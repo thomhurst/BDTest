@@ -364,11 +364,11 @@ In your output directory after your tests have finished:
 
 </p>
 </details>
+
 ## HTML
 ### By Story
 In your output directory after your tests have finished:
 > Report - By Story - {timestamp}.html
-
 
 ### All Scenarios
 In your output directory after your tests have finished:
