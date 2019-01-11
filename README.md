@@ -8,49 +8,49 @@ Tests can be constructed either by extending from a base class, or by using the 
 Extending from `BDTestBase`
 
 ```csharp
-    public class MyTests : BDTestBase
-    {
-	    [Test]
-	    public void Test1() {
-		    Given(() => Action1())
-		    .When(() => Action2())
-		    .Then(() => Action3())
-		    .BDTest();
-		}
-	}
+public class MyTests : BDTestBase
+{
+    [Test]
+    public void Test1() {
+        Given(() => Action1())
+        .When(() => Action2())
+        .Then(() => Action3())
+        .BDTest();
+    }
+}
 ```
 
 Or by using the `BDTestBuilder` object
 
 ```csharp
-    public class MyTests 
-    {
-	    [Test]
-	    public void Test1() {
-		    new BDTestBuilder().Given(() => Action1())
-							    .When(() => Action2())
-							    .Then(() => Action3())
-							    .BDTest();
-		}
-	}
+public class MyTests 
+{
+    [Test]
+    public void Test1() {
+        new BDTestBuilder().Given(() => Action1())
+                            .When(() => Action2())
+                            .Then(() => Action3())
+                            .BDTest();
+    }
+}
 ```
 
 ### Automatic Context Construction
 Construction of your TestContext using lambda syntax
 
 ```csharp
-    public class MyTests : BDTestBase
-    {
-	    [Test]
-	    public void Test1() {
-		    WithContext<TestContext>(context =>
-			    Given(() => Action1())
-			    .When(() => Action2())
-			    .Then(() => Action3())
-			    .BDTest()
-			);
-		}
-	}
+public class MyTests : BDTestBase
+{
+    [Test]
+    public void Test1() {
+        WithContext<TestContext>(context =>
+            Given(() => Action1())
+            .When(() => Action2())
+            .Then(() => Action3())
+            .BDTest()
+        );
+    }
+}
 ```
 
  - Your TestContext will be automatically constructed and injected in via the lambda
@@ -78,40 +78,40 @@ BDTest enforces best practice:
 Annotate your test classes with a `[StoryText]` attribute
 
 ```csharp
-	    [Story(AsA = "Test User",
-	        IWant = "To Test",
-	        SoThat = "Things Work")]
-	    public class MyTests : BDTestBase
-	    {
-		    ...
-	    }
+[Story(AsA = "Test User",
+    IWant = "To Test",
+    SoThat = "Things Work")]
+public class MyTests : BDTestBase
+{
+    ...
+}
 ```
 
 ### Scenario Text
 Annotate your tests with a `[ScenarioText]` attribute
 
 ```csharp
-	    [Test]
-        [ScenarioText("Custom Scenario")]
-        public void Test1()
-        {
-            Given(() => Action1())
-                .When(() => Action2())
-                .Then(() => Action3())
-                .And(() => Action4())
-                .BDTest();
-        }
+[Test]
+[ScenarioText("Custom Scenario")]
+public void Test1()
+{
+    Given(() => Action1())
+        .When(() => Action2())
+        .Then(() => Action3())
+        .And(() => Action4())
+        .BDTest();
+}
 ```
 
 ### Step Text
 Annotate your steps/methods with a `[StepText]` attribute
 
 ```csharp
-	    [StepText("I perform my second action")]
-        public void Action2()
-        {
-            ...
-        }
+[StepText("I perform my second action")]
+public void Action2()
+{
+    ...
+}
 ```
 
 # Reports
