@@ -1,6 +1,6 @@
 # BDTest
 ## Installation
-Install via Nuget > ...
+Install via Nuget > `Install-Package BDTest`
 ## Usage
 Tests can be constructed either by extending from a base class, or by using the a test builder object.
 
@@ -103,7 +103,7 @@ Annotate your steps/methods with a `[StepText]` attribute
 
 # Reports
 ## Installation
-Install via Nuget > ...
+Install via Nuget > `Install-Package BDTest.ReportGenerator`
 ## Usage
 You don't have to do anything. 
 
