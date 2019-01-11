@@ -7,6 +7,7 @@ Tests can be constructed either by extending from a base class, or by using the 
 
 Extending from `BDTestBase`
 
+```csharp
     public class MyTests : BDTestBase
     {
 	    [Test]
@@ -17,9 +18,11 @@ Extending from `BDTestBase`
 		    .BDTest();
 		}
 	}
+```
 
 Or by using the `BDTestBuilder` object
 
+```csharp
     public class MyTests 
     {
 	    [Test]
@@ -30,10 +33,12 @@ Or by using the `BDTestBuilder` object
 							    .BDTest();
 		}
 	}
+```
 
 ### Automatic Context Construction
 Construction of your TestContext using lambda syntax
 
+```csharp
     public class MyTests : BDTestBase
     {
 	    [Test]
@@ -46,6 +51,8 @@ Construction of your TestContext using lambda syntax
 			);
 		}
 	}
+```
+
  - Your TestContext will be automatically constructed and injected in via the lambda
  - Your TestContext should have a public constructor with 0 parameters
 
@@ -70,6 +77,7 @@ BDTest enforces best practice:
 ### StoryText
 Annotate your test classes with a `[StoryText]` attribute
 
+```csharp
 	    [Story(AsA = "Test User",
 	        IWant = "To Test",
 	        SoThat = "Things Work")]
@@ -77,10 +85,12 @@ Annotate your test classes with a `[StoryText]` attribute
 	    {
 		    ...
 	    }
+```
 
 ### Scenario Text
 Annotate your tests with a `[ScenarioText]` attribute
 
+```csharp
 	    [Test]
         [ScenarioText("Custom Scenario")]
         public void Test1()
@@ -91,15 +101,18 @@ Annotate your tests with a `[ScenarioText]` attribute
                 .And(() => Action4())
                 .BDTest();
         }
+```
 
 ### Step Text
 Annotate your steps/methods with a `[StepText]` attribute
 
+```csharp
 	    [StepText("I perform my second action")]
         public void Action2()
         {
             ...
         }
+```
 
 # Reports
 ## Installation
@@ -115,7 +128,8 @@ In your output directory after your tests have finished:
 <details>
 <summary>Example:</summary>
 <p>
-		    
+
+```json
     {
     "TestTimer": {
     
@@ -232,18 +246,21 @@ In your output directory after your tests have finished:
     ]
     
     }
-
+```
 </p>
 </details>
+
 
 ## XML
 In your output directory after your tests have finished:
 > test_data - {timestamp}.xml
 
+
 <details>
 <summary>Example:</summary>
 <p>
 
+```xml
     <?xml version="1.0" encoding="utf-16"?>
     
     <TestData>
@@ -361,7 +378,7 @@ In your output directory after your tests have finished:
     </Scenarios>
     
     </TestData>
-
+```
 </p>
 </details>
 
