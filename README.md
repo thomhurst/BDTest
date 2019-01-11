@@ -68,7 +68,7 @@ BDTest enforces best practice:
 
 ## Attributes
 ### StoryText
-Annotate your steps/methods with a `[StoryText]` attribute
+Annotate your test classes with a `[StoryText]` attribute
 
 	    [Story(AsA = "Test User",
 	        IWant = "To Test",
