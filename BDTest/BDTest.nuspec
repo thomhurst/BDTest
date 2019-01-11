@@ -1,0 +1,67 @@
+<?xml version="1.0"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2013/05/nuspec.xsd">
+    <metadata>
+        <!-- The identifier that must be unique within the hosting gallery -->
+        <id>BDTest</id>
+
+        <!-- The package version number that is used when resolving dependencies -->
+        <version>1.0.0</version>
+
+        <!-- Authors contain text that appears directly on the gallery -->
+        <authors>Tom Longhurst</authors>
+
+        <!-- 
+            Owners are typically nuget.org identities that allow gallery
+            users to easily find other packages by the same owners.  
+        -->
+        <owners>Tom Longhurst</owners>
+
+        <title>BDTest - A Testing Framework</title>
+
+        <!-- Project URL provides a link for the gallery -->
+        <projectUrl>http://github.com/thomhurst/BDTest</projectUrl>
+
+        <!-- License information is displayed on the gallery -->
+        <license type="expression">Apache-2.0</license>
+
+
+        <!-- The icon is used in Visual Studio's package manager UI -->
+        <iconUrl>http://github.com/thomhurst/BDTest/nuget_icon.png</iconUrl>
+
+        <!-- 
+            If true, this value prompts the user to accept the license when
+            installing the package. 
+        -->
+        <requireLicenseAcceptance>false</requireLicenseAcceptance>
+
+        <!-- Any details about this particular release -->
+        <releaseNotes>Release!</releaseNotes>
+
+        <!-- 
+            The description can be used in package manager UI. Note that the
+            nuget.org gallery uses information you add in the portal. 
+        -->
+        <description>A lightweight testing framework</description>
+
+        <summary>A lightweight testing framework</summary>
+
+        <!-- Copyright information -->
+        <copyright>Copyright ©2019 Tom Longhurst</copyright>
+
+        <!-- Tags appear in the gallery and can be used for tag searches -->
+        <tags>test tdd bdd testing given when then</tags>
+
+        <!-- Dependencies are automatically installed when the package is installed -->
+        <dependencies>
+            <dependency id="Newtonsoft.Json" version="12.0.1" />
+            <dependency id="Humanizer" version="2.5.16" />
+        </dependencies>
+    </metadata>
+
+    <!-- A readme.txt to display when the package is installed -->
+    <files>
+        <file src="bin\Release\**\BDTest*.json" target="build" />
+        <file src="bin\Release\**\BDTest.props" target="build" />
+        <file src="bin\Release\**\BDTest.dll" target="build" />
+    </files>
+</package>
