@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Linq.Expressions;
-using NUnit.Framework;
 using BDTest.Attributes;
 using BDTest.Test;
+using NUnit.Framework;
 
 namespace TestTester
 {

@@ -1,8 +1,8 @@
 ﻿using System;
 using System.IO;
 using System.Threading;
-using NUnit.Framework;
 using BDTest.Test;
+using NUnit.Framework;
 
 namespace TestTester
 {

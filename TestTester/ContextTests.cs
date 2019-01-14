@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using NUnit.Framework;
 using BDTest.Attributes;
 using BDTest.Test;
+using NUnit.Framework;
 
 namespace TestTester
 {

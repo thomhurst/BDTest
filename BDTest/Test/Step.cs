@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Threading.Tasks;
 using Humanizer;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
@@ -24,6 +25,9 @@ namespace BDTest.Test
         [JsonProperty]
         private readonly StepType _stepType;
         private string StepPrefix => _stepType.GetValue();
+
+        [JsonProperty]
+        public string Output { get; private set; }
 
         [JsonConverter(typeof(TimespanConverter))]
         [JsonProperty]
@@ -64,29 +68,36 @@ namespace BDTest.Test
 
         public void Execute()
         {
-            try
+            var task = new Task(() =>
             {
-                StartTime = DateTime.Now;
-                Action.Compile().Invoke();
-                Status = Status.Passed;
-            }
-            catch (NotImplementedException e)
-            {
-                Status = Status.NotImplemented;
-                Exception = e;
-                throw;
-            }
-            catch (Exception e)
-            {
-                Status = Status.Failed;
-                Exception = e;
-                throw;
-            }
-            finally
-            {
-                EndTime = DateTime.Now;
-                TimeTaken = EndTime - StartTime;
-            }
+                try
+                {
+                    StartTime = DateTime.Now;
+                    Action.Compile().Invoke();
+                    Status = Status.Passed;
+                }
+                catch (NotImplementedException e)
+                {
+                    Status = Status.NotImplemented;
+                    Exception = e;
+                    throw;
+                }
+                catch (Exception e)
+                {
+                    Status = Status.Failed;
+                    Exception = e;
+                    throw;
+                }
+                finally
+                {
+                    EndTime = DateTime.Now;
+                    TimeTaken = EndTime - StartTime;
+                    Output = ConsoleTextInterceptor.Instance.ToString();
+                    ConsoleTextInterceptor.Instance.ClearCurrentTaskData();
+                }
+            });
+            task.Start();
+            task.Wait();
         }
 
         public void SetEndTime() {

@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Text.Encodings.Web;
 using BDTest.Output;
 using BDTest.Paths;
@@ -429,12 +428,37 @@ namespace BDTest.ReportGenerator.Builders
             }
             else
             {
-                exceptionTag = new HtmlTag("p").Append(
-                            new HtmlTag("span").AddClass("exception").AppendText(step.Exception?.ToString() ?? "")
-                        );
+                exceptionTag = new HtmlTag("details").Append(
+                    new HtmlTag("summary").AppendText("Exception"),
+                    new HtmlTag("p").AddClass("exception").AppendText(step.Exception?.ToString() ?? "")
+                );
             }
 
-            return exceptionTag;
+            HtmlTag outputTag;
+
+            if (step.Output == null || string.IsNullOrWhiteSpace(step.Output))
+            {
+                outputTag = null;
+            }
+            else
+            {
+                outputTag = new HtmlTag("details").Append(
+                    new HtmlTag("summary").AppendText("Output"),
+                    new HtmlTag("p").AddClass("output").AppendText(step.Output ?? "")
+                );
+            }
+
+            var returnTag = new HtmlTag("p").Append(
+                exceptionTag ?? HtmlTag.Empty(),
+                outputTag ?? HtmlTag.Empty()
+            );
+
+            if (exceptionTag == null && outputTag == null)
+            {
+                return null;
+            }
+
+            return returnTag;
         }
 
         private HtmlTag BuildHead()
@@ -495,7 +519,7 @@ namespace BDTest.ReportGenerator.Builders
             var inconclusive = scenarios.Count(scenario => scenario.Status == Status.Inconclusive);
             var notImplemented = scenarios.Count(scenario => scenario.Status == Status.NotImplemented);
 
-            return $"['Passed', {passed}], ['Failed', {failed}], ['Inconclusive', {inconclusive}], ['Not Implemented', {notImplemented}";
+            return $"['Passed', {passed}], ['Failed', {failed}], ['Inconclusive', {inconclusive}], ['Not Implemented', {notImplemented}]";
         }
 
         private object BuildChartScenarioTimesData(int i)

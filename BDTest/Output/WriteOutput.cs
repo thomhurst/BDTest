@@ -2,8 +2,6 @@
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using Newtonsoft.Json;
-using BDTest.Paths;
 
 namespace BDTest.Output
 {

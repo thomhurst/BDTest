@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
+using System.Threading.Tasks;
 using Humanizer;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
@@ -14,6 +15,15 @@ namespace BDTest.Test
 {
     public class Scenario
     {
+
+        static Scenario()
+        {
+            if (BDTestSettings.InterceptConsoleOutput)
+            {
+                Console.SetOut(ConsoleTextInterceptor.Instance);
+            }
+        }
+
         private readonly Reporter _reporters;
 
         [JsonProperty]
@@ -121,6 +131,9 @@ namespace BDTest.Test
         [JsonProperty]
         public List<Step> Steps { get; set; }
 
+        [JsonProperty]
+        public string Output { get; private set; }
+
         [JsonConverter(typeof(StringEnumConverter))]
         [JsonProperty]
         public Status Status { get; set; } = Status.Inconclusive;
@@ -134,32 +147,39 @@ namespace BDTest.Test
 
         internal void Execute()
         {
-            try
+            var task = new Task( () => 
             {
-                StartTime = DateTime.Now;
-                _reporters.WriteStory(StoryText);
-                _reporters.WriteScenario(ScenarioText);
-                Steps.ForEach(step => _reporters.WriteLine(step.StepText));
-                _reporters.NewLine();
-                Steps.ForEach(step => step.Execute());
-                Status = Status.Passed;
-            }
-            catch (NotImplementedException)
-            {
-                Status = Status.NotImplemented;
-            }
-            catch (Exception e)
-            {
-                Status = Status.Failed;
-                _reporters.WriteLine($"Exception: {e.StackTrace}");
-                throw e;
-            }
-            finally
-            {
-                _reporters.WriteLine($"{Environment.NewLine}Test Result: {Status}");
-                EndTime = DateTime.Now;
-                TimeTaken = EndTime - StartTime;
-            }
+                try
+                {
+                    StartTime = DateTime.Now;
+                    _reporters.WriteStory(StoryText);
+                    _reporters.WriteScenario(ScenarioText);
+                    Steps.ForEach(step => _reporters.WriteLine(step.StepText));
+                    _reporters.NewLine();
+                    Steps.ForEach(step => step.Execute());
+                    Status = Status.Passed;
+                }
+                catch (NotImplementedException)
+                {
+                    Status = Status.NotImplemented;
+                }
+                catch (Exception e)
+                {
+                    Status = Status.Failed;
+                    _reporters.WriteLine($"Exception: {e.StackTrace}");
+                    throw;
+                }
+                finally
+                {
+                    _reporters.WriteLine($"{Environment.NewLine}Test Result: {Status}");
+                    EndTime = DateTime.Now;
+                    TimeTaken = EndTime - StartTime;
+                    Output = string.Join(Environment.NewLine, Steps.Where(step => !string.IsNullOrWhiteSpace(step.Output)).Select(step => step.Output));
+                }
+            });
+
+            task.Start();
+            task.Wait();
         }
     }
 }
