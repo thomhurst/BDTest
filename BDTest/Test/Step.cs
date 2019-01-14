@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Reflection;
+using System.Runtime.InteropServices.ComTypes;
 using System.Threading.Tasks;
 using Humanizer;
 using Newtonsoft.Json;
@@ -58,11 +60,29 @@ namespace BDTest.Test
 
         public void SetStepText()
         {
+            var methodCallExpression = (Action.Body as MethodCallExpression);
+            var methodInfo = methodCallExpression?.Method;
+            var arguments = methodCallExpression?.Arguments;
+
             var customStepText =
-                ((StepTextAttribute)(((Action.Body as MethodCallExpression)?.Method.GetCustomAttributes(
+                ((StepTextAttribute)((methodInfo?.GetCustomAttributes(
                                           typeof(StepTextAttribute), true) ??
                                       new string[] { }).FirstOrDefault()))?.Text;
-            var methodNameHumanized = (Action.Body as MethodCallExpression)?.Method.Name.Humanize();
+            var methodNameHumanized = methodInfo?.Name.Humanize();
+
+            if (customStepText != null && arguments != null)
+            {
+                try
+                {
+                    customStepText = string.Format(customStepText, arguments.ToArray());
+                }
+                catch (Exception)
+                {
+                    throw new Exception(
+                        $"Step Text arguments are wrong.\nTemplate is: {customStepText}\nArguments are {string.Join(",", arguments)}");
+                }
+            }
+
             StepText = $"{StepPrefix} {customStepText ?? methodNameHumanized}";
         }
 
