@@ -1,12 +1,22 @@
-﻿namespace BDTest.Test
+﻿using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
+
+namespace BDTest.Test
 {
     public class StoryText
     {
+        [JsonProperty]
         public readonly string Story;
 
         public StoryText(string story)
         {
             Story = story;
+        }
+
+        [JsonConstructor]
+        private StoryText()
+        {
+
         }
 
         protected bool Equals(StoryText other)

@@ -13,15 +13,15 @@ namespace BDTest.Test.Steps.Given
 
         public AndGiven And(Expression<Action> step)
         {
-            return new AndGiven(ExistingSteps, step);
+            return new AndGiven(ExistingSteps, step, TestDetails);
         }
 
         public When.When When(Expression<Action> step)
         {
-            return new When.When(ExistingSteps, step);
+            return new When.When(ExistingSteps, step, TestDetails);
         }
 
-        public AndGiven(List<Step> previousSteps, Expression<Action> action) : base(previousSteps, action)
+        public AndGiven(List<Step> previousSteps, Expression<Action> action, TestDetails testDetails) : base(previousSteps, action, testDetails)
         {
         }
     }

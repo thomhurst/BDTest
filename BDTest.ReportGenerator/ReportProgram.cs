@@ -21,7 +21,7 @@ namespace BDTest.ReportGenerator
         {
 
             ResultDirectory = args.FirstOrDefault(it => it.StartsWith(WriteOutput.ResultDirectoryArgumentName))?.Replace(WriteOutput.ResultDirectoryArgumentName, "");
-            
+
             Console.WriteLine($"Results Directory is: {ResultDirectory}");
 
             if (ResultDirectory == null)
@@ -38,18 +38,26 @@ namespace BDTest.ReportGenerator
            var testDataXmlPath = Path.Combine(ResultDirectory, FileNames.TestDataXml);
 
             DeleteExistingFiles(reportPathByStory, reportPathAllScenarios, testDataJsonPath, testDataXmlPath);
+        
+            var warnings = GetWarnings();
 
             var dataToOutput = new DataOutputModel
             {
                 Scenarios = scenarios,
-                TestTimer = testTimer
+                TestTimer = testTimer,
+                Warnings = warnings
             };
 
-            var jsonData = JsonConvert.SerializeObject(dataToOutput, Formatting.Indented);
+            var settings = new JsonSerializerSettings
+            {
+                PreserveReferencesHandling = PreserveReferencesHandling.Objects
+            };
+
+            var jsonData = JsonConvert.SerializeObject(dataToOutput, Formatting.Indented, settings);
             File.WriteAllText(Path.Combine(ResultDirectory, FileNames.TestDataJson), jsonData);
             File.WriteAllText(Path.Combine(ResultDirectory, FileNames.TestDataXml), JsonConvert.DeserializeXmlNode(jsonData, "TestData").ToXmlString());
 
-            HtmlReportBuilder.CreateReport(scenarios, testTimer);
+            HtmlReportBuilder.CreateReport(dataToOutput);
 
             try
            {
@@ -85,12 +93,23 @@ namespace BDTest.ReportGenerator
 
         private static List<Scenario> GetScenarios(string resultDirectory)
         {
+            var settings = new JsonSerializerSettings
+            {
+                PreserveReferencesHandling = PreserveReferencesHandling.Objects,
+                Error = (se, ev) => { ev.ErrorContext.Handled = true; }
+            };
             var scenariosFolder = Directory.GetDirectories(resultDirectory, FileNames.Scenarios).FirstOrDefault() ?? throw new Exception($"Can't find '{FileNames.Scenarios} folder in directory {resultDirectory}");
 
             var scenarios = Directory.GetFiles(scenariosFolder).Select(scenarioFile =>
-                JsonConvert.DeserializeObject<Scenario>(File.ReadAllText(scenarioFile)));
+                JsonConvert.DeserializeObject<Scenario>(File.ReadAllText(scenarioFile), settings));
 
             return scenarios.ToList();
+        }
+
+        private static WarningsChecker GetWarnings()
+        {
+            var warningsPath = Path.Combine(ResultDirectory, FileNames.Warnings);
+            return !File.Exists(warningsPath) ? new WarningsChecker(new List<BuildableTest>()) : JsonConvert.DeserializeObject<WarningsChecker>(File.ReadAllText(warningsPath));
         }
 
         private static TestTimer GetTestTimer(IEnumerable<Scenario> scenarios)

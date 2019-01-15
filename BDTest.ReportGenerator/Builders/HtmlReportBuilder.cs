@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text.Encodings.Web;
 using BDTest.Output;
 using BDTest.Paths;
+using BDTest.ReportGenerator.Models;
 using BDTest.Test;
 using HtmlTags;
 
@@ -29,17 +30,19 @@ namespace BDTest.ReportGenerator.Builders
 
         private int _storiesBuiltCounter = 0;
         private readonly List<HtmlTag> chartJs = new List<HtmlTag>();
+        private readonly WarningsChecker _warnings;
 
-        internal static HtmlReportBuilder CreateReport(List<Scenario> scenarios, TestTimer testTimer)
+        internal static HtmlReportBuilder CreateReport(DataOutputModel dataOutputModel)
         {
-            return new HtmlReportBuilder(scenarios, testTimer);
+            return new HtmlReportBuilder(dataOutputModel);
         }
 
-        internal HtmlReportBuilder(List<Scenario> scenarios, TestTimer testTimer)
+        internal HtmlReportBuilder(DataOutputModel dataOutputModel)
         {
-            _scenarios = scenarios;
-            _stories = scenarios.Select(scenario => scenario.GetStoryText()).Distinct().ToList();
-            _testTimer = testTimer;
+            _scenarios = dataOutputModel.Scenarios;
+            _stories = _scenarios.Select(scenario => scenario.GetStoryText()).Distinct().ToList();
+            _testTimer = dataOutputModel.TestTimer;
+            _warnings = dataOutputModel.Warnings;
             BuildChartJavascript();
             CreateReportWithStories();
             CreateReportWithoutStories();
@@ -84,6 +87,7 @@ namespace BDTest.ReportGenerator.Builders
                     BuildTimerBox(),
                     BuildChart()
                 ),
+                BuildWarnings(),
                 new HtmlTag("p").Append(
                     BuildStorySection()
                 ),
@@ -105,6 +109,7 @@ namespace BDTest.ReportGenerator.Builders
                     BuildTimerBox(),
                     BuildChart()
                 ),
+                BuildWarnings(),
                 new HtmlTag("p").Append(
                     BuildScenariosSection(_scenarios)
                 ),
@@ -113,6 +118,36 @@ namespace BDTest.ReportGenerator.Builders
                 ),
                 new HtmlTag("p").Append(
                     BuildJavascript()
+                )
+            );
+        }
+
+        private HtmlTag BuildWarnings()
+        {
+            var warningsNonExecutedTests = _warnings.NonExecutedTests;
+            if(!warningsNonExecutedTests.Any()) return HtmlTag.Empty();
+
+            return new HtmlTag("details").Append(
+                new HtmlTag("summary").AddClass("canToggle").AppendText("Tests Not Executed"),
+                new HtmlTag("p").Append(
+                    new HtmlTag("table").Append(
+                        new HtmlTag("thead").Append(
+                            new HtmlTag("tr").Append(
+                                new HtmlTag("th").AppendText("Story"),
+                                new HtmlTag("th").AppendText("Scenario"),
+                                new HtmlTag("th").AppendText("Parameters")
+                            )
+                        ),
+                        new HtmlTag("tbody").Append(
+                            warningsNonExecutedTests.Select(it =>
+                                new HtmlTag("tr").Append(
+                                    new HtmlTag("td").AppendText(it.GetStoryText()),
+                                    new HtmlTag("td").AppendText(it.GetScenarioText()),
+                                    new HtmlTag("td").Append(it.TestDetails.Parameters?.Select(parameterName => new HtmlTag("div").AppendText(parameterName)) ?? new List<HtmlTag> { HtmlTag.Empty() })
+                                )
+                            )
+                        )
+                    )
                 )
             );
         }

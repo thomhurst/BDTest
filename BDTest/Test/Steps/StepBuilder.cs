@@ -1,32 +1,42 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
+using BDTest.Maps;
+using BDTest.Output;
+using Newtonsoft.Json;
 
 namespace BDTest.Test.Steps
 {
-    public abstract class StepBuilder
+    public abstract class StepBuilder : BuildableTest
     {
 
         internal readonly List<Step> ExistingSteps;
         protected abstract StepType StepType { get; }
         protected string StepPrefix => StepType.GetValue();
 
-        protected StepBuilder(Expression<Action> action)
+        protected StepBuilder(Expression<Action> action, string callerMember)
         {
             ExistingSteps = new List<Step> { new Step(action, StepType.Given) };
+            TestDetails = new TestDetails(callerMember, Guid.NewGuid());
         }
 
         
 
-        internal StepBuilder(List<Step> previousSteps, Expression<Action> action)
+        internal StepBuilder(List<Step> previousSteps, Expression<Action> action, TestDetails testDetails)
         {
+            TestDetails = testDetails;
+            StoryText = testDetails.StoryText;
+            ScenarioText = testDetails.ScenarioText;
+
+            TestMap.Testables[testDetails.GetGuid()] = this;
+
             ExistingSteps = previousSteps;
             ExistingSteps.Add(new Step(action, StepType));
         }
 
-        protected Scenario Invoke(string callerMember)
+        protected Scenario Invoke(TestDetails testDetails)
         {
-            return new Scenario(ExistingSteps, callerMember);
+            return new Scenario(ExistingSteps, testDetails);
         }
     }
 }

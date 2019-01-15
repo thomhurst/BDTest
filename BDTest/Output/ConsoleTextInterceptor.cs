@@ -11,7 +11,7 @@ namespace BDTest.Output
         private static readonly List<KeyValuePair<int?, char>> ThreadAndChars = new List<KeyValuePair<int?, char>>();
         public static readonly ConsoleTextInterceptor Instance = new ConsoleTextInterceptor(Encoding.UTF8);
 
-        public ConsoleTextInterceptor(Encoding encoding)
+        internal ConsoleTextInterceptor(Encoding encoding)
         {
             Encoding = encoding;
         }

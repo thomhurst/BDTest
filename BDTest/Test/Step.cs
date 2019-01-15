@@ -62,7 +62,7 @@ namespace BDTest.Test
         {
             var methodCallExpression = (Action.Body as MethodCallExpression);
             var methodInfo = methodCallExpression?.Method;
-            var arguments = methodCallExpression?.Arguments;
+            var arguments = methodCallExpression?.Arguments.Select(it => (it as ConstantExpression)?.Value);
 
             var customStepText =
                 ((StepTextAttribute)((methodInfo?.GetCustomAttributes(
