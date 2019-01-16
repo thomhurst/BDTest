@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
 
 namespace BDTest.Test.Steps.Then
 {
@@ -22,6 +23,11 @@ namespace BDTest.Test.Steps.Then
         public Scenario BDTest()
         {
             return Invoke(TestDetails);
+        }
+
+        public Task<Scenario> BDTestAsync()
+        {
+            return Task.Run(() => Invoke(TestDetails));
         }
     }
 }

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq.Expressions;
 using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
 using BDTest.Test.Steps.Given;
 
 namespace BDTest.Test
@@ -20,6 +21,11 @@ namespace BDTest.Test
         public void WithContext<TContext>(Func<TContext, Scenario> test) where TContext : new()
         {
             test.Invoke(Activator.CreateInstance<TContext>());
+        }
+
+        public Task WithContext<TContext>(Func<TContext, Task<Scenario>> test) where TContext : new()
+        {
+            return test.Invoke(Activator.CreateInstance<TContext>());
         }
     }
 }

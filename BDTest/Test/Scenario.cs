@@ -56,6 +56,9 @@ namespace BDTest.Test
             }
         }
 
+        [JsonIgnore]
+        public bool IsAsync { get; set; }
+
         [JsonProperty]
         public List<Step> Steps { get; set; }
 
