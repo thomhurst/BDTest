@@ -117,8 +117,8 @@ namespace TestTester
         [Ignore("")]
         public void IgnoreTest()
         {
-            BdTestBuilder.WithContext<TestContext>((context, bdTestBuilder) =>
-                bdTestBuilder.Given(() => Add(context))
+            BdTestBuilder.WithContext<TestContext>(context =>
+                BdTestBuilder.Given(() => Add(context))
                     .When(() => Add(context))
                     .Then(() => Add(context))
                     .And(() => Exception(context))
