@@ -23,9 +23,9 @@ namespace BDTest.Test
             test.Invoke(Activator.CreateInstance<TContext>());
         }
 
-        public Task WithContext<TContext>(Func<TContext, Task<Scenario>> test) where TContext : new()
+        public async Task WithContext<TContext>(Func<TContext, Task<Scenario>> test) where TContext : new()
         {
-            return test.Invoke(Activator.CreateInstance<TContext>());
+            await test.Invoke(Activator.CreateInstance<TContext>());
         }
     }
 }
