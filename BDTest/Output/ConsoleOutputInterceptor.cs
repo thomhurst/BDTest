@@ -29,6 +29,11 @@ namespace BDTest.Output
             _two.Write(value);
         }
 
+        public override string ToString()
+        {
+            return _two.ToString();
+        }
+
         public void ClearCurrentTaskData()
         {
             _two.ClearCurrentTaskData();
