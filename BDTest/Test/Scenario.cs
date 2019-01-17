@@ -1,13 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
-using System.Reflection;
 using System.Threading.Tasks;
-using Humanizer;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
-using BDTest.Attributes;
 using BDTest.Maps;
 using BDTest.Output;
 using BDTest.Reporters;
@@ -21,7 +17,7 @@ namespace BDTest.Test
         {
             if (BDTestSettings.InterceptConsoleOutput)
             {
-                Console.SetOut(ConsoleTextInterceptor.Instance);
+                Console.SetOut(TestOutputData.Instance);
             }
         }
 

@@ -2,8 +2,6 @@
 using System.Collections.Generic;
 using System.Linq.Expressions;
 using BDTest.Maps;
-using BDTest.Output;
-using Newtonsoft.Json;
 
 namespace BDTest.Test.Steps
 {

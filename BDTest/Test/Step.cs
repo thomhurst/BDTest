@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Reflection;
-using System.Runtime.InteropServices.ComTypes;
 using System.Threading.Tasks;
 using Humanizer;
 using Newtonsoft.Json;
@@ -112,17 +110,12 @@ namespace BDTest.Test
                 {
                     EndTime = DateTime.Now;
                     TimeTaken = EndTime - StartTime;
-                    Output = ConsoleTextInterceptor.Instance.ToString();
-                    ConsoleTextInterceptor.Instance.ClearCurrentTaskData();
+                    Output = TestOutputData.Instance.ToString();
+                    TestOutputData.Instance.ClearCurrentTaskData();
                 }
             });
             task.Start();
             task.Wait();
-        }
-
-        public void SetEndTime() {
-            EndTime = DateTime.Now;
-            TimeTaken = EndTime - StartTime;
         }
     }
 }

@@ -2,7 +2,6 @@
 using BDTest.Output;
 using BDTest.Test;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Serialization;
 
 namespace BDTest.ReportGenerator.Models
 {

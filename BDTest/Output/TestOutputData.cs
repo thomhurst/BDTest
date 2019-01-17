@@ -6,20 +6,18 @@ using System.Threading.Tasks;
 
 namespace BDTest.Output
 {
-    class ConsoleTextInterceptor : TextWriter
+    class TestOutputData : TextWriter
     {
         private static readonly List<KeyValuePair<int?, char>> ThreadAndChars = new List<KeyValuePair<int?, char>>();
-        public static readonly ConsoleTextInterceptor Instance = new ConsoleTextInterceptor(Encoding.UTF8);
-
-        internal ConsoleTextInterceptor(Encoding encoding)
-        {
-            Encoding = encoding;
-        }
+        public static readonly ConsoleOutputInterceptor Instance = new ConsoleOutputInterceptor();
+        private static readonly object Lock = new object();
 
         public override void Write(char value)
         {
+            lock (Lock)
+            {
             ThreadAndChars.Add(new KeyValuePair<int?, char>(Task.CurrentId, value));
-            base.Write(value);
+            }
         }
 
         public override string ToString()

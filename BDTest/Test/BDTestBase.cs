@@ -38,29 +38,29 @@ namespace BDTest.Test
             test.Invoke(Activator.CreateInstance<TContext>(), Activator.CreateInstance<TContext2>(), Activator.CreateInstance<TContext3>(), Activator.CreateInstance<TContext4>(), Activator.CreateInstance<TContext5>());
         }
 
-        public async Task WithContext<TContext>(Func<TContext, Task<Scenario>> test) where TContext : new()
+        public ConfiguredTaskAwaitable<Scenario> WithContext<TContext>(Func<TContext, Task<Scenario>> test) where TContext : new()
         {
-            await test.Invoke(Activator.CreateInstance<TContext>());
+            return test.Invoke(Activator.CreateInstance<TContext>()).ConfigureAwait(false);
         }
 
-        public async Task WithContext<TContext, TContext2>(Func<TContext, TContext2, Task<Scenario>> test) where TContext : new() where TContext2 : new()
+        public ConfiguredTaskAwaitable<Scenario> WithContext<TContext, TContext2>(Func<TContext, TContext2, Task<Scenario>> test) where TContext : new() where TContext2 : new()
         {
-            await test.Invoke(Activator.CreateInstance<TContext>(), Activator.CreateInstance<TContext2>());
+            return test.Invoke(Activator.CreateInstance<TContext>(), Activator.CreateInstance<TContext2>()).ConfigureAwait(false);
         }
 
-        public async Task WithContext<TContext, TContext2, TContext3>(Func<TContext, TContext2, TContext3, Task<Scenario>> test) where TContext : new() where TContext2 : new() where TContext3 : new()
+        public ConfiguredTaskAwaitable<Scenario> WithContext<TContext, TContext2, TContext3>(Func<TContext, TContext2, TContext3, Task<Scenario>> test) where TContext : new() where TContext2 : new() where TContext3 : new()
         {
-            await test.Invoke(Activator.CreateInstance<TContext>(), Activator.CreateInstance<TContext2>(), Activator.CreateInstance<TContext3>());
+            return test.Invoke(Activator.CreateInstance<TContext>(), Activator.CreateInstance<TContext2>(), Activator.CreateInstance<TContext3>()).ConfigureAwait(false);
         }
 
-        public async Task WithContext<TContext, TContext2, TContext3, TContext4>(Func<TContext, TContext2, TContext3, TContext4, Task<Scenario>> test) where TContext : new() where TContext2 : new() where TContext3 : new() where TContext4 : new()
+        public ConfiguredTaskAwaitable<Scenario> WithContext<TContext, TContext2, TContext3, TContext4>(Func<TContext, TContext2, TContext3, TContext4, Task<Scenario>> test) where TContext : new() where TContext2 : new() where TContext3 : new() where TContext4 : new()
         {
-            await test.Invoke(Activator.CreateInstance<TContext>(), Activator.CreateInstance<TContext2>(), Activator.CreateInstance<TContext3>(), Activator.CreateInstance<TContext4>());
+            return test.Invoke(Activator.CreateInstance<TContext>(), Activator.CreateInstance<TContext2>(), Activator.CreateInstance<TContext3>(), Activator.CreateInstance<TContext4>()).ConfigureAwait(false);
         }
 
-        public async Task WithContext<TContext, TContext2, TContext3, TContext4, TContext5>(Func<TContext, TContext2, TContext3, TContext4, TContext5, Task<Scenario>> test) where TContext : new() where TContext2 : new() where TContext3 : new() where TContext4 : new() where TContext5 : new()
+        public ConfiguredTaskAwaitable<Scenario> WithContext<TContext, TContext2, TContext3, TContext4, TContext5>(Func<TContext, TContext2, TContext3, TContext4, TContext5, Task<Scenario>> test) where TContext : new() where TContext2 : new() where TContext3 : new() where TContext4 : new() where TContext5 : new()
         {
-            await test.Invoke(Activator.CreateInstance<TContext>(), Activator.CreateInstance<TContext2>(), Activator.CreateInstance<TContext3>(), Activator.CreateInstance<TContext4>(), Activator.CreateInstance<TContext5>());
+            return test.Invoke(Activator.CreateInstance<TContext>(), Activator.CreateInstance<TContext2>(), Activator.CreateInstance<TContext3>(), Activator.CreateInstance<TContext4>(), Activator.CreateInstance<TContext5>()).ConfigureAwait(false);
         }
 
         

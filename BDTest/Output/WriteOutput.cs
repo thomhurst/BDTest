@@ -13,7 +13,7 @@ namespace BDTest.Output
     {
         public const string ResultDirectoryArgumentName = "-ResultsDirectory=";
         public static string OutputDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-        public static bool AlreadyExecuted = false;
+        public static bool AlreadyExecuted;
         private static readonly object Lock = new object();
 
         static WriteOutput()

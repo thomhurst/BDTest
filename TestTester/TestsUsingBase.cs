@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Linq.Expressions;
+using System.Threading.Tasks;
 using BDTest.Attributes;
 using BDTest.Test;
 using NUnit.Framework;
+using Assert = NUnit.Framework.Assert;
 
 namespace TestTester
 {
@@ -12,6 +14,30 @@ namespace TestTester
         SoThat = "Things Work")]
     public class TestsUsingBase : BDTestBase
     {
+
+        [Test]
+        [ScenarioText("Asynchronous Scenario")]
+        public async Task AsyncTest()
+        {
+            await Given(() => Action1())
+                .When(() => Action2())
+                .Then(() => Action3())
+                .And(() => Action4())
+                .BDTestAsync();
+        }
+
+        [Test]
+        [ScenarioText("Asynchronous Scenario Failure")]
+        public async Task AsyncTestFailure()
+        {
+            await Given(() => Action1())
+                .When(() => Action2())
+                .Then(() => Action3())
+                .And(() => Action4())
+                .And(() => Exception(new TestContext()))
+                .BDTestAsync();
+        }
+
         [Test]
         [ScenarioText("Custom Scenario")]
         public void Test1()
@@ -25,23 +51,23 @@ namespace TestTester
 
         private void Action4()
         {
-            
+            Console.WriteLine("Action 4");
         }
 
         public void Action1()
         {
-
+            Console.WriteLine("Action 1");
         }
 
         [StepText("I perform my second action")]
         public void Action2()
         {
-            
+            Console.WriteLine("Action 2");
         }
 
         public void Action3()
         {
-            Console.WriteLine(3);
+            Console.WriteLine("Action 3");
         }
 
         public void Add(TestContext testContext)
@@ -56,7 +82,7 @@ namespace TestTester
 
         public void Exception(TestContext testContext)
         {
-            throw new Exception("");
+            throw new Exception("The test threw an exception");
         }
 
         public void AssertException(Expression<Action> code)
@@ -116,7 +142,7 @@ namespace TestTester
         }
 
         [Test]
-        [Ignore("")]
+        [NUnit.Framework.Ignore("")]
         public void IgnoreTest()
         {
             WithContext<TestContext>(context =>

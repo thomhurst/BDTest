@@ -1,8 +1,7 @@
-﻿using System;
-using System.IO;
-using Newtonsoft.Json;
+﻿using System.IO;
 using BDTest.Paths;
 using BDTest.Test;
+using Newtonsoft.Json;
 
 namespace BDTest.Output
 {

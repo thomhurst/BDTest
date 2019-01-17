@@ -25,9 +25,9 @@ namespace BDTest.Test.Steps.Then
             return Invoke(TestDetails);
         }
 
-        public async Task<Scenario> BDTestAsync()
+        public ConfiguredTaskAwaitable<Scenario> BDTestAsync()
         {
-            return await Task.Run(() => Invoke(TestDetails));
+            return Task.Run(() => Invoke(TestDetails)).ConfigureAwait(false);
         }
     }
 }

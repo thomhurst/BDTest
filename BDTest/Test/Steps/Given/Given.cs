@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Linq.Expressions;
-using System.Runtime.CompilerServices;
 using BDTest.Output;
 
 namespace BDTest.Test.Steps.Given
