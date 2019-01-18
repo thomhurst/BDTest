@@ -1,4 +1,5 @@
 # BDTest
+### A testing framework for .NET Core 2.0+
 ## Installation
 Install via Nuget > `Install-Package BDTest`
 ## Usage
@@ -111,6 +112,26 @@ Annotate your steps/methods with a `[StepText]` attribute
 public void Action2()
 {
     ...
+}
+```
+
+### Step Text (with parameters)
+
+Use parameter indexes to substitute in your arguments to the steptext
+
+```csharp
+[StepText("my name is {0} {1}")]
+public void SetName(string firstName, string lastName)
+{
+    ...
+}
+
+public void TestSetName() 
+{
+    Given(() => SetName("Tom", "Longhurst");) // StepText should equal "Given my name is Tom Longhurst"
+    .When(() => SetName("Tom", "Longhurst");) // StepText should equal "When my name is Tom Longhurst"
+    .Then(() => SetName("Tom", "Longhurst");) // StepText should equal "Then my name is Tom Longhurst"
+    .And(() => SetName("Tom", "Longhurst");) // StepText should equal "And my name is Tom Longhurst"
 }
 ```
 
