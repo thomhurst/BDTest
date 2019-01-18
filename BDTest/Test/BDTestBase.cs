@@ -38,29 +38,29 @@ namespace BDTest.Test
             test.Invoke(Activator.CreateInstance<TContext>(), Activator.CreateInstance<TContext2>(), Activator.CreateInstance<TContext3>(), Activator.CreateInstance<TContext4>(), Activator.CreateInstance<TContext5>());
         }
 
-        public ConfiguredTaskAwaitable<Scenario> WithContext<TContext>(Func<TContext, Task<Scenario>> test) where TContext : new()
+        public Task<Scenario> WithContext<TContext>(Func<TContext, Task<Scenario>> test) where TContext : new()
         {
-            return test.Invoke(Activator.CreateInstance<TContext>()).ConfigureAwait(false);
+            return test.Invoke(Activator.CreateInstance<TContext>());
         }
 
-        public ConfiguredTaskAwaitable<Scenario> WithContext<TContext, TContext2>(Func<TContext, TContext2, Task<Scenario>> test) where TContext : new() where TContext2 : new()
+        public Task<Scenario> WithContext<TContext, TContext2>(Func<TContext, TContext2, Task<Scenario>> test) where TContext : new() where TContext2 : new()
         {
-            return test.Invoke(Activator.CreateInstance<TContext>(), Activator.CreateInstance<TContext2>()).ConfigureAwait(false);
+            return test.Invoke(Activator.CreateInstance<TContext>(), Activator.CreateInstance<TContext2>());
         }
 
-        public ConfiguredTaskAwaitable<Scenario> WithContext<TContext, TContext2, TContext3>(Func<TContext, TContext2, TContext3, Task<Scenario>> test) where TContext : new() where TContext2 : new() where TContext3 : new()
+        public Task<Scenario> WithContext<TContext, TContext2, TContext3>(Func<TContext, TContext2, TContext3, Task<Scenario>> test) where TContext : new() where TContext2 : new() where TContext3 : new()
         {
-            return test.Invoke(Activator.CreateInstance<TContext>(), Activator.CreateInstance<TContext2>(), Activator.CreateInstance<TContext3>()).ConfigureAwait(false);
+            return test.Invoke(Activator.CreateInstance<TContext>(), Activator.CreateInstance<TContext2>(), Activator.CreateInstance<TContext3>());
         }
 
-        public ConfiguredTaskAwaitable<Scenario> WithContext<TContext, TContext2, TContext3, TContext4>(Func<TContext, TContext2, TContext3, TContext4, Task<Scenario>> test) where TContext : new() where TContext2 : new() where TContext3 : new() where TContext4 : new()
+        public Task<Scenario> WithContext<TContext, TContext2, TContext3, TContext4>(Func<TContext, TContext2, TContext3, TContext4, Task<Scenario>> test) where TContext : new() where TContext2 : new() where TContext3 : new() where TContext4 : new()
         {
-            return test.Invoke(Activator.CreateInstance<TContext>(), Activator.CreateInstance<TContext2>(), Activator.CreateInstance<TContext3>(), Activator.CreateInstance<TContext4>()).ConfigureAwait(false);
+            return test.Invoke(Activator.CreateInstance<TContext>(), Activator.CreateInstance<TContext2>(), Activator.CreateInstance<TContext3>(), Activator.CreateInstance<TContext4>());
         }
 
-        public ConfiguredTaskAwaitable<Scenario> WithContext<TContext, TContext2, TContext3, TContext4, TContext5>(Func<TContext, TContext2, TContext3, TContext4, TContext5, Task<Scenario>> test) where TContext : new() where TContext2 : new() where TContext3 : new() where TContext4 : new() where TContext5 : new()
+        public Task<Scenario> WithContext<TContext, TContext2, TContext3, TContext4, TContext5>(Func<TContext, TContext2, TContext3, TContext4, TContext5, Task<Scenario>> test) where TContext : new() where TContext2 : new() where TContext3 : new() where TContext4 : new() where TContext5 : new()
         {
-            return test.Invoke(Activator.CreateInstance<TContext>(), Activator.CreateInstance<TContext2>(), Activator.CreateInstance<TContext3>(), Activator.CreateInstance<TContext4>(), Activator.CreateInstance<TContext5>()).ConfigureAwait(false);
+            return test.Invoke(Activator.CreateInstance<TContext>(), Activator.CreateInstance<TContext2>(), Activator.CreateInstance<TContext3>(), Activator.CreateInstance<TContext4>(), Activator.CreateInstance<TContext5>());
         }
 
         
