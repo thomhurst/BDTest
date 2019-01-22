@@ -1,4 +1,6 @@
-﻿using BDTest.Attributes;
+﻿using System;
+using System.Threading;
+using BDTest.Attributes;
 using BDTest.Test;
 using NUnit.Framework;
 using Assert = NUnit.Framework.Assert;
@@ -9,6 +11,7 @@ namespace TestTester
         AsA = "Test User",
         IWant = "To Test Using the Base Class",
         SoThat = "Things Work")]
+    [Parallelizable(ParallelScope.All)]
     public class TestsUsingNUnitBaseWithContext : NUnitBDTestBase<TestContext>
     {
 

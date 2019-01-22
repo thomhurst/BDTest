@@ -1,14 +1,13 @@
 ﻿using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
+using System.Runtime.CompilerServices;
+using NUnit.Framework;
 using NUnitTestContext = NUnit.Framework.TestContext;
-using MSTestContext = Microsoft.VisualStudio.TestTools.UnitTesting.TestContext;
 
 namespace BDTest.Test
 {
-    public class NUnitBDTestBase<TContext> : BDTestBase where TContext : new()
+    [TestFixture]
+    public class NUnitBDTestBase<TContext> : BDTestBase where TContext : class, new()
     {
         protected NUnitBDTestBase()
         {
@@ -20,8 +19,13 @@ namespace BDTest.Test
             }
         }
 
-        private readonly IDictionary<string, TContext> _contexts = new ConcurrentDictionary<string, TContext>();
+        private readonly ConditionalWeakTable<string, TContext> _contexts = new ConditionalWeakTable<string, TContext>();
 
+        [TearDown]
+        public void PruneContext()
+        {
+            _contexts.Remove(NUnitTestContext.CurrentContext.Test.ID);
+        }
 
         public TContext Context
         {
@@ -36,7 +40,7 @@ namespace BDTest.Test
                 }
 
                 context = Activator.CreateInstance<TContext>();
-                _contexts[testContextId] = context;
+                _contexts.Add(testContextId, context);
                 return context;
             }
         }
