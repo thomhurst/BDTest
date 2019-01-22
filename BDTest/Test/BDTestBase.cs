@@ -8,6 +8,7 @@ namespace BDTest.Test
 {
     public abstract class BDTestBase
     {
+
         public Given Given(Expression<Action> step, [CallerMemberName] string callerMember = null)
         {
             return new Given(step, callerMember);

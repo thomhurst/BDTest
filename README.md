@@ -54,6 +54,26 @@ public class MyTests : BDTestBase
 }
 ```
 
+#### NUnit
+Instead of extending from `BDTestBase` extend from `NUnitBDTestBase` and pass the type of your Context.
+Your context will be constructed for each test independently.
+
+Access this using the `Context` property. See below for example.
+
+```csharp
+    public class TestsUsingNUnitBaseWithContext : NUnitBDTestBase<TestContext>
+    {
+        [Test]
+        public void Test1()
+        {
+            Given(() => Action1(Context))
+                .When(() => Action2(Context))
+                .Then(() => Action3(Context))
+                .BDTest();
+        }
+    }
+```
+
  - Your TestContext will be automatically constructed and injected in via the lambda
  - Your TestContext should have a public constructor with 0 parameters
 
