@@ -5,7 +5,7 @@
         <id>BDTest.ReportGenerator</id>
 
         <!-- The package version number that is used when resolving dependencies -->
-        <version>1.0.11</version>
+        <version>1.0.15</version>
 
         <!-- Authors contain text that appears directly on the gallery -->
         <authors>Tom Longhurst</authors>
@@ -58,7 +58,6 @@
         </dependencies>
     </metadata>
 
-    <!-- A readme.txt to display when the package is installed -->
     <files>
         <file src="bin\Release\**\BDTest.ReportGenerator*.json" target="build" />
         <file src="bin\Release\**\BDTest.ReportGenerator.props" target="build" />

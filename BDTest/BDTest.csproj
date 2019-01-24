@@ -1,6 +1,10 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
+    <IsPackable>true</IsPackable>
+  </PropertyGroup>
+
+  <PropertyGroup>
     <OutputType>Library</OutputType>
     <TargetFramework>netcoreapp2.0</TargetFramework>
     <RootNamespace>BDTest</RootNamespace>
@@ -32,8 +36,12 @@
     <PackageReference Include="Humanizer" Version="2.5.16" />
     <PackageReference Include="MSTest.TestFramework" Version="1.4.0" />
     <PackageReference Include="Newtonsoft.Json" Version="12.0.1" />
-    <PackageReference Include="NUnit" Version="3.11.0" />
-    <PackageReference Include="xunit" Version="2.4.1" />
+    <PackageReference Include="NUnit" Version="3.11.0" PrivateAssets="All" />
+    <PackageReference Include="xunit" Version="2.4.1" PrivateAssets="All" />
   </ItemGroup>
+
+  <Target Name="PreBuild" BeforeTargets="PreBuildEvent">
+    <Exec Command="del &quot;$(TargetDir)Report - All Scenarios - *&quot; /q &gt;nul 2&gt;&amp;1&#xD;&#xA;del &quot;$(TargetDir)Report - By Story - *&quot; /q &gt;nul 2&gt;&amp;1&#xD;&#xA;del &quot;$(TargetDir)test_data - *&quot; /q &gt;nul 2&gt;&amp;1&#xD;&#xA;del &quot;$(TargetDir)Warnings.json&quot; /q &gt;nul 2&gt;&amp;1" />
+  </Target>
 
 </Project>
