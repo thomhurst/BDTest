@@ -37,6 +37,8 @@ public class MyTests
 ```
 
 ### Automatic Context Construction
+
+#### Lambda Syntax
 Construction of your TestContext using lambda syntax
 
 ```csharp
@@ -79,7 +81,7 @@ Access this using the `Context` property. See below for example.
 
 ### Thread Safety Parallelization
 In order to keep all tests thread safe and have the ability to run all in parallel:
--	Use the `WithContext<TestContext>(...)` syntax as above
+-	Use the `NUnitBDTestBase<>` base class OR `WithContext<TestContext>(...)` syntax as above
 -	Do not use static variables/fields/properties in your tests
 -	Do not share fields/properties in your test class - All variables should be populated as new for each test - Which the Context construction can take care of
 
