@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Threading.Tasks;
 using BDTest.Maps;
 using BDTest.Paths;
 using Newtonsoft.Json;
@@ -23,8 +24,7 @@ namespace BDTest.Output
 
         public static void OutputData(object sender, EventArgs e)
         {
-            WriteWarnings();
-            RunReportDll();
+            Task.WaitAll(WriteWarnings(), RunReportDll());
         }
 
         public static void Initialise()
@@ -55,48 +55,55 @@ namespace BDTest.Output
             }
         }
 
-        private static void WriteWarnings()
+        private static async Task WriteWarnings()
         {
-            var settings = new JsonSerializerSettings
+            await Task.Run(() =>
             {
-                PreserveReferencesHandling = PreserveReferencesHandling.Objects
-            };
+                var settings = new JsonSerializerSettings
+                {
+                    PreserveReferencesHandling = PreserveReferencesHandling.Objects
+                };
 
-            try
-            {
-                var warnings = new WarningsChecker(TestMap.Testables.Values);
-                File.WriteAllText(FileLocations.Warnings, JsonConvert.SerializeObject(warnings, settings));
-            }
-            catch (Exception e)
-            {
-                File.WriteAllText(Path.Combine(OutputDirectory, "Exception.txt"), e.StackTrace);
-            }
+                try
+                {
+                    var warnings = new WarningsChecker(TestMap.NotRun.Values, TestMap.StoppedEarly.Values);
+                    File.WriteAllText(FileLocations.Warnings, JsonConvert.SerializeObject(warnings, settings));
+                }
+                catch (Exception e)
+                {
+                    File.WriteAllText(Path.Combine(OutputDirectory, "Exception.txt"), e.StackTrace);
+                }
+            });
         }
 
-        private static void RunReportDll()
+        private static async Task RunReportDll()
         {
-            var reportDll = Directory.CreateDirectory(OutputDirectory).GetFiles("BDTest.ReportGenerator.dll").FirstOrDefault()?.FullName;
-
-            if (OutputDirectory == null || reportDll == null)
+            await Task.Run(() =>
             {
-                return;
-            }
+                var reportDll = Directory.CreateDirectory(OutputDirectory).GetFiles("BDTest.ReportGenerator.dll")
+                    .FirstOrDefault()?.FullName;
 
-            var process = new Process
-            {
-                StartInfo = new ProcessStartInfo
+                if (OutputDirectory == null || reportDll == null)
                 {
-                    FileName = "dotnet",
-                    Arguments = $"\"{reportDll}\" \"{ResultDirectoryArgumentName}{OutputDirectory}\"",
-                    UseShellExecute = false,
-                    RedirectStandardOutput = false,
-                    RedirectStandardError = false,
-                    CreateNoWindow = true
+                    return;
                 }
 
-            };
+                var process = new Process
+                {
+                    StartInfo = new ProcessStartInfo
+                    {
+                        FileName = "dotnet",
+                        Arguments = $"\"{reportDll}\" \"{ResultDirectoryArgumentName}{OutputDirectory}\"",
+                        UseShellExecute = false,
+                        RedirectStandardOutput = false,
+                        RedirectStandardError = false,
+                        CreateNoWindow = true
+                    }
 
-            process.Start();
+                };
+
+                process.Start();
+            });
         }
     }
 }

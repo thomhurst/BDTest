@@ -5,7 +5,7 @@
         <id>BDTest.ReportGenerator</id>
 
         <!-- The package version number that is used when resolving dependencies -->
-        <version>1.0.15</version>
+        <version>1.0.12</version>
 
         <!-- Authors contain text that appears directly on the gallery -->
         <authors>Tom Longhurst</authors>
@@ -35,7 +35,7 @@
         <requireLicenseAcceptance>false</requireLicenseAcceptance>
 
         <!-- Any details about this particular release -->
-        <releaseNotes>Warnings for non-executed tests.</releaseNotes>
+        <releaseNotes>Tests stopped before finishing now correctly show as 'Inconclusive'</releaseNotes>
 
         <!-- 
             The description can be used in package manager UI. Note that the

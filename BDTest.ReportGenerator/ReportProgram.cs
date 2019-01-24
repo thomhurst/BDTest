@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using Newtonsoft.Json;
 using BDTest.Output;
 using BDTest.Paths;
@@ -40,6 +41,8 @@ namespace BDTest.ReportGenerator
             DeleteExistingFiles(reportPathByStory, reportPathAllScenarios, testDataJsonPath, testDataXmlPath);
         
             var warnings = GetWarnings();
+
+            scenarios.AddRange(warnings.StoppedEarlyTests);
 
             var dataToOutput = new DataOutputModel
             {
@@ -109,7 +112,13 @@ namespace BDTest.ReportGenerator
         private static WarningsChecker GetWarnings()
         {
             var warningsPath = Path.Combine(ResultDirectory, FileNames.Warnings);
-            return !File.Exists(warningsPath) ? new WarningsChecker(new List<BuildableTest>()) : JsonConvert.DeserializeObject<WarningsChecker>(File.ReadAllText(warningsPath));
+
+            if (!File.Exists(warningsPath))
+            {
+                Thread.Sleep(2000);
+            }
+
+            return !File.Exists(warningsPath) ? new WarningsChecker(new List<BuildableTest>(), new List<Scenario>()) : JsonConvert.DeserializeObject<WarningsChecker>(File.ReadAllText(warningsPath));
         }
 
         private static TestTimer GetTestTimer(IEnumerable<Scenario> scenarios)

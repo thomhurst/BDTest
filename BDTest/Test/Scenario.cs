@@ -34,7 +34,8 @@ namespace BDTest.Test
 
         internal Scenario(List<Step> steps, TestDetails testDetails)
         {
-            TestMap.Testables.TryRemove(testDetails.GetGuid(), out _);
+            TestMap.NotRun.TryRemove(testDetails.GetGuid(), out _);
+            TestMap.StoppedEarly.TryAdd(testDetails.GetGuid(), this);
 
             StoryText = testDetails.StoryText;
             ScenarioText = testDetails.ScenarioText;
@@ -49,6 +50,7 @@ namespace BDTest.Test
             finally
             {
                 JsonLogger.WriteScenario(this);
+                TestMap.StoppedEarly.TryRemove(testDetails.GetGuid(), out _);
             }
         }
 
