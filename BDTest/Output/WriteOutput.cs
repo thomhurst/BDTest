@@ -52,6 +52,21 @@ namespace BDTest.Output
                 {
                     File.Delete(FileLocations.Warnings);
                 }
+
+                var runtimeConfigFile = Directory.GetFiles(FileLocations.OutputDirectory)
+                    .FirstOrDefault(it => it.EndsWith(".runtimeconfig.dev.json"));
+
+                if (runtimeConfigFile == null) return;
+
+                var bdTestReportRunConfigPath = Path.Combine(FileLocations.OutputDirectory, "BDTest.ReportGenerator.runtimeconfig.dev.json");
+
+                if (File.Exists(bdTestReportRunConfigPath))
+                {
+                    File.Delete(bdTestReportRunConfigPath);
+                }
+
+                File.Copy(runtimeConfigFile,
+                    bdTestReportRunConfigPath);
             }
         }
 

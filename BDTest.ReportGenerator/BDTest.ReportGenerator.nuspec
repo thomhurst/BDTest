@@ -5,7 +5,7 @@
         <id>BDTest.ReportGenerator</id>
 
         <!-- The package version number that is used when resolving dependencies -->
-        <version>1.0.12</version>
+        <version>1.0.13</version>
 
         <!-- Authors contain text that appears directly on the gallery -->
         <authors>Tom Longhurst</authors>
@@ -54,12 +54,13 @@
         <!-- Dependencies are automatically installed when the package is installed -->
         <dependencies>
             <dependency id="HtmlTags.AspNetCore" version="7.0.3" />
-			<dependency id="BDTest" version="1.0" />
+			<dependency id="BDTest" version="1.0.13" />
         </dependencies>
     </metadata>
 
     <files>
-        <file src="bin\Release\**\BDTest.ReportGenerator*.json" target="build" />
+        <file src="bin\Release\**\BDTest.ReportGenerator.runtimeconfig.json" target="build" />
+        <file src="bin\Release\**\BDTest.ReportGenerator.deps.json" target="build" />
         <file src="bin\Release\**\BDTest.ReportGenerator.props" target="build" />
         <file src="bin\Release\**\BDTest.ReportGenerator.dll" target="build" />
         <file src="bin\Release\**\css\" target="build" />
