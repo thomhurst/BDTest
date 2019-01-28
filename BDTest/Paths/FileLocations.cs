@@ -20,11 +20,13 @@ namespace BDTest.Paths
     public static class FileNames
     {
         public static readonly string TimeStamp = DateTime.Now.ToString("yyyyMMdd HH-mm-ss-fff");
-        public static readonly string TestDataJson = $"test_data - {TimeStamp}.json";
-        public static readonly string TestDataXml = $"test_data - {TimeStamp}.xml";
-        public static readonly string ReportByStory = $"Report - By Story - {TimeStamp}.html";
-        public static readonly string ReportAllScenarios = $"Report - All Scenarios - {TimeStamp}.html";
-        public static readonly string Scenarios = "Scenarios";
-        public static readonly string Warnings = "Warnings.json";
+        public static readonly string TestDataJson = $"BDTest - Test Data - {TimeStamp}.json";
+        public static readonly string TestDataXml = $"BDTest - Test Data - {TimeStamp}.xml";
+        public static readonly string ReportByStory = $"BDTest - Report - By Story - {TimeStamp}.html";
+        public static readonly string ReportAllScenarios = $"BDTest - Report - All Scenarios - {TimeStamp}.html";
+        public static readonly string ReportFlakiness = $"BDTest - Report - Flakiness - {TimeStamp}.html";
+        public static readonly string ReportTestTimesComparison = $"BDTest - Report - Test Times Comparison - {TimeStamp}.html";
+        public static readonly string Scenarios = "BDTest - Scenarios";
+        public static readonly string Warnings = "BDTest - Warnings.json";
     }
 }

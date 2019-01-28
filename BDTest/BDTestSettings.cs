@@ -3,5 +3,7 @@
     public static class BDTestSettings
     {
         public static bool InterceptConsoleOutput { get; set; } = true;
+
+        public static string PersistantResultsDirectory { get; set; } = null;
     }
 }

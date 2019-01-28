@@ -51,6 +51,37 @@ namespace BDTest.ReportGenerator
             return scenarios.OrderByDescending(scenario => scenario.EndTime).First().StartTime;
         }
 
+        public static double GetPercentage(this IEnumerable<Scenario> scenarios, Status status)
+        {
+            var enumerable = scenarios.ToList();
+            double count = enumerable.Count(scenario => scenario.Status == status);
+            var percentage = (count / enumerable.Count()) * 100;
+            return Math.Round(percentage, 2);
+        }
+
+        public static double GetFlakinessPercentage(this IEnumerable<Scenario> scenarios)
+        {
+            var enumerable = scenarios.ToList();
+            var enums = (Status[]) Enum.GetValues(typeof(Status));
+
+            Enum.TryParse(enums.OrderByDescending(it => enumerable.Count(scenario => scenario.Status == it)).ToString(), out Status maxEnum);
+            
+            double count = enumerable.Count(scenario => scenario.Status == maxEnum);
+            var percentage = (count / enumerable.Count()) * 100;
+            if (percentage == 0)
+            {
+                return 0;
+            }
+
+            return Math.Round(100 - percentage, 2);
+        }
+
+        public static int GetCount(this IEnumerable<Scenario> scenarios, Status status)
+        {
+            var enumerable = scenarios.ToList();
+            return enumerable.Count(scenario => scenario.Status == status);
+        }
+
         public static string ToStringForReport(this DateTime dateTime)
         {
             return dateTime == DateTime.MinValue ? "" : dateTime.ToString("dd/MM/yyyy\nHH:mm:ss.FFF");
@@ -61,6 +92,19 @@ namespace BDTest.ReportGenerator
             return htmlTag.Append(
                 htmlTags.ToArray()
             );
+        }
+
+        public static IEnumerable<TSource> DistinctBy<TSource, TKey>
+            (this IEnumerable<TSource> source, Func<TSource, TKey> keySelector)
+        {
+            var seenKeys = new HashSet<TKey>();
+            foreach (var element in source)
+            {
+                if (seenKeys.Add(keySelector(element)))
+                {
+                    yield return element;
+                }
+            }
         }
     }
 }

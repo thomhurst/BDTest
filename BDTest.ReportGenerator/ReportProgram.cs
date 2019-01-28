@@ -3,25 +3,35 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading;
-using Newtonsoft.Json;
 using BDTest.Output;
 using BDTest.Paths;
 using BDTest.ReportGenerator.Builders;
 using BDTest.ReportGenerator.Models;
 using BDTest.ReportGenerator.Utils;
 using BDTest.Test;
-using Formatting = Newtonsoft.Json.Formatting;
+using Newtonsoft.Json;
 
 namespace BDTest.ReportGenerator
 {
     internal class ReportProgram
     {
         public static string ResultDirectory;
+        public static string PersistantStorage;
 
         public static void Main(string[] args)
         {
 
             ResultDirectory = args.FirstOrDefault(it => it.StartsWith(WriteOutput.ResultDirectoryArgumentName))?.Replace(WriteOutput.ResultDirectoryArgumentName, "");
+            PersistantStorage = args.FirstOrDefault(it => it.StartsWith(WriteOutput.PersistantStorageArgumentName))?.Replace(WriteOutput.PersistantStorageArgumentName, "");
+
+            ResultDirectory =
+                "C:\\AsosDev\\asos-saved-items-api\\src\\Asos.Customer.SavedLists.Web.Api.AcceptanceTests\\bin\\Debug\\netcoreapp2.1";
+            PersistantStorage = "C:\\BDTestData\\AcceptanceTests";
+
+            if (!string.IsNullOrWhiteSpace(PersistantStorage))
+            {
+                Directory.CreateDirectory(PersistantStorage);
+            }
 
             Console.WriteLine($"Results Directory is: {ResultDirectory}");
 
@@ -57,8 +67,11 @@ namespace BDTest.ReportGenerator
             };
 
             var jsonData = JsonConvert.SerializeObject(dataToOutput, Formatting.Indented, settings);
-            File.WriteAllText(Path.Combine(ResultDirectory, FileNames.TestDataJson), jsonData);
-            File.WriteAllText(Path.Combine(ResultDirectory, FileNames.TestDataXml), JsonConvert.DeserializeXmlNode(jsonData, "TestData").ToXmlString());
+
+
+            WriteJsonOutput(jsonData);
+
+            WriteXmlOutput(jsonData);
 
             HtmlReportBuilder.CreateReport(dataToOutput);
 
@@ -70,6 +83,29 @@ namespace BDTest.ReportGenerator
            {
                Console.WriteLine(e);
            }
+        }
+
+        private static void WriteJsonOutput(string jsonData)
+        {
+            File.WriteAllText(Path.Combine(ResultDirectory, FileNames.TestDataJson), jsonData);
+
+            if (!string.IsNullOrWhiteSpace(PersistantStorage))
+            {
+                File.Copy(Path.Combine(ResultDirectory, FileNames.TestDataJson),
+                    Path.Combine(PersistantStorage, FileNames.TestDataJson));
+            }
+        }
+
+        private static void WriteXmlOutput(string jsonData)
+        {
+            File.WriteAllText(Path.Combine(ResultDirectory, FileNames.TestDataXml),
+                JsonConvert.DeserializeXmlNode(jsonData, "TestData").ToXmlString());
+
+//            if (!string.IsNullOrWhiteSpace(PersistantStorage))
+//            {
+//                File.Copy(Path.Combine(ResultDirectory, FileNames.TestDataXml),
+//                    Path.Combine(PersistantStorage, FileNames.TestDataXml));
+//            }
         }
 
         private static void DeleteExistingFiles(params string[] filePaths)

@@ -5,7 +5,7 @@
         <id>BDTest.ReportGenerator</id>
 
         <!-- The package version number that is used when resolving dependencies -->
-        <version>1.0.13</version>
+        <version>1.0.14</version>
 
         <!-- Authors contain text that appears directly on the gallery -->
         <authors>Tom Longhurst</authors>
@@ -35,7 +35,7 @@
         <requireLicenseAcceptance>false</requireLicenseAcceptance>
 
         <!-- Any details about this particular release -->
-        <releaseNotes>Tests stopped before finishing now correctly show as 'Inconclusive'</releaseNotes>
+        <releaseNotes>A flakiness report and a test time comparison report if the Persistant Storage location is setting in BDTestSettings</releaseNotes>
 
         <!-- 
             The description can be used in package manager UI. Note that the
@@ -54,7 +54,7 @@
         <!-- Dependencies are automatically installed when the package is installed -->
         <dependencies>
             <dependency id="HtmlTags.AspNetCore" version="7.0.3" />
-			<dependency id="BDTest" version="1.0.13" />
+			<dependency id="BDTest" version="1.0.14" />
         </dependencies>
     </metadata>
 

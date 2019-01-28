@@ -13,6 +13,7 @@ namespace BDTest.Output
     public class WriteOutput
     {
         public const string ResultDirectoryArgumentName = "-ResultsDirectory=";
+        public const string PersistantStorageArgumentName = "-PersistantStorageDirectory=";
         public static string OutputDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
         public static bool AlreadyExecuted;
         private static readonly object Lock = new object();
@@ -86,7 +87,7 @@ namespace BDTest.Output
                 }
                 catch (Exception e)
                 {
-                    File.WriteAllText(Path.Combine(OutputDirectory, "Exception.txt"), e.StackTrace);
+                    File.WriteAllText(Path.Combine(OutputDirectory, "BDTest - Exception.txt"), e.StackTrace);
                 }
             });
         }
@@ -108,7 +109,7 @@ namespace BDTest.Output
                     StartInfo = new ProcessStartInfo
                     {
                         FileName = "dotnet",
-                        Arguments = $"\"{reportDll}\" \"{ResultDirectoryArgumentName}{OutputDirectory}\"",
+                        Arguments = $"\"{reportDll}\" \"{ResultDirectoryArgumentName}{OutputDirectory}\" \"{PersistantStorageArgumentName}{BDTestSettings.PersistantResultsDirectory}\"",
                         UseShellExecute = false,
                         RedirectStandardOutput = false,
                         RedirectStandardError = false,
