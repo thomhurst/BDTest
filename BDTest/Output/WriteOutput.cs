@@ -13,7 +13,7 @@ namespace BDTest.Output
     public class WriteOutput
     {
         public const string ResultDirectoryArgumentName = "-ResultsDirectory=";
-        public const string PersistantStorageArgumentName = "-PersistantStorageDirectory=";
+        public const string PersistentStorageArgumentName = "-PersistentStorageDirectory=";
         public static string OutputDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
         public static bool AlreadyExecuted;
         private static readonly object Lock = new object();
@@ -109,7 +109,7 @@ namespace BDTest.Output
                     StartInfo = new ProcessStartInfo
                     {
                         FileName = "dotnet",
-                        Arguments = $"\"{reportDll}\" \"{ResultDirectoryArgumentName}{OutputDirectory}\" \"{PersistantStorageArgumentName}{BDTestSettings.PersistantResultsDirectory}\"",
+                        Arguments = $"\"{reportDll}\" \"{ResultDirectoryArgumentName}{OutputDirectory}\" \"{PersistentStorageArgumentName}{BDTestSettings.PersistentResultsDirectory}\"",
                         UseShellExecute = false,
                         RedirectStandardOutput = false,
                         RedirectStandardError = false,

@@ -5,7 +5,7 @@
         <id>BDTest</id>
 
         <!-- The package version number that is used when resolving dependencies -->
-        <version>1.0.15</version>
+        <version>1.0.16</version>
 
         <!-- Authors contain text that appears directly on the gallery -->
         <authors>Tom Longhurst</authors>
@@ -35,7 +35,7 @@
         <requireLicenseAcceptance>false</requireLicenseAcceptance>
 
         <!-- Any details about this particular release -->
-        <releaseNotes>A flakiness report and a test time comparison report if the Persistant Storage location is set in BDTestSettings</releaseNotes>
+        <releaseNotes>A flakiness report and a test time comparison report if the Persistent Storage location is set in BDTestSettings</releaseNotes>
 
         <!-- 
             The description can be used in package manager UI. Note that the

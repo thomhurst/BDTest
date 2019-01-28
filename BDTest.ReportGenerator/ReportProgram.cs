@@ -16,17 +16,25 @@ namespace BDTest.ReportGenerator
     internal class ReportProgram
     {
         public static string ResultDirectory;
-        public static string PersistantStorage;
+        public static string PersistentStorage;
 
         public static void Main(string[] args)
         {
 
             ResultDirectory = args.FirstOrDefault(it => it.StartsWith(WriteOutput.ResultDirectoryArgumentName))?.Replace(WriteOutput.ResultDirectoryArgumentName, "");
-            PersistantStorage = args.FirstOrDefault(it => it.StartsWith(WriteOutput.PersistantStorageArgumentName))?.Replace(WriteOutput.PersistantStorageArgumentName, "");
+            PersistentStorage = args.FirstOrDefault(it => it.StartsWith(WriteOutput.PersistentStorageArgumentName))?.Replace(WriteOutput.PersistentStorageArgumentName, "");
 
-            if (!string.IsNullOrWhiteSpace(PersistantStorage))
+            if (!string.IsNullOrWhiteSpace(PersistentStorage))
             {
-                Directory.CreateDirectory(PersistantStorage);
+                try
+                {
+                    Directory.CreateDirectory(PersistentStorage);
+                }
+                catch (Exception e)
+                {
+                    File.WriteAllText(Path.Combine(ResultDirectory, "BDTest - Exception.txt"), e.StackTrace);
+                    PersistentStorage = null;
+                }
             }
 
             Console.WriteLine($"Results Directory is: {ResultDirectory}");
@@ -85,10 +93,10 @@ namespace BDTest.ReportGenerator
         {
             File.WriteAllText(Path.Combine(ResultDirectory, FileNames.TestDataJson), jsonData);
 
-            if (!string.IsNullOrWhiteSpace(PersistantStorage))
+            if (!string.IsNullOrWhiteSpace(PersistentStorage))
             {
                 File.Copy(Path.Combine(ResultDirectory, FileNames.TestDataJson),
-                    Path.Combine(PersistantStorage, FileNames.TestDataJson));
+                    Path.Combine(PersistentStorage, FileNames.TestDataJson));
             }
         }
 
@@ -97,10 +105,10 @@ namespace BDTest.ReportGenerator
             File.WriteAllText(Path.Combine(ResultDirectory, FileNames.TestDataXml),
                 JsonConvert.DeserializeXmlNode(jsonData, "TestData").ToXmlString());
 
-//            if (!string.IsNullOrWhiteSpace(PersistantStorage))
+//            if (!string.IsNullOrWhiteSpace(PersistentStorage))
 //            {
 //                File.Copy(Path.Combine(ResultDirectory, FileNames.TestDataXml),
-//                    Path.Combine(PersistantStorage, FileNames.TestDataXml));
+//                    Path.Combine(PersistentStorage, FileNames.TestDataXml));
 //            }
         }
 

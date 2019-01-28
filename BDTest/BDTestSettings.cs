@@ -4,6 +4,6 @@
     {
         public static bool InterceptConsoleOutput { get; set; } = true;
 
-        public static string PersistantResultsDirectory { get; set; } = null;
+        public static string PersistentResultsDirectory { get; set; } = null;
     }
 }

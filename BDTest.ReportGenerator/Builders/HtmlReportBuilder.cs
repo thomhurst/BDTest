@@ -54,7 +54,10 @@ namespace BDTest.ReportGenerator.Builders
 
         private void CreateFlakinessReport()
         {
-            if (string.IsNullOrWhiteSpace(ReportProgram.PersistantStorage)) return;
+            if (string.IsNullOrWhiteSpace(ReportProgram.PersistentStorage))
+            {
+                return;
+            }
 
             using (var stringWriter = new StringWriter())
             {
@@ -71,7 +74,10 @@ namespace BDTest.ReportGenerator.Builders
 
         private void CreateTestTimesComparisonReport()
         {
-            if (string.IsNullOrWhiteSpace(ReportProgram.PersistantStorage)) return;
+            if (string.IsNullOrWhiteSpace(ReportProgram.PersistentStorage))
+            {
+                return;
+            }
 
             using (var stringWriter = new StringWriter())
             {
@@ -92,7 +98,7 @@ namespace BDTest.ReportGenerator.Builders
             {
                 new HtmlTag("html")
                     .Append(BuildHead())
-                    .Append(BuildFlakinessBody())
+                    .Append(BuildBodyWithStories())
                     .Style("padding", "25px")
                     .WriteTo(stringWriter, HtmlEncoder.Default);
 
@@ -118,7 +124,7 @@ namespace BDTest.ReportGenerator.Builders
 
         private HtmlTag BuildFlakinessBody()
         {
-            var scenarioBatched = Directory.GetFiles(ReportProgram.PersistantStorage).Where(it => it.EndsWith(".json"))
+            var scenarioBatched = Directory.GetFiles(ReportProgram.PersistentStorage).Where(it => it.EndsWith(".json"))
                 .Select(filePath =>
                     JsonConvert.DeserializeObject<DataOutputModel>(File.ReadAllText(filePath)).Scenarios)
                 .ToList();
@@ -195,7 +201,7 @@ namespace BDTest.ReportGenerator.Builders
 
         private HtmlTag BuildTestTimeComparisonBody()
         {
-            var scenarioBatched = Directory.GetFiles(ReportProgram.PersistantStorage).Where(it => it.EndsWith(".json"))
+            var scenarioBatched = Directory.GetFiles(ReportProgram.PersistentStorage).Where(it => it.EndsWith(".json"))
                 .Select(filePath =>
                     JsonConvert.DeserializeObject<DataOutputModel>(File.ReadAllText(filePath)).Scenarios)
                 .ToList();
