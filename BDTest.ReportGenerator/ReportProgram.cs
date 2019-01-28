@@ -24,10 +24,6 @@ namespace BDTest.ReportGenerator
             ResultDirectory = args.FirstOrDefault(it => it.StartsWith(WriteOutput.ResultDirectoryArgumentName))?.Replace(WriteOutput.ResultDirectoryArgumentName, "");
             PersistantStorage = args.FirstOrDefault(it => it.StartsWith(WriteOutput.PersistantStorageArgumentName))?.Replace(WriteOutput.PersistantStorageArgumentName, "");
 
-            ResultDirectory =
-                "C:\\AsosDev\\asos-saved-items-api\\src\\Asos.Customer.SavedLists.Web.Api.AcceptanceTests\\bin\\Debug\\netcoreapp2.1";
-            PersistantStorage = "C:\\BDTestData\\AcceptanceTests";
-
             if (!string.IsNullOrWhiteSpace(PersistantStorage))
             {
                 Directory.CreateDirectory(PersistantStorage);

@@ -1,7 +1,13 @@
 # BDTest
 ### A testing framework for .NET Core 2.0+
+
+## About
+BDTest is a testing framework. It can be used with other frameworks (such as MSTest, xUnit or NUnit) or standalone.
+The examples below will use attributes (such as `[Test]`) from NUnit.
+
 ## Installation
 Install via Nuget > `Install-Package BDTest`
+
 ## Usage
 Tests can be constructed either by extending from a base class, or by using the a test builder object.
 
@@ -162,6 +168,27 @@ public void TestSetName()
 Install via Nuget > `Install-Package BDTest.ReportGenerator`
 ## Usage
 You don't have to do anything. 
+
+## Persistant Test Data
+BDTest allows you to pass it a directory path, to persistantly store test data.
+Why is this useful?
+It allows us to keep a record of all our test runs, and this allows us to compare test runs.
+
+Set the directory by setting `BDTestSettings.PersistantResultsDirectory`
+
+```csharp
+[OneTimeSetUp]
+public void SetPersistantStorage()
+{
+    BDTestSettings.PersistantResultsDirectory = "C:\\AcceptanceTests";
+}
+
+[Test]
+public void Test() 
+{
+    ...
+}
+```
 
 Once the package has been installed and your tests have run, these reports should appear in your output directory automatically.
 ## Json
