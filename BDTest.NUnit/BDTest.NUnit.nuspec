@@ -2,7 +2,7 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2013/05/nuspec.xsd">
     <metadata>
         <!-- The identifier that must be unique within the hosting gallery -->
-        <id>BDTest</id>
+        <id>BDTest.NUnit</id>
 
         <!-- The package version number that is used when resolving dependencies -->
         <version>1.0.17</version>
@@ -16,7 +16,7 @@
         -->
         <owners>Tom Longhurst</owners>
 
-        <title>BDTest - A Testing Framework</title>
+        <title>BDTest - NUnit</title>
 
         <!-- Project URL provides a link for the gallery -->
         <projectUrl>http://github.com/thomhurst/BDTest</projectUrl>
@@ -53,15 +53,13 @@
 
         <!-- Dependencies are automatically installed when the package is installed -->
         <dependencies>
-            <dependency id="Newtonsoft.Json" version="12.0.1" />
-            <dependency id="Humanizer" version="2.5.16" />
+            <dependency id="NUnit" version="3.11.0" />
+            <dependency id="BDTest" version="1.0.17" />
         </dependencies>
     </metadata>
 
-    <files>
-        <file src="bin\Release\**\BDTest.props" target="build" />
-        <file src="bin\Release\**\BDTest.dll" target="build" />
-        <file src="bin\Release\**\BDTest.dll" target="lib" />
-        <file src="bin\Release\**\BDTest.props" target="content\BDTest.props" />
-    </files>
+  <files>
+    <file src="bin\Release\**\BDTest.NUnit.dll" target="build" />
+    <file src="bin\Release\**\BDTest.NUnit.dll" target="lib" />
+  </files>
 </package>

@@ -12,8 +12,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="BDTest" Version="1.0.13" />
-    <PackageReference Include="BDTest.ReportGenerator" Version="1.0.13" />
+    <PackageReference Include="BDTest" Version="1.0.17" />
+    <PackageReference Include="BDTest.NUnit" Version="1.0.17" />
+    <PackageReference Include="BDTest.ReportGenerator" Version="1.0.17" />
     <PackageReference Include="HtmlAgilityPack" Version="1.8.11" />
     <PackageReference Include="HtmlTags.AspNetCore" Version="7.0.3" />
     <PackageReference Include="Humanizer" Version="2.5.16" />

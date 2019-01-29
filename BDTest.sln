@@ -8,6 +8,13 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BDTest.ReportGenerator", "BDTest.ReportGenerator\BDTest.ReportGenerator.csproj", "{98F7F6F8-8F89-4BDE-9CE0-AEA579019FCD}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TestTester", "TestTester\TestTester.csproj", "{A884AAB7-CEE7-4D7A-B764-BAFB243CC07F}"
+	ProjectSection(ProjectDependencies) = postProject
+		{7073FC21-4C7D-4D86-BB3A-73A7FBE144F6} = {7073FC21-4C7D-4D86-BB3A-73A7FBE144F6}
+		{D87A9590-13BA-4FFB-A628-FB9255C24260} = {D87A9590-13BA-4FFB-A628-FB9255C24260}
+		{98F7F6F8-8F89-4BDE-9CE0-AEA579019FCD} = {98F7F6F8-8F89-4BDE-9CE0-AEA579019FCD}
+	EndProjectSection
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BDTest.NUnit", "BDTest.NUnit\BDTest.NUnit.csproj", "{7073FC21-4C7D-4D86-BB3A-73A7FBE144F6}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -27,6 +34,10 @@ Global
 		{A884AAB7-CEE7-4D7A-B764-BAFB243CC07F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A884AAB7-CEE7-4D7A-B764-BAFB243CC07F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A884AAB7-CEE7-4D7A-B764-BAFB243CC07F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7073FC21-4C7D-4D86-BB3A-73A7FBE144F6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7073FC21-4C7D-4D86-BB3A-73A7FBE144F6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7073FC21-4C7D-4D86-BB3A-73A7FBE144F6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7073FC21-4C7D-4D86-BB3A-73A7FBE144F6}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
