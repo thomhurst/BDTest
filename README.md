@@ -63,6 +63,8 @@ public class MyTests : BDTestBase
 ```
 
 #### NUnit
+Install via Nuget > `Install-Package BDTest.NUnit`
+
 Instead of extending from `BDTestBase` extend from `NUnitBDTestBase` and pass the type of your Context.
 Your context will be constructed for each test independently.
 
