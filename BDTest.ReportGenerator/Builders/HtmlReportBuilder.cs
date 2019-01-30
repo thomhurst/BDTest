@@ -48,8 +48,8 @@ namespace BDTest.ReportGenerator.Builders
             BuildChartJavascript();
             CreateFlakinessReport();
             CreateTestTimesComparisonReport();
-            CreateReportWithStories();
             CreateReportWithoutStories();
+            CreateReportWithStories();
         }
 
         private void CreateFlakinessReport()
@@ -481,11 +481,11 @@ namespace BDTest.ReportGenerator.Builders
                                             .ToPrettyFormat()
                                     ),
                                     new HtmlTag("td").AppendText(
-                                        scenarios.OrderBy(scenario => scenario.StartTime).First().StartTime
+                                        scenarios.GetStartDateTime()
                                             .ToStringForReport()
                                     ),
                                     new HtmlTag("td").AppendText(
-                                        scenarios.OrderByDescending(scenario => scenario.EndTime).First().EndTime
+                                        scenarios.GetEndDateTime()
                                             .ToStringForReport()
                                     )
                                 )

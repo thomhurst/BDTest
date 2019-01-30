@@ -1,10 +1,11 @@
 ﻿using System;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using BDTest.Test;
 using NUnit.Framework;
 using NUnitTestContext = NUnit.Framework.TestContext;
 
-namespace BDTest.Test
+namespace BDTest.NUnit
 {
     [TestFixture]
     public class NUnitBDTestBase<TContext> : BDTestBase where TContext : class, new()

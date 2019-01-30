@@ -48,7 +48,7 @@ namespace BDTest.ReportGenerator
 
         public static DateTime GetEndDateTime(this IEnumerable<Scenario> scenarios)
         {
-            return scenarios.OrderByDescending(scenario => scenario.EndTime).First().StartTime;
+            return scenarios.OrderByDescending(scenario => scenario.EndTime).First().EndTime;
         }
 
         public static double GetPercentage(this IEnumerable<Scenario> scenarios, Status status)
