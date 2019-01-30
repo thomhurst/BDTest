@@ -31,7 +31,6 @@ namespace BDTest.ReportGenerator.Builders
         const string TimeTag = "time";
 
         private int _storiesBuiltCounter = 0;
-        private readonly List<HtmlTag> chartJs = new List<HtmlTag>();
         private readonly WarningsChecker _warnings;
 
         internal static HtmlReportBuilder CreateReport(DataOutputModel dataOutputModel)
@@ -45,7 +44,6 @@ namespace BDTest.ReportGenerator.Builders
             _stories = _scenarios.Select(scenario => scenario.GetStoryText()).Distinct().ToList();
             _testTimer = dataOutputModel.TestTimer;
             _warnings = dataOutputModel.Warnings;
-            BuildChartJavascript();
             CreateFlakinessReport();
             CreateTestTimesComparisonReport();
             CreateReportWithoutStories();
@@ -275,7 +273,7 @@ namespace BDTest.ReportGenerator.Builders
                     BuildFooter()
                 ),
                 new HtmlTag("p").Append(
-                    BuildJavascript()
+                    BuildJavascript(StoriesCount)
                 )
             );
         }
@@ -297,7 +295,7 @@ namespace BDTest.ReportGenerator.Builders
                     BuildFooter()
                 ),
                 new HtmlTag("p").Append(
-                    BuildJavascript()
+                    BuildJavascript(0)
                 )
             );
         }
@@ -692,7 +690,7 @@ namespace BDTest.ReportGenerator.Builders
                     .AppendHtml("<a href=\"https://github.com/thomhurst/BDTest\">BDTest</a>");
         }
 
-        private HtmlTag[] BuildJavascript()
+        private HtmlTag[] BuildJavascript(int storiesCount)
         {
             var list = new List<HtmlTag>
             {
@@ -700,22 +698,23 @@ namespace BDTest.ReportGenerator.Builders
                 new HtmlTag("script").Attr("type","text/javascript").Attr("src", "./css/checkbox_toggle_js.js"),
                 new HtmlTag("script").Attr("type","text/javascript").Attr("src", "https://www.gstatic.com/charts/loader.js"),
             };
-            list.AddRange(chartJs);
+            list.AddRange(BuildChartJavascript(storiesCount));
 
             return list.ToArray();
         }
 
-        private void BuildChartJavascript()
+        private List<HtmlTag> BuildChartJavascript(int storiesCount)
         {
+            var chartJs = new List<HtmlTag>();
             var htmlTag = new HtmlTag("script").Attr("type", "text/javascript").Encoded(false).AppendText(
                 "google.charts.load('current', {'packages':['corechart']});\r\n      google.charts.setOnLoadCallback(drawChart);\r\n\r\n      function drawChart() {\r\n\r\n        ");
 
-            for (var i = 0; i <= StoriesCount; i++)
+            for (var i = 0; i <= storiesCount; i++)
             {
                 htmlTag.AppendText("var data" + StatusTag + i + " = google.visualization.arrayToDataTable([\r\n          ['Scenarios', 'Amount'],\r\n          " + BuildChartScenarioStatusData(i) + "\r\n        ]);\r\n\r\n        var options" + StatusTag + i + " = {\r\n          title: 'Test Status', width: 700, height: 400, pieSliceText: 'none', slices: {\r\n            0: { color: '#34A853' },\r\n            1: { color: '#EA4335' },\r\n 2: { color: '#FBBc05' },\r\n 3: { color: '#4285F4' }          }\r\n        };\r\n\r\n        var chart" + StatusTag + i + " = new google.visualization.PieChart(document.getElementById('piechart" + StatusTag + i + "'));\r\n\r\n        chart" + StatusTag + i + ".draw(data" + StatusTag + i + ", options" + StatusTag + i + ");\r\n      ");
             }
 
-            for (var i = 0; i <= StoriesCount; i++)
+            for (var i = 0; i <= storiesCount; i++)
             {
                 htmlTag.AppendText("var data" + TimeTag + i + " = google.visualization.arrayToDataTable([\r\n          ['Scenarios', 'Amount'],\r\n          " + BuildChartScenarioTimesData(i) + "\r\n        ]);\r\n\r\n        var options" + TimeTag + i + " = {\r\n          title: 'Test Times', width: 700, height: 400, pieSliceText: 'none'};\r\n\r\n        var chart" + TimeTag + i + " = new google.visualization.PieChart(document.getElementById('piechart" + TimeTag + i + "'));\r\n\r\n        chart" + TimeTag + i + ".draw(data" + TimeTag + i + ", options" + TimeTag + i + ");\r\n      ");
             }
@@ -723,6 +722,8 @@ namespace BDTest.ReportGenerator.Builders
             htmlTag.AppendText("}");
 
             chartJs.Add(htmlTag);
+
+            return chartJs;
         }
 
         private object BuildChartScenarioStatusData(int i)
