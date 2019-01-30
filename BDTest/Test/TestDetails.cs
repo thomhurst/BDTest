@@ -12,13 +12,15 @@ namespace BDTest.Test
     public class TestDetails : BuildableTest
     {
         private readonly string _callerMember;
+        public readonly string CallerFile;
         public IEnumerable<string> Parameters { get; set; }
 
-        internal TestDetails(string callerMember, Guid guid)
+        internal TestDetails(string callerMember, string callerFile, Guid guid)
         {
             this.TestDetails = this;
             Guid = guid;
             _callerMember = callerMember;
+            CallerFile = callerFile;
             SetStoryText();
             SetScenarioText();
         }

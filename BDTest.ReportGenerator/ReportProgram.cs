@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -16,26 +17,13 @@ namespace BDTest.ReportGenerator
     internal class ReportProgram
     {
         public static string ResultDirectory;
-        public static string PersistentStorage;
 
         public static void Main(string[] args)
         {
 
             ResultDirectory = args.FirstOrDefault(it => it.StartsWith(WriteOutput.ResultDirectoryArgumentName))?.Replace(WriteOutput.ResultDirectoryArgumentName, "");
-            PersistentStorage = args.FirstOrDefault(it => it.StartsWith(WriteOutput.PersistentStorageArgumentName))?.Replace(WriteOutput.PersistentStorageArgumentName, "");
 
-            if (!string.IsNullOrWhiteSpace(PersistentStorage))
-            {
-                try
-                {
-                    Directory.CreateDirectory(PersistentStorage);
-                }
-                catch (Exception e)
-                {
-                    File.WriteAllText(Path.Combine(ResultDirectory, "BDTest - Exception.txt"), e.StackTrace);
-                    PersistentStorage = null;
-                }
-            }
+            SetSettingsFromArgs(args);
 
             Console.WriteLine($"Results Directory is: {ResultDirectory}");
 
@@ -89,20 +77,63 @@ namespace BDTest.ReportGenerator
            }
         }
 
+        private static void SetSettingsFromArgs(string[] args)
+        {
+            BDTestSettings.PersistentResultsDirectory = GetArgument(args, WriteOutput.PersistentStorageArgumentName);
+
+            var persistentCompareStartDate = GetArgument(args, WriteOutput.PersistentResultsCompareStartTimeArgumentName);
+            if (persistentCompareStartDate != null)
+            {
+                BDTestSettings.PersistentResultsCompareStartTime = DateTime.ParseExact(persistentCompareStartDate, "o", CultureInfo.InvariantCulture);
+            }
+
+            BDTestSettings.AllScenariosReportHtmlFilename = GetArgument(args, WriteOutput.AllScenariosReportHtmlFilenameArgumentName);
+
+            BDTestSettings.ScenariosByStoryReportHtmlFilename = GetArgument(args, WriteOutput.ScenariosByStoryReportHtmlFilenameArgumentName);
+
+            BDTestSettings.FlakinessReportHtmlFilename = GetArgument(args, WriteOutput.FlakinessReportHtmlFilenameArgumentName);
+
+            BDTestSettings.TestTimesReportHtmlFilename = GetArgument(args, WriteOutput.TestTimesReportHtmlFilenameArgumentName);
+
+            BDTestSettings.XmlDataFilename = GetArgument(args, WriteOutput.XmlDataFilenameArgumentName);
+
+            BDTestSettings.JsonDataFilename = GetArgument(args, WriteOutput.JsonDataFilenameArgumentName);
+
+            if (!string.IsNullOrWhiteSpace(BDTestSettings.PersistentResultsDirectory))
+            {
+                try
+                {
+                    Directory.CreateDirectory(BDTestSettings.PersistentResultsDirectory);
+                }
+                catch (Exception e)
+                {
+                    File.WriteAllText(Path.Combine(ResultDirectory, "BDTest - Exception.txt"), e.StackTrace);
+                    BDTestSettings.PersistentResultsDirectory = null;
+                }
+            }
+        }
+
+        private static string GetArgument(string[] args, string argumentName)
+        {
+            var argument = args.FirstOrDefault(it => it.StartsWith(argumentName))?.Replace(argumentName, "");
+
+            return string.IsNullOrWhiteSpace(argument) ? null : argument;
+        }
+
         private static void WriteJsonOutput(string jsonData)
         {
-            File.WriteAllText(Path.Combine(ResultDirectory, FileNames.TestDataJson), jsonData);
+            File.WriteAllText(Path.Combine(ResultDirectory, BDTestSettings.JsonDataFilename ?? FileNames.TestDataJson), jsonData);
 
-            if (!string.IsNullOrWhiteSpace(PersistentStorage))
+            if (!string.IsNullOrWhiteSpace(BDTestSettings.PersistentResultsDirectory))
             {
-                File.Copy(Path.Combine(ResultDirectory, FileNames.TestDataJson),
-                    Path.Combine(PersistentStorage, FileNames.TestDataJson));
+                File.Copy(Path.Combine(ResultDirectory, BDTestSettings.JsonDataFilename ?? FileNames.TestDataJson),
+                    Path.Combine(BDTestSettings.PersistentResultsDirectory, FileNames.TestDataJson));
             }
         }
 
         private static void WriteXmlOutput(string jsonData)
         {
-            File.WriteAllText(Path.Combine(ResultDirectory, FileNames.TestDataXml),
+            File.WriteAllText(Path.Combine(ResultDirectory, BDTestSettings.XmlDataFilename ?? FileNames.TestDataXml),
                 JsonConvert.DeserializeXmlNode(jsonData, "TestData").ToXmlString());
 
 //            if (!string.IsNullOrWhiteSpace(PersistentStorage))

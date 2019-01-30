@@ -9,9 +9,9 @@ namespace BDTest.Test
     public abstract class BDTestBase
     {
 
-        public Given Given(Expression<Action> step, [CallerMemberName] string callerMember = null)
+        public Given Given(Expression<Action> step, [CallerMemberName] string callerMember = null, [CallerFilePath] string callerFile = null)
         {
-            return new Given(step, callerMember);
+            return new Given(step, callerMember, callerFile);
         }
 
         public void WithContext<TContext>(Func<TContext, Scenario> test) where TContext : new()

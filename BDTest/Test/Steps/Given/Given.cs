@@ -14,7 +14,7 @@ namespace BDTest.Test.Steps.Given
 
         protected override StepType StepType { get; } = StepType.Given;
 
-        internal Given(Expression<Action> action, string callerMember) : base(action, callerMember)
+        internal Given(Expression<Action> action, string callerMember, string callerFile) : base(action, callerMember, callerFile)
         {
         }
 

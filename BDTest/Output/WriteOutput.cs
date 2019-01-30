@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.Serialization;
 using System.Threading.Tasks;
 using BDTest.Maps;
 using BDTest.Paths;
@@ -14,6 +16,15 @@ namespace BDTest.Output
     {
         public const string ResultDirectoryArgumentName = "-ResultsDirectory=";
         public const string PersistentStorageArgumentName = "-PersistentStorageDirectory=";
+        public const string PersistentResultsCompareStartTimeArgumentName = "-PersistentResultsStartCompareTime=";
+        public const string ScenariosByStoryReportHtmlFilenameArgumentName = "-ScenariosByStoryReportHtmlFilename=";
+        public const string AllScenariosReportHtmlFilenameArgumentName = "-AllScenariosReportHtmlFilename=";
+        public const string FlakinessReportHtmlFilenameArgumentName = "-FlakinessReportHtmlFilename=";
+        public const string TestTimesReportHtmlFilenameArgumentName = "-TestTimesReportHtmlFilename=";
+        public const string JsonDataFilenameArgumentName = "-JsonDataFilename=";
+        public const string XmlDataFilenameArgumentName = "-XmlDataFilename=";
+   
+
         public static string OutputDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
         public static bool AlreadyExecuted;
         private static readonly object Lock = new object();
@@ -96,29 +107,38 @@ namespace BDTest.Output
         {
             await Task.Run(() =>
             {
-                var reportDll = Directory.CreateDirectory(OutputDirectory).GetFiles("BDTest.ReportGenerator.dll")
-                    .FirstOrDefault()?.FullName;
-
-                if (OutputDirectory == null || reportDll == null)
+                try
                 {
-                    return;
-                }
+                    var reportDll = Directory.CreateDirectory(OutputDirectory).GetFiles("BDTest.ReportGenerator.dll")
+                        .FirstOrDefault()?.FullName;
 
-                var process = new Process
-                {
-                    StartInfo = new ProcessStartInfo
+                    if (OutputDirectory == null || reportDll == null)
                     {
-                        FileName = "dotnet",
-                        Arguments = $"\"{reportDll}\" \"{ResultDirectoryArgumentName}{OutputDirectory}\" \"{PersistentStorageArgumentName}{BDTestSettings.PersistentResultsDirectory}\"",
-                        UseShellExecute = false,
-                        RedirectStandardOutput = false,
-                        RedirectStandardError = false,
-                        CreateNoWindow = true
+                        return;
                     }
 
-                };
+                    var dllArguments = $"\"{reportDll}\" \"{ResultDirectoryArgumentName}{OutputDirectory}\" \"{PersistentStorageArgumentName}{BDTestSettings.PersistentResultsDirectory}\" \"{PersistentResultsCompareStartTimeArgumentName}{BDTestSettings.PersistentResultsCompareStartTime:o}\" \"{AllScenariosReportHtmlFilenameArgumentName}{BDTestSettings.AllScenariosReportHtmlFilename}\" \"{ScenariosByStoryReportHtmlFilenameArgumentName}{BDTestSettings.ScenariosByStoryReportHtmlFilename}\" \"{FlakinessReportHtmlFilenameArgumentName}{BDTestSettings.FlakinessReportHtmlFilename}\" \"{TestTimesReportHtmlFilenameArgumentName}{BDTestSettings.TestTimesReportHtmlFilename}\" \"{JsonDataFilenameArgumentName}{BDTestSettings.JsonDataFilename}\" \"{XmlDataFilenameArgumentName}{BDTestSettings.XmlDataFilename}\" ";
 
-                process.Start();
+                    var process = new Process
+                    {
+                        StartInfo = new ProcessStartInfo
+                        {
+                            FileName = "dotnet",
+                            Arguments = dllArguments,
+                            UseShellExecute = false,
+                            RedirectStandardOutput = false,
+                            RedirectStandardError = false,
+                            CreateNoWindow = true
+                        }
+
+                    };
+
+                    process.Start();
+                }
+                catch (Exception e)
+                {
+                    File.WriteAllText(Path.Combine(OutputDirectory, "BDTest - Run Exception.txt"), e.StackTrace);
+                }
             });
         }
     }

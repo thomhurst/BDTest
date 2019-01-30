@@ -5,7 +5,7 @@
         <id>BDTest.ReportGenerator</id>
 
         <!-- The package version number that is used when resolving dependencies -->
-        <version>1.0.19</version>
+        <version>1.0.20</version>
 
         <!-- Authors contain text that appears directly on the gallery -->
         <authors>Tom Longhurst</authors>
@@ -54,7 +54,7 @@
         <!-- Dependencies are automatically installed when the package is installed -->
         <dependencies>
             <dependency id="HtmlTags.AspNetCore" version="7.0.3" />
-			<dependency id="BDTest" version="1.0.19" />
+			<dependency id="BDTest" version="1.0.20" />
         </dependencies>
     </metadata>
 

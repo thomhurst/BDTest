@@ -12,10 +12,10 @@ namespace BDTest.Test.Steps
         protected abstract StepType StepType { get; }
         protected string StepPrefix => StepType.GetValue();
 
-        protected StepBuilder(Expression<Action> action, string callerMember)
+        protected StepBuilder(Expression<Action> action, string callerMember, string callerFile)
         {
             ExistingSteps = new List<Step> { new Step(action, StepType.Given) };
-            TestDetails = new TestDetails(callerMember, Guid.NewGuid());
+            TestDetails = new TestDetails(callerMember, callerFile, Guid.NewGuid());
         }
 
         

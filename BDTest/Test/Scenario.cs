@@ -29,6 +29,9 @@ namespace BDTest.Test
         [JsonProperty]
         public DateTime EndTime;
 
+        [JsonProperty]
+        public string FileName;
+
         [JsonConstructor]
         private Scenario() { }
 
@@ -39,6 +42,8 @@ namespace BDTest.Test
 
             StoryText = testDetails.StoryText;
             ScenarioText = testDetails.ScenarioText;
+
+            FileName = testDetails.CallerFile;
 
             _reporters = new Reporters.Reporters();
             Steps = steps;

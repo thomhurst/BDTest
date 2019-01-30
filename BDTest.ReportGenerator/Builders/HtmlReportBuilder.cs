@@ -52,7 +52,7 @@ namespace BDTest.ReportGenerator.Builders
 
         private void CreateFlakinessReport()
         {
-            if (string.IsNullOrWhiteSpace(ReportProgram.PersistentStorage))
+            if (string.IsNullOrWhiteSpace(BDTestSettings.PersistentResultsDirectory))
             {
                 return;
             }
@@ -65,14 +65,14 @@ namespace BDTest.ReportGenerator.Builders
                     .Style("padding", "25px")
                     .WriteTo(stringWriter, HtmlEncoder.Default);
 
-                File.WriteAllText(Path.Combine(ReportProgram.ResultDirectory, FileNames.ReportFlakiness),
+                File.WriteAllText(Path.Combine(ReportProgram.ResultDirectory, BDTestSettings.FlakinessReportHtmlFilename ?? FileNames.ReportFlakiness),
                     stringWriter.ToString());
             }
         }
 
         private void CreateTestTimesComparisonReport()
         {
-            if (string.IsNullOrWhiteSpace(ReportProgram.PersistentStorage))
+            if (string.IsNullOrWhiteSpace(BDTestSettings.PersistentResultsDirectory))
             {
                 return;
             }
@@ -85,7 +85,7 @@ namespace BDTest.ReportGenerator.Builders
                     .Style("padding", "25px")
                     .WriteTo(stringWriter, HtmlEncoder.Default);
 
-                File.WriteAllText(Path.Combine(ReportProgram.ResultDirectory, FileNames.ReportTestTimesComparison),
+                File.WriteAllText(Path.Combine(ReportProgram.ResultDirectory, BDTestSettings.TestTimesReportHtmlFilename ?? FileNames.ReportTestTimesComparison),
                     stringWriter.ToString());
             }
         }
@@ -100,7 +100,7 @@ namespace BDTest.ReportGenerator.Builders
                     .Style("padding", "25px")
                     .WriteTo(stringWriter, HtmlEncoder.Default);
 
-                File.WriteAllText(Path.Combine(ReportProgram.ResultDirectory, FileNames.ReportByStory),
+                File.WriteAllText(Path.Combine(ReportProgram.ResultDirectory, BDTestSettings.ScenariosByStoryReportHtmlFilename ?? FileNames.ReportByStory),
                     stringWriter.ToString());
             }
         }
@@ -115,21 +115,21 @@ namespace BDTest.ReportGenerator.Builders
                     .Style("padding", "25px")
                     .WriteTo(stringWriter, HtmlEncoder.Default);
 
-                File.WriteAllText(Path.Combine(ReportProgram.ResultDirectory, FileNames.ReportAllScenarios),
+                File.WriteAllText(Path.Combine(ReportProgram.ResultDirectory, BDTestSettings.AllScenariosReportHtmlFilename ?? FileNames.ReportAllScenarios),
                     stringWriter.ToString());
             }
         }
 
         private HtmlTag BuildFlakinessBody()
         {
-            var scenarioBatched = Directory.GetFiles(ReportProgram.PersistentStorage).Where(it => it.EndsWith(".json"))
+            var scenarioBatched = Directory.GetFiles(BDTestSettings.PersistentResultsDirectory).Where(it => it.EndsWith(".json") && File.GetCreationTime(it) > BDTestSettings.PersistentResultsCompareStartTime)
                 .Select(filePath =>
                     JsonConvert.DeserializeObject<DataOutputModel>(File.ReadAllText(filePath)).Scenarios)
                 .ToList();
 
             var scenarios = scenarioBatched.SelectMany(it => it).ToList();
 
-            var scenariosGroupedByStory = scenarios.GroupBy(scenario => scenario.GetStoryText());
+            var scenariosGroupedByStory = scenarios.GroupBy(scenario => new { scenario.StoryText.Story, scenario.FileName});
 
             return new HtmlTag("body").Append(
                 new HtmlTag("div").Append(
@@ -160,7 +160,7 @@ namespace BDTest.ReportGenerator.Builders
                                     ),
                                     new HtmlTag("tbody").Append(
                                         scenarios.Where(scenario =>
-                                                scenario.GetStoryText() == scenariosWithSameStory.Key)
+                                                scenario.GetStoryText() == scenariosWithSameStory.Key.Story && scenario.FileName == scenariosWithSameStory.Key.FileName)
                                             .GroupBy(scenario => scenario.GetScenarioText())
                                             .Select(sameScenarios =>
                                             {
@@ -199,14 +199,14 @@ namespace BDTest.ReportGenerator.Builders
 
         private HtmlTag BuildTestTimeComparisonBody()
         {
-            var scenarioBatched = Directory.GetFiles(ReportProgram.PersistentStorage).Where(it => it.EndsWith(".json"))
+            var scenarioBatched = Directory.GetFiles(BDTestSettings.PersistentResultsDirectory).Where(it => it.EndsWith(".json") && File.GetCreationTime(it) > BDTestSettings.PersistentResultsCompareStartTime)
                 .Select(filePath =>
                     JsonConvert.DeserializeObject<DataOutputModel>(File.ReadAllText(filePath)).Scenarios)
                 .ToList();
 
             var scenarios = scenarioBatched.SelectMany(it => it).Where(scenario => scenario.Status == Status.Passed).ToList();
 
-            var scenariosGroupedByStory = scenarios.GroupBy(scenario => scenario.GetStoryText());
+            var scenariosGroupedByStory = scenarios.GroupBy(scenario => new { scenario.StoryText.Story, scenario.FileName });
 
             return new HtmlTag("body").Append(
                 new HtmlTag("div").Append(
@@ -227,7 +227,7 @@ namespace BDTest.ReportGenerator.Builders
                                     ),
                                     new HtmlTag("tbody").Append(
                                         scenarios.Where(scenario =>
-                                                scenario.GetStoryText() == scenariosWithSameStory.Key)
+                                                scenario.GetStoryText() == scenariosWithSameStory.Key.Story && scenario.FileName == scenariosWithSameStory.Key.FileName)
                                             .GroupBy(scenario => scenario.GetScenarioText())
                                             .Select(sameScenarios =>
                                             {
