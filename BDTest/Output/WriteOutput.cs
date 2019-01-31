@@ -70,7 +70,8 @@ namespace BDTest.Output
 
                 if (runtimeConfigFile == null) return;
 
-                var bdTestReportRunConfigPath = Path.Combine(FileLocations.OutputDirectory, "BDTest.ReportGenerator.runtimeconfig.dev.json");
+                var bdTestReportRunConfigPath = Path.Combine(FileLocations.OutputDirectory,
+                    "BDTest.ReportGenerator.runtimeconfig.dev.json");
 
                 if (File.Exists(bdTestReportRunConfigPath))
                 {
@@ -79,6 +80,21 @@ namespace BDTest.Output
 
                 File.Copy(runtimeConfigFile,
                     bdTestReportRunConfigPath);
+
+                if (File.Exists(Path.Combine(OutputDirectory, "BDTest - Exception.txt")))
+                {
+                    File.Delete(Path.Combine(OutputDirectory, "BDTest - Exception.txt"));
+                }
+
+                if (File.Exists(Path.Combine(OutputDirectory, "BDTest - Run Exception.txt")))
+                {
+                    File.Delete(Path.Combine(OutputDirectory, "BDTest - Run Exception.txt"));
+                }
+
+                if (File.Exists(Path.Combine(OutputDirectory, "BDTest - Report Exception.txt")))
+                {
+                    File.Delete(Path.Combine(OutputDirectory, "BDTest - Report Exception.txt"));
+                }
             }
         }
 

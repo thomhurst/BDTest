@@ -129,7 +129,7 @@ namespace BDTest.ReportGenerator.Builders
 
             var scenarios = scenarioBatched.SelectMany(it => it).ToList();
 
-            var scenariosGroupedByStory = scenarios.GroupBy(scenario => new { scenario.StoryText.Story, scenario.FileName});
+            var scenariosGroupedByStory = scenarios.GroupBy(scenario => new { scenario.StoryText?.Story, scenario.FileName});
 
             return new HtmlTag("body").Append(
                 new HtmlTag("div").Append(
@@ -206,7 +206,7 @@ namespace BDTest.ReportGenerator.Builders
 
             var scenarios = scenarioBatched.SelectMany(it => it).Where(scenario => scenario.Status == Status.Passed).ToList();
 
-            var scenariosGroupedByStory = scenarios.GroupBy(scenario => new { scenario.StoryText.Story, scenario.FileName });
+            var scenariosGroupedByStory = scenarios.GroupBy(scenario => new { scenario.StoryText?.Story, scenario.FileName });
 
             return new HtmlTag("body").Append(
                 new HtmlTag("div").Append(
