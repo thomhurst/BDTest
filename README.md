@@ -170,6 +170,7 @@ public void TestSetName()
 Install via Nuget > `Install-Package BDTest.ReportGenerator`
 ## Usage
 You don't have to do anything. 
+Once the package has been installed and your tests have run, these reports should appear in your output directory automatically.
 
 ## Persistent Test Data
 BDTest allows you to pass it a directory path, to persistently store test data.
@@ -192,10 +193,25 @@ public void Test()
 }
 ```
 
-Once the package has been installed and your tests have run, these reports should appear in your output directory automatically.
+This will produce a flakiness report and a test times report.
+
+### Flakiness
+In your output directory after your tests have finished:
+> BDTest - Report - Flakiness - {timestamp}.html
+
+Override this filename by settings `BDTest.BDTestSettings.FlakinessReportHtmlFilename = "C:\\SomeDirectory\\test-flakiness.html";`
+
+### Test Times
+In your output directory after your tests have finished:
+> BDTest - Report - Test Times Comparison - {timestamp}.html
+
+Override this filename by settings `BDTest.BDTestSettings.TestTimesReportHtmlFilename = "C:\\SomeDirectory\\test-times.html";`
+
 ## Json
 In your output directory after your tests have finished:
-> test_data - {timestamp}.json
+> BDTest - Test Data - {timestamp}.json
+
+Override this filename by settings `BDTest.BDTestSettings.JsonDataFilename = "C:\\SomeDirectory\\test-json-raw-data.json";`
 
 <details>
 <summary>Example:</summary>
@@ -325,8 +341,9 @@ In your output directory after your tests have finished:
 
 ## XML
 In your output directory after your tests have finished:
-> test_data - {timestamp}.xml
+> BDTest - Test Data - {timestamp}.xml
 
+Override this filename by settings `BDTest.BDTestSettings.XmlDataFilename = "C:\\SomeDirectory\\test-xml-raw-data.json";`
 
 <details>
 <summary>Example:</summary>
@@ -457,8 +474,12 @@ In your output directory after your tests have finished:
 ## HTML
 ### By Story
 In your output directory after your tests have finished:
-> Report - By Story - {timestamp}.html
+> BDTest - Report - By Story - {timestamp}.html
+
+Override this filename by settings `BDTest.BDTestSettings.ScenariosByStoryReportHtmlFilename = "C:\\SomeDirectory\\test-stories.html";`
 
 ### All Scenarios
 In your output directory after your tests have finished:
-> Report - All Scenarios - {timestamp}.html
+> BDTest - Report - All Scenarios - {timestamp}.html
+
+Override this filename by settings `BDTest.BDTestSettings.AllScenariosReportHtmlFilename = "C:\\SomeDirectory\\test-all-scenarios.html";`
