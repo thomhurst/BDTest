@@ -50,7 +50,7 @@ namespace BDTest.ReportGenerator.Builders
             CreateReportWithStories();
         }
 
-        private void CreateFlakinessReport()
+        private static void CreateFlakinessReport()
         {
             if (string.IsNullOrWhiteSpace(BDTestSettings.PersistentResultsDirectory))
             {
@@ -70,7 +70,7 @@ namespace BDTest.ReportGenerator.Builders
             }
         }
 
-        private void CreateTestTimesComparisonReport()
+        private static void CreateTestTimesComparisonReport()
         {
             if (string.IsNullOrWhiteSpace(BDTestSettings.PersistentResultsDirectory))
             {

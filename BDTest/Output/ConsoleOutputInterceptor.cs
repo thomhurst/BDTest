@@ -36,7 +36,7 @@ namespace BDTest.Output
 
         public void ClearCurrentTaskData()
         {
-            _two.ClearCurrentTaskData();
+            TestOutputData.ClearCurrentTaskData();
         }
 
     }

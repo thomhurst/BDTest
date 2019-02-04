@@ -11,17 +11,17 @@ namespace BDTest.Attributes
 
         public string GetStoryText()
         {
-            if (!AsA.ToLower().StartsWith("as a"))
+            if (!AsA.ToLowerInvariant().StartsWith("as a"))
             {
                 AsA = $"As a {AsA}";
             }
 
-            if (!IWant.ToLower().StartsWith("i want"))
+            if (!IWant.ToLowerInvariant().StartsWith("i want"))
             {
                 IWant = $"I want {IWant}";
             }
 
-            if (!SoThat.ToLower().StartsWith("so that"))
+            if (!SoThat.ToLowerInvariant().StartsWith("so that"))
             {
                 SoThat = $"So that {SoThat}";
             }
