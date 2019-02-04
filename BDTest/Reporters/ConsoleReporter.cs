@@ -3,7 +3,7 @@ using BDTest.Test;
 
 namespace BDTest.Reporters
 {
-    class ConsoleReporter : Reporter
+    internal class ConsoleReporter : Reporter
     {
 
         public override void WriteLine(string text, params object[] args)
@@ -13,13 +13,21 @@ namespace BDTest.Reporters
 
         public override void WriteStory(StoryText storyText)
         {
-            if(storyText?.Story == null) return;
+            if (storyText?.Story == null)
+            {
+                return;
+            }
+
             WriteLine("Story: " + storyText.Story);
         }
 
         public override void WriteScenario(ScenarioText scenarioText)
         {
-            if (scenarioText?.Scenario == null) return;
+            if (scenarioText?.Scenario == null)
+            {
+                return;
+            }
+
             WriteLine("Scenario: " + scenarioText.Scenario);
         }
 

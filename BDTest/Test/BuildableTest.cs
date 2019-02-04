@@ -6,16 +6,15 @@ namespace BDTest.Test
     public class BuildableTest
     {
         [JsonIgnore]
-        protected Guid Guid;
+        protected Guid Guid { get; set; }
+
+        [JsonProperty] public StoryText StoryText { get; protected set; }
 
         [JsonProperty]
-        public StoryText StoryText;
+        public ScenarioText ScenarioText { get; protected set; }
 
         [JsonProperty]
-        public ScenarioText ScenarioText;
-
-        [JsonProperty]
-        public TestDetails TestDetails;
+        public TestDetails TestDetails { get; protected set; }
 
         public string GetScenarioText()
         {

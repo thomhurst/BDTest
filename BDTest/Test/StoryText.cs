@@ -5,7 +5,7 @@ namespace BDTest.Test
     public class StoryText
     {
         [JsonProperty]
-        public readonly string Story;
+        public string Story { get; private set; }
 
         public StoryText(string story)
         {

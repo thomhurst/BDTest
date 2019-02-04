@@ -76,7 +76,7 @@ namespace BDTest.Test
                 }
                 catch (Exception)
                 {
-                    throw new Exception(
+                    throw new ArgumentException(
                         $"Step Text arguments are wrong.\nTemplate is: {customStepText}\nArguments are {string.Join(",", arguments)}");
                 }
             }

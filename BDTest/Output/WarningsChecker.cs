@@ -7,10 +7,10 @@ namespace BDTest.Output
     public class WarningsChecker
     {
         [JsonProperty]
-        public IEnumerable<BuildableTest> NonExecutedTests;
+        public IEnumerable<BuildableTest> NonExecutedTests { get; private set; }
 
         [JsonProperty]
-        public IEnumerable<Scenario> StoppedEarlyTests;
+        public IEnumerable<Scenario> StoppedEarlyTests { get; private set; }
 
         public WarningsChecker(IEnumerable<BuildableTest> nonExecutedTests, IEnumerable<Scenario> stoppedEarlyTests)
         {

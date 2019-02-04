@@ -8,7 +8,7 @@ namespace BDTest.Output
             /// <summary>
             /// Format: Days.Hours:Minutes:Seconds:Milliseconds
             /// </summary>
-            public const string TimeSpanFormatString = @"d\.hh\:mm\:ss\:fffffff";
+            public static string TimeSpanFormatString { get; } = @"d\.hh\:mm\:ss\:fffffff";
 
             public override void WriteJson(JsonWriter writer, TimeSpan value, JsonSerializer serializer)
             {

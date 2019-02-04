@@ -6,7 +6,7 @@ using BDTest.Test;
 
 namespace BDTest.Reporters
 {
-    class FileReporter : Reporter
+    internal class FileReporter : Reporter
     {
         private static readonly string DirectoryName = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
         private static readonly string FilePath = Path.Combine(DirectoryName, "test_output.txt");
@@ -23,7 +23,6 @@ namespace BDTest.Reporters
         public override void WriteLine(string text, params object[] args)
         {
             _contents.AppendLine(text);
-            //File.AppendAllText(FilePath, text + Environment.NewLine);
         }
 
         public override void WriteStory(StoryText storyText)
