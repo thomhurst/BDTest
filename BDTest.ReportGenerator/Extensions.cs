@@ -12,7 +12,10 @@ namespace BDTest.ReportGenerator
     {
         public static string ToPrettyFormat(this TimeSpan span)
         {
-            if (span == TimeSpan.Zero) return "< 1 ms";
+            if (span == TimeSpan.Zero)
+            {
+                return "< 1 ms";
+            }
 
             var sb = new List<string>();
             if (span.Days > 0)

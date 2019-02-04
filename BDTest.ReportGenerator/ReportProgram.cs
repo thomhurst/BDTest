@@ -106,7 +106,10 @@ namespace BDTest.ReportGenerator
 
             BDTestSettings.JsonDataFilename = GetArgument(args, WriteOutput.JsonDataFilenameArgumentName);
 
-            if (string.IsNullOrWhiteSpace(BDTestSettings.PersistentResultsDirectory)) return;
+            if (string.IsNullOrWhiteSpace(BDTestSettings.PersistentResultsDirectory))
+            {
+                return;
+            }
 
             try
             {

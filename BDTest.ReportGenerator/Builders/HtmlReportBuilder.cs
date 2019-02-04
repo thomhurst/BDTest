@@ -303,7 +303,10 @@ namespace BDTest.ReportGenerator.Builders
         private HtmlTag BuildWarnings()
         {
             var warningsNonExecutedTests = _warnings.NonExecutedTests.ToList();
-            if(!warningsNonExecutedTests.Any()) return HtmlTag.Empty();
+            if (!warningsNonExecutedTests.Any())
+            {
+                return HtmlTag.Empty();
+            }
 
             return new HtmlTag("details").Append(
                 new HtmlTag("summary").AddClass("canToggle").AppendText("Tests Not Executed"),
