@@ -12,7 +12,7 @@ using Newtonsoft.Json;
 
 namespace BDTest.Output
 {
-    public class WriteOutput
+    public static class WriteOutput
     {
         public static string ResultDirectoryArgumentName { get; } = "-ResultsDirectory=";
         public static string PersistentStorageArgumentName { get; } = "-PersistentStorageDirectory=";
@@ -25,8 +25,8 @@ namespace BDTest.Output
         public static string XmlDataFilenameArgumentName { get; } = "-XmlDataFilename=";
    
 
-        public static string OutputDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-        public static bool AlreadyExecuted;
+        public static string OutputDirectory { get; } = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+        private static bool _alreadyExecuted;
         private static readonly object Lock = new object();
 
         static WriteOutput()
@@ -43,12 +43,12 @@ namespace BDTest.Output
         {
             lock (Lock)
             {
-                if (AlreadyExecuted)
+                if (_alreadyExecuted)
                 {
                     return;
                 }
 
-                AlreadyExecuted = true;
+                _alreadyExecuted = true;
 
                 if (Directory.Exists(FileLocations.ScenariosDirectory))
                 {
@@ -68,7 +68,10 @@ namespace BDTest.Output
                 var runtimeConfigFile = Directory.GetFiles(FileLocations.OutputDirectory)
                     .FirstOrDefault(it => it.EndsWith(".runtimeconfig.dev.json"));
 
-                if (runtimeConfigFile == null) return;
+                if (runtimeConfigFile == null)
+                {
+                    return;
+                }
 
                 var bdTestReportRunConfigPath = Path.Combine(FileLocations.OutputDirectory,
                     "BDTest.ReportGenerator.runtimeconfig.dev.json");

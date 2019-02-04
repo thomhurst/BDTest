@@ -332,7 +332,10 @@ namespace BDTest.ReportGenerator.Builders
 
         private HtmlTag BuildTimerBox()
         {
-            if (_testTimer == null) return new HtmlTag("br");
+            if (_testTimer == null)
+            {
+                return new HtmlTag("br");
+            }
 
             return new HtmlTag("table").Append(
                 new HtmlTag("thead").Append(
@@ -533,7 +536,6 @@ namespace BDTest.ReportGenerator.Builders
         private HtmlTag BuildScenario(Scenario scenario)
         {
             var scenarioText = scenario.GetScenarioText();
-            Console.WriteLine($"Scenario text output is: {scenarioText}");
 
             return new HtmlTag("tr").AddClass(HtmlReportPrebuilt.GetStatus(scenario) + _storiesBuiltCounter).AddClass(HtmlReportPrebuilt.GetStatus(scenario)).Append(
                 new HtmlTag("td").Append(
@@ -673,7 +675,7 @@ namespace BDTest.ReportGenerator.Builders
             return returnTag;
         }
 
-        private HtmlTag BuildHead()
+        private static HtmlTag BuildHead()
         {
             return new HtmlTag("head")
                 .Append(
