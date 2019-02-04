@@ -111,7 +111,7 @@ namespace BDTest.Test
                     EndTime = DateTime.Now;
                     TimeTaken = EndTime - StartTime;
                     Output = TestOutputData.Instance.ToString();
-                    TestOutputData.Instance.ClearCurrentTaskData();
+                    TestOutputData.ClearCurrentTaskData();
                 }
             });
             task.Start();

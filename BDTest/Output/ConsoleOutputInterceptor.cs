@@ -34,7 +34,7 @@ namespace BDTest.Output
             return _two.ToString();
         }
 
-        public void ClearCurrentTaskData()
+        public static void ClearCurrentTaskData()
         {
             TestOutputData.ClearCurrentTaskData();
         }

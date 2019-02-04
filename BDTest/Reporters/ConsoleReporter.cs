@@ -33,6 +33,7 @@ namespace BDTest.Reporters
 
         public override void OnFinish()
         {
+            // Nothing Needed to Finish with the console.
         }
     }
 }

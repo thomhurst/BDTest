@@ -142,7 +142,7 @@ namespace BDTest.ReportGenerator.Builders
                                 new HtmlTag("table").Append(
                                     new HtmlTag("thead").Append(
                                         new HtmlTag("tr").Append(
-                                            new HtmlTag("th").AppendText("Scenario"),
+                                            HtmlReportPrebuilt.ScenariosHeader,
                                             new HtmlTag("th").AppendText("Flakiness"),
                                             new HtmlTag("th").Append(
                                                     HtmlReportPrebuilt.PassedIcon
@@ -219,7 +219,7 @@ namespace BDTest.ReportGenerator.Builders
                                 new HtmlTag("table").Append(
                                     new HtmlTag("thead").Append(
                                         new HtmlTag("tr").Append(
-                                            new HtmlTag("th").AppendText("Scenario"),
+                                            HtmlReportPrebuilt.ScenariosHeader,
                                             new HtmlTag("th").AppendText("Min"),
                                             new HtmlTag("th").AppendText("Avg"),
                                             new HtmlTag("th").AppendText("Max")
@@ -314,8 +314,8 @@ namespace BDTest.ReportGenerator.Builders
                     new HtmlTag("table").Append(
                         new HtmlTag("thead").Append(
                             new HtmlTag("tr").Append(
-                                new HtmlTag("th").AppendText("Story"),
-                                new HtmlTag("th").AppendText("Scenario"),
+                                HtmlReportPrebuilt.StoryHeader,
+                                HtmlReportPrebuilt.ScenarioHeader,
                                 new HtmlTag("th").AppendText("Parameters")
                             )
                         ),
@@ -363,8 +363,8 @@ namespace BDTest.ReportGenerator.Builders
             return new HtmlTag("table").Append(
                 new HtmlTag("thead").Append(
                     new HtmlTag("tr").Append(
-                        new HtmlTag("th").AppendText("Stories"),
-                        new HtmlTag("th").AppendText("Scenarios"),
+                        HtmlReportPrebuilt.StoriesHeader,
+                        HtmlReportPrebuilt.ScenariosHeader,
                         new HtmlTag("th").Append(
                             new HtmlTag("div").Append(
                                 HtmlReportPrebuilt.PassedIcon
@@ -427,8 +427,8 @@ namespace BDTest.ReportGenerator.Builders
                         new HtmlTag("table").Append(
                             new HtmlTag("thead").Append(
                                 new HtmlTag("tr").Append(
-                                    new HtmlTag("th").AppendText("Status"),
-                                    new HtmlTag("th").AppendText("Scenarios"),
+                                    HtmlReportPrebuilt.StatusHeader,
+                                    HtmlReportPrebuilt.ScenariosHeader,
                                     new HtmlTag("th").Append(
                                         new HtmlTag("div").Append(
                                             HtmlReportPrebuilt.PassedIcon
@@ -454,9 +454,9 @@ namespace BDTest.ReportGenerator.Builders
                                         ),
                                         new HtmlTag("input").Attr("type", "checkbox").Attr("checked", "checked").Id($"NotImplemented{_storiesBuiltCounter}")
                                     ),
-                                    new HtmlTag("th").AppendText("Duration"),
-                                    new HtmlTag("th").AppendText("Start"),
-                                    new HtmlTag("th").AppendText("End")
+                                    HtmlReportPrebuilt.DurationHeader,
+                                    HtmlReportPrebuilt.StartHeader,
+                                    HtmlReportPrebuilt.EndHeader
                                 )
                             ),
                             new HtmlTag("tbody").Append(
@@ -522,11 +522,11 @@ namespace BDTest.ReportGenerator.Builders
                 new HtmlTag("table").Append(
                     new HtmlTag("thead").Append(
                         new HtmlTag("tr").Append(
-                            new HtmlTag("th").AppendText("Scenario"),
-                            new HtmlTag("th").AppendText("Status"),
-                            new HtmlTag("th").AppendText("Duration"),
-                            new HtmlTag("th").AppendText("Start"),
-                            new HtmlTag("th").AppendText("End")
+                            HtmlReportPrebuilt.ScenarioHeader,
+                            HtmlReportPrebuilt.StatusHeader,
+                            HtmlReportPrebuilt.DurationHeader,
+                            HtmlReportPrebuilt.StartHeader,
+                            HtmlReportPrebuilt.EndHeader
                         )
                     ),
                     new HtmlTag("tbody").Append(
@@ -585,11 +585,11 @@ namespace BDTest.ReportGenerator.Builders
             return new HtmlTag("table").Append(
                 new HtmlTag("thead").Append(
                     new HtmlTag("tr").Append(
-                        new HtmlTag("th").AppendText("Step"),
-                        new HtmlTag("th").AppendText("Status"),
-                        new HtmlTag("th").AppendText("Duration"),
-                        new HtmlTag("th").AppendText("Start"),
-                        new HtmlTag("th").AppendText("End")
+                        HtmlReportPrebuilt.StepHeader,
+                        HtmlReportPrebuilt.StatusHeader,
+                        HtmlReportPrebuilt.DurationHeader,
+                        HtmlReportPrebuilt.StartHeader,
+                        HtmlReportPrebuilt.EndHeader
                     )
                 ),
                 new HtmlTag("tbody").Append(
