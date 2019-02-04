@@ -12,7 +12,7 @@ namespace BDTest.Test
     public class TestDetails : BuildableTest
     {
         private readonly string _callerMember;
-        public readonly string CallerFile;
+        public string CallerFile { get; }
         public IEnumerable<string> Parameters { get; set; }
 
         internal TestDetails(string callerMember, string callerFile, Guid guid)

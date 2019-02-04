@@ -12,10 +12,10 @@ namespace BDTest.Output
             ElapsedTime = TestsFinishedAt - TestsStartedAt;
         }
 
-        [JsonProperty] public DateTime TestsStartedAt = Process.GetCurrentProcess().StartTime;
+        [JsonProperty] public DateTime TestsStartedAt { get; set; } = Process.GetCurrentProcess().StartTime;
 
-        [JsonProperty] public DateTime TestsFinishedAt = DateTime.Now;
+        [JsonProperty] public DateTime TestsFinishedAt { get; set; } = DateTime.Now;
 
-        [JsonProperty] public TimeSpan ElapsedTime;
+        [JsonProperty] public TimeSpan ElapsedTime { get; set; }
     }
 }

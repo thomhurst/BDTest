@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace BDTest.Output
 {
-    class TestOutputData : TextWriter
+    internal class TestOutputData : TextWriter
     {
         private static readonly List<KeyValuePair<int?, char>> ThreadAndChars = new List<KeyValuePair<int?, char>>();
         public static readonly ConsoleOutputInterceptor Instance = new ConsoleOutputInterceptor();
@@ -16,7 +16,7 @@ namespace BDTest.Output
         {
             lock (Lock)
             {
-            ThreadAndChars.Add(new KeyValuePair<int?, char>(Task.CurrentId, value));
+                ThreadAndChars.Add(new KeyValuePair<int?, char>(Task.CurrentId, value));
             }
         }
 
@@ -26,7 +26,7 @@ namespace BDTest.Output
             return string.Join("", thisThreadValues);
         }
 
-        public void ClearCurrentTaskData()
+        public static void ClearCurrentTaskData()
         {
             ThreadAndChars.RemoveAll(it => it.Key == Task.CurrentId);
         }

@@ -9,7 +9,7 @@ namespace BDTest.Test.Steps.Given
 
         protected override StepType StepType { get; } = StepType.AndGiven;
 
-        
+
 
         public AndGiven And(Expression<Action> step)
         {

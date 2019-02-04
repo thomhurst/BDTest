@@ -5,7 +5,7 @@
         <id>BDTest.NUnit</id>
 
         <!-- The package version number that is used when resolving dependencies -->
-        <version>1.0.21</version>
+        <version>###version###</version>
 
         <!-- Authors contain text that appears directly on the gallery -->
         <authors>Tom Longhurst</authors>
@@ -54,7 +54,7 @@
         <!-- Dependencies are automatically installed when the package is installed -->
         <dependencies>
             <dependency id="NUnit" version="3.11.0" />
-            <dependency id="BDTest" version="1.0.21" />
+            <dependency id="BDTest" version="###version###" />
         </dependencies>
     </metadata>
 

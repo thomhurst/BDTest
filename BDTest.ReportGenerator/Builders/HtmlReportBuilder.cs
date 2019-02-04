@@ -27,10 +27,10 @@ namespace BDTest.ReportGenerator.Builders
         private int InconclusiveCount => _scenarios.Count(it => it.Status == Status.Inconclusive);
         private int NotImplementedCount => _scenarios.Count(it => it.Status == Status.NotImplemented);
 
-        const string StatusTag = "status";
-        const string TimeTag = "time";
+        private const string StatusTag = "status";
+        private const string TimeTag = "time";
 
-        private int _storiesBuiltCounter = 0;
+        private int _storiesBuiltCounter;
         private readonly WarningsChecker _warnings;
 
         internal static HtmlReportBuilder CreateReport(DataOutputModel dataOutputModel)
@@ -50,7 +50,7 @@ namespace BDTest.ReportGenerator.Builders
             CreateReportWithStories();
         }
 
-        private void CreateFlakinessReport()
+        private static void CreateFlakinessReport()
         {
             if (string.IsNullOrWhiteSpace(BDTestSettings.PersistentResultsDirectory))
             {
@@ -70,7 +70,7 @@ namespace BDTest.ReportGenerator.Builders
             }
         }
 
-        private void CreateTestTimesComparisonReport()
+        private static void CreateTestTimesComparisonReport()
         {
             if (string.IsNullOrWhiteSpace(BDTestSettings.PersistentResultsDirectory))
             {
@@ -120,71 +120,54 @@ namespace BDTest.ReportGenerator.Builders
             }
         }
 
-        private HtmlTag BuildFlakinessBody()
+        private static HtmlTag BuildFlakinessBody()
         {
-            var scenarioBatched = Directory.GetFiles(BDTestSettings.PersistentResultsDirectory).Where(it => it.EndsWith(".json") && File.GetCreationTime(it) > BDTestSettings.PersistentResultsCompareStartTime)
-                .Select(filePath =>
-                    JsonConvert.DeserializeObject<DataOutputModel>(File.ReadAllText(filePath)).Scenarios)
-                .ToList();
-
-            var scenarios = scenarioBatched.SelectMany(it => it).ToList();
-
-            var scenariosGroupedByStory = scenarios.GroupBy(scenario => new { scenario.StoryText?.Story, scenario.FileName});
+            var flakyScenarioBatched = GetScenarioBatched();
+            var flakyScenarios = FlattenBatchScenarios(flakyScenarioBatched);
+            var flakyScenariosGroupedByStory = flakyScenarios.GroupBy(scenario => new { scenario.StoryText?.Story, scenario.FileName });
 
             return new HtmlTag("body").Append(
                 new HtmlTag("div").Append(
                     new HtmlTag("h3").AppendText("Flakiness"),
                     new HtmlTag("div").Append(
-                        scenariosGroupedByStory.Select(scenariosWithSameStory =>
+                        flakyScenariosGroupedByStory.Select(flakyScenariosWithSameStory =>
                             new HtmlTag("div").AddClass("box").Append(
                                 new HtmlTag("h4")
-                                    .AppendText($"Story: {scenariosWithSameStory.FirstOrDefault()?.GetStoryText()}"),
+                                    .AppendText($"Story: {flakyScenariosWithSameStory.FirstOrDefault()?.GetStoryText()}"),
                                 new HtmlTag("table").Append(
                                     new HtmlTag("thead").Append(
                                         new HtmlTag("tr").Append(
-                                            new HtmlTag("th").AppendText("Scenario"),
-                                            new HtmlTag("th").AppendText("Flakiness"),
-                                            new HtmlTag("th").Append(
-                                                    HtmlReportPrebuilt.PassedIcon
-                                            ),
-                                            new HtmlTag("th").Append(
-                                                    HtmlReportPrebuilt.FailedIcon
-                                            ),
-                                            new HtmlTag("th").Append(
-                                                    HtmlReportPrebuilt.InconclusiveIcon
-                                            ),
-                                            new HtmlTag("th").Append(
-                                                    HtmlReportPrebuilt.NotImplementedIcon
-                                            )
-                                        )
+                                            HtmlReportPrebuilt.ScenariosHeader,
+                                            new HtmlTag("th").AppendText("Flakiness")
+                                        ).Append(HtmlReportPrebuilt.StatusIconHeaders)
                                     ),
                                     new HtmlTag("tbody").Append(
-                                        scenarios.Where(scenario =>
-                                                scenario.GetStoryText() == scenariosWithSameStory.Key.Story && scenario.FileName == scenariosWithSameStory.Key.FileName)
+                                        flakyScenarios.Where(scenario =>
+                                                scenario.GetStoryText() == flakyScenariosWithSameStory.Key.Story && scenario.FileName == flakyScenariosWithSameStory.Key.FileName)
                                             .GroupBy(scenario => scenario.GetScenarioText())
-                                            .Select(sameScenarios =>
+                                            .Select(flakySameScenarios =>
                                             {
-                                                var groupedByDistinctScenarioText =
-                                                    sameScenarios.ToList();
+                                                var flakyGroupedByDistinctScenarioText =
+                                                    flakySameScenarios.ToList();
                                                 return new HtmlTag("tr").Append(
-                                                    new HtmlTag("td").AppendText(groupedByDistinctScenarioText
+                                                    new HtmlTag("td").AppendText(flakyGroupedByDistinctScenarioText
                                                         .FirstOrDefault()
                                                         ?.ScenarioText.Scenario),
                                                     new HtmlTag("td").Append(
                                                         new HtmlTag("div").AppendText(
-                                                            $"{groupedByDistinctScenarioText.GetFlakinessPercentage()}%")
+                                                            $"{flakyGroupedByDistinctScenarioText.GetFlakinessPercentage()}%")
                                                     ),
                                                     new HtmlTag("td").AppendText(
-                                                        $"{groupedByDistinctScenarioText.GetCount(Status.Passed)} / {groupedByDistinctScenarioText.Count}"
+                                                        $"{flakyGroupedByDistinctScenarioText.GetCount(Status.Passed)} / {flakyGroupedByDistinctScenarioText.Count}"
                                                     ),
                                                     new HtmlTag("td").AppendText(
-                                                        $"{groupedByDistinctScenarioText.GetCount(Status.Failed)} / {groupedByDistinctScenarioText.Count}"
+                                                        $"{flakyGroupedByDistinctScenarioText.GetCount(Status.Failed)} / {flakyGroupedByDistinctScenarioText.Count}"
                                                     ),
                                                     new HtmlTag("td").AppendText(
-                                                        $"{groupedByDistinctScenarioText.GetCount(Status.Inconclusive)} / {groupedByDistinctScenarioText.Count}"
+                                                        $"{flakyGroupedByDistinctScenarioText.GetCount(Status.Inconclusive)} / {flakyGroupedByDistinctScenarioText.Count}"
                                                     ),
                                                     new HtmlTag("td").AppendText(
-                                                        $"{groupedByDistinctScenarioText.GetCount(Status.NotImplemented)} / {groupedByDistinctScenarioText.Count}"
+                                                        $"{flakyGroupedByDistinctScenarioText.GetCount(Status.NotImplemented)} / {flakyGroupedByDistinctScenarioText.Count}"
                                                     )
                                                 );
                                             })
@@ -197,53 +180,58 @@ namespace BDTest.ReportGenerator.Builders
             );
         }
 
-        private HtmlTag BuildTestTimeComparisonBody()
+        private static IEnumerable<List<Scenario>> GetScenarioBatched()
         {
-            var scenarioBatched = Directory.GetFiles(BDTestSettings.PersistentResultsDirectory).Where(it => it.EndsWith(".json") && File.GetCreationTime(it) > BDTestSettings.PersistentResultsCompareStartTime)
+            var scenarioBatched = Directory.GetFiles(BDTestSettings.PersistentResultsDirectory).Where(it =>
+                    it.EndsWith(".json") && File.GetCreationTime(it) > BDTestSettings.PersistentResultsCompareStartTime)
                 .Select(filePath =>
                     JsonConvert.DeserializeObject<DataOutputModel>(File.ReadAllText(filePath)).Scenarios)
                 .ToList();
+            return scenarioBatched;
+        }
 
-            var scenarios = scenarioBatched.SelectMany(it => it).Where(scenario => scenario.Status == Status.Passed).ToList();
-
-            var scenariosGroupedByStory = scenarios.GroupBy(scenario => new { scenario.StoryText?.Story, scenario.FileName });
+        private static HtmlTag BuildTestTimeComparisonBody()
+        {
+            var testTimesScenarioBatched = GetScenarioBatched();
+            var testTimesScenarios = FlattenBatchScenarios(testTimesScenarioBatched);
+            var testTimesScenariosGroupedByStory = testTimesScenarios.GroupBy(scenario => new { scenario.StoryText?.Story, scenario.FileName });
 
             return new HtmlTag("body").Append(
                 new HtmlTag("div").Append(
                     new HtmlTag("h3").AppendText("Test Times"),
                     new HtmlTag("div").Append(
-                        scenariosGroupedByStory.Select(scenariosWithSameStory =>
+                        testTimesScenariosGroupedByStory.Select(testTimesScenariosWithSameStory =>
                             new HtmlTag("div").AddClass("box").Append(
                                 new HtmlTag("h4")
-                                    .AppendText($"Story: {scenariosWithSameStory.FirstOrDefault()?.GetStoryText()}"),
+                                    .AppendText($"Story: {testTimesScenariosWithSameStory.FirstOrDefault()?.GetStoryText()}"),
                                 new HtmlTag("table").Append(
                                     new HtmlTag("thead").Append(
                                         new HtmlTag("tr").Append(
-                                            new HtmlTag("th").AppendText("Scenario"),
+                                            HtmlReportPrebuilt.ScenariosHeader,
                                             new HtmlTag("th").AppendText("Min"),
                                             new HtmlTag("th").AppendText("Avg"),
                                             new HtmlTag("th").AppendText("Max")
                                         )
                                     ),
                                     new HtmlTag("tbody").Append(
-                                        scenarios.Where(scenario =>
-                                                scenario.GetStoryText() == scenariosWithSameStory.Key.Story && scenario.FileName == scenariosWithSameStory.Key.FileName)
+                                        testTimesScenarios.Where(scenario =>
+                                                scenario.GetStoryText() == testTimesScenariosWithSameStory.Key.Story && scenario.FileName == testTimesScenariosWithSameStory.Key.FileName)
                                             .GroupBy(scenario => scenario.GetScenarioText())
-                                            .Select(sameScenarios =>
+                                            .Select(testTimesSameScenarios =>
                                             {
-                                                var groupedByDistinctScenarioText =
-                                                    sameScenarios.ToList();
+                                                var testTimesGroupedByDistinctScenarioText =
+                                                    testTimesSameScenarios.ToList();
                                                 return new HtmlTag("tr").Append(
-                                                    new HtmlTag("td").AppendText(groupedByDistinctScenarioText
+                                                    new HtmlTag("td").AppendText(testTimesGroupedByDistinctScenarioText
                                                         .FirstOrDefault()
                                                         ?.ScenarioText.Scenario),
-                                                    new HtmlTag("td").AppendText(groupedByDistinctScenarioText
+                                                    new HtmlTag("td").AppendText(testTimesGroupedByDistinctScenarioText
                                                         .Min(scenario => scenario.TimeTaken).ToPrettyFormat()),
                                                     new HtmlTag("td").AppendText(
                                                         new TimeSpan(Convert.ToInt64(
-                                                            groupedByDistinctScenarioText.Average(scenario =>
+                                                            testTimesGroupedByDistinctScenarioText.Average(scenario =>
                                                                 scenario.TimeTaken.Ticks))).ToPrettyFormat()),
-                                                    new HtmlTag("td").AppendText(groupedByDistinctScenarioText
+                                                    new HtmlTag("td").AppendText(testTimesGroupedByDistinctScenarioText
                                                         .Max(scenario => scenario.TimeTaken).ToPrettyFormat())
                                                 );
                                             })
@@ -256,15 +244,15 @@ namespace BDTest.ReportGenerator.Builders
             );
         }
 
+        private static List<Scenario> FlattenBatchScenarios(IEnumerable<List<Scenario>> scenarioBatched)
+        {
+            return scenarioBatched.SelectMany(it => it).Where(scenario => scenario.Status == Status.Passed).ToList();
+        }
+
         private HtmlTag BuildBodyWithStories()
         {
             return new HtmlTag("body").Append(
-                new HtmlTag("div").AddClass("box").Append(
-                    new HtmlTag("h3").AppendText("Summary"),
-                    BuildSummaryBox(),
-                    BuildTimerBox(),
-                    BuildChart()
-                ),
+                BuildHeaderBoxes(),
                 BuildWarnings(),
                 new HtmlTag("p").Append(
                     BuildStorySection()
@@ -278,15 +266,20 @@ namespace BDTest.ReportGenerator.Builders
             );
         }
 
+        private HtmlTag BuildHeaderBoxes()
+        {
+            return new HtmlTag("div").AddClass("box").Append(
+                new HtmlTag("h3").AppendText("Summary"),
+                BuildSummaryBox(),
+                BuildTimerBox(),
+                BuildChart()
+            );
+        }
+
         private HtmlTag BuildBodyWithoutStories()
         {
             return new HtmlTag("body").Append(
-                new HtmlTag("div").AddClass("box").Append(
-                    new HtmlTag("h3").AppendText("Summary"),
-                    BuildSummaryBox(),
-                    BuildTimerBox(),
-                    BuildChart()
-                ),
+                BuildHeaderBoxes(),
                 BuildWarnings(),
                 new HtmlTag("p").Append(
                     BuildScenariosSection(_scenarios)
@@ -302,8 +295,11 @@ namespace BDTest.ReportGenerator.Builders
 
         private HtmlTag BuildWarnings()
         {
-            var warningsNonExecutedTests = _warnings.NonExecutedTests;
-            if(!warningsNonExecutedTests.Any()) return HtmlTag.Empty();
+            var warningsNonExecutedTests = _warnings.NonExecutedTests.ToList();
+            if (!warningsNonExecutedTests.Any())
+            {
+                return HtmlTag.Empty();
+            }
 
             return new HtmlTag("details").Append(
                 new HtmlTag("summary").AddClass("canToggle").AppendText("Tests Not Executed"),
@@ -311,8 +307,8 @@ namespace BDTest.ReportGenerator.Builders
                     new HtmlTag("table").Append(
                         new HtmlTag("thead").Append(
                             new HtmlTag("tr").Append(
-                                new HtmlTag("th").AppendText("Story"),
-                                new HtmlTag("th").AppendText("Scenario"),
+                                HtmlReportPrebuilt.StoryHeader,
+                                HtmlReportPrebuilt.ScenarioHeader,
                                 new HtmlTag("th").AppendText("Parameters")
                             )
                         ),
@@ -332,7 +328,10 @@ namespace BDTest.ReportGenerator.Builders
 
         private HtmlTag BuildTimerBox()
         {
-            if (_testTimer == null) return new HtmlTag("br");
+            if (_testTimer == null)
+            {
+                return new HtmlTag("br");
+            }
 
             return new HtmlTag("table").Append(
                 new HtmlTag("thead").Append(
@@ -357,13 +356,12 @@ namespace BDTest.ReportGenerator.Builders
             return new HtmlTag("table").Append(
                 new HtmlTag("thead").Append(
                     new HtmlTag("tr").Append(
-                        new HtmlTag("th").AppendText("Stories"),
-                        new HtmlTag("th").AppendText("Scenarios"),
+                        HtmlReportPrebuilt.StoriesHeader,
+                        HtmlReportPrebuilt.ScenariosHeader,
                         new HtmlTag("th").Append(
                             new HtmlTag("div").Append(
                                 HtmlReportPrebuilt.PassedIcon
                             ),
-                            
                             new HtmlTag("input").Attr("type", "checkbox").Attr("checked", "checked").Id("Passed")
                         ),
                         new HtmlTag("th").Append(
@@ -411,7 +409,6 @@ namespace BDTest.ReportGenerator.Builders
             _storiesBuiltCounter++;
             var scenarios = enumerableScenarios.ToList();
             var storyText = scenarios.FirstOrDefault()?.GetStoryText();
-            Console.WriteLine($"Scenario text output is: {storyText}");
 
             return
                 new HtmlTag("div").Append(
@@ -422,8 +419,8 @@ namespace BDTest.ReportGenerator.Builders
                         new HtmlTag("table").Append(
                             new HtmlTag("thead").Append(
                                 new HtmlTag("tr").Append(
-                                    new HtmlTag("th").AppendText("Status"),
-                                    new HtmlTag("th").AppendText("Scenarios"),
+                                    HtmlReportPrebuilt.StatusHeader,
+                                    HtmlReportPrebuilt.ScenariosHeader,
                                     new HtmlTag("th").Append(
                                         new HtmlTag("div").Append(
                                             HtmlReportPrebuilt.PassedIcon
@@ -449,9 +446,9 @@ namespace BDTest.ReportGenerator.Builders
                                         ),
                                         new HtmlTag("input").Attr("type", "checkbox").Attr("checked", "checked").Id($"NotImplemented{_storiesBuiltCounter}")
                                     ),
-                                    new HtmlTag("th").AppendText("Duration"),
-                                    new HtmlTag("th").AppendText("Start"),
-                                    new HtmlTag("th").AppendText("End")
+                                    HtmlReportPrebuilt.DurationHeader,
+                                    HtmlReportPrebuilt.StartHeader,
+                                    HtmlReportPrebuilt.EndHeader
                                 )
                             ),
                             new HtmlTag("tbody").Append(
@@ -496,7 +493,7 @@ namespace BDTest.ReportGenerator.Builders
                                     BuildScenariosSection(scenarios)
                                 )
                             )
-                        ), 
+                        ),
                         BuildChart()
                     )
                 );
@@ -517,11 +514,11 @@ namespace BDTest.ReportGenerator.Builders
                 new HtmlTag("table").Append(
                     new HtmlTag("thead").Append(
                         new HtmlTag("tr").Append(
-                            new HtmlTag("th").AppendText("Scenario"),
-                            new HtmlTag("th").AppendText("Status"),
-                            new HtmlTag("th").AppendText("Duration"),
-                            new HtmlTag("th").AppendText("Start"),
-                            new HtmlTag("th").AppendText("End")
+                            HtmlReportPrebuilt.ScenarioHeader,
+                            HtmlReportPrebuilt.StatusHeader,
+                            HtmlReportPrebuilt.DurationHeader,
+                            HtmlReportPrebuilt.StartHeader,
+                            HtmlReportPrebuilt.EndHeader
                         )
                     ),
                     new HtmlTag("tbody").Append(
@@ -534,7 +531,6 @@ namespace BDTest.ReportGenerator.Builders
         private HtmlTag BuildScenario(Scenario scenario)
         {
             var scenarioText = scenario.GetScenarioText();
-            Console.WriteLine($"Scenario text output is: {scenarioText}");
 
             return new HtmlTag("tr").AddClass(HtmlReportPrebuilt.GetStatus(scenario) + _storiesBuiltCounter).AddClass(HtmlReportPrebuilt.GetStatus(scenario)).Append(
                 new HtmlTag("td").Append(
@@ -564,7 +560,7 @@ namespace BDTest.ReportGenerator.Builders
             );
         }
 
-        private HtmlTag[] AddStylesheets()
+        private static IEnumerable<HtmlTag> AddStylesheets()
         {
             return new[]
             {
@@ -576,16 +572,16 @@ namespace BDTest.ReportGenerator.Builders
             };
         }
 
-        private HtmlTag BuildSteps(List<Step> steps)
+        private static HtmlTag BuildSteps(List<Step> steps)
         {
             return new HtmlTag("table").Append(
                 new HtmlTag("thead").Append(
                     new HtmlTag("tr").Append(
-                        new HtmlTag("th").AppendText("Step"),
-                        new HtmlTag("th").AppendText("Status"),
-                        new HtmlTag("th").AppendText("Duration"),
-                        new HtmlTag("th").AppendText("Start"),
-                        new HtmlTag("th").AppendText("End")
+                        HtmlReportPrebuilt.StepHeader,
+                        HtmlReportPrebuilt.StatusHeader,
+                        HtmlReportPrebuilt.DurationHeader,
+                        HtmlReportPrebuilt.StartHeader,
+                        HtmlReportPrebuilt.EndHeader
                     )
                 ),
                 new HtmlTag("tbody").Append(
@@ -594,7 +590,7 @@ namespace BDTest.ReportGenerator.Builders
             );
         }
 
-        private HtmlTag BuildStep(Step step)
+        private static HtmlTag BuildStep(Step step)
         {
             var expandedStepInfo = BuildStepExpandedInfo(step);
             HtmlTag stepEntry;
@@ -631,7 +627,7 @@ namespace BDTest.ReportGenerator.Builders
             ).Style("margin-left", "25px");
         }
 
-        private HtmlTag BuildStepExpandedInfo(Step step)
+        private static HtmlTag BuildStepExpandedInfo(Step step)
         {
             HtmlTag exceptionTag;
 
@@ -674,7 +670,7 @@ namespace BDTest.ReportGenerator.Builders
             return returnTag;
         }
 
-        private HtmlTag BuildHead()
+        private static HtmlTag BuildHead()
         {
             return new HtmlTag("head")
                 .Append(
@@ -684,13 +680,13 @@ namespace BDTest.ReportGenerator.Builders
                 .Append(AddStylesheets());
         }
 
-        private HtmlTag BuildFooter()
+        private static HtmlTag BuildFooter()
         {
             return new HtmlTag("div").AddClass("footer").AppendText("Powered by ")
                     .AppendHtml("<a href=\"https://github.com/thomhurst/BDTest\">BDTest</a>");
         }
 
-        private HtmlTag[] BuildJavascript(int storiesCount)
+        private IEnumerable<HtmlTag> BuildJavascript(int storiesCount)
         {
             var list = new List<HtmlTag>
             {
@@ -703,7 +699,7 @@ namespace BDTest.ReportGenerator.Builders
             return list.ToArray();
         }
 
-        private List<HtmlTag> BuildChartJavascript(int storiesCount)
+        private IEnumerable<HtmlTag> BuildChartJavascript(int storiesCount)
         {
             var chartJs = new List<HtmlTag>();
             var htmlTag = new HtmlTag("script").Attr("type", "text/javascript").Encoded(false).AppendText(
@@ -726,7 +722,7 @@ namespace BDTest.ReportGenerator.Builders
             return chartJs;
         }
 
-        private object BuildChartScenarioStatusData(int i)
+        private string BuildChartScenarioStatusData(int i)
         {
             var scenarios = i == 0 ? _scenarios : _scenarios.Where(scenario => scenario.GetStoryText() == _stories[i - 1]).ToList();
 
@@ -738,13 +734,13 @@ namespace BDTest.ReportGenerator.Builders
             return $"['Passed', {passed}], ['Failed', {failed}], ['Inconclusive', {inconclusive}], ['Not Implemented', {notImplemented}]";
         }
 
-        private object BuildChartScenarioTimesData(int i)
+        private string BuildChartScenarioTimesData(int i)
         {
             var scenarios = i == 0 ? _scenarios : _scenarios.Where(scenario => scenario.GetStoryText() == _stories[i - 1]).ToList();
 
             var stringBuilder = new List<string>();
 
-            foreach(var scenario in scenarios)
+            foreach (var scenario in scenarios)
             {
                 stringBuilder.Add($"['{scenario.GetScenarioText()}', {scenario.TimeTaken.Ticks}]");
             }

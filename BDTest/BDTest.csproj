@@ -37,6 +37,12 @@
     <PackageReference Include="Newtonsoft.Json" Version="12.0.1" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Reference Include="System">
+      <HintPath>System</HintPath>
+    </Reference>
+  </ItemGroup>
+
   <Target Name="BDTestClean" AfterTargets="Clean">
     <Exec Command="del &quot;$(TargetDir)Report - All Scenarios - *&quot; /q &gt;nul 2&gt;&amp;1&#xD;&#xA;del &quot;$(TargetDir)Report - By Story - *&quot; /q &gt;nul 2&gt;&amp;1&#xD;&#xA;del &quot;$(TargetDir)test_data - *&quot; /q &gt;nul 2&gt;&amp;1&#xD;&#xA;del &quot;$(TargetDir)Warnings.json&quot; /q &gt;nul 2&gt;&amp;1" />
   </Target>

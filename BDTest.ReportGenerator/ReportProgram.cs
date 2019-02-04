@@ -14,10 +14,10 @@ using Newtonsoft.Json;
 
 namespace BDTest.ReportGenerator
 {
-    internal class ReportProgram
+    internal static class ReportProgram
     {
-        public static string ResultDirectory;
-        public static string Args;
+        public static string ResultDirectory { get; private set; }
+        public static string Args { get; private set; }
 
         private static void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
         {
@@ -33,8 +33,6 @@ namespace BDTest.ReportGenerator
             ResultDirectory = args.FirstOrDefault(it => it.StartsWith(WriteOutput.ResultDirectoryArgumentName))?.Replace(WriteOutput.ResultDirectoryArgumentName, "");
 
             SetSettingsFromArgs(args);
-
-            Console.WriteLine($"Results Directory is: {ResultDirectory}");
 
             if (ResultDirectory == null)
             {
@@ -108,21 +106,23 @@ namespace BDTest.ReportGenerator
 
             BDTestSettings.JsonDataFilename = GetArgument(args, WriteOutput.JsonDataFilenameArgumentName);
 
-            if (!string.IsNullOrWhiteSpace(BDTestSettings.PersistentResultsDirectory))
+            if (string.IsNullOrWhiteSpace(BDTestSettings.PersistentResultsDirectory))
             {
-                try
-                {
-                    Directory.CreateDirectory(BDTestSettings.PersistentResultsDirectory);
-                }
-                catch (Exception e)
-                {
-                    File.WriteAllText(Path.Combine(ResultDirectory, "BDTest - Persistent Directory Error.txt"), e.StackTrace);
-                    BDTestSettings.PersistentResultsDirectory = null;
-                }
+                return;
+            }
+
+            try
+            {
+                Directory.CreateDirectory(BDTestSettings.PersistentResultsDirectory);
+            }
+            catch (Exception e)
+            {
+                File.WriteAllText(Path.Combine(ResultDirectory, "BDTest - Persistent Directory Error.txt"), e.StackTrace);
+                BDTestSettings.PersistentResultsDirectory = null;
             }
         }
 
-        private static string GetArgument(string[] args, string argumentName)
+        private static string GetArgument(IEnumerable<string> args, string argumentName)
         {
             var argument = args.FirstOrDefault(it => it.StartsWith(argumentName))?.Replace(argumentName, "");
 
@@ -144,12 +144,6 @@ namespace BDTest.ReportGenerator
         {
             File.WriteAllText(Path.Combine(ResultDirectory, BDTestSettings.XmlDataFilename ?? FileNames.TestDataXml),
                 JsonConvert.DeserializeXmlNode(jsonData, "TestData").ToXmlString());
-
-            //            if (!string.IsNullOrWhiteSpace(PersistentStorage))
-            //            {
-            //                File.Copy(Path.Combine(ResultDirectory, FileNames.TestDataXml),
-            //                    Path.Combine(PersistentStorage, FileNames.TestDataXml));
-            //            }
         }
 
         private static void DeleteExistingFiles(params string[] filePaths)
@@ -162,15 +156,18 @@ namespace BDTest.ReportGenerator
 
         private static void DeleteExistingFile(string path)
         {
-            if (!File.Exists(path)) return;
+            if (!File.Exists(path))
+            {
+                return;
+            }
 
             try
             {
                 File.Delete(path);
             }
-            catch (Exception e)
+            catch (Exception)
             {
-                Console.WriteLine(e);
+                // ignored
             }
         }
 
@@ -181,7 +178,13 @@ namespace BDTest.ReportGenerator
                 PreserveReferencesHandling = PreserveReferencesHandling.Objects,
                 Error = (se, ev) => { ev.ErrorContext.Handled = true; }
             };
-            var scenariosFolder = Directory.GetDirectories(resultDirectory, FileNames.Scenarios).FirstOrDefault() ?? throw new Exception($"Can't find '{FileNames.Scenarios} folder in directory {resultDirectory}");
+
+            var scenariosFolder = Directory.GetDirectories(resultDirectory, FileNames.Scenarios).FirstOrDefault();
+
+            if (scenariosFolder == null)
+            {
+                throw new ArgumentNullException(nameof(scenariosFolder), $"Can't find '{FileNames.Scenarios} folder in directory {resultDirectory}");
+            }
 
             var scenarios = Directory.GetFiles(scenariosFolder).Select(scenarioFile =>
                 JsonConvert.DeserializeObject<Scenario>(File.ReadAllText(scenarioFile), settings));
@@ -205,7 +208,10 @@ namespace BDTest.ReportGenerator
         {
             var enumerable = scenarios.ToList();
 
-            if (enumerable.Count == 0) return new TestTimer();
+            if (enumerable.Count == 0)
+            {
+                return new TestTimer();
+            }
 
             var testTimer = new TestTimer
             {

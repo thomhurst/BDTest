@@ -30,7 +30,7 @@ namespace BDTest.Test.Steps
             var fieldInfo = type.GetField(stepType.ToString());
 
             var attributes = fieldInfo.GetCustomAttributes(
-                typeof(EnumStringValueAttribute), false) as EnumStringValueAttribute[] ?? new EnumStringValueAttribute[] {};
+                                 typeof(EnumStringValueAttribute), false) as EnumStringValueAttribute[] ?? new EnumStringValueAttribute[] { };
 
             return attributes.FirstOrDefault()?.StringValue;
         }

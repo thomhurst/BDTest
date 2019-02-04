@@ -12,19 +12,36 @@ namespace BDTest.ReportGenerator
     {
         public static string ToPrettyFormat(this TimeSpan span)
         {
-            if (span == TimeSpan.Zero) return "< 1 ms";
+            if (span == TimeSpan.Zero)
+            {
+                return "< 1 ms";
+            }
 
             var sb = new List<string>();
             if (span.Days > 0)
+            {
                 sb.Add($"{span.Days} day{(span.Days > 1 ? "s" : string.Empty)} ");
+            }
+
             if (span.Hours > 0)
+            {
                 sb.Add($"{span.Hours} hour{(span.Hours > 1 ? "s" : string.Empty)} ");
+            }
+
             if (span.Minutes > 0)
+            {
                 sb.Add($"{span.Minutes} minute{(span.Minutes > 1 ? "s" : string.Empty)} ");
+            }
+
             if (span.Seconds > 0)
+            {
                 sb.Add($"{span.Seconds} second{(span.Seconds > 1 ? "s" : string.Empty)} ");
+            }
+
             if (span.Milliseconds > 0)
+            {
                 sb.Add($"{span.Milliseconds} ms");
+            }
 
             var joinedResult = string.Join(" | ", sb);
             return string.IsNullOrWhiteSpace(joinedResult) ? "< 1 ms" : joinedResult;
@@ -62,10 +79,10 @@ namespace BDTest.ReportGenerator
         public static double GetFlakinessPercentage(this IEnumerable<Scenario> scenarios)
         {
             var enumerable = scenarios.ToList();
-            var enums = (Status[]) Enum.GetValues(typeof(Status));
+            var enums = (Status[])Enum.GetValues(typeof(Status));
 
             Enum.TryParse(enums.OrderByDescending(it => enumerable.Count(scenario => scenario.Status == it)).ToString(), out Status maxEnum);
-            
+
             double count = enumerable.Count(scenario => scenario.Status == maxEnum);
             var percentage = (count / enumerable.Count()) * 100;
             if (percentage == 0)

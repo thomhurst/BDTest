@@ -18,9 +18,7 @@ namespace BDTest.Test.Steps
             TestDetails = new TestDetails(callerMember, callerFile, Guid.NewGuid());
         }
 
-        
-
-        internal StepBuilder(List<Step> previousSteps, Expression<Action> action, TestDetails testDetails)
+        protected StepBuilder(List<Step> previousSteps, Expression<Action> action, TestDetails testDetails)
         {
             TestDetails = testDetails;
             StoryText = testDetails.StoryText;

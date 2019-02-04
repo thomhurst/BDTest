@@ -5,7 +5,7 @@
         <id>BDTest.ReportGenerator</id>
 
         <!-- The package version number that is used when resolving dependencies -->
-        <version>1.0.21</version>
+        <version>###version###</version>
 
         <!-- Authors contain text that appears directly on the gallery -->
         <authors>Tom Longhurst</authors>
@@ -46,7 +46,7 @@
         <summary>A Report Generator for BDTest</summary>
 
         <!-- Copyright information -->
-        <copyright>Copyright ©2019 Tom Longhurst</copyright>
+        <copyright>Copyright Â©2019 Tom Longhurst</copyright>
 
         <!-- Tags appear in the gallery and can be used for tag searches -->
         <tags>test tdd bdd testing json html xml data report</tags>
@@ -54,7 +54,7 @@
         <!-- Dependencies are automatically installed when the package is installed -->
         <dependencies>
             <dependency id="HtmlTags.AspNetCore" version="7.0.3" />
-			<dependency id="BDTest" version="1.0.21" />
+			<dependency id="BDTest" version="###version###" />
         </dependencies>
     </metadata>
 

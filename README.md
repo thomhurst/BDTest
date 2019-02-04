@@ -1,16 +1,18 @@
 # BDTest
-### A testing framework for .NET Core 2.0+
+## A testing framework for .NET Core 2.0+
 
 ## About
+
 BDTest is a testing framework. It can be used with other frameworks (such as MSTest, xUnit or NUnit) or standalone.
 The examples below will use attributes (such as `[Test]`) from NUnit.
 
-## Installation
+### Installation
+
 Install via Nuget > `Install-Package BDTest`
 
-## Usage
-Tests can be constructed either by extending from a base class, or by using the a test builder object.
+### Usage
 
+Tests can be constructed either by extending from a base class, or by using the a test builder object.
 
 Extending from `BDTestBase`
 
@@ -45,6 +47,7 @@ public class MyTests
 ### Automatic Context Construction
 
 #### Lambda Syntax
+
 Construction of your TestContext using lambda syntax
 
 ```csharp
@@ -63,7 +66,6 @@ public class MyTests : BDTestBase
 ```
 
 #### NUnit
-Install via Nuget > `Install-Package BDTest.NUnit`
 
 Instead of extending from `BDTestBase` extend from `NUnitBDTestBase` and pass the type of your Context.
 Your context will be constructed for each test independently.
@@ -84,16 +86,18 @@ Access this using the `Context` property. See below for example.
     }
 ```
 
- - Your TestContext will be automatically constructed and injected in via the lambda
- - Your TestContext should have a public constructor with 0 parameters
+- Your TestContext will be automatically constructed and injected in via the lambda
+- Your TestContext should have a public constructor with 0 parameters
 
 ### Thread Safety Parallelization
+
 In order to keep all tests thread safe and have the ability to run all in parallel:
--	Use the `NUnitBDTestBase<>` base class OR `WithContext<TestContext>(...)` syntax as above
--	Do not use static variables/fields/properties in your tests
--	Do not share fields/properties in your test class - All variables should be populated as new for each test - Which the Context construction can take care of
+- Use the `NUnitBDTestBase<>` base class OR `WithContext<TestContext>(...)` syntax as above
+- Do not use static variables/fields/properties in your tests
+- Do not share fields/properties in your test class - All variables should be populated as new for each test - Which the Context construction can take care of
 
 ## Best Practice
+
 BDTest enforces best practice: 
 - Tests MUST contain a `Given` + `When` + `Then` and executed with a `BDTest`
 - Tests MUST start with a `Given`
@@ -104,8 +108,10 @@ BDTest enforces best practice:
 	- Off of a `Then` you can have `And` or `BDTest`
 	  - Off of an `And` you can  have `And` or `BDTest`
 
-## Attributes
-### StoryText
+### Attributes
+
+#### StoryText
+
 Annotate your test classes with a `[StoryText]` attribute
 
 ```csharp
@@ -118,7 +124,8 @@ public class MyTests : BDTestBase
 }
 ```
 
-### Scenario Text
+#### Scenario Text
+
 Annotate your tests with a `[ScenarioText]` attribute
 
 ```csharp
@@ -134,7 +141,8 @@ public void Test1()
 }
 ```
 
-### Step Text
+#### Step Text
+
 Annotate your steps/methods with a `[StepText]` attribute
 
 ```csharp
@@ -145,7 +153,7 @@ public void Action2()
 }
 ```
 
-### Step Text (with parameters)
+#### Step Text (with parameters)
 
 Use parameter indexes to substitute in your arguments to the steptext
 
@@ -165,25 +173,33 @@ public void TestSetName()
 }
 ```
 
-# Reports
-## Installation
+## Reports
+
+### Report Installation
+
 Install via Nuget > `Install-Package BDTest.ReportGenerator`
-## Usage
-You don't have to do anything. 
+
+### Report Usage
+
+You don't have to do anything for the standard reports! 
+
 Once the package has been installed and your tests have run, these reports should appear in your output directory automatically.
 
-## Persistent Test Data
-BDTest allows you to pass it a directory path, to persistently store test data.
+See below for extra options.
+
+### Persistant Test Data
+
+BDTest allows you to pass it a directory path, to persistantly store test data.
 Why is this useful?
 It allows us to keep a record of all our test runs, and this allows us to compare test runs.
 
-Set the directory by setting `BDTestSettings.PersistentResultsDirectory`
+Set the directory by setting `BDTestSettings.PersistantResultsDirectory`
 
 ```csharp
 [OneTimeSetUp]
-public void SetPersistentStorage()
+public void SetPersistantStorage()
 {
-    BDTestSettings.PersistentResultsDirectory = "C:\\AcceptanceTests";
+    BDTestSettings.PersistantResultsDirectory = "C:\\AcceptanceTests";
 }
 
 [Test]
@@ -193,25 +209,23 @@ public void Test()
 }
 ```
 
-This will produce a flakiness report and a test times report.
+If you set these, you will be produced a Test Time Comparison Report and a Test Flakiness Report.
 
-### Flakiness
-In your output directory after your tests have finished:
-> BDTest - Report - Flakiness - {timestamp}.html
+#### Test Flakiness
 
-Override this filename by settings `BDTest.BDTestSettings.FlakinessReportHtmlFilename = "C:\\SomeDirectory\\test-flakiness.html";`
-
-### Test Times
 In your output directory after your tests have finished:
 > BDTest - Report - Test Times Comparison - {timestamp}.html
 
-Override this filename by settings `BDTest.BDTestSettings.TestTimesReportHtmlFilename = "C:\\SomeDirectory\\test-times.html";`
+#### Test Times Comparison
 
-## Json
 In your output directory after your tests have finished:
-> BDTest - Test Data - {timestamp}.json
+> BDTest - Report - Test Times Comparison - {timestamp}.html
 
-Override this filename by settings `BDTest.BDTestSettings.JsonDataFilename = "C:\\SomeDirectory\\test-json-raw-data.json";`
+### Json
+
+In your output directory after your tests have finished:
+
+> BDTest - Test Data - {timestamp}.json
 
 <details>
 <summary>Example:</summary>
@@ -338,12 +352,11 @@ Override this filename by settings `BDTest.BDTestSettings.JsonDataFilename = "C:
 </p>
 </details>
 
+### XML
 
-## XML
 In your output directory after your tests have finished:
-> BDTest - Test Data - {timestamp}.xml
 
-Override this filename by settings `BDTest.BDTestSettings.XmlDataFilename = "C:\\SomeDirectory\\test-xml-raw-data.json";`
+> BDTest - Test Data - {timestamp}.xml
 
 <details>
 <summary>Example:</summary>
@@ -471,15 +484,14 @@ Override this filename by settings `BDTest.BDTestSettings.XmlDataFilename = "C:\
 </p>
 </details>
 
-## HTML
-### By Story
+### HTML
+
+#### By Story
+
 In your output directory after your tests have finished:
 > BDTest - Report - By Story - {timestamp}.html
 
-Override this filename by settings `BDTest.BDTestSettings.ScenariosByStoryReportHtmlFilename = "C:\\SomeDirectory\\test-stories.html";`
+#### All Scenarios
 
-### All Scenarios
 In your output directory after your tests have finished:
 > BDTest - Report - All Scenarios - {timestamp}.html
-
-Override this filename by settings `BDTest.BDTestSettings.AllScenariosReportHtmlFilename = "C:\\SomeDirectory\\test-all-scenarios.html";`

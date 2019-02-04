@@ -20,6 +20,38 @@ namespace BDTest.ReportGenerator.Builders
         public static HtmlTag NotImplementedIcon => new DivTag().AppendHtml(
             "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\">\r\n    <title>Not Implemented</title><path clip-rule=\"evenodd\" fill=\"none\" d=\"M0 0h24v24H0z\"/>\r\n    <path fill=\"#4285F4\" d=\"M22.7 19l-9.1-9.1c.9-2.3.4-5-1.5-6.9-2-2-5-2.4-7.4-1.3L9 6 6 9 1.6 4.7C.4 7.1.9 10.1 2.9 12.1c1.9 1.9 4.6 2.4 6.9 1.5l9.1 9.1c.4.4 1 .4 1.4 0l2.3-2.3c.5-.4.5-1.1.1-1.4z\"/>\r\n</svg>");
 
+        private static HtmlTag TableHeader(string title)
+        {
+            return new HtmlTag("th").AppendText(title);
+        }
+
+        public static HtmlTag StoryHeader => TableHeader("Story");
+        public static HtmlTag ScenarioHeader => TableHeader("Scenario");
+        public static HtmlTag StepHeader => TableHeader("Step");
+        public static HtmlTag StatusHeader => TableHeader("Status");
+        public static HtmlTag StoriesHeader => TableHeader("Stories");
+        public static HtmlTag ScenariosHeader => TableHeader("Scenarios");
+        public static HtmlTag DurationHeader => TableHeader("Duration");
+        public static HtmlTag StartHeader => TableHeader("Start");
+        public static HtmlTag EndHeader => TableHeader("End");
+
+        public static HtmlTag[] StatusIconHeaders =>
+            new[]
+            {
+                new HtmlTag("th").Append(
+                    PassedIcon
+                ),
+                new HtmlTag("th").Append(
+                    FailedIcon
+                ),
+                new HtmlTag("th").Append(
+                    InconclusiveIcon
+                ),
+                new HtmlTag("th").Append(
+                    NotImplementedIcon
+                )
+            };
+
         public static string GetStatus(Scenario scenario)
         {
             return GetStatus(scenario.Status);
