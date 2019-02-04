@@ -1,6 +1,8 @@
 # BDTest
 ## A testing framework for .NET Core 2.0+
 
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/976b0c6b323b43ef94334f503af9b737)](https://www.codacy.com/app/thomhurst/BDTest?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=thomhurst/BDTest&amp;utm_campaign=Badge_Grade)
+
 ## About
 
 BDTest is a testing framework. It can be used with other frameworks (such as MSTest, xUnit or NUnit) or standalone.
