@@ -36,7 +36,7 @@ namespace BDTest.Test
                 return true;
             }
 
-            return obj.GetType() == GetType() && Equals((StoryText) obj);
+            return obj.GetType() == GetType() && Equals((StoryText)obj);
         }
 
         public override int GetHashCode()

@@ -129,7 +129,7 @@ namespace BDTest.ReportGenerator.Builders
 
             var scenarios = scenarioBatched.SelectMany(it => it).ToList();
 
-            var scenariosGroupedByStory = scenarios.GroupBy(scenario => new { scenario.StoryText?.Story, scenario.FileName});
+            var scenariosGroupedByStory = scenarios.GroupBy(scenario => new { scenario.StoryText?.Story, scenario.FileName });
 
             return new HtmlTag("body").Append(
                 new HtmlTag("div").Append(
@@ -369,7 +369,7 @@ namespace BDTest.ReportGenerator.Builders
                             new HtmlTag("div").Append(
                                 HtmlReportPrebuilt.PassedIcon
                             ),
-                            
+
                             new HtmlTag("input").Attr("type", "checkbox").Attr("checked", "checked").Id("Passed")
                         ),
                         new HtmlTag("th").Append(
@@ -501,7 +501,7 @@ namespace BDTest.ReportGenerator.Builders
                                     BuildScenariosSection(scenarios)
                                 )
                             )
-                        ), 
+                        ),
                         BuildChart()
                     )
                 );
@@ -748,7 +748,7 @@ namespace BDTest.ReportGenerator.Builders
 
             var stringBuilder = new List<string>();
 
-            foreach(var scenario in scenarios)
+            foreach (var scenario in scenarios)
             {
                 stringBuilder.Add($"['{scenario.GetScenarioText()}', {scenario.TimeTaken.Ticks}]");
             }

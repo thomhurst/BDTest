@@ -49,7 +49,7 @@ namespace BDTest.Test
 
             _reporters = new Reporters.Reporters();
             Steps = steps;
-            
+
             try
             {
                 Execute();
@@ -97,7 +97,7 @@ namespace BDTest.Test
 
         internal void Execute()
         {
-            var task = new Task( () => 
+            var task = new Task(() =>
             {
                 try
                 {

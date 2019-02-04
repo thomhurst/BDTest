@@ -23,7 +23,7 @@ namespace BDTest.Output
         public static string TestTimesReportHtmlFilenameArgumentName { get; } = "-TestTimesReportHtmlFilename=";
         public static string JsonDataFilenameArgumentName { get; } = "-JsonDataFilename=";
         public static string XmlDataFilenameArgumentName { get; } = "-XmlDataFilename=";
-   
+
 
         public static string OutputDirectory { get; } = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
         private static bool _alreadyExecuted;

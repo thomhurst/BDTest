@@ -41,7 +41,7 @@ namespace BDTest.Test
                 return true;
             }
 
-            return obj.GetType() == this.GetType() && Equals((ScenarioText) obj);
+            return obj.GetType() == this.GetType() && Equals((ScenarioText)obj);
         }
 
         public override int GetHashCode()

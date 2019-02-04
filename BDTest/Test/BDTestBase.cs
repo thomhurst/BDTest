@@ -64,6 +64,6 @@ namespace BDTest.Test
             return test.Invoke(Activator.CreateInstance<TContext>(), Activator.CreateInstance<TContext2>(), Activator.CreateInstance<TContext3>(), Activator.CreateInstance<TContext4>(), Activator.CreateInstance<TContext5>());
         }
 
-        
+
     }
 }

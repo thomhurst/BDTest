@@ -16,7 +16,7 @@ namespace BDTest.Test
         internal Expression<Action> Action { get; }
 
         [JsonProperty]
-        public  DateTime StartTime { get; private set; }
+        public DateTime StartTime { get; private set; }
 
         [JsonProperty]
         public DateTime EndTime { get; private set; }
