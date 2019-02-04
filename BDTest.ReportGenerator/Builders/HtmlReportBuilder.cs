@@ -122,18 +122,18 @@ namespace BDTest.ReportGenerator.Builders
 
         private static HtmlTag BuildFlakinessBody()
         {
-            var scenarioBatched = GetScenarioBatched();
-            var scenarios = FlattenBatchScenarios(scenarioBatched);
-            var scenariosGroupedByStory = scenarios.GroupBy(scenario => new { scenario.StoryText?.Story, scenario.FileName });
+            var flakyScenarioBatched = GetScenarioBatched();
+            var flakyScenarios = FlattenBatchScenarios(flakyScenarioBatched);
+            var flakyScenariosGroupedByStory = flakyScenarios.GroupBy(scenario => new { scenario.StoryText?.Story, scenario.FileName });
 
             return new HtmlTag("body").Append(
                 new HtmlTag("div").Append(
                     new HtmlTag("h3").AppendText("Flakiness"),
                     new HtmlTag("div").Append(
-                        scenariosGroupedByStory.Select(scenariosWithSameStory =>
+                        flakyScenariosGroupedByStory.Select(flakyScenariosWithSameStory =>
                             new HtmlTag("div").AddClass("box").Append(
                                 new HtmlTag("h4")
-                                    .AppendText($"Story: {scenariosWithSameStory.FirstOrDefault()?.GetStoryText()}"),
+                                    .AppendText($"Story: {flakyScenariosWithSameStory.FirstOrDefault()?.GetStoryText()}"),
                                 new HtmlTag("table").Append(
                                     new HtmlTag("thead").Append(
                                         new HtmlTag("tr").Append(
@@ -142,32 +142,32 @@ namespace BDTest.ReportGenerator.Builders
                                         ).Append(HtmlReportPrebuilt.StatusIconHeaders)
                                     ),
                                     new HtmlTag("tbody").Append(
-                                        scenarios.Where(scenario =>
-                                                scenario.GetStoryText() == scenariosWithSameStory.Key.Story && scenario.FileName == scenariosWithSameStory.Key.FileName)
+                                        flakyScenarios.Where(scenario =>
+                                                scenario.GetStoryText() == flakyScenariosWithSameStory.Key.Story && scenario.FileName == flakyScenariosWithSameStory.Key.FileName)
                                             .GroupBy(scenario => scenario.GetScenarioText())
-                                            .Select(sameScenarios =>
+                                            .Select(flakySameScenarios =>
                                             {
-                                                var groupedByDistinctScenarioText =
-                                                    sameScenarios.ToList();
+                                                var flakyGroupedByDistinctScenarioText =
+                                                    flakySameScenarios.ToList();
                                                 return new HtmlTag("tr").Append(
-                                                    new HtmlTag("td").AppendText(groupedByDistinctScenarioText
+                                                    new HtmlTag("td").AppendText(flakyGroupedByDistinctScenarioText
                                                         .FirstOrDefault()
                                                         ?.ScenarioText.Scenario),
                                                     new HtmlTag("td").Append(
                                                         new HtmlTag("div").AppendText(
-                                                            $"{groupedByDistinctScenarioText.GetFlakinessPercentage()}%")
+                                                            $"{flakyGroupedByDistinctScenarioText.GetFlakinessPercentage()}%")
                                                     ),
                                                     new HtmlTag("td").AppendText(
-                                                        $"{groupedByDistinctScenarioText.GetCount(Status.Passed)} / {groupedByDistinctScenarioText.Count}"
+                                                        $"{flakyGroupedByDistinctScenarioText.GetCount(Status.Passed)} / {flakyGroupedByDistinctScenarioText.Count}"
                                                     ),
                                                     new HtmlTag("td").AppendText(
-                                                        $"{groupedByDistinctScenarioText.GetCount(Status.Failed)} / {groupedByDistinctScenarioText.Count}"
+                                                        $"{flakyGroupedByDistinctScenarioText.GetCount(Status.Failed)} / {flakyGroupedByDistinctScenarioText.Count}"
                                                     ),
                                                     new HtmlTag("td").AppendText(
-                                                        $"{groupedByDistinctScenarioText.GetCount(Status.Inconclusive)} / {groupedByDistinctScenarioText.Count}"
+                                                        $"{flakyGroupedByDistinctScenarioText.GetCount(Status.Inconclusive)} / {flakyGroupedByDistinctScenarioText.Count}"
                                                     ),
                                                     new HtmlTag("td").AppendText(
-                                                        $"{groupedByDistinctScenarioText.GetCount(Status.NotImplemented)} / {groupedByDistinctScenarioText.Count}"
+                                                        $"{flakyGroupedByDistinctScenarioText.GetCount(Status.NotImplemented)} / {flakyGroupedByDistinctScenarioText.Count}"
                                                     )
                                                 );
                                             })
@@ -192,18 +192,18 @@ namespace BDTest.ReportGenerator.Builders
 
         private static HtmlTag BuildTestTimeComparisonBody()
         {
-            var scenarioBatched = GetScenarioBatched();
-            var scenarios = FlattenBatchScenarios(scenarioBatched);
-            var scenariosGroupedByStory = scenarios.GroupBy(scenario => new { scenario.StoryText?.Story, scenario.FileName });
+            var testTimesScenarioBatched = GetScenarioBatched();
+            var testTimesScenarios = FlattenBatchScenarios(testTimesScenarioBatched);
+            var testTimesScenariosGroupedByStory = testTimesScenarios.GroupBy(scenario => new { scenario.StoryText?.Story, scenario.FileName });
 
             return new HtmlTag("body").Append(
                 new HtmlTag("div").Append(
                     new HtmlTag("h3").AppendText("Test Times"),
                     new HtmlTag("div").Append(
-                        scenariosGroupedByStory.Select(scenariosWithSameStory =>
+                        testTimesScenariosGroupedByStory.Select(testTimesScenariosWithSameStory =>
                             new HtmlTag("div").AddClass("box").Append(
                                 new HtmlTag("h4")
-                                    .AppendText($"Story: {scenariosWithSameStory.FirstOrDefault()?.GetStoryText()}"),
+                                    .AppendText($"Story: {testTimesScenariosWithSameStory.FirstOrDefault()?.GetStoryText()}"),
                                 new HtmlTag("table").Append(
                                     new HtmlTag("thead").Append(
                                         new HtmlTag("tr").Append(
@@ -214,24 +214,24 @@ namespace BDTest.ReportGenerator.Builders
                                         )
                                     ),
                                     new HtmlTag("tbody").Append(
-                                        scenarios.Where(scenario =>
-                                                scenario.GetStoryText() == scenariosWithSameStory.Key.Story && scenario.FileName == scenariosWithSameStory.Key.FileName)
+                                        testTimesScenarios.Where(scenario =>
+                                                scenario.GetStoryText() == testTimesScenariosWithSameStory.Key.Story && scenario.FileName == testTimesScenariosWithSameStory.Key.FileName)
                                             .GroupBy(scenario => scenario.GetScenarioText())
-                                            .Select(sameScenarios =>
+                                            .Select(testTimesSameScenarios =>
                                             {
-                                                var groupedByDistinctScenarioText =
-                                                    sameScenarios.ToList();
+                                                var testTimesGroupedByDistinctScenarioText =
+                                                    testTimesSameScenarios.ToList();
                                                 return new HtmlTag("tr").Append(
-                                                    new HtmlTag("td").AppendText(groupedByDistinctScenarioText
+                                                    new HtmlTag("td").AppendText(testTimesGroupedByDistinctScenarioText
                                                         .FirstOrDefault()
                                                         ?.ScenarioText.Scenario),
-                                                    new HtmlTag("td").AppendText(groupedByDistinctScenarioText
+                                                    new HtmlTag("td").AppendText(testTimesGroupedByDistinctScenarioText
                                                         .Min(scenario => scenario.TimeTaken).ToPrettyFormat()),
                                                     new HtmlTag("td").AppendText(
                                                         new TimeSpan(Convert.ToInt64(
-                                                            groupedByDistinctScenarioText.Average(scenario =>
+                                                            testTimesGroupedByDistinctScenarioText.Average(scenario =>
                                                                 scenario.TimeTaken.Ticks))).ToPrettyFormat()),
-                                                    new HtmlTag("td").AppendText(groupedByDistinctScenarioText
+                                                    new HtmlTag("td").AppendText(testTimesGroupedByDistinctScenarioText
                                                         .Max(scenario => scenario.TimeTaken).ToPrettyFormat())
                                                 );
                                             })
@@ -252,12 +252,7 @@ namespace BDTest.ReportGenerator.Builders
         private HtmlTag BuildBodyWithStories()
         {
             return new HtmlTag("body").Append(
-                new HtmlTag("div").AddClass("box").Append(
-                    new HtmlTag("h3").AppendText("Summary"),
-                    BuildSummaryBox(),
-                    BuildTimerBox(),
-                    BuildChart()
-                ),
+                BuildHeaderBoxes(),
                 BuildWarnings(),
                 new HtmlTag("p").Append(
                     BuildStorySection()
@@ -271,15 +266,20 @@ namespace BDTest.ReportGenerator.Builders
             );
         }
 
+        private HtmlTag BuildHeaderBoxes()
+        {
+            return new HtmlTag("div").AddClass("box").Append(
+                new HtmlTag("h3").AppendText("Summary"),
+                BuildSummaryBox(),
+                BuildTimerBox(),
+                BuildChart()
+            );
+        }
+
         private HtmlTag BuildBodyWithoutStories()
         {
             return new HtmlTag("body").Append(
-                new HtmlTag("div").AddClass("box").Append(
-                    new HtmlTag("h3").AppendText("Summary"),
-                    BuildSummaryBox(),
-                    BuildTimerBox(),
-                    BuildChart()
-                ),
+                BuildHeaderBoxes(),
                 BuildWarnings(),
                 new HtmlTag("p").Append(
                     BuildScenariosSection(_scenarios)
