@@ -34,8 +34,6 @@ namespace BDTest.ReportGenerator
 
             SetSettingsFromArgs(args);
 
-            Console.WriteLine($"Results Directory is: {ResultDirectory}");
-
             if (ResultDirectory == null)
             {
                 return;
@@ -168,9 +166,9 @@ namespace BDTest.ReportGenerator
             {
                 File.Delete(path);
             }
-            catch (Exception e)
+            catch (Exception)
             {
-                Console.WriteLine(e);
+                // ignored
             }
         }
 
@@ -181,7 +179,13 @@ namespace BDTest.ReportGenerator
                 PreserveReferencesHandling = PreserveReferencesHandling.Objects,
                 Error = (se, ev) => { ev.ErrorContext.Handled = true; }
             };
-            var scenariosFolder = Directory.GetDirectories(resultDirectory, FileNames.Scenarios).FirstOrDefault() ?? throw new Exception($"Can't find '{FileNames.Scenarios} folder in directory {resultDirectory}");
+
+            var scenariosFolder = Directory.GetDirectories(resultDirectory, FileNames.Scenarios).FirstOrDefault();
+
+            if (scenariosFolder == null)
+            {
+                throw new ArgumentNullException(nameof(scenariosFolder), $"Can't find '{FileNames.Scenarios} folder in directory {resultDirectory}");
+            }
 
             var scenarios = Directory.GetFiles(scenariosFolder).Select(scenarioFile =>
                 JsonConvert.DeserializeObject<Scenario>(File.ReadAllText(scenarioFile), settings));

@@ -14,15 +14,15 @@ namespace BDTest.Output
 {
     public class WriteOutput
     {
-        public const string ResultDirectoryArgumentName = "-ResultsDirectory=";
-        public const string PersistentStorageArgumentName = "-PersistentStorageDirectory=";
-        public const string PersistentResultsCompareStartTimeArgumentName = "-PersistentResultsStartCompareTime=";
-        public const string ScenariosByStoryReportHtmlFilenameArgumentName = "-ScenariosByStoryReportHtmlFilename=";
-        public const string AllScenariosReportHtmlFilenameArgumentName = "-AllScenariosReportHtmlFilename=";
-        public const string FlakinessReportHtmlFilenameArgumentName = "-FlakinessReportHtmlFilename=";
-        public const string TestTimesReportHtmlFilenameArgumentName = "-TestTimesReportHtmlFilename=";
-        public const string JsonDataFilenameArgumentName = "-JsonDataFilename=";
-        public const string XmlDataFilenameArgumentName = "-XmlDataFilename=";
+        public static string ResultDirectoryArgumentName { get; } = "-ResultsDirectory=";
+        public static string PersistentStorageArgumentName { get; } = "-PersistentStorageDirectory=";
+        public static string PersistentResultsCompareStartTimeArgumentName { get; } = "-PersistentResultsStartCompareTime=";
+        public static string ScenariosByStoryReportHtmlFilenameArgumentName { get; } = "-ScenariosByStoryReportHtmlFilename=";
+        public static string AllScenariosReportHtmlFilenameArgumentName { get; } = "-AllScenariosReportHtmlFilename=";
+        public static string FlakinessReportHtmlFilenameArgumentName { get; } = "-FlakinessReportHtmlFilename=";
+        public static string TestTimesReportHtmlFilenameArgumentName { get; } = "-TestTimesReportHtmlFilename=";
+        public static string JsonDataFilenameArgumentName { get; } = "-JsonDataFilename=";
+        public static string XmlDataFilenameArgumentName { get; } = "-XmlDataFilename=";
    
 
         public static string OutputDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);

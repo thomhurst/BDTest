@@ -16,34 +16,34 @@ namespace BDTest.Test
         internal Expression<Action> Action { get; }
 
         [JsonProperty]
-        public  DateTime StartTime;
+        public  DateTime StartTime { get; private set; }
 
         [JsonProperty]
-        public DateTime EndTime;
+        public DateTime EndTime { get; private set; }
 
         [JsonConverter(typeof(StringEnumConverter))]
         [JsonProperty]
-        private readonly StepType _stepType;
-        private string StepPrefix => _stepType.GetValue();
+        private StepType StepType { get; }
+        private string StepPrefix => StepType.GetValue();
 
         [JsonProperty]
         public string Output { get; private set; }
 
         [JsonConverter(typeof(TimespanConverter))]
         [JsonProperty]
-        public TimeSpan TimeTaken;
+        public TimeSpan TimeTaken { get; private set; }
 
         [JsonConverter(typeof(StringEnumConverter))]
         [JsonProperty]
-        public Status Status { get; set; } = Status.Inconclusive;
+        public Status Status { get; private set; } = Status.Inconclusive;
 
         [JsonProperty]
-        public Exception Exception;
+        public Exception Exception { get; private set; }
 
         internal Step(Expression<Action> action, StepType stepType)
         {
             Action = action;
-            _stepType = stepType;
+            StepType = stepType;
             SetStepText();
         }
 

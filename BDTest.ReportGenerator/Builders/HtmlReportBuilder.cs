@@ -27,10 +27,10 @@ namespace BDTest.ReportGenerator.Builders
         private int InconclusiveCount => _scenarios.Count(it => it.Status == Status.Inconclusive);
         private int NotImplementedCount => _scenarios.Count(it => it.Status == Status.NotImplemented);
 
-        const string StatusTag = "status";
-        const string TimeTag = "time";
+        private const string StatusTag = "status";
+        private const string TimeTag = "time";
 
-        private int _storiesBuiltCounter = 0;
+        private int _storiesBuiltCounter;
         private readonly WarningsChecker _warnings;
 
         internal static HtmlReportBuilder CreateReport(DataOutputModel dataOutputModel)
@@ -120,7 +120,7 @@ namespace BDTest.ReportGenerator.Builders
             }
         }
 
-        private HtmlTag BuildFlakinessBody()
+        private static HtmlTag BuildFlakinessBody()
         {
             var scenarioBatched = Directory.GetFiles(BDTestSettings.PersistentResultsDirectory).Where(it => it.EndsWith(".json") && File.GetCreationTime(it) > BDTestSettings.PersistentResultsCompareStartTime)
                 .Select(filePath =>
@@ -197,7 +197,7 @@ namespace BDTest.ReportGenerator.Builders
             );
         }
 
-        private HtmlTag BuildTestTimeComparisonBody()
+        private static HtmlTag BuildTestTimeComparisonBody()
         {
             var scenarioBatched = Directory.GetFiles(BDTestSettings.PersistentResultsDirectory).Where(it => it.EndsWith(".json") && File.GetCreationTime(it) > BDTestSettings.PersistentResultsCompareStartTime)
                 .Select(filePath =>
@@ -302,7 +302,7 @@ namespace BDTest.ReportGenerator.Builders
 
         private HtmlTag BuildWarnings()
         {
-            var warningsNonExecutedTests = _warnings.NonExecutedTests;
+            var warningsNonExecutedTests = _warnings.NonExecutedTests.ToList();
             if(!warningsNonExecutedTests.Any()) return HtmlTag.Empty();
 
             return new HtmlTag("details").Append(
@@ -411,7 +411,6 @@ namespace BDTest.ReportGenerator.Builders
             _storiesBuiltCounter++;
             var scenarios = enumerableScenarios.ToList();
             var storyText = scenarios.FirstOrDefault()?.GetStoryText();
-            Console.WriteLine($"Scenario text output is: {storyText}");
 
             return
                 new HtmlTag("div").Append(
@@ -564,7 +563,7 @@ namespace BDTest.ReportGenerator.Builders
             );
         }
 
-        private HtmlTag[] AddStylesheets()
+        private static IEnumerable<HtmlTag> AddStylesheets()
         {
             return new[]
             {
@@ -576,7 +575,7 @@ namespace BDTest.ReportGenerator.Builders
             };
         }
 
-        private HtmlTag BuildSteps(List<Step> steps)
+        private static HtmlTag BuildSteps(List<Step> steps)
         {
             return new HtmlTag("table").Append(
                 new HtmlTag("thead").Append(
@@ -594,7 +593,7 @@ namespace BDTest.ReportGenerator.Builders
             );
         }
 
-        private HtmlTag BuildStep(Step step)
+        private static HtmlTag BuildStep(Step step)
         {
             var expandedStepInfo = BuildStepExpandedInfo(step);
             HtmlTag stepEntry;
@@ -631,7 +630,7 @@ namespace BDTest.ReportGenerator.Builders
             ).Style("margin-left", "25px");
         }
 
-        private HtmlTag BuildStepExpandedInfo(Step step)
+        private static HtmlTag BuildStepExpandedInfo(Step step)
         {
             HtmlTag exceptionTag;
 
@@ -684,13 +683,13 @@ namespace BDTest.ReportGenerator.Builders
                 .Append(AddStylesheets());
         }
 
-        private HtmlTag BuildFooter()
+        private static HtmlTag BuildFooter()
         {
             return new HtmlTag("div").AddClass("footer").AppendText("Powered by ")
                     .AppendHtml("<a href=\"https://github.com/thomhurst/BDTest\">BDTest</a>");
         }
 
-        private HtmlTag[] BuildJavascript(int storiesCount)
+        private IEnumerable<HtmlTag> BuildJavascript(int storiesCount)
         {
             var list = new List<HtmlTag>
             {
@@ -703,7 +702,7 @@ namespace BDTest.ReportGenerator.Builders
             return list.ToArray();
         }
 
-        private List<HtmlTag> BuildChartJavascript(int storiesCount)
+        private IEnumerable<HtmlTag> BuildChartJavascript(int storiesCount)
         {
             var chartJs = new List<HtmlTag>();
             var htmlTag = new HtmlTag("script").Attr("type", "text/javascript").Encoded(false).AppendText(
@@ -726,7 +725,7 @@ namespace BDTest.ReportGenerator.Builders
             return chartJs;
         }
 
-        private object BuildChartScenarioStatusData(int i)
+        private string BuildChartScenarioStatusData(int i)
         {
             var scenarios = i == 0 ? _scenarios : _scenarios.Where(scenario => scenario.GetStoryText() == _stories[i - 1]).ToList();
 
@@ -738,7 +737,7 @@ namespace BDTest.ReportGenerator.Builders
             return $"['Passed', {passed}], ['Failed', {failed}], ['Inconclusive', {inconclusive}], ['Not Implemented', {notImplemented}]";
         }
 
-        private object BuildChartScenarioTimesData(int i)
+        private string BuildChartScenarioTimesData(int i)
         {
             var scenarios = i == 0 ? _scenarios : _scenarios.Where(scenario => scenario.GetStoryText() == _stories[i - 1]).ToList();
 

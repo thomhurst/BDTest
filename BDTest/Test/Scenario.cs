@@ -24,13 +24,13 @@ namespace BDTest.Test
         private readonly Reporter _reporters;
 
         [JsonProperty]
-        public DateTime StartTime;
+        public DateTime StartTime { get; private set; }
 
         [JsonProperty]
-        public DateTime EndTime;
+        public DateTime EndTime { get; private set; }
 
         [JsonProperty]
-        public string FileName;
+        public string FileName { get; private set; }
 
         [JsonConstructor]
         private Scenario() { }
@@ -44,6 +44,8 @@ namespace BDTest.Test
             ScenarioText = testDetails.ScenarioText;
 
             FileName = testDetails.CallerFile;
+
+            Version = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString();
 
             _reporters = new Reporters.Reporters();
             Steps = steps;
@@ -63,18 +65,21 @@ namespace BDTest.Test
         public bool IsAsync { get; set; }
 
         [JsonProperty]
-        public List<Step> Steps { get; set; }
+        public string Version { get; private set; }
+
+        [JsonProperty]
+        public List<Step> Steps { get; private set; }
 
         [JsonProperty]
         public string Output { get; private set; }
 
         [JsonConverter(typeof(StringEnumConverter))]
         [JsonProperty]
-        public Status Status { get; set; } = Status.Inconclusive;
+        public Status Status { get; private set; } = Status.Inconclusive;
 
-        [JsonProperty] public StoryText StoryText;
+        [JsonProperty] public StoryText StoryText { get; private set; }
 
-        [JsonProperty] public ScenarioText ScenarioText;
+        [JsonProperty] public ScenarioText ScenarioText { get; private set; }
 
         public string GetScenarioText()
         {
@@ -88,7 +93,7 @@ namespace BDTest.Test
 
         [JsonConverter(typeof(TimespanConverter))]
         [JsonProperty]
-        public TimeSpan TimeTaken;
+        public TimeSpan TimeTaken { get; private set; }
 
         internal void Execute()
         {

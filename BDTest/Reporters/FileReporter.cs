@@ -28,13 +28,21 @@ namespace BDTest.Reporters
 
         public override void WriteStory(StoryText storyText)
         {
-            if (storyText?.Story == null) return;
+            if (storyText?.Story == null)
+            {
+                return;
+            }
+
             WriteLine(storyText.Story);
         }
 
         public override void WriteScenario(ScenarioText scenarioText)
         {
-            if (scenarioText?.Scenario == null) return;
+            if (scenarioText?.Scenario == null)
+            {
+                return;
+            }
+
             WriteLine(scenarioText.Scenario);
         }
 
