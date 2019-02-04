@@ -35,6 +35,23 @@ namespace BDTest.ReportGenerator.Builders
         public static HtmlTag StartHeader => TableHeader("Start");
         public static HtmlTag EndHeader => TableHeader("End");
 
+        public static HtmlTag[] StatusIconHeaders =>
+            new[]
+            {
+                new HtmlTag("th").Append(
+                    PassedIcon
+                ),
+                new HtmlTag("th").Append(
+                    FailedIcon
+                ),
+                new HtmlTag("th").Append(
+                    InconclusiveIcon
+                ),
+                new HtmlTag("th").Append(
+                    NotImplementedIcon
+                )
+            };
+
         public static string GetStatus(Scenario scenario)
         {
             return GetStatus(scenario.Status);

@@ -122,13 +122,8 @@ namespace BDTest.ReportGenerator.Builders
 
         private static HtmlTag BuildFlakinessBody()
         {
-            var scenarioBatched = Directory.GetFiles(BDTestSettings.PersistentResultsDirectory).Where(it => it.EndsWith(".json") && File.GetCreationTime(it) > BDTestSettings.PersistentResultsCompareStartTime)
-                .Select(filePath =>
-                    JsonConvert.DeserializeObject<DataOutputModel>(File.ReadAllText(filePath)).Scenarios)
-                .ToList();
-
-            var scenarios = scenarioBatched.SelectMany(it => it).ToList();
-
+            var scenarioBatched = GetScenarioBatched();
+            var scenarios = FlattenBatchScenarios(scenarioBatched);
             var scenariosGroupedByStory = scenarios.GroupBy(scenario => new { scenario.StoryText?.Story, scenario.FileName });
 
             return new HtmlTag("body").Append(
@@ -143,20 +138,8 @@ namespace BDTest.ReportGenerator.Builders
                                     new HtmlTag("thead").Append(
                                         new HtmlTag("tr").Append(
                                             HtmlReportPrebuilt.ScenariosHeader,
-                                            new HtmlTag("th").AppendText("Flakiness"),
-                                            new HtmlTag("th").Append(
-                                                    HtmlReportPrebuilt.PassedIcon
-                                            ),
-                                            new HtmlTag("th").Append(
-                                                    HtmlReportPrebuilt.FailedIcon
-                                            ),
-                                            new HtmlTag("th").Append(
-                                                    HtmlReportPrebuilt.InconclusiveIcon
-                                            ),
-                                            new HtmlTag("th").Append(
-                                                    HtmlReportPrebuilt.NotImplementedIcon
-                                            )
-                                        )
+                                            new HtmlTag("th").AppendText("Flakiness")
+                                        ).Append(HtmlReportPrebuilt.StatusIconHeaders)
                                     ),
                                     new HtmlTag("tbody").Append(
                                         scenarios.Where(scenario =>
@@ -197,15 +180,20 @@ namespace BDTest.ReportGenerator.Builders
             );
         }
 
-        private static HtmlTag BuildTestTimeComparisonBody()
+        private static IEnumerable<List<Scenario>> GetScenarioBatched()
         {
-            var scenarioBatched = Directory.GetFiles(BDTestSettings.PersistentResultsDirectory).Where(it => it.EndsWith(".json") && File.GetCreationTime(it) > BDTestSettings.PersistentResultsCompareStartTime)
+            var scenarioBatched = Directory.GetFiles(BDTestSettings.PersistentResultsDirectory).Where(it =>
+                    it.EndsWith(".json") && File.GetCreationTime(it) > BDTestSettings.PersistentResultsCompareStartTime)
                 .Select(filePath =>
                     JsonConvert.DeserializeObject<DataOutputModel>(File.ReadAllText(filePath)).Scenarios)
                 .ToList();
+            return scenarioBatched;
+        }
 
-            var scenarios = scenarioBatched.SelectMany(it => it).Where(scenario => scenario.Status == Status.Passed).ToList();
-
+        private static HtmlTag BuildTestTimeComparisonBody()
+        {
+            var scenarioBatched = GetScenarioBatched();
+            var scenarios = FlattenBatchScenarios(scenarioBatched);
             var scenariosGroupedByStory = scenarios.GroupBy(scenario => new { scenario.StoryText?.Story, scenario.FileName });
 
             return new HtmlTag("body").Append(
@@ -254,6 +242,11 @@ namespace BDTest.ReportGenerator.Builders
                     )
                 )
             );
+        }
+
+        private static List<Scenario> FlattenBatchScenarios(IEnumerable<List<Scenario>> scenarioBatched)
+        {
+            return scenarioBatched.SelectMany(it => it).Where(scenario => scenario.Status == Status.Passed).ToList();
         }
 
         private HtmlTag BuildBodyWithStories()
@@ -369,7 +362,6 @@ namespace BDTest.ReportGenerator.Builders
                             new HtmlTag("div").Append(
                                 HtmlReportPrebuilt.PassedIcon
                             ),
-
                             new HtmlTag("input").Attr("type", "checkbox").Attr("checked", "checked").Id("Passed")
                         ),
                         new HtmlTag("th").Append(

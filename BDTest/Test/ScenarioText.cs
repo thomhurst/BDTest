@@ -5,8 +5,7 @@ namespace BDTest.Test
 {
     public class ScenarioText : IEquatable<ScenarioText>
     {
-        [JsonProperty]
-        public string Scenario { get; private set; }
+        [JsonProperty] public string Scenario { get; private set; }
 
         public ScenarioText(string scenario)
         {
@@ -21,7 +20,7 @@ namespace BDTest.Test
 
         public bool Equals(ScenarioText other)
         {
-            if (other is null)
+            if (other == null)
             {
                 return false;
             }
@@ -31,7 +30,7 @@ namespace BDTest.Test
 
         public override bool Equals(object obj)
         {
-            if (obj is null)
+            if (obj == null)
             {
                 return false;
             }
@@ -41,7 +40,7 @@ namespace BDTest.Test
                 return true;
             }
 
-            return obj.GetType() == this.GetType() && Equals((ScenarioText)obj);
+            return obj.GetType() == this.GetType() && Equals((ScenarioText) obj);
         }
 
         public override int GetHashCode()
