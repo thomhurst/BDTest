@@ -20,7 +20,7 @@ namespace BDTest.Test.Steps
 
         
 
-        internal StepBuilder(List<Step> previousSteps, Expression<Action> action, TestDetails testDetails)
+        protected internal StepBuilder(List<Step> previousSteps, Expression<Action> action, TestDetails testDetails)
         {
             TestDetails = testDetails;
             StoryText = testDetails.StoryText;

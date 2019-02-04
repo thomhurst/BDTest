@@ -11,9 +11,20 @@ namespace BDTest.Attributes
 
         public string GetStoryText()
         {
-            if (!AsA.ToLower().StartsWith("as a")) AsA = $"As a {AsA}";
-            if (!IWant.ToLower().StartsWith("i want")) IWant = $"I want {IWant}";
-            if (!SoThat.ToLower().StartsWith("so that")) SoThat = $"So that {SoThat}";
+            if (!AsA.ToLower().StartsWith("as a"))
+            {
+                AsA = $"As a {AsA}";
+            }
+
+            if (!IWant.ToLower().StartsWith("i want"))
+            {
+                IWant = $"I want {IWant}";
+            }
+
+            if (!SoThat.ToLower().StartsWith("so that"))
+            {
+                SoThat = $"So that {SoThat}";
+            }
 
             return $"{AsA}" +
                    $"{Environment.NewLine}{IWant}" +

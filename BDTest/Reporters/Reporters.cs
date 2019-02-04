@@ -39,7 +39,11 @@ namespace BDTest.Reporters
 
         public override void WriteStory(StoryText storyText)
         {
-            if (storyText?.Story == null) return;
+            if (storyText?.Story == null)
+            {
+                return;
+            }
+
             foreach (var reporter in _reporters)
             {
                 reporter.WriteStory(storyText);
@@ -48,7 +52,11 @@ namespace BDTest.Reporters
 
         public override void WriteScenario(ScenarioText scenarioText)
         {
-            if (scenarioText?.Scenario == null) return;
+            if (scenarioText?.Scenario == null)
+            {
+                return;
+            }
+
             foreach (var reporter in _reporters)
             {
                 reporter.WriteScenario(scenarioText);
