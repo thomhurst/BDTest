@@ -118,7 +118,7 @@ namespace BDTest.ReportGenerator
             BDTestSettings.PersistentResultsDirectory = GetArgument(args, WriteOutput.PersistentStorageArgumentName);
 
             var persistentCompareStartDate = GetArgument(args, WriteOutput.PersistentResultsCompareStartTimeArgumentName);
-            if (string.IsNullOrWhiteSpace(persistentCompareStartDate))
+            if (!string.IsNullOrWhiteSpace(persistentCompareStartDate))
             {
                 BDTestSettings.PersistentResultsCompareStartTime = DateTime.ParseExact(persistentCompareStartDate, "o", CultureInfo.InvariantCulture);
             }
