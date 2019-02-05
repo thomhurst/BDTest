@@ -63,6 +63,12 @@ namespace BDTest.ReportGenerator
             return scenarios.OrderBy(scenario => scenario.StartTime).First().StartTime;
         }
 
+        public static IEnumerable<Scenario> CurrentVersion(this IEnumerable<Scenario> scenarios)
+        {
+            return scenarios.Where(scenario =>
+                scenario.Version == System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString());
+        }
+
         public static DateTime GetEndDateTime(this IEnumerable<Scenario> scenarios)
         {
             return scenarios.OrderByDescending(scenario => scenario.EndTime).First().EndTime;

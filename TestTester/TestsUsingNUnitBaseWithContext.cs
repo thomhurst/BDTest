@@ -1,8 +1,5 @@
-﻿using System;
-using System.Threading;
-using BDTest.Attributes;
+﻿using BDTest.Attributes;
 using BDTest.NUnit;
-using BDTest.Test;
 using NUnit.Framework;
 using Assert = NUnit.Framework.Assert;
 
