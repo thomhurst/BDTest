@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text.Encodings.Web;
@@ -246,7 +245,7 @@ namespace BDTest.ReportGenerator.Builders
 
         private static List<Scenario> FlattenBatchScenarios(IEnumerable<List<Scenario>> scenarioBatched)
         {
-            return scenarioBatched.SelectMany(it => it).Where(scenario => scenario.Status == Status.Passed).ToList();
+            return scenarioBatched.SelectMany(it => it).Where(scenario => scenario.Status == Status.Passed).CurrentVersion().ToList();
         }
 
         private HtmlTag BuildBodyWithStories()

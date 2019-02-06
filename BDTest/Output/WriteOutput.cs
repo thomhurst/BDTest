@@ -1,10 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
-using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Reflection;
-using System.Runtime.Serialization;
 using System.Threading.Tasks;
 using BDTest.Maps;
 using BDTest.Paths;
@@ -14,32 +11,16 @@ namespace BDTest.Output
 {
     public static class WriteOutput
     {
-        public static string ResultDirectoryArgumentName { get; } = "-ResultsDirectory=";
-        public static string PersistentStorageArgumentName { get; } = "-PersistentStorageDirectory=";
-        public static string PersistentResultsCompareStartTimeArgumentName { get; } = "-PersistentResultsStartCompareTime=";
-        public static string ScenariosByStoryReportHtmlFilenameArgumentName { get; } = "-ScenariosByStoryReportHtmlFilename=";
-        public static string AllScenariosReportHtmlFilenameArgumentName { get; } = "-AllScenariosReportHtmlFilename=";
-        public static string FlakinessReportHtmlFilenameArgumentName { get; } = "-FlakinessReportHtmlFilename=";
-        public static string TestTimesReportHtmlFilenameArgumentName { get; } = "-TestTimesReportHtmlFilename=";
-        public static string JsonDataFilenameArgumentName { get; } = "-JsonDataFilename=";
-        public static string XmlDataFilenameArgumentName { get; } = "-XmlDataFilename=";
-
-
-        public static string OutputDirectory { get; } = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
         private static bool _alreadyExecuted;
         private static readonly object Lock = new object();
 
-        static WriteOutput()
-        {
-            AppDomain.CurrentDomain.ProcessExit += OutputData;
-        }
-
         public static void OutputData(object sender, EventArgs e)
         {
-            Task.WaitAll(WriteWarnings(), RunReportDll());
+            RunReportDll();
+            Task.WaitAll(WriteWarnings());
         }
 
-        public static void Initialise()
+        internal static void Initialise()
         {
             lock (Lock)
             {
@@ -49,6 +30,8 @@ namespace BDTest.Output
                 }
 
                 _alreadyExecuted = true;
+
+                AppDomain.CurrentDomain.ProcessExit += OutputData;
 
                 if (Directory.Exists(FileLocations.ScenariosDirectory))
                 {
@@ -84,19 +67,19 @@ namespace BDTest.Output
                 File.Copy(runtimeConfigFile,
                     bdTestReportRunConfigPath);
 
-                if (File.Exists(Path.Combine(OutputDirectory, "BDTest - Exception.txt")))
+                if (File.Exists(Path.Combine(FileLocations.OutputDirectory, "BDTest - Exception.txt")))
                 {
-                    File.Delete(Path.Combine(OutputDirectory, "BDTest - Exception.txt"));
+                    File.Delete(Path.Combine(FileLocations.OutputDirectory, "BDTest - Exception.txt"));
                 }
 
-                if (File.Exists(Path.Combine(OutputDirectory, "BDTest - Run Exception.txt")))
+                if (File.Exists(Path.Combine(FileLocations.OutputDirectory, "BDTest - Run Exception.txt")))
                 {
-                    File.Delete(Path.Combine(OutputDirectory, "BDTest - Run Exception.txt"));
+                    File.Delete(Path.Combine(FileLocations.OutputDirectory, "BDTest - Run Exception.txt"));
                 }
 
-                if (File.Exists(Path.Combine(OutputDirectory, "BDTest - Report Exception.txt")))
+                if (File.Exists(Path.Combine(FileLocations.OutputDirectory, "BDTest - Report Exception.txt")))
                 {
-                    File.Delete(Path.Combine(OutputDirectory, "BDTest - Report Exception.txt"));
+                    File.Delete(Path.Combine(FileLocations.OutputDirectory, "BDTest - Report Exception.txt"));
                 }
             }
         }
@@ -117,26 +100,16 @@ namespace BDTest.Output
                 }
                 catch (Exception e)
                 {
-                    File.WriteAllText(Path.Combine(OutputDirectory, "BDTest - Exception.txt"), e.StackTrace);
+                    File.WriteAllText(Path.Combine(FileLocations.OutputDirectory, "BDTest - Exception.txt"), e.StackTrace);
                 }
             });
         }
 
-        private static async Task RunReportDll()
+        private static void RunReportDll()
         {
-            await Task.Run(() =>
-            {
                 try
                 {
-                    var reportDll = Directory.CreateDirectory(OutputDirectory).GetFiles("BDTest.ReportGenerator.dll")
-                        .FirstOrDefault()?.FullName;
-
-                    if (OutputDirectory == null || reportDll == null)
-                    {
-                        return;
-                    }
-
-                    var dllArguments = $"\"{reportDll}\" \"{ResultDirectoryArgumentName}{OutputDirectory}\" \"{PersistentStorageArgumentName}{BDTestSettings.PersistentResultsDirectory}\" \"{PersistentResultsCompareStartTimeArgumentName}{BDTestSettings.PersistentResultsCompareStartTime:o}\" \"{AllScenariosReportHtmlFilenameArgumentName}{BDTestSettings.AllScenariosReportHtmlFilename}\" \"{ScenariosByStoryReportHtmlFilenameArgumentName}{BDTestSettings.ScenariosByStoryReportHtmlFilename}\" \"{FlakinessReportHtmlFilenameArgumentName}{BDTestSettings.FlakinessReportHtmlFilename}\" \"{TestTimesReportHtmlFilenameArgumentName}{BDTestSettings.TestTimesReportHtmlFilename}\" \"{JsonDataFilenameArgumentName}{BDTestSettings.JsonDataFilename}\" \"{XmlDataFilenameArgumentName}{BDTestSettings.XmlDataFilename}\" ";
+                    var dllArguments = GetDllArguments();
 
                     var process = new Process
                     {
@@ -156,9 +129,17 @@ namespace BDTest.Output
                 }
                 catch (Exception e)
                 {
-                    File.WriteAllText(Path.Combine(OutputDirectory, "BDTest - Run Exception.txt"), e.StackTrace);
+                    File.WriteAllText(Path.Combine(FileLocations.OutputDirectory, "BDTest - Run Exception.txt"), e.StackTrace);
                 }
-            });
+        }
+
+        public static string GetDllArguments()
+        {
+            var reportDll = Directory.CreateDirectory(FileLocations.OutputDirectory).GetFiles("BDTest.ReportGenerator.dll")
+                .FirstOrDefault()?.FullName;
+
+            return 
+                $"\"{reportDll}\" \"{Arguments.ResultDirectoryArgumentName}{FileLocations.OutputDirectory}\" \"{Arguments.PersistentStorageArgumentName}{BDTestSettings.PersistentResultsDirectory}\" \"{Arguments.PersistentResultsCompareStartTimeArgumentName}{BDTestSettings.PersistentResultsCompareStartTime:o}\" \"{Arguments.AllScenariosReportHtmlFilenameArgumentName}{BDTestSettings.AllScenariosReportHtmlFilename}\" \"{Arguments.ScenariosByStoryReportHtmlFilenameArgumentName}{BDTestSettings.ScenariosByStoryReportHtmlFilename}\" \"{Arguments.FlakinessReportHtmlFilenameArgumentName}{BDTestSettings.FlakinessReportHtmlFilename}\" \"{Arguments.TestTimesReportHtmlFilenameArgumentName}{BDTestSettings.TestTimesReportHtmlFilename}\" \"{Arguments.JsonDataFilenameArgumentName}{BDTestSettings.JsonDataFilename}\" \"{Arguments.XmlDataFilenameArgumentName}{BDTestSettings.XmlDataFilename}\" ";
         }
     }
 }

@@ -5,9 +5,10 @@ namespace BDTest
     public static class BDTestSettings
     {
         public static bool InterceptConsoleOutput { get; set; } = true;
-
         public static string PersistentResultsDirectory { get; set; }
         public static DateTime PersistentResultsCompareStartTime { get; set; } = DateTime.MinValue;
+        public static DateTime PrunePersistentDataOlderThan { get; set; } = DateTime.MinValue;
+        public static int PersistentFileCountToKeep { get; set; } = 365;
 
         public static string ScenariosByStoryReportHtmlFilename { get; set; }
         public static string AllScenariosReportHtmlFilename { get; set; }
@@ -15,6 +16,5 @@ namespace BDTest
         public static string TestTimesReportHtmlFilename { get; set; }
         public static string JsonDataFilename { get; set; }
         public static string XmlDataFilename { get; set; }
-
     }
 }
