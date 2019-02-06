@@ -50,11 +50,13 @@ namespace BDTest.ReportGenerator
         public static string ToXmlString(this XmlDocument xmlDocument)
         {
             using (var stringWriter = new StringWriter())
-            using (var xmlTextWriter = XmlWriter.Create(stringWriter))
             {
-                xmlDocument.WriteTo(xmlTextWriter);
-                xmlTextWriter.Flush();
-                return stringWriter.GetStringBuilder().ToString();
+                using (var xmlTextWriter = XmlWriter.Create(stringWriter))
+                {
+                    xmlDocument.WriteTo(xmlTextWriter);
+                    xmlTextWriter.Flush();
+                    return stringWriter.GetStringBuilder().ToString();
+                }
             }
         }
 

@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading;
+using System.Xml;
 using BDTest.Output;
 using BDTest.Paths;
 using BDTest.ReportGenerator.Builders;
@@ -11,6 +13,7 @@ using BDTest.ReportGenerator.Models;
 using BDTest.ReportGenerator.Utils;
 using BDTest.Test;
 using Newtonsoft.Json;
+using Formatting = Newtonsoft.Json.Formatting;
 
 namespace BDTest.ReportGenerator
 {
@@ -26,13 +29,11 @@ namespace BDTest.ReportGenerator
 
         public static void Main(string[] args)
         {
-            BDTestSettings.RunReport = false;
-
             Args = string.Join(" ", args);
 
             AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
 
-            ResultDirectory = args.FirstOrDefault(it => it.StartsWith(WriteOutput.ResultDirectoryArgumentName))?.Replace(WriteOutput.ResultDirectoryArgumentName, "");
+            ResultDirectory = args.FirstOrDefault(it => it.StartsWith(Arguments.ResultDirectoryArgumentName))?.Replace(Arguments.ResultDirectoryArgumentName, "");
 
             SetSettingsFromArgs(args);
 
@@ -95,7 +96,7 @@ namespace BDTest.ReportGenerator
                 return;
             }
 
-            var filesTooOld = Directory.GetFiles(BDTestSettings.PersistentResultsDirectory).Where(filePath => File.GetCreationTime(filePath) < BDTestSettings.PrunePersistentDataOlderThan);
+            var filesTooOld = Directory.GetFiles(BDTestSettings.PersistentResultsDirectory).Where(filePath => File.GetCreationTime(filePath) < BDTestSettings.PrunePersistentDataOlderThan).ToList();
             foreach (var fileTooOld in filesTooOld)
             {
                 File.Delete(fileTooOld);
@@ -104,7 +105,10 @@ namespace BDTest.ReportGenerator
             var filesOverLimit = Directory.GetFiles(BDTestSettings.PersistentResultsDirectory).OrderBy(File.GetCreationTime).ToList();
             var count = filesOverLimit.Count();
 
-            if (count <= BDTestSettings.PersistentFileCountToKeep) return;
+            if (count <= BDTestSettings.PersistentFileCountToKeep)
+            {
+                return;
+            }
 
             var amountToDelete = count - BDTestSettings.PersistentFileCountToKeep;
             foreach (var fileToPrune in filesOverLimit.Take(amountToDelete))
@@ -115,25 +119,25 @@ namespace BDTest.ReportGenerator
 
         private static void SetSettingsFromArgs(string[] args)
         {
-            BDTestSettings.PersistentResultsDirectory = GetArgument(args, WriteOutput.PersistentStorageArgumentName);
+            BDTestSettings.PersistentResultsDirectory = GetArgument(args, Arguments.PersistentStorageArgumentName);
 
-            var persistentCompareStartDate = GetArgument(args, WriteOutput.PersistentResultsCompareStartTimeArgumentName);
+            var persistentCompareStartDate = GetArgument(args, Arguments.PersistentResultsCompareStartTimeArgumentName);
             if (!string.IsNullOrWhiteSpace(persistentCompareStartDate))
             {
                 BDTestSettings.PersistentResultsCompareStartTime = DateTime.ParseExact(persistentCompareStartDate, "o", CultureInfo.InvariantCulture);
             }
 
-            BDTestSettings.AllScenariosReportHtmlFilename = GetArgument(args, WriteOutput.AllScenariosReportHtmlFilenameArgumentName);
+            BDTestSettings.AllScenariosReportHtmlFilename = GetArgument(args, Arguments.AllScenariosReportHtmlFilenameArgumentName);
 
-            BDTestSettings.ScenariosByStoryReportHtmlFilename = GetArgument(args, WriteOutput.ScenariosByStoryReportHtmlFilenameArgumentName);
+            BDTestSettings.ScenariosByStoryReportHtmlFilename = GetArgument(args, Arguments.ScenariosByStoryReportHtmlFilenameArgumentName);
 
-            BDTestSettings.FlakinessReportHtmlFilename = GetArgument(args, WriteOutput.FlakinessReportHtmlFilenameArgumentName);
+            BDTestSettings.FlakinessReportHtmlFilename = GetArgument(args, Arguments.FlakinessReportHtmlFilenameArgumentName);
 
-            BDTestSettings.TestTimesReportHtmlFilename = GetArgument(args, WriteOutput.TestTimesReportHtmlFilenameArgumentName);
+            BDTestSettings.TestTimesReportHtmlFilename = GetArgument(args, Arguments.TestTimesReportHtmlFilenameArgumentName);
 
-            BDTestSettings.XmlDataFilename = GetArgument(args, WriteOutput.XmlDataFilenameArgumentName);
+            BDTestSettings.XmlDataFilename = GetArgument(args, Arguments.XmlDataFilenameArgumentName);
 
-            BDTestSettings.JsonDataFilename = GetArgument(args, WriteOutput.JsonDataFilenameArgumentName);
+            BDTestSettings.JsonDataFilename = GetArgument(args, Arguments.JsonDataFilenameArgumentName);
 
             if (string.IsNullOrWhiteSpace(BDTestSettings.PersistentResultsDirectory))
             {
@@ -171,8 +175,14 @@ namespace BDTest.ReportGenerator
 
         private static void WriteXmlOutput(string jsonData)
         {
-            File.WriteAllText(Path.Combine(ResultDirectory, BDTestSettings.XmlDataFilename ?? FileNames.TestDataXml),
-                JsonConvert.DeserializeXmlNode(jsonData, "TestData").ToXmlString());
+            try
+            {
+                JsonConvert.DeserializeXNode(jsonData, "TestData", true, true).WriteTo(new XmlTextWriter(Path.Combine(ResultDirectory, BDTestSettings.XmlDataFilename ?? FileNames.TestDataXml), Encoding.UTF8));
+            }
+            catch (Exception e)
+            {
+                File.WriteAllText(Path.Combine(ResultDirectory, "BDTest - XML Write Exception.txt"), e.Message + Environment.NewLine + e.StackTrace);
+            }
         }
 
         private static void DeleteExistingFiles(params string[] filePaths)

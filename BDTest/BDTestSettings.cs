@@ -4,9 +4,7 @@ namespace BDTest
 {
     public static class BDTestSettings
     {
-        public static bool RunReport { get; set; } = true;
         public static bool InterceptConsoleOutput { get; set; } = true;
-
         public static string PersistentResultsDirectory { get; set; }
         public static DateTime PersistentResultsCompareStartTime { get; set; } = DateTime.MinValue;
         public static DateTime PrunePersistentDataOlderThan { get; set; } = DateTime.MinValue;
