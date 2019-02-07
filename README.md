@@ -59,9 +59,9 @@ public class MyTests : BDTestBase
     [Test]
     public void Test1() {
         WithContext<TestContext>(context =>
-            Given(() => Action1())
-            .When(() => Action2())
-            .Then(() => Action3())
+            Given(() => Action1(context))
+            .When(() => Action2(context))
+            .Then(() => Action3(context))
             .BDTest()
         );
     }
