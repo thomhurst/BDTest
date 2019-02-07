@@ -68,6 +68,8 @@ public class MyTests : BDTestBase
 }
 ```
 
+- Your TestContext will be automatically constructed and injected in via the lambda
+
 #### NUnit
 
 Instead of extending from `BDTestBase` extend from `NUnitBDTestBase` and pass the type of your Context.
@@ -89,8 +91,7 @@ Access this using the `Context` property. See below for example.
     }
 ```
 
-- Your TestContext will be automatically constructed and injected in via the lambda
-- Your TestContext should have a public constructor with 0 parameters
+For either of these methods, your TestContext should have a public constructor with 0 parameters. Otherwise, check out the source code for NUnitBDTestBase to set up your own version with extra construction logic.
 
 ### Thread Safety Parallelization
 
