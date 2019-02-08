@@ -14,6 +14,11 @@ namespace BDTest.Test
             return new Given(step, callerMember, callerFile);
         }
 
+        public Given Given(Expression<Func<Task>> step, [CallerMemberName] string callerMember = null, [CallerFilePath] string callerFile = null)
+        {
+            return new Given(step, callerMember, callerFile);
+        }
+
         public void WithContext<TContext>(Func<TContext, Scenario> test) where TContext : new()
         {
             test.Invoke(Activator.CreateInstance<TContext>());
