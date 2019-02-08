@@ -13,7 +13,7 @@ namespace BDTest.Test
 {
     public class Step
     {
-        internal Expression<Action> Action { get; }
+        internal Runnable Runnable { get; }
 
         [JsonProperty]
         public DateTime StartTime { get; private set; }
@@ -40,9 +40,9 @@ namespace BDTest.Test
         [JsonProperty]
         public Exception Exception { get; private set; }
 
-        internal Step(Expression<Action> action, StepType stepType)
+        internal Step(Runnable runnable, StepType stepType)
         {
-            Action = action;
+            Runnable = runnable;
             StepType = stepType;
             SetStepText();
         }
@@ -58,7 +58,16 @@ namespace BDTest.Test
 
         public void SetStepText()
         {
-            var methodCallExpression = (Action.Body as MethodCallExpression);
+            MethodCallExpression methodCallExpression;
+            if (Runnable.Action != null)
+            {
+                methodCallExpression = (Runnable.Action.Body as MethodCallExpression);
+            }
+            else
+            {
+                methodCallExpression = (Runnable.Task.Body as MethodCallExpression);
+            }
+
             var methodInfo = methodCallExpression?.Method;
             var arguments = methodCallExpression?.Arguments.Select(it => (it as ConstantExpression)?.Value);
 
@@ -86,12 +95,12 @@ namespace BDTest.Test
 
         public void Execute()
         {
-            var task = new Task(() =>
+            var task = new Task(async () =>
             {
                 try
                 {
                     StartTime = DateTime.Now;
-                    Action.Compile().Invoke();
+                    await Runnable.Run();
                     Status = Status.Passed;
                 }
                 catch (NotImplementedException e)
