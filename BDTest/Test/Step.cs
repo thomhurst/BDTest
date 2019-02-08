@@ -95,6 +95,8 @@ namespace BDTest.Test
 
         public async Task Execute()
         {
+            await Task.Run(async () =>
+            {
                 try
                 {
                     StartTime = DateTime.Now;
@@ -120,6 +122,7 @@ namespace BDTest.Test
                     Output = TestOutputData.Instance.ToString();
                     TestOutputData.ClearCurrentTaskData();
                 }
+            });
         }
     }
 }

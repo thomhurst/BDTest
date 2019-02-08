@@ -99,39 +99,42 @@ namespace BDTest.Test
 
         private async Task ExecuteInternal()
         {
-            try
+            await Task.Run(async () =>
             {
-                StartTime = DateTime.Now;
-                _reporters.WriteStory(StoryText);
-                _reporters.WriteScenario(ScenarioText);
-                Steps.ForEach(step => _reporters.WriteLine(step.StepText));
-                _reporters.NewLine();
-
-                foreach (var step in Steps)
+                try
                 {
-                    await step.Execute();
-                }
+                    StartTime = DateTime.Now;
+                    _reporters.WriteStory(StoryText);
+                    _reporters.WriteScenario(ScenarioText);
+                    Steps.ForEach(step => _reporters.WriteLine(step.StepText));
+                    _reporters.NewLine();
 
-                Status = Status.Passed;
-            }
-            catch (NotImplementedException)
-            {
-                Status = Status.NotImplemented;
-            }
-            catch (Exception e)
-            {
-                Status = Status.Failed;
-                _reporters.WriteLine($"Exception: {e.StackTrace}");
-                throw;
-            }
-            finally
-            {
-                _reporters.WriteLine($"{Environment.NewLine}Test Result: {Status}");
-                EndTime = DateTime.Now;
-                TimeTaken = EndTime - StartTime;
-                Output = string.Join(Environment.NewLine,
-                    Steps.Where(step => !string.IsNullOrWhiteSpace(step.Output)).Select(step => step.Output));
-            }
+                    foreach (var step in Steps)
+                    {
+                        await step.Execute();
+                    }
+
+                    Status = Status.Passed;
+                }
+                catch (NotImplementedException)
+                {
+                    Status = Status.NotImplemented;
+                }
+                catch (Exception e)
+                {
+                    Status = Status.Failed;
+                    _reporters.WriteLine($"Exception: {e.StackTrace}");
+                    throw;
+                }
+                finally
+                {
+                    _reporters.WriteLine($"{Environment.NewLine}Test Result: {Status}");
+                    EndTime = DateTime.Now;
+                    TimeTaken = EndTime - StartTime;
+                    Output = string.Join(Environment.NewLine,
+                        Steps.Where(step => !string.IsNullOrWhiteSpace(step.Output)).Select(step => step.Output));
+                }
+            });
         }
     }
 }
