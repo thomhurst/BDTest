@@ -93,10 +93,8 @@ namespace BDTest.Test
             StepText = $"{StepPrefix} {customStepText ?? methodNameHumanized}";
         }
 
-        public void Execute()
+        public async Task Execute()
         {
-            var task = new Task(async () =>
-            {
                 try
                 {
                     StartTime = DateTime.Now;
@@ -122,9 +120,6 @@ namespace BDTest.Test
                     Output = TestOutputData.Instance.ToString();
                     TestOutputData.ClearCurrentTaskData();
                 }
-            });
-            task.Start();
-            task.Wait();
         }
     }
 }

@@ -32,12 +32,12 @@ namespace BDTest.Test.Steps.Then
 
         public Scenario BDTest()
         {
-            return Invoke(TestDetails);
+            return Invoke(TestDetails).Result;
         }
 
-        public Task<Scenario> BDTestAsync()
+        public async Task<Scenario> BDTestAsync()
         {
-            return Task.Run(() => Invoke(TestDetails));
+            return await Invoke(TestDetails);
         }
     }
 }
