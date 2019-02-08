@@ -9,79 +9,14 @@ using Newtonsoft.Json;
 
 namespace BDTest.Output
 {
-    public static class WriteOutput
+    public static class TestsFinalizer
     {
-        private static bool _alreadyExecuted;
-        private static readonly object Lock = new object();
 
-        public static void OutputData(object sender, EventArgs e)
+        internal static bool Debug { get; set; }
+
+        static TestsFinalizer()
         {
-            RunReportDll();
-            Task.WaitAll(WriteWarnings());
-        }
-
-        internal static void Initialise()
-        {
-            lock (Lock)
-            {
-                if (_alreadyExecuted)
-                {
-                    return;
-                }
-
-                _alreadyExecuted = true;
-
-                AppDomain.CurrentDomain.ProcessExit += OutputData;
-
-                if (Directory.Exists(FileLocations.ScenariosDirectory))
-                {
-                    foreach (var filePath in Directory.GetFiles(FileLocations.ScenariosDirectory))
-                    {
-                        File.Delete(filePath);
-                    }
-                }
-
-                Directory.CreateDirectory(FileLocations.ScenariosDirectory);
-
-                if (File.Exists(FileLocations.Warnings))
-                {
-                    File.Delete(FileLocations.Warnings);
-                }
-
-                var runtimeConfigFile = Directory.GetFiles(FileLocations.OutputDirectory)
-                    .FirstOrDefault(it => it.EndsWith(".runtimeconfig.dev.json"));
-
-                if (runtimeConfigFile == null)
-                {
-                    return;
-                }
-
-                var bdTestReportRunConfigPath = Path.Combine(FileLocations.OutputDirectory,
-                    "BDTest.ReportGenerator.runtimeconfig.dev.json");
-
-                if (File.Exists(bdTestReportRunConfigPath))
-                {
-                    File.Delete(bdTestReportRunConfigPath);
-                }
-
-                File.Copy(runtimeConfigFile,
-                    bdTestReportRunConfigPath);
-
-                if (File.Exists(Path.Combine(FileLocations.OutputDirectory, "BDTest - Exception.txt")))
-                {
-                    File.Delete(Path.Combine(FileLocations.OutputDirectory, "BDTest - Exception.txt"));
-                }
-
-                if (File.Exists(Path.Combine(FileLocations.OutputDirectory, "BDTest - Run Exception.txt")))
-                {
-                    File.Delete(Path.Combine(FileLocations.OutputDirectory, "BDTest - Run Exception.txt"));
-                }
-
-                if (File.Exists(Path.Combine(FileLocations.OutputDirectory, "BDTest - Report Exception.txt")))
-                {
-                    File.Delete(Path.Combine(FileLocations.OutputDirectory, "BDTest - Report Exception.txt"));
-                }
-            }
+            AppDomain.CurrentDomain.ProcessExit += (s, e) => Task.WaitAll(RunReportDll(), WriteWarnings());
         }
 
         private static async Task WriteWarnings()
@@ -105,11 +40,18 @@ namespace BDTest.Output
             });
         }
 
-        private static void RunReportDll()
+        private static async Task RunReportDll()
         {
+            await Task.Run(() =>
+            {
                 try
                 {
                     var dllArguments = GetDllArguments();
+
+                    if (Debug)
+                    {
+                        File.WriteAllText(Path.Combine(FileLocations.OutputDirectory, "BDTest - Debug.txt"), dllArguments);
+                    }
 
                     var process = new Process
                     {
@@ -129,8 +71,10 @@ namespace BDTest.Output
                 }
                 catch (Exception e)
                 {
-                    File.WriteAllText(Path.Combine(FileLocations.OutputDirectory, "BDTest - Run Exception.txt"), e.StackTrace);
+                    File.WriteAllText(Path.Combine(FileLocations.OutputDirectory, "BDTest - Run Exception.txt"),
+                        e.StackTrace);
                 }
+            });
         }
 
         public static string GetDllArguments()

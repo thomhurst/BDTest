@@ -10,6 +10,7 @@ namespace BDTest.Test.Steps.Then
 
         protected override StepType StepType { get; } = StepType.Then;
 
+        // Actions
         protected internal Then(List<Step> previousSteps, Expression<Action> action, TestDetails testDetails) : base(previousSteps, action, testDetails)
         {
         }
@@ -19,14 +20,24 @@ namespace BDTest.Test.Steps.Then
             return new AndThen(ExistingSteps, step, TestDetails);
         }
 
-        public Scenario BDTest()
+        // Tasks
+        protected internal Then(List<Step> previousSteps, Expression<Func<Task>> action, TestDetails testDetails) : base(previousSteps, action, testDetails)
         {
-            return Invoke(TestDetails);
         }
 
-        public Task<Scenario> BDTestAsync()
+        public AndThen And(Expression<Func<Task>> step)
         {
-            return Task.Run(() => Invoke(TestDetails));
+            return new AndThen(ExistingSteps, step, TestDetails);
+        }
+
+        public Scenario BDTest()
+        {
+            return Invoke(TestDetails).Result;
+        }
+
+        public async Task<Scenario> BDTestAsync()
+        {
+            return await Invoke(TestDetails);
         }
     }
 }

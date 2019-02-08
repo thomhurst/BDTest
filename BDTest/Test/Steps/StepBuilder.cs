@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
+using System.Threading.Tasks;
 using BDTest.Maps;
+using BDTest.Output;
 
 namespace BDTest.Test.Steps
 {
@@ -12,13 +14,36 @@ namespace BDTest.Test.Steps
         protected abstract StepType StepType { get; }
         protected string StepPrefix => StepType.GetValue();
 
-        protected StepBuilder(Expression<Action> action, string callerMember, string callerFile)
+        static StepBuilder()
         {
-            ExistingSteps = new List<Step> { new Step(action, StepType.Given) };
+            Initialiser.Initialise();
+        }
+
+        protected StepBuilder(Expression<Action> action, string callerMember, string callerFile) : this(new Runnable(action), callerMember, callerFile )
+        {
+            
+        }
+
+        protected StepBuilder(Expression<Func<Task>> action, string callerMember, string callerFile) : this(new Runnable(action), callerMember, callerFile)
+        {
+            
+        }
+
+        internal StepBuilder(Runnable runnable, string callerMember, string callerFile)
+        {
+            ExistingSteps = new List<Step> { new Step(runnable, StepType.Given) };
             TestDetails = new TestDetails(callerMember, callerFile, Guid.NewGuid());
         }
 
-        protected StepBuilder(List<Step> previousSteps, Expression<Action> action, TestDetails testDetails)
+        protected StepBuilder(List<Step> previousSteps, Expression<Action> action, TestDetails testDetails) : this(previousSteps, new Runnable(action), testDetails )
+        {
+        }
+
+        protected StepBuilder(List<Step> previousSteps, Expression<Func<Task>> action, TestDetails testDetails) : this(previousSteps, new Runnable(action), testDetails)
+        {
+        }
+
+        internal StepBuilder(List<Step> previousSteps, Runnable runnable, TestDetails testDetails)
         {
             TestDetails = testDetails;
             StoryText = testDetails.StoryText;
@@ -27,12 +52,14 @@ namespace BDTest.Test.Steps
             TestMap.NotRun[testDetails.GetGuid()] = this;
 
             ExistingSteps = previousSteps;
-            ExistingSteps.Add(new Step(action, StepType));
+            ExistingSteps.Add(new Step(runnable, StepType));
         }
 
-        protected Scenario Invoke(TestDetails testDetails)
+        protected async Task<Scenario> Invoke(TestDetails testDetails)
         {
-            return new Scenario(ExistingSteps, testDetails);
+            var scenario = new Scenario(ExistingSteps, testDetails);
+            await scenario.Execute();
+            return scenario;
         }
     }
 }

@@ -23,17 +23,18 @@ namespace BDTest.Test
 
         private readonly Reporter _reporters;
 
-        [JsonProperty]
-        public DateTime StartTime { get; private set; }
+        [JsonProperty] public DateTime StartTime { get; private set; }
 
-        [JsonProperty]
-        public DateTime EndTime { get; private set; }
+        [JsonProperty] public DateTime EndTime { get; private set; }
 
-        [JsonProperty]
-        public string FileName { get; private set; }
+        [JsonProperty] public string FileName { get; private set; }
 
         [JsonConstructor]
-        private Scenario() { }
+        private Scenario()
+        {
+        }
+
+        [JsonIgnore] private TestDetails _testDetails;
 
         internal Scenario(List<Step> steps, TestDetails testDetails)
         {
@@ -43,35 +44,36 @@ namespace BDTest.Test
             StoryText = testDetails.StoryText;
             ScenarioText = testDetails.ScenarioText;
 
+            _testDetails = testDetails;
+
             FileName = testDetails.CallerFile;
 
             Version = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString();
 
             _reporters = new Reporters.Reporters();
             Steps = steps;
+        }
 
+        public async Task Execute()
+        {
             try
             {
-                Execute();
+                await ExecuteInternal();
             }
             finally
             {
                 JsonLogger.WriteScenario(this);
-                TestMap.StoppedEarly.TryRemove(testDetails.GetGuid(), out _);
+                TestMap.StoppedEarly.TryRemove(_testDetails.GetGuid(), out _);
             }
         }
 
-        [JsonIgnore]
-        public bool IsAsync { get; set; }
+        [JsonIgnore] public bool IsAsync { get; set; }
 
-        [JsonProperty]
-        public string Version { get; private set; }
+        [JsonProperty] public string Version { get; private set; }
 
-        [JsonProperty]
-        public List<Step> Steps { get; private set; }
+        [JsonProperty] public List<Step> Steps { get; private set; }
 
-        [JsonProperty]
-        public string Output { get; private set; }
+        [JsonProperty] public string Output { get; private set; }
 
         [JsonConverter(typeof(StringEnumConverter))]
         [JsonProperty]
@@ -95,9 +97,9 @@ namespace BDTest.Test
         [JsonProperty]
         public TimeSpan TimeTaken { get; private set; }
 
-        internal void Execute()
+        private async Task ExecuteInternal()
         {
-            var task = new Task(() =>
+            await Task.Run(async () =>
             {
                 try
                 {
@@ -106,7 +108,12 @@ namespace BDTest.Test
                     _reporters.WriteScenario(ScenarioText);
                     Steps.ForEach(step => _reporters.WriteLine(step.StepText));
                     _reporters.NewLine();
-                    Steps.ForEach(step => step.Execute());
+
+                    foreach (var step in Steps)
+                    {
+                        await step.Execute();
+                    }
+
                     Status = Status.Passed;
                 }
                 catch (NotImplementedException)
@@ -124,12 +131,10 @@ namespace BDTest.Test
                     _reporters.WriteLine($"{Environment.NewLine}Test Result: {Status}");
                     EndTime = DateTime.Now;
                     TimeTaken = EndTime - StartTime;
-                    Output = string.Join(Environment.NewLine, Steps.Where(step => !string.IsNullOrWhiteSpace(step.Output)).Select(step => step.Output));
+                    Output = string.Join(Environment.NewLine,
+                        Steps.Where(step => !string.IsNullOrWhiteSpace(step.Output)).Select(step => step.Output));
                 }
             });
-
-            task.Start();
-            task.Wait();
         }
     }
 }
