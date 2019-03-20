@@ -22,15 +22,22 @@ namespace BDTest.Output
 
         public override string ToString()
         {
-            var thisThreadValues = ThreadAndChars.Where(it => it.Key == Task.CurrentId).Select(it => it.Value).ToList();
-            return string.Join("", thisThreadValues);
+            lock (Lock)
+            {
+                var thisThreadValues = ThreadAndChars.Where(it => it.Key == Task.CurrentId).Select(it => it.Value)
+                    .ToList();
+                return string.Join("", thisThreadValues);
+            }
         }
 
         public static void ClearCurrentTaskData()
         {
-            ThreadAndChars.RemoveAll(it => it.Key == Task.CurrentId);
+            lock (Lock)
+            {
+                ThreadAndChars.RemoveAll(it => it.Key == Task.CurrentId);
+            }
         }
 
-        public override Encoding Encoding { get; }
+        public override Encoding Encoding { get; } = Encoding.UTF8;
     }
 }
