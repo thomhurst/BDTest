@@ -76,7 +76,7 @@ namespace BDTest.Test
                 foreach (var argument in methodCallExpression.Arguments)
                 {
                     var value = Expression.Lambda(argument).Compile().DynamicInvoke();
-                    arguments.Add(value.ToString());
+                    arguments.Add(value?.ToString() ?? "");
                 }
             }
 
