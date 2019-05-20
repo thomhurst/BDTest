@@ -80,7 +80,7 @@ namespace BDTest.ReportGenerator
         {
             var enumerable = scenarios.ToList();
             double count = enumerable.Count(scenario => scenario.Status == status);
-            var percentage = (count / enumerable.Count()) * 100;
+            var percentage = count / enumerable.Count() * 100;
             return Math.Round(percentage, 2);
         }
 
@@ -92,8 +92,8 @@ namespace BDTest.ReportGenerator
             Enum.TryParse(enums.OrderByDescending(it => enumerable.Count(scenario => scenario.Status == it)).ToString(), out Status maxEnum);
 
             double count = enumerable.Count(scenario => scenario.Status == maxEnum);
-            var percentage = (count / enumerable.Count()) * 100;
-            if (percentage == 0)
+            var percentage = count / enumerable.Count * 100;
+            if (Convert.ToInt32(percentage) == 0)
             {
                 return 0;
             }

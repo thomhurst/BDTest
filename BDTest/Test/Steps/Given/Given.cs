@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
-using BDTest.Output;
 
 namespace BDTest.Test.Steps.Given
 {

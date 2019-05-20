@@ -40,12 +40,12 @@ namespace BDTest.Test
                 return true;
             }
 
-            return obj.GetType() == this.GetType() && Equals((ScenarioText) obj);
+            return obj.GetType() == GetType() && Equals((ScenarioText) obj);
         }
 
         public override int GetHashCode()
         {
-            return (Scenario != null ? Scenario.GetHashCode() : 0);
+            return Scenario != null ? Scenario.GetHashCode() : 0;
         }
     }
 }

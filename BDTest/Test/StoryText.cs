@@ -41,7 +41,7 @@ namespace BDTest.Test
 
         public override int GetHashCode()
         {
-            return (Story != null ? Story.GetHashCode() : 0);
+            return Story != null ? Story.GetHashCode() : 0;
         }
 
         bool IEquatable<StoryText>.Equals(StoryText other)

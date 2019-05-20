@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
@@ -56,25 +57,34 @@ namespace BDTest.Test
         [JsonProperty]
         public string StepText { get; private set; }
 
-        public void SetStepText()
+        private void SetStepText()
         {
             MethodCallExpression methodCallExpression;
             if (Runnable.Action != null)
             {
-                methodCallExpression = (Runnable.Action.Body as MethodCallExpression);
+                methodCallExpression = Runnable.Action.Body as MethodCallExpression;
             }
             else
             {
-                methodCallExpression = (Runnable.Task.Body as MethodCallExpression);
+                methodCallExpression = Runnable.Task.Body as MethodCallExpression;
+            }
+
+            var arguments = new List<string>();
+
+            if (methodCallExpression?.Arguments != null)
+            {
+                foreach (var argument in methodCallExpression.Arguments)
+                {
+                    var value = Expression.Lambda(argument).Compile().DynamicInvoke();
+                    arguments.Add(value.ToString());
+                }
             }
 
             var methodInfo = methodCallExpression?.Method;
-            var arguments = methodCallExpression?.Arguments.Select(it => (it as ConstantExpression)?.Value);
-
             var customStepText =
-                ((StepTextAttribute)((methodInfo?.GetCustomAttributes(
-                                          typeof(StepTextAttribute), true) ??
-                                      new string[] { }).FirstOrDefault()))?.Text;
+                ((StepTextAttribute)(methodInfo?.GetCustomAttributes(
+                                         typeof(StepTextAttribute), true) ??
+                                     new string[] { }).FirstOrDefault())?.Text;
             var methodNameHumanized = methodInfo?.Name.Humanize();
 
             if (customStepText != null && arguments != null)

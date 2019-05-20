@@ -34,7 +34,7 @@ namespace BDTest.Test
         {
         }
 
-        [JsonIgnore] private TestDetails _testDetails;
+        [JsonIgnore] private readonly TestDetails _testDetails;
 
         internal Scenario(List<Step> steps, TestDetails testDetails)
         {

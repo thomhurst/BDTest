@@ -17,7 +17,7 @@ namespace BDTest.Test
 
         internal TestDetails(string callerMember, string callerFile, Guid guid)
         {
-            this.TestDetails = this;
+            TestDetails = this;
             Guid = guid;
             _callerMember = callerMember;
             CallerFile = callerFile;
@@ -94,8 +94,8 @@ namespace BDTest.Test
 
         private static string GetScenarioTextAttribute(ICustomAttributeProvider it)
         {
-            return ((ScenarioTextAttribute)((it.GetCustomAttributes(typeof(ScenarioTextAttribute), true) ??
-                                             new string[] { }).FirstOrDefault()))?.Text;
+            return ((ScenarioTextAttribute)(it.GetCustomAttributes(typeof(ScenarioTextAttribute), true) ??
+                                            new string[] { }).FirstOrDefault())?.Text;
         }
 
         public Guid GetGuid()

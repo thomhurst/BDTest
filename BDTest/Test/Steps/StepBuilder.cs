@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
 using BDTest.Maps;
-using BDTest.Output;
 
 namespace BDTest.Test.Steps
 {
