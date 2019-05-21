@@ -75,8 +75,13 @@ namespace BDTest.Test
             {
                 foreach (var argument in methodCallExpression.Arguments)
                 {
+                    if (argument == null)
+                    {
+                        arguments.Add("null");
+                        continue;
+                    }
                     var value = Expression.Lambda(argument).Compile().DynamicInvoke();
-                    arguments.Add(value?.ToString() ?? "");
+                    arguments.Add(value?.ToString() ?? "null");
                 }
             }
 
@@ -87,11 +92,11 @@ namespace BDTest.Test
                                      new string[] { }).FirstOrDefault())?.Text;
             var methodNameHumanized = methodInfo?.Name.Humanize();
 
-            if (customStepText != null && arguments != null)
+            if (customStepText != null)
             {
                 try
                 {
-                    customStepText = string.Format(customStepText, arguments.ToArray());
+                    customStepText = string.Format(customStepText, arguments);
                 }
                 catch (Exception)
                 {
