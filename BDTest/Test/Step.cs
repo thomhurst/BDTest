@@ -75,16 +75,11 @@ namespace BDTest.Test
             {
                 foreach (var argument in methodCallExpression.Arguments)
                 {
-                    if (argument == null)
-                    {
-                        arguments.Add("null");
-                        continue;
-                    }
-                    var value = Expression.Lambda(argument).Compile().DynamicInvoke();
-                    arguments.Add(value?.ToString() ?? "null");
+                    var value = GetExpressionValue(argument);
+                    arguments.Add(value ?? "null");
                 }
             }
-
+            
             var methodInfo = methodCallExpression?.Method;
             var customStepText =
                 ((StepTextAttribute)(methodInfo?.GetCustomAttributes(
@@ -96,7 +91,7 @@ namespace BDTest.Test
             {
                 try
                 {
-                    customStepText = string.Format(customStepText, arguments);
+                    customStepText = string.Format(customStepText, arguments.Cast<object>().ToArray());
                 }
                 catch (Exception)
                 {
@@ -106,6 +101,18 @@ namespace BDTest.Test
             }
 
             StepText = $"{StepPrefix} {customStepText ?? methodNameHumanized}";
+        }
+        
+        private static string GetExpressionValue(Expression argument)
+        {
+            try
+            {
+                return Expression.Lambda(argument).Compile().DynamicInvoke()?.ToString();
+            }
+            catch (Exception)
+            {
+                return "null";
+            }
         }
 
         public async Task Execute()

@@ -17,7 +17,7 @@ namespace BDTest.NUnit
             _contexts.Remove(NUnitTestContext.CurrentContext.Test.ID);
         }
 
-        public TContext Context
+        public virtual TContext Context
         {
             get
             {
