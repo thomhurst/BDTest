@@ -17,7 +17,9 @@ namespace BDTest.NUnit
             _contexts.Remove(NUnitTestContext.CurrentContext.Test.ID);
         }
 
-        public virtual TContext Context
+        public Action<TContext> ContextAmendment { get; set; }
+
+        public TContext Context
         {
             get
             {
@@ -30,6 +32,9 @@ namespace BDTest.NUnit
                 }
 
                 context = Activator.CreateInstance<TContext>();
+
+                ContextAmendment?.Invoke(context);
+
                 _contexts.Add(testContextId, context);
                 return context;
             }
