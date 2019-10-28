@@ -17,17 +17,42 @@ using Formatting = Newtonsoft.Json.Formatting;
 
 namespace BDTest.ReportGenerator
 {
-    internal static class ReportProgram
+    public static class ReportProgram
     {
-        public static string ResultDirectory { get; private set; }
-        public static string Args { get; private set; }
+        internal static string ResultDirectory { get; private set; }
+        private static string Args { get; set; }
 
         private static void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
         {
             File.WriteAllText(Path.Combine(ResultDirectory, "BDTest - Report Exception.txt"), "Args: " + Args + Environment.NewLine + (e.ExceptionObject as Exception)?.StackTrace);
         }
 
-        public static void Main(string[] args)
+        public static void Invoke()
+        {
+            var reportDll = Directory.CreateDirectory(FileLocations.OutputDirectory)
+                .GetFiles("BDTest.ReportGenerator.dll")
+                .FirstOrDefault()?.FullName;
+
+            var command = new[]
+            {
+                reportDll, Arguments.ResultDirectoryArgumentName + FileLocations.OutputDirectory,
+                Arguments.PersistentStorageArgumentName + BDTestSettings.PersistentResultsDirectory,
+                Arguments.PersistentResultsCompareStartTimeArgumentName +
+                $"{BDTestSettings.PersistentResultsCompareStartTime:o}",
+                Arguments.AllScenariosReportHtmlFilenameArgumentName +
+                BDTestSettings.AllScenariosReportHtmlFilename,
+                Arguments.ScenariosByStoryReportHtmlFilenameArgumentName +
+                BDTestSettings.ScenariosByStoryReportHtmlFilename,
+                Arguments.FlakinessReportHtmlFilenameArgumentName + BDTestSettings.FlakinessReportHtmlFilename,
+                Arguments.TestTimesReportHtmlFilenameArgumentName + BDTestSettings.TestTimesReportHtmlFilename,
+                Arguments.JsonDataFilenameArgumentName + BDTestSettings.JsonDataFilename,
+                Arguments.XmlDataFilenameArgumentName + BDTestSettings.XmlDataFilename
+            };
+
+            Main(command);
+        }
+
+        internal static void Main(string[] args)
         {
             Args = string.Join(" ", args);
 
@@ -83,9 +108,9 @@ namespace BDTest.ReportGenerator
             {
                 CopyFolder.Copy(Path.Combine(FileLocations.ProjectDirectory, "css"), Path.Combine(ResultDirectory, "css"));
             }
-            catch (Exception)
+            catch (Exception e)
             {
-                // ignored
+                Console.WriteLine(e.Message);
             }
         }
 

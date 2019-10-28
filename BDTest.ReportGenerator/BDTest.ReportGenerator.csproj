@@ -5,8 +5,7 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <OutputType>Exe</OutputType>
-    <TargetFramework>netcoreapp2.0</TargetFramework>
+    <TargetFramework>net462</TargetFramework>
     <PublishWithAspNetCoreTargetManifest>false</PublishWithAspNetCoreTargetManifest>
     <RunPostBuildEvent>OnBuildSuccess</RunPostBuildEvent>
     <ApplicationIcon />
@@ -42,5 +41,10 @@
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">
     <Exec Command="copy /Y &quot;$(ProjectDir)$(TargetName).props&quot; &quot;$(TargetDir)$(TargetName).props&quot;&#xD;&#xA;echo D|XCOPY &quot;$(ProjectDir)css&quot; &quot;$(TargetDir)css\css\&quot; /S /Y /I" />
   </Target>
+
+  <ItemGroup>
+    <None Include="$(ProjectDir)css\**"
+          CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
 
 </Project>
