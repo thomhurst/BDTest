@@ -48,6 +48,11 @@ namespace BDTest.Output
                 {
                     var dllArguments = GetDllArguments();
 
+                    if (string.IsNullOrEmpty(dllArguments))
+                    {
+                        return;
+                    }
+
                     if (Debug)
                     {
                         File.WriteAllText(Path.Combine(FileLocations.OutputDirectory, "BDTest - Debug.txt"), dllArguments);
@@ -71,7 +76,7 @@ namespace BDTest.Output
                 }
                 catch (Exception e)
                 {
-                    File.WriteAllText(Path.Combine(FileLocations.OutputDirectory, "BDTest - Run Exception.txt"),
+                    File.WriteAllText(Path.Combine(FileLocations.OutputDirectory, "BDTest - Run Report Exception.txt"),
                         e.StackTrace);
                 }
             });
@@ -81,6 +86,11 @@ namespace BDTest.Output
         {
             var reportDll = Directory.CreateDirectory(FileLocations.OutputDirectory).GetFiles("BDTest.ReportGenerator.dll")
                 .FirstOrDefault()?.FullName;
+
+            if (string.IsNullOrEmpty(reportDll))
+            {
+                return null;
+            }
 
             return 
                 $"\"{reportDll}\" \"{Arguments.ResultDirectoryArgumentName}{FileLocations.OutputDirectory}\" \"{Arguments.PersistentStorageArgumentName}{BDTestSettings.PersistentResultsDirectory}\" \"{Arguments.PersistentResultsCompareStartTimeArgumentName}{BDTestSettings.PersistentResultsCompareStartTime:o}\" \"{Arguments.AllScenariosReportHtmlFilenameArgumentName}{BDTestSettings.AllScenariosReportHtmlFilename}\" \"{Arguments.ScenariosByStoryReportHtmlFilenameArgumentName}{BDTestSettings.ScenariosByStoryReportHtmlFilename}\" \"{Arguments.FlakinessReportHtmlFilenameArgumentName}{BDTestSettings.FlakinessReportHtmlFilename}\" \"{Arguments.TestTimesReportHtmlFilenameArgumentName}{BDTestSettings.TestTimesReportHtmlFilename}\" \"{Arguments.JsonDataFilenameArgumentName}{BDTestSettings.JsonDataFilename}\" \"{Arguments.XmlDataFilenameArgumentName}{BDTestSettings.XmlDataFilename}\" ";
