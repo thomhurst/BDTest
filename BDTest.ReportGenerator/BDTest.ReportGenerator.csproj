@@ -10,6 +10,8 @@
     <RunPostBuildEvent>OnBuildSuccess</RunPostBuildEvent>
     <ApplicationIcon />
     <StartupObject />
+    <NuspecFile>BDTest.ReportGenerator.nuspec</NuspecFile>
+    <NuspecProperties>version=$(Version)</NuspecProperties>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
@@ -24,7 +26,6 @@
 
   <ItemGroup>
     <PackageReference Include="HtmlTags.AspNetCore" Version="7.0.4" />
-    <PackageReference Include="Humanizer" Version="2.7.9" />
     <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
   </ItemGroup>
 

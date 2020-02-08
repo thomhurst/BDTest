@@ -69,22 +69,15 @@ namespace BDTest.Test
                 methodCallExpression = Runnable.Task.Body as MethodCallExpression;
             }
 
-            var arguments = new List<string>();
+            var arguments = GetMethodArguments(methodCallExpression);
 
-            if (methodCallExpression?.Arguments != null)
-            {
-                foreach (var argument in methodCallExpression.Arguments)
-                {
-                    var value = GetExpressionValue(argument);
-                    arguments.Add(value ?? "null");
-                }
-            }
-            
             var methodInfo = methodCallExpression?.Method;
+            
             var customStepText =
                 ((StepTextAttribute)(methodInfo?.GetCustomAttributes(
                                          typeof(StepTextAttribute), true) ??
                                      new string[] { }).FirstOrDefault())?.Text;
+            
             var methodNameHumanized = methodInfo?.Name.Humanize();
 
             if (customStepText != null)
@@ -102,7 +95,23 @@ namespace BDTest.Test
 
             StepText = $"{StepPrefix} {customStepText ?? methodNameHumanized}";
         }
-        
+
+        private static List<string> GetMethodArguments(MethodCallExpression methodCallExpression)
+        {
+            var arguments = new List<string>();
+
+            if (methodCallExpression?.Arguments != null)
+            {
+                foreach (var argument in methodCallExpression.Arguments)
+                {
+                    var value = GetExpressionValue(argument);
+                    arguments.Add(value ?? "null");
+                }
+            }
+
+            return arguments;
+        }
+
         private static string GetExpressionValue(Expression argument)
         {
             try

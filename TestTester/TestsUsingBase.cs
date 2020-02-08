@@ -76,6 +76,7 @@ namespace TestTester
             testContext.Number++;
         }
 
+        [StepText("the number should be {1}")]
         public void NumberShouldBe(TestContext testContext, int number)
         {
             Assert.AreEqual(number, testContext.Number);
@@ -157,7 +158,7 @@ namespace TestTester
         [OneTimeTearDown]
         public void TearDown()
         {
-            ReportProgram.Invoke();
+            BDTestReportGenerator.Generate();
         }
     }
 }

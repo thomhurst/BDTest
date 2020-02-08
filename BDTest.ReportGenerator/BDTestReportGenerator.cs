@@ -17,7 +17,7 @@ using Formatting = Newtonsoft.Json.Formatting;
 
 namespace BDTest.ReportGenerator
 {
-    public static class ReportProgram
+    public static class BDTestReportGenerator
     {
         internal static string ResultDirectory { get; private set; }
         private static string Args { get; set; }
@@ -27,7 +27,7 @@ namespace BDTest.ReportGenerator
             File.WriteAllText(Path.Combine(ResultDirectory, "BDTest - Report Exception.txt"), "Args: " + Args + Environment.NewLine + (e.ExceptionObject as Exception)?.StackTrace);
         }
 
-        public static void Invoke()
+        public static void Generate()
         {
             var reportDll = Directory.CreateDirectory(FileLocations.OutputDirectory)
                 .GetFiles("BDTest.ReportGenerator.dll")
