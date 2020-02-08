@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -8,34 +9,29 @@ namespace BDTest.Output
 {
     internal class TestOutputData : TextWriter
     {
-        private static readonly List<KeyValuePair<int?, char>> ThreadAndChars = new List<KeyValuePair<int?, char>>();
+        private static readonly ConcurrentDictionary<int?, StringBuilder> ThreadAndChars = new ConcurrentDictionary<int?, StringBuilder>();
         public static readonly ConsoleOutputInterceptor Instance = new ConsoleOutputInterceptor();
-        private static readonly object Lock = new object();
 
         public override void Write(char value)
         {
-            lock (Lock)
+            if (ThreadAndChars.TryGetValue(Task.CurrentId ?? 0, out var existingStringBuilder))
             {
-                ThreadAndChars.Add(new KeyValuePair<int?, char>(Task.CurrentId, value));
+                existingStringBuilder.Append(value);
+            }
+            else
+            {
+                ThreadAndChars.TryAdd(Task.CurrentId ?? 0, new StringBuilder(value.ToString()));
             }
         }
 
         public override string ToString()
         {
-            lock (Lock)
-            {
-                var thisThreadValues = ThreadAndChars.Where(it => it.Key == Task.CurrentId).Select(it => it.Value)
-                    .ToList();
-                return string.Join("", thisThreadValues);
-            }
+            return ThreadAndChars[Task.CurrentId].ToString();
         }
 
         public static void ClearCurrentTaskData()
         {
-            lock (Lock)
-            {
-                ThreadAndChars.RemoveAll(it => it.Key == Task.CurrentId);
-            }
+            ThreadAndChars.TryRemove(Task.CurrentId ?? 0, out _);
         }
 
         public override Encoding Encoding { get; } = Encoding.UTF8;
