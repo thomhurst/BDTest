@@ -46,5 +46,19 @@
 
         <!-- Tags appear in the gallery and can be used for tag searches -->
         <tags>test tdd bdd testing given when then</tags>
+
+        <!-- Dependencies are automatically installed when the package is installed -->
+        <dependencies>
+            <dependency id="Newtonsoft.Json" version="12.0.2" />
+            <dependency id="Humanizer.Core" version="2.7.9" />
+        </dependencies>
     </metadata>
+
+    <files>
+        <file src="bin\Release\**\BDTest.props" target="build" />
+        <file src="bin\Release\**\BDTest.dll" target="build" />
+        <file src="bin\Release\**\BDTest.dll" target="lib" />
+        <file src="bin\Release\**\BDTest.props" target="content\BDTest.props" />
+    </files>
+
 </package>

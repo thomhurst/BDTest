@@ -46,5 +46,17 @@
 
         <!-- Tags appear in the gallery and can be used for tag searches -->
         <tags>test tdd bdd testing given when then</tags>
+
+        <!-- Dependencies are automatically installed when the package is installed -->
+        <dependencies>
+            <dependency id="NUnit" version="3.12.0" />
+            <dependency id="BDTest" version="$version$" />
+        </dependencies>
     </metadata>
+
+    <files>
+        <file src="bin\Release\**\BDTest.NUnit.dll" target="build" />
+        <file src="bin\Release\**\BDTest.NUnit.dll" target="lib" />
+    </files>
+
 </package>

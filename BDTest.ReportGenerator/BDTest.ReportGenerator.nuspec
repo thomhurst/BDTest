@@ -39,6 +39,12 @@
 
         <!-- Tags appear in the gallery and can be used for tag searches -->
         <tags>test tdd bdd testing json html xml data report</tags>
+
+        <!-- Dependencies are automatically installed when the package is installed -->
+        <dependencies>
+            <dependency id="HtmlTags.AspNetCore" version="7.0.3" />
+            <dependency id="BDTest" version="$version$" />
+        </dependencies>
     </metadata>
 
     <files>
