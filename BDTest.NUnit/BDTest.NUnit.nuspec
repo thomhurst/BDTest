@@ -23,9 +23,8 @@
         <!-- License information is displayed on the gallery -->
         <license type="expression">Apache-2.0</license>
 
-
         <!-- The icon is used in Visual Studio's package manager UI -->
-        <iconUrl>http://github.com/thomhurst/BDTest/blob/master/nuget_icon.png</iconUrl>
+        <icon>nuget_icon.png</icon>
 
         <!-- 
             If true, this value prompts the user to accept the license when
@@ -55,6 +54,7 @@
     </metadata>
 
     <files>
+    <file src="..\nuget_icon.png" target="" />
         <file src="bin\Release\**\BDTest.NUnit.dll" target="build" />
         <file src="bin\Release\**\BDTest.NUnit.dll" target="lib" />
     </files>
