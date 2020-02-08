@@ -24,7 +24,7 @@ namespace BDTest.Output
 
         public override string ToString()
         {
-            return ThreadAndChars[Task.CurrentId].ToString();
+            return ThreadAndChars.TryGetValue(Task.CurrentId ?? 0, out var stringBuilder) ? stringBuilder.ToString() : string.Empty;
         }
 
         public static void ClearCurrentTaskData()
