@@ -1,5 +1,5 @@
 # BDTest
-## A testing framework for .NET Core 2.0+
+## A testing framework for .NET
 
 [![nuget](https://img.shields.io/nuget/v/BDTest.svg)](https://www.nuget.org/packages/BDTest/)
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/976b0c6b323b43ef94334f503af9b737)](https://www.codacy.com/app/thomhurst/BDTest?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=thomhurst/BDTest&amp;utm_campaign=Badge_Grade)
@@ -8,6 +8,8 @@
 
 BDTest is a testing framework. It can be used with other frameworks (such as MSTest, xUnit or NUnit) or standalone.
 The examples below will use attributes (such as `[Test]`) from NUnit.
+
+BDTest is written in .NET Standard - So should work for .NET Framework and .NET Core
 
 ### Installation
 
@@ -185,9 +187,27 @@ Install via Nuget > `Install-Package BDTest.ReportGenerator`
 
 ### Report Usage
 
-You don't have to do anything for the standard reports! 
-
+#### For .NET Core: 
+You shouldn't have to do anything for the standard reports! 
 Once the package has been installed and your tests have run, these reports should appear in your output directory automatically.
+
+#### For .NET Standard:
+You will need to create a global tear down method that runs after all of your tests, and in that you need to call
+`BDTestReportGenerator.Generate();`
+
+Example in NUnit would be a class like this:
+
+```csharp
+    [SetUpFixture]
+    public class TestSetup
+    {
+        [OneTimeTearDown]
+        public void GlobalTeardown()
+        {
+            BDTestReportGenerator.Generate();
+        }
+    }
+```
 
 See below for extra options.
 
