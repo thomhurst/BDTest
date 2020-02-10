@@ -142,7 +142,7 @@ namespace BDTest.ReportGenerator
                     continue;
                 }
 
-                foreach (var outputFile in groupedOutputFiles)
+                foreach (var outputFile in groupedOutputFiles.OrderBy(File.GetLastWriteTimeUtc))
                 {
                     foundScenario.TearDownOutput += File.ReadAllText(outputFile) + Environment.NewLine;   
                 }
