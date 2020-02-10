@@ -8,5 +8,7 @@ namespace BDTest.Maps
     {
         internal static ConcurrentDictionary<Guid, BuildableTest> NotRun { get; } = new ConcurrentDictionary<Guid, BuildableTest>();
         internal static ConcurrentDictionary<Guid, Scenario> StoppedEarly { get; } = new ConcurrentDictionary<Guid, Scenario>();
+        
+        internal static readonly ConcurrentDictionary<Guid, Scenario> Scenarios = new ConcurrentDictionary<Guid, Scenario>();
     }
 }

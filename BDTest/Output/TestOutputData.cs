@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading;
+using BDTest.Maps;
 using BDTest.Test;
 
 namespace BDTest.Output
@@ -76,7 +77,7 @@ namespace BDTest.Output
                 return;
             }
 
-            if (Scenario.Instances.TryGetValue((Guid) TestId, out var foundScenario))
+            if (TestMap.Scenarios.TryGetValue((Guid) TestId, out var foundScenario))
             {
                 foundScenario.TearDownOutput += text + Environment.NewLine;
             }

@@ -22,8 +22,6 @@ namespace BDTest.Test
             }
         }
         
-        internal static readonly ConcurrentDictionary<Guid, Scenario> Instances = new ConcurrentDictionary<Guid, Scenario>();
-
         private readonly Reporter _reporters;
 
         [JsonProperty] public DateTime StartTime { get; private set; }
@@ -41,7 +39,7 @@ namespace BDTest.Test
 
         internal Scenario(List<Step> steps, TestDetails testDetails)
         {
-            Instances.TryAdd(testDetails.GetGuid(), this);
+            TestMap.Scenarios.TryAdd(testDetails.GetGuid(), this);
             
             TestMap.NotRun.TryRemove(testDetails.GetGuid(), out _);
             TestMap.StoppedEarly.TryAdd(testDetails.GetGuid(), this);
@@ -67,8 +65,8 @@ namespace BDTest.Test
             }
             finally
             {
-                JsonLogger.WriteScenario(this);
                 TestMap.StoppedEarly.TryRemove(TestDetails.GetGuid(), out _);
+                Task.Delay(1500).ContinueWith(_ => JsonLogger.WriteScenario(this)).ConfigureAwait(false);
             }
         }
 
