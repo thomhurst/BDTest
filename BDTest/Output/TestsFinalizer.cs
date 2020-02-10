@@ -16,12 +16,7 @@ namespace BDTest.Output
 
         static TestsFinalizer()
         {
-            AppDomain.CurrentDomain.ProcessExit += (s, e) => Task.WaitAll(RunReportDll(), WriteWarnings(), Wait());
-        }
-
-        private static async Task Wait()
-        {
-            await Task.Delay(2000);
+            AppDomain.CurrentDomain.ProcessExit += (s, e) => Task.WaitAll(RunReportDll(), WriteWarnings());
         }
 
         private static async Task WriteWarnings()

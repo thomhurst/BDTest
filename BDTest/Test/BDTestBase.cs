@@ -9,14 +9,16 @@ namespace BDTest.Test
 {
     public abstract class BDTestBase
     {
+        protected virtual string TestId { get; set; }
+        
         public Given Given(Expression<Action> step, [CallerMemberName] string callerMember = null, [CallerFilePath] string callerFile = null)
         {
-            return new Given(step, callerMember, callerFile);
+            return new Given(step, callerMember, callerFile, TestId);
         }
 
         public Given Given(Expression<Func<Task>> step, [CallerMemberName] string callerMember = null, [CallerFilePath] string callerFile = null)
         {
-            return new Given(step, callerMember, callerFile);
+            return new Given(step, callerMember, callerFile, TestId);
         }
 
         public void WithContext<TContext>(Func<TContext, Scenario> test) where TContext : new()
@@ -69,9 +71,9 @@ namespace BDTest.Test
             return test.Invoke(Activator.CreateInstance<TContext>(), Activator.CreateInstance<TContext2>(), Activator.CreateInstance<TContext3>(), Activator.CreateInstance<TContext4>(), Activator.CreateInstance<TContext5>());
         }
 
-        public void WriteOutput(string text)
+        public async Task WriteTearDownOutput(string text)
         {
-            TestOutputData.WriteAsExtraScenarioOutput(text);
+            await TestOutputData.WriteAsExtraScenarioOutput(TestId, text);
         }
     }
 }

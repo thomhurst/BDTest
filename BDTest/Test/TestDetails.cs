@@ -13,14 +13,16 @@ namespace BDTest.Test
     {
         private readonly string _callerMember;
         public string CallerFile { get; }
+        public string TestId { get; }
         public IEnumerable<string> Parameters { get; set; }
 
-        internal TestDetails(string callerMember, string callerFile, Guid guid)
+        internal TestDetails(string callerMember, string callerFile, Guid guid, string testId)
         {
             TestDetails = this;
             Guid = guid;
             _callerMember = callerMember;
             CallerFile = callerFile;
+            TestId = testId;
             SetStoryText();
             SetScenarioText();
         }

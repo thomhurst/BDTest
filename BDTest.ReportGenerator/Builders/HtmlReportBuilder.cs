@@ -567,11 +567,14 @@ namespace BDTest.ReportGenerator.Builders
                 return HtmlTag.Empty();
             }
 
+            var scenarioTearDownOutputLines = scenario.TearDownOutput.SplitOnNewLines();
+            
             return new HtmlTag("details").Append(
                 new HtmlTag("summary").Append(
                     new HtmlTag("span").AppendText("Test Tear Down Output")
                 ),
-                new HtmlTag("p").AppendText(scenario.TearDownOutput)
+                new HtmlTag("p").Append(scenarioTearDownOutputLines.SelectMany(
+                    line => new[] {new HtmlTag("span").AppendText(line), new BrTag()}))
             );
         }
 

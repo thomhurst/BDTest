@@ -68,6 +68,8 @@ namespace BDTest.ReportGenerator
             }
 
             var scenarios = GetScenarios(ResultDirectory);
+            scenarios = AddTearDownOutputToScenarios(scenarios);
+            
             var testTimer = GetTestTimer(scenarios);
 
             var reportPathByStory = Path.Combine(ResultDirectory, FileNames.ReportByStory);
@@ -112,6 +114,41 @@ namespace BDTest.ReportGenerator
             {
                 Console.WriteLine(e.Message);
             }
+        }
+
+        private static List<Scenario> AddTearDownOutputToScenarios(List<Scenario> scenarios)
+        {
+            var scenariosFolder = Directory.GetDirectories(ResultDirectory, FileNames.Scenarios).FirstOrDefault();
+
+            if (string.IsNullOrWhiteSpace(scenariosFolder))
+            {
+                throw new ArgumentNullException(nameof(scenariosFolder), $"Can't find '{FileNames.Scenarios} folder in directory {ResultDirectory}");
+            }
+
+            var outputFiles = Directory.GetFiles(scenariosFolder).Where(name => name.Contains("TearDownOutput-"));
+
+            var outputFilesByTestId = outputFiles.GroupBy(outputFile =>
+                Path.GetFileNameWithoutExtension(outputFile)
+                    .Split(new[] {"-TearDownOutput-"}, StringSplitOptions.None)[1]);
+            
+            foreach (var groupedOutputFiles in outputFilesByTestId)
+            {
+                var scenarioFrameworkTestId = groupedOutputFiles.Key;
+
+                var foundScenario = scenarios.FirstOrDefault(scenario => scenario.FrameworkTestId == scenarioFrameworkTestId);
+
+                if (foundScenario == null)
+                {
+                    continue;
+                }
+
+                foreach (var outputFile in groupedOutputFiles)
+                {
+                    foundScenario.TearDownOutput += File.ReadAllText(outputFile) + Environment.NewLine;   
+                }
+            }
+
+            return scenarios;
         }
 
         private static void PruneData()
@@ -250,7 +287,7 @@ namespace BDTest.ReportGenerator
                 throw new ArgumentNullException(nameof(scenariosFolder), $"Can't find '{FileNames.Scenarios} folder in directory {resultDirectory}");
             }
 
-            var scenarios = Directory.GetFiles(scenariosFolder).Select(scenarioFile =>
+            var scenarios = Directory.GetFiles(scenariosFolder).Where(name => !name.Contains("TearDownOutput-")).Select(scenarioFile =>
                 JsonConvert.DeserializeObject<Scenario>(File.ReadAllText(scenarioFile), settings));
 
             return scenarios.ToList();

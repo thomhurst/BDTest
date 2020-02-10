@@ -4,7 +4,9 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 using BDTest.Maps;
+using BDTest.Paths;
 using BDTest.Test;
 
 namespace BDTest.Output
@@ -70,17 +72,14 @@ namespace BDTest.Output
 
         public override Encoding Encoding { get; } = Encoding.UTF8;
 
-        internal static void WriteAsExtraScenarioOutput(string text)
+        internal static async Task WriteAsExtraScenarioOutput(string testId, string text)
         {
-            if (TestId == null)
+            if (testId == null)
             {
                 return;
             }
 
-            if (TestMap.Scenarios.TryGetValue((Guid) TestId, out var foundScenario))
-            {
-                foundScenario.TearDownOutput += text + Environment.NewLine;
-            }
+            await FileHelper.WriteTextAsync(FileLocations.ScenarioTeardownOutputFilePath(testId), text);
         }
     }
 }

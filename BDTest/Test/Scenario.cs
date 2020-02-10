@@ -24,11 +24,14 @@ namespace BDTest.Test
         
         private readonly Reporter _reporters;
 
+        [JsonProperty] public string Guid { get; private set; }
         [JsonProperty] public DateTime StartTime { get; private set; }
 
         [JsonProperty] public DateTime EndTime { get; private set; }
 
         [JsonProperty] public string FileName { get; private set; }
+        
+        [JsonProperty] public string TearDownOutput { get; set; }
 
         [JsonConstructor]
         private Scenario()
@@ -39,7 +42,8 @@ namespace BDTest.Test
 
         internal Scenario(List<Step> steps, TestDetails testDetails)
         {
-            TestMap.Scenarios.TryAdd(testDetails.GetGuid(), this);
+            Guid = testDetails.GetGuid().ToString();
+            FrameworkTestId = testDetails.TestId;
             
             TestMap.NotRun.TryRemove(testDetails.GetGuid(), out _);
             TestMap.StoppedEarly.TryAdd(testDetails.GetGuid(), this);
@@ -57,6 +61,9 @@ namespace BDTest.Test
             Steps = steps;
         }
 
+        [JsonProperty]
+        public string FrameworkTestId { get; set; }
+
         public async Task Execute()
         {
             try
@@ -66,7 +73,7 @@ namespace BDTest.Test
             finally
             {
                 TestMap.StoppedEarly.TryRemove(TestDetails.GetGuid(), out _);
-                Task.Delay(1500).ContinueWith(_ => JsonLogger.WriteScenario(this)).ConfigureAwait(false);
+                JsonLogger.WriteScenario(this);
             }
         }
 
@@ -99,9 +106,6 @@ namespace BDTest.Test
         [JsonConverter(typeof(TimespanConverter))]
         [JsonProperty]
         public TimeSpan TimeTaken { get; private set; }
-
-        [JsonProperty]
-        public string TearDownOutput { get; internal set; }
 
         private async Task ExecuteInternal()
         {

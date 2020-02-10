@@ -9,6 +9,7 @@ namespace BDTest.NUnit
     [TestFixture]
     public class NUnitBDTestBase<TContext> : BDTestBase where TContext : class, new()
     {
+        protected override string TestId => TestContext.CurrentContext.Test.ID;
         private readonly ConditionalWeakTable<string, TContext> _contexts = new ConditionalWeakTable<string, TContext>();
 
         [TearDown]
