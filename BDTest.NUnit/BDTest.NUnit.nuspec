@@ -4,11 +4,10 @@
         <!-- The identifier that must be unique within the hosting gallery -->
         <id>BDTest.NUnit</id>
 
-        <!-- The package version number that is used when resolving dependencies -->
-        <version>###version###</version>
-
         <!-- Authors contain text that appears directly on the gallery -->
         <authors>Tom Longhurst</authors>
+
+        <version>$version$</version>
 
         <!-- 
             Owners are typically nuget.org identities that allow gallery
@@ -24,18 +23,14 @@
         <!-- License information is displayed on the gallery -->
         <license type="expression">Apache-2.0</license>
 
-
         <!-- The icon is used in Visual Studio's package manager UI -->
-        <iconUrl>http://github.com/thomhurst/BDTest/blob/master/nuget_icon.png</iconUrl>
+        <icon>nuget_icon.png</icon>
 
         <!-- 
             If true, this value prompts the user to accept the license when
             installing the package. 
         -->
         <requireLicenseAcceptance>false</requireLicenseAcceptance>
-
-        <!-- Any details about this particular release -->
-        <releaseNotes>A flakiness report and a test time comparison report if the Persistent Storage location is set in BDTestSettings</releaseNotes>
 
         <!-- 
             The description can be used in package manager UI. Note that the
@@ -54,12 +49,14 @@
         <!-- Dependencies are automatically installed when the package is installed -->
         <dependencies>
             <dependency id="NUnit" version="3.12.0" />
-            <dependency id="BDTest" version="###version###" />
+            <dependency id="BDTest" version="$version$" />
         </dependencies>
     </metadata>
 
-  <files>
-    <file src="bin\Release\**\BDTest.NUnit.dll" target="build" />
-    <file src="bin\Release\**\BDTest.NUnit.dll" target="lib" />
-  </files>
+    <files>
+    <file src="..\nuget_icon.png" target="" />
+        <file src="bin\Release\**\BDTest.NUnit.dll" target="build" />
+        <file src="bin\Release\**\BDTest.NUnit.dll" target="lib" />
+    </files>
+
 </package>

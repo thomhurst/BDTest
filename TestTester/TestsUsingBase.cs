@@ -2,6 +2,7 @@
 using System.Linq.Expressions;
 using System.Threading.Tasks;
 using BDTest.Attributes;
+using BDTest.ReportGenerator;
 using BDTest.Test;
 using NUnit.Framework;
 using Assert = NUnit.Framework.Assert;
@@ -75,6 +76,7 @@ namespace TestTester
             testContext.Number++;
         }
 
+        [StepText("the number should be {1}")]
         public void NumberShouldBe(TestContext testContext, int number)
         {
             Assert.AreEqual(number, testContext.Number);
@@ -151,6 +153,12 @@ namespace TestTester
                     .Then(() => Add(context))
                     .And(() => Exception(context))
                     .BDTest());
+        }
+
+        [OneTimeTearDown]
+        public void TearDown()
+        {
+            BDTestReportGenerator.Generate();
         }
     }
 }

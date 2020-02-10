@@ -64,7 +64,7 @@ namespace BDTest.ReportGenerator.Builders
                     .Style("padding", "25px")
                     .WriteTo(stringWriter, HtmlEncoder.Default);
 
-                File.WriteAllText(Path.Combine(ReportProgram.ResultDirectory, BDTestSettings.FlakinessReportHtmlFilename ?? FileNames.ReportFlakiness),
+                File.WriteAllText(Path.Combine(BDTestReportGenerator.ResultDirectory, BDTestSettings.FlakinessReportHtmlFilename ?? FileNames.ReportFlakiness),
                     stringWriter.ToString());
             }
         }
@@ -84,7 +84,7 @@ namespace BDTest.ReportGenerator.Builders
                     .Style("padding", "25px")
                     .WriteTo(stringWriter, HtmlEncoder.Default);
 
-                File.WriteAllText(Path.Combine(ReportProgram.ResultDirectory, BDTestSettings.TestTimesReportHtmlFilename ?? FileNames.ReportTestTimesComparison),
+                File.WriteAllText(Path.Combine(BDTestReportGenerator.ResultDirectory, BDTestSettings.TestTimesReportHtmlFilename ?? FileNames.ReportTestTimesComparison),
                     stringWriter.ToString());
             }
         }
@@ -99,7 +99,7 @@ namespace BDTest.ReportGenerator.Builders
                     .Style("padding", "25px")
                     .WriteTo(stringWriter, HtmlEncoder.Default);
 
-                File.WriteAllText(Path.Combine(ReportProgram.ResultDirectory, BDTestSettings.ScenariosByStoryReportHtmlFilename ?? FileNames.ReportByStory),
+                File.WriteAllText(Path.Combine(BDTestReportGenerator.ResultDirectory, BDTestSettings.ScenariosByStoryReportHtmlFilename ?? FileNames.ReportByStory),
                     stringWriter.ToString());
             }
         }
@@ -114,7 +114,7 @@ namespace BDTest.ReportGenerator.Builders
                     .Style("padding", "25px")
                     .WriteTo(stringWriter, HtmlEncoder.Default);
 
-                File.WriteAllText(Path.Combine(ReportProgram.ResultDirectory, BDTestSettings.AllScenariosReportHtmlFilename ?? FileNames.ReportAllScenarios),
+                File.WriteAllText(Path.Combine(BDTestReportGenerator.ResultDirectory, BDTestSettings.AllScenariosReportHtmlFilename ?? FileNames.ReportAllScenarios),
                     stringWriter.ToString());
             }
         }
@@ -741,7 +741,7 @@ namespace BDTest.ReportGenerator.Builders
 
             foreach (var scenario in scenarios)
             {
-                stringBuilder.Add($"['{scenario.GetScenarioText()}', {scenario.TimeTaken.Ticks}]");
+                stringBuilder.Add($"['{scenario.GetScenarioText().Replace("'", "&#8217;")}', {scenario.TimeTaken.Ticks}]");
             }
 
             return string.Join(",", stringBuilder);
