@@ -75,14 +75,11 @@ namespace BDTest.Output
             {
                 return;
             }
-            
-            var foundScenario = Scenario.Instances.FirstOrDefault(scenario => scenario.TestDetails.GetGuid() == TestId);
-            if (foundScenario == null)
-            {
-                return;
-            }
 
-            foundScenario.TearDownOutputStringBuilder.Append(text);
+            if (Scenario.Instances.TryGetValue((Guid) TestId, out var foundScenario))
+            {
+                foundScenario.TearDownOutput += text + Environment.NewLine;
+            }
         }
     }
 }

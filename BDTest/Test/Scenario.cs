@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -21,7 +22,7 @@ namespace BDTest.Test
             }
         }
         
-        internal static List<Scenario> Instances = new List<Scenario>();
+        internal static readonly ConcurrentDictionary<Guid, Scenario> Instances = new ConcurrentDictionary<Guid, Scenario>();
 
         private readonly Reporter _reporters;
 
@@ -34,13 +35,14 @@ namespace BDTest.Test
         [JsonConstructor]
         private Scenario()
         {
-            Instances.Add(this);
         }
 
         [JsonIgnore] internal readonly TestDetails TestDetails;
 
         internal Scenario(List<Step> steps, TestDetails testDetails)
         {
+            Instances.TryAdd(testDetails.GetGuid(), this);
+            
             TestMap.NotRun.TryRemove(testDetails.GetGuid(), out _);
             TestMap.StoppedEarly.TryAdd(testDetails.GetGuid(), this);
 
@@ -100,11 +102,8 @@ namespace BDTest.Test
         [JsonProperty]
         public TimeSpan TimeTaken { get; private set; }
 
-        [JsonIgnore]
-        internal StringBuilder TearDownOutputStringBuilder { get; } = new StringBuilder();
-        
         [JsonProperty]
-        public string TearDownOutput => TearDownOutputStringBuilder.ToString();
+        public string TearDownOutput { get; internal set; }
 
         private async Task ExecuteInternal()
         {
