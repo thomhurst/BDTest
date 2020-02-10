@@ -2,8 +2,13 @@ li {
     list-style-type: none
 }
 
-th, td {
-  text-align: center;
+th,
+td {
+    text-align: left;
+}
+
+.output {
+    text-align: left;
 }
 
 a {
@@ -41,7 +46,7 @@ a:hover {
     margin: 10px 0;
     padding: 20px;
     border: 1px solid #d0d0d0;
-    display:inline-block;
+    display: inline-block;
 }
 
 #expandCollapse {

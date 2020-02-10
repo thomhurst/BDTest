@@ -412,8 +412,8 @@ namespace BDTest.ReportGenerator.Builders
             return
                 new HtmlTag("div").Append(
                     new HtmlTag("div").AddClass("Story").AddClass(HtmlReportPrebuilt.GetStatus(scenarios)).Append(
-                        new HtmlTag("h4").AddClass("StoryText").AppendText(
-                            $"Story: {storyText}"
+                        new HtmlTag("h4").AddClass("StoryText").AppendHtml(
+                            $"Story: {storyText}".UsingHtmlNewLines()
                         ),
                         new HtmlTag("table").Append(
                             new HtmlTag("thead").Append(
@@ -540,7 +540,8 @@ namespace BDTest.ReportGenerator.Builders
                                 )
                         ),
                         new HtmlTag("p").Append(
-                            BuildSteps(scenario.Steps)
+                            BuildSteps(scenario.Steps),
+                            BuildScenarioTeardownOutput(scenario)
                         )
                     )
                 ),
@@ -556,6 +557,21 @@ namespace BDTest.ReportGenerator.Builders
                 new HtmlTag("td").AppendText(
                         scenario.EndTime.ToStringForReport()
                 )
+            );
+        }
+
+        private HtmlTag BuildScenarioTeardownOutput(Scenario scenario)
+        {
+            if (string.IsNullOrEmpty(scenario.TearDownOutput))
+            {
+                return HtmlTag.Empty();
+            }
+
+            return new HtmlTag("details").Append(
+                new HtmlTag("summary").Append(
+                    new HtmlTag("span").AppendText("Test Tear Down Output")
+                ),
+                new HtmlTag("p").AppendText(scenario.TearDownOutput)
             );
         }
 
@@ -650,9 +666,13 @@ namespace BDTest.ReportGenerator.Builders
             }
             else
             {
+                var outputLines = step.Output.SplitOnNewLines();
+
                 outputTag = new HtmlTag("details").Append(
                     new HtmlTag("summary").AppendText("Output"),
-                    new HtmlTag("p").AddClass("output").AppendText(step.Output ?? "")
+                    new HtmlTag("p").AddClass("output")
+                        .Append(outputLines.SelectMany(
+                            line => new[] {new HtmlTag("span").AppendText(line), new BrTag()}))
                 );
             }
 

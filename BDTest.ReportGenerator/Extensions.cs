@@ -131,5 +131,23 @@ namespace BDTest.ReportGenerator
                 }
             }
         }
+
+        public static string UsingHtmlNewLines(this string text)
+        {
+            return text.Replace(Environment.NewLine, "<br>");
+        }
+        
+        public static string WrappedInSpan(this string text)
+        {
+            return $"<span>{text}</span>";
+        }
+
+        public static IEnumerable<string> SplitOnNewLines(this string text)
+        {
+            return text.Split(
+                new[] { Environment.NewLine },
+                StringSplitOptions.None
+            );
+        }
     }
 }

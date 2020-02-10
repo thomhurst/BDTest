@@ -2,13 +2,13 @@
 using System.Linq.Expressions;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
+using BDTest.Output;
 using BDTest.Test.Steps.Given;
 
 namespace BDTest.Test
 {
     public abstract class BDTestBase
     {
-
         public Given Given(Expression<Action> step, [CallerMemberName] string callerMember = null, [CallerFilePath] string callerFile = null)
         {
             return new Given(step, callerMember, callerFile);
@@ -69,6 +69,9 @@ namespace BDTest.Test
             return test.Invoke(Activator.CreateInstance<TContext>(), Activator.CreateInstance<TContext2>(), Activator.CreateInstance<TContext3>(), Activator.CreateInstance<TContext4>(), Activator.CreateInstance<TContext5>());
         }
 
-
+        public void WriteOutput(string text)
+        {
+            TestOutputData.WriteAsExtraScenarioOutput(text);
+        }
     }
 }

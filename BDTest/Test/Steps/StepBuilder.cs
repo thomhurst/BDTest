@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
 using BDTest.Maps;
+using BDTest.Output;
 
 namespace BDTest.Test.Steps
 {
@@ -31,7 +32,9 @@ namespace BDTest.Test.Steps
         internal StepBuilder(Runnable runnable, string callerMember, string callerFile)
         {
             ExistingSteps = new List<Step> { new Step(runnable, StepType.Given) };
-            TestDetails = new TestDetails(callerMember, callerFile, Guid.NewGuid());
+            var testGuid = Guid.NewGuid();
+            TestDetails = new TestDetails(callerMember, callerFile, testGuid);
+            TestOutputData.TestId = testGuid;
         }
 
         protected StepBuilder(List<Step> previousSteps, Expression<Action> action, TestDetails testDetails) : this(previousSteps, new Runnable(action), testDetails )

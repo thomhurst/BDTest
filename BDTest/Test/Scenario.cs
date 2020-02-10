@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
@@ -12,7 +13,6 @@ namespace BDTest.Test
 {
     public class Scenario
     {
-
         static Scenario()
         {
             if (BDTestSettings.InterceptConsoleOutput)
@@ -20,6 +20,8 @@ namespace BDTest.Test
                 Console.SetOut(TestOutputData.Instance);
             }
         }
+        
+        internal static List<Scenario> Instances = new List<Scenario>();
 
         private readonly Reporter _reporters;
 
@@ -32,9 +34,10 @@ namespace BDTest.Test
         [JsonConstructor]
         private Scenario()
         {
+            Instances.Add(this);
         }
 
-        [JsonIgnore] private readonly TestDetails _testDetails;
+        [JsonIgnore] internal readonly TestDetails TestDetails;
 
         internal Scenario(List<Step> steps, TestDetails testDetails)
         {
@@ -44,7 +47,7 @@ namespace BDTest.Test
             StoryText = testDetails.StoryText;
             ScenarioText = testDetails.ScenarioText;
 
-            _testDetails = testDetails;
+            TestDetails = testDetails;
 
             FileName = testDetails.CallerFile;
 
@@ -63,7 +66,7 @@ namespace BDTest.Test
             finally
             {
                 JsonLogger.WriteScenario(this);
-                TestMap.StoppedEarly.TryRemove(_testDetails.GetGuid(), out _);
+                TestMap.StoppedEarly.TryRemove(TestDetails.GetGuid(), out _);
             }
         }
 
@@ -96,6 +99,12 @@ namespace BDTest.Test
         [JsonConverter(typeof(TimespanConverter))]
         [JsonProperty]
         public TimeSpan TimeTaken { get; private set; }
+
+        [JsonIgnore]
+        internal StringBuilder TearDownOutputStringBuilder { get; } = new StringBuilder();
+        
+        [JsonProperty]
+        public string TearDownOutput => TearDownOutputStringBuilder.ToString();
 
         private async Task ExecuteInternal()
         {

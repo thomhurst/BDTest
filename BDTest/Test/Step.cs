@@ -21,8 +21,7 @@ namespace BDTest.Test
 
         [JsonProperty]
         public DateTime EndTime { get; private set; }
-
-        [JsonConverter(typeof(StringEnumConverter))]
+        
         [JsonProperty]
         private StepType StepType { get; }
         private string StepPrefix => StepType.GetValue();
