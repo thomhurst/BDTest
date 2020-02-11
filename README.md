@@ -49,6 +49,28 @@ public class MyTests
 }
 ```
 
+### Async
+
+BDTest supports asynchronous operations. In any Given, When, Then, you can pass in an asynchronous, or a non-asynchronous call.
+If you call `.BDTest()` at the end, any asynchronous tasks will be run in a blocking mode.
+If you want to utilise full asynchronous calls, use `.BDTestAsync()`
+To use this to the full extent, try to use asynchronous methods absolutely everywhere that they could be used.
+
+Make sure if calling a test using `.BDTestAsync()` to await the test, and make the test `async` and return a `Task` instead of void.
+
+```csharp
+public class MyTests : BDTestBase
+{
+    [Test]
+    public async Task Test1() {
+       await Given(() => Action1Async())
+             .When(() => Action2Async())
+             .Then(() => Action3Async())
+             .BDTestAsync();
+    }
+}
+```
+
 ### Automatic Context Construction
 
 #### Lambda Syntax
