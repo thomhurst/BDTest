@@ -7,6 +7,7 @@ using Humanizer;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using BDTest.Attributes;
+using BDTest.Helpers;
 using BDTest.Output;
 using BDTest.Test.Steps;
 
@@ -71,11 +72,13 @@ namespace BDTest.Test
             var arguments = GetMethodArguments(methodCallExpression);
 
             var methodInfo = methodCallExpression?.Method;
+
+            var stepTextAttribute = ((StepTextAttribute)(methodInfo?.GetCustomAttributes(
+                                                             typeof(StepTextAttribute), true) ??
+                                                         new string[] { }).FirstOrDefault());
             
             var customStepText =
-                ((StepTextAttribute)(methodInfo?.GetCustomAttributes(
-                                         typeof(StepTextAttribute), true) ??
-                                     new string[] { }).FirstOrDefault())?.Text;
+                stepTextAttribute?.Text;
             
             var methodNameHumanized = methodInfo?.Name.Humanize();
 
@@ -83,6 +86,7 @@ namespace BDTest.Test
             {
                 try
                 {
+                    customStepText = UseStepTextParameterOverrides(stepTextAttribute);
                     customStepText = string.Format(customStepText, arguments.Cast<object>().ToArray());
                 }
                 catch (Exception)
@@ -93,6 +97,11 @@ namespace BDTest.Test
             }
 
             StepText = $"{StepPrefix} {customStepText ?? methodNameHumanized}";
+        }
+
+        private string UseStepTextParameterOverrides(StepTextAttribute stepTextAttribute)
+        {
+            return stepTextAttribute.StepTextParameterOverrides.Aggregate(stepTextAttribute.Text, (current, parameterOverride) => current.Replace($"{{{parameterOverride.Split(':')[0]}}}", parameterOverride.Split(new [] {':'}, 2)[1]));
         }
 
         private static List<string> GetMethodArguments(MethodCallExpression methodCallExpression)
@@ -115,7 +124,16 @@ namespace BDTest.Test
         {
             try
             {
-                return Expression.Lambda(argument).Compile().DynamicInvoke()?.ToString();
+                var compiledExpression = Expression.Lambda(argument).Compile().DynamicInvoke();
+
+                if (TypeHelper.IsFuncOrAction(compiledExpression.GetType()))
+                {
+                    var func = (Delegate) compiledExpression;
+
+                    return func.DynamicInvoke()?.ToString();
+                }
+                
+                return compiledExpression?.ToString();
             }
             catch (Exception)
             {

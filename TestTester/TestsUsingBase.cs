@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
 using BDTest.Attributes;
@@ -152,6 +153,38 @@ namespace TestTester
                     .When(() => Add(context))
                     .Then(() => Add(context))
                     .And(() => Exception(context))
+                    .BDTest());
+        }
+        
+        [Test]
+        public void FuncStepTextTest()
+        {
+            WithContext<TestContext>(context =>
+                Given(() => Add(context))
+                    .When(() => Add(context))
+                    .Then(() => FuncReturnsStepTextCorrectly(() => "Blah"))
+                    .BDTest());
+        }
+
+        [StepText("Text with a function returning {0}")]
+        public void FuncReturnsStepTextCorrectly(Func<string> func)
+        {
+            
+        }
+        
+        [StepText("Text with a function returning {0} which is overridden", "0:Overridden Successfully")]
+        public void FuncReturnsStepTextOverriddenCorrectly(Func<string, string> func)
+        {
+            
+        }
+        
+        [Test]
+        public void FuncStepTextReverserTest()
+        {
+            WithContext<TestContext>(context =>
+                Given(() => Add(context))
+                    .When(() => Add(context))
+                    .Then(() => FuncReturnsStepTextOverriddenCorrectly(str => str.Reverse().ToString()))
                     .BDTest());
         }
 

@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Text.RegularExpressions;
 
 namespace BDTest.Attributes
 {
@@ -14,10 +16,40 @@ namespace BDTest.Attributes
     public class StepTextAttribute : Attribute
     {
         public string Text { get; }
+        public List<string> StepTextParameterOverrides { get; } = new List<string>();
 
         public StepTextAttribute(string stepText)
         {
             Text = stepText;
+        }
+
+        public StepTextAttribute(string stepText, string parameterOverride)
+        {
+            Text = stepText;
+
+            if (!string.IsNullOrEmpty(parameterOverride) && !Regex.IsMatch(parameterOverride, "^(\\d+):"))
+            {
+                throw new IndexOutOfRangeException(
+                    "The parameter override must begin with an index and a colon. E.g. \"0:Overriding Parameter 0\"");
+            }
+
+            StepTextParameterOverrides.Add(parameterOverride);
+        }
+        
+        public StepTextAttribute(string stepText, string[] parameterOverrides)
+        {
+            Text = stepText;
+
+            foreach (var parameterOverride in parameterOverrides)
+            {
+                if (!string.IsNullOrEmpty(parameterOverride) && Regex.IsMatch(parameterOverride, "^(\\d+):"))
+                {
+                    throw new IndexOutOfRangeException(
+                        "The parameter override must begin with an index and a colon. E.g. \"0:Overriding Parameter 0\"");
+                }
+            }
+
+            StepTextParameterOverrides.AddRange(parameterOverrides);
         }
     }
 }
