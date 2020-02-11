@@ -10,7 +10,7 @@ namespace BDTest.Paths
         public static readonly string AggregatedJsonScenarios = Path.Combine(OutputDirectory, FileNames.TestDataJson);
         public static readonly string ScenariosDirectory = Path.Combine(OutputDirectory, FileNames.Scenarios);
         public static string RandomScenarioFilePath => Path.Combine(ScenariosDirectory, Guid.NewGuid() + ".json");
-        public static string ScenarioTeardownOutputFilePath(string guid) => Path.Combine(ScenariosDirectory, $"{Guid.NewGuid():N}-TearDownOutput-{guid}.txt");
+        public static string ScenarioTeardownOutputFilePath(string guid) => Path.Combine(ScenariosDirectory, $"TearDownOutput-{guid}.txt");
         public static readonly string Warnings = Path.Combine(OutputDirectory, FileNames.Warnings);
         
 

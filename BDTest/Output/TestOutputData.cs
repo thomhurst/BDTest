@@ -1,13 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using BDTest.Maps;
 using BDTest.Paths;
-using BDTest.Test;
 
 namespace BDTest.Output
 {
@@ -79,7 +76,7 @@ namespace BDTest.Output
                 return;
             }
 
-            await FileHelper.WriteTextAsync(FileLocations.ScenarioTeardownOutputFilePath(testId), text);
+            await FileHelper.AppendTextAsync(FileLocations.ScenarioTeardownOutputFilePath(testId), $"{text}{Environment.NewLine}");
         }
     }
 }

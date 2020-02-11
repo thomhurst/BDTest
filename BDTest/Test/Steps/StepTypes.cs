@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Linq;
-using BDTest.Output;
 
 namespace BDTest.Test.Steps
 {

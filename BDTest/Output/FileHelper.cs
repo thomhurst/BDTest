@@ -6,7 +6,7 @@ namespace BDTest.Output
 {
     public class FileHelper
     {
-        public static async Task WriteTextAsync(string filePath, string text)
+        public static async Task AppendTextAsync(string filePath, string text)
         {
             var encodedText = Encoding.UTF8.GetBytes(text);
 

@@ -129,7 +129,7 @@ namespace BDTest.ReportGenerator
 
             var outputFilesByTestId = outputFiles.GroupBy(outputFile =>
                 Path.GetFileNameWithoutExtension(outputFile)
-                    .Split(new[] {"-TearDownOutput-"}, StringSplitOptions.None)[1]);
+                    .Split(new[] {"TearDownOutput-"}, StringSplitOptions.None)[1]);
             
             foreach (var groupedOutputFiles in outputFilesByTestId)
             {
