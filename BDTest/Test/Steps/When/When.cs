@@ -14,6 +14,11 @@ namespace BDTest.Test.Steps.When
         protected internal When(List<Step> previousSteps, Expression<Action> action, TestDetails testDetails) : base(previousSteps, action, testDetails)
         {
         }
+        
+        public When WithStepText(Func<string> overridingStepText)
+        {
+            return WithStepText<When>(overridingStepText);
+        }
 
         public Then.Then Then(Expression<Action> step)
         {

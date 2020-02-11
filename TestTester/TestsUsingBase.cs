@@ -187,6 +187,18 @@ namespace TestTester
                     .Then(() => FuncReturnsStepTextOverriddenCorrectly(str => str.Reverse().ToString()))
                     .BDTest());
         }
+        
+        [Test]
+        public void WithStepText()
+        {
+            WithContext<TestContext>(context =>
+                Given(() => Add(context)).WithStepText(() => $"this is my Given step {context.Number}")
+                    .And(() => Add(context)).WithStepText(() => $"this is my AndGiven step {context.Number}")
+                    .When(() => Add(context)).WithStepText(() => $"this is my When step {context.Number}")
+                    .Then(() => Add(context)).WithStepText(() => $"this is my Then step {context.Number}")
+                    .And(() => Add(context)).WithStepText(() => $"this is my AndThen step {context.Number}")
+                    .BDTest());
+        }
 
         [OneTimeTearDown]
         public void TearDown()

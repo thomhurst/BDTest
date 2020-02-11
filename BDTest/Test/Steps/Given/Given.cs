@@ -7,10 +7,15 @@ namespace BDTest.Test.Steps.Given
     public class Given : StepBuilder
     {
         protected override StepType StepType { get; } = StepType.Given;
-
+        
         // Actions
         internal Given(Expression<Action> action, string callerMember, string callerFile, string testId) : base(action, callerMember, callerFile, testId)
         {
+        }
+
+        public Given WithStepText(Func<string> overridingStepText)
+        {
+            return WithStepText<Given>(overridingStepText);
         }
 
         public AndGiven And(Expression<Action> step)

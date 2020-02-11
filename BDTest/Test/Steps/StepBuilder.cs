@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
 using BDTest.Maps;
@@ -29,6 +30,12 @@ namespace BDTest.Test.Steps
             
         }
 
+        protected T WithStepText<T>(Func<string> overridingStepText) where T : StepBuilder
+        {
+            ExistingSteps[TestDetails.StepCount - 1].OverriddenStepText = overridingStepText;
+            return (T) this;
+        }
+
         internal StepBuilder(Runnable runnable, string callerMember, string callerFile, string testId)
         {
             ExistingSteps = new List<Step> { new Step(runnable, StepType.Given) };
@@ -47,6 +54,8 @@ namespace BDTest.Test.Steps
 
         internal StepBuilder(List<Step> previousSteps, Runnable runnable, TestDetails testDetails)
         {
+            testDetails.StepCount++;
+            
             TestDetails = testDetails;
             StoryText = testDetails.StoryText;
             ScenarioText = testDetails.ScenarioText;

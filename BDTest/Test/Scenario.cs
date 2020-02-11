@@ -114,7 +114,6 @@ namespace BDTest.Test
                     StartTime = DateTime.Now;
                     _reporters.WriteStory(StoryText);
                     _reporters.WriteScenario(ScenarioText);
-                    Steps.ForEach(step => _reporters.WriteLine(step.StepText));
                     _reporters.NewLine();
 
                     foreach (var step in Steps)
@@ -136,6 +135,7 @@ namespace BDTest.Test
                 }
                 finally
                 {
+                    Steps.ForEach(step => _reporters.WriteLine($"{step.StepText} > [{step.Status}]"));
                     _reporters.WriteLine($"{Environment.NewLine}Test Result: {Status}");
                     EndTime = DateTime.Now;
                     TimeTaken = EndTime - StartTime;

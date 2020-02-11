@@ -56,6 +56,9 @@ namespace BDTest.Test
 
         [JsonProperty]
         public string StepText { get; private set; }
+        
+        [JsonIgnore]
+        internal Func<string> OverriddenStepText { get; set; }
 
         private void SetStepText()
         {
@@ -143,6 +146,11 @@ namespace BDTest.Test
 
         public async Task Execute()
         {
+            if (OverriddenStepText != null)
+            {
+                StepText = $"{StepPrefix} {OverriddenStepText.Invoke()}";
+            }
+            
             await Task.Run(async () =>
             {
                 try

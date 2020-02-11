@@ -10,6 +10,10 @@ namespace BDTest.Test.Steps.Given
 
         protected override StepType StepType { get; } = StepType.AndGiven;
 
+        public AndGiven WithStepText(Func<string> overridingStepText)
+        {
+            return WithStepText<AndGiven>(overridingStepText);
+        }
 
         // Actions
         public AndGiven And(Expression<Action> step)

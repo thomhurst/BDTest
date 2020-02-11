@@ -24,6 +24,11 @@ namespace BDTest.Test.Steps.Then
         protected internal Then(List<Step> previousSteps, Expression<Func<Task>> action, TestDetails testDetails) : base(previousSteps, action, testDetails)
         {
         }
+        
+        public Then WithStepText(Func<string> overridingStepText)
+        {
+            return WithStepText<Then>(overridingStepText);
+        }
 
         public AndThen And(Expression<Func<Task>> step)
         {
