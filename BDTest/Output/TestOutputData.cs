@@ -76,7 +76,7 @@ namespace BDTest.Output
                 return;
             }
 
-            await FileHelper.AppendTextAsync(FileLocations.ScenarioTeardownOutputFilePath(testId), $"{text}{Environment.NewLine}");
+            await AsyncFileHelper.AppendTextAsync(FileLocations.ScenarioTeardownOutputFilePath(testId), $"{text}{Environment.NewLine}");
         }
     }
 }

@@ -647,36 +647,12 @@ namespace BDTest.ReportGenerator.Builders
 
         private static HtmlTag BuildStepExpandedInfo(Step step)
         {
-            HtmlTag exceptionTag;
+            var exceptionTag = BuildExceptionTag(step);
+            var outputTag = BuildOutputTag(step);
 
-            if (step.Exception == null)
+            if (exceptionTag == null && outputTag == null)
             {
-                exceptionTag = null;
-            }
-            else
-            {
-                exceptionTag = new HtmlTag("details").Append(
-                    new HtmlTag("summary").AppendText("Exception"),
-                    new HtmlTag("p").AddClass("exception").AppendText(step.Exception?.ToString() ?? "")
-                );
-            }
-
-            HtmlTag outputTag;
-
-            if (step.Output == null || string.IsNullOrWhiteSpace(step.Output))
-            {
-                outputTag = null;
-            }
-            else
-            {
-                var outputLines = step.Output.SplitOnNewLines();
-
-                outputTag = new HtmlTag("details").Append(
-                    new HtmlTag("summary").AppendText("Output"),
-                    new HtmlTag("p").AddClass("output")
-                        .Append(outputLines.SelectMany(
-                            line => new[] {new HtmlTag("span").AppendText(line), new BrTag()}))
-                );
+                return null;
             }
 
             var returnTag = new HtmlTag("p").Append(
@@ -684,12 +660,37 @@ namespace BDTest.ReportGenerator.Builders
                 outputTag ?? HtmlTag.Empty()
             );
 
-            if (exceptionTag == null && outputTag == null)
+            return returnTag;
+        }
+
+        private static HtmlTag BuildOutputTag(Step step)
+        {
+            if (string.IsNullOrWhiteSpace(step.Output))
             {
                 return null;
             }
 
-            return returnTag;
+            var outputLines = step.Output.SplitOnNewLines();
+
+            return new HtmlTag("details").Append(
+                new HtmlTag("summary").AppendText("Output"),
+                new HtmlTag("pre").AddClass("output")
+                    .Append(outputLines.SelectMany(
+                        line => new[] {new HtmlTag("span").AppendText(line), new BrTag()}))
+            );
+        }
+
+        private static HtmlTag BuildExceptionTag(Step step)
+        {
+            if (step.Exception == null)
+            {
+                return null;
+            }
+
+            return new HtmlTag("details").Append(
+                new HtmlTag("summary").AppendText("Exception"),
+                new HtmlTag("pre").AddClass("exception").AppendText(step.Exception?.ToString() ?? "")
+            );
         }
 
         private static HtmlTag BuildHead()
@@ -714,7 +715,7 @@ namespace BDTest.ReportGenerator.Builders
             {
                 new HtmlTag("script").Attr("type","text/javascript").Attr("src", "./css/jquery-3.3.1.min.js"),
                 new HtmlTag("script").Attr("type","text/javascript").Attr("src", "./css/checkbox_toggle_js.js"),
-                new HtmlTag("script").Attr("type","text/javascript").Attr("src", "https://www.gstatic.com/charts/loader.js"),
+                new HtmlTag("script").Attr("type","text/javascript").Attr("src", "https://www.gstatic.com/charts/loader.js").Attr("async", "async"),
             };
             list.AddRange(BuildChartJavascript(storiesCount));
 
@@ -724,7 +725,7 @@ namespace BDTest.ReportGenerator.Builders
         private IEnumerable<HtmlTag> BuildChartJavascript(int storiesCount)
         {
             var chartJs = new List<HtmlTag>();
-            var htmlTag = new HtmlTag("script").Attr("type", "text/javascript").Encoded(false).AppendText(
+            var htmlTag = new HtmlTag("script").Attr("type", "text/javascript").Attr("defer", "defer").Encoded(false).AppendText(
                 "google.charts.load('current', {'packages':['corechart']});\r\n      google.charts.setOnLoadCallback(drawChart);\r\n\r\n      function drawChart() {\r\n\r\n        ");
 
             for (var i = 0; i <= storiesCount; i++)

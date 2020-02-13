@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 
 namespace BDTest.Output
 {
-    public class FileHelper
+    public static class AsyncFileHelper
     {
         public static async Task AppendTextAsync(string filePath, string text)
         {
@@ -15,7 +15,7 @@ namespace BDTest.Output
                 bufferSize: 4096, useAsync: true))
             {
                 await sourceStream.WriteAsync(encodedText, 0, encodedText.Length);
-            };
+            }
         }
     }
 }

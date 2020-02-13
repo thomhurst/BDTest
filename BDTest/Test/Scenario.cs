@@ -135,6 +135,11 @@ namespace BDTest.Test
                 }
                 finally
                 {
+                    foreach (var notRunStep in Steps.Where(step => step.Status == Status.Inconclusive))
+                    {
+                        notRunStep.SetStepText();
+                    }
+                    
                     Steps.ForEach(step => _reporters.WriteLine($"{step.StepText} > [{step.Status}]"));
                     _reporters.WriteLine($"{Environment.NewLine}Test Result: {Status}");
                     EndTime = DateTime.Now;

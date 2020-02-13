@@ -60,8 +60,14 @@ namespace BDTest.Test
         [JsonIgnore]
         internal Func<string> OverriddenStepText { get; set; }
 
-        private void SetStepText()
+        internal void SetStepText()
         {
+            if (OverriddenStepText != null)
+            {
+                StepText = $"{StepPrefix} {OverriddenStepText.Invoke()}";
+                return;
+            }
+            
             MethodCallExpression methodCallExpression;
             if (Runnable.Action != null)
             {
@@ -146,11 +152,8 @@ namespace BDTest.Test
 
         public async Task Execute()
         {
-            if (OverriddenStepText != null)
-            {
-                StepText = $"{StepPrefix} {OverriddenStepText.Invoke()}";
-            }
-            
+            SetStepText();
+
             await Task.Run(async () =>
             {
                 try

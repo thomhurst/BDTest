@@ -20,7 +20,7 @@ namespace BDTest.Test.Steps.Then
         {
         }
         
-        public AndThen WithStepText(Func<string> overridingStepText)
+        public new AndThen WithStepText(Func<string> overridingStepText)
         {
             return WithStepText<AndThen>(overridingStepText);
         }
