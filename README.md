@@ -49,6 +49,28 @@ public class MyTests
 }
 ```
 
+### Async
+
+BDTest supports asynchronous operations. In any Given, When, Then, you can pass in an asynchronous, or a non-asynchronous call.
+If you call `.BDTest()` at the end, any asynchronous tasks will be run in a blocking mode.
+If you want to utilise full asynchronous calls, use `.BDTestAsync()`
+To use this to the full extent, try to use asynchronous methods absolutely everywhere that they could be used.
+
+Make sure if calling a test using `.BDTestAsync()` to await the test, and make the test `async` and return a `Task` instead of void.
+
+```csharp
+public class MyTests : BDTestBase
+{
+    [Test]
+    public async Task Test1() {
+       await Given(() => Action1Async())
+             .When(() => Action2Async())
+             .Then(() => Action3Async())
+             .BDTestAsync();
+    }
+}
+```
+
 ### Automatic Context Construction
 
 #### Lambda Syntax
@@ -172,11 +194,26 @@ public void SetName(string firstName, string lastName)
 
 public void TestSetName() 
 {
-    Given(() => SetName("Tom", "Longhurst");) // StepText should equal "Given my name is Tom Longhurst"
-    .When(() => SetName("Tom", "Longhurst");) // StepText should equal "When my name is Tom Longhurst"
-    .Then(() => SetName("Tom", "Longhurst");) // StepText should equal "Then my name is Tom Longhurst"
-    .And(() => SetName("Tom", "Longhurst");) // StepText should equal "And my name is Tom Longhurst"
+    Given(() => SetName("Tom", "Longhurst")) // StepText should equal "Given my name is Tom Longhurst"
+    .When(() => SetName("Tom", "Longhurst")) // StepText should equal "When my name is Tom Longhurst"
+    .Then(() => SetName("Tom", "Longhurst")) // StepText should equal "Then my name is Tom Longhurst"
+    .And(() => SetName("Tom", "Longhurst")) // StepText should equal "And my name is Tom Longhurst"
 }
+```
+
+#### Overriding Step Text
+
+Sometimes, you can't generate a nice step text from attributes due to compile-time constant restraints,
+or you might have a method that takes a Func<> and won't implicitly convert to a nice readable string.
+
+The way around this would be to add a `.WithStepText(() => "text")` call to your step.
+
+For instance, I have a method which takes a Func, and it's used to update fields on an API Request Model. I did this so that I don't have to create lots of different methods doing a similar thing. The trade off here was that I can't have a StepText that specifically outlined what I was doing for each test.
+
+So I can override this to a different value for each test, and provide a better context to what action I am performing.
+This looks like:
+```
+.When(() => MyUpdateSteps.UpdateTheField(request => nameof(request.EmailAddress), newEmailAddress)).WithStepText(() => $"I call update customer with a new email address of '{newEmailAddress}'")
 ```
 
 ## Reports
@@ -191,7 +228,7 @@ Install via Nuget > `Install-Package BDTest.ReportGenerator`
 You shouldn't have to do anything for the standard reports! 
 Once the package has been installed and your tests have run, these reports should appear in your output directory automatically.
 
-#### For .NET Standard:
+#### For .NET Framework:
 You will need to create a global tear down method that runs after all of your tests, and in that you need to call
 `BDTestReportGenerator.Generate();`
 
