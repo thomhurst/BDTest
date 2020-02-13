@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -135,14 +136,31 @@ namespace BDTest.Test
             {
                 var compiledExpression = Expression.Lambda(argument).Compile().DynamicInvoke();
 
+                if (compiledExpression == null)
+                {
+                    return "null";
+                }
+
                 if (TypeHelper.IsFuncOrAction(compiledExpression.GetType()))
                 {
                     var func = (Delegate) compiledExpression;
 
                     return func.DynamicInvoke()?.ToString();
                 }
-                
-                return compiledExpression?.ToString();
+
+                if (TypeHelper.IsIEnumerable(compiledExpression) || compiledExpression.GetType().IsArray)
+                {
+                    return string.Join(", ", (IEnumerable<object>) compiledExpression);
+                }
+
+                if (TypeHelper.IsIDictionary(compiledExpression))
+                {
+                    return string.Join(",",
+                        ((IDictionary<object, object>) compiledExpression).Select(kv => $"{kv.Key}={kv.Value}")
+                    );
+                }
+
+                return compiledExpression.ToString();
             }
             catch (Exception)
             {

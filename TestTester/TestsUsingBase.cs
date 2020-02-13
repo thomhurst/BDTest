@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
@@ -178,6 +179,12 @@ namespace TestTester
             
         }
         
+        [StepText("the step text can display the list {0}")]
+        public void StepWithListType(IList<string> list)
+        {
+            
+        }
+        
         [Test]
         public void FuncStepTextReverserTest()
         {
@@ -198,6 +205,15 @@ namespace TestTester
                     .Then(() => Add(context)).WithStepText(() => $"this is my Then step {context.Number}")
                     .And(() => Add(context)).WithStepText(() => $"this is my AndThen step {context.Number}")
                     .BDTest());
+        }
+
+        [Test]
+        public void WithStepTextList()
+        {
+            Given(() => Console.WriteLine("Empty Step"))
+                .When(() => Console.WriteLine("Empty Step"))
+                .Then(() => StepWithListType(new List<string> {"Blah1", "Blah2", "Blah3"}))
+                .BDTest();
         }
 
         [OneTimeTearDown]
