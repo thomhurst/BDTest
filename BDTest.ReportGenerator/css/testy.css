@@ -5,11 +5,7 @@ li {
 th,
 td {
     text-align: left;
-}
-
-.output {
-    text-align: left;
-    margin-left: 25px;
+    vertical-align: top;
 }
 
 a {
@@ -20,9 +16,20 @@ a:hover {
     color: #606c76;
 }
 
+pre {
+    width: 1000px;
+    word-break: break-word;
+    overflow: scroll;
+}
+
 .StoryText,
 .ScenarioText {
     /* font-weight: bold */
+}
+
+.output {
+    text-align: left;
+    margin-left: 25px;
 }
 
 .footer {
