@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Text.Encodings.Web;
 using BDTest.Output;
 using BDTest.Paths;
@@ -539,7 +540,7 @@ namespace BDTest.ReportGenerator.Builders
                                 scenarioText
                                 )
                         ),
-                        new HtmlTag("p").Append(
+                        new HtmlTag("p").Style("margin-left", "25px").Append(
                             BuildSteps(scenario.Steps),
                             BuildScenarioTeardownOutput(scenario)
                         )
@@ -573,7 +574,7 @@ namespace BDTest.ReportGenerator.Builders
                 new HtmlTag("summary").Append(
                     new HtmlTag("span").AppendText("Test Tear Down Output")
                 ),
-                new HtmlTag("p").Append(scenarioTearDownOutputLines.SelectMany(
+                new HtmlTag("pre").Append(scenarioTearDownOutputLines.SelectMany(
                     line => new[] {new HtmlTag("span").AppendText(line), new BrTag()}))
             );
         }
@@ -582,11 +583,11 @@ namespace BDTest.ReportGenerator.Builders
         {
             return new[]
             {
-                new HtmlTag("link").Attr("rel", "stylesheet").Attr("href", "https://fonts.googleapis.com/css?family=Roboto:300,300italic,700,700italic"),
-                new HtmlTag("link").Attr("rel", "stylesheet").Attr("href", "http://cdn.rawgit.com/necolas/normalize.css/master/normalize.css"),
-                new HtmlTag("link").Attr("rel", "stylesheet").Attr("href", "./css/milligram/dist/milligram.min.css"),
-                new HtmlTag("link").Attr("rel", "stylesheet").Attr("href", "./css/milligram/dist/milligram.css"),
-                new HtmlTag("link").Attr("rel", "stylesheet").Attr("href", "./css/testy.css")
+                new HtmlTag("link").Attr("rel", "stylesheet").Attr("href", "https://fonts.googleapis.com/css?family=Roboto:300,300italic,700,700italic").Attr("media", "print").Attr("onload", "this.media='all'"),
+                new HtmlTag("link").Attr("rel", "stylesheet").Attr("href", "http://cdn.rawgit.com/necolas/normalize.css/master/normalize.css").Attr("media", "print").Attr("onload", "this.media='all'"),
+                new HtmlTag("link").Attr("rel", "stylesheet").Attr("href", "./css/milligram/dist/milligram.min.css").Attr("media", "print").Attr("onload", "this.media='all'"),
+                new HtmlTag("link").Attr("rel", "stylesheet").Attr("href", "./css/milligram/dist/milligram.css").Attr("media", "print").Attr("onload", "this.media='all'"),
+                new HtmlTag("link").Attr("rel", "stylesheet").Attr("href", "./css/testy.css").Attr("media", "print").Attr("onload", "this.media='all'")
             };
         }
 
@@ -715,35 +716,44 @@ namespace BDTest.ReportGenerator.Builders
             {
                 new HtmlTag("script").Attr("type","text/javascript").Attr("src", "./css/jquery-3.3.1.min.js"),
                 new HtmlTag("script").Attr("type","text/javascript").Attr("src", "./css/checkbox_toggle_js.js"),
-                new HtmlTag("script").Attr("type","text/javascript").Attr("src", "https://www.gstatic.com/charts/loader.js").Attr("async", "async"),
+                new HtmlTag("script").Attr("type", "text/javascript").AppendHtml(JavascriptStringHelpers.LoadJavascriptChartsAsync(BuildChartJavascript(storiesCount).ToString()))
             };
-            list.AddRange(BuildChartJavascript(storiesCount));
 
             return list.ToArray();
         }
 
-        private IEnumerable<HtmlTag> BuildChartJavascript(int storiesCount)
+        private StringBuilder BuildChartJavascript(int storiesCount)
         {
-            var chartJs = new List<HtmlTag>();
-            var htmlTag = new HtmlTag("script").Attr("type", "text/javascript").Attr("defer", "defer").Encoded(false).AppendText(
-                "google.charts.load('current', {'packages':['corechart']});\r\n      google.charts.setOnLoadCallback(drawChart);\r\n\r\n      function drawChart() {\r\n\r\n        ");
+            var stringBuilder = new StringBuilder();
+            stringBuilder.Append(
+                "google.charts.load('current', {'packages':['corechart']});\r\n      google.charts.setOnLoadCallback(drawChart);\r\n\r\n      function drawChart() {\r\n\r\n        "
+                );
+
+            //var chartJs = new List<HtmlTag>();
+            //var htmlTag = new HtmlTag("script").Attr("type", "text/javascript").Encoded(false).AppendText(
+             //   "google.charts.load('current', {'packages':['corechart']});\r\n      google.charts.setOnLoadCallback(drawChart);\r\n\r\n      function drawChart() {\r\n\r\n        ");
 
             for (var i = 0; i <= storiesCount; i++)
             {
-                htmlTag.AppendText("var data" + StatusTag + i + " = google.visualization.arrayToDataTable([\r\n          ['Scenarios', 'Amount'],\r\n          " + BuildChartScenarioStatusData(i) + "\r\n        ]);\r\n\r\n        var options" + StatusTag + i + " = {\r\n          title: 'Test Status', width: 700, height: 400, pieSliceText: 'none', slices: {\r\n            0: { color: '#34A853' },\r\n            1: { color: '#EA4335' },\r\n 2: { color: '#FBBc05' },\r\n 3: { color: '#4285F4' }          }\r\n        };\r\n\r\n        var chart" + StatusTag + i + " = new google.visualization.PieChart(document.getElementById('piechart" + StatusTag + i + "'));\r\n\r\n        chart" + StatusTag + i + ".draw(data" + StatusTag + i + ", options" + StatusTag + i + ");\r\n      ");
+               // htmlTag.AppendText("var data" + StatusTag + i + " = google.visualization.arrayToDataTable([\r\n          ['Scenarios', 'Amount'],\r\n          " + BuildChartScenarioStatusData(i) + "\r\n        ]);\r\n\r\n        var options" + StatusTag + i + " = {\r\n          title: 'Test Status', width: 700, height: 400, pieSliceText: 'none', slices: {\r\n            0: { color: '#34A853' },\r\n            1: { color: '#EA4335' },\r\n 2: { color: '#FBBc05' },\r\n 3: { color: '#4285F4' }          }\r\n        };\r\n\r\n        var chart" + StatusTag + i + " = new google.visualization.PieChart(document.getElementById('piechart" + StatusTag + i + "'));\r\n\r\n        chart" + StatusTag + i + ".draw(data" + StatusTag + i + ", options" + StatusTag + i + ");\r\n      ");
+                stringBuilder.Append("var data" + StatusTag + i + " = google.visualization.arrayToDataTable([\r\n          ['Scenarios', 'Amount'],\r\n          " + BuildChartScenarioStatusData(i) + "\r\n        ]);\r\n\r\n        var options" + StatusTag + i + " = {\r\n          title: 'Test Status', width: 700, height: 400, pieSliceText: 'none', slices: {\r\n            0: { color: '#34A853' },\r\n            1: { color: '#EA4335' },\r\n 2: { color: '#FBBc05' },\r\n 3: { color: '#4285F4' }          }\r\n        };\r\n\r\n        var chart" + StatusTag + i + " = new google.visualization.PieChart(document.getElementById('piechart" + StatusTag + i + "'));\r\n\r\n        chart" + StatusTag + i + ".draw(data" + StatusTag + i + ", options" + StatusTag + i + ");\r\n      ");
             }
 
             for (var i = 0; i <= storiesCount; i++)
             {
-                htmlTag.AppendText("var data" + TimeTag + i + " = google.visualization.arrayToDataTable([\r\n          ['Scenarios', 'Amount'],\r\n          " + BuildChartScenarioTimesData(i) + "\r\n        ]);\r\n\r\n        var options" + TimeTag + i + " = {\r\n          title: 'Test Times', width: 700, height: 400, pieSliceText: 'none'};\r\n\r\n        var chart" + TimeTag + i + " = new google.visualization.PieChart(document.getElementById('piechart" + TimeTag + i + "'));\r\n\r\n        chart" + TimeTag + i + ".draw(data" + TimeTag + i + ", options" + TimeTag + i + ");\r\n      ");
+                //htmlTag.AppendText("var data" + TimeTag + i + " = google.visualization.arrayToDataTable([\r\n          ['Scenarios', 'Amount'],\r\n          " + BuildChartScenarioTimesData(i) + "\r\n        ]);\r\n\r\n        var options" + TimeTag + i + " = {\r\n          title: 'Test Times', width: 700, height: 400, pieSliceText: 'none'};\r\n\r\n        var chart" + TimeTag + i + " = new google.visualization.PieChart(document.getElementById('piechart" + TimeTag + i + "'));\r\n\r\n        chart" + TimeTag + i + ".draw(data" + TimeTag + i + ", options" + TimeTag + i + ");\r\n      ");
+                stringBuilder.Append("var data" + TimeTag + i + " = google.visualization.arrayToDataTable([\r\n          ['Scenarios', 'Amount'],\r\n          " + BuildChartScenarioTimesData(i) + "\r\n        ]);\r\n\r\n        var options" + TimeTag + i + " = {\r\n          title: 'Test Times', width: 700, height: 400, pieSliceText: 'none'};\r\n\r\n        var chart" + TimeTag + i + " = new google.visualization.PieChart(document.getElementById('piechart" + TimeTag + i + "'));\r\n\r\n        chart" + TimeTag + i + ".draw(data" + TimeTag + i + ", options" + TimeTag + i + ");\r\n      ");
             }
+            
+            //htmlTag.AppendText("}");
+            stringBuilder.Append("}");
 
-            htmlTag.AppendText("}");
+            //chartJs.Add(htmlTag);
 
-            chartJs.Add(htmlTag);
-
-            return chartJs;
+            return stringBuilder;
         }
+
+
 
         private string BuildChartScenarioStatusData(int i)
         {
