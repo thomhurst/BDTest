@@ -570,9 +570,9 @@ namespace BDTest.ReportGenerator.Builders
 
             var scenarioTearDownOutputLines = scenario.TearDownOutput.SplitOnNewLines();
             
-            return new HtmlTag("details").Append(
+            return new HtmlTag("details").Style("margin-left", "25px").Append(
                 new HtmlTag("summary").Append(
-                    new HtmlTag("span").AppendText("Test Tear Down Output")
+                    new HtmlTag("span").AppendText("Test Tear Down Output").AddClass("step")
                 ),
                 new HtmlTag("pre").Append(scenarioTearDownOutputLines.SelectMany(
                     line => new[] {new HtmlTag("span").AppendText(line), new BrTag()}))
