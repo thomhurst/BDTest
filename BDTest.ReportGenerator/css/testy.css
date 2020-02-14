@@ -9,6 +9,7 @@ td {
 
 .output {
     text-align: left;
+    margin-left: 25px;
 }
 
 a {
@@ -42,6 +43,10 @@ a:hover {
     border: 1px solid #d0d0d0;
 }
 
+.step {
+    font-size: 90%;
+}
+
 .box {
     margin: 10px 0;
     padding: 20px;
@@ -68,6 +73,7 @@ a:hover {
 
 .exception {
     color: red;
+    margin-left: 25px;
 }
 
 .success {
