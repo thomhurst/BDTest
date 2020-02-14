@@ -43,7 +43,7 @@ namespace BDTest.ReportGenerator
                 sb.Add($"{span.Milliseconds} ms");
             }
 
-            var joinedResult = string.Join(" | ", sb);
+            var joinedResult = string.Join(" & ", sb);
             return string.IsNullOrWhiteSpace(joinedResult) ? "< 1 ms" : joinedResult;
         }
 
