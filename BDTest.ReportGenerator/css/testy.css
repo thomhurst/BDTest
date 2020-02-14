@@ -17,9 +17,10 @@ a:hover {
 }
 
 pre {
-    width: 1000px;
+    max-width: 1000px;
+    max-height: 500px;
     word-break: break-word;
-    overflow: scroll;
+    overflow: auto;
 }
 
 .StoryText,
