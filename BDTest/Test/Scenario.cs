@@ -112,6 +112,7 @@ namespace BDTest.Test
                 try
                 {
                     StartTime = DateTime.Now;
+                    
                     _reporters.WriteStory(StoryText);
                     _reporters.WriteScenario(ScenarioText);
                     _reporters.NewLine();
@@ -130,7 +131,9 @@ namespace BDTest.Test
                 catch (Exception e)
                 {
                     Status = Status.Failed;
+                    
                     _reporters.WriteLine($"Exception: {e.StackTrace}");
+                    
                     throw;
                 }
                 finally
@@ -140,10 +143,15 @@ namespace BDTest.Test
                         notRunStep.SetStepText();
                     }
                     
+                    _reporters.WriteLine($"{Environment.NewLine}Test Summary:{Environment.NewLine}");
+                    
                     Steps.ForEach(step => _reporters.WriteLine($"{step.StepText} > [{step.Status}]"));
+                    
                     _reporters.WriteLine($"{Environment.NewLine}Test Result: {Status}");
+                    
                     EndTime = DateTime.Now;
                     TimeTaken = EndTime - StartTime;
+                    
                     Output = string.Join(Environment.NewLine,
                         Steps.Where(step => !string.IsNullOrWhiteSpace(step.Output)).Select(step => step.Output));
                 }
