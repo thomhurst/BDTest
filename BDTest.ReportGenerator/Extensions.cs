@@ -65,7 +65,7 @@ namespace BDTest.ReportGenerator
             return scenarios.OrderBy(scenario => scenario.StartTime).First().StartTime;
         }
 
-        public static IEnumerable<Scenario> CurrentVersion(this IEnumerable<Scenario> scenarios)
+        public static IEnumerable<Scenario> WithCurrentVersion(this IEnumerable<Scenario> scenarios)
         {
             return scenarios.Where(scenario =>
                 scenario.Version == System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString());

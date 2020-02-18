@@ -246,7 +246,9 @@ namespace BDTest.ReportGenerator.Builders
 
         private static List<Scenario> FlattenBatchScenarios(IEnumerable<List<Scenario>> scenarioBatched)
         {
-            return scenarioBatched.SelectMany(it => it).Where(scenario => scenario.Status == Status.Passed).CurrentVersion().ToList();
+            return scenarioBatched.SelectMany(it => it)
+                .WithCurrentVersion()
+                .ToList();
         }
 
         private HtmlTag BuildBodyWithStories()
