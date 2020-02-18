@@ -775,7 +775,7 @@ namespace BDTest.ReportGenerator.Builders
 
             foreach (var scenario in scenarios)
             {
-                stringBuilder.Add($"['{scenario.GetScenarioText().Replace("'", "&#8217;")}', {scenario.TimeTaken.Ticks}]");
+                stringBuilder.Add($"['{scenario.GetScenarioText().ReplaceHtmlCharacters()}', {scenario.TimeTaken.Ticks}]");
             }
 
             return string.Join(",", stringBuilder);
