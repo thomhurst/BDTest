@@ -73,7 +73,7 @@ namespace BDTest.Test
 
         public async Task WriteTearDownOutput(string text)
         {
-            await TestOutputData.WriteAsExtraScenarioOutput(TestId, text);
+            await TestOutputData.WriteTearDownOutput(TestId, text);
         }
     }
 }

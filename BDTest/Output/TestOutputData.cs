@@ -69,13 +69,15 @@ namespace BDTest.Output
 
         public override Encoding Encoding { get; } = Encoding.UTF8;
 
-        internal static async Task WriteAsExtraScenarioOutput(string testId, string text)
+        internal static async Task WriteTearDownOutput(string testId, string text)
         {
             if (testId == null)
             {
+                Console.WriteLine("Attempting to write tear down output but no unique test ID has been set in the base class");
                 return;
             }
 
+            Console.WriteLine(Environment.NewLine + text);
             await AsyncFileHelper.AppendTextAsync(FileLocations.ScenarioTeardownOutputFilePath(testId), $"{text}{Environment.NewLine}");
         }
     }
