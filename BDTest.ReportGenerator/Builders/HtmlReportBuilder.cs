@@ -193,12 +193,12 @@ namespace BDTest.ReportGenerator.Builders
         private static HtmlTag BuildTestTimeComparisonBody()
         {
             var testTimesScenarioBatched = GetScenarioBatched();
-            var testTimesScenarios = FlattenBatchScenarios(testTimesScenarioBatched);
+            var testTimesScenarios = FlattenBatchScenarios(testTimesScenarioBatched).Where(scenario => scenario.Status == Status.Passed).ToList();
             var testTimesScenariosGroupedByStory = testTimesScenarios.GroupBy(scenario => new { scenario.StoryText?.Story, scenario.FileName });
 
             return new HtmlTag("body").Append(
                 new HtmlTag("div").Append(
-                    new HtmlTag("h3").AppendText("Test Times"),
+                    new HtmlTag("h3").AppendText("Test Times (Passed Only)"),
                     new HtmlTag("div").Append(
                         testTimesScenariosGroupedByStory.Select(testTimesScenariosWithSameStory =>
                             new HtmlTag("div").AddClass("box").Append(
@@ -777,7 +777,7 @@ namespace BDTest.ReportGenerator.Builders
 
             foreach (var scenario in scenarios)
             {
-                stringBuilder.Add($"['{scenario.GetScenarioText().ReplaceHtmlCharacters()}', {scenario.TimeTaken.Ticks}]");
+                stringBuilder.Add($"['{scenario.GetScenarioText().EscapeQuotes()}', {scenario.TimeTaken.Ticks}]");
             }
 
             return string.Join(",", stringBuilder);

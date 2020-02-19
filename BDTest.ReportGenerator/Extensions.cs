@@ -156,5 +156,12 @@ namespace BDTest.ReportGenerator
                 .Replace("`", "&#96;")
                 .Replace("\"", "&#34;");
         }
+        
+        public static string EscapeQuotes(this string text)
+        {
+            return text.Replace("'", "\\'")
+                .Replace("`", "\\`")
+                .Replace("\"", "\\\"");
+        }
     }
 }
