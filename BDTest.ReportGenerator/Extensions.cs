@@ -87,16 +87,18 @@ namespace BDTest.ReportGenerator
         public static double GetFlakinessPercentage(this IEnumerable<Scenario> scenarios)
         {
             var enumerable = scenarios.ToList();
-            var enums = (Status[])Enum.GetValues(typeof(Status));
-
-            Enum.TryParse(enums.OrderByDescending(it => enumerable.Count(scenario => scenario.Status == it)).ToString(), out Status maxEnum);
-
-            double count = enumerable.Count(scenario => scenario.Status == maxEnum);
-            var percentage = count / enumerable.Count * 100;
-            if (Convert.ToInt32(percentage) == 0)
+            double enumerableCount = enumerable.Count;
+            
+            double passedScenarios = enumerable.Count(scenario => scenario.Status == Status.Passed);
+            
+            if (Math.Abs(enumerableCount - passedScenarios) < 1)
             {
                 return 0;
             }
+
+            var notPassed = enumerableCount - passedScenarios;
+
+            var percentage = Math.Min(passedScenarios, notPassed) / enumerableCount * 100;
 
             return Math.Round(100 - percentage, 2);
         }
