@@ -224,11 +224,6 @@ Install via Nuget > `Install-Package BDTest.ReportGenerator`
 
 ### Report Usage
 
-#### For .NET Core: 
-You shouldn't have to do anything for the standard reports! 
-Once the package has been installed and your tests have run, these reports should appear in your output directory automatically.
-
-#### For .NET Framework:
 You will need to create a global tear down method that runs after all of your tests, and in that you need to call
 `BDTestReportGenerator.Generate();`
 
