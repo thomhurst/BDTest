@@ -153,7 +153,7 @@ namespace BDTest.ReportGenerator
         public static string ReplaceHtmlCharacters(this string text)
         {
             return text.Replace("'", "&#39;")
-                .Replace("'", "&#96;")
+                .Replace("`", "&#96;")
                 .Replace("\"", "&#34;");
         }
     }
