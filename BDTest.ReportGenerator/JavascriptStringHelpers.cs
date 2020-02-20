@@ -44,8 +44,13 @@ function RefreshChartElements() {
         private static string BuildDynamicCreateElementInJavascript(string javascriptBody)
         {
             // Write body to its own javascript file
-            var uniqueFilename = $"{Guid.NewGuid():N}.js";
-            var javascriptFilePath = Path.Combine(FileLocations.OutputDirectory, uniqueFilename);
+            var javascriptFilePath = Path.Combine(FileLocations.OutputDirectory, "BDTestCharts.js");
+
+            if (File.Exists(javascriptFilePath))
+            {
+                File.Delete(javascriptFilePath);
+            }
+            
             File.WriteAllText(javascriptFilePath, javascriptBody);
             
             return @"
