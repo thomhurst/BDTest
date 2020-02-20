@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 
 namespace BDTest.Attributes
 {
@@ -11,9 +12,21 @@ namespace BDTest.Attributes
 
         public string GetStoryText()
         {
+            var firstChar = AsA.ToLowerInvariant()
+                .Replace("as an", String.Empty)
+                .Replace("as a", String.Empty)
+                .Trim()
+                .FirstOrDefault();
+
+            var asAPrefix = "As a";
+            if ("aeiouAEIOU".IndexOf(firstChar) >= 0)
+            {
+                asAPrefix = "As an";
+            }
+            
             if (!AsA.ToLowerInvariant().StartsWith("as a"))
             {
-                AsA = $"As a {AsA}";
+                AsA = $"{asAPrefix} {AsA}";
             }
 
             if (!IWant.ToLowerInvariant().StartsWith("i want"))
