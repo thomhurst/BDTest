@@ -1,3 +1,7 @@
+using System;
+using System.IO;
+using BDTest.Paths;
+
 namespace BDTest.ReportGenerator
 {
     public static class JavascriptStringHelpers
@@ -39,6 +43,11 @@ function RefreshChartElements() {
 
         private static string BuildDynamicCreateElementInJavascript(string javascriptBody)
         {
+            // Write body to its own javascript file
+            var uniqueFilename = $"{Guid.NewGuid():N}.js";
+            var javascriptFilePath = Path.Combine(FileLocations.OutputDirectory, uniqueFilename);
+            File.WriteAllText(javascriptFilePath, javascriptBody);
+            
             return @"
 let script = document.createElement('script');
 
@@ -46,7 +55,7 @@ let script = document.createElement('script');
         console.log(""Error loading chart script"")
     }
 
-    script.text = `" + javascriptBody + @"`;
+    script.src = '" + javascriptFilePath.Replace("\\", "/") + @"';
     document.getElementsByTagName('head')[0].appendChild(script);
 ";
         }

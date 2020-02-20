@@ -2,10 +2,11 @@
 
   <PropertyGroup>
     <IsPackable>true</IsPackable>
+    <TargetFrameworks>netstandard2.0;netcoreapp2.0</TargetFrameworks>
+    <LangVersion>default</LangVersion>
   </PropertyGroup>
 
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
     <PublishWithAspNetCoreTargetManifest>false</PublishWithAspNetCoreTargetManifest>
     <RunPostBuildEvent>OnBuildSuccess</RunPostBuildEvent>
     <ApplicationIcon />

@@ -718,13 +718,13 @@ namespace BDTest.ReportGenerator.Builders
             {
                 new HtmlTag("script").Attr("type","text/javascript").Attr("src", "./css/jquery-3.3.1.min.js"),
                 new HtmlTag("script").Attr("type","text/javascript").Attr("src", "./css/checkbox_toggle_js.js"),
-                new HtmlTag("script").Attr("type", "text/javascript").AppendHtml(JavascriptStringHelpers.LoadJavascriptChartsAsync(BuildChartJavascript(storiesCount).ToString()))
+                new HtmlTag("script").Attr("type", "text/javascript").AppendHtml(JavascriptStringHelpers.LoadJavascriptChartsAsync(BuildChartJavascript(storiesCount)))
             };
 
             return list.ToArray();
         }
 
-        private StringBuilder BuildChartJavascript(int storiesCount)
+        private string BuildChartJavascript(int storiesCount)
         {
             var stringBuilder = new StringBuilder();
             stringBuilder.Append(
@@ -752,7 +752,7 @@ namespace BDTest.ReportGenerator.Builders
 
             //chartJs.Add(htmlTag);
 
-            return stringBuilder;
+            return stringBuilder.ToString();
         }
 
 

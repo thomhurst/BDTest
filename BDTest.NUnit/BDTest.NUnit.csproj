@@ -2,11 +2,12 @@
 
   <PropertyGroup>
     <OutputType>Library</OutputType>
-    <TargetFramework>netstandard2.0</TargetFramework>
     <ApplicationIcon />
     <StartupObject />
     <NuspecFile>BDTest.NUnit.nuspec</NuspecFile>
     <NuspecProperties>version=$(Version)</NuspecProperties>
+    <TargetFrameworks>netstandard2.0;netcoreapp2.0</TargetFrameworks>
+    <LangVersion>default</LangVersion>
   </PropertyGroup>
 
   <ItemGroup>
