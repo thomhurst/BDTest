@@ -60,7 +60,7 @@ let script = document.createElement('script');
         console.log(""Error loading chart script"")
     }
 
-    script.src = '" + javascriptFilePath.Replace("\\", "/") + @"';
+    script.src = '" + "./BDTestCharts.js" + @"';
     document.getElementsByTagName('head')[0].appendChild(script);
 ";
         }
