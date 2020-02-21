@@ -1,0 +1,387 @@
+﻿<?xml version="1.0" encoding="utf-8"?><TestData><_x0024_id>1</_x0024_id><TestTimer><_x0024_id>2</_x0024_id><TestsStartedAt>2020-02-21T15:36:41.4868886+00:00</TestsStartedAt><TestsFinishedAt>2020-02-21T15:36:42.5250178+00:00</TestsFinishedAt><ElapsedTime>00:00:01.0381292</ElapsedTime></TestTimer><Scenarios><_x0024_id>3</_x0024_id><Guid>44a2cbea-7174-46ac-b267-8831f3a63b31</Guid><StartTime>2020-02-21T15:36:42.3007316+00:00</StartTime><EndTime>2020-02-21T15:36:42.3614988+00:00</EndTime><FileName>C:\git\BDTest\TestTester\TestsUsingBase.cs</FileName><TearDownOutput /><FrameworkTestId /><Version>1.0.0.0</Version><Steps><_x0024_id>4</_x0024_id><StartTime>2020-02-21T15:36:42.3007316+00:00</StartTime><EndTime>2020-02-21T15:36:42.3017286+00:00</EndTime><StepType>0</StepType><Output>-------------------------------
+Story: As a Test User
+I want To Test Using the Base Class
+So that Things Work
+
+Scenario: Asynchronous Scenario Failure
+
+Action 1
+</Output><TimeTaken>0.00:00:00:0009970</TimeTaken><Status>Passed</Status><Exception /><StepText>Given Action 1</StepText></Steps><Steps><_x0024_id>5</_x0024_id><StartTime>2020-02-21T15:36:42.3017286+00:00</StartTime><EndTime>2020-02-21T15:36:42.3017286+00:00</EndTime><StepType>0</StepType><Output>Action 2
+</Output><TimeTaken>0.00:00:00:0000000</TimeTaken><Status>Passed</Status><Exception /><StepText>When I perform my second action</StepText></Steps><Steps><_x0024_id>6</_x0024_id><StartTime>2020-02-21T15:36:42.3017286+00:00</StartTime><EndTime>2020-02-21T15:36:42.3017286+00:00</EndTime><StepType>0</StepType><Output>Action 3
+</Output><TimeTaken>0.00:00:00:0000000</TimeTaken><Status>Passed</Status><Exception /><StepText>Then Action 3</StepText></Steps><Steps><_x0024_id>7</_x0024_id><StartTime>2020-02-21T15:36:42.3017286+00:00</StartTime><EndTime>2020-02-21T15:36:42.3017286+00:00</EndTime><StepType>0</StepType><Output>Action 4
+</Output><TimeTaken>0.00:00:00:0000000</TimeTaken><Status>Passed</Status><Exception /><StepText>And Action 4</StepText></Steps><Steps><_x0024_id>8</_x0024_id><StartTime>2020-02-21T15:36:42.3017286+00:00</StartTime><EndTime>2020-02-21T15:36:42.3027253+00:00</EndTime><StepType>0</StepType><Output></Output><TimeTaken>0.00:00:00:0009967</TimeTaken><Status>Failed</Status><Exception><_x0024_id>9</_x0024_id><ClassName>System.Exception</ClassName><Message>The test threw an exception</Message><Data /><InnerException /><HelpURL /><StackTraceString>   at TestTester.TestsUsingBase.Exception(TestContext testContext) in C:\git\BDTest\TestTester\TestsUsingBase.cs:line 89
+   at BDTest.Runnable.&lt;Run&gt;d__8.MoveNext() in C:\git\BDTest\BDTest\Runnable.cs:line 31
+--- End of stack trace from previous location where exception was thrown ---
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.GetResult()
+   at BDTest.Test.Step.&lt;&lt;Execute&gt;b__46_0&gt;d.MoveNext() in C:\git\BDTest\BDTest\Test\Step.cs:line 193
+--- End of stack trace from previous location where exception was thrown ---
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.GetResult()
+   at BDTest.Test.Step.&lt;Execute&gt;d__46.MoveNext() in C:\git\BDTest\BDTest\Test\Step.cs:line 175
+--- End of stack trace from previous location where exception was thrown ---
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.GetResult()
+   at BDTest.Test.Scenario.&lt;&lt;ExecuteInternal&gt;b__64_0&gt;d.MoveNext() in C:\git\BDTest\BDTest\Test\Scenario.cs:line 137
+--- End of stack trace from previous location where exception was thrown ---
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.GetResult()
+   at BDTest.Test.Scenario.&lt;ExecuteInternal&gt;d__64.MoveNext() in C:\git\BDTest\BDTest\Test\Scenario.cs:line 110
+--- End of stack trace from previous location where exception was thrown ---
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.GetResult()
+   at BDTest.Test.Scenario.&lt;Execute&gt;d__29.MoveNext() in C:\git\BDTest\BDTest\Test\Scenario.cs:line 69</StackTraceString><RemoteStackTraceString /><RemoteStackIndex>0</RemoteStackIndex><ExceptionMethod /><HResult>-2146233088</HResult><Source>TestTester</Source><WatsonBuckets /></Exception><StepText>And Exception</StepText></Steps><Output>-------------------------------
+Story: As a Test User
+I want To Test Using the Base Class
+So that Things Work
+
+Scenario: Asynchronous Scenario Failure
+
+Action 1
+
+Action 2
+
+Action 3
+
+Action 4
+</Output><Status>Failed</Status><StoryText><_x0024_id>10</_x0024_id><Story>As a Test User
+I want To Test Using the Base Class
+So that Things Work
+</Story></StoryText><ScenarioText><_x0024_id>11</_x0024_id><Scenario>Asynchronous Scenario Failure</Scenario></ScenarioText><TimeTaken>0.00:00:00:0607672</TimeTaken></Scenarios><Scenarios><_x0024_id>12</_x0024_id><Guid>c02d4e3d-e796-4cb3-9ba3-5fc78c737e8b</Guid><StartTime>2020-02-21T15:36:42.52402+00:00</StartTime><EndTime>2020-02-21T15:36:42.5250178+00:00</EndTime><FileName>C:\git\BDTest\TestTester\TestsUsingBase.cs</FileName><TearDownOutput /><FrameworkTestId /><Version>1.0.0.0</Version><Steps><_x0024_id>13</_x0024_id><StartTime>2020-02-21T15:36:42.52402+00:00</StartTime><EndTime>2020-02-21T15:36:42.52402+00:00</EndTime><StepType>0</StepType><Output>-------------------------------
+Story: As a Test User
+I want To Test Using the Base Class
+So that Things Work
+
+Scenario: With step text list
+
+Empty Step
+</Output><TimeTaken>0.00:00:00:0000000</TimeTaken><Status>Passed</Status><Exception /><StepText>Given Write line</StepText></Steps><Steps><_x0024_id>14</_x0024_id><StartTime>2020-02-21T15:36:42.52402+00:00</StartTime><EndTime>2020-02-21T15:36:42.52402+00:00</EndTime><StepType>0</StepType><Output>Empty Step
+</Output><TimeTaken>0.00:00:00:0000000</TimeTaken><Status>Passed</Status><Exception /><StepText>When Write line</StepText></Steps><Steps><_x0024_id>15</_x0024_id><StartTime>2020-02-21T15:36:42.52402+00:00</StartTime><EndTime>2020-02-21T15:36:42.5250178+00:00</EndTime><StepType>0</StepType><Output></Output><TimeTaken>0.00:00:00:0009978</TimeTaken><Status>Passed</Status><Exception /><StepText>Then the step text can display the list Blah1, Blah2, Blah3</StepText></Steps><Output>-------------------------------
+Story: As a Test User
+I want To Test Using the Base Class
+So that Things Work
+
+Scenario: With step text list
+
+Empty Step
+
+Empty Step
+</Output><Status>Passed</Status><StoryText><_x0024_id>16</_x0024_id><Story>As a Test User
+I want To Test Using the Base Class
+So that Things Work
+</Story></StoryText><ScenarioText><_x0024_id>17</_x0024_id><Scenario>With step text list</Scenario></ScenarioText><TimeTaken>0.00:00:00:0009978</TimeTaken></Scenarios><Scenarios><_x0024_id>18</_x0024_id><Guid>913fdd89-51bc-4843-bc1d-f3eb614264ae</Guid><StartTime>2020-02-21T15:36:42.3830942+00:00</StartTime><EndTime>2020-02-21T15:36:42.3900411+00:00</EndTime><FileName>C:\git\BDTest\TestTester\TestsUsingBase.cs</FileName><TearDownOutput /><FrameworkTestId /><Version>1.0.0.0</Version><Steps><_x0024_id>19</_x0024_id><StartTime>2020-02-21T15:36:42.3830942+00:00</StartTime><EndTime>2020-02-21T15:36:42.3840551+00:00</EndTime><StepType>0</StepType><Output>-------------------------------
+Story: As a Test User
+I want To Test Using the Base Class
+So that Things Work
+
+Scenario: Exception test
+
+</Output><TimeTaken>0.00:00:00:0009609</TimeTaken><Status>Passed</Status><Exception /><StepText>Given Add</StepText></Steps><Steps><_x0024_id>20</_x0024_id><StartTime>2020-02-21T15:36:42.3840551+00:00</StartTime><EndTime>2020-02-21T15:36:42.3840551+00:00</EndTime><StepType>0</StepType><Output></Output><TimeTaken>0.00:00:00:0000000</TimeTaken><Status>Passed</Status><Exception /><StepText>When Add</StepText></Steps><Steps><_x0024_id>21</_x0024_id><StartTime>2020-02-21T15:36:42.3880915+00:00</StartTime><EndTime>2020-02-21T15:36:42.389042+00:00</EndTime><StepType>0</StepType><Output></Output><TimeTaken>0.00:00:00:0009505</TimeTaken><Status>Passed</Status><Exception /><StepText>Then Add</StepText></Steps><Steps><_x0024_id>22</_x0024_id><StartTime>2020-02-21T15:36:42.389042+00:00</StartTime><EndTime>2020-02-21T15:36:42.3900411+00:00</EndTime><StepType>0</StepType><Output></Output><TimeTaken>0.00:00:00:0009991</TimeTaken><Status>Failed</Status><Exception><_x0024_id>23</_x0024_id><ClassName>System.Exception</ClassName><Message>The test threw an exception</Message><Data /><InnerException /><HelpURL /><StackTraceString>   at TestTester.TestsUsingBase.Exception(TestContext testContext) in C:\git\BDTest\TestTester\TestsUsingBase.cs:line 89
+   at BDTest.Runnable.&lt;Run&gt;d__8.MoveNext() in C:\git\BDTest\BDTest\Runnable.cs:line 31
+--- End of stack trace from previous location where exception was thrown ---
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.GetResult()
+   at BDTest.Test.Step.&lt;&lt;Execute&gt;b__46_0&gt;d.MoveNext() in C:\git\BDTest\BDTest\Test\Step.cs:line 193
+--- End of stack trace from previous location where exception was thrown ---
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.GetResult()
+   at BDTest.Test.Step.&lt;Execute&gt;d__46.MoveNext() in C:\git\BDTest\BDTest\Test\Step.cs:line 175
+--- End of stack trace from previous location where exception was thrown ---
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.GetResult()
+   at BDTest.Test.Scenario.&lt;&lt;ExecuteInternal&gt;b__64_0&gt;d.MoveNext() in C:\git\BDTest\BDTest\Test\Scenario.cs:line 137
+--- End of stack trace from previous location where exception was thrown ---
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.GetResult()
+   at BDTest.Test.Scenario.&lt;ExecuteInternal&gt;d__64.MoveNext() in C:\git\BDTest\BDTest\Test\Scenario.cs:line 110
+--- End of stack trace from previous location where exception was thrown ---
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.GetResult()
+   at BDTest.Test.Scenario.&lt;Execute&gt;d__29.MoveNext() in C:\git\BDTest\BDTest\Test\Scenario.cs:line 69</StackTraceString><RemoteStackTraceString /><RemoteStackIndex>0</RemoteStackIndex><ExceptionMethod /><HResult>-2146233088</HResult><Source>TestTester</Source><WatsonBuckets /></Exception><StepText>And Exception</StepText></Steps><Output>-------------------------------
+Story: As a Test User
+I want To Test Using the Base Class
+So that Things Work
+
+Scenario: Exception test
+
+</Output><Status>Failed</Status><StoryText><_x0024_id>24</_x0024_id><Story>As a Test User
+I want To Test Using the Base Class
+So that Things Work
+</Story></StoryText><ScenarioText><_x0024_id>25</_x0024_id><Scenario>Exception test</Scenario></ScenarioText><TimeTaken>0.00:00:00:0069469</TimeTaken></Scenarios><Scenarios><_x0024_id>26</_x0024_id><Guid>7512980b-f8e9-4b0f-a451-e3c81fd8b172</Guid><StartTime>2020-02-21T15:36:42.4325959+00:00</StartTime><EndTime>2020-02-21T15:36:42.434462+00:00</EndTime><FileName>C:\git\BDTest\TestTester\TestsUsingBase.cs</FileName><TearDownOutput /><FrameworkTestId /><Version>1.0.0.0</Version><Steps><_x0024_id>27</_x0024_id><StartTime>2020-02-21T15:36:42.4325959+00:00</StartTime><EndTime>2020-02-21T15:36:42.4334634+00:00</EndTime><StepType>0</StepType><Output>-------------------------------
+Story: As a Test User
+I want To Test Using the Base Class
+So that Things Work
+
+Scenario: Func step text test
+
+</Output><TimeTaken>0.00:00:00:0008675</TimeTaken><Status>Passed</Status><Exception /><StepText>Given Add</StepText></Steps><Steps><_x0024_id>28</_x0024_id><StartTime>2020-02-21T15:36:42.4334634+00:00</StartTime><EndTime>2020-02-21T15:36:42.4334634+00:00</EndTime><StepType>0</StepType><Output></Output><TimeTaken>0.00:00:00:0000000</TimeTaken><Status>Passed</Status><Exception /><StepText>When Add</StepText></Steps><Steps><_x0024_id>29</_x0024_id><StartTime>2020-02-21T15:36:42.434462+00:00</StartTime><EndTime>2020-02-21T15:36:42.434462+00:00</EndTime><StepType>0</StepType><Output></Output><TimeTaken>0.00:00:00:0000000</TimeTaken><Status>Passed</Status><Exception /><StepText>Then Text with a function returning Blah</StepText></Steps><Output>-------------------------------
+Story: As a Test User
+I want To Test Using the Base Class
+So that Things Work
+
+Scenario: Func step text test
+
+</Output><Status>Passed</Status><StoryText><_x0024_id>30</_x0024_id><Story>As a Test User
+I want To Test Using the Base Class
+So that Things Work
+</Story></StoryText><ScenarioText><_x0024_id>31</_x0024_id><Scenario>Func step text test</Scenario></ScenarioText><TimeTaken>0.00:00:00:0018661</TimeTaken></Scenarios><Scenarios><_x0024_id>32</_x0024_id><Guid>80f0e4e3-d44c-4b88-87ad-1883d54bf8b4</Guid><StartTime>2020-02-21T15:36:41.8261303+00:00</StartTime><EndTime>2020-02-21T15:36:41.8511486+00:00</EndTime><FileName>C:\git\BDTest\TestTester\TestsUsingNUnitBaseWithContext.cs</FileName><TearDownOutput /><FrameworkTestId>0-1029</FrameworkTestId><Version>1.0.0.0</Version><Steps><_x0024_id>33</_x0024_id><StartTime>2020-02-21T15:36:41.8271281+00:00</StartTime><EndTime>2020-02-21T15:36:41.8281249+00:00</EndTime><StepType>0</StepType><Output>-------------------------------
+Story: As a Test User
+I want To Test Using the Base Class
+So that Things Work
+
+Scenario: Test 1
+
+</Output><TimeTaken>0.00:00:00:0009968</TimeTaken><Status>Passed</Status><Exception /><StepText>Given Add</StepText></Steps><Steps><_x0024_id>34</_x0024_id><StartTime>2020-02-21T15:36:41.8281249+00:00</StartTime><EndTime>2020-02-21T15:36:41.8291212+00:00</EndTime><StepType>0</StepType><Output></Output><TimeTaken>0.00:00:00:0009963</TimeTaken><Status>Passed</Status><Exception /><StepText>When Add</StepText></Steps><Steps><_x0024_id>35</_x0024_id><StartTime>2020-02-21T15:36:41.8301217+00:00</StartTime><EndTime>2020-02-21T15:36:41.8491551+00:00</EndTime><StepType>0</StepType><Output></Output><TimeTaken>0.00:00:00:0190334</TimeTaken><Status>Passed</Status><Exception /><StepText>Then Number should be</StepText></Steps><Output>-------------------------------
+Story: As a Test User
+I want To Test Using the Base Class
+So that Things Work
+
+Scenario: Test 1
+
+</Output><Status>Passed</Status><StoryText><_x0024_id>36</_x0024_id><Story>As a Test User
+I want To Test Using the Base Class
+So that Things Work
+</Story></StoryText><ScenarioText><_x0024_id>37</_x0024_id><Scenario>Test 1</Scenario></ScenarioText><TimeTaken>0.00:00:00:0250183</TimeTaken></Scenarios><Scenarios><_x0024_id>38</_x0024_id><Guid>7e069c36-0baa-4110-a863-aae4eff8ff7b</Guid><StartTime>2020-02-21T15:36:41.8271281+00:00</StartTime><EndTime>2020-02-21T15:36:41.8501511+00:00</EndTime><FileName>C:\git\BDTest\TestTester\TestsUsingNUnitBaseWithContext.cs</FileName><TearDownOutput /><FrameworkTestId>0-1031</FrameworkTestId><Version>1.0.0.0</Version><Steps><_x0024_id>39</_x0024_id><StartTime>2020-02-21T15:36:41.8281249+00:00</StartTime><EndTime>2020-02-21T15:36:41.8281249+00:00</EndTime><StepType>0</StepType><Output>-------------------------------
+Story: As a Test User
+I want To Test Using the Base Class
+So that Things Work
+
+Scenario: Test 3
+
+</Output><TimeTaken>0.00:00:00:0000000</TimeTaken><Status>Passed</Status><Exception /><StepText>Given Add</StepText></Steps><Steps><_x0024_id>40</_x0024_id><StartTime>2020-02-21T15:36:41.8291212+00:00</StartTime><EndTime>2020-02-21T15:36:41.8301217+00:00</EndTime><StepType>0</StepType><Output></Output><TimeTaken>0.00:00:00:0010005</TimeTaken><Status>Passed</Status><Exception /><StepText>And Add</StepText></Steps><Steps><_x0024_id>41</_x0024_id><StartTime>2020-02-21T15:36:41.8301217+00:00</StartTime><EndTime>2020-02-21T15:36:41.8311159+00:00</EndTime><StepType>0</StepType><Output></Output><TimeTaken>0.00:00:00:0009942</TimeTaken><Status>Passed</Status><Exception /><StepText>And Add</StepText></Steps><Steps><_x0024_id>42</_x0024_id><StartTime>2020-02-21T15:36:41.8311159+00:00</StartTime><EndTime>2020-02-21T15:36:41.8321135+00:00</EndTime><StepType>0</StepType><Output></Output><TimeTaken>0.00:00:00:0009976</TimeTaken><Status>Passed</Status><Exception /><StepText>And Add</StepText></Steps><Steps><_x0024_id>43</_x0024_id><StartTime>2020-02-21T15:36:41.8321135+00:00</StartTime><EndTime>2020-02-21T15:36:41.8331102+00:00</EndTime><StepType>0</StepType><Output></Output><TimeTaken>0.00:00:00:0009967</TimeTaken><Status>Passed</Status><Exception /><StepText>And Add</StepText></Steps><Steps><_x0024_id>44</_x0024_id><StartTime>2020-02-21T15:36:41.8331102+00:00</StartTime><EndTime>2020-02-21T15:36:41.8331102+00:00</EndTime><StepType>0</StepType><Output></Output><TimeTaken>0.00:00:00:0000000</TimeTaken><Status>Passed</Status><Exception /><StepText>And Add</StepText></Steps><Steps><_x0024_id>45</_x0024_id><StartTime>2020-02-21T15:36:41.8341076+00:00</StartTime><EndTime>2020-02-21T15:36:41.8341076+00:00</EndTime><StepType>0</StepType><Output></Output><TimeTaken>0.00:00:00:0000000</TimeTaken><Status>Passed</Status><Exception /><StepText>And Add</StepText></Steps><Steps><_x0024_id>46</_x0024_id><StartTime>2020-02-21T15:36:41.8351067+00:00</StartTime><EndTime>2020-02-21T15:36:41.8351067+00:00</EndTime><StepType>0</StepType><Output></Output><TimeTaken>0.00:00:00:0000000</TimeTaken><Status>Passed</Status><Exception /><StepText>And Add</StepText></Steps><Steps><_x0024_id>47</_x0024_id><StartTime>2020-02-21T15:36:41.8361022+00:00</StartTime><EndTime>2020-02-21T15:36:41.8361022+00:00</EndTime><StepType>0</StepType><Output></Output><TimeTaken>0.00:00:00:0000000</TimeTaken><Status>Passed</Status><Exception /><StepText>And Add</StepText></Steps><Steps><_x0024_id>48</_x0024_id><StartTime>2020-02-21T15:36:41.8371007+00:00</StartTime><EndTime>2020-02-21T15:36:41.8371007+00:00</EndTime><StepType>0</StepType><Output></Output><TimeTaken>0.00:00:00:0000000</TimeTaken><Status>Passed</Status><Exception /><StepText>When Add</StepText></Steps><Steps><_x0024_id>49</_x0024_id><StartTime>2020-02-21T15:36:41.8380973+00:00</StartTime><EndTime>2020-02-21T15:36:41.8501511+00:00</EndTime><StepType>0</StepType><Output></Output><TimeTaken>0.00:00:00:0120538</TimeTaken><Status>Passed</Status><Exception /><StepText>Then Number should be</StepText></Steps><Output>-------------------------------
+Story: As a Test User
+I want To Test Using the Base Class
+So that Things Work
+
+Scenario: Test 3
+
+</Output><Status>Passed</Status><StoryText><_x0024_id>50</_x0024_id><Story>As a Test User
+I want To Test Using the Base Class
+So that Things Work
+</Story></StoryText><ScenarioText><_x0024_id>51</_x0024_id><Scenario>Test 3</Scenario></ScenarioText><TimeTaken>0.00:00:00:0230230</TimeTaken></Scenarios><Scenarios><_x0024_id>52</_x0024_id><Guid>13e61807-ff54-4d0e-87f4-2a697848a88a</Guid><StartTime>2020-02-21T15:36:42.5029095+00:00</StartTime><EndTime>2020-02-21T15:36:42.5059376+00:00</EndTime><FileName>C:\git\BDTest\TestTester\TestsUsingBase.cs</FileName><TearDownOutput /><FrameworkTestId /><Version>1.0.0.0</Version><Steps><_x0024_id>53</_x0024_id><StartTime>2020-02-21T15:36:42.5039071+00:00</StartTime><EndTime>2020-02-21T15:36:42.5039071+00:00</EndTime><StepType>0</StepType><Output>-------------------------------
+Story: As a Test User
+I want To Test Using the Base Class
+So that Things Work
+
+Scenario: With step text
+
+</Output><TimeTaken>0.00:00:00:0000000</TimeTaken><Status>Passed</Status><Exception /><StepText>Given this is my Given step 0</StepText></Steps><Steps><_x0024_id>54</_x0024_id><StartTime>2020-02-21T15:36:42.5039071+00:00</StartTime><EndTime>2020-02-21T15:36:42.5039071+00:00</EndTime><StepType>0</StepType><Output></Output><TimeTaken>0.00:00:00:0000000</TimeTaken><Status>Passed</Status><Exception /><StepText>And this is my AndGiven step 1</StepText></Steps><Steps><_x0024_id>55</_x0024_id><StartTime>2020-02-21T15:36:42.5049439+00:00</StartTime><EndTime>2020-02-21T15:36:42.5049439+00:00</EndTime><StepType>0</StepType><Output></Output><TimeTaken>0.00:00:00:0000000</TimeTaken><Status>Passed</Status><Exception /><StepText>When this is my When step 2</StepText></Steps><Steps><_x0024_id>56</_x0024_id><StartTime>2020-02-21T15:36:42.5049439+00:00</StartTime><EndTime>2020-02-21T15:36:42.5049439+00:00</EndTime><StepType>0</StepType><Output></Output><TimeTaken>0.00:00:00:0000000</TimeTaken><Status>Passed</Status><Exception /><StepText>Then this is my Then step 3</StepText></Steps><Steps><_x0024_id>57</_x0024_id><StartTime>2020-02-21T15:36:42.5059376+00:00</StartTime><EndTime>2020-02-21T15:36:42.5059376+00:00</EndTime><StepType>0</StepType><Output></Output><TimeTaken>0.00:00:00:0000000</TimeTaken><Status>Passed</Status><Exception /><StepText>And this is my AndThen step 4</StepText></Steps><Output>-------------------------------
+Story: As a Test User
+I want To Test Using the Base Class
+So that Things Work
+
+Scenario: With step text
+
+</Output><Status>Passed</Status><StoryText><_x0024_id>58</_x0024_id><Story>As a Test User
+I want To Test Using the Base Class
+So that Things Work
+</Story></StoryText><ScenarioText><_x0024_id>59</_x0024_id><Scenario>With step text</Scenario></ScenarioText><TimeTaken>0.00:00:00:0030281</TimeTaken></Scenarios><Scenarios><_x0024_id>60</_x0024_id><Guid>b59cd309-0009-4a1a-ae34-0dd6b9a0173a</Guid><StartTime>2020-02-21T15:36:42.4450664+00:00</StartTime><EndTime>2020-02-21T15:36:42.4500885+00:00</EndTime><FileName>C:\git\BDTest\TestTester\TestsUsingBase.cs</FileName><TearDownOutput /><FrameworkTestId /><Version>1.0.0.0</Version><Steps><_x0024_id>61</_x0024_id><StartTime>2020-02-21T15:36:42.4450664+00:00</StartTime><EndTime>2020-02-21T15:36:42.4460609+00:00</EndTime><StepType>0</StepType><Output>-------------------------------
+Story: As a Test User
+I want To Test Using the Base Class
+So that Things Work
+
+Scenario: Not implemented test
+
+</Output><TimeTaken>0.00:00:00:0009945</TimeTaken><Status>Passed</Status><Exception /><StepText>Given Add</StepText></Steps><Steps><_x0024_id>62</_x0024_id><StartTime>2020-02-21T15:36:42.4460609+00:00</StartTime><EndTime>2020-02-21T15:36:42.4470591+00:00</EndTime><StepType>0</StepType><Output></Output><TimeTaken>0.00:00:00:0009982</TimeTaken><Status>Passed</Status><Exception /><StepText>When Add</StepText></Steps><Steps><_x0024_id>63</_x0024_id><StartTime>2020-02-21T15:36:42.4480558+00:00</StartTime><EndTime>2020-02-21T15:36:42.4480558+00:00</EndTime><StepType>0</StepType><Output></Output><TimeTaken>0.00:00:00:0000000</TimeTaken><Status>Passed</Status><Exception /><StepText>Then Add</StepText></Steps><Steps><_x0024_id>64</_x0024_id><StartTime>2020-02-21T15:36:42.4490532+00:00</StartTime><EndTime>2020-02-21T15:36:42.4490532+00:00</EndTime><StepType>0</StepType><Output></Output><TimeTaken>0.00:00:00:0000000</TimeTaken><Status>NotImplemented</Status><Exception><_x0024_id>65</_x0024_id><ClassName>System.NotImplementedException</ClassName><Message>The method or operation is not implemented.</Message><Data /><InnerException /><HelpURL /><StackTraceString>   at TestTester.TestsUsingBase.NotImplemented(TestContext context) in C:\git\BDTest\TestTester\TestsUsingBase.cs:line 100
+   at BDTest.Runnable.&lt;Run&gt;d__8.MoveNext() in C:\git\BDTest\BDTest\Runnable.cs:line 31
+--- End of stack trace from previous location where exception was thrown ---
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.GetResult()
+   at BDTest.Test.Step.&lt;&lt;Execute&gt;b__46_0&gt;d.MoveNext() in C:\git\BDTest\BDTest\Test\Step.cs:line 187
+--- End of stack trace from previous location where exception was thrown ---
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.GetResult()
+   at BDTest.Test.Step.&lt;Execute&gt;d__46.MoveNext() in C:\git\BDTest\BDTest\Test\Step.cs:line 175
+--- End of stack trace from previous location where exception was thrown ---
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.GetResult()
+   at BDTest.Test.Scenario.&lt;&lt;ExecuteInternal&gt;b__64_0&gt;d.MoveNext() in C:\git\BDTest\BDTest\Test\Scenario.cs:line 122</StackTraceString><RemoteStackTraceString /><RemoteStackIndex>0</RemoteStackIndex><ExceptionMethod /><HResult>-2147467263</HResult><Source>TestTester</Source><WatsonBuckets /></Exception><StepText>And Not implemented</StepText></Steps><Output>-------------------------------
+Story: As a Test User
+I want To Test Using the Base Class
+So that Things Work
+
+Scenario: Not implemented test
+
+</Output><Status>NotImplemented</Status><StoryText><_x0024_id>66</_x0024_id><Story>As a Test User
+I want To Test Using the Base Class
+So that Things Work
+</Story></StoryText><ScenarioText><_x0024_id>67</_x0024_id><Scenario>Not implemented test</Scenario></ScenarioText><TimeTaken>0.00:00:00:0050221</TimeTaken></Scenarios><Scenarios><_x0024_id>68</_x0024_id><Guid>2a7b1e01-383b-41c8-a5a8-5b83167ee40f</Guid><StartTime>2020-02-21T15:36:42.4610214+00:00</StartTime><EndTime>2020-02-21T15:36:42.4630164+00:00</EndTime><FileName>C:\git\BDTest\TestTester\TestsUsingBase.cs</FileName><TearDownOutput /><FrameworkTestId /><Version>1.0.0.0</Version><Steps><_x0024_id>69</_x0024_id><StartTime>2020-02-21T15:36:42.4610214+00:00</StartTime><EndTime>2020-02-21T15:36:42.4620537+00:00</EndTime><StepType>0</StepType><Output>-------------------------------
+Story: As a Test User
+I want To Test Using the Base Class
+So that Things Work
+
+Scenario: Custom Scenario
+
+Action 1
+</Output><TimeTaken>0.00:00:00:0010323</TimeTaken><Status>Passed</Status><Exception /><StepText>Given Action 1</StepText></Steps><Steps><_x0024_id>70</_x0024_id><StartTime>2020-02-21T15:36:42.4620537+00:00</StartTime><EndTime>2020-02-21T15:36:42.4620537+00:00</EndTime><StepType>0</StepType><Output>Action 2
+</Output><TimeTaken>0.00:00:00:0000000</TimeTaken><Status>Passed</Status><Exception /><StepText>When I perform my second action</StepText></Steps><Steps><_x0024_id>71</_x0024_id><StartTime>2020-02-21T15:36:42.4620537+00:00</StartTime><EndTime>2020-02-21T15:36:42.4620537+00:00</EndTime><StepType>0</StepType><Output>Action 3
+</Output><TimeTaken>0.00:00:00:0000000</TimeTaken><Status>Passed</Status><Exception /><StepText>Then Action 3</StepText></Steps><Steps><_x0024_id>72</_x0024_id><StartTime>2020-02-21T15:36:42.4630164+00:00</StartTime><EndTime>2020-02-21T15:36:42.4630164+00:00</EndTime><StepType>0</StepType><Output>Action 4
+</Output><TimeTaken>0.00:00:00:0000000</TimeTaken><Status>Passed</Status><Exception /><StepText>And Action 4</StepText></Steps><Output>-------------------------------
+Story: As a Test User
+I want To Test Using the Base Class
+So that Things Work
+
+Scenario: Custom Scenario
+
+Action 1
+
+Action 2
+
+Action 3
+
+Action 4
+</Output><Status>Passed</Status><StoryText><_x0024_id>73</_x0024_id><Story>As a Test User
+I want To Test Using the Base Class
+So that Things Work
+</Story></StoryText><ScenarioText><_x0024_id>74</_x0024_id><Scenario>Custom Scenario</Scenario></ScenarioText><TimeTaken>0.00:00:00:0019950</TimeTaken></Scenarios><Scenarios><_x0024_id>75</_x0024_id><Guid>b25115a8-4081-4cbc-930a-03af34e37a1a</Guid><StartTime>2020-02-21T15:36:42.419212+00:00</StartTime><EndTime>2020-02-21T15:36:42.4232012+00:00</EndTime><FileName>C:\git\BDTest\TestTester\TestsUsingBase.cs</FileName><TearDownOutput /><FrameworkTestId /><Version>1.0.0.0</Version><Steps><_x0024_id>76</_x0024_id><StartTime>2020-02-21T15:36:42.419212+00:00</StartTime><EndTime>2020-02-21T15:36:42.4202093+00:00</EndTime><StepType>0</StepType><Output>-------------------------------
+Story: As a Test User
+I want To Test Using the Base Class
+So that Things Work
+
+Scenario: Func step text reverser test
+
+</Output><TimeTaken>0.00:00:00:0009973</TimeTaken><Status>Passed</Status><Exception /><StepText>Given Add</StepText></Steps><Steps><_x0024_id>77</_x0024_id><StartTime>2020-02-21T15:36:42.4202093+00:00</StartTime><EndTime>2020-02-21T15:36:42.4212066+00:00</EndTime><StepType>0</StepType><Output></Output><TimeTaken>0.00:00:00:0009973</TimeTaken><Status>Passed</Status><Exception /><StepText>When Add</StepText></Steps><Steps><_x0024_id>78</_x0024_id><StartTime>2020-02-21T15:36:42.4222065+00:00</StartTime><EndTime>2020-02-21T15:36:42.4232012+00:00</EndTime><StepType>0</StepType><Output></Output><TimeTaken>0.00:00:00:0009947</TimeTaken><Status>Passed</Status><Exception /><StepText>Then Text with a function returning Overridden Successfully which is overridden</StepText></Steps><Output>-------------------------------
+Story: As a Test User
+I want To Test Using the Base Class
+So that Things Work
+
+Scenario: Func step text reverser test
+
+</Output><Status>Passed</Status><StoryText><_x0024_id>79</_x0024_id><Story>As a Test User
+I want To Test Using the Base Class
+So that Things Work
+</Story></StoryText><ScenarioText><_x0024_id>80</_x0024_id><Scenario>Func step text reverser test</Scenario></ScenarioText><TimeTaken>0.00:00:00:0039892</TimeTaken></Scenarios><Scenarios><_x0024_id>81</_x0024_id><Guid>a3bc635c-1e3d-4076-bdce-47b088954f20</Guid><StartTime>2020-02-21T15:36:42.4749878+00:00</StartTime><EndTime>2020-02-21T15:36:42.4779777+00:00</EndTime><FileName>C:\git\BDTest\TestTester\TestsUsingBase.cs</FileName><TearDownOutput /><FrameworkTestId /><Version>1.0.0.0</Version><Steps><_x0024_id>82</_x0024_id><StartTime>2020-02-21T15:36:42.4749878+00:00</StartTime><EndTime>2020-02-21T15:36:42.4759831+00:00</EndTime><StepType>0</StepType><Output>-------------------------------
+Story: As a Test User
+I want To Test Using the Base Class
+So that Things Work
+
+Scenario: Test 4
+
+</Output><TimeTaken>0.00:00:00:0009953</TimeTaken><Status>Passed</Status><Exception /><StepText>Given Add</StepText></Steps><Steps><_x0024_id>83</_x0024_id><StartTime>2020-02-21T15:36:42.4759831+00:00</StartTime><EndTime>2020-02-21T15:36:42.4759831+00:00</EndTime><StepType>0</StepType><Output></Output><TimeTaken>0.00:00:00:0000000</TimeTaken><Status>Passed</Status><Exception /><StepText>When Add</StepText></Steps><Steps><_x0024_id>84</_x0024_id><StartTime>2020-02-21T15:36:42.4769787+00:00</StartTime><EndTime>2020-02-21T15:36:42.4769787+00:00</EndTime><StepType>0</StepType><Output></Output><TimeTaken>0.00:00:00:0000000</TimeTaken><Status>Passed</Status><Exception /><StepText>Then Add</StepText></Steps><Steps><_x0024_id>85</_x0024_id><StartTime>2020-02-21T15:36:42.4779777+00:00</StartTime><EndTime>2020-02-21T15:36:42.4779777+00:00</EndTime><StepType>0</StepType><Output></Output><TimeTaken>0.00:00:00:0000000</TimeTaken><Status>Passed</Status><Exception /><StepText>And the number should be 3</StepText></Steps><Output>-------------------------------
+Story: As a Test User
+I want To Test Using the Base Class
+So that Things Work
+
+Scenario: Test 4
+
+</Output><Status>Passed</Status><StoryText><_x0024_id>86</_x0024_id><Story>As a Test User
+I want To Test Using the Base Class
+So that Things Work
+</Story></StoryText><ScenarioText><_x0024_id>87</_x0024_id><Scenario>Test 4</Scenario></ScenarioText><TimeTaken>0.00:00:00:0029899</TimeTaken></Scenarios><Scenarios><_x0024_id>88</_x0024_id><Guid>7713fd85-cd35-4e47-af13-8bd2491af039</Guid><StartTime>2020-02-21T15:36:41.4868886+00:00</StartTime><EndTime>2020-02-21T15:36:41.502745+00:00</EndTime><FileName>C:\git\BDTest\TestTester\ContextTests.cs</FileName><TearDownOutput /><FrameworkTestId /><Version>1.0.0.0</Version><Steps><_x0024_id>89</_x0024_id><StartTime>2020-02-21T15:36:41.4908767+00:00</StartTime><EndTime>2020-02-21T15:36:41.4987607+00:00</EndTime><StepType>0</StepType><Output>-------------------------------
+Story: As a context
+I want to be unique
+So that tests can run independently
+
+Scenario: Test
+
+</Output><TimeTaken>0.00:00:00:0078840</TimeTaken><Status>Passed</Status><Exception /><StepText>Given I do something</StepText></Steps><Steps><_x0024_id>90</_x0024_id><StartTime>2020-02-21T15:36:41.499759+00:00</StartTime><EndTime>2020-02-21T15:36:41.499759+00:00</EndTime><StepType>0</StepType><Output></Output><TimeTaken>0.00:00:00:0000000</TimeTaken><Status>Passed</Status><Exception /><StepText>When I do something</StepText></Steps><Steps><_x0024_id>91</_x0024_id><StartTime>2020-02-21T15:36:41.5007551+00:00</StartTime><EndTime>2020-02-21T15:36:41.5017531+00:00</EndTime><StepType>0</StepType><Output></Output><TimeTaken>0.00:00:00:0009980</TimeTaken><Status>Passed</Status><Exception /><StepText>Then the context should be new</StepText></Steps><Output>-------------------------------
+Story: As a context
+I want to be unique
+So that tests can run independently
+
+Scenario: Test
+
+</Output><Status>Passed</Status><StoryText><_x0024_id>92</_x0024_id><Story>As a context
+I want to be unique
+So that tests can run independently
+</Story></StoryText><ScenarioText><_x0024_id>93</_x0024_id><Scenario>Test</Scenario></ScenarioText><TimeTaken>0.00:00:00:0158564</TimeTaken></Scenarios><Scenarios><_x0024_id>94</_x0024_id><Guid>063118ce-3ee8-424f-a84c-baeba80f762d</Guid><StartTime>2020-02-21T15:36:41.8311159+00:00</StartTime><EndTime>2020-02-21T15:36:41.8501511+00:00</EndTime><FileName>C:\git\BDTest\TestTester\TestsUsingNUnitBaseWithContext.cs</FileName><TearDownOutput /><FrameworkTestId>0-1032</FrameworkTestId><Version>1.0.0.0</Version><Steps><_x0024_id>95</_x0024_id><StartTime>2020-02-21T15:36:41.8311159+00:00</StartTime><EndTime>2020-02-21T15:36:41.8321135+00:00</EndTime><StepType>0</StepType><Output>-------------------------------
+Story: As a Test User
+I want To Test Using the Base Class
+So that Things Work
+
+Scenario: Test 4
+
+</Output><TimeTaken>0.00:00:00:0009976</TimeTaken><Status>Passed</Status><Exception /><StepText>Given Add</StepText></Steps><Steps><_x0024_id>96</_x0024_id><StartTime>2020-02-21T15:36:41.8321135+00:00</StartTime><EndTime>2020-02-21T15:36:41.8331102+00:00</EndTime><StepType>0</StepType><Output></Output><TimeTaken>0.00:00:00:0009967</TimeTaken><Status>Passed</Status><Exception /><StepText>And Add</StepText></Steps><Steps><_x0024_id>97</_x0024_id><StartTime>2020-02-21T15:36:41.8331102+00:00</StartTime><EndTime>2020-02-21T15:36:41.8331102+00:00</EndTime><StepType>0</StepType><Output></Output><TimeTaken>0.00:00:00:0000000</TimeTaken><Status>Passed</Status><Exception /><StepText>And Add</StepText></Steps><Steps><_x0024_id>98</_x0024_id><StartTime>2020-02-21T15:36:41.8341076+00:00</StartTime><EndTime>2020-02-21T15:36:41.8341076+00:00</EndTime><StepType>0</StepType><Output></Output><TimeTaken>0.00:00:00:0000000</TimeTaken><Status>Passed</Status><Exception /><StepText>And Add</StepText></Steps><Steps><_x0024_id>99</_x0024_id><StartTime>2020-02-21T15:36:41.8351067+00:00</StartTime><EndTime>2020-02-21T15:36:41.8351067+00:00</EndTime><StepType>0</StepType><Output></Output><TimeTaken>0.00:00:00:0000000</TimeTaken><Status>Passed</Status><Exception /><StepText>And Add</StepText></Steps><Steps><_x0024_id>100</_x0024_id><StartTime>2020-02-21T15:36:41.8361022+00:00</StartTime><EndTime>2020-02-21T15:36:41.8361022+00:00</EndTime><StepType>0</StepType><Output></Output><TimeTaken>0.00:00:00:0000000</TimeTaken><Status>Passed</Status><Exception /><StepText>And Add</StepText></Steps><Steps><_x0024_id>101</_x0024_id><StartTime>2020-02-21T15:36:41.8361022+00:00</StartTime><EndTime>2020-02-21T15:36:41.8371007+00:00</EndTime><StepType>0</StepType><Output></Output><TimeTaken>0.00:00:00:0009985</TimeTaken><Status>Passed</Status><Exception /><StepText>And Add</StepText></Steps><Steps><_x0024_id>102</_x0024_id><StartTime>2020-02-21T15:36:41.8380973+00:00</StartTime><EndTime>2020-02-21T15:36:41.8380973+00:00</EndTime><StepType>0</StepType><Output></Output><TimeTaken>0.00:00:00:0000000</TimeTaken><Status>Passed</Status><Exception /><StepText>And Add</StepText></Steps><Steps><_x0024_id>103</_x0024_id><StartTime>2020-02-21T15:36:41.8380973+00:00</StartTime><EndTime>2020-02-21T15:36:41.8390942+00:00</EndTime><StepType>0</StepType><Output></Output><TimeTaken>0.00:00:00:0009969</TimeTaken><Status>Passed</Status><Exception /><StepText>And Add</StepText></Steps><Steps><_x0024_id>104</_x0024_id><StartTime>2020-02-21T15:36:41.8390942+00:00</StartTime><EndTime>2020-02-21T15:36:41.8400917+00:00</EndTime><StepType>0</StepType><Output></Output><TimeTaken>0.00:00:00:0009975</TimeTaken><Status>Passed</Status><Exception /><StepText>And Add</StepText></Steps><Steps><_x0024_id>105</_x0024_id><StartTime>2020-02-21T15:36:41.8400917+00:00</StartTime><EndTime>2020-02-21T15:36:41.8400917+00:00</EndTime><StepType>0</StepType><Output></Output><TimeTaken>0.00:00:00:0000000</TimeTaken><Status>Passed</Status><Exception /><StepText>And Add</StepText></Steps><Steps><_x0024_id>106</_x0024_id><StartTime>2020-02-21T15:36:41.8411853+00:00</StartTime><EndTime>2020-02-21T15:36:41.8411853+00:00</EndTime><StepType>0</StepType><Output></Output><TimeTaken>0.00:00:00:0000000</TimeTaken><Status>Passed</Status><Exception /><StepText>And Add</StepText></Steps><Steps><_x0024_id>107</_x0024_id><StartTime>2020-02-21T15:36:41.8421719+00:00</StartTime><EndTime>2020-02-21T15:36:41.8421719+00:00</EndTime><StepType>0</StepType><Output></Output><TimeTaken>0.00:00:00:0000000</TimeTaken><Status>Passed</Status><Exception /><StepText>And Add</StepText></Steps><Steps><_x0024_id>108</_x0024_id><StartTime>2020-02-21T15:36:41.8421719+00:00</StartTime><EndTime>2020-02-21T15:36:41.8431694+00:00</EndTime><StepType>0</StepType><Output></Output><TimeTaken>0.00:00:00:0009975</TimeTaken><Status>Passed</Status><Exception /><StepText>And Add</StepText></Steps><Steps><_x0024_id>109</_x0024_id><StartTime>2020-02-21T15:36:41.8431694+00:00</StartTime><EndTime>2020-02-21T15:36:41.8441667+00:00</EndTime><StepType>0</StepType><Output></Output><TimeTaken>0.00:00:00:0009973</TimeTaken><Status>Passed</Status><Exception /><StepText>And Add</StepText></Steps><Steps><_x0024_id>110</_x0024_id><StartTime>2020-02-21T15:36:41.8441667+00:00</StartTime><EndTime>2020-02-21T15:36:41.8441667+00:00</EndTime><StepType>0</StepType><Output></Output><TimeTaken>0.00:00:00:0000000</TimeTaken><Status>Passed</Status><Exception /><StepText>And Add</StepText></Steps><Steps><_x0024_id>111</_x0024_id><StartTime>2020-02-21T15:36:41.8451641+00:00</StartTime><EndTime>2020-02-21T15:36:41.8451641+00:00</EndTime><StepType>0</StepType><Output></Output><TimeTaken>0.00:00:00:0000000</TimeTaken><Status>Passed</Status><Exception /><StepText>And Add</StepText></Steps><Steps><_x0024_id>112</_x0024_id><StartTime>2020-02-21T15:36:41.8451641+00:00</StartTime><EndTime>2020-02-21T15:36:41.8461614+00:00</EndTime><StepType>0</StepType><Output></Output><TimeTaken>0.00:00:00:0009973</TimeTaken><Status>Passed</Status><Exception /><StepText>And Add</StepText></Steps><Steps><_x0024_id>113</_x0024_id><StartTime>2020-02-21T15:36:41.8461614+00:00</StartTime><EndTime>2020-02-21T15:36:41.8461614+00:00</EndTime><StepType>0</StepType><Output></Output><TimeTaken>0.00:00:00:0000000</TimeTaken><Status>Passed</Status><Exception /><StepText>And Add</StepText></Steps><Steps><_x0024_id>114</_x0024_id><StartTime>2020-02-21T15:36:41.8471591+00:00</StartTime><EndTime>2020-02-21T15:36:41.8471591+00:00</EndTime><StepType>0</StepType><Output></Output><TimeTaken>0.00:00:00:0000000</TimeTaken><Status>Passed</Status><Exception /><StepText>When Add</StepText></Steps><Steps><_x0024_id>115</_x0024_id><StartTime>2020-02-21T15:36:41.8481564+00:00</StartTime><EndTime>2020-02-21T15:36:41.8501511+00:00</EndTime><StepType>0</StepType><Output></Output><TimeTaken>0.00:00:00:0019947</TimeTaken><Status>Passed</Status><Exception /><StepText>Then Number should be</StepText></Steps><Output>-------------------------------
+Story: As a Test User
+I want To Test Using the Base Class
+So that Things Work
+
+Scenario: Test 4
+
+</Output><Status>Passed</Status><StoryText><_x0024_id>116</_x0024_id><Story>As a Test User
+I want To Test Using the Base Class
+So that Things Work
+</Story></StoryText><ScenarioText><_x0024_id>117</_x0024_id><Scenario>Test 4</Scenario></ScenarioText><TimeTaken>0.00:00:00:0190352</TimeTaken></Scenarios><Scenarios><_x0024_id>118</_x0024_id><Guid>d522244b-35a9-4911-af21-f1aa8f90ad95</Guid><StartTime>2020-02-21T15:36:42.4899841+00:00</StartTime><EndTime>2020-02-21T15:36:42.4929376+00:00</EndTime><FileName>C:\git\BDTest\TestTester\TestsUsingBase.cs</FileName><TearDownOutput /><FrameworkTestId /><Version>1.0.0.0</Version><Steps><_x0024_id>119</_x0024_id><StartTime>2020-02-21T15:36:42.490942+00:00</StartTime><EndTime>2020-02-21T15:36:42.490942+00:00</EndTime><StepType>0</StepType><Output>-------------------------------
+Story: As a Test User
+I want To Test Using the Base Class
+So that Things Work
+
+Scenario: Test 5
+
+</Output><TimeTaken>0.00:00:00:0000000</TimeTaken><Status>Passed</Status><Exception /><StepText>Given Add</StepText></Steps><Steps><_x0024_id>120</_x0024_id><StartTime>2020-02-21T15:36:42.490942+00:00</StartTime><EndTime>2020-02-21T15:36:42.491938+00:00</EndTime><StepType>0</StepType><Output></Output><TimeTaken>0.00:00:00:0009960</TimeTaken><Status>Passed</Status><Exception /><StepText>When Add</StepText></Steps><Steps><_x0024_id>121</_x0024_id><StartTime>2020-02-21T15:36:42.491938+00:00</StartTime><EndTime>2020-02-21T15:36:42.491938+00:00</EndTime><StepType>0</StepType><Output></Output><TimeTaken>0.00:00:00:0000000</TimeTaken><Status>Passed</Status><Exception /><StepText>Then Add</StepText></Steps><Steps><_x0024_id>122</_x0024_id><StartTime>2020-02-21T15:36:42.4929376+00:00</StartTime><EndTime>2020-02-21T15:36:42.4929376+00:00</EndTime><StepType>0</StepType><Output></Output><TimeTaken>0.00:00:00:0000000</TimeTaken><Status>Passed</Status><Exception /><StepText>And the number should be 3</StepText></Steps><Output>-------------------------------
+Story: As a Test User
+I want To Test Using the Base Class
+So that Things Work
+
+Scenario: Test 5
+
+</Output><Status>Passed</Status><StoryText><_x0024_id>123</_x0024_id><Story>As a Test User
+I want To Test Using the Base Class
+So that Things Work
+</Story></StoryText><ScenarioText><_x0024_id>124</_x0024_id><Scenario>Test 5</Scenario></ScenarioText><TimeTaken>0.00:00:00:0029535</TimeTaken></Scenarios><Scenarios><_x0024_id>125</_x0024_id><Guid>f4547c13-f5c7-48d3-b159-287aa2c4d856</Guid><StartTime>2020-02-21T15:36:41.8780773+00:00</StartTime><EndTime>2020-02-21T15:36:41.8822478+00:00</EndTime><FileName>C:\git\BDTest\TestTester\StepTextTests.cs</FileName><TearDownOutput /><FrameworkTestId /><Version>1.0.0.0</Version><Steps><_x0024_id>126</_x0024_id><StartTime>2020-02-21T15:36:41.8790752+00:00</StartTime><EndTime>2020-02-21T15:36:41.8790752+00:00</EndTime><StepType>0</StepType><Output>-------------------------------
+Scenario: Constant arguments
+
+</Output><TimeTaken>0.00:00:00:0000000</TimeTaken><Status>Passed</Status><Exception /><StepText>Given Steptext is blah1</StepText></Steps><Steps><_x0024_id>127</_x0024_id><StartTime>2020-02-21T15:36:41.8800762+00:00</StartTime><EndTime>2020-02-21T15:36:41.8800762+00:00</EndTime><StepType>0</StepType><Output></Output><TimeTaken>0.00:00:00:0000000</TimeTaken><Status>Passed</Status><Exception /><StepText>When Steptext is blah2</StepText></Steps><Steps><_x0024_id>128</_x0024_id><StartTime>2020-02-21T15:36:41.8810709+00:00</StartTime><EndTime>2020-02-21T15:36:41.8810709+00:00</EndTime><StepType>0</StepType><Output></Output><TimeTaken>0.00:00:00:0000000</TimeTaken><Status>Passed</Status><Exception /><StepText>Then Steptext is blah3</StepText></Steps><Steps><_x0024_id>129</_x0024_id><StartTime>2020-02-21T15:36:41.8810709+00:00</StartTime><EndTime>2020-02-21T15:36:41.8822478+00:00</EndTime><StepType>0</StepType><Output></Output><TimeTaken>0.00:00:00:0011769</TimeTaken><Status>Passed</Status><Exception /><StepText>And Steptext is blah4</StepText></Steps><Output>-------------------------------
+Scenario: Constant arguments
+
+</Output><Status>Passed</Status><StoryText /><ScenarioText><_x0024_id>130</_x0024_id><Scenario>Constant arguments</Scenario></ScenarioText><TimeTaken>0.00:00:00:0041705</TimeTaken></Scenarios><Scenarios><_x0024_id>131</_x0024_id><Guid>e9bb6553-6aa4-4374-90a6-e89f28f21a68</Guid><StartTime>2020-02-21T15:36:42.2897605+00:00</StartTime><EndTime>2020-02-21T15:36:42.2907583+00:00</EndTime><FileName>C:\git\BDTest\TestTester\TestsUsingBase.cs</FileName><TearDownOutput /><FrameworkTestId /><Version>1.0.0.0</Version><Steps><_x0024_id>132</_x0024_id><StartTime>2020-02-21T15:36:42.2897605+00:00</StartTime><EndTime>2020-02-21T15:36:42.2897605+00:00</EndTime><StepType>0</StepType><Output>-------------------------------
+Story: As a Test User
+I want To Test Using the Base Class
+So that Things Work
+
+Scenario: Asynchronous Scenario
+
+Action 1
+</Output><TimeTaken>0.00:00:00:0000000</TimeTaken><Status>Passed</Status><Exception /><StepText>Given Action 1</StepText></Steps><Steps><_x0024_id>133</_x0024_id><StartTime>2020-02-21T15:36:42.2897605+00:00</StartTime><EndTime>2020-02-21T15:36:42.2897605+00:00</EndTime><StepType>0</StepType><Output>Action 2
+</Output><TimeTaken>0.00:00:00:0000000</TimeTaken><Status>Passed</Status><Exception /><StepText>When I perform my second action</StepText></Steps><Steps><_x0024_id>134</_x0024_id><StartTime>2020-02-21T15:36:42.2897605+00:00</StartTime><EndTime>2020-02-21T15:36:42.2907583+00:00</EndTime><StepType>0</StepType><Output>Action 3
+</Output><TimeTaken>0.00:00:00:0009978</TimeTaken><Status>Passed</Status><Exception /><StepText>Then Action 3</StepText></Steps><Steps><_x0024_id>135</_x0024_id><StartTime>2020-02-21T15:36:42.2907583+00:00</StartTime><EndTime>2020-02-21T15:36:42.2907583+00:00</EndTime><StepType>0</StepType><Output>Action 4
+</Output><TimeTaken>0.00:00:00:0000000</TimeTaken><Status>Passed</Status><Exception /><StepText>And Action 4</StepText></Steps><Output>-------------------------------
+Story: As a Test User
+I want To Test Using the Base Class
+So that Things Work
+
+Scenario: Asynchronous Scenario
+
+Action 1
+
+Action 2
+
+Action 3
+
+Action 4
+</Output><Status>Passed</Status><StoryText><_x0024_id>136</_x0024_id><Story>As a Test User
+I want To Test Using the Base Class
+So that Things Work
+</Story></StoryText><ScenarioText><_x0024_id>137</_x0024_id><Scenario>Asynchronous Scenario</Scenario></ScenarioText><TimeTaken>0.00:00:00:0009978</TimeTaken></Scenarios><Scenarios><_x0024_id>138</_x0024_id><Guid>d7c87fa2-5514-4ee2-b54d-a3c2363e9eb7</Guid><StartTime>2020-02-21T15:36:41.9050105+00:00</StartTime><EndTime>2020-02-21T15:36:42.2817824+00:00</EndTime><FileName>C:\git\BDTest\TestTester\TestClass.cs</FileName><TearDownOutput /><FrameworkTestId /><Version>1.0.0.0</Version><Steps><_x0024_id>139</_x0024_id><StartTime>2020-02-21T15:36:41.9050105+00:00</StartTime><EndTime>2020-02-21T15:36:41.9533784+00:00</EndTime><StepType>0</StepType><Output>-------------------------------
+Scenario: Test 1
+
+</Output><TimeTaken>0.00:00:00:0483679</TimeTaken><Status>Passed</Status><Exception /><StepText>Given Something</StepText></Steps><Steps><_x0024_id>140</_x0024_id><StartTime>2020-02-21T15:36:41.9533784+00:00</StartTime><EndTime>2020-02-21T15:36:42.2787897+00:00</EndTime><StepType>0</StepType><Output></Output><TimeTaken>0.00:00:00:3254113</TimeTaken><Status>Passed</Status><Exception /><StepText>When Something</StepText></Steps><Steps><_x0024_id>141</_x0024_id><StartTime>2020-02-21T15:36:42.2787897+00:00</StartTime><EndTime>2020-02-21T15:36:42.2817021+00:00</EndTime><StepType>0</StepType><Output></Output><TimeTaken>0.00:00:00:0029124</TimeTaken><Status>Passed</Status><Exception /><StepText>Then Something</StepText></Steps><Output>-------------------------------
+Scenario: Test 1
+
+</Output><Status>Passed</Status><StoryText /><ScenarioText><_x0024_id>142</_x0024_id><Scenario>Test 1</Scenario></ScenarioText><TimeTaken>0.00:00:00:3767719</TimeTaken></Scenarios><Scenarios><_x0024_id>143</_x0024_id><Guid>43c4f251-3a5c-4a45-b4ee-bc666b6f29e7</Guid><StartTime>2020-02-21T15:36:41.8940348+00:00</StartTime><EndTime>2020-02-21T15:36:41.897027+00:00</EndTime><FileName>C:\git\BDTest\TestTester\StepTextTests.cs</FileName><TearDownOutput /><FrameworkTestId /><Version>1.0.0.0</Version><Steps><_x0024_id>144</_x0024_id><StartTime>2020-02-21T15:36:41.8940348+00:00</StartTime><EndTime>2020-02-21T15:36:41.8950317+00:00</EndTime><StepType>0</StepType><Output>-------------------------------
+Scenario: Dynamic arguments
+
+</Output><TimeTaken>0.00:00:00:0009969</TimeTaken><Status>Passed</Status><Exception /><StepText>Given Steptext is Blah</StepText></Steps><Steps><_x0024_id>145</_x0024_id><StartTime>2020-02-21T15:36:41.8950317+00:00</StartTime><EndTime>2020-02-21T15:36:41.8950317+00:00</EndTime><StepType>0</StepType><Output></Output><TimeTaken>0.00:00:00:0000000</TimeTaken><Status>Passed</Status><Exception /><StepText>When Steptext is Blah</StepText></Steps><Steps><_x0024_id>146</_x0024_id><StartTime>2020-02-21T15:36:41.8960315+00:00</StartTime><EndTime>2020-02-21T15:36:41.8960315+00:00</EndTime><StepType>0</StepType><Output></Output><TimeTaken>0.00:00:00:0000000</TimeTaken><Status>Passed</Status><Exception /><StepText>Then Steptext is Blah</StepText></Steps><Steps><_x0024_id>147</_x0024_id><StartTime>2020-02-21T15:36:41.897027+00:00</StartTime><EndTime>2020-02-21T15:36:41.897027+00:00</EndTime><StepType>0</StepType><Output></Output><TimeTaken>0.00:00:00:0000000</TimeTaken><Status>Passed</Status><Exception /><StepText>And Steptext is Blah</StepText></Steps><Output>-------------------------------
+Scenario: Dynamic arguments
+
+</Output><Status>Passed</Status><StoryText /><ScenarioText><_x0024_id>148</_x0024_id><Scenario>Dynamic arguments</Scenario></ScenarioText><TimeTaken>0.00:00:00:0029922</TimeTaken></Scenarios><Scenarios><_x0024_id>149</_x0024_id><Guid>6fad29b8-91be-4718-b136-23189891feef</Guid><StartTime>2020-02-21T15:36:41.8281249+00:00</StartTime><EndTime>2020-02-21T15:36:41.8501511+00:00</EndTime><FileName>C:\git\BDTest\TestTester\TestsUsingNUnitBaseWithContext.cs</FileName><TearDownOutput /><FrameworkTestId>0-1030</FrameworkTestId><Version>1.0.0.0</Version><Steps><_x0024_id>150</_x0024_id><StartTime>2020-02-21T15:36:41.8291212+00:00</StartTime><EndTime>2020-02-21T15:36:41.8291212+00:00</EndTime><StepType>0</StepType><Output>-------------------------------
+Story: As a Test User
+I want To Test Using the Base Class
+So that Things Work
+
+Scenario: Test 2
+
+</Output><TimeTaken>0.00:00:00:0000000</TimeTaken><Status>Passed</Status><Exception /><StepText>Given Add</StepText></Steps><Steps><_x0024_id>151</_x0024_id><StartTime>2020-02-21T15:36:41.8301217+00:00</StartTime><EndTime>2020-02-21T15:36:41.8301217+00:00</EndTime><StepType>0</StepType><Output></Output><TimeTaken>0.00:00:00:0000000</TimeTaken><Status>Passed</Status><Exception /><StepText>And Add</StepText></Steps><Steps><_x0024_id>152</_x0024_id><StartTime>2020-02-21T15:36:41.8311159+00:00</StartTime><EndTime>2020-02-21T15:36:41.8311159+00:00</EndTime><StepType>0</StepType><Output></Output><TimeTaken>0.00:00:00:0000000</TimeTaken><Status>Passed</Status><Exception /><StepText>And Add</StepText></Steps><Steps><_x0024_id>153</_x0024_id><StartTime>2020-02-21T15:36:41.8311159+00:00</StartTime><EndTime>2020-02-21T15:36:41.8321135+00:00</EndTime><StepType>0</StepType><Output></Output><TimeTaken>0.00:00:00:0009976</TimeTaken><Status>Passed</Status><Exception /><StepText>And Add</StepText></Steps><Steps><_x0024_id>154</_x0024_id><StartTime>2020-02-21T15:36:41.8321135+00:00</StartTime><EndTime>2020-02-21T15:36:41.8331102+00:00</EndTime><StepType>0</StepType><Output><
