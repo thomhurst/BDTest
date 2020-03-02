@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
 using BDTest.Output;
 
 namespace BDTest
@@ -12,6 +14,8 @@ namespace BDTest
             get => TestsFinalizer.Debug;
             set => TestsFinalizer.Debug = value;
         }
+        
+        public static ConcurrentBag<Type> SuccessExceptionTypes { get; } = new ConcurrentBag<Type>();
 
         public static string PersistentResultsDirectory { get; set; }
         public static DateTime PersistentResultsCompareStartTime { get; set; } = DateTime.MinValue;

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using BDTest.Test;
 using NUnit.Framework;
@@ -12,6 +13,15 @@ namespace BDTest.NUnit
         protected override string TestId => TestContext.CurrentContext.Test.ID;
         private readonly ConditionalWeakTable<string, TContext> _contexts = new ConditionalWeakTable<string, TContext>();
 
+        [OneTimeSetUp]
+        public void AllowAssertPassException()
+        {
+            if (!BDTestSettings.SuccessExceptionTypes.Contains(typeof(SuccessException)))
+            {
+                BDTestSettings.SuccessExceptionTypes.Add(typeof(SuccessException));
+            }
+        }
+        
         [TearDown]
         public void PruneContext()
         {

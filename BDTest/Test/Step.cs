@@ -188,9 +188,16 @@ namespace BDTest.Test
                 }
                 catch (Exception e)
                 {
-                    Status = Status.Failed;
-                    Exception = e;
-                    throw;
+                    if (BDTestSettings.SuccessExceptionTypes.Contains(e.GetType()))
+                    {
+                        Status = Status.Passed;
+                    }
+                    else
+                    {
+                        Status = Status.Failed;
+                        Exception = e;
+                        throw;
+                    }
                 }
                 finally
                 {
