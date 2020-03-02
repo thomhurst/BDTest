@@ -212,8 +212,27 @@ For instance, I have a method which takes a Func, and it's used to update fields
 
 So I can override this to a different value for each test, and provide a better context to what action I am performing.
 This looks like:
-```
+
+```csharp
 .When(() => MyUpdateSteps.UpdateTheField(request => nameof(request.EmailAddress), newEmailAddress)).WithStepText(() => $"I call update customer with a new email address of '{newEmailAddress}'")
+```
+
+#### Allowing Certain Exceptions
+
+Some frameworks might use specific exceptions to pass a test, and therefore we wouldn't want it to be marked as 'Failed' in our reports.
+Use `BDTestSettings.SuccessExceptionTypes` to register types of exceptions that you wouldn't want to be marked as failures if thrown.
+
+E.g.
+
+```csharp
+        [OneTimeSetUp]
+        public void AllowAssertPassException()
+        {
+            if (!BDTestSettings.SuccessExceptionTypes.Contains(typeof(SuccessException)))
+            {
+                BDTestSettings.SuccessExceptionTypes.Add(typeof(SuccessException));
+            }
+        }
 ```
 
 ## Reports
