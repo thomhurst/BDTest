@@ -10,12 +10,11 @@ namespace BDTest.Output
         {
             var encodedText = Encoding.UTF8.GetBytes(text);
 
-            using (var sourceStream = new FileStream(filePath,
+            using var sourceStream = new FileStream(filePath,
                 FileMode.Append, FileAccess.Write, FileShare.None,
-                bufferSize: 4096, useAsync: true))
-            {
-                await sourceStream.WriteAsync(encodedText, 0, encodedText.Length);
-            }
+                bufferSize: 4096, useAsync: true);
+            
+            await sourceStream.WriteAsync(encodedText, 0, encodedText.Length).ConfigureAwait(false);
         }
     }
 }
