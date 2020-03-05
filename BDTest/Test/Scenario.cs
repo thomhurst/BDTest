@@ -37,6 +37,8 @@ namespace BDTest.Test
         }
 
         [JsonIgnore] internal readonly TestDetails TestDetails;
+        
+        private bool _alreadyExecuted;
 
         internal Scenario(List<Step> steps, TestDetails testDetails)
         {
@@ -102,9 +104,21 @@ namespace BDTest.Test
         [JsonConverter(typeof(TimespanConverter))]
         [JsonProperty]
         public TimeSpan TimeTaken { get; private set; }
+        
+        private void CheckIfAlreadyExecuted()
+        {
+            if (_alreadyExecuted)
+            {
+                throw new AlreadyExecutedException("This scenario has already been executed");
+            }
+
+            _alreadyExecuted = true;
+        }
 
         private async Task ExecuteInternal()
         {
+            CheckIfAlreadyExecuted();
+            
             await Task.Run(async () =>
             {
                 try

@@ -42,6 +42,8 @@ namespace BDTest.Test
         [JsonProperty]
         public Exception Exception { get; private set; }
 
+        private bool _alreadyExecuted;
+
         internal Step(Runnable runnable, StepType stepType)
         {
             Runnable = runnable;
@@ -172,6 +174,8 @@ namespace BDTest.Test
         {
             SetStepText();
 
+            CheckIfAlreadyExecuted();
+
             await Task.Run(async () =>
             {
                 try
@@ -207,6 +211,16 @@ namespace BDTest.Test
                     TestOutputData.ClearCurrentTaskData();
                 }
             });
+        }
+
+        private void CheckIfAlreadyExecuted()
+        {
+            if (_alreadyExecuted)
+            {
+                throw new AlreadyExecutedException("This step has already been executed");
+            }
+
+            _alreadyExecuted = true;
         }
     }
 }
