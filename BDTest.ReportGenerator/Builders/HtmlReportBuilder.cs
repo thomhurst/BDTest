@@ -124,56 +124,63 @@ namespace BDTest.ReportGenerator.Builders
         {
             var flakyScenarioBatched = GetScenarioBatched();
             var flakyScenarios = FlattenBatchScenarios(flakyScenarioBatched);
-            var flakyScenariosGroupedByStory = flakyScenarios.GroupBy(scenario => new { Story = scenario.GetStoryText(), scenario.FileName });
+            var flakyScenariosGroupedByStory =
+                flakyScenarios.GroupBy(scenario => new {Story = scenario.GetStoryText(), scenario.FileName});
 
             return new HtmlTag("body").Append(
                 new HtmlTag("div").Append(
                     new HtmlTag("h3").AppendText("Flakiness"),
                     new HtmlTag("div").Append(
-                        flakyScenariosGroupedByStory.Select(flakyScenariosWithSameStory =>
-                            new HtmlTag("div").AddClass("box").Append(
-                                new HtmlTag("h4")
-                                    .AppendText($"Story: {flakyScenariosWithSameStory.FirstOrDefault()?.GetStoryText()}"),
-                                new HtmlTag("table").Append(
-                                    new HtmlTag("thead").Append(
-                                        new HtmlTag("tr").Append(
-                                            HtmlReportPrebuilt.ScenariosHeader,
-                                            new HtmlTag("th").AppendText("Flakiness")
-                                        ).Append(HtmlReportPrebuilt.StatusIconHeaders)
-                                    ),
-                                    new HtmlTag("tbody").Append(
-                                        flakyScenarios.Where(scenario =>
-                                                scenario.GetStoryText() == flakyScenariosWithSameStory.Key.Story && scenario.FileName == flakyScenariosWithSameStory.Key.FileName)
-                                            .GroupBy(scenario => scenario.GetScenarioText())
-                                            .Select(flakySameScenarios =>
-                                            {
-                                                var flakyGroupedByDistinctScenarioText =
-                                                    flakySameScenarios.ToList();
-                                                return new HtmlTag("tr").Append(
-                                                    new HtmlTag("td").AppendText(flakyGroupedByDistinctScenarioText
-                                                        .FirstOrDefault()
-                                                        ?.GetScenarioText()),
-                                                    new HtmlTag("td").Append(
-                                                        new HtmlTag("div").AppendText(
-                                                            $"{flakyGroupedByDistinctScenarioText.GetFlakinessPercentage()}%")
-                                                    ),
-                                                    new HtmlTag("td").AppendText(
-                                                        $"{flakyGroupedByDistinctScenarioText.GetCount(Status.Passed)} / {flakyGroupedByDistinctScenarioText.Count}"
-                                                    ),
-                                                    new HtmlTag("td").AppendText(
-                                                        $"{flakyGroupedByDistinctScenarioText.GetCount(Status.Failed)} / {flakyGroupedByDistinctScenarioText.Count}"
-                                                    ),
-                                                    new HtmlTag("td").AppendText(
-                                                        $"{flakyGroupedByDistinctScenarioText.GetCount(Status.Inconclusive)} / {flakyGroupedByDistinctScenarioText.Count}"
-                                                    ),
-                                                    new HtmlTag("td").AppendText(
-                                                        $"{flakyGroupedByDistinctScenarioText.GetCount(Status.NotImplemented)} / {flakyGroupedByDistinctScenarioText.Count}"
-                                                    )
-                                                );
-                                            })
+                        flakyScenariosGroupedByStory.SelectMany(flakyScenariosWithSameStory =>
+                            new[]
+                            {
+                                new HtmlTag("div").AddClass("box").Append(
+                                    new HtmlTag("h4")
+                                        .AppendText(
+                                            $"Story: {flakyScenariosWithSameStory.FirstOrDefault()?.GetStoryText()}"),
+                                    new HtmlTag("table").Append(
+                                        new HtmlTag("thead").Append(
+                                            new HtmlTag("tr").Append(
+                                                HtmlReportPrebuilt.ScenariosHeader,
+                                                new HtmlTag("th").AppendText("Flakiness")
+                                            ).Append(HtmlReportPrebuilt.StatusIconHeaders)
+                                        ),
+                                        new HtmlTag("tbody").Append(
+                                            flakyScenarios.Where(scenario =>
+                                                    scenario.GetStoryText() == flakyScenariosWithSameStory.Key.Story &&
+                                                    scenario.FileName == flakyScenariosWithSameStory.Key.FileName)
+                                                .GroupBy(scenario => scenario.GetScenarioText())
+                                                .Select(flakySameScenarios =>
+                                                {
+                                                    var flakyGroupedByDistinctScenarioText =
+                                                        flakySameScenarios.ToList();
+                                                    return new HtmlTag("tr").Append(
+                                                        new HtmlTag("td").AppendText(flakyGroupedByDistinctScenarioText
+                                                            .FirstOrDefault()
+                                                            ?.GetScenarioText()),
+                                                        new HtmlTag("td").Append(
+                                                            new HtmlTag("div").AppendText(
+                                                                $"{flakyGroupedByDistinctScenarioText.GetFlakinessPercentage()}%")
+                                                        ),
+                                                        new HtmlTag("td").AppendText(
+                                                            $"{flakyGroupedByDistinctScenarioText.GetCount(Status.Passed)} / {flakyGroupedByDistinctScenarioText.Count}"
+                                                        ),
+                                                        new HtmlTag("td").AppendText(
+                                                            $"{flakyGroupedByDistinctScenarioText.GetCount(Status.Failed)} / {flakyGroupedByDistinctScenarioText.Count}"
+                                                        ),
+                                                        new HtmlTag("td").AppendText(
+                                                            $"{flakyGroupedByDistinctScenarioText.GetCount(Status.Inconclusive)} / {flakyGroupedByDistinctScenarioText.Count}"
+                                                        ),
+                                                        new HtmlTag("td").AppendText(
+                                                            $"{flakyGroupedByDistinctScenarioText.GetCount(Status.NotImplemented)} / {flakyGroupedByDistinctScenarioText.Count}"
+                                                        )
+                                                    );
+                                                })
+                                        )
                                     )
-                                )
-                            )
+                                ),
+                                new BrTag()
+                            }
                         )
                     )
                 )
