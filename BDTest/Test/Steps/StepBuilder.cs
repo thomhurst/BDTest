@@ -65,7 +65,7 @@ namespace BDTest.Test.Steps
             ExistingSteps.Add(new Step(runnable, StepType));
         }
 
-        protected async Task<Scenario> Invoke(TestDetails testDetails)
+        internal async Task<Scenario> Invoke(TestDetails testDetails)
         {
             var scenario = new Scenario(ExistingSteps, testDetails);
             await scenario.Execute();

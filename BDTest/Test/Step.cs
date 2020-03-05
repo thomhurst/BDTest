@@ -168,7 +168,7 @@ namespace BDTest.Test
             }
         }
 
-        public async Task Execute()
+        internal async Task Execute()
         {
             SetStepText();
 

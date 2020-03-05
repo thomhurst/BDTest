@@ -22,7 +22,7 @@ namespace BDTest.Test
         
         private readonly Reporter _reporters;
 
-        [JsonProperty] public string Guid { get; private set; }
+        [JsonProperty] internal string Guid { get; private set; }
         [JsonProperty] public DateTime StartTime { get; private set; }
 
         [JsonProperty] public DateTime EndTime { get; private set; }
@@ -62,7 +62,7 @@ namespace BDTest.Test
         [JsonProperty]
         public string FrameworkTestId { get; set; }
 
-        public async Task Execute()
+        internal async Task Execute()
         {
             try
             {
@@ -75,8 +75,6 @@ namespace BDTest.Test
             }
         }
 
-        [JsonIgnore] public bool IsAsync { get; set; }
-
         [JsonProperty] public string Version { get; private set; }
 
         [JsonProperty] public List<Step> Steps { get; private set; }
@@ -87,9 +85,9 @@ namespace BDTest.Test
         [JsonProperty]
         public Status Status { get; private set; } = Status.Inconclusive;
 
-        [JsonProperty] public StoryText StoryText { get; private set; }
+        [JsonProperty] internal StoryText StoryText { get; private set; }
 
-        [JsonProperty] public ScenarioText ScenarioText { get; private set; }
+        [JsonProperty] internal ScenarioText ScenarioText { get; private set; }
 
         public string GetScenarioText()
         {

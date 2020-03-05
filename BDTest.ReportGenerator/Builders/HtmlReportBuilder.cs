@@ -124,7 +124,7 @@ namespace BDTest.ReportGenerator.Builders
         {
             var flakyScenarioBatched = GetScenarioBatched();
             var flakyScenarios = FlattenBatchScenarios(flakyScenarioBatched);
-            var flakyScenariosGroupedByStory = flakyScenarios.GroupBy(scenario => new { scenario.StoryText?.Story, scenario.FileName });
+            var flakyScenariosGroupedByStory = flakyScenarios.GroupBy(scenario => new { Story = scenario.GetStoryText(), scenario.FileName });
 
             return new HtmlTag("body").Append(
                 new HtmlTag("div").Append(
@@ -152,7 +152,7 @@ namespace BDTest.ReportGenerator.Builders
                                                 return new HtmlTag("tr").Append(
                                                     new HtmlTag("td").AppendText(flakyGroupedByDistinctScenarioText
                                                         .FirstOrDefault()
-                                                        ?.ScenarioText.Scenario),
+                                                        ?.GetScenarioText()),
                                                     new HtmlTag("td").Append(
                                                         new HtmlTag("div").AppendText(
                                                             $"{flakyGroupedByDistinctScenarioText.GetFlakinessPercentage()}%")
@@ -194,7 +194,7 @@ namespace BDTest.ReportGenerator.Builders
         {
             var testTimesScenarioBatched = GetScenarioBatched();
             var testTimesScenarios = FlattenBatchScenarios(testTimesScenarioBatched).Where(scenario => scenario.Status == Status.Passed).ToList();
-            var testTimesScenariosGroupedByStory = testTimesScenarios.GroupBy(scenario => new { scenario.StoryText?.Story, scenario.FileName });
+            var testTimesScenariosGroupedByStory = testTimesScenarios.GroupBy(scenario => new { Story = scenario.GetStoryText(), scenario.FileName });
 
             return new HtmlTag("body").Append(
                 new HtmlTag("div").Append(
@@ -224,7 +224,7 @@ namespace BDTest.ReportGenerator.Builders
                                                 return new HtmlTag("tr").Append(
                                                     new HtmlTag("td").AppendText(testTimesGroupedByDistinctScenarioText
                                                         .FirstOrDefault()
-                                                        ?.ScenarioText.Scenario),
+                                                        ?.GetScenarioText()),
                                                     new HtmlTag("td").AppendText(testTimesGroupedByDistinctScenarioText
                                                         .Min(scenario => scenario.TimeTaken).ToPrettyFormat()),
                                                     new HtmlTag("td").AppendText(
