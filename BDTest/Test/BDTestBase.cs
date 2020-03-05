@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq.Expressions;
 using System.Runtime.CompilerServices;
+using System.Threading;
 using System.Threading.Tasks;
 using BDTest.Output;
 using BDTest.Test.Steps.Given;
@@ -9,7 +10,10 @@ namespace BDTest.Test
 {
     public abstract class BDTestBase
     {
-        protected virtual string TestId { get; set; }
+        private static readonly AsyncLocal<string> AsyncLocalTestId = new AsyncLocal<string>();
+        private static string InternalTestId => AsyncLocalTestId.Value ?? (AsyncLocalTestId.Value = Guid.NewGuid().ToString("N"));
+
+        protected virtual string TestId { get; set; } = InternalTestId;
         
         public Given Given(Expression<Action> step, [CallerMemberName] string callerMember = null, [CallerFilePath] string callerFile = null)
         {
