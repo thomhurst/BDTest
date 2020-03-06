@@ -30,6 +30,7 @@ namespace TestTester
         }
 
         [ScenarioText("Asynchronous Scenario With Custom Awaiter")]
+        [Test]
         public async Task AsyncTestCustomAwaiter()
         {
             await Given(() => Action1())
