@@ -14,7 +14,7 @@ namespace BDTest.Test
         private static readonly AsyncLocal<string> AsyncLocalTestId = new AsyncLocal<string>();
         private static string InternalTestId => AsyncLocalTestId.Value ?? (AsyncLocalTestId.Value = Guid.NewGuid().ToString("N"));
 
-        protected virtual string TestId { get; set; } = InternalTestId;
+        protected virtual string TestId => InternalTestId;
         
         public Given Given(Expression<Action> step, [CallerMemberName] string callerMember = null, [CallerFilePath] string callerFile = null)
         {
