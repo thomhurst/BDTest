@@ -272,19 +272,19 @@ Example in NUnit would be a class like this:
 
 See below for extra options.
 
-### Persistant Test Data
+### Persistent Test Data
 
-BDTest allows you to pass it a directory path, to persistantly store test data.
+BDTest allows you to pass it a directory path, to persistently store test data.
 Why is this useful?
 It allows us to keep a record of all our test runs, and this allows us to compare test runs.
 
-Set the directory by setting `BDTestSettings.PersistantResultsDirectory`
+Set the directory by setting `BDTestSettings.PersistentResultsDirectory`
 
 ```csharp
 [OneTimeSetUp]
-public void SetPersistantStorage()
+public void SetPersistentStorage()
 {
-    BDTestSettings.PersistantResultsDirectory = "C:\\AcceptanceTests";
+    BDTestSettings.PersistentResultsDirectory = "C:\\AcceptanceTests";
 }
 
 [Test]
