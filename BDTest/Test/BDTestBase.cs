@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using BDTest.Output;
 using BDTest.Test.Steps.Given;
+using BDTest.Test.Steps.When;
 
 namespace BDTest.Test
 {
@@ -23,6 +24,16 @@ namespace BDTest.Test
         public Given Given(Expression<Func<Task>> step, [CallerMemberName] string callerMember = null, [CallerFilePath] string callerFile = null)
         {
             return new Given(step, callerMember, callerFile, TestId);
+        }
+        
+        public When When(Expression<Action> step, [CallerMemberName] string callerMember = null, [CallerFilePath] string callerFile = null)
+        {
+            return new When(step, callerMember, callerFile, TestId);
+        }
+
+        public When When(Expression<Func<Task>> step, [CallerMemberName] string callerMember = null, [CallerFilePath] string callerFile = null)
+        {
+            return new When(step, callerMember, callerFile, TestId);
         }
 
         public void WithContext<TContext>(Func<TContext, Scenario> test) where TContext : new()
