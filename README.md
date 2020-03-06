@@ -136,7 +136,7 @@ BDTest enforces best practice:
 	
 	The former would be when a test needs setup to get to the required state. The latter if no state is required.
 	
-- Tests MUST start with a `Given`
+- Tests MUST start with a `Given` or a `When`
 	- Off of a `Given` you can have `And` or `When`
 	  - Off of an `And` you can  have `And` or `When`
 	- Off of a `When` you can have a `Then` 
