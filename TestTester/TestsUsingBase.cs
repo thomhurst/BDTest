@@ -29,6 +29,15 @@ namespace TestTester
                 .BDTestAsync();
         }
 
+        [ScenarioText("Asynchronous Scenario With Custom Awaiter")]
+        public async Task AsyncTestCustomAwaiter()
+        {
+            await Given(() => Action1())
+                .When(() => Action2())
+                .Then(() => Action3())
+                .And(() => Action4());
+        }
+
         [Test]
         [ScenarioText("Asynchronous Scenario Failure")]
         public async Task AsyncTestFailure()

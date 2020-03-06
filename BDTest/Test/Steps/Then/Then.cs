@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 
 namespace BDTest.Test.Steps.Then
@@ -44,5 +45,8 @@ namespace BDTest.Test.Steps.Then
         {
             return await Invoke(TestDetails);
         }
+
+        public TaskAwaiter<Scenario> GetAwaiter()
+            => Invoke(TestDetails).GetAwaiter();
     }
 }
