@@ -41,6 +41,18 @@ namespace TestTester
                 .BDTestAsync();
         }
 
+
+        [Test]
+        [ScenarioText("Synchronous Scenario Failure")]
+        public async Task SyncTestFailure()
+        {
+            Given(() => Action1())
+                .When(() => Action2())
+                .Then(() => Action3())
+                .And(() => Action4())
+                .And(() => Exception(new TestContext()))
+                .BDTest();
+        }
         [Test]
         [ScenarioText("Custom Scenario")]
         public void Test1()

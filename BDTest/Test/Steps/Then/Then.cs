@@ -37,7 +37,7 @@ namespace BDTest.Test.Steps.Then
 
         public Scenario BDTest()
         {
-            return Invoke(TestDetails).Result;
+            return Invoke(TestDetails).GetAwaiter().GetResult();
         }
 
         public async Task<Scenario> BDTestAsync()
