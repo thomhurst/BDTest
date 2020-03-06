@@ -17,7 +17,7 @@ Install via Nuget > `Install-Package BDTest`
 
 ### Usage
 
-Tests can be constructed either by extending from a base class, or by using the a test builder object.
+Tests can be constructed either by extending from a base class (recommended for cleaner and more readable tests), or by using the a test builder object.
 
 Extending from `BDTestBase`
 
@@ -51,10 +51,10 @@ public class MyTests
 
 ### Async
 
-BDTest supports asynchronous operations. In any Given, When, Then, you can pass in an asynchronous, or a non-asynchronous call.
+BDTest supports asynchronous operations. In any Given, When, Then or And, you can pass in an asynchronous or a non-asynchronous call.
 If you call `.BDTest()` at the end, any asynchronous tasks will be run in a blocking mode.
 If you want to utilise full asynchronous calls, use `.BDTestAsync()`
-To use this to the full extent, try to use asynchronous methods absolutely everywhere that they could be used.
+To use this to the full extent, try to use asynchronous methods absolutely everywhere that they could be used. Async programming 101 :)
 
 Make sure if calling a test using `.BDTestAsync()` to await the test, and make the test `async` and return a `Task` instead of void.
 
@@ -72,6 +72,8 @@ public class MyTests : BDTestBase
 ```
 
 ### Automatic Context Construction
+
+(`TestContext` below is an example class. You pass in the type of your specific context object to these generic classes/methods.)
 
 #### Lambda Syntax
 
@@ -120,7 +122,7 @@ For either of these methods, your TestContext should have a public constructor w
 ### Thread Safety Parallelization
 
 In order to keep all tests thread safe and have the ability to run all in parallel:
-- Use the `NUnitBDTestBase<>` base class OR `WithContext<TestContext>(...)` syntax as above
+- Use the `NUnitBDTestBase<TestContext>` base class OR `WithContext<TestContext>(...)` syntax as above
 - Do not use static variables/fields/properties in your tests
 - Do not share fields/properties in your test class - All variables should be populated as new for each test - Which the Context construction can take care of
 
@@ -234,6 +236,8 @@ E.g.
             }
         }
 ```
+
+If using NUnitBDTestBase, the NUNit SuccessException from Assert.Pass should automatically be registered.
 
 ## Reports
 
