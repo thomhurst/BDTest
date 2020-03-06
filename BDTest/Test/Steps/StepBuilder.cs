@@ -19,12 +19,12 @@ namespace BDTest.Test.Steps
             Initialiser.Initialise();
         }
 
-        protected StepBuilder(Expression<Action> action, string callerMember, string callerFile, string testId) : this(new Runnable(action), callerMember, callerFile, testId)
+        protected StepBuilder(Expression<Action> action, string callerMember, string callerFile, string testId, StepType stepType) : this(new Runnable(action), callerMember, callerFile, testId, stepType)
         {
             
         }
 
-        protected StepBuilder(Expression<Func<Task>> action, string callerMember, string callerFile, string testId) : this(new Runnable(action), callerMember, callerFile, testId)
+        protected StepBuilder(Expression<Func<Task>> action, string callerMember, string callerFile, string testId, StepType stepType) : this(new Runnable(action), callerMember, callerFile, testId, stepType)
         {
             
         }
@@ -35,9 +35,9 @@ namespace BDTest.Test.Steps
             return (T) this;
         }
 
-        internal StepBuilder(Runnable runnable, string callerMember, string callerFile, string testId)
+        internal StepBuilder(Runnable runnable, string callerMember, string callerFile, string testId, StepType stepType)
         {
-            ExistingSteps = new List<Step> { new Step(runnable, StepType.Given) };
+            ExistingSteps = new List<Step> { new Step(runnable, stepType) };
             var testGuid = Guid.NewGuid();
             TestDetails = new TestDetails(callerMember, callerFile, testGuid, testId);
             TestOutputData.TestId = testGuid;

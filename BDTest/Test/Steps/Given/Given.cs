@@ -9,7 +9,7 @@ namespace BDTest.Test.Steps.Given
         protected override StepType StepType { get; } = StepType.Given;
         
         // Actions
-        internal Given(Expression<Action> action, string callerMember, string callerFile, string testId) : base(action, callerMember, callerFile, testId)
+        internal Given(Expression<Action> action, string callerMember, string callerFile, string testId) : base(action, callerMember, callerFile, testId, StepType.Given)
         {
         }
 
@@ -29,7 +29,7 @@ namespace BDTest.Test.Steps.Given
         }
 
         // Tasks
-        internal Given(Expression<Func<Task>> action, string callerMember, string callerFile, string testId) : base(action, callerMember, callerFile, testId)
+        internal Given(Expression<Func<Task>> action, string callerMember, string callerFile, string testId) : base(action, callerMember, callerFile, testId, StepType.Given)
         {
         }
 

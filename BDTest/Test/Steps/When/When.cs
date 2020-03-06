@@ -15,12 +15,12 @@ namespace BDTest.Test.Steps.When
         {
         }
         
-        internal When(Expression<Action> action, string callerMember, string callerFile, string testId) : base(action, callerMember, callerFile, testId)
+        internal When(Expression<Action> action, string callerMember, string callerFile, string testId) : base(action, callerMember, callerFile, testId, StepType.When)
         {
             // Used for skipping a 'Given' step
         }
         
-        internal When(Expression<Func<Task>> action, string callerMember, string callerFile, string testId) : base(action, callerMember, callerFile, testId)
+        internal When(Expression<Func<Task>> action, string callerMember, string callerFile, string testId) : base(action, callerMember, callerFile, testId, StepType.When)
         {
             // Used for skipping a 'Given' step
         }
