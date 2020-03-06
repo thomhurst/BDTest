@@ -123,8 +123,8 @@ For either of these methods, your TestContext should have a public constructor w
 
 In order to keep all tests thread safe and have the ability to run all in parallel:
 - Use the `NUnitBDTestBase<TestContext>` base class OR `WithContext<TestContext>(...)` syntax as above
-- Do not use static variables/fields/properties in your tests
-- Do not share fields/properties in your test class - All variables should be populated as new for each test - Which the Context construction can take care of
+- Do not use static variables/fields/properties in your tests - Store any state in your TestContext object.
+- Do not share fields/properties in your test class - Store any state in your TestContext object - Which the Context construction will take care of
 
 ## Best Practice
 
