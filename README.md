@@ -131,7 +131,7 @@ In order to keep all tests thread safe and have the ability to run all in parall
 BDTest enforces best practice: 
 - Tests MUST contain 
 	- `Given` + `When` + `Then` and executed with a `BDTest(Async)`
-	OR
+	- OR
 	- `When` + `Then` and executed with a `BDTest(Async)`
 	
 	The former would be when a test needs setup to get to the required state. The latter if no state is required.
