@@ -16,14 +16,6 @@ namespace BDTest.Helpers
             typeof(Func<,,>),
         };
 
-        private static readonly Type DictionaryType = typeof(IDictionary<,>);
-
-        private static readonly Type IEnumerableType = typeof(IEnumerable<>);
-
-        private static readonly Type IListType = typeof(IList<>);
-
-        private static readonly Type ICollectionType = typeof(ICollection<>);
-
         public static bool IsFuncOrAction(Type type)
         {
             return FuncActionSet.Contains(type) ||
