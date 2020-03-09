@@ -17,7 +17,7 @@ Install via Nuget > `Install-Package BDTest`
 
 ### Usage
 
-Tests can be constructed either by extending from a base class (recommended for cleaner and more readable tests), or by using the a test builder object.
+Tests can be constructed either by extending from a base class (recommended for cleaner and more readable tests), or by using the test builder object.
 
 Extending from `BDTestBase`
 
