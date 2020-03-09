@@ -144,8 +144,8 @@ namespace BDTest.Test
                 {
                     Status = Status.Failed;
                     
-                    _reporters.WriteLine($"Exception: {e.StackTrace}");
-                    
+                    _reporters.WriteLine($"{Environment.NewLine}Exception: {e.StackTrace}{Environment.NewLine}");
+
                     throw;
                 }
                 finally
@@ -159,15 +159,13 @@ namespace BDTest.Test
                     
                     Steps.ForEach(step => _reporters.WriteLine($"{step.StepText} > [{step.Status}]"));
                     
-                    _reporters.WriteLine($"{Environment.NewLine}Test Result: {Status}");
+                    _reporters.WriteLine($"{Environment.NewLine}Test Result: {Status}{Environment.NewLine}");
                     
                     EndTime = DateTime.Now;
                     TimeTaken = EndTime - StartTime;
                     
                     Output = string.Join(Environment.NewLine,
                         Steps.Where(step => !string.IsNullOrWhiteSpace(step.Output)).Select(step => step.Output));
-                    
-                    _reporters.NewLine();
                 }
             });
         }
