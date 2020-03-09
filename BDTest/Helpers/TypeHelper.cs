@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 namespace BDTest.Helpers
 {
-    public class TypeHelper
+    internal static class TypeHelper
     {
         private static readonly HashSet<Type> FuncActionSet = new HashSet<Type>
         {

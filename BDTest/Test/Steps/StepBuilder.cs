@@ -35,7 +35,7 @@ namespace BDTest.Test.Steps
             return (T) this;
         }
 
-        internal StepBuilder(Runnable runnable, string callerMember, string callerFile, string testId, StepType stepType)
+        private StepBuilder(Runnable runnable, string callerMember, string callerFile, string testId, StepType stepType)
         {
             ExistingSteps = new List<Step> { new Step(runnable, stepType) };
             var testGuid = Guid.NewGuid();
@@ -51,7 +51,7 @@ namespace BDTest.Test.Steps
         {
         }
 
-        internal StepBuilder(List<Step> previousSteps, Runnable runnable, TestDetails testDetails)
+        private StepBuilder(List<Step> previousSteps, Runnable runnable, TestDetails testDetails)
         {
             testDetails.StepCount++;
             

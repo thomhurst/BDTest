@@ -166,6 +166,8 @@ namespace BDTest.Test
                     
                     Output = string.Join(Environment.NewLine,
                         Steps.Where(step => !string.IsNullOrWhiteSpace(step.Output)).Select(step => step.Output));
+                    
+                    _reporters.NewLine();
                 }
             });
         }

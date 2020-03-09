@@ -570,7 +570,7 @@ namespace BDTest.ReportGenerator.Builders
             );
         }
 
-        private HtmlTag BuildScenarioTeardownOutput(Scenario scenario)
+        private static HtmlTag BuildScenarioTeardownOutput(Scenario scenario)
         {
             if (string.IsNullOrEmpty(scenario.TearDownOutput))
             {
