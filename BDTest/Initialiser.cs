@@ -8,6 +8,9 @@ namespace BDTest
     internal static class Initialiser
     {
         private static bool _alreadyRun;
+        private static string _exceptionFilePath = Path.Combine(FileLocations.OutputDirectory, "BDTest - Exception.txt");
+        private static string _runExceptionFilePath = Path.Combine(FileLocations.OutputDirectory, "BDTest - Run Exception.txt");
+        private static string _reportExceptionFilePath = Path.Combine(FileLocations.OutputDirectory, "BDTest - Report Exception.txt");
 
         [MethodImpl(MethodImplOptions.Synchronized)]
         public static void Initialise()
@@ -59,20 +62,20 @@ namespace BDTest
 
             File.Copy(runtimeConfigFile,
                 bdTestReportRunConfigPath);
-
-            if (File.Exists(Path.Combine(FileLocations.OutputDirectory, "BDTest - Exception.txt")))
+            
+            if (File.Exists(_exceptionFilePath))
             {
-                File.Delete(Path.Combine(FileLocations.OutputDirectory, "BDTest - Exception.txt"));
+                File.Delete(_exceptionFilePath);
             }
-
-            if (File.Exists(Path.Combine(FileLocations.OutputDirectory, "BDTest - Run Exception.txt")))
+            
+            if (File.Exists(_runExceptionFilePath))
             {
-                File.Delete(Path.Combine(FileLocations.OutputDirectory, "BDTest - Run Exception.txt"));
+                File.Delete(_runExceptionFilePath);
             }
-
-            if (File.Exists(Path.Combine(FileLocations.OutputDirectory, "BDTest - Report Exception.txt")))
+            
+            if (File.Exists(_reportExceptionFilePath))
             {
-                File.Delete(Path.Combine(FileLocations.OutputDirectory, "BDTest - Report Exception.txt"));
+                File.Delete(_reportExceptionFilePath);
             }
         }
     }

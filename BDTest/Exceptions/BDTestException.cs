@@ -1,6 +1,6 @@
 using System;
 
-namespace BDTest
+namespace BDTest.Exceptions
 {
     public class BDTestException : Exception
     {

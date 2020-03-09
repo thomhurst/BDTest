@@ -8,6 +8,7 @@ using Humanizer;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using BDTest.Attributes;
+using BDTest.Exceptions;
 using BDTest.Helpers;
 using BDTest.Output;
 using BDTest.Test.Steps;

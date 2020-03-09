@@ -1,4 +1,4 @@
-namespace BDTest
+namespace BDTest.Exceptions
 {
     public class AlreadyExecutedException : BDTestException
     {

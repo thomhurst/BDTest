@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using BDTest.Exceptions;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using BDTest.Maps;

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
+using BDTest.Exceptions;
 
 namespace BDTest.Attributes
 {
@@ -29,7 +30,7 @@ namespace BDTest.Attributes
 
             if (!string.IsNullOrEmpty(parameterOverride) && !Regex.IsMatch(parameterOverride, "^(\\d+):"))
             {
-                throw new IndexOutOfRangeException(
+                throw new InvalidStepTextParameterException(
                     "The parameter override must begin with an index and a colon. E.g. \"0:Overriding Parameter 0\"");
             }
 
@@ -44,7 +45,7 @@ namespace BDTest.Attributes
             {
                 if (!string.IsNullOrEmpty(parameterOverride) && Regex.IsMatch(parameterOverride, "^(\\d+):"))
                 {
-                    throw new IndexOutOfRangeException(
+                    throw new InvalidStepTextParameterException(
                         "The parameter override must begin with an index and a colon. E.g. \"0:Overriding Parameter 0\"");
                 }
             }
