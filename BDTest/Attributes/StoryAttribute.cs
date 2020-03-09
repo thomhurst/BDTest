@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using BDTest.Exceptions;
 
 namespace BDTest.Attributes
 {
@@ -12,9 +13,11 @@ namespace BDTest.Attributes
 
         public string GetStoryText()
         {
+            ValidateArguments();
+            
             var firstChar = AsA.ToLowerInvariant()
-                .Replace("as an", String.Empty)
-                .Replace("as a", String.Empty)
+                .Replace("as an", string.Empty)
+                .Replace("as a", string.Empty)
                 .Trim()
                 .FirstOrDefault();
 
@@ -42,6 +45,24 @@ namespace BDTest.Attributes
             return $"{AsA}" +
                    $"{Environment.NewLine}{IWant}" +
                    $"{Environment.NewLine}{SoThat}{Environment.NewLine}";
+        }
+
+        private void ValidateArguments()
+        {
+            if (string.IsNullOrEmpty(AsA))
+            {
+                throw new MissingStoryTextArgumentException(nameof(AsA));
+            }
+            
+            if (string.IsNullOrEmpty(IWant))
+            {
+                throw new MissingStoryTextArgumentException(nameof(IWant));
+            }
+            
+            if (string.IsNullOrEmpty(SoThat))
+            {
+                throw new MissingStoryTextArgumentException(nameof(SoThat));
+            }
         }
     }
 }
