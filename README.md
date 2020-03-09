@@ -6,6 +6,8 @@
 
 ## About
 
+### B(ehaviour) D(riven) Test(ing)
+
 BDTest is a testing framework. It can be used with other frameworks (such as MSTest, xUnit or NUnit) or standalone.
 The examples below will use attributes (such as `[Test]`) from NUnit.
 
