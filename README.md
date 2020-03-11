@@ -77,6 +77,48 @@ public class MyTests : BDTestBase
 
 (`TestContext` below is an example class. You pass in the type of your specific context object to these generic classes/methods.)
 
+For either of these methods, your TestContext should have a public constructor with 0 parameters. Otherwise, check out the source code for ContextBDTestBase or NUnitBDTestBase to set up your own automatic context injector with extra construction logic.
+
+#### ContextBDTestBase
+
+Instead of extending from `BDTestBase` extend from `ContextBDTestBase<>` and pass the type of your Context.
+Your context will be constructed for each test independently.
+
+Access this using the `Context` property. See below for example.
+
+```csharp
+    public class TestsUsingNUnitBaseWithContext : ContextBDTestBase<TestContext>
+    {
+        [Test]
+        public void Test1()
+        {
+            Given(() => Action1(Context))
+                .When(() => Action2(Context))
+                .Then(() => Action3(Context))
+                .BDTest();
+        }
+    }
+```
+
+#### NUnit
+
+Instead of extending from `ContextBDTestBase<>` extend from `NUnitBDTestBase<>` and pass the type of your Context.
+This works the same, but does some NUnit additional set up, such as registering exception exclusions such as `NUnit.SuccessException`
+
+```csharp
+    public class TestsUsingNUnitBaseWithContext : NUnitBDTestBase<TestContext>
+    {
+        [Test]
+        public void Test1()
+        {
+            Given(() => Action1(Context))
+                .When(() => Action2(Context))
+                .Then(() => Action3(Context))
+                .BDTest();
+        }
+    }
+```
+
 #### Lambda Syntax
 
 Construction of your TestContext using lambda syntax
@@ -98,33 +140,10 @@ public class MyTests : BDTestBase
 
 - Your TestContext will be automatically constructed and injected in via the lambda
 
-#### NUnit
-
-Instead of extending from `BDTestBase` extend from `NUnitBDTestBase` and pass the type of your Context.
-Your context will be constructed for each test independently.
-
-Access this using the `Context` property. See below for example.
-
-```csharp
-    public class TestsUsingNUnitBaseWithContext : NUnitBDTestBase<TestContext>
-    {
-        [Test]
-        public void Test1()
-        {
-            Given(() => Action1(Context))
-                .When(() => Action2(Context))
-                .Then(() => Action3(Context))
-                .BDTest();
-        }
-    }
-```
-
-For either of these methods, your TestContext should have a public constructor with 0 parameters. Otherwise, check out the source code for NUnitBDTestBase to set up your own version with extra construction logic.
-
 ### Thread Safety Parallelization
 
 In order to keep all tests thread safe and have the ability to run all in parallel:
-- Use the `NUnitBDTestBase<TestContext>` base class OR `WithContext<TestContext>(...)` syntax as above
+- Use the `ContextBDTestBase<TestContext>`, `NUnitBDTestBase<TestContext>` base class OR `WithContext<TestContext>(...)` syntax as above
 - Do not use static variables/fields/properties in your tests - Store any state in your TestContext object.
 - Do not share fields/properties in your test class - Store any state in your TestContext object - Which the Context construction will take care of
 
