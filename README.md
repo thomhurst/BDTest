@@ -87,7 +87,7 @@ Your context will be constructed for each test independently.
 Access this using the `Context` property. See below for example.
 
 ```csharp
-    public class TestsUsingNUnitBaseWithContext : ContextBDTestBase<TestContext>
+    public class TestsUsingBaseWithContext : ContextBDTestBase<TestContext>
     {
         [Test]
         public void Test1()
