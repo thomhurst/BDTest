@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq.Expressions;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 
 namespace BDTest
@@ -28,9 +29,22 @@ namespace BDTest
             }
             else
             {
-                Action.Compile().Invoke();
+                var compiledAction = Action.Compile();
+                if (IsThisAsync(compiledAction))
+                {
+                    await System.Threading.Tasks.Task.Run(compiledAction);
+                }
+                else
+                {
+                    compiledAction.Invoke();
+                }
             }
         }
 
+        private static bool IsThisAsync(Action action)
+        {
+            return action.Method.IsDefined(typeof(AsyncStateMachineAttribute),
+                false);
+        }
     }
 }
