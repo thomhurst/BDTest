@@ -20,8 +20,18 @@ namespace BDTest.Helpers
             return GetStepText(action.Body as MethodCallExpression);
         }
         
+        public static string GetStepText(Expression expression)
+        {
+            return GetStepText(expression as MethodCallExpression);
+        }
+        
         private static string GetStepText(MethodCallExpression methodCallExpression)
         {
+            if (methodCallExpression == null)
+            {
+                return string.Empty;
+            }
+            
             var arguments = GetMethodArguments(methodCallExpression);
 
             var methodInfo = methodCallExpression?.Method;
