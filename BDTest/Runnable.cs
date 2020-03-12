@@ -26,19 +26,17 @@ namespace BDTest
             if (Task != null)
             {
                 await Task.Compile().Invoke();
+                return;
             }
-            else
+
+            var compiledAction = Action.Compile();
+            if (IsThisAsync(compiledAction))
             {
-                var compiledAction = Action.Compile();
-                if (IsThisAsync(compiledAction))
-                {
-                    await System.Threading.Tasks.Task.Run(compiledAction);
-                }
-                else
-                {
-                    compiledAction.Invoke();
-                }
+                await System.Threading.Tasks.Task.Run(compiledAction);
+                return;
             }
+
+            compiledAction.Invoke();
         }
 
         private static bool IsThisAsync(Action action)
