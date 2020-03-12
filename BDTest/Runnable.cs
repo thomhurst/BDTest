@@ -41,6 +41,11 @@ namespace BDTest
 
         private static bool IsThisAsync(Action action)
         {
+            if (action.Method.ReturnType.GetMethod(nameof(System.Threading.Tasks.Task.GetAwaiter)) != null)
+            {
+                return true;
+            }
+            
             return action.Method.IsDefined(typeof(AsyncStateMachineAttribute),
                 false);
         }
