@@ -30,6 +30,9 @@ namespace BDTest.Test
 
         [JsonProperty] public string FileName { get; private set; }
         
+        [JsonProperty]
+        public string TestStartupInformation { get; set; }
+        
         [JsonProperty] public string TearDownOutput { get; set; }
 
         [JsonConstructor]
@@ -125,6 +128,8 @@ namespace BDTest.Test
                 try
                 {
                     StartTime = DateTime.Now;
+                    
+                    WriteStoryAndScenario();
 
                     foreach (var step in Steps)
                     {
@@ -165,6 +170,16 @@ namespace BDTest.Test
                         Steps.Where(step => !string.IsNullOrWhiteSpace(step.Output)).Select(step => step.Output));
                 }
             });
+        }
+
+        private void WriteStoryAndScenario()
+        {
+            _reporters.WriteStory(StoryText);
+            _reporters.WriteScenario(ScenarioText);
+            _reporters.NewLine();
+            
+            TestStartupInformation = TestOutputData.Instance.ToString();
+            TestOutputData.ClearCurrentTaskData();
         }
     }
 }

@@ -550,8 +550,9 @@ namespace BDTest.ReportGenerator.Builders
                                 )
                         ),
                         new HtmlTag("p").Style("margin-left", "25px").Append(
+                            BuildScenarioStartupOrTeardownOutput("Test Start-Up Output", scenario.TestStartupInformation),
                             BuildSteps(scenario.Steps),
-                            BuildScenarioTeardownOutput(scenario)
+                            BuildScenarioStartupOrTeardownOutput("Test Tear Down Output", scenario.TearDownOutput)
                         )
                     )
                 ),
@@ -570,20 +571,20 @@ namespace BDTest.ReportGenerator.Builders
             );
         }
 
-        private static HtmlTag BuildScenarioTeardownOutput(Scenario scenario)
+        private static HtmlTag BuildScenarioStartupOrTeardownOutput(string title, string text)
         {
-            if (string.IsNullOrEmpty(scenario.TearDownOutput))
+            if (string.IsNullOrEmpty(text))
             {
                 return HtmlTag.Empty();
             }
 
-            var scenarioTearDownOutputLines = scenario.TearDownOutput.SplitOnNewLines();
+            var outputLines = text.SplitOnNewLines();
             
             return new HtmlTag("details").Style("margin-left", "25px").Append(
                 new HtmlTag("summary").Append(
-                    new HtmlTag("span").AppendText("Test Tear Down Output").AddClass("step")
+                    new HtmlTag("span").AppendText(title).AddClass("step")
                 ),
-                new HtmlTag("pre").Append(scenarioTearDownOutputLines.SelectMany(
+                new HtmlTag("pre").Append(outputLines.SelectMany(
                     line => new[] {new HtmlTag("span").AppendText(line), new BrTag()}))
             );
         }
