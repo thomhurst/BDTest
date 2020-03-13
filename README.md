@@ -105,6 +105,9 @@ Access this using the `Context` property. See below for example.
 Instead of extending from `ContextBDTestBase<>` extend from `NUnitBDTestBase<>` and pass the type of your Context.
 This works the same, but does some NUnit additional set up, such as registering exception exclusions such as `NUnit.SuccessException`
 
+This class requires an extra Nuget package (As I didn't want base BDTest to have a dependency on NUnit)
+Install via Nuget > `Install-Package BDTest.NUnit`
+
 ```csharp
     public class TestsUsingNUnitBaseWithContext : NUnitBDTestBase<TestContext>
     {
