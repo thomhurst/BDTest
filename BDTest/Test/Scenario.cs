@@ -126,9 +126,9 @@ namespace BDTest.Test
                 {
                     StartTime = DateTime.Now;
                     
-                    _reporters.WriteStory(StoryText);
-                    _reporters.WriteScenario(ScenarioText);
-                    _reporters.NewLine();
+                    // _reporters.WriteStory(StoryText);
+                    // _reporters.WriteScenario(ScenarioText);
+                    // _reporters.NewLine();
 
                     foreach (var step in Steps)
                     {

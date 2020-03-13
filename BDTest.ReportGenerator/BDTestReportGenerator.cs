@@ -19,48 +19,18 @@ namespace BDTest.ReportGenerator
 {
     public static class BDTestReportGenerator
     {
-        internal static string ResultDirectory { get; private set; }
-        private static string Args { get; set; }
+        internal static string ResultDirectory => FileLocations.OutputDirectory;
 
         private static void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
         {
-            File.WriteAllText(Path.Combine(ResultDirectory, "BDTest - Report Exception.txt"), "Args: " + Args + Environment.NewLine + (e.ExceptionObject as Exception)?.StackTrace);
+            File.WriteAllText(Path.Combine(ResultDirectory, "BDTest - Report Exception.txt"), (e.ExceptionObject as Exception)?.StackTrace);
         }
 
         public static void Generate()
         {
-            var reportDll = Directory.CreateDirectory(FileLocations.OutputDirectory)
-                .GetFiles("BDTest.ReportGenerator.dll")
-                .FirstOrDefault()?.FullName;
-
-            var command = new[]
-            {
-                reportDll, Arguments.ResultDirectoryArgumentName + FileLocations.OutputDirectory,
-                Arguments.PersistentStorageArgumentName + BDTestSettings.PersistentResultsDirectory,
-                Arguments.PersistentResultsCompareStartTimeArgumentName +
-                $"{BDTestSettings.PersistentResultsCompareStartTime:o}",
-                Arguments.AllScenariosReportHtmlFilenameArgumentName +
-                BDTestSettings.AllScenariosReportHtmlFilename,
-                Arguments.ScenariosByStoryReportHtmlFilenameArgumentName +
-                BDTestSettings.ScenariosByStoryReportHtmlFilename,
-                Arguments.FlakinessReportHtmlFilenameArgumentName + BDTestSettings.FlakinessReportHtmlFilename,
-                Arguments.TestTimesReportHtmlFilenameArgumentName + BDTestSettings.TestTimesReportHtmlFilename,
-                Arguments.JsonDataFilenameArgumentName + BDTestSettings.JsonDataFilename,
-                Arguments.XmlDataFilenameArgumentName + BDTestSettings.XmlDataFilename
-            };
-
-            Main(command);
-        }
-
-        internal static void Main(string[] args)
-        {
-            Args = string.Join(" ", args);
-
             AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
 
-            ResultDirectory = args.FirstOrDefault(it => it.StartsWith(Arguments.ResultDirectoryArgumentName))?.Replace(Arguments.ResultDirectoryArgumentName, "");
-
-            SetSettingsFromArgs(args);
+            CreatePersistentResults();
 
             if (string.IsNullOrWhiteSpace(ResultDirectory))
             {
@@ -72,6 +42,7 @@ namespace BDTest.ReportGenerator
             
             var testTimer = GetTestTimer(scenarios);
 
+            // Original File Names
             var reportPathByStory = Path.Combine(ResultDirectory, FileNames.ReportByStory);
             var reportPathAllScenarios = Path.Combine(ResultDirectory, FileNames.ReportAllScenarios);
             var testDataJsonPath = Path.Combine(ResultDirectory, FileNames.TestDataJson);
@@ -96,8 +67,7 @@ namespace BDTest.ReportGenerator
             };
 
             var jsonData = JsonConvert.SerializeObject(dataToOutput, Formatting.Indented, settings);
-
-
+            
             WriteJsonOutput(jsonData);
 
             WriteXmlOutput(jsonData);
@@ -179,28 +149,8 @@ namespace BDTest.ReportGenerator
             }
         }
 
-        private static void SetSettingsFromArgs(string[] args)
+        private static void CreatePersistentResults()
         {
-            BDTestSettings.PersistentResultsDirectory = GetArgument(args, Arguments.PersistentStorageArgumentName);
-
-            var persistentCompareStartDate = GetArgument(args, Arguments.PersistentResultsCompareStartTimeArgumentName);
-            if (!string.IsNullOrWhiteSpace(persistentCompareStartDate))
-            {
-                BDTestSettings.PersistentResultsCompareStartTime = DateTime.ParseExact(persistentCompareStartDate, "o", CultureInfo.InvariantCulture);
-            }
-
-            BDTestSettings.AllScenariosReportHtmlFilename = GetArgument(args, Arguments.AllScenariosReportHtmlFilenameArgumentName);
-
-            BDTestSettings.ScenariosByStoryReportHtmlFilename = GetArgument(args, Arguments.ScenariosByStoryReportHtmlFilenameArgumentName);
-
-            BDTestSettings.FlakinessReportHtmlFilename = GetArgument(args, Arguments.FlakinessReportHtmlFilenameArgumentName);
-
-            BDTestSettings.TestTimesReportHtmlFilename = GetArgument(args, Arguments.TestTimesReportHtmlFilenameArgumentName);
-
-            BDTestSettings.XmlDataFilename = GetArgument(args, Arguments.XmlDataFilenameArgumentName);
-
-            BDTestSettings.JsonDataFilename = GetArgument(args, Arguments.JsonDataFilenameArgumentName);
-
             if (string.IsNullOrWhiteSpace(BDTestSettings.PersistentResultsDirectory))
             {
                 return;
@@ -215,13 +165,6 @@ namespace BDTest.ReportGenerator
                 File.WriteAllText(Path.Combine(ResultDirectory, "BDTest - Persistent Directory Error.txt"), e.StackTrace);
                 BDTestSettings.PersistentResultsDirectory = null;
             }
-        }
-
-        private static string GetArgument(IEnumerable<string> args, string argumentName)
-        {
-            var argument = args.FirstOrDefault(it => it.StartsWith(argumentName))?.Replace(argumentName, "");
-
-            return string.IsNullOrWhiteSpace(argument) ? null : argument;
         }
 
         private static void WriteJsonOutput(string jsonData)

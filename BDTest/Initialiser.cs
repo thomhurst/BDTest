@@ -1,6 +1,7 @@
 ﻿using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using BDTest.Output;
 using BDTest.Paths;
 
 namespace BDTest
@@ -22,7 +23,7 @@ namespace BDTest
 
             _alreadyRun = true;
 
-            BDTestSettings.Debug.ShouldWriteDebugOutputFile = false;
+            TestsFinalizer.Initialise();
 
             DeletePreviousData();
         }

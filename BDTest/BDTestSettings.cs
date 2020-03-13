@@ -28,12 +28,6 @@ namespace BDTest
 
     public class DebugSettings
     {
-        public bool ShouldWriteDebugOutputFile
-        {
-            get => TestsFinalizer.Debug;
-            set => TestsFinalizer.Debug = value;
-        }
-
         public bool ShouldSkipWhenStep { get; set; } = false;
     }
 }
