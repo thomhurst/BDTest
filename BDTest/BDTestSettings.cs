@@ -28,6 +28,6 @@ namespace BDTest
 
     public class DebugSettings
     {
-        public bool ShouldSkipWhenStep { get; set; } = false;
+        public bool ShouldSkipWhenStep { get; set; }
     }
 }
