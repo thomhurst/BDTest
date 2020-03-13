@@ -75,7 +75,6 @@ namespace BDTest.Test
             finally
             {
                 TestHolder.StoppedEarly.TryRemove(TestDetails.GetGuid(), out _);
-                JsonLogger.WriteScenario(this);
             }
         }
 

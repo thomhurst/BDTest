@@ -86,9 +86,9 @@ namespace BDTest.Test
             return test.Invoke(Activator.CreateInstance<TContext>(), Activator.CreateInstance<TContext2>(), Activator.CreateInstance<TContext3>(), Activator.CreateInstance<TContext4>(), Activator.CreateInstance<TContext5>());
         }
 
-        public async Task WriteTearDownOutput(string text)
+        public void WriteTearDownOutput(string text)
         {
-            await TestOutputData.WriteTearDownOutput(TestId, text);
+            TestOutputData.WriteTearDownOutput(TestId, text);
         }
     }
 }
