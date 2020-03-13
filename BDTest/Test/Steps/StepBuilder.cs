@@ -59,7 +59,7 @@ namespace BDTest.Test.Steps
             StoryText = testDetails.StoryText;
             ScenarioText = testDetails.ScenarioText;
 
-            TestMap.NotRun[testDetails.GetGuid()] = this;
+            TestHolder.NotRun[testDetails.GetGuid()] = this;
 
             ExistingSteps = previousSteps;
             ExistingSteps.Add(new Step(runnable, StepType));

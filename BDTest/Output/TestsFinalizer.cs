@@ -26,7 +26,7 @@ namespace BDTest.Output
 
                 try
                 {
-                    var warnings = new WarningsChecker(TestMap.NotRun.Values, TestMap.StoppedEarly.Values);
+                    var warnings = new WarningsChecker(TestHolder.NotRun.Values, TestHolder.StoppedEarly.Values);
                     File.WriteAllText(FileLocations.Warnings, JsonConvert.SerializeObject(warnings, settings));
                 }
                 catch (Exception e)

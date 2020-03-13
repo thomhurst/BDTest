@@ -46,8 +46,9 @@ namespace BDTest.Test
             Guid = testDetails.GetGuid().ToString();
             FrameworkTestId = testDetails.TestId;
             
-            TestMap.NotRun.TryRemove(testDetails.GetGuid(), out _);
-            TestMap.StoppedEarly.TryAdd(testDetails.GetGuid(), this);
+            TestHolder.NotRun.TryRemove(testDetails.GetGuid(), out _);
+            TestHolder.StoppedEarly.TryAdd(testDetails.GetGuid(), this);
+            TestHolder.Scenarios.Add(this);
 
             StoryText = testDetails.StoryText;
             ScenarioText = testDetails.ScenarioText;
@@ -73,7 +74,7 @@ namespace BDTest.Test
             }
             finally
             {
-                TestMap.StoppedEarly.TryRemove(TestDetails.GetGuid(), out _);
+                TestHolder.StoppedEarly.TryRemove(TestDetails.GetGuid(), out _);
                 JsonLogger.WriteScenario(this);
             }
         }

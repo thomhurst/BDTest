@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Xml;
+using BDTest.Maps;
 using BDTest.Output;
 using BDTest.Paths;
 using BDTest.ReportGenerator.Builders;
@@ -37,8 +38,7 @@ namespace BDTest.ReportGenerator
                 return;
             }
 
-            var scenarios = GetScenarios(ResultDirectory);
-            scenarios = AddTearDownOutputToScenarios(scenarios);
+            var scenarios = TestHolder.Scenarios.ToList();
             
             var testTimer = GetTestTimer(scenarios);
 
@@ -51,8 +51,6 @@ namespace BDTest.ReportGenerator
             DeleteExistingFiles(reportPathByStory, reportPathAllScenarios, testDataJsonPath, testDataXmlPath);
 
             var warnings = GetWarnings();
-
-            scenarios.AddRange(warnings.StoppedEarlyTests);
 
             var dataToOutput = new DataOutputModel
             {
@@ -84,41 +82,6 @@ namespace BDTest.ReportGenerator
             {
                 Console.WriteLine(e.Message);
             }
-        }
-
-        private static List<Scenario> AddTearDownOutputToScenarios(List<Scenario> scenarios)
-        {
-            var scenariosFolder = Directory.GetDirectories(ResultDirectory, FileNames.Scenarios).FirstOrDefault();
-
-            if (string.IsNullOrWhiteSpace(scenariosFolder))
-            {
-                throw new ArgumentNullException(nameof(scenariosFolder), $"Can't find '{FileNames.Scenarios} folder in directory {ResultDirectory}");
-            }
-
-            var outputFiles = Directory.GetFiles(scenariosFolder).Where(name => name.Contains("TearDownOutput-"));
-
-            var outputFilesByTestId = outputFiles.GroupBy(outputFile =>
-                Path.GetFileNameWithoutExtension(outputFile)
-                    .Split(new[] {"TearDownOutput-"}, StringSplitOptions.None)[1]);
-            
-            foreach (var groupedOutputFiles in outputFilesByTestId)
-            {
-                var scenarioFrameworkTestId = groupedOutputFiles.Key;
-
-                var foundScenario = scenarios.FirstOrDefault(scenario => scenario.FrameworkTestId == scenarioFrameworkTestId);
-
-                if (foundScenario == null)
-                {
-                    continue;
-                }
-
-                foreach (var outputFile in groupedOutputFiles.OrderBy(File.GetLastWriteTimeUtc))
-                {
-                    foundScenario.TearDownOutput += File.ReadAllText(outputFile) + Environment.NewLine;   
-                }
-            }
-
-            return scenarios;
         }
 
         private static void PruneData()
@@ -213,27 +176,6 @@ namespace BDTest.ReportGenerator
             {
                 // ignored
             }
-        }
-
-        private static List<Scenario> GetScenarios(string resultDirectory)
-        {
-            var settings = new JsonSerializerSettings
-            {
-                PreserveReferencesHandling = PreserveReferencesHandling.Objects,
-                Error = (se, ev) => { ev.ErrorContext.Handled = true; }
-            };
-
-            var scenariosFolder = Directory.GetDirectories(resultDirectory, FileNames.Scenarios).FirstOrDefault();
-
-            if (string.IsNullOrWhiteSpace(scenariosFolder))
-            {
-                throw new ArgumentNullException(nameof(scenariosFolder), $"Can't find '{FileNames.Scenarios} folder in directory {resultDirectory}");
-            }
-
-            var scenarios = Directory.GetFiles(scenariosFolder).Where(name => !name.Contains("TearDownOutput-")).Select(scenarioFile =>
-                JsonConvert.DeserializeObject<Scenario>(File.ReadAllText(scenarioFile), settings));
-
-            return scenarios.ToList();
         }
 
         private static WarningsChecker GetWarnings()

@@ -1,10 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using BDTest.Maps;
 using BDTest.Paths;
+using BDTest.Test;
 
 namespace BDTest.Output
 {
@@ -76,6 +79,8 @@ namespace BDTest.Output
                 Console.WriteLine("Attempting to write tear down output but no unique test ID has been set in the base class");
                 return;
             }
+
+            TestHolder.Scenarios.First(scenario => scenario.FrameworkTestId == testId).TearDownOutput += $"{text}{Environment.NewLine}";
 
             Console.WriteLine(Environment.NewLine + text);
             await AsyncFileHelper.AppendTextAsync(FileLocations.ScenarioTeardownOutputFilePath(testId), $"{text}{Environment.NewLine}");
