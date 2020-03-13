@@ -22,7 +22,7 @@ namespace BDTest
 
             _alreadyRun = true;
 
-            BDTestSettings.Debug = false;
+            BDTestSettings.Debug.ShouldWriteDebugOutputFile = false;
 
             DeletePreviousData();
         }

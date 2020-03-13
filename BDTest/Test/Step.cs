@@ -83,6 +83,14 @@ namespace BDTest.Test
                 try
                 {
                     StartTime = DateTime.Now;
+
+                    if (StepType == StepType.When && BDTestSettings.Debug.ShouldSkipWhenStep)
+                    {
+                        StepText = $"[Skipped due to Debug Settings] {StepText}";
+                        Status = Status.SkippedDueToDebugSettings;
+                        return;
+                    }
+                    
                     await Runnable.Run();
                     Status = Status.Passed;
                 }

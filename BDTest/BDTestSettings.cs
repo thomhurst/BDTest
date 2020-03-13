@@ -9,11 +9,7 @@ namespace BDTest
     {
         public static bool InterceptConsoleOutput { get; set; } = true;
 
-        public static bool Debug
-        {
-            get => TestsFinalizer.Debug;
-            set => TestsFinalizer.Debug = value;
-        }
+        public static DebugSettings Debug { get; } = new DebugSettings();
         
         public static ConcurrentBag<Type> SuccessExceptionTypes { get; } = new ConcurrentBag<Type>();
 
@@ -28,5 +24,16 @@ namespace BDTest
         public static string TestTimesReportHtmlFilename { get; set; }
         public static string JsonDataFilename { get; set; }
         public static string XmlDataFilename { get; set; }
+    }
+
+    public class DebugSettings
+    {
+        public bool ShouldWriteDebugOutputFile
+        {
+            get => TestsFinalizer.Debug;
+            set => TestsFinalizer.Debug = value;
+        }
+
+        public bool ShouldSkipWhenStep { get; set; } = false;
     }
 }

@@ -5,6 +5,7 @@
         Passed,
         Failed,
         Inconclusive,
-        NotImplemented
+        NotImplemented,
+        SkippedDueToDebugSettings
     }
 }
