@@ -132,12 +132,19 @@ namespace BDTest.ReportGenerator
 
         private static void WriteJsonOutput(string jsonData)
         {
-            File.WriteAllText(Path.Combine(ResultDirectory, BDTestSettings.JsonDataFilename ?? FileNames.TestDataJson), jsonData);
-
-            if (!string.IsNullOrWhiteSpace(BDTestSettings.PersistentResultsDirectory))
+            try
             {
-                File.Copy(Path.Combine(ResultDirectory, BDTestSettings.JsonDataFilename ?? FileNames.TestDataJson),
-                    Path.Combine(BDTestSettings.PersistentResultsDirectory, FileNames.TestDataJson));
+                File.WriteAllText(Path.Combine(ResultDirectory, BDTestSettings.JsonDataFilename ?? FileNames.TestDataJson), jsonData);
+
+                if (!string.IsNullOrWhiteSpace(BDTestSettings.PersistentResultsDirectory))
+                {
+                    File.Copy(Path.Combine(ResultDirectory, BDTestSettings.JsonDataFilename ?? FileNames.TestDataJson),
+                        Path.Combine(BDTestSettings.PersistentResultsDirectory, FileNames.TestDataJson));
+                }
+            }
+            catch (Exception e)
+            {
+                File.WriteAllText(Path.Combine(ResultDirectory, "BDTest - JSON Write Exception.txt"), e.Message + Environment.NewLine + e.StackTrace);
             }
         }
 
