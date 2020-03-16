@@ -6,7 +6,18 @@ namespace BDTest.Paths
 {
     public static class FileLocations
     {
-        public static readonly string OutputDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+        public static string OutputDirectory
+        {
+            get
+            {
+                if (!string.IsNullOrEmpty(BDTestSettings.ReportFolderName))
+                {
+                    return Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), BDTestSettings.ReportFolderName);
+                }
+                
+                return Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+            }
+        } 
         public static readonly string AggregatedJsonScenarios = Path.Combine(OutputDirectory, FileNames.TestDataJson);
         public static readonly string ScenariosDirectory = Path.Combine(OutputDirectory, FileNames.Scenarios);
         public static string RandomScenarioFilePath => Path.Combine(ScenariosDirectory, Guid.NewGuid() + ".json");
