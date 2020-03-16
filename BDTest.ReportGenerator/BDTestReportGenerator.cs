@@ -30,6 +30,7 @@ namespace BDTest.ReportGenerator
         {
             AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
 
+            CreateReportFolder();
             CreatePersistentResults();
 
             if (string.IsNullOrWhiteSpace(ResultDirectory))
@@ -81,6 +82,11 @@ namespace BDTest.ReportGenerator
             {
                 Console.WriteLine(e.Message);
             }
+        }
+
+        private static void CreateReportFolder()
+        {
+            Directory.CreateDirectory(FileLocations.ReportsOutputDirectory);
         }
 
         private static void PruneData()
