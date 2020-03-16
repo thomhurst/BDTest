@@ -19,7 +19,6 @@ namespace BDTest.Paths
             }
         } 
         public static string AggregatedJsonScenarios => Path.Combine(ReportsOutputDirectory, FileNames.TestDataJson);
-        public static string ScenariosDirectory => Path.Combine(ReportsOutputDirectory, FileNames.Scenarios);
         public static string Warnings => Path.Combine(ReportsOutputDirectory, FileNames.Warnings);
         
 
@@ -38,7 +37,6 @@ namespace BDTest.Paths
         public static readonly string ReportAllScenarios = $"BDTest - Report - All Scenarios - {TimeStamp}.html";
         public static readonly string ReportFlakiness = $"BDTest - Report - Flakiness - {TimeStamp}.html";
         public static readonly string ReportTestTimesComparison = $"BDTest - Report - Test Times Comparison - {TimeStamp}.html";
-        public static readonly string Scenarios = "BDTest - Scenarios";
         public static readonly string Warnings = "BDTest - Warnings.json";
     }
 }
