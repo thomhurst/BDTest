@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
-using BDTest.Paths;
+using BDTest.Maps;
 
 namespace BDTest.Output
 {
@@ -69,7 +69,7 @@ namespace BDTest.Output
 
         public override Encoding Encoding { get; } = Encoding.UTF8;
 
-        internal static async Task WriteTearDownOutput(string testId, string text)
+        internal static void WriteTearDownOutput(string testId, string text)
         {
             if (testId == null)
             {
@@ -77,8 +77,9 @@ namespace BDTest.Output
                 return;
             }
 
+            TestHolder.Scenarios.First(scenario => scenario.FrameworkTestId == testId).TearDownOutput += $"{text}{Environment.NewLine}";
+
             Console.WriteLine(Environment.NewLine + text);
-            await AsyncFileHelper.AppendTextAsync(FileLocations.ScenarioTeardownOutputFilePath(testId), $"{text}{Environment.NewLine}");
         }
     }
 }

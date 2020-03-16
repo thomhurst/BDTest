@@ -1,6 +1,6 @@
 ﻿using System.IO;
-using System.Linq;
 using System.Runtime.CompilerServices;
+using BDTest.Output;
 using BDTest.Paths;
 
 namespace BDTest
@@ -8,9 +8,9 @@ namespace BDTest
     internal static class Initialiser
     {
         private static bool _alreadyRun;
-        private static string _exceptionFilePath = Path.Combine(FileLocations.OutputDirectory, "BDTest - Exception.txt");
-        private static string _runExceptionFilePath = Path.Combine(FileLocations.OutputDirectory, "BDTest - Run Exception.txt");
-        private static string _reportExceptionFilePath = Path.Combine(FileLocations.OutputDirectory, "BDTest - Report Exception.txt");
+        private static string _exceptionFilePath => Path.Combine(FileLocations.ReportsOutputDirectory, "BDTest - Exception.txt");
+        private static string _runExceptionFilePath => Path.Combine(FileLocations.ReportsOutputDirectory, "BDTest - Run Exception.txt");
+        private static string _reportExceptionFilePath => Path.Combine(FileLocations.ReportsOutputDirectory, "BDTest - Report Exception.txt");
 
         [MethodImpl(MethodImplOptions.Synchronized)]
         public static void Initialise()
@@ -22,47 +22,29 @@ namespace BDTest
 
             _alreadyRun = true;
 
-            BDTestSettings.Debug.ShouldWriteDebugOutputFile = false;
+            TestsFinalizer.Initialise();
 
             DeletePreviousData();
         }
 
         private static void DeletePreviousData()
         {
-            if (Directory.Exists(FileLocations.ScenariosDirectory))
+            if (Directory.Exists(FileLocations.ReportsOutputDirectory) 
+                && FileLocations.ReportsOutputDirectory != FileLocations.RawOutputDirectory)
             {
-                foreach (var filePath in Directory.GetFiles(FileLocations.ScenariosDirectory))
+                var files = Directory.GetFiles(FileLocations.ReportsOutputDirectory);
+
+                foreach (var file in files)
                 {
-                    File.Delete(filePath);
+                    File.Delete(file);
                 }
             }
-
-            Directory.CreateDirectory(FileLocations.ScenariosDirectory);
-
+            
             if (File.Exists(FileLocations.Warnings))
             {
                 File.Delete(FileLocations.Warnings);
             }
 
-            var runtimeConfigFile = Directory.GetFiles(FileLocations.OutputDirectory)
-                .FirstOrDefault(it => it.EndsWith(".runtimeconfig.dev.json"));
-
-            if (runtimeConfigFile == null)
-            {
-                return;
-            }
-
-            var bdTestReportRunConfigPath = Path.Combine(FileLocations.OutputDirectory,
-                "BDTest.ReportGenerator.runtimeconfig.dev.json");
-
-            if (File.Exists(bdTestReportRunConfigPath))
-            {
-                File.Delete(bdTestReportRunConfigPath);
-            }
-
-            File.Copy(runtimeConfigFile,
-                bdTestReportRunConfigPath);
-            
             if (File.Exists(_exceptionFilePath))
             {
                 File.Delete(_exceptionFilePath);

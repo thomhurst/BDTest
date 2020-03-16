@@ -13,7 +13,7 @@ namespace BDTest.Helpers
             typeof(Action<,>),
             typeof(Func<>),
             typeof(Func<,>),
-            typeof(Func<,,>),
+            typeof(Func<,,>)
         };
 
         public static bool IsFuncOrAction(Type type)

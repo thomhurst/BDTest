@@ -3,11 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
+using BDTest;
 using BDTest.Attributes;
 using BDTest.ReportGenerator;
 using BDTest.Test;
 using NUnit.Framework;
-using Assert = NUnit.Framework.Assert;
 
 namespace TestTester
 {
@@ -236,6 +236,27 @@ namespace TestTester
                 .When(() => Console.WriteLine("Empty Step"))
                 .Then(() => StepWithListType(new List<string> {"Blah1", "Blah2", "Blah3"}))
                 .BDTest();
+        }
+        
+        [Test]
+        public void SkipGivenStep()
+        {
+            When(() => Console.WriteLine("Empty Step"))
+                .Then(() => Console.WriteLine("Empty Step"))
+                .BDTest();
+        }
+        
+        [Test]
+        public void ReportFolderNameProperty()
+        {
+            BDTestSettings.ReportFolderName = "BDTestReports";
+            
+            Given(() => Console.WriteLine("Empty Step"))
+                .When(() => Console.WriteLine("Empty Step"))
+                .Then(() => Console.WriteLine("Empty Step"))
+                .BDTest();
+
+            BDTestSettings.ReportFolderName = null;
         }
 
         [OneTimeTearDown]

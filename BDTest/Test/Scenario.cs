@@ -30,6 +30,9 @@ namespace BDTest.Test
 
         [JsonProperty] public string FileName { get; private set; }
         
+        [JsonProperty]
+        public string TestStartupInformation { get; set; }
+        
         [JsonProperty] public string TearDownOutput { get; set; }
 
         [JsonConstructor]
@@ -46,8 +49,9 @@ namespace BDTest.Test
             Guid = testDetails.GetGuid().ToString();
             FrameworkTestId = testDetails.TestId;
             
-            TestMap.NotRun.TryRemove(testDetails.GetGuid(), out _);
-            TestMap.StoppedEarly.TryAdd(testDetails.GetGuid(), this);
+            TestHolder.NotRun.TryRemove(testDetails.GetGuid(), out _);
+            TestHolder.StoppedEarly.TryAdd(testDetails.GetGuid(), this);
+            TestHolder.Scenarios.Add(this);
 
             StoryText = testDetails.StoryText;
             ScenarioText = testDetails.ScenarioText;
@@ -73,8 +77,7 @@ namespace BDTest.Test
             }
             finally
             {
-                TestMap.StoppedEarly.TryRemove(TestDetails.GetGuid(), out _);
-                JsonLogger.WriteScenario(this);
+                TestHolder.StoppedEarly.TryRemove(TestDetails.GetGuid(), out _);
             }
         }
 
@@ -126,9 +129,7 @@ namespace BDTest.Test
                 {
                     StartTime = DateTime.Now;
                     
-                    _reporters.WriteStory(StoryText);
-                    _reporters.WriteScenario(ScenarioText);
-                    _reporters.NewLine();
+                    WriteStoryAndScenario();
 
                     foreach (var step in Steps)
                     {
@@ -169,6 +170,16 @@ namespace BDTest.Test
                         Steps.Where(step => !string.IsNullOrWhiteSpace(step.Output)).Select(step => step.Output));
                 }
             });
+        }
+
+        private void WriteStoryAndScenario()
+        {
+            _reporters.WriteStory(StoryText);
+            _reporters.WriteScenario(ScenarioText);
+            _reporters.NewLine();
+            
+            TestStartupInformation = TestOutputData.Instance.ToString();
+            TestOutputData.ClearCurrentTaskData();
         }
     }
 }

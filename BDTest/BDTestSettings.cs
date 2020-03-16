@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
-using BDTest.Output;
+
+// ReSharper disable UnusedAutoPropertyAccessor.Global
 
 namespace BDTest
 {
@@ -18,6 +18,7 @@ namespace BDTest
         public static DateTime PrunePersistentDataOlderThan { get; set; } = DateTime.MinValue;
         public static int PersistentFileCountToKeep { get; set; } = 365;
 
+        public static string ReportFolderName { get; set; }
         public static string ScenariosByStoryReportHtmlFilename { get; set; }
         public static string AllScenariosReportHtmlFilename { get; set; }
         public static string FlakinessReportHtmlFilename { get; set; }
@@ -28,12 +29,6 @@ namespace BDTest
 
     public class DebugSettings
     {
-        public bool ShouldWriteDebugOutputFile
-        {
-            get => TestsFinalizer.Debug;
-            set => TestsFinalizer.Debug = value;
-        }
-
-        public bool ShouldSkipWhenStep { get; set; } = false;
+        public bool ShouldSkipWhenStep { get; set; }
     }
 }

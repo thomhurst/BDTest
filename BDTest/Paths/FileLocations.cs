@@ -6,17 +6,26 @@ namespace BDTest.Paths
 {
     public static class FileLocations
     {
-        public static readonly string OutputDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-        public static readonly string AggregatedJsonScenarios = Path.Combine(OutputDirectory, FileNames.TestDataJson);
-        public static readonly string ScenariosDirectory = Path.Combine(OutputDirectory, FileNames.Scenarios);
-        public static string RandomScenarioFilePath => Path.Combine(ScenariosDirectory, Guid.NewGuid() + ".json");
-        public static string ScenarioTeardownOutputFilePath(string guid) => Path.Combine(ScenariosDirectory, $"TearDownOutput-{guid}.txt");
-        public static readonly string Warnings = Path.Combine(OutputDirectory, FileNames.Warnings);
+        public static string ReportsOutputDirectory
+        {
+            get
+            {
+                if (!string.IsNullOrEmpty(BDTestSettings.ReportFolderName))
+                {
+                    return Path.Combine(RawOutputDirectory, BDTestSettings.ReportFolderName);
+                }
+                
+                return RawOutputDirectory;
+            }
+        } 
+        public static string AggregatedJsonScenarios => Path.Combine(ReportsOutputDirectory, FileNames.TestDataJson);
+        public static string Warnings => Path.Combine(ReportsOutputDirectory, FileNames.Warnings);
         
 
-        public static readonly string HtmlReportWithStoriesFilePath = Path.Combine(OutputDirectory, FileNames.ReportByStory);
-        public static readonly string HtmlReportWithoutStoriesFilePath = Path.Combine(OutputDirectory, FileNames.ReportAllScenarios);
-        public static readonly string ProjectDirectory = Directory.GetParent(Directory.GetCurrentDirectory())?.Parent?.Parent?.FullName;
+        public static string HtmlReportWithStoriesFilePath => Path.Combine(ReportsOutputDirectory, FileNames.ReportByStory);
+        public static string HtmlReportWithoutStoriesFilePath => Path.Combine(ReportsOutputDirectory, FileNames.ReportAllScenarios);
+        public static string ProjectDirectory => Directory.GetParent(Directory.GetCurrentDirectory())?.Parent?.Parent?.FullName;
+        public static string RawOutputDirectory => Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
     }
 
     public static class FileNames
@@ -28,7 +37,6 @@ namespace BDTest.Paths
         public static readonly string ReportAllScenarios = $"BDTest - Report - All Scenarios - {TimeStamp}.html";
         public static readonly string ReportFlakiness = $"BDTest - Report - Flakiness - {TimeStamp}.html";
         public static readonly string ReportTestTimesComparison = $"BDTest - Report - Test Times Comparison - {TimeStamp}.html";
-        public static readonly string Scenarios = "BDTest - Scenarios";
         public static readonly string Warnings = "BDTest - Warnings.json";
     }
 }
