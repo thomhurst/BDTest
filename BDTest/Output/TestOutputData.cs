@@ -77,7 +77,12 @@ namespace BDTest.Output
                 return;
             }
 
-            TestHolder.Scenarios.First(scenario => scenario.FrameworkTestId == testId).TearDownOutput += $"{text}{Environment.NewLine}";
+            var foundScenario = TestHolder.Scenarios.FirstOrDefault(scenario => scenario.FrameworkTestId == testId);
+
+            if (foundScenario != null)
+            {
+                foundScenario.TearDownOutput += $"{text}{Environment.NewLine}";
+            }
 
             Console.WriteLine(Environment.NewLine + text);
         }
