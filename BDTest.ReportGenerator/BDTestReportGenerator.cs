@@ -76,7 +76,11 @@ namespace BDTest.ReportGenerator
 
             try
             {
-                CopyFolder.Copy(Path.Combine(FileLocations.RawOutputDirectory, "css"), Path.Combine(FileLocations.ReportsOutputDirectory, "css"));
+                if (FileLocations.RawOutputDirectory != FileLocations.ReportsOutputDirectory)
+                {
+                    CopyFolder.Copy(Path.Combine(FileLocations.RawOutputDirectory, "css"),
+                        Path.Combine(FileLocations.ReportsOutputDirectory, "css"));
+                }
             }
             catch (Exception e)
             {
