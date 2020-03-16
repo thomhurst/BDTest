@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Linq;
 using BDTest.Exceptions;
 
 namespace BDTest.Attributes
@@ -8,6 +7,7 @@ namespace BDTest.Attributes
     public class StoryAttribute : Attribute
     {
         public string AsA { get; set; }
+        public string AsAn { get; set; }
         public string IWant { get; set; }
         public string SoThat { get; set; }
 
@@ -15,22 +15,7 @@ namespace BDTest.Attributes
         {
             ValidateArguments();
             
-            var firstChar = AsA.ToLowerInvariant()
-                .Replace("as an", string.Empty)
-                .Replace("as a", string.Empty)
-                .Trim()
-                .FirstOrDefault();
-
-            var asAPrefix = "As a";
-            if ("aeiouAEIOU".IndexOf(firstChar) >= 0)
-            {
-                asAPrefix = "As an";
-            }
-            
-            if (!AsA.ToLowerInvariant().StartsWith("as a"))
-            {
-                AsA = $"{asAPrefix} {AsA}";
-            }
+            PopulateAsA();
 
             if (!IWant.ToLowerInvariant().StartsWith("i want"))
             {
@@ -47,11 +32,38 @@ namespace BDTest.Attributes
                    $"{Environment.NewLine}{SoThat}{Environment.NewLine}";
         }
 
+        private void PopulateAsA()
+        {
+            if (!string.IsNullOrEmpty(AsAn))
+            {
+                AsA = AsAn;
+            }
+
+            if (AsA.ToLowerInvariant().StartsWith("as a"))
+            {
+                return;
+            }
+
+            if (!string.IsNullOrEmpty(AsAn))
+            {
+                AsA = $"As an {AsAn}";
+            }
+            else
+            {
+                AsA = $"As a {AsA}";
+            }
+        }
+
         private void ValidateArguments()
         {
-            if (string.IsNullOrEmpty(AsA))
+            if (string.IsNullOrEmpty(AsA) || string.IsNullOrEmpty(AsAn))
             {
                 throw new MissingStoryTextArgumentException(nameof(AsA));
+            }
+            
+            if (!string.IsNullOrEmpty(AsA) && !string.IsNullOrEmpty(AsAn))
+            {
+                throw new DuplicateStoryTextArgumentException(nameof(AsA), nameof(AsAn));
             }
             
             if (string.IsNullOrEmpty(IWant))
