@@ -13,7 +13,7 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
 
-    <None Include="$(MSBuildThisFileDirectory)css\**" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="$(MSBuildThisFileDirectory)css\**" CopyToOutputDirectory="PreserveNewest" LinkBase="css\"/>
 
     <SourceFiles Include="$(MSBuildThisFileDirectory)BDTest.ReportGenerator*.json" />
   </ItemGroup>
