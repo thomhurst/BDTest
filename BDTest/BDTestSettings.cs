@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Concurrent;
 
+// ReSharper disable UnusedAutoPropertyAccessor.Global
+
 namespace BDTest
 {
     public static class BDTestSettings
