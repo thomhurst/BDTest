@@ -56,7 +56,7 @@ namespace BDTest.Attributes
 
         private void ValidateArguments()
         {
-            if (string.IsNullOrEmpty(AsA) || string.IsNullOrEmpty(AsAn))
+            if (string.IsNullOrEmpty(AsA) && string.IsNullOrEmpty(AsAn))
             {
                 throw new MissingStoryTextArgumentException(nameof(AsA));
             }
