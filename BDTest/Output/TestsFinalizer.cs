@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
 using BDTest.Maps;
@@ -31,7 +30,7 @@ namespace BDTest.Output
                 }
                 catch (Exception e)
                 {
-                    File.WriteAllText(Path.Combine(FileLocations.OutputDirectory, "BDTest - Exception.txt"), e.StackTrace);
+                    File.WriteAllText(Path.Combine(FileLocations.ReportsOutputDirectory, "BDTest - Exception.txt"), e.StackTrace);
                 }
             });
         }

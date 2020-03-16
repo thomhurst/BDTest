@@ -1,4 +1,3 @@
-using System;
 using System.IO;
 using BDTest.Paths;
 
@@ -44,7 +43,7 @@ function RefreshChartElements() {
         private static string BuildDynamicCreateElementInJavascript(string javascriptBody)
         {
             // Write body to its own javascript file
-            var javascriptFilePath = Path.Combine(FileLocations.OutputDirectory, "BDTestCharts.js");
+            var javascriptFilePath = Path.Combine(FileLocations.ReportsOutputDirectory, "BDTestCharts.js");
 
             if (File.Exists(javascriptFilePath))
             {

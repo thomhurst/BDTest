@@ -9,9 +9,9 @@ namespace BDTest
     internal static class Initialiser
     {
         private static bool _alreadyRun;
-        private static string _exceptionFilePath = Path.Combine(FileLocations.OutputDirectory, "BDTest - Exception.txt");
-        private static string _runExceptionFilePath = Path.Combine(FileLocations.OutputDirectory, "BDTest - Run Exception.txt");
-        private static string _reportExceptionFilePath = Path.Combine(FileLocations.OutputDirectory, "BDTest - Report Exception.txt");
+        private static string _exceptionFilePath = Path.Combine(FileLocations.ReportsOutputDirectory, "BDTest - Exception.txt");
+        private static string _runExceptionFilePath = Path.Combine(FileLocations.ReportsOutputDirectory, "BDTest - Run Exception.txt");
+        private static string _reportExceptionFilePath = Path.Combine(FileLocations.ReportsOutputDirectory, "BDTest - Report Exception.txt");
 
         [MethodImpl(MethodImplOptions.Synchronized)]
         public static void Initialise()
@@ -45,7 +45,7 @@ namespace BDTest
                 File.Delete(FileLocations.Warnings);
             }
 
-            var runtimeConfigFile = Directory.GetFiles(FileLocations.OutputDirectory)
+            var runtimeConfigFile = Directory.GetFiles(FileLocations.ReportsOutputDirectory)
                 .FirstOrDefault(it => it.EndsWith(".runtimeconfig.dev.json"));
 
             if (runtimeConfigFile == null)
@@ -53,7 +53,7 @@ namespace BDTest
                 return;
             }
 
-            var bdTestReportRunConfigPath = Path.Combine(FileLocations.OutputDirectory,
+            var bdTestReportRunConfigPath = Path.Combine(FileLocations.ReportsOutputDirectory,
                 "BDTest.ReportGenerator.runtimeconfig.dev.json");
 
             if (File.Exists(bdTestReportRunConfigPath))

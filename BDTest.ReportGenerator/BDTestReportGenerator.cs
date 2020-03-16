@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -20,7 +19,7 @@ namespace BDTest.ReportGenerator
 {
     public static class BDTestReportGenerator
     {
-        internal static string ResultDirectory => FileLocations.OutputDirectory;
+        internal static string ResultDirectory => FileLocations.ReportsOutputDirectory;
 
         private static void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
         {
@@ -76,7 +75,7 @@ namespace BDTest.ReportGenerator
 
             try
             {
-                CopyFolder.Copy(Path.Combine(FileLocations.ProjectDirectory, "css"), Path.Combine(ResultDirectory, "css"));
+                CopyFolder.Copy(Path.Combine(FileLocations.ProjectDirectory, "css"), Path.Combine(FileLocations.ReportsOutputDirectory, "css"));
             }
             catch (Exception e)
             {
