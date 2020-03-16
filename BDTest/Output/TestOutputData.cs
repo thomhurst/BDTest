@@ -4,10 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 using BDTest.Maps;
-using BDTest.Paths;
-using BDTest.Test;
 
 namespace BDTest.Output
 {
