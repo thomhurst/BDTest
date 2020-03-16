@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
-using BDTest.Output;
 
 namespace BDTest
 {
@@ -18,6 +16,7 @@ namespace BDTest
         public static DateTime PrunePersistentDataOlderThan { get; set; } = DateTime.MinValue;
         public static int PersistentFileCountToKeep { get; set; } = 365;
 
+        public static string ReportFolderName { get; set; }
         public static string ScenariosByStoryReportHtmlFilename { get; set; }
         public static string AllScenariosReportHtmlFilename { get; set; }
         public static string FlakinessReportHtmlFilename { get; set; }
