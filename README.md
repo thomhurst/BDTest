@@ -604,3 +604,53 @@ In your output directory after your tests have finished:
 
 In your output directory after your tests have finished:
 > BDTest - Report - All Scenarios - {timestamp}.html
+
+### Other Settings
+
+#### PersistentResultsCompareStartTime > The earliest date to start comparing against
+
+```csharp
+BDTestSettings.PersistentResultsCompareStartTime = DateTime.Now.Subtract(TimeSpan.FromDays(30));
+```
+
+#### JsonDataFilename > Custom filename for the JSON data file
+
+```csharp
+BDTestSettings.JsonDataFilename = "API-TestData-Json.json";
+```
+
+#### XmlDataFilename > Custom filename for the XML data file
+
+```csharp
+BDTestSettings.XmlDataFilename = "API-TestData-XML.xml";
+```
+
+#### TestTimesReportHtmlFilename > Custom filename for the 'Test Times' Report
+
+```csharp
+BDTestSettings.TestTimesReportHtmlFilename = "API-Test-Times.html";
+```
+
+#### FlakinessReportHtmlFilename > Custom filename for the 'Flakiness' Report.
+
+```csharp
+BDTestSettings.FlakinessReportHtmlFilename = "API-Test-Flakiness.html";
+```
+
+#### AllScenariosReportHtmlFilename > Custom filename for the 'All Scenarios' Report
+
+```csharp
+BDTestSettings.AllScenariosReportHtmlFilename = "API-Tests-All-Scenarios.html";
+```
+
+#### ScenariosByStoryReportHtmlFilename > Custom filename for the 'Scenarios grouped by Story' Report
+
+```csharp
+BDTestSettings.ScenariosByStoryReportHtmlFilename = "API-Tests-Scenarios-by-Stories.html";
+```
+
+#### ReportFolderName > Put test reports in a folder named this
+
+```csharp
+BDTestSettings.ReportFolderName = "TestReports";
+```
