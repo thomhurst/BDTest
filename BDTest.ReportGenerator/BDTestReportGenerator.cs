@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
-using System.Threading;
 using System.Xml;
 using BDTest.Maps;
 using BDTest.Output;
@@ -197,11 +196,6 @@ namespace BDTest.ReportGenerator
         private static WarningsChecker GetWarnings()
         {
             var warningsPath = Path.Combine(ResultDirectory, FileNames.Warnings);
-
-            if (!File.Exists(warningsPath))
-            {
-                Thread.Sleep(2000);
-            }
 
             return !File.Exists(warningsPath) ? new WarningsChecker(new List<BuildableTest>(), new List<Scenario>()) : JsonConvert.DeserializeObject<WarningsChecker>(File.ReadAllText(warningsPath));
         }

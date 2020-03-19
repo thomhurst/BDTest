@@ -25,6 +25,10 @@ namespace BDTest.Output
 
                 try
                 {
+                    if (TestHolder.NotRun.IsEmpty && TestHolder.StoppedEarly.IsEmpty)
+                    {
+                        return;
+                    }
                     var warnings = new WarningsChecker(TestHolder.NotRun.Values, TestHolder.StoppedEarly.Values);
                     File.WriteAllText(FileLocations.Warnings, JsonConvert.SerializeObject(warnings, settings));
                 }
