@@ -18,7 +18,7 @@ namespace BDTest.NUnit
                 BDTestSettings.SuccessExceptionTypes.Add(typeof(SuccessException));
             }
         }
-        
+
         [TearDown]
         public void PruneContext()
         {

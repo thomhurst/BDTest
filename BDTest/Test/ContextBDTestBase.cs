@@ -33,9 +33,13 @@ namespace BDTest.Test
         protected TStep GetStep<TStep>() where TStep : AbstractStep<TContext>, new()
         {
             _steps.TryGetValue(TestId, typeof(TStep).FullName, out var step);
+
+            if (step is TStep castStep)
+            {
+                return castStep;
+            }
             
-            step = new TStep();
-            var castStep = (TStep) step;
+            castStep = new TStep();
             castStep.InitialiseContext(Context);
 
             _steps.Add(TestId, typeof(TStep).FullName, castStep);
