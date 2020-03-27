@@ -269,6 +269,24 @@ E.g.
 
 If using NUnitBDTestBase, the NUNit SuccessException from Assert.Pass should automatically be registered.
 
+### Debugging Tests
+
+There is a property which can be accessed statically:
+
+```csharp
+	BDTestSettings.Debug.ShouldSkipWhenStep = true;
+```
+
+This, by default, is set to false. This is your standard test execution.
+
+However, when set to `true` your `.When(() => ...)` steps will NOT be executed.
+The purpose of this is to find which tests aren't behaving as expected.
+
+When this is set to `true`, you should expect your tests to fail.
+If any tests still pass, this suggests that these tests either aren't set up properly, or aren't properly testing what you think they're testing.
+
+It should go without saying, but this should be used for debug and test checking purposes only. Don't commit this change to your source control.
+
 ## Reports
 
 ### Report Installation
