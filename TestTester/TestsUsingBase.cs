@@ -17,7 +17,6 @@ namespace TestTester
         SoThat = "Things Work")]
     public class TestsUsingBase : BDTestBase
     {
-
         [Test]
         [ScenarioText("Asynchronous Scenario")]
         public async Task AsyncTest()

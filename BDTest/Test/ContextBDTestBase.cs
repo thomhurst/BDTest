@@ -30,6 +30,16 @@ namespace BDTest.Test
             }
         }
 
+        public void OverwriteContext(TContext context)
+        {
+            if (_contexts.TryGetValue(TestId, out _))
+            {
+                _contexts.Remove(TestId);
+            }
+            
+            _contexts.Add(TestId, context);
+        }
+
         protected TStep GetStep<TStep>() where TStep : AbstractStep<TContext>, new()
         {
             _steps.TryGetValue(TestId, typeof(TStep).FullName, out var step);
