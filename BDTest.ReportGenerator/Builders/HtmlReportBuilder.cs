@@ -122,8 +122,8 @@ namespace BDTest.ReportGenerator.Builders
 
         private static HtmlTag BuildFlakinessBody()
         {
-            var flakyScenarioBatched = GetScenarioBatched();
-            var flakyScenarios = FlattenBatchScenarios(flakyScenarioBatched);
+            var flakyScenarios = GetScenarioBatched();
+            
             var flakyScenariosGroupedByStory =
                 flakyScenarios.GroupBy(scenario => new {Story = scenario.GetStoryText(), scenario.FileName});
 
@@ -187,7 +187,7 @@ namespace BDTest.ReportGenerator.Builders
             );
         }
 
-        private static IEnumerable<List<Scenario>> GetScenarioBatched()
+        private static List<Scenario> GetScenarioBatched()
         {
             var scenarioBatched = Directory.GetFiles(BDTestSettings.PersistentResultsDirectory)
                 .Where(it => it.EndsWith(".json") && File.GetCreationTime(it) > BDTestSettings.PersistentResultsCompareStartTime)
@@ -202,8 +202,8 @@ namespace BDTest.ReportGenerator.Builders
                         return null;
                     }
                 })
-                .Where(model => model != null)
-                .Select(model => model.Scenarios)
+                .Where(model => model != null && model.Scenarios.Count > 0 && model.Scenarios.First().Version == System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString())
+                .SelectMany(model => model.Scenarios)
                 .ToList();
             
             return scenarioBatched;
@@ -211,8 +211,8 @@ namespace BDTest.ReportGenerator.Builders
 
         private static HtmlTag BuildTestTimeComparisonBody()
         {
-            var testTimesScenarioBatched = GetScenarioBatched();
-            var testTimesScenarios = FlattenBatchScenarios(testTimesScenarioBatched).Where(scenario => scenario.Status == Status.Passed).ToList();
+            var testTimesScenarios = GetScenarioBatched().Where(scenario => scenario.Status == Status.Passed).ToList();
+            
             var testTimesScenariosGroupedByStory = testTimesScenarios.GroupBy(scenario => new { Story = scenario.GetStoryText(), scenario.FileName });
 
             return new HtmlTag("body").Append(
