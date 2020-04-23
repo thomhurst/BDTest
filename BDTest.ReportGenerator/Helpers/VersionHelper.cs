@@ -2,6 +2,6 @@ namespace BDTest.ReportGenerator.Helpers
 {
     internal static class VersionHelper
     {
-        public static string CurrentVersion = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString(); 
+        internal static readonly string CurrentVersion = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString(); 
     }
 }
