@@ -8,6 +8,7 @@ using BDTest.Maps;
 using BDTest.Output;
 using BDTest.Paths;
 using BDTest.ReportGenerator.Builders;
+using BDTest.ReportGenerator.Helpers;
 using BDTest.ReportGenerator.Models;
 using BDTest.ReportGenerator.Utils;
 using BDTest.Test;
@@ -55,7 +56,8 @@ namespace BDTest.ReportGenerator
             {
                 Scenarios = scenarios,
                 TestTimer = testTimer,
-                Warnings = warnings
+                Warnings = warnings,
+                Version = VersionHelper.CurrentVersion
             };
 
             var settings = new JsonSerializerSettings

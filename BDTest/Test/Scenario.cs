@@ -3,11 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using BDTest.Exceptions;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
 using BDTest.Maps;
 using BDTest.Output;
 using BDTest.Reporters;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 
 namespace BDTest.Test
 {
@@ -60,8 +60,6 @@ namespace BDTest.Test
 
             FileName = testDetails.CallerFile;
 
-            Version = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString();
-
             _reporters = new Reporters.Reporters();
             Steps = steps;
         }
@@ -80,8 +78,6 @@ namespace BDTest.Test
                 TestHolder.StoppedEarly.TryRemove(TestDetails.GetGuid(), out _);
             }
         }
-
-        [JsonProperty] public string Version { get; private set; }
 
         [JsonProperty] public List<Step> Steps { get; private set; }
 

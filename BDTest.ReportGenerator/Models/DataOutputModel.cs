@@ -8,10 +8,15 @@ namespace BDTest.ReportGenerator.Models
     internal class DataOutputModel
     {
         [JsonProperty]
-        public TestTimer TestTimer;
+        public TestTimer TestTimer { get; set; }
+        
         [JsonProperty]
-        public List<Scenario> Scenarios;
+        public List<Scenario> Scenarios { get; set; }
+        
         [JsonProperty]
-        public WarningsChecker Warnings;
+        public WarningsChecker Warnings { get; set; }
+
+        [JsonProperty] 
+        public string Version { get; set; }
     }
 }

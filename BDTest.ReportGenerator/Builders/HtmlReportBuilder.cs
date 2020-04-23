@@ -6,6 +6,7 @@ using System.Text;
 using System.Text.Encodings.Web;
 using BDTest.Output;
 using BDTest.Paths;
+using BDTest.ReportGenerator.Helpers;
 using BDTest.ReportGenerator.Models;
 using BDTest.Test;
 using HtmlTags;
@@ -202,7 +203,7 @@ namespace BDTest.ReportGenerator.Builders
                         return null;
                     }
                 })
-                .Where(model => model != null && model.Scenarios?.Count > 0 && model.Scenarios.First().Version == System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString())
+                .Where(model => model != null && model.Version == VersionHelper.CurrentVersion)
                 .SelectMany(model => model.Scenarios)
                 .ToList();
             
@@ -261,13 +262,6 @@ namespace BDTest.ReportGenerator.Builders
                     )
                 )
             );
-        }
-
-        private static List<Scenario> FlattenBatchScenarios(IEnumerable<List<Scenario>> scenarioBatched)
-        {
-            return scenarioBatched.SelectMany(it => it)
-                .WithCurrentVersion()
-                .ToList();
         }
 
         private HtmlTag BuildBodyWithStories()
