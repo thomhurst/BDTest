@@ -202,7 +202,7 @@ namespace BDTest.ReportGenerator.Builders
                         return null;
                     }
                 })
-                .Where(model => model != null && model.Scenarios.Count > 0 && model.Scenarios.First().Version == System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString())
+                .Where(model => model != null && model.Scenarios?.Count > 0 && model.Scenarios.First().Version == System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString())
                 .SelectMany(model => model.Scenarios)
                 .ToList();
             
