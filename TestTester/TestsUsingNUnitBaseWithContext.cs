@@ -11,8 +11,6 @@ namespace TestTester
     [Parallelizable(ParallelScope.All)]
     public class TestsUsingNUnitBaseWithContext : NUnitBDTestBase<TestContext>
     {
-        private InheritedAbstractStep Steps => GetStep<InheritedAbstractStep>();
-        
         [Test]
         public void Test1()
         {
