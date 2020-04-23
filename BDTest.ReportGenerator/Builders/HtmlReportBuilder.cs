@@ -189,11 +189,23 @@ namespace BDTest.ReportGenerator.Builders
 
         private static IEnumerable<List<Scenario>> GetScenarioBatched()
         {
-            var scenarioBatched = Directory.GetFiles(BDTestSettings.PersistentResultsDirectory).Where(it =>
-                    it.EndsWith(".json") && File.GetCreationTime(it) > BDTestSettings.PersistentResultsCompareStartTime)
+            var scenarioBatched = Directory.GetFiles(BDTestSettings.PersistentResultsDirectory)
+                .Where(it => it.EndsWith(".json") && File.GetCreationTime(it) > BDTestSettings.PersistentResultsCompareStartTime)
                 .Select(filePath =>
-                    JsonConvert.DeserializeObject<DataOutputModel>(File.ReadAllText(filePath)).Scenarios)
+                {
+                    try
+                    {
+                        return JsonConvert.DeserializeObject<DataOutputModel>(File.ReadAllText(filePath));
+                    }
+                    catch
+                    {
+                        return null;
+                    }
+                })
+                .Where(model => model != null)
+                .Select(model => model.Scenarios)
                 .ToList();
+            
             return scenarioBatched;
         }
 
