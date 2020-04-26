@@ -1,5 +1,6 @@
 using System.Net;
 using BDTest.Attributes;
+using BDTest.Example.Context;
 using NUnit.Framework;
 
 namespace BDTest.Example.Steps.Assertions

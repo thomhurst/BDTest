@@ -1,4 +1,4 @@
-namespace BDTest.Example
+namespace BDTest.Example.Context
 {
     public class MyTestContext
     {

@@ -2,6 +2,7 @@ using System;
 using System.Net.Http;
 using System.Threading.Tasks;
 using BDTest.Attributes;
+using BDTest.Example.Context;
 using BDTest.Example.Helpers;
 
 namespace BDTest.Example.Steps
