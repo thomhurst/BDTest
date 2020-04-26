@@ -20,6 +20,7 @@ namespace BDTest.Example
         }
         
         [Test]
+        [BugInformation("123456")]
         [ScenarioText("A failing test using steps defined in a BDTestBase, with StoryText, ScenarioText and StepTexts")]
         public async Task TestFail()
         {
