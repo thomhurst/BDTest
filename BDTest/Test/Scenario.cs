@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using BDTest.Attributes;
 using BDTest.Exceptions;
 using BDTest.Maps;
 using BDTest.Output;
@@ -55,6 +56,7 @@ namespace BDTest.Test
 
             StoryText = testDetails.StoryText;
             ScenarioText = testDetails.ScenarioText;
+            CustomTestInformation = testDetails.CustomTestInformation;
 
             TestDetails = testDetails;
 
@@ -90,6 +92,8 @@ namespace BDTest.Test
         [JsonProperty] internal StoryText StoryText { get; private set; }
 
         [JsonProperty] internal ScenarioText ScenarioText { get; private set; }
+        
+        [JsonProperty] public TestInformationAttribute[] CustomTestInformation { get; private set; }
 
         public string GetScenarioText()
         {

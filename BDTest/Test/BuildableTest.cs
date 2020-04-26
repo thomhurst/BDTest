@@ -1,4 +1,5 @@
 ﻿using System;
+using BDTest.Attributes;
 using Newtonsoft.Json;
 
 namespace BDTest.Test
@@ -15,6 +16,9 @@ namespace BDTest.Test
 
         [JsonProperty]
         public TestDetails TestDetails { get; protected set; }
+        
+        [JsonProperty]
+        public TestInformationAttribute[] CustomTestInformation { get; set; }
 
         public string GetScenarioText()
         {

@@ -62,9 +62,22 @@ namespace TestTester
                 .And(() => Exception(new TestContext()))
                 .BDTest();
         }
+        
         [Test]
         [ScenarioText("Custom Scenario")]
         public void Test1()
+        {
+            Given(() => Action1())
+                .When(() => Action2())
+                .Then(() => Action3())
+                .And(() => Action4())
+                .BDTest();
+        }
+        
+        [Test]
+        [CustomTestInformation("Some information!")]
+        [ScenarioText("Test Information Attribute Test")]
+        public void TestInformationAttribute()
         {
             Given(() => Action1())
                 .When(() => Action2())

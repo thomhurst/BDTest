@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.Encodings.Web;
+using BDTest.Attributes;
 using BDTest.Output;
 using BDTest.Paths;
 using BDTest.ReportGenerator.Helpers;
@@ -556,6 +557,7 @@ namespace BDTest.ReportGenerator.Builders
                                 )
                         ),
                         new HtmlTag("p").Style("margin-left", "25px").Append(
+                            BuildCustomTestInformation(scenario.CustomTestInformation),
                             BuildScenarioStartupOrTeardownOutput("Test Start-Up Output", scenario.TestStartupInformation),
                             BuildSteps(scenario.Steps),
                             BuildScenarioStartupOrTeardownOutput("Test Tear Down Output", scenario.TearDownOutput)
@@ -576,6 +578,22 @@ namespace BDTest.ReportGenerator.Builders
                 )
             );
         }
+        
+        private static HtmlTag BuildCustomTestInformation(TestInformationAttribute[] customTestInformation)
+        {
+            if (customTestInformation == null || !customTestInformation.Any())
+            {
+                return HtmlTag.Empty();
+            }
+
+            return new HtmlTag("details").Style("margin-left", "25px").Append(
+                new HtmlTag("summary").Append(
+                    new HtmlTag("span").AppendText("Custom Test Information").AddClass("custom-test-info")
+                ),
+                new HtmlTag("pre").Style("padding-left", "20px").Append(customTestInformation.SelectMany(
+                    attribute => new[] {new HtmlTag("span").AppendText($"{attribute.GetType().Name} - {attribute.Information}"), new BrTag()}))
+            );
+        }
 
         private static HtmlTag BuildScenarioStartupOrTeardownOutput(string title, string text)
         {
@@ -590,7 +608,7 @@ namespace BDTest.ReportGenerator.Builders
                 new HtmlTag("summary").Append(
                     new HtmlTag("span").AppendText(title).AddClass("step")
                 ),
-                new HtmlTag("pre").Append(outputLines.SelectMany(
+                new HtmlTag("pre").Style("padding-left", "20px").Append(outputLines.SelectMany(
                     line => new[] {new HtmlTag("span").AppendText(line), new BrTag()}))
             );
         }
@@ -691,7 +709,7 @@ namespace BDTest.ReportGenerator.Builders
 
             return new HtmlTag("details").Append(
                 new HtmlTag("summary").Style("margin-left", "25px").AddClass("step").AppendText("Output"),
-                new HtmlTag("pre").AddClass("output")
+                new HtmlTag("pre").Style("padding-left", "20px").AddClass("output")
                     .Append(outputLines.SelectMany(
                         line => new[] {new HtmlTag("span").AppendText(line), new BrTag()}))
             );
@@ -706,7 +724,7 @@ namespace BDTest.ReportGenerator.Builders
 
             return new HtmlTag("details").Append(
                 new HtmlTag("summary").Style("margin-left", "25px").AddClass("step").AppendText("Exception"),
-                new HtmlTag("pre").AddClass("exception").AppendText(step.Exception?.ToString() ?? "")
+                new HtmlTag("pre").Style("padding-left", "20px").AddClass("exception").AppendText(step.Exception?.ToString() ?? "")
             );
         }
 
