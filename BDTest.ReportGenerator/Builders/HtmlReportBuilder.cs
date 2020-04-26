@@ -6,6 +6,7 @@ using System.Text;
 using System.Text.Encodings.Web;
 using BDTest.Output;
 using BDTest.Paths;
+using BDTest.ReportGenerator.Helpers;
 using BDTest.ReportGenerator.Models;
 using BDTest.Test;
 using HtmlTags;
@@ -122,8 +123,8 @@ namespace BDTest.ReportGenerator.Builders
 
         private static HtmlTag BuildFlakinessBody()
         {
-            var flakyScenarioBatched = GetScenarioBatched();
-            var flakyScenarios = FlattenBatchScenarios(flakyScenarioBatched);
+            var flakyScenarios = GetScenarioBatched();
+            
             var flakyScenariosGroupedByStory =
                 flakyScenarios.GroupBy(scenario => new {Story = scenario.GetStoryText(), scenario.FileName});
 
@@ -187,20 +188,32 @@ namespace BDTest.ReportGenerator.Builders
             );
         }
 
-        private static IEnumerable<List<Scenario>> GetScenarioBatched()
+        private static List<Scenario> GetScenarioBatched()
         {
-            var scenarioBatched = Directory.GetFiles(BDTestSettings.PersistentResultsDirectory).Where(it =>
-                    it.EndsWith(".json") && File.GetCreationTime(it) > BDTestSettings.PersistentResultsCompareStartTime)
+            var scenarioBatched = Directory.GetFiles(BDTestSettings.PersistentResultsDirectory)
+                .Where(it => it.EndsWith(".json") && File.GetCreationTime(it) > BDTestSettings.PersistentResultsCompareStartTime)
                 .Select(filePath =>
-                    JsonConvert.DeserializeObject<DataOutputModel>(File.ReadAllText(filePath)).Scenarios)
+                {
+                    try
+                    {
+                        return JsonConvert.DeserializeObject<DataOutputModel>(File.ReadAllText(filePath));
+                    }
+                    catch
+                    {
+                        return null;
+                    }
+                })
+                .Where(model => model != null && model.Version == VersionHelper.CurrentVersion)
+                .SelectMany(model => model.Scenarios)
                 .ToList();
+            
             return scenarioBatched;
         }
 
         private static HtmlTag BuildTestTimeComparisonBody()
         {
-            var testTimesScenarioBatched = GetScenarioBatched();
-            var testTimesScenarios = FlattenBatchScenarios(testTimesScenarioBatched).Where(scenario => scenario.Status == Status.Passed).ToList();
+            var testTimesScenarios = GetScenarioBatched().Where(scenario => scenario.Status == Status.Passed).ToList();
+            
             var testTimesScenariosGroupedByStory = testTimesScenarios.GroupBy(scenario => new { Story = scenario.GetStoryText(), scenario.FileName });
 
             return new HtmlTag("body").Append(
@@ -249,13 +262,6 @@ namespace BDTest.ReportGenerator.Builders
                     )
                 )
             );
-        }
-
-        private static List<Scenario> FlattenBatchScenarios(IEnumerable<List<Scenario>> scenarioBatched)
-        {
-            return scenarioBatched.SelectMany(it => it)
-                .WithCurrentVersion()
-                .ToList();
         }
 
         private HtmlTag BuildBodyWithStories()

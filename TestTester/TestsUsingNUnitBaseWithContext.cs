@@ -1,7 +1,6 @@
 ﻿using BDTest.Attributes;
 using BDTest.NUnit;
 using NUnit.Framework;
-using Assert = NUnit.Framework.Assert;
 
 namespace TestTester
 {
@@ -12,7 +11,6 @@ namespace TestTester
     [Parallelizable(ParallelScope.All)]
     public class TestsUsingNUnitBaseWithContext : NUnitBDTestBase<TestContext>
     {
-
         [Test]
         public void Test1()
         {
