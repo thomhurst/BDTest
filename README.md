@@ -17,6 +17,11 @@ BDTest is written in .NET Standard - So should work for .NET Framework and .NET 
 
 Install via Nuget > `Install-Package BDTest`
 
+### Example Project
+
+Below you will find information on how to get setup. I have also created an example project which you can view.
+https://github.com/thomhurst/BDTest/tree/master/BDTest.Example
+
 ### Usage
 
 Tests can be constructed either by extending from a base class (recommended for cleaner and more readable tests), or by using the test builder object.
