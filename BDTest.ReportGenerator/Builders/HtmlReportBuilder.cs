@@ -502,14 +502,14 @@ namespace BDTest.ReportGenerator.Builders
                                 )
                             )
                         ),
-                        new HtmlTag("details").Append(
+                        new HtmlTag("details").AddClass("details-boxed").Append(
                             new HtmlTag("summary").AddClass("canToggle").AppendText("Scenarios"),
                             new HtmlTag("p").Append(
                                 new HtmlTag("h4").Append(
                                     BuildScenariosSection(scenarios)
                                 )
                             )
-                        ).AddClass("box"),
+                        ),
                         BuildChart()
                     )
                 );
@@ -550,7 +550,7 @@ namespace BDTest.ReportGenerator.Builders
 
             return new HtmlTag("tr").AddClass(HtmlReportPrebuilt.GetStatus(scenario) + _storiesBuiltCounter).AddClass(HtmlReportPrebuilt.GetStatus(scenario)).Append(
                 new HtmlTag("td").Append(
-                    new HtmlTag("details").Append(
+                    new HtmlTag("details").AddClass("details-boxed").Append(
                         new HtmlTag("summary").Append(
                             new HtmlTag("span").AddClass("ScenarioText").AppendText(
                                 scenarioText
