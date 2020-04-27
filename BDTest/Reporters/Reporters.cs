@@ -25,8 +25,6 @@ namespace BDTest.Reporters
             {
                 _reporters.Add(Activator.CreateInstance(customReporter.GetType()) as Reporter);
             }
-
-            WriteStartLine();
         }
 
         public override void WriteLine(string text, params object[] args)

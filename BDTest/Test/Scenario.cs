@@ -129,7 +129,9 @@ namespace BDTest.Test
                 {
                     StartTime = DateTime.Now;
                     
-                    WriteStoryAndScenario();
+                    CollectStartupInformation();
+
+                    WriteAttributeData();
 
                     foreach (var step in Steps)
                     {
@@ -172,13 +174,36 @@ namespace BDTest.Test
             });
         }
 
+        private void WriteAttributeData()
+        {
+            WriteStoryAndScenario();
+            WriteCustomTestInformation();
+        }
+
+        private void CollectStartupInformation()
+        {
+            TestStartupInformation = TestOutputData.Instance.ToString();
+            TestOutputData.ClearCurrentTaskData();
+        }
+
+        private void WriteCustomTestInformation()
+        {
+            foreach (var testInformationAttribute in CustomTestInformation)
+            {
+                _reporters.WriteLine(testInformationAttribute.Print());
+            }
+            
+            _reporters.NewLine();
+            
+            TestOutputData.ClearCurrentTaskData();
+        }
+
         private void WriteStoryAndScenario()
         {
             _reporters.WriteStory(StoryText);
             _reporters.WriteScenario(ScenarioText);
             _reporters.NewLine();
             
-            TestStartupInformation = TestOutputData.Instance.ToString();
             TestOutputData.ClearCurrentTaskData();
         }
     }

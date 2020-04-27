@@ -509,7 +509,7 @@ namespace BDTest.ReportGenerator.Builders
                                     BuildScenariosSection(scenarios)
                                 )
                             )
-                        ),
+                        ).AddClass("box"),
                         BuildChart()
                     )
                 );
@@ -590,26 +590,24 @@ namespace BDTest.ReportGenerator.Builders
                 new HtmlTag("summary").Append(
                     new HtmlTag("span").AppendText("Custom Test Information").AddClass("custom-test-info")
                 ),
-                new HtmlTag("pre").Style("padding-left", "20px").Append(customTestInformation.SelectMany(
-                    attribute => new[] {new HtmlTag("span").AppendText($"{attribute.GetType().Name} - {attribute.Information}"), new BrTag()}))
+                new HtmlTag("pre").Append(customTestInformation.SelectMany((attribute, index) => WriteLinesWithBreaks(index, attribute.Print())))
             );
         }
 
         private static HtmlTag BuildScenarioStartupOrTeardownOutput(string title, string text)
         {
-            if (string.IsNullOrEmpty(text))
+            if (string.IsNullOrWhiteSpace(text))
             {
                 return HtmlTag.Empty();
             }
 
-            var outputLines = text.SplitOnNewLines();
+            var outputLines = text.Trim().SplitOnNewLines();
             
             return new HtmlTag("details").Style("margin-left", "25px").Append(
                 new HtmlTag("summary").Append(
                     new HtmlTag("span").AppendText(title).AddClass("step")
                 ),
-                new HtmlTag("pre").Style("padding-left", "20px").Append(outputLines.SelectMany(
-                    line => new[] {new HtmlTag("span").AppendText(line), new BrTag()}))
+                new HtmlTag("pre").Append(outputLines.SelectMany((line, index) => WriteLinesWithBreaks(index, line)))
             );
         }
 
@@ -682,8 +680,8 @@ namespace BDTest.ReportGenerator.Builders
 
         private static HtmlTag BuildStepExpandedInfo(Step step)
         {
-            var exceptionTag = BuildExceptionTag(step);
-            var outputTag = BuildOutputTag(step);
+            var exceptionTag = BuildStepExceptionTag(step);
+            var outputTag = BuildStepOutputTag(step);
 
             if (exceptionTag == null && outputTag == null)
             {
@@ -698,24 +696,37 @@ namespace BDTest.ReportGenerator.Builders
             return returnTag;
         }
 
-        private static HtmlTag BuildOutputTag(Step step)
+        private static HtmlTag BuildStepOutputTag(Step step)
         {
             if (string.IsNullOrWhiteSpace(step.Output))
             {
                 return null;
             }
 
-            var outputLines = step.Output.SplitOnNewLines();
+            var outputLines = step.Output.Trim().SplitOnNewLines();
 
-            return new HtmlTag("details").Append(
-                new HtmlTag("summary").Style("margin-left", "25px").AddClass("step").AppendText("Output"),
-                new HtmlTag("pre").Style("padding-left", "20px").AddClass("output")
-                    .Append(outputLines.SelectMany(
-                        line => new[] {new HtmlTag("span").AppendText(line), new BrTag()}))
+            return new HtmlTag("details").Style("margin-left", "25px").Append(
+                new HtmlTag("summary").AddClass("step").AppendText("Output"),
+                new HtmlTag("pre")
+                    .Append(outputLines.SelectMany((line, index) => WriteLinesWithBreaks(index, line)))
             );
         }
 
-        private static HtmlTag BuildExceptionTag(Step step)
+        private static IEnumerable<HtmlTag> WriteLinesWithBreaks(int index, string line)
+        {
+            var list = new List<HtmlTag>();
+
+            if (index != 0)
+            {
+                list.Add(new BrTag());
+            }
+
+            list.Add(new HtmlTag("span").AppendText(line));
+
+            return list;
+        }
+
+        private static HtmlTag BuildStepExceptionTag(Step step)
         {
             if (step.Exception == null)
             {
@@ -724,7 +735,7 @@ namespace BDTest.ReportGenerator.Builders
 
             return new HtmlTag("details").Append(
                 new HtmlTag("summary").Style("margin-left", "25px").AddClass("step").AppendText("Exception"),
-                new HtmlTag("pre").Style("padding-left", "20px").AddClass("exception").AppendText(step.Exception?.ToString() ?? "")
+                new HtmlTag("pre").AddClass("exception").AppendText(step.Exception?.ToString() ?? "")
             );
         }
 

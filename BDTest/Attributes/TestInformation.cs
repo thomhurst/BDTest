@@ -5,11 +5,12 @@ namespace BDTest.Attributes
     [AttributeUsage(AttributeTargets.Method, AllowMultiple = true)]
     public class TestInformationAttribute : Attribute
     {
-        public string Information { get; }
+        private string _information;
+        public string Print() => $"{GetType().Name} - {_information}";
 
         public TestInformationAttribute(string information)
         {
-            Information = information;
+            _information = information;
         }
     }
 }

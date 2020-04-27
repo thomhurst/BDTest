@@ -8,6 +8,7 @@ using BDTest.Attributes;
 using BDTest.ReportGenerator;
 using BDTest.Test;
 using NUnit.Framework;
+using TestTester.CustomAttributes;
 
 namespace TestTester
 {
@@ -78,6 +79,20 @@ namespace TestTester
         [CustomTestInformation("Some information!")]
         [ScenarioText("Test Information Attribute Test")]
         public void TestInformationAttribute()
+        {
+            Given(() => Action1())
+                .When(() => Action2())
+                .Then(() => Action3())
+                .And(() => Action4())
+                .BDTest();
+        }
+        
+        [Test]
+        [CustomTestInformation("Some information!")]
+        [CustomTestInformation("Some information again!")]
+        [CustomTestInformationAttribute2("Some information 2!")]
+        [ScenarioText("Test Information Attribute Test")]
+        public void TestInformationAttribute2()
         {
             Given(() => Action1())
                 .When(() => Action2())

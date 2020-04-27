@@ -1,6 +1,6 @@
 using BDTest.Attributes;
 
-namespace TestTester
+namespace TestTester.CustomAttributes
 {
     public class CustomTestInformationAttribute : TestInformationAttribute
     {

@@ -4,12 +4,6 @@ namespace BDTest.Reporters
 {
     public abstract class Reporter
     {
-
-        public virtual void WriteStartLine()
-        {
-            WriteLine("-------------------------------");
-        }
-
         public abstract void WriteLine(string text, params object[] args);
 
         public abstract void WriteStory(StoryText storyText);
@@ -17,7 +11,7 @@ namespace BDTest.Reporters
 
         public void NewLine() => WriteLine("");
 
-        public virtual void WriteEndLine()
+        public virtual void WriteDashedLineSeparator()
         {
             WriteLine("-------------------------------");
             NewLine();
@@ -25,7 +19,7 @@ namespace BDTest.Reporters
 
         internal void Finish()
         {
-            WriteEndLine();
+            WriteDashedLineSeparator();
             OnFinish();
         }
 

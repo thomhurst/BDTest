@@ -21,6 +21,7 @@ pre {
     max-height: 500px;
     word-break: break-word;
     overflow: auto;
+    padding: 20px;
 }
 
 .StoryText,
