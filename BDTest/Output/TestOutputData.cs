@@ -86,5 +86,18 @@ namespace BDTest.Output
 
             Console.WriteLine(Environment.NewLine + text);
         }
+        
+        internal static void WriteStartupOutput(string testId, string text)
+        {
+            if (testId == null)
+            {
+                Console.WriteLine("Attempting to write tear down output but no unique test ID has been set in the base class");
+                return;
+            }
+            
+            TestHolder.ListenForScenario(testId, scenario => scenario.TestStartupInformation += $"{text}{Environment.NewLine}");
+
+            Console.WriteLine(Environment.NewLine + text);
+        }
     }
 }

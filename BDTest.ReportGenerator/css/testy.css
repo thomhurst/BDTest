@@ -52,7 +52,11 @@ pre {
     border: 1px solid #d0d0d0;
 }
 
-.step {
+.faded-opacity-8 {
+    opacity: 0.8;
+}
+
+.small-font {
     font-size: 90%;
 }
 

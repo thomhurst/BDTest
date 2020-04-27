@@ -85,6 +85,11 @@ namespace BDTest.Test
         {
             return test.Invoke(Activator.CreateInstance<TContext>(), Activator.CreateInstance<TContext2>(), Activator.CreateInstance<TContext3>(), Activator.CreateInstance<TContext4>(), Activator.CreateInstance<TContext5>());
         }
+        
+        public void WriteStartupOutput(string text)
+        {
+            TestOutputData.WriteStartupOutput(TestId, text);
+        }
 
         public void WriteTearDownOutput(string text)
         {

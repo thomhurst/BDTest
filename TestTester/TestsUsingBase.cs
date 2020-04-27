@@ -18,6 +18,22 @@ namespace TestTester
         SoThat = "Things Work")]
     public class TestsUsingBase : BDTestBase
     {
+        [SetUp]
+        public void Setup()
+        {
+            WriteStartupOutput("Blah-Startup");
+            WriteStartupOutput("Blah-Startup");
+            WriteStartupOutput("Blah-Startup");
+        }
+        
+        [TearDown]
+        public void Teardown()
+        {
+            WriteTearDownOutput("Blah-Teardown");
+            WriteTearDownOutput("Blah-Teardown");
+            WriteTearDownOutput("Blah-Teardown");
+        }
+        
         [Test]
         [ScenarioText("Asynchronous Scenario")]
         public async Task AsyncTest()

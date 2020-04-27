@@ -52,7 +52,7 @@ namespace BDTest.Test
             
             TestHolder.NotRun.TryRemove(testDetails.GetGuid(), out _);
             TestHolder.StoppedEarly.TryAdd(testDetails.GetGuid(), this);
-            TestHolder.Scenarios.Add(this);
+            TestHolder.AddScenario(this);
 
             StoryText = testDetails.StoryText;
             ScenarioText = testDetails.ScenarioText;
@@ -129,7 +129,7 @@ namespace BDTest.Test
                 {
                     StartTime = DateTime.Now;
                     
-                    CollectStartupInformation();
+                    TestOutputData.ClearCurrentTaskData();
 
                     WriteAttributeData();
 
@@ -178,12 +178,6 @@ namespace BDTest.Test
         {
             WriteStoryAndScenario();
             WriteCustomTestInformation();
-        }
-
-        private void CollectStartupInformation()
-        {
-            TestStartupInformation = TestOutputData.Instance.ToString();
-            TestOutputData.ClearCurrentTaskData();
         }
 
         private void WriteCustomTestInformation()

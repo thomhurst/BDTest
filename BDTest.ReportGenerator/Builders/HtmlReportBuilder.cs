@@ -586,9 +586,9 @@ namespace BDTest.ReportGenerator.Builders
                 return HtmlTag.Empty();
             }
 
-            return new HtmlTag("details").Style("margin-left", "25px").Append(
+            return new HtmlTag("details").AddClass("small-font").Append(
                 new HtmlTag("summary").Append(
-                    new HtmlTag("span").AppendText("Custom Test Information").AddClass("custom-test-info")
+                    new HtmlTag("span").AppendText("Custom Test Information").AddClass("faded-opacity-8")
                 ),
                 new HtmlTag("pre").Append(customTestInformation.SelectMany((attribute, index) => WriteLinesWithBreaks(index, attribute.Print())))
             );
@@ -603,9 +603,9 @@ namespace BDTest.ReportGenerator.Builders
 
             var outputLines = text.Trim().SplitOnNewLines();
             
-            return new HtmlTag("details").Style("margin-left", "25px").Append(
+            return new HtmlTag("details").AddClass("small-font").Append(
                 new HtmlTag("summary").Append(
-                    new HtmlTag("span").AppendText(title).AddClass("step")
+                    new HtmlTag("span").AppendText(title).AddClass("faded-opacity-8")
                 ),
                 new HtmlTag("pre").Append(outputLines.SelectMany((line, index) => WriteLinesWithBreaks(index, line)))
             );
@@ -628,11 +628,11 @@ namespace BDTest.ReportGenerator.Builders
             return new HtmlTag("table").Append(
                 new HtmlTag("thead").Append(
                     new HtmlTag("tr").Append(
-                        HtmlReportPrebuilt.StepHeader.AddClass("step"),
-                        HtmlReportPrebuilt.StatusHeader.AddClass("step"),
-                        HtmlReportPrebuilt.DurationHeader.AddClass("step"),
-                        HtmlReportPrebuilt.StartHeader.AddClass("step"),
-                        HtmlReportPrebuilt.EndHeader.AddClass("step")
+                        HtmlReportPrebuilt.StepHeader.AddClass("small-font"),
+                        HtmlReportPrebuilt.StatusHeader.AddClass("small-font"),
+                        HtmlReportPrebuilt.DurationHeader.AddClass("small-font"),
+                        HtmlReportPrebuilt.StartHeader.AddClass("small-font"),
+                        HtmlReportPrebuilt.EndHeader.AddClass("small-font")
                     )
                 ),
                 new HtmlTag("tbody").Append(
@@ -647,12 +647,12 @@ namespace BDTest.ReportGenerator.Builders
             HtmlTag stepEntry;
             if (expandedStepInfo == null)
             {
-                stepEntry = new HtmlTag("span").AddClass("step").AppendText(step.StepText);
+                stepEntry = new HtmlTag("span").AddClass("small-font").AppendText(step.StepText);
             }
             else
             {
                 stepEntry = new HtmlTag("details").Append(
-                            new HtmlTag("summary").AddClass("step").AppendText(
+                            new HtmlTag("summary").AddClass("small-font").AppendText(
                                 step.StepText
                             ),
                             expandedStepInfo
@@ -666,13 +666,13 @@ namespace BDTest.ReportGenerator.Builders
                 new HtmlTag("td").Append(
                     HtmlReportPrebuilt.GetStatusIcon(step)
                 ),
-                new HtmlTag("td").AddClass("step").AppendText(
+                new HtmlTag("td").AddClass("small-font").AppendText(
                     step.TimeTaken.ToPrettyFormat()
                 ),
-                new HtmlTag("td").AddClass("step").AppendText(
+                new HtmlTag("td").AddClass("small-font").AppendText(
                     step.StartTime.ToStringForReport()
                 ),
-                new HtmlTag("td").AddClass("step").AppendText(
+                new HtmlTag("td").AddClass("small-font").AppendText(
                     step.EndTime.ToStringForReport()
                 )
             ).Style("margin-left", "25px");
@@ -706,7 +706,7 @@ namespace BDTest.ReportGenerator.Builders
             var outputLines = step.Output.Trim().SplitOnNewLines();
 
             return new HtmlTag("details").Style("margin-left", "25px").Append(
-                new HtmlTag("summary").AddClass("step").AppendText("Output"),
+                new HtmlTag("summary").AddClass("small-font").AppendText("Output"),
                 new HtmlTag("pre")
                     .Append(outputLines.SelectMany((line, index) => WriteLinesWithBreaks(index, line)))
             );
@@ -734,7 +734,7 @@ namespace BDTest.ReportGenerator.Builders
             }
 
             return new HtmlTag("details").Append(
-                new HtmlTag("summary").Style("margin-left", "25px").AddClass("step").AppendText("Exception"),
+                new HtmlTag("summary").Style("margin-left", "25px").AddClass("small-font").AppendText("Exception"),
                 new HtmlTag("pre").AddClass("exception").AppendText(step.Exception?.ToString() ?? "")
             );
         }
