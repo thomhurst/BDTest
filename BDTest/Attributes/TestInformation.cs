@@ -5,7 +5,7 @@ namespace BDTest.Attributes
     [AttributeUsage(AttributeTargets.Method, AllowMultiple = true)]
     public class TestInformationAttribute : Attribute
     {
-        private string _information;
+        private readonly string _information;
         public string Print() => $"{GetType().Name} - {_information}";
 
         public TestInformationAttribute(string information)
