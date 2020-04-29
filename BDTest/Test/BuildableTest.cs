@@ -18,7 +18,7 @@ namespace BDTest.Test
         public TestDetails TestDetails { get; protected set; }
         
         [JsonProperty]
-        public TestInformationAttribute[] CustomTestInformation { get; set; }
+        public TestInformationAttribute[] CustomTestInformation { get; set; } = Array.Empty<TestInformationAttribute>();
 
         public string GetScenarioText()
         {

@@ -32,11 +32,16 @@ namespace BDTest.Test
 
         private void SetTestInformation()
         {
-            CustomTestInformation = GetTestInformationAttribute(GetStackFrames().FirstOrDefault(it =>
+            var stackFrame = GetStackFrames().FirstOrDefault(it =>
             {
                 var testInformationAttribute = GetTestInformationAttribute(it);
                 return testInformationAttribute != null && testInformationAttribute.Any();
-            }))?.ToArray() ?? Array.Empty<TestInformationAttribute>();
+            });
+
+            if (stackFrame != null)
+            {
+                CustomTestInformation = GetTestInformationAttribute(stackFrame)?.ToArray() ?? Array.Empty<TestInformationAttribute>();
+            }
         }
 
         [JsonConstructor]

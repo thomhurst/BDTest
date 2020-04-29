@@ -2,6 +2,14 @@ li {
     list-style-type: none
 }
 
+h1 {
+    margin-bottom: -10px;
+}
+
+h2 {
+    font-size: 17px
+}
+
 th,
 td {
     text-align: left;

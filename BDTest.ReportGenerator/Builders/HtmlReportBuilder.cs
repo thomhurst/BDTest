@@ -15,7 +15,6 @@ using Newtonsoft.Json;
 
 namespace BDTest.ReportGenerator.Builders
 {
-
     public class HtmlReportBuilder
     {
         private readonly TestTimer _testTimer;
@@ -752,7 +751,7 @@ namespace BDTest.ReportGenerator.Builders
         private static HtmlTag BuildFooter()
         {
             return new HtmlTag("div").AddClass("footer").AppendText("Powered by ")
-                    .AppendHtml("<a href=\"https://github.com/thomhurst/BDTest\">BDTest</a>");
+                    .AppendHtml("<a href=\"https://github.com/thomhurst/BDTest/wiki\">BDTest</a>");
         }
 
         private IEnumerable<HtmlTag> BuildJavascript(int storiesCount)
