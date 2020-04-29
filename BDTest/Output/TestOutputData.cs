@@ -84,7 +84,7 @@ namespace BDTest.Output
                 foundScenario.TearDownOutput += $"{text}{Environment.NewLine}";
             }
 
-            Console.WriteLine(Environment.NewLine + text);
+            Console.Out.WriteLine(Environment.NewLine + text);
         }
         
         internal static void WriteStartupOutput(string testId, string text)
@@ -97,7 +97,7 @@ namespace BDTest.Output
             
             TestHolder.ListenForScenario(testId, scenario => scenario.TestStartupInformation += $"{text}{Environment.NewLine}");
 
-            Console.WriteLine(Environment.NewLine + text);
+            Console.Out.WriteLine(Environment.NewLine + text);
         }
     }
 }

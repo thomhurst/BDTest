@@ -73,7 +73,7 @@ namespace BDTest.Test
         {
             try
             {
-                await ExecuteInternal();
+                await ExecuteInternal().ConfigureAwait(false);
             }
             finally
             {
