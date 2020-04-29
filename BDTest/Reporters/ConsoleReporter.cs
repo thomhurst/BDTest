@@ -8,7 +8,7 @@ namespace BDTest.Reporters
 
         public override void WriteLine(string text, params object[] args)
         {
-            Console.WriteLine(text, args);
+            Console.Out.WriteLine(text, args);
         }
 
         public override void WriteStory(StoryText storyText)

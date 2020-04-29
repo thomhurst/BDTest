@@ -73,7 +73,7 @@ namespace BDTest.Output
         {
             if (testId == null)
             {
-                Console.WriteLine("Attempting to write tear down output but no unique test ID has been set in the base class");
+                Console.Out.WriteLine("Attempting to write tear down output but no unique test ID has been set in the base class");
                 return;
             }
 
@@ -91,7 +91,7 @@ namespace BDTest.Output
         {
             if (testId == null)
             {
-                Console.WriteLine("Attempting to write tear down output but no unique test ID has been set in the base class");
+                Console.Out.WriteLine("Attempting to write test startup output but no unique test ID has been set in the base class");
                 return;
             }
             
