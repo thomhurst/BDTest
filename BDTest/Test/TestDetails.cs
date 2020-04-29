@@ -97,7 +97,7 @@ namespace BDTest.Test
                 return;
             }
 
-            ScenarioText = new ScenarioText("No Scenario Text found (Use attribute [ScenarioText\"...\")] on your tests");
+            ScenarioText = new ScenarioText("No Scenario Text found (Use attribute [ScenarioText(\"...\")] on your tests");
         }
 
         private static StackFrame[] GetStackFrames()
