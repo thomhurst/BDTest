@@ -6,7 +6,7 @@ namespace BDTest.Example.Helpers
 {
     public class JsonContent : StringContent
     {
-        public const string ContentType = "application/json";
+        public static readonly string ContentType = "application/json";
         
         public JsonContent(string content) : base(content, Encoding.UTF8, ContentType)
         {
@@ -19,13 +19,11 @@ namespace BDTest.Example.Helpers
     
     public class JsonContent<T> : StringContent
     {
-        public const string ContentType = "application/json";
-        
-        public JsonContent(T content) : base(JsonConvert.SerializeObject(content), Encoding.UTF8, ContentType)
+        public JsonContent(T content) : base(JsonConvert.SerializeObject(content), Encoding.UTF8, JsonContent.ContentType)
         {
         }
 
-        public JsonContent(T content, Encoding encoding) : base(JsonConvert.SerializeObject(content), encoding, ContentType)
+        public JsonContent(T content, Encoding encoding) : base(JsonConvert.SerializeObject(content), encoding, JsonContent.ContentType)
         {
         }
     }
