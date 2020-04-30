@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Xml;
 using BDTest.Test;
 using HtmlTags;
 
@@ -45,19 +43,6 @@ namespace BDTest.ReportGenerator
 
             var joinedResult = string.Join(" & ", sb);
             return string.IsNullOrWhiteSpace(joinedResult) ? "< 1 ms" : joinedResult;
-        }
-
-        public static string ToXmlString(this XmlDocument xmlDocument)
-        {
-            using (var stringWriter = new StringWriter())
-            {
-                using (var xmlTextWriter = XmlWriter.Create(stringWriter))
-                {
-                    xmlDocument.WriteTo(xmlTextWriter);
-                    xmlTextWriter.Flush();
-                    return stringWriter.GetStringBuilder().ToString();
-                }
-            }
         }
 
         public static DateTime GetStartDateTime(this IEnumerable<Scenario> scenarios)

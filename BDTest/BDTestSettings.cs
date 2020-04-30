@@ -24,7 +24,6 @@ namespace BDTest
         public static string FlakinessReportHtmlFilename { get; set; }
         public static string TestTimesReportHtmlFilename { get; set; }
         public static string JsonDataFilename { get; set; }
-        public static string XmlDataFilename { get; set; }
     }
 
     public class DebugSettings

@@ -2,8 +2,6 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Xml;
 using BDTest.Maps;
 using BDTest.Output;
 using BDTest.Paths;
@@ -13,7 +11,6 @@ using BDTest.ReportGenerator.Models;
 using BDTest.ReportGenerator.Utils;
 using BDTest.Test;
 using Newtonsoft.Json;
-using Formatting = Newtonsoft.Json.Formatting;
 
 namespace BDTest.ReportGenerator
 {
@@ -46,9 +43,8 @@ namespace BDTest.ReportGenerator
             var reportPathByStory = Path.Combine(ResultDirectory, FileNames.ReportByStory);
             var reportPathAllScenarios = Path.Combine(ResultDirectory, FileNames.ReportAllScenarios);
             var testDataJsonPath = Path.Combine(ResultDirectory, FileNames.TestDataJson);
-            var testDataXmlPath = Path.Combine(ResultDirectory, FileNames.TestDataXml);
 
-            DeleteExistingFiles(reportPathByStory, reportPathAllScenarios, testDataJsonPath, testDataXmlPath);
+            DeleteExistingFiles(reportPathByStory, reportPathAllScenarios, testDataJsonPath);
 
             var warnings = GetWarnings();
 
@@ -68,8 +64,6 @@ namespace BDTest.ReportGenerator
             var jsonData = JsonConvert.SerializeObject(dataToOutput, Formatting.Indented, settings);
             
             WriteJsonOutput(jsonData);
-
-            WriteXmlOutput(jsonData);
 
             PruneData();
 
@@ -155,18 +149,6 @@ namespace BDTest.ReportGenerator
             catch (Exception e)
             {
                 File.WriteAllText(Path.Combine(ResultDirectory, "BDTest - JSON Write Exception.txt"), e.Message + Environment.NewLine + e.StackTrace);
-            }
-        }
-
-        private static void WriteXmlOutput(string jsonData)
-        {
-            try
-            {
-                JsonConvert.DeserializeXNode(jsonData, "TestData", true, true).WriteTo(new XmlTextWriter(Path.Combine(ResultDirectory, BDTestSettings.XmlDataFilename ?? FileNames.TestDataXml), Encoding.UTF8));
-            }
-            catch (Exception e)
-            {
-                File.WriteAllText(Path.Combine(ResultDirectory, "BDTest - XML Write Exception.txt"), e.Message + Environment.NewLine + e.StackTrace);
             }
         }
 

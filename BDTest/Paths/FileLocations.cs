@@ -32,7 +32,6 @@ namespace BDTest.Paths
     {
         public static readonly string TimeStamp = DateTime.Now.ToString("yyyyMMdd HH-mm-ss-fff");
         public static readonly string TestDataJson = $"BDTest - Test Data - {TimeStamp}.json";
-        public static readonly string TestDataXml = $"BDTest - Test Data - {TimeStamp}.xml";
         public static readonly string ReportByStory = $"BDTest - Report - By Story - {TimeStamp}.html";
         public static readonly string ReportAllScenarios = $"BDTest - Report - All Scenarios - {TimeStamp}.html";
         public static readonly string ReportFlakiness = $"BDTest - Report - Flakiness - {TimeStamp}.html";

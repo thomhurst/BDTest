@@ -1,7 +1,10 @@
 using System;
+using BDTest.Helpers;
+using Newtonsoft.Json;
 
 namespace BDTest.Attributes
 {
+    [JsonConverter(typeof(TestInformationAttributeJsonConverter))]
     [AttributeUsage(AttributeTargets.Method, AllowMultiple = true)]
     public class TestInformationAttribute : Attribute
     {
