@@ -17,12 +17,7 @@ namespace BDTest.Tests
         [SetUp]
         public void Setup()
         {
-            BDTestSettings.ReportFolderName = "CustomFolder";
-            
-            if (FileHelpers.HasCustomFolder() && File.Exists(FileHelpers.GetOutputFolder()))
-            {
-                Directory.Delete(FileHelpers.GetOutputFolder(), true);
-            }
+            TestSetupHelper.ResetData();
         }
 
         [Test]

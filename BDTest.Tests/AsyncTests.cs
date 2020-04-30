@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Threading.Tasks;
+using BDTest.ReportGenerator;
 using BDTest.Test;
 using NUnit.Framework;
 
@@ -19,6 +20,8 @@ namespace BDTest.Tests
                 .BDTest();
             
             Assert.That(stopwatch.Elapsed.Seconds, Is.GreaterThanOrEqualTo(3));
+            
+            BDTestReportGenerator.Generate();
         }
         
         [Test]
