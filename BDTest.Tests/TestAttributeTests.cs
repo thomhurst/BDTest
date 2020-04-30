@@ -21,6 +21,19 @@ namespace BDTest.Tests
                 Directory.Delete(FileHelpers.GetOutputFolder(), true);
             }
         }
+        
+        [Test]
+        public void NoTestInformationAttribute()
+        {
+            var scenario = When(() => Console.WriteLine("my test has no test information attribute"))
+                .Then(() => Console.WriteLine("the information array should be empty"))
+                .BDTest();
+            
+            BDTestReportGenerator.Generate();
+            
+            Assert.That(scenario.CustomTestInformation, Is.Empty);
+            Assert.That(JsonHelper.GetDynamicJsonObject().SelectToken("$.Scenarios[0].CustomTestInformation").ToString(), Is.EqualTo("[]"));
+        }
 
         [Test]
         [TestInformation("Testing 1 Information Attribute")]
