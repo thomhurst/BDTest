@@ -35,16 +35,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="BDTest.ReportGenerator.props">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-  </ItemGroup>
-
-  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
-    <Exec Command="copy /Y &quot;$(ProjectDir)$(TargetName).props&quot; &quot;$(TargetDir)$(TargetName).props&quot;&#xD;&#xA;echo D|XCOPY &quot;$(ProjectDir)css&quot; &quot;$(TargetDir)css\css\&quot; /S /Y /I" />
-  </Target>
-
-  <ItemGroup>
     <None Include="$(ProjectDir)css\**" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
