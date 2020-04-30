@@ -22,7 +22,7 @@ namespace BDTest.Test
 
         public string GetScenarioText()
         {
-            return ScenarioText?.Scenario ?? "Scenario Title Not Defined";
+            return ScenarioText?.Scenario ?? "Scenario Text Not Defined";
         }
 
         public string GetStoryText()

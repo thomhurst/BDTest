@@ -4,12 +4,11 @@ using System.Linq;
 using BDTest.Attributes;
 using BDTest.ReportGenerator;
 using BDTest.Test;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using NUnit.Framework;
 
 namespace BDTest.Tests
 {
+    [Parallelizable(ParallelScope.None)]
     public class TestAttributeTests : BDTestBase
     {
         [SetUp]
@@ -17,7 +16,7 @@ namespace BDTest.Tests
         {
             BDTestSettings.ReportFolderName = "CustomFolder";
             
-            if (FileHelpers.HasCustomFolder())
+            if (FileHelpers.HasCustomFolder() && File.Exists(FileHelpers.GetOutputFolder()))
             {
                 Directory.Delete(FileHelpers.GetOutputFolder(), true);
             }
@@ -34,7 +33,7 @@ namespace BDTest.Tests
             BDTestReportGenerator.Generate();
             
             Assert.That(scenario.CustomTestInformation.First().Print(), Is.EqualTo($"{nameof(TestInformationAttribute)} - Testing 1 Information Attribute"));
-            Assert.That(GetDynamicJsonObject().SelectToken("$.Scenarios[0].CustomTestInformation[0]").ToString(), Is.EqualTo($"{nameof(TestInformationAttribute)} - Testing 1 Information Attribute"));
+            Assert.That(JsonHelper.GetDynamicJsonObject().SelectToken("$.Scenarios[0].CustomTestInformation[0]").ToString(), Is.EqualTo($"{nameof(TestInformationAttribute)} - Testing 1 Information Attribute"));
         }
         
         [Test]
@@ -49,15 +48,9 @@ namespace BDTest.Tests
             BDTestReportGenerator.Generate();
             
             Assert.That(scenario.CustomTestInformation.First().Print(), Is.EqualTo($"{nameof(TestInformationAttribute)} - Testing 1 Information Attribute"));
-            Assert.That(GetDynamicJsonObject().SelectToken("$.Scenarios[0].CustomTestInformation[0]").ToString(), Is.EqualTo($"{nameof(TestInformationAttribute)} - Testing 1 Information Attribute"));
+            Assert.That(JsonHelper.GetDynamicJsonObject().SelectToken("$.Scenarios[0].CustomTestInformation[0]").ToString(), Is.EqualTo($"{nameof(TestInformationAttribute)} - Testing 1 Information Attribute"));
             Assert.That(scenario.CustomTestInformation[1].Print(), Is.EqualTo($"{nameof(CustomInformationAttribute)} - Testing 2 Information Attributes"));
-            Assert.That(GetDynamicJsonObject().SelectToken("$.Scenarios[0].CustomTestInformation[1]").ToString(), Is.EqualTo($"{nameof(CustomInformationAttribute)} - Testing 2 Information Attributes"));
-        }
-
-        private static JObject GetDynamicJsonObject()
-        {
-            var jsonText = File.ReadAllText(FileHelpers.GetJsonFilePath());
-            return JObject.Load(new JsonTextReader(new StringReader(jsonText)));
+            Assert.That(JsonHelper.GetDynamicJsonObject().SelectToken("$.Scenarios[0].CustomTestInformation[1]").ToString(), Is.EqualTo($"{nameof(CustomInformationAttribute)} - Testing 2 Information Attributes"));
         }
     }
 }
