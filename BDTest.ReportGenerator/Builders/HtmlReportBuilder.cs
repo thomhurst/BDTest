@@ -34,24 +34,24 @@ namespace BDTest.ReportGenerator.Builders
         private int _storiesBuiltCounter;
         private readonly WarningsChecker _warnings;
 
-        internal static HtmlReportBuilder CreateReport(DataOutputModel dataOutputModel)
+        internal static HtmlReportBuilder CreateReport(string folderPath, DataOutputModel dataOutputModel)
         {
-            return new HtmlReportBuilder(dataOutputModel);
+            return new HtmlReportBuilder(folderPath, dataOutputModel);
         }
 
-        internal HtmlReportBuilder(DataOutputModel dataOutputModel)
+        internal HtmlReportBuilder(string folderPath, DataOutputModel dataOutputModel)
         {
             _scenarios = dataOutputModel.Scenarios;
             _stories = _scenarios.Select(scenario => scenario.GetStoryText()).Distinct().ToList();
             _testTimer = dataOutputModel.TestTimer;
             _warnings = dataOutputModel.Warnings;
-            CreateFlakinessReport();
-            CreateTestTimesComparisonReport();
-            CreateReportWithoutStories();
-            CreateReportWithStories();
+            CreateFlakinessReport(folderPath);
+            CreateTestTimesComparisonReport(folderPath);
+            CreateReportWithoutStories(folderPath);
+            CreateReportWithStories(folderPath);
         }
 
-        private static void CreateFlakinessReport()
+        private static void CreateFlakinessReport(string folderPath)
         {
             if (string.IsNullOrWhiteSpace(BDTestSettings.PersistentResultsDirectory))
             {
@@ -66,12 +66,12 @@ namespace BDTest.ReportGenerator.Builders
                     .Style("padding", "25px")
                     .WriteTo(stringWriter, HtmlEncoder.Default);
 
-                File.WriteAllText(Path.Combine(BDTestReportGenerator.ResultDirectory, BDTestSettings.FlakinessReportHtmlFilename ?? FileNames.ReportFlakiness),
+                File.WriteAllText(Path.Combine(folderPath, BDTestSettings.FlakinessReportHtmlFilename ?? FileNames.ReportFlakiness),
                     stringWriter.ToString());
             }
         }
 
-        private static void CreateTestTimesComparisonReport()
+        private static void CreateTestTimesComparisonReport(string folderPath)
         {
             if (string.IsNullOrWhiteSpace(BDTestSettings.PersistentResultsDirectory))
             {
@@ -86,12 +86,12 @@ namespace BDTest.ReportGenerator.Builders
                     .Style("padding", "25px")
                     .WriteTo(stringWriter, HtmlEncoder.Default);
 
-                File.WriteAllText(Path.Combine(BDTestReportGenerator.ResultDirectory, BDTestSettings.TestTimesReportHtmlFilename ?? FileNames.ReportTestTimesComparison),
+                File.WriteAllText(Path.Combine(folderPath, BDTestSettings.TestTimesReportHtmlFilename ?? FileNames.ReportTestTimesComparison),
                     stringWriter.ToString());
             }
         }
 
-        private void CreateReportWithStories()
+        private void CreateReportWithStories(string folderPath)
         {
             using (var stringWriter = new StringWriter())
             {
@@ -101,12 +101,12 @@ namespace BDTest.ReportGenerator.Builders
                     .Style("padding", "25px")
                     .WriteTo(stringWriter, HtmlEncoder.Default);
 
-                File.WriteAllText(Path.Combine(BDTestReportGenerator.ResultDirectory, BDTestSettings.ScenariosByStoryReportHtmlFilename ?? FileNames.ReportByStory),
+                File.WriteAllText(Path.Combine(folderPath, BDTestSettings.ScenariosByStoryReportHtmlFilename ?? FileNames.ReportByStory),
                     stringWriter.ToString());
             }
         }
 
-        private void CreateReportWithoutStories()
+        private void CreateReportWithoutStories(string folderPath)
         {
             using (var stringWriter = new StringWriter())
             {
@@ -116,7 +116,7 @@ namespace BDTest.ReportGenerator.Builders
                     .Style("padding", "25px")
                     .WriteTo(stringWriter, HtmlEncoder.Default);
 
-                File.WriteAllText(Path.Combine(BDTestReportGenerator.ResultDirectory, BDTestSettings.AllScenariosReportHtmlFilename ?? FileNames.ReportAllScenarios),
+                File.WriteAllText(Path.Combine(folderPath, BDTestSettings.AllScenariosReportHtmlFilename ?? FileNames.ReportAllScenarios),
                     stringWriter.ToString());
             }
         }

@@ -2,11 +2,12 @@ using System.Diagnostics;
 using System.Threading.Tasks;
 using BDTest.ReportGenerator;
 using BDTest.Test;
+using BDTest.Tests.Helpers;
 using NUnit.Framework;
 
-namespace BDTest.Tests
+namespace BDTest.Tests.Fixtures
 {
-    [Parallelizable(ParallelScope.Children)]
+    [Parallelizable(ParallelScope.None)]
     public class AsyncTests : BDTestBase
     {
         [Test]
@@ -21,7 +22,7 @@ namespace BDTest.Tests
             
             Assert.That(stopwatch.Elapsed.Seconds, Is.GreaterThanOrEqualTo(3));
             
-            BDTestReportGenerator.Generate();
+            BDTestReportGenerator.GenerateInFolder(FileHelpers.GetUniqueTestOutputFolder());
         }
         
         [Test]
@@ -35,6 +36,8 @@ namespace BDTest.Tests
                 .BDTestAsync();
             
             Assert.That(stopwatch.Elapsed.Seconds, Is.GreaterThanOrEqualTo(3));
+            
+            BDTestReportGenerator.GenerateInFolder(FileHelpers.GetUniqueTestOutputFolder());
         }
         
         [Test]
@@ -47,6 +50,8 @@ namespace BDTest.Tests
                 .Then(() => Task.Delay(1000));
             
             Assert.That(stopwatch.Elapsed.Seconds, Is.GreaterThanOrEqualTo(3));
+            
+            BDTestReportGenerator.GenerateInFolder(FileHelpers.GetUniqueTestOutputFolder());
         }
     }
 }

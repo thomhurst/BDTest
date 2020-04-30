@@ -3,6 +3,7 @@
     <PropertyGroup>
         <TargetFramework>netcoreapp3.1</TargetFramework>
 
+        <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
         <IsPackable>false</IsPackable>
     </PropertyGroup>
 
@@ -16,6 +17,10 @@
       <ProjectReference Include="..\BDTest.Example\BDTest.Example.csproj" />
       <ProjectReference Include="..\BDTest.NUnit\BDTest.NUnit.csproj" />
       <ProjectReference Include="..\BDTest.ReportGenerator\BDTest.ReportGenerator.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="Properties\" />
     </ItemGroup>
 
 </Project>

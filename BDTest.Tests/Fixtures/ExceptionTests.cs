@@ -3,10 +3,12 @@ using System.Linq;
 using BDTest.Maps;
 using BDTest.ReportGenerator;
 using BDTest.Test;
+using BDTest.Tests.Helpers;
 using NUnit.Framework;
 
-namespace BDTest.Tests
+namespace BDTest.Tests.Fixtures
 {
+    [Parallelizable(ParallelScope.None)]
     public class ExceptionTests : BDTestBase
     {
         [SetUp]
@@ -33,7 +35,7 @@ namespace BDTest.Tests
             }
             catch
             {
-                BDTestReportGenerator.Generate();
+                BDTestReportGenerator.GenerateInFolder(FileHelpers.GetUniqueTestOutputFolder());
 
                 var scenario = TestHolder.Scenarios.First();
 
@@ -48,16 +50,16 @@ namespace BDTest.Tests
             
                 Assert.That(scenario.Status, Is.EqualTo(status));
             
-                Assert.That(JsonHelper.GetDynamicJsonObject().SelectToken("$.Scenarios[0].Steps[0].Exception.Message").ToString(), Is.EqualTo("BDTest Exception!"));
+                Assert.That(JsonHelper.GetTestDynamicJsonObject().SelectToken("$.Scenarios[0].Steps[0].Exception.Message").ToString(), Is.EqualTo("BDTest Exception!"));
             
-                Assert.That(JsonHelper.GetDynamicJsonObject().SelectToken("$.Scenarios[0].Steps[0].Status").ToString(), Is.EqualTo(status.ToString()));
-                Assert.That(JsonHelper.GetDynamicJsonObject().SelectToken("$.Scenarios[0].Steps[1].Status").ToString(), Is.EqualTo("Inconclusive"));
-                Assert.That(JsonHelper.GetDynamicJsonObject().SelectToken("$.Scenarios[0].Steps[2].Status").ToString(), Is.EqualTo("Inconclusive"));
-                Assert.That(JsonHelper.GetDynamicJsonObject().SelectToken("$.Scenarios[0].Steps[3].Status").ToString(), Is.EqualTo("Inconclusive"));
-                Assert.That(JsonHelper.GetDynamicJsonObject().SelectToken("$.Scenarios[0].Steps[4].Status").ToString(), Is.EqualTo("Inconclusive"));
-                Assert.That(JsonHelper.GetDynamicJsonObject().SelectToken("$.Scenarios[0].Steps[5].Status").ToString(), Is.EqualTo("Inconclusive"));
+                Assert.That(JsonHelper.GetTestDynamicJsonObject().SelectToken("$.Scenarios[0].Steps[0].Status").ToString(), Is.EqualTo(status.ToString()));
+                Assert.That(JsonHelper.GetTestDynamicJsonObject().SelectToken("$.Scenarios[0].Steps[1].Status").ToString(), Is.EqualTo("Inconclusive"));
+                Assert.That(JsonHelper.GetTestDynamicJsonObject().SelectToken("$.Scenarios[0].Steps[2].Status").ToString(), Is.EqualTo("Inconclusive"));
+                Assert.That(JsonHelper.GetTestDynamicJsonObject().SelectToken("$.Scenarios[0].Steps[3].Status").ToString(), Is.EqualTo("Inconclusive"));
+                Assert.That(JsonHelper.GetTestDynamicJsonObject().SelectToken("$.Scenarios[0].Steps[4].Status").ToString(), Is.EqualTo("Inconclusive"));
+                Assert.That(JsonHelper.GetTestDynamicJsonObject().SelectToken("$.Scenarios[0].Steps[5].Status").ToString(), Is.EqualTo("Inconclusive"));
             
-                Assert.That(JsonHelper.GetDynamicJsonObject().SelectToken("$.Scenarios[0].Status").ToString(), Is.EqualTo(status.ToString()));
+                Assert.That(JsonHelper.GetTestDynamicJsonObject().SelectToken("$.Scenarios[0].Status").ToString(), Is.EqualTo(status.ToString()));
             }
         }
         
@@ -79,7 +81,7 @@ namespace BDTest.Tests
             }
             catch
             {
-                BDTestReportGenerator.Generate();
+                BDTestReportGenerator.GenerateInFolder(FileHelpers.GetUniqueTestOutputFolder());
 
                 var scenario = TestHolder.Scenarios.First();
 
@@ -94,16 +96,16 @@ namespace BDTest.Tests
 
                 Assert.That(scenario.Status, Is.EqualTo(status));
             
-                Assert.That(JsonHelper.GetDynamicJsonObject().SelectToken("$.Scenarios[0].Steps[3].Exception.Message").ToString(), Is.EqualTo("BDTest Exception!"));
+                Assert.That(JsonHelper.GetTestDynamicJsonObject().SelectToken("$.Scenarios[0].Steps[3].Exception.Message").ToString(), Is.EqualTo("BDTest Exception!"));
             
-                Assert.That(JsonHelper.GetDynamicJsonObject().SelectToken("$.Scenarios[0].Steps[0].Status").ToString(), Is.EqualTo("Passed"));
-                Assert.That(JsonHelper.GetDynamicJsonObject().SelectToken("$.Scenarios[0].Steps[1].Status").ToString(), Is.EqualTo("Passed"));
-                Assert.That(JsonHelper.GetDynamicJsonObject().SelectToken("$.Scenarios[0].Steps[2].Status").ToString(), Is.EqualTo("Passed"));
-                Assert.That(JsonHelper.GetDynamicJsonObject().SelectToken("$.Scenarios[0].Steps[3].Status").ToString(), Is.EqualTo(status.ToString()));
-                Assert.That(JsonHelper.GetDynamicJsonObject().SelectToken("$.Scenarios[0].Steps[4].Status").ToString(), Is.EqualTo("Inconclusive"));
-                Assert.That(JsonHelper.GetDynamicJsonObject().SelectToken("$.Scenarios[0].Steps[5].Status").ToString(), Is.EqualTo("Inconclusive"));
+                Assert.That(JsonHelper.GetTestDynamicJsonObject().SelectToken("$.Scenarios[0].Steps[0].Status").ToString(), Is.EqualTo("Passed"));
+                Assert.That(JsonHelper.GetTestDynamicJsonObject().SelectToken("$.Scenarios[0].Steps[1].Status").ToString(), Is.EqualTo("Passed"));
+                Assert.That(JsonHelper.GetTestDynamicJsonObject().SelectToken("$.Scenarios[0].Steps[2].Status").ToString(), Is.EqualTo("Passed"));
+                Assert.That(JsonHelper.GetTestDynamicJsonObject().SelectToken("$.Scenarios[0].Steps[3].Status").ToString(), Is.EqualTo(status.ToString()));
+                Assert.That(JsonHelper.GetTestDynamicJsonObject().SelectToken("$.Scenarios[0].Steps[4].Status").ToString(), Is.EqualTo("Inconclusive"));
+                Assert.That(JsonHelper.GetTestDynamicJsonObject().SelectToken("$.Scenarios[0].Steps[5].Status").ToString(), Is.EqualTo("Inconclusive"));
 
-                Assert.That(JsonHelper.GetDynamicJsonObject().SelectToken("$.Scenarios[0].Status").ToString(), Is.EqualTo(status.ToString()));
+                Assert.That(JsonHelper.GetTestDynamicJsonObject().SelectToken("$.Scenarios[0].Status").ToString(), Is.EqualTo(status.ToString()));
             }
         }
 

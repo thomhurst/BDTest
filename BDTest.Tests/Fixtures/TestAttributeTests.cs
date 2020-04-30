@@ -3,9 +3,10 @@ using System.Linq;
 using BDTest.Attributes;
 using BDTest.ReportGenerator;
 using BDTest.Test;
+using BDTest.Tests.Helpers;
 using NUnit.Framework;
 
-namespace BDTest.Tests
+namespace BDTest.Tests.Fixtures
 {
     [Parallelizable(ParallelScope.None)]
     public class TestAttributeTests : BDTestBase
@@ -23,10 +24,10 @@ namespace BDTest.Tests
                 .Then(() => Console.WriteLine("the information array should be empty"))
                 .BDTest();
             
-            BDTestReportGenerator.Generate();
+            BDTestReportGenerator.GenerateInFolder(FileHelpers.GetUniqueTestOutputFolder());
             
             Assert.That(scenario.CustomTestInformation, Is.Empty);
-            Assert.That(JsonHelper.GetDynamicJsonObject().SelectToken("$.Scenarios[0].CustomTestInformation").ToString(), Is.EqualTo("[]"));
+            Assert.That(JsonHelper.GetTestDynamicJsonObject().SelectToken("$.Scenarios[0].CustomTestInformation").ToString(), Is.EqualTo("[]"));
         }
 
         [Test]
@@ -37,10 +38,10 @@ namespace BDTest.Tests
                 .Then(() => Console.WriteLine("the attribute should be serialized to the json output"))
                 .BDTest();
             
-            BDTestReportGenerator.Generate();
+            BDTestReportGenerator.GenerateInFolder(FileHelpers.GetUniqueTestOutputFolder());
             
             Assert.That(scenario.CustomTestInformation.First().Print(), Is.EqualTo($"{nameof(TestInformationAttribute)} - Testing 1 Information Attribute"));
-            Assert.That(JsonHelper.GetDynamicJsonObject().SelectToken("$.Scenarios[0].CustomTestInformation[0]").ToString(), Is.EqualTo($"{nameof(TestInformationAttribute)} - Testing 1 Information Attribute"));
+            Assert.That(JsonHelper.GetTestDynamicJsonObject().SelectToken("$.Scenarios[0].CustomTestInformation[0]").ToString(), Is.EqualTo($"{nameof(TestInformationAttribute)} - Testing 1 Information Attribute"));
         }
         
         [Test]
@@ -52,12 +53,12 @@ namespace BDTest.Tests
                 .Then(() => Console.WriteLine("the attributes should be serialized to the json output"))
                 .BDTest();
             
-            BDTestReportGenerator.Generate();
+            BDTestReportGenerator.GenerateInFolder(FileHelpers.GetUniqueTestOutputFolder());
             
             Assert.That(scenario.CustomTestInformation.First().Print(), Is.EqualTo($"{nameof(TestInformationAttribute)} - Testing 1 Information Attribute"));
-            Assert.That(JsonHelper.GetDynamicJsonObject().SelectToken("$.Scenarios[0].CustomTestInformation[0]").ToString(), Is.EqualTo($"{nameof(TestInformationAttribute)} - Testing 1 Information Attribute"));
+            Assert.That(JsonHelper.GetTestDynamicJsonObject().SelectToken("$.Scenarios[0].CustomTestInformation[0]").ToString(), Is.EqualTo($"{nameof(TestInformationAttribute)} - Testing 1 Information Attribute"));
             Assert.That(scenario.CustomTestInformation[1].Print(), Is.EqualTo($"{nameof(CustomInformationAttribute)} - Testing 2 Information Attributes"));
-            Assert.That(JsonHelper.GetDynamicJsonObject().SelectToken("$.Scenarios[0].CustomTestInformation[1]").ToString(), Is.EqualTo($"{nameof(CustomInformationAttribute)} - Testing 2 Information Attributes"));
+            Assert.That(JsonHelper.GetTestDynamicJsonObject().SelectToken("$.Scenarios[0].CustomTestInformation[1]").ToString(), Is.EqualTo($"{nameof(CustomInformationAttribute)} - Testing 2 Information Attributes"));
         }
     }
 }

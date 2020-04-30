@@ -2,9 +2,10 @@ using System;
 using BDTest.Attributes;
 using BDTest.ReportGenerator;
 using BDTest.Test;
+using BDTest.Tests.Helpers;
 using NUnit.Framework;
 
-namespace BDTest.Tests
+namespace BDTest.Tests.Fixtures
 {
     [Parallelizable(ParallelScope.None)]
     public class ScenarioTextTests : BDTestBase
@@ -23,10 +24,10 @@ namespace BDTest.Tests
                 .Then(() => Console.WriteLine("the attribute should be serialized to the json output"))
                 .BDTest();
             
-            BDTestReportGenerator.Generate();
+            BDTestReportGenerator.GenerateInFolder(FileHelpers.GetUniqueTestOutputFolder());
 
             Assert.That(scenario.GetScenarioText(), Is.EqualTo("My test that does stuff"));
-            Assert.That(JsonHelper.GetDynamicJsonObject().SelectToken("$.Scenarios[0].ScenarioText.Scenario").ToString(), Is.EqualTo("My test that does stuff"));
+            Assert.That(JsonHelper.GetTestDynamicJsonObject().SelectToken("$.Scenarios[0].ScenarioText.Scenario").ToString(), Is.EqualTo("My test that does stuff"));
         }
         
         [Test]
@@ -36,10 +37,10 @@ namespace BDTest.Tests
                 .Then(() => Console.WriteLine("the scenario text should be set to the method name"))
                 .BDTest();
             
-            BDTestReportGenerator.Generate();
+            BDTestReportGenerator.GenerateInFolder(FileHelpers.GetUniqueTestOutputFolder());
 
             Assert.That(scenario.GetScenarioText(), Is.EqualTo("No scenario text"));
-            Assert.That(JsonHelper.GetDynamicJsonObject().SelectToken("$.Scenarios[0].ScenarioText.Scenario").ToString(), Is.EqualTo("No scenario text"));
+            Assert.That(JsonHelper.GetTestDynamicJsonObject().SelectToken("$.Scenarios[0].ScenarioText.Scenario").ToString(), Is.EqualTo("No scenario text"));
         }
         
         [Test]
@@ -49,10 +50,10 @@ namespace BDTest.Tests
                 .Then(() => Console.WriteLine("the scenario text should be set to the method name"))
                 .BDTest();
             
-            BDTestReportGenerator.Generate();
+            BDTestReportGenerator.GenerateInFolder(FileHelpers.GetUniqueTestOutputFolder());
 
             Assert.That(scenario.GetScenarioText(), Is.EqualTo("No Scenario Text with Hyphens"));
-            Assert.That(JsonHelper.GetDynamicJsonObject().SelectToken("$.Scenarios[0].ScenarioText.Scenario").ToString(), Is.EqualTo("No Scenario Text with Hyphens"));
+            Assert.That(JsonHelper.GetTestDynamicJsonObject().SelectToken("$.Scenarios[0].ScenarioText.Scenario").ToString(), Is.EqualTo("No Scenario Text with Hyphens"));
         }
     }
 }

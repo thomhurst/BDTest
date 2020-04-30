@@ -16,21 +16,19 @@ namespace BDTest.ReportGenerator
 {
     public static class BDTestReportGenerator
     {
-        internal static string ResultDirectory => FileLocations.ReportsOutputDirectory;
-
         private static void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
         {
-            File.WriteAllText(Path.Combine(ResultDirectory, "BDTest - Report Exception.txt"), (e.ExceptionObject as Exception)?.StackTrace);
+            File.WriteAllText(Path.Combine(FileLocations.ReportsOutputDirectory, "BDTest - Report Exception.txt"), (e.ExceptionObject as Exception)?.StackTrace);
         }
 
-        public static void Generate()
+        public static void GenerateInFolder(string folderPath)
         {
             AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
 
             CreateReportFolder();
-            CreatePersistentResults();
+            CreatePersistentResults(folderPath);
 
-            if (string.IsNullOrWhiteSpace(ResultDirectory))
+            if (string.IsNullOrWhiteSpace(folderPath))
             {
                 return;
             }
@@ -40,9 +38,9 @@ namespace BDTest.ReportGenerator
             var testTimer = GetTestTimer(scenarios);
 
             // Original File Names
-            var reportPathByStory = Path.Combine(ResultDirectory, FileNames.ReportByStory);
-            var reportPathAllScenarios = Path.Combine(ResultDirectory, FileNames.ReportAllScenarios);
-            var testDataJsonPath = Path.Combine(ResultDirectory, FileNames.TestDataJson);
+            var reportPathByStory = Path.Combine(folderPath, FileNames.ReportByStory);
+            var reportPathAllScenarios = Path.Combine(folderPath, FileNames.ReportAllScenarios);
+            var testDataJsonPath = Path.Combine(folderPath, FileNames.TestDataJson);
 
             DeleteExistingFiles(reportPathByStory, reportPathAllScenarios, testDataJsonPath);
 
@@ -63,24 +61,29 @@ namespace BDTest.ReportGenerator
 
             var jsonData = JsonConvert.SerializeObject(dataToOutput, Formatting.Indented, settings);
             
-            WriteJsonOutput(jsonData);
+            WriteJsonOutput(folderPath, jsonData);
 
             PruneData();
 
-            HtmlReportBuilder.CreateReport(dataToOutput);
+            HtmlReportBuilder.CreateReport(folderPath, dataToOutput);
 
             try
             {
-                if (FileLocations.RawOutputDirectory != FileLocations.ReportsOutputDirectory)
+                if (folderPath != FileLocations.ReportsOutputDirectory || FileLocations.RawOutputDirectory != FileLocations.ReportsOutputDirectory)
                 {
                     CopyFolder.Copy(Path.Combine(FileLocations.RawOutputDirectory, "css"),
-                        Path.Combine(FileLocations.ReportsOutputDirectory, "css"));
+                        Path.Combine(folderPath, "css"));
                 }
             }
             catch (Exception e)
             {
                 Console.Out.WriteLine(e.Message);
             }
+        }
+        
+        public static void Generate()
+        {
+            GenerateInFolder(FileLocations.ReportsOutputDirectory);
         }
 
         private static void CreateReportFolder()
@@ -102,7 +105,7 @@ namespace BDTest.ReportGenerator
             }
 
             var filesOverLimit = Directory.GetFiles(BDTestSettings.PersistentResultsDirectory).OrderBy(File.GetCreationTime).ToList();
-            var count = filesOverLimit.Count();
+            var count = filesOverLimit.Count;
 
             if (count <= BDTestSettings.PersistentFileCountToKeep)
             {
@@ -116,7 +119,7 @@ namespace BDTest.ReportGenerator
             }
         }
 
-        private static void CreatePersistentResults()
+        private static void CreatePersistentResults(string folderPath)
         {
             if (string.IsNullOrWhiteSpace(BDTestSettings.PersistentResultsDirectory))
             {
@@ -129,26 +132,26 @@ namespace BDTest.ReportGenerator
             }
             catch (Exception e)
             {
-                File.WriteAllText(Path.Combine(ResultDirectory, "BDTest - Persistent Directory Error.txt"), e.StackTrace);
+                File.WriteAllText(Path.Combine(folderPath, "BDTest - Persistent Directory Error.txt"), e.StackTrace);
                 BDTestSettings.PersistentResultsDirectory = null;
             }
         }
 
-        private static void WriteJsonOutput(string jsonData)
+        private static void WriteJsonOutput(string folderPath, string jsonData)
         {
             try
             {
-                File.WriteAllText(Path.Combine(ResultDirectory, BDTestSettings.JsonDataFilename ?? FileNames.TestDataJson), jsonData);
+                File.WriteAllText(Path.Combine(folderPath, BDTestSettings.JsonDataFilename ?? FileNames.TestDataJson), jsonData);
 
                 if (!string.IsNullOrWhiteSpace(BDTestSettings.PersistentResultsDirectory))
                 {
-                    File.Copy(Path.Combine(ResultDirectory, BDTestSettings.JsonDataFilename ?? FileNames.TestDataJson),
+                    File.Copy(Path.Combine(folderPath, BDTestSettings.JsonDataFilename ?? FileNames.TestDataJson),
                         Path.Combine(BDTestSettings.PersistentResultsDirectory, FileNames.TestDataJson));
                 }
             }
             catch (Exception e)
             {
-                File.WriteAllText(Path.Combine(ResultDirectory, "BDTest - JSON Write Exception.txt"), e.Message + Environment.NewLine + e.StackTrace);
+                File.WriteAllText(Path.Combine(folderPath, "BDTest - JSON Write Exception.txt"), e.Message + Environment.NewLine + e.StackTrace);
             }
         }
 
@@ -179,7 +182,7 @@ namespace BDTest.ReportGenerator
 
         private static WarningsChecker GetWarnings()
         {
-            var warningsPath = Path.Combine(ResultDirectory, FileNames.Warnings);
+            var warningsPath = Path.Combine(FileLocations.ReportsOutputDirectory, FileNames.Warnings);
 
             return !File.Exists(warningsPath) ? new WarningsChecker(new List<BuildableTest>(), new List<Scenario>()) : JsonConvert.DeserializeObject<WarningsChecker>(File.ReadAllText(warningsPath));
         }

@@ -1,9 +1,10 @@
 using BDTest.Attributes;
 using BDTest.ReportGenerator;
 using BDTest.Test;
+using BDTest.Tests.Helpers;
 using NUnit.Framework;
 
-namespace BDTest.Tests
+namespace BDTest.Tests.Fixtures
 {
     [Parallelizable(ParallelScope.None)]
     public class StepTextTests : BDTestBase
@@ -22,15 +23,15 @@ namespace BDTest.Tests
                 .Then(() => Action3Custom())
                 .BDTest();
             
-            BDTestReportGenerator.Generate();
+            BDTestReportGenerator.GenerateInFolder(FileHelpers.GetUniqueTestOutputFolder());
 
             Assert.That(scenario.Steps[0].StepText, Is.EqualTo("Given I have a custom step 1"));
             Assert.That(scenario.Steps[1].StepText, Is.EqualTo("When my name is Tom Longhurst"));
             Assert.That(scenario.Steps[2].StepText, Is.EqualTo("Then I have a custom step 3"));
             
-            Assert.That(JsonHelper.GetDynamicJsonObject().SelectToken("$.Scenarios[0].Steps[0].StepText").ToString(), Is.EqualTo("Given I have a custom step 1"));
-            Assert.That(JsonHelper.GetDynamicJsonObject().SelectToken("$.Scenarios[0].Steps[1].StepText").ToString(), Is.EqualTo("When my name is Tom Longhurst"));
-            Assert.That(JsonHelper.GetDynamicJsonObject().SelectToken("$.Scenarios[0].Steps[2].StepText").ToString(), Is.EqualTo("Then I have a custom step 3"));
+            Assert.That(JsonHelper.GetTestDynamicJsonObject().SelectToken("$.Scenarios[0].Steps[0].StepText").ToString(), Is.EqualTo("Given I have a custom step 1"));
+            Assert.That(JsonHelper.GetTestDynamicJsonObject().SelectToken("$.Scenarios[0].Steps[1].StepText").ToString(), Is.EqualTo("When my name is Tom Longhurst"));
+            Assert.That(JsonHelper.GetTestDynamicJsonObject().SelectToken("$.Scenarios[0].Steps[2].StepText").ToString(), Is.EqualTo("Then I have a custom step 3"));
         }
         
         [Test]
@@ -46,17 +47,17 @@ namespace BDTest.Tests
                 .And(() => Action3Custom()).WithStepText(() => text3)
                 .BDTest();
             
-            BDTestReportGenerator.Generate();
+            BDTestReportGenerator.GenerateInFolder(FileHelpers.GetUniqueTestOutputFolder());
 
             Assert.That(scenario.Steps[0].StepText, Is.EqualTo("Given " + text1));
             Assert.That(scenario.Steps[1].StepText, Is.EqualTo("When " + text2));
             Assert.That(scenario.Steps[2].StepText, Is.EqualTo("Then " + text3));
             Assert.That(scenario.Steps[3].StepText, Is.EqualTo("And " + text3));
             
-            Assert.That(JsonHelper.GetDynamicJsonObject().SelectToken("$.Scenarios[0].Steps[0].StepText").ToString(), Is.EqualTo("Given " + text1));
-            Assert.That(JsonHelper.GetDynamicJsonObject().SelectToken("$.Scenarios[0].Steps[1].StepText").ToString(), Is.EqualTo("When " + text2));
-            Assert.That(JsonHelper.GetDynamicJsonObject().SelectToken("$.Scenarios[0].Steps[2].StepText").ToString(), Is.EqualTo("Then " + text3));
-            Assert.That(JsonHelper.GetDynamicJsonObject().SelectToken("$.Scenarios[0].Steps[3].StepText").ToString(), Is.EqualTo("And " + text3));
+            Assert.That(JsonHelper.GetTestDynamicJsonObject().SelectToken("$.Scenarios[0].Steps[0].StepText").ToString(), Is.EqualTo("Given " + text1));
+            Assert.That(JsonHelper.GetTestDynamicJsonObject().SelectToken("$.Scenarios[0].Steps[1].StepText").ToString(), Is.EqualTo("When " + text2));
+            Assert.That(JsonHelper.GetTestDynamicJsonObject().SelectToken("$.Scenarios[0].Steps[2].StepText").ToString(), Is.EqualTo("Then " + text3));
+            Assert.That(JsonHelper.GetTestDynamicJsonObject().SelectToken("$.Scenarios[0].Steps[3].StepText").ToString(), Is.EqualTo("And " + text3));
         }
         
         [Test]
@@ -67,15 +68,15 @@ namespace BDTest.Tests
                 .Then(() => Step_3_Without_A_StepTextAttribute_and_Hyphens())
                 .BDTest();
             
-            BDTestReportGenerator.Generate();
+            BDTestReportGenerator.GenerateInFolder(FileHelpers.GetUniqueTestOutputFolder());
 
             Assert.That(scenario.Steps[0].StepText, Is.EqualTo("Given Step 1 without a step text attribute"));
             Assert.That(scenario.Steps[1].StepText, Is.EqualTo("When Step 2 without a step text attribute"));
             Assert.That(scenario.Steps[2].StepText, Is.EqualTo("Then Step 3 Without A StepTextAttribute and Hyphens"));
             
-            Assert.That(JsonHelper.GetDynamicJsonObject().SelectToken("$.Scenarios[0].Steps[0].StepText").ToString(), Is.EqualTo("Given Step 1 without a step text attribute"));
-            Assert.That(JsonHelper.GetDynamicJsonObject().SelectToken("$.Scenarios[0].Steps[1].StepText").ToString(), Is.EqualTo("When Step 2 without a step text attribute"));
-            Assert.That(JsonHelper.GetDynamicJsonObject().SelectToken("$.Scenarios[0].Steps[2].StepText").ToString(), Is.EqualTo("Then Step 3 Without A StepTextAttribute and Hyphens"));
+            Assert.That(JsonHelper.GetTestDynamicJsonObject().SelectToken("$.Scenarios[0].Steps[0].StepText").ToString(), Is.EqualTo("Given Step 1 without a step text attribute"));
+            Assert.That(JsonHelper.GetTestDynamicJsonObject().SelectToken("$.Scenarios[0].Steps[1].StepText").ToString(), Is.EqualTo("When Step 2 without a step text attribute"));
+            Assert.That(JsonHelper.GetTestDynamicJsonObject().SelectToken("$.Scenarios[0].Steps[2].StepText").ToString(), Is.EqualTo("Then Step 3 Without A StepTextAttribute and Hyphens"));
         }
 
         [StepText("I have a custom step 1")]
