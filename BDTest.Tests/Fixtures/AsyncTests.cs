@@ -1,7 +1,9 @@
+using System;
 using System.Diagnostics;
 using System.Threading.Tasks;
 using BDTest.ReportGenerator;
 using BDTest.Test;
+using BDTest.Tests.Extensions;
 using BDTest.Tests.Helpers;
 using NUnit.Framework;
 
@@ -15,12 +17,13 @@ namespace BDTest.Tests.Fixtures
         {
             var stopwatch = Stopwatch.StartNew();
             
-            Given(() => Task.Delay(1000))
+            var scenario = Given(() => Task.Delay(1000))
                 .When(() => Task.Delay(1000))
                 .Then(() => Task.Delay(1000))
                 .BDTest();
-            
-            Assert.That(stopwatch.Elapsed.Seconds, Is.GreaterThanOrEqualTo(3));
+
+            Assert.That(stopwatch.StopAndGetElapsed().Seconds, Is.GreaterThanOrEqualTo(3));
+            Assert.That(scenario.TimeTaken > TimeSpan.FromSeconds(3));
             
             BDTestReportGenerator.GenerateInFolder(FileHelpers.GetUniqueTestOutputFolder());
         }
@@ -30,12 +33,13 @@ namespace BDTest.Tests.Fixtures
         {
             var stopwatch = Stopwatch.StartNew();
             
-            await Given(() => Task.Delay(1000))
+            var scenario = await Given(() => Task.Delay(1000))
                 .When(() => Task.Delay(1000))
                 .Then(() => Task.Delay(1000))
                 .BDTestAsync();
-            
-            Assert.That(stopwatch.Elapsed.Seconds, Is.GreaterThanOrEqualTo(3));
+
+            Assert.That(stopwatch.StopAndGetElapsed().Seconds, Is.GreaterThanOrEqualTo(3));
+            Assert.That(scenario.TimeTaken > TimeSpan.FromSeconds(3));
             
             BDTestReportGenerator.GenerateInFolder(FileHelpers.GetUniqueTestOutputFolder());
         }
@@ -45,11 +49,12 @@ namespace BDTest.Tests.Fixtures
         {
             var stopwatch = Stopwatch.StartNew();
             
-            await Given(() => Task.Delay(1000))
+            var scenario = await Given(() => Task.Delay(1000))
                 .When(() => Task.Delay(1000))
                 .Then(() => Task.Delay(1000));
-            
-            Assert.That(stopwatch.Elapsed.Seconds, Is.GreaterThanOrEqualTo(3));
+
+            Assert.That(stopwatch.StopAndGetElapsed().Seconds, Is.GreaterThanOrEqualTo(3));
+            Assert.That(scenario.TimeTaken > TimeSpan.FromSeconds(3));
             
             BDTestReportGenerator.GenerateInFolder(FileHelpers.GetUniqueTestOutputFolder());
         }

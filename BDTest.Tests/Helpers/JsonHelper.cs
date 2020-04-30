@@ -6,12 +6,6 @@ namespace BDTest.Tests.Helpers
 {
     public class JsonHelper
     {
-        // public static JObject GetDynamicJsonObject()
-        // {
-        //     var jsonText = File.ReadAllText(FileHelpers.GetJsonFilePath());
-        //     return JObject.Load(new JsonTextReader(new StringReader(jsonText)));
-        // }
-        
         public static JObject GetTestDynamicJsonObject()
         {
             var jsonText = File.ReadAllText(FileHelpers.GetUniqueTestJsonFilePath());
