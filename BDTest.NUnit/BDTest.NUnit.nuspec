@@ -36,12 +36,12 @@
             The description can be used in package manager UI. Note that the
             nuget.org gallery uses information you add in the portal. 
         -->
-        <description>A lightweight testing framework</description>
+        <description>An NUnit Extension for BDTest</description>
 
-        <summary>A lightweight testing framework</summary>
+        <summary>An NUnit Extension for BDTest</summary>
 
         <!-- Copyright information -->
-        <copyright>Copyright ©2019 Tom Longhurst</copyright>
+        <copyright>Copyright ©2020 Tom Longhurst</copyright>
 
         <!-- Tags appear in the gallery and can be used for tag searches -->
         <tags>test tdd bdd testing given when then</tags>

@@ -35,6 +35,12 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Update="BDTest.ReportGenerator.props">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
     <None Include="$(ProjectDir)css\**" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
