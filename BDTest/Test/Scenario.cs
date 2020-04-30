@@ -143,6 +143,7 @@ namespace BDTest.Test
                 catch (NotImplementedException)
                 {
                     Status = Status.NotImplemented;
+                    throw;
                 }
                 catch (Exception e)
                 {
