@@ -15,7 +15,7 @@
         -->
         <owners>Tom Longhurst</owners>
 
-        <title>BDTest - A Testing Framework</title>
+        <title>BDTest - A Behaviour Driven Testing Framework</title>
 
         <!-- Project URL provides a link for the gallery -->
         <projectUrl>http://github.com/thomhurst/BDTest</projectUrl>
@@ -36,12 +36,12 @@
             The description can be used in package manager UI. Note that the
             nuget.org gallery uses information you add in the portal. 
         -->
-        <description>A lightweight testing framework</description>
+        <description>A Behaviour Driven Testing Framework</description>
 
-        <summary>A lightweight testing framework</summary>
+        <summary>A Behaviour Driven Testing Framework</summary>
 
         <!-- Copyright information -->
-        <copyright>Copyright ©2019 Tom Longhurst</copyright>
+        <copyright>Copyright ©2020 Tom Longhurst</copyright>
 
         <!-- Tags appear in the gallery and can be used for tag searches -->
         <tags>test tdd bdd testing given when then</tags>
