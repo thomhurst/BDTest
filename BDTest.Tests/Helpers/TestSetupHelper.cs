@@ -1,4 +1,5 @@
 using BDTest.Maps;
+using BDTest.Settings;
 
 namespace BDTest.Tests.Helpers
 {

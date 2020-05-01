@@ -1,4 +1,5 @@
 using BDTest.ReportGenerator;
+using BDTest.Settings;
 using NUnit.Framework;
 
 namespace BDTest.Example

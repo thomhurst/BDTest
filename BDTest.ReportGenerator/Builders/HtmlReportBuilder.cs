@@ -9,6 +9,7 @@ using BDTest.Output;
 using BDTest.Paths;
 using BDTest.ReportGenerator.Helpers;
 using BDTest.ReportGenerator.Models;
+using BDTest.Settings;
 using BDTest.Test;
 using HtmlTags;
 using Newtonsoft.Json;
