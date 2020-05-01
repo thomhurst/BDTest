@@ -8,12 +8,12 @@ namespace BDTest.Attributes
     [AttributeUsage(AttributeTargets.Method, AllowMultiple = true)]
     public class TestInformationAttribute : Attribute
     {
-        private readonly string _information;
-        public string Print() => $"{GetType().Name} - {_information}";
+        public string Information { get; }
+        public string Print() => $"{GetType().Name} - {Information}";
 
         public TestInformationAttribute(string information)
         {
-            _information = information;
+            Information = information;
         }
     }
 }

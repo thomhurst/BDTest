@@ -13,13 +13,13 @@ namespace BDTest.Helpers.JsonConverters
                 return;
             }
             
-            writer.WriteValue(value.Print());
+            writer.WriteValue(value.Information);
         }
 
         public override TestInformationAttribute ReadJson(JsonReader reader, Type objectType, TestInformationAttribute existingValue,
             bool hasExistingValue, JsonSerializer serializer)
         {
-            throw new NotImplementedException();
+            return new TestInformationAttribute(reader.Value?.ToString());
         }
     }
 }
