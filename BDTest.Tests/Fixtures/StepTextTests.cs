@@ -16,10 +16,29 @@ namespace BDTest.Tests.Fixtures
         }
 
         [Test]
-        public void CustomStepTexts()
+        public void CustomStepTexts_ConstantArgumentValue()
         {
             var scenario = Given(() => Action1Custom())
                 .When(() => StepThatPrintsMyName("Tom", "Longhurst"))
+                .Then(() => Action3Custom())
+                .BDTest();
+            
+            BDTestReportGenerator.GenerateInFolder(FileHelpers.GetUniqueTestOutputFolder());
+
+            Assert.That(scenario.Steps[0].StepText, Is.EqualTo("Given I have a custom step 1"));
+            Assert.That(scenario.Steps[1].StepText, Is.EqualTo("When my name is Tom Longhurst"));
+            Assert.That(scenario.Steps[2].StepText, Is.EqualTo("Then I have a custom step 3"));
+            
+            Assert.That(JsonHelper.GetTestDynamicJsonObject().SelectToken("$.Scenarios[0].Steps[0].StepText").ToString(), Is.EqualTo("Given I have a custom step 1"));
+            Assert.That(JsonHelper.GetTestDynamicJsonObject().SelectToken("$.Scenarios[0].Steps[1].StepText").ToString(), Is.EqualTo("When my name is Tom Longhurst"));
+            Assert.That(JsonHelper.GetTestDynamicJsonObject().SelectToken("$.Scenarios[0].Steps[2].StepText").ToString(), Is.EqualTo("Then I have a custom step 3"));
+        }
+        
+        [TestCase("Tom", "Longhurst")]
+        public void CustomStepTexts_DynamicArgumentValue(string firstName, string lastName)
+        {
+            var scenario = Given(() => Action1Custom())
+                .When(() => StepThatPrintsMyName(firstName, lastName))
                 .Then(() => Action3Custom())
                 .BDTest();
             
