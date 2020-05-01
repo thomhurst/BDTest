@@ -7,6 +7,7 @@ using BDTest.Exceptions;
 using BDTest.Maps;
 using BDTest.Output;
 using BDTest.Reporters;
+using BDTest.Settings;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 
@@ -143,6 +144,16 @@ namespace BDTest.Test
                 catch (NotImplementedException)
                 {
                     Status = Status.NotImplemented;
+                    throw;
+                }
+                catch (Exception e) when (BDTestSettings.CustomExceptionSettings.SuccessExceptionTypes.Contains(e.GetType()))
+                {
+                    Status = Status.Passed;
+                    throw;
+                }
+                catch (Exception e) when (BDTestSettings.CustomExceptionSettings.InconclusiveExceptionTypes.Contains(e.GetType()))
+                {
+                    Status = Status.Inconclusive;
                     throw;
                 }
                 catch (Exception e)

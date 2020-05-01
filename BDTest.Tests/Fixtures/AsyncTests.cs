@@ -17,9 +17,9 @@ namespace BDTest.Tests.Fixtures
         {
             var stopwatch = Stopwatch.StartNew();
             
-            var scenario = Given(() => Task.Delay(1000))
-                .When(() => Task.Delay(1000))
-                .Then(() => Task.Delay(1000))
+            var scenario = Given(() => Task.Delay(1250))
+                .When(() => Task.Delay(1250))
+                .Then(() => Task.Delay(1250))
                 .BDTest();
 
             Assert.That(stopwatch.StopAndGetElapsed().Seconds, Is.GreaterThanOrEqualTo(3));
@@ -33,9 +33,9 @@ namespace BDTest.Tests.Fixtures
         {
             var stopwatch = Stopwatch.StartNew();
             
-            var scenario = await Given(() => Task.Delay(1000))
-                .When(() => Task.Delay(1000))
-                .Then(() => Task.Delay(1000))
+            var scenario = await Given(() => Task.Delay(1250))
+                .When(() => Task.Delay(1250))
+                .Then(() => Task.Delay(1250))
                 .BDTestAsync();
 
             Assert.That(stopwatch.StopAndGetElapsed().Seconds, Is.GreaterThanOrEqualTo(3));
@@ -49,9 +49,9 @@ namespace BDTest.Tests.Fixtures
         {
             var stopwatch = Stopwatch.StartNew();
             
-            var scenario = await Given(() => Task.Delay(1000))
-                .When(() => Task.Delay(1000))
-                .Then(() => Task.Delay(1000));
+            var scenario = await Given(() => Task.Delay(1250))
+                .When(() => Task.Delay(1250))
+                .Then(() => Task.Delay(1250));
 
             Assert.That(stopwatch.StopAndGetElapsed().Seconds, Is.GreaterThanOrEqualTo(3));
             Assert.That(scenario.TimeTaken > TimeSpan.FromSeconds(3));

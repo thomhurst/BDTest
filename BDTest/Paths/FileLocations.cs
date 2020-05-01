@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Reflection;
+using BDTest.Settings;
 
 namespace BDTest.Paths
 {

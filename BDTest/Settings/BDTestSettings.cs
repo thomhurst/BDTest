@@ -1,9 +1,8 @@
 ﻿using System;
-using System.Collections.Concurrent;
 
 // ReSharper disable UnusedAutoPropertyAccessor.Global
 
-namespace BDTest
+namespace BDTest.Settings
 {
     public static class BDTestSettings
     {
@@ -11,7 +10,7 @@ namespace BDTest
 
         public static DebugSettings Debug { get; } = new DebugSettings();
         
-        public static ConcurrentBag<Type> SuccessExceptionTypes { get; } = new ConcurrentBag<Type>();
+        public static CustomExceptionSettings CustomExceptionSettings { get; } = new CustomExceptionSettings();
 
         public static string PersistentResultsDirectory { get; set; }
         public static DateTime PersistentResultsCompareStartTime { get; set; } = DateTime.MinValue;
@@ -24,10 +23,5 @@ namespace BDTest
         public static string FlakinessReportHtmlFilename { get; set; }
         public static string TestTimesReportHtmlFilename { get; set; }
         public static string JsonDataFilename { get; set; }
-    }
-
-    public class DebugSettings
-    {
-        public bool ShouldSkipWhenStep { get; set; }
     }
 }

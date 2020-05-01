@@ -9,6 +9,7 @@ using BDTest.ReportGenerator.Builders;
 using BDTest.ReportGenerator.Helpers;
 using BDTest.ReportGenerator.Models;
 using BDTest.ReportGenerator.Utils;
+using BDTest.Settings;
 using BDTest.Test;
 using Newtonsoft.Json;
 

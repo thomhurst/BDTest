@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using BDTest.Exceptions;
 using BDTest.Helpers;
 using BDTest.Output;
+using BDTest.Settings;
 using BDTest.Test.Steps;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
@@ -90,7 +91,7 @@ namespace BDTest.Test
                         Status = Status.SkippedDueToDebugSettings;
                         return;
                     }
-                    
+
                     await Runnable.Run();
                     Status = Status.Passed;
                 }
@@ -100,18 +101,21 @@ namespace BDTest.Test
                     Exception = e;
                     throw;
                 }
+                catch (Exception e) when (BDTestSettings.CustomExceptionSettings.SuccessExceptionTypes.Contains(e.GetType()))
+                {
+                    Status = Status.Passed;
+                    throw;
+                }
+                catch (Exception e) when (BDTestSettings.CustomExceptionSettings.InconclusiveExceptionTypes.Contains(e.GetType()))
+                {
+                    Status = Status.Inconclusive;
+                    throw;
+                }
                 catch (Exception e)
                 {
-                    if (BDTestSettings.SuccessExceptionTypes.Contains(e.GetType()))
-                    {
-                        Status = Status.Passed;
-                    }
-                    else
-                    {
-                        Status = Status.Failed;
-                        Exception = e;
-                        throw;
-                    }
+                    Status = Status.Failed;
+                    Exception = e;
+                    throw;
                 }
                 finally
                 {

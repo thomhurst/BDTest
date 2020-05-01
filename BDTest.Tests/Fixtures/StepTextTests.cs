@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using BDTest.Attributes;
 using BDTest.ReportGenerator;
 using BDTest.Test;
@@ -16,10 +18,29 @@ namespace BDTest.Tests.Fixtures
         }
 
         [Test]
-        public void CustomStepTexts()
+        public void CustomStepTexts_ConstantArgumentValue()
         {
             var scenario = Given(() => Action1Custom())
                 .When(() => StepThatPrintsMyName("Tom", "Longhurst"))
+                .Then(() => Action3Custom())
+                .BDTest();
+            
+            BDTestReportGenerator.GenerateInFolder(FileHelpers.GetUniqueTestOutputFolder());
+
+            Assert.That(scenario.Steps[0].StepText, Is.EqualTo("Given I have a custom step 1"));
+            Assert.That(scenario.Steps[1].StepText, Is.EqualTo("When my name is Tom Longhurst"));
+            Assert.That(scenario.Steps[2].StepText, Is.EqualTo("Then I have a custom step 3"));
+            
+            Assert.That(JsonHelper.GetTestDynamicJsonObject().SelectToken("$.Scenarios[0].Steps[0].StepText").ToString(), Is.EqualTo("Given I have a custom step 1"));
+            Assert.That(JsonHelper.GetTestDynamicJsonObject().SelectToken("$.Scenarios[0].Steps[1].StepText").ToString(), Is.EqualTo("When my name is Tom Longhurst"));
+            Assert.That(JsonHelper.GetTestDynamicJsonObject().SelectToken("$.Scenarios[0].Steps[2].StepText").ToString(), Is.EqualTo("Then I have a custom step 3"));
+        }
+        
+        [TestCase("Tom", "Longhurst")]
+        public void CustomStepTexts_DynamicArgumentValue(string firstName, string lastName)
+        {
+            var scenario = Given(() => Action1Custom())
+                .When(() => StepThatPrintsMyName(firstName, lastName))
                 .Then(() => Action3Custom())
                 .BDTest();
             
@@ -77,6 +98,40 @@ namespace BDTest.Tests.Fixtures
             Assert.That(JsonHelper.GetTestDynamicJsonObject().SelectToken("$.Scenarios[0].Steps[0].StepText").ToString(), Is.EqualTo("Given Step 1 without a step text attribute"));
             Assert.That(JsonHelper.GetTestDynamicJsonObject().SelectToken("$.Scenarios[0].Steps[1].StepText").ToString(), Is.EqualTo("When Step 2 without a step text attribute"));
             Assert.That(JsonHelper.GetTestDynamicJsonObject().SelectToken("$.Scenarios[0].Steps[2].StepText").ToString(), Is.EqualTo("Then Step 3 Without A StepTextAttribute and Hyphens"));
+        }
+        
+        [Test]
+        public void FuncStepTextTest()
+        {
+            var scenario = Given(() => Console.WriteLine("I have a func that returns a strring"))
+                    .When(() => FuncReturningStepText(() => "Blah"))
+                    .Then(() => Console.WriteLine("the steptext should correctly have the func response"))
+                    .BDTest();
+            
+            Assert.That(scenario.Steps[1].StepText, Is.EqualTo("When the func returns: Blah"));
+        }
+        
+        [Test]
+        public void WithStepTextList()
+        {
+            var scenario = Given(() => Console.WriteLine("Empty Step"))
+                .When(() => Console.WriteLine("Empty Step"))
+                .Then(() => StepWithListType(new List<string> {"Blah1", "Blah2", "Blah3"}))
+                .BDTest();
+            
+            Assert.That(scenario.Steps[2].StepText, Is.EqualTo("Then the step text can display the list Blah1, Blah2, Blah3"));
+        }
+
+        [StepText("the func returns: {0}")]
+        public void FuncReturningStepText(Func<string> func)
+        {
+            
+        }
+        
+        [StepText("the step text can display the list {0}")]
+        public void StepWithListType(IList<string> list)
+        {
+            
         }
 
         [StepText("I have a custom step 1")]

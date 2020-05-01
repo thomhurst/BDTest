@@ -19,9 +19,9 @@ namespace BDTest.Tests.Helpers
         public static string GetUniqueTestOutputFolder()
         {
             return GetOutputFolder(
-                "BDTest-"
-                + TestContext.CurrentContext.Test.FullName
-                + TestContext.CurrentContext.Test.ID
+                MakeValidFileName("BDTest-"
+                                  + TestContext.CurrentContext.Test.FullName
+                                  + TestContext.CurrentContext.Test.ID)
             );
         }
         
@@ -35,6 +35,14 @@ namespace BDTest.Tests.Helpers
             Directory.CreateDirectory(outputFolder);
 
             return outputFolder;
+        }
+        
+        private static string MakeValidFileName(string name)
+        {
+            string invalidChars = System.Text.RegularExpressions.Regex.Escape( new string(Path.GetInvalidFileNameChars()));
+            string invalidRegStr = string.Format( @"([{0}]*\.+$)|([{0}]+)", invalidChars);
+
+            return System.Text.RegularExpressions.Regex.Replace( name, invalidRegStr, "_");
         }
     }
 }

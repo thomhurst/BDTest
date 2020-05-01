@@ -1,4 +1,5 @@
 ﻿using System.Linq;
+using BDTest.Settings;
 using BDTest.Test;
 using NUnit.Framework;
 using NUnitTestContext = NUnit.Framework.TestContext;
@@ -6,16 +7,21 @@ using NUnitTestContext = NUnit.Framework.TestContext;
 namespace BDTest.NUnit
 {
     [TestFixture]
-    public abstract class NUnitBDTestBase<TContext> : ContextBDTestBase<TContext> where TContext : class, new()
+    public abstract class NUnitBDTestBase<TContext> : AbstractContextBDTestBase<TContext> where TContext : class, new()
     {
         protected override string TestId => NUnitTestContext.CurrentContext.Test.ID;
 
         [OneTimeSetUp]
-        public void AllowAssertPassException()
+        public void SetupNUnitExceptions()
         {
-            if (!BDTestSettings.SuccessExceptionTypes.Contains(typeof(SuccessException)))
+            if (!BDTestSettings.CustomExceptionSettings.SuccessExceptionTypes.Contains(typeof(SuccessException)))
             {
-                BDTestSettings.SuccessExceptionTypes.Add(typeof(SuccessException));
+                BDTestSettings.CustomExceptionSettings.SuccessExceptionTypes.Add(typeof(SuccessException));
+            }
+            
+            if (!BDTestSettings.CustomExceptionSettings.InconclusiveExceptionTypes.Contains(typeof(IgnoreException)))
+            {
+                BDTestSettings.CustomExceptionSettings.InconclusiveExceptionTypes.Add(typeof(IgnoreException));
             }
         }
 
