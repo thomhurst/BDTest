@@ -3,7 +3,7 @@ using System.Runtime.CompilerServices;
 
 namespace BDTest.Test
 {
-    public abstract class ContextBDTestBase<TContext> : BDTestBase where TContext : class, new()
+    public abstract class AbstractContextBDTestBase<TContext> : BDTestBase where TContext : class, new()
     {
         private readonly ConditionalWeakTable<string, TContext> _contexts = new ConditionalWeakTable<string, TContext>();
 
@@ -43,7 +43,5 @@ namespace BDTest.Test
         }
         
         public Action<TContext> ContextAmendment { get; set; }
-        
-        
     }
 }

@@ -6,7 +6,7 @@ using NUnitTestContext = NUnit.Framework.TestContext;
 namespace BDTest.NUnit
 {
     [TestFixture]
-    public abstract class NUnitBDTestBase<TContext> : ContextBDTestBase<TContext> where TContext : class, new()
+    public abstract class NUnitBDTestBase<TContext> : AbstractContextBDTestBase<TContext> where TContext : class, new()
     {
         protected override string TestId => NUnitTestContext.CurrentContext.Test.ID;
 
