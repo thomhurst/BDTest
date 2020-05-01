@@ -1,8 +1,10 @@
 ﻿using System;
+using BDTest.Helpers.JsonConverters;
 using Newtonsoft.Json;
 
 namespace BDTest.Test
 {
+    [JsonConverter(typeof(ScenarioTextConverter))]
     public class ScenarioText : IEquatable<ScenarioText>
     {
         [JsonProperty] public string Scenario { get; private set; }

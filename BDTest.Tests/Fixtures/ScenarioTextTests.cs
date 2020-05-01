@@ -27,7 +27,7 @@ namespace BDTest.Tests.Fixtures
             BDTestReportGenerator.GenerateInFolder(FileHelpers.GetUniqueTestOutputFolder());
 
             Assert.That(scenario.GetScenarioText(), Is.EqualTo("My test that does stuff"));
-            Assert.That(JsonHelper.GetTestDynamicJsonObject().SelectToken("$.Scenarios[0].ScenarioText.Scenario").ToString(), Is.EqualTo("My test that does stuff"));
+            Assert.That(JsonHelper.GetTestDynamicJsonObject().SelectToken("$.Scenarios[0].ScenarioText").ToString(), Is.EqualTo("My test that does stuff"));
         }
         
         [Test]
@@ -40,7 +40,7 @@ namespace BDTest.Tests.Fixtures
             BDTestReportGenerator.GenerateInFolder(FileHelpers.GetUniqueTestOutputFolder());
 
             Assert.That(scenario.GetScenarioText(), Is.EqualTo("No scenario text"));
-            Assert.That(JsonHelper.GetTestDynamicJsonObject().SelectToken("$.Scenarios[0].ScenarioText.Scenario").ToString(), Is.EqualTo("No scenario text"));
+            Assert.That(JsonHelper.GetTestDynamicJsonObject().SelectToken("$.Scenarios[0].ScenarioText").ToString(), Is.EqualTo("No scenario text"));
         }
         
         [Test]
@@ -53,7 +53,7 @@ namespace BDTest.Tests.Fixtures
             BDTestReportGenerator.GenerateInFolder(FileHelpers.GetUniqueTestOutputFolder());
 
             Assert.That(scenario.GetScenarioText(), Is.EqualTo("No Scenario Text with Hyphens"));
-            Assert.That(JsonHelper.GetTestDynamicJsonObject().SelectToken("$.Scenarios[0].ScenarioText.Scenario").ToString(), Is.EqualTo("No Scenario Text with Hyphens"));
+            Assert.That(JsonHelper.GetTestDynamicJsonObject().SelectToken("$.Scenarios[0].ScenarioText").ToString(), Is.EqualTo("No Scenario Text with Hyphens"));
         }
     }
 }

@@ -1,8 +1,10 @@
 ﻿using System;
+using BDTest.Helpers.JsonConverters;
 using Newtonsoft.Json;
 
 namespace BDTest.Test
 {
+    [JsonConverter(typeof(StoryTextConverter))]
     public class StoryText : IEquatable<StoryText>
     {
         [JsonProperty]

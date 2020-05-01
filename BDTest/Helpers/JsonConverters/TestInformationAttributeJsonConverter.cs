@@ -2,7 +2,7 @@ using System;
 using BDTest.Attributes;
 using Newtonsoft.Json;
 
-namespace BDTest.Helpers
+namespace BDTest.Helpers.JsonConverters
 {
     public class TestInformationAttributeJsonConverter : JsonConverter<TestInformationAttribute>
     {
