@@ -12,7 +12,7 @@ namespace BDTest.Attributes
     /// <para>[StepText("This is your custom step text. {0} is the first parameter, {1} is the second. etc.")]</para>
     /// <para>public void This_Is_My_Step_Method(string param1, string param2) { ... }</para>
     /// </summary>
-
+    
     [AttributeUsage(AttributeTargets.Method)]
     public class StepTextAttribute : Attribute
     {
