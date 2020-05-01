@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using BDTest.Attributes;
 using BDTest.ReportGenerator;
 using BDTest.Test;
@@ -109,9 +110,26 @@ namespace BDTest.Tests.Fixtures
             
             Assert.That(scenario.Steps[1].StepText, Is.EqualTo("When the func returns: Blah"));
         }
+        
+        [Test]
+        public void WithStepTextList()
+        {
+            var scenario = Given(() => Console.WriteLine("Empty Step"))
+                .When(() => Console.WriteLine("Empty Step"))
+                .Then(() => StepWithListType(new List<string> {"Blah1", "Blah2", "Blah3"}))
+                .BDTest();
+            
+            Assert.That(scenario.Steps[2].StepText, Is.EqualTo("Then the step text can display the list Blah1, Blah2, Blah3"));
+        }
 
         [StepText("the func returns: {0}")]
         public void FuncReturningStepText(Func<string> func)
+        {
+            
+        }
+        
+        [StepText("the step text can display the list {0}")]
+        public void StepWithListType(IList<string> list)
         {
             
         }
