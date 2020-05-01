@@ -16,11 +16,11 @@ namespace BDTest.Tests.Fixtures
         {
             try
             {
-                var scenario = Given(() => Console.WriteLine("NUnit throws a success exception"))
+                Given(() => Console.WriteLine("NUnit throws a success exception"))
                     .When(() => Assert.Pass())
                     .Then(() => Console.WriteLine("the test has passed"))
                     .BDTest();
-            
+
                 Assert.Fail("An exception should be thrown to stop us getting here!");
             }
             catch (SuccessException)
@@ -49,8 +49,6 @@ namespace BDTest.Tests.Fixtures
                 var scenario = TestHolder.Scenarios.First();
                 Assert.That(scenario.Status, Is.EqualTo(Status.Passed));
             }
-            
-            
         }
 
         private void ThrowException()
