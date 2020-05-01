@@ -232,7 +232,7 @@ namespace TestTester
                     .BDTest());
         }
 
-        [StepText("Text with a function returning {0}")]
+        [StepText("Text is: {0}")]
         public void FuncReturnsStepTextCorrectly(Func<string> func)
         {
             

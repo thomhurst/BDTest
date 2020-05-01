@@ -1,3 +1,4 @@
+using System;
 using BDTest.Attributes;
 using BDTest.ReportGenerator;
 using BDTest.Test;
@@ -96,6 +97,23 @@ namespace BDTest.Tests.Fixtures
             Assert.That(JsonHelper.GetTestDynamicJsonObject().SelectToken("$.Scenarios[0].Steps[0].StepText").ToString(), Is.EqualTo("Given Step 1 without a step text attribute"));
             Assert.That(JsonHelper.GetTestDynamicJsonObject().SelectToken("$.Scenarios[0].Steps[1].StepText").ToString(), Is.EqualTo("When Step 2 without a step text attribute"));
             Assert.That(JsonHelper.GetTestDynamicJsonObject().SelectToken("$.Scenarios[0].Steps[2].StepText").ToString(), Is.EqualTo("Then Step 3 Without A StepTextAttribute and Hyphens"));
+        }
+        
+        [Test]
+        public void FuncStepTextTest()
+        {
+            var scenario = Given(() => Console.WriteLine("I have a func that returns a strring"))
+                    .When(() => FuncReturningStepText(() => "Blah"))
+                    .Then(() => Console.WriteLine("the steptext should correctly have the func response"))
+                    .BDTest();
+            
+            Assert.That(scenario.Steps[1].StepText, Is.EqualTo("When the func returns: Blah"));
+        }
+
+        [StepText("the func returns: {0}")]
+        public void FuncReturningStepText(Func<string> func)
+        {
+            
         }
 
         [StepText("I have a custom step 1")]
