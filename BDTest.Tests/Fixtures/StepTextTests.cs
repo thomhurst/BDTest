@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using BDTest.Attributes;
 using BDTest.ReportGenerator;
+using BDTest.Settings;
 using BDTest.Test;
 using BDTest.Tests.Helpers;
 using NUnit.Framework;
@@ -120,6 +121,25 @@ namespace BDTest.Tests.Fixtures
                 .BDTest();
             
             Assert.That(scenario.Steps[2].StepText, Is.EqualTo("Then the step text can display the list Blah1, Blah2, Blah3"));
+        }
+        
+        [Test]
+        public void WithCustomStepTextStringConverter()
+        {
+            BDTestSettings.CustomStringConverters.Add(new CustomClassToStepTextStringStringConverter());
+            
+            var scenario = Given(() => Console.WriteLine("Empty Step"))
+                .When(() => Console.WriteLine("Empty Step"))
+                .Then(() => StepWithStringConverterType(new CustomClassToStepTextString()))
+                .BDTest();
+            
+            Assert.That(scenario.Steps[2].StepText, Is.EqualTo("Then the text is 123..................4....................................5"));
+        }
+        
+        [StepText("the text is {0}")]
+        public void StepWithStringConverterType(CustomClassToStepTextString obj)
+        {
+            
         }
 
         [StepText("the func returns: {0}")]
