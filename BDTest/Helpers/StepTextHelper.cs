@@ -4,6 +4,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
 using BDTest.Attributes;
+using BDTest.Settings;
 using Humanizer;
 
 namespace BDTest.Helpers
@@ -87,6 +88,18 @@ namespace BDTest.Helpers
                 if (compiledExpression == null)
                 {
                     return "null";
+                }
+
+                var stepTextStringConverter = BDTestSettings.CustomStringConverters
+                    .FirstOrDefault(type => 
+                        type.GetType().GetInterfaces().FirstOrDefault()?.Name.StartsWith("IStepTextStringConverter") == true 
+                        && type.GetType().GetInterfaces().FirstOrDefault()?.GetGenericArguments().FirstOrDefault() == compiledExpression.GetType());
+                
+                if (stepTextStringConverter != null)
+                {
+                    var method = stepTextStringConverter.GetType().GetMethod("ConvertToString");
+                    var expressionValue = method.Invoke(stepTextStringConverter, new[] {compiledExpression}) as string;
+                    return expressionValue;
                 }
 
                 if (TypeHelper.IsFuncOrAction(compiledExpression.GetType()))

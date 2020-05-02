@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 // ReSharper disable UnusedAutoPropertyAccessor.Global
 
@@ -9,6 +10,8 @@ namespace BDTest.Settings
         public static bool InterceptConsoleOutput { get; set; } = true;
 
         public static DebugSettings Debug { get; } = new DebugSettings();
+        
+        public static List<object> CustomStringConverters { get; } = new List<object>();
         
         public static CustomExceptionSettings CustomExceptionSettings { get; } = new CustomExceptionSettings();
 
