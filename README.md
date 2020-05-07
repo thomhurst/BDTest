@@ -21,10 +21,13 @@ BDTest is a testing and reporting framework for .NET
 
 #### Why?
 I worked on some projects that had SpecFlow tests, and I had a few problems with it:
+
 - Hard to debug - Exception stacktraces took you to horrible dynamically generated classes
 - IDE Support / Plugins - I didn't use Visual Studio, and so I didn't have proper support for specflow  
 - Just generally hard to navigate - Especially with no IDE support, so I couldn't go to step implementations automatically!
 - Felt slow and bloated
+
+So think of this as a code-based version of SpecFlow.
 
 #### What next?
 
