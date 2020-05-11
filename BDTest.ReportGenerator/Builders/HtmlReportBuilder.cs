@@ -18,6 +18,7 @@ namespace BDTest.ReportGenerator.Builders
 {
     public class HtmlReportBuilder
     {
+        private readonly string _folderPath;
         private readonly TestTimer _testTimer;
         private readonly List<Scenario> _scenarios;
         private readonly List<string> _stories;
@@ -42,6 +43,7 @@ namespace BDTest.ReportGenerator.Builders
 
         internal HtmlReportBuilder(string folderPath, DataOutputModel dataOutputModel)
         {
+            _folderPath = folderPath;
             _scenarios = dataOutputModel.Scenarios;
             _stories = _scenarios.Select(scenario => scenario.GetStoryText()).Distinct().ToList();
             _testTimer = dataOutputModel.TestTimer;
@@ -769,7 +771,7 @@ namespace BDTest.ReportGenerator.Builders
             {
                 new HtmlTag("script").Attr("type","text/javascript").Attr("src", "./css/jquery-3.3.1.min.js"),
                 new HtmlTag("script").Attr("type","text/javascript").Attr("src", "./css/checkbox_toggle_js.js"),
-                new HtmlTag("script").Attr("type", "text/javascript").AppendHtml(JavascriptStringHelpers.LoadJavascriptChartsAsync(BuildChartJavascript(storiesCount)))
+                new HtmlTag("script").Attr("type", "text/javascript").AppendHtml(JavascriptStringHelpers.LoadJavascriptChartsAsync(BuildChartJavascript(storiesCount), _folderPath))
             };
 
             return list.ToArray();
