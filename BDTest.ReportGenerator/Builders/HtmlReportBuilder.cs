@@ -18,6 +18,7 @@ namespace BDTest.ReportGenerator.Builders
 {
     public class HtmlReportBuilder
     {
+        private readonly string _folderPath;
         private readonly TestTimer _testTimer;
         private readonly List<Scenario> _scenarios;
         private readonly List<string> _stories;
@@ -33,7 +34,7 @@ namespace BDTest.ReportGenerator.Builders
         private const string TimeTag = "time";
 
         private int _storiesBuiltCounter;
-        private readonly WarningsChecker _warnings;
+        private readonly List<BuildableTest> _notRun;
 
         internal static HtmlReportBuilder CreateReport(string folderPath, DataOutputModel dataOutputModel)
         {
@@ -42,10 +43,11 @@ namespace BDTest.ReportGenerator.Builders
 
         internal HtmlReportBuilder(string folderPath, DataOutputModel dataOutputModel)
         {
+            _folderPath = folderPath;
             _scenarios = dataOutputModel.Scenarios;
             _stories = _scenarios.Select(scenario => scenario.GetStoryText()).Distinct().ToList();
             _testTimer = dataOutputModel.TestTimer;
-            _warnings = dataOutputModel.Warnings;
+            _notRun = dataOutputModel.NotRun;
             CreateFlakinessReport(folderPath);
             CreateTestTimesComparisonReport(folderPath);
             CreateReportWithoutStories(folderPath);
@@ -311,29 +313,37 @@ namespace BDTest.ReportGenerator.Builders
 
         private HtmlTag BuildWarnings()
         {
-            var warningsNonExecutedTests = _warnings.NonExecutedTests.ToList();
+            var warningsNonExecutedTests = _notRun;
             if (!warningsNonExecutedTests.Any())
             {
                 return HtmlTag.Empty();
             }
 
-            return new HtmlTag("details").Append(
-                new HtmlTag("summary").AddClass("canToggle").AppendText("Tests Not Executed"),
-                new HtmlTag("p").Append(
-                    new HtmlTag("table").Append(
-                        new HtmlTag("thead").Append(
-                            new HtmlTag("tr").Append(
-                                HtmlReportPrebuilt.StoryHeader,
-                                HtmlReportPrebuilt.ScenarioHeader,
-                                new HtmlTag("th").AppendText("Parameters")
-                            )
-                        ),
-                        new HtmlTag("tbody").Append(
-                            warningsNonExecutedTests.Select(it =>
-                                new HtmlTag("tr").Append(
-                                    new HtmlTag("td").AppendText(it.GetStoryText()),
-                                    new HtmlTag("td").AppendText(it.GetScenarioText()),
-                                    new HtmlTag("td").Append(it.TestDetails.Parameters?.Select(parameterName => new HtmlTag("div").AppendText(parameterName)) ?? new List<HtmlTag> { HtmlTag.Empty() })
+            return new BrTag().Append(
+                new HtmlTag("div").AddClass("box").AddClass("box").AddClass("warnings").Append(
+                    new HtmlTag("h2").AppendText("Warnings").AddClass("strong-text"),
+                    new HtmlTag("details").Append(
+                        new HtmlTag("summary").AddClass("canToggle").AppendText("Tests Not Executed"),
+                        new HtmlTag("p").Append(
+                            new HtmlTag("table").Append(
+                                new HtmlTag("thead").Append(
+                                    new HtmlTag("tr").Append(
+                                        HtmlReportPrebuilt.StoryHeader,
+                                        HtmlReportPrebuilt.ScenarioHeader,
+                                        new HtmlTag("th").AppendText("Parameters")
+                                    )
+                                ),
+                                new HtmlTag("tbody").Append(
+                                    warningsNonExecutedTests.Select(it =>
+                                        new HtmlTag("tr").Append(
+                                            new HtmlTag("td").AppendText(it.GetStoryText()),
+                                            new HtmlTag("td").AppendText(it.GetScenarioText()),
+                                            new HtmlTag("td").Append(
+                                                it.TestDetails.Parameters?.Select(parameterName =>
+                                                    new HtmlTag("div").AppendText(parameterName)) ??
+                                                new List<HtmlTag> {HtmlTag.Empty()})
+                                        )
+                                    )
                                 )
                             )
                         )
@@ -615,11 +625,10 @@ namespace BDTest.ReportGenerator.Builders
         {
             return new[]
             {
+                new HtmlTag("link").Attr("rel", "stylesheet").Attr("href", "./bdtest-reportdependencies/milligram/dist/milligram.min.css"),
+                new HtmlTag("link").Attr("rel", "stylesheet").Attr("href", "./bdtest-reportdependencies/bdtest.css"),
                 new HtmlTag("link").Attr("rel", "stylesheet").Attr("href", "https://fonts.googleapis.com/css?family=Roboto:300,300italic,700,700italic").Attr("media", "print").Attr("onload", "this.media='all'"),
-                new HtmlTag("link").Attr("rel", "stylesheet").Attr("href", "http://cdn.rawgit.com/necolas/normalize.css/master/normalize.css").Attr("media", "print").Attr("onload", "this.media='all'"),
-                new HtmlTag("link").Attr("rel", "stylesheet").Attr("href", "./css/milligram/dist/milligram.min.css").Attr("media", "print").Attr("onload", "this.media='all'"),
-                new HtmlTag("link").Attr("rel", "stylesheet").Attr("href", "./css/milligram/dist/milligram.css").Attr("media", "print").Attr("onload", "this.media='all'"),
-                new HtmlTag("link").Attr("rel", "stylesheet").Attr("href", "./css/testy.css").Attr("media", "print").Attr("onload", "this.media='all'")
+                new HtmlTag("link").Attr("rel", "stylesheet").Attr("href", "http://cdn.rawgit.com/necolas/normalize.css/master/normalize.css").Attr("media", "print").Attr("onload", "this.media='all'")
             };
         }
 
@@ -759,9 +768,9 @@ namespace BDTest.ReportGenerator.Builders
         {
             var list = new List<HtmlTag>
             {
-                new HtmlTag("script").Attr("type","text/javascript").Attr("src", "./css/jquery-3.3.1.min.js"),
-                new HtmlTag("script").Attr("type","text/javascript").Attr("src", "./css/checkbox_toggle_js.js"),
-                new HtmlTag("script").Attr("type", "text/javascript").AppendHtml(JavascriptStringHelpers.LoadJavascriptChartsAsync(BuildChartJavascript(storiesCount)))
+                new HtmlTag("script").Attr("type","text/javascript").Attr("src", "./bdtest-reportdependencies/jquery-3.3.1.min.js"),
+                new HtmlTag("script").Attr("type","text/javascript").Attr("src", "./bdtest-reportdependencies/checkbox_toggle_js.js"),
+                new HtmlTag("script").Attr("type", "text/javascript").AppendHtml(JavascriptStringHelpers.LoadJavascriptChartsAsync(BuildChartJavascript(storiesCount), _folderPath))
             };
 
             return list.ToArray();

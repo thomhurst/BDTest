@@ -42,24 +42,19 @@ namespace BDTest.Test
         {
         }
 
-        [JsonIgnore] internal readonly TestDetails TestDetails;
-        
         private bool _alreadyExecuted;
 
         internal Scenario(List<Step> steps, TestDetails testDetails)
         {
-            Guid = testDetails.GetGuid().ToString();
+            Guid = testDetails.GetGuid();
             FrameworkTestId = testDetails.TestId;
             
-            TestHolder.NotRun.TryRemove(testDetails.GetGuid(), out _);
-            TestHolder.StoppedEarly.TryAdd(testDetails.GetGuid(), this);
+            TestHolder.NotRun.TryRemove(Guid, out _);
             TestHolder.AddScenario(this);
 
             StoryText = testDetails.StoryText;
             ScenarioText = testDetails.ScenarioText;
             CustomTestInformation = testDetails.CustomTestInformation;
-
-            TestDetails = testDetails;
 
             FileName = testDetails.CallerFile;
 
@@ -72,14 +67,7 @@ namespace BDTest.Test
 
         internal async Task Execute()
         {
-            try
-            {
-                await ExecuteInternal().ConfigureAwait(false);
-            }
-            finally
-            {
-                TestHolder.StoppedEarly.TryRemove(TestDetails.GetGuid(), out _);
-            }
+            await ExecuteInternal().ConfigureAwait(false);
         }
 
         [JsonProperty] public List<Step> Steps { get; private set; }

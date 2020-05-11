@@ -14,7 +14,7 @@ namespace BDTest.ReportGenerator.Models
         public List<Scenario> Scenarios { get; set; }
         
         [JsonProperty]
-        public WarningsChecker Warnings { get; set; }
+        public List<BuildableTest> NotRun { get; set; }
 
         [JsonProperty] 
         public string Version { get; set; }

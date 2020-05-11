@@ -1,7 +1,6 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
-using BDTest.Maps;
 using BDTest.ReportGenerator;
 using BDTest.Test;
 using BDTest.Tests.Helpers;
@@ -38,7 +37,7 @@ namespace BDTest.Tests.Fixtures
             {
                 BDTestReportGenerator.GenerateInFolder(FileHelpers.GetUniqueTestOutputFolder());
 
-                var scenario = TestHolder.Scenarios.First();
+                var scenario = BDTestUtil.GetScenarios().First();
 
                 Assert.That(scenario.Steps[0].Exception.Message, Is.EqualTo("BDTest Exception!"));
 
@@ -99,7 +98,7 @@ namespace BDTest.Tests.Fixtures
             {
                 BDTestReportGenerator.GenerateInFolder(FileHelpers.GetUniqueTestOutputFolder());
 
-                var scenario = TestHolder.Scenarios.First();
+                var scenario = BDTestUtil.GetScenarios().First();
 
                 Assert.That(scenario.Steps[3].Exception.Message, Is.EqualTo("BDTest Exception!"));
 

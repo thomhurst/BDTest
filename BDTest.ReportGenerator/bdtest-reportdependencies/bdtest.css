@@ -31,6 +31,14 @@ pre {
     padding: 20px;
 }
 
+.warnings {
+    background-color: #ffdbdc;
+}
+
+.strong-text {
+    font-weight: 600;
+}
+
 .output {
     text-align: left;
     margin-left: 25px;

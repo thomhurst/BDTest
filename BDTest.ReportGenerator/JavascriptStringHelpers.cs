@@ -1,11 +1,10 @@
 using System.IO;
-using BDTest.Paths;
 
 namespace BDTest.ReportGenerator
 {
     public static class JavascriptStringHelpers
     {
-        public static string LoadJavascriptChartsAsync(string chartJavascriptCode) => @"
+        public static string LoadJavascriptChartsAsync(string chartJavascriptCode, string outputFolder) => @"
 LoadChartScriptAsync();
 
 function LoadChartScriptAsync() {
@@ -19,10 +18,10 @@ function LoadChartScriptAsync() {
     script.onload = function () {
         console.log(scriptPath + ' loaded ')
 "
-                                                                                      +
-                                                                                      BuildDynamicCreateElementInJavascript(chartJavascriptCode)
-                                                                                      +
-                                                                                      @"
+                                                                                                           +
+                                                                                                           BuildDynamicCreateElementInJavascript(chartJavascriptCode, outputFolder)
+                                                                                                           +
+                                                                                                           @"
         RefreshChartElements();
     }
 
@@ -40,10 +39,10 @@ function RefreshChartElements() {
 }
 ";
 
-        private static string BuildDynamicCreateElementInJavascript(string javascriptBody)
+        private static string BuildDynamicCreateElementInJavascript(string javascriptBody, string outputFolder)
         {
             // Write body to its own javascript file
-            var javascriptFilePath = Path.Combine(FileLocations.ReportsOutputDirectory, "BDTestCharts.js");
+            var javascriptFilePath = Path.Combine(outputFolder, "BDTestCharts.js");
 
             if (File.Exists(javascriptFilePath))
             {

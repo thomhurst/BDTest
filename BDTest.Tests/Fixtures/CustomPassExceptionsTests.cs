@@ -1,6 +1,5 @@
 using System;
 using System.Linq;
-using BDTest.Maps;
 using BDTest.NUnit;
 using BDTest.Settings;
 using BDTest.Test;
@@ -25,7 +24,7 @@ namespace BDTest.Tests.Fixtures
             }
             catch (SuccessException)
             {
-                var scenario = TestHolder.Scenarios.First();
+                var scenario = BDTestUtil.GetScenarios().First();
                 Assert.That(scenario.Status, Is.EqualTo(Status.Passed));
             }
         }
@@ -46,7 +45,7 @@ namespace BDTest.Tests.Fixtures
             }
             catch (MyAllowedException)
             {
-                var scenario = TestHolder.Scenarios.First();
+                var scenario = BDTestUtil.GetScenarios().First();
                 Assert.That(scenario.Status, Is.EqualTo(Status.Passed));
             }
         }

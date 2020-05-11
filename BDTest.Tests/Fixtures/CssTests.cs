@@ -21,19 +21,19 @@ namespace BDTest.Tests.Fixtures
 
             var foldersInDirectory = Directory.GetDirectories(FileHelpers.GetUniqueTestOutputFolder()).Select(Path.GetFileName).ToList();
 
-            Assert.That(foldersInDirectory, Contains.Item("css"));
+            Assert.That(foldersInDirectory, Contains.Item("bdtest-reportdependencies"));
 
-            var filesInCssFolder = Directory.GetFiles(Path.Combine(FileHelpers.GetUniqueTestOutputFolder(), "css")).Select(Path.GetFileName).ToList();
+            var filesInCssFolder = Directory.GetFiles(Path.Combine(FileHelpers.GetUniqueTestOutputFolder(), "bdtest-reportdependencies")).Select(Path.GetFileName).ToList();
 
-            Assert.That(filesInCssFolder, Contains.Item("testy.css"));
+            Assert.That(filesInCssFolder, Contains.Item("bdtest.css"));
             Assert.That(filesInCssFolder, Contains.Item("jquery-3.3.1.min.js"));
             Assert.That(filesInCssFolder, Contains.Item("checkbox_toggle_js.js"));
             
-            var foldersInCssFolder = Directory.GetDirectories(Path.Combine(FileHelpers.GetUniqueTestOutputFolder(), "css")).Select(Path.GetFileName).ToList();
+            var foldersInCssFolder = Directory.GetDirectories(Path.Combine(FileHelpers.GetUniqueTestOutputFolder(), "bdtest-reportdependencies")).Select(Path.GetFileName).ToList();
             
             Assert.That(foldersInCssFolder, Contains.Item("milligram"));
             
-            var filesInMilligramFolder = Directory.GetFiles(Path.Combine(FileHelpers.GetUniqueTestOutputFolder(), "css", "milligram", "dist")).Select(Path.GetFileName).ToList();
+            var filesInMilligramFolder = Directory.GetFiles(Path.Combine(FileHelpers.GetUniqueTestOutputFolder(), "bdtest-reportdependencies", "milligram", "dist")).Select(Path.GetFileName).ToList();
             
             Assert.That(filesInMilligramFolder, Contains.Item("milligram.css"));
             Assert.That(filesInMilligramFolder, Contains.Item("milligram.css.map"));

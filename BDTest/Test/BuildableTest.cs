@@ -7,12 +7,12 @@ namespace BDTest.Test
     public class BuildableTest
     {
         [JsonIgnore]
-        protected Guid Guid { get; set; }
+        protected string Guid { get; set; }
 
-        [JsonProperty] public StoryText StoryText { get; protected set; }
+        [JsonProperty] internal StoryText StoryText { get; set; }
 
         [JsonProperty]
-        public ScenarioText ScenarioText { get; protected set; }
+        internal ScenarioText ScenarioText { get; set; }
 
         [JsonProperty]
         public TestDetails TestDetails { get; protected set; }
