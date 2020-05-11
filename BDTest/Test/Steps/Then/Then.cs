@@ -8,32 +8,26 @@ namespace BDTest.Test.Steps.Then
 {
     public class Then : StepBuilder
     {
-
         protected override StepType StepType { get; } = StepType.Then;
 
-        // Actions
-        protected internal Then(List<Step> previousSteps, Expression<Action> action, TestDetails testDetails) : base(previousSteps, action, testDetails)
+        internal Then(List<Step> previousSteps, Runnable runnable, TestDetails testDetails) : base(previousSteps, runnable, testDetails)
         {
         }
 
-        public AndThen And(Expression<Action> step)
-        {
-            return new AndThen(ExistingSteps, step, TestDetails);
-        }
-
-        // Tasks
-        protected internal Then(List<Step> previousSteps, Expression<Func<Task>> action, TestDetails testDetails) : base(previousSteps, action, testDetails)
-        {
-        }
-        
         public Then WithStepText(Func<string> overridingStepText)
         {
             return WithStepText<Then>(overridingStepText);
         }
 
+        // Actions
+        public AndThen And(Expression<Action> step)
+        {
+            return new AndThen(ExistingSteps, new Runnable(step), TestDetails);
+        }
+
         public AndThen And(Expression<Func<Task>> step)
         {
-            return new AndThen(ExistingSteps, step, TestDetails);
+            return new AndThen(ExistingSteps, new Runnable(step), TestDetails);
         }
 
         public Scenario BDTest()

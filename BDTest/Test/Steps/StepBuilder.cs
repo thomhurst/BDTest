@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq.Expressions;
 using System.Threading.Tasks;
 using BDTest.Maps;
 using BDTest.Output;
@@ -25,6 +24,7 @@ namespace BDTest.Test.Steps
             return (T) this;
         }
 
+        // First Test Construction - Given or When
         internal StepBuilder(Runnable runnable, string callerMember, string callerFile, string testId, StepType stepType)
         {
             ExistingSteps = new List<Step> { new Step(runnable, stepType) };
@@ -40,15 +40,7 @@ namespace BDTest.Test.Steps
             ScenarioText = TestDetails.ScenarioText;
         }
 
-        protected StepBuilder(List<Step> previousSteps, Expression<Action> action, TestDetails testDetails) : this(previousSteps, new Runnable(action), testDetails )
-        {
-        }
-
-        protected StepBuilder(List<Step> previousSteps, Expression<Func<Task>> action, TestDetails testDetails) : this(previousSteps, new Runnable(action), testDetails)
-        {
-        }
-
-        private StepBuilder(List<Step> previousSteps, Runnable runnable, TestDetails testDetails)
+        internal StepBuilder(List<Step> previousSteps, Runnable runnable, TestDetails testDetails)
         {
             testDetails.StepCount++;
             

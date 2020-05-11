@@ -8,34 +8,35 @@ namespace BDTest.Test.Steps.Given
     {
         protected override StepType StepType { get; } = StepType.Given;
         
-        // Actions
         internal Given(Runnable runnable, string callerMember, string callerFile, string testId) : base(runnable, callerMember, callerFile, testId, StepType.Given)
         {
         }
-
+        
         public Given WithStepText(Func<string> overridingStepText)
         {
             return WithStepText<Given>(overridingStepText);
         }
-
+        
+        // Actions
         public AndGiven And(Expression<Action> step)
         {
-            return new AndGiven(ExistingSteps, step, TestDetails);
+            return new AndGiven(ExistingSteps, new Runnable(step), TestDetails);
         }
 
         public When.When When(Expression<Action> step)
         {
-            return new When.When(ExistingSteps, step, TestDetails);
+            return new When.When(ExistingSteps, new Runnable(step), TestDetails);
         }
 
+        // Tasks
         public AndGiven And(Expression<Func<Task>> step)
         {
-            return new AndGiven(ExistingSteps, step, TestDetails);
+            return new AndGiven(ExistingSteps, new Runnable(step), TestDetails);
         }
 
         public When.When When(Expression<Func<Task>> step)
         {
-            return new When.When(ExistingSteps, step, TestDetails);
+            return new When.When(ExistingSteps, new Runnable(step), TestDetails);
         }
     }
 }

@@ -7,11 +7,9 @@ namespace BDTest.Test.Steps.When
 {
     public class When : StepBuilder
     {
-
         protected override StepType StepType { get; } = StepType.When;
 
-        // Actions
-        protected internal When(List<Step> previousSteps, Expression<Action> action, TestDetails testDetails) : base(previousSteps, action, testDetails)
+        internal When(List<Step> previousSteps, Runnable runnable, TestDetails testDetails) : base(previousSteps, runnable, testDetails)
         {
         }
         
@@ -19,25 +17,22 @@ namespace BDTest.Test.Steps.When
         {
             // Used for skipping a 'Given' step
         }
-
+        
         public When WithStepText(Func<string> overridingStepText)
         {
             return WithStepText<When>(overridingStepText);
         }
-
+        
+        // Actions
         public Then.Then Then(Expression<Action> step)
         {
-            return new Then.Then(ExistingSteps, step, TestDetails);
+            return new Then.Then(ExistingSteps, new Runnable(step), TestDetails);
         }
 
         // Tasks
-        protected internal When(List<Step> previousSteps, Expression<Func<Task>> action, TestDetails testDetails) : base(previousSteps, action, testDetails)
-        {
-        }
-
         public Then.Then Then(Expression<Func<Task>> step)
         {
-            return new Then.Then(ExistingSteps, step, TestDetails);
+            return new Then.Then(ExistingSteps, new Runnable(step), TestDetails);
         }
     }
 }
