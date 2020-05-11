@@ -15,7 +15,6 @@ namespace BDTest.Test
         public string CallerFile { get; }
         public string TestId { get; }
         public IEnumerable<string> Parameters { get; set; }
-        internal int StepCount { get; set; }
 
         internal TestDetails(string callerMember, string callerFile, Guid guid, string testId)
         {
@@ -27,7 +26,6 @@ namespace BDTest.Test
             SetStoryText();
             SetScenarioText();
             SetTestInformation();
-            StepCount = 1;
         }
 
         private void SetTestInformation()
