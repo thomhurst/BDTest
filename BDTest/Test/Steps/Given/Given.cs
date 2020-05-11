@@ -9,7 +9,7 @@ namespace BDTest.Test.Steps.Given
         protected override StepType StepType { get; } = StepType.Given;
         
         // Actions
-        internal Given(Expression<Action> action, string callerMember, string callerFile, string testId) : base(action, callerMember, callerFile, testId, StepType.Given)
+        internal Given(Runnable runnable, string callerMember, string callerFile, string testId) : base(runnable, callerMember, callerFile, testId, StepType.Given)
         {
         }
 
@@ -26,11 +26,6 @@ namespace BDTest.Test.Steps.Given
         public When.When When(Expression<Action> step)
         {
             return new When.When(ExistingSteps, step, TestDetails);
-        }
-
-        // Tasks
-        internal Given(Expression<Func<Task>> action, string callerMember, string callerFile, string testId) : base(action, callerMember, callerFile, testId, StepType.Given)
-        {
         }
 
         public AndGiven And(Expression<Func<Task>> step)

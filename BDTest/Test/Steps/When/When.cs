@@ -15,16 +15,11 @@ namespace BDTest.Test.Steps.When
         {
         }
         
-        internal When(Expression<Action> action, string callerMember, string callerFile, string testId) : base(action, callerMember, callerFile, testId, StepType.When)
+        internal When(Runnable runnable, string callerMember, string callerFile, string testId) : base(runnable, callerMember, callerFile, testId, StepType.When)
         {
             // Used for skipping a 'Given' step
         }
-        
-        internal When(Expression<Func<Task>> action, string callerMember, string callerFile, string testId) : base(action, callerMember, callerFile, testId, StepType.When)
-        {
-            // Used for skipping a 'Given' step
-        }
-        
+
         public When WithStepText(Func<string> overridingStepText)
         {
             return WithStepText<When>(overridingStepText);

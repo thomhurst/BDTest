@@ -19,23 +19,13 @@ namespace BDTest.Test.Steps
             Initialiser.Initialise();
         }
 
-        protected StepBuilder(Expression<Action> action, string callerMember, string callerFile, string testId, StepType stepType) : this(new Runnable(action), callerMember, callerFile, testId, stepType)
-        {
-            
-        }
-
-        protected StepBuilder(Expression<Func<Task>> action, string callerMember, string callerFile, string testId, StepType stepType) : this(new Runnable(action), callerMember, callerFile, testId, stepType)
-        {
-            
-        }
-
         protected T WithStepText<T>(Func<string> overridingStepText) where T : StepBuilder
         {
             ExistingSteps[TestDetails.StepCount - 1].OverriddenStepText = overridingStepText;
             return (T) this;
         }
 
-        private StepBuilder(Runnable runnable, string callerMember, string callerFile, string testId, StepType stepType)
+        internal StepBuilder(Runnable runnable, string callerMember, string callerFile, string testId, StepType stepType)
         {
             ExistingSteps = new List<Step> { new Step(runnable, stepType) };
             

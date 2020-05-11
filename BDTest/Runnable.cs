@@ -8,10 +8,10 @@ namespace BDTest
     internal class Runnable
     {
 
-        public Expression<Func<Task>> Task { get; }
-        public Expression<Action> Action { get; }
+        internal Expression<Func<Task>> Task { get; }
+        internal Expression<Action> Action { get; }
 
-        public Runnable(Expression<Func<Task>> task)
+        internal Runnable(Expression<Func<Task>> task)
         {
             Task = task;
         }
