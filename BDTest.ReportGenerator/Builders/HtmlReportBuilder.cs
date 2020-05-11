@@ -33,7 +33,7 @@ namespace BDTest.ReportGenerator.Builders
         private const string TimeTag = "time";
 
         private int _storiesBuiltCounter;
-        private readonly WarningsChecker _warnings;
+        private readonly List<BuildableTest> _notRun;
 
         internal static HtmlReportBuilder CreateReport(string folderPath, DataOutputModel dataOutputModel)
         {
@@ -45,7 +45,7 @@ namespace BDTest.ReportGenerator.Builders
             _scenarios = dataOutputModel.Scenarios;
             _stories = _scenarios.Select(scenario => scenario.GetStoryText()).Distinct().ToList();
             _testTimer = dataOutputModel.TestTimer;
-            _warnings = dataOutputModel.Warnings;
+            _notRun = dataOutputModel.NotRun;
             CreateFlakinessReport(folderPath);
             CreateTestTimesComparisonReport(folderPath);
             CreateReportWithoutStories(folderPath);
@@ -311,29 +311,37 @@ namespace BDTest.ReportGenerator.Builders
 
         private HtmlTag BuildWarnings()
         {
-            var warningsNonExecutedTests = _warnings.NonExecutedTests.ToList();
+            var warningsNonExecutedTests = _notRun;
             if (!warningsNonExecutedTests.Any())
             {
                 return HtmlTag.Empty();
             }
 
-            return new HtmlTag("details").Append(
-                new HtmlTag("summary").AddClass("canToggle").AppendText("Tests Not Executed"),
-                new HtmlTag("p").Append(
-                    new HtmlTag("table").Append(
-                        new HtmlTag("thead").Append(
-                            new HtmlTag("tr").Append(
-                                HtmlReportPrebuilt.StoryHeader,
-                                HtmlReportPrebuilt.ScenarioHeader,
-                                new HtmlTag("th").AppendText("Parameters")
-                            )
-                        ),
-                        new HtmlTag("tbody").Append(
-                            warningsNonExecutedTests.Select(it =>
-                                new HtmlTag("tr").Append(
-                                    new HtmlTag("td").AppendText(it.GetStoryText()),
-                                    new HtmlTag("td").AppendText(it.GetScenarioText()),
-                                    new HtmlTag("td").Append(it.TestDetails.Parameters?.Select(parameterName => new HtmlTag("div").AppendText(parameterName)) ?? new List<HtmlTag> { HtmlTag.Empty() })
+            return new BrTag().Append(
+                new HtmlTag("div").AddClass("box").AddClass("box").AddClass("warnings").Append(
+                    new HtmlTag("h2").AppendText("Warnings").AddClass("strong-text"),
+                    new HtmlTag("details").Append(
+                        new HtmlTag("summary").AddClass("canToggle").AppendText("Tests Not Executed"),
+                        new HtmlTag("p").Append(
+                            new HtmlTag("table").Append(
+                                new HtmlTag("thead").Append(
+                                    new HtmlTag("tr").Append(
+                                        HtmlReportPrebuilt.StoryHeader,
+                                        HtmlReportPrebuilt.ScenarioHeader,
+                                        new HtmlTag("th").AppendText("Parameters")
+                                    )
+                                ),
+                                new HtmlTag("tbody").Append(
+                                    warningsNonExecutedTests.Select(it =>
+                                        new HtmlTag("tr").Append(
+                                            new HtmlTag("td").AppendText(it.GetStoryText()),
+                                            new HtmlTag("td").AppendText(it.GetScenarioText()),
+                                            new HtmlTag("td").Append(
+                                                it.TestDetails.Parameters?.Select(parameterName =>
+                                                    new HtmlTag("div").AppendText(parameterName)) ??
+                                                new List<HtmlTag> {HtmlTag.Empty()})
+                                        )
+                                    )
                                 )
                             )
                         )

@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using BDTest.Maps;
+using System.Reflection;
 using BDTest.Output;
 using BDTest.Paths;
 using BDTest.ReportGenerator.Builders;
@@ -26,7 +26,7 @@ namespace BDTest.ReportGenerator
         {
             AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
 
-            CreateReportFolder();
+            CreateReportFolder(folderPath);
             CreatePersistentResults(folderPath);
 
             if (string.IsNullOrWhiteSpace(folderPath))
@@ -34,7 +34,7 @@ namespace BDTest.ReportGenerator
                 return;
             }
 
-            var scenarios = TestHolder.Scenarios.ToList();
+            var scenarios = BDTestUtil.GetScenarios();
             
             var testTimer = GetTestTimer(scenarios);
 
@@ -45,13 +45,11 @@ namespace BDTest.ReportGenerator
 
             DeleteExistingFiles(reportPathByStory, reportPathAllScenarios, testDataJsonPath);
 
-            var warnings = GetWarnings();
-
             var dataToOutput = new DataOutputModel
             {
                 Scenarios = scenarios,
                 TestTimer = testTimer,
-                Warnings = warnings,
+                NotRun = BDTestUtil.GetNotRunScenarios(),
                 Version = VersionHelper.CurrentVersion
             };
 
@@ -87,9 +85,28 @@ namespace BDTest.ReportGenerator
             GenerateInFolder(FileLocations.ReportsOutputDirectory);
         }
 
-        private static void CreateReportFolder()
+        private static void CreateReportFolder(string folderPath)
         {
-            Directory.CreateDirectory(FileLocations.ReportsOutputDirectory);
+            // Relative file path - They've just given us a folder name probably. So let's use the current output directory.
+            if (!Path.IsPathRooted(folderPath))
+            {
+                folderPath = Path.Combine(
+                    Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location),
+                    folderPath
+                );
+            }
+            
+            if (Directory.Exists(folderPath) && folderPath != FileLocations.RawOutputDirectory)
+            {
+                var files = Directory.GetFiles(folderPath);
+
+                foreach (var file in files)
+                {
+                    File.Delete(file);
+                }
+            }
+            
+            Directory.CreateDirectory(folderPath);
         }
 
         private static void PruneData()
@@ -179,13 +196,6 @@ namespace BDTest.ReportGenerator
             {
                 // ignored
             }
-        }
-
-        private static WarningsChecker GetWarnings()
-        {
-            var warningsPath = Path.Combine(FileLocations.ReportsOutputDirectory, FileNames.Warnings);
-
-            return !File.Exists(warningsPath) ? new WarningsChecker(new List<BuildableTest>(), new List<Scenario>()) : JsonConvert.DeserializeObject<WarningsChecker>(File.ReadAllText(warningsPath));
         }
 
         private static TestTimer GetTestTimer(IEnumerable<Scenario> scenarios)

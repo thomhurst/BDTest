@@ -1,6 +1,5 @@
 ﻿using System.IO;
 using System.Runtime.CompilerServices;
-using BDTest.Output;
 using BDTest.Paths;
 
 namespace BDTest
@@ -8,9 +7,9 @@ namespace BDTest
     internal static class Initialiser
     {
         private static bool _alreadyRun;
-        private static string _exceptionFilePath => Path.Combine(FileLocations.ReportsOutputDirectory, "BDTest - Exception.txt");
-        private static string _runExceptionFilePath => Path.Combine(FileLocations.ReportsOutputDirectory, "BDTest - Run Exception.txt");
-        private static string _reportExceptionFilePath => Path.Combine(FileLocations.ReportsOutputDirectory, "BDTest - Report Exception.txt");
+        private static string ExceptionFilePath => Path.Combine(FileLocations.ReportsOutputDirectory, "BDTest - Exception.txt");
+        private static string RunExceptionFilePath => Path.Combine(FileLocations.ReportsOutputDirectory, "BDTest - Run Exception.txt");
+        private static string ReportExceptionFilePath => Path.Combine(FileLocations.ReportsOutputDirectory, "BDTest - Report Exception.txt");
 
         [MethodImpl(MethodImplOptions.Synchronized)]
         public static void Initialise()
@@ -21,8 +20,6 @@ namespace BDTest
             }
 
             _alreadyRun = true;
-
-            TestsFinalizer.Initialise();
 
             DeletePreviousData();
         }
@@ -39,25 +36,20 @@ namespace BDTest
                     File.Delete(file);
                 }
             }
-            
-            if (File.Exists(FileLocations.Warnings))
-            {
-                File.Delete(FileLocations.Warnings);
-            }
 
-            if (File.Exists(_exceptionFilePath))
+            if (File.Exists(ExceptionFilePath))
             {
-                File.Delete(_exceptionFilePath);
+                File.Delete(ExceptionFilePath);
             }
             
-            if (File.Exists(_runExceptionFilePath))
+            if (File.Exists(RunExceptionFilePath))
             {
-                File.Delete(_runExceptionFilePath);
+                File.Delete(RunExceptionFilePath);
             }
             
-            if (File.Exists(_reportExceptionFilePath))
+            if (File.Exists(ReportExceptionFilePath))
             {
-                File.Delete(_reportExceptionFilePath);
+                File.Delete(ReportExceptionFilePath);
             }
         }
     }

@@ -1,4 +1,3 @@
-using BDTest.Maps;
 using BDTest.Settings;
 
 namespace BDTest.Tests.Helpers
@@ -9,7 +8,7 @@ namespace BDTest.Tests.Helpers
         {
             BDTestSettings.ReportFolderName = "CustomFolder";
 
-            TestHolder.Scenarios.Clear();
+            BDTestUtil.ClearScenarios();
         }
     }
 }

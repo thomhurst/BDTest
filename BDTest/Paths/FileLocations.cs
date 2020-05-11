@@ -20,8 +20,6 @@ namespace BDTest.Paths
             }
         } 
         public static string AggregatedJsonScenarios => Path.Combine(ReportsOutputDirectory, FileNames.TestDataJson);
-        public static string Warnings => Path.Combine(ReportsOutputDirectory, FileNames.Warnings);
-        
 
         public static string HtmlReportWithStoriesFilePath => Path.Combine(ReportsOutputDirectory, FileNames.ReportByStory);
         public static string HtmlReportWithoutStoriesFilePath => Path.Combine(ReportsOutputDirectory, FileNames.ReportAllScenarios);

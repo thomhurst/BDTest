@@ -38,9 +38,16 @@ namespace BDTest.Test.Steps
         private StepBuilder(Runnable runnable, string callerMember, string callerFile, string testId, StepType stepType)
         {
             ExistingSteps = new List<Step> { new Step(runnable, stepType) };
-            var testGuid = Guid.NewGuid();
+            
+            var testGuid = System.Guid.NewGuid();
             TestDetails = new TestDetails(callerMember, callerFile, testGuid, testId);
+            
             TestOutputData.TestId = testGuid;
+            
+            TestHolder.NotRun[testGuid.ToString()] = this;
+            
+            StoryText = TestDetails.StoryText;
+            ScenarioText = TestDetails.ScenarioText;
         }
 
         protected StepBuilder(List<Step> previousSteps, Expression<Action> action, TestDetails testDetails) : this(previousSteps, new Runnable(action), testDetails )

@@ -20,7 +20,7 @@ namespace BDTest.Test
         internal TestDetails(string callerMember, string callerFile, Guid guid, string testId)
         {
             TestDetails = this;
-            Guid = guid;
+            Guid = guid.ToString();
             _callerMember = callerMember;
             CallerFile = callerFile;
             TestId = testId;
@@ -130,7 +130,7 @@ namespace BDTest.Test
             return it.GetCustomAttributes(typeof(TestInformationAttribute), true) as TestInformationAttribute[] ?? Enumerable.Empty<TestInformationAttribute>();
         }
 
-        public Guid GetGuid()
+        public string GetGuid()
         {
             return Guid;
         }

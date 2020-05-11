@@ -4,7 +4,7 @@ using Newtonsoft.Json;
 
 namespace BDTest.Helpers.JsonConverters
 {
-    public class StoryTextConverter : JsonConverter<StoryText>
+    internal class StoryTextConverter : JsonConverter<StoryText>
     {
         public override void WriteJson(JsonWriter writer, StoryText value, JsonSerializer serializer)
         {

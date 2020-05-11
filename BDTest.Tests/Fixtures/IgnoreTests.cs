@@ -1,6 +1,5 @@
 using System;
 using System.Linq;
-using BDTest.Maps;
 using BDTest.NUnit;
 using BDTest.Settings;
 using BDTest.Test;
@@ -32,7 +31,7 @@ namespace BDTest.Tests.Fixtures
             }
             catch(IgnoreException)
             {
-                var scenario = TestHolder.Scenarios.First();
+                var scenario = BDTestUtil.GetScenarios().First();
                 
                 Assert.That(scenario.Status, Is.EqualTo(Status.Inconclusive));
             }
@@ -53,7 +52,7 @@ namespace BDTest.Tests.Fixtures
             }
             catch(MyCustomIgnoreException)
             {
-                var scenario = TestHolder.Scenarios.First();
+                var scenario = BDTestUtil.GetScenarios().First();
                 
                 Assert.That(scenario.Status, Is.EqualTo(Status.Inconclusive));
             }

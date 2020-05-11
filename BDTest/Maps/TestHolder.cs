@@ -6,11 +6,10 @@ using BDTest.Test;
 
 namespace BDTest.Maps
 {
-    public static class TestHolder
+    internal static class TestHolder
     {
-        internal static ConcurrentDictionary<Guid, BuildableTest> NotRun { get; } = new ConcurrentDictionary<Guid, BuildableTest>();
-        internal static ConcurrentDictionary<Guid, Scenario> StoppedEarly { get; } = new ConcurrentDictionary<Guid, Scenario>();
-        public static ConcurrentBag<Scenario> Scenarios { get; } = new ConcurrentBag<Scenario>();
+        internal static ConcurrentDictionary<string, BuildableTest> NotRun { get; } = new ConcurrentDictionary<string, BuildableTest>();
+        internal static ConcurrentDictionary<string, Scenario> Scenarios { get; } = new ConcurrentDictionary<string, Scenario>();
         
         private static readonly ConcurrentDictionary<string, List<Action<Scenario>>> ScenarioListeners = new ConcurrentDictionary<string, List<Action<Scenario>>>();
 
@@ -22,7 +21,7 @@ namespace BDTest.Maps
 
         internal static void AddScenario(Scenario scenario)
         {
-            Scenarios.Add(scenario);
+            Scenarios[scenario.Guid] = scenario;
             
             if (ScenarioListeners.TryGetValue(scenario.FrameworkTestId, out var delegateList))
             {
