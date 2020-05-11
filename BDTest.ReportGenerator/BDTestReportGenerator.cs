@@ -70,8 +70,8 @@ namespace BDTest.ReportGenerator
             {
                 if (folderPath != FileLocations.ReportsOutputDirectory || FileLocations.RawOutputDirectory != FileLocations.ReportsOutputDirectory)
                 {
-                    CopyFolder.Copy(Path.Combine(FileLocations.RawOutputDirectory, "css"),
-                        Path.Combine(folderPath, "css"));
+                    CopyFolder.Copy(Path.Combine(FileLocations.RawOutputDirectory, "bdtest-reportdependencies"),
+                        Path.Combine(folderPath, "bdtest-reportdependencies"));
                 }
             }
             catch (Exception e)

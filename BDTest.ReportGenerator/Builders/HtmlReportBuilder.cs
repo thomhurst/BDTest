@@ -625,11 +625,10 @@ namespace BDTest.ReportGenerator.Builders
         {
             return new[]
             {
+                new HtmlTag("link").Attr("rel", "stylesheet").Attr("href", "./bdtest-reportdependencies/milligram/dist/milligram.min.css"),
+                new HtmlTag("link").Attr("rel", "stylesheet").Attr("href", "./bdtest-reportdependencies/bdtest.css"),
                 new HtmlTag("link").Attr("rel", "stylesheet").Attr("href", "https://fonts.googleapis.com/css?family=Roboto:300,300italic,700,700italic").Attr("media", "print").Attr("onload", "this.media='all'"),
-                new HtmlTag("link").Attr("rel", "stylesheet").Attr("href", "http://cdn.rawgit.com/necolas/normalize.css/master/normalize.css").Attr("media", "print").Attr("onload", "this.media='all'"),
-                new HtmlTag("link").Attr("rel", "stylesheet").Attr("href", "./css/milligram/dist/milligram.min.css").Attr("media", "print").Attr("onload", "this.media='all'"),
-                new HtmlTag("link").Attr("rel", "stylesheet").Attr("href", "./css/milligram/dist/milligram.css").Attr("media", "print").Attr("onload", "this.media='all'"),
-                new HtmlTag("link").Attr("rel", "stylesheet").Attr("href", "./css/testy.css").Attr("media", "print").Attr("onload", "this.media='all'")
+                new HtmlTag("link").Attr("rel", "stylesheet").Attr("href", "http://cdn.rawgit.com/necolas/normalize.css/master/normalize.css").Attr("media", "print").Attr("onload", "this.media='all'")
             };
         }
 
@@ -769,8 +768,8 @@ namespace BDTest.ReportGenerator.Builders
         {
             var list = new List<HtmlTag>
             {
-                new HtmlTag("script").Attr("type","text/javascript").Attr("src", "./css/jquery-3.3.1.min.js"),
-                new HtmlTag("script").Attr("type","text/javascript").Attr("src", "./css/checkbox_toggle_js.js"),
+                new HtmlTag("script").Attr("type","text/javascript").Attr("src", "./bdtest-reportdependencies/jquery-3.3.1.min.js"),
+                new HtmlTag("script").Attr("type","text/javascript").Attr("src", "./bdtest-reportdependencies/checkbox_toggle_js.js"),
                 new HtmlTag("script").Attr("type", "text/javascript").AppendHtml(JavascriptStringHelpers.LoadJavascriptChartsAsync(BuildChartJavascript(storiesCount), _folderPath))
             };
 

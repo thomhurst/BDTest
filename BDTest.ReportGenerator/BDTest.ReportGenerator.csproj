@@ -41,7 +41,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="$(ProjectDir)css\**" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="$(ProjectDir)bdtest-reportdependencies\**" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

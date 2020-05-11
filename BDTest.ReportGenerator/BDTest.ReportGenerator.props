@@ -3,7 +3,7 @@
   xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 
   <ItemGroup>
-    <None Include="$(MSBuildThisFileDirectory)css\**" CopyToOutputDirectory="PreserveNewest" LinkBase="css\"/>
+    <None Include="$(MSBuildThisFileDirectory)bdtest-reportdependencies\**" CopyToOutputDirectory="PreserveNewest" LinkBase="css\"/>
   </ItemGroup>
   
   <Target Name="AfterBuild">

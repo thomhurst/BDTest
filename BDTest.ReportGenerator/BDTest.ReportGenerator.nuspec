@@ -52,6 +52,6 @@
         <file src="bin\Release\**\BDTest.ReportGenerator.dll" target="build" />
         <file src="bin\Release\**\BDTest.ReportGenerator.dll" target="lib" />
         <file src="bin\Release\**\BDTest.ReportGenerator.props" target="build" />
-        <file src="bin\Release\**\css\" target="build" />
+        <file src="bin\Release\**\bdtest-reportdependencies\" target="build" />
     </files>
 </package>
