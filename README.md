@@ -47,8 +47,8 @@ namespace BDTest.Example
         [ScenarioText("A passing test using steps defined in a BDTestBase, with StoryText, ScenarioText and StepTexts")]
         public async Task TestPass()
         {
-            await When(() => Steps.CreateAnAccount())
-                .Then(() => Assertions.TheHttpStatusCodeIs(HttpStatusCode.NotFound))
+            await When(() => AccountSteps.CreateAnAccount())
+                .Then(() => HttpAssertions.TheHttpStatusCodeIs(HttpStatusCode.NotFound))
                 .BDTestAsync();
         }
         
@@ -57,8 +57,8 @@ namespace BDTest.Example
         [ScenarioText("A failing test using steps defined in a BDTestBase, with StoryText, ScenarioText and StepTexts")]
         public async Task TestFail()
         {
-            await When(() => Steps.CreateAnAccount())
-                .Then(() => Assertions.TheHttpStatusCodeIs(HttpStatusCode.OK))
+            await When(() => AccountSteps.CreateAnAccount())
+                .Then(() => HttpAssertions.TheHttpStatusCodeIs(HttpStatusCode.OK))
                 .BDTestAsync();
         }
     }
