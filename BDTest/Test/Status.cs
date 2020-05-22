@@ -6,6 +6,6 @@
         Failed,
         Inconclusive,
         NotImplemented,
-        SkippedDueToDebugSettings
+        Skipped
     }
 }

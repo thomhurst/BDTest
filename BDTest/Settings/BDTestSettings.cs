@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using BDTest.Attributes;
 
 // ReSharper disable UnusedAutoPropertyAccessor.Global
 
@@ -26,5 +27,16 @@ namespace BDTest.Settings
         public static string FlakinessReportHtmlFilename { get; set; }
         public static string TestTimesReportHtmlFilename { get; set; }
         public static string JsonDataFilename { get; set; }
+        public static SkipStepRules SkipStepRules { get; } = new SkipStepRules();
+    }
+
+    public class SkipStepRules
+    {
+        internal List<SkipStepRule> Rules = new List<SkipStepRule>();
+
+        public void Add<T>(Func<bool> condition) where T : SkipStepAttribute
+        {
+            Rules.Add(new SkipStepRule(typeof(T), condition));
+        }
     }
 }

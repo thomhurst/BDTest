@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Threading.Tasks;
+using BDTest.Attributes;
 using BDTest.Exceptions;
 using BDTest.Helpers;
 using BDTest.Output;
@@ -41,6 +43,8 @@ namespace BDTest.Test
 
         private bool _alreadyExecuted;
 
+        private bool _shouldSkip;
+
         internal Step(Runnable runnable, StepType stepType)
         {
             Runnable = runnable;
@@ -70,7 +74,36 @@ namespace BDTest.Test
 
             var customStepText = Runnable.Action != null ? StepTextHelper.GetStepText(Runnable.Action) : StepTextHelper.GetStepText(Runnable.Task);
 
+            SetShouldSkip();
+            
             StepText = $"{StepPrefix} {customStepText}";
+        }
+
+        private void SetShouldSkip()
+        {
+            var methodCallExpression = (Runnable.Action?.Body ?? Runnable.Task.Body) as MethodCallExpression;
+            var methodInfo = methodCallExpression?.Method;
+
+            var skipStepAttributes = (methodInfo?.GetCustomAttributes(
+                                         typeof(SkipStepAttribute), true) ??
+                                     new string[] { }) as SkipStepAttribute[];
+
+            if (skipStepAttributes == null || !skipStepAttributes.Any())
+            {
+                return;
+            }
+
+            foreach (var skipStepAttributeOnStep in skipStepAttributes)
+            {
+                foreach (var skipStepRuleInSettings in BDTestSettings.SkipStepRules.Rules)
+                {
+                    if (skipStepRuleInSettings.AssociatedSkipAttributeType == skipStepAttributeOnStep.GetType()
+                        && skipStepRuleInSettings.Condition())
+                    {
+                        _shouldSkip = true;
+                    }
+                }
+            }
         }
 
         internal async Task Execute()
@@ -85,10 +118,11 @@ namespace BDTest.Test
                 {
                     StartTime = DateTime.Now;
 
-                    if (StepType == StepType.When && BDTestSettings.Debug.ShouldSkipWhenStep)
+                    if (StepType == StepType.When && BDTestSettings.Debug.ShouldSkipWhenStep
+                    || _shouldSkip)
                     {
                         StepText = $"[Skipped due to Debug Settings] {StepText}";
-                        Status = Status.SkippedDueToDebugSettings;
+                        Status = Status.Skipped;
                         return;
                     }
 
