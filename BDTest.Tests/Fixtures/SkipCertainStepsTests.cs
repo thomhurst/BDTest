@@ -1,6 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using BDTest.Attributes;
+using BDTest.ReportGenerator;
 using BDTest.Settings;
 using BDTest.Test;
 using NUnit.Framework;
@@ -15,6 +16,12 @@ namespace BDTest.Tests.Fixtures
             BDTestSettings.SkipStepRules.Add<SkipAttribute1>(() => true);
             BDTestSettings.SkipStepRules.Add<SkipAttribute2>(() => true);
             BDTestSettings.SkipStepRules.Add<SkipAttribute3>(() => true);
+        }
+
+        [OneTimeTearDown]
+        public void Teardown()
+        {
+            BDTestReportGenerator.GenerateInFolder(nameof(SkipCertainStepsTests));
         }
 
         [Test]

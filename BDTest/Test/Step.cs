@@ -121,7 +121,7 @@ namespace BDTest.Test
                     if (StepType == StepType.When && BDTestSettings.Debug.ShouldSkipWhenStep
                     || _shouldSkip)
                     {
-                        StepText = $"[Skipped due to Debug Settings] {StepText}";
+                        StepText = $"[Skipped] {StepText}";
                         Status = Status.Skipped;
                         return;
                     }
