@@ -98,7 +98,7 @@ namespace BDTest.Test
                 foreach (var skipStepRuleInSettings in BDTestSettings.SkipStepRules.Rules)
                 {
                     if (skipStepRuleInSettings.AssociatedSkipAttributeType == skipStepAttributeOnStep.GetType()
-                        && skipStepRuleInSettings.Condition())
+                        && skipStepRuleInSettings.Condition(skipStepAttributeOnStep))
                     {
                         _shouldSkip = true;
                     }
@@ -118,8 +118,7 @@ namespace BDTest.Test
                 {
                     StartTime = DateTime.Now;
 
-                    if (StepType == StepType.When && BDTestSettings.Debug.ShouldSkipWhenStep
-                    || _shouldSkip)
+                    if (ShouldSkip())
                     {
                         StepText = $"[Skipped] {StepText}";
                         Status = Status.Skipped;
@@ -159,6 +158,16 @@ namespace BDTest.Test
                     TestOutputData.ClearCurrentTaskData();
                 }
             });
+        }
+
+        private bool ShouldSkip()
+        {
+            if (StepType == StepType.When && BDTestSettings.Debug.ShouldSkipWhenStep)
+            {
+                return true;
+            }
+
+            return _shouldSkip;
         }
 
         private void CheckIfAlreadyExecuted()

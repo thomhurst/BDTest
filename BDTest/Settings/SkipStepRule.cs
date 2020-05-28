@@ -2,12 +2,12 @@ using System;
 
 namespace BDTest.Settings
 {
-    public class SkipStepRule
+    public class SkipStepRule<T>
     {
-        public Func<bool> Condition { get; }
+        public Func<T, bool> Condition { get; }
         public Type AssociatedSkipAttributeType { get; }
         
-        public SkipStepRule(Type associatedSkipAttributeType, Func<bool> condition)
+        public SkipStepRule(Type associatedSkipAttributeType, Func<T, bool> condition)
         {
             AssociatedSkipAttributeType = associatedSkipAttributeType;
             Condition = condition;

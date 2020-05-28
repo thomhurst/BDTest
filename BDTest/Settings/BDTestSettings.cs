@@ -32,11 +32,13 @@ namespace BDTest.Settings
 
     public class SkipStepRules
     {
-        internal List<SkipStepRule> Rules = new List<SkipStepRule>();
+        internal List<SkipStepRule<object>> Rules = new List<SkipStepRule<object>>();
 
-        public void Add<T>(Func<bool> condition) where T : SkipStepAttribute
+        public void Add<T>(Func<T, bool> condition) where T : SkipStepAttribute
         {
-            Rules.Add(new SkipStepRule(typeof(T), condition));
+            // Cast to Func<object, bool>
+            Func<object, bool> func = value => condition((T) value);
+            Rules.Add(new SkipStepRule<object>(typeof(T), func));
         }
     }
 }

@@ -13,9 +13,10 @@ namespace BDTest.Tests.Fixtures
         [OneTimeSetUp]
         public void Setup()
         {
-            BDTestSettings.SkipStepRules.Add<SkipAttribute1>(() => true);
-            BDTestSettings.SkipStepRules.Add<SkipAttribute2>(() => true);
-            BDTestSettings.SkipStepRules.Add<SkipAttribute3>(() => true);
+            BDTestSettings.SkipStepRules.Add<SkipAttribute1>(attr => true);
+            BDTestSettings.SkipStepRules.Add<SkipAttribute2>(attr => true);
+            BDTestSettings.SkipStepRules.Add<SkipAttribute3>(attr => true);
+            BDTestSettings.SkipStepRules.Add<SkipAttributeWithParameter>(attr => attr.ShouldSkip);
         }
 
         [OneTimeTearDown]
@@ -44,6 +45,37 @@ namespace BDTest.Tests.Fixtures
                 .And(() => ThrowException2())
                 .And(() => ThrowException3())
                 .BDTest();
+        }
+        
+        [Test]
+        public void ShouldSkipTrue()
+        {
+            Given(() => Console.WriteLine("A test"))
+                .When(() => Console.WriteLine())
+                .Then(() => Console.WriteLine("The test passes because the exception step was skipped"))
+                .And(() => ThrowExceptionShouldSkipTrue())
+                .BDTest();
+        }
+        
+        [Test]
+        public void ShouldSkipFalse()
+        {
+            try
+            {
+                Given(() => Console.WriteLine("A test"))
+                    .When(() => Console.WriteLine())
+                    .Then(() => Console.WriteLine("The test passes because the exception step was skipped"))
+                    .And(() => ThrowExceptionShouldSkipFalse())
+                    .BDTest();
+                
+                Assert.Fail("The last exception should not be skipped - And should stop us getting here.");
+            }
+            catch (Exception e) when(e.Message == "ThrowExceptionShouldSkipFalse")
+            {
+                Assert.Pass();
+            }
+            
+            Assert.Fail();
         }
         
         [Test]
@@ -93,6 +125,18 @@ namespace BDTest.Tests.Fixtures
         {
             throw new Exception("ThrowException3");
         }
+        
+        [SkipAttributeWithParameter(true)]
+        private static Task ThrowExceptionShouldSkipTrue()
+        {
+            throw new Exception("ThrowExceptionShouldSkipTrue");
+        }
+        
+        [SkipAttributeWithParameter(false)]
+        private static Task ThrowExceptionShouldSkipFalse()
+        {
+            throw new Exception("ThrowExceptionShouldSkipFalse");
+        }
     }
 
     class SkipAttribute1 : SkipStepAttribute
@@ -108,6 +152,16 @@ namespace BDTest.Tests.Fixtures
     class SkipAttribute3 : SkipStepAttribute
     {
         
+    }
+    
+    class SkipAttributeWithParameter : SkipStepAttribute
+    {
+        public bool ShouldSkip { get; }
+
+        public SkipAttributeWithParameter(bool shouldSkip)
+        {
+            ShouldSkip = shouldSkip;
+        }
     }
     
     class NotRegisteredSkipAttribute : SkipStepAttribute
