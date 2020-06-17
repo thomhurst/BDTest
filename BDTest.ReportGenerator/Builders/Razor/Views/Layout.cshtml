@@ -8,22 +8,60 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>BDTest Report</title>
     <link rel="stylesheet" href="./bdtest-reportdependencies/bulma/bulma.min.css"/>
+    @await Html.PartialAsync("_Javascript.cshtml")
 </head>
 <body>
 @await Html.PartialAsync("NavBarHeader.cshtml")
 <section class="section">
-    <p class="subtitle">
-        Welcome to your report by <strong>BDTest</strong>!
-    </p>
-    
-    <p class="subtitle">
-        Here is a <strong>summary</strong> of your tests:
-    </p>
-    
     <div class="container">
-        @await Html.PartialAsync("StatusBars.cshtml", new StatusBarsViewModel {Scenarios = Model.Scenarios})
-        <span>You have @Model.Scenarios.Count scenarios! 2</span>
+        <div class="columns is-centered">
+            <div class="column has-text-centered">
+                <p class="subtitle">
+                    Welcome to your report by <strong>BDTest</strong>!
+                </p>
+            </div>
+        </div>
     </div>
 </section>
+<section class="section">
+    <div class="container">
+        <h2 class="subtitle">
+            Here is a <strong>summary</strong> of your tests:
+        </h2>
+
+        @await Html.PartialAsync("SummaryGraphics.cshtml", new SummaryViewModel {Scenarios = Model.Scenarios})
+
+        
+    </div>
+</section>
+
+@{
+    var scenariosGroupedByStories = @Model.Scenarios.GroupBy(scenario => scenario.GetStoryText());
+}
+
+<section class="section">
+    <div class="container">
+        <h2 class="subtitle">
+            Here are the <strong>stories</strong> that you've tested:
+        </h2>
+        
+        @{ var storyIndex = 0; }
+        @foreach(var story in scenariosGroupedByStories)
+        {
+            storyIndex++;
+        
+        <div class="box">
+            <h4 class="title is-4">@story.Key</h4>
+            
+            <a class="title is-5 toggle-hide" element-id-to-hide="story-summary-@storyIndex">Toggle Summary</a>
+            <div class="box mt-4" style="display: none" id="story-summary-@storyIndex">
+                @await Html.PartialAsync("SummaryGraphics.cshtml", new SummaryViewModel {Scenarios = story.ToList()})
+            </div>
+        </div>
+        
+    }
+    </div>
+</section>
+
 </body>
 </html>

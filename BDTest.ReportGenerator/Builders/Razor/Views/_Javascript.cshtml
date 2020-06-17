@@ -1,0 +1,34 @@
+<script>
+    function onWindowFullyLoaded(callback) {
+        if (document.readyState === 'complete') {
+            callback();
+        } else {
+            window.addEventListener('load', callback);
+        }
+    }
+    
+    function onDomLoaded(callback) {
+        if (document.readyState !== 'loading') {
+            callback();
+        } else {
+            document.addEventListener('DOMContentLoaded', callback);
+        }
+    }
+
+    onDomLoaded(function() {
+      let toggleElements = document.getElementsByClassName("toggle-hide");
+      
+      for (let toggleElement of toggleElements) {
+          toggleElement.addEventListener("click", function() {
+            let childElementIdToHide = toggleElement.getAttribute("element-id-to-hide");
+            let childElementToHide = document.getElementById(childElementIdToHide);
+            
+            if (childElementToHide.style.display === "none") {
+                childElementToHide.style.display = "block";
+              } else {
+                childElementToHide.style.display = "none";
+              }
+          })
+      }
+    })
+</script>

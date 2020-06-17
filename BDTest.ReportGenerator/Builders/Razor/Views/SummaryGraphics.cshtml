@@ -1,0 +1,71 @@
+@using BDTest.Test
+@model BDTest.ReportGenerator.Builders.Razor.Models.SummaryViewModel
+@{
+    var total = Model.Scenarios.Count;
+    var passed = Model.Scenarios.Count(scenario => scenario.Status == Status.Passed);
+    var failed = Model.Scenarios.Count(scenario => scenario.Status == Status.Failed);
+    var skipped = Model.Scenarios.Count(scenario => scenario.Status == Status.Skipped);
+    var notImplemented = Model.Scenarios.Count(scenario => scenario.Status == Status.NotImplemented);
+    var inconclusive = Model.Scenarios.Count(scenario => scenario.Status == Status.Inconclusive);
+}
+
+<div id="summary-boxes">
+    <div class="tile is-ancestor" id="summary-boxes-total">
+        <div class="tile is-parent">
+            <article class="tile is-child box notification is-info has-text-centered">
+                <p class="subtitle">Total</p>
+                <p class="title">@total</p>
+            </article>
+        </div>
+    </div>
+
+    <div class="tile is-ancestor" id="summary-boxes-others">
+        <div class="tile is-parent">
+            <article class="tile is-child box notification is-success">
+                <p class="subtitle">Passed</p>
+                <p class="title">@passed</p>
+            </article>
+        </div>
+        <div class="tile is-parent">
+            <article class="tile is-child box notification is-warning">
+                <p class="subtitle">Skipped</p>
+                <p class="title">@skipped</p>
+            </article>
+        </div>
+        <div class="tile is-parent">
+            <article class="tile is-child box notification is-warning">
+                <p class="subtitle">Not Implemented</p>
+                <p class="title">@notImplemented</p>
+            </article>
+        </div>
+        <div class="tile is-parent">
+            <article class="tile is-child box notification is-warning">
+                <p class="subtitle">Inconclusive</p>
+                <p class="title">@inconclusive</p>
+            </article>
+        </div>
+        <div class="tile is-parent">
+            <article class="tile is-child box notification is-danger">
+                <p class="subtitle">Failed</p>
+                <p class="title">@failed</p>
+            </article>
+        </div>
+    </div>
+</div>
+
+<div class="box" id="progress-bars">
+    <span>Passed</span>
+    <progress class="progress is-success" value="@passed" max="@total">Passed (@passed / @total)</progress>
+
+    <span>Failed</span>
+    <progress class="progress is-danger" value="@failed" max="@total">Failed (@failed / @total)</progress>
+
+    <span>Skipped</span>
+    <progress class="progress is-warning" value="@skipped" max="@total">Skipped (@skipped / @total)</progress>
+
+    <span>Not Implemented</span>
+    <progress class="progress is-warning" value="@notImplemented" max="@total">Not Implemented (@notImplemented / @total)</progress>
+
+    <span>Inconclusive</span>
+    <progress class="progress is-warning" value="@inconclusive" max="@total">Inconclusive (@inconclusive / @total)</progress>
+</div>
