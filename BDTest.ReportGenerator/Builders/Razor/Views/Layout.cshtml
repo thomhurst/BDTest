@@ -1,0 +1,29 @@
+@using BDTest.ReportGenerator.Builders.Razor.Models
+@model BDTest.ReportGenerator.Models.DataOutputModel
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>BDTest Report</title>
+    <link rel="stylesheet" href="./bdtest-reportdependencies/bulma/bulma.min.css"/>
+</head>
+<body>
+@await Html.PartialAsync("NavBarHeader.cshtml")
+<section class="section">
+    <p class="subtitle">
+        Welcome to your report by <strong>BDTest</strong>!
+    </p>
+    
+    <p class="subtitle">
+        Here is a <strong>summary</strong> of your tests:
+    </p>
+    
+    <div class="container">
+        @await Html.PartialAsync("StatusBars.cshtml", new StatusBarsViewModel {Scenarios = Model.Scenarios})
+        <span>You have @Model.Scenarios.Count scenarios! 2</span>
+    </div>
+</section>
+</body>
+</html>

@@ -4,9 +4,9 @@ using System.Linq;
 using BDTest.Test;
 using HtmlTags;
 
-namespace BDTest.ReportGenerator
+namespace BDTest.ReportGenerator.Extensions
 {
-    public static class Extensions
+    public static class MiscExtensions
     {
         public static string ToPrettyFormat(this TimeSpan span)
         {

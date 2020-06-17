@@ -1,0 +1,60 @@
+@using BDTest.Test
+@model BDTest.ReportGenerator.Builders.Razor.Models.StatusBarsViewModel
+@{
+    var max = Model.Scenarios.Count;
+    var passed = Model.Scenarios.Count(scenario => scenario.Status == Status.Passed);
+    var failed = Model.Scenarios.Count(scenario => scenario.Status == Status.Failed);
+    var skipped = Model.Scenarios.Count(scenario => scenario.Status == Status.Skipped);
+    var notImplemented = Model.Scenarios.Count(scenario => scenario.Status == Status.NotImplemented);
+    var inconclusive = Model.Scenarios.Count(scenario => scenario.Status == Status.Inconclusive);
+}
+
+<div class="tile is-ancestor" id="summary-boxes">
+    <div class="tile is-parent">
+        <article class="tile is-child box notification is-success">
+            <p class="subtitle">Passed</p>
+            <p class="title">@passed</p>
+        </article>
+    </div>
+    <div class="tile is-parent">
+        <article class="tile is-child box notification is-danger">
+            <p class="subtitle">Failed</p>
+            <p class="title">@failed</p>
+        </article>
+    </div>
+    <div class="tile is-parent">
+        <article class="tile is-child box notification is-warning">
+            <p class="subtitle">Skipped</p>
+            <p class="title">@skipped</p>
+        </article>
+    </div>
+    <div class="tile is-parent">
+        <article class="tile is-child box notification is-warning">
+            <p class="subtitle">Not Implemented</p>
+            <p class="title">@notImplemented</p>
+        </article>
+    </div>
+    <div class="tile is-parent">
+            <article class="tile is-child box notification is-warning">
+                <p class="subtitle">Inconclusive</p>
+                <p class="title">@inconclusive</p>
+            </article>
+        </div>
+</div>
+
+<div class="box" id="progress-bars">
+    <span>Passed</span>
+    <progress class="progress is-success" value="@passed" max="@max">Passed (@passed / @max)</progress>
+
+    <span>Failed</span>
+    <progress class="progress is-danger" value="@failed" max="@max">Failed (@failed / @max)</progress>
+
+    <span>Skipped</span>
+    <progress class="progress is-warning" value="@skipped" max="@max">Skipped (@skipped / @max)</progress>
+
+    <span>Not Implemented</span>
+    <progress class="progress is-warning" value="@notImplemented" max="@max">Not Implemented (@notImplemented / @max)</progress>
+
+    <span>Inconclusive</span>
+    <progress class="progress is-warning" value="@inconclusive" max="@max">Inconclusive (@inconclusive / @max)</progress>
+</div>

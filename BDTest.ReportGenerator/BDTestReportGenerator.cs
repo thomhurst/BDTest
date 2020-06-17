@@ -5,7 +5,8 @@ using System.Linq;
 using System.Reflection;
 using BDTest.Output;
 using BDTest.Paths;
-using BDTest.ReportGenerator.Builders;
+using BDTest.ReportGenerator.Builders.Razor;
+using BDTest.ReportGenerator.Extensions;
 using BDTest.ReportGenerator.Helpers;
 using BDTest.ReportGenerator.Models;
 using BDTest.ReportGenerator.Utils;
@@ -64,7 +65,13 @@ namespace BDTest.ReportGenerator
 
             PruneData();
 
-            HtmlReportBuilder.CreateReport(folderPath, dataToOutput);
+            Directory.CreateDirectory(FileLocations.ReportsOutputDirectory);
+            
+            var html = RenderProvider.GetRenderer().RenderViewToStringAsync("/Builders/Razor/Views/Layout.cshtml", dataToOutput).GetAwaiter().GetResult();
+            
+            File.WriteAllText(Path.Combine(folderPath, "RazorReport.html"), html);
+            
+            // HtmlReportBuilder.CreateReport(folderPath, dataToOutput);
 
             try
             {

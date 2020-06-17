@@ -7,6 +7,7 @@ using System.Text.Encodings.Web;
 using BDTest.Attributes;
 using BDTest.Output;
 using BDTest.Paths;
+using BDTest.ReportGenerator.Extensions;
 using BDTest.ReportGenerator.Helpers;
 using BDTest.ReportGenerator.Models;
 using BDTest.Settings;

@@ -5,7 +5,7 @@ using Newtonsoft.Json;
 
 namespace BDTest.ReportGenerator.Models
 {
-    internal class DataOutputModel
+    public class DataOutputModel
     {
         [JsonProperty]
         public TestTimer TestTimer { get; set; }
