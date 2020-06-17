@@ -127,7 +127,7 @@ namespace BDTest.ReportGenerator.Extensions
         {
             return text.Split(
                 new[] { Environment.NewLine },
-                StringSplitOptions.None
+                StringSplitOptions.RemoveEmptyEntries
             );
         }
 

@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using BDTest.Test;
@@ -17,6 +18,23 @@ namespace BDTest.ReportGenerator.Extensions
             var status = firstScenario?.Status ?? Status.Inconclusive;
             
             return status;
+        }
+
+        public static string GetCssColourValueForStatus(this Status status)
+        {
+            switch (status)
+            {
+                case Status.Passed:
+                    return "is-success";
+                case Status.Failed:
+                    return "is-danger";
+                case Status.Inconclusive:
+                case Status.NotImplemented:
+                case Status.Skipped:
+                    return "is-warning";
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(status), status, null);
+            }
         }
     }
 }

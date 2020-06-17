@@ -1,4 +1,5 @@
 @using BDTest.ReportGenerator.Builders.Razor.Models
+@using BDTest.ReportGenerator.Extensions
 @model BDTest.ReportGenerator.Models.DataOutputModel
 
 <!DOCTYPE html>
@@ -39,24 +40,43 @@
     var scenariosGroupedByStories = @Model.Scenarios.GroupBy(scenario => scenario.GetStoryText());
 }
 
-<section class="section">
-    <div class="container">
-        <h2 class="subtitle">
-            Here are the <strong>stories</strong> that you've tested:
-        </h2>
-        
+<section class="hero is-info">
+    <div class="hero-body">
+        <div class="container">
+            <h1 class="title">
+                Stories
+            </h1>
+            <h2 class="subtitle">
+                Here are the <strong>stories</strong> that you've tested:
+            </h2>
+        </div>
+    </div>
+</section>
+
+
         @{ var storyIndex = 0; }
-        @foreach(var story in scenariosGroupedByStories)
+        @foreach (var story in scenariosGroupedByStories)
         {
             storyIndex++;
-                var scenariosForThisStory = story.ToList();
+            var scenariosForThisStory = story.ToList();
 
-            <article class="message is-large">
-                <div class="message-header">
-                    <h4>@story.Key</h4>
-                    <button class="delete toggle-hide" aria-label="minimise" element-id-to-hide="story-@storyIndex"/>
-                </div>
-                <div class="message-body" id="story-@storyIndex">
+
+            <section class="section">
+                <section class="hero @scenariosForThisStory.GetTotalStatus().GetCssColourValueForStatus()">
+                    <div class="hero-body">
+                        <div class="container toggle-hide" element-id-to-hide="story-@storyIndex">
+                            @{
+                                var storyTextSplitByLines = story.Key.SplitOnNewLines();
+                                foreach (var line in storyTextSplitByLines)
+                                {
+                                    <h2 class="subtitle my-0">@line</h2>
+                                }
+                            }
+                        </div>
+                    </div>
+                </section>
+
+                <div class="box" id="story-@storyIndex">
                     <p class="title is-5 toggle-hide" toggle-alternative-text="Summary" element-id-to-hide="story-summary-@storyIndex">Click here to show a summary for this story</p>
                     <div class="mt-4" style="display: none" id="story-summary-@storyIndex">
                         @await Html.PartialAsync("SummaryGraphics.cshtml", new SummaryViewModel {Scenarios = scenariosForThisStory})
@@ -79,13 +99,9 @@
                             // Write Grouped
                         }
                     }
-
                 </div>
-            </article>
-
+            </section>
         }
-    </div>
-</section>
 
 </body>
 </html>
