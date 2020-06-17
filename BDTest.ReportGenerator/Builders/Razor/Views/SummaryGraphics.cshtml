@@ -10,42 +10,46 @@
 }
 
 <div id="summary-boxes">
-    <div class="tile is-ancestor" id="summary-boxes-total">
-        <div class="tile is-parent">
-            <article class="tile is-child box notification is-info has-text-centered">
-                <p class="subtitle">Total</p>
-                <p class="title">@total</p>
-            </article>
+    <div class="columns is-centered">
+        <div class="column is-half">
+            <div class="tile is-ancestor" id="summary-boxes-total">
+                <div class="tile is-parent">
+                    <article class="tile is-child box notification is-info has-text-centered">
+                        <p class="subtitle">Total</p>
+                        <p class="title">@total</p>
+                    </article>
+                </div>
+            </div>
         </div>
     </div>
 
     <div class="tile is-ancestor" id="summary-boxes-others">
         <div class="tile is-parent">
-            <article class="tile is-child box notification is-success">
+            <article class="tile is-child box notification is-success has-text-centered">
                 <p class="subtitle">Passed</p>
                 <p class="title">@passed</p>
             </article>
         </div>
         <div class="tile is-parent">
-            <article class="tile is-child box notification is-warning">
+            <article class="tile is-child box notification is-warning has-text-centered">
                 <p class="subtitle">Skipped</p>
                 <p class="title">@skipped</p>
             </article>
         </div>
         <div class="tile is-parent">
-            <article class="tile is-child box notification is-warning">
+            <article class="tile is-child box notification is-warning has-text-centered">
                 <p class="subtitle">Not Implemented</p>
                 <p class="title">@notImplemented</p>
             </article>
         </div>
         <div class="tile is-parent">
-            <article class="tile is-child box notification is-warning">
+            <article class="tile is-child box notification is-warning has-text-centered">
                 <p class="subtitle">Inconclusive</p>
                 <p class="title">@inconclusive</p>
             </article>
         </div>
         <div class="tile is-parent">
-            <article class="tile is-child box notification is-danger">
+            <article class="tile is-child box notification is-danger has-text-centered">
                 <p class="subtitle">Failed</p>
                 <p class="title">@failed</p>
             </article>

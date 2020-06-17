@@ -10,7 +10,7 @@
     <link rel="stylesheet" href="./bdtest-reportdependencies/bulma/bulma.min.css"/>
     @await Html.PartialAsync("_Javascript.cshtml")
 </head>
-<body>
+<body class="has-navbar-fixed-top">
 @await Html.PartialAsync("NavBarHeader.cshtml")
 <section class="section">
     <div class="container">
@@ -49,17 +49,41 @@
         @foreach(var story in scenariosGroupedByStories)
         {
             storyIndex++;
-        
-        <div class="box">
-            <h4 class="title is-4">@story.Key</h4>
-            
-            <a class="title is-5 toggle-hide" element-id-to-hide="story-summary-@storyIndex">Toggle Summary</a>
-            <div class="box mt-4" style="display: none" id="story-summary-@storyIndex">
-                @await Html.PartialAsync("SummaryGraphics.cshtml", new SummaryViewModel {Scenarios = story.ToList()})
-            </div>
-        </div>
-        
-    }
+                var scenariosForThisStory = story.ToList();
+
+            <article class="message is-large">
+                <div class="message-header">
+                    <h4>@story.Key</h4>
+                    <button class="delete toggle-hide" aria-label="minimise" element-id-to-hide="story-@storyIndex"/>
+                </div>
+                <div class="message-body" id="story-@storyIndex">
+                    <p class="title is-5 toggle-hide" toggle-alternative-text="Summary" element-id-to-hide="story-summary-@storyIndex">Click here to show a summary for this story</p>
+                    <div class="mt-4" style="display: none" id="story-summary-@storyIndex">
+                        @await Html.PartialAsync("SummaryGraphics.cshtml", new SummaryViewModel {Scenarios = scenariosForThisStory})
+                    </div>
+
+                    <div class="my-6"></div>
+
+                    <h5 class="title is-5">Scenarios</h5>
+
+                    @foreach (var groupedScenarios in scenariosForThisStory.GroupBy(scenario => scenario.GetScenarioText()))
+                    {
+                        if (groupedScenarios.Count() == 1)
+                        {
+                            var scenario = groupedScenarios.First();
+                            // WriteScenario
+                            <h6 class="title is-6">@scenario.GetScenarioText()</h6>
+                        }
+                        else
+                        {
+                            // Write Grouped
+                        }
+                    }
+
+                </div>
+            </article>
+
+        }
     </div>
 </section>
 

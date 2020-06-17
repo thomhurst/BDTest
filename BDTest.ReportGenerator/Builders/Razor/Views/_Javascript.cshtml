@@ -28,6 +28,14 @@
               } else {
                 childElementToHide.style.display = "none";
               }
+            
+            if(toggleElement.hasAttribute("toggle-alternative-text")) {
+                var alternativeText = toggleElement.getAttribute("toggle-alternative-text");
+                var currentText = toggleElement.textContent;
+                
+                toggleElement.textContent = alternativeText;
+                toggleElement.setAttribute("toggle-alternative-text", currentText);
+            }
           })
       }
     })
