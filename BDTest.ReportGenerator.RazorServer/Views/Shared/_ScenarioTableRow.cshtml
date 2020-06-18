@@ -1,0 +1,10 @@
+@using BDTest.ReportGenerator.RazorServer.Extensions
+@model BDTest.ReportGenerator.RazorServer.Models.ScenarioViewModel
+
+<tr class="modal-link pointer" data-target="scenario-modal-@Model.ScenarioIndex">
+    <th>@Model.Scenario.GetScenarioText()</th>
+    <td class="@Model.Scenario.Status.GetCssColourValueForStatus()">@Model.Scenario.Status</td>
+    <td>@Model.Scenario.TimeTaken.ToPrettyFormat()</td>
+    <td>@Model.Scenario.StartTime.ToStringForReport()</td>
+    <td>@Model.Scenario.EndTime.ToStringForReport()</td>
+</tr>

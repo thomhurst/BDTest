@@ -1,0 +1,45 @@
+@using BDTest.ReportGenerator.RazorServer.Extensions
+@model BDTest.ReportGenerator.RazorServer.Models.ScenarioViewModel
+
+<div class="modal" id="scenario-modal-@Model.ScenarioIndex">
+    <div class="modal-background"></div>
+    <div class="modal-card modal-card-wide">
+        <header class="modal-card-head">
+            <p class="modal-card-title">@Model.Scenario.GetScenarioText()</p>
+            <a class="delete" aria-label="close"></a>
+        </header>
+        <section class="modal-card-body">
+            <div>
+                <table class="table is-fullwidth">
+                    <thead>
+                    <tr>
+                        <th>Step</th>
+                        <th>Status</th>
+                        <th>Duration</th>
+                        <th>Start</th>
+                        <th>End</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+
+                    @{ var scenarioIndex = 0; }
+                    @foreach (var step in Model.Scenario.Steps)
+                    {
+                        <tr>
+                            <td>@step.StepText</td>
+                            <td class="@step.Status.GetCssColourValueForStatus()">@step.Status</td>
+                            <td>@step.TimeTaken.ToPrettyFormat()</td>
+                            <td>@step.StartTime.ToStringForReport()</td>
+                            <td>@step.EndTime.ToStringForReport()</td>
+                        </tr>
+                    }
+
+                    </tbody>
+                </table>
+            </div>
+        </section>
+        <footer class="modal-card-foot">
+            <button class="button">Close</button>
+        </footer>
+    </div>
+</div>

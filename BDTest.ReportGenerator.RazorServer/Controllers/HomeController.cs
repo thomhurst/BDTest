@@ -1,21 +1,23 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Threading.Tasks;
 using BDTest.Maps;
+using BDTest.ReportGenerator.RazorServer.Interfaces;
 using BDTest.ReportGenerator.RazorServer.Models;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 
 namespace BDTest.ReportGenerator.RazorServer.Controllers
 {
     public class HomeController : Controller
     {
-        private readonly IMemoryCache _cache;
+        private readonly IMemoryCacheDataStore _memoryCacheDataStore;
         private readonly ILogger<HomeController> _logger;
 
-        public HomeController(IMemoryCache cache, ILogger<HomeController> logger)
+        public HomeController(IMemoryCacheDataStore memoryCacheDataStore, ILogger<HomeController> logger)
         {
-            _cache = cache;
+            _memoryCacheDataStore = memoryCacheDataStore;
             _logger = logger;
         }
 
@@ -30,7 +32,7 @@ namespace BDTest.ReportGenerator.RazorServer.Controllers
             
             var id = Guid.NewGuid().ToString("N");
 
-            _cache.Set(id, bdTestOutputModel);
+            _memoryCacheDataStore.StoreData(id, JsonConvert.SerializeObject(bdTestOutputModel));
 
             return RedirectToAction("Summary", "Home", new { id });
         }
@@ -44,28 +46,30 @@ namespace BDTest.ReportGenerator.RazorServer.Controllers
 
         [HttpGet]
         [Route("report/{id}/summary")]
-        public IActionResult Summary([FromRoute] string id)
+        public Task<IActionResult> Summary([FromRoute] string id)
         {
             return GetView(id, "Summary");
         }
         
         [HttpGet]
         [Route("report/{id}/stories")]
-        public IActionResult Stories([FromRoute] string id)
+        public Task<IActionResult> Stories([FromRoute] string id)
         {
             return GetView(id, "Stories");
         }
 
-        private IActionResult GetView(string id, string viewName)
+        private async Task<IActionResult> GetView(string id, string viewName)
         {
-            if (!_cache.TryGetValue(id, out var model))
+            var model = await _memoryCacheDataStore.GetDataFromStore(id);
+            
+            if (model == null)
             {
                 return NotFound($"Report Not Found: {id}");
             }
-            
+
             ViewBag.Id = id;
             
-            return View(viewName, model);
+            return View(viewName, JsonConvert.DeserializeObject<BDTestOutputModel>(model));
 
         }
 

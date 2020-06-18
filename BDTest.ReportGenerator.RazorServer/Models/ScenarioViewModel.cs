@@ -1,6 +1,6 @@
 using BDTest.Test;
 
-namespace BDTest.ReportGenerator.Builders.Razor.Models
+namespace BDTest.ReportGenerator.RazorServer.Models
 {
     public class ScenarioViewModel
     {
