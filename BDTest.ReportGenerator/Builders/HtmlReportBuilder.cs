@@ -5,11 +5,11 @@ using System.Linq;
 using System.Text;
 using System.Text.Encodings.Web;
 using BDTest.Attributes;
+using BDTest.Helpers;
+using BDTest.Maps;
 using BDTest.Output;
 using BDTest.Paths;
 using BDTest.ReportGenerator.Extensions;
-using BDTest.ReportGenerator.Helpers;
-using BDTest.ReportGenerator.Models;
 using BDTest.Settings;
 using BDTest.Test;
 using HtmlTags;
@@ -37,18 +37,18 @@ namespace BDTest.ReportGenerator.Builders
         private int _storiesBuiltCounter;
         private readonly List<BuildableTest> _notRun;
 
-        internal static HtmlReportBuilder CreateReport(string folderPath, DataOutputModel dataOutputModel)
+        internal static HtmlReportBuilder CreateReport(string folderPath, BDTestOutputModel bdTestOutputModel)
         {
-            return new HtmlReportBuilder(folderPath, dataOutputModel);
+            return new HtmlReportBuilder(folderPath, bdTestOutputModel);
         }
 
-        internal HtmlReportBuilder(string folderPath, DataOutputModel dataOutputModel)
+        internal HtmlReportBuilder(string folderPath, BDTestOutputModel bdTestOutputModel)
         {
             _folderPath = folderPath;
-            _scenarios = dataOutputModel.Scenarios;
+            _scenarios = bdTestOutputModel.Scenarios;
             _stories = _scenarios.Select(scenario => scenario.GetStoryText()).Distinct().ToList();
-            _testTimer = dataOutputModel.TestTimer;
-            _notRun = dataOutputModel.NotRun;
+            _testTimer = bdTestOutputModel.TestTimer;
+            _notRun = bdTestOutputModel.NotRun;
             CreateFlakinessReport(folderPath);
             CreateTestTimesComparisonReport(folderPath);
             CreateReportWithoutStories(folderPath);
@@ -200,14 +200,14 @@ namespace BDTest.ReportGenerator.Builders
                 {
                     try
                     {
-                        return JsonConvert.DeserializeObject<DataOutputModel>(File.ReadAllText(filePath));
+                        return JsonConvert.DeserializeObject<BDTestOutputModel>(File.ReadAllText(filePath));
                     }
                     catch
                     {
                         return null;
                     }
                 })
-                .Where(model => model != null && model.Version == VersionHelper.CurrentVersion)
+                .Where(model => model != null && model.Version == BDTestVersionHelper.CurrentVersion)
                 .SelectMany(model => model.Scenarios)
                 .ToList();
             

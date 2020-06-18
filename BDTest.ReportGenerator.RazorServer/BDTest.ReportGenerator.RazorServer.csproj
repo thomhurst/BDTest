@@ -1,0 +1,79 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+    <PropertyGroup>
+        <TargetFramework>netcoreapp3.1</TargetFramework>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <_ContentIncludedByDefault Remove="Views\Home\Index.cshtml" />
+      <_ContentIncludedByDefault Remove="Views\Home\Privacy.cshtml" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Content Update="Views\Shared\_Css.cshtml">
+        <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <Content Update="Views\Shared\_Javascript.cshtml">
+        <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <Content Update="Views\Shared\_NavBarHeader.cshtml">
+        <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <Content Update="Views\Shared\_Scenario.cshtml">
+        <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <Content Update="Views\Shared\_SummaryGraphics.cshtml">
+        <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <Content Update="Views\Shared\Layout.cshtml">
+        <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\BDTest\BDTest.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Include="wwwroot\css\bulma\bulma-rtl.css">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+      <None Include="wwwroot\css\bulma\bulma-rtl.css.map">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        <DependentUpon>bulma-rtl.css</DependentUpon>
+      </None>
+      <None Include="wwwroot\css\bulma\bulma-rtl.min.css">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        <DependentUpon>bulma-rtl.css</DependentUpon>
+      </None>
+      <None Include="wwwroot\css\bulma\bulma.css">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+      <None Include="wwwroot\css\bulma\bulma.css.map">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        <DependentUpon>bulma.css</DependentUpon>
+      </None>
+      <None Include="wwwroot\css\bulma\bulma.min.css">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        <DependentUpon>bulma.css</DependentUpon>
+      </None>
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="3.1.5" />
+      <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="3.1.5" />
+    </ItemGroup>
+
+</Project>

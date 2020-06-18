@@ -3,9 +3,9 @@ using BDTest.Output;
 using BDTest.Test;
 using Newtonsoft.Json;
 
-namespace BDTest.ReportGenerator.Models
+namespace BDTest.Maps
 {
-    public class DataOutputModel
+    public class BDTestOutputModel
     {
         [JsonProperty]
         public TestTimer TestTimer { get; set; }

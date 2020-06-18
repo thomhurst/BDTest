@@ -3,12 +3,12 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using BDTest.Helpers;
+using BDTest.Maps;
 using BDTest.Output;
 using BDTest.Paths;
-using BDTest.ReportGenerator.Builders.Razor;
+using BDTest.ReportGenerator.Builders;
 using BDTest.ReportGenerator.Extensions;
-using BDTest.ReportGenerator.Helpers;
-using BDTest.ReportGenerator.Models;
 using BDTest.ReportGenerator.Utils;
 using BDTest.Settings;
 using BDTest.Test;
@@ -46,12 +46,12 @@ namespace BDTest.ReportGenerator
 
             DeleteExistingFiles(reportPathByStory, reportPathAllScenarios, testDataJsonPath);
 
-            var dataToOutput = new DataOutputModel
+            var dataToOutput = new BDTestOutputModel
             {
                 Scenarios = scenarios,
                 TestTimer = testTimer,
                 NotRun = BDTestUtil.GetNotRunScenarios(),
-                Version = VersionHelper.CurrentVersion
+                Version = BDTestVersionHelper.CurrentVersion
             };
 
             var settings = new JsonSerializerSettings
@@ -65,13 +65,9 @@ namespace BDTest.ReportGenerator
 
             PruneData();
 
-            Directory.CreateDirectory(FileLocations.ReportsOutputDirectory);
-            
-            var html = RenderProvider.GetRenderer().RenderViewToStringAsync("~/Builders/Razor/Views/Layout.cshtml", dataToOutput).GetAwaiter().GetResult();
-            
-            File.WriteAllText(Path.Combine(folderPath, "RazorReport.html"), html);
-            
-            // HtmlReportBuilder.CreateReport(folderPath, dataToOutput);
+            Directory.CreateDirectory(folderPath);
+
+            HtmlReportBuilder.CreateReport(folderPath, dataToOutput);
 
             try
             {
@@ -219,7 +215,6 @@ namespace BDTest.ReportGenerator
                 TestsStartedAt = enumerable.GetStartDateTime(),
                 TestsFinishedAt = enumerable.GetEndDateTime()
             };
-            testTimer.ElapsedTime = testTimer.TestsFinishedAt - testTimer.TestsStartedAt;
 
             return testTimer;
         }

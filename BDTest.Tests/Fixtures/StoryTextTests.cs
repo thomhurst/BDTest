@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using BDTest.Attributes;
 using BDTest.ReportGenerator;
 using BDTest.Test;
@@ -21,11 +22,20 @@ namespace BDTest.Tests.Fixtures
         }
 
         [Test]
-        public void CustomStoryText()
+        public async Task CustomStoryText()
         {
             var scenario = When(() => Console.WriteLine("my test has a story text"))
                 .Then(() => Console.WriteLine("the attribute should be serialized to the json output"))
                 .BDTest();
+            
+            var uri = new UriBuilder()
+            {
+                Scheme = "https",
+                Host = "localhost",
+                Port = 44329
+            }.Uri;
+            
+            var guid = await BDTestRazorServer.SendData(uri, true);
             
             BDTestReportGenerator.GenerateInFolder(FileHelpers.GetUniqueTestOutputFolder());
 

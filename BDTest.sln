@@ -13,6 +13,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BDTest.Example", "BDTest.Ex
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BDTest.Tests", "BDTest.Tests\BDTest.Tests.csproj", "{3E0458F3-4FA1-4A37-A84E-996B5CA2A87E}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BDTest.ReportGenerator.RazorServer", "BDTest.ReportGenerator.RazorServer\BDTest.ReportGenerator.RazorServer.csproj", "{26D8DE39-2C9D-402D-A769-B7A8FBDF26BA}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -39,6 +41,10 @@ Global
 		{3E0458F3-4FA1-4A37-A84E-996B5CA2A87E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3E0458F3-4FA1-4A37-A84E-996B5CA2A87E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3E0458F3-4FA1-4A37-A84E-996B5CA2A87E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{26D8DE39-2C9D-402D-A769-B7A8FBDF26BA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{26D8DE39-2C9D-402D-A769-B7A8FBDF26BA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{26D8DE39-2C9D-402D-A769-B7A8FBDF26BA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{26D8DE39-2C9D-402D-A769-B7A8FBDF26BA}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

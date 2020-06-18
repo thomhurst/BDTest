@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using BDTest.Test;
 
-namespace BDTest.ReportGenerator.Extensions
+namespace BDTest.ReportGenerator.RazorServer.Extensions
 {
     public static class ScenarioExtensions
     {
