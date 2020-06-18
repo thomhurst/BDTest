@@ -1,0 +1,20 @@
+@{ var id = ViewBag.Id; }
+
+@{
+    var summaryIsActive = Context.Request.Path.Value?.ToLowerInvariant().Contains("summary") == true ? "is-active" : "";
+    var storiesIsActive = Context.Request.Path.Value?.ToLowerInvariant().Contains("stories") == true ? "is-active" : "";
+}
+
+<div class="tabs is-right">
+    <ul><li class="@summaryIsActive">
+            <a href="~/report/@id/summary">
+                <span>Summary</span>
+            </a>
+        </li>
+        <li class="@storiesIsActive">
+            <a href="~/report/@id/stories">
+                <span>Stories</span>
+            </a>
+        </li>
+    </ul>
+</div>

@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.Threading.Tasks;
 using BDTest.Attributes;
 using BDTest.ReportGenerator;
@@ -20,9 +21,23 @@ namespace BDTest.Tests.Fixtures
         }
 
         [OneTimeTearDown]
-        public void Teardown()
+        public async Task Teardown()
         {
             BDTestReportGenerator.GenerateInFolder(nameof(SkipCertainStepsTests));
+            
+            var uri = new Uri("https://bdtest-reportserver.azurewebsites.net");
+            
+            uri = new UriBuilder
+            {
+                Scheme = "https",
+                Host = "localhost",
+                Port = 44329
+            }.Uri;
+            
+            var url = await BDTestReportServer.SendDataAndGetReportUri(uri);
+            var absoluteUrl = url.AbsoluteUri;
+            Console.WriteLine(absoluteUrl);
+            Process.Start("explorer", absoluteUrl);
         }
 
         [Test]

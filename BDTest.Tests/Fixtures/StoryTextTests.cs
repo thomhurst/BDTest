@@ -27,16 +27,7 @@ namespace BDTest.Tests.Fixtures
             var scenario = When(() => Console.WriteLine("my test has a story text"))
                 .Then(() => Console.WriteLine("the attribute should be serialized to the json output"))
                 .BDTest();
-            
-            var uri = new UriBuilder()
-            {
-                Scheme = "https",
-                Host = "localhost",
-                Port = 44329
-            }.Uri;
-            
-            var guid = await BDTestRazorServer.SendData(uri, true);
-            
+
             BDTestReportGenerator.GenerateInFolder(FileHelpers.GetUniqueTestOutputFolder());
 
             Assert.That(scenario.GetStoryText(), Is.EqualTo($"As a BDTest developer{Environment.NewLine}I want to make sure that BDTest works{Environment.NewLine}So that other developers can use it confidently{Environment.NewLine}"));

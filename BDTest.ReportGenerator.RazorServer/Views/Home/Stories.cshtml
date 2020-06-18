@@ -1,0 +1,99 @@
+@using BDTest.ReportGenerator.Builders.Razor.Models
+@using BDTest.ReportGenerator.RazorServer.Extensions
+@model BDTest.Maps.BDTestOutputModel
+
+@{
+    ViewBag.Title = "Stories";
+    Layout = "_Layout";
+}
+
+@{
+    var scenariosGroupedByStories = @Model.Scenarios.GroupBy(scenario => scenario.GetStoryText());
+}
+
+<section class="hero is-info">
+    <div class="hero-body">
+        <div class="container">
+            <h1 class="title">
+                Stories
+            </h1>
+            <h2 class="subtitle">
+                Here are the <strong>stories</strong> that you've tested:
+            </h2>
+        </div>
+    </div>
+</section>
+
+@{ var storyIndex = 0; }
+
+@foreach (var story in scenariosGroupedByStories)
+{
+    storyIndex++;
+    var scenariosForThisStory = story.ToList();
+
+    <section class="section">
+        <section class="hero @scenariosForThisStory.GetTotalStatus().GetCssColourValueForStatus()">
+            <div class="hero-body">
+                <div class="container toggle-hide pointer" element-id-to-hide="story-@storyIndex">
+                    @{
+                        var storyTextSplitByLines = story.Key.SplitOnNewLines();
+                        foreach (var line in storyTextSplitByLines)
+                        {
+                            <h2 class="subtitle my-0">@line</h2>
+                        }
+                    }
+                </div>
+            </div>
+        </section>
+
+        <div class="box" id="story-@storyIndex">
+            <div class="has-text-right">
+                <button class="button toggle-hide pointer" toggle-alternative-text="Hide Summary" element-id-to-hide="story-summary-@storyIndex">Show Summary</button>
+            </div>
+
+            <div class="mt-4 container" style="display: none" id="story-summary-@storyIndex">
+                @await Html.PartialAsync("_SummaryGraphics", new SummaryViewModel {Scenarios = scenariosForThisStory})
+            </div>
+
+            <table class="table is-fullwidth">
+                <thead>
+                <tr>
+                    <th>Scenario</th>
+                    <th>Status</th>
+                    <th>Duration</th>
+                    <th>Start</th>
+                    <th>End</th>
+                </tr>
+                </thead>
+                <tbody>
+
+                @{ var scenarioIndex = 0; }
+                @foreach (var groupedScenarios in scenariosForThisStory.GroupBy(scenario => scenario.GetScenarioText()))
+                {
+                    if (groupedScenarios.Count() == 1)
+                    {
+                        @await Html.PartialAsync("_Scenario", new ScenarioViewModel
+                        {
+                            Scenario = groupedScenarios.First(),
+                            ScenarioIndex = ++scenarioIndex
+                        })
+                    }
+                    else
+                    {
+                        // Write wrapper element?
+                        foreach (var scenario in groupedScenarios)
+                        {
+                            @await Html.PartialAsync("_Scenario", new ScenarioViewModel
+                            {
+                                Scenario = scenario,
+                                ScenarioIndex = ++scenarioIndex
+                            })
+                        }
+                    }
+                }
+
+                </tbody>
+            </table>
+        </div>
+    </section>
+}

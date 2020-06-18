@@ -12,9 +12,9 @@ using Newtonsoft.Json;
 
 namespace BDTest
 {
-    public static class BDTestRazorServer
+    public static class BDTestReportServer
     {
-        public static async Task<string> SendData(Uri serverAddress, bool shouldOpenWebPage)
+        public static async Task<Uri> SendDataAndGetReportUri(Uri serverAddress)
         {
             serverAddress = new UriBuilder(serverAddress)
             {
@@ -42,7 +42,7 @@ namespace BDTest
             
             var response = await httpClient.SendAsync(httpRequestMessage);
 
-            return await response.EnsureSuccessStatusCode().Content.ReadAsStringAsync();
+            return response.EnsureSuccessStatusCode().RequestMessage.RequestUri;
         }
         
         private static TestTimer GetTestTimer(IReadOnlyCollection<Scenario> scenarios)

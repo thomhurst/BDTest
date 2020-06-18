@@ -28,23 +28,45 @@ namespace BDTest.ReportGenerator.RazorServer.Controllers
                 return BadRequest();
             }
             
-            var guid = Guid.NewGuid().ToString("N");
+            var id = Guid.NewGuid().ToString("N");
 
-            _cache.Set(guid, bdTestOutputModel);
+            _cache.Set(id, bdTestOutputModel);
 
-            return Redirect($"report/{guid}");
+            return RedirectToAction("Summary", "Home", new { id });
         }
 
         [HttpGet]
         [Route("report/{id}")]
         public IActionResult GetReport([FromRoute] string id)
         {
-            if(_cache.TryGetValue(id, out var model))
-            {
-                return View("Layout", model);   
-            }
+            return RedirectToAction("Summary", "Home", new { id });
+        }
 
-            return NotFound();
+        [HttpGet]
+        [Route("report/{id}/summary")]
+        public IActionResult Summary([FromRoute] string id)
+        {
+            return GetView(id, "Summary");
+        }
+        
+        [HttpGet]
+        [Route("report/{id}/stories")]
+        public IActionResult Stories([FromRoute] string id)
+        {
+            return GetView(id, "Stories");
+        }
+
+        private IActionResult GetView(string id, string viewName)
+        {
+            if (!_cache.TryGetValue(id, out var model))
+            {
+                return NotFound($"Report Not Found: {id}");
+            }
+            
+            ViewBag.Id = id;
+            
+            return View(viewName, model);
+
         }
 
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
