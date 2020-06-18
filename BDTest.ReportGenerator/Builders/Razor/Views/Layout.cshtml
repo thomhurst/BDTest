@@ -8,11 +8,11 @@
     <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>BDTest Report</title>
-    <link rel="stylesheet" href="./bdtest-reportdependencies/bulma/bulma.min.css"/>
+    @await Html.PartialAsync("_Css.cshtml")
     @await Html.PartialAsync("_Javascript.cshtml")
 </head>
 <body class="has-navbar-fixed-top">
-@await Html.PartialAsync("NavBarHeader.cshtml")
+@await Html.PartialAsync("_NavBarHeader.cshtml")
 <section class="section">
     <div class="container">
         <div class="columns is-centered">
@@ -30,7 +30,7 @@
             Here is a <strong>summary</strong> of your tests:
         </h2>
 
-        @await Html.PartialAsync("SummaryGraphics.cshtml", new SummaryViewModel {Scenarios = Model.Scenarios})
+        @await Html.PartialAsync("_SummaryGraphics.cshtml", new SummaryViewModel {Scenarios = Model.Scenarios})
 
         
     </div>
@@ -64,7 +64,7 @@
             <section class="section">
                 <section class="hero @scenariosForThisStory.GetTotalStatus().GetCssColourValueForStatus()">
                     <div class="hero-body">
-                        <div class="container toggle-hide" element-id-to-hide="story-@storyIndex">
+                        <div class="container toggle-hide pointer" element-id-to-hide="story-@storyIndex">
                             @{
                                 var storyTextSplitByLines = story.Key.SplitOnNewLines();
                                 foreach (var line in storyTextSplitByLines)
@@ -77,28 +77,56 @@
                 </section>
 
                 <div class="box" id="story-@storyIndex">
-                    <p class="title is-5 toggle-hide" toggle-alternative-text="Summary" element-id-to-hide="story-summary-@storyIndex">Click here to show a summary for this story</p>
-                    <div class="mt-4" style="display: none" id="story-summary-@storyIndex">
-                        @await Html.PartialAsync("SummaryGraphics.cshtml", new SummaryViewModel {Scenarios = scenariosForThisStory})
+                    <div class="has-text-centered">
+                            <button class="button toggle-hide pointer" toggle-alternative-text="Hide Summary" element-id-to-hide="story-summary-@storyIndex">Show Summary</button>
+                        </div>
+
+                        <div class="mt-4 container" style="display: none" id="story-summary-@storyIndex">
+                        @await Html.PartialAsync("_SummaryGraphics.cshtml", new SummaryViewModel {Scenarios = scenariosForThisStory})
                     </div>
 
+                    @* Spacer *@
                     <div class="my-6"></div>
 
-                    <h5 class="title is-5">Scenarios</h5>
+                    <table class="table is-fullwidth">
+                        <thead>
+                        <tr>
+                            <th>Scenario</th>
+                            <th>Status</th>
+                            <th>Duration</th>
+                            <th>Start</th>
+                            <th>End</th>
+                        </tr>
+                        </thead>>
+                        <tbody>
 
-                    @foreach (var groupedScenarios in scenariosForThisStory.GroupBy(scenario => scenario.GetScenarioText()))
-                    {
-                        if (groupedScenarios.Count() == 1)
+                        @{ var scenarioIndex = 0; }
+                        @foreach (var groupedScenarios in scenariosForThisStory.GroupBy(scenario => scenario.GetScenarioText()))
                         {
-                            var scenario = groupedScenarios.First();
-                            // WriteScenario
-                            <h6 class="title is-6">@scenario.GetScenarioText()</h6>
+                            if (groupedScenarios.Count() == 1)
+                            {
+                                @await Html.PartialAsync("_Scenario.cshtml", new ScenarioViewModel
+                                {
+                                    Scenario = groupedScenarios.First(),
+                                    ScenarioIndex = ++scenarioIndex
+                                })
+                            }
+                            else
+                            {
+                                // Write wrapper element?
+                                foreach (var scenario in groupedScenarios)
+                                {
+                                    @await Html.PartialAsync("_Scenario.cshtml", new ScenarioViewModel
+                                    {
+                                        Scenario = scenario,
+                                        ScenarioIndex = ++scenarioIndex
+                                    })
+                                }
+                            }
                         }
-                        else
-                        {
-                            // Write Grouped
-                        }
-                    }
+
+                        </tbody>
+                    </table>
                 </div>
             </section>
         }

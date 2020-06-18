@@ -13,7 +13,8 @@ namespace BDTest.ReportGenerator.Builders.Razor
 {
     public class RenderProvider
     {
-        private static RazorViewToStringRenderer _renderer;
+        private static readonly RazorViewToStringRenderer _renderer;
+        private static readonly ServiceProvider _provider;
 
         static RenderProvider()
         {
@@ -21,11 +22,11 @@ namespace BDTest.ReportGenerator.Builders.Razor
             var applicationEnvironment = PlatformServices.Default.Application;
             services.AddSingleton(applicationEnvironment);
 
-            var appDirectory = Directory.GetCurrentDirectory();
+            var appDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
 
             var environment = new HostingEnvironment
             {
-                ApplicationName = Assembly.GetEntryAssembly().GetName().Name
+                ApplicationName = Assembly.GetExecutingAssembly().GetName().Name
             };
             services.AddSingleton<IHostingEnvironment>(environment);
 
@@ -33,6 +34,7 @@ namespace BDTest.ReportGenerator.Builders.Razor
             {
                 options.FileProviders.Clear();
                 options.FileProviders.Add(new PhysicalFileProvider(appDirectory));
+                //options.AddBDTestViews();
             });
 
             services.AddSingleton<ObjectPoolProvider, DefaultObjectPoolProvider>();
@@ -43,8 +45,8 @@ namespace BDTest.ReportGenerator.Builders.Razor
             services.AddLogging();
             services.AddMvc();
             services.AddSingleton<RazorViewToStringRenderer>();
-            var provider = services.BuildServiceProvider();
-            _renderer = provider.GetRequiredService<RazorViewToStringRenderer>();
+            _provider = services.BuildServiceProvider();
+            _renderer = _provider.GetRequiredService<RazorViewToStringRenderer>();
         }
 
         public static RazorViewToStringRenderer GetRenderer() => _renderer;

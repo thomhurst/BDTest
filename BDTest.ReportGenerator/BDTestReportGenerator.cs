@@ -67,7 +67,7 @@ namespace BDTest.ReportGenerator
 
             Directory.CreateDirectory(FileLocations.ReportsOutputDirectory);
             
-            var html = RenderProvider.GetRenderer().RenderViewToStringAsync("/Builders/Razor/Views/Layout.cshtml", dataToOutput).GetAwaiter().GetResult();
+            var html = RenderProvider.GetRenderer().RenderViewToStringAsync("~/Builders/Razor/Views/Layout.cshtml", dataToOutput).GetAwaiter().GetResult();
             
             File.WriteAllText(Path.Combine(folderPath, "RazorReport.html"), html);
             
