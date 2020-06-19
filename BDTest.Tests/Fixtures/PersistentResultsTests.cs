@@ -32,8 +32,8 @@ namespace BDTest.Tests.Fixtures
         public void CanDeserializePersistentTestResultsSuccessfully()
         {
             BDTestSettings.PersistentResultsDirectory =
-                Path.Combine(FileHelpers.GetUniqueTestOutputFolder(), "Persistent");
-            
+                Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"), "Persistent");
+
             When(() => Console.WriteLine("A persistent json file is written")).WithStepText(() => "I write custom when step text")
                 .Then(() => CustomStep("1", "2"))
                 .BDTest();

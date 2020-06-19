@@ -1,5 +1,6 @@
-using System;
-using System.Diagnostics;
+using System.IO;
+using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 using NUnit.Framework;
 
@@ -11,28 +12,14 @@ namespace BDTest.Tests.Fixtures
         [OneTimeTearDown]
         public async Task DeleteOutputDirectories()
         {
-            // var bdTestOutputs = Directory
-            //     .GetDirectories(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location))
-            //     .Where(directory => Path.GetFileName(directory).StartsWith("BDTest-"));
-            //
-            // foreach (var bdTestOutput in bdTestOutputs)
-            // {
-            //     Directory.Delete(bdTestOutput, true);
-            // }
+            var bdTestOutputs = Directory
+                .GetDirectories(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location))
+                .Where(directory => Path.GetFileName(directory).StartsWith("BDTest-"));
             
-            var uri = new Uri("https://bdtest-reportserver.azurewebsites.net");
-            
-            uri = new UriBuilder
+            foreach (var bdTestOutput in bdTestOutputs)
             {
-                Scheme = "https",
-                Host = "localhost",
-                Port = 44329
-            }.Uri;
-            
-            var url = await BDTestReportServer.SendDataAndGetReportUri(uri);
-            var absoluteUrl = url.AbsoluteUri;
-            Console.WriteLine(absoluteUrl);
-            Process.Start("explorer", absoluteUrl);
+                Directory.Delete(bdTestOutput, true);
+            }
         }
     }
 }

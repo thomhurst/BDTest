@@ -55,8 +55,8 @@ namespace BDTest.Tests.Fixtures
                 Assert.That(scenario.Status, Is.EqualTo(status));
 
                 Assert.That(
-                    JsonHelper.GetTestDynamicJsonObject().SelectToken("$.Scenarios[0].Steps[0].Exception.Message")
-                        .ToString(), Is.EqualTo("BDTest Exception!"));
+                    JsonHelper.GetTestDynamicJsonObject().SelectToken("$.Scenarios[0].Steps[0].Exception")
+                        .ToString().Contains("BDTest Exception!"));
 
                 Assert.That(
                     JsonHelper.GetTestDynamicJsonObject().SelectToken("$.Scenarios[0].Steps[0].Status").ToString(),
@@ -116,8 +116,8 @@ namespace BDTest.Tests.Fixtures
                 Assert.That(scenario.Status, Is.EqualTo(status));
 
                 Assert.That(
-                    JsonHelper.GetTestDynamicJsonObject().SelectToken("$.Scenarios[0].Steps[3].Exception.Message")
-                        .ToString(), Is.EqualTo("BDTest Exception!"));
+                    JsonHelper.GetTestDynamicJsonObject().SelectToken("$.Scenarios[0].Steps[3].Exception")
+                        .ToString().Contains("BDTest Exception!"));
 
                 Assert.That(
                     JsonHelper.GetTestDynamicJsonObject().SelectToken("$.Scenarios[0].Steps[0].Status").ToString(),
