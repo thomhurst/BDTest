@@ -48,7 +48,7 @@ namespace BDTest.ReportGenerator
 
             var dataToOutput = new BDTestOutputModel
             {
-                Guid = BDTestUtil.GetInstanceGuid,
+                Id = BDTestUtil.GetInstanceGuid,
                 Scenarios = scenarios,
                 TestTimer = testTimer,
                 NotRun = BDTestUtil.GetNotRunScenarios(),

@@ -53,7 +53,7 @@
                     <button class="button toggle-hide pointer" toggle-alternative-text="Hide Summary" element-id-to-hide="story-summary-@storyIndex">Show Summary</button>
                 </div>
 
-                <div class="mt-4 container" style="display: none" id="story-summary-@storyIndex">
+                <div class="mt-4 container invisible" id="story-summary-@storyIndex">
                     @await Html.PartialAsync("_SummaryGraphics", new SummaryViewModel {Scenarios = scenariosForThisStory})
                 </div>
 
@@ -69,47 +69,31 @@
                     </thead>
                     <tbody>
 
-                    @{ var scenarioIndex = 0; }
+                    @{ var scenarioIndex = new ReferenceInt(0); }
+                    @{ var groupedScenariosCount = new ReferenceInt(0); }
                     @foreach (var groupedScenarios in scenariosGroupedByScenarioText)
                     {
-                        if (groupedScenarios.Count() == 1)
+                        @await Html.PartialAsync("_GroupedScenarioTableRow", new GroupedScenarioViewModel
                         {
-                            @await Html.PartialAsync("_ScenarioTableRow", new ScenarioViewModel
-                            {
-                                Scenario = groupedScenarios.First(),
-                                ScenarioIndex = ++scenarioIndex
-                            })
-                        }
-                        else
-                        {
-                            // Write wrapper element?
-                            foreach (var scenario in groupedScenarios)
-                            {
-                                @await Html.PartialAsync("_ScenarioTableRow", new ScenarioViewModel
-                                {
-                                    Scenario = scenario,
-                                    ScenarioIndex = ++scenarioIndex
-                                })
-                            }
-                        }
+                            Scenarios = groupedScenarios.ToList(),
+                            ScenarioIndex = scenarioIndex,
+                            GroupedScenarioIndex = groupedScenariosCount,
+                        })
                     }
 
                     </tbody>
                 </table>
             </div>
             
-            @{ scenarioIndex = 0; }
-                            @foreach (var groupedScenarios in scenariosGroupedByScenarioText)
-                            {
-                                foreach (var scenario in groupedScenarios)
-                                {
-                                    @await Html.PartialAsync("_ScenarioModalPopup", new ScenarioViewModel
-                                    {
-                                        Scenario = scenario,
-                                        ScenarioIndex = ++scenarioIndex
-                                    })
-                                }
-                            }
-            
+            @{ scenarioIndex = new ReferenceInt(0); }
+            @foreach (var scenario in scenariosGroupedByScenarioText.SelectMany(groupedScenarios => groupedScenarios))
+            {
+                @await Html.PartialAsync("_ScenarioModalPopup", new ScenarioViewModel
+                {
+                    Scenario = scenario,
+                    ScenarioIndex = scenarioIndex.IncrementAndGet()
+                })
+            }
+
         </section>
 }

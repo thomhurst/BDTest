@@ -2,11 +2,11 @@
 @using BDTest.Test
 @model BDTest.ReportGenerator.RazorServer.Models.ScenarioViewModel
 
-<div class="modal" id="scenario-modal-@Model.ScenarioIndex">
+<div class="modal" id="scenario-modal-@Model.ScenarioIndex.Get()">
     <div class="modal-background"></div>
     <div class="modal-card modal-card-wide">
         <header class="modal-card-head">
-            <p class="modal-card-title">@Model.Scenario.GetScenarioText()</p>
+            <p class="modal-card-title">Scenario: @Model.Scenario.GetScenarioText()</p>
             <a class="delete" aria-label="close"></a>
         </header>
         <section class="modal-card-body">
@@ -58,14 +58,16 @@
                                                     <p>Exception</p>
                                                 </div>
                                                 <pre class="message-body">
-                            @step.Exception.ToString()
+                            @step.Exception.ToString().Trim()
                         </pre>
                                             </article>
                                         }
                                     </details>
                                 }
                             </td>
-                            <td class="@step.Status.GetCssColourValueForStatus()">@step.Status</td>
+                            <td class="has-text-centered">
+                                <button class="@step.Status.GetCssColourValueForStatus() button is-fullwidth no-pointer">@step.Status</button>
+                            </td>
                             <td>@step.TimeTaken.ToPrettyFormat()</td>
                             <td>@step.StartTime.ToStringForReport()</td>
                             <td>@step.EndTime.ToStringForReport()</td>

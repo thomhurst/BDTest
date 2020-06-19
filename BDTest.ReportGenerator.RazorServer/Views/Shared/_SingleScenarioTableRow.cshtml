@@ -1,0 +1,20 @@
+@using BDTest.ReportGenerator.RazorServer.Extensions
+@model BDTest.ReportGenerator.RazorServer.Models.ScenarioViewModel
+
+@{
+    var isGroupedScenarioIndentCssClass = Model.IsPartOfGroupedScenarios ? "pl-6" : "";
+    var visibilityClass = Model.IsPartOfGroupedScenarios ? "invisible" : "";
+    var parentScenarioGroupId = Model.IsPartOfGroupedScenarios ? Model.GroupedScenarioIndex.Get() : -1;
+}
+
+<tr class="modal-link pointer @visibilityClass" data-target="scenario-modal-@Model.ScenarioIndex.Get()" parent-scenario-group="@parentScenarioGroupId">
+    <td class="@isGroupedScenarioIndentCssClass">
+         <button class="button is-fullwidth is-info"> @Model.Scenario.GetScenarioText() </button>
+    </td>
+    <td class="has-text-centered">
+        <button class="@Model.Scenario.Status.GetCssColourValueForStatus() button is-fullwidth no-pointer">@Model.Scenario.Status</button>
+    </td>
+    <td>@Model.Scenario.TimeTaken.ToPrettyFormat()</td>
+    <td>@Model.Scenario.StartTime.ToStringForReport()</td>
+    <td>@Model.Scenario.EndTime.ToStringForReport()</td>
+</tr>

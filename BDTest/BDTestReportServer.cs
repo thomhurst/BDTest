@@ -1,13 +1,10 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 using BDTest.Helpers;
 using BDTest.Maps;
-using BDTest.Output;
-using BDTest.Test;
 using Newtonsoft.Json;
 
 namespace BDTest
@@ -27,11 +24,11 @@ namespace BDTest
             
             var dataOutputModel = new BDTestOutputModel
             {
-                Guid = TestHolder.InstanceGuid,
+                Id = TestHolder.InstanceGuid,
                 Scenarios = scenarios,
                 Version = BDTestVersionHelper.CurrentVersion,
                 NotRun = TestHolder.NotRun.Values.ToList(),
-                TestTimer = GetTestTimer(scenarios)
+                TestTimer = BDTestUtil.GetTestTimer(scenarios)
             };
 
             var httpRequestMessage = new HttpRequestMessage
@@ -44,32 +41,6 @@ namespace BDTest
             var response = await httpClient.SendAsync(httpRequestMessage);
 
             return response.EnsureSuccessStatusCode().RequestMessage.RequestUri;
-        }
-        
-        private static TestTimer GetTestTimer(IReadOnlyCollection<Scenario> scenarios)
-        {
-            if (scenarios.Count == 0)
-            {
-                return new TestTimer();
-            }
-
-            var testTimer = new TestTimer
-            {
-                TestsStartedAt = scenarios.GetStartDateTime(),
-                TestsFinishedAt = scenarios.GetEndDateTime()
-            };
-
-            return testTimer;
-        }
-        
-        private static DateTime GetStartDateTime(this IEnumerable<Scenario> scenarios)
-        {
-            return scenarios.OrderBy(scenario => scenario.StartTime).First().StartTime;
-        }
-
-        private static DateTime GetEndDateTime(this IEnumerable<Scenario> scenarios)
-        {
-            return scenarios.OrderByDescending(scenario => scenario.EndTime).First().EndTime;
         }
     }
 }

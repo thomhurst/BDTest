@@ -7,7 +7,6 @@ using BDTest.ReportGenerator.RazorServer.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
 
 namespace BDTest.ReportGenerator.RazorServer.Controllers
 {
@@ -34,7 +33,7 @@ namespace BDTest.ReportGenerator.RazorServer.Controllers
                 return BadRequest();
             }
             
-            var id = bdTestOutputModel.Guid ?? Guid.NewGuid().ToString("N");
+            var id = bdTestOutputModel.Id ?? Guid.NewGuid().ToString("N");
 
             await StoreData(bdTestOutputModel, id);
 
@@ -45,15 +44,13 @@ namespace BDTest.ReportGenerator.RazorServer.Controllers
         {
             if (await _memoryCacheBdTestDataStore.GetDataFromStore(id) == null)
             {
-                var serializedData = JsonConvert.SerializeObject(bdTestOutputModel);
-                
                 // Save to in-memory cache for 3 hours for quick fetching
-                await _memoryCacheBdTestDataStore.StoreData(id, serializedData);
+                await _memoryCacheBdTestDataStore.StoreData(id, bdTestOutputModel);
                 
                 if (_customDatastore != null)
                 {
                     // Save to persistent storage if it's configured!
-                    await _customDatastore.StoreData(id, serializedData);
+                    await _customDatastore.StoreData(id, bdTestOutputModel);
                 }
             }
         }
@@ -119,7 +116,7 @@ namespace BDTest.ReportGenerator.RazorServer.Controllers
             // Re-cache it to extend the time
             await _memoryCacheBdTestDataStore.StoreData(id, model);
 
-            return JsonConvert.DeserializeObject<BDTestOutputModel>(model);
+            return model;
 
         }
 

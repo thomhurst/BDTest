@@ -14,6 +14,24 @@
             document.addEventListener('DOMContentLoaded', callback);
         }
     }
+    
+    function toggleElementVisibility(element) {
+      if (element.classList.contains("invisible")) {
+                      element.classList.remove("invisible");
+                    } else {
+                      element.classList.add("invisible");
+                    }
+    }
+    
+    function toggleAlternativeText(element) {
+          if(element.hasAttribute("toggle-alternative-text")) {
+                          let alternativeText = element.getAttribute("toggle-alternative-text");
+                          let currentText = element.textContent;
+                          
+                          element.textContent = alternativeText;
+                          element.setAttribute("toggle-alternative-text", currentText);
+                      }
+        }
 
     onDomLoaded(function() {
       let toggleElements = document.getElementsByClassName("toggle-hide");
@@ -23,22 +41,33 @@
             let childElementIdToHide = toggleElement.getAttribute("element-id-to-hide");
             let childElementToHide = document.getElementById(childElementIdToHide);
             
-            if (childElementToHide.style.display === "none") {
-                childElementToHide.style.display = "block";
-              } else {
-                childElementToHide.style.display = "none";
-              }
+            toggleElementVisibility(childElementToHide);
             
-            if(toggleElement.hasAttribute("toggle-alternative-text")) {
-                var alternativeText = toggleElement.getAttribute("toggle-alternative-text");
-                var currentText = toggleElement.textContent;
-                
-                toggleElement.textContent = alternativeText;
-                toggleElement.setAttribute("toggle-alternative-text", currentText);
-            }
+            toggleAlternativeText(toggleElement);
           })
       }
     })
+    
+    onDomLoaded(function () {
+        let scenarioGroupElements = document.querySelectorAll('tr[scenario-group]');
+    
+        for (let scenarioGroupElement of scenarioGroupElements) {
+            scenarioGroupElement.addEventListener("click", function () {
+                let scenarioGroupId = scenarioGroupElement.getAttribute("scenario-group");
+                let scenarioElementsInThatGroup = document.querySelectorAll('tr[parent-scenario-group="' + scenarioGroupId + '"]');
+                
+                Array.prototype.forEach.call (scenarioElementsInThatGroup, function (scenarioInGroup) {
+                    toggleElementVisibility(scenarioInGroup);
+                });
+                
+                if(scenarioGroupElement.classList.contains("invisible")) {
+                    scenarioGroupElement.textContent = scenarioGroupElement.textContent.replace("hide", "expand");
+                } else {
+                    scenarioGroupElement.textContent = scenarioGroupElement.textContent.replace("expand", "hide");
+                }
+            });
+        }
+    });
 </script>
 
 <script>

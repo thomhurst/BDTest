@@ -1,0 +1,35 @@
+@using BDTest
+@using BDTest.ReportGenerator.RazorServer.Extensions
+@using BDTest.ReportGenerator.RazorServer.Models
+@model BDTest.ReportGenerator.RazorServer.Models.GroupedScenarioViewModel
+
+@{ var testTimer = BDTestUtil.GetTestTimer(Model.Scenarios); }
+
+@if (Model.Scenarios.Count != 1)
+{
+    Model.GroupedScenarioIndex.IncrementAndGet();
+    
+    <tr scenario-group="@Model.GroupedScenarioIndex.Get()" class="pointer">
+        <td>
+            <button class="button is-fullwidth is-info no-pointer">► @Model.Scenarios.First().GetScenarioText()</button>
+        </td>
+        <td class="has-text-centered">
+            <button class="@Model.Scenarios.GetTotalStatus().GetCssColourValueForStatus() button is-fullwidth no-pointer">@Model.Scenarios.GetTotalStatus()</button>
+        </td>
+        <td>@testTimer.ElapsedTime.ToPrettyFormat()</td>
+        <td>@testTimer.TestsStartedAt.ToStringForReport()</td>
+        <td>@testTimer.TestsFinishedAt.ToStringForReport()</td>
+    </tr>
+}
+
+@foreach (var scenario in Model.Scenarios)
+{
+    @(await Html.PartialAsync("_SingleScenarioTableRow", new ScenarioViewModel
+    {
+        Scenario = scenario,
+        ScenarioIndex = Model.ScenarioIndex.IncrementAndGet(),
+        GroupedScenarioIndex = Model.GroupedScenarioIndex,
+        IsPartOfGroupedScenarios = Model.Scenarios.Count != 1
+    }))
+}
+

@@ -1,10 +1,11 @@
 using System.Threading.Tasks;
+using BDTest.Maps;
 
 namespace BDTest.ReportGenerator.RazorServer.Interfaces
 {
     public interface IBDTestDataStore
     {
-        public Task<string> GetDataFromStore(string id);
-        public Task StoreData(string id, string data);
+        public Task<BDTestOutputModel> GetDataFromStore(string id);
+        public Task StoreData(string id, BDTestOutputModel data);
     }
 }
