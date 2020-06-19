@@ -1,6 +1,7 @@
 using System;
 using System.Diagnostics;
 using System.Threading.Tasks;
+using BDTest.Attributes;
 using BDTest.ReportGenerator;
 using BDTest.Test;
 using BDTest.Tests.Extensions;
@@ -10,6 +11,9 @@ using NUnit.Framework;
 namespace BDTest.Tests.Fixtures
 {
     [Parallelizable(ParallelScope.None)]
+    [Story(AsA = "BDTest developer",
+        IWant = "to make sure that BDTest works asynchronously",
+        SoThat = "tests run with maxiumum performance")]
     public class AsyncTests : BDTestBase
     {
         [Test]

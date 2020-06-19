@@ -10,25 +10,26 @@
     Model.GroupedScenarioIndex.IncrementAndGet();
     
     <tr scenario-group="@Model.GroupedScenarioIndex.Get()" class="pointer">
-        <td>
-            <button class="button is-fullwidth is-info no-pointer">► @Model.Scenarios.First().GetScenarioText()</button>
+        <td class="has-text-centered">
+            <button class="button is-fullwidth is-info no-pointer">@Model.Scenarios.First().GetScenarioText() (@Model.Scenarios.Count)</button>
         </td>
         <td class="has-text-centered">
             <button class="@Model.Scenarios.GetTotalStatus().GetCssColourValueForStatus() button is-fullwidth no-pointer">@Model.Scenarios.GetTotalStatus()</button>
         </td>
-        <td>@testTimer.ElapsedTime.ToPrettyFormat()</td>
-        <td>@testTimer.TestsStartedAt.ToStringForReport()</td>
-        <td>@testTimer.TestsFinishedAt.ToStringForReport()</td>
+        <td class="has-text-centered">@testTimer.ElapsedTime.ToPrettyFormat()</td>
+        <td class="has-text-centered">@testTimer.TestsStartedAt.ToStringForReport()</td>
+        <td class="has-text-centered">@testTimer.TestsFinishedAt.ToStringForReport()</td>
     </tr>
 }
 
+@{ var indexOfScenarioInParent = new ReferenceInt(0); }
 @foreach (var scenario in Model.Scenarios)
 {
     @(await Html.PartialAsync("_SingleScenarioTableRow", new ScenarioViewModel
     {
         Scenario = scenario,
-        ScenarioIndex = Model.ScenarioIndex.IncrementAndGet(),
-        GroupedScenarioIndex = Model.GroupedScenarioIndex,
+        GroupedScenarioParentIndex = Model.GroupedScenarioIndex,
+        IndexOfScenarioInParent = indexOfScenarioInParent.IncrementAndGet(),
         IsPartOfGroupedScenarios = Model.Scenarios.Count != 1
     }))
 }

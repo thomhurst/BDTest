@@ -1,5 +1,4 @@
 using System;
-using System.Threading.Tasks;
 using BDTest.Attributes;
 using BDTest.ReportGenerator;
 using BDTest.Test;
@@ -22,7 +21,7 @@ namespace BDTest.Tests.Fixtures
         }
 
         [Test]
-        public async Task CustomStoryText()
+        public void CustomStoryText()
         {
             var scenario = When(() => Console.WriteLine("my test has a story text"))
                 .Then(() => Console.WriteLine("the attribute should be serialized to the json output"))

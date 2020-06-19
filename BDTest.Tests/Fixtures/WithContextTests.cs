@@ -1,9 +1,13 @@
 using System;
+using BDTest.Attributes;
 using BDTest.Test;
 using NUnit.Framework;
 
 namespace BDTest.Tests.Fixtures
 {
+    [Story(AsA = "BDTest developer",
+        IWant = "to make sure that test contexts are different for each test",
+        SoThat = "tests don't share state")]
     public class WithContextTests : BDTestBase
     {
         private MyTestContext _context1;

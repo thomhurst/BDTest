@@ -1,9 +1,13 @@
 using System;
+using BDTest.Attributes;
 using BDTest.Test;
 using NUnit.Framework;
 
 namespace BDTest.Tests.Fixtures
 {
+    [Story(AsA = "BDTest developer",
+        IWant = "to make sure that BDTest works with parameterised values",
+        SoThat = "tests can be written concisely")]
     public class ParameterisedTests : BDTestBase
     {
         [TestCase(1)]

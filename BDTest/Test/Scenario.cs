@@ -25,7 +25,7 @@ namespace BDTest.Test
         
         private readonly Reporter _reporters;
 
-        [JsonProperty] internal string Guid { get; private set; }
+        [JsonProperty] public string Guid { get; private set; }
         [JsonProperty] public DateTime StartTime { get; private set; }
 
         [JsonProperty] public DateTime EndTime { get; private set; }
@@ -35,7 +35,7 @@ namespace BDTest.Test
         [JsonProperty]
         public string TestStartupInformation { get; set; }
 
-        [JsonIgnore] public Exception Exception => Steps.Select(step => step.Exception).FirstOrDefault();
+        [JsonIgnore] public string Exception => Steps.Select(step => step.Exception).FirstOrDefault();
         
         [JsonProperty] public string TearDownOutput { get; set; }
 

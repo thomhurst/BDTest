@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using BDTest.Attributes;
 using BDTest.ReportGenerator;
 using BDTest.Test;
 using BDTest.Tests.Helpers;
@@ -9,6 +10,9 @@ using NUnit.Framework;
 namespace BDTest.Tests.Fixtures
 {
     [Parallelizable(ParallelScope.None)]
+    [Story(AsA = "BDTest developer",
+        IWant = "to make sure that exceptions are logged properly",
+        SoThat = "developers can see why their test failed")]
     public class ExceptionTests : BDTestBase
     {
         [SetUp]
@@ -39,7 +43,7 @@ namespace BDTest.Tests.Fixtures
 
                 var scenario = BDTestUtil.GetScenarios().First();
 
-                Assert.That(scenario.Steps[0].Exception.Message, Is.EqualTo("BDTest Exception!"));
+                Assert.That(scenario.Steps[0].Exception.Contains("BDTest Exception!"));
 
                 Assert.That(scenario.Steps[0].Status, Is.EqualTo(status));
                 Assert.That(scenario.Steps[1].Status, Is.EqualTo(Status.Inconclusive));
@@ -100,7 +104,7 @@ namespace BDTest.Tests.Fixtures
 
                 var scenario = BDTestUtil.GetScenarios().First();
 
-                Assert.That(scenario.Steps[3].Exception.Message, Is.EqualTo("BDTest Exception!"));
+                Assert.That(scenario.Steps[3].Exception.Contains("BDTest Exception!"));
 
                 Assert.That(scenario.Steps[0].Status, Is.EqualTo(Status.Passed));
                 Assert.That(scenario.Steps[1].Status, Is.EqualTo(Status.Passed));

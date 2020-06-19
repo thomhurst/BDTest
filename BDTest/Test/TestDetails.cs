@@ -18,7 +18,8 @@ namespace BDTest.Test
 
         internal TestDetails(string callerMember, string callerFile, Guid guid, string testId)
         {
-            TestDetails = this;
+            // TODO RESTRUCTURE
+            TestDetails = null;
             Guid = guid.ToString();
             _callerMember = callerMember;
             CallerFile = callerFile;

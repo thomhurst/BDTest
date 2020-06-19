@@ -59,12 +59,6 @@
                 Array.prototype.forEach.call (scenarioElementsInThatGroup, function (scenarioInGroup) {
                     toggleElementVisibility(scenarioInGroup);
                 });
-                
-                if(scenarioGroupElement.classList.contains("invisible")) {
-                    scenarioGroupElement.textContent = scenarioGroupElement.textContent.replace("hide", "expand");
-                } else {
-                    scenarioGroupElement.textContent = scenarioGroupElement.textContent.replace("expand", "hide");
-                }
             });
         }
     });

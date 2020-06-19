@@ -60,11 +60,11 @@
                 <table class="table is-fullwidth">
                     <thead>
                     <tr>
-                        <th>Scenario</th>
-                        <th>Status</th>
-                        <th>Duration</th>
-                        <th>Start</th>
-                        <th>End</th>
+                        <th class="has-text-centered">Scenario</th>
+                        <th class="has-text-centered">Status</th>
+                        <th class="has-text-centered">Duration</th>
+                        <th class="has-text-centered">Start</th>
+                        <th class="has-text-centered">End</th>
                     </tr>
                     </thead>
                     <tbody>
@@ -85,13 +85,11 @@
                 </table>
             </div>
             
-            @{ scenarioIndex = new ReferenceInt(0); }
             @foreach (var scenario in scenariosGroupedByScenarioText.SelectMany(groupedScenarios => groupedScenarios))
             {
                 @await Html.PartialAsync("_ScenarioModalPopup", new ScenarioViewModel
                 {
-                    Scenario = scenario,
-                    ScenarioIndex = scenarioIndex.IncrementAndGet()
+                    Scenario = scenario
                 })
             }
 

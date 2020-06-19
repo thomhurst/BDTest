@@ -9,6 +9,9 @@ using NUnit.Framework;
 namespace BDTest.Tests.Fixtures
 {
     [Parallelizable(ParallelScope.None)]
+    [Story(AsA = "BDTest developer",
+        IWant = "to make sure that I can use TestInformation attributes",
+        SoThat = "my report has detailed information")]
     public class TestInformationAttributeTests : BDTestBase
     {
         [SetUp]

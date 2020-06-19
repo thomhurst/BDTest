@@ -31,11 +31,13 @@ namespace BDTest
                 TestTimer = BDTestUtil.GetTestTimer(scenarios)
             };
 
+            var stringContent = JsonConvert.SerializeObject(dataOutputModel);
+            
             var httpRequestMessage = new HttpRequestMessage
             {
                 RequestUri = serverAddress,
                 Method = HttpMethod.Post,
-                Content = new StringContent(JsonConvert.SerializeObject(dataOutputModel), Encoding.UTF8, "application/json")
+                Content = new StringContent(stringContent, Encoding.UTF8, "application/json")
             };
             
             var response = await httpClient.SendAsync(httpRequestMessage);
