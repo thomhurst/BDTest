@@ -22,7 +22,7 @@ namespace BDTest.ReportGenerator.RazorServer
         {
             services.AddControllersWithViews().AddNewtonsoftJson();
             services.AddMemoryCache();
-            services.AddSingleton<IMemoryCacheDataStore, MemoryCacheDataStore>();
+            services.AddSingleton<IMemoryCacheBdTestDataStore, MemoryCacheBdTestDataStore>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

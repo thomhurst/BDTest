@@ -8,6 +8,9 @@ namespace BDTest.Maps
     public class BDTestOutputModel
     {
         [JsonProperty]
+        public string Guid { get; set; }
+        
+        [JsonProperty]
         public TestTimer TestTimer { get; set; }
         
         [JsonProperty]

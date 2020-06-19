@@ -1,0 +1,51 @@
+@model List<BDTest.Test.Scenario>
+
+<canvas id="myChart" width="400" height="400"></canvas>
+
+<section class="section">
+    <div class="container has-text-right">
+        <p class="is-size-7">* Amounts are in milliseconds</p>
+    </div>
+</section>
+
+<script>
+function getRandomColor() {
+            let letters = '0123456789ABCDEF'.split('');
+            let color = '#';
+            for (let i = 0; i < 6; i++ ) {
+                color += letters[Math.floor(Math.random() * 16)];
+            }
+            return color;
+                }
+              
+let ctx = document.getElementById('myChart').getContext('2d');
+data = {
+    datasets: [{
+        data: [
+            @foreach (var scenario in Model)
+                    {
+                        @scenario.TimeTaken.TotalMilliseconds@:,
+                    }
+            ],
+            backgroundColor: [
+                @for (var index = 0; index < Model.Count; index++)
+                {
+                    @:getRandomColor(),
+                }
+            ]
+    }],
+
+    // These labels appear in the legend and in the tooltips when hovering different arcs
+    labels: [
+        @foreach (var scenario in Model)
+        {
+            @:'@scenario.GetScenarioText()',
+        }
+    ]
+}
+
+let myPieChart = new Chart(ctx, {
+    type: 'pie',
+    data: data
+})
+</script>

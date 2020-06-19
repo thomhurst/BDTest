@@ -1,4 +1,5 @@
 @using BDTest.ReportGenerator.RazorServer.Extensions
+@using BDTest.Test
 @model BDTest.ReportGenerator.RazorServer.Models.ScenarioViewModel
 
 <div class="modal" id="scenario-modal-@Model.ScenarioIndex">
@@ -26,7 +27,44 @@
                     @foreach (var step in Model.Scenario.Steps)
                     {
                         <tr>
-                            <td>@step.StepText</td>
+                            <td>
+                                @if (!IsExpandable(step))
+                                {
+                                    @step.StepText
+                                }
+                                else
+                                {
+                                    <details>
+                                        <summary>
+                                            @step.StepText
+                                        </summary>
+                
+                                        @if (!string.IsNullOrEmpty(step.Output))
+                                        {
+                                            <article class="message is-info mt-4">
+                                                <div class="message-header">
+                                                    <p>Output</p>
+                                                </div>
+                                                <div class="message-body">
+                                                    @step.Output
+                                                </div>
+                                            </article>
+                                        }
+                
+                                        @if (step.Exception != null)
+                                        {
+                                            <article class="message is-danger mt-4">
+                                                <div class="message-header">
+                                                    <p>Exception</p>
+                                                </div>
+                                                <pre class="message-body">
+                            @step.Exception.ToString()
+                        </pre>
+                                            </article>
+                                        }
+                                    </details>
+                                }
+                            </td>
                             <td class="@step.Status.GetCssColourValueForStatus()">@step.Status</td>
                             <td>@step.TimeTaken.ToPrettyFormat()</td>
                             <td>@step.StartTime.ToStringForReport()</td>
@@ -43,3 +81,11 @@
         </footer>
     </div>
 </div>
+
+@functions 
+{
+    private bool IsExpandable(Step step)
+    {
+        return !string.IsNullOrEmpty(step.Output) || step.Exception != null;
+    }
+}

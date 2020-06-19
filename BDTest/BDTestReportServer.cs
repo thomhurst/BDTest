@@ -18,7 +18,7 @@ namespace BDTest
         {
             serverAddress = new UriBuilder(serverAddress)
             {
-                Path = "data"
+                Path = "bdtest/data"
             }.Uri;
 
             var httpClient = new HttpClient();
@@ -27,6 +27,7 @@ namespace BDTest
             
             var dataOutputModel = new BDTestOutputModel
             {
+                Guid = TestHolder.InstanceGuid,
                 Scenarios = scenarios,
                 Version = BDTestVersionHelper.CurrentVersion,
                 NotRun = TestHolder.NotRun.Values.ToList(),

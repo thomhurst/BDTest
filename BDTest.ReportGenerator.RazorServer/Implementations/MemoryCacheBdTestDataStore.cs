@@ -1,14 +1,15 @@
+using System;
 using System.Threading.Tasks;
 using BDTest.ReportGenerator.RazorServer.Interfaces;
 using Microsoft.Extensions.Caching.Memory;
 
 namespace BDTest.ReportGenerator.RazorServer.Implementations
 {
-    public class MemoryCacheDataStore : IMemoryCacheDataStore
+    public class MemoryCacheBdTestDataStore : IMemoryCacheBdTestDataStore
     {
         private readonly IMemoryCache _cache;
 
-        public MemoryCacheDataStore(IMemoryCache cache)
+        public MemoryCacheBdTestDataStore(IMemoryCache cache)
         {
             _cache = cache;
         }
@@ -25,7 +26,7 @@ namespace BDTest.ReportGenerator.RazorServer.Implementations
 
         public Task StoreData(string id, string data)
         {
-            _cache.Set(id, data);
+            _cache.Set(id, data, TimeSpan.FromHours(3));
             return Task.CompletedTask;
         }
     }
