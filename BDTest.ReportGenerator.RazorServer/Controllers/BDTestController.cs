@@ -77,6 +77,13 @@ namespace BDTest.ReportGenerator.RazorServer.Controllers
         }
         
         [HttpGet]
+        [Route("report/{id}/all-scenarios")]
+        public Task<IActionResult> AllScenarios([FromRoute] string id)
+        {
+            return GetView(id, model => View("AllScenarios", model));
+        }
+        
+        [HttpGet]
         [Route("report/{id}/timings")]
         public Task<IActionResult> Timings([FromRoute] string id)
         {

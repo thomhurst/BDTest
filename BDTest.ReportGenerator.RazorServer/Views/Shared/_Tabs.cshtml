@@ -4,6 +4,7 @@
 @{
     var summaryIsActive = Context.Request.Path.Value?.ToLowerInvariant().Contains("summary") == true ? "is-active" : "";
     var storiesIsActive = Context.Request.Path.Value?.ToLowerInvariant().Contains("stories") == true ? "is-active" : "";
+    var allScenariosIsActive = Context.Request.Path.Value?.ToLowerInvariant().Contains("all-scenarios") == true ? "is-active" : "";
     var timingsIsActive = Context.Request.Path.Value?.ToLowerInvariant().Contains("timings") == true ? "is-active" : "";
 }
 
@@ -18,6 +19,11 @@
                 <span>Stories</span>
             </a>
         </li>
+        <li class="@allScenariosIsActive">
+            <a href="~/bdtest/report/@id/all-scenarios">
+                <span>All Scenarios</span>
+            </a>
+        </li>
         <li class="@timingsIsActive">
             <a href="~/bdtest/report/@id/timings">
                 <span>Timings</span>
@@ -27,7 +33,7 @@
             @{
                 var url = Context.Request.GetEncodedUrl();
             }
-            <a onclick="navigator.clipboard.writeText('@url');">
+            <a onclick="copyToClipboard('@url');">
                 <span>Copy Report to Clipboard</span>
             </a>
         </li>

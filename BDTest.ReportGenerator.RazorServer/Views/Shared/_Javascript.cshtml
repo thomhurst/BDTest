@@ -15,6 +15,21 @@
         }
     }
     
+    function copyToClipboard(text) {
+      navigator.clipboard.writeText(text);
+      
+        // Get the snackbar DIV
+        let snackbar = document.getElementById("snackbar");
+      
+        snackbar.textContent = "Copied to clipboard!"
+        
+        // Add the "show" class to DIV
+        snackbar.className = "show";
+      
+        // After 3 seconds, remove the show class from DIV
+        setTimeout(function(){ snackbar.className = snackbar.className.replace("show", ""); }, 3000);
+    }
+    
     function toggleElementVisibility(element) {
       if (element.classList.contains("invisible")) {
                       element.classList.remove("invisible");
@@ -65,16 +80,29 @@
 </script>
 
 <script>
-onDomLoaded(function() {
-  function getAll(selector) {
-      let parent = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : document;
+
+    function openModal(target) {
+      let $target = document.getElementById(target);
+      document.documentElement.classList.add('is-clipped');
+      $target.classList.add('is-active');
+    }
   
-      return Array.prototype.slice.call(parent.querySelectorAll(selector), 0);
+    function closeModals() {
+      document.documentElement.classList.remove('is-clipped');
+      getAll('.modal').forEach(function ($el) {
+        $el.classList.remove('is-active');
+      });
     }
     
+      function getAll(selector) {
+          let parent = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : document;
+      
+          return Array.prototype.slice.call(parent.querySelectorAll(selector), 0);
+        }
+
+onDomLoaded(function() {
+   
   // Modals
-    let rootEl = document.documentElement;
-    let $modals = getAll('.modal');
     let $modalButtons = getAll('.modal-link');
     let $modalCloses = getAll('.modal-background, .modal-close, .modal-card-head .delete, .modal-card-foot .button');
   
@@ -95,19 +123,6 @@ onDomLoaded(function() {
       });
     }
   
-    function openModal(target) {
-      let $target = document.getElementById(target);
-      rootEl.classList.add('is-clipped');
-      $target.classList.add('is-active');
-    }
-  
-    function closeModals() {
-      rootEl.classList.remove('is-clipped');
-      $modals.forEach(function ($el) {
-        $el.classList.remove('is-active');
-      });
-    }
-  
     document.addEventListener('keydown', function (event) {
       let e = event || window.event;
       if (e.keyCode === 27) {
@@ -118,3 +133,4 @@ onDomLoaded(function() {
 </script>
 
 <script src="~/js/Chart.min.js"></script>
+@await Html.PartialAsync("_GoToScenarioJavascript")

@@ -1,0 +1,20 @@
+@{
+    var goToScenarioQueryParam = Context.Request.Query.FirstOrDefault(item => item.Key == "scenarioId");
+    var isValidPath = Context.Request.Path.Value.ToLower().Contains("stories") || Context.Request.Path.Value.ToLower().Contains("scenarios");
+}
+
+@if (!goToScenarioQueryParam.Equals(default) && isValidPath)
+{
+    var scenarioId = goToScenarioQueryParam.Value.ToString();
+    
+    if (string.IsNullOrEmpty(scenarioId))
+    {
+        return;
+    }
+    
+    <script>
+        onDomLoaded(function() {
+           openModal("scenario-modal-@scenarioId") 
+        });
+    </script>
+}

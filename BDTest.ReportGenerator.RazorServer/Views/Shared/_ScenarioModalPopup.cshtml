@@ -1,12 +1,18 @@
 @using BDTest.ReportGenerator.RazorServer.Extensions
 @using BDTest.Test
+@using Microsoft.AspNetCore.Http.Extensions
 @model BDTest.ReportGenerator.RazorServer.Models.ScenarioViewModel
+
+@{
+    var shareUrl = new Uri(Context.Request.GetEncodedUrl()).WithQueryParameter("scenarioId", Model.Scenario.Guid);
+}
 
 <div class="modal" id="scenario-modal-@Model.Scenario.Guid">
     <div class="modal-background"></div>
     <div class="modal-card modal-card-wide">
         <header class="modal-card-head">
             <p class="modal-card-title">Scenario: @Model.Scenario.GetScenarioText()</p>
+            <img src="~/icons/share-black-18dp.svg" class="pointer mx-3" alt="Share" onclick="copyToClipboard('@shareUrl.ToString()')"/>
             <a class="delete" aria-label="close"></a>
         </header>
         <section class="modal-card-body">
@@ -22,8 +28,7 @@
                     </tr>
                     </thead>
                     <tbody>
-
-                    @{ var scenarioIndex = 0; }
+                    
                     @foreach (var step in Model.Scenario.Steps)
                     {
                         <tr>
@@ -57,9 +62,7 @@
                                                 <div class="message-header">
                                                     <p>Exception</p>
                                                 </div>
-                                                <pre class="message-body">
-                            @step.Exception.ToString().Trim()
-                        </pre>
+                                                <pre class="message-body has-text-left">@step.Exception.Trim()</pre>
                                             </article>
                                         }
                                     </details>
