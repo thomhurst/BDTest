@@ -1,0 +1,76 @@
+@using BDTest.ReportGenerator.RazorServer.Extensions
+@using BDTest.Test
+@model List<BDTest.Maps.BDTestOutputModel>
+
+@{
+    ViewBag.Title = "Flakiness";
+    Layout = "_Layout";
+
+    var allScenarios = Model.SelectMany(model => model.Scenarios);
+    var groupedScenarios = allScenarios.GroupBy(scenario => new
+    {
+        StoryText = scenario.GetStoryText(),
+        ScenarioText = scenario.GetScenarioText()
+    });
+}
+
+<section class="hero is-info">
+    <div class="hero-body">
+        <div class="container">
+            <h1 class="title">
+                Test Times
+            </h1>
+            <h2 class="subtitle">
+                Here are how your <strong>test times</strong> compare across multiple runs:
+            </h2>
+            <h3 class="subtitle is-7">
+                * Test times are only compared if the test passed.
+            </h3>
+        </div>
+    </div>
+</section>
+
+<section class="section">
+    
+    @foreach (var scenarioGroup in groupedScenarios)
+    {
+        var scenarios = scenarioGroup.Where(scenario => scenario.Status == Status.Passed).ToList();
+
+        if (!scenarios.Any())
+        {
+            continue;
+        }
+        
+        var fastest = scenarios.OrderBy(scenario => scenario.TimeTaken).First().TimeTaken.ToPrettyFormat();
+        var slowest = scenarios.OrderByDescending(scenario => scenario.TimeTaken).First().TimeTaken.ToPrettyFormat();
+        var average = new TimeSpan((long) scenarios.Average(scenario => scenario.TimeTaken.Ticks)).ToPrettyFormat();
+            
+        <div class="container">
+            <div class="box">
+                    
+                <table class="table is-fullwidth">
+                    <thead>
+                    <tr>
+                        <th class="has-text-centered">Scenario</th>
+                        <th class="has-text-centered">Fastest</th>
+                        <th class="has-text-centered">Average</th>
+                        <th class="has-text-centered">Slowest</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+
+                    <tr>
+                        <td class="has-text-centered">
+                            <button class="button is-fullwidth is-info no-pointer">@scenarios.First().GetScenarioText() (@scenarios.Count)</button>
+                        </td>
+                        <td class="has-text-centered">@fastest</td>
+                        <td class="has-text-centered">@average</td>
+                        <td class="has-text-centered">@slowest</td>
+                    </tr>
+                    </tbody>
+                </table>
+
+            </div>
+        </div>
+    }
+</section>

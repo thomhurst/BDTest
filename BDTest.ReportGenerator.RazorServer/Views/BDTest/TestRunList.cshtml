@@ -1,0 +1,85 @@
+@using BDTest.ReportGenerator.RazorServer.Extensions
+@model List<BDTest.ReportGenerator.RazorServer.Models.RecordDateTimeModel>
+
+@{
+    ViewBag.Title = "Test Runs";
+    Layout = "_Layout";
+}
+
+<script>
+    onDomLoaded(function() {
+        const compareTimesButton = document.getElementById("compare-times");
+        compareTimesButton.addEventListener('click', function() {
+          let checkboxes = document.getElementsByName("checkbox");
+          let checkedIds = [];
+          
+          for (let i=0; i<checkboxes.length; i++) {
+               // And stick the checked ones onto an array...
+               if (checkboxes[i].checked) {
+                  checkedIds.push(checkboxes[i].id);
+               }
+            }
+          
+          let queryString = "?reportIds=" + checkedIds.join(",");
+          
+          window.location = "@Url.Action("TestRuns", "BDTest")" + queryString;
+        });
+    })
+</script>
+
+<section class="hero is-info">
+    <div class="hero-body">
+        <div class="container">
+            <h1 class="title">
+                Test Runs
+            </h1>
+            <h2 class="subtitle">
+                Please select some <strong>test runs</strong> to compare:
+            </h2>
+        </div>
+    </div>
+</section>
+
+<section class="section">
+    <div class="container">
+        <div class="has-text-right">
+            <button class="button is-info" id="compare-times">Compares Times</button>
+        </div>
+
+        <table class="table is-fullwidth">
+
+            <thead>
+            <tr>
+                <th class="has-text-centered">Select</th>
+                <th class="has-text-centered">Date and Time</th>
+                <th class="has-text-centered">Status</th>
+                <th></th>
+            </tr>
+            </thead>
+            <tbody>
+
+            @foreach (var record in Model)
+            {
+                <tr>
+                    <td class="has-text-centered">
+                        <input name="checkbox" type="checkbox" id="@record.RecordId"/>
+                    </td>
+                    <td class="has-text-centered">@record.DateTime.ToStringForReport()</td>
+                    <td class="has-text-centered">
+                        <button class="@record.Status.GetCssColourValueForStatus() button is-fullwidth no-pointer">
+                            @record.Status
+                        </button>
+                    </td>
+                    <td>
+                        <a href="~/bdtest/report/@record.RecordId/summary">
+                            <button class="button is-fullwidth is-info pointer">View Report</button>
+                        </a>
+                    </td>
+                </tr>
+            }
+
+            </tbody>
+        </table>
+
+    </div>
+</section>

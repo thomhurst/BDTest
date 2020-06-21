@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -20,6 +21,8 @@ namespace BDTest.Tests.Fixtures
             {
                 Directory.Delete(bdTestOutput, true);
             }
+
+            var uri = await BDTestReportServer.SendDataAndGetReportUri(new Uri("https://localhost:44329/"));
         }
     }
 }
