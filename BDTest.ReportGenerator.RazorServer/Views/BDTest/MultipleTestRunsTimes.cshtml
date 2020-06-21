@@ -1,5 +1,5 @@
 @using BDTest.ReportGenerator.RazorServer.Extensions
-@using BDTest.Test
+@using BDTest.ReportGenerator.RazorServer.Models
 @model List<BDTest.Maps.BDTestOutputModel>
 
 @{
@@ -7,7 +7,7 @@
     Layout = "_Layout";
 
     var allScenarios = Model.SelectMany(model => model.Scenarios);
-    var groupedScenarios = allScenarios.GroupBy(scenario => new
+    var groupedScenarios = allScenarios.GroupBy(scenario => new ScenarioGroupKey
     {
         StoryText = scenario.GetStoryText(),
         ScenarioText = scenario.GetScenarioText()
@@ -42,30 +42,24 @@
                     <th class="has-text-centered">Fastest</th>
                     <th class="has-text-centered">Average</th>
                     <th class="has-text-centered">Slowest</th>
+                    <th class="has-text-centered">Slowest - Fastest Difference</th>
                 </tr>
                 </thead>
                 <tbody>
     
-                @foreach (var scenarioGroup in groupedScenarios)
+                @foreach (var scenarioTimingModel in groupedScenarios
+                    .Select(x => new MultipleTestRunsTimingDifferenceModel(x))
+                    .Where(model => !string.IsNullOrEmpty(model.ScenarioName))
+                    .OrderByDescending(model => model.Difference))
                 {
-                    var scenarios = scenarioGroup.Where(scenario => scenario.Status == Status.Passed).ToList();
-
-                    if (!scenarios.Any())
-                    {
-                        continue;
-                    }
-        
-                    var fastest = scenarios.OrderBy(scenario => scenario.TimeTaken).First().TimeTaken.ToPrettyFormat();
-                    var slowest = scenarios.OrderByDescending(scenario => scenario.TimeTaken).First().TimeTaken.ToPrettyFormat();
-                    var average = new TimeSpan((long) scenarios.Average(scenario => scenario.TimeTaken.Ticks)).ToPrettyFormat();
-
                     <tr>
                         <td class="has-text-centered">
-                            <button class="button is-fullwidth is-info no-pointer">@scenarios.First().GetScenarioText() (@scenarios.Count)</button>
+                            <button class="button is-fullwidth is-info no-pointer">@scenarioTimingModel.ScenarioName (@scenarioTimingModel.ScenarioCount)</button>
                         </td>
-                        <td class="has-text-centered">@fastest</td>
-                        <td class="has-text-centered">@average</td>
-                        <td class="has-text-centered">@slowest</td>
+                        <td class="has-text-centered">@scenarioTimingModel.Fastest.ToPrettyFormat()</td>
+                        <td class="has-text-centered">@scenarioTimingModel.Average.ToPrettyFormat()</td>
+                        <td class="has-text-centered">@scenarioTimingModel.Slowest.ToPrettyFormat()</td>
+                        <td class="has-text-centered">@scenarioTimingModel.Difference.ToPrettyFormat()</td>
                     </tr>
                 }
                 </tbody>
