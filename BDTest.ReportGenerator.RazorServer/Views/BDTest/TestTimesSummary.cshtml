@@ -1,3 +1,4 @@
+@using BDTest.ReportGenerator.RazorServer.Models
 @model BDTest.Maps.BDTestOutputModel
 
 @{
@@ -21,7 +22,10 @@
 <section class="section">
     <div class="container pie-chart-large">
 
-        @await Html.PartialAsync("_TestTimesPieChart", Model.Scenarios)
+        @await Html.PartialAsync("_TestTimesPieChart", new TestTimesPieChartViewModel
+        {
+            Scenarios = Model.Scenarios
+        })
 
     </div>
 </section>

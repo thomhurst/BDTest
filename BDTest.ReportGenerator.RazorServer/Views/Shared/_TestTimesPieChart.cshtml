@@ -1,12 +1,10 @@
-@model List<BDTest.Test.Scenario>
+@model BDTest.ReportGenerator.RazorServer.Models.TestTimesPieChartViewModel
 
-<canvas id="myChart" width="400" height="400"></canvas>
+<canvas id="myChart-@Model.StoryIndex" width="400" height="400"></canvas>
 
-<section class="section">
-    <div class="container has-text-right">
+    <div class="container has-text-right mb-6">
         <p class="is-size-7">* Amounts are in milliseconds</p>
     </div>
-</section>
 
 <script>
 function getRandomColor() {
@@ -18,17 +16,17 @@ function getRandomColor() {
             return color;
                 }
               
-let ctx = document.getElementById('myChart').getContext('2d');
+var ctx = document.getElementById('myChart-@Model.StoryIndex').getContext('2d');
 data = {
     datasets: [{
         data: [
-            @foreach (var scenario in Model)
+            @foreach (var scenario in Model.Scenarios)
                     {
                         @scenario.TimeTaken.TotalMilliseconds@:,
                     }
             ],
             backgroundColor: [
-                @for (var index = 0; index < Model.Count; index++)
+                @for (var index = 0; index < Model.Scenarios.Count; index++)
                 {
                     @:getRandomColor(),
                 }
@@ -37,14 +35,14 @@ data = {
 
     // These labels appear in the legend and in the tooltips when hovering different arcs
     labels: [
-        @foreach (var scenario in Model)
+        @foreach (var scenario in Model.Scenarios)
         {
             @:'@scenario.GetScenarioText()',
         }
     ]
 }
 
-let myPieChart = new Chart(ctx, {
+var myPieChart = new Chart(ctx, {
     type: 'pie',
     data: data
 })

@@ -106,7 +106,7 @@ namespace BDTest.ReportGenerator.RazorServer.Controllers
                 return NotFound("No reports found");
             }
 
-            return View("TestRuns", foundReports);
+            return View("MultipleTestRunsTimes", foundReports);
         }
 
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]

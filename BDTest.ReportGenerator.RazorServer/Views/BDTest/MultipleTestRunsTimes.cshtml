@@ -32,32 +32,32 @@
 
 <section class="section">
     
-    @foreach (var scenarioGroup in groupedScenarios)
-    {
-        var scenarios = scenarioGroup.Where(scenario => scenario.Status == Status.Passed).ToList();
+    <div class="container">
+        <div class="box">
+                        
+            <table class="table is-fullwidth">
+                <thead>
+                <tr>
+                    <th class="has-text-centered">Scenario</th>
+                    <th class="has-text-centered">Fastest</th>
+                    <th class="has-text-centered">Average</th>
+                    <th class="has-text-centered">Slowest</th>
+                </tr>
+                </thead>
+                <tbody>
+    
+                @foreach (var scenarioGroup in groupedScenarios)
+                {
+                    var scenarios = scenarioGroup.Where(scenario => scenario.Status == Status.Passed).ToList();
 
-        if (!scenarios.Any())
-        {
-            continue;
-        }
+                    if (!scenarios.Any())
+                    {
+                        continue;
+                    }
         
-        var fastest = scenarios.OrderBy(scenario => scenario.TimeTaken).First().TimeTaken.ToPrettyFormat();
-        var slowest = scenarios.OrderByDescending(scenario => scenario.TimeTaken).First().TimeTaken.ToPrettyFormat();
-        var average = new TimeSpan((long) scenarios.Average(scenario => scenario.TimeTaken.Ticks)).ToPrettyFormat();
-            
-        <div class="container">
-            <div class="box">
-                    
-                <table class="table is-fullwidth">
-                    <thead>
-                    <tr>
-                        <th class="has-text-centered">Scenario</th>
-                        <th class="has-text-centered">Fastest</th>
-                        <th class="has-text-centered">Average</th>
-                        <th class="has-text-centered">Slowest</th>
-                    </tr>
-                    </thead>
-                    <tbody>
+                    var fastest = scenarios.OrderBy(scenario => scenario.TimeTaken).First().TimeTaken.ToPrettyFormat();
+                    var slowest = scenarios.OrderByDescending(scenario => scenario.TimeTaken).First().TimeTaken.ToPrettyFormat();
+                    var average = new TimeSpan((long) scenarios.Average(scenario => scenario.TimeTaken.Ticks)).ToPrettyFormat();
 
                     <tr>
                         <td class="has-text-centered">
@@ -67,10 +67,10 @@
                         <td class="has-text-centered">@average</td>
                         <td class="has-text-centered">@slowest</td>
                     </tr>
-                    </tbody>
-                </table>
-
-            </div>
+                }
+                </tbody>
+            </table>
+                        
         </div>
-    }
+    </div>
 </section>
