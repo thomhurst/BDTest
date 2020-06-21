@@ -16,6 +16,9 @@ namespace BDTest.Test
     public class Step
     {
         internal Runnable Runnable { get; }
+        
+        [JsonProperty]
+        public string Guid { get; private set; }
 
         [JsonProperty]
         public DateTime StartTime { get; private set; }
@@ -47,6 +50,7 @@ namespace BDTest.Test
 
         internal Step(Runnable runnable, StepType stepType)
         {
+            Guid = System.Guid.NewGuid().ToString("N");
             Runnable = runnable;
             StepType = stepType;
             SetStepText();

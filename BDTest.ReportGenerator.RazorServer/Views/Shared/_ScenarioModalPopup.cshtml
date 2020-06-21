@@ -1,4 +1,5 @@
 @using BDTest.ReportGenerator.RazorServer.Extensions
+@using BDTest.ReportGenerator.RazorServer.Models
 @using BDTest.Test
 @using Microsoft.AspNetCore.Http.Extensions
 @model BDTest.ReportGenerator.RazorServer.Models.ScenarioViewModel
@@ -17,6 +18,16 @@
         </header>
         <section class="modal-card-body">
             <div>
+                @if (!string.IsNullOrEmpty(Model.Scenario.TestStartupInformation))
+                {
+                    @(await Html.PartialAsync("_CollapsableArticle", new CollapsableArticicleViewModel()
+                    {
+                        Header = "Test Start Up Info",
+                        Body = Model.Scenario.TestStartupInformation,
+                        StartCollapsed = true
+                    }))
+                }
+                
                 <table class="table is-fullwidth">
                     <thead>
                     <tr>
@@ -28,7 +39,7 @@
                     </tr>
                     </thead>
                     <tbody>
-                    
+
                     @foreach (var step in Model.Scenario.Steps)
                     {
                         <tr>
@@ -43,7 +54,7 @@
                                         <summary>
                                             @step.StepText
                                         </summary>
-                
+
                                         @if (!string.IsNullOrEmpty(step.Output))
                                         {
                                             <article class="message is-info mt-4">
@@ -55,7 +66,7 @@
                                                 </div>
                                             </article>
                                         }
-                
+
                                         @if (step.Exception != null)
                                         {
                                             <article class="message is-danger mt-4">
@@ -80,6 +91,17 @@
                     </tbody>
                 </table>
             </div>
+            
+            @if (!string.IsNullOrEmpty(Model.Scenario.TearDownOutput))
+                            {
+                                @(await Html.PartialAsync("_CollapsableArticle", new CollapsableArticicleViewModel()
+                                {
+                                    Header = "Test Teardown Info",
+                                    Body = Model.Scenario.TearDownOutput,
+                                    StartCollapsed = true
+                                }))
+                            }
+            
         </section>
         <footer class="modal-card-foot">
             <button class="button">Close</button>

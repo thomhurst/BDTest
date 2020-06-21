@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Threading;
 using BDTest.Maps;
@@ -75,10 +76,13 @@ namespace BDTest.Output
                 Console.Out.WriteLine("Attempting to write tear down output but no unique test ID has been set in the base class");
                 return;
             }
+
+            var foundScenario =
+                TestHolder.Scenarios.FirstOrDefault(scenario => scenario.Value.FrameworkTestId == testId);
             
-            if (TestHolder.Scenarios.TryGetValue(testId, out var foundScenario))
+            if (!foundScenario.Equals(default) && foundScenario.Value != null)
             {
-                foundScenario.TearDownOutput += $"{text}{Environment.NewLine}";
+                foundScenario.Value.TearDownOutput += $"{text}{Environment.NewLine}";
             }
 
             Console.Out.WriteLine(Environment.NewLine + text);

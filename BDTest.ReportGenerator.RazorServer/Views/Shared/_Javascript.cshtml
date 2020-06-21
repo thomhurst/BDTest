@@ -39,14 +39,28 @@
     }
     
     function toggleAlternativeText(element) {
-          if(element.hasAttribute("toggle-alternative-text")) {
-                          let alternativeText = element.getAttribute("toggle-alternative-text");
-                          let currentText = element.textContent;
-                          
-                          element.textContent = alternativeText;
-                          element.setAttribute("toggle-alternative-text", currentText);
-                      }
+              if(element.hasAttribute("toggle-alternative-text")) {
+                              let alternativeText = element.getAttribute("toggle-alternative-text");
+                              let currentText = element.textContent;
+                              
+                              element.textContent = alternativeText;
+                              element.setAttribute("toggle-alternative-text", currentText);
+                          }
+            }
+            
+            function toggleIcon(element) {
+        @{
+            var toggleOnIconUrl = Url.Content("~/icons/toggle_on-24px.svg");
+            var toggleOffIconUrl = Url.Content("~/icons/toggle_off-24px.svg");
         }
+                      if(element.src.includes('@toggleOffIconUrl')) {
+                          element.src = '@toggleOnIconUrl';
+                          }
+                      
+                      else if(element.src.includes('@toggleOnIconUrl')) {
+                                                element.src = '@toggleOffIconUrl';
+                                                }
+                    }
 
     onDomLoaded(function() {
       let toggleElements = document.getElementsByClassName("toggle-hide");
@@ -59,6 +73,8 @@
             toggleElementVisibility(childElementToHide);
             
             toggleAlternativeText(toggleElement);
+            
+            toggleIcon(toggleElement);
           })
       }
     })
