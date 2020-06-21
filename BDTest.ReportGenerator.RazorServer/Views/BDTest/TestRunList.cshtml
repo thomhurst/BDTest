@@ -7,24 +7,33 @@
 }
 
 <script>
+    function getCheckedIdsAsQueryParameter() {
+        let checkboxes = document.getElementsByName("checkbox");
+                  let checkedIds = [];
+                  
+                  for (let i=0; i<checkboxes.length; i++) {
+                       // And stick the checked ones onto an array...
+                       if (checkboxes[i].checked) {
+                          checkedIds.push(checkboxes[i].id);
+                       }
+                    }
+                  
+                  let queryString = "?reportIds=" + checkedIds.join(",");
+                  
+                  return queryString;
+    }
+
     onDomLoaded(function() {
         const compareTimesButton = document.getElementById("compare-times");
-        compareTimesButton.addEventListener('click', function() {
-          let checkboxes = document.getElementsByName("checkbox");
-          let checkedIds = [];
-          
-          for (let i=0; i<checkboxes.length; i++) {
-               // And stick the checked ones onto an array...
-               if (checkboxes[i].checked) {
-                  checkedIds.push(checkboxes[i].id);
-               }
-            }
-          
-          let queryString = "?reportIds=" + checkedIds.join(",");
-          
-          window.location = "@Url.Action("TestRuns", "BDTest")" + queryString;
-        });
-    })
+                compareTimesButton.addEventListener('click', function() {
+                  window.location = "@Url.Action("TestRunTimes", "BDTest")" + getCheckedIdsAsQueryParameter();
+                });
+                
+                const checkFlakinessButton = document.getElementById("check-flakiness");
+                        checkFlakinessButton.addEventListener('click', function() {
+                          window.location = "@Url.Action("TestRunFlakiness", "BDTest")" + getCheckedIdsAsQueryParameter();
+                        });
+    });
 </script>
 
 <section class="hero is-info">
@@ -44,6 +53,7 @@
     <div class="container">
         <div class="has-text-right">
             <button class="button is-info" id="compare-times">Compares Times</button>
+            <button class="button is-info" id="check-flakiness">Check Flakiness</button>
         </div>
 
         <table class="table is-fullwidth">

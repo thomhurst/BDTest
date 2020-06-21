@@ -3,7 +3,7 @@
 @model List<BDTest.Maps.BDTestOutputModel>
 
 @{
-    ViewBag.Title = "Flakiness";
+    ViewBag.Title = "Test Times";
     Layout = "_Layout";
 
     var allScenarios = Model.SelectMany(model => model.Scenarios);

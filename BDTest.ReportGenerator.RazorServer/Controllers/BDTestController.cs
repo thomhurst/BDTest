@@ -84,19 +84,26 @@ namespace BDTest.ReportGenerator.RazorServer.Controllers
         {
             return RedirectToAction("TestRuns");
         }
-        
+
         [HttpGet]
         [Route("report/test-runs")]
         public async Task<IActionResult> TestRuns([FromQuery] string reportIds)
+        {
+            var records = await GetRunsBetweenTimes(DateTime.Now.Subtract(TimeSpan.FromDays(30)),
+                DateTime.Now);
+
+            return View("TestRunList", records.ToList());
+        }
+
+        [HttpGet]
+        [Route("report/test-run-times")]
+        public async Task<IActionResult> TestRunTimes([FromQuery] string reportIds)
         {
             var reportIdsArray = reportIds?.Split(',') ?? Array.Empty<string>();
 
             if (!reportIdsArray.Any())
             {
-                var records = await GetRunsBetweenTimes(DateTime.Now.Subtract(TimeSpan.FromDays(30)),
-                    DateTime.Now);
-                
-                return View("TestRunList", records.ToList());
+                return RedirectToAction("TestRuns", "BDTest");
             }
             
             var foundReports = (await Task.WhenAll(reportIdsArray.Select(GetData))).ToList();
@@ -107,6 +114,27 @@ namespace BDTest.ReportGenerator.RazorServer.Controllers
             }
 
             return View("MultipleTestRunsTimes", foundReports);
+        }
+        
+        [HttpGet]
+        [Route("report/test-run-flakiness")]
+        public async Task<IActionResult> TestRunFlakiness([FromQuery] string reportIds)
+        {
+            var reportIdsArray = reportIds?.Split(',') ?? Array.Empty<string>();
+
+            if (!reportIdsArray.Any())
+            {
+                return RedirectToAction("TestRuns", "BDTest");
+            }
+            
+            var foundReports = (await Task.WhenAll(reportIdsArray.Select(GetData))).ToList();
+
+            if (!foundReports.Any())
+            {
+                return NotFound("No reports found");
+            }
+
+            return View("MultipleTestRunsFlakiness", foundReports);
         }
 
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]

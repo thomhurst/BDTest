@@ -1,0 +1,108 @@
+@using BDTest.Maps
+@using BDTest.ReportGenerator.RazorServer.Extensions
+@using BDTest.Test
+@model List<BDTest.Maps.BDTestOutputModel>
+
+@{
+    ViewBag.Title = "Flakiness";
+    Layout = "_Layout";
+
+    var allScenarios = Model.SelectMany(model => model.Scenarios);
+    var groupedScenarios = allScenarios.GroupBy(scenario => new
+    {
+        StoryText = scenario.GetStoryText(),
+        ScenarioText = scenario.GetScenarioText()
+    });
+}
+
+<section class="hero is-info">
+    <div class="hero-body">
+        <div class="container">
+            <h1 class="title">
+                Flakey Tests
+            </h1>
+            <h2 class="subtitle">
+                Here are how your <strong>flakey</strong> your tests are across multiple runs:
+            </h2>
+        </div>
+    </div>
+</section>
+
+<section class="section">
+    
+    <div class="container">
+        <div class="box">
+                        
+            <table class="table is-fullwidth">
+                <thead>
+                <tr>
+                    <th class="has-text-centered">Scenario</th>
+                    <th class="has-text-centered">Passed</th>
+                    <th class="has-text-centered">Failed</th>
+                </tr>
+                </thead>
+                <tbody>
+    
+                @foreach (var scenarioGroup in groupedScenarios)
+                {
+                    var scenarios = scenarioGroup.ToList();
+
+                    var failed = scenarios.Count(scenario => scenario.Status == Status.Failed);
+                    var passed = scenarios.Count(scenario => scenario.Status == Status.Passed);
+
+                    <tr>
+                        <td class="has-text-centered">
+                        @* <button class="button is-fullwidth is-info no-pointer">@scenarios.First().GetScenarioText() (@scenarios.Count)</button> *@
+                        <details>
+                            <summary>
+                                @scenarios.First().GetScenarioText() (@scenarios.Count)
+                            </summary>
+                            
+                            <table class="table is-fullwidth">
+                                <thead>
+                                <tr>
+                                    <th></th>
+                                    <th class="has-text-centered">Date and Time</th>
+                                    <th class="has-text-centered">Status</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                @foreach (var scenario in scenarios)
+                                {
+                                    <tr>
+                                        <td>
+                                            <a href="~/bdtest/report/@getOutputModel(scenario).Id/stories?scenarioId=@scenario.Guid">
+                                                <button class="button is-info pointer">View Report</button>
+                                            </a>
+                                        </td>
+                                        <td>
+                                            <button class="button is-link no-pointer">@scenario.StartTime</button>
+                                        </td>
+                                        <td>
+                                            <button class="@scenario.Status.GetCssColourValueForStatus() button is-fullwidth no-pointer">@scenario.Status</button>
+                                        </td>
+                                    </tr>
+                                }
+                                                                
+                                </tbody>
+                            </table>
+                        </details>
+                        
+                        <td class="has-text-centered">@passed</td>
+                        <td class="has-text-centered">@failed</td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+                        
+        </div>
+    </div>
+</section>
+
+@functions 
+{
+    private BDTestOutputModel getOutputModel(Scenario scenario)
+    {
+        return Model.FirstOrDefault(bdTestOutputModel => bdTestOutputModel.Scenarios.Any(s => s.Guid == scenario.Guid));
+    }
+}
