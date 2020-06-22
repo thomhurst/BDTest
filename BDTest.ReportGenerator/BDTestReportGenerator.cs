@@ -49,6 +49,8 @@ namespace BDTest.ReportGenerator
             var dataToOutput = new BDTestOutputModel
             {
                 Id = BDTestUtil.GetInstanceGuid,
+                Environment = BDTestSettings.Environment,
+                Tag = BDTestSettings.Tag,
                 Scenarios = scenarios,
                 TestTimer = testTimer,
                 NotRun = BDTestUtil.GetNotRunScenarios(),
@@ -115,26 +117,26 @@ namespace BDTest.ReportGenerator
 
         private static void PruneData()
         {
-            if (string.IsNullOrWhiteSpace(BDTestSettings.LegacyReportSettings.PersistentResultsDirectory))
+            if (string.IsNullOrWhiteSpace(BDTestSettings.ReportSettings.PersistentResultsDirectory))
             {
                 return;
             }
 
-            var filesTooOld = Directory.GetFiles(BDTestSettings.LegacyReportSettings.PersistentResultsDirectory).Where(filePath => File.GetCreationTime(filePath) < BDTestSettings.LegacyReportSettings.PrunePersistentDataOlderThan).ToList();
+            var filesTooOld = Directory.GetFiles(BDTestSettings.ReportSettings.PersistentResultsDirectory).Where(filePath => File.GetCreationTime(filePath) < BDTestSettings.ReportSettings.PrunePersistentDataOlderThan).ToList();
             foreach (var fileTooOld in filesTooOld)
             {
                 File.Delete(fileTooOld);
             }
 
-            var filesOverLimit = Directory.GetFiles(BDTestSettings.LegacyReportSettings.PersistentResultsDirectory).OrderBy(File.GetCreationTime).ToList();
+            var filesOverLimit = Directory.GetFiles(BDTestSettings.ReportSettings.PersistentResultsDirectory).OrderBy(File.GetCreationTime).ToList();
             var count = filesOverLimit.Count;
 
-            if (count <= BDTestSettings.LegacyReportSettings.PersistentFileCountToKeep)
+            if (count <= BDTestSettings.ReportSettings.PersistentFileCountToKeep)
             {
                 return;
             }
 
-            var amountToDelete = count - BDTestSettings.LegacyReportSettings.PersistentFileCountToKeep;
+            var amountToDelete = count - BDTestSettings.ReportSettings.PersistentFileCountToKeep;
             foreach (var fileToPrune in filesOverLimit.Take(amountToDelete))
             {
                 File.Delete(fileToPrune);
@@ -143,19 +145,19 @@ namespace BDTest.ReportGenerator
 
         private static void CreatePersistentResults(string folderPath)
         {
-            if (string.IsNullOrWhiteSpace(BDTestSettings.LegacyReportSettings.PersistentResultsDirectory))
+            if (string.IsNullOrWhiteSpace(BDTestSettings.ReportSettings.PersistentResultsDirectory))
             {
                 return;
             }
 
             try
             {
-                Directory.CreateDirectory(BDTestSettings.LegacyReportSettings.PersistentResultsDirectory);
+                Directory.CreateDirectory(BDTestSettings.ReportSettings.PersistentResultsDirectory);
             }
             catch (Exception e)
             {
                 File.WriteAllText(Path.Combine(folderPath, "BDTest - Persistent Directory Error.txt"), e.StackTrace);
-                BDTestSettings.LegacyReportSettings.PersistentResultsDirectory = null;
+                BDTestSettings.ReportSettings.PersistentResultsDirectory = null;
             }
         }
 
@@ -163,12 +165,12 @@ namespace BDTest.ReportGenerator
         {
             try
             {
-                File.WriteAllText(Path.Combine(folderPath, BDTestSettings.LegacyReportSettings.JsonDataFilename ?? FileNames.TestDataJson), jsonData);
+                File.WriteAllText(Path.Combine(folderPath, BDTestSettings.ReportSettings.JsonDataFilename ?? FileNames.TestDataJson), jsonData);
 
-                if (!string.IsNullOrWhiteSpace(BDTestSettings.LegacyReportSettings.PersistentResultsDirectory))
+                if (!string.IsNullOrWhiteSpace(BDTestSettings.ReportSettings.PersistentResultsDirectory))
                 {
-                    File.Copy(Path.Combine(folderPath, BDTestSettings.LegacyReportSettings.JsonDataFilename ?? FileNames.TestDataJson),
-                        Path.Combine(BDTestSettings.LegacyReportSettings.PersistentResultsDirectory, FileNames.TestDataJson));
+                    File.Copy(Path.Combine(folderPath, BDTestSettings.ReportSettings.JsonDataFilename ?? FileNames.TestDataJson),
+                        Path.Combine(BDTestSettings.ReportSettings.PersistentResultsDirectory, FileNames.TestDataJson));
                 }
             }
             catch (Exception e)

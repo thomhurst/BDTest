@@ -5,11 +5,12 @@ using System.Text;
 using System.Threading.Tasks;
 using BDTest.Helpers;
 using BDTest.Maps;
+using BDTest.Settings;
 using Newtonsoft.Json;
 
 namespace BDTest
 {
-    public static class BDTestReportServer
+    internal static class BDTestReportServer
     {
         public static async Task<Uri> SendDataAndGetReportUri(Uri serverAddress)
         {
@@ -25,6 +26,8 @@ namespace BDTest
             var dataOutputModel = new BDTestOutputModel
             {
                 Id = TestHolder.InstanceGuid,
+                Environment = BDTestSettings.Environment,
+                Tag = BDTestSettings.Tag,
                 Scenarios = scenarios,
                 Version = BDTestVersionHelper.CurrentVersion,
                 NotRun = TestHolder.NotRun.Values.ToList(),

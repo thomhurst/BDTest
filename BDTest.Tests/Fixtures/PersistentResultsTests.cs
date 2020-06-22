@@ -31,7 +31,7 @@ namespace BDTest.Tests.Fixtures
         [ScenarioText("Can Deserialize Persistent JSON File")]
         public void CanDeserializePersistentTestResultsSuccessfully()
         {
-            BDTestSettings.LegacyReportSettings.PersistentResultsDirectory =
+            BDTestSettings.ReportSettings.PersistentResultsDirectory =
                 Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"), "Persistent");
 
             When(() => Console.WriteLine("A persistent json file is written")).WithStepText(() => "I write custom when step text")
@@ -40,7 +40,7 @@ namespace BDTest.Tests.Fixtures
             
             BDTestReportGenerator.Generate();
 
-            var persistentJson = Directory.GetFiles(BDTestSettings.LegacyReportSettings.PersistentResultsDirectory).First();
+            var persistentJson = Directory.GetFiles(BDTestSettings.ReportSettings.PersistentResultsDirectory).First();
             var jObject = JObject.Load(new JsonTextReader(new StringReader(File.ReadAllText(persistentJson))));
 
             var scenarios = JsonConvert.DeserializeObject<List<Scenario>>(jObject.GetValue("Scenarios").ToString());

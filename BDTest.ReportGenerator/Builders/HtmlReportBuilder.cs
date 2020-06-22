@@ -57,7 +57,7 @@ namespace BDTest.ReportGenerator.Builders
 
         private static void CreateFlakinessReport(string folderPath)
         {
-            if (string.IsNullOrWhiteSpace(BDTestSettings.LegacyReportSettings.PersistentResultsDirectory))
+            if (string.IsNullOrWhiteSpace(BDTestSettings.ReportSettings.PersistentResultsDirectory))
             {
                 return;
             }
@@ -70,14 +70,14 @@ namespace BDTest.ReportGenerator.Builders
                     .Style("padding", "25px")
                     .WriteTo(stringWriter, HtmlEncoder.Default);
 
-                File.WriteAllText(Path.Combine(folderPath, BDTestSettings.LegacyReportSettings.FlakinessReportHtmlFilename ?? FileNames.ReportFlakiness),
+                File.WriteAllText(Path.Combine(folderPath, BDTestSettings.ReportSettings.FlakinessReportHtmlFilename ?? FileNames.ReportFlakiness),
                     stringWriter.ToString());
             }
         }
 
         private static void CreateTestTimesComparisonReport(string folderPath)
         {
-            if (string.IsNullOrWhiteSpace(BDTestSettings.LegacyReportSettings.PersistentResultsDirectory))
+            if (string.IsNullOrWhiteSpace(BDTestSettings.ReportSettings.PersistentResultsDirectory))
             {
                 return;
             }
@@ -90,7 +90,7 @@ namespace BDTest.ReportGenerator.Builders
                     .Style("padding", "25px")
                     .WriteTo(stringWriter, HtmlEncoder.Default);
 
-                File.WriteAllText(Path.Combine(folderPath, BDTestSettings.LegacyReportSettings.TestTimesReportHtmlFilename ?? FileNames.ReportTestTimesComparison),
+                File.WriteAllText(Path.Combine(folderPath, BDTestSettings.ReportSettings.TestTimesReportHtmlFilename ?? FileNames.ReportTestTimesComparison),
                     stringWriter.ToString());
             }
         }
@@ -105,7 +105,7 @@ namespace BDTest.ReportGenerator.Builders
                     .Style("padding", "25px")
                     .WriteTo(stringWriter, HtmlEncoder.Default);
 
-                File.WriteAllText(Path.Combine(folderPath, BDTestSettings.LegacyReportSettings.ScenariosByStoryReportHtmlFilename ?? FileNames.ReportByStory),
+                File.WriteAllText(Path.Combine(folderPath, BDTestSettings.ReportSettings.ScenariosByStoryReportHtmlFilename ?? FileNames.ReportByStory),
                     stringWriter.ToString());
             }
         }
@@ -120,7 +120,7 @@ namespace BDTest.ReportGenerator.Builders
                     .Style("padding", "25px")
                     .WriteTo(stringWriter, HtmlEncoder.Default);
 
-                File.WriteAllText(Path.Combine(folderPath, BDTestSettings.LegacyReportSettings.AllScenariosReportHtmlFilename ?? FileNames.ReportAllScenarios),
+                File.WriteAllText(Path.Combine(folderPath, BDTestSettings.ReportSettings.AllScenariosReportHtmlFilename ?? FileNames.ReportAllScenarios),
                     stringWriter.ToString());
             }
         }
@@ -194,8 +194,8 @@ namespace BDTest.ReportGenerator.Builders
 
         private static List<Scenario> GetScenarioBatched()
         {
-            var scenarioBatched = Directory.GetFiles(BDTestSettings.LegacyReportSettings.PersistentResultsDirectory)
-                .Where(it => it.EndsWith(".json") && File.GetCreationTime(it) > BDTestSettings.LegacyReportSettings.PersistentResultsCompareStartTime)
+            var scenarioBatched = Directory.GetFiles(BDTestSettings.ReportSettings.PersistentResultsDirectory)
+                .Where(it => it.EndsWith(".json") && File.GetCreationTime(it) > BDTestSettings.ReportSettings.PersistentResultsCompareStartTime)
                 .Select(filePath =>
                 {
                     try
@@ -622,7 +622,7 @@ namespace BDTest.ReportGenerator.Builders
                 new HtmlTag("pre").Append(outputLines.SelectMany((line, index) => WriteLinesWithBreaks(index, line)))
             );
         }
-        
+
         private static HtmlTag BuildHtmlOutput(string html)
         {
             if (string.IsNullOrWhiteSpace(html))
@@ -630,7 +630,10 @@ namespace BDTest.ReportGenerator.Builders
                 return HtmlTag.Empty();
             }
 
-            return new HtmlTag("p").AppendHtml(html);
+            return new HtmlTag("div").Append(
+                new HtmlTag("br"),
+                new HtmlTag("p").AppendHtml(html)
+            );
         }
 
         private static IEnumerable<HtmlTag> AddStylesheets()

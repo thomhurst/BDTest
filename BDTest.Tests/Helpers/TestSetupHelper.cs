@@ -6,7 +6,7 @@ namespace BDTest.Tests.Helpers
     {
         public static void ResetData()
         {
-            BDTestSettings.LegacyReportSettings.ReportFolderName = "CustomFolder";
+            BDTestSettings.ReportSettings.ReportFolderName = "CustomFolder";
             
             BDTestUtil.ClearScenarios();
         }

@@ -11,9 +11,9 @@ namespace BDTest.Paths
         {
             get
             {
-                if (!string.IsNullOrEmpty(BDTestSettings.LegacyReportSettings.ReportFolderName))
+                if (!string.IsNullOrEmpty(BDTestSettings.ReportSettings.ReportFolderName))
                 {
-                    return Path.Combine(RawOutputDirectory, BDTestSettings.LegacyReportSettings.ReportFolderName);
+                    return Path.Combine(RawOutputDirectory, BDTestSettings.ReportSettings.ReportFolderName);
                 }
                 
                 return RawOutputDirectory;

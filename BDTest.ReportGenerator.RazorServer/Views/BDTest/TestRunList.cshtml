@@ -1,5 +1,5 @@
 @using BDTest.ReportGenerator.RazorServer.Extensions
-@model List<BDTest.ReportGenerator.RazorServer.Models.RecordDateTimeModel>
+@model List<BDTest.ReportGenerator.RazorServer.Models.TestRunOverview>
 
 @{
     ViewBag.Title = "Test Runs";
@@ -61,6 +61,8 @@
             <thead>
             <tr>
                 <th class="has-text-centered">Select</th>
+                <th class="has-text-centered">Tag</th>
+                <th class="has-text-centered">Environment</th>
                 <th class="has-text-centered">Date and Time</th>
                 <th class="has-text-centered">Status</th>
                 <th></th>
@@ -74,6 +76,8 @@
                     <td class="has-text-centered">
                         <input name="checkbox" type="checkbox" id="@record.RecordId"/>
                     </td>
+                    <td class="has-text-centered">@record.Tag</td>
+                    <td class="has-text-centered">@record.Environment</td>
                     <td class="has-text-centered">@record.DateTime.ToStringForReport()</td>
                     <td class="has-text-centered">
                         <button class="@record.Status.GetCssColourValueForStatus() button is-fullwidth no-pointer">

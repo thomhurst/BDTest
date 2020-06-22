@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 using BDTest.Maps;
 using BDTest.ReportGenerator.RazorServer.Interfaces;
 using BDTest.ReportGenerator.RazorServer.Models;
-using BDTest.Test;
 using Microsoft.Extensions.Caching.Memory;
 
 namespace BDTest.ReportGenerator.RazorServer.Implementations
@@ -20,7 +19,7 @@ namespace BDTest.ReportGenerator.RazorServer.Implementations
             _cache = cache;
         }
 
-        public Task<BDTestOutputModel> GetRecord(string id)
+        public Task<BDTestOutputModel> GetTestData(string id)
         {
             if (_cache.TryGetValue<BDTestOutputModel>(id, out var model))
             {
@@ -30,13 +29,13 @@ namespace BDTest.ReportGenerator.RazorServer.Implementations
             return Task.FromResult(null as BDTestOutputModel);
         }
 
-        public Task<RecordDateTimeModel[]> GetRecordsBetweenDateTimes(DateTime start, DateTime end)
+        public Task<TestRunOverview[]> GetTestRunRecordsBetweenDateTimes(DateTime start, DateTime end)
         {
-            var recordDateTimeModels = new List<RecordDateTimeModel>();
+            var recordDateTimeModels = new List<TestRunOverview>();
             
             if(_cache.TryGetValue(RecordDateTimeModelsKey, out var recordDateTimeModelsAsObject))
             {
-                recordDateTimeModels.AddRange(recordDateTimeModelsAsObject as IEnumerable<RecordDateTimeModel> ?? Array.Empty<RecordDateTimeModel>());
+                recordDateTimeModels.AddRange(recordDateTimeModelsAsObject as IEnumerable<TestRunOverview> ?? Array.Empty<TestRunOverview>());
             }
 
             var recordsInDateRange = recordDateTimeModels.Where(model => model.DateTime > start && model.DateTime < end);
@@ -44,22 +43,22 @@ namespace BDTest.ReportGenerator.RazorServer.Implementations
             return Task.FromResult(recordsInDateRange.ToArray());
         }
 
-        public Task StoreRecord(string id, BDTestOutputModel data)
+        public Task StoreTestData(string id, BDTestOutputModel data)
         {
             _cache.Set(id, data, TimeSpan.FromHours(3));
             return Task.CompletedTask;
         }
 
-        public Task StoreRecordIdAndDateTime(string id, DateTime dateTime, Status status)
+        public Task StoreTestRunRecord(TestRunOverview testRunOverview)
         {
-            var recordDateTimeModels = new List<RecordDateTimeModel>();
+            var recordDateTimeModels = new List<TestRunOverview>();
             
             if(_cache.TryGetValue(RecordDateTimeModelsKey, out var recordDateTimeModelsAsObject))
             {
-                recordDateTimeModels.AddRange(recordDateTimeModelsAsObject as IEnumerable<RecordDateTimeModel> ?? Array.Empty<RecordDateTimeModel>());
+                recordDateTimeModels.AddRange(recordDateTimeModelsAsObject as IEnumerable<TestRunOverview> ?? Array.Empty<TestRunOverview>());
             }
             
-            recordDateTimeModels.Add(new RecordDateTimeModel(id, dateTime, status));
+            recordDateTimeModels.Add(testRunOverview);
 
             _cache.Set(RecordDateTimeModelsKey, recordDateTimeModels);
             

@@ -18,7 +18,7 @@ namespace BDTest.Settings
         
         public static CustomExceptionSettings CustomExceptionSettings { get; } = new CustomExceptionSettings();
         
-        public static LegacyReportSettings LegacyReportSettings { get; } = new LegacyReportSettings();
+        public static ReportSettings ReportSettings { get; } = new ReportSettings();
         
         public static SkipStepRules SkipStepRules { get; } = new SkipStepRules();
     }
@@ -33,20 +33,5 @@ namespace BDTest.Settings
             Func<object, bool> func = value => condition((T) value);
             Rules.Add(new SkipStepRule<object>(typeof(T), func));
         }
-    }
-
-    public class LegacyReportSettings
-    {
-        public string PersistentResultsDirectory { get; set; }
-        public DateTime PersistentResultsCompareStartTime { get; set; } = DateTime.MinValue;
-        public DateTime PrunePersistentDataOlderThan { get; set; } = DateTime.MinValue;
-        public int PersistentFileCountToKeep { get; set; } = 365;
-
-        public string ReportFolderName { get; set; } = "BDTestReports";
-        public string ScenariosByStoryReportHtmlFilename { get; set; }
-        public string AllScenariosReportHtmlFilename { get; set; }
-        public string FlakinessReportHtmlFilename { get; set; }
-        public string TestTimesReportHtmlFilename { get; set; }
-        public string JsonDataFilename { get; set; }
     }
 }
