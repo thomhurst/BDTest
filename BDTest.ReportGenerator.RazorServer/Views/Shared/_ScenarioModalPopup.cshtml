@@ -93,14 +93,22 @@
             </div>
             
             @if (!string.IsNullOrEmpty(Model.Scenario.TearDownOutput))
-                            {
-                                @(await Html.PartialAsync("_CollapsableArticle", new CollapsableArticicleViewModel()
-                                {
-                                    Header = "Test Teardown Info",
-                                    Body = Model.Scenario.TearDownOutput,
-                                    StartCollapsed = true
-                                }))
-                            }
+            {
+                @(await Html.PartialAsync("_CollapsableArticle", new CollapsableArticicleViewModel()
+                {
+                    Header = "Test Teardown Info",
+                    Body = Model.Scenario.TearDownOutput,
+                    StartCollapsed = true
+                }))
+            }
+            
+            @if (!string.IsNullOrEmpty(Model.Scenario.HtmlReportOutput))
+            {
+                <div class="container">
+                    <h2 class="subtitle">Custom:</h2>
+                    @Html.Raw(Model.Scenario.HtmlReportOutput)
+                </div>
+            }
             
         </section>
         <footer class="modal-card-foot">

@@ -27,8 +27,6 @@ namespace BDTest.Tests.Fixtures
             BDTestReportGenerator.GenerateInFolder(FileHelpers.GetUniqueTestOutputFolder());
             
             Assert.That(JsonHelper.GetTestDynamicJsonObject().SelectToken("$.Scenarios[0].TearDownOutput").ToString().Trim(), Is.EqualTo("Some teardown info!"));
-
-            // var uri = BDTestReportServer.SendDataAndGetReportUri(new Uri("https://localhost:44329/")).Result;
         }
         
         [Test]

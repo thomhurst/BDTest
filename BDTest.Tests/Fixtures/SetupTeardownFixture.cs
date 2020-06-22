@@ -1,8 +1,6 @@
-using System;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Threading.Tasks;
 using NUnit.Framework;
 
 namespace BDTest.Tests.Fixtures
@@ -11,7 +9,7 @@ namespace BDTest.Tests.Fixtures
     public class SetupTeardownFixture
     {
         [OneTimeTearDown]
-        public async Task DeleteOutputDirectories()
+        public void DeleteOutputDirectories()
         {
             var bdTestOutputs = Directory
                 .GetDirectories(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location))
@@ -21,8 +19,6 @@ namespace BDTest.Tests.Fixtures
             {
                 Directory.Delete(bdTestOutput, true);
             }
-
-            var uri = await BDTestReportServer.SendDataAndGetReportUri(new Uri("https://localhost:44329/"));
         }
     }
 }

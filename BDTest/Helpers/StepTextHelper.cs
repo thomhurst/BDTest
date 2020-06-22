@@ -42,7 +42,7 @@ namespace BDTest.Helpers
             var customStepText =
                 stepTextAttribute?.Text;
 
-            var methodNameHumanized = $"{LowercaseFirstLetter(methodInfo.Name.Humanize())} {string.Join(" ", arguments)}";
+            var methodNameHumanized = $"{LowercaseFirstLetter(methodInfo.Name.Humanize())} {string.Join(" ", arguments)}".Trim();
 
             if (customStepText != null)
             {

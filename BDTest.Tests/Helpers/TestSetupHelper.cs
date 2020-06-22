@@ -8,7 +8,7 @@ namespace BDTest.Tests.Helpers
         {
             BDTestSettings.LegacyReportSettings.ReportFolderName = "CustomFolder";
             
-            // BDTestUtil.ClearScenarios();
+            BDTestUtil.ClearScenarios();
         }
     }
 }
