@@ -139,6 +139,16 @@ namespace BDTest.Tests.Fixtures
             Assert.That(scenario.Steps[2].StepText, Is.EqualTo("Then the text is 123..................4....................................5"));
         }
         
+        [Test]
+        public void NoStepTextIncludesParameterValues()
+        {
+            var scenario = When(() => StepWithParametersButWithoutStepText("One", "Two"))
+                .Then(() => StepWithParametersButWithoutStepText("One", "Two"))
+                .BDTest();
+            
+            Assert.That(scenario.Steps[1].StepText, Is.EqualTo("Then step with parameters but without step text One Two"));
+        }
+        
         [StepText("the text is {0}")]
         public void StepWithStringConverterType(CustomClassToStepTextString obj)
         {
@@ -188,6 +198,11 @@ namespace BDTest.Tests.Fixtures
         public void Step_3_Without_A_StepTextAttribute_and_Hyphens()
         {
             
+        }
+
+        public void StepWithParametersButWithoutStepText(string valueOne, string valueTwo)
+        {
+            // Nothing
         }
     }
 }

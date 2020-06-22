@@ -38,6 +38,8 @@ namespace BDTest.Test
         [JsonIgnore] public string Exception => Steps.Select(step => step.Exception).FirstOrDefault();
         
         [JsonProperty] public string TearDownOutput { get; set; }
+        
+        [JsonProperty] public string HtmlReportOutput { get; set; }
 
         [JsonConstructor]
         private Scenario()

@@ -11,6 +11,12 @@ namespace BDTest.Maps
         public string Id { get; set; }
         
         [JsonProperty]
+        public string Environment { get; set; }
+        
+        [JsonProperty]
+        public string Tag { get; set; }
+        
+        [JsonProperty]
         public TestTimer TestTimer { get; set; }
         
         [JsonProperty]

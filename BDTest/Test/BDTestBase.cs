@@ -55,5 +55,10 @@ namespace BDTest.Test
         {
             TestOutputData.WriteTearDownOutput(TestId, text);
         }
+        
+        public void WriteHtmlToReportForScenario(string html)
+        {
+            TestOutputData.WriteHtmlOutput(TestId, html);
+        }
     }
 }

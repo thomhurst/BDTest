@@ -9,24 +9,17 @@ namespace BDTest.Settings
     public static class BDTestSettings
     {
         public static bool InterceptConsoleOutput { get; set; } = true;
+        public static string Environment { get; set; }
+        public static string Tag { get; set; }
 
         public static DebugSettings Debug { get; } = new DebugSettings();
         
         public static List<object> CustomStringConverters { get; } = new List<object>();
         
         public static CustomExceptionSettings CustomExceptionSettings { get; } = new CustomExceptionSettings();
-
-        public static string PersistentResultsDirectory { get; set; }
-        public static DateTime PersistentResultsCompareStartTime { get; set; } = DateTime.MinValue;
-        public static DateTime PrunePersistentDataOlderThan { get; set; } = DateTime.MinValue;
-        public static int PersistentFileCountToKeep { get; set; } = 365;
-
-        public static string ReportFolderName { get; set; } = "BDTestReports";
-        public static string ScenariosByStoryReportHtmlFilename { get; set; }
-        public static string AllScenariosReportHtmlFilename { get; set; }
-        public static string FlakinessReportHtmlFilename { get; set; }
-        public static string TestTimesReportHtmlFilename { get; set; }
-        public static string JsonDataFilename { get; set; }
+        
+        public static LegacyReportSettings LegacyReportSettings { get; } = new LegacyReportSettings();
+        
         public static SkipStepRules SkipStepRules { get; } = new SkipStepRules();
     }
 
@@ -40,5 +33,20 @@ namespace BDTest.Settings
             Func<object, bool> func = value => condition((T) value);
             Rules.Add(new SkipStepRule<object>(typeof(T), func));
         }
+    }
+
+    public class LegacyReportSettings
+    {
+        public string PersistentResultsDirectory { get; set; }
+        public DateTime PersistentResultsCompareStartTime { get; set; } = DateTime.MinValue;
+        public DateTime PrunePersistentDataOlderThan { get; set; } = DateTime.MinValue;
+        public int PersistentFileCountToKeep { get; set; } = 365;
+
+        public string ReportFolderName { get; set; } = "BDTestReports";
+        public string ScenariosByStoryReportHtmlFilename { get; set; }
+        public string AllScenariosReportHtmlFilename { get; set; }
+        public string FlakinessReportHtmlFilename { get; set; }
+        public string TestTimesReportHtmlFilename { get; set; }
+        public string JsonDataFilename { get; set; }
     }
 }

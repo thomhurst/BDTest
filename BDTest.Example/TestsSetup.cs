@@ -10,9 +10,9 @@ namespace BDTest.Example
         [OneTimeSetUp]
         public void SetupBDTestSettings()
         {
-            BDTestSettings.AllScenariosReportHtmlFilename = "BDTest - All Scenarios.html";
-            BDTestSettings.ScenariosByStoryReportHtmlFilename = "BDTest - Stories.html";
-            BDTestSettings.ReportFolderName = "BDTestOutput";
+            BDTestSettings.LegacyReportSettings.AllScenariosReportHtmlFilename = "BDTest - All Scenarios.html";
+            BDTestSettings.LegacyReportSettings.ScenariosByStoryReportHtmlFilename = "BDTest - Stories.html";
+            BDTestSettings.LegacyReportSettings.ReportFolderName = "BDTestOutput";
         }
 
         [OneTimeTearDown]

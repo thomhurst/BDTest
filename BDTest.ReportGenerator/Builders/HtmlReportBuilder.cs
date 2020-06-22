@@ -57,7 +57,7 @@ namespace BDTest.ReportGenerator.Builders
 
         private static void CreateFlakinessReport(string folderPath)
         {
-            if (string.IsNullOrWhiteSpace(BDTestSettings.PersistentResultsDirectory))
+            if (string.IsNullOrWhiteSpace(BDTestSettings.LegacyReportSettings.PersistentResultsDirectory))
             {
                 return;
             }
@@ -70,14 +70,14 @@ namespace BDTest.ReportGenerator.Builders
                     .Style("padding", "25px")
                     .WriteTo(stringWriter, HtmlEncoder.Default);
 
-                File.WriteAllText(Path.Combine(folderPath, BDTestSettings.FlakinessReportHtmlFilename ?? FileNames.ReportFlakiness),
+                File.WriteAllText(Path.Combine(folderPath, BDTestSettings.LegacyReportSettings.FlakinessReportHtmlFilename ?? FileNames.ReportFlakiness),
                     stringWriter.ToString());
             }
         }
 
         private static void CreateTestTimesComparisonReport(string folderPath)
         {
-            if (string.IsNullOrWhiteSpace(BDTestSettings.PersistentResultsDirectory))
+            if (string.IsNullOrWhiteSpace(BDTestSettings.LegacyReportSettings.PersistentResultsDirectory))
             {
                 return;
             }
@@ -90,7 +90,7 @@ namespace BDTest.ReportGenerator.Builders
                     .Style("padding", "25px")
                     .WriteTo(stringWriter, HtmlEncoder.Default);
 
-                File.WriteAllText(Path.Combine(folderPath, BDTestSettings.TestTimesReportHtmlFilename ?? FileNames.ReportTestTimesComparison),
+                File.WriteAllText(Path.Combine(folderPath, BDTestSettings.LegacyReportSettings.TestTimesReportHtmlFilename ?? FileNames.ReportTestTimesComparison),
                     stringWriter.ToString());
             }
         }
@@ -105,7 +105,7 @@ namespace BDTest.ReportGenerator.Builders
                     .Style("padding", "25px")
                     .WriteTo(stringWriter, HtmlEncoder.Default);
 
-                File.WriteAllText(Path.Combine(folderPath, BDTestSettings.ScenariosByStoryReportHtmlFilename ?? FileNames.ReportByStory),
+                File.WriteAllText(Path.Combine(folderPath, BDTestSettings.LegacyReportSettings.ScenariosByStoryReportHtmlFilename ?? FileNames.ReportByStory),
                     stringWriter.ToString());
             }
         }
@@ -120,7 +120,7 @@ namespace BDTest.ReportGenerator.Builders
                     .Style("padding", "25px")
                     .WriteTo(stringWriter, HtmlEncoder.Default);
 
-                File.WriteAllText(Path.Combine(folderPath, BDTestSettings.AllScenariosReportHtmlFilename ?? FileNames.ReportAllScenarios),
+                File.WriteAllText(Path.Combine(folderPath, BDTestSettings.LegacyReportSettings.AllScenariosReportHtmlFilename ?? FileNames.ReportAllScenarios),
                     stringWriter.ToString());
             }
         }
@@ -194,8 +194,8 @@ namespace BDTest.ReportGenerator.Builders
 
         private static List<Scenario> GetScenarioBatched()
         {
-            var scenarioBatched = Directory.GetFiles(BDTestSettings.PersistentResultsDirectory)
-                .Where(it => it.EndsWith(".json") && File.GetCreationTime(it) > BDTestSettings.PersistentResultsCompareStartTime)
+            var scenarioBatched = Directory.GetFiles(BDTestSettings.LegacyReportSettings.PersistentResultsDirectory)
+                .Where(it => it.EndsWith(".json") && File.GetCreationTime(it) > BDTestSettings.LegacyReportSettings.PersistentResultsCompareStartTime)
                 .Select(filePath =>
                 {
                     try

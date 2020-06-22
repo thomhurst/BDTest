@@ -115,26 +115,26 @@ namespace BDTest.ReportGenerator
 
         private static void PruneData()
         {
-            if (string.IsNullOrWhiteSpace(BDTestSettings.PersistentResultsDirectory))
+            if (string.IsNullOrWhiteSpace(BDTestSettings.LegacyReportSettings.PersistentResultsDirectory))
             {
                 return;
             }
 
-            var filesTooOld = Directory.GetFiles(BDTestSettings.PersistentResultsDirectory).Where(filePath => File.GetCreationTime(filePath) < BDTestSettings.PrunePersistentDataOlderThan).ToList();
+            var filesTooOld = Directory.GetFiles(BDTestSettings.LegacyReportSettings.PersistentResultsDirectory).Where(filePath => File.GetCreationTime(filePath) < BDTestSettings.LegacyReportSettings.PrunePersistentDataOlderThan).ToList();
             foreach (var fileTooOld in filesTooOld)
             {
                 File.Delete(fileTooOld);
             }
 
-            var filesOverLimit = Directory.GetFiles(BDTestSettings.PersistentResultsDirectory).OrderBy(File.GetCreationTime).ToList();
+            var filesOverLimit = Directory.GetFiles(BDTestSettings.LegacyReportSettings.PersistentResultsDirectory).OrderBy(File.GetCreationTime).ToList();
             var count = filesOverLimit.Count;
 
-            if (count <= BDTestSettings.PersistentFileCountToKeep)
+            if (count <= BDTestSettings.LegacyReportSettings.PersistentFileCountToKeep)
             {
                 return;
             }
 
-            var amountToDelete = count - BDTestSettings.PersistentFileCountToKeep;
+            var amountToDelete = count - BDTestSettings.LegacyReportSettings.PersistentFileCountToKeep;
             foreach (var fileToPrune in filesOverLimit.Take(amountToDelete))
             {
                 File.Delete(fileToPrune);
@@ -143,19 +143,19 @@ namespace BDTest.ReportGenerator
 
         private static void CreatePersistentResults(string folderPath)
         {
-            if (string.IsNullOrWhiteSpace(BDTestSettings.PersistentResultsDirectory))
+            if (string.IsNullOrWhiteSpace(BDTestSettings.LegacyReportSettings.PersistentResultsDirectory))
             {
                 return;
             }
 
             try
             {
-                Directory.CreateDirectory(BDTestSettings.PersistentResultsDirectory);
+                Directory.CreateDirectory(BDTestSettings.LegacyReportSettings.PersistentResultsDirectory);
             }
             catch (Exception e)
             {
                 File.WriteAllText(Path.Combine(folderPath, "BDTest - Persistent Directory Error.txt"), e.StackTrace);
-                BDTestSettings.PersistentResultsDirectory = null;
+                BDTestSettings.LegacyReportSettings.PersistentResultsDirectory = null;
             }
         }
 
@@ -163,12 +163,12 @@ namespace BDTest.ReportGenerator
         {
             try
             {
-                File.WriteAllText(Path.Combine(folderPath, BDTestSettings.JsonDataFilename ?? FileNames.TestDataJson), jsonData);
+                File.WriteAllText(Path.Combine(folderPath, BDTestSettings.LegacyReportSettings.JsonDataFilename ?? FileNames.TestDataJson), jsonData);
 
-                if (!string.IsNullOrWhiteSpace(BDTestSettings.PersistentResultsDirectory))
+                if (!string.IsNullOrWhiteSpace(BDTestSettings.LegacyReportSettings.PersistentResultsDirectory))
                 {
-                    File.Copy(Path.Combine(folderPath, BDTestSettings.JsonDataFilename ?? FileNames.TestDataJson),
-                        Path.Combine(BDTestSettings.PersistentResultsDirectory, FileNames.TestDataJson));
+                    File.Copy(Path.Combine(folderPath, BDTestSettings.LegacyReportSettings.JsonDataFilename ?? FileNames.TestDataJson),
+                        Path.Combine(BDTestSettings.LegacyReportSettings.PersistentResultsDirectory, FileNames.TestDataJson));
                 }
             }
             catch (Exception e)
