@@ -571,7 +571,8 @@ namespace BDTest.ReportGenerator.Builders
                             BuildCustomTestInformation(scenario.CustomTestInformation),
                             BuildScenarioStartupOrTeardownOutput("Test Start-Up Output", scenario.TestStartupInformation),
                             BuildSteps(scenario.Steps),
-                            BuildScenarioStartupOrTeardownOutput("Test Tear Down Output", scenario.TearDownOutput)
+                            BuildScenarioStartupOrTeardownOutput("Test Tear Down Output", scenario.TearDownOutput),
+                            BuildHtmlOutput(scenario.CustomHtmlOutputForReport)
                         )
                     )
                 ),
@@ -620,6 +621,16 @@ namespace BDTest.ReportGenerator.Builders
                 ),
                 new HtmlTag("pre").Append(outputLines.SelectMany((line, index) => WriteLinesWithBreaks(index, line)))
             );
+        }
+        
+        private static HtmlTag BuildHtmlOutput(string html)
+        {
+            if (string.IsNullOrWhiteSpace(html))
+            {
+                return HtmlTag.Empty();
+            }
+
+            return new HtmlTag("p").AppendHtml(html);
         }
 
         private static IEnumerable<HtmlTag> AddStylesheets()

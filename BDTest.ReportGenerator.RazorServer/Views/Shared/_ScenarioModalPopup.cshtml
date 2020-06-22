@@ -102,11 +102,11 @@
                 }))
             }
             
-            @if (!string.IsNullOrEmpty(Model.Scenario.HtmlReportOutput))
+            @if (!string.IsNullOrEmpty(Model.Scenario.CustomHtmlOutputForReport))
             {
                 <div class="container">
                     <h2 class="subtitle">Custom:</h2>
-                    @Html.Raw(Model.Scenario.HtmlReportOutput)
+                    @Html.Raw(Model.Scenario.CustomHtmlOutputForReport)
                 </div>
             }
             

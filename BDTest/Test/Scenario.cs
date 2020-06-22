@@ -39,7 +39,7 @@ namespace BDTest.Test
         
         [JsonProperty] public string TearDownOutput { get; set; }
         
-        [JsonProperty] public string HtmlReportOutput { get; set; }
+        [JsonProperty] public string CustomHtmlOutputForReport { get; set; }
 
         [JsonConstructor]
         private Scenario()

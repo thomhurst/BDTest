@@ -58,7 +58,7 @@ namespace BDTest.Test
         
         public void WriteHtmlToReportForScenario(string html)
         {
-            TestOutputData.WriteHtmlOutput(TestId, html);
+            TestOutputData.WriteCustomHtmlForReport(TestId, html);
         }
     }
 }

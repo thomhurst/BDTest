@@ -101,18 +101,18 @@ namespace BDTest.Output
             Console.Out.WriteLine(Environment.NewLine + text);
         }
 
-        internal static void WriteHtmlOutput(string testId, string htmlValue)
+        internal static void WriteCustomHtmlForReport(string testId, string htmlValue)
         {
             var foundScenario =
                 TestHolder.Scenarios.FirstOrDefault(scenario => scenario.Value.FrameworkTestId == testId);
 
             if (!foundScenario.Equals(default) && foundScenario.Value != null)
             {
-                foundScenario.Value.HtmlReportOutput += htmlValue;
+                foundScenario.Value.CustomHtmlOutputForReport += htmlValue;
             }
             else
             {
-                TestHolder.ListenForScenario(testId, scenario => scenario.HtmlReportOutput += htmlValue);
+                TestHolder.ListenForScenario(testId, scenario => scenario.CustomHtmlOutputForReport += htmlValue);
             }
         }
     }
