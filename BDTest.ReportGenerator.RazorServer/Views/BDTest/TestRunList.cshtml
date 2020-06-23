@@ -112,20 +112,20 @@
             @foreach (var record in Model)
             {
                 <tr>
-                    <td class="has-text-centered">
+                    <td class="has-text-centered is-vcentered">
                         <input name="checkbox" type="checkbox" id="@record.RecordId"/>
                     </td>
-                    <td name="tag-field" class="has-text-centered">@record.Tag</td>
-                    <td name="environment-field" class="has-text-centered">@record.Environment</td>
-                    <td class="has-text-centered">@record.DateTime.ToStringForReport()</td>
-                    <td class="has-text-centered">
-                        <button class="@record.Status.GetCssColourValueForStatus() button is-fullwidth no-pointer">
+                    <td name="tag-field" class="has-text-centered is-vcentered">@record.Tag</td>
+                    <td name="environment-field" class="has-text-centered is-vcentered">@record.Environment</td>
+                    <td class="has-text-centered is-vcentered">@record.DateTime.ToStringForReport()</td>
+                    <td class="has-text-centered is-vcentered">
+                        <button class="@record.Status.GetCssColourValueForStatus() button is-fullwidth no-pointer is-rounded">
                             @record.Status.AsString()
                         </button>
                     </td>
-                    <td>
+                    <td class=" is-vcentered">
                         <a href="~/bdtest/report/@record.RecordId/summary">
-                            <button class="button is-fullwidth is-info pointer">View Report</button>
+                            <button class="button is-fullwidth is-info pointer is-rounded">View Report</button>
                         </a>
                     </td>
                 </tr>

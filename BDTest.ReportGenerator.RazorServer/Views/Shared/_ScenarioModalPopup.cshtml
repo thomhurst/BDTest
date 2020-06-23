@@ -17,14 +17,16 @@
             <nav class="level">
                 @if (Model.LastScenario != null)
                 {
-                    <button class="button is-info is-small mx-1" onclick="openModal('scenario-modal-@Model.LastScenario.Guid');">Previous</button>
+                    <button class="button is-info is-small mx-1 is-rounded" onclick="openModal('scenario-modal-@Model.LastScenario.Guid');">Previous</button>
                 }
                 @if (Model.NextScenario != null)
                 {
-                    <button class="button is-info is-small mx-1" onclick="openModal('scenario-modal-@Model.NextScenario.Guid');">Next</button>            
+                    <button class="button is-info is-small mx-1 is-rounded" onclick="openModal('scenario-modal-@Model.NextScenario.Guid');">Next</button>            
                 }
 
-                <img src="~/icons/share-black-18dp.svg" class="pointer mx-3" alt="Share" onclick="copyToClipboard('@shareUrl.ToString()')"/>
+                <button class="button is-primary is-small is-rounded mx-3">
+                    <img src="~/icons/share-white-18dp.svg" class="pointer" alt="Share" onclick="copyToClipboard('@shareUrl.ToString()')"/>
+                </button>
                 <a class="delete" aria-label="close"></a>
             </nav>
             
@@ -56,17 +58,17 @@
                     @foreach (var step in Model.Scenario.Steps)
                     {
                         <tr>
-                            <td class="has-text-centered">
+                            <td class="has-text-centered is-vcentered">
                                 @if (!IsExpandable(step))
                                 {
-                                    <button class="is-info is-fullwidth button no-pointer">
+                                    <button class="is-info is-fullwidth button no-pointer is-rounded">
                                         @step.StepText
                                     </button>
                                 }
                                 else
                                 {
                                     <details class="mr-5half">
-                                        <summary class="is-info is-fullwidth button">
+                                        <summary class="is-info is-fullwidth button is-rounded">
                                             @step.StepText
                                         </summary>
 
@@ -94,12 +96,12 @@
                                     </details>
                                 }
                             </td>
-                            <td class="has-text-centered">
-                                <button class="@step.Status.GetCssColourValueForStatus() button is-fullwidth no-pointer">@step.Status.AsString()</button>
+                            <td class="has-text-centered is-vcentered">
+                                <button class="@step.Status.GetCssColourValueForStatus() button is-fullwidth no-pointer is-rounded">@step.Status.AsString()</button>
                             </td>
-                            <td class="has-text-centered">@step.TimeTaken.ToPrettyFormat()</td>
-                            <td class="has-text-centered">@step.StartTime.ToStringForReport()</td>
-                            <td class="has-text-centered">@step.EndTime.ToStringForReport()</td>
+                            <td class="has-text-centered is-vcentered">@step.TimeTaken.ToPrettyFormat()</td>
+                            <td class="has-text-centered is-vcentered">@step.StartTime.ToStringForReport()</td>
+                            <td class="has-text-centered is-vcentered">@step.EndTime.ToStringForReport()</td>
                         </tr>
                     }
 

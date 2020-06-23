@@ -63,7 +63,7 @@
                         var passed = scenarios.Count(scenario => scenario.Status == Status.Passed);
 
                         <tr>
-                            <td>
+                            <td class="is-vcentered">
                                 @* <button class="button is-fullwidth is-info no-pointer">@scenarios.First().GetScenarioText() (@scenarios.Count)</button> *@
                                 <details class="mr-5half">
                                     <summary class="is-info is-fullwidth button">
@@ -82,16 +82,16 @@
                                         @foreach (var scenario in scenarios)
                                         {
                                             <tr>
-                                                <td class="has-text-centered">
+                                                <td class="has-text-centered is-vcentered">
                                                     <a href="~/bdtest/report/@GetOutputModel(scenario).Id/stories?scenarioId=@scenario.Guid">
-                                                        <button class="button is-info pointer">View Report</button>
+                                                        <button class="button is-info pointer is-rounded">View Report</button>
                                                     </a>
                                                 </td>
-                                                <td class="has-text-centered">
-                                                    <button class="button is-link no-pointer">@scenario.StartTime</button>
+                                                <td class="has-text-centered is-vcentered">
+                                                    <button class="button is-link no-pointer is-rounded">@scenario.StartTime</button>
                                                 </td>
-                                                <td class="has-text-centered">
-                                                    <button class="@scenario.Status.GetCssColourValueForStatus() button is-fullwidth no-pointer">@scenario.Status.AsString()</button>
+                                                <td class="has-text-centered is-vcentered">
+                                                    <button class="@scenario.Status.GetCssColourValueForStatus() button is-fullwidth no-pointer is-rounded">@scenario.Status.AsString()</button>
                                                 </td>
                                             </tr>
                                         }
@@ -102,12 +102,12 @@
                             </td>
 
                             <td class="has-text-centered is-vcentered">
-                                <button class="button is-fullwidth is-success no-pointer">
+                                <button class="button is-fullwidth is-success no-pointer is-rounded">
                                     @passed
                                 </button>
                             </td>
                             <td class="has-text-centered is-vcentered">
-                                <button class="button is-fullwidth is-danger no-pointer">
+                                <button class="button is-fullwidth is-danger no-pointer is-rounded">
                                     @failed
                                 </button>
                             </td>

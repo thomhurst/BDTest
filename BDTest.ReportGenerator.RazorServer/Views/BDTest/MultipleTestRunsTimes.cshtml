@@ -53,13 +53,13 @@
                     .OrderByDescending(model => model.Difference))
                 {
                     <tr>
-                        <td class="has-text-centered">
-                            <button class="button is-fullwidth is-info no-pointer">@scenarioTimingModel.ScenarioName (@scenarioTimingModel.ScenarioCount)</button>
+                        <td class="has-text-centered is-vcentered">
+                            <button class="button is-fullwidth is-info no-pointer is-rounded">@scenarioTimingModel.ScenarioName (@scenarioTimingModel.ScenarioCount)</button>
                         </td>
-                        <td class="has-text-centered">@scenarioTimingModel.Fastest.ToPrettyFormat()</td>
-                        <td class="has-text-centered">@scenarioTimingModel.Average.ToPrettyFormat()</td>
-                        <td class="has-text-centered">@scenarioTimingModel.Slowest.ToPrettyFormat()</td>
-                        <td class="has-text-centered">@scenarioTimingModel.Difference.ToPrettyFormat()</td>
+                        <td class="has-text-centered is-vcentered">@scenarioTimingModel.Fastest.ToPrettyFormat()</td>
+                        <td class="has-text-centered is-vcentered">@scenarioTimingModel.Average.ToPrettyFormat()</td>
+                        <td class="has-text-centered is-vcentered">@scenarioTimingModel.Slowest.ToPrettyFormat()</td>
+                        <td class="has-text-centered is-vcentered">@scenarioTimingModel.Difference.ToPrettyFormat()</td>
                     </tr>
                 }
                 </tbody>
