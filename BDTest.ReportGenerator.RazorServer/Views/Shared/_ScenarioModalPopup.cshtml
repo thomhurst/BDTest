@@ -11,23 +11,23 @@
 <div class="modal" id="scenario-modal-@Model.Scenario.Guid">
     <div class="modal-background"></div>
     <div class="modal-card modal-card-wide">
-        <header class="modal-card-head">
-            <p class="modal-card-title">Scenario: @Model.Scenario.GetScenarioText()</p>
+        <header class="modal-card-head @Model.Scenario.Status.GetCssColourValueForStatus()-background-color">
+            <p class="modal-card-title @Model.Scenario.Status.GetCssColourValueForStatus()-text-color">Scenario: @Model.Scenario.GetScenarioText()</p>
 
             <nav class="level">
                 @if (Model.LastScenario != null)
                 {
-                    <button class="button is-info is-small mx-1 is-rounded" onclick="openModal('scenario-modal-@Model.LastScenario.Guid');">Previous</button>
+                    <button class="button @Model.Scenario.Status.GetCssColourValueForStatus() is-small mx-1 is-rounded" onclick="openModal('scenario-modal-@Model.LastScenario.Guid');">Previous</button>
                 }
                 @if (Model.NextScenario != null)
                 {
-                    <button class="button is-info is-small mx-1 is-rounded" onclick="openModal('scenario-modal-@Model.NextScenario.Guid');">Next</button>            
+                    <button class="button @Model.Scenario.Status.GetCssColourValueForStatus() is-small mx-1 is-rounded" onclick="openModal('scenario-modal-@Model.NextScenario.Guid');">Next</button>            
                 }
 
-                <button class="button is-primary is-small is-rounded mx-3">
+                <button class="button @Model.Scenario.Status.GetCssColourValueForStatus() is-small is-rounded mx-3">
                     <img src="~/icons/share-white-18dp.svg" class="pointer" alt="Share" onclick="copyToClipboard('@shareUrl.ToString()')"/>
                 </button>
-                <a class="delete" aria-label="close"></a>
+                <button class="delete is-medium @Model.Scenario.Status.GetCssColourValueForStatus()-background-color" aria-label="close"></button>
             </nav>
             
         </header>
@@ -74,7 +74,7 @@
 
                                         @if (!string.IsNullOrEmpty(step.Output))
                                         {
-                                            <article class="message is-info mt-4">
+                                            <article class="message is-link mt-4">
                                                 @* <div class="message-header"> *@
                                                 @*     <p>Output</p> *@
                                                 @* </div> *@
