@@ -46,12 +46,14 @@
                             <td class="has-text-centered">
                                 @if (!IsExpandable(step))
                                 {
-                                    @step.StepText
+                                    <button class="is-info is-fullwidth button no-pointer">
+                                        @step.StepText
+                                    </button>
                                 }
                                 else
                                 {
-                                    <details>
-                                        <summary>
+                                    <details class="mr-5half">
+                                        <summary class="is-info is-fullwidth button">
                                             @step.StepText
                                         </summary>
 

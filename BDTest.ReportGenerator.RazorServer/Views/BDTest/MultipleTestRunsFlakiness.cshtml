@@ -63,45 +63,54 @@
                         var passed = scenarios.Count(scenario => scenario.Status == Status.Passed);
 
                         <tr>
-                            <td class="has-text-centered">
-                            @* <button class="button is-fullwidth is-info no-pointer">@scenarios.First().GetScenarioText() (@scenarios.Count)</button> *@
-                            <details>
-                                <summary>
-                                    @scenarios.First().GetScenarioText() (@scenarios.Count)
-                                </summary>
+                            <td>
+                                @* <button class="button is-fullwidth is-info no-pointer">@scenarios.First().GetScenarioText() (@scenarios.Count)</button> *@
+                                <details class="mr-5half">
+                                    <summary class="is-info is-fullwidth button">
+                                        @scenarios.First().GetScenarioText() (@scenarios.Count)
+                                    </summary>
 
-                                <table class="table is-fullwidth">
-                                    <thead>
-                                    <tr>
-                                        <th></th>
-                                        <th class="has-text-centered">Date and Time</th>
-                                        <th class="has-text-centered">Status</th>
-                                    </tr>
-                                    </thead>
-                                    <tbody>
-                                    @foreach (var scenario in scenarios)
-                                    {
+                                    <table class="table is-fullwidth">
+                                        <thead>
                                         <tr>
-                                            <td>
-                                                <a href="~/bdtest/report/@GetOutputModel(scenario).Id/stories?scenarioId=@scenario.Guid">
-                                                    <button class="button is-info pointer">View Report</button>
-                                                </a>
-                                            </td>
-                                            <td>
-                                                <button class="button is-link no-pointer">@scenario.StartTime</button>
-                                            </td>
-                                            <td>
-                                                <button class="@scenario.Status.GetCssColourValueForStatus() button is-fullwidth no-pointer">@scenario.Status</button>
-                                            </td>
+                                            <th></th>
+                                            <th class="has-text-centered">Date and Time</th>
+                                            <th class="has-text-centered">Status</th>
                                         </tr>
-                                    }
+                                        </thead>
+                                        <tbody>
+                                        @foreach (var scenario in scenarios)
+                                        {
+                                            <tr>
+                                                <td class="has-text-centered">
+                                                    <a href="~/bdtest/report/@GetOutputModel(scenario).Id/stories?scenarioId=@scenario.Guid">
+                                                        <button class="button is-info pointer">View Report</button>
+                                                    </a>
+                                                </td>
+                                                <td class="has-text-centered">
+                                                    <button class="button is-link no-pointer">@scenario.StartTime</button>
+                                                </td>
+                                                <td class="has-text-centered">
+                                                    <button class="@scenario.Status.GetCssColourValueForStatus() button is-fullwidth no-pointer">@scenario.Status</button>
+                                                </td>
+                                            </tr>
+                                        }
 
-                                    </tbody>
-                                </table>
-                            </details>
+                                        </tbody>
+                                    </table>
+                                </details>
+                            </td>
 
-                            <td class="has-text-centered">@passed</td>
-                            <td class="has-text-centered">@failed</td>
+                            <td class="has-text-centered is-vcentered">
+                                <button class="button is-fullwidth is-success no-pointer">
+                                    @passed
+                                </button>
+                            </td>
+                            <td class="has-text-centered is-vcentered">
+                                <button class="button is-fullwidth is-danger no-pointer">
+                                    @failed
+                                </button>
+                            </td>
                         </tr>
                     }
                     </tbody>
