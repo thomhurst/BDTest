@@ -45,7 +45,7 @@ namespace BDTest.ReportGenerator.RazorServer.Implementations
 
         public Task StoreTestData(string id, BDTestOutputModel data)
         {
-            _cache.Set(id, data, TimeSpan.FromHours(3));
+            _cache.Set(id, data, TimeSpan.FromHours(8));
             return Task.CompletedTask;
         }
 

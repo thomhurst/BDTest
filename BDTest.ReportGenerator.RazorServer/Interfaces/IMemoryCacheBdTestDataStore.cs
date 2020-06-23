@@ -1,6 +1,6 @@
 namespace BDTest.ReportGenerator.RazorServer.Interfaces
 {
-    public interface IMemoryCacheBdTestDataStore : IBDTestDataStore
+    internal interface IMemoryCacheBdTestDataStore : IBDTestDataStore
     {
         
     }

@@ -23,6 +23,7 @@ namespace BDTest.ReportGenerator.RazorServer
             services.AddMemoryCache();
             services.AddSingleton<IMemoryCacheBdTestDataStore, MemoryCacheBdTestDataStore>();
             services.AddSingleton<IBDTestDataStore, AzureStorageBDTestDataStore>();
+            services.AddSingleton<IDataController, DataController>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

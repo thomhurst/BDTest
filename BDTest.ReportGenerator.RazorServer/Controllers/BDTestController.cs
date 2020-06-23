@@ -1,14 +1,11 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using BDTest.Maps;
-using BDTest.ReportGenerator.RazorServer.Extensions;
 using BDTest.ReportGenerator.RazorServer.Interfaces;
 using BDTest.ReportGenerator.RazorServer.Models;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 namespace BDTest.ReportGenerator.RazorServer.Controllers
@@ -16,15 +13,13 @@ namespace BDTest.ReportGenerator.RazorServer.Controllers
     [Route("bdtest")]
     public class BDTestController : Controller
     {
-        private readonly IMemoryCacheBdTestDataStore _memoryCacheBdTestDataStore;
+        private readonly IDataController _dataController;
         private readonly ILogger<BDTestController> _logger;
-        private readonly IBDTestDataStore _customDatastore;
-
-        public BDTestController(IMemoryCacheBdTestDataStore memoryCacheBdTestDataStore, ILogger<BDTestController> logger, IServiceProvider serviceProvider)
+        
+        public BDTestController(IDataController dataController, ILogger<BDTestController> logger)
         {
-            _memoryCacheBdTestDataStore = memoryCacheBdTestDataStore;
+            _dataController = dataController;
             _logger = logger;
-            _customDatastore = serviceProvider.GetService<IBDTestDataStore>();
         }
 
         [HttpPost]
@@ -38,7 +33,7 @@ namespace BDTest.ReportGenerator.RazorServer.Controllers
             
             var id = bdTestOutputModel.Id ?? Guid.NewGuid().ToString("N");
 
-            await StoreData(bdTestOutputModel, id);
+            await _dataController.StoreData(bdTestOutputModel, id);
 
             return RedirectToAction("Summary", "BDTest", new { id });
         }
@@ -87,10 +82,9 @@ namespace BDTest.ReportGenerator.RazorServer.Controllers
 
         [HttpGet]
         [Route("report/test-runs")]
-        public async Task<IActionResult> TestRuns([FromQuery] string reportIds, [FromQuery] int? daysBackToSearch)
+        public async Task<IActionResult> TestRuns([FromQuery] string reportIds)
         {
-            var records = await GetRunsBetweenTimes(DateTime.Now.Subtract(TimeSpan.FromDays(daysBackToSearch ?? 30)),
-                DateTime.Now);
+            var records = await _dataController.GetRunsBetweenTimes(DateTime.MinValue, DateTime.MaxValue);
 
             return View("TestRunList", records.OrderByDescending(record => record.DateTime).ToList());
         }
@@ -106,7 +100,7 @@ namespace BDTest.ReportGenerator.RazorServer.Controllers
                 return RedirectToAction("TestRuns", "BDTest");
             }
             
-            var foundReports = (await Task.WhenAll(reportIdsArray.Select(GetData))).ToList();
+            var foundReports = (await Task.WhenAll(reportIdsArray.Select(_dataController.GetData))).ToList();
 
             if (!foundReports.Any())
             {
@@ -127,7 +121,7 @@ namespace BDTest.ReportGenerator.RazorServer.Controllers
                 return RedirectToAction("TestRuns", "BDTest");
             }
             
-            var foundReports = (await Task.WhenAll(reportIdsArray.Select(GetData))).ToList();
+            var foundReports = (await Task.WhenAll(reportIdsArray.Select(_dataController.GetData))).ToList();
 
             if (!foundReports.Any())
             {
@@ -145,7 +139,7 @@ namespace BDTest.ReportGenerator.RazorServer.Controllers
 
         private async Task<IActionResult> GetView(string id, Func<BDTestOutputModel, IActionResult> viewAction)
         {
-            var model = await GetData(id);
+            var model = await _dataController.GetData(id);
             
             if (model == null)
             {
@@ -155,68 +149,6 @@ namespace BDTest.ReportGenerator.RazorServer.Controllers
             ViewBag.Id = id;
 
             return viewAction(model);
-        }
-
-        private async Task<BDTestOutputModel> GetData(string id)
-        {
-            // Check if it's already in-memory
-            var model = await _memoryCacheBdTestDataStore.GetTestData(id);
-
-            if (model == null && _customDatastore != null)
-            {
-                // Search the backup persistent storage
-                model = await _customDatastore.GetTestData(id);
-            }
-
-            if (model == null)
-            {
-                return null;
-            }
-            
-            // Re-cache it to extend the time
-            await _memoryCacheBdTestDataStore.StoreTestData(id, model);
-
-            return model;
-
-        }
-        
-        private async Task<IEnumerable<TestRunOverview>> GetRunsBetweenTimes(DateTime start, DateTime end)
-        {
-            // Check if it's already in-memory
-            var model = await _memoryCacheBdTestDataStore.GetTestRunRecordsBetweenDateTimes(start, end) ?? Array.Empty<TestRunOverview>();
-
-            if (!model.Any() && _customDatastore != null)
-            {
-                // Search the backup persistent storage
-                model = await _customDatastore.GetTestRunRecordsBetweenDateTimes(start, end);
-                
-                foreach (var testRunRecord in model ?? Array.Empty<TestRunOverview>())
-                {
-                    await _memoryCacheBdTestDataStore.StoreTestRunRecord(testRunRecord);   
-                }
-            }
-
-            return model;
-        }
-
-        private async Task StoreData(BDTestOutputModel bdTestOutputModel, string id)
-        {
-            if (await _memoryCacheBdTestDataStore.GetTestData(id) == null)
-            {
-                var totalStatus = bdTestOutputModel.Scenarios.GetTotalStatus();
-                var currentDateTime = DateTime.Now;
-                
-                // Save to in-memory cache for 3 hours for quick fetching
-                await _memoryCacheBdTestDataStore.StoreTestData(id, bdTestOutputModel);
-                await _memoryCacheBdTestDataStore.StoreTestRunRecord(bdTestOutputModel.GetOverview());
-                
-                if (_customDatastore != null)
-                {
-                    // Save to persistent storage if it's configured!
-                    await _customDatastore.StoreTestData(id, bdTestOutputModel);
-                    await _customDatastore.StoreTestRunRecord(bdTestOutputModel.GetOverview());
-                }
-            }
         }
     }
 }
