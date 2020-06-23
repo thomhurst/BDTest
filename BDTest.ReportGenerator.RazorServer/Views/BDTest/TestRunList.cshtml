@@ -71,23 +71,22 @@
         <script>
             function filterRows(inputElementId, tableCellNamesToCheck) {
               let filterInput = document.getElementById(inputElementId);
-                                  filterInput.addEventListener("input", function() {
-                                      let filterValue = filterInput.value.toLowerCase();
-                                      let tags = document.getElementsByName(tableCellNamesToCheck);
-                                      for (const tag of tags) {
-                                          
-                                          if(!filterValue) {
-                                              setElementVisible(tag.parentElement);
-                                              continue;
-                                          }
-                                          
-                                         if(tag.textContent.toLowerCase().includes(filterValue)) {
-                                             setElementVisible(tag.parentElement);
-                                         }  else {
-                                             setElementInvisible(tag.parentElement);
-                                         }
-                                      }
-                                  })
+              filterInput.addEventListener("input", function() {
+                  let filterValue = filterInput.value.toLowerCase();
+                  let tags = document.getElementsByName(tableCellNamesToCheck);
+                  for (const tag of tags) {
+                      if(!filterValue) {
+                          setElementVisible(tag.parentElement);
+                          continue;
+                      }
+                      
+                     if(tag.textContent.toLowerCase().includes(filterValue)) {
+                         setElementVisible(tag.parentElement);
+                     }  else {
+                         setElementInvisible(tag.parentElement);
+                     }
+                  }
+              })
             }
         </script>
 

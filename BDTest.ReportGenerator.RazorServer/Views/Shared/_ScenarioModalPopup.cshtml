@@ -2,7 +2,7 @@
 @using BDTest.ReportGenerator.RazorServer.Models
 @using BDTest.Test
 @using Microsoft.AspNetCore.Http.Extensions
-@model BDTest.ReportGenerator.RazorServer.Models.ScenarioViewModel
+@model BDTest.ReportGenerator.RazorServer.Models.ScenarioModalViewModel
 
 @{
     var shareUrl = new Uri(Context.Request.GetEncodedUrl()).WithQueryParameter("scenarioId", Model.Scenario.Guid);
@@ -13,8 +13,21 @@
     <div class="modal-card modal-card-wide">
         <header class="modal-card-head">
             <p class="modal-card-title">Scenario: @Model.Scenario.GetScenarioText()</p>
-            <img src="~/icons/share-black-18dp.svg" class="pointer mx-3" alt="Share" onclick="copyToClipboard('@shareUrl.ToString()')"/>
-            <a class="delete" aria-label="close"></a>
+
+            <nav class="level">
+                @if (Model.LastScenario != null)
+                {
+                    <button class="button is-info is-small mx-1" onclick="openModal('scenario-modal-@Model.LastScenario.Guid');">Previous</button>
+                }
+                @if (Model.NextScenario != null)
+                {
+                    <button class="button is-info is-small mx-1" onclick="openModal('scenario-modal-@Model.NextScenario.Guid');">Next</button>            
+                }
+
+                <img src="~/icons/share-black-18dp.svg" class="pointer mx-3" alt="Share" onclick="copyToClipboard('@shareUrl.ToString()')"/>
+                <a class="delete" aria-label="close"></a>
+            </nav>
+            
         </header>
         <section class="modal-card-body">
             <div>

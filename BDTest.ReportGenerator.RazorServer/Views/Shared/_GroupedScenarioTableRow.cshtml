@@ -25,7 +25,7 @@
 @{ var indexOfScenarioInParent = new ReferenceInt(0); }
 @foreach (var scenario in Model.Scenarios)
 {
-    @(await Html.PartialAsync("_SingleScenarioTableRow", new ScenarioViewModel
+    @(await Html.PartialAsync("_SingleScenarioTableRow", new ScenarioRowViewModel
     {
         Scenario = scenario,
         GroupedScenarioParentIndex = Model.GroupedScenarioIndex,

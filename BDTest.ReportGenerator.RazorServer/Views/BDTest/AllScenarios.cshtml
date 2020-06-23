@@ -61,13 +61,22 @@
         </table>
     </div>
 
-    @foreach (var scenario in scenariosGroupedByScenarioText.SelectMany(groupedScenarios => groupedScenarios))
-    {
-        @await Html.PartialAsync("_ScenarioModalPopup", new ScenarioViewModel
+
+        @{
+            var allScenarios = scenariosGroupedByScenarioText.SelectMany(groupedScenarios => groupedScenarios).ToList();
+        }
+        @for (var index = 0; index < allScenarios.Count; index++)
         {
-            Scenario = scenario
-        })
-    }
+            var lastScenario = allScenarios.ElementAtOrDefault(index - 1);
+            var nextScenario = allScenarios.ElementAtOrDefault(index + 1);
+            var scenario = allScenarios[index];
+            @await Html.PartialAsync("_ScenarioModalPopup", new ScenarioModalViewModel
+            {
+                LastScenario = lastScenario,
+                NextScenario = nextScenario,
+                Scenario = scenario
+            })
+        }
 
     </div>
 </section>

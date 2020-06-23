@@ -2,7 +2,7 @@ using BDTest.Test;
 
 namespace BDTest.ReportGenerator.RazorServer.Models
 {
-    public class ScenarioViewModel
+    public class ScenarioRowViewModel
     {
         public Scenario Scenario { get; set; }
         public ReferenceInt GroupedScenarioParentIndex { get; set; }

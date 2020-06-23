@@ -87,12 +87,12 @@ namespace BDTest.ReportGenerator.RazorServer.Controllers
 
         [HttpGet]
         [Route("report/test-runs")]
-        public async Task<IActionResult> TestRuns([FromQuery] string reportIds)
+        public async Task<IActionResult> TestRuns([FromQuery] string reportIds, [FromQuery] int? daysBackToSearch)
         {
-            var records = await GetRunsBetweenTimes(DateTime.Now.Subtract(TimeSpan.FromDays(30)),
+            var records = await GetRunsBetweenTimes(DateTime.Now.Subtract(TimeSpan.FromDays(daysBackToSearch ?? 30)),
                 DateTime.Now);
 
-            return View("TestRunList", records.ToList());
+            return View("TestRunList", records.OrderByDescending(record => record.DateTime).ToList());
         }
 
         [HttpGet]

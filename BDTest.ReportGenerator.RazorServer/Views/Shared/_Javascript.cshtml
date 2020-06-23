@@ -117,8 +117,9 @@
 
 <script>
 
-    function openModal(target) {
-      let $target = document.getElementById(target);
+    function openModal(targetId) {
+      closeModals();
+      let $target = document.getElementById(targetId);
       document.documentElement.classList.add('is-clipped');
       $target.classList.add('is-active');
     }
