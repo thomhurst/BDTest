@@ -37,11 +37,12 @@
         <section class="hero @scenariosForThisStory.GetTotalStatus().GetCssColourValueForStatus()">
             <div class="hero-body">
                 <div class="container toggle-hide pointer" element-id-to-hide="story-@storyIndex">
+                    <h1 class="title">Story:</h1>
                     @{
                         var storyTextSplitByLines = story.Key.SplitOnNewLines();
                         foreach (var line in storyTextSplitByLines)
                         {
-                            <h2 class="subtitle my-0">@line</h2>
+                            <h2 class="subtitle mb-0">@line</h2>
                         }
                     }
                 </div>

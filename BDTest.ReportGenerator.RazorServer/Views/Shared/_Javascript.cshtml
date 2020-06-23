@@ -32,11 +32,19 @@
     
     function toggleElementVisibility(element) {
       if (element.classList.contains("invisible")) {
-                      element.classList.remove("invisible");
+                      setElementVisible(element);
                     } else {
-                      element.classList.add("invisible");
+                      setElementInvisible(element);
                     }
     }
+    
+    function setElementVisible(element) {
+            element.classList.remove("invisible");
+        }
+        
+        function setElementInvisible(element) {
+                element.classList.add("invisible");
+            }
     
     function toggleAlternativeText(element) {
               if(element.hasAttribute("toggle-alternative-text")) {
