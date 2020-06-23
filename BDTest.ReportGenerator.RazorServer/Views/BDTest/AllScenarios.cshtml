@@ -68,13 +68,14 @@
         @for (var index = 0; index < allScenarios.Count; index++)
         {
             var lastScenario = allScenarios.ElementAtOrDefault(index - 1);
-            var nextScenario = allScenarios.ElementAtOrDefault(index + 1);
             var scenario = allScenarios[index];
+            var nextScenario = allScenarios.ElementAtOrDefault(index + 1);
+            
             @await Html.PartialAsync("_ScenarioModalPopup", new ScenarioModalViewModel
             {
                 LastScenario = lastScenario,
-                NextScenario = nextScenario,
-                Scenario = scenario
+                Scenario = scenario,
+                NextScenario = nextScenario
             })
         }
 
