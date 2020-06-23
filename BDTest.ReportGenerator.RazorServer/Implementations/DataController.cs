@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using BDTest.Maps;
@@ -23,8 +22,7 @@ namespace BDTest.ReportGenerator.RazorServer.Implementations
             _memoryCacheBdTestDataStore = memoryCacheBdTestDataStore;
             _customDatastore = serviceProvider.GetService<IBDTestDataStore>();
         }
-
-        [MethodImpl(MethodImplOptions.Synchronized)]
+        
         public async Task<BDTestOutputModel> GetData(string id)
         {
             return await _methodLock.RunAndReturnAsync(async () =>
@@ -50,7 +48,6 @@ namespace BDTest.ReportGenerator.RazorServer.Implementations
             }, CancellationToken.None);
         }
         
-        [MethodImpl(MethodImplOptions.Synchronized)]
         public async Task<IEnumerable<TestRunOverview>> GetRunsBetweenTimes(DateTime start, DateTime end)
         {
             return await _methodLock.RunAndReturnAsync(async () =>
@@ -73,8 +70,7 @@ namespace BDTest.ReportGenerator.RazorServer.Implementations
                 return model;
             }, CancellationToken.None);
         }
-
-        [MethodImpl(MethodImplOptions.Synchronized)]
+        
         public async Task StoreData(BDTestOutputModel bdTestOutputModel, string id)
         {
             await _methodLock.RunAsync(async () =>
