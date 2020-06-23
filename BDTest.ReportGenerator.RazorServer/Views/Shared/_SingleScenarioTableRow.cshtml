@@ -4,16 +4,17 @@
 @{
     var isGroupedScenarioIndentCssClass = Model.IsPartOfGroupedScenarios ? "pl-6" : "";
     var isGroupedScenarioColourCssClass = Model.IsPartOfGroupedScenarios ? "is-outlined" : "";
+    var rowIsChildScenarioCssClass = Model.IsPartOfGroupedScenarios ? "grouped-scenario-child" : "";
     var parentScenarioGroupId = Model.IsPartOfGroupedScenarios ? Model.GroupedScenarioParentIndex.Get() : -1;
     var scenarioCountInsideParentGroup = Model.IsPartOfGroupedScenarios ? $"({Model.IndexOfScenarioInParent.Get()})" : "";
 }
 
-<tr class="modal-link pointer" data-target="scenario-modal-@Model.Scenario.Guid" parent-scenario-group="@parentScenarioGroupId">
+<tr class="modal-link pointer @rowIsChildScenarioCssClass" data-target="scenario-modal-@Model.Scenario.Guid" parent-scenario-group="@parentScenarioGroupId">
     <td class="@isGroupedScenarioIndentCssClass has-text-centered">
          <button class="button is-fullwidth is-info @isGroupedScenarioColourCssClass">@Model.Scenario.GetScenarioText() @scenarioCountInsideParentGroup</button>
     </td>
     <td class="has-text-centered">
-        <button class="@Model.Scenario.Status.GetCssColourValueForStatus() button is-fullwidth no-pointer">@Model.Scenario.Status</button>
+        <button class="@Model.Scenario.Status.GetCssColourValueForStatus() button is-fullwidth no-pointer">@Model.Scenario.Status.AsString()</button>
     </td>
     <td class="has-text-centered">@Model.Scenario.TimeTaken.ToPrettyFormat()</td>
     <td class="has-text-centered">@Model.Scenario.StartTime.ToStringForReport()</td>

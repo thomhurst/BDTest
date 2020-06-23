@@ -36,5 +36,21 @@ namespace BDTest.ReportGenerator.RazorServer.Extensions
                     throw new ArgumentOutOfRangeException(nameof(status), status, null);
             }
         }
+
+        public static string AsString(this Status status)
+        {
+            switch (status)
+            {
+                case Status.Passed:
+                case Status.Failed:
+                case Status.Inconclusive:
+                case Status.Skipped:
+                    return status.ToString();
+                case Status.NotImplemented:
+                    return "Not Implemented";
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(status), status, null);
+            }
+        }
     }
 }

@@ -69,6 +69,18 @@
                                                 element.src = '@toggleOffIconUrl';
                                                 }
                     }
+                    
+                    function collapseExpandGroupedScenarios(containerId, expand) {
+        let container = document.getElementById(containerId);
+        let groupedScenarios = container.getElementsByClassName("grouped-scenario-child");
+        for (let groupedScenario of groupedScenarios) {
+            if(expand) {
+                setElementVisible(groupedScenario);
+            } else {
+                setElementInvisible(groupedScenario);
+            }
+        }
+                    }
 
     onDomLoaded(function() {
       let toggleElements = document.getElementsByClassName("toggle-hide");

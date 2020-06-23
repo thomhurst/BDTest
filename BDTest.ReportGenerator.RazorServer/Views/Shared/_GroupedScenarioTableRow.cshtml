@@ -14,7 +14,7 @@
             <button class="button is-fullwidth is-info no-pointer">@Model.Scenarios.First().GetScenarioText() (@Model.Scenarios.Count)</button>
         </td>
         <td class="has-text-centered">
-            <button class="@Model.Scenarios.GetTotalStatus().GetCssColourValueForStatus() button is-fullwidth no-pointer">@Model.Scenarios.GetTotalStatus()</button>
+            <button class="@Model.Scenarios.GetTotalStatus().GetCssColourValueForStatus() button is-fullwidth no-pointer">@Model.Scenarios.GetTotalStatus().AsString()</button>
         </td>
         <td class="has-text-centered">@testTimer.ElapsedTime.ToPrettyFormat()</td>
         <td class="has-text-centered">@testTimer.TestsStartedAt.ToStringForReport()</td>

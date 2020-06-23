@@ -22,9 +22,10 @@
 
 <section class="section">
     <div class="container">
-    <div class="box">
+    <div class="box" id="all-scenarios-container">
         <div class="has-text-right">
-            <button class="button toggle-hide pointer" toggle-alternative-text="Hide Summary" element-id-to-hide="summary">Show Summary</button>
+            @await Html.PartialAsync("_CollapseExpandGroupedScenariosButtons", $"all-scenarios-container")
+            @* <button class="button toggle-hide pointer" toggle-alternative-text="Hide Summary" element-id-to-hide="summary">Show Summary</button> *@
         </div>
 
         <div class="mt-4 container invisible" id="summary">

@@ -121,7 +121,7 @@
                     <td class="has-text-centered">@record.DateTime.ToStringForReport()</td>
                     <td class="has-text-centered">
                         <button class="@record.Status.GetCssColourValueForStatus() button is-fullwidth no-pointer">
-                            @record.Status
+                            @record.Status.AsString()
                         </button>
                     </td>
                     <td>

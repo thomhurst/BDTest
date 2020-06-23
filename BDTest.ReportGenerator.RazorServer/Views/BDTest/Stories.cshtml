@@ -27,30 +27,37 @@
 
 @{ var storyIndex = 0; }
 
-@foreach (var story in scenariosGroupedByStories)
-{
-    storyIndex++;
-    var scenariosForThisStory = story.ToList();
-    var scenariosGroupedByScenarioText = scenariosForThisStory.GroupBy(scenario => scenario.GetScenarioText()).ToList();
+<div id="stories-container">
+    
+    <div class="buttons is-right mr-4 mt-4">
+        @await Html.PartialAsync("_CollapseExpandGroupedScenariosButtons", "stories-container")
+    </div>
+    
+    @foreach (var story in scenariosGroupedByStories)
+    {
+        storyIndex++;
+        var scenariosForThisStory = story.ToList();
+        var scenariosGroupedByScenarioText = scenariosForThisStory.GroupBy(scenario => scenario.GetScenarioText()).ToList();
 
         <section class="section">
-        <section class="hero @scenariosForThisStory.GetTotalStatus().GetCssColourValueForStatus()">
-            <div class="hero-body">
-                <div class="container toggle-hide pointer" element-id-to-hide="story-@storyIndex">
-                    <h1 class="title">Story:</h1>
-                    @{
-                        var storyTextSplitByLines = story.Key.SplitOnNewLines();
-                        foreach (var line in storyTextSplitByLines)
-                        {
-                            <h2 class="subtitle mb-0">@line</h2>
+            <section class="hero @scenariosForThisStory.GetTotalStatus().GetCssColourValueForStatus()">
+                <div class="hero-body">
+                    <div class="container toggle-hide pointer" element-id-to-hide="story-@storyIndex">
+                        <h1 class="title">Story:</h1>
+                        @{
+                            var storyTextSplitByLines = story.Key.SplitOnNewLines();
+                            foreach (var line in storyTextSplitByLines)
+                            {
+                                <h2 class="subtitle mb-0">@line</h2>
+                            }
                         }
-                    }
+                    </div>
                 </div>
-            </div>
-        </section>
+            </section>
 
             <div class="box" id="story-@storyIndex">
                 <div class="has-text-right">
+                    @await Html.PartialAsync("_CollapseExpandGroupedScenariosButtons", $"story-{storyIndex}")
                     <button class="button toggle-hide pointer" toggle-alternative-text="Hide Summary" element-id-to-hide="story-summary-@storyIndex">Show Summary</button>
                     <button class="button toggle-hide pointer" toggle-alternative-text="Hide Timings Chart" element-id-to-hide="story-summary-pie-chart-times-@storyIndex">Show Timings Chart</button>
                 </div>
@@ -60,11 +67,7 @@
                 </div>
 
                 <div class="mt-4 mb-6 container invisible pie-chart-large" id="story-summary-pie-chart-times-@storyIndex">
-                    @await Html.PartialAsync("_TestTimesPieChart", new TestTimesPieChartViewModel
-                    {
-                        Scenarios = scenariosForThisStory,
-                        StoryIndex = storyIndex
-                    })
+                    @await Html.PartialAsync("_TestTimesPieChart", new TestTimesPieChartViewModel {Scenarios = scenariosForThisStory, StoryIndex = storyIndex})
                 </div>
 
                 <table class="table is-fullwidth mt-4">
@@ -94,7 +97,7 @@
                     </tbody>
                 </table>
             </div>
-            
+
             @foreach (var scenario in scenariosGroupedByScenarioText.SelectMany(groupedScenarios => groupedScenarios))
             {
                 @await Html.PartialAsync("_ScenarioModalPopup", new ScenarioViewModel
@@ -104,4 +107,5 @@
             }
 
         </section>
-}
+    }
+</div>

@@ -82,7 +82,7 @@
                                 }
                             </td>
                             <td class="has-text-centered">
-                                <button class="@step.Status.GetCssColourValueForStatus() button is-fullwidth no-pointer">@step.Status</button>
+                                <button class="@step.Status.GetCssColourValueForStatus() button is-fullwidth no-pointer">@step.Status.AsString()</button>
                             </td>
                             <td class="has-text-centered">@step.TimeTaken.ToPrettyFormat()</td>
                             <td class="has-text-centered">@step.StartTime.ToStringForReport()</td>
