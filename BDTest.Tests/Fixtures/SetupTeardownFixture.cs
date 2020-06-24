@@ -1,6 +1,8 @@
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Threading.Tasks;
+using BDTest.Settings;
 using NUnit.Framework;
 
 namespace BDTest.Tests.Fixtures
@@ -8,8 +10,15 @@ namespace BDTest.Tests.Fixtures
     [SetUpFixture]
     public class SetupTeardownFixture
     {
+        [OneTimeSetUp]
+        public void Settings()
+        {
+            BDTestSettings.Environment = "Local";
+            BDTestSettings.Tag = "AcceptanceTests";
+        }
+        
         [OneTimeTearDown]
-        public void DeleteOutputDirectories()
+        public async Task DeleteOutputDirectories()
         {
             var bdTestOutputs = Directory
                 .GetDirectories(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location))

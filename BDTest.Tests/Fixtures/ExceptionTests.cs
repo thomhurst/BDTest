@@ -18,7 +18,7 @@ namespace BDTest.Tests.Fixtures
         [SetUp]
         public void Setup()
         {
-            TestSetupHelper.ResetData();
+            TestResetHelper.ResetData();
         }
 
         [TestCase(typeof(Exception), Status.Failed)]

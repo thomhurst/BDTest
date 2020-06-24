@@ -23,7 +23,7 @@ namespace BDTest.Tests.Fixtures
         [SetUp]
         public void Setup()
         { 
-            TestSetupHelper.ResetData();    
+            TestResetHelper.ResetData();    
         }
         
         [Test]

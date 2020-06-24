@@ -17,7 +17,7 @@ namespace BDTest.Tests.Fixtures
         [OneTimeSetUp]
         public void Setup()
         {
-            TestSetupHelper.ResetData();
+            TestResetHelper.ResetData();
         }
 
         [Test, Order(4)]

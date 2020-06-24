@@ -10,7 +10,7 @@ using Newtonsoft.Json;
 
 namespace BDTest
 {
-    internal static class BDTestReportServer
+    public static class BDTestReportServer
     {
         public static async Task<Uri> SendDataAndGetReportUri(Uri serverAddress)
         {

@@ -1,13 +1,17 @@
+using System.Collections.Generic;
 using BDTest.Settings;
+using BDTest.Test;
 
 namespace BDTest.Tests.Helpers
 {
-    public class TestSetupHelper
+    public static class TestResetHelper
     {
+        public static List<Scenario> ClearedScenarios { get; } = new List<Scenario>();
         public static void ResetData()
         {
             BDTestSettings.ReportSettings.ReportFolderName = "CustomFolder";
             
+            ClearedScenarios.AddRange(BDTestUtil.GetScenarios());
             BDTestUtil.ClearScenarios();
         }
     }
