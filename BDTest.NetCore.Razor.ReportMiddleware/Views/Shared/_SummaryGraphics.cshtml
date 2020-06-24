@@ -1,0 +1,101 @@
+@using BDTest
+@using BDTest.NetCore.Razor.ReportMiddleware.Extensions
+@using BDTest.Test
+@model BDTest.NetCore.Razor.ReportMiddleware.Models.SummaryViewModel
+@{
+    var total = Model.Scenarios.Count;
+    var passed = Model.Scenarios.Count(scenario => scenario.Status == Status.Passed);
+    var failed = Model.Scenarios.Count(scenario => scenario.Status == Status.Failed);
+    var skipped = Model.Scenarios.Count(scenario => scenario.Status == Status.Skipped);
+    var notImplemented = Model.Scenarios.Count(scenario => scenario.Status == Status.NotImplemented);
+    var inconclusive = Model.Scenarios.Count(scenario => scenario.Status == Status.Inconclusive);
+    var testTimer = BDTestUtil.GetTestTimer(Model.Scenarios);
+}
+
+<div id="summary-boxes">
+    <div class="columns is-centered">
+        <div class="column is-half">
+            <div class="tile is-ancestor" id="summary-boxes-total">
+                <div class="tile is-parent">
+                    <article class="tile is-child box notification is-info has-text-centered">
+                        <p class="subtitle">Total Tests Run</p>
+                        <p class="title">@total</p>
+                    </article>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="tile is-ancestor" id="summary-boxes-time-taken">
+        <div class="tile is-parent">
+            <article class="tile is-child box notification is-link has-text-centered">
+                <p class="subtitle">Started at</p>
+                <p class="title is-4">@testTimer.TestsStartedAt.ToStringForReport()</p>
+            </article>
+        </div>
+            
+        <div class="tile is-parent">
+            <article class="tile is-child box notification is-link has-text-centered">
+                <p class="subtitle">Time Taken</p>
+                <p class="title is-4">@testTimer.ElapsedTime.ToPrettyFormat()</p>
+            </article>
+        </div>
+            
+        <div class="tile is-parent">
+            <article class="tile is-child box notification is-link has-text-centered">
+                <p class="subtitle">Finished at</p>
+                <p class="title is-4">@testTimer.TestsFinishedAt.ToStringForReport()</p>
+            </article>
+        </div>
+    </div>
+
+    <div class="tile is-ancestor" id="summary-boxes-others">
+            <div class="tile is-parent">
+                <article class="tile is-child box notification is-success has-text-centered">
+                    <p class="subtitle">Passed</p>
+                    <p class="title">@passed</p>
+                </article>
+            </div>
+            <div class="tile is-parent">
+                <article class="tile is-child box notification is-warning has-text-centered">
+                    <p class="subtitle">Skipped</p>
+                    <p class="title">@skipped</p>
+                </article>
+            </div>
+            <div class="tile is-parent">
+                <article class="tile is-child box notification is-warning has-text-centered">
+                    <p class="subtitle">Not Implemented</p>
+                    <p class="title">@notImplemented</p>
+                </article>
+            </div>
+            <div class="tile is-parent">
+                <article class="tile is-child box notification is-warning has-text-centered">
+                    <p class="subtitle">Inconclusive</p>
+                    <p class="title">@inconclusive</p>
+                </article>
+            </div>
+            <div class="tile is-parent">
+                <article class="tile is-child box notification is-danger has-text-centered">
+                    <p class="subtitle">Failed</p>
+                    <p class="title">@failed</p>
+                </article>
+            </div>
+        </div>
+    </div>
+
+<div class="box mb-6" id="progress-bars">
+    <span>Passed</span>
+    <progress class="progress is-success" value="@passed" max="@total">Passed (@passed / @total)</progress>
+
+    <span>Failed</span>
+    <progress class="progress is-danger" value="@failed" max="@total">Failed (@failed / @total)</progress>
+
+    <span>Skipped</span>
+    <progress class="progress is-warning" value="@skipped" max="@total">Skipped (@skipped / @total)</progress>
+
+    <span>Not Implemented</span>
+    <progress class="progress is-warning" value="@notImplemented" max="@total">Not Implemented (@notImplemented / @total)</progress>
+
+    <span>Inconclusive</span>
+    <progress class="progress is-warning" value="@inconclusive" max="@total">Inconclusive (@inconclusive / @total)</progress>
+</div>

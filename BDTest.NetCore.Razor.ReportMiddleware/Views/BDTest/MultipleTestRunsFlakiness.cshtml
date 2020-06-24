@@ -1,0 +1,131 @@
+@using BDTest.Maps
+@using BDTest.NetCore.Razor.ReportMiddleware.Extensions
+@using BDTest.NetCore.Razor.ReportMiddleware.Models
+@using BDTest.Test
+@model List<BDTest.Maps.BDTestOutputModel>
+
+@{
+    ViewBag.Title = "Flakiness";
+    Layout = "_Layout";
+
+    var allScenarios = Model.SelectMany(model => model.Scenarios);
+    var groupedScenarios = allScenarios.GroupBy(scenario => new ScenarioGroupKey
+    {
+        StoryText = scenario.GetStoryText(),
+        ScenarioText = scenario.GetScenarioText()
+    })
+        .Where(group => group.Any(scenario => scenario.Status == Status.Failed))
+        .OrderByDescending(group => group.Count(scenario => scenario.Status == Status.Failed));
+}
+
+<section class="hero is-info">
+    <div class="hero-body">
+        <div class="container">
+            <h1 class="title">
+                Flakey Tests
+            </h1>
+            <h2 class="subtitle">
+                Here are how your <strong>flakey</strong> your tests are across multiple runs:
+            </h2>
+        </div>
+    </div>
+</section>
+
+<section class="section">
+    
+    <div class="container">
+        <div class="box">
+            
+            @if (!groupedScenarios.Any())
+            {
+                <div class="has-text-centered">
+                    <button class="no-pointer is-success is-large">No Flakey Tests!</button>
+                </div>
+            }
+            else
+            {
+
+                <table class="table is-fullwidth">
+                    <thead>
+                    <tr>
+                        <th class="has-text-centered">Scenario</th>
+                        <th class="has-text-centered">Passed</th>
+                        <th class="has-text-centered">Failed</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+
+                    @foreach (var scenarioGroup in groupedScenarios)
+                    {
+                        var scenarios = scenarioGroup.ToList();
+
+                        var failed = scenarios.Count(scenario => scenario.Status == Status.Failed);
+                        var passed = scenarios.Count(scenario => scenario.Status == Status.Passed);
+
+                        <tr>
+                            <td class="is-vcentered">
+                                @* <button class="button is-fullwidth is-info no-pointer">@scenarios.First().GetScenarioText() (@scenarios.Count)</button> *@
+                                <details class="mr-5half">
+                                    <summary class="is-info is-fullwidth button is-rounded">
+                                        @scenarios.First().GetScenarioText() (@scenarios.Count)
+                                    </summary>
+
+                                    <table class="table is-fullwidth">
+                                        <thead>
+                                        <tr>
+                                            <th></th>
+                                            <th class="has-text-centered">Date and Time</th>
+                                            <th class="has-text-centered">Status</th>
+                                        </tr>
+                                        </thead>
+                                        <tbody>
+                                        @foreach (var scenario in scenarios)
+                                        {
+                                            <tr>
+                                                <td class="has-text-centered is-vcentered">
+                                                    <a href="~/bdtest/report/@GetOutputModel(scenario).Id/stories?scenarioId=@scenario.Guid">
+                                                        <button class="button is-info pointer is-rounded">View Report</button>
+                                                    </a>
+                                                </td>
+                                                <td class="has-text-centered is-vcentered">
+                                                    <button class="button is-link no-pointer is-rounded">@scenario.StartTime</button>
+                                                </td>
+                                                <td class="has-text-centered is-vcentered">
+                                                    <button class="@scenario.Status.GetCssColourValueForStatus() button is-fullwidth no-pointer is-rounded">@scenario.Status.AsString()</button>
+                                                </td>
+                                            </tr>
+                                        }
+
+                                        </tbody>
+                                    </table>
+                                </details>
+                            </td>
+
+                            <td class="has-text-centered is-vcentered">
+                                <button class="button is-fullwidth is-success no-pointer is-rounded">
+                                    @passed
+                                </button>
+                            </td>
+                            <td class="has-text-centered is-vcentered">
+                                <button class="button is-fullwidth is-danger no-pointer is-rounded">
+                                    @failed
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                    </tbody>
+                </table>
+
+            }
+
+        </div>
+    </div>
+</section>
+
+@functions 
+{
+    private BDTestOutputModel GetOutputModel(Scenario scenario)
+    {
+        return Model.FirstOrDefault(bdTestOutputModel => bdTestOutputModel.Scenarios.Any(s => s.Guid == scenario.Guid));
+    }
+}

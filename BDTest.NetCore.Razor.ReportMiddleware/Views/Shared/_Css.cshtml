@@ -1,0 +1,51 @@
+<link rel="stylesheet" href="~/_content/BDTest.NetCore.Razor.ReportMiddleware/css/bulma/bulma.min.css"/>
+
+<link rel="stylesheet" href="~/_content/BDTest.NetCore.Razor.ReportMiddleware/css/Chart.min.css"/>
+
+<link rel="stylesheet" href="~/_content/BDTest.NetCore.Razor.ReportMiddleware/css/Toast.css"/>
+
+@* The fonts don't load if I try and inline this css? *@
+@* <style type="text/css"> *@
+@*     @{ var css = File.ReadAllText("./bdtest-reportdependencies/bulma/bulma.min.css"); } *@
+@*     @css *@
+@* </style> *@
+
+<style type="text/css">
+    .is-vcentered {
+      -webkit-box-align: center;
+         -ms-flex-align: center;
+            align-items: center;
+    }
+    .pointer { cursor: pointer; }
+    .modal-card-wide { width: 1280px  }
+    .pie-chart-large { width: 600px; height: 600px }
+    .no-pointer { cursor: default }
+    .invisible { display: none; }
+    .mr-5half {
+        margin-right: 2.1rem!important;
+    }
+    
+    .is-danger-background-color {
+        background-color: #f14668 !important;
+    }
+    
+    .is-success-background-color {
+        background-color: #48c774 !important;
+    }
+            
+    .is-warning-background-color {
+        background-color: #ffdd57 !important;
+    }
+    
+    .is-danger-text-color {
+        color: #ffffff !important;
+    }
+    
+    .is-success-text-color {
+        color: #ffffff !important;
+    }
+            
+    .is-warning-text-color {
+        color: rgba(0,0,0,.7) !important;
+    }
+</style>

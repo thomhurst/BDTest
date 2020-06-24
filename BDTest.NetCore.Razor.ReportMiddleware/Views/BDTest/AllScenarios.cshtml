@@ -1,0 +1,84 @@
+@using BDTest.NetCore.Razor.ReportMiddleware.Models
+@model BDTest.Maps.BDTestOutputModel
+
+@{
+    ViewBag.Title = "Stories";
+    Layout = "_Layout";
+}
+
+@await Html.PartialAsync("_PreviousNextReportButtons", Model)
+
+<section class="hero is-info">
+    <div class="hero-body">
+        <div class="container">
+            <h1 class="title">
+                All Scenarios
+            </h1>
+            <h2 class="subtitle">
+                Here are all of the <strong>scenarios</strong> in this test run:
+            </h2>
+        </div>
+    </div>
+</section>
+
+<section class="section">
+    <div class="container">
+    <div class="box" id="all-scenarios-container">
+        <div class="has-text-right">
+            @await Html.PartialAsync("_CollapseExpandGroupedScenariosButtons", $"all-scenarios-container")
+            @* <button class="button toggle-hide pointer" toggle-alternative-text="Hide Summary" element-id-to-hide="summary">Show Summary</button> *@
+        </div>
+
+        <div class="mt-4 container invisible" id="summary">
+            @await Html.PartialAsync("_SummaryGraphics", new SummaryViewModel {Scenarios = Model.Scenarios})
+        </div>
+
+        <table class="table is-fullwidth">
+            <thead>
+            <tr>
+                <th class="has-text-centered">Scenario</th>
+                <th class="has-text-centered">Status</th>
+                <th class="has-text-centered">Duration</th>
+                <th class="has-text-centered">Start</th>
+                <th class="has-text-centered">End</th>
+            </tr>
+            </thead>
+            <tbody>
+
+            @{ var scenariosGroupedByScenarioText = Model.Scenarios.GroupBy(scenario => scenario.GetScenarioText()).ToList();}
+            @{ var scenarioIndex = new ReferenceInt(0); }
+            @{ var groupedScenariosCount = new ReferenceInt(0); }
+            @foreach (var groupedScenarios in scenariosGroupedByScenarioText)
+            {
+                @await Html.PartialAsync("_GroupedScenarioTableRow", new GroupedScenarioViewModel
+                {
+                    Scenarios = groupedScenarios.ToList(),
+                    ScenarioIndex = scenarioIndex,
+                    GroupedScenarioIndex = groupedScenariosCount,
+                })
+            }
+
+            </tbody>
+        </table>
+    </div>
+
+
+        @{
+            var allScenarios = scenariosGroupedByScenarioText.SelectMany(groupedScenarios => groupedScenarios).ToList();
+        }
+        @for (var index = 0; index < allScenarios.Count; index++)
+        {
+            var lastScenario = allScenarios.ElementAtOrDefault(index - 1);
+            var scenario = allScenarios[index];
+            var nextScenario = allScenarios.ElementAtOrDefault(index + 1);
+            
+            @await Html.PartialAsync("_ScenarioModalPopup", new ScenarioModalViewModel
+            {
+                LastScenario = lastScenario,
+                Scenario = scenario,
+                NextScenario = nextScenario
+            })
+        }
+
+    </div>
+</section>

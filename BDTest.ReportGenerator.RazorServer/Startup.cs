@@ -1,5 +1,4 @@
-using BDTest.ReportGenerator.RazorServer.Implementations;
-using BDTest.ReportGenerator.RazorServer.Interfaces;
+using BDTest.NetCore.Razor.ReportMiddleware.Extensions;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
@@ -19,11 +18,9 @@ namespace BDTest.ReportGenerator.RazorServer
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddControllersWithViews().AddNewtonsoftJson();
-            services.AddMemoryCache();
-            services.AddSingleton<IMemoryCacheBdTestDataStore, MemoryCacheBdTestDataStore>();
-            services.AddSingleton<IBDTestDataStore, AzureStorageBDTestDataStore>();
-            services.AddSingleton<IDataController, DataController>();
+            services
+                .AddControllersWithViews()
+                .AddBdTestReportMiddleware();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

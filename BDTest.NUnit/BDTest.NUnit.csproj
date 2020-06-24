@@ -7,7 +7,7 @@
     <NuspecFile>BDTest.NUnit.nuspec</NuspecFile>
     <NuspecProperties>version=$(Version)</NuspecProperties>
     <TargetFrameworks>netstandard2.0;netcoreapp2.0</TargetFrameworks>
-    <LangVersion>default</LangVersion>
+    <LangVersion>latest</LangVersion>
   </PropertyGroup>
 
   <ItemGroup>

@@ -2,6 +2,7 @@
 
     <PropertyGroup>
         <TargetFramework>netcoreapp3.1</TargetFramework>
+        <LangVersion>latest</LangVersion>
     </PropertyGroup>
 
     <ItemGroup>
@@ -72,10 +73,6 @@
         <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
         <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
       </Content>
-      <Content Update="wwwroot\css\Toast.css">
-        <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
-        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-      </Content>
       <Content Update="Views\BDTest\AllScenarios.cshtml">
         <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
         <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
@@ -107,42 +104,13 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\BDTest\BDTest.csproj" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <None Include="wwwroot\css\bulma\bulma-rtl.css">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </None>
-      <None Include="wwwroot\css\bulma\bulma-rtl.css.map">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-        <DependentUpon>bulma-rtl.css</DependentUpon>
-      </None>
-      <None Include="wwwroot\css\bulma\bulma-rtl.min.css">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-        <DependentUpon>bulma-rtl.css</DependentUpon>
-      </None>
-      <None Include="wwwroot\css\bulma\bulma.css">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </None>
-      <None Include="wwwroot\css\bulma\bulma.css.map">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-        <DependentUpon>bulma.css</DependentUpon>
-      </None>
-      <None Include="wwwroot\css\bulma\bulma.min.css">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-        <DependentUpon>bulma.css</DependentUpon>
-      </None>
-    </ItemGroup>
-
-    <ItemGroup>
       <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="3.1.5" />
       <PackageReference Include="Microsoft.Azure.Cosmos" Version="3.10.1" />
       <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="3.1.5" />
     </ItemGroup>
 
     <ItemGroup>
-      <Folder Include="wwwroot\icons" />
+      <ProjectReference Include="..\BDTest.NetCore.Razor.ReportMiddleware\BDTest.NetCore.Razor.ReportMiddleware.csproj" />
     </ItemGroup>
 
 </Project>

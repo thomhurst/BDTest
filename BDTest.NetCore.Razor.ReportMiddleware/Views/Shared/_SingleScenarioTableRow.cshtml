@@ -1,0 +1,22 @@
+@using BDTest.NetCore.Razor.ReportMiddleware.Extensions
+@model BDTest.NetCore.Razor.ReportMiddleware.Models.ScenarioRowViewModel
+
+@{
+    var isGroupedScenarioIndentCssClass = Model.IsPartOfGroupedScenarios ? "pl-6" : "";
+    var isGroupedScenarioColourCssClass = Model.IsPartOfGroupedScenarios ? "is-outlined" : "";
+    var rowIsChildScenarioCssClass = Model.IsPartOfGroupedScenarios ? "grouped-scenario-child" : "";
+    var parentScenarioGroupId = Model.IsPartOfGroupedScenarios ? Model.GroupedScenarioParentIndex.Get() : -1;
+    var scenarioCountInsideParentGroup = Model.IsPartOfGroupedScenarios ? $"({Model.IndexOfScenarioInParent.Get()})" : "";
+}
+
+<tr class="modal-link pointer @rowIsChildScenarioCssClass" data-target="scenario-modal-@Model.Scenario.Guid" parent-scenario-group="@parentScenarioGroupId">
+    <td class="@isGroupedScenarioIndentCssClass has-text-centered is-vcentered">
+         <button class="button is-fullwidth is-info @isGroupedScenarioColourCssClass is-rounded">@Model.Scenario.GetScenarioText() @scenarioCountInsideParentGroup</button>
+    </td>
+    <td class="has-text-centered is-vcentered">
+        <button class="@Model.Scenario.Status.GetCssColourValueForStatus() button is-fullwidth no-pointer is-rounded">@Model.Scenario.Status.AsString()</button>
+    </td>
+    <td class="has-text-centered is-vcentered">@Model.Scenario.TimeTaken.ToPrettyFormat()</td>
+    <td class="has-text-centered is-vcentered">@Model.Scenario.StartTime.ToStringForReport()</td>
+    <td class="has-text-centered is-vcentered">@Model.Scenario.EndTime.ToStringForReport()</td>
+</tr>

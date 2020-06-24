@@ -1,0 +1,70 @@
+@using BDTest.NetCore.Razor.ReportMiddleware.Extensions
+@using BDTest.NetCore.Razor.ReportMiddleware.Models
+@model List<BDTest.Maps.BDTestOutputModel>
+
+@{
+    ViewBag.Title = "Test Times";
+    Layout = "_Layout";
+
+    var allScenarios = Model.SelectMany(model => model.Scenarios);
+    var groupedScenarios = allScenarios.GroupBy(scenario => new ScenarioGroupKey
+    {
+        StoryText = scenario.GetStoryText(),
+        ScenarioText = scenario.GetScenarioText()
+    });
+}
+
+<section class="hero is-info">
+    <div class="hero-body">
+        <div class="container">
+            <h1 class="title">
+                Test Times
+            </h1>
+            <h2 class="subtitle">
+                Here are how your <strong>test times</strong> compare across multiple runs:
+            </h2>
+            <h3 class="subtitle is-7">
+                * Test times are only compared if the test passed.
+            </h3>
+        </div>
+    </div>
+</section>
+
+<section class="section">
+    
+    <div class="container">
+        <div class="box">
+                        
+            <table class="table is-fullwidth">
+                <thead>
+                <tr>
+                    <th class="has-text-centered">Scenario</th>
+                    <th class="has-text-centered">Fastest</th>
+                    <th class="has-text-centered">Average</th>
+                    <th class="has-text-centered">Slowest</th>
+                    <th class="has-text-centered">Slowest - Fastest Difference</th>
+                </tr>
+                </thead>
+                <tbody>
+    
+                @foreach (var scenarioTimingModel in groupedScenarios
+                    .Select(x => new MultipleTestRunsTimingDifferenceModel(x))
+                    .Where(model => !string.IsNullOrEmpty(model.ScenarioName))
+                    .OrderByDescending(model => model.Difference))
+                {
+                    <tr>
+                        <td class="has-text-centered is-vcentered">
+                            <button class="button is-fullwidth is-info no-pointer is-rounded">@scenarioTimingModel.ScenarioName (@scenarioTimingModel.ScenarioCount)</button>
+                        </td>
+                        <td class="has-text-centered is-vcentered">@scenarioTimingModel.Fastest.ToPrettyFormat()</td>
+                        <td class="has-text-centered is-vcentered">@scenarioTimingModel.Average.ToPrettyFormat()</td>
+                        <td class="has-text-centered is-vcentered">@scenarioTimingModel.Slowest.ToPrettyFormat()</td>
+                        <td class="has-text-centered is-vcentered">@scenarioTimingModel.Difference.ToPrettyFormat()</td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+                        
+        </div>
+    </div>
+</section>
