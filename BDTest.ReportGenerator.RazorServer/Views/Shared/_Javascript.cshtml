@@ -24,10 +24,10 @@
         snackbar.textContent = "Copied to clipboard!"
         
         // Add the "show" class to DIV
-        snackbar.className = "show";
+        snackbar.classList.add("show");
       
         // After 3 seconds, remove the show class from DIV
-        setTimeout(function(){ snackbar.className = snackbar.className.replace("show", ""); }, 3000);
+        setTimeout(function(){ snackbar.classList.remove("show"); }, 3000);
     }
     
     function toggleElementVisibility(element) {
@@ -120,12 +120,12 @@
     function openModal(targetId) {
       closeModals();
       let $target = document.getElementById(targetId);
-      document.documentElement.classList.add('is-clipped');
+      document.getElementById("main-body").classList.add('is-clipped');
       $target.classList.add('is-active');
     }
   
     function closeModals() {
-      document.documentElement.classList.remove('is-clipped');
+      document.getElementById("main-body").classList.remove('is-clipped');
       getAll('.modal').forEach(function ($el) {
         $el.classList.remove('is-active');
       });

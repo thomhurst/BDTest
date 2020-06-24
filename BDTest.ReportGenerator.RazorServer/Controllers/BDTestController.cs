@@ -30,7 +30,7 @@ namespace BDTest.ReportGenerator.RazorServer.Controllers
             {
                 return BadRequest();
             }
-            
+
             var id = bdTestOutputModel.Id ?? Guid.NewGuid().ToString("N");
 
             await _dataController.StoreData(bdTestOutputModel, id);

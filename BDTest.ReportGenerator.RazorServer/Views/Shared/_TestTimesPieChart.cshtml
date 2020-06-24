@@ -44,6 +44,11 @@ data = {
 
 var myPieChart = new Chart(ctx, {
     type: 'pie',
-    data: data
+    data: data,
+    options: {
+        legend: {
+            display: false
+        }
+    }
 })
 </script>

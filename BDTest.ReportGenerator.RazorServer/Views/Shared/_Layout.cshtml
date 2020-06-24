@@ -6,7 +6,7 @@
 <html>
 <head>
     <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
+        @* <meta name="viewport" content="width=device-width, initial-scale=1"> *@
     <title>@title</title>
     @await Html.PartialAsync("_Css")
     @await Html.PartialAsync("_Javascript")
@@ -14,7 +14,9 @@
 <body class="has-navbar-fixed-top">
 @await Html.PartialAsync("_NavBarHeader")
 @await Html.PartialAsync("_Tabs")
-@RenderBody()
-<div id="snackbar">Toast!</div>
+<div id="main-body">
+    @RenderBody()
+</div>
+<div id="snackbar" class="button is-info is-rounded">Toast!</div>
 </body>
 </html>
