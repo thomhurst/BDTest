@@ -48,18 +48,18 @@ namespace BDTest.NetCore.Razor.ReportMiddleware.Implementations
             }, CancellationToken.None);
         }
         
-        public async Task<IEnumerable<TestRunOverview>> GetRunsBetweenTimes(DateTime start, DateTime end)
+        public async Task<IEnumerable<TestRunOverview>> GetAllTestRunRecords()
         {
             return await _methodLock.RunAndReturnAsync(async () =>
             {
                 // Check if it's already in-memory
-                var model = await _memoryCacheBdTestDataStore.GetTestRunRecordsBetweenDateTimes(start, end) ??
+                var model = await _memoryCacheBdTestDataStore.GetAllTestRunRecords() ??
                             Array.Empty<TestRunOverview>();
 
                 if (!model.Any() && _customDatastore != null)
                 {
                     // Search the backup persistent storage
-                    model = await _customDatastore.GetTestRunRecordsBetweenDateTimes(start, end);
+                    model = await _customDatastore.GetAllTestRunRecords();
 
                     foreach (var testRunRecord in model ?? Array.Empty<TestRunOverview>())
                     {

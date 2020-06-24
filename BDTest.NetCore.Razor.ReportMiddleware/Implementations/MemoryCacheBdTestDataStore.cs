@@ -29,7 +29,7 @@ namespace BDTest.NetCore.Razor.ReportMiddleware.Implementations
             return Task.FromResult(null as BDTestOutputModel);
         }
 
-        public Task<TestRunOverview[]> GetTestRunRecordsBetweenDateTimes(DateTime start, DateTime end)
+        public Task<TestRunOverview[]> GetAllTestRunRecords()
         {
             var recordDateTimeModels = new List<TestRunOverview>();
             
@@ -38,9 +38,7 @@ namespace BDTest.NetCore.Razor.ReportMiddleware.Implementations
                 recordDateTimeModels.AddRange(recordDateTimeModelsAsObject as IEnumerable<TestRunOverview> ?? Array.Empty<TestRunOverview>());
             }
 
-            var recordsInDateRange = recordDateTimeModels.Where(model => model.DateTime > start && model.DateTime < end);
-            
-            return Task.FromResult(recordsInDateRange.ToArray());
+            return Task.FromResult(recordDateTimeModels.OrderByDescending(record => record.DateTime).ToArray());
         }
 
         public Task StoreTestData(string id, BDTestOutputModel data)

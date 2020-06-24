@@ -84,7 +84,7 @@ namespace BDTest.NetCore.Razor.ReportMiddleware.Controllers
         [Route("report/test-runs")]
         public async Task<IActionResult> TestRuns([FromQuery] string reportIds)
         {
-            var records = await _dataController.GetRunsBetweenTimes(DateTime.MinValue, DateTime.MaxValue);
+            var records = await _dataController.GetAllTestRunRecords();
 
             return View("TestRunList", records.OrderByDescending(record => record.DateTime).ToList());
         }

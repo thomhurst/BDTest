@@ -5,7 +5,7 @@
 @inject IDataController DataController
 
 @{
-    var allReports = (await DataController.GetRunsBetweenTimes(DateTime.MinValue, DateTime.MaxValue)).ToList();
+    var allReports = (await DataController.GetAllTestRunRecords()).ToList();
     var thisIndex = allReports.FindIndex(report => report.RecordId == Model.Id);
     var lastReport = allReports.ElementAtOrDefault(thisIndex - 1);
     var nextReport = allReports.ElementAtOrDefault(thisIndex + 1);
