@@ -1,0 +1,200 @@
+@using BDTest.NetCore.Razor.ReportMiddleware.Constants
+@using BDTest.Test
+@{
+  const string All = "all";
+  const string Success = "success";
+  const string Failed = "failed";
+  const string Skipped = "skipped";
+  const string Inconclusive = "inconclusive";
+  const string NotImplemented = "notImplemented";
+}
+
+<div class="dropdown">
+  <div class="dropdown-trigger">
+    <button class="button" aria-haspopup="true" aria-controls="dropdown-menu" id="dropdown-main-button">
+      <span>Show All</span>
+      @* <span class="icon is-small"> *@
+      @*   <i class="fas fa-angle-down" aria-hidden="true"></i> *@
+      @* </span> *@
+    </button>
+  </div>
+  <div class="dropdown-menu has-text-centered" id="dropdown-menu" role="menu">
+    <button class="button is-info is-fullwidth" onclick="filterByStatus('@All');">
+              Show All
+            </button>
+    <hr class="dropdown-divider">
+    <div class="dropdown-content has-text-centered">
+      <a href="#" class="dropdown-item">
+        <button class="button is-fullwidth is-success" onclick="filterByStatus('@Success');">
+          Show Successful
+        </button>
+      </a>
+      <a class="dropdown-item">
+        <button class="button is-fullwidth is-danger" onclick="filterByStatus('@Failed');">
+          Show Failures
+        </button>
+      </a>
+      <a href="#" class="dropdown-item">
+        <button class="button is-fullwidth is-warning" onclick="filterByStatus('@Skipped');">
+          Show Skipped
+        </button>
+      </a>
+      <a href="#" class="dropdown-item">
+        <button class="button is-fullwidth is-warning" onclick="filterByStatus('@Inconclusive');">
+          Show Inconclusive
+        </button>
+      </a>
+      <a href="#" class="dropdown-item">
+        <button class="button is-fullwidth is-warning" onclick="filterByStatus('@NotImplemented');">
+          Show Not Implemented
+        </button>
+      </a>
+    </div>
+  </div>
+</div>
+
+<script>
+
+  function filterByStatus(status) {
+    
+    let mainDropdownButton = document.getElementById("dropdown-main-button");
+    
+    if(status === '@All') {
+      mainDropdownButton.textContent = "Show All";
+      mainDropdownButton.className = "button has-text-centered is-info";
+      makeAllVisible();
+      return;
+    }
+    
+    makeAllInvisible();
+    
+    switch (status) {
+      case '@Success':
+        mainDropdownButton.textContent = "Show Success";
+        mainDropdownButton.className = "button has-text-centered is-success";
+        
+        var stories =  document.querySelectorAll(".story-header.@HtmlClassConstants.HasSuccess");
+        var scenarioGroups =  document.querySelectorAll(".scenario-group.@HtmlClassConstants.HasSuccess");
+        var rows = document.querySelectorAll(".scenario-row.@Status.Passed");
+        break;
+      case '@Failed':
+        mainDropdownButton.textContent = "Show Failures";
+        mainDropdownButton.className = "button has-text-centered is-danger";
+        
+        var stories =  document.querySelectorAll(".story-header.@HtmlClassConstants.HasFailures");
+        var scenarioGroups =  document.querySelectorAll(".scenario-group.@HtmlClassConstants.HasFailures");
+        var rows = document.querySelectorAll(".scenario-row.@Status.Failed");
+        break;
+      case '@Skipped':
+        mainDropdownButton.textContent = "Show Skipped";
+        mainDropdownButton.className = "button has-text-centered is-warning";
+        
+        var stories =  document.querySelectorAll(".story-header.@HtmlClassConstants.HasSkipped");
+        var scenarioGroups =  document.querySelectorAll(".scenario-group.@HtmlClassConstants.HasSkipped");
+        var rows = document.querySelectorAll(".scenario-row.@Status.Skipped");
+        break;
+      case '@Inconclusive':
+        mainDropdownButton.textContent = "Show Inconclusive";
+        mainDropdownButton.className = "button has-text-centered is-warning";
+        
+        var stories =  document.querySelectorAll(".story-header.@HtmlClassConstants.HasInconclusive");
+        var scenarioGroups =  document.querySelectorAll(".scenario-group.@HtmlClassConstants.HasInconclusive");
+        var rows = document.querySelectorAll(".scenario-row.@Status.Inconclusive");
+        break;
+      case '@NotImplemented':
+        mainDropdownButton.textContent = "Show Not Implemented";
+        mainDropdownButton.className = "button has-text-centered is-warning";
+        
+        var stories =  document.querySelectorAll(".story-header.@HtmlClassConstants.HasNotImplemented");
+        var scenarioGroups =  document.querySelectorAll(".scenario-group.@HtmlClassConstants.HasNotImplemented");
+        var rows = document.querySelectorAll(".scenario-row.@Status.NotImplemented");
+        break;
+      }
+      
+      for (let story of stories) {
+        setElementVisible(story.parentElement.parentElement.parentElement);
+      }
+      for (let scenarioGroup of scenarioGroups) {
+        scenarioGroup.querySelector(".button").disabled = true;
+        setElementVisible(scenarioGroup);
+      }
+      for (let row of rows) {
+        setElementVisible(row);
+      }
+    }
+    
+    function makeAllVisible() {
+        let stories = document.querySelectorAll(".story-header");
+        for (let story of stories) {
+          setElementVisible(story.parentElement.parentElement.parentElement);
+        }
+          
+        let scenarioGroups = document.querySelectorAll(".scenario-group");
+        for (let scenarioGroup of scenarioGroups) {
+          scenarioGroup.querySelector(".button").disabled = false;
+          setElementVisible(scenarioGroup);
+        }
+        
+        let scenarioRows = document.querySelectorAll(".scenario-row");
+        for (let scenarioRow of scenarioRows) {
+          setElementVisible(scenarioRow);
+        }
+        
+        let scenarioButtonsRows = document.querySelectorAll(".scenarios-buttons-row");
+        for (let scenarioButtonsRow of scenarioButtonsRows) {
+          setElementVisible(scenarioButtonsRow);
+        }
+    }
+    
+    function makeAllInvisible() {
+        let stories = document.querySelectorAll(".story-header");
+        for (let story of stories) {
+          setElementInvisible(story.parentElement.parentElement.parentElement);
+        }
+          
+        let scenarioGroups = document.querySelectorAll(".scenario-group");
+        for (let scenarioGroup of scenarioGroups) {
+          scenarioGroup.querySelector(".button").disabled = false;
+          setElementInvisible(scenarioGroup);
+        }
+        
+        let scenarioRows = document.querySelectorAll(".scenario-row");
+        for (let scenarioRow of scenarioRows) {
+          setElementInvisible(scenarioRow);
+        }
+        
+        let scenarioButtonsRows = document.querySelectorAll(".scenarios-buttons-row");
+        for (let scenarioButtonsRow of scenarioButtonsRows) {
+          setElementInvisible(scenarioButtonsRow);
+        }
+    }
+
+// Get all dropdowns on the page that aren't hoverable.
+
+  const dropdown = document.querySelector('.dropdown');
+  
+  // If user clicks outside dropdown, close it.
+  document.addEventListener('click', function() {
+    closeDropdown();
+  });
+
+  dropdown.addEventListener('click', function(e) {
+    dropdown.classList.toggle('is-active');
+    e.stopPropagation();
+  });
+
+  /*
+   * Close dropdowns by removing `is-active` class.
+   */
+  function closeDropdown() {
+    dropdown.classList.remove('is-active');
+  }
+  
+  // Close dropdowns if ESC pressed
+  document.addEventListener('keydown', function (event) {
+    let e = event || window.event;
+    if (e.key === 'Esc' || e.key === 'Escape') {
+      closeDropdown();
+    }
+  });
+</script>

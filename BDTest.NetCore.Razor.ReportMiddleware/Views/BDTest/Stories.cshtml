@@ -1,5 +1,7 @@
+@using BDTest.NetCore.Razor.ReportMiddleware.Constants
 @using BDTest.NetCore.Razor.ReportMiddleware.Extensions
 @using BDTest.NetCore.Razor.ReportMiddleware.Models
+@using BDTest.Test
 @model BDTest.Maps.BDTestOutputModel
 
 @{
@@ -31,8 +33,26 @@
 <div id="stories-container">
     
     <div class="buttons is-right mr-4 mt-4">
-        @await Html.PartialAsync("_CollapseExpandGroupedScenariosButtons", "stories-container")
+        @await Html.PartialAsync("_StatusDropdown")
+        <button class="button" onclick="expandCollapseStories(true);">Expand All</button>
+        <button class="button" onclick="expandCollapseStories(false);">Collapse All</button>
     </div>
+    
+    <script>
+    function expandCollapseStories(shouldExpand) {
+      let storyHeaders = document.getElementsByClassName("story-header");
+      for (let storyHeader of storyHeaders) {
+          let elementIdToHide = storyHeader.getAttribute("element-id-to-hide");
+          let elementToHide = document.getElementById(elementIdToHide);
+                      
+          if(shouldExpand) {
+              setElementVisible(elementToHide);
+          } else {
+              setElementInvisible(elementToHide);
+          }
+      }
+    }
+    </script>
     
     @foreach (var story in scenariosGroupedByStories)
     {
@@ -40,10 +60,16 @@
         var scenariosForThisStory = story.ToList();
         var scenariosGroupedByScenarioText = scenariosForThisStory.GroupBy(scenario => scenario.GetScenarioText()).ToList();
 
+        var hasSuccess = scenariosForThisStory.Any(scenario => scenario.Status == Status.Passed) ? HtmlClassConstants.HasSuccess : string.Empty;
+        var hasFailures = scenariosForThisStory.Any(scenario => scenario.Status == Status.Failed) ? HtmlClassConstants.HasFailures : string.Empty;
+        var hasSkipped = scenariosForThisStory.Any(scenario => scenario.Status == Status.Skipped) ? HtmlClassConstants.HasSkipped : string.Empty;
+        var hasInconclusive = scenariosForThisStory.Any(scenario => scenario.Status == Status.Inconclusive) ? HtmlClassConstants.HasInconclusive : string.Empty;
+        var hasNotImplemented = scenariosForThisStory.Any(scenario => scenario.Status == Status.NotImplemented) ? HtmlClassConstants.HasNotImplemented : string.Empty;
+        
         <section class="section">
             <section class="hero @scenariosForThisStory.GetTotalStatus().GetCssColourValueForStatus()">
                 <div class="hero-body">
-                    <div class="container toggle-hide pointer" element-id-to-hide="story-@storyIndex">
+                    <div class="container toggle-hide pointer story-header @hasSuccess @hasFailures @hasSkipped @hasInconclusive @hasNotImplemented" element-id-to-hide="story-@storyIndex">
                         <h1 class="title">Story:</h1>
                         @{
                             var storyTextSplitByLines = story.Key.SplitOnNewLines();
@@ -57,7 +83,7 @@
             </section>
 
             <div class="box" id="story-@storyIndex">
-                <div class="has-text-right">
+                <div class="has-text-right scenarios-buttons-row">
                     @await Html.PartialAsync("_CollapseExpandGroupedScenariosButtons", $"story-{storyIndex}")
                     <button class="button toggle-hide pointer" toggle-alternative-text="Hide Summary" element-id-to-hide="story-summary-@storyIndex">Show Summary</button>
                     <button class="button toggle-hide pointer" toggle-alternative-text="Hide Timings Chart" element-id-to-hide="story-summary-pie-chart-times-@storyIndex">Show Timings Chart</button>
