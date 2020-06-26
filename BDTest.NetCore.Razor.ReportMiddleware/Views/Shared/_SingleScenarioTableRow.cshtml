@@ -11,7 +11,7 @@
 
 <tr class="modal-link pointer scenario-row @rowIsChildScenarioCssClass @Model.Scenario.Status" data-target="scenario-modal-@Model.Scenario.Guid" parent-scenario-group="@parentScenarioGroupId">
     <td class="@isGroupedScenarioIndentCssClass has-text-centered is-vcentered">
-         <button class="button is-fullwidth is-info @isGroupedScenarioColourCssClass is-rounded">@Model.Scenario.GetScenarioText() @scenarioCountInsideParentGroup</button>
+         <button class="button is-fullwidth is-info is-rounded @isGroupedScenarioColourCssClass">@Model.Scenario.GetScenarioText() @scenarioCountInsideParentGroup</button>
     </td>
     <td class="has-text-centered is-vcentered">
         <span class="@Model.Scenario.Status.GetCssColourValueForStatus() tag px-5 is-medium">@Model.Scenario.Status.AsString()</span>

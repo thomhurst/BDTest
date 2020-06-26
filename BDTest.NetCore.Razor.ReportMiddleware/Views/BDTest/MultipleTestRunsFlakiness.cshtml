@@ -84,11 +84,11 @@
                                             <tr>
                                                 <td class="has-text-centered is-vcentered">
                                                     <a href="~/bdtest/report/@GetOutputModel(scenario).Id/stories?scenarioId=@scenario.Guid">
-                                                        <button class="button is-info pointer is-rounded">View Report</button>
+                                                        <button class="button is-dark is-outlined pointer is-rounded">View Report</button>
                                                     </a>
                                                 </td>
                                                 <td class="has-text-centered is-vcentered">
-                                                    <button class="button is-link no-pointer is-rounded">@scenario.StartTime</button>
+                                                    <span class="tag is-medium px-5 is-link">@scenario.StartTime</span>
                                                 </td>
                                                 <td class="has-text-centered is-vcentered">
                                                     <span class="@scenario.Status.GetCssColourValueForStatus() tag px-5 is-medium">@scenario.Status.AsString()</span>
@@ -102,14 +102,14 @@
                             </td>
 
                             <td class="has-text-centered is-vcentered">
-                                <button class="button is-fullwidth is-success no-pointer is-rounded">
+                                <span class="tag is-medium px-5 is-success">
                                     @passed
-                                </button>
+                                </span>
                             </td>
                             <td class="has-text-centered is-vcentered">
-                                <button class="button is-fullwidth is-danger no-pointer is-rounded">
+                                <span class="tag is-medium px-5 is-danger">
                                     @failed
-                                </button>
+                                </span>
                             </td>
                         </tr>
                     }
