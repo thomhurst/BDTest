@@ -129,9 +129,9 @@
                     <td name="environment-field" class="has-text-centered is-vcentered">@record.Environment</td>
                     <td class="has-text-centered is-vcentered">@record.DateTime.ToStringForReport()</td>
                     <td class="has-text-centered is-vcentered">
-                        <button class="@record.Status.GetCssColourValueForStatus() button is-fullwidth no-pointer is-rounded">
+                        <span class="@record.Status.GetCssColourValueForStatus() tag px-5 is-medium">
                             @record.Status.AsString()
-                        </button>
+                        </span>
                     </td>
                     <td class=" is-vcentered">
                         <a href="~/bdtest/report/@record.RecordId/summary">

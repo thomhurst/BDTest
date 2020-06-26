@@ -91,7 +91,7 @@
                                                     <button class="button is-link no-pointer is-rounded">@scenario.StartTime</button>
                                                 </td>
                                                 <td class="has-text-centered is-vcentered">
-                                                    <button class="@scenario.Status.GetCssColourValueForStatus() button is-fullwidth no-pointer is-rounded">@scenario.Status.AsString()</button>
+                                                    <span class="@scenario.Status.GetCssColourValueForStatus() tag px-5 is-medium">@scenario.Status.AsString()</span>
                                                 </td>
                                             </tr>
                                         }

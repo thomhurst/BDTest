@@ -97,7 +97,7 @@
                                 }
                             </td>
                             <td class="has-text-centered is-vcentered">
-                                <button class="@step.Status.GetCssColourValueForStatus() button is-fullwidth no-pointer is-rounded">@step.Status.AsString()</button>
+                                <span class="@step.Status.GetCssColourValueForStatus() tag px-5 is-medium">@step.Status.AsString()</span>
                             </td>
                             <td class="has-text-centered is-vcentered">@step.TimeTaken.ToPrettyFormat()</td>
                             <td class="has-text-centered is-vcentered">@step.StartTime.ToStringForReport()</td>

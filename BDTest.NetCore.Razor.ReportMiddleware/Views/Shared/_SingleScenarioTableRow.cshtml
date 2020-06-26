@@ -14,7 +14,7 @@
          <button class="button is-fullwidth is-info @isGroupedScenarioColourCssClass is-rounded">@Model.Scenario.GetScenarioText() @scenarioCountInsideParentGroup</button>
     </td>
     <td class="has-text-centered is-vcentered">
-        <button class="@Model.Scenario.Status.GetCssColourValueForStatus() button is-fullwidth no-pointer is-rounded">@Model.Scenario.Status.AsString()</button>
+        <span class="@Model.Scenario.Status.GetCssColourValueForStatus() tag px-5 is-medium">@Model.Scenario.Status.AsString()</span>
     </td>
     <td class="has-text-centered is-vcentered">@Model.Scenario.TimeTaken.ToPrettyFormat()</td>
     <td class="has-text-centered is-vcentered">@Model.Scenario.StartTime.ToStringForReport()</td>
