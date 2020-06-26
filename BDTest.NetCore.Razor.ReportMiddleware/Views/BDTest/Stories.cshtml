@@ -73,90 +73,94 @@
         var hasInconclusive = scenariosForThisStory.Any(scenario => scenario.Status == Status.Inconclusive) ? HtmlClassConstants.HasInconclusive : string.Empty;
         var hasNotImplemented = scenariosForThisStory.Any(scenario => scenario.Status == Status.NotImplemented) ? HtmlClassConstants.HasNotImplemented : string.Empty;
         
-        <section class="section">
-            <section class="hero @scenariosForThisStory.GetTotalStatus().GetCssColourValueForStatus()">
-                <div class="hero-body">
-                    <div class="container toggle-hide pointer story-header @hasSuccess @hasFailures @hasSkipped @hasInconclusive @hasNotImplemented" element-id-to-hide="story-@storyIndex">
-                        <h1 class="title">Story:</h1>
-                        @{
-                            var storyTextSplitByLines = story.Key.SplitOnNewLines();
-                            foreach (var line in storyTextSplitByLines)
+        <div class="columns is-centered">
+            <div class="column is-three-quarters">
+                <section class="section">
+                    <section class="hero @scenariosForThisStory.GetTotalStatus().GetCssColourValueForStatus()">
+                        <div class="hero-body">
+                            <div class="container toggle-hide pointer story-header @hasSuccess @hasFailures @hasSkipped @hasInconclusive @hasNotImplemented" element-id-to-hide="story-@storyIndex">
+                                <h1 class="title">Story:</h1>
+                                @{
+                                    var storyTextSplitByLines = story.Key.SplitOnNewLines();
+                                    foreach (var line in storyTextSplitByLines)
+                                    {
+                                        <h2 class="subtitle mb-0">@line</h2>
+                                    }
+                                }
+                            </div>
+                        </div>
+                    </section>
+
+                    <div class="box" id="story-@storyIndex">
+                        <div class="has-text-right scenarios-buttons-row">
+                            @await Html.PartialAsync("_CollapseExpandGroupedScenariosButtons", $"story-{storyIndex}")
+                            <button class="button toggle-hide pointer is-rounded" toggle-alternative-text="Hide Summary" element-id-to-hide="story-summary-@storyIndex">Show Summary</button>
+                            <button class="button toggle-hide pointer is-rounded" toggle-alternative-text="Hide Timings Chart" element-id-to-hide="story-summary-pie-chart-times-@storyIndex">Show Timings Chart</button>
+                        </div>
+
+                        <div class="mt-4 container invisible" id="story-summary-@storyIndex">
+                            @await Html.PartialAsync("_SummaryGraphics", new SummaryViewModel {Scenarios = scenariosForThisStory})
+                        </div>
+
+                        <div class="mt-4 mb-6 container invisible pie-chart-large" id="story-summary-pie-chart-times-@storyIndex">
+                            @await Html.PartialAsync("_TestTimesPieChart", new TestTimesPieChartViewModel {Scenarios = scenariosForThisStory, StoryIndex = storyIndex})
+                        </div>
+
+                        <table class="table is-fullwidth mt-4">
+                            <thead>
+                            <tr>
+                                <th class="has-text-centered">Scenario</th>
+                                <th class="has-text-centered">Status</th>
+                                <th class="has-text-centered">Duration</th>
+                                <th class="has-text-centered">Start</th>
+                                <th class="has-text-centered">End</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+
+                            @{ var scenarioIndex = new ReferenceInt(0); }
+                            @{ var groupedScenariosCount = new ReferenceInt(0); }
+                            @foreach (var groupedScenarios in scenariosGroupedByScenarioText)
                             {
-                                <h2 class="subtitle mb-0">@line</h2>
+                                @await Html.PartialAsync("_GroupedScenarioTableRow", new GroupedScenarioViewModel
+                                {
+                                    Scenarios = groupedScenarios.ToList(),
+                                    ScenarioIndex = scenarioIndex,
+                                    GroupedScenarioIndex = groupedScenariosCount,
+                                })
                             }
-                        }
+
+                            </tbody>
+                        </table>
                     </div>
-                </div>
-            </section>
 
-            <div class="box" id="story-@storyIndex">
-                <div class="has-text-right scenarios-buttons-row">
-                    @await Html.PartialAsync("_CollapseExpandGroupedScenariosButtons", $"story-{storyIndex}")
-                    <button class="button toggle-hide pointer is-rounded" toggle-alternative-text="Hide Summary" element-id-to-hide="story-summary-@storyIndex">Show Summary</button>
-                    <button class="button toggle-hide pointer is-rounded" toggle-alternative-text="Hide Timings Chart" element-id-to-hide="story-summary-pie-chart-times-@storyIndex">Show Timings Chart</button>
-                </div>
 
-                <div class="mt-4 container invisible" id="story-summary-@storyIndex">
-                    @await Html.PartialAsync("_SummaryGraphics", new SummaryViewModel {Scenarios = scenariosForThisStory})
-                </div>
-
-                <div class="mt-4 mb-6 container invisible pie-chart-large" id="story-summary-pie-chart-times-@storyIndex">
-                    @await Html.PartialAsync("_TestTimesPieChart", new TestTimesPieChartViewModel {Scenarios = scenariosForThisStory, StoryIndex = storyIndex})
-                </div>
-
-                <table class="table is-fullwidth mt-4">
-                    <thead>
-                    <tr>
-                        <th class="has-text-centered">Scenario</th>
-                        <th class="has-text-centered">Status</th>
-                        <th class="has-text-centered">Duration</th>
-                        <th class="has-text-centered">Start</th>
-                        <th class="has-text-centered">End</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-
-                    @{ var scenarioIndex = new ReferenceInt(0); }
-                    @{ var groupedScenariosCount = new ReferenceInt(0); }
-                    @foreach (var groupedScenarios in scenariosGroupedByScenarioText)
+                    @{
+                        var allScenarioGroups = scenariosGroupedByScenarioText.Select(groupedScenarios => groupedScenarios.ToList()).ToList();
+                    }
+            
+                    @for(var outerIndex = 0; outerIndex < allScenarioGroups.Count; outerIndex++)
                     {
-                        @await Html.PartialAsync("_GroupedScenarioTableRow", new GroupedScenarioViewModel
+                        var groupedScenario = allScenarioGroups[outerIndex];
+                        for (var innerIndex = 0; innerIndex < groupedScenario.Count; innerIndex++)
                         {
-                            Scenarios = groupedScenarios.ToList(),
-                            ScenarioIndex = scenarioIndex,
-                            GroupedScenarioIndex = groupedScenariosCount,
-                        })
+                            var lastScenario = groupedScenario.ElementAtOrDefault(innerIndex - 1) ?? allScenarioGroups.ElementAtOrDefault(outerIndex - 1)?.LastOrDefault();
+                            var scenario = groupedScenario[innerIndex];
+                            var nextScenario = groupedScenario.ElementAtOrDefault(innerIndex + 1) ?? allScenarioGroups.ElementAtOrDefault(outerIndex + 1)?.FirstOrDefault();
+                    
+                            @await Html.PartialAsync("_ScenarioModalPopup", new ScenarioModalViewModel
+                            {
+                                LastScenario = lastScenario,
+                                Scenario = scenario,
+                                NextScenario = nextScenario
+                            })
+                        }
                     }
 
-                    </tbody>
-                </table>
+                </section>
             </div>
+        </div>
 
-
-            @{
-                var allScenarioGroups = scenariosGroupedByScenarioText.Select(groupedScenarios => groupedScenarios.ToList()).ToList();
-            }
-            
-            @for(var outerIndex = 0; outerIndex < allScenarioGroups.Count; outerIndex++)
-            {
-                var groupedScenario = allScenarioGroups[outerIndex];
-                for (var innerIndex = 0; innerIndex < groupedScenario.Count; innerIndex++)
-                {
-                    var lastScenario = groupedScenario.ElementAtOrDefault(innerIndex - 1) ?? allScenarioGroups.ElementAtOrDefault(outerIndex - 1)?.LastOrDefault();
-                    var scenario = groupedScenario[innerIndex];
-                    var nextScenario = groupedScenario.ElementAtOrDefault(innerIndex + 1) ?? allScenarioGroups.ElementAtOrDefault(outerIndex + 1)?.FirstOrDefault();
-                    
-                    @await Html.PartialAsync("_ScenarioModalPopup", new ScenarioModalViewModel
-                    {
-                        LastScenario = lastScenario,
-                        Scenario = scenario,
-                        NextScenario = nextScenario
-                    })
-                }
-            }
-
-        </section>
-        
         <div class="columns is-centered">
             <div class="column is-half">
                 <hr class="rounded">
