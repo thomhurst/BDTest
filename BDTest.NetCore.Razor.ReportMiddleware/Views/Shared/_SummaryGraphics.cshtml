@@ -1,6 +1,8 @@
 @using BDTest
+@using BDTest.NetCore.Razor.ReportMiddleware.Constants
 @using BDTest.NetCore.Razor.ReportMiddleware.Extensions
 @using BDTest.Test
+@using Microsoft.AspNetCore.Http.Extensions
 @model BDTest.NetCore.Razor.ReportMiddleware.Models.SummaryViewModel
 @{
     var total = Model.Scenarios.Count;
@@ -10,13 +12,20 @@
     var notImplemented = Model.Scenarios.Count(scenario => scenario.Status == Status.NotImplemented);
     var inconclusive = Model.Scenarios.Count(scenario => scenario.Status == Status.Inconclusive);
     var testTimer = BDTestUtil.GetTestTimer(Model.Scenarios);
+
+    var currentUri = new Uri(Context.Request.GetEncodedUrl());
+    _isSummaryPage = currentUri.AbsolutePath.Contains("/summary");
+
+    var pointerClassIfSummaryPage = _isSummaryPage ? "pointer" : string.Empty;
+    var currentId = currentUri.ToString().Split("report/")[1].Split("/")[0];
+    var allScenariosUri = currentUri.WithPath($"bdtest/report/{currentId}/all-scenarios");
 }
 
 <div id="summary-boxes">
     <div class="columns is-centered">
         <div class="column is-half">
             <div class="tile is-ancestor" id="summary-boxes-total">
-                <div class="tile is-parent">
+                <div class="tile is-parent @pointerClassIfSummaryPage" onclick="@MakeUrl(allScenariosUri)">
                     <article class="tile is-child box notification is-info has-text-centered">
                         <p class="subtitle">Total Tests Run</p>
                         <p class="title">@total</p>
@@ -50,31 +59,31 @@
     </div>
 
     <div class="tile is-ancestor" id="summary-boxes-others">
-            <div class="tile is-parent">
+            <div class="tile is-parent @pointerClassIfSummaryPage" onclick="@MakeUrl(allScenariosUri.WithQueryParameter("filterByStatus",StatusConstants.Success))">
                 <article class="tile is-child box notification is-success has-text-centered">
                     <p class="subtitle">Passed</p>
                     <p class="title">@passed</p>
                 </article>
             </div>
-            <div class="tile is-parent">
+            <div class="tile is-parent @pointerClassIfSummaryPage" onclick="@MakeUrl(allScenariosUri.WithQueryParameter("filterByStatus",StatusConstants.Skipped))">
                 <article class="tile is-child box notification is-warning has-text-centered">
                     <p class="subtitle">Skipped</p>
                     <p class="title">@skipped</p>
                 </article>
             </div>
-            <div class="tile is-parent">
+            <div class="tile is-parent @pointerClassIfSummaryPage" onclick="@MakeUrl(allScenariosUri.WithQueryParameter("filterByStatus",StatusConstants.NotImplemented))">
                 <article class="tile is-child box notification is-warning has-text-centered">
                     <p class="subtitle">Not Implemented</p>
                     <p class="title">@notImplemented</p>
                 </article>
             </div>
-            <div class="tile is-parent">
+            <div class="tile is-parent @pointerClassIfSummaryPage" onclick="@MakeUrl(allScenariosUri.WithQueryParameter("filterByStatus",StatusConstants.Inconclusive))">
                 <article class="tile is-child box notification is-warning has-text-centered">
                     <p class="subtitle">Inconclusive</p>
                     <p class="title">@inconclusive</p>
                 </article>
             </div>
-            <div class="tile is-parent">
+            <div class="tile is-parent @pointerClassIfSummaryPage" onclick="@MakeUrl(allScenariosUri.WithQueryParameter("filterByStatus",StatusConstants.Failed))">
                 <article class="tile is-child box notification is-danger has-text-centered">
                     <p class="subtitle">Failed</p>
                     <p class="title">@failed</p>
@@ -99,3 +108,13 @@
     <span>Inconclusive</span>
     <progress class="progress is-warning" value="@inconclusive" max="@total">Inconclusive (@inconclusive / @total)</progress>
 </div>
+
+@functions
+{
+    private string MakeUrl(Uri url)
+    {
+        return _isSummaryPage ? $"window.location = '{url}'" : "return false;";
+    }
+
+    private bool _isSummaryPage;
+}

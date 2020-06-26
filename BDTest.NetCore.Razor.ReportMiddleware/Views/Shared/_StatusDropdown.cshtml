@@ -1,14 +1,5 @@
 @using BDTest.NetCore.Razor.ReportMiddleware.Constants
 @using BDTest.Test
-@{
-  const string All = "all";
-  const string Success = "success";
-  const string Failed = "failed";
-  const string Skipped = "skipped";
-  const string Inconclusive = "inconclusive";
-  const string NotImplemented = "notImplemented";
-}
-
 <div class="dropdown">
   <div class="dropdown-trigger">
     <button class="button is-info is-rounded" aria-haspopup="true" aria-controls="dropdown-menu" id="dropdown-main-button">
@@ -19,33 +10,33 @@
     </button>
   </div>
   <div class="dropdown-menu has-text-centered" id="dropdown-menu" role="menu">
-    <button class="button is-info is-fullwidth" onclick="filterByStatus('@All');">
+    <button class="button is-info is-fullwidth" onclick="filterByStatus('@StatusConstants.All');">
               Show All
             </button>
     <hr class="dropdown-divider">
     <div class="dropdown-content has-text-centered">
       <a href="#" class="dropdown-item">
-        <button class="button is-fullwidth is-success" onclick="filterByStatus('@Success');">
+        <button class="button is-fullwidth is-success" onclick="filterByStatus('@StatusConstants.Success');">
           Show Successful
         </button>
       </a>
       <a class="dropdown-item">
-        <button class="button is-fullwidth is-danger" onclick="filterByStatus('@Failed');">
+        <button class="button is-fullwidth is-danger" onclick="filterByStatus('@StatusConstants.Failed');">
           Show Failures
         </button>
       </a>
       <a href="#" class="dropdown-item">
-        <button class="button is-fullwidth is-warning" onclick="filterByStatus('@Skipped');">
+        <button class="button is-fullwidth is-warning" onclick="filterByStatus('@StatusConstants.Skipped');">
           Show Skipped
         </button>
       </a>
       <a href="#" class="dropdown-item">
-        <button class="button is-fullwidth is-warning" onclick="filterByStatus('@Inconclusive');">
+        <button class="button is-fullwidth is-warning" onclick="filterByStatus('@StatusConstants.Inconclusive');">
           Show Inconclusive
         </button>
       </a>
       <a href="#" class="dropdown-item">
-        <button class="button is-fullwidth is-warning" onclick="filterByStatus('@NotImplemented');">
+        <button class="button is-fullwidth is-warning" onclick="filterByStatus('@StatusConstants.NotImplemented');">
           Show Not Implemented
         </button>
       </a>
@@ -59,7 +50,7 @@
     
     let mainDropdownButton = document.getElementById("dropdown-main-button");
     
-    if(status === '@All') {
+    if(status === '@StatusConstants.All') {
       mainDropdownButton.textContent = "Show All";
       mainDropdownButton.className = "button has-text-centered is-info";
       makeAllVisible();
@@ -69,7 +60,7 @@
     makeAllInvisible();
     
     switch (status) {
-      case '@Success':
+      case '@StatusConstants.Success':
         mainDropdownButton.textContent = "Show Success";
         mainDropdownButton.className = "button has-text-centered is-success";
         
@@ -77,7 +68,7 @@
         var scenarioGroups =  document.querySelectorAll(".scenario-group.@HtmlClassConstants.HasSuccess");
         var rows = document.querySelectorAll(".scenario-row.@Status.Passed");
         break;
-      case '@Failed':
+      case '@StatusConstants.Failed':
         mainDropdownButton.textContent = "Show Failures";
         mainDropdownButton.className = "button has-text-centered is-danger";
         
@@ -85,7 +76,7 @@
         var scenarioGroups =  document.querySelectorAll(".scenario-group.@HtmlClassConstants.HasFailures");
         var rows = document.querySelectorAll(".scenario-row.@Status.Failed");
         break;
-      case '@Skipped':
+      case '@StatusConstants.Skipped':
         mainDropdownButton.textContent = "Show Skipped";
         mainDropdownButton.className = "button has-text-centered is-warning";
         
@@ -93,7 +84,7 @@
         var scenarioGroups =  document.querySelectorAll(".scenario-group.@HtmlClassConstants.HasSkipped");
         var rows = document.querySelectorAll(".scenario-row.@Status.Skipped");
         break;
-      case '@Inconclusive':
+      case '@StatusConstants.Inconclusive':
         mainDropdownButton.textContent = "Show Inconclusive";
         mainDropdownButton.className = "button has-text-centered is-warning";
         
@@ -101,7 +92,7 @@
         var scenarioGroups =  document.querySelectorAll(".scenario-group.@HtmlClassConstants.HasInconclusive");
         var rows = document.querySelectorAll(".scenario-row.@Status.Inconclusive");
         break;
-      case '@NotImplemented':
+      case '@StatusConstants.NotImplemented':
         mainDropdownButton.textContent = "Show Not Implemented";
         mainDropdownButton.className = "button has-text-centered is-warning";
         

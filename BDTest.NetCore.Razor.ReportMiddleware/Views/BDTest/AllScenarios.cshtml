@@ -1,9 +1,22 @@
+@using System.Web
 @using BDTest.NetCore.Razor.ReportMiddleware.Models
+@using Microsoft.AspNetCore.Http.Extensions
 @model BDTest.Maps.BDTestOutputModel
 
 @{
     ViewBag.Title = "Stories";
     Layout = "_Layout";
+    
+    var filterByQueryParameter = HttpUtility.ParseQueryString(new Uri(Context.Request.GetEncodedUrl()).Query).Get("filterByStatus");
+}
+
+@if (filterByQueryParameter != null)
+{
+    <script>
+        onDomLoaded(function() {
+          filterByStatus('@filterByQueryParameter');
+        });
+    </script>
 }
 
 <section class="hero is-info">
