@@ -10,7 +10,9 @@
 }
 
 @{
-    var scenariosGroupedByStories = @Model.Scenarios.GroupBy(scenario => scenario.GetStoryText());
+    var scenariosGroupedByStories = @Model.Scenarios.GroupBy(scenario => scenario.GetStoryText())
+        .OrderBy(group => group.GetTotalStatus().GetOrder())
+        .ThenBy(group => group.Key);
 }
 
 <section class="hero is-info">

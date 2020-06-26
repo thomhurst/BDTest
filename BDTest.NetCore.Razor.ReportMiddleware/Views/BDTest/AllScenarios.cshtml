@@ -1,5 +1,7 @@
 @using System.Web
+@using BDTest.NetCore.Razor.ReportMiddleware.Extensions
 @using BDTest.NetCore.Razor.ReportMiddleware.Models
+@using BDTest.Test
 @using Microsoft.AspNetCore.Http.Extensions
 @model BDTest.Maps.BDTestOutputModel
 
@@ -66,7 +68,13 @@
             </thead>
             <tbody>
 
-            @{ var scenariosGroupedByScenarioText = Model.Scenarios.GroupBy(scenario => scenario.GetScenarioText()).ToList();}
+            @{ 
+                var scenariosGroupedByScenarioText = Model.Scenarios.GroupBy(scenario => scenario.GetScenarioText())
+                   .OrderBy(group => group.GetTotalStatus().GetOrder())
+                   .ThenBy(group => group.Key)
+                   .ToList();
+            }
+            
             @{ var scenarioIndex = new ReferenceInt(0); }
             @{ var groupedScenariosCount = new ReferenceInt(0); }
             @foreach (var groupedScenarios in scenariosGroupedByScenarioText)
