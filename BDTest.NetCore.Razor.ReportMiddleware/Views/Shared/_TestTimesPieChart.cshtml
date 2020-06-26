@@ -1,12 +1,29 @@
 @model BDTest.NetCore.Razor.ReportMiddleware.Models.TestTimesPieChartViewModel
 
+@{
+    var orderedByTime = Model.Scenarios.OrderBy(scenario => scenario.TimeTaken).ToList();
+    var shortestScenarios = orderedByTime.Take(5);
+    var longestScenarios = orderedByTime.TakeLast(5);
+    var scenarios = shortestScenarios.Union(longestScenarios).ToList();
+}
+
+@if (orderedByTime.Count > 10)
+{
+    <div class="has-text-centered">
+        <h2 class="subtitle is-5 mb-4">
+            Results shown are the fastest 5 and slowest 5 to better show the difference.
+        </h2>
+    </div>
+}
+
 <canvas id="myChart-@Model.StoryIndex" width="400" height="400"></canvas>
 
-    <div class="container has-text-right mb-6">
-        <p class="is-size-7">* Amounts are in milliseconds</p>
-    </div>
+    @* <div class="container has-text-right mb-6"> *@
+    @*     <p class="is-size-7">* Amounts are in milliseconds</p> *@
+    @* </div> *@
 
 <script>
+
 function getRandomColor() {
             let letters = '0123456789ABCDEF'.split('');
             let color = '#';
@@ -20,13 +37,13 @@ var ctx = document.getElementById('myChart-@Model.StoryIndex').getContext('2d');
 data = {
     datasets: [{
         data: [
-            @foreach (var scenario in Model.Scenarios)
+            @foreach (var scenario in scenarios)
                     {
                         @scenario.TimeTaken.TotalMilliseconds@:,
                     }
             ],
             backgroundColor: [
-                @for (var index = 0; index < Model.Scenarios.Count; index++)
+                @for (var index = 0; index < scenarios.Count; index++)
                 {
                     @:getRandomColor(),
                 }
@@ -35,7 +52,7 @@ data = {
 
     // These labels appear in the legend and in the tooltips when hovering different arcs
     labels: [
-        @foreach (var scenario in Model.Scenarios)
+        @foreach (var scenario in scenarios)
         {
             @:'@scenario.GetScenarioText()',
         }
@@ -47,8 +64,15 @@ var myPieChart = new Chart(ctx, {
     data: data,
     options: {
         legend: {
-            display: false
-        }
+                    display: false
+                },
+        scales: {
+            yAxes: [{
+              scaleLabel: {
+                labelString: 'Milliseconds'
+              }
+            }]
+          }  
     }
 })
 </script>
