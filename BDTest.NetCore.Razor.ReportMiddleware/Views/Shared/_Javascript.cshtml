@@ -18,16 +18,20 @@
     function copyToClipboard(text) {
       navigator.clipboard.writeText(text);
       
-        // Get the snackbar DIV
-        let snackbar = document.getElementById("snackbar");
-      
-        snackbar.textContent = "Copied to clipboard!"
-        
-        // Add the "show" class to DIV
-        snackbar.classList.add("show");
-      
-        // After 3 seconds, remove the show class from DIV
-        setTimeout(function(){ snackbar.classList.remove("show"); }, 3000);
+        showSnackbar("Copied to clipboard!");
+    }
+    
+    function showSnackbar(text) {
+      // Get the snackbar DIV
+              let snackbar = document.getElementById("snackbar");
+            
+              snackbar.textContent = text;
+              
+              // Add the "show" class to DIV
+              snackbar.classList.add("show");
+            
+              // After 3 seconds, remove the show class from DIV
+              setTimeout(function(){ snackbar.classList.remove("show"); }, 3000);
     }
     
     function toggleElementVisibility(element) {

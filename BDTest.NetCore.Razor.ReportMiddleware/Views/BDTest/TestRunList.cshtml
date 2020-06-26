@@ -26,12 +26,22 @@
     onDomLoaded(function() {
         const compareTimesButton = document.getElementById("compare-times");
                 compareTimesButton.addEventListener('click', function() {
-                  window.location = "@Url.Action("TestRunTimes", "BDTest")" + getCheckedIdsAsQueryParameter();
+                    let checkIdsQueryParameter = getCheckedIdsAsQueryParameter();
+                    if(checkIdsQueryParameter === "?reportIds=") {
+                        showSnackbar("Please check some test runs to compare");
+                        return;
+                    }
+                  window.location = "@Url.Action("TestRunTimes", "BDTest")" + checkIdsQueryParameter;
                 });
                 
                 const checkFlakinessButton = document.getElementById("check-flakiness");
                         checkFlakinessButton.addEventListener('click', function() {
-                          window.location = "@Url.Action("TestRunFlakiness", "BDTest")" + getCheckedIdsAsQueryParameter();
+                        let checkIdsQueryParameter = getCheckedIdsAsQueryParameter();
+                        if(checkIdsQueryParameter === "?reportIds=") {
+                            showSnackbar("Please check some test runs to compare");
+                            return;
+                        }
+                          window.location = "@Url.Action("TestRunFlakiness", "BDTest")" + checkIdsQueryParameter;
                         });
     });
 </script>

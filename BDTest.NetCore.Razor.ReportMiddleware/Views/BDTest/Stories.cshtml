@@ -13,17 +13,22 @@
     var scenariosGroupedByStories = @Model.Scenarios.GroupBy(scenario => scenario.GetStoryText());
 }
 
-@await Html.PartialAsync("_PreviousNextReportButtons", Model)
-
 <section class="hero is-info">
     <div class="hero-body">
         <div class="container">
-            <h1 class="title">
-                Stories
-            </h1>
-            <h2 class="subtitle">
-                Here are the <strong>stories</strong> that you've tested:
-            </h2>
+            <div class="columns is-vcentered">
+                <div class="column">
+                    <h1 class="title">
+                        Stories
+                    </h1>
+                    <h2 class="subtitle">
+                        Here are the <strong>stories</strong> that you've tested:
+                    </h2>
+                </div>
+                <div class="column">
+                    @await Html.PartialAsync("_PreviousNextReportButtons", Model)
+                </div>
+            </div>
         </div>
     </div>
 </section>
@@ -34,8 +39,8 @@
     
     <div class="buttons is-right mr-4 mt-4">
         @await Html.PartialAsync("_StatusDropdown")
-        <button class="button" onclick="expandCollapseStories(true);">Expand All</button>
-        <button class="button" onclick="expandCollapseStories(false);">Collapse All</button>
+        <button class="button is-rounded" onclick="expandCollapseStories(true);">Expand All</button>
+        <button class="button is-rounded" onclick="expandCollapseStories(false);">Collapse All</button>
     </div>
     
     <script>
@@ -85,8 +90,8 @@
             <div class="box" id="story-@storyIndex">
                 <div class="has-text-right scenarios-buttons-row">
                     @await Html.PartialAsync("_CollapseExpandGroupedScenariosButtons", $"story-{storyIndex}")
-                    <button class="button toggle-hide pointer" toggle-alternative-text="Hide Summary" element-id-to-hide="story-summary-@storyIndex">Show Summary</button>
-                    <button class="button toggle-hide pointer" toggle-alternative-text="Hide Timings Chart" element-id-to-hide="story-summary-pie-chart-times-@storyIndex">Show Timings Chart</button>
+                    <button class="button toggle-hide pointer is-rounded" toggle-alternative-text="Hide Summary" element-id-to-hide="story-summary-@storyIndex">Show Summary</button>
+                    <button class="button toggle-hide pointer is-rounded" toggle-alternative-text="Hide Timings Chart" element-id-to-hide="story-summary-pie-chart-times-@storyIndex">Show Timings Chart</button>
                 </div>
 
                 <div class="mt-4 container invisible" id="story-summary-@storyIndex">
@@ -149,5 +154,11 @@
             }
 
         </section>
+        
+        <div class="columns is-centered">
+            <div class="column is-half">
+                <hr class="rounded">
+            </div>
+        </div>
     }
 </div>

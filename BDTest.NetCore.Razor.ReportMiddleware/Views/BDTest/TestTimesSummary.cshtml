@@ -6,20 +6,26 @@
     Layout = "_Layout";
 }
 
-@await Html.PartialAsync("_PreviousNextReportButtons", Model)
-
 <section class="hero is-info">
     <div class="hero-body">
         <div class="container">
-            <h1 class="title">
-                Test Times
-            </h1>
-            <h2 class="subtitle">
-                Here is a breakdown of the <strong>times</strong> that your tests took to run:
-            </h2>
-            <h2 class="subtitle">
-                Hover over a slice to view more details
-            </h2>
+            <div class="columns is-vcentered">
+                <div class="column">
+                    <h1 class="title">
+                        Test Times
+                    </h1>
+                    <h2 class="subtitle">
+                        Here is a breakdown of the <strong>times</strong> that your tests took to run:
+                    </h2>
+                    <h2 class="subtitle is-6">
+                        Hover over a slice to view more details
+                    </h2>
+                </div>
+
+                <div class="column">
+                    @await Html.PartialAsync("_PreviousNextReportButtons", Model)
+                </div>
+            </div>
         </div>
     </div>
 </section>

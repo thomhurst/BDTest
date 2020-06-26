@@ -6,17 +6,22 @@
     Layout = "_Layout";
 }
 
-@await Html.PartialAsync("_PreviousNextReportButtons", Model)
-
 <section class="hero is-info">
     <div class="hero-body">
         <div class="container">
-            <h1 class="title">
-                All Scenarios
-            </h1>
-            <h2 class="subtitle">
-                Here are all of the <strong>scenarios</strong> in this test run:
-            </h2>
+            <div class="columns is-vcentered">
+                <div class="column">
+                    <h1 class="title">
+                        All Scenarios
+                    </h1>
+                    <h2 class="subtitle">
+                        Here are all of the <strong>scenarios</strong> in this test run:
+                    </h2>
+                </div>
+                <div class="column">
+                    @await Html.PartialAsync("_PreviousNextReportButtons", Model)
+                </div>
+            </div>
         </div>
     </div>
 </section>

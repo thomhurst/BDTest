@@ -19,7 +19,10 @@
     .pointer { cursor: pointer; }
     .modal-card-wide { width: 1280px  }
     .pie-chart-large { width: 600px; height: 600px }
-    .no-pointer { cursor: default }
+    .no-pointer { 
+    cursor: default;
+    pointer-events: none;
+     }
     .invisible { display: none; }
     .mr-5half {
         margin-right: 2.1rem!important;
@@ -47,5 +50,10 @@
             
     .is-warning-text-color {
         color: rgba(0,0,0,.7) !important;
+    }
+    
+    hr.rounded {
+      border-top: 8px solid #bbb;
+      border-radius: 5px;
     }
 </style>

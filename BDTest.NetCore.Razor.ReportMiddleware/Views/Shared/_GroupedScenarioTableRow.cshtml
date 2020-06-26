@@ -19,7 +19,7 @@
     
     <tr scenario-group="@Model.GroupedScenarioIndex.Get()" class="pointer scenario-group @hasSuccess @hasFailures @hasSkipped @hasInconclusive @hasNotImplemented">
         <td class="has-text-centered is-vcentered">
-            <button class="button is-fullwidth is-link no-pointer is-rounded">@Model.Scenarios.First().GetScenarioText() (@Model.Scenarios.Count Tests)</button>
+            <button class="button is-fullwidth is-link is-rounded">@Model.Scenarios.First().GetScenarioText() (@Model.Scenarios.Count Tests)</button>
         </td>
         <td class="has-text-centered is-vcentered">
             <button class="@Model.Scenarios.GetTotalStatus().GetCssColourValueForStatus() button is-fullwidth no-pointer is-rounded">@Model.Scenarios.GetTotalStatus().AsString()</button>
