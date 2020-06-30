@@ -29,13 +29,13 @@ namespace BDTest.NetCore.Razor.ReportMiddleware.Implementations
             return Task.FromResult(null as BDTestOutputModel);
         }
 
-        public Task<TestRunOverview[]> GetAllTestRunRecords()
+        public Task<TestRunSummary[]> GetAllTestRunRecords()
         {
-            var recordDateTimeModels = new List<TestRunOverview>();
+            var recordDateTimeModels = new List<TestRunSummary>();
             
             if(_cache.TryGetValue(RecordDateTimeModelsKey, out var recordDateTimeModelsAsObject))
             {
-                recordDateTimeModels.AddRange(recordDateTimeModelsAsObject as IEnumerable<TestRunOverview> ?? Array.Empty<TestRunOverview>());
+                recordDateTimeModels.AddRange(recordDateTimeModelsAsObject as IEnumerable<TestRunSummary> ?? Array.Empty<TestRunSummary>());
             }
 
             return Task.FromResult(recordDateTimeModels.OrderByDescending(record => record.DateTime).ToArray());
@@ -47,16 +47,16 @@ namespace BDTest.NetCore.Razor.ReportMiddleware.Implementations
             return Task.CompletedTask;
         }
 
-        public Task StoreTestRunRecord(TestRunOverview testRunOverview)
+        public Task StoreTestRunRecord(TestRunSummary testRunSummary)
         {
-            var recordDateTimeModels = new List<TestRunOverview>();
+            var recordDateTimeModels = new List<TestRunSummary>();
             
             if(_cache.TryGetValue(RecordDateTimeModelsKey, out var recordDateTimeModelsAsObject))
             {
-                recordDateTimeModels.AddRange(recordDateTimeModelsAsObject as IEnumerable<TestRunOverview> ?? Array.Empty<TestRunOverview>());
+                recordDateTimeModels.AddRange(recordDateTimeModelsAsObject as IEnumerable<TestRunSummary> ?? Array.Empty<TestRunSummary>());
             }
             
-            recordDateTimeModels.Add(testRunOverview);
+            recordDateTimeModels.Add(testRunSummary);
 
             _cache.Set(RecordDateTimeModelsKey, recordDateTimeModels);
             

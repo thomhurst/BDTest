@@ -79,7 +79,11 @@
                                                 @*     <p>Output</p> *@
                                                 @* </div> *@
                                                 <div class="message-body">
-                                                    @step.Output
+                                                    @foreach (var outputLine in step.Output.SplitOnNewLines())
+                                                    {
+                                                        <span>@outputLine</span>
+                                                        <br/>
+                                                    }
                                                 </div>
                                             </article>
                                         }

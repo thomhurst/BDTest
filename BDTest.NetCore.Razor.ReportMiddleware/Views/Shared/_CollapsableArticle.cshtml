@@ -1,3 +1,4 @@
+@using BDTest.NetCore.Razor.ReportMiddleware.Extensions
 @model BDTest.NetCore.Razor.ReportMiddleware.Models.CollapsableArticicleViewModel
 
 @{
@@ -12,6 +13,10 @@
         <img class="toggle-hide pointer" element-id-to-hide="@randomGuid" src="@initialIcon" alt="toggle"/>
     </div>
     <div class="message-body @collapsedClass" id="@randomGuid">
-        @Model.Body
+        @foreach (var line in Model.Body.SplitOnNewLines())
+        {
+            <span>@line</span>
+            <br/>
+        }
     </div>
 </article>

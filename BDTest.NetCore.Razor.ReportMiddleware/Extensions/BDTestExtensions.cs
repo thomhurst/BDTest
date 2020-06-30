@@ -10,9 +10,9 @@ namespace BDTest.NetCore.Razor.ReportMiddleware.Extensions
 {
     public static class BDTestExtensions
     {
-        internal static TestRunOverview GetOverview(this BDTestOutputModel bdTestOutputModel)
+        internal static TestRunSummary GetOverview(this BDTestOutputModel bdTestOutputModel)
         {
-            return new TestRunOverview(bdTestOutputModel.Id, DateTime.Now, bdTestOutputModel.Scenarios.GetTotalStatus(), bdTestOutputModel.Tag, bdTestOutputModel.Environment);
+            return new TestRunSummary(bdTestOutputModel.Id, DateTime.Now, bdTestOutputModel.Scenarios.GetTotalStatus(), bdTestOutputModel.Tag, bdTestOutputModel.Environment);
         }
 
         public static IMvcBuilder AddBdTestReportMiddleware(this IMvcBuilder mvcBuilder)

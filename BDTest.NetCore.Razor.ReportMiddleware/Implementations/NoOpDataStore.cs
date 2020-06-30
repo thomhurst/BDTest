@@ -13,9 +13,9 @@ namespace BDTest.NetCore.Razor.ReportMiddleware.Implementations
             return Task.FromResult(null as BDTestOutputModel);
         }
 
-        public Task<TestRunOverview[]> GetAllTestRunRecords()
+        public Task<TestRunSummary[]> GetAllTestRunRecords()
         {
-            return Task.FromResult(Array.Empty<TestRunOverview>());
+            return Task.FromResult(Array.Empty<TestRunSummary>());
         }
 
         public Task StoreTestData(string id, BDTestOutputModel data)
@@ -23,7 +23,7 @@ namespace BDTest.NetCore.Razor.ReportMiddleware.Implementations
             return Task.CompletedTask;
         }
 
-        public Task StoreTestRunRecord(TestRunOverview testRunOverview)
+        public Task StoreTestRunRecord(TestRunSummary testRunSummary)
         {
             return Task.CompletedTask;
         }

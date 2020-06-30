@@ -8,7 +8,7 @@ namespace BDTest.NetCore.Razor.ReportMiddleware.Interfaces
     public interface IDataController
     {
         Task<BDTestOutputModel> GetData(string id);
-        Task<IEnumerable<TestRunOverview>> GetAllTestRunRecords();
+        Task<IEnumerable<TestRunSummary>> GetAllTestRunRecords();
         Task StoreData(BDTestOutputModel bdTestOutputModel, string id);
     }
 }

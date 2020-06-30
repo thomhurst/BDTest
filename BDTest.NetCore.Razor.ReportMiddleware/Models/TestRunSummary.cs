@@ -3,9 +3,9 @@ using BDTest.Test;
 
 namespace BDTest.NetCore.Razor.ReportMiddleware.Models
 {
-    public class TestRunOverview
+    public class TestRunSummary
     {
-        public TestRunOverview(string recordId, DateTime dateTime, Status status, string tag, string environment)
+        public TestRunSummary(string recordId, DateTime dateTime, Status status, string tag, string environment)
         {
             RecordId = recordId;
             DateTime = dateTime;

@@ -7,8 +7,8 @@ namespace BDTest.NetCore.Razor.ReportMiddleware.Interfaces
     public interface IBDTestDataStore
     {
         Task<BDTestOutputModel> GetTestData(string id);
-        Task<TestRunOverview[]> GetAllTestRunRecords();
+        Task<TestRunSummary[]> GetAllTestRunRecords();
         Task StoreTestData(string id, BDTestOutputModel data);
-        Task StoreTestRunRecord(TestRunOverview testRunOverview);
+        Task StoreTestRunRecord(TestRunSummary testRunSummary);
     }
 }

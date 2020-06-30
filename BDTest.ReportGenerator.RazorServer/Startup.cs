@@ -1,6 +1,4 @@
-using System.Diagnostics;
 using BDTest.NetCore.Razor.ReportMiddleware.Extensions;
-using BDTest.NetCore.Razor.ReportMiddleware.Interfaces;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
@@ -19,16 +17,14 @@ namespace BDTest.ReportGenerator.RazorServer
         public IConfiguration Configuration { get; }
 
         // This method gets called by the runtime. Use this method to add services to the container.
+
         public void ConfigureServices(IServiceCollection services)
         {
             services
                 .AddControllersWithViews()
                 .AddBdTestReportMiddleware();
 
-            if (Debugger.IsAttached)
-            {
-                services.AddSingleton<IBDTestDataStore, CosmosBDTestDataStore>();
-            }
+            services.AddRazorPages();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -47,16 +43,15 @@ namespace BDTest.ReportGenerator.RazorServer
 
             app.UseHttpsRedirection();
             app.UseStaticFiles();
-
+            
             app.UseRouting();
-
-            app.UseAuthorization();
 
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllerRoute(
                     name: "default",
                     pattern: "{controller=Home}/{action=Index}/{id?}");
+                endpoints.MapRazorPages();
             });
         }
     }
