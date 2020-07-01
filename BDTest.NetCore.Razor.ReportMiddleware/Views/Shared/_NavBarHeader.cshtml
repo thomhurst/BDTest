@@ -39,28 +39,20 @@
             <a class="navbar-item" href="~/bdtest/report/test-runs">
                 All Test Runs
             </a>
-            
-            @if (customLinksProvider != null)
-                    {
-                        foreach (var customLinkData in customLinksProvider.GetCustomLinks())
-                        {
-                            <li>
-                                <a href="@customLinkData.Url">
-                                    <span>@customLinkData.Text</span>
-                                </a>
-                            </li>
-                        }
-                    }
         </div>
 
-        @* <div class="navbar-end"> *@
-        @*     <div class="navbar-item"> *@
-        @*         <div class="buttons"> *@
-        @*             <a class="button is-primary" href="#"> *@
-        @*                 <strong>Back to Top</strong> *@
-        @*             </a> *@
-        @*         </div> *@
-        @*     </div> *@
-        @* </div> *@
+        <div class="navbar-end">
+            @if (customLinksProvider != null)
+            {
+                foreach (var customLinkData in customLinksProvider.GetCustomLinks())
+                {
+                    <li>
+                        <a class="navbar-item" href="@customLinkData.Url">
+                            <span>@customLinkData.Text</span>
+                        </a>
+                    </li>
+                }
+            }
+        </div>
     </div>
 </nav>
