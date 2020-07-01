@@ -1,6 +1,8 @@
 using BDTest.NetCore.Razor.ReportMiddleware.Extensions;
+using BDTest.NetCore.Razor.ReportMiddleware.Interfaces;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -23,6 +25,8 @@ namespace BDTest.ReportGenerator.RazorServer
             services
                 .AddControllersWithViews()
                 .AddBdTestReportMiddleware();
+            
+            services.AddSingleton<IBDTestDataStore>(new CosmosBDTestDataStore("AccountEndpoint=https://localhost:8081/;AccountKey=C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==;"));
 
             services.AddRazorPages();
         }
@@ -43,7 +47,9 @@ namespace BDTest.ReportGenerator.RazorServer
 
             app.UseHttpsRedirection();
             app.UseStaticFiles();
-            
+
+            app.UseMiddleware<StaticFileMiddleware>();
+
             app.UseRouting();
 
             app.UseEndpoints(endpoints =>

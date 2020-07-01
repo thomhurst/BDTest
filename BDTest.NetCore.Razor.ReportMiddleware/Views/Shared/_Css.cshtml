@@ -28,7 +28,7 @@
     cursor: default;
     pointer-events: none;
      }
-    .invisible { display: none; }
+    .invisible { display: none !important; }
     .mr-5half {
         margin-right: 2.1rem!important;
     }
@@ -62,8 +62,36 @@
       border-radius: 5px;
     }
     
-      .column.is-three-quarters {
-        flex: none;
-        width: 75%;
-      }
+    .column.is-three-quarters {
+    flex: none;
+    width: 75%;
+    }
+    
+    .arrow {
+      border: solid white;
+      border-width: 0 3px 3px 0;
+      display: inline-block;
+      padding: 3px;
+      margin: 3px;
+    }
+    
+    .right {
+      transform: rotate(-45deg);
+      -webkit-transform: rotate(-45deg);
+    }
+    
+    .left {
+      transform: rotate(135deg);
+      -webkit-transform: rotate(135deg);
+    }
+    
+    .up {
+      transform: rotate(-135deg);
+      -webkit-transform: rotate(-135deg);
+    }
+    
+    .down {
+      transform: rotate(45deg);
+      -webkit-transform: rotate(45deg);
+    }
 </style>

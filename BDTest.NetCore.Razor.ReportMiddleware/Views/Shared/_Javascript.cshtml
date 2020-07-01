@@ -110,6 +110,8 @@
             scenarioGroupElement.addEventListener("click", function () {
                 let scenarioGroupId = scenarioGroupElement.getAttribute("scenario-group");
                 let scenarioElementsInThatGroup = document.querySelectorAll('tr[parent-scenario-group="' + scenarioGroupId + '"]');
+                let scenarioGroupStatus = scenarioGroupElement.querySelector('.scenario-group-status');
+                toggleElementVisibility(scenarioGroupStatus);
                 
                 Array.prototype.forEach.call (scenarioElementsInThatGroup, function (scenarioInGroup) {
                     toggleElementVisibility(scenarioInGroup);

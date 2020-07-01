@@ -22,7 +22,7 @@
             <button class="button is-fullwidth is-link is-rounded">@Model.Scenarios.First().GetScenarioText() (@Model.Scenarios.Count Tests)</button>
         </td>
         <td class="has-text-centered is-vcentered">
-            <span class="@Model.Scenarios.GetTotalStatus().GetCssColourValueForStatus() tag px-5 is-medium">@Model.Scenarios.GetTotalStatus().AsString()</span>
+            <span class="@Model.Scenarios.GetTotalStatus().GetCssColourValueForStatus() tag px-5 is-medium invisible scenario-group-status">@Model.Scenarios.GetTotalStatus().AsString()</span>
         </td>
         <td class="has-text-centered is-vcentered">@testTimer.ElapsedTime.ToPrettyFormat()</td>
         <td class="has-text-centered is-vcentered">@testTimer.TestsStartedAt.ToStringForReport()</td>

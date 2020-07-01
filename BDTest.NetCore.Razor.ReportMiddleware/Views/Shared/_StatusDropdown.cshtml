@@ -3,7 +3,7 @@
 <div class="dropdown">
   <div class="dropdown-trigger">
     <button class="button is-info is-rounded" aria-haspopup="true" aria-controls="dropdown-menu" id="dropdown-main-button">
-      <span>Show All</span>
+      <p>Show All <i class="arrow down"></i></p>
       @* <span class="icon is-small"> *@
       @*   <i class="fas fa-angle-down" aria-hidden="true"></i> *@
       @* </span> *@
@@ -16,27 +16,27 @@
     <hr class="dropdown-divider">
     <div class="dropdown-content has-text-centered">
       <a href="#" class="dropdown-item">
-        <button class="button is-fullwidth is-success" onclick="filterByStatus('@StatusConstants.Success');">
+        <button class="button is-fullwidth is-success is-rounded" onclick="filterByStatus('@StatusConstants.Success');">
           Show Successful
         </button>
       </a>
       <a class="dropdown-item">
-        <button class="button is-fullwidth is-danger" onclick="filterByStatus('@StatusConstants.Failed');">
+        <button class="button is-fullwidth is-danger is-rounded" onclick="filterByStatus('@StatusConstants.Failed');">
           Show Failures
         </button>
       </a>
       <a href="#" class="dropdown-item">
-        <button class="button is-fullwidth is-warning" onclick="filterByStatus('@StatusConstants.Skipped');">
+        <button class="button is-fullwidth is-warning is-rounded" onclick="filterByStatus('@StatusConstants.Skipped');">
           Show Skipped
         </button>
       </a>
       <a href="#" class="dropdown-item">
-        <button class="button is-fullwidth is-warning" onclick="filterByStatus('@StatusConstants.Inconclusive');">
+        <button class="button is-fullwidth is-warning is-rounded" onclick="filterByStatus('@StatusConstants.Inconclusive');">
           Show Inconclusive
         </button>
       </a>
       <a href="#" class="dropdown-item">
-        <button class="button is-fullwidth is-warning" onclick="filterByStatus('@StatusConstants.NotImplemented');">
+        <button class="button is-fullwidth is-warning is-rounded" onclick="filterByStatus('@StatusConstants.NotImplemented');">
           Show Not Implemented
         </button>
       </a>
@@ -51,8 +51,8 @@
     let mainDropdownButton = document.getElementById("dropdown-main-button");
     
     if(status === '@StatusConstants.All') {
-      mainDropdownButton.textContent = "Show All";
-      mainDropdownButton.className = "button has-text-centered is-info";
+      mainDropdownButton.innerHTML = '<p>Show All <i class="arrow down"></i></p>';
+      mainDropdownButton.className = "button has-text-centered is-info is-rounded";
       makeAllVisible();
       return;
     }
@@ -61,40 +61,40 @@
     
     switch (status) {
       case '@StatusConstants.Success':
-        mainDropdownButton.textContent = "Show Success";
-        mainDropdownButton.className = "button has-text-centered is-success";
+        mainDropdownButton.innerHTML = '<p>Show Success <i class="arrow down"></i></p>';
+        mainDropdownButton.className = "button has-text-centered is-success is-rounded";
         
         var stories =  document.querySelectorAll(".story-header.@HtmlClassConstants.HasSuccess");
         var scenarioGroups =  document.querySelectorAll(".scenario-group.@HtmlClassConstants.HasSuccess");
         var rows = document.querySelectorAll(".scenario-row.@Status.Passed");
         break;
       case '@StatusConstants.Failed':
-        mainDropdownButton.textContent = "Show Failures";
-        mainDropdownButton.className = "button has-text-centered is-danger";
+        mainDropdownButton.innerHTML = '<p>Show Failures <i class="arrow down"></i></p>';
+        mainDropdownButton.className = "button has-text-centered is-danger is-rounded";
         
         var stories =  document.querySelectorAll(".story-header.@HtmlClassConstants.HasFailures");
         var scenarioGroups =  document.querySelectorAll(".scenario-group.@HtmlClassConstants.HasFailures");
         var rows = document.querySelectorAll(".scenario-row.@Status.Failed");
         break;
       case '@StatusConstants.Skipped':
-        mainDropdownButton.textContent = "Show Skipped";
-        mainDropdownButton.className = "button has-text-centered is-warning";
+        mainDropdownButton.innerHTML = '<p>Show Skipped <i class="arrow down"></i></p>';
+        mainDropdownButton.className = "button has-text-centered is-warning is-rounded";
         
         var stories =  document.querySelectorAll(".story-header.@HtmlClassConstants.HasSkipped");
         var scenarioGroups =  document.querySelectorAll(".scenario-group.@HtmlClassConstants.HasSkipped");
         var rows = document.querySelectorAll(".scenario-row.@Status.Skipped");
         break;
       case '@StatusConstants.Inconclusive':
-        mainDropdownButton.textContent = "Show Inconclusive";
-        mainDropdownButton.className = "button has-text-centered is-warning";
+        mainDropdownButton.innerHTML = '<p>Show Inconclusive <i class="arrow down"></i></p>';
+        mainDropdownButton.className = "button has-text-centered is-warning is-rounded";
         
         var stories =  document.querySelectorAll(".story-header.@HtmlClassConstants.HasInconclusive");
         var scenarioGroups =  document.querySelectorAll(".scenario-group.@HtmlClassConstants.HasInconclusive");
         var rows = document.querySelectorAll(".scenario-row.@Status.Inconclusive");
         break;
       case '@StatusConstants.NotImplemented':
-        mainDropdownButton.textContent = "Show Not Implemented";
-        mainDropdownButton.className = "button has-text-centered is-warning";
+        mainDropdownButton.innerHTML = '<p>Show Not Implemented <i class="arrow down"></i></p>';
+        mainDropdownButton.className = "button has-text-centered is-warning is-rounded";
         
         var stories =  document.querySelectorAll(".story-header.@HtmlClassConstants.HasNotImplemented");
         var scenarioGroups =  document.querySelectorAll(".scenario-group.@HtmlClassConstants.HasNotImplemented");
