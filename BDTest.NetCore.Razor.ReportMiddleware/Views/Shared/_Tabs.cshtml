@@ -43,7 +43,7 @@
             foreach (var customTabData in customTabsProvider.GetCustomLinks())
             {
                 <li>
-                    <a href="@customTabData.Url">
+                    <a href="@customTabData.Url.AbsoluteUri">
                         <span>@customTabData.Text</span>
                     </a>
                 </li>
