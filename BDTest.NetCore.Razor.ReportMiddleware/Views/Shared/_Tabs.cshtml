@@ -1,5 +1,8 @@
+@using BDTest.NetCore.Razor.ReportMiddleware.Interfaces
 @using Microsoft.AspNetCore.Http.Extensions
+@using Microsoft.Extensions.DependencyInjection
 @{ var id = ViewBag.Id; }
+@inject IServiceProvider ServiceProvider
 
 @{
     var summaryIsActive = Context.Request.Path.Value?.ToLowerInvariant().Contains("summary") == true ? "is-active" : "";
@@ -7,6 +10,7 @@
     var allScenariosIsActive = Context.Request.Path.Value?.ToLowerInvariant().Contains("all-scenarios") == true ? "is-active" : "";
     var timingsIsActive = Context.Request.Path.Value?.ToLowerInvariant().Contains("timings") == true ? "is-active" : "";
     var invisibleClass = string.IsNullOrEmpty(id) ? "invisible" : string.Empty;
+    var customTabsProvider = ServiceProvider.GetService<IBDTestCustomTabsProvider>();
 }
 
 <div class="tabs is-right mb-0">
@@ -33,6 +37,17 @@
                     <span>Timings</span>
                 </a>
             </li>
+        }
+        @if (customTabsProvider != null)
+        {
+            foreach (var customTabData in customTabsProvider.GetCustomTabsData())
+            {
+                <li>
+                    <a href="@customTabData.Url">
+                        <span>@customTabData.Text</span>
+                    </a>
+                </li>
+            }
         }
         <li>
             @{
