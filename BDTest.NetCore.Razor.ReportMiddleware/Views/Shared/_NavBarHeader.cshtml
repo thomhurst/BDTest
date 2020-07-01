@@ -46,7 +46,7 @@
             {
                 foreach (var customLinkData in customLinksProvider.GetCustomLinks())
                 {
-                    <a class="navbar-item" href="@customLinkData.Url.AbsoluteUri">
+                    <a class="navbar-item" href="@customLinkData.Url">
                         <span>@customLinkData.Text</span>
                     </a>
                 }
