@@ -15,7 +15,7 @@ namespace BDTest.NetCore.Razor.ReportMiddleware.Extensions
             return new TestRunSummary(bdTestOutputModel.Id, DateTime.Now, bdTestOutputModel.Scenarios.GetTotalStatus(), bdTestOutputModel.Tag, bdTestOutputModel.Environment);
         }
 
-        public static IMvcBuilder AddBdTestReportMiddleware(this IMvcBuilder mvcBuilder)
+        public static IMvcBuilder AddBdTestReportControllersAndViews(this IMvcBuilder mvcBuilder)
         {
             mvcBuilder
                 .AddApplicationPart(typeof(BDTestController).Assembly)

@@ -21,6 +21,16 @@
         showSnackbar("Copied to clipboard!");
     }
     
+    function isInViewport(elem) {
+        let bounding = elem.getBoundingClientRect();
+        return (
+            bounding.top >= 0 &&
+            bounding.left >= 0 &&
+            bounding.bottom <= (window.innerHeight || document.documentElement.clientHeight) &&
+            bounding.right <= (window.innerWidth || document.documentElement.clientWidth)
+        );
+    }
+    
     function showSnackbar(text) {
       // Get the snackbar DIV
               let snackbar = document.getElementById("snackbar");
@@ -172,6 +182,22 @@ onDomLoaded(function() {
         closeModals();
       }
     });
+    
+    
+    // Scroll to details when clicked
+    let detailsElements = document.getElementsByTagName("details");
+    for (let detailsElement of detailsElements) {
+        detailsElement.addEventListener('click', function () {
+            if(!detailsElement.hasAttribute("open")) {
+                // Run on next loop after details element has expanded
+                setTimeout(function() {
+                    if(!isInViewport(detailsElement)) {
+                        detailsElement.scrollIntoView(true);
+                    }
+                }, 0);
+            } 
+        });
+    }
   });
 </script>
 
