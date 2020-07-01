@@ -72,7 +72,7 @@
         var hasSkipped = scenariosForThisStory.Any(scenario => scenario.Status == Status.Skipped) ? HtmlClassConstants.HasSkipped : string.Empty;
         var hasInconclusive = scenariosForThisStory.Any(scenario => scenario.Status == Status.Inconclusive) ? HtmlClassConstants.HasInconclusive : string.Empty;
         var hasNotImplemented = scenariosForThisStory.Any(scenario => scenario.Status == Status.NotImplemented) ? HtmlClassConstants.HasNotImplemented : string.Empty;
-        
+
         <div class="columns is-centered">
             <div class="column is-three-quarters">
                 <section class="section">
@@ -138,8 +138,8 @@
                     @{
                         var allScenarioGroups = scenariosGroupedByScenarioText.Select(groupedScenarios => groupedScenarios.ToList()).ToList();
                     }
-            
-                    @for(var outerIndex = 0; outerIndex < allScenarioGroups.Count; outerIndex++)
+
+                    @for (var outerIndex = 0; outerIndex < allScenarioGroups.Count; outerIndex++)
                     {
                         var groupedScenario = allScenarioGroups[outerIndex];
                         for (var innerIndex = 0; innerIndex < groupedScenario.Count; innerIndex++)
@@ -147,7 +147,7 @@
                             var lastScenario = groupedScenario.ElementAtOrDefault(innerIndex - 1) ?? allScenarioGroups.ElementAtOrDefault(outerIndex - 1)?.LastOrDefault();
                             var scenario = groupedScenario[innerIndex];
                             var nextScenario = groupedScenario.ElementAtOrDefault(innerIndex + 1) ?? allScenarioGroups.ElementAtOrDefault(outerIndex + 1)?.FirstOrDefault();
-                    
+
                             @await Html.PartialAsync("_ScenarioModalPopup", new ScenarioModalViewModel
                             {
                                 LastScenario = lastScenario,
@@ -161,10 +161,7 @@
             </div>
         </div>
 
-        <div class="columns is-centered">
-            <div class="column is-half">
-                <hr class="rounded">
-            </div>
-        </div>
+
+        <hr class="rounded quarter-width center-horizontally">
     }
 </div>
