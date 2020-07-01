@@ -6,11 +6,11 @@ namespace BDTest.ReportGenerator.RazorServer
 {
     public class CustomTabProvider : IBDTestCustomTabsProvider
     {
-        public List<CustomTabData> GetCustomTabsData()
+        public List<CustomLinkData> GetCustomLinks()
         {
-            return new List<CustomTabData>
+            return new List<CustomLinkData>
             {
-                new CustomTabData("Google", "https://www.google.com")
+                new CustomLinkData("Google", "https://www.google.com")
             };
         }
     }

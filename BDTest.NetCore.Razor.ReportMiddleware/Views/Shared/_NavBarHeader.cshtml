@@ -1,3 +1,11 @@
+@using BDTest.NetCore.Razor.ReportMiddleware.Interfaces
+@using Microsoft.Extensions.DependencyInjection
+@inject IServiceProvider ServiceProvider
+
+@{
+    var customLinksProvider = ServiceProvider.GetService<IBDTestCustomHeaderLinksProvider>();
+}
+
 <nav class="navbar is-fixed-top" role="navigation" aria-label="main navigation">
     <div class="navbar-brand">
         <a class="navbar-item" href="https://github.com/thomhurst/BDTest" target="_blank">
@@ -31,6 +39,18 @@
             <a class="navbar-item" href="~/bdtest/report/test-runs">
                 All Test Runs
             </a>
+            
+            @if (customLinksProvider != null)
+                    {
+                        foreach (var customLinkData in customLinksProvider.GetCustomLinks())
+                        {
+                            <li>
+                                <a href="@customLinkData.Url">
+                                    <span>@customLinkData.Text</span>
+                                </a>
+                            </li>
+                        }
+                    }
         </div>
 
         @* <div class="navbar-end"> *@

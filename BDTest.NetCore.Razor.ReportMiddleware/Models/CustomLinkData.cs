@@ -1,8 +1,8 @@
 namespace BDTest.NetCore.Razor.ReportMiddleware.Models
 {
-    public class CustomTabData
+    public class CustomLinkData
     {
-        public CustomTabData(string text, string url)
+        public CustomLinkData(string text, string url)
         {
             Text = text;
             Url = url;

@@ -3,7 +3,7 @@ using BDTest.NetCore.Razor.ReportMiddleware.Models;
 
 namespace BDTest.NetCore.Razor.ReportMiddleware.Interfaces
 {
-    public interface IBDTestCustomTabsProvider
+    public interface IBDTestCustomHeaderLinksProvider
     {
         List<CustomLinkData> GetCustomLinks();
     }

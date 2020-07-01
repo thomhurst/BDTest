@@ -40,7 +40,7 @@
         }
         @if (customTabsProvider != null)
         {
-            foreach (var customTabData in customTabsProvider.GetCustomTabsData())
+            foreach (var customTabData in customTabsProvider.GetCustomLinks())
             {
                 <li>
                     <a href="@customTabData.Url">
