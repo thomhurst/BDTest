@@ -46,17 +46,40 @@
     </div>
     
     <script>
+          function expandStory(storyHeader, elementToHide){
+                  storyHeader.parentElement.parentElement.classList.remove("rounded-all-corners")
+                  storyHeader.parentElement.parentElement.classList.add("rounded-top-corners")
+                  setElementVisible(elementToHide);
+          }
+          
+          function collapseStory(storyHeader, elementToHide){
+              storyHeader.parentElement.parentElement.classList.remove("rounded-top-corners")
+              storyHeader.parentElement.parentElement.classList.add("rounded-all-corners")
+              setElementInvisible(elementToHide);
+          }
+          
+          function toggleStoryHeader(storyHeaderId, shouldExpand) {
+            let storyHeader = document.getElementById(storyHeaderId);
+            let elementIdToHide = storyHeader.getAttribute("element-id-to-hide");
+            let elementToHide = document.getElementById(elementIdToHide);
+            
+            let expand = shouldExpand;
+            if(shouldExpand == null) 
+            {
+                expand = elementToHide.classList.contains("invisible");
+            }
+                                  
+              if(expand) {
+                  expandStory(storyHeader, elementToHide);
+              } else {
+                  collapseStory(storyHeader, elementToHide);
+              }
+          }
+    
     function expandCollapseStories(shouldExpand) {
       let storyHeaders = document.getElementsByClassName("story-header");
       for (let storyHeader of storyHeaders) {
-          let elementIdToHide = storyHeader.getAttribute("element-id-to-hide");
-          let elementToHide = document.getElementById(elementIdToHide);
-                      
-          if(shouldExpand) {
-              setElementVisible(elementToHide);
-          } else {
-              setElementInvisible(elementToHide);
-          }
+          toggleStoryHeader(storyHeader.id, shouldExpand);
       }
     }
     </script>
@@ -76,9 +99,9 @@
         <div class="columns is-centered">
             <div class="column is-three-quarters">
                 <section class="section">
-                    <section class="hero @scenariosForThisStory.GetTotalStatus().GetCssColourValueForStatus()">
+                    <section class="rounded-top-corners hero @scenariosForThisStory.GetTotalStatus().GetCssColourValueForStatus()">
                         <div class="hero-body">
-                            <div class="container toggle-hide pointer story-header @hasSuccess @hasFailures @hasSkipped @hasInconclusive @hasNotImplemented" element-id-to-hide="story-@storyIndex">
+                            <div id="story-header-@storyIndex" class="container pointer story-header @hasSuccess @hasFailures @hasSkipped @hasInconclusive @hasNotImplemented" element-id-to-hide="story-@storyIndex" onclick="toggleStoryHeader('story-header-@storyIndex', null)">
                                 <h1 class="title">Story:</h1>
                                 @{
                                     var storyTextSplitByLines = story.Key.SplitOnNewLines();
