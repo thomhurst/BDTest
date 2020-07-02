@@ -33,16 +33,6 @@
         </header>
         <section class="modal-card-body">
             <div>
-                @if (!string.IsNullOrEmpty(Model.Scenario.TestStartupInformation))
-                {
-                    @(await Html.PartialAsync("_CollapsableArticle", new CollapsableArticicleViewModel()
-                    {
-                        Header = "Test Start Up Info",
-                        Body = Model.Scenario.TestStartupInformation,
-                        StartCollapsed = true
-                    }))
-                }
-                
                 <table class="table is-fullwidth">
                     <thead>
                     <tr>
@@ -55,6 +45,8 @@
                     </thead>
                     <tbody>
 
+                    @await Html.PartialAsync("_SetupTeardownOutputRow", new SetupTeardownOutputViewModel("Test Setup Info", Model.Scenario.TestStartupInformation))
+                    
                     @foreach (var step in Model.Scenario.Steps)
                     {
                         <tr>
@@ -74,28 +66,26 @@
 
                                         @if (!string.IsNullOrEmpty(step.Output))
                                         {
-                                            <article class="message is-link mt-4 has-text-left">
-                                                @* <div class="message-header"> *@
-                                                @*     <p>Output</p> *@
-                                                @* </div> *@
-                                                <div class="message-body">
-                                                    @foreach (var outputLine in step.Output.SplitOnNewLines())
-                                                    {
-                                                        <span>@outputLine</span>
-                                                        <br/>
-                                                    }
-                                                </div>
-                                            </article>
+                                            <div class="container">
+                                                <article class="message is-link mt-4 has-text-left">
+                                                    @* <div class="message-header"> *@
+                                                    @*     <p>Output</p> *@
+                                                    @* </div> *@
+                                                    <pre class="message-body">@step.Output.Trim()</pre>
+                                                </article>
+                                            </div>
                                         }
 
                                         @if (step.Exception != null)
                                         {
-                                            <article class="message is-danger mt-4">
-                                                <div class="message-header">
-                                                    <p>Exception</p>
-                                                </div>
-                                                <pre class="message-body has-text-left">@step.Exception.Trim()</pre>
-                                            </article>
+                                            <div class="container">
+                                                <article class="message is-danger mt-4">
+                                                    <div class="message-header">
+                                                        <p>Exception</p>
+                                                    </div>
+                                                    <pre class="message-body has-text-left">@step.Exception.Trim()</pre>
+                                                </article>
+                                            </div>
                                         }
                                     </details>
                                 }
@@ -108,21 +98,13 @@
                             <td class="has-text-centered is-vcentered">@step.EndTime.ToStringForReport()</td>
                         </tr>
                     }
+                    
+                    @await Html.PartialAsync("_SetupTeardownOutputRow", new SetupTeardownOutputViewModel("Test Teardown Info", Model.Scenario.TearDownOutput))
 
                     </tbody>
                 </table>
             </div>
-            
-            @if (!string.IsNullOrEmpty(Model.Scenario.TearDownOutput))
-            {
-                @(await Html.PartialAsync("_CollapsableArticle", new CollapsableArticicleViewModel()
-                {
-                    Header = "Test Teardown Info",
-                    Body = Model.Scenario.TearDownOutput,
-                    StartCollapsed = true
-                }))
-            }
-            
+
             @if (!string.IsNullOrEmpty(Model.Scenario.CustomHtmlOutputForReport))
             {
                 <div class="container">
