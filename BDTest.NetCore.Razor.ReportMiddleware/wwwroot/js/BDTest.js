@@ -182,7 +182,7 @@ onDomLoaded(function() {
 // Run on next loop after details element has expanded
                 setTimeout(function() {
                     if(!isInViewport(detailsElement)) {
-                        detailsElement.scrollIntoView(true);
+                        detailsElement.scrollIntoView({ behavior: "smooth" });
                     }
                 }, 0);
             }
