@@ -16,27 +16,27 @@
     <hr class="dropdown-divider">
     <div class="dropdown-content has-text-centered">
       <a href="#" class="dropdown-item">
-        <button class="button is-fullwidth is-success is-rounded" onclick="filterByStatus('@StatusConstants.Success');">
+        <button class="button is-fullwidth is-success is-rounded" onclick="filterByStatus('@Status.Passed');">
           Show Successful
         </button>
       </a>
       <a class="dropdown-item">
-        <button class="button is-fullwidth is-danger is-rounded" onclick="filterByStatus('@StatusConstants.Failed');">
+        <button class="button is-fullwidth is-danger is-rounded" onclick="filterByStatus('@Status.Failed');">
           Show Failures
         </button>
       </a>
       <a href="#" class="dropdown-item">
-        <button class="button is-fullwidth is-warning is-rounded" onclick="filterByStatus('@StatusConstants.Skipped');">
+        <button class="button is-fullwidth is-warning is-rounded" onclick="filterByStatus('@Status.Skipped');">
           Show Skipped
         </button>
       </a>
       <a href="#" class="dropdown-item">
-        <button class="button is-fullwidth is-warning is-rounded" onclick="filterByStatus('@StatusConstants.Inconclusive');">
+        <button class="button is-fullwidth is-warning is-rounded" onclick="filterByStatus('@Status.Inconclusive');">
           Show Inconclusive
         </button>
       </a>
       <a href="#" class="dropdown-item">
-        <button class="button is-fullwidth is-warning is-rounded" onclick="filterByStatus('@StatusConstants.NotImplemented');">
+        <button class="button is-fullwidth is-warning is-rounded" onclick="filterByStatus('@Status.NotImplemented');">
           Show Not Implemented
         </button>
       </a>
@@ -60,7 +60,7 @@
     makeAllInvisible();
     
     switch (status) {
-      case '@StatusConstants.Success':
+      case '@Status.Passed':
         mainDropdownButton.innerHTML = '<p>Show Success <i class="arrow down"></i></p>';
         mainDropdownButton.className = "button has-text-centered is-success is-rounded";
         
@@ -68,7 +68,7 @@
         var scenarioGroups =  document.querySelectorAll(".scenario-group.@HtmlClassConstants.HasSuccess");
         var rows = document.querySelectorAll(".scenario-row.@Status.Passed");
         break;
-      case '@StatusConstants.Failed':
+      case '@Status.Failed':
         mainDropdownButton.innerHTML = '<p>Show Failures <i class="arrow down"></i></p>';
         mainDropdownButton.className = "button has-text-centered is-danger is-rounded";
         
@@ -76,7 +76,7 @@
         var scenarioGroups =  document.querySelectorAll(".scenario-group.@HtmlClassConstants.HasFailures");
         var rows = document.querySelectorAll(".scenario-row.@Status.Failed");
         break;
-      case '@StatusConstants.Skipped':
+      case '@Status.Skipped':
         mainDropdownButton.innerHTML = '<p>Show Skipped <i class="arrow down"></i></p>';
         mainDropdownButton.className = "button has-text-centered is-warning is-rounded";
         
@@ -84,7 +84,7 @@
         var scenarioGroups =  document.querySelectorAll(".scenario-group.@HtmlClassConstants.HasSkipped");
         var rows = document.querySelectorAll(".scenario-row.@Status.Skipped");
         break;
-      case '@StatusConstants.Inconclusive':
+      case '@Status.Inconclusive':
         mainDropdownButton.innerHTML = '<p>Show Inconclusive <i class="arrow down"></i></p>';
         mainDropdownButton.className = "button has-text-centered is-warning is-rounded";
         
@@ -92,7 +92,7 @@
         var scenarioGroups =  document.querySelectorAll(".scenario-group.@HtmlClassConstants.HasInconclusive");
         var rows = document.querySelectorAll(".scenario-row.@Status.Inconclusive");
         break;
-      case '@StatusConstants.NotImplemented':
+      case '@Status.NotImplemented':
         mainDropdownButton.innerHTML = '<p>Show Not Implemented <i class="arrow down"></i></p>';
         mainDropdownButton.className = "button has-text-centered is-warning is-rounded";
         
@@ -104,6 +104,7 @@
       
       for (let story of stories) {
         setElementVisible(story.parentElement.parentElement.parentElement);
+        setElementVisible(story.parentElement.parentElement.parentElement.parentElement.parentElement.nextElementSibling);
       }
       for (let scenarioGroup of scenarioGroups) {
         scenarioGroup.classList.add("no-pointer");
@@ -116,6 +117,11 @@
     }
     
     function makeAllVisible() {
+        let dividers = document.getElementsByTagName("hr");
+        for (let divider of dividers) {
+          setElementVisible(divider);
+        }
+    
         let stories = document.querySelectorAll(".story-header");
         for (let story of stories) {
           setElementVisible(story.parentElement.parentElement.parentElement);
@@ -140,6 +146,11 @@
     }
     
     function makeAllInvisible() {
+        let dividers = document.getElementsByTagName("hr");
+        for (let divider of dividers) {
+          setElementInvisible(divider);
+        }
+            
         let stories = document.querySelectorAll(".story-header");
         for (let story of stories) {
           setElementInvisible(story.parentElement.parentElement.parentElement);

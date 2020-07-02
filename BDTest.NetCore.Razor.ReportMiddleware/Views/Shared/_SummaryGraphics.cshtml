@@ -1,5 +1,4 @@
 @using BDTest
-@using BDTest.NetCore.Razor.ReportMiddleware.Constants
 @using BDTest.NetCore.Razor.ReportMiddleware.Extensions
 @using BDTest.Test
 @using Microsoft.AspNetCore.Http.Extensions
@@ -59,31 +58,31 @@
     </div>
 
     <div class="tile is-ancestor" id="summary-boxes-others">
-            <div class="tile is-parent @pointerClassIfSummaryPage" onclick="@MakeUrl(allScenariosUri.WithQueryParameter("filterByStatus",StatusConstants.Success))">
+            <div class="tile is-parent @pointerClassIfSummaryPage" onclick="@MakeUrl(allScenariosUri.WithQueryParameter("filterByStatus",Status.Passed.ToString()))">
                 <article class="tile is-child box notification is-success has-text-centered">
                     <p class="subtitle">Passed</p>
                     <p class="title">@passed</p>
                 </article>
             </div>
-            <div class="tile is-parent @pointerClassIfSummaryPage" onclick="@MakeUrl(allScenariosUri.WithQueryParameter("filterByStatus",StatusConstants.Skipped))">
+            <div class="tile is-parent @pointerClassIfSummaryPage" onclick="@MakeUrl(allScenariosUri.WithQueryParameter("filterByStatus",Status.Skipped.ToString()))">
                 <article class="tile is-child box notification is-warning has-text-centered">
                     <p class="subtitle">Skipped</p>
                     <p class="title">@skipped</p>
                 </article>
             </div>
-            <div class="tile is-parent @pointerClassIfSummaryPage" onclick="@MakeUrl(allScenariosUri.WithQueryParameter("filterByStatus",StatusConstants.NotImplemented))">
+            <div class="tile is-parent @pointerClassIfSummaryPage" onclick="@MakeUrl(allScenariosUri.WithQueryParameter("filterByStatus",Status.NotImplemented.ToString()))">
                 <article class="tile is-child box notification is-warning has-text-centered">
                     <p class="subtitle">Not Implemented</p>
                     <p class="title">@notImplemented</p>
                 </article>
             </div>
-            <div class="tile is-parent @pointerClassIfSummaryPage" onclick="@MakeUrl(allScenariosUri.WithQueryParameter("filterByStatus",StatusConstants.Inconclusive))">
+            <div class="tile is-parent @pointerClassIfSummaryPage" onclick="@MakeUrl(allScenariosUri.WithQueryParameter("filterByStatus",Status.Inconclusive.ToString()))">
                 <article class="tile is-child box notification is-warning has-text-centered">
                     <p class="subtitle">Inconclusive</p>
                     <p class="title">@inconclusive</p>
                 </article>
             </div>
-            <div class="tile is-parent @pointerClassIfSummaryPage" onclick="@MakeUrl(allScenariosUri.WithQueryParameter("filterByStatus",StatusConstants.Failed))">
+            <div class="tile is-parent @pointerClassIfSummaryPage" onclick="@MakeUrl(allScenariosUri.WithQueryParameter("filterByStatus",Status.Failed.ToString()))">
                 <article class="tile is-child box notification is-danger has-text-centered">
                     <p class="subtitle">Failed</p>
                     <p class="title">@failed</p>
