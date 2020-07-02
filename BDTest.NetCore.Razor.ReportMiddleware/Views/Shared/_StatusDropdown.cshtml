@@ -106,6 +106,7 @@
         setElementVisible(story.parentElement.parentElement.parentElement);
       }
       for (let scenarioGroup of scenarioGroups) {
+        scenarioGroup.classList.add("no-pointer");
         scenarioGroup.querySelector(".button").disabled = true;
         setElementVisible(scenarioGroup);
       }
@@ -122,6 +123,7 @@
           
         let scenarioGroups = document.querySelectorAll(".scenario-group");
         for (let scenarioGroup of scenarioGroups) {
+          scenarioGroup.classList.remove("no-pointer");
           scenarioGroup.querySelector(".button").disabled = false;
           setElementVisible(scenarioGroup);
         }
@@ -145,6 +147,7 @@
           
         let scenarioGroups = document.querySelectorAll(".scenario-group");
         for (let scenarioGroup of scenarioGroups) {
+          scenarioGroup.classList.remove("no-pointer");
           scenarioGroup.querySelector(".button").disabled = false;
           setElementInvisible(scenarioGroup);
         }

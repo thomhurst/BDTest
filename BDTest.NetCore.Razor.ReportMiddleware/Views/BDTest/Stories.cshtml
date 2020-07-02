@@ -102,8 +102,12 @@
                             @await Html.PartialAsync("_SummaryGraphics", new SummaryViewModel {Scenarios = scenariosForThisStory})
                         </div>
 
-                        <div class="mt-4 mb-6 container invisible pie-chart-large" id="story-summary-pie-chart-times-@storyIndex">
-                            @await Html.PartialAsync("_TestTimesPieChart", new TestTimesPieChartViewModel {Scenarios = scenariosForThisStory, StoryIndex = storyIndex})
+                        <div class="mt-4 mb-6 container invisible story-chart-container" id="story-summary-pie-chart-times-@storyIndex">
+                            @await Html.PartialAsync("_TestTimesPieChart", new TestTimesPieChartViewModel
+                            {
+                                Scenarios = scenariosForThisStory, 
+                                StoryIndex = storyIndex
+                            })
                         </div>
 
                         <table class="table is-fullwidth mt-4">

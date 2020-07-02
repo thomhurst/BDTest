@@ -14,6 +14,15 @@ function isInViewport(elem) {
     );
 }
 
+function getRandomColor() {
+    let letters = '0123456789ABCDEF'.split('');
+    let color = '#';
+    for (let i = 0; i < 6; i++ ) {
+        color += letters[Math.floor(Math.random() * 16)];
+    }
+    return color;
+}
+
 function showSnackbar(text) {
     // Get the snackbar DIV
     let snackbar = document.getElementById("snackbar");

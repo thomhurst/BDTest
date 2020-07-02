@@ -16,22 +16,9 @@
     </div>
 }
 
-<canvas id="myChart-@Model.StoryIndex" width="400" height="400"></canvas>
-
-    @* <div class="container has-text-right mb-6"> *@
-    @*     <p class="is-size-7">* Amounts are in milliseconds</p> *@
-    @* </div> *@
+<canvas id="myChart-@Model.StoryIndex"></canvas>
 
 <script>
-
-function getRandomColor() {
-            let letters = '0123456789ABCDEF'.split('');
-            let color = '#';
-            for (let i = 0; i < 6; i++ ) {
-                color += letters[Math.floor(Math.random() * 16)];
-            }
-            return color;
-                }
               
 var ctx = document.getElementById('myChart-@Model.StoryIndex').getContext('2d');
 data = {
@@ -50,7 +37,6 @@ data = {
             ]
     }],
 
-    // These labels appear in the legend and in the tooltips when hovering different arcs
     labels: [
         @foreach (var scenario in scenarios)
         {
