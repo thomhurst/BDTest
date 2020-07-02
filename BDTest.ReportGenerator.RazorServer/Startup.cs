@@ -2,10 +2,10 @@ using BDTest.NetCore.Razor.ReportMiddleware.Extensions;
 using BDTest.NetCore.Razor.ReportMiddleware.Interfaces;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Net.Http.Headers;
 
 namespace BDTest.ReportGenerator.RazorServer
 {
@@ -47,9 +47,15 @@ namespace BDTest.ReportGenerator.RazorServer
             }
 
             app.UseHttpsRedirection();
-            app.UseStaticFiles();
-
-            app.UseMiddleware<StaticFileMiddleware>();
+            app.UseStaticFiles(new StaticFileOptions
+            {
+                OnPrepareResponse = ctx =>
+                {
+                    const int durationInSeconds = 60 * 60 * 24;
+                    ctx.Context.Response.Headers[HeaderNames.CacheControl] =
+                        "public,max-age=" + durationInSeconds;
+                }
+            });
 
             app.UseRouting();
 
