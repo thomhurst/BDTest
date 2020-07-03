@@ -48,7 +48,7 @@
                         @scenarioExceptions.Count()
                     </td>
                     <td class="is-vcentered has-text-centered">
-                        @scenarioExceptions.First().ExceptionMessage.Message
+                        @scenarioExceptions.First().ExceptionMessage.TypeName: @scenarioExceptions.First().ExceptionMessage.Message
                     </td>
                     <td class="is-vcentered">
                         <a href="~/bdtest/report/@Model.Id/stories?scenarioId=@scenarioExceptions.First().TestGuid">

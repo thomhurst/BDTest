@@ -759,7 +759,7 @@ namespace BDTest.ReportGenerator.Builders
 
             return new HtmlTag("details").Append(
                 new HtmlTag("summary").Style("margin-left", "25px").AddClass("small-font").AppendText("Exception"),
-                new HtmlTag("pre").AddClass("exception").AppendText(step.Exception.StackTrace ?? "")
+                new HtmlTag("pre").AddClass("exception").AppendText(step.Exception.AsString ?? "")
             );
         }
 
