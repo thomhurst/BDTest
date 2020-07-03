@@ -43,7 +43,7 @@ namespace BDTest.Tests.Fixtures
 
                 var scenario = BDTestUtil.GetScenarios().First();
 
-                Assert.That(scenario.Steps[0].Exception.Contains("BDTest Exception!"));
+                Assert.That(scenario.Steps[0].Exception.Message.Contains("BDTest Exception!"));
 
                 Assert.That(scenario.Steps[0].Status, Is.EqualTo(status));
                 Assert.That(scenario.Steps[1].Status, Is.EqualTo(Status.Inconclusive));
@@ -104,7 +104,7 @@ namespace BDTest.Tests.Fixtures
 
                 var scenario = BDTestUtil.GetScenarios().First();
 
-                Assert.That(scenario.Steps[3].Exception.Contains("BDTest Exception!"));
+                Assert.That(scenario.Steps[3].Exception.Message.Contains("BDTest Exception!"));
 
                 Assert.That(scenario.Steps[0].Status, Is.EqualTo(Status.Passed));
                 Assert.That(scenario.Steps[1].Status, Is.EqualTo(Status.Passed));

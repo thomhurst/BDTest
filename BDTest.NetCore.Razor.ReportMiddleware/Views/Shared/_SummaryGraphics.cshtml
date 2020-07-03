@@ -2,7 +2,7 @@
 @using BDTest.NetCore.Razor.ReportMiddleware.Extensions
 @using BDTest.Test
 @using Microsoft.AspNetCore.Http.Extensions
-@model BDTest.NetCore.Razor.ReportMiddleware.Models.SummaryViewModel
+@model BDTest.NetCore.Razor.ReportMiddleware.Models.ViewModels.SummaryViewModel
 @{
     var total = Model.Scenarios.Count;
     var passed = Model.Scenarios.Count(scenario => scenario.Status == Status.Passed);

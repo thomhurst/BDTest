@@ -35,7 +35,7 @@ namespace BDTest.Test
         [JsonProperty]
         public string TestStartupInformation { get; set; }
 
-        [JsonIgnore] public string Exception => Steps.Select(step => step.Exception).FirstOrDefault();
+        [JsonIgnore] public ExceptionWrapper Exception => Steps.FirstOrDefault(step => step.Exception != null)?.Exception;
         
         [JsonProperty] public string TearDownOutput { get; set; }
         

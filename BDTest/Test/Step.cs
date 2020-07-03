@@ -42,7 +42,7 @@ namespace BDTest.Test
         public Status Status { get; private set; } = Status.Inconclusive;
 
         [JsonProperty]
-        public string Exception { get; private set; }
+        public ExceptionWrapper Exception { get; private set; }
 
         private bool _alreadyExecuted;
 
@@ -135,7 +135,7 @@ namespace BDTest.Test
                 catch (NotImplementedException e)
                 {
                     Status = Status.NotImplemented;
-                    Exception = e.ToString();
+                    Exception = new ExceptionWrapper(e);
                     throw;
                 }
                 catch (Exception e) when (BDTestSettings.CustomExceptionSettings.SuccessExceptionTypes.Contains(e.GetType()))
@@ -151,7 +151,7 @@ namespace BDTest.Test
                 catch (Exception e)
                 {
                     Status = Status.Failed;
-                    Exception = e.ToString();
+                    Exception = new ExceptionWrapper(e);
                     throw;
                 }
                 finally

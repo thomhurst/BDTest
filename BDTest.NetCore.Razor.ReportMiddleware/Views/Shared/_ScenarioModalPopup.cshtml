@@ -1,8 +1,8 @@
 @using BDTest.NetCore.Razor.ReportMiddleware.Extensions
-@using BDTest.NetCore.Razor.ReportMiddleware.Models
+@using BDTest.NetCore.Razor.ReportMiddleware.Models.ViewModels
 @using BDTest.Test
 @using Microsoft.AspNetCore.Http.Extensions
-@model BDTest.NetCore.Razor.ReportMiddleware.Models.ScenarioModalViewModel
+@model BDTest.NetCore.Razor.ReportMiddleware.Models.ViewModels.ScenarioModalViewModel
 
 @{
     var shareUrl = new Uri(Context.Request.GetEncodedUrl()).WithQueryParameter("scenarioId", Model.Scenario.Guid);
@@ -83,7 +83,7 @@
                                                     <div class="message-header">
                                                         <p>Exception</p>
                                                     </div>
-                                                    <pre class="message-body has-text-left">@step.Exception.Trim()</pre>
+                                                    <pre class="message-body has-text-left">@step.Exception.StackTrace.Trim()</pre>
                                                 </article>
                                             </div>
                                         }

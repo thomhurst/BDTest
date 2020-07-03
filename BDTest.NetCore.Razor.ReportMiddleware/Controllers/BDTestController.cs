@@ -4,7 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using BDTest.Maps;
 using BDTest.NetCore.Razor.ReportMiddleware.Interfaces;
-using BDTest.NetCore.Razor.ReportMiddleware.Models;
+using BDTest.NetCore.Razor.ReportMiddleware.Models.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 
@@ -71,6 +71,13 @@ namespace BDTest.NetCore.Razor.ReportMiddleware.Controllers
         public Task<IActionResult> Timings([FromRoute] string id)
         {
             return GetView(id, model => View("TestTimesSummary", model));
+        }
+        
+        [HttpGet]
+        [Route("report/{id}/top-defects")]
+        public Task<IActionResult> TopDefects([FromRoute] string id)
+        {
+            return GetView(id, model => View("TopDefects", model));
         }
 
         [HttpGet]

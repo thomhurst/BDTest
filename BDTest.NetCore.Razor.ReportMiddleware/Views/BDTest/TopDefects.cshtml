@@ -1,0 +1,64 @@
+@using BDTest.NetCore.Razor.ReportMiddleware.Models
+@model BDTest.Maps.BDTestOutputModel
+
+@{
+    ViewBag.Title = "Test Times";
+    Layout = "_Layout";
+    
+    var exceptionsGrouped = new GroupedExceptions(Model.Scenarios).GroupedScenarioExceptions;
+}
+
+<section class="hero is-info">
+    <div class="hero-body">
+        <div class="container">
+            <div class="columns is-vcentered">
+                <div class="column">
+                    <h1 class="title">
+                        Top Defects
+                    </h1>
+                    <h2 class="subtitle">
+                        Here are the <strong>top defects</strong> from your tests:
+                    </h2>
+                </div>
+
+                <div class="column">
+                    @await Html.PartialAsync("_PreviousNextReportButtons", Model)
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="section">
+    <div class="container">
+        <table class="table is-fullwidth">
+            <thead>
+            <tr>
+                <th class="has-text-centered">Count</th>
+                <th class="has-text-centered">Exception</th>
+                <th></th>
+            </tr>
+            </thead>
+            <tbody>
+            
+            @foreach (var scenarioExceptions in exceptionsGrouped)
+            {
+                <tr>
+                    <td class="is-vcentered has-text-centered">
+                        @scenarioExceptions.Count()
+                    </td>
+                    <td class="is-vcentered has-text-centered">
+                        @scenarioExceptions.First().ExceptionMessage.Message
+                    </td>
+                    <td class="is-vcentered">
+                        <a href="~/bdtest/report/@Model.Id/stories?scenarioId=@scenarioExceptions.First().TestGuid">
+                            <button class="button is-fullwidth is-dark is-outlined pointer is-rounded">View Report</button>
+                        </a>
+                    </td>
+                </tr>
+            }
+
+            </tbody>
+        </table>
+    </div>
+</section>

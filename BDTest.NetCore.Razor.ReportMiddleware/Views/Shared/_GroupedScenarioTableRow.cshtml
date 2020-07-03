@@ -2,8 +2,9 @@
 @using BDTest.NetCore.Razor.ReportMiddleware.Constants
 @using BDTest.NetCore.Razor.ReportMiddleware.Extensions
 @using BDTest.NetCore.Razor.ReportMiddleware.Models
+@using BDTest.NetCore.Razor.ReportMiddleware.Models.ViewModels
 @using BDTest.Test
-@model BDTest.NetCore.Razor.ReportMiddleware.Models.GroupedScenarioViewModel
+@model BDTest.NetCore.Razor.ReportMiddleware.Models.ViewModels.GroupedScenarioViewModel
 
 @{ var testTimer = BDTestUtil.GetTestTimer(Model.Scenarios); }
 

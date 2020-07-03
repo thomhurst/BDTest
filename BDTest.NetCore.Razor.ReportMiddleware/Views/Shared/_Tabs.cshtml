@@ -1,3 +1,5 @@
+@using BDTest.Maps
+@using BDTest.NetCore.Razor.ReportMiddleware.Extensions
 @using BDTest.NetCore.Razor.ReportMiddleware.Interfaces
 @using Microsoft.AspNetCore.Http.Extensions
 @using Microsoft.Extensions.DependencyInjection
@@ -9,8 +11,13 @@
     var storiesIsActive = Context.Request.Path.Value?.ToLowerInvariant().Contains("stories") == true ? "is-active" : "";
     var allScenariosIsActive = Context.Request.Path.Value?.ToLowerInvariant().Contains("all-scenarios") == true ? "is-active" : "";
     var timingsIsActive = Context.Request.Path.Value?.ToLowerInvariant().Contains("timings") == true ? "is-active" : "";
+    var topDefectsIsActive = Context.Request.Path.Value?.ToLowerInvariant().Contains("top-defects") == true ? "is-active" : "";
     var invisibleClass = string.IsNullOrEmpty(id) ? "invisible" : string.Empty;
     var customTabsProvider = ServiceProvider.GetService<IBDTestCustomTabsProvider>();
+    
+    BDTestOutputModel currentTestReport = string.IsNullOrEmpty(id) ? null : await ServiceProvider.GetService<IBDTestDataStore>().GetTestData(id);
+    var metrics = new OutputMetrics(currentTestReport);
+    var anyExceptions = metrics.AnyExceptions;
 }
 
 <div class="tabs is-right mb-0">
@@ -35,6 +42,14 @@
             <li class="@timingsIsActive">
                 <a href="~/bdtest/report/@id/timings">
                     <span>Timings</span>
+                </a>
+            </li>
+        }
+        @if (anyExceptions)
+        {
+            <li class="@topDefectsIsActive">
+                <a href="~/bdtest/report/@id/top-defects">
+                    <span>Top Defects</span>
                 </a>
             </li>
         }

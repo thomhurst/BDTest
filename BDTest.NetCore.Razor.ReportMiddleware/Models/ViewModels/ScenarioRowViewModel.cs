@@ -1,6 +1,6 @@
 using BDTest.Test;
 
-namespace BDTest.NetCore.Razor.ReportMiddleware.Models
+namespace BDTest.NetCore.Razor.ReportMiddleware.Models.ViewModels
 {
     public class ScenarioRowViewModel
     {
