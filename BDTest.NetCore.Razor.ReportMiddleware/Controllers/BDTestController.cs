@@ -21,6 +21,13 @@ namespace BDTest.NetCore.Razor.ReportMiddleware.Controllers
             _dataController = dataController;
             _logger = logger;
         }
+        
+        [HttpGet]
+        [Route("ping")]
+        public IActionResult Ping()
+        {
+            return Ok();
+        }
 
         [HttpPost]
         [Route("data")]

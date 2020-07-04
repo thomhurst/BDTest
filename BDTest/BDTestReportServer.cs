@@ -14,12 +14,20 @@ namespace BDTest
     {
         public static async Task<Uri> SendDataAndGetReportUri(Uri serverAddress)
         {
-            serverAddress = new UriBuilder(serverAddress)
+            var httpClient = new HttpClient();
+            
+            var pingUri = new UriBuilder(serverAddress)
+            {
+                Path = "bdtest/ping"
+            }.Uri;
+
+            // Result ignored - This is just to make sure the server is warmed up. If not, it'll warm it up!
+            await httpClient.GetAsync(pingUri);
+            
+            var uploadUri = new UriBuilder(serverAddress)
             {
                 Path = "bdtest/data"
             }.Uri;
-
-            var httpClient = new HttpClient();
 
             var scenarios = TestHolder.Scenarios.Values.ToList();
             
@@ -38,13 +46,14 @@ namespace BDTest
             
             var httpRequestMessage = new HttpRequestMessage
             {
-                RequestUri = serverAddress,
+                RequestUri = uploadUri,
                 Method = HttpMethod.Post,
                 Content = new StringContent(stringContent, Encoding.UTF8, "application/json")
             };
             
             var response = await httpClient.SendAsync(httpRequestMessage);
 
+            // The upload will redirect to the generated report URI
             return response.EnsureSuccessStatusCode().RequestMessage.RequestUri;
         }
     }
