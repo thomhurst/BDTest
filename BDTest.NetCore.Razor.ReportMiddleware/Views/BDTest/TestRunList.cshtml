@@ -1,4 +1,5 @@
 @using BDTest.NetCore.Razor.ReportMiddleware.Extensions
+@using BDTest.Test
 @model List<BDTest.NetCore.Razor.ReportMiddleware.Models.TestRunSummary>
 
 @{
@@ -121,6 +122,13 @@
 
             @foreach (var record in Model)
             {
+                var status = record.Status.ToString();
+                if (record.Status == Status.Failed)
+                {
+                    status += $" ({record.FailedCount})";
+                }
+                
+                
                 <tr class="off-white-bg-color">
                     <td class="has-text-centered is-vcentered">
                         <input name="checkbox" type="checkbox" id="@record.RecordId"/>
@@ -130,7 +138,7 @@
                     <td class="has-text-centered is-vcentered">@record.DateTime.ToStringForReport()</td>
                     <td class="has-text-centered is-vcentered">
                         <span class="@record.Status.GetCssColourValueForStatus() tag px-5 is-medium">
-                            @record.Status.AsString()
+                            @status
                         </span>
                     </td>
                     <td class=" is-vcentered">
