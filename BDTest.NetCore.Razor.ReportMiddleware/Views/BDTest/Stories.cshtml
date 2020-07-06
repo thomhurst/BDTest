@@ -117,7 +117,10 @@
 
                     <div class="box mb-0 rounded-bottom-corners" id="story-@storyIndex">
                         <div class="has-text-right scenarios-buttons-row">
-                            @await Html.PartialAsync("_CollapseExpandGroupedScenariosButtons", $"story-{storyIndex}")
+                            @if (scenariosGroupedByScenarioText.Any(scenarios => scenarios.Count() > 1))
+                            {
+                                @await Html.PartialAsync("_CollapseExpandGroupedScenariosButtons", $"story-{storyIndex}")
+                            }
                             <button class="button toggle-hide pointer is-rounded" toggle-alternative-text="Hide Summary" element-id-to-hide="story-summary-@storyIndex">Show Summary</button>
                             <button class="button toggle-hide pointer is-rounded" toggle-alternative-text="Hide Timings Chart" element-id-to-hide="story-summary-pie-chart-times-@storyIndex">Show Timings Chart</button>
                         </div>
@@ -127,11 +130,7 @@
                         </div>
 
                         <div class="mt-4 mb-6 container invisible story-chart-container" id="story-summary-pie-chart-times-@storyIndex">
-                            @await Html.PartialAsync("_TestTimesPieChart", new TestTimesPieChartViewModel
-                            {
-                                Scenarios = scenariosForThisStory, 
-                                StoryIndex = storyIndex
-                            })
+                            @await Html.PartialAsync("_TestTimesPieChart", new TestTimesPieChartViewModel { Scenarios = scenariosForThisStory, StoryIndex = storyIndex })
                         </div>
 
                         <table class="table is-fullwidth mt-4">
