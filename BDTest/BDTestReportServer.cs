@@ -53,8 +53,9 @@ namespace BDTest
             
             var response = await httpClient.SendAsync(httpRequestMessage);
 
-            // The upload will redirect to the generated report URI
-            return response.EnsureSuccessStatusCode().RequestMessage.RequestUri;
+            var content = await response.EnsureSuccessStatusCode().Content.ReadAsStringAsync();
+            
+            return new Uri(content);
         }
     }
 }
