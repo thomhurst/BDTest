@@ -5,7 +5,9 @@
     ViewBag.Title = "Test Times";
     Layout = "_Layout";
     
-    var exceptionsGrouped = new GroupedExceptions(Model.Scenarios).GroupedScenarioExceptions;
+    var exceptionsGrouped = new GroupedExceptions(Model.Scenarios)
+        .GroupedScenarioExceptions
+        .Take(10);
 }
 
 <section class="hero is-info">
@@ -33,7 +35,7 @@
     <div class="container">
         <table class="table is-fullwidth">
             <thead>
-            <tr>
+            <tr class="off-white-bg-color">
                 <th class="has-text-centered">Count</th>
                 <th class="has-text-centered">Exception</th>
                 <th></th>
@@ -43,12 +45,12 @@
             
             @foreach (var scenarioExceptions in exceptionsGrouped)
             {
-                <tr>
+                <tr class="off-white-bg-color">
                     <td class="is-vcentered has-text-centered">
-                        @scenarioExceptions.Count()
+                        <span class="title">@scenarioExceptions.Count()</span>
                     </td>
                     <td class="is-vcentered has-text-centered">
-                        @scenarioExceptions.First().ExceptionMessage.TypeName: @scenarioExceptions.First().ExceptionMessage.Message
+                        <pre class="off-white-bg-color">@scenarioExceptions.First().ExceptionMessage.TypeName: @scenarioExceptions.First().ExceptionMessage.Message.Trim()</pre>
                     </td>
                     <td class="is-vcentered">
                         <a href="~/bdtest/report/@Model.Id/stories?scenarioId=@scenarioExceptions.First().TestGuid">

@@ -7,10 +7,9 @@ namespace BDTest.NetCore.Razor.ReportMiddleware.Models
     public class GroupedExceptions
     {
         private readonly List<ScenarioException> _scenarioExceptions = new List<ScenarioException>();
-        public IList<IGrouping<string, ScenarioException>> GroupedScenarioExceptions => _scenarioExceptions
+        public IEnumerable<IGrouping<string, ScenarioException>> GroupedScenarioExceptions => _scenarioExceptions
             .GroupBy(scenario => scenario.ExceptionMessage.Message)
-            .OrderByDescending(scenarios => scenarios.Count())
-            .ToList();
+            .OrderByDescending(scenarios => scenarios.Count());
 
         public GroupedExceptions(List<Scenario> scenarios)
         {

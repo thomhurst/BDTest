@@ -14,8 +14,15 @@ namespace BDTest.Test
         [JsonProperty]
         public string TypeName { get; set; }
 
+        private string _asString;
         [JsonProperty] 
-        public string AsString { get; set; }
+        public string AsString {
+            get
+            {
+                return _asString ?? $"{TypeName}: {Message}";
+            }
+            set => _asString = value;
+        }
 
 
         [JsonConstructor]
