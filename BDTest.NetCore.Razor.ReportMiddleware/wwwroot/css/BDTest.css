@@ -2,7 +2,7 @@ span, div, button {
     overflow-wrap: break-word
 }
 
-body, .navbar {
+html, body, .navbar, .off-white-bg-color {
     background-color: #FFFAFA;
 }
 
@@ -112,6 +112,10 @@ hr.rounded {
 
 .rounded-top-corners {
     border-radius:50px 50px 0 0;
+}
+
+.rounded-bottom-corners {
+    border-radius:0 0 50px 50px ;
 }
 
 .rounded-all-corners {

@@ -115,7 +115,7 @@
                         </div>
                     </section>
 
-                    <div class="box mb-0" id="story-@storyIndex">
+                    <div class="box mb-0 rounded-bottom-corners" id="story-@storyIndex">
                         <div class="has-text-right scenarios-buttons-row">
                             @await Html.PartialAsync("_CollapseExpandGroupedScenariosButtons", $"story-{storyIndex}")
                             <button class="button toggle-hide pointer is-rounded" toggle-alternative-text="Hide Summary" element-id-to-hide="story-summary-@storyIndex">Show Summary</button>

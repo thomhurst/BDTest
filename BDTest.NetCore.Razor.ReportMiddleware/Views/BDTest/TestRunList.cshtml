@@ -108,7 +108,7 @@
         <table class="table is-fullwidth">
 
             <thead>
-            <tr>
+            <tr class="off-white-bg-color">
                 <th class="has-text-centered">Select</th>
                 <th class="has-text-centered">Tag</th>
                 <th class="has-text-centered">Environment</th>
@@ -121,7 +121,7 @@
 
             @foreach (var record in Model)
             {
-                <tr>
+                <tr class="off-white-bg-color">
                     <td class="has-text-centered is-vcentered">
                         <input name="checkbox" type="checkbox" id="@record.RecordId"/>
                     </td>
