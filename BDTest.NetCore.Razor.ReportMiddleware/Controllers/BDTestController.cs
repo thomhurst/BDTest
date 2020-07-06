@@ -45,7 +45,7 @@ namespace BDTest.NetCore.Razor.ReportMiddleware.Controllers
 
             await _dataController.StoreData(bdTestOutputModel, id);
 
-            return Ok(Url.Action("Summary", "BDTest", new { id }));
+            return Ok(Url.ActionLink("Summary", "BDTest", new { id }));
         }
 
         [HttpGet]
