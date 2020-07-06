@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using BDTest.Maps;
 using BDTest.NetCore.Razor.ReportMiddleware.Interfaces;
 using BDTest.NetCore.Razor.ReportMiddleware.Models.ViewModels;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 
@@ -23,12 +24,14 @@ namespace BDTest.NetCore.Razor.ReportMiddleware.Controllers
         }
         
         [HttpGet]
+        [AllowAnonymous]
         [Route("ping")]
         public IActionResult Ping()
         {
             return Ok();
         }
 
+        [AllowAnonymous]
         [HttpPost]
         [Route("data")]
         public async Task<IActionResult> Index([FromBody] BDTestOutputModel bdTestOutputModel)
@@ -145,6 +148,7 @@ namespace BDTest.NetCore.Razor.ReportMiddleware.Controllers
             return View("MultipleTestRunsFlakiness", foundReports);
         }
 
+        [AllowAnonymous]
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
         public IActionResult Error()
         {
