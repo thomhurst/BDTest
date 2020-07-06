@@ -71,9 +71,9 @@
 
             @{ 
                 var scenariosGroupedByScenarioText = Model.Scenarios.GroupBy(scenario => scenario.GetScenarioText())
-                   .OrderBy(group => group.GetTotalStatus().GetOrder())
-                   .ThenBy(group => group.Key)
-                   .ToList();
+                    .OrderBy(group => group.GetTotalStatus().GetOrder())
+                    .ThenBy(group => group.Key)
+                    .ToList();
             }
             
             @{ var scenarioIndex = new ReferenceInt(0); }
@@ -90,6 +90,8 @@
 
             </tbody>
         </table>
+        
+        @await Html.PartialAsync("_WowSuchEmpty")
     </div>
 
 

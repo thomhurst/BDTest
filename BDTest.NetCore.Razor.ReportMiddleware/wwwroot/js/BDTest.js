@@ -98,6 +98,32 @@ function collapseExpandGroupedScenarios(containerId, expand) {
     }
 }
 
+function checkIfFilterHiddenAllStories() {
+    let elements
+    
+    if(document.URL.includes("/stories")) {
+        elements = document.querySelectorAll(".story-header");
+    } else {
+        elements = document.querySelectorAll(".scenario-row");
+    }
+    
+    let anyVisible = false;
+    
+    for (const el of elements) {
+        if(el.offsetParent !== null) {
+            anyVisible = true;
+            break;
+        }
+    }
+    
+    let emptyMessage = document.getElementById("wow-such-empty");
+    if(!anyVisible) {
+        setElementVisible(emptyMessage);
+    } else {
+        setElementInvisible(emptyMessage);
+    }
+}
+
 onDomLoaded(function() {
     let toggleElements = document.getElementsByClassName("toggle-hide");
 

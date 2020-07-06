@@ -103,17 +103,21 @@
       }
       
       for (let story of stories) {
-        setElementVisible(story.parentElement.parentElement.parentElement);
+        setElementVisible(story.parentElement.parentElement.parentElement.parentElement.parentElement);
         setElementVisible(story.parentElement.parentElement.parentElement.parentElement.parentElement.nextElementSibling);
       }
+      
       for (let scenarioGroup of scenarioGroups) {
         scenarioGroup.classList.add("no-pointer");
         scenarioGroup.querySelector(".button").disabled = true;
         setElementVisible(scenarioGroup);
       }
+      
       for (let row of rows) {
         setElementVisible(row);
       }
+      
+      checkIfFilterHiddenAllStories();
     }
     
     function makeAllVisible() {
@@ -124,7 +128,7 @@
     
         let stories = document.querySelectorAll(".story-header");
         for (let story of stories) {
-          setElementVisible(story.parentElement.parentElement.parentElement);
+          setElementVisible(story.parentElement.parentElement.parentElement.parentElement.parentElement);
         }
           
         let scenarioGroups = document.querySelectorAll(".scenario-group");
@@ -153,7 +157,7 @@
             
         let stories = document.querySelectorAll(".story-header");
         for (let story of stories) {
-          setElementInvisible(story.parentElement.parentElement.parentElement);
+          setElementInvisible(story.parentElement.parentElement.parentElement.parentElement.parentElement);
         }
           
         let scenarioGroups = document.querySelectorAll(".scenario-group");
