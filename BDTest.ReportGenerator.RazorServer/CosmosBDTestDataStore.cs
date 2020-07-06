@@ -38,8 +38,15 @@ namespace BDTest.ReportGenerator.RazorServer
         
         public async Task<BDTestOutputModel> GetTestData(string id)
         {
-            var item = await _testRecordContainer.ReadItemAsync<BDTestOutputModel>(id, new PartitionKey(id));
-            return item.Resource;
+            try
+            {
+                var item = await _testRecordContainer.ReadItemAsync<BDTestOutputModel>(id, new PartitionKey(id));
+                return item.Resource;
+            }
+            catch (CosmosException e) when(e.StatusCode == HttpStatusCode.NotFound)
+            {
+                return null;
+            }
         }
 
         public async Task StoreTestData(string id, BDTestOutputModel data)

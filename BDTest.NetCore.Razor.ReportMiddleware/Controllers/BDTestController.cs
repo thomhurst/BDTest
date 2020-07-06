@@ -118,7 +118,7 @@ namespace BDTest.NetCore.Razor.ReportMiddleware.Controllers
 
             if (!foundReports.Any())
             {
-                return NotFound("No reports found");
+                return View("NotFoundMultiple");
             }
 
             return View("MultipleTestRunsTimes", foundReports);
@@ -139,7 +139,7 @@ namespace BDTest.NetCore.Razor.ReportMiddleware.Controllers
 
             if (!foundReports.Any())
             {
-                return NotFound("No reports found");
+                return View("NotFoundMultiple");
             }
 
             return View("MultipleTestRunsFlakiness", foundReports);
@@ -157,7 +157,7 @@ namespace BDTest.NetCore.Razor.ReportMiddleware.Controllers
             
             if (model == null)
             {
-                return NotFound($"Report Not Found: {id}");
+                return View("NotFoundSingle", id);
             }
 
             ViewBag.Id = id;
