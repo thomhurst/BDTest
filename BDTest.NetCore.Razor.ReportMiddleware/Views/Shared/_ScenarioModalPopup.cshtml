@@ -21,7 +21,7 @@
                 }
                 @if (Model.NextScenario != null)
                 {
-                    <button class="button @Model.Scenario.Status.GetCssColourValueForStatus() is-small mx-1 is-rounded" onclick="openModal('scenario-modal-@Model.NextScenario.Guid');">Next</button>            
+                    <button class="button @Model.Scenario.Status.GetCssColourValueForStatus() is-small mx-1 is-rounded" onclick="openModal('scenario-modal-@Model.NextScenario.Guid');">Next</button>
                 }
 
                 <button class="button @Model.Scenario.Status.GetCssColourValueForStatus() is-small is-rounded mx-3">
@@ -29,10 +29,15 @@
                 </button>
                 <button class="delete is-medium @Model.Scenario.Status.GetCssColourValueForStatus()-background-color" aria-label="close"></button>
             </nav>
-            
         </header>
+        
         <section class="modal-card-body">
             <div>
+                @foreach (var testInformationAttribute in Model.Scenario.CustomTestInformation)
+                {
+                    <h6 class="subtitle is-6">@testInformationAttribute.Information</h6>
+                }
+                
                 <table class="table is-fullwidth">
                     <thead>
                     <tr>
@@ -46,7 +51,7 @@
                     <tbody>
 
                     @await Html.PartialAsync("_SetupTeardownOutputRow", new SetupTeardownOutputViewModel("Test Setup Info", Model.Scenario.TestStartupInformation))
-                    
+
                     @foreach (var step in Model.Scenario.Steps)
                     {
                         <tr>
@@ -98,7 +103,7 @@
                             <td class="has-text-centered is-vcentered">@step.EndTime.ToStringForReport()</td>
                         </tr>
                     }
-                    
+
                     @await Html.PartialAsync("_SetupTeardownOutputRow", new SetupTeardownOutputViewModel("Test Teardown Info", Model.Scenario.TearDownOutput))
 
                     </tbody>
