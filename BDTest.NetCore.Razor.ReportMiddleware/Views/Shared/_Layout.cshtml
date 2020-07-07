@@ -13,8 +13,9 @@
 </head>
 <body class="has-navbar-fixed-top">
 @await Html.PartialAsync("_NavBarHeader")
-@await Html.PartialAsync("_Tabs")
-<div id="main-body">
+@await Html.PartialAsync("_SideMenu")
+@* @await Html.PartialAsync("_Tabs") *@
+<div id="main-body" class="main-body">
     @RenderBody()
 </div>
 <div id="snackbar" class="button is-info is-rounded no-pointer">Toast!</div>

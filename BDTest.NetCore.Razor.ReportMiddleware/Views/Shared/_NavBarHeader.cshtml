@@ -7,15 +7,22 @@
 }
 
 <nav class="navbar is-fixed-top" role="navigation" aria-label="main navigation">
+
     <div class="navbar-brand">
+        <a role="button" id="burger-sidebar-icon" class="burger is-active" onclick="toggleSidebar()">
+            <span aria-hidden="true"></span>
+            <span aria-hidden="true"></span>
+            <span aria-hidden="true"></span>
+        </a>
+
         <a class="navbar-item" href="~/bdtest/report/test-runs">
             <h1 class="title">BDTest</h1>
         </a>
-        
+
         <a role="button" data-target="navMenu" class="navbar-burger" aria-label="menu" aria-expanded="false">
-          <span aria-hidden="true"></span>
-          <span aria-hidden="true"></span>
-          <span aria-hidden="true"></span>
+            <span aria-hidden="true"></span>
+            <span aria-hidden="true"></span>
+            <span aria-hidden="true"></span>
         </a>
     </div>
 
@@ -40,11 +47,6 @@
                     </a>
                 </div>
             </div>
-            
-            
-            <a class="navbar-item" href="~/bdtest/report/test-runs">
-                All Test Runs
-            </a>
         </div>
 
         <div class="navbar-end">

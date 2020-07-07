@@ -1,0 +1,105 @@
+@using BDTest.Maps
+@using BDTest.NetCore.Razor.ReportMiddleware.Extensions
+@using BDTest.NetCore.Razor.ReportMiddleware.Interfaces
+@using Microsoft.AspNetCore.Http.Extensions
+@using Microsoft.Extensions.DependencyInjection
+@{ var id = ViewBag.Id; }
+@inject IServiceProvider ServiceProvider
+
+@{
+    var summaryIsActive = Context.Request.Path.Value?.ToLowerInvariant().Contains("summary") == true ? "is-active" : "";
+    var storiesIsActive = Context.Request.Path.Value?.ToLowerInvariant().Contains("stories") == true ? "is-active" : "";
+    var allScenariosIsActive = Context.Request.Path.Value?.ToLowerInvariant().Contains("all-scenarios") == true ? "is-active" : "";
+    var timingsIsActive = Context.Request.Path.Value?.ToLowerInvariant().Contains("timings") == true ? "is-active" : "";
+    var topDefectsIsActive = Context.Request.Path.Value?.ToLowerInvariant().Contains("top-defects") == true ? "is-active" : "";
+    var invisibleClass = string.IsNullOrEmpty(id) ? "invisible" : string.Empty;
+    var customTabsProvider = ServiceProvider.GetService<IBDTestCustomTabsProvider>();
+    
+    BDTestOutputModel currentTestReport = string.IsNullOrEmpty(id) ? null : await ServiceProvider.GetService<IBDTestDataStore>().GetTestData(id);
+    var metrics = new OutputMetrics(currentTestReport);
+    var anyExceptions = metrics.AnyExceptions;
+}
+
+<div class="box menu-box off-white-bg-color" id="sidebar">
+    <aside class="menu my-6">
+        <p class="menu-label">
+            Navigation
+        </p>
+        
+        <ul class="menu-list">
+            <li>
+                <a class="navbar-item" href="~/bdtest/report/test-runs">
+                    Home / Test Runs
+                </a>
+            </li>
+        </ul>
+        
+        @if (!string.IsNullOrEmpty(id))
+        {
+            <p class="menu-label">
+                This Test Report
+            </p>
+
+            <ul class="menu-list">
+                <li class="@summaryIsActive">
+                    <a href="~/bdtest/report/@id/summary">
+                        <span>Summary</span>
+                    </a>
+                </li>
+                <li class="@storiesIsActive">
+                    <a href="~/bdtest/report/@id/stories">
+                        <span>Stories</span>
+                    </a>
+                </li>
+                <li class="@allScenariosIsActive">
+                    <a href="~/bdtest/report/@id/all-scenarios">
+                        <span>All Scenarios</span>
+                    </a>
+                </li>
+                <li class="@timingsIsActive">
+                    <a href="~/bdtest/report/@id/timings">
+                        <span>Timings</span>
+                    </a>
+                </li>
+                @if (anyExceptions)
+                {
+                    <li class="@topDefectsIsActive">
+                        <a href="~/bdtest/report/@id/top-defects">
+                            <span>Top Defects</span>
+                        </a>
+                    </li>
+                }
+            </ul>
+        }
+        <p class="menu-label">
+            Actions
+        </p>
+        <ul class="menu-list">
+            <li>
+                @{
+                    var url = Context.Request.GetEncodedUrl();
+                }
+                <a onclick="copyToClipboard('@url');">
+                    <span>Copy URL to Clipboard</span>
+                </a>
+            </li>
+        </ul>
+        @if (customTabsProvider != null)
+        {
+            <p class="menu-label">
+                Custom Links
+            </p>
+            <ul class="menu-list">
+                @foreach (var customTabData in customTabsProvider.GetCustomLinks())
+                {
+                    <li>
+                        <a href="@customTabData.Url" target="_blank">
+                            <span>@customTabData.Text</span>
+                        </a>
+                    </li>
+                }
+            </ul>
+        }
+    </aside>
+</div>
+

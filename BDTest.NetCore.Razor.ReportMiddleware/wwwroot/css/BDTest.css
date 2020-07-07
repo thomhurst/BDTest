@@ -176,3 +176,69 @@ hr.rounded {
     visibility: visible;
     opacity: 1;
 }
+
+.menu-box {
+    position: fixed;
+    top: 0;
+    height: 100vh;
+    width: 250px;
+    /*display: flex;*/
+    /*align-items: center;*/
+}
+
+.main-body {
+    margin-left: 250px;
+}
+
+/* Burger Sidebar Menu */
+
+.burger {
+    color: #4a4a4a;
+    cursor: pointer;
+    display: block;
+    height: 3.25rem;
+    position: relative;
+    width: 3.25rem;
+    margin-left: auto;
+}
+
+.burger span {
+    background-color: currentColor;
+    display: block;
+    height: 1px;
+    left: calc(50% - 8px);
+    position: absolute;
+    transform-origin: center;
+    transition-duration: 86ms;
+    transition-property: background-color, opacity, transform;
+    transition-timing-function: ease-out;
+    width: 16px;
+}
+
+.burger span:nth-child(1) {
+    top: calc(50% - 6px);
+}
+
+.burger span:nth-child(2) {
+    top: calc(50% - 1px);
+}
+
+.burger span:nth-child(3) {
+    top: calc(50% + 4px);
+}
+
+.burger:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+.burger.is-active span:nth-child(1) {
+    transform: translateY(5px) rotate(45deg);
+}
+
+.burger.is-active span:nth-child(2) {
+    opacity: 0;
+}
+
+.burger.is-active span:nth-child(3) {
+    transform: translateY(-5px) rotate(-45deg);
+}
