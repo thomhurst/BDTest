@@ -20,7 +20,7 @@ namespace BDTest.NetCore.Razor.ReportMiddleware.Models
             {
                 if (_url == null)
                 {
-                    return "#";
+                    return null;
                 }
 
                 if (_url.IsAbsoluteUri)
