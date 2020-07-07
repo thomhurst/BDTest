@@ -25,7 +25,12 @@
         <td class="has-text-centered is-vcentered">
             <span class="@Model.Scenarios.GetTotalStatus().GetCssColourValueForStatus() tag px-5 is-medium invisible scenario-group-status">@Model.Scenarios.GetTotalStatus().AsString()</span>
         </td>
-        <td class="has-text-centered is-vcentered">@testTimer.ElapsedTime.ToPrettyFormat()</td>
+        <td class="has-text-centered is-vcentered">
+            <div class="tooltip">
+                @testTimer.ElapsedTime.ToString()
+                <span class="tooltiptext">@testTimer.ElapsedTime.ToPrettyFormat()</span>
+            </div>
+        </td>
         <td class="has-text-centered is-vcentered">@testTimer.TestsStartedAt.ToStringForReport()</td>
         <td class="has-text-centered is-vcentered">@testTimer.TestsFinishedAt.ToStringForReport()</td>
     </tr>

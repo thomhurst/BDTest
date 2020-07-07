@@ -16,7 +16,12 @@
     <td class="has-text-centered is-vcentered">
         <span class="@Model.Scenario.Status.GetCssColourValueForStatus() tag px-5 is-medium">@Model.Scenario.Status.AsString()</span>
     </td>
-    <td class="has-text-centered is-vcentered">@Model.Scenario.TimeTaken.ToPrettyFormat()</td>
+    <td class="has-text-centered is-vcentered">
+        <div class="tooltip">
+            @Model.Scenario.TimeTaken.ToString()
+            <span class="tooltiptext">@Model.Scenario.TimeTaken.ToPrettyFormat()</span>
+        </div>
+    </td>
     <td class="has-text-centered is-vcentered">@Model.Scenario.StartTime.ToStringForReport()</td>
     <td class="has-text-centered is-vcentered">@Model.Scenario.EndTime.ToStringForReport()</td>
 </tr>

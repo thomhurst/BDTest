@@ -56,10 +56,30 @@
                         <td class="has-text-centered is-vcentered">
                             <button class="button is-fullwidth is-info no-pointer is-rounded">@scenarioTimingModel.ScenarioName (@scenarioTimingModel.ScenarioCount)</button>
                         </td>
-                        <td class="has-text-centered is-vcentered">@scenarioTimingModel.Fastest.ToPrettyFormat()</td>
-                        <td class="has-text-centered is-vcentered">@scenarioTimingModel.Average.ToPrettyFormat()</td>
-                        <td class="has-text-centered is-vcentered">@scenarioTimingModel.Slowest.ToPrettyFormat()</td>
-                        <td class="has-text-centered is-vcentered">@scenarioTimingModel.Difference.ToPrettyFormat()</td>
+                        <td class="has-text-centered is-vcentered">
+                            <div class="tooltip">
+                                @scenarioTimingModel.Fastest.ToString()
+                                <span class="tooltiptext">@scenarioTimingModel.Fastest.ToPrettyFormat()</span>
+                            </div>
+                        </td>
+                        <td class="has-text-centered is-vcentered">
+                            <div class="tooltip">
+                                @scenarioTimingModel.Average.ToString()
+                                <span class="tooltiptext">@scenarioTimingModel.Average.ToPrettyFormat()</span>
+                            </div>
+                        </td>
+                        <td class="has-text-centered is-vcentered">
+                            <div class="tooltip">
+                                @scenarioTimingModel.Slowest.ToString()
+                                <span class="tooltiptext">@scenarioTimingModel.Slowest.ToPrettyFormat()</span>
+                            </div>
+                        </td>
+                        <td class="has-text-centered is-vcentered">
+                            <div class="tooltip">
+                                @scenarioTimingModel.Difference.ToPrettyFormat()
+                                <span class="tooltiptext">@scenarioTimingModel.Difference.ToString()</span>
+                            </div>
+                        </td>
                     </tr>
                 }
                 </tbody>

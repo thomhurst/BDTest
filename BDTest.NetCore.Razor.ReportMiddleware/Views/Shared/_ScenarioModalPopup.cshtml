@@ -17,17 +17,17 @@
             <nav class="level">
                 @if (Model.LastScenario != null)
                 {
-                    <button class="button @Model.Scenario.Status.GetCssColourValueForStatus() is-small mx-1 is-rounded" onclick="openModal('scenario-modal-@Model.LastScenario.Guid');">Previous</button>
+                    <button class="button @Model.Scenario.Status.GetCssColourValueForStatus() mx-1 is-rounded" onclick="openModal('scenario-modal-@Model.LastScenario.Guid');">Previous</button>
                 }
                 @if (Model.NextScenario != null)
                 {
-                    <button class="button @Model.Scenario.Status.GetCssColourValueForStatus() is-small mx-1 is-rounded" onclick="openModal('scenario-modal-@Model.NextScenario.Guid');">Next</button>
+                    <button class="button @Model.Scenario.Status.GetCssColourValueForStatus() mx-1 is-rounded" onclick="openModal('scenario-modal-@Model.NextScenario.Guid');">Next</button>
                 }
 
                 <button class="button @Model.Scenario.Status.GetCssColourValueForStatus() is-small is-rounded mx-3">
                     <img src="~/_content/BDTest.NetCore.Razor.ReportMiddleware/icons/share-white-18dp.svg" class="pointer" alt="Share" onclick="copyToClipboard('@shareUrl.ToString()')"/>
                 </button>
-                <button class="delete is-medium @Model.Scenario.Status.GetCssColourValueForStatus()-background-color" aria-label="close"></button>
+                <button class="delete is-large @Model.Scenario.Status.GetCssColourValueForStatus()-background-color" aria-label="close"></button>
             </nav>
         </header>
         
@@ -98,7 +98,12 @@
                             <td class="has-text-centered is-vcentered">
                                 <span class="@step.Status.GetCssColourValueForStatus() tag px-5 is-medium">@step.Status.AsString()</span>
                             </td>
-                            <td class="has-text-centered is-vcentered">@step.TimeTaken.ToPrettyFormat()</td>
+                            <td class="has-text-centered is-vcentered">
+                                <div class="tooltip">
+                                    @step.TimeTaken.ToString()
+                                    <span class="tooltiptext">@step.TimeTaken.ToPrettyFormat()</span>
+                                </div>
+                            </td>
                             <td class="has-text-centered is-vcentered">@step.StartTime.ToStringForReport()</td>
                             <td class="has-text-centered is-vcentered">@step.EndTime.ToStringForReport()</td>
                         </tr>
