@@ -12,11 +12,11 @@ namespace BDTest.Test
     public class TestDetails : BuildableTest
     {
         [JsonProperty]
-        public string CallerMember;
+        public string CallerMember { get; set; }
         [JsonProperty]
-        public string CallerFile { get; }
+        public string CallerFile { get; set; }
         [JsonProperty]
-        public string TestId { get; }
+        public string TestId { get; set; }
         [JsonProperty]
         public IEnumerable<string> Parameters { get; set; }
 
