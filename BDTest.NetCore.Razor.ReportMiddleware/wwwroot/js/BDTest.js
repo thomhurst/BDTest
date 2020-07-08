@@ -23,6 +23,27 @@ function getRandomColor() {
     return color;
 }
 
+function getUrlWithAppendedParameter(paramName, paramValue) {
+    let url = window.location.href;
+    if (url.indexOf(paramName + "=") >= 0)
+    {
+        let prefix = url.substring(0, url.indexOf(paramName));
+        let suffix = url.substring(url.indexOf(paramName));
+        suffix = suffix.substring(suffix.indexOf("=") + 1);
+        suffix = (suffix.indexOf("&") >= 0) ? suffix.substring(suffix.indexOf("&")) : "";
+        url = prefix + paramName + "=" + paramValue + suffix;
+    }
+    else
+    {
+        if (url.indexOf("?") < 0)
+            url += "?" + paramName + "=" + paramValue;
+        else
+            url += "&" + paramName + "=" + paramValue;
+    }
+    
+    return url;
+}
+
 function showSnackbar(text) {
     // Get the snackbar DIV
     let snackbar = document.getElementById("snackbar");
@@ -181,6 +202,40 @@ onDomLoaded(function () {
             });
         });
     }
+});
+
+onDomLoaded(function () {
+    // Get all dropdowns on the page that aren't hoverable.
+    const dropdowns = document.querySelectorAll('.dropdown');
+
+    // If user clicks outside dropdown, close it.
+    document.addEventListener('click', function() {
+        closeDropdown();
+    });
+
+    for (let dropdown of dropdowns) {
+        dropdown.addEventListener('click', function(e) {
+            dropdown.classList.toggle('is-active');
+            e.stopPropagation();
+        });   
+    }
+
+    /*
+     * Close dropdowns by removing `is-active` class.
+     */
+    function closeDropdown() {
+        for (let dropdown of dropdowns) {
+            dropdown.classList.remove('is-active');
+        }
+    }
+
+    // Close dropdowns if ESC pressed
+    document.addEventListener('keydown', function (event) {
+        let e = event || window.event;
+        if (e.key === 'Esc' || e.key === 'Escape') {
+            closeDropdown();
+        }
+    });
 });
 
 function toggleSidebar() {

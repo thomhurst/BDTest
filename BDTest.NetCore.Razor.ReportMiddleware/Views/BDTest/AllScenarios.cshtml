@@ -1,4 +1,6 @@
 @using System.Web
+@using BDTest
+@using BDTest.NetCore.Razor.ReportMiddleware.Constants
 @using BDTest.NetCore.Razor.ReportMiddleware.Extensions
 @using BDTest.NetCore.Razor.ReportMiddleware.Models
 @using BDTest.NetCore.Razor.ReportMiddleware.Models.ViewModels
@@ -6,11 +8,56 @@
 @using Microsoft.AspNetCore.Http.Extensions
 @model BDTest.Maps.BDTestOutputModel
 
+@functions {
+    private static IOrderedEnumerable<IGrouping<string, Scenario>> SetOrder(string orderByQueryParameter,
+        IOrderedEnumerable<IGrouping<string, Scenario>> scenariosGroupedByScenarioTextEnumerable)
+    {
+        switch (orderByQueryParameter)
+        {
+            case OrderConstants.Name:
+                scenariosGroupedByScenarioTextEnumerable =
+                    scenariosGroupedByScenarioTextEnumerable.OrderBy(scenarios => scenarios.Key);
+                break;
+            case OrderConstants.Duration:
+                scenariosGroupedByScenarioTextEnumerable =
+                    scenariosGroupedByScenarioTextEnumerable.OrderByDescending(scenarios =>
+                        scenarios.Select(scenario => scenario.TimeTaken).Max());
+                break;
+            case OrderConstants.Status:
+                // Defaults to status. We don't need to do anything :)
+                break;
+            case OrderConstants.DateAscending:
+                scenariosGroupedByScenarioTextEnumerable = scenariosGroupedByScenarioTextEnumerable.OrderBy(scenarios =>
+                    BDTestUtil.GetTestTimer(scenarios.ToList()).TestsStartedAt);
+                break;
+            case OrderConstants.DateDescending:
+                scenariosGroupedByScenarioTextEnumerable =
+                    scenariosGroupedByScenarioTextEnumerable.OrderByDescending(scenarios =>
+                        BDTestUtil.GetTestTimer(scenarios.ToList()).TestsStartedAt);
+                break;
+        }
+
+        return scenariosGroupedByScenarioTextEnumerable;
+    }
+}
+
 @{
     ViewBag.Title = "Stories";
     Layout = "_Layout";
     
     var filterByQueryParameter = HttpUtility.ParseQueryString(new Uri(Context.Request.GetEncodedUrl()).Query).Get("filterByStatus");
+    var orderByQueryParameter = HttpUtility.ParseQueryString(new Uri(Context.Request.GetEncodedUrl()).Query).Get("order");
+
+    var scenariosGroupedByScenarioTextEnumerable = Model.Scenarios.GroupBy(scenario => scenario.GetScenarioText())
+        .OrderBy(group => group.GetTotalStatus().GetOrder())
+        .ThenBy(group => group.Key);
+
+    if (orderByQueryParameter != null)
+    {
+        scenariosGroupedByScenarioTextEnumerable = SetOrder(orderByQueryParameter, scenariosGroupedByScenarioTextEnumerable);
+    }
+    
+    var scenariosGroupedByScenarioText = scenariosGroupedByScenarioTextEnumerable.ToList();
 }
 
 @if (filterByQueryParameter != null)
@@ -47,8 +94,9 @@
     <div class="box" id="all-scenarios-container">
         <div class="buttons is-right">
             @await Html.PartialAsync("_StatusDropdown")
+            @await Html.PartialAsync("_OrderByDropdown")
             <div class="scenarios-buttons-row">
-                @await Html.PartialAsync("_CollapseExpandGroupedScenariosButtons", $"all-scenarios-container")
+                @await Html.PartialAsync("_CollapseExpandGroupedScenariosButtons", "all-scenarios-container")
                 @* <button class="button toggle-hide pointer" toggle-alternative-text="Hide Summary" element-id-to-hide="summary">Show Summary</button> *@
             </div>
         </div>
@@ -69,13 +117,6 @@
             </thead>
             <tbody>
 
-            @{ 
-                var scenariosGroupedByScenarioText = Model.Scenarios.GroupBy(scenario => scenario.GetScenarioText())
-                    .OrderBy(group => group.GetTotalStatus().GetOrder())
-                    .ThenBy(group => group.Key)
-                    .ToList();
-            }
-            
             @{ var scenarioIndex = new ReferenceInt(0); }
             @{ var groupedScenariosCount = new ReferenceInt(0); }
             @foreach (var groupedScenarios in scenariosGroupedByScenarioText)

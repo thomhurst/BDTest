@@ -48,6 +48,9 @@
 
   function filterByStatus(status) {
     
+    let url = getUrlWithAppendedParameter("filterByStatus", status);
+    window.history.pushState({} , '', url);
+    
     let mainDropdownButton = document.getElementById("dropdown-main-button");
     
     if(status === '@StatusConstants.All') {
@@ -177,33 +180,4 @@
           setElementInvisible(scenarioButtonsRow);
         }
     }
-
-// Get all dropdowns on the page that aren't hoverable.
-
-  const dropdown = document.querySelector('.dropdown');
-  
-  // If user clicks outside dropdown, close it.
-  document.addEventListener('click', function() {
-    closeDropdown();
-  });
-
-  dropdown.addEventListener('click', function(e) {
-    dropdown.classList.toggle('is-active');
-    e.stopPropagation();
-  });
-
-  /*
-   * Close dropdowns by removing `is-active` class.
-   */
-  function closeDropdown() {
-    dropdown.classList.remove('is-active');
-  }
-  
-  // Close dropdowns if ESC pressed
-  document.addEventListener('keydown', function (event) {
-    let e = event || window.event;
-    if (e.key === 'Esc' || e.key === 'Escape') {
-      closeDropdown();
-    }
-  });
 </script>
