@@ -26,7 +26,7 @@ data = {
         data: [
             @foreach (var scenario in scenarios)
                     {
-                        @scenario.TimeTaken.TotalMilliseconds@:,
+                        @((long)scenario.TimeTaken.TotalMilliseconds)@:,
                     }
             ],
             backgroundColor: [
@@ -56,9 +56,22 @@ var myPieChart = new Chart(ctx, {
             yAxes: [{
               scaleLabel: {
                 labelString: 'Milliseconds'
-              }
+              },
+              ticks: {
+                      // Include a dollar sign in the ticks
+                      callback: function(value, index, values) {
+                          return value + "ms";
+                      }
+                  }
             }]
-          }  
+          },
+        tooltips: {
+            callbacks: {
+                label: function(tooltipItem, data) {
+                  return data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index] + "ms";
+                }
+            }
+        }
     }
 })
 </script>
