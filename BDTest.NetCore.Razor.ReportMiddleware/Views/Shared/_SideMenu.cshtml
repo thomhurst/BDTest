@@ -11,7 +11,6 @@
     
     BDTestOutputModel currentTestReport = string.IsNullOrEmpty(id) ? null : await ServiceProvider.GetService<IBDTestDataStore>().GetTestData(id);
     var metrics = new OutputMetrics(currentTestReport);
-    var anyExceptions = metrics.AnyExceptions;
 }
 
 <div class="box menu-box off-white-bg-color" id="sidebar">
@@ -55,11 +54,20 @@
                         <span>Timings</span>
                     </a>
                 </li>
-                @if (anyExceptions)
+                @if (metrics.AnyExceptions)
                 {
                     <li>
                         <a class="@GetIsActive("/top-defects")" href="~/bdtest/report/@id/top-defects">
                             <span>Top Defects</span>
+                        </a>
+                    </li>
+                }
+                
+                @if (metrics.AnyWarnings)
+                {
+                    <li>
+                        <a class="@GetIsActive("/warnings")" href="~/bdtest/report/@id/warnings">
+                            <span>Warnings</span>
                         </a>
                     </li>
                 }

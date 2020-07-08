@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using BDTest.Maps;
 using BDTest.Test;
 
@@ -53,7 +54,11 @@ namespace BDTest.NetCore.Razor.ReportMiddleware.Extensions
                     AnyExceptions = true;
                 }
             }
+
+            AnyWarnings = bdTestOutputModel.NotRun.Any();
         }
+
+        public bool AnyWarnings { get; set; }
 
         public bool AnyExceptions { get; }
 

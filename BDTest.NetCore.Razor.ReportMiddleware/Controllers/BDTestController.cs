@@ -89,6 +89,13 @@ namespace BDTest.NetCore.Razor.ReportMiddleware.Controllers
         {
             return GetView(id, model => View("TopDefects", model));
         }
+        
+        [HttpGet]
+        [Route("report/{id}/warnings")]
+        public Task<IActionResult> Warnings([FromRoute] string id)
+        {
+            return GetView(id, model => View("Warnings", model));
+        }
 
         [HttpGet]
         [Route("/")]

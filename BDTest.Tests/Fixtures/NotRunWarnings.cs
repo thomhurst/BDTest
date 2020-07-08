@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Threading.Tasks;
 using BDTest.Attributes;
 using BDTest.ReportGenerator;
 using BDTest.Test;
@@ -18,6 +19,12 @@ namespace BDTest.Tests.Fixtures
         public void Setup()
         {
             TestResetHelper.ResetData();
+        }
+
+        [OneTimeTearDown]
+        public async Task SendReportData()
+        {
+            await BDTestReportServer.SendDataAndGetReportUri(new Uri("https://localhost:44329"));
         }
 
         [Test, Order(4)]
