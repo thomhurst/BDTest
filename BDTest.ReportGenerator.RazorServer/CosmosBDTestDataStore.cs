@@ -74,7 +74,7 @@ namespace BDTest.ReportGenerator.RazorServer
 
             // Only keep the last 100 records
             var recordsToSave = records
-                .OrderByDescending(record => record.DateTime)
+                .OrderByDescending(record => record.StartedAtDateTime)
                 .Take(100)
                 .ToList();
 
@@ -119,7 +119,7 @@ namespace BDTest.ReportGenerator.RazorServer
                 // Ignored - Just means our collection that we initialised is still empty!
             }
 
-            return records.OrderByDescending(record => record.DateTime).ToArray();
+            return records.OrderByDescending(record => record.StartedAtDateTime).ToArray();
         }
     }
 

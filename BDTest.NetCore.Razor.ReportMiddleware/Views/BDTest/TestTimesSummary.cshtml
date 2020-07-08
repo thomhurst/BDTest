@@ -31,12 +31,9 @@
 </section>
 
 <section class="section">
-    <div class="container page-chart-container">
+    <div class="container">
 
-        @await Html.PartialAsync("_TestTimesPieChart", new TestTimesPieChartViewModel
-        {
-            Scenarios = Model.Scenarios
-        })
+        @await Html.PartialAsync("_TestTimesPieChart", new TestTimesPieChartViewModel { Scenarios = Model.Scenarios })
 
-    </div>
+        </div>
 </section>

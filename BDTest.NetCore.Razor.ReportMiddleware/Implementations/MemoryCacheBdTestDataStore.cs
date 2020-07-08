@@ -38,7 +38,7 @@ namespace BDTest.NetCore.Razor.ReportMiddleware.Implementations
                 recordDateTimeModels.AddRange(recordDateTimeModelsAsObject as IEnumerable<TestRunSummary> ?? Array.Empty<TestRunSummary>());
             }
 
-            return Task.FromResult(recordDateTimeModels.OrderByDescending(record => record.DateTime).ToArray());
+            return Task.FromResult(recordDateTimeModels.OrderByDescending(record => record.StartedAtDateTime).ToArray());
         }
 
         public Task StoreTestData(string id, BDTestOutputModel data)

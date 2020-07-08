@@ -1,4 +1,3 @@
-using System;
 using System.Linq;
 using BDTest.Maps;
 using BDTest.NetCore.Razor.ReportMiddleware.Controllers;
@@ -15,11 +14,14 @@ namespace BDTest.NetCore.Razor.ReportMiddleware.Extensions
         internal static TestRunSummary GetOverview(this BDTestOutputModel bdTestOutputModel)
         {
             return new TestRunSummary(bdTestOutputModel.Id, 
-                DateTime.Now, 
-                bdTestOutputModel.Scenarios.GetTotalStatus(), 
+                bdTestOutputModel.TestTimer.TestsStartedAt,
+                bdTestOutputModel.TestTimer.TestsFinishedAt,
+                bdTestOutputModel.Scenarios.GetTotalStatus(),
+                bdTestOutputModel.Scenarios.Count,
                 bdTestOutputModel.Scenarios.Count(scenario => scenario.Status == Status.Failed),
                 bdTestOutputModel.Tag, 
-                bdTestOutputModel.Environment);
+                bdTestOutputModel.Environment,
+                bdTestOutputModel.Version);
         }
 
         public static IMvcBuilder AddBdTestReportControllersAndViews(this IMvcBuilder mvcBuilder)

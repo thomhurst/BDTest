@@ -103,7 +103,7 @@ namespace BDTest.NetCore.Razor.ReportMiddleware.Controllers
         {
             var records = await _dataController.GetAllTestRunRecords();
 
-            return View("TestRunList", records.OrderByDescending(record => record.DateTime).ToList());
+            return View("TestRunList", records.OrderByDescending(record => record.StartedAtDateTime).ToList());
         }
 
         [HttpGet]
