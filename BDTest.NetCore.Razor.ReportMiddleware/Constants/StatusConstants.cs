@@ -1,6 +1,6 @@
 namespace BDTest.NetCore.Razor.ReportMiddleware.Constants
 {
-    public class StatusConstants
+    public static class StatusConstants
     {
         public const string All = "all";
     }

@@ -11,7 +11,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace BDTest.NetCore.Razor.ReportMiddleware.Implementations
 {
-    internal class DataController : IDataController
+    internal class DataController : IDataController, IDisposable
     {
         private readonly IMemoryCacheBdTestDataStore _memoryCacheBdTestDataStore;
         private readonly IBDTestDataStore _customDatastore;
@@ -89,6 +89,11 @@ namespace BDTest.NetCore.Razor.ReportMiddleware.Implementations
                     }
                 }
             }, CancellationToken.None);
+        }
+
+        public void Dispose()
+        {
+            _methodLock?.Dispose();
         }
     }
 }

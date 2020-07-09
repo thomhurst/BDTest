@@ -6,12 +6,6 @@ namespace BDTest.Output
 {
     public class TestTimer
     {
-        
-        [JsonConstructor]
-        public TestTimer()
-        {
-        }
-
         [JsonProperty] public DateTime TestsStartedAt { get; set; } = Process.GetCurrentProcess().StartTime;
 
         [JsonProperty] public DateTime TestsFinishedAt { get; set; } = DateTime.Now;

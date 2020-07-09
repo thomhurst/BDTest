@@ -17,7 +17,7 @@ function isInViewport(elem) {
 function getRandomColor() {
     let letters = '0123456789ABCDEF'.split('');
     let color = '#';
-    for (let i = 0; i < 6; i++ ) {
+    for (let i = 0; i < 6; i++) {
         color += letters[Math.floor(Math.random() * 16)];
     }
     return color;
@@ -25,22 +25,19 @@ function getRandomColor() {
 
 function getUrlWithAppendedParameter(paramName, paramValue) {
     let url = window.location.href;
-    if (url.indexOf(paramName + "=") >= 0)
-    {
+    if (url.indexOf(paramName + "=") >= 0) {
         let prefix = url.substring(0, url.indexOf(paramName));
         let suffix = url.substring(url.indexOf(paramName));
         suffix = suffix.substring(suffix.indexOf("=") + 1);
         suffix = (suffix.indexOf("&") >= 0) ? suffix.substring(suffix.indexOf("&")) : "";
         url = prefix + paramName + "=" + paramValue + suffix;
-    }
-    else
-    {
+    } else {
         if (url.indexOf("?") < 0)
             url += "?" + paramName + "=" + paramValue;
         else
             url += "&" + paramName + "=" + paramValue;
     }
-    
+
     return url;
 }
 
@@ -54,7 +51,9 @@ function showSnackbar(text) {
     snackbar.classList.add("show");
 
     // After 3 seconds, remove the show class from DIV
-    setTimeout(function(){ snackbar.classList.remove("show"); }, 3000);
+    setTimeout(function() {
+        snackbar.classList.remove("show");
+    }, 3000);
 }
 
 function toggleElementVisibility(element) {
@@ -74,7 +73,7 @@ function setElementInvisible(element) {
 }
 
 function toggleAlternativeText(element) {
-    if(element.hasAttribute("toggle-alternative-text")) {
+    if (element.hasAttribute("toggle-alternative-text")) {
         let alternativeText = element.getAttribute("toggle-alternative-text");
         let currentText = element.textContent;
 
@@ -88,11 +87,9 @@ function toggleIcon(element) {
     var toggleOnIconUrl = "/_content/BDTest.NetCore.Razor.ReportMiddleware/icons/toggle_on-24px.svg";
     var toggleOffIconUrl = "/_content/BDTest.NetCore.Razor.ReportMiddleware/icons/toggle_off-24px.svg";
 
-    if(element.src.includes(toggleOffIconUrl)) {
+    if (element.src.includes(toggleOffIconUrl)) {
         element.src = toggleOnIconUrl;
-    }
-
-    else if(element.src.includes(toggleOnIconUrl)) {
+    } else if (element.src.includes(toggleOnIconUrl)) {
         element.src = toggleOffIconUrl;
     }
 }
@@ -102,7 +99,7 @@ function collapseExpandGroupedScenarios(containerId, expand) {
 
     let groupedScenarios = container.getElementsByClassName("grouped-scenario-child");
     for (let groupedScenario of groupedScenarios) {
-        if(expand) {
+        if (expand) {
             setElementVisible(groupedScenario);
         } else {
             setElementInvisible(groupedScenario);
@@ -111,7 +108,7 @@ function collapseExpandGroupedScenarios(containerId, expand) {
 
     let groupedScenariosStatuses = container.getElementsByClassName("scenario-group-status");
     for (let groupedScenarioStatus of groupedScenariosStatuses) {
-        if(expand) {
+        if (expand) {
             setElementInvisible(groupedScenarioStatus);
         } else {
             setElementVisible(groupedScenarioStatus);
@@ -121,24 +118,24 @@ function collapseExpandGroupedScenarios(containerId, expand) {
 
 function checkIfFilterHiddenAllStories() {
     let elements
-    
-    if(document.URL.includes("/stories")) {
+
+    if (document.URL.includes("/stories")) {
         elements = document.querySelectorAll(".story-header");
     } else {
         elements = document.querySelectorAll(".scenario-row");
     }
-    
+
     let anyVisible = false;
-    
+
     for (const el of elements) {
-        if(el.offsetParent !== null) {
+        if (el.offsetParent !== null) {
             anyVisible = true;
             break;
         }
     }
-    
+
     let emptyMessage = document.getElementById("wow-such-empty");
-    if(!anyVisible) {
+    if (!anyVisible) {
         setElementVisible(emptyMessage);
     } else {
         setElementInvisible(emptyMessage);
@@ -154,7 +151,7 @@ onDomLoaded(function() {
     if ($navbarBurgers.length > 0) {
 
         // Add a click event on each of them
-        $navbarBurgers.forEach( el => {
+        $navbarBurgers.forEach(el => {
             el.addEventListener('click', () => {
 
                 // Get the target from the "data-target" attribute
@@ -187,24 +184,24 @@ onDomLoaded(function() {
     }
 })
 
-onDomLoaded(function () {
+onDomLoaded(function() {
     let scenarioGroupElements = document.querySelectorAll('tr[scenario-group]');
 
     for (let scenarioGroupElement of scenarioGroupElements) {
-        scenarioGroupElement.addEventListener("click", function () {
+        scenarioGroupElement.addEventListener("click", function() {
             let scenarioGroupId = scenarioGroupElement.getAttribute("scenario-group");
             let scenarioElementsInThatGroup = document.querySelectorAll('tr[parent-scenario-group="' + scenarioGroupId + '"]');
             let scenarioGroupStatus = scenarioGroupElement.querySelector('.scenario-group-status');
             toggleElementVisibility(scenarioGroupStatus);
 
-            Array.prototype.forEach.call (scenarioElementsInThatGroup, function (scenarioInGroup) {
+            Array.prototype.forEach.call(scenarioElementsInThatGroup, function(scenarioInGroup) {
                 toggleElementVisibility(scenarioInGroup);
             });
         });
     }
 });
 
-onDomLoaded(function () {
+onDomLoaded(function() {
     // Get all dropdowns on the page that aren't hoverable.
     const dropdowns = document.querySelectorAll('.dropdown');
 
@@ -217,7 +214,7 @@ onDomLoaded(function () {
         dropdown.addEventListener('click', function(e) {
             dropdown.classList.toggle('is-active');
             e.stopPropagation();
-        });   
+        });
     }
 
     /*
@@ -230,7 +227,7 @@ onDomLoaded(function () {
     }
 
     // Close dropdowns if ESC pressed
-    document.addEventListener('keydown', function (event) {
+    document.addEventListener('keydown', function(event) {
         let e = event || window.event;
         if (e.key === 'Esc' || e.key === 'Escape') {
             closeDropdown();
@@ -239,7 +236,7 @@ onDomLoaded(function () {
 });
 
 function toggleSidebar() {
-    if(document.getElementById("sidebar").classList.contains("invisible")) {
+    if (document.getElementById("sidebar").classList.contains("invisible")) {
         openSidebar()
     } else {
         closeSidebar()
@@ -269,7 +266,7 @@ function openModal(targetId) {
 
 function closeModals() {
     document.getElementById("main-body").classList.remove('is-clipped');
-    getAll('.modal').forEach(function ($el) {
+    getAll('.modal').forEach(function($el) {
         $el.classList.remove('is-active');
     });
 }
@@ -282,13 +279,13 @@ function getAll(selector) {
 
 onDomLoaded(function() {
 
-// Modals
+    // Modals
     let $modalButtons = getAll('.modal-link');
     let $modalCloses = getAll('.modal-background, .modal-close, .modal-card-head .delete, .modal-card-foot .button');
 
     if ($modalButtons.length > 0) {
-        $modalButtons.forEach(function ($el) {
-            $el.addEventListener('click', function () {
+        $modalButtons.forEach(function($el) {
+            $el.addEventListener('click', function() {
                 let target = $el.dataset.target;
                 openModal(target);
             });
@@ -296,14 +293,14 @@ onDomLoaded(function() {
     }
 
     if ($modalCloses.length > 0) {
-        $modalCloses.forEach(function ($el) {
-            $el.addEventListener('click', function () {
+        $modalCloses.forEach(function($el) {
+            $el.addEventListener('click', function() {
                 closeModals();
             });
         });
     }
 
-    document.addEventListener('keydown', function (event) {
+    document.addEventListener('keydown', function(event) {
         let e = event || window.event;
         if (e.keyCode === 27) {
             closeModals();
@@ -311,15 +308,17 @@ onDomLoaded(function() {
     });
 
 
-// Scroll to details when clicked
+    // Scroll to details when clicked
     let detailsElements = document.getElementsByTagName("details");
     for (let detailsElement of detailsElements) {
-        detailsElement.addEventListener('click', function () {
-            if(!detailsElement.hasAttribute("open")) {
-// Run on next loop after details element has expanded
+        detailsElement.addEventListener('click', function() {
+            if (!detailsElement.hasAttribute("open")) {
+                // Run on next loop after details element has expanded
                 setTimeout(function() {
-                    if(!isInViewport(detailsElement)) {
-                        detailsElement.scrollIntoView({ behavior: "smooth" });
+                    if (!isInViewport(detailsElement)) {
+                        detailsElement.scrollIntoView({
+                            behavior: "smooth"
+                        });
                     }
                 }, 0);
             }

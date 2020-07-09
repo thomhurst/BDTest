@@ -1,244 +1,264 @@
-span, div, button {
-    overflow-wrap: break-word
+span,
+div,
+button {
+	overflow-wrap: break-word
 }
 
-html, body, .navbar, .off-white-bg-color {
-    background-color: #FFFAFA;
+html,
+body,
+.navbar,
+.off-white-bg-color {
+	background-color: #FFFAFA;
 }
 
 .is-vcentered {
-    -webkit-box-align: center;
-    -ms-flex-align: center;
-    align-items: center;
+	-webkit-box-align: center;
+	-ms-flex-align: center;
+	align-items: center;
 }
 
 .story-chart-container {
-    width: 80%;
+	width: 80%;
 }
 
 .page-chart-container {
-    width: 80vw;
+	width: 80vw;
 }
 
-.pointer { cursor: pointer; }
+.pointer {
+	cursor: pointer;
+}
 
-.modal-card-wide { width: 98vw  }
+.modal-card-wide {
+	width: 98vw
+}
 
 .no-pointer {
-    cursor: default;
-    pointer-events: none;
+	cursor: default;
+	pointer-events: none;
 }
 
-.invisible { display: none !important; }
+.invisible {
+	display: none !important;
+}
 
 .mr-5half {
-    margin-right: 2.1rem!important;
+	margin-right: 2.1rem!important;
 }
 
 .is-danger-background-color {
-    background-color: #f14668 !important;
+	background-color: #f14668 !important;
 }
 
 .is-success-background-color {
-    background-color: #48c774 !important;
+	background-color: #48c774 !important;
 }
 
 .is-warning-background-color {
-    background-color: #ffdd57 !important;
+	background-color: #ffdd57 !important;
 }
 
 .is-danger-text-color {
-    color: #ffffff !important;
+	color: #ffffff !important;
 }
 
 .is-success-text-color {
-    color: #ffffff !important;
+	color: #ffffff !important;
 }
 
 .is-warning-text-color {
-    color: rgba(0,0,0,.7) !important;
+	color: rgba(0, 0, 0, .7) !important;
 }
 
 .half-width {
-    width: 50%;
+	width: 50%;
 }
 
 .quarter-width {
-    width: 25%;
+	width: 25%;
 }
 
 .center-horizontally {
-    margin-left: auto;
-    margin-right: auto;
+	margin-left: auto;
+	margin-right: auto;
 }
 
 hr.rounded {
-    border-top: 8px solid #bbb;
-    border-radius: 5px;
+	border-top: 8px solid #bbb;
+	border-radius: 5px;
 }
 
 .column.is-three-quarters {
-    flex: none;
-    width: 75%;
+	flex: none;
+	width: 75%;
 }
 
 .arrow {
-    border: solid white;
-    border-width: 0 3px 3px 0;
-    display: inline-block;
-    padding: 3px;
-    margin: 3px;
+	border: solid white;
+	border-width: 0 3px 3px 0;
+	display: inline-block;
+	padding: 3px;
+	margin: 3px;
 }
 
 .right {
-    transform: rotate(-45deg);
-    -webkit-transform: rotate(-45deg);
+	transform: rotate(-45deg);
+	-webkit-transform: rotate(-45deg);
 }
 
 .left {
-    transform: rotate(135deg);
-    -webkit-transform: rotate(135deg);
+	transform: rotate(135deg);
+	-webkit-transform: rotate(135deg);
 }
 
 .up {
-    transform: rotate(-135deg);
-    -webkit-transform: rotate(-135deg);
+	transform: rotate(-135deg);
+	-webkit-transform: rotate(-135deg);
 }
 
 .down {
-    transform: rotate(45deg);
-    -webkit-transform: rotate(45deg);
+	transform: rotate(45deg);
+	-webkit-transform: rotate(45deg);
 }
 
 .rounded-top-corners {
-    border-radius:50px 50px 0 0;
+	border-radius: 50px 50px 0 0;
 }
 
 .rounded-bottom-corners {
-    border-radius:0 0 50px 50px ;
+	border-radius: 0 0 50px 50px;
 }
 
 .rounded-all-corners {
-     border-radius:50px 50px 50px 50px;
- }
+	border-radius: 50px 50px 50px 50px;
+}
 
-*, .button {
-    font-family: 'Karla', sans-serif;
+*,
+.button {
+	font-family: 'Karla', sans-serif;
 }
 
 .title {
-    font-family: 'Roboto', sans-serif;
+	font-family: 'Roboto', sans-serif;
 }
+
 
 /* Tooltip container */
+
 .tooltip {
-    position: relative;
-    display: inline-block;
-    border-bottom: 1px dotted black; /* If you want dots under the hoverable text */
+	position: relative;
+	display: inline-block;
+	border-bottom: 1px dotted black;
+	/* If you want dots under the hoverable text */
 }
+
 
 /* Tooltip text */
+
 .tooltip .tooltiptext {
-    visibility: hidden;
-    width: 200px;
-    background-color: #555;
-    color: #fff;
-    text-align: center;
-    padding: 5px 0;
-    border-radius: 6px;
-
-    /* Position the tooltip text */
-    position: absolute;
-    z-index: 1;
-    bottom: 125%;
-    left: 50%;
-    margin-left: -60px;
-
-    /* Fade in tooltip */
-    opacity: 0;
-    transition: opacity 0.3s;
+	visibility: hidden;
+	width: 200px;
+	background-color: #555;
+	color: #fff;
+	text-align: center;
+	padding: 5px 0;
+	border-radius: 6px;
+	/* Position the tooltip text */
+	position: absolute;
+	z-index: 1;
+	bottom: 125%;
+	left: 50%;
+	margin-left: -60px;
+	/* Fade in tooltip */
+	opacity: 0;
+	transition: opacity 0.3s;
 }
+
 
 /* Tooltip arrow */
+
 .tooltip .tooltiptext::after {
-    content: "";
-    position: absolute;
-    top: 100%;
-    left: 50%;
-    margin-left: -5px;
-    border-width: 5px;
-    border-style: solid;
-    border-color: #555 transparent transparent transparent;
+	content: "";
+	position: absolute;
+	top: 100%;
+	left: 50%;
+	margin-left: -5px;
+	border-width: 5px;
+	border-style: solid;
+	border-color: #555 transparent transparent transparent;
 }
 
+
 /* Show the tooltip text when you mouse over the tooltip container */
+
 .tooltip:hover .tooltiptext {
-    visibility: visible;
-    opacity: 1;
+	visibility: visible;
+	opacity: 1;
 }
 
 .menu-box {
-    position: fixed;
-    top: 0;
-    height: 100vh;
-    width: 250px;
-    /*display: flex;*/
-    /*align-items: center;*/
+	position: fixed;
+	top: 0;
+	height: 100vh;
+	width: 250px;
+	/*display: flex;*/
+	/*align-items: center;*/
 }
 
 .main-body {
-    margin-left: 250px;
+	margin-left: 250px;
 }
+
 
 /* Burger Sidebar Menu */
 
 .burger {
-    color: #4a4a4a;
-    cursor: pointer;
-    display: block;
-    height: 3.25rem;
-    position: relative;
-    width: 3.25rem;
-    margin-left: auto;
+	color: #4a4a4a;
+	cursor: pointer;
+	display: block;
+	height: 3.25rem;
+	position: relative;
+	width: 3.25rem;
+	margin-left: auto;
 }
 
 .burger span {
-    background-color: currentColor;
-    display: block;
-    height: 1px;
-    left: calc(50% - 8px);
-    position: absolute;
-    transform-origin: center;
-    transition-duration: 86ms;
-    transition-property: background-color, opacity, transform;
-    transition-timing-function: ease-out;
-    width: 16px;
+	background-color: currentColor;
+	display: block;
+	height: 1px;
+	left: calc(50% - 8px);
+	position: absolute;
+	transform-origin: center;
+	transition-duration: 86ms;
+	transition-property: background-color, opacity, transform;
+	transition-timing-function: ease-out;
+	width: 16px;
 }
 
 .burger span:nth-child(1) {
-    top: calc(50% - 6px);
+	top: calc(50% - 6px);
 }
 
 .burger span:nth-child(2) {
-    top: calc(50% - 1px);
+	top: calc(50% - 1px);
 }
 
 .burger span:nth-child(3) {
-    top: calc(50% + 4px);
+	top: calc(50% + 4px);
 }
 
 .burger:hover {
-    background-color: rgba(0, 0, 0, 0.05);
+	background-color: rgba(0, 0, 0, 0.05);
 }
 
 .burger.is-active span:nth-child(1) {
-    transform: translateY(5px) rotate(45deg);
+	transform: translateY(5px) rotate(45deg);
 }
 
 .burger.is-active span:nth-child(2) {
-    opacity: 0;
+	opacity: 0;
 }
 
 .burger.is-active span:nth-child(3) {
-    transform: translateY(-5px) rotate(-45deg);
+	transform: translateY(-5px) rotate(-45deg);
 }

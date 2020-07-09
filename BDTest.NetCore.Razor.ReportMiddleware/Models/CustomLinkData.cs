@@ -4,7 +4,7 @@ namespace BDTest.NetCore.Razor.ReportMiddleware.Models
 {
     public class CustomLinkData
     {
-        private Uri _url;
+        private readonly Uri _url;
 
         public CustomLinkData(string text, Uri url)
         {
