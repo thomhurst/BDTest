@@ -36,9 +36,24 @@ namespace BDTest.NetCore.Razor.ReportMiddleware.Models
         public TimeSpan Fastest { get; set; }
     }
 
-    public struct ScenarioGroupKey
+    public struct ScenarioGroupKey : IEquatable<ScenarioGroupKey>
     {
         public string ScenarioText { get; set; }
         public string StoryText { get; set; }
+
+        public bool Equals(ScenarioGroupKey other)
+        {
+            return ScenarioText == other.ScenarioText && StoryText == other.StoryText;
+        }
+
+        public override bool Equals(object obj)
+        {
+            return obj is ScenarioGroupKey other && Equals(other);
+        }
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(ScenarioText, StoryText);
+        }
     }
 }
