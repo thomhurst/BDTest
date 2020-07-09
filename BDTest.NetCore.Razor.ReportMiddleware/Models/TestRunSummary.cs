@@ -61,7 +61,7 @@ namespace BDTest.NetCore.Razor.ReportMiddleware.Models
         [JsonProperty]
         public DateTime StartedAtDateTime { get; set; }
         [JsonProperty]
-        public DateTime FinishedAtDateTime { get; }
+        public DateTime FinishedAtDateTime { get; set; }
         [JsonProperty]
         public Status Status { get; set; }
         [JsonProperty]

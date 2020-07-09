@@ -106,11 +106,20 @@ namespace BDTest.NetCore.Razor.ReportMiddleware.Controllers
 
         [HttpGet]
         [Route("report/test-runs")]
-        public async Task<IActionResult> TestRuns([FromQuery] string reportIds)
+        public async Task<IActionResult> TestRuns()
         {
             var records = await _dataController.GetAllTestRunRecords();
 
             return View("TestRunList", records.OrderByDescending(record => record.StartedAtDateTime).ToList());
+        }
+        
+        [HttpGet]
+        [Route("report/trends")]
+        public async Task<IActionResult> Trends()
+        {
+            var records = await _dataController.GetAllTestRunRecords();
+
+            return View("Trends", records.OrderByDescending(record => record.StartedAtDateTime).ToList());
         }
 
         [HttpGet]

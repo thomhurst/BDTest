@@ -1,0 +1,180 @@
+@model List<BDTest.NetCore.Razor.ReportMiddleware.Models.TestRunSummary>
+
+@{
+    ViewBag.Title = "Trends";
+    Layout = "_Layout";
+}
+
+<section class="hero is-info">
+    <div class="hero-body">
+        <div class="container">
+            <div class="columns is-vcentered">
+                <div class="column">
+                    <h1 class="title">
+                        Trends
+                    </h1>
+                    <h2 class="subtitle">
+                        Here are some trends from your tests
+                    </h2>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="section">
+    <div class="container">
+        <div class="columns">
+            <div class="column is-half">
+                <h5 class="subtitle is-5">Durations</h5>
+                <canvas id="duration-trend-chart"></canvas>
+            </div>
+            <div class="column is-half">
+                <h5 class="subtitle is-5">Statuses</h5>
+                <canvas id="success-trend-chart"></canvas>
+            </div>
+            
+        </div>
+    </div>
+</section>
+
+
+@* Duration Trend Chart *@
+<script>
+              
+var ctx = document.getElementById('duration-trend-chart').getContext('2d');
+data = {
+    datasets: [{
+        data: [
+            @foreach (var timespan in Model.Select(model => model.FinishedAtDateTime - model.StartedAtDateTime))
+            {
+                @((long)timespan.TotalSeconds)@:,
+            }
+            ]
+    }],
+
+    labels: [
+        @for (var index = 0; index < Model.Count; index++)
+        {
+            @:"Test Run #@index",
+        }
+    ]
+}
+
+var myPieChart = new Chart(ctx, {
+    type: 'line',
+    data: data,
+    options: {
+        legend: {
+                    display: false
+                },
+        scales: {
+            yAxes: [{
+              scaleLabel: {
+                labelString: 'Seconds'
+              },
+              ticks: {
+                  beginAtZero:true,
+                  // Include a dollar sign in the ticks
+                  callback: function(value, index, values) {
+                      return value + "s";
+                  }
+                  }
+            }]
+          },
+        tooltips: {
+            callbacks: {
+                label: function(tooltipItem, data) {
+                  return data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index] + " seconds";
+                }
+            }
+        }
+    }
+})
+</script>
+
+
+@* Success Trend Chart *@
+<script>
+              
+var ctx = document.getElementById('success-trend-chart').getContext('2d');
+data = {
+    datasets: [ 
+        {
+            label: "Not Run",
+            data: [
+                @string.Join(",", Model.Select(summary => summary.Counts.NotRun))
+            ]    
+        },
+        {
+            label: "Failed",
+            data: [
+                @string.Join(",", Model.Select(summary => summary.Counts.Failed))
+            ]    
+        },
+        {
+            label: "Inconclusive",
+            data: [
+                @string.Join(",", Model.Select(summary => summary.Counts.Inconclusive))
+            ]    
+        },
+        {
+            label: "Not Implemented",
+            data: [
+                @string.Join(",", Model.Select(summary => summary.Counts.NotImplemented))
+            ]    
+        },
+        {
+            label: "Skipped",
+            data: [
+                @string.Join(",", Model.Select(summary => summary.Counts.Skipped))
+            ]    
+        },
+        {
+            label: "Passed",
+            data: [
+                @string.Join(",", Model.Select(summary => summary.Counts.Passed))
+            ]    
+        }
+        ],
+
+    labels: [
+        @for (var index = 0; index < Model.Count; index++)
+        {
+            @:"Test Run #@index",
+        }
+    ]
+}
+
+var myPieChart = new Chart(ctx, {
+    type: 'line',
+    data: data,
+    options: {
+        legend: {
+                    display: false
+                },
+        scales: {
+            yAxes: [{
+              scaleLabel: {
+                labelString: 'Seconds'
+              },
+              stacked: true,
+              ticks: {
+                  beginAtZero:true,
+                  // Include a dollar sign in the ticks
+                  callback: function(value, index, values) {
+                      return value + "s";
+                  }
+                  }
+            }]
+          },
+        tooltips: {
+            callbacks: {
+                label: function(tooltipItem, data) {
+                  return data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index] + " seconds";
+                }
+            }
+        }
+    }
+})
+</script>
