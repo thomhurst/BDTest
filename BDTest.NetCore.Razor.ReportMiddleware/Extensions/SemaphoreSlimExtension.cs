@@ -12,8 +12,8 @@ namespace BDTest.NetCore.Razor.ReportMiddleware.Extensions
 
             try
             {
-                await semaphore.WaitAsync(cancellationToken);
-                await action();
+                await semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
+                await action().ConfigureAwait(false);
             }
             finally
             {
@@ -28,8 +28,8 @@ namespace BDTest.NetCore.Razor.ReportMiddleware.Extensions
 
             try
             {
-                await semaphore.WaitAsync(cancellationToken);
-                return await action();
+                await semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
+                return await action().ConfigureAwait(false);
             }
             finally
             {
