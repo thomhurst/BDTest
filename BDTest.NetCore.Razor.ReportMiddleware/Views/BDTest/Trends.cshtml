@@ -3,6 +3,8 @@
 @{
     ViewBag.Title = "Trends";
     Layout = "_Layout";
+
+    var testRunSummaries = Model.OrderBy(x => x.StartedAtDateTime).ToList();
 }
 
 <section class="hero is-info">
@@ -45,8 +47,10 @@
 var ctx = document.getElementById('duration-trend-chart').getContext('2d');
 data = {
     datasets: [{
+        backgroundColor: "#3298dc",
+        borderColor: "#3298dc",
         data: [
-            @foreach (var timespan in Model.Select(model => model.FinishedAtDateTime - model.StartedAtDateTime))
+            @foreach (var timespan in testRunSummaries.Select(model => model.FinishedAtDateTime - model.StartedAtDateTime))
             {
                 @((long)timespan.TotalSeconds)@:,
             }
@@ -54,7 +58,7 @@ data = {
     }],
 
     labels: [
-        @for (var index = 0; index < Model.Count; index++)
+        @for (var index = 0; index < testRunSummaries.Count; index++)
         {
             @:"Test Run #@index",
         }
@@ -102,44 +106,67 @@ data = {
     datasets: [ 
         {
             label: "Not Run",
+            borderColor: "rgba(0, 0, 0, 0)",
+            pointBorderColor: "rgba(0, 0, 0, 0)",
+            pointBackgroundColor: "rgba(0, 0, 0, 0)",
             data: [
-                @string.Join(",", Model.Select(summary => summary.Counts.NotRun))
+                @string.Join(",", testRunSummaries.Select(summary => summary.Counts.NotRun))
             ]    
         },
         {
             label: "Failed",
+            backgroundColor: "#f14668",
+            borderColor: "rgba(0, 0, 0, 0)",
+            pointBorderColor: "rgba(0, 0, 0, 0)",
+            pointBackgroundColor: "rgba(0, 0, 0, 0)",
             data: [
-                @string.Join(",", Model.Select(summary => summary.Counts.Failed))
+                @string.Join(",", testRunSummaries.Select(summary => summary.Counts.Failed))
             ]    
         },
         {
             label: "Inconclusive",
+            backgroundColor: "#ffdd57",
+            borderColor: "rgba(0, 0, 0, 0)",
+            pointBorderColor: "rgba(0, 0, 0, 0)",
+            pointBackgroundColor: "rgba(0, 0, 0, 0)",
             data: [
-                @string.Join(",", Model.Select(summary => summary.Counts.Inconclusive))
+                @string.Join(",", testRunSummaries.Select(summary => summary.Counts.Inconclusive))
             ]    
         },
         {
             label: "Not Implemented",
+            backgroundColor: "#ffdd57",
+            borderColor: "rgba(0, 0, 0, 0)",
+            pointBorderColor: "rgba(0, 0, 0, 0)",
+            pointBackgroundColor: "rgba(0, 0, 0, 0)",
             data: [
-                @string.Join(",", Model.Select(summary => summary.Counts.NotImplemented))
+                @string.Join(",", testRunSummaries.Select(summary => summary.Counts.NotImplemented))
             ]    
         },
         {
             label: "Skipped",
+            backgroundColor: "#ffdd57",
+            borderColor: "rgba(0, 0, 0, 0)",
+            pointBorderColor: "rgba(0, 0, 0, 0)",
+            pointBackgroundColor: "rgba(0, 0, 0, 0)",
             data: [
-                @string.Join(",", Model.Select(summary => summary.Counts.Skipped))
+                @string.Join(",", testRunSummaries.Select(summary => summary.Counts.Skipped))
             ]    
         },
         {
             label: "Passed",
+            backgroundColor: "#48c774",
+            borderColor: "rgba(0, 0, 0, 0)",
+            pointBorderColor: "rgba(0, 0, 0, 0)",
+            pointBackgroundColor: "rgba(0, 0, 0, 0)",
             data: [
-                @string.Join(",", Model.Select(summary => summary.Counts.Passed))
+                @string.Join(",", testRunSummaries.Select(summary => summary.Counts.Passed))
             ]    
         }
         ],
 
     labels: [
-        @for (var index = 0; index < Model.Count; index++)
+        @for (var index = 0; index < testRunSummaries.Count; index++)
         {
             @:"Test Run #@index",
         }
@@ -167,14 +194,7 @@ var myPieChart = new Chart(ctx, {
                   }
                   }
             }]
-          },
-        tooltips: {
-            callbacks: {
-                label: function(tooltipItem, data) {
-                  return data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index] + " seconds";
-                }
-            }
-        }
+          }
     }
 })
 </script>

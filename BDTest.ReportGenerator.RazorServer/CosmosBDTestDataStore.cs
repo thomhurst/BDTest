@@ -119,7 +119,7 @@ namespace BDTest.ReportGenerator.RazorServer
                 // Ignored - Just means our collection that we initialised is still empty!
             }
 
-            return records.OrderByDescending(record => record.StartedAtDateTime).ToArray();
+            return records.ToArray();
         }
     }
 

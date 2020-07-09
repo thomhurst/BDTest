@@ -53,21 +53,21 @@ namespace BDTest.NetCore.Razor.ReportMiddleware.Implementations
             return await _methodLock.RunAndReturnAsync(async () =>
             {
                 // Check if it's already in-memory
-                var model = await _memoryCacheBdTestDataStore.GetAllTestRunRecords() ??
+                var models = await _memoryCacheBdTestDataStore.GetAllTestRunRecords() ??
                             Array.Empty<TestRunSummary>();
 
-                if (!model.Any() && _customDatastore != null)
+                if (!models.Any() && _customDatastore != null)
                 {
                     // Search the backup persistent storage
-                    model = await _customDatastore.GetAllTestRunRecords();
+                    models = await _customDatastore.GetAllTestRunRecords() ?? Array.Empty<TestRunSummary>();
 
-                    foreach (var testRunRecord in model ?? Array.Empty<TestRunSummary>())
+                    foreach (var testRunRecord in models)
                     {
                         await _memoryCacheBdTestDataStore.StoreTestRunRecord(testRunRecord);
                     }
                 }
 
-                return model;
+                return models.OrderByDescending(record => record.StartedAtDateTime);
             }, CancellationToken.None);
         }
         
