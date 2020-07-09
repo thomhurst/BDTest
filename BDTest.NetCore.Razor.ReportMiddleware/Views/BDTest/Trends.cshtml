@@ -1,10 +1,30 @@
+@using System.Web
+@using BDTest.NetCore.Razor.ReportMiddleware.Models
+@using Microsoft.AspNetCore.Http.Extensions
 @model List<BDTest.NetCore.Razor.ReportMiddleware.Models.TestRunSummary>
+
+@functions {
+    private List<string> GetEnvironments()
+    {
+        var environments = Model.Select(x => x.Environment).Distinct().ToList();
+        environments.Insert(0, "All Environments");
+        return environments;
+    }
+}
 
 @{
     ViewBag.Title = "Trends";
     Layout = "_Layout";
 
-    var testRunSummaries = Model.OrderBy(x => x.StartedAtDateTime).ToList();
+    var testRunSummariesEnumerable = Model.AsEnumerable() ?? Enumerable.Empty<TestRunSummary>();
+    
+    var environmentQueryParameter = HttpUtility.ParseQueryString(new Uri(Context.Request.GetEncodedUrl()).Query).Get("environment");
+    if (!string.IsNullOrEmpty(environmentQueryParameter) && environmentQueryParameter != "All Environments")
+    {
+        testRunSummariesEnumerable = testRunSummariesEnumerable.Where(summary => summary.Environment == environmentQueryParameter);
+    }
+
+    var testRunSummaries = testRunSummariesEnumerable.OrderBy(x => x.StartedAtDateTime).ToList();
 }
 
 <section class="hero is-info">
@@ -26,6 +46,11 @@
 
 <section class="section">
     <div class="container">
+        
+        <div class="mb-6 has-text-right">
+            @await Html.PartialAsync("_EnvironmentDropdown", GetEnvironments())
+        </div>
+
         <div class="columns">
             <div class="column is-half">
                 <h5 class="subtitle is-5">Durations</h5>
@@ -35,7 +60,7 @@
                 <h5 class="subtitle is-5">Statuses</h5>
                 <canvas id="success-trend-chart"></canvas>
             </div>
-            
+
         </div>
     </div>
 </section>
