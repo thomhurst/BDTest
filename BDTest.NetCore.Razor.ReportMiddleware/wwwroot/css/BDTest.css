@@ -1,7 +1,7 @@
 span,
 div,
 button {
-	overflow-wrap: break-word
+	overflow-wrap: break-word;
 }
 
 html,
@@ -30,7 +30,7 @@ body,
 }
 
 .modal-card-wide {
-	width: 98vw
+	width: 98vw;
 }
 
 .no-pointer {
@@ -43,7 +43,7 @@ body,
 }
 
 .mr-5half {
-	margin-right: 2.1rem!important;
+	margin-right: 2.1rem !important;
 }
 
 .is-danger-background-color {
