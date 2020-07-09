@@ -6,7 +6,7 @@ namespace BDTest.ReportGenerator.RazorServer
 {
     public class CustomHeaderProvider : IBDTestCustomHeaderLinksProvider
     {
-        public List<CustomLinkData> GetCustomLinks()
+        public IEnumerable<CustomLinkData> GetCustomLinks()
         {
             return new List<CustomLinkData>
             {

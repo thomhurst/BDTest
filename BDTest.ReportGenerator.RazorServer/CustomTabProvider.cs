@@ -7,7 +7,7 @@ namespace BDTest.ReportGenerator.RazorServer
 {
     public class CustomTabProvider : IBDTestCustomTabsProvider
     {
-        public List<CustomLinkData> GetCustomLinks()
+        public IEnumerable<CustomLinkData> GetCustomLinks()
         {
             return new List<CustomLinkData>
             {

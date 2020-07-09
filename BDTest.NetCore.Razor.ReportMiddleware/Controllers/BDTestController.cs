@@ -7,7 +7,6 @@ using BDTest.NetCore.Razor.ReportMiddleware.Interfaces;
 using BDTest.NetCore.Razor.ReportMiddleware.Models.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
 
 namespace BDTest.NetCore.Razor.ReportMiddleware.Controllers
 {
@@ -15,12 +14,10 @@ namespace BDTest.NetCore.Razor.ReportMiddleware.Controllers
     public class BDTestController : Controller
     {
         private readonly IDataController _dataController;
-        private readonly ILogger<BDTestController> _logger;
-        
-        public BDTestController(IDataController dataController, ILogger<BDTestController> logger)
+
+        public BDTestController(IDataController dataController)
         {
             _dataController = dataController;
-            _logger = logger;
         }
         
         [HttpGet]

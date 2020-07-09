@@ -5,6 +5,6 @@ namespace BDTest.NetCore.Razor.ReportMiddleware.Interfaces
 {
     public interface IBDTestCustomTabsProvider
     {
-        List<CustomLinkData> GetCustomLinks();
+        IEnumerable<CustomLinkData> GetCustomLinks();
     }
 }

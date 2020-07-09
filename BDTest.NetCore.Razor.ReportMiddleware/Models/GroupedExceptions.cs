@@ -11,7 +11,7 @@ namespace BDTest.NetCore.Razor.ReportMiddleware.Models
             .GroupBy(scenario => scenario.ExceptionMessage.Message)
             .OrderByDescending(scenarios => scenarios.Count());
 
-        public GroupedExceptions(List<Scenario> scenarios)
+        public GroupedExceptions(IEnumerable<Scenario> scenarios)
         {
             foreach (var scenario in scenarios.Where(scenario => scenario.Exception != null))
             {
