@@ -125,7 +125,7 @@
                 var status = record.Status.ToString();
                 if (record.Status == Status.Failed)
                 {
-                    status += $" ({record.FailedCount})";
+                    status += $" ({record.Counts.Failed})";
                 }
                 
                 

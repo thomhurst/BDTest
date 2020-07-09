@@ -1,40 +1,94 @@
 using System;
+using BDTest.Maps;
+using BDTest.NetCore.Razor.ReportMiddleware.Extensions;
 using BDTest.Test;
+using Newtonsoft.Json;
 
 namespace BDTest.NetCore.Razor.ReportMiddleware.Models
 {
     public class TestRunSummary
     {
-        public TestRunSummary(string recordId,
-            DateTime startedAtDateTime,
-            DateTime finishedAtDateTime,
-            Status status,
-            int totalCount,
-            int failedCount,
-            string tag,
-            string environment, 
-            string version
-            )
+        [JsonConstructor]
+        private TestRunSummary()
         {
-            RecordId = recordId;
-            StartedAtDateTime = startedAtDateTime;
-            FinishedAtDateTime = finishedAtDateTime;
-            Status = status;
-            TotalCount = totalCount;
-            FailedCount = failedCount;
-            Tag = tag;
-            Environment = environment;
-            Version = version;
+        }
+        
+        internal TestRunSummary(BDTestOutputModel bdTestOutputModel)
+        {
+            RecordId = bdTestOutputModel.Id;
+            StartedAtDateTime = bdTestOutputModel.TestTimer.TestsStartedAt;
+            FinishedAtDateTime = bdTestOutputModel.TestTimer.TestsFinishedAt;
+            Status = bdTestOutputModel.Scenarios.GetTotalStatus();
+            Tag = bdTestOutputModel.Tag;
+            Environment = bdTestOutputModel.Environment;
+            Version = bdTestOutputModel.Version;
+
+            SetCounts(bdTestOutputModel);
         }
 
+        public void SetCounts(BDTestOutputModel bdTestOutputModel)
+        {
+            Counts.Total = bdTestOutputModel.Scenarios.Count;
+            Counts.NotRun = bdTestOutputModel.NotRun?.Count ?? 0;
+
+            foreach (var scenario in bdTestOutputModel.Scenarios)
+            {
+                switch (scenario.Status)
+                {
+                    case Status.Passed:
+                        Counts.Passed++;
+                        break;
+                    case Status.Failed:
+                        Counts.Failed++;
+                        break;
+                    case Status.Inconclusive:
+                        Counts.Inconclusive++;
+                        break;
+                    case Status.NotImplemented:
+                        Counts.NotImplemented++;
+                        break;
+                    case Status.Skipped:
+                        Counts.Skipped++;
+                        break;
+                    default:
+                        throw new ArgumentOutOfRangeException();
+                }
+            }
+        }
+        
+        [JsonProperty]
         public string RecordId { get; set; }
+        [JsonProperty]
         public DateTime StartedAtDateTime { get; set; }
+        [JsonProperty]
         public DateTime FinishedAtDateTime { get; }
+        [JsonProperty]
         public Status Status { get; set; }
-        public int TotalCount { get; set; }
-        public int FailedCount { get; set; }
+        [JsonProperty]
+        public Counts Counts { get; set; } = new Counts();
+        [JsonProperty]
         public string Tag { get; set; }
+        [JsonProperty]
         public string Environment { get; set; }
+        [JsonProperty]
         public string Version { get; set; }
+    }
+
+    public class Counts
+    {
+        [JsonProperty]
+        public int Total { get; set; }
+        [JsonProperty]
+        public int Passed { get; set; }
+        [JsonProperty]
+        public int Failed { get; set; }
+        [JsonProperty]
+        public int Inconclusive { get; set; }
+        [JsonProperty]
+        public int NotImplemented { get; set; }
+        [JsonProperty]
+        public int Skipped { get; set; }
+        [JsonProperty]
+        public int NotRun { get; set; }
     }
 }
