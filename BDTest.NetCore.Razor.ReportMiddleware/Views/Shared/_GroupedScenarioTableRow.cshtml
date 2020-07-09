@@ -1,0 +1,50 @@
+@using BDTest
+@using BDTest.NetCore.Razor.ReportMiddleware.Constants
+@using BDTest.NetCore.Razor.ReportMiddleware.Extensions
+@using BDTest.NetCore.Razor.ReportMiddleware.Models
+@using BDTest.NetCore.Razor.ReportMiddleware.Models.ViewModels
+@using BDTest.Test
+@model BDTest.NetCore.Razor.ReportMiddleware.Models.ViewModels.GroupedScenarioViewModel
+
+@{ var testTimer = BDTestUtil.GetTestTimer(Model.Scenarios); }
+
+@if (Model.Scenarios.Count != 1)
+{
+    Model.GroupedScenarioIndex.IncrementAndGet();
+    
+    var hasSuccess = Model.Scenarios.Any(scenario => scenario.Status == Status.Passed) ? HtmlClassConstants.HasSuccess : string.Empty;
+    var hasFailures = Model.Scenarios.Any(scenario => scenario.Status == Status.Failed) ? HtmlClassConstants.HasFailures : string.Empty;
+    var hasSkipped = Model.Scenarios.Any(scenario => scenario.Status == Status.Skipped) ? HtmlClassConstants.HasSkipped : string.Empty;
+    var hasInconclusive = Model.Scenarios.Any(scenario => scenario.Status == Status.Inconclusive) ? HtmlClassConstants.HasInconclusive : string.Empty;
+    var hasNotImplemented = Model.Scenarios.Any(scenario => scenario.Status == Status.NotImplemented) ? HtmlClassConstants.HasNotImplemented : string.Empty;
+    
+    <tr scenario-group="@Model.GroupedScenarioIndex.Get()" class="pointer scenario-group @hasSuccess @hasFailures @hasSkipped @hasInconclusive @hasNotImplemented">
+        <td class="has-text-centered is-vcentered">
+            <button class="button is-fullwidth is-link is-rounded">@Model.Scenarios.First().GetScenarioText() (@Model.Scenarios.Count Tests)</button>
+        </td>
+        <td class="has-text-centered is-vcentered">
+            <span class="@Model.Scenarios.GetTotalStatus().GetCssColourValueForStatus() tag px-5 is-medium invisible scenario-group-status">@Model.Scenarios.GetTotalStatus().AsString()</span>
+        </td>
+        <td class="has-text-centered is-vcentered">
+            <div class="tooltip">
+                @testTimer.ElapsedTime.ToString()
+                <span class="tooltiptext">@testTimer.ElapsedTime.ToPrettyFormat()</span>
+            </div>
+        </td>
+        <td class="has-text-centered is-vcentered">@testTimer.TestsStartedAt.ToStringForReport()</td>
+        <td class="has-text-centered is-vcentered">@testTimer.TestsFinishedAt.ToStringForReport()</td>
+    </tr>
+}
+
+@{ var indexOfScenarioInParent = new ReferenceInt(0); }
+@foreach (var scenario in Model.Scenarios)
+{
+    @(await Html.PartialAsync("_SingleScenarioTableRow", new ScenarioRowViewModel
+    {
+        Scenario = scenario,
+        GroupedScenarioParentIndex = Model.GroupedScenarioIndex,
+        IndexOfScenarioInParent = indexOfScenarioInParent.IncrementAndGet(),
+        IsPartOfGroupedScenarios = Model.Scenarios.Count != 1
+    }))
+}
+

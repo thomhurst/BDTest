@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Linq;
+using BDTest.Attributes;
 using BDTest.ReportGenerator;
 using BDTest.Test;
 using BDTest.Tests.Helpers;
@@ -8,6 +9,9 @@ using NUnit.Framework;
 
 namespace BDTest.Tests.Fixtures
 {
+    [Story(AsA = "BDTest developer",
+        IWant = "to make sure that css is copied to the output directory",
+        SoThat = "locally generated reports are styled correctly")]
     public class CssTests : BDTestBase
     {
         [Test]

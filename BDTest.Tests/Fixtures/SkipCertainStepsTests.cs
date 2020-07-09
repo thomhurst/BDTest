@@ -8,6 +8,9 @@ using NUnit.Framework;
 
 namespace BDTest.Tests.Fixtures
 {
+    [Story(AsA = "BDTest developer",
+        IWant = "to make sure that certain steps can be skipped conditionally",
+        SoThat = "tests can be run with different behaviour for different test environments")]
     public class SkipCertainStepsTests : BDTestBase
     {
         [OneTimeSetUp]
@@ -20,7 +23,7 @@ namespace BDTest.Tests.Fixtures
         }
 
         [OneTimeTearDown]
-        public void Teardown()
+        public async Task Teardown()
         {
             BDTestReportGenerator.GenerateInFolder(nameof(SkipCertainStepsTests));
         }

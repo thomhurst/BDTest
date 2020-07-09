@@ -11,16 +11,21 @@ namespace BDTest.Test
 {
     public class TestDetails : BuildableTest
     {
-        private readonly string _callerMember;
-        public string CallerFile { get; }
-        public string TestId { get; }
+        [JsonProperty]
+        public string CallerMember { get; set; }
+        [JsonProperty]
+        public string CallerFile { get; set; }
+        [JsonProperty]
+        public string TestId { get; set; }
+        [JsonProperty]
         public IEnumerable<string> Parameters { get; set; }
 
         internal TestDetails(string callerMember, string callerFile, Guid guid, string testId)
         {
-            TestDetails = this;
+            // TODO RESTRUCTURE
+            TestDetails = null;
             Guid = guid.ToString();
-            _callerMember = callerMember;
+            CallerMember = callerMember;
             CallerFile = callerFile;
             TestId = testId;
             SetStoryText();
@@ -87,7 +92,7 @@ namespace BDTest.Test
                 return;
             }
 
-            var callingFrame = stackFrames.FirstOrDefault(it => it.GetMethod().Name == _callerMember);
+            var callingFrame = stackFrames.FirstOrDefault(it => it.GetMethod().Name == CallerMember);
             if (callingFrame != null)
             {
                 SetParameters(callingFrame);

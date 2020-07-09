@@ -35,16 +35,14 @@ namespace BDTest.Helpers
             
             var arguments = GetMethodArguments(methodCallExpression);
 
-            var methodInfo = methodCallExpression?.Method;
+            var methodInfo = methodCallExpression.Method;
 
-            var stepTextAttribute = (StepTextAttribute)(methodInfo?.GetCustomAttributes(
-                                                            typeof(StepTextAttribute), true) ??
-                                                        new string[] { }).FirstOrDefault();
+            var stepTextAttribute = (StepTextAttribute) methodInfo.GetCustomAttributes(typeof(StepTextAttribute), true).FirstOrDefault();
             
             var customStepText =
                 stepTextAttribute?.Text;
-            
-            var methodNameHumanized = methodInfo?.Name.Humanize();
+
+            var methodNameHumanized = $"{LowercaseFirstLetter(methodInfo.Name.Humanize())} {string.Join(" ", arguments)}".Trim();
 
             if (customStepText != null)
             {
@@ -61,6 +59,16 @@ namespace BDTest.Helpers
             }
 
             return customStepText ?? methodNameHumanized;
+        }
+
+        private static string LowercaseFirstLetter(string input)
+        {
+            if (input != string.Empty && char.IsUpper(input[0]))
+            {
+                return  char.ToLower(input[0]) + input.Substring(1);
+            }
+
+            return input;
         }
         
         private static List<string> GetMethodArguments(MethodCallExpression methodCallExpression)

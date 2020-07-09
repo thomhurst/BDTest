@@ -8,6 +8,7 @@ namespace BDTest.Maps
 {
     internal static class TestHolder
     {
+        internal static readonly string InstanceGuid = Guid.NewGuid().ToString("N");
         internal static ConcurrentDictionary<string, BuildableTest> NotRun { get; } = new ConcurrentDictionary<string, BuildableTest>();
         internal static ConcurrentDictionary<string, Scenario> Scenarios { get; } = new ConcurrentDictionary<string, Scenario>();
         

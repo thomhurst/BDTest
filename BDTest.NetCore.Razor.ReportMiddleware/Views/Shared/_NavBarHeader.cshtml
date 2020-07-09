@@ -1,0 +1,71 @@
+@using BDTest.NetCore.Razor.ReportMiddleware.Interfaces
+@using Microsoft.Extensions.DependencyInjection
+@inject IServiceProvider ServiceProvider
+
+@{
+    var customLinksProvider = ServiceProvider.GetService<IBDTestCustomHeaderLinksProvider>();
+}
+
+<nav class="navbar is-fixed-top" role="navigation" aria-label="main navigation">
+
+    <div class="navbar-brand">
+        <a role="button" id="burger-sidebar-icon" class="burger is-active" onclick="toggleSidebar()">
+            <span aria-hidden="true"></span>
+            <span aria-hidden="true"></span>
+            <span aria-hidden="true"></span>
+        </a>
+
+        <a class="navbar-item" href="~/bdtest/report/test-runs">
+            <h1 class="title">BDTest</h1>
+        </a>
+
+        <a role="button" data-target="navMenu" class="navbar-burger" aria-label="menu" aria-expanded="false">
+            <span aria-hidden="true"></span>
+            <span aria-hidden="true"></span>
+            <span aria-hidden="true"></span>
+        </a>
+    </div>
+
+    <div class="navbar-menu" id="navMenu">
+        <div class="navbar-start">
+            <a class="navbar-item" href="https://github.com/thomhurst/BDTest" target="_blank">
+                Github
+            </a>
+
+            <div class="navbar-item has-dropdown is-hoverable">
+                <a class="navbar-link">
+                    More
+                </a>
+
+                <div class="navbar-dropdown">
+                    <a class="navbar-item" href="https://github.com/thomhurst/BDTest/wiki" target="_blank">
+                        Wiki
+                    </a>
+                    <hr class="navbar-divider">
+                    <a class="navbar-item" href="https://github.com/thomhurst/BDTest/issues" target="_blank">
+                        Report an issue
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="navbar-end">
+            @if (customLinksProvider != null)
+            {
+                foreach (var customLinkData in customLinksProvider.GetCustomLinks())
+                {
+                    if (customLinkData.Url == null)
+                    {
+                        <span class="navbar-item">@customLinkData.Text</span>
+                    }
+                    else
+                    {
+                        <a class="navbar-item" href="@customLinkData.Url">
+                            <span>@customLinkData.Text</span>
+                        </a>
+                    }
+                }
+            }
+        </div>
+    </div>
+</nav>

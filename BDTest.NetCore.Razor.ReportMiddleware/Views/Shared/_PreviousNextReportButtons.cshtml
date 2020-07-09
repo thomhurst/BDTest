@@ -1,0 +1,44 @@
+@using BDTest.NetCore.Razor.ReportMiddleware.Extensions
+@using BDTest.NetCore.Razor.ReportMiddleware.Interfaces
+@using Microsoft.AspNetCore.Http.Extensions
+@model BDTest.Maps.BDTestOutputModel
+@inject IDataController DataController
+
+@{
+    var allReports = (await DataController.GetAllTestRunRecords()).ToList();
+    var thisIndex = allReports.FindIndex(report => report.RecordId == Model.Id);
+    var lastReport = allReports.ElementAtOrDefault(thisIndex - 1);
+    var nextReport = allReports.ElementAtOrDefault(thisIndex + 1);
+}
+
+<div class="buttons is-right mx-2">
+    @if (lastReport != null)
+    {
+        <a href="@GenerateUrl(lastReport.RecordId)">
+            <button class="button is-info is-rounded is-inverted is-outlined is-medium">Previous Test Run</button>
+        </a>
+    }
+    @if (nextReport != null)
+    {
+        <a href="@GenerateUrl(nextReport.RecordId)">
+            <button class="button is-info is-rounded is-inverted is-outlined is-medium">Next Test Run</button>
+        </a>
+    }
+</div>
+
+@functions
+{
+    private string GenerateUrl(string id)
+    {
+        var currentUrl = Context.Request.GetEncodedUrl();
+        try
+        {
+            var currentId = currentUrl.Split("report/")[1].Split("/")[0];
+            return currentUrl.Replace(currentId, id);
+        }
+        catch
+        {
+            return new Uri(currentUrl).WithPath($"/bdtest/report/{id}/summary").ToString();
+        }
+    }
+}

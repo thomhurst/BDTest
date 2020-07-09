@@ -8,12 +8,15 @@ using NUnit.Framework;
 namespace BDTest.Tests.Fixtures
 {
     [Parallelizable(ParallelScope.None)]
+    [Story(AsA = "BDTest developer",
+        IWant = "to make sure that custom scenario text attributes work properly",
+        SoThat = "tests can be translated to plain English")]
     public class ScenarioTextTests : BDTestBase
     {
         [SetUp]
         public void Setup()
         {
-            TestSetupHelper.ResetData();
+            TestResetHelper.ResetData();
         }
 
         [Test]

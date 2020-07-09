@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using BDTest.Attributes;
 using BDTest.NUnit;
 using BDTest.Settings;
 using BDTest.Test;
@@ -8,6 +9,9 @@ using NUnit.Framework;
 namespace BDTest.Tests.Fixtures
 {
     [Parallelizable(ParallelScope.None)]
+    [Story(AsA = "BDTest developer",
+        IWant = "to make sure that specific exceptions can be registered as 'passable'",
+        SoThat = "BDTest works well with other frameworks such as NUnit")]
     public class CustomPassExceptionsTests : NUnitBDTestBase<MyTestContext>
     {
         [Test]

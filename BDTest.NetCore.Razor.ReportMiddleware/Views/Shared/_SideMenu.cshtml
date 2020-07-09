@@ -1,0 +1,126 @@
+@using BDTest.Maps
+@using BDTest.NetCore.Razor.ReportMiddleware.Extensions
+@using BDTest.NetCore.Razor.ReportMiddleware.Interfaces
+@using Microsoft.AspNetCore.Http.Extensions
+@using Microsoft.Extensions.DependencyInjection
+@{ var id = ViewBag.Id; }
+@inject IServiceProvider ServiceProvider
+
+@{
+    var customTabsProvider = ServiceProvider.GetService<IBDTestCustomTabsProvider>();
+    
+    BDTestOutputModel currentTestReport = string.IsNullOrEmpty(id) ? null : await ServiceProvider.GetService<IBDTestDataStore>().GetTestData(id);
+    var metrics = new OutputMetrics(currentTestReport);
+}
+
+<div class="box menu-box off-white-bg-color" id="sidebar">
+    <aside class="menu my-6">
+        <p class="menu-label">
+            Navigation
+        </p>
+        
+        <ul class="menu-list">
+            <li>
+                <a class="@GetIsActive("/test-runs")" href="~/bdtest/report/test-runs">
+                    Home / Test Runs
+                </a>
+            </li>
+            <li>
+                <a class="@GetIsActive("/trends")" href="~/bdtest/report/trends">
+                    Trends
+                </a>
+            </li>
+            
+        </ul>
+        
+        @if (!string.IsNullOrEmpty(id))
+        {
+            <p class="menu-label">
+                This Test Report
+            </p>
+
+            <ul class="menu-list">
+                <li>
+                    <a class="@GetIsActive("/summary")" href="~/bdtest/report/@id/summary">
+                        <span>Summary</span>
+                    </a>
+                </li>
+                <li>
+                    <a class="@GetIsActive("/stories")" href="~/bdtest/report/@id/stories">
+                        <span>Stories</span>
+                    </a>
+                </li>
+                <li>
+                    <a class="@GetIsActive("/all-scenarios")" href="~/bdtest/report/@id/all-scenarios">
+                        <span>All Scenarios</span>
+                    </a>
+                </li>
+                <li>
+                    <a class="@GetIsActive("/timings")" href="~/bdtest/report/@id/timings">
+                        <span>Timings</span>
+                    </a>
+                </li>
+                @if (metrics.AnyExceptions)
+                {
+                    <li>
+                        <a class="@GetIsActive("/top-defects")" href="~/bdtest/report/@id/top-defects">
+                            <span>Top Defects</span>
+                        </a>
+                    </li>
+                }
+                
+                @if (metrics.AnyWarnings)
+                {
+                    <li>
+                        <a class="@GetIsActive("/warnings")" href="~/bdtest/report/@id/warnings">
+                            <span>Warnings</span>
+                        </a>
+                    </li>
+                }
+            </ul>
+        }
+        <p class="menu-label">
+            Actions
+        </p>
+        <ul class="menu-list">
+            <li>
+                @{
+                    var url = Context.Request.GetEncodedUrl();
+                }
+                <a onclick="copyToClipboard('@url');">
+                    <span>Copy URL to Clipboard</span>
+                </a>
+            </li>
+        </ul>
+        @if (customTabsProvider != null)
+        {
+            <p class="menu-label">
+                Custom Links
+            </p>
+            <ul class="menu-list">
+                @foreach (var customTabData in customTabsProvider.GetCustomLinks())
+                {
+                    <li>
+                        <a href="@customTabData.Url" target="_blank">
+                            <span>@customTabData.Text</span>
+                        </a>
+                    </li>
+                }
+            </ul>
+        }
+    </aside>
+</div>
+
+@functions
+{
+
+    private string GetIsActive(string path)
+    {
+        if (Context.Request.Path.Value?.ToLowerInvariant().Contains(path.ToLower()) == true)
+        {
+            return "is-active";
+        }
+
+        return string.Empty;
+    }
+}

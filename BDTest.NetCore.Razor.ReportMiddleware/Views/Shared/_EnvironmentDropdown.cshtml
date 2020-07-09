@@ -1,0 +1,30 @@
+@model List<string>
+
+<script>
+    function filterEnvironment(value) {
+      window.location.href = getUrlWithAppendedParameter('environment', value);
+    }
+</script>
+
+<div class="dropdown">
+    <div class="dropdown-trigger">
+        <button class="button is-info is-rounded" aria-haspopup="true" aria-controls="dropdown-menu">
+            <p id="filter-by-environment-text">Filter by Environment <i class="arrow down"></i></p>
+            @* <span class="icon is-small"> *@
+            @*   <i class="fas fa-angle-down" aria-hidden="true"></i> *@
+            @* </span> *@
+        </button>
+    </div>
+    <div class="dropdown-menu has-text-centered" id="environment-dropdown-menu" role="menu">
+        <div class="dropdown-content has-text-centered">
+            @foreach (var environment in Model)
+            {
+                <a class="dropdown-item">
+                    <button class="button is-fullwidth is-rounded" onclick="filterEnvironment('@environment');">
+                        @environment
+                    </button>
+                </a>
+            }
+        </div>
+    </div>
+</div>

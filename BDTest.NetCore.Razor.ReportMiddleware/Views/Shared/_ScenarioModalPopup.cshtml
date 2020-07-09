@@ -1,0 +1,139 @@
+@using BDTest.NetCore.Razor.ReportMiddleware.Extensions
+@using BDTest.NetCore.Razor.ReportMiddleware.Models.ViewModels
+@using BDTest.Test
+@using Microsoft.AspNetCore.Http.Extensions
+@model BDTest.NetCore.Razor.ReportMiddleware.Models.ViewModels.ScenarioModalViewModel
+
+@{
+    var shareUrl = new Uri(Context.Request.GetEncodedUrl()).WithQueryParameter("scenarioId", Model.Scenario.Guid);
+}
+
+<div class="modal" id="scenario-modal-@Model.Scenario.Guid">
+    <div class="modal-background"></div>
+    <div class="modal-card modal-card-wide">
+        <header class="modal-card-head @Model.Scenario.Status.GetCssColourValueForStatus()-background-color">
+            <p class="modal-card-title @Model.Scenario.Status.GetCssColourValueForStatus()-text-color">Scenario: @Model.Scenario.GetScenarioText()</p>
+
+            <nav class="level">
+                @if (Model.LastScenario != null)
+                {
+                    <button class="button @Model.Scenario.Status.GetCssColourValueForStatus() mx-1 is-rounded" onclick="openModal('scenario-modal-@Model.LastScenario.Guid');">Previous</button>
+                }
+                @if (Model.NextScenario != null)
+                {
+                    <button class="button @Model.Scenario.Status.GetCssColourValueForStatus() mx-1 is-rounded" onclick="openModal('scenario-modal-@Model.NextScenario.Guid');">Next</button>
+                }
+
+                <button class="button @Model.Scenario.Status.GetCssColourValueForStatus() is-small is-rounded mx-3">
+                    <img src="~/_content/BDTest.NetCore.Razor.ReportMiddleware/icons/share-white-18dp.svg" class="pointer" alt="Share" onclick="copyToClipboard('@shareUrl.ToString()')"/>
+                </button>
+                <button class="delete is-large @Model.Scenario.Status.GetCssColourValueForStatus()-background-color" aria-label="close"></button>
+            </nav>
+        </header>
+        
+        <section class="modal-card-body">
+            <div>
+                @foreach (var testInformationAttribute in Model.Scenario.CustomTestInformation)
+                {
+                    <h6 class="subtitle is-6">@testInformationAttribute.Information</h6>
+                }
+                
+                <table class="table is-fullwidth">
+                    <thead>
+                    <tr>
+                        <th class="has-text-centered">Step</th>
+                        <th class="has-text-centered">Status</th>
+                        <th class="has-text-centered">Duration</th>
+                        <th class="has-text-centered">Start</th>
+                        <th class="has-text-centered">End</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+
+                    @await Html.PartialAsync("_SetupTeardownOutputRow", new SetupTeardownOutputViewModel("Test Setup Info", Model.Scenario.TestStartupInformation))
+
+                    @foreach (var step in Model.Scenario.Steps)
+                    {
+                        <tr>
+                            <td class="has-text-centered is-vcentered">
+                                @if (!IsExpandable(step))
+                                {
+                                    <span>
+                                        @step.StepText
+                                    </span>
+                                }
+                                else
+                                {
+                                    <details class="mr-5half">
+                                        <summary class="button is-fullwidth">
+                                            @step.StepText
+                                        </summary>
+
+                                        @if (!string.IsNullOrEmpty(step.Output))
+                                        {
+                                            <div class="container">
+                                                <article class="message is-link mt-4 has-text-left">
+                                                    @* <div class="message-header"> *@
+                                                    @*     <p>Output</p> *@
+                                                    @* </div> *@
+                                                    <pre class="message-body">@step.Output.Trim()</pre>
+                                                </article>
+                                            </div>
+                                        }
+
+                                        @if (step.Exception != null)
+                                        {
+                                            <div class="container">
+                                                <article class="message is-danger mt-4">
+                                                    <div class="message-header">
+                                                        <p>Exception</p>
+                                                    </div>
+                                                    <pre class="message-body has-text-left">@step.Exception.AsString.Trim()</pre>
+                                                </article>
+                                            </div>
+                                        }
+                                    </details>
+                                }
+                            </td>
+                            <td class="has-text-centered is-vcentered">
+                                <span class="@step.Status.GetCssColourValueForStatus() tag px-5 is-medium">@step.Status.AsString()</span>
+                            </td>
+                            <td class="has-text-centered is-vcentered">
+                                <div class="tooltip">
+                                    @step.TimeTaken.ToString()
+                                    <span class="tooltiptext">@step.TimeTaken.ToPrettyFormat()</span>
+                                </div>
+                            </td>
+                            <td class="has-text-centered is-vcentered">@step.StartTime.ToStringForReport()</td>
+                            <td class="has-text-centered is-vcentered">@step.EndTime.ToStringForReport()</td>
+                        </tr>
+                    }
+
+                    @await Html.PartialAsync("_SetupTeardownOutputRow", new SetupTeardownOutputViewModel("Test Teardown Info", Model.Scenario.TearDownOutput))
+
+                    </tbody>
+                </table>
+            </div>
+
+            @if (!string.IsNullOrEmpty(Model.Scenario.CustomHtmlOutputForReport))
+            {
+                <div class="container">
+                    <h2 class="subtitle">Custom:</h2>
+                    @Html.Raw(Model.Scenario.CustomHtmlOutputForReport)
+                </div>
+            }
+            
+        </section>
+        <footer class="modal-card-foot">
+            <button class="button">Close</button>
+        </footer>
+    </div>
+</div>
+
+@functions 
+{
+    private bool IsExpandable(Step step)
+    {
+        return !string.IsNullOrEmpty(step.Output) || step.Exception != null;
+    }
+}

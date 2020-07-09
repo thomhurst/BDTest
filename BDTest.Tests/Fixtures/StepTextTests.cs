@@ -10,12 +10,15 @@ using NUnit.Framework;
 namespace BDTest.Tests.Fixtures
 {
     [Parallelizable(ParallelScope.None)]
+    [Story(AsA = "BDTest developer",
+        IWant = "to make sure that custom step text attributes work properly",
+        SoThat = "tests can be translated to plain English")]
     public class StepTextTests : BDTestBase
     {
         [SetUp]
         public void Setup()
         {
-            TestSetupHelper.ResetData();
+            TestResetHelper.ResetData();
         }
 
         [Test]
@@ -92,13 +95,13 @@ namespace BDTest.Tests.Fixtures
             
             BDTestReportGenerator.GenerateInFolder(FileHelpers.GetUniqueTestOutputFolder());
 
-            Assert.That(scenario.Steps[0].StepText, Is.EqualTo("Given Step 1 without a step text attribute"));
-            Assert.That(scenario.Steps[1].StepText, Is.EqualTo("When Step 2 without a step text attribute"));
-            Assert.That(scenario.Steps[2].StepText, Is.EqualTo("Then Step 3 Without A StepTextAttribute and Hyphens"));
+            Assert.That(scenario.Steps[0].StepText, Is.EqualTo("Given step 1 without a step text attribute"));
+            Assert.That(scenario.Steps[1].StepText, Is.EqualTo("When step 2 without a step text attribute"));
+            Assert.That(scenario.Steps[2].StepText, Is.EqualTo("Then step 3 Without A StepTextAttribute and Hyphens"));
             
-            Assert.That(JsonHelper.GetTestDynamicJsonObject().SelectToken("$.Scenarios[0].Steps[0].StepText").ToString(), Is.EqualTo("Given Step 1 without a step text attribute"));
-            Assert.That(JsonHelper.GetTestDynamicJsonObject().SelectToken("$.Scenarios[0].Steps[1].StepText").ToString(), Is.EqualTo("When Step 2 without a step text attribute"));
-            Assert.That(JsonHelper.GetTestDynamicJsonObject().SelectToken("$.Scenarios[0].Steps[2].StepText").ToString(), Is.EqualTo("Then Step 3 Without A StepTextAttribute and Hyphens"));
+            Assert.That(JsonHelper.GetTestDynamicJsonObject().SelectToken("$.Scenarios[0].Steps[0].StepText").ToString(), Is.EqualTo("Given step 1 without a step text attribute"));
+            Assert.That(JsonHelper.GetTestDynamicJsonObject().SelectToken("$.Scenarios[0].Steps[1].StepText").ToString(), Is.EqualTo("When step 2 without a step text attribute"));
+            Assert.That(JsonHelper.GetTestDynamicJsonObject().SelectToken("$.Scenarios[0].Steps[2].StepText").ToString(), Is.EqualTo("Then step 3 Without A StepTextAttribute and Hyphens"));
         }
         
         [Test]
@@ -134,6 +137,16 @@ namespace BDTest.Tests.Fixtures
                 .BDTest();
             
             Assert.That(scenario.Steps[2].StepText, Is.EqualTo("Then the text is 123..................4....................................5"));
+        }
+        
+        [Test]
+        public void NoStepTextIncludesParameterValues()
+        {
+            var scenario = When(() => StepWithParametersButWithoutStepText("One", "Two"))
+                .Then(() => StepWithParametersButWithoutStepText("One", "Two"))
+                .BDTest();
+            
+            Assert.That(scenario.Steps[1].StepText, Is.EqualTo("Then step with parameters but without step text One Two"));
         }
         
         [StepText("the text is {0}")]
@@ -185,6 +198,11 @@ namespace BDTest.Tests.Fixtures
         public void Step_3_Without_A_StepTextAttribute_and_Hyphens()
         {
             
+        }
+
+        public void StepWithParametersButWithoutStepText(string valueOne, string valueTwo)
+        {
+            // Nothing
         }
     }
 }

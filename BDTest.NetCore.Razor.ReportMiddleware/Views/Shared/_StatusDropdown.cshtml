@@ -1,0 +1,183 @@
+@using BDTest.NetCore.Razor.ReportMiddleware.Constants
+@using BDTest.Test
+<div class="dropdown">
+  <div class="dropdown-trigger">
+    <button class="button is-info is-rounded" aria-haspopup="true" aria-controls="dropdown-menu" id="dropdown-main-button">
+      <p>Show All <i class="arrow down"></i></p>
+      @* <span class="icon is-small"> *@
+      @*   <i class="fas fa-angle-down" aria-hidden="true"></i> *@
+      @* </span> *@
+    </button>
+  </div>
+  <div class="dropdown-menu has-text-centered" id="dropdown-menu" role="menu">
+    <button class="button is-info is-fullwidth" onclick="filterByStatus('@StatusConstants.All');">
+              Show All
+            </button>
+    <hr class="dropdown-divider">
+    <div class="dropdown-content has-text-centered">
+      <a href="#" class="dropdown-item">
+        <button class="button is-fullwidth is-success is-rounded" onclick="filterByStatus('@Status.Passed');">
+          Show Successful
+        </button>
+      </a>
+      <a class="dropdown-item">
+        <button class="button is-fullwidth is-danger is-rounded" onclick="filterByStatus('@Status.Failed');">
+          Show Failures
+        </button>
+      </a>
+      <a href="#" class="dropdown-item">
+        <button class="button is-fullwidth is-warning is-rounded" onclick="filterByStatus('@Status.Skipped');">
+          Show Skipped
+        </button>
+      </a>
+      <a href="#" class="dropdown-item">
+        <button class="button is-fullwidth is-warning is-rounded" onclick="filterByStatus('@Status.Inconclusive');">
+          Show Inconclusive
+        </button>
+      </a>
+      <a href="#" class="dropdown-item">
+        <button class="button is-fullwidth is-warning is-rounded" onclick="filterByStatus('@Status.NotImplemented');">
+          Show Not Implemented
+        </button>
+      </a>
+    </div>
+  </div>
+</div>
+
+<script>
+
+  function filterByStatus(status) {
+    
+    let url = getUrlWithAppendedParameter("filterByStatus", status);
+    window.history.pushState({} , '', url);
+    
+    let mainDropdownButton = document.getElementById("dropdown-main-button");
+    
+    if(status === '@StatusConstants.All') {
+      mainDropdownButton.innerHTML = '<p>Show All <i class="arrow down"></i></p>';
+      mainDropdownButton.className = "button has-text-centered is-info is-rounded";
+      makeAllVisible();
+      return;
+    }
+    
+    makeAllInvisible();
+    
+    switch (status) {
+      case '@Status.Passed':
+        mainDropdownButton.innerHTML = '<p>Show Success <i class="arrow down"></i></p>';
+        mainDropdownButton.className = "button has-text-centered is-success is-rounded";
+        
+        var stories =  document.querySelectorAll(".story-header.@HtmlClassConstants.HasSuccess");
+        var scenarioGroups =  document.querySelectorAll(".scenario-group.@HtmlClassConstants.HasSuccess");
+        var rows = document.querySelectorAll(".scenario-row.@Status.Passed");
+        break;
+      case '@Status.Failed':
+        mainDropdownButton.innerHTML = '<p>Show Failures <i class="arrow down"></i></p>';
+        mainDropdownButton.className = "button has-text-centered is-danger is-rounded";
+        
+        var stories =  document.querySelectorAll(".story-header.@HtmlClassConstants.HasFailures");
+        var scenarioGroups =  document.querySelectorAll(".scenario-group.@HtmlClassConstants.HasFailures");
+        var rows = document.querySelectorAll(".scenario-row.@Status.Failed");
+        break;
+      case '@Status.Skipped':
+        mainDropdownButton.innerHTML = '<p>Show Skipped <i class="arrow down"></i></p>';
+        mainDropdownButton.className = "button has-text-centered is-warning is-rounded";
+        
+        var stories =  document.querySelectorAll(".story-header.@HtmlClassConstants.HasSkipped");
+        var scenarioGroups =  document.querySelectorAll(".scenario-group.@HtmlClassConstants.HasSkipped");
+        var rows = document.querySelectorAll(".scenario-row.@Status.Skipped");
+        break;
+      case '@Status.Inconclusive':
+        mainDropdownButton.innerHTML = '<p>Show Inconclusive <i class="arrow down"></i></p>';
+        mainDropdownButton.className = "button has-text-centered is-warning is-rounded";
+        
+        var stories =  document.querySelectorAll(".story-header.@HtmlClassConstants.HasInconclusive");
+        var scenarioGroups =  document.querySelectorAll(".scenario-group.@HtmlClassConstants.HasInconclusive");
+        var rows = document.querySelectorAll(".scenario-row.@Status.Inconclusive");
+        break;
+      case '@Status.NotImplemented':
+        mainDropdownButton.innerHTML = '<p>Show Not Implemented <i class="arrow down"></i></p>';
+        mainDropdownButton.className = "button has-text-centered is-warning is-rounded";
+        
+        var stories =  document.querySelectorAll(".story-header.@HtmlClassConstants.HasNotImplemented");
+        var scenarioGroups =  document.querySelectorAll(".scenario-group.@HtmlClassConstants.HasNotImplemented");
+        var rows = document.querySelectorAll(".scenario-row.@Status.NotImplemented");
+        break;
+      }
+      
+      for (let story of stories) {
+        setElementVisible(story.parentElement.parentElement.parentElement.parentElement.parentElement);
+        setElementVisible(story.parentElement.parentElement.parentElement.parentElement.parentElement.nextElementSibling);
+      }
+      
+      for (let scenarioGroup of scenarioGroups) {
+        scenarioGroup.classList.add("no-pointer");
+        scenarioGroup.querySelector(".button").disabled = true;
+        setElementVisible(scenarioGroup);
+      }
+      
+      for (let row of rows) {
+        setElementVisible(row);
+      }
+      
+      checkIfFilterHiddenAllStories();
+    }
+    
+    function makeAllVisible() {
+        let dividers = document.getElementsByTagName("hr");
+        for (let divider of dividers) {
+          setElementVisible(divider);
+        }
+    
+        let stories = document.querySelectorAll(".story-header");
+        for (let story of stories) {
+          setElementVisible(story.parentElement.parentElement.parentElement.parentElement.parentElement);
+        }
+          
+        let scenarioGroups = document.querySelectorAll(".scenario-group");
+        for (let scenarioGroup of scenarioGroups) {
+          scenarioGroup.classList.remove("no-pointer");
+          scenarioGroup.querySelector(".button").disabled = false;
+          setElementVisible(scenarioGroup);
+        }
+        
+        let scenarioRows = document.querySelectorAll(".scenario-row");
+        for (let scenarioRow of scenarioRows) {
+          setElementVisible(scenarioRow);
+        }
+        
+        let scenarioButtonsRows = document.querySelectorAll(".scenarios-buttons-row");
+        for (let scenarioButtonsRow of scenarioButtonsRows) {
+          setElementVisible(scenarioButtonsRow);
+        }
+    }
+    
+    function makeAllInvisible() {
+        let dividers = document.getElementsByTagName("hr");
+        for (let divider of dividers) {
+          setElementInvisible(divider);
+        }
+            
+        let stories = document.querySelectorAll(".story-header");
+        for (let story of stories) {
+          setElementInvisible(story.parentElement.parentElement.parentElement.parentElement.parentElement);
+        }
+          
+        let scenarioGroups = document.querySelectorAll(".scenario-group");
+        for (let scenarioGroup of scenarioGroups) {
+          scenarioGroup.classList.remove("no-pointer");
+          scenarioGroup.querySelector(".button").disabled = false;
+          setElementInvisible(scenarioGroup);
+        }
+        
+        let scenarioRows = document.querySelectorAll(".scenario-row");
+        for (let scenarioRow of scenarioRows) {
+          setElementInvisible(scenarioRow);
+        }
+        
+        let scenarioButtonsRows = document.querySelectorAll(".scenarios-buttons-row");
+        for (let scenarioButtonsRow of scenarioButtonsRows) {
+          setElementInvisible(scenarioButtonsRow);
+        }
+    }
+</script>

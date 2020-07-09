@@ -1,0 +1,33 @@
+@using BDTest.NetCore.Razor.ReportMiddleware.Models.ViewModels
+@model BDTest.Maps.BDTestOutputModel
+@{
+    ViewBag.Title = "Summary";
+    Layout = "_Layout";
+}
+
+<section class="hero is-info">
+    <div class="hero-body">
+        <div class="container">
+            <div class="columns is-vcentered">
+                <div class="column">
+                    <h1 class="title">
+                        Welcome to your report by <strong>BDTest</strong>!
+                    </h1>
+                    <h2 class="subtitle">
+                        Here is a summary of your tests:
+                    </h2>
+                </div>
+
+                <div class="column">
+                    @await Html.PartialAsync("_PreviousNextReportButtons", Model)
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="section">
+    <div class="container">
+        @await Html.PartialAsync("_SummaryGraphics", new SummaryViewModel {Scenarios = Model.Scenarios})
+    </div>
+</section>

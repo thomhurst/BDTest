@@ -17,7 +17,7 @@ namespace BDTest.Tests.Fixtures
         [SetUp]
         public void Setup()
         {
-            TestSetupHelper.ResetData();
+            TestResetHelper.ResetData();
         }
 
         [Test]
@@ -26,7 +26,7 @@ namespace BDTest.Tests.Fixtures
             var scenario = When(() => Console.WriteLine("my test has a story text"))
                 .Then(() => Console.WriteLine("the attribute should be serialized to the json output"))
                 .BDTest();
-            
+
             BDTestReportGenerator.GenerateInFolder(FileHelpers.GetUniqueTestOutputFolder());
 
             Assert.That(scenario.GetStoryText(), Is.EqualTo($"As a BDTest developer{Environment.NewLine}I want to make sure that BDTest works{Environment.NewLine}So that other developers can use it confidently{Environment.NewLine}"));
@@ -40,7 +40,7 @@ namespace BDTest.Tests.Fixtures
         [SetUp]
         public void Setup()
         {
-            TestSetupHelper.ResetData();
+            TestResetHelper.ResetData();
         }
         
         [Test]

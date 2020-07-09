@@ -1,0 +1,22 @@
+@addTagHelper "*, Microsoft.AspNetCore.Mvc.TagHelpers"
+
+<script>
+    function onWindowFullyLoaded(callback) {
+        if (document.readyState === 'complete') {
+            callback();
+        } else {
+            window.addEventListener('load', callback);
+        }
+    }
+    
+    function onDomLoaded(callback) {
+        if (document.readyState !== 'loading') {
+            callback();
+        } else {
+            document.addEventListener('DOMContentLoaded', callback);
+        }
+    }
+</script>
+<script src="~/_content/BDTest.NetCore.Razor.ReportMiddleware/js/BDTest.js" asp-append-version="true"></script>
+<script src="~/_content/BDTest.NetCore.Razor.ReportMiddleware/js/Chart.min.js" asp-append-version="true"></script>
+@await Html.PartialAsync("_GoToScenarioJavascript")

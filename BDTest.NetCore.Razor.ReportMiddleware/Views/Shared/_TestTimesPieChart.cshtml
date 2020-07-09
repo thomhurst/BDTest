@@ -1,0 +1,77 @@
+@model BDTest.NetCore.Razor.ReportMiddleware.Models.ViewModels.TestTimesPieChartViewModel
+
+@{
+    var orderedByTime = Model.Scenarios.OrderBy(scenario => scenario.TimeTaken).ToList();
+    var shortestScenarios = orderedByTime.Take(5);
+    var longestScenarios = orderedByTime.TakeLast(5);
+    var scenarios = shortestScenarios.Union(longestScenarios).ToList();
+}
+
+@if (orderedByTime.Count > 10)
+{
+    <div class="has-text-centered">
+        <h2 class="subtitle is-5 mb-4">
+            Showing the fastest 5 and slowest 5
+        </h2>
+    </div>
+}
+
+<canvas id="myChart-@Model.StoryIndex"></canvas>
+
+<script>
+              
+var ctx = document.getElementById('myChart-@Model.StoryIndex').getContext('2d');
+data = {
+    datasets: [{
+        data: [
+            @foreach (var scenario in scenarios)
+                    {
+                        @((long)scenario.TimeTaken.TotalMilliseconds)@:,
+                    }
+            ],
+            backgroundColor: [
+                @for (var index = 0; index < scenarios.Count; index++)
+                {
+                    @:getRandomColor(),
+                }
+            ]
+    }],
+
+    labels: [
+        @foreach (var scenario in scenarios)
+        {
+            @:'@scenario.GetScenarioText()',
+        }
+    ]
+}
+
+var myPieChart = new Chart(ctx, {
+    type: 'bar',
+    data: data,
+    options: {
+        legend: {
+                    display: false
+                },
+        scales: {
+            yAxes: [{
+              scaleLabel: {
+                labelString: 'Milliseconds'
+              },
+              ticks: {
+                      // Include a dollar sign in the ticks
+                      callback: function(value, index, values) {
+                          return value + "ms";
+                      }
+                  }
+            }]
+          },
+        tooltips: {
+            callbacks: {
+                label: function(tooltipItem, data) {
+                  return data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index] + "ms";
+                }
+            }
+        }
+    }
+})
+</script>

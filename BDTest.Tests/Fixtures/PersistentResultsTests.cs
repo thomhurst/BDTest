@@ -23,7 +23,7 @@ namespace BDTest.Tests.Fixtures
         [SetUp]
         public void Setup()
         { 
-            TestSetupHelper.ResetData();    
+            TestResetHelper.ResetData();    
         }
         
         [Test]
@@ -31,16 +31,16 @@ namespace BDTest.Tests.Fixtures
         [ScenarioText("Can Deserialize Persistent JSON File")]
         public void CanDeserializePersistentTestResultsSuccessfully()
         {
-            BDTestSettings.PersistentResultsDirectory =
-                Path.Combine(FileHelpers.GetUniqueTestOutputFolder(), "Persistent");
-            
+            BDTestSettings.ReportSettings.PersistentResultsDirectory =
+                Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"), "Persistent");
+
             When(() => Console.WriteLine("A persistent json file is written")).WithStepText(() => "I write custom when step text")
                 .Then(() => CustomStep("1", "2"))
                 .BDTest();
             
             BDTestReportGenerator.Generate();
 
-            var persistentJson = Directory.GetFiles(BDTestSettings.PersistentResultsDirectory).First();
+            var persistentJson = Directory.GetFiles(BDTestSettings.ReportSettings.PersistentResultsDirectory).First();
             var jObject = JObject.Load(new JsonTextReader(new StringReader(File.ReadAllText(persistentJson))));
 
             var scenarios = JsonConvert.DeserializeObject<List<Scenario>>(jObject.GetValue("Scenarios").ToString());

@@ -16,6 +16,9 @@ namespace BDTest.Test
     public class Step
     {
         internal Runnable Runnable { get; }
+        
+        [JsonProperty]
+        public string Guid { get; private set; }
 
         [JsonProperty]
         public DateTime StartTime { get; private set; }
@@ -39,7 +42,7 @@ namespace BDTest.Test
         public Status Status { get; private set; } = Status.Inconclusive;
 
         [JsonProperty]
-        public Exception Exception { get; private set; }
+        public ExceptionWrapper Exception { get; private set; }
 
         private bool _alreadyExecuted;
 
@@ -47,6 +50,7 @@ namespace BDTest.Test
 
         internal Step(Runnable runnable, StepType stepType)
         {
+            Guid = System.Guid.NewGuid().ToString("N");
             Runnable = runnable;
             StepType = stepType;
             SetStepText();
@@ -131,7 +135,7 @@ namespace BDTest.Test
                 catch (NotImplementedException e)
                 {
                     Status = Status.NotImplemented;
-                    Exception = e;
+                    Exception = new ExceptionWrapper(e);
                     throw;
                 }
                 catch (Exception e) when (BDTestSettings.CustomExceptionSettings.SuccessExceptionTypes.Contains(e.GetType()))
@@ -147,7 +151,7 @@ namespace BDTest.Test
                 catch (Exception e)
                 {
                     Status = Status.Failed;
-                    Exception = e;
+                    Exception = new ExceptionWrapper(e);
                     throw;
                 }
                 finally

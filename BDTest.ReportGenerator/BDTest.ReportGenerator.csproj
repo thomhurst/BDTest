@@ -2,8 +2,8 @@
 
   <PropertyGroup>
     <IsPackable>true</IsPackable>
-    <TargetFrameworks>netstandard2.0;netcoreapp2.0</TargetFrameworks>
-    <LangVersion>default</LangVersion>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
   </PropertyGroup>
 
   <PropertyGroup>
@@ -42,6 +42,7 @@
 
   <ItemGroup>
     <None Include="$(ProjectDir)bdtest-reportdependencies\**" CopyToOutputDirectory="PreserveNewest" />
+    <Folder Include="Helpers" />
   </ItemGroup>
 
 </Project>

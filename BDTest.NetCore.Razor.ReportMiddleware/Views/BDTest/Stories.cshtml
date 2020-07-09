@@ -1,0 +1,201 @@
+@using BDTest.NetCore.Razor.ReportMiddleware.Constants
+@using BDTest.NetCore.Razor.ReportMiddleware.Extensions
+@using BDTest.NetCore.Razor.ReportMiddleware.Models
+@using BDTest.NetCore.Razor.ReportMiddleware.Models.ViewModels
+@using BDTest.Test
+@model BDTest.Maps.BDTestOutputModel
+
+@{
+    ViewBag.Title = "Stories";
+    Layout = "_Layout";
+}
+
+@{
+    var scenariosGroupedByStories = @Model.Scenarios.GroupBy(scenario => scenario.GetStoryText())
+        .OrderBy(group => group.GetTotalStatus().GetOrder())
+        .ThenBy(group => group.Key);
+}
+
+<section class="hero is-info">
+    <div class="hero-body">
+        <div class="container">
+            <div class="columns is-vcentered">
+                <div class="column">
+                    <h1 class="title">
+                        Stories
+                    </h1>
+                    <h2 class="subtitle">
+                        Here are the stories that you've tested:
+                    </h2>
+                </div>
+                <div class="column">
+                    @await Html.PartialAsync("_PreviousNextReportButtons", Model)
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+@{ var storyIndex = 0; }
+
+<div id="stories-container">
+    
+    <div class="buttons is-right mr-4 mt-4">
+        @await Html.PartialAsync("_StatusDropdown")
+        <button class="button is-rounded" onclick="expandCollapseStories(true);">Expand All</button>
+        <button class="button is-rounded" onclick="expandCollapseStories(false);">Collapse All</button>
+    </div>
+    
+    <script>
+          function expandStory(storyHeader, elementToHide){
+                  storyHeader.parentElement.parentElement.classList.remove("rounded-all-corners")
+                  storyHeader.parentElement.parentElement.classList.add("rounded-top-corners")
+                  setElementVisible(elementToHide);
+          }
+          
+          function collapseStory(storyHeader, elementToHide){
+              storyHeader.parentElement.parentElement.classList.remove("rounded-top-corners")
+              storyHeader.parentElement.parentElement.classList.add("rounded-all-corners")
+              setElementInvisible(elementToHide);
+          }
+          
+          function toggleStoryHeader(storyHeaderId, shouldExpand) {
+            let storyHeader = document.getElementById(storyHeaderId);
+            let elementIdToHide = storyHeader.getAttribute("element-id-to-hide");
+            let elementToHide = document.getElementById(elementIdToHide);
+            
+            let expand = shouldExpand;
+            if(shouldExpand == null) 
+            {
+                expand = elementToHide.classList.contains("invisible");
+            }
+                                  
+              if(expand) {
+                  expandStory(storyHeader, elementToHide);
+              } else {
+                  collapseStory(storyHeader, elementToHide);
+              }
+          }
+    
+    function expandCollapseStories(shouldExpand) {
+      let storyHeaders = document.getElementsByClassName("story-header");
+      for (let storyHeader of storyHeaders) {
+          toggleStoryHeader(storyHeader.id, shouldExpand);
+      }
+    }
+    </script>
+    
+    @foreach (var story in scenariosGroupedByStories)
+    {
+        storyIndex++;
+        var scenariosForThisStory = story.ToList();
+        var scenariosGroupedByScenarioText = scenariosForThisStory.GroupBy(scenario => scenario.GetScenarioText()).ToList();
+
+        var hasSuccess = scenariosForThisStory.Any(scenario => scenario.Status == Status.Passed) ? HtmlClassConstants.HasSuccess : string.Empty;
+        var hasFailures = scenariosForThisStory.Any(scenario => scenario.Status == Status.Failed) ? HtmlClassConstants.HasFailures : string.Empty;
+        var hasSkipped = scenariosForThisStory.Any(scenario => scenario.Status == Status.Skipped) ? HtmlClassConstants.HasSkipped : string.Empty;
+        var hasInconclusive = scenariosForThisStory.Any(scenario => scenario.Status == Status.Inconclusive) ? HtmlClassConstants.HasInconclusive : string.Empty;
+        var hasNotImplemented = scenariosForThisStory.Any(scenario => scenario.Status == Status.NotImplemented) ? HtmlClassConstants.HasNotImplemented : string.Empty;
+
+        <div class="columns is-centered">
+            <div class="column is-three-quarters">
+                <section class="section">
+                    <section class="rounded-top-corners hero @scenariosForThisStory.GetTotalStatus().GetCssColourValueForStatus()">
+                        <div class="hero-body">
+                            <div id="story-header-@storyIndex" class="container pointer story-header @hasSuccess @hasFailures @hasSkipped @hasInconclusive @hasNotImplemented" element-id-to-hide="story-@storyIndex" onclick="toggleStoryHeader('story-header-@storyIndex', null)">
+                                <h1 class="title">Story:</h1>
+                                @{
+                                    var storyTextSplitByLines = story.Key.SplitOnNewLines();
+                                    foreach (var line in storyTextSplitByLines)
+                                    {
+                                        <h2 class="subtitle mb-0">@line</h2>
+                                    }
+                                }
+                            </div>
+                        </div>
+                    </section>
+
+                    <div class="box mb-0 rounded-bottom-corners" id="story-@storyIndex">
+                        <div class="has-text-right scenarios-buttons-row">
+                            @if (scenariosGroupedByScenarioText.Any(scenarios => scenarios.Count() > 1))
+                            {
+                                @await Html.PartialAsync("_CollapseExpandGroupedScenariosButtons", $"story-{storyIndex}")
+                            }
+                            <button class="button toggle-hide pointer is-rounded" toggle-alternative-text="Hide Summary" element-id-to-hide="story-summary-@storyIndex">Show Summary</button>
+                            <button class="button toggle-hide pointer is-rounded" toggle-alternative-text="Hide Timings Chart" element-id-to-hide="story-summary-pie-chart-times-@storyIndex">Show Timings Chart</button>
+                        </div>
+
+                        <div class="mt-4 container invisible" id="story-summary-@storyIndex">
+                            @await Html.PartialAsync("_SummaryGraphics", new SummaryViewModel {Scenarios = scenariosForThisStory})
+                        </div>
+
+                        <div class="mt-4 mb-6 container invisible story-chart-container" id="story-summary-pie-chart-times-@storyIndex">
+                            @await Html.PartialAsync("_TestTimesPieChart", new TestTimesPieChartViewModel { Scenarios = scenariosForThisStory, StoryIndex = storyIndex })
+                        </div>
+
+                        <table class="table is-fullwidth mt-4">
+                            <thead>
+                            <tr>
+                                <th class="has-text-centered">Scenario</th>
+                                <th class="has-text-centered">Status</th>
+                                <th class="has-text-centered">Duration</th>
+                                <th class="has-text-centered">Start</th>
+                                <th class="has-text-centered">End</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+
+                            @{ var scenarioIndex = new ReferenceInt(0); }
+                            @{ var groupedScenariosCount = new ReferenceInt(0); }
+                            @foreach (var groupedScenarios in scenariosGroupedByScenarioText)
+                            {
+                                @await Html.PartialAsync("_GroupedScenarioTableRow", new GroupedScenarioViewModel
+                                {
+                                    Scenarios = groupedScenarios.ToList(),
+                                    ScenarioIndex = scenarioIndex,
+                                    GroupedScenarioIndex = groupedScenariosCount,
+                                })
+                            }
+
+                            </tbody>
+                        </table>
+                    </div>
+
+
+                    @{
+                        var allScenarioGroups = scenariosGroupedByScenarioText.Select(groupedScenarios => groupedScenarios.ToList()).ToList();
+                    }
+
+                    @for (var outerIndex = 0; outerIndex < allScenarioGroups.Count; outerIndex++)
+                    {
+                        var groupedScenario = allScenarioGroups[outerIndex];
+                        for (var innerIndex = 0; innerIndex < groupedScenario.Count; innerIndex++)
+                        {
+                            var lastScenario = groupedScenario.ElementAtOrDefault(innerIndex - 1) ?? allScenarioGroups.ElementAtOrDefault(outerIndex - 1)?.LastOrDefault();
+                            var scenario = groupedScenario[innerIndex];
+                            var nextScenario = groupedScenario.ElementAtOrDefault(innerIndex + 1) ?? allScenarioGroups.ElementAtOrDefault(outerIndex + 1)?.FirstOrDefault();
+
+                            @await Html.PartialAsync("_ScenarioModalPopup", new ScenarioModalViewModel
+                            {
+                                LastScenario = lastScenario,
+                                Scenario = scenario,
+                                NextScenario = nextScenario
+                            })
+                        }
+                    }
+
+                </section>
+            </div>
+        </div>
+        
+        <hr class="rounded quarter-width center-horizontally">
+    }
+    
+    @* Remove the last divider - There's not another story after it so it's not dividing anything! *@
+    <script>
+        Array.prototype.slice.call(document.getElementsByTagName("hr")).slice(-1)[0].remove()
+    </script>
+    
+    @await Html.PartialAsync("_WowSuchEmpty")
+    
+</div>

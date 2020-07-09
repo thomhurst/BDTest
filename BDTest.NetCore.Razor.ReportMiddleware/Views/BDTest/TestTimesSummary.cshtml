@@ -1,0 +1,39 @@
+@using BDTest.NetCore.Razor.ReportMiddleware.Models.ViewModels
+@model BDTest.Maps.BDTestOutputModel
+
+@{
+    ViewBag.Title = "Test Times";
+    Layout = "_Layout";
+}
+
+<section class="hero is-info">
+    <div class="hero-body">
+        <div class="container">
+            <div class="columns is-vcentered">
+                <div class="column">
+                    <h1 class="title">
+                        Test Times
+                    </h1>
+                    <h2 class="subtitle">
+                        Here is a breakdown of the times that your tests took to run:
+                    </h2>
+                    <h2 class="subtitle is-6">
+                        Hover over a slice to view more details
+                    </h2>
+                </div>
+
+                <div class="column">
+                    @await Html.PartialAsync("_PreviousNextReportButtons", Model)
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="section">
+    <div class="container">
+
+        @await Html.PartialAsync("_TestTimesPieChart", new TestTimesPieChartViewModel { Scenarios = Model.Scenarios })
+
+        </div>
+</section>
