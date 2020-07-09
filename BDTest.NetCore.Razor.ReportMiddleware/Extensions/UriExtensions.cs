@@ -24,13 +24,5 @@ namespace BDTest.NetCore.Razor.ReportMiddleware.Extensions
                 Path = path
             }.Uri;
         }
-
-        public static Uri ClearQueryParameters(this Uri uri)
-        {
-            return new UriBuilder(uri)
-            {
-                Query = string.Empty
-            }.Uri;
-        }
     }
 }
