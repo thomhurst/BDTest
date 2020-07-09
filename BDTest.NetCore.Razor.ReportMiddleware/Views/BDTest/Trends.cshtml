@@ -106,9 +106,10 @@ data = {
     datasets: [ 
         {
             label: "Not Run",
-            borderColor: "rgba(0, 0, 0, 0)",
-            pointBorderColor: "rgba(0, 0, 0, 0)",
-            pointBackgroundColor: "rgba(0, 0, 0, 0)",
+            borderColor: "rgba(0,0,0,0)",
+            pointRadius: 0,
+            pointHitRadius: 15,
+            borderWidth: 0,
             data: [
                 @string.Join(",", testRunSummaries.Select(summary => summary.Counts.NotRun))
             ]    
@@ -116,9 +117,12 @@ data = {
         {
             label: "Failed",
             backgroundColor: "#f14668",
-            borderColor: "rgba(0, 0, 0, 0)",
-            pointBorderColor: "rgba(0, 0, 0, 0)",
-            pointBackgroundColor: "rgba(0, 0, 0, 0)",
+            borderColor: "rgba(0,0,0,0)",
+            pointBorderColor: "#f14668",
+            pointBackgroundColor: "#f14668",
+            pointHitRadius: 15,
+            pointRadius: 0,
+            borderWidth: 0,
             data: [
                 @string.Join(",", testRunSummaries.Select(summary => summary.Counts.Failed))
             ]    
@@ -126,9 +130,12 @@ data = {
         {
             label: "Inconclusive",
             backgroundColor: "#ffdd57",
-            borderColor: "rgba(0, 0, 0, 0)",
-            pointBorderColor: "rgba(0, 0, 0, 0)",
-            pointBackgroundColor: "rgba(0, 0, 0, 0)",
+            borderColor: "rgba(0,0,0,0)",
+            pointBorderColor: "#ffdd57",
+            pointBackgroundColor: "#ffdd57",
+            pointHitRadius: 15,
+            pointRadius: 0,
+            borderWidth: 0,
             data: [
                 @string.Join(",", testRunSummaries.Select(summary => summary.Counts.Inconclusive))
             ]    
@@ -136,9 +143,12 @@ data = {
         {
             label: "Not Implemented",
             backgroundColor: "#ffdd57",
-            borderColor: "rgba(0, 0, 0, 0)",
-            pointBorderColor: "rgba(0, 0, 0, 0)",
-            pointBackgroundColor: "rgba(0, 0, 0, 0)",
+            borderColor: "rgba(0,0,0,0)",
+            pointBorderColor: "#ffdd57",
+            pointBackgroundColor: "#ffdd57",
+            pointHitRadius: 15,
+            pointRadius: 0,
+            borderWidth: 0,
             data: [
                 @string.Join(",", testRunSummaries.Select(summary => summary.Counts.NotImplemented))
             ]    
@@ -146,9 +156,12 @@ data = {
         {
             label: "Skipped",
             backgroundColor: "#ffdd57",
-            borderColor: "rgba(0, 0, 0, 0)",
-            pointBorderColor: "rgba(0, 0, 0, 0)",
-            pointBackgroundColor: "rgba(0, 0, 0, 0)",
+            borderColor: "rgba(0,0,0,0)",
+            pointBorderColor: "#ffdd57",
+            pointBackgroundColor: "#ffdd57",
+            pointHitRadius: 15,
+            pointRadius: 0,
+            borderWidth: 0,
             data: [
                 @string.Join(",", testRunSummaries.Select(summary => summary.Counts.Skipped))
             ]    
@@ -156,9 +169,12 @@ data = {
         {
             label: "Passed",
             backgroundColor: "#48c774",
-            borderColor: "rgba(0, 0, 0, 0)",
-            pointBorderColor: "rgba(0, 0, 0, 0)",
-            pointBackgroundColor: "rgba(0, 0, 0, 0)",
+            borderColor: "rgba(0,0,0,0)",
+            pointBorderColor: "#48c774",
+            pointBackgroundColor: "#48c774",
+            pointHitRadius: 15,
+            pointRadius: 0,
+            borderWidth: 0,
             data: [
                 @string.Join(",", testRunSummaries.Select(summary => summary.Counts.Passed))
             ]    
