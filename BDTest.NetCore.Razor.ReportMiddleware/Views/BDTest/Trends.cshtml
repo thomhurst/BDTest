@@ -22,6 +22,11 @@
     if (!string.IsNullOrEmpty(environmentQueryParameter) && environmentQueryParameter != "All Environments")
     {
         testRunSummariesEnumerable = testRunSummariesEnumerable.Where(summary => summary.Environment == environmentQueryParameter);
+        <script>
+            onDomLoaded(function() {
+              document.getElementById("filter-by-environment-text").textContent = '@environmentQueryParameter';
+            })
+        </script>
     }
 
     var testRunSummaries = testRunSummariesEnumerable.OrderBy(x => x.StartedAtDateTime).ToList();

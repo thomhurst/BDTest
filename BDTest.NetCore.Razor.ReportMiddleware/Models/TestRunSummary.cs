@@ -26,7 +26,7 @@ namespace BDTest.NetCore.Razor.ReportMiddleware.Models
             SetCounts(bdTestOutputModel);
         }
 
-        public void SetCounts(BDTestOutputModel bdTestOutputModel)
+        private void SetCounts(BDTestOutputModel bdTestOutputModel)
         {
             Counts.Total = bdTestOutputModel.Scenarios.Count;
             Counts.NotRun = bdTestOutputModel.NotRun?.Count ?? 0;
