@@ -52,8 +52,56 @@
                 </li>
                 <li>
                     <a class="@GetIsActive("/all-scenarios")" href="~/bdtest/report/@id/all-scenarios">
-                        <span>All Scenarios</span>
+                        <span>Scenarios</span>
                     </a>
+                    @if (!metrics.AllPassed)
+                    {
+                    <ul>
+
+                        <li>
+                            <a href="~/bdtest/report/@id/all-scenarios?filterByStatus=Passed">
+                                <span>Passed</span>
+                            </a>
+                        </li>
+
+                        @if (metrics.AnyFailed)
+                        {
+                            <li>
+                                <a href="~/bdtest/report/@id/all-scenarios?filterByStatus=Failed">
+                                    <span>Failed</span>
+                                </a>
+                            </li>
+                        }
+
+                        @if (metrics.AnyInconclusive)
+                        {
+                            <li>
+                                <a href="~/bdtest/report/@id/all-scenarios?filterByStatus=Inconclusive">
+                                    <span>Inconclusive</span>
+                                </a>
+                            </li>
+                        }
+
+                        @if (metrics.AnySkipped)
+                        {
+                            <li>
+                                <a href="~/bdtest/report/@id/all-scenarios?filterByStatus=Skipped">
+                                    <span>Skipped</span>
+                                </a>
+                            </li>
+                        }
+
+                        @if (metrics.AnyNotImplemented)
+                        {
+                            <li>
+                                <a href="~/bdtest/report/@id/all-scenarios?filterByStatus=NotImplemented">
+                                    <span>Not Implemented</span>
+                                </a>
+                            </li>
+                        }
+
+                    </ul>
+                    }
                 </li>
                 <li>
                     <a class="@GetIsActive("/timings")" href="~/bdtest/report/@id/timings">
