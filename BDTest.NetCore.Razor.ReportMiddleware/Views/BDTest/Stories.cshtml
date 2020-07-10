@@ -133,32 +133,34 @@
                             @await Html.PartialAsync("_TestTimesPieChart", new TestTimesPieChartViewModel { Scenarios = scenariosForThisStory, StoryIndex = storyIndex })
                         </div>
 
-                        <table class="table is-fullwidth mt-4">
-                            <thead>
-                            <tr>
-                                <th class="has-text-centered">Scenario</th>
-                                <th class="has-text-centered">Status</th>
-                                <th class="has-text-centered">Duration</th>
-                                <th class="has-text-centered">Start</th>
-                                <th class="has-text-centered">End</th>
-                            </tr>
-                            </thead>
-                            <tbody>
+                        <div class="scrollable-table-container">
+                            <table class="table is-fullwidth mt-4">
+                                <thead>
+                                <tr>
+                                    <th class="has-text-centered">Scenario</th>
+                                    <th class="has-text-centered">Status</th>
+                                    <th class="has-text-centered">Duration</th>
+                                    <th class="has-text-centered">Start</th>
+                                    <th class="has-text-centered">End</th>
+                                </tr>
+                                </thead>
+                                <tbody>
 
-                            @{ var scenarioIndex = new ReferenceInt(0); }
-                            @{ var groupedScenariosCount = new ReferenceInt(0); }
-                            @foreach (var groupedScenarios in scenariosGroupedByScenarioText)
-                            {
-                                @await Html.PartialAsync("_GroupedScenarioTableRow", new GroupedScenarioViewModel
+                                @{ var scenarioIndex = new ReferenceInt(0); }
+                                @{ var groupedScenariosCount = new ReferenceInt(0); }
+                                @foreach (var groupedScenarios in scenariosGroupedByScenarioText)
                                 {
-                                    Scenarios = groupedScenarios.ToList(),
-                                    ScenarioIndex = scenarioIndex,
-                                    GroupedScenarioIndex = groupedScenariosCount,
-                                })
-                            }
+                                    @await Html.PartialAsync("_GroupedScenarioTableRow", new GroupedScenarioViewModel
+                                    {
+                                        Scenarios = groupedScenarios.ToList(),
+                                        ScenarioIndex = scenarioIndex,
+                                        GroupedScenarioIndex = groupedScenariosCount,
+                                    })
+                                }
 
-                            </tbody>
-                        </table>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
 
 

@@ -4,6 +4,10 @@ button {
 	overflow-wrap: break-word;
 }
 
+.scrollable-table-container {
+	overflow: auto;
+}
+
 html,
 body,
 .navbar,
