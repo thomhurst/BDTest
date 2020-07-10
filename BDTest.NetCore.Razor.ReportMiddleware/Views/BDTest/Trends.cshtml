@@ -10,6 +10,13 @@
         environments.Insert(0, "All Environments");
         return environments;
     }
+    
+    private List<string> GetTags()
+    {
+        var environments = Model.Select(x => x.Tag).Distinct().ToList();
+        environments.Insert(0, "All Tags");
+        return environments;
+    }
 }
 
 @{
@@ -19,12 +26,24 @@
     var testRunSummariesEnumerable = Model.AsEnumerable() ?? Enumerable.Empty<TestRunSummary>();
     
     var environmentQueryParameter = HttpUtility.ParseQueryString(new Uri(Context.Request.GetEncodedUrl()).Query).Get("environment");
+    var tagQueryParameter = HttpUtility.ParseQueryString(new Uri(Context.Request.GetEncodedUrl()).Query).Get("tag");
+    
     if (!string.IsNullOrEmpty(environmentQueryParameter) && environmentQueryParameter != "All Environments")
     {
         testRunSummariesEnumerable = testRunSummariesEnumerable.Where(summary => summary.Environment == environmentQueryParameter);
         <script>
             onDomLoaded(function() {
               document.getElementById("filter-by-environment-text").textContent = '@environmentQueryParameter';
+            })
+        </script>
+    }
+
+    if (!string.IsNullOrEmpty(tagQueryParameter) && environmentQueryParameter != "All Tags")
+    {
+        testRunSummariesEnumerable = testRunSummariesEnumerable.Where(summary => summary.Tag?.ToLowerInvariant().Contains(tagQueryParameter.ToLowerInvariant()) == true);
+        <script>
+            onDomLoaded(function() {
+              document.getElementById("filter-by-tag-text").textContent = '@tagQueryParameter';
             })
         </script>
     }
@@ -52,9 +71,15 @@
 <section class="section">
     <div class="container">
         
-        <div class="mb-6 has-text-right">
-            @await Html.PartialAsync("_EnvironmentDropdown", GetEnvironments())
-        </div>
+        <nav class="level">
+            <div class="mb-6 has-text-right">
+                @await Html.PartialAsync("_TagDropdown", GetTags())
+            </div>
+            
+            <div class="mb-6 has-text-right">
+                @await Html.PartialAsync("_EnvironmentDropdown", GetEnvironments())
+            </div>
+        </nav>
 
         <div class="columns">
             <div class="column is-half">
@@ -236,7 +261,7 @@ var myPieChart = new Chart(ctx, {
                   beginAtZero:true,
                   // Include a dollar sign in the ticks
                   callback: function(value, index, values) {
-                      return value + "s";
+                      return "";
                   }
                   }
             }]
