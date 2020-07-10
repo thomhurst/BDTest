@@ -57,7 +57,7 @@
                         <span class="title">@scenarioExceptions.Count()</span>
                     </td>
                     <td class="is-vcentered has-text-centered">
-                        <pre class="off-white-bg-color">@scenarioExceptions.First().ExceptionMessage.TypeName: @scenarioExceptions.First().ExceptionMessage.Message.Trim()</pre>
+                        <div class="off-white-bg-color like-pre" style="max-width: 50vw;">@scenarioExceptions.First().ExceptionMessage.TypeName: @scenarioExceptions.First().ExceptionMessage.Message.Trim()</div>
                     </td>
                     <td class="is-vcentered">
                         <a href="~/bdtest/report/@Model.Id/stories?scenarioId=@scenarioExceptions.First().TestGuid">

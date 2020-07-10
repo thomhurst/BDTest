@@ -262,3 +262,7 @@ hr.rounded {
 .burger.is-active span:nth-child(3) {
 	transform: translateY(-5px) rotate(-45deg);
 }
+
+.like-pre {
+	font-family: monospace;
+}
