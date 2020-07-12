@@ -40,7 +40,7 @@
 
     if (!string.IsNullOrEmpty(tagQueryParameter) && tagQueryParameter != "All Tags")
     {
-        testRunSummariesEnumerable = testRunSummariesEnumerable.Where(summary => summary.Tag?.ToLowerInvariant().Contains(tagQueryParameter.ToLowerInvariant()) == true);
+        testRunSummariesEnumerable = testRunSummariesEnumerable.Where(summary => summary.Tag == tagQueryParameter);
         <script>
             onDomLoaded(function() {
               document.getElementById("filter-by-tag-text").textContent = '@tagQueryParameter';
