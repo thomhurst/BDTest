@@ -38,7 +38,7 @@
         </script>
     }
 
-    if (!string.IsNullOrEmpty(tagQueryParameter) && environmentQueryParameter != "All Tags")
+    if (!string.IsNullOrEmpty(tagQueryParameter) && tagQueryParameter != "All Tags")
     {
         testRunSummariesEnumerable = testRunSummariesEnumerable.Where(summary => summary.Tag?.ToLowerInvariant().Contains(tagQueryParameter.ToLowerInvariant()) == true);
         <script>
