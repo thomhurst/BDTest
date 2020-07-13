@@ -45,70 +45,74 @@
                         <span>Summary</span>
                     </a>
                 </li>
+                
                 <li>
                     <a class="@GetIsActive("/stories")" href="~/bdtest/report/@id/stories">
                         <span>Stories</span>
                     </a>
                 </li>
+                
                 <li>
                     <a class="@GetIsActive("/all-scenarios")" href="~/bdtest/report/@id/all-scenarios">
                         <span>Scenarios</span>
                     </a>
                     @if (!metrics.AllPassed)
                     {
-                    <ul>
+                        <ul>
 
-                        <li>
-                            <a href="~/bdtest/report/@id/all-scenarios?filterByStatus=Passed">
-                                <span>Passed</span>
-                            </a>
-                        </li>
-
-                        @if (metrics.AnyFailed)
-                        {
                             <li>
-                                <a href="~/bdtest/report/@id/all-scenarios?filterByStatus=Failed">
-                                    <span>Failed</span>
+                                <a href="~/bdtest/report/@id/all-scenarios?filterByStatus=Passed">
+                                    <span>Passed</span>
                                 </a>
                             </li>
-                        }
 
-                        @if (metrics.AnyInconclusive)
-                        {
-                            <li>
-                                <a href="~/bdtest/report/@id/all-scenarios?filterByStatus=Inconclusive">
-                                    <span>Inconclusive</span>
-                                </a>
-                            </li>
-                        }
+                            @if (metrics.AnyFailed)
+                            {
+                                <li>
+                                    <a href="~/bdtest/report/@id/all-scenarios?filterByStatus=Failed">
+                                        <span>Failed</span>
+                                    </a>
+                                </li>
+                            }
 
-                        @if (metrics.AnySkipped)
-                        {
-                            <li>
-                                <a href="~/bdtest/report/@id/all-scenarios?filterByStatus=Skipped">
-                                    <span>Skipped</span>
-                                </a>
-                            </li>
-                        }
+                            @if (metrics.AnyInconclusive)
+                            {
+                                <li>
+                                    <a href="~/bdtest/report/@id/all-scenarios?filterByStatus=Inconclusive">
+                                        <span>Inconclusive</span>
+                                    </a>
+                                </li>
+                            }
 
-                        @if (metrics.AnyNotImplemented)
-                        {
-                            <li>
-                                <a href="~/bdtest/report/@id/all-scenarios?filterByStatus=NotImplemented">
-                                    <span>Not Implemented</span>
-                                </a>
-                            </li>
-                        }
+                            @if (metrics.AnySkipped)
+                            {
+                                <li>
+                                    <a href="~/bdtest/report/@id/all-scenarios?filterByStatus=Skipped">
+                                        <span>Skipped</span>
+                                    </a>
+                                </li>
+                            }
 
-                    </ul>
+                            @if (metrics.AnyNotImplemented)
+                            {
+                                <li>
+                                    <a href="~/bdtest/report/@id/all-scenarios?filterByStatus=NotImplemented">
+                                        <span>Not Implemented</span>
+                                    </a>
+                                </li>
+                            }
+
+                        </ul>
                     }
                 </li>
+                
                 <li>
                     <a class="@GetIsActive("/timings")" href="~/bdtest/report/@id/timings">
                         <span>Timings</span>
                     </a>
                 </li>
-                @if (metrics.AnyExceptions)
+                
+                @if (metrics.AnyFailed)
                 {
                     <li>
                         <a class="@GetIsActive("/top-defects")" href="~/bdtest/report/@id/top-defects">
