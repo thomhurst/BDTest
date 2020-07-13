@@ -6,9 +6,9 @@ namespace BDTest.Reporters
     internal class ConsoleReporter : Reporter
     {
 
-        public override void WriteLine(string text, params object[] args)
+        public override void WriteLine(string text)
         {
-            Console.Out.WriteLine(text, args);
+            Console.Out.WriteLine(text);
         }
 
         public override void WriteStory(StoryText storyText)

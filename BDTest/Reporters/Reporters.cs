@@ -27,11 +27,11 @@ namespace BDTest.Reporters
             }
         }
 
-        public override void WriteLine(string text, params object[] args)
+        public override void WriteLine(string text)
         {
             foreach (var reporter in _reporters)
             {
-                reporter.WriteLine(text, args);
+                reporter.WriteLine(text);
             }
         }
 

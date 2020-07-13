@@ -186,7 +186,7 @@ namespace BDTest.Test
 
         private void WriteCustomTestInformation()
         {
-            foreach (var testInformationAttribute in CustomTestInformation)
+            foreach (var testInformationAttribute in CustomTestInformation ?? Array.Empty<TestInformationAttribute>())
             {
                 _reporters.WriteLine(testInformationAttribute.Print());
             }

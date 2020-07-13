@@ -20,7 +20,7 @@ namespace BDTest.Reporters
             }
         }
 
-        public override void WriteLine(string text, params object[] args)
+        public override void WriteLine(string text)
         {
             _contents.AppendLine(text);
         }
