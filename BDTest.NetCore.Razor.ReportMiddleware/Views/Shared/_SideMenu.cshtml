@@ -15,6 +15,7 @@
 
 <div class="box menu-box off-white-bg-color" id="sidebar">
     <aside class="menu my-6">
+    
         <p class="menu-label">
             Navigation
         </p>
@@ -130,6 +131,34 @@
                     </li>
                 }
             </ul>
+            
+            @if (!string.IsNullOrEmpty(currentTestReport?.Environment) || !string.IsNullOrEmpty(currentTestReport?.Tag))
+            {
+                @if (!string.IsNullOrEmpty(currentTestReport.Environment))
+                {
+                    <p class="menu-label mb-0">
+                        Environment
+                    </p>
+                    <ul class="menu-list">
+                        <li>
+                            <span class="menu-text">@currentTestReport.Environment</span>
+                        </li>
+                    </ul>
+                }
+
+                @if (!string.IsNullOrEmpty(currentTestReport.Tag))
+                {
+                    <p class="menu-label mb-0">
+                        Tag
+                    </p>
+                    <ul class="menu-list">
+                        <li>
+                            <span class="menu-text">@currentTestReport.Tag</span>
+                        </li>
+                    </ul>
+                }
+            }
+            
         }
         <p class="menu-label">
             Actions
@@ -144,41 +173,7 @@
                 </a>
             </li>
         </ul>
-        
-        @if (!string.IsNullOrEmpty(currentTestReport?.Environment) || !string.IsNullOrEmpty(currentTestReport?.Tag))
-        {
-            <p class="menu-label">
-                Test Report Information
-            </p>
-            <ul class="menu-list">
-                @if (!string.IsNullOrEmpty(currentTestReport.Environment))
-                {
-                    <li>
-                        <span class="menu-text">Environment:</span>
 
-                        <ul class="mt-0">
-                            <li>
-                                <span>@currentTestReport.Environment</span>
-                            </li>
-                        </ul>
-                    </li>
-                }
-
-                @if (!string.IsNullOrEmpty(currentTestReport.Tag))
-                {
-                    <li>
-                        <span class="menu-text">Tag:</span>
-
-                        <ul class="mt-0">
-                            <li>
-                                <span>@currentTestReport.Tag</span>
-                            </li>
-                        </ul>
-                    </li>
-                }
-            </ul>
-        }
-        
         @if (customTabsProvider != null)
         {
             <p class="menu-label">
