@@ -140,6 +140,41 @@
                 </a>
             </li>
         </ul>
+        
+        @if (!string.IsNullOrEmpty(currentTestReport?.Environment) || !string.IsNullOrEmpty(currentTestReport?.Tag))
+        {
+            <p class="menu-label">
+                Test Report Information
+            </p>
+            <ul class="menu-list">
+                @if (!string.IsNullOrEmpty(currentTestReport.Environment))
+                {
+                    <li>
+                        <span class="menu-text">Environment:</span>
+
+                        <ul class="mt-0">
+                            <li>
+                                <span>@currentTestReport.Environment</span>
+                            </li>
+                        </ul>
+                    </li>
+                }
+
+                @if (!string.IsNullOrEmpty(currentTestReport.Tag))
+                {
+                    <li>
+                        <span class="menu-text">Tag:</span>
+
+                        <ul class="mt-0">
+                            <li>
+                                <span>@currentTestReport.Tag</span>
+                            </li>
+                        </ul>
+                    </li>
+                }
+            </ul>
+        }
+        
         @if (customTabsProvider != null)
         {
             <p class="menu-label">

@@ -270,3 +270,10 @@ hr.rounded {
 .like-pre {
 	font-family: monospace;
 }
+
+.menu-text {
+	/*border-radius: 2px;*/
+	color: #4a4a4a;
+	display: block;
+	padding: 0.5em 0.75em;
+}
