@@ -15,7 +15,7 @@
     var invisibleClass = string.IsNullOrEmpty(id) ? "invisible" : string.Empty;
     var customTabsProvider = ServiceProvider.GetService<IBDTestCustomTabsProvider>();
     
-    BDTestOutputModel currentTestReport = string.IsNullOrEmpty(id) ? null : await ServiceProvider.GetService<IBDTestDataStore>().GetTestData(id);
+    BDTestOutputModel currentTestReport = string.IsNullOrEmpty(id) ? null : await ServiceProvider.GetService<IDataController>().GetData(id);
     var metrics = new OutputMetrics(currentTestReport);
     var anyExceptions = metrics.AnyExceptions;
 }

@@ -277,3 +277,15 @@ hr.rounded {
 	display: block;
 	padding: 0.5em 0.75em;
 }
+
+.max-width-40 {
+	max-width: 40vw;
+}
+
+.max-width-50 {
+	max-width: 50vw;
+}
+
+.max-width-80 {
+	max-width: 80vw;
+}
