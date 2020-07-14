@@ -8,7 +8,8 @@
     ViewBag.Title = "Flakiness";
     Layout = "_Layout";
 
-    var allScenarios = Model.SelectMany(model => model.Scenarios).Where(scenario => scenario != null);
+    var allScenarios = Model.SelectMany(model => model.Scenarios)
+        .Where(scenario => scenario != null);
     var groupedScenarios = allScenarios.GroupBy(scenario => new ScenarioGroupKey
     {
         StoryText = scenario.GetStoryText(),

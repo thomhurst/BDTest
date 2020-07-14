@@ -130,7 +130,7 @@ namespace BDTest.NetCore.Razor.ReportMiddleware.Controllers
                 return RedirectToAction("TestRuns", "BDTest");
             }
             
-            var foundReports = (await Task.WhenAll(reportIdsArray.Select(_dataController.GetData))).ToList();
+            var foundReports = (await Task.WhenAll(reportIdsArray.Select(_dataController.GetData))).Where(data => data != null).ToList();
 
             if (!foundReports.Any())
             {
@@ -151,7 +151,7 @@ namespace BDTest.NetCore.Razor.ReportMiddleware.Controllers
                 return RedirectToAction("TestRuns", "BDTest");
             }
             
-            var foundReports = (await Task.WhenAll(reportIdsArray.Select(_dataController.GetData))).ToList();
+            var foundReports = (await Task.WhenAll(reportIdsArray.Select(_dataController.GetData))).Where(data => data != null).ToList();
 
             if (!foundReports.Any())
             {
