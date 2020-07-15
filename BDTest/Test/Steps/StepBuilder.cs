@@ -16,7 +16,6 @@ namespace BDTest.Test.Steps
 
         static StepBuilder()
         {
-            InternalTestTimeData.TestsStartedAt = DateTime.Now;
             Initialiser.Initialise();
         }
 

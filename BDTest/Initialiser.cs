@@ -1,5 +1,7 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using System.Runtime.CompilerServices;
+using BDTest.Output;
 using BDTest.Paths;
 
 namespace BDTest
@@ -22,6 +24,8 @@ namespace BDTest
             _alreadyRun = true;
 
             DeletePreviousData();
+            
+            InternalTestTimeData.TestsStartedAt = DateTime.Now;
         }
 
         private static void DeletePreviousData()
