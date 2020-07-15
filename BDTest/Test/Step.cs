@@ -99,13 +99,12 @@ namespace BDTest.Test
 
             foreach (var skipStepAttributeOnStep in skipStepAttributes)
             {
-                foreach (var skipStepRuleInSettings in BDTestSettings.SkipStepRules.Rules)
+                if (BDTestSettings.SkipStepRules.Rules.Any(skipStepRuleInSettings =>
+                    skipStepRuleInSettings.AssociatedSkipAttributeType == skipStepAttributeOnStep.GetType()
+                    && skipStepRuleInSettings.Condition(skipStepAttributeOnStep)))
                 {
-                    if (skipStepRuleInSettings.AssociatedSkipAttributeType == skipStepAttributeOnStep.GetType()
-                        && skipStepRuleInSettings.Condition(skipStepAttributeOnStep))
-                    {
-                        _shouldSkip = true;
-                    }
+                    _shouldSkip = true;
+                    break;   
                 }
             }
         }
