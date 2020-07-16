@@ -14,6 +14,11 @@ namespace BDTest.NetCore.Razor.ReportMiddleware.Implementations
         private const string RecordDateTimeModelsKey = "RecordDateTimeModels";
         private readonly IMemoryCache _cache;
 
+        private readonly MemoryCacheEntryOptions _neverRemoveMemoryCacheEntryOptions = new MemoryCacheEntryOptions
+        {
+            Priority = CacheItemPriority.NeverRemove
+        };
+
         public MemoryCacheBdTestDataStore(IMemoryCache cache)
         {
             _cache = cache;
@@ -58,7 +63,7 @@ namespace BDTest.NetCore.Razor.ReportMiddleware.Implementations
             
             recordDateTimeModels.Add(testRunSummary);
 
-            _cache.Set(RecordDateTimeModelsKey, recordDateTimeModels);
+            _cache.Set(RecordDateTimeModelsKey, recordDateTimeModels, _neverRemoveMemoryCacheEntryOptions);
             
             return Task.CompletedTask;
         }
