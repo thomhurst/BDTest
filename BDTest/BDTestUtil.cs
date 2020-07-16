@@ -15,20 +15,22 @@ namespace BDTest
 
         public static void ClearScenarios() => TestHolder.Scenarios.Clear();
         
-        public static TestTimer GetTestTimer(IReadOnlyCollection<Scenario> scenarios)
+        public static TestTimer GetTestTimer(IReadOnlyCollection<Scenario> scenarios,
+            BDTestOutputModel totalReportData = null)
         {
-            if (scenarios.Count == 0)
+            return scenarios.Count switch
             {
-                return new TestTimer();
-            }
-
-            var testTimer = new TestTimer
-            {
-                TestsStartedAt = scenarios.GetStartDateTime(),
-                TestsFinishedAt = scenarios.GetEndDateTime()
+                0 when totalReportData != null => new TestTimer
+                {
+                    TestsStartedAt = totalReportData.TestTimer.TestsStartedAt,
+                    TestsFinishedAt = totalReportData.TestTimer.TestsFinishedAt
+                },
+                0 => new TestTimer(),
+                _ => new TestTimer
+                {
+                    TestsStartedAt = scenarios.GetStartDateTime(), TestsFinishedAt = scenarios.GetEndDateTime()
+                }
             };
-
-            return testTimer;
         }
         
         private static DateTime GetStartDateTime(this IEnumerable<Scenario> scenarios)

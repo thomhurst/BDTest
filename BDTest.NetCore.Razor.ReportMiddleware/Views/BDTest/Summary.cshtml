@@ -28,6 +28,10 @@
 
 <section class="section">
     <div class="container">
-        @await Html.PartialAsync("_SummaryGraphics", new SummaryViewModel {Scenarios = Model.Scenarios})
+        @await Html.PartialAsync("_SummaryGraphics", new SummaryViewModel
+        {
+            Scenarios = Model.Scenarios,
+            TotalReportData = Model
+        })
     </div>
 </section>

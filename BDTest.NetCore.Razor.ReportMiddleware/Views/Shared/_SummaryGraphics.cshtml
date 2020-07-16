@@ -10,7 +10,7 @@
     var skipped = Model.Scenarios.Count(scenario => scenario.Status == Status.Skipped);
     var notImplemented = Model.Scenarios.Count(scenario => scenario.Status == Status.NotImplemented);
     var inconclusive = Model.Scenarios.Count(scenario => scenario.Status == Status.Inconclusive);
-    var testTimer = BDTestUtil.GetTestTimer(Model.Scenarios);
+    var testTimer = BDTestUtil.GetTestTimer(Model.Scenarios, Model.TotalReportData);
 
     var currentUri = new Uri(Context.Request.GetEncodedUrl());
     _isSummaryPage = currentUri.AbsolutePath.Contains("/summary");
