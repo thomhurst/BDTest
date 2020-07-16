@@ -217,6 +217,9 @@ html, body, .main-body {
 	height: 100%;
 }
 
+html {
+	overflow: hidden;
+}
 
 /* Burger Sidebar Menu */
 
