@@ -14,10 +14,7 @@ namespace BDTest.NetCore.Razor.ReportMiddleware.Implementations
         private const string RecordDateTimeModelsKey = "RecordDateTimeModels";
         private readonly IMemoryCache _cache;
 
-        private readonly MemoryCacheEntryOptions _neverRemoveMemoryCacheEntryOptions = new MemoryCacheEntryOptions
-        {
-            Priority = CacheItemPriority.NeverRemove
-        };
+        private readonly List<TestRunSummary> _testRunSummaries = new List<TestRunSummary>();
 
         public MemoryCacheBdTestDataStore(IMemoryCache cache)
         {
@@ -36,14 +33,7 @@ namespace BDTest.NetCore.Razor.ReportMiddleware.Implementations
 
         public Task<TestRunSummary[]> GetAllTestRunRecords()
         {
-            var recordDateTimeModels = new List<TestRunSummary>();
-            
-            if(_cache.TryGetValue(RecordDateTimeModelsKey, out var recordDateTimeModelsAsObject))
-            {
-                recordDateTimeModels.AddRange(recordDateTimeModelsAsObject as IEnumerable<TestRunSummary> ?? Array.Empty<TestRunSummary>());
-            }
-
-            return Task.FromResult(recordDateTimeModels.OrderByDescending(record => record.StartedAtDateTime).ToArray());
+            return Task.FromResult(_testRunSummaries.OrderByDescending(record => record.StartedAtDateTime).ToArray());
         }
 
         public Task StoreTestData(string id, BDTestOutputModel data)
@@ -54,17 +44,8 @@ namespace BDTest.NetCore.Razor.ReportMiddleware.Implementations
 
         public Task StoreTestRunRecord(TestRunSummary testRunSummary)
         {
-            var recordDateTimeModels = new List<TestRunSummary>();
-            
-            if(_cache.TryGetValue(RecordDateTimeModelsKey, out var recordDateTimeModelsAsObject))
-            {
-                recordDateTimeModels.AddRange(recordDateTimeModelsAsObject as IEnumerable<TestRunSummary> ?? Array.Empty<TestRunSummary>());
-            }
-            
-            recordDateTimeModels.Add(testRunSummary);
+            _testRunSummaries.Add(testRunSummary);
 
-            _cache.Set(RecordDateTimeModelsKey, recordDateTimeModels, _neverRemoveMemoryCacheEntryOptions);
-            
             return Task.CompletedTask;
         }
     }
