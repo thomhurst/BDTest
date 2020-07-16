@@ -62,48 +62,77 @@
 
 <section class="section">
     <div class="container">
-        <div class="has-text-right">
+        <div class="has-text-right mb-5">
             <button class="button is-info is-rounded" id="compare-times">Compare Times</button>
             <button class="button is-info is-rounded" id="check-flakiness">Check Flakiness</button>
         </div>
         
-        <nav class="level level-left">
-            <div class="mx-4">
-                <label>Filter by Tag</label>
-                <input class="input" type="text" id="filter-tag" placeholder="Tag">
+        <nav class="level">
+            <div class="level-left">
+                <div class="mx-4">
+                    <label>Filter by Tag</label>
+                    <input class="input" type="text" id="filter-tag" placeholder="Tag">
+                    <div class="has-text-right">
+                        <label>Exact Match</label>
+                        <input name="checkbox" type="checkbox" id="filter-tag-checkbox"/>
+                    </div>
+                </div>
             </div>
             
-            <div class="mx-4">
-                <label>Filter by Environment</label>
-                <input class="input" type="text" id="filter-environment" placeholder="Environment">
+            <div class="level-right">
+                <div class="mx-4">
+                    <label>Filter by Environment</label>
+                    <input class="input" type="text" id="filter-environment" placeholder="Environment">
+                    <div class="has-text-right">
+                        <label>Exact Match</label>
+                        <input name="checkbox" type="checkbox" id="filter-environment-checkbox"/>
+                    </div>
+                </div>
             </div>
         </nav>
-        
+
         <script>
-            function filterRows(inputElementId, tableCellNamesToCheck) {
-              let filterInput = document.getElementById(inputElementId);
-              filterInput.addEventListener("input", function() {
-                  let filterValue = filterInput.value.toLowerCase();
-                  let tags = document.getElementsByName(tableCellNamesToCheck);
-                  for (const tag of tags) {
-                      if(!filterValue) {
-                          setElementVisible(tag.parentElement);
-                          continue;
-                      }
-                      
-                     if(tag.textContent.toLowerCase().includes(filterValue)) {
+             function matches(tag, filterValue, checkbox){
+                 if(checkbox.checked === false) {
+                    return tag.textContent.toLowerCase().includes(filterValue.toLowerCase());
+                 }
+                 
+                 return tag.textContent === filterValue;
+             }
+             
+             function performFilter(filterInput, checkbox, tableCellNamesToCheck) {
+                 let filterValue = filterInput.value;
+                 let tags = document.getElementsByName(tableCellNamesToCheck);
+                 for (const tag of tags) {
+                     if(!filterValue) {
                          setElementVisible(tag.parentElement);
-                     }  else {
-                         setElementInvisible(tag.parentElement);
+                         continue;
                      }
-                  }
-              })
+                     
+                    if(matches(tag, filterValue, checkbox)) {
+                        setElementVisible(tag.parentElement);
+                    }  else {
+                        setElementInvisible(tag.parentElement);
+                    }
+                 }
+             }
+        
+            function filterRows(inputElementId, checkboxId, tableCellNamesToCheck) {
+              let filterInput = document.getElementById(inputElementId);
+              let checkbox = document.getElementById(checkboxId);
+              filterInput.addEventListener('input', function() {
+                  performFilter(filterInput, checkbox, tableCellNamesToCheck);
+              });
+              
+              checkbox.addEventListener('change', function() {
+                  performFilter(filterInput, checkbox, tableCellNamesToCheck);
+              });
             }
         </script>
 
         <script>
-            filterRows("filter-tag", "tag-field");
-            filterRows("filter-environment", "environment-field");
+            filterRows("filter-tag", "filter-tag-checkbox", "tag-field");
+            filterRows("filter-environment", "filter-environment-checkbox", "environment-field");
         </script>
 
         <table class="table is-fullwidth">
