@@ -74,7 +74,7 @@
                     <input class="input" type="text" id="filter-tag" placeholder="Tag">
                     <div class="has-text-right">
                         <label>Exact Match</label>
-                        <input name="checkbox" type="checkbox" id="filter-tag-checkbox"/>
+                        <input type="checkbox" id="filter-tag-checkbox"/>
                     </div>
                 </div>
             </div>
@@ -85,7 +85,7 @@
                     <input class="input" type="text" id="filter-environment" placeholder="Environment">
                     <div class="has-text-right">
                         <label>Exact Match</label>
-                        <input name="checkbox" type="checkbox" id="filter-environment-checkbox"/>
+                        <input type="checkbox" id="filter-environment-checkbox"/>
                     </div>
                 </div>
             </div>
@@ -96,7 +96,7 @@
                     <input class="input" type="text" id="filter-machine-name" placeholder="Machine Name">
                     <div class="has-text-right">
                         <label>Exact Match</label>
-                        <input name="checkbox" type="checkbox" id="filter-machine-name-checkbox"/>
+                        <input type="checkbox" id="filter-machine-name-checkbox"/>
                     </div>
                 </div>
             </div>
@@ -142,16 +142,35 @@
         </script>
 
         <script>
-            filterRows("filter-tag", "filter-tag-checkbox", "tag-field");
-            filterRows("filter-environment", "filter-environment-checkbox", "environment-field");
-            filterRows("filter-machine-name", "filter-machine-name-checkbox", "machine-name-field");
+            onDomLoaded(function() {
+                filterRows("filter-tag", "filter-tag-checkbox", "tag-field");
+                filterRows("filter-environment", "filter-environment-checkbox", "environment-field");
+                filterRows("filter-machine-name", "filter-machine-name-checkbox", "machine-name-field");
+                
+                let headerCheckbox = document.getElementById("checkbox-header");
+                headerCheckbox.addEventListener('click', function() {
+                  if(headerCheckbox.checked === false) {
+                      for (let checkbox of document.getElementsByName("checkbox")) {
+                          checkbox.checked = false;
+                      }
+                  } else {
+                      for (let checkbox of document.getElementsByName("checkbox")) {
+                        if(!checkbox.parentElement.parentElement.classList.contains("invisible")) {
+                            checkbox.checked = true;
+                        }
+                      }
+                  }
+                })
+            })
         </script>
 
         <table class="table is-fullwidth">
 
             <thead>
             <tr class="off-white-bg-color">
-                <th class="has-text-centered">Select</th>
+                <th class="has-text-centered">
+                    <input id="checkbox-header" type="checkbox"/>
+                </th>
                 <th class="has-text-centered">Tag</th>
                 <th class="has-text-centered">Environment</th>
                 <th class="has-text-centered">Machine Name</th>
