@@ -11,7 +11,6 @@ namespace BDTest.NetCore.Razor.ReportMiddleware.Implementations
 {
     public class MemoryCacheBdTestDataStore : IMemoryCacheBdTestDataStore
     {
-        private const string RecordDateTimeModelsKey = "RecordDateTimeModels";
         private readonly IMemoryCache _cache;
 
         private readonly List<TestRunSummary> _testRunSummaries = new List<TestRunSummary>();
