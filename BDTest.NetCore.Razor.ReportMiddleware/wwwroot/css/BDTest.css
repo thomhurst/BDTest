@@ -213,6 +213,10 @@ hr.rounded {
 	margin-left: 250px;
 }
 
+html, body, .main-body {
+	height: 100%;
+}
+
 
 /* Burger Sidebar Menu */
 
