@@ -22,6 +22,7 @@ namespace BDTest.NetCore.Razor.ReportMiddleware.Models
             Tag = bdTestOutputModel.Tag;
             Environment = bdTestOutputModel.Environment;
             Version = bdTestOutputModel.Version;
+            MachineName = bdTestOutputModel.MachineName;
 
             SetCounts(bdTestOutputModel);
         }
@@ -70,6 +71,8 @@ namespace BDTest.NetCore.Razor.ReportMiddleware.Models
         public string Tag { get; set; }
         [JsonProperty]
         public string Environment { get; set; }
+        [JsonProperty]
+        public string MachineName { get; set; }
         [JsonProperty]
         public string Version { get; set; }
     }

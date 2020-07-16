@@ -17,6 +17,9 @@ namespace BDTest.Maps
         public string Tag { get; set; }
         
         [JsonProperty]
+        public string MachineName { get; set; }
+        
+        [JsonProperty]
         public TestTimer TestTimer { get; set; }
         
         [JsonProperty]

@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Net.Http;
 using System.Text;
@@ -10,9 +11,12 @@ using Newtonsoft.Json;
 
 namespace BDTest
 {
+    [SuppressMessage("ReSharper", "UnusedMember.Global")]
+    [SuppressMessage("ReSharper", "UnusedType.Global")]
     public static class BDTestReportServer
     {
-        public static async Task<Uri> SendDataAndGetReportUri(Uri serverAddress)
+        
+        public static async Task<Uri> SendDataAndGetReportUriAsync(Uri serverAddress)
         {
             var httpClient = new HttpClient();
             
@@ -36,6 +40,7 @@ namespace BDTest
                 Id = TestHolder.InstanceGuid,
                 Environment = BDTestSettings.Environment,
                 Tag = BDTestSettings.Tag,
+                MachineName = Environment.MachineName,
                 Scenarios = scenarios,
                 Version = BDTestVersionHelper.CurrentVersion,
                 NotRun = TestHolder.NotRun.Values.ToList(),

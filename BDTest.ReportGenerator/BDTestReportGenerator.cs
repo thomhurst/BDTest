@@ -51,6 +51,7 @@ namespace BDTest.ReportGenerator
                 Id = BDTestUtil.GetInstanceGuid,
                 Environment = BDTestSettings.Environment,
                 Tag = BDTestSettings.Tag,
+                MachineName = Environment.MachineName,
                 Scenarios = scenarios,
                 TestTimer = testTimer,
                 NotRun = BDTestUtil.GetNotRunScenarios(),

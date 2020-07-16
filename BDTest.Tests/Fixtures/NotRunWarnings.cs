@@ -24,7 +24,7 @@ namespace BDTest.Tests.Fixtures
         [OneTimeTearDown]
         public async Task SendReportData()
         {
-            await BDTestReportServer.SendDataAndGetReportUri(new Uri("https://localhost:44329"));
+            await BDTestReportServer.SendDataAndGetReportUriAsync(new Uri("https://localhost:44329"));
         }
 
         [Test, Order(4)]
