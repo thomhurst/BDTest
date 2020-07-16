@@ -4,18 +4,27 @@
 @model List<BDTest.NetCore.Razor.ReportMiddleware.Models.TestRunSummary>
 
 @functions {
+
+    private List<string> GetGeneric(Func<TestRunSummary, string> func, string defaultValue)
+    {
+        var values = Model.Select(func).Where(x => !string.IsNullOrEmpty(x)).Distinct().ToList();
+        values.Insert(0, defaultValue);
+        return values;
+    }
+
     private List<string> GetEnvironments()
     {
-        var environments = Model.Select(x => x.Environment).Distinct().ToList();
-        environments.Insert(0, "All Environments");
-        return environments;
+        return GetGeneric(x => x.Environment, "All Environments");
     }
-    
+
     private List<string> GetTags()
     {
-        var environments = Model.Select(x => x.Tag).Distinct().ToList();
-        environments.Insert(0, "All Tags");
-        return environments;
+        return GetGeneric(x => x.Tag, "All Tags");
+    }
+    
+    private List<string> GetMachineNames()
+    {
+        return GetGeneric(x => x.MachineName, "All Machines");
     }
 }
 
@@ -27,6 +36,7 @@
     
     var environmentQueryParameter = HttpUtility.ParseQueryString(new Uri(Context.Request.GetEncodedUrl()).Query).Get("environment");
     var tagQueryParameter = HttpUtility.ParseQueryString(new Uri(Context.Request.GetEncodedUrl()).Query).Get("tag");
+    var machineQueryParameter = HttpUtility.ParseQueryString(new Uri(Context.Request.GetEncodedUrl()).Query).Get("machine");
     
     if (!string.IsNullOrEmpty(environmentQueryParameter) && environmentQueryParameter != "All Environments")
     {
@@ -44,6 +54,16 @@
         <script>
             onDomLoaded(function() {
               document.getElementById("filter-by-tag-text").textContent = '@tagQueryParameter';
+            })
+        </script>
+    }
+    
+    if (!string.IsNullOrEmpty(machineQueryParameter) && machineQueryParameter != "All Machines")
+    {
+        testRunSummariesEnumerable = testRunSummariesEnumerable.Where(summary => summary.MachineName == machineQueryParameter);
+        <script>
+            onDomLoaded(function() {
+              document.getElementById("filter-by-machine-text").textContent = '@machineQueryParameter';
             })
         </script>
     }
@@ -78,6 +98,10 @@
             
             <div class="mb-6 has-text-right">
                 @await Html.PartialAsync("_EnvironmentDropdown", GetEnvironments())
+            </div>
+            
+            <div class="mb-6 has-text-right">
+                @await Html.PartialAsync("_MachinesDropdown", GetMachineNames())
             </div>
         </nav>
 
