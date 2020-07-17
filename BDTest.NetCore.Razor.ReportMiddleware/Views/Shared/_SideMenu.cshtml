@@ -34,7 +34,7 @@
             
         </ul>
         
-        @if (!string.IsNullOrEmpty(id))
+        @if (currentTestReport != null)
         {
             <p class="menu-label">
                 This Test Report
@@ -158,6 +158,16 @@
                     </ul>
                 }
             }
+            
+            <p class="menu-label">
+                Status
+            </p>
+            var totalStatus = currentTestReport.Scenarios.GetTotalStatus();
+            <ul class="menu-list">
+                <li>
+                    <span class="menu-text button no-pointer is-fullwidth @totalStatus.GetCssColourValueForStatus()">@totalStatus</span>
+                </li>
+            </ul>
             
         }
         <p class="menu-label">
