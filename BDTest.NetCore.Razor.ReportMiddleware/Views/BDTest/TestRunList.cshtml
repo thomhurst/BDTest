@@ -103,6 +103,8 @@
         </nav>
 
         <script>
+            let filterObjectsArray = [];
+        
              function matches(tag, filterValue, checkbox){
                  if(checkbox.checked === false) {
                     return tag.textContent.toLowerCase().includes(filterValue.toLowerCase());
@@ -111,32 +113,45 @@
                  return tag.textContent === filterValue;
              }
              
-             function performFilter(filterInput, checkbox, tableCellNamesToCheck) {
-                 let filterValue = filterInput.value;
-                 let tags = document.getElementsByName(tableCellNamesToCheck);
-                 for (const tag of tags) {
+             function performFilter() {
+                 
+                 // Make all visible
+                 for (const filterObject of filterObjectsArray) {
+                     let tags = document.getElementsByName(filterObject.tableCellNamesToCheck);
+                     for (const tag of tags) {
+                        setElementVisible(tag.parentElement);   
+                     }
+                 }
+                 
+                 for (const filterObject of filterObjectsArray) {
+                     let filterValue = filterObject.filterInput.value;
+                     
                      if(!filterValue) {
-                         setElementVisible(tag.parentElement);
                          continue;
                      }
                      
-                    if(matches(tag, filterValue, checkbox)) {
-                        setElementVisible(tag.parentElement);
-                    }  else {
-                        setElementInvisible(tag.parentElement);
-                    }
+                     let tags = document.getElementsByName(filterObject.tableCellNamesToCheck);
+                     for (const tag of tags) {
+                         
+                        if(!matches(tag, filterValue, filterObject.checkbox)) {
+                            setElementInvisible(tag.parentElement);
+                        }
+                     }
                  }
              }
         
             function filterRows(inputElementId, checkboxId, tableCellNamesToCheck) {
               let filterInput = document.getElementById(inputElementId);
               let checkbox = document.getElementById(checkboxId);
+              
+              filterObjectsArray.push({filterInput: filterInput, checkbox: checkbox, tableCellNamesToCheck: tableCellNamesToCheck});
+              
               filterInput.addEventListener('input', function() {
-                  performFilter(filterInput, checkbox, tableCellNamesToCheck);
+                  performFilter();
               });
               
               checkbox.addEventListener('change', function() {
-                  performFilter(filterInput, checkbox, tableCellNamesToCheck);
+                  performFilter();
               });
             }
         </script>
