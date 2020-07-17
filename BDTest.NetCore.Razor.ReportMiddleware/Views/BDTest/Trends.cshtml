@@ -119,11 +119,30 @@
     </div>
 </section>
 
+@* Report IDs available for Javascript *@
+<script>
 
+let reportIdsArray = [];
+
+@foreach (var report in testRunSummaries)
+{
+    @:reportIdsArray.push("@report.RecordId");
+}
+
+@{
+    var currentUrl = new Uri(Context.Request.GetEncodedUrl());
+    var baseUrl = currentUrl.Scheme + Uri.SchemeDelimiter + currentUrl.Host;
+    if (!currentUrl.IsDefaultPort)
+    {
+        baseUrl += ":" + currentUrl.Port;
+    }
+}
+
+</script>
+         
 @* Duration Trend Chart *@
 <script>
-              
-var ctx = document.getElementById('duration-trend-chart').getContext('2d');
+var durationChartContext = document.getElementById('duration-trend-chart').getContext('2d');
 data = {
     datasets: [{
         backgroundColor: "#3298dc",
@@ -144,7 +163,7 @@ data = {
     ]
 }
 
-var myPieChart = new Chart(ctx, {
+let durationChart = new Chart(durationChartContext, {
     type: 'line',
     data: data,
     options: {
@@ -173,14 +192,27 @@ var myPieChart = new Chart(ctx, {
             }
         }
     }
-})
+});
+
+document.getElementById('duration-trend-chart').onclick = function(evt) {
+    let activePoint = durationChart.getElementAtEvent(evt);
+    
+     if (activePoint.length > 0) {
+        let clickedDatasetIndex = activePoint[0]._datasetIndex;
+        let clickedElementindex = activePoint[0]._index;
+        
+        let clickedOnReportId = reportIdsArray[clickedElementindex];
+
+        window.location.href = '@baseUrl/bdtest/report/' + clickedOnReportId + '/summary'
+     }
+}
 </script>
 
 
 @* Success Trend Chart *@
 <script>
               
-var ctx = document.getElementById('success-trend-chart').getContext('2d');
+var successChartContext = document.getElementById('success-trend-chart').getContext('2d');
 data = {
     datasets: [ 
         {
@@ -268,7 +300,7 @@ data = {
     ]
 }
 
-var myPieChart = new Chart(ctx, {
+var successChart = new Chart(successChartContext, {
     type: 'line',
     data: data,
     options: {
@@ -291,5 +323,18 @@ var myPieChart = new Chart(ctx, {
             }]
           }
     }
-})
+});
+
+document.getElementById('success-trend-chart').onclick = function(evt) {
+    let activePoint = successChart.getElementAtEvent(evt);
+    
+     if (activePoint.length > 0) {
+        let clickedDatasetIndex = activePoint[0]._datasetIndex;
+        let clickedElementindex = activePoint[0]._index;
+        
+        let clickedOnReportId = reportIdsArray[clickedElementindex];
+
+        window.location.href = '@baseUrl/bdtest/report/' + clickedOnReportId + '/summary'
+     }
+}
 </script>
