@@ -6,22 +6,49 @@
         
         let checkbox = element.firstElementChild.firstElementChild;
         
-        @* Change checkbox checked value to opposite as it has been clicked *@
-        checkbox.click();
+        changeCheckboxValueAndFireEvent(checkbox);
+    }
+    
+    function changeCheckboxValueAndFireEvent(checkbox) {
+      checkbox.checked = !checkbox.checked;
+        
+      let event = document.createEvent("HTMLEvents");
+      event.initEvent('change', false, true);
+      checkbox.dispatchEvent(event);
     }
     
     function toggleColumnVisibility(checkbox) {
-            let target = checkbox.dataset.target;
-            let columnFields = document.getElementsByClassName(target)
-            
-            for (let columnField of columnFields) {
-                if(checkbox.checked === true) {
-                    setElementVisible(columnField);
-                } else {
-                    setElementInvisible(columnField);
-                }
+        let target = checkbox.dataset.target;
+        let columnFields = document.getElementsByClassName(target)
+        
+        for (let columnField of columnFields) {
+            if(checkbox.checked === true) {
+                setElementVisible(columnField);
+            } else {
+                setElementInvisible(columnField);
             }
         }
+        
+        setCookie("is-visible-test-run-list-" + target, checkbox.checked.toString())
+    }
+        
+    onDomLoaded(function() {
+        let checkboxIds = ["tag-visible-column-checkbox", "environment-visible-column-checkbox", "machine-visible-column-checkbox" ,"branch-visible-column-checkbox"];
+        
+        for (let checkboxId of checkboxIds) {
+            let checkbox = document.getElementById(checkboxId);
+            let target = checkbox.dataset.target;
+            let savedCookieValue = getCookie("is-visible-test-run-list-" + target);
+            
+            if(savedCookieValue == null) {
+                continue;
+            }
+            
+            if(savedCookieValue == 'false') {
+                changeCheckboxValueAndFireEvent(checkbox);
+            }
+        }
+    });
 </script>
 
 <div class="dropdown">
@@ -38,28 +65,28 @@
             
             <div class="dropdown-item" onclick="clickColumnVisibilityButton(this)">
                 <button class="button is-fullwidth is-rounded">
-                    <input type="checkbox" class="mr-4" checked="checked" data-target="tag-column" onchange="toggleColumnVisibility(this)"/>
+                    <input id="tag-visible-column-checkbox" type="checkbox" class="mr-4" checked="checked" data-target="tag-column" onchange="toggleColumnVisibility(this)"/>
                     Tag
                 </button>
             </div>
             
             <div class="dropdown-item" onclick="clickColumnVisibilityButton(this)">
                 <button class="button is-fullwidth is-rounded">
-                    <input type="checkbox" class="mr-4" checked="checked" data-target="environment-column" onchange="toggleColumnVisibility(this)"/>
+                    <input id="environment-visible-column-checkbox" type="checkbox" class="mr-4" checked="checked" data-target="environment-column" onchange="toggleColumnVisibility(this)"/>
                     Environment
                 </button>
             </div>
             
             <div class="dropdown-item" onclick="clickColumnVisibilityButton(this)">
                 <button class="button is-fullwidth is-rounded">
-                    <input type="checkbox" class="mr-4" checked="checked" data-target="machine-column" onchange="toggleColumnVisibility(this)"/>
+                    <input id="machine-visible-column-checkbox" type="checkbox" class="mr-4" checked="checked" data-target="machine-column" onchange="toggleColumnVisibility(this)"/>
                     Machine
                 </button>
             </div>
             
             <div class="dropdown-item" onclick="clickColumnVisibilityButton(this)">
                 <button class="button is-fullwidth is-rounded">
-                    <input type="checkbox" class="mr-4" checked="checked" data-target="branch-column" onchange="toggleColumnVisibility(this)"/>
+                    <input id="branch-visible-column-checkbox" type="checkbox" class="mr-4" checked="checked" data-target="branch-column" onchange="toggleColumnVisibility(this)"/>
                     Branch
                 </button>
             </div>
