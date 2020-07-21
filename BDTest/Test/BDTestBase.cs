@@ -3,6 +3,7 @@ using System.Linq.Expressions;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
+using BDTest.Helpers;
 using BDTest.Output;
 using BDTest.Test.Steps.Given;
 using BDTest.Test.Steps.When;
@@ -56,9 +57,6 @@ namespace BDTest.Test
             TestOutputData.WriteTearDownOutput(TestId, text);
         }
         
-        public void WriteHtmlToReportForScenario(string html)
-        {
-            TestOutputData.WriteCustomHtmlForReport(TestId, html);
-        }
+        public HtmlWriter ScenarioHtmlWriter => new HtmlWriter(TestId);
     }
 }

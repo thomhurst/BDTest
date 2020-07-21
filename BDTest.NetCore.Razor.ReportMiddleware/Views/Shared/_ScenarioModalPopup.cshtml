@@ -117,8 +117,7 @@
 
             @if (!string.IsNullOrEmpty(Model.Scenario.CustomHtmlOutputForReport))
             {
-                <div class="container">
-                    <h2 class="subtitle">Custom:</h2>
+                <div class="mx-4 mt-4">
                     @Html.Raw(Model.Scenario.CustomHtmlOutputForReport)
                 </div>
             }
