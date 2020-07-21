@@ -62,11 +62,16 @@
 
 <section class="section">
     <div class="container">
-        <div class="has-text-right mb-5">
-            <button class="button is-info is-rounded" id="compare-times">Compare Times</button>
-            <button class="button is-info is-rounded" id="check-flakiness">Check Flakiness</button>
-        </div>
-        
+        <nav class="level">
+            <div class="level-left mb-5">
+                @await Html.PartialAsync("_TestRunListVisibleColumnsDropdown")
+            </div>
+            <div class="level-right mb-5">
+                <button class="button is-info is-rounded" id="compare-times">Compare Times</button>
+                <button class="button is-info is-rounded" id="check-flakiness">Check Flakiness</button>
+            </div>
+        </nav>
+
         <nav class="level">
             <div class="">
                 <div class="mx-4">
@@ -78,7 +83,7 @@
                     </div>
                 </div>
             </div>
-            
+
             <div class="">
                 <div class="mx-4">
                     <label>Filter by Environment</label>
@@ -89,7 +94,7 @@
                     </div>
                 </div>
             </div>
-            
+
             <div class="">
                 <div class="mx-4">
                     <label>Filter by Machine</label>
@@ -100,7 +105,7 @@
                     </div>
                 </div>
             </div>
-            
+
             <div class="">
                 <div class="mx-4">
                     <label>Filter by Branch</label>
@@ -198,10 +203,10 @@
                 <th class="has-text-centered">
                     <input id="checkbox-header" type="checkbox"/>
                 </th>
-                <th class="has-text-centered">Tag</th>
-                <th class="has-text-centered">Environment</th>
-                <th class="has-text-centered">Machine Name</th>
-                <th class="has-text-centered">Branch</th>
+                <th class="has-text-centered tag-column">Tag</th>
+                <th class="has-text-centered environment-column">Environment</th>
+                <th class="has-text-centered machine-column">Machine Name</th>
+                <th class="has-text-centered branch-column">Branch</th>
                 <th class="has-text-centered">Date and Time</th>
                 <th class="has-text-centered">Tests Run</th>
                 <th class="has-text-centered">Status</th>
@@ -217,16 +222,16 @@
                 {
                     status += $" ({record.Counts.Failed})";
                 }
-                
-                
+
+
                 <tr class="off-white-bg-color">
                     <td class="has-text-centered is-vcentered">
                         <input name="checkbox" type="checkbox" id="@record.RecordId"/>
                     </td>
-                    <td name="tag-field" class="has-text-centered is-vcentered">@record.Tag</td>
-                    <td name="environment-field" class="has-text-centered is-vcentered">@record.Environment</td>
-                    <td name="machine-name-field" class="has-text-centered is-vcentered">@record.MachineName</td>
-                    <td name="branch-field" class="has-text-centered is-vcentered">@record.BranchName</td>
+                    <td name="tag-field" class="has-text-centered is-vcentered tag-column">@record.Tag</td>
+                    <td name="environment-field" class="has-text-centered is-vcentered environment-column">@record.Environment</td>
+                    <td name="machine-name-field" class="has-text-centered is-vcentered machine-column">@record.MachineName</td>
+                    <td name="branch-field" class="has-text-centered is-vcentered branch-column">@record.BranchName</td>
                     <td class="has-text-centered is-vcentered">@record.StartedAtDateTime.ToStringForReport()</td>
                     <td class="has-text-centered is-vcentered">
                         <span class="title is-4">@record.Counts.Total</span>

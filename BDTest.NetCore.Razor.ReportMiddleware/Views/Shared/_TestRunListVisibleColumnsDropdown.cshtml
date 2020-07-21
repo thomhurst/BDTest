@@ -1,0 +1,63 @@
+<script>
+    function toggleColumnVisibility(dropdownElement) {
+        let checkbox = dropdownElement.firstElementChild.firstElementChild;
+        
+        @* Change checkbox checked value to opposite as it has been clicked *@
+        checkbox.checked ^= 1;
+        
+        let target = checkbox.dataset.target;
+        let columnFields = document.getElementsByClassName(target)
+        
+        for (let columnField of columnFields) {
+            if(checkbox.checked === true) {
+                setElementVisible(columnField);
+            } else {
+                setElementInvisible(columnField);
+            }
+        }
+    }
+</script>
+
+<div class="dropdown">
+    <div class="dropdown-trigger">
+        <button class="button is-info is-rounded" aria-haspopup="true" aria-controls="dropdown-menu">
+            <p id="visible-columns-dropdown">Visible Columns <i class="arrow down"></i></p>
+            @* <span class="icon is-small"> *@
+            @*   <i class="fas fa-angle-down" aria-hidden="true"></i> *@
+            @* </span> *@
+        </button>
+    </div>
+    <div class="dropdown-menu has-text-centered" id="environment-dropdown-menu" role="menu">
+        <div class="dropdown-content has-text-centered">
+            
+            <div class="dropdown-item" onclick="toggleColumnVisibility(this)">
+                <button class="button is-fullwidth is-rounded">
+                    <input type="checkbox" class="mr-4" checked="checked" data-target="tag-column"/>
+                    Tag
+                </button>
+            </div>
+            
+            <div class="dropdown-item" onclick="toggleColumnVisibility(this)">
+                <button class="button is-fullwidth is-rounded">
+                    <input type="checkbox" class="mr-4" checked="checked" data-target="environment-column"/>
+                    Environment
+                </button>
+            </div>
+            
+            <div class="dropdown-item" onclick="toggleColumnVisibility(this)">
+                <button class="button is-fullwidth is-rounded">
+                    <input type="checkbox" class="mr-4" checked="checked" data-target="machine-column"/>
+                    Machine
+                </button>
+            </div>
+            
+            <div class="dropdown-item" onclick="toggleColumnVisibility(this)">
+                <button class="button is-fullwidth is-rounded">
+                    <input type="checkbox" class="mr-4" checked="checked" data-target="branch-column"/>
+                    Branch
+                </button>
+            </div>
+
+        </div>
+    </div>
+</div>
