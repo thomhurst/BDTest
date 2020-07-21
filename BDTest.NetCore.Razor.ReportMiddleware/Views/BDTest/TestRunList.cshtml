@@ -207,7 +207,8 @@
                 <th class="has-text-centered environment-column">Environment</th>
                 <th class="has-text-centered machine-column">Machine Name</th>
                 <th class="has-text-centered branch-column">Branch</th>
-                <th class="has-text-centered">Date and Time</th>
+                <th class="has-text-centered date-column">Date and Time</th>
+                <th class="has-text-centered duration-column">Duration</th>
                 <th class="has-text-centered">Tests Run</th>
                 <th class="has-text-centered">Status</th>
                 <th></th>
@@ -232,7 +233,16 @@
                     <td name="environment-field" class="has-text-centered is-vcentered environment-column">@record.Environment</td>
                     <td name="machine-name-field" class="has-text-centered is-vcentered machine-column">@record.MachineName</td>
                     <td name="branch-field" class="has-text-centered is-vcentered branch-column">@record.BranchName</td>
-                    <td class="has-text-centered is-vcentered">@record.StartedAtDateTime.ToStringForReport()</td>
+                    <td class="has-text-centered is-vcentered date-column">@record.StartedAtDateTime.ToStringForReport()</td>
+                    <td class="has-text-centered is-vcentered duration-column">
+                        <div class="tooltip">
+                            @{
+                                var timeTaken = record.FinishedAtDateTime - record.StartedAtDateTime;
+                            }
+                            @timeTaken.ToString()
+                            <span class="tooltiptext">@timeTaken.ToPrettyFormat()</span>
+                        </div>
+                    </td>
                     <td class="has-text-centered is-vcentered">
                         <span class="title is-4">@record.Counts.Total</span>
                     </td>

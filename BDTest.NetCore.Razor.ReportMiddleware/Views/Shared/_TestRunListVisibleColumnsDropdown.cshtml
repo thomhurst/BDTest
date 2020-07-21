@@ -22,11 +22,7 @@
         let columnFields = document.getElementsByClassName(target)
         
         for (let columnField of columnFields) {
-            if(checkbox.checked === true) {
-                setElementVisible(columnField);
-            } else {
-                setElementInvisible(columnField);
-            }
+            setElementVisibility(columnField, checkbox.checked);
         }
         
         setCookie("is-visible-test-run-list-" + target, checkbox.checked.toString())
@@ -44,6 +40,7 @@
                 continue;
             }
             
+            /* They're checked by default, so if they're remembered as unchecked, toggle it to off! */
             if(savedCookieValue == 'false') {
                 changeCheckboxValueAndFireEvent(checkbox);
             }
@@ -88,6 +85,20 @@
                 <button class="button is-fullwidth is-rounded">
                     <input id="branch-visible-column-checkbox" type="checkbox" class="mr-4" checked="checked" data-target="branch-column" onchange="toggleColumnVisibility(this)"/>
                     Branch
+                </button>
+            </div>
+            
+            <div class="dropdown-item" onclick="clickColumnVisibilityButton(this)">
+                <button class="button is-fullwidth is-rounded">
+                    <input id="date-visible-column-checkbox" type="checkbox" class="mr-4" checked="checked" data-target="date-column" onchange="toggleColumnVisibility(this)"/>
+                    Date
+                </button>
+            </div>
+            
+            <div class="dropdown-item" onclick="clickColumnVisibilityButton(this)">
+                <button class="button is-fullwidth is-rounded">
+                    <input id="duration-visible-column-checkbox" type="checkbox" class="mr-4" checked="checked" data-target="duration-column" onchange="toggleColumnVisibility(this)"/>
+                    Duration
                 </button>
             </div>
 

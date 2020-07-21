@@ -64,6 +64,14 @@ function toggleElementVisibility(element) {
     }
 }
 
+function setElementVisibility(element, value) {
+    if(value) {
+        setElementVisible(element);
+    } else {
+        setElementInvisible(element)
+    }
+}
+
 function setElementVisible(element) {
     element.classList.remove("invisible");
 }
