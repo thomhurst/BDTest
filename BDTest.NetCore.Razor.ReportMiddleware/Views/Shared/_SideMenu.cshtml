@@ -157,6 +157,18 @@
                         </li>
                     </ul>
                 }
+                
+                @if (!string.IsNullOrEmpty(currentTestReport.BranchName))
+                {
+                    <p class="menu-label mb-0">
+                        Branch
+                    </p>
+                    <ul class="menu-list">
+                        <li>
+                            <span class="menu-text">@currentTestReport.BranchName</span>
+                        </li>
+                    </ul>
+                }
             }
             
             <p class="menu-label">

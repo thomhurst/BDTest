@@ -1,5 +1,6 @@
 @using System.Web
 @using BDTest.NetCore.Razor.ReportMiddleware.Models
+@using BDTest.NetCore.Razor.ReportMiddleware.Views.BDTest
 @using Microsoft.AspNetCore.Http.Extensions
 @model List<BDTest.NetCore.Razor.ReportMiddleware.Models.TestRunSummary>
 
@@ -26,6 +27,11 @@
     {
         return GetGeneric(x => x.MachineName, "All Machines");
     }
+    
+    private List<string> GetBranches()
+    {
+        return GetGeneric(x => x.BranchName, "All Branches");
+    }
 }
 
 @{
@@ -33,10 +39,12 @@
     Layout = "_Layout";
 
     var testRunSummariesEnumerable = Model.AsEnumerable() ?? Enumerable.Empty<TestRunSummary>();
-    
-    var environmentQueryParameter = HttpUtility.ParseQueryString(new Uri(Context.Request.GetEncodedUrl()).Query).Get("environment");
-    var tagQueryParameter = HttpUtility.ParseQueryString(new Uri(Context.Request.GetEncodedUrl()).Query).Get("tag");
-    var machineQueryParameter = HttpUtility.ParseQueryString(new Uri(Context.Request.GetEncodedUrl()).Query).Get("machine");
+
+    var queryString = HttpUtility.ParseQueryString(new Uri(Context.Request.GetEncodedUrl()).Query);
+    var environmentQueryParameter = queryString.Get("environment");
+    var tagQueryParameter = queryString.Get("tag");
+    var machineQueryParameter = queryString.Get("machine");
+    var branchQueryParameter = queryString.Get("branch");
     
     if (!string.IsNullOrEmpty(environmentQueryParameter) && environmentQueryParameter != "All Environments")
     {
@@ -64,6 +72,16 @@
         <script>
             onDomLoaded(function() {
               document.getElementById("filter-by-machine-text").textContent = '@machineQueryParameter';
+            })
+        </script>
+    }
+    
+    if (!string.IsNullOrEmpty(branchQueryParameter) && branchQueryParameter != "All Branches")
+    {
+        testRunSummariesEnumerable = testRunSummariesEnumerable.Where(summary => summary.BranchName == branchQueryParameter);
+        <script>
+            onDomLoaded(function() {
+              document.getElementById("filter-by-branch-text").textContent = '@branchQueryParameter';
             })
         </script>
     }
@@ -100,15 +118,43 @@
         
         <nav class="level">
             <div class="mb-6 has-text-right">
-                @await Html.PartialAsync("_TagDropdown", GetTags())
+                @await Html.PartialAsync("_TrendsPageGenericDropdown", new TrendsPageGenericDropdownViewModel
+                {
+                    ButtonId = "filter-by-tag-text",
+                    ButtonText = "Filter by Tag",
+                    QueryParameterName = "tag",
+                    DropdownValues = GetTags()
+                })
             </div>
             
             <div class="mb-6 has-text-right">
-                @await Html.PartialAsync("_EnvironmentDropdown", GetEnvironments())
+                @await Html.PartialAsync("_TrendsPageGenericDropdown", new TrendsPageGenericDropdownViewModel
+                {
+                    ButtonId = "filter-by-environment-text",
+                    ButtonText = "Filter by Environment",
+                    QueryParameterName = "environment",
+                    DropdownValues = GetEnvironments()
+                })
             </div>
             
             <div class="mb-6 has-text-right">
-                @await Html.PartialAsync("_MachinesDropdown", GetMachineNames())
+                @await Html.PartialAsync("_TrendsPageGenericDropdown", new TrendsPageGenericDropdownViewModel
+                {
+                    ButtonId = "filter-by-machine-text",
+                    ButtonText = "Filter by Machine",
+                    QueryParameterName = "machine",
+                    DropdownValues = GetMachineNames()
+                })
+            </div>
+            
+            <div class="mb-6 has-text-right">
+                @await Html.PartialAsync("_TrendsPageGenericDropdown", new TrendsPageGenericDropdownViewModel
+                {
+                    ButtonId = "filter-by-branch-text",
+                    ButtonText = "Filter by Branch",
+                    QueryParameterName = "branch",
+                    DropdownValues = GetBranches()
+                })
             </div>
         </nav>
 

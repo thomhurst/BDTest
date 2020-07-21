@@ -100,6 +100,17 @@
                     </div>
                 </div>
             </div>
+            
+            <div class="">
+                <div class="mx-4">
+                    <label>Filter by Branch</label>
+                    <input class="input" type="text" id="filter-branch" placeholder="Branch">
+                    <div class="has-text-right">
+                        <label>Exact Match</label>
+                        <input type="checkbox" id="filter-branch-checkbox"/>
+                    </div>
+                </div>
+            </div>
         </nav>
 
         <script>
@@ -161,6 +172,7 @@
                 filterRows("filter-tag", "filter-tag-checkbox", "tag-field");
                 filterRows("filter-environment", "filter-environment-checkbox", "environment-field");
                 filterRows("filter-machine-name", "filter-machine-name-checkbox", "machine-name-field");
+                filterRows("filter-branch", "filter-branch-checkbox", "branch-field");
                 
                 let headerCheckbox = document.getElementById("checkbox-header");
                 headerCheckbox.addEventListener('click', function() {
@@ -189,6 +201,7 @@
                 <th class="has-text-centered">Tag</th>
                 <th class="has-text-centered">Environment</th>
                 <th class="has-text-centered">Machine Name</th>
+                <th class="has-text-centered">Branch</th>
                 <th class="has-text-centered">Date and Time</th>
                 <th class="has-text-centered">Tests Run</th>
                 <th class="has-text-centered">Status</th>
@@ -213,6 +226,7 @@
                     <td name="tag-field" class="has-text-centered is-vcentered">@record.Tag</td>
                     <td name="environment-field" class="has-text-centered is-vcentered">@record.Environment</td>
                     <td name="machine-name-field" class="has-text-centered is-vcentered">@record.MachineName</td>
+                    <td name="branch-field" class="has-text-centered is-vcentered">@record.BranchName</td>
                     <td class="has-text-centered is-vcentered">@record.StartedAtDateTime.ToStringForReport()</td>
                     <td class="has-text-centered is-vcentered">
                         <span class="title is-4">@record.Counts.Total</span>

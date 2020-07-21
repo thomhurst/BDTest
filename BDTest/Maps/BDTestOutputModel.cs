@@ -17,6 +17,9 @@ namespace BDTest.Maps
         public string Tag { get; set; }
         
         [JsonProperty]
+        public string BranchName { get; set; }
+        
+        [JsonProperty]
         public string MachineName { get; set; }
         
         [JsonProperty]

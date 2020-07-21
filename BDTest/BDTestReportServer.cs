@@ -40,6 +40,7 @@ namespace BDTest
                 Id = TestHolder.InstanceGuid,
                 Environment = BDTestSettings.Environment,
                 Tag = BDTestSettings.Tag,
+                BranchName = BDTestSettings.BranchName,
                 MachineName = Environment.MachineName,
                 Scenarios = scenarios,
                 Version = BDTestVersionHelper.CurrentVersion,
