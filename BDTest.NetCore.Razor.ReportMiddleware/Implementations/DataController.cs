@@ -21,6 +21,9 @@ namespace BDTest.NetCore.Razor.ReportMiddleware.Implementations
         {
             _memoryCacheBdTestDataStore = memoryCacheBdTestDataStore;
             _customDatastore = serviceProvider.GetService<IBDTestDataStore>();
+            
+            // Get all records on startup
+            Task.Run(GetAllTestRunRecords);
         }
         
         public async Task<BDTestOutputModel> GetData(string id)
