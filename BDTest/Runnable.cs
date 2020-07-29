@@ -7,7 +7,6 @@ namespace BDTest
 {
     internal class Runnable
     {
-
         internal Expression<Func<Task>> Task { get; }
         internal Expression<Action> Action { get; }
 

@@ -1,6 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using BDTest.Attributes;
+﻿using System.Collections.Generic;
+using BDTest.Settings.Retry;
+using BDTest.Settings.Skip;
 
 // ReSharper disable UnusedAutoPropertyAccessor.Global
 
@@ -22,17 +22,6 @@ namespace BDTest.Settings
         public static ReportSettings ReportSettings { get; } = new ReportSettings();
 
         public static SkipStepRules SkipStepRules { get; } = new SkipStepRules();
-    }
-
-    public class SkipStepRules
-    {
-        internal List<SkipStepRule<object>> Rules = new List<SkipStepRule<object>>();
-
-        public void Add<T>(Func<T, bool> condition) where T : SkipStepAttribute
-        {
-            // Cast to Func<object, bool>
-            Func<object, bool> func = value => condition((T) value);
-            Rules.Add(new SkipStepRule<object>(typeof(T), func));
-        }
+        public static RetryTestRules RetryTestRules { get; } = new RetryTestRules();
     }
 }
