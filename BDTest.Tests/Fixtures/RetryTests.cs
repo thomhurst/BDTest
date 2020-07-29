@@ -1,0 +1,79 @@
+using System;
+using BDTest.Attributes;
+using BDTest.Settings;
+using BDTest.Test;
+using BDTest.Tests.Helpers;
+using NUnit.Framework;
+
+namespace BDTest.Tests.Fixtures
+{
+    [Parallelizable(ParallelScope.None)]
+    [Story(AsA = "BDTest developer",
+        IWant = "to make sure that tests can be retried",
+        SoThat = "developers can mitigate against flakey tests")]
+    public class RetryTests : BDTestBase
+    {
+        [SetUp]
+        public void Setup()
+        {
+            _retryCount = 0;
+            TestResetHelper.ResetData();
+        }
+        
+        [OneTimeSetUp]
+        public void OneTimeSetUp()
+        {
+            BDTestSettings.RetryTestRules.Add(exception => exception is MyCustomRetryException, 3);
+        }
+
+        private int _retryCount;
+
+        [TestCase(1)]
+        [TestCase(2)]
+        [TestCase(3)]
+        public void RetrySuccessfully(int throwIfRetryLessThan)
+        {
+            var scenario = Given(() => ThrowException(throwIfRetryLessThan))
+                .When(() => Console.WriteLine("my test has an exception"))
+                .Then(() => Console.WriteLine("the test should retry"))
+                .BDTest();
+            
+            Assert.That(scenario.RetryCount, Is.EqualTo(throwIfRetryLessThan));
+        }
+
+        [TestCase(4)]
+        [TestCase(5)]
+        [TestCase(6)]
+        public void RetryPastLimit(int throwIfRetryLessThan)
+        {
+            try
+            {
+                Given(() => ThrowException(throwIfRetryLessThan))
+                    .When(() => Console.WriteLine("my test has an exception"))
+                    .Then(() => Console.WriteLine("the test should retry"))
+                    .BDTest();
+
+                Assert.Fail();
+            }
+            catch (MyCustomRetryException)
+            {
+                Assert.Pass();
+            }
+        }
+
+        private void ThrowException(int throwIfRetryLessThan)
+        {
+            if (_retryCount++ < throwIfRetryLessThan)
+            {
+                throw new MyCustomRetryException("Blah");
+            }
+        }
+    }
+
+    public class MyCustomRetryException : Exception
+    {
+        public MyCustomRetryException(string message) : base(message)
+        {
+        }
+    }
+}

@@ -3,7 +3,6 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
 using BDTest.Attributes;
-using BDTest.Exceptions;
 using BDTest.Helpers;
 using BDTest.Output;
 using BDTest.Settings;
@@ -113,8 +112,6 @@ namespace BDTest.Test
         {
             SetStepText();
 
-            CheckIfAlreadyExecuted();
-
             await Task.Run(async () =>
             {
                 try
@@ -171,16 +168,6 @@ namespace BDTest.Test
             }
 
             return _shouldSkip;
-        }
-
-        private void CheckIfAlreadyExecuted()
-        {
-            if (_alreadyExecuted)
-            {
-                throw new AlreadyExecutedException("This step has already been executed");
-            }
-
-            _alreadyExecuted = true;
         }
     }
 }

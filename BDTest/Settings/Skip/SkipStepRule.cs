@@ -1,6 +1,6 @@
 using System;
 
-namespace BDTest.Settings
+namespace BDTest.Settings.Skip
 {
     public class SkipStepRule<T>
     {

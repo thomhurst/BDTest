@@ -87,6 +87,9 @@ namespace BDTest.Test
         [JsonProperty] internal ScenarioText ScenarioText { get; private set; }
         
         [JsonProperty] public TestInformationAttribute[] CustomTestInformation { get; private set; }
+        
+        internal bool ShouldRetry { get; private set; }
+        [JsonProperty] public int RetryCount { get; private set; }
 
         public string GetScenarioText()
         {
@@ -104,6 +107,13 @@ namespace BDTest.Test
         
         private void CheckIfAlreadyExecuted()
         {
+            if (ShouldRetry)
+            {
+                ShouldRetry = false;
+                RetryCount++;
+                return;
+            }
+            
             if (_alreadyExecuted)
             {
                 throw new AlreadyExecutedException("This scenario has already been executed");
@@ -150,6 +160,13 @@ namespace BDTest.Test
                 }
                 catch (Exception e)
                 {
+                    var validRetryRules = BDTestSettings.RetryTestRules.Rules.Where(rule => rule.Condition(e)).ToList();
+                    if (validRetryRules.Any() && RetryCount < validRetryRules.Max(x => x.RetryLimit))
+                    {
+                        ShouldRetry = true;
+                        return;
+                    }
+                    
                     Status = Status.Failed;
                     
                     _reporters.WriteLine($"{Environment.NewLine}Exception: {e.StackTrace}{Environment.NewLine}");
@@ -158,22 +175,29 @@ namespace BDTest.Test
                 }
                 finally
                 {
-                    foreach (var notRunStep in Steps.Where(step => step.Status == Status.Inconclusive))
+                    if (ShouldRetry)
                     {
-                        notRunStep.SetStepText();
+                        await ExecuteInternal();
                     }
-                    
-                    _reporters.WriteLine($"{Environment.NewLine}Test Summary:{Environment.NewLine}");
-                    
-                    Steps.ForEach(step => _reporters.WriteLine($"{step.StepText} > [{step.Status}]"));
-                    
-                    _reporters.WriteLine($"{Environment.NewLine}Test Result: {Status}{Environment.NewLine}");
-                    
-                    EndTime = DateTime.Now;
-                    TimeTaken = EndTime - StartTime;
-                    
-                    Output = string.Join(Environment.NewLine,
-                        Steps.Where(step => !string.IsNullOrWhiteSpace(step.Output)).Select(step => step.Output));
+                    else
+                    {
+                        foreach (var notRunStep in Steps.Where(step => step.Status == Status.Inconclusive))
+                        {
+                            notRunStep.SetStepText();
+                        }
+
+                        _reporters.WriteLine($"{Environment.NewLine}Test Summary:{Environment.NewLine}");
+
+                        Steps.ForEach(step => _reporters.WriteLine($"{step.StepText} > [{step.Status}]"));
+
+                        _reporters.WriteLine($"{Environment.NewLine}Test Result: {Status}{Environment.NewLine}");
+
+                        EndTime = DateTime.Now;
+                        TimeTaken = EndTime - StartTime;
+
+                        Output = string.Join(Environment.NewLine,
+                            Steps.Where(step => !string.IsNullOrWhiteSpace(step.Output)).Select(step => step.Output));
+                    }
                 }
             });
         }
