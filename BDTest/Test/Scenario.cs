@@ -88,7 +88,7 @@ namespace BDTest.Test
         
         [JsonProperty] public TestInformationAttribute[] CustomTestInformation { get; private set; }
         
-        internal bool ShouldRetry { get; private set; }
+        [JsonIgnore] internal bool ShouldRetry { get; private set; }
         [JsonProperty] public int RetryCount { get; private set; }
 
         public string GetScenarioText()
