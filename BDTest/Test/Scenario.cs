@@ -111,6 +111,9 @@ namespace BDTest.Test
             {
                 ShouldRetry = false;
                 RetryCount++;
+                
+                _reporters.WriteLine("\nRetrying test...\n");
+                
                 return;
             }
             
@@ -134,7 +137,10 @@ namespace BDTest.Test
                     
                     TestOutputData.ClearCurrentTaskData();
 
-                    WriteAttributeData();
+                    if (RetryCount == 0)
+                    {
+                        WriteTestInformation();
+                    }
 
                     foreach (var step in Steps)
                     {
@@ -202,10 +208,13 @@ namespace BDTest.Test
             });
         }
 
-        private void WriteAttributeData()
+        private void WriteTestInformation()
         {
             WriteStoryAndScenario();
+            
             WriteCustomTestInformation();
+            
+            TestOutputData.ClearCurrentTaskData();
         }
 
         private void WriteCustomTestInformation()
@@ -216,17 +225,15 @@ namespace BDTest.Test
             }
             
             _reporters.NewLine();
-            
-            TestOutputData.ClearCurrentTaskData();
         }
 
         private void WriteStoryAndScenario()
         {
             _reporters.WriteStory(StoryText);
-            _reporters.WriteScenario(ScenarioText);
-            _reporters.NewLine();
             
-            TestOutputData.ClearCurrentTaskData();
+            _reporters.WriteScenario(ScenarioText);
+            
+            _reporters.NewLine();
         }
     }
 }
