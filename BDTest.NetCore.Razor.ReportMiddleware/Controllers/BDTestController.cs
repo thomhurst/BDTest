@@ -7,6 +7,7 @@ using BDTest.NetCore.Razor.ReportMiddleware.Interfaces;
 using BDTest.NetCore.Razor.ReportMiddleware.Models.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json;
 
 namespace BDTest.NetCore.Razor.ReportMiddleware.Controllers
 {
@@ -159,6 +160,20 @@ namespace BDTest.NetCore.Razor.ReportMiddleware.Controllers
             }
 
             return View("MultipleTestRunsFlakiness", foundReports);
+        }
+
+        [HttpGet]
+        [Route("report/{id}/raw-json-data")]
+        public async Task<IActionResult> RawJsonData([FromRoute] string id)
+        {
+            var model = await _dataController.GetData(id);
+            
+            if (model == null)
+            {
+                return View("NotFoundSingle", id);
+            }
+            
+            return Ok(JsonConvert.SerializeObject(model));
         }
 
         [AllowAnonymous]

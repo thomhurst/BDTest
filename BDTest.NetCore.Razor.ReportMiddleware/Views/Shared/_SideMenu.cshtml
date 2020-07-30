@@ -194,6 +194,14 @@
                     <span>Copy URL to Clipboard</span>
                 </a>
             </li>
+            @if (currentTestReport != null)
+            {
+                <li>
+                    <a href="~/bdtest/report/@currentTestReport.Id/raw-json-data" target="_blank">
+                        <span>Download Raw Json Data</span>
+                    </a>
+                </li>
+            }
         </ul>
 
         @if (customTabsProvider != null)
