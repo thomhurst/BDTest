@@ -14,9 +14,14 @@ namespace BDTest
         public static List<BuildableTest> GetNotRunScenarios() => TestHolder.NotRun.Values.ToList();
 
         public static void ClearScenarios() => TestHolder.Scenarios.Clear();
-        
+
+        public static TestTimer GetTestTimer(IReadOnlyCollection<Scenario> scenarios)
+        {
+            return GetTestTimer(scenarios, null);
+        }
+
         public static TestTimer GetTestTimer(IReadOnlyCollection<Scenario> scenarios,
-            BDTestOutputModel totalReportData = null)
+            BDTestOutputModel totalReportData)
         {
             return scenarios.Count switch
             {

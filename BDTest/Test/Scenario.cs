@@ -109,11 +109,7 @@ namespace BDTest.Test
         {
             if (ShouldRetry)
             {
-                ShouldRetry = false;
-                RetryCount++;
-                
-                _reporters.WriteLine("\nRetrying test...\n");
-                
+                SetRetryValues();
                 return;
             }
             
@@ -123,6 +119,22 @@ namespace BDTest.Test
             }
 
             _alreadyExecuted = true;
+        }
+
+        private void SetRetryValues()
+        {
+            ShouldRetry = false;
+            
+            RetryCount++;
+            
+            foreach (var step in Steps)
+            {
+                step.ResetData();
+            }
+
+            Status = Status.Inconclusive;
+
+            _reporters.WriteLine("\nRetrying test...\n");
         }
 
         private async Task ExecuteInternal()

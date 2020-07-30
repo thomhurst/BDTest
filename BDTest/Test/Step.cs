@@ -43,8 +43,6 @@ namespace BDTest.Test
         [JsonProperty]
         public ExceptionWrapper Exception { get; private set; }
 
-        private bool _alreadyExecuted;
-
         private bool _shouldSkip;
 
         internal Step(Runnable runnable, StepType stepType)
@@ -67,6 +65,16 @@ namespace BDTest.Test
         [JsonIgnore]
         internal Func<string> OverriddenStepText { get; set; }
 
+        internal void ResetData()
+        {
+            Exception = null;
+            Output = null;
+            StartTime = DateTime.MinValue;
+            EndTime = DateTime.MinValue;
+            TimeTaken = TimeSpan.Zero;
+            Status = Status.Inconclusive;
+        }
+        
         internal void SetStepText()
         {
             if (OverriddenStepText != null)
