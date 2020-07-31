@@ -23,7 +23,11 @@ namespace BDTest.Test
             }
         }
         
+        [JsonIgnore]
         private readonly Reporter _reporters;
+        
+        [JsonIgnore]
+        private readonly TestDetails _testDetails;
 
         [JsonProperty] public string Guid { get; private set; }
         [JsonProperty] public DateTime StartTime { get; private set; }
@@ -50,6 +54,7 @@ namespace BDTest.Test
 
         internal Scenario(List<Step> steps, TestDetails testDetails)
         {
+            _testDetails = testDetails;
             Guid = testDetails.GetGuid();
             FrameworkTestId = testDetails.TestId;
             
@@ -105,11 +110,11 @@ namespace BDTest.Test
         [JsonProperty]
         public TimeSpan TimeTaken { get; private set; }
         
-        private void CheckIfAlreadyExecuted()
+        private async Task CheckIfAlreadyExecuted()
         {
             if (ShouldRetry)
             {
-                SetRetryValues();
+                await SetRetryValues();
                 return;
             }
             
@@ -121,7 +126,7 @@ namespace BDTest.Test
             _alreadyExecuted = true;
         }
 
-        private void SetRetryValues()
+        private async Task SetRetryValues()
         {
             ShouldRetry = false;
             
@@ -134,12 +139,14 @@ namespace BDTest.Test
 
             Status = Status.Inconclusive;
 
+            await _testDetails.BdTestBase.OnRetry();
+
             _reporters.WriteLine("\nRetrying test...\n");
         }
 
         private async Task ExecuteInternal()
         {
-            CheckIfAlreadyExecuted();
+            await CheckIfAlreadyExecuted();
             
             await Task.Run(async () =>
             {

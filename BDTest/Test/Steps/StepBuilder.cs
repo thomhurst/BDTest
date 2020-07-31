@@ -26,12 +26,12 @@ namespace BDTest.Test.Steps
         }
 
         // First Test Construction - Given or When
-        internal StepBuilder(Runnable runnable, string callerMember, string callerFile, string testId, StepType stepType)
+        internal StepBuilder(Runnable runnable, string callerMember, string callerFile, string testId, StepType stepType, BDTestBase bdTestBase)
         {
             ExistingSteps = new List<Step> { new Step(runnable, stepType) };
             
             var testGuid = System.Guid.NewGuid();
-            TestDetails = new TestDetails(callerMember, callerFile, testGuid, testId);
+            TestDetails = new TestDetails(callerMember, callerFile, testGuid, testId, bdTestBase);
             
             TestOutputData.TestId = testGuid;
             

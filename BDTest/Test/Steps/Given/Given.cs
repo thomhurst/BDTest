@@ -8,7 +8,7 @@ namespace BDTest.Test.Steps.Given
     {
         protected override StepType StepType { get; } = StepType.Given;
         
-        internal Given(Runnable runnable, string callerMember, string callerFile, string testId) : base(runnable, callerMember, callerFile, testId, StepType.Given)
+        internal Given(Runnable runnable, string callerMember, string callerFile, string testId, BDTestBase bdTestBase) : base(runnable, callerMember, callerFile, testId, StepType.Given, bdTestBase)
         {
         }
         

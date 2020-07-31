@@ -17,10 +17,14 @@ namespace BDTest.Test
         public string CallerFile { get; set; }
         [JsonProperty]
         public string TestId { get; set; }
+
+        [JsonIgnore]
+        public BDTestBase BdTestBase { get; }
+
         [JsonProperty]
         public IEnumerable<string> Parameters { get; set; }
 
-        internal TestDetails(string callerMember, string callerFile, Guid guid, string testId)
+        internal TestDetails(string callerMember, string callerFile, Guid guid, string testId, BDTestBase bdTestBase)
         {
             // TODO RESTRUCTURE
             TestDetails = null;
@@ -28,6 +32,7 @@ namespace BDTest.Test
             CallerMember = callerMember;
             CallerFile = callerFile;
             TestId = testId;
+            BdTestBase = bdTestBase;
             SetStoryText();
             SetScenarioText();
             SetTestInformation();

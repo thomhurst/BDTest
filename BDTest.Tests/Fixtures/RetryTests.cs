@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using BDTest.Attributes;
 using BDTest.Settings;
 using BDTest.Test;
@@ -13,10 +14,13 @@ namespace BDTest.Tests.Fixtures
         SoThat = "developers can mitigate against flakey tests")]
     public class RetryTests : BDTestBase
     {
+        private int _retryMethodCallCount;
+        
         [SetUp]
         public void Setup()
         {
             _retryCount = 0;
+            _retryMethodCallCount = 0;
             TestResetHelper.ResetData();
         }
         
@@ -39,6 +43,7 @@ namespace BDTest.Tests.Fixtures
                 .BDTest();
             
             Assert.That(scenario.RetryCount, Is.EqualTo(throwIfRetryLessThan));
+            Assert.That(_retryMethodCallCount, Is.EqualTo(throwIfRetryLessThan));
         }
 
         [TestCase(4)]
@@ -57,6 +62,7 @@ namespace BDTest.Tests.Fixtures
             }
             catch (MyCustomRetryException)
             {
+                Assert.That(_retryMethodCallCount, Is.EqualTo(3));
                 Assert.Pass();
             }
         }
@@ -67,6 +73,12 @@ namespace BDTest.Tests.Fixtures
             {
                 throw new MyCustomRetryException("Blah");
             }
+        }
+
+        public override Task OnRetry()
+        {
+            _retryMethodCallCount++;
+            return Task.CompletedTask;
         }
     }
 

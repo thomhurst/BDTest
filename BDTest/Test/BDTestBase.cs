@@ -19,22 +19,22 @@ namespace BDTest.Test
         
         public Given Given(Expression<Action> step, [CallerMemberName] string callerMember = null, [CallerFilePath] string callerFile = null)
         {
-            return new Given(new Runnable(step), callerMember, callerFile, TestId);
+            return new Given(new Runnable(step), callerMember, callerFile, TestId, this);
         }
 
         public Given Given(Expression<Func<Task>> step, [CallerMemberName] string callerMember = null, [CallerFilePath] string callerFile = null)
         {
-            return new Given(new Runnable(step), callerMember, callerFile, TestId);
+            return new Given(new Runnable(step), callerMember, callerFile, TestId, this);
         }
         
         public When When(Expression<Action> step, [CallerMemberName] string callerMember = null, [CallerFilePath] string callerFile = null)
         {
-            return new When(new Runnable(step), callerMember, callerFile, TestId);
+            return new When(new Runnable(step), callerMember, callerFile, TestId, this);
         }
 
         public When When(Expression<Func<Task>> step, [CallerMemberName] string callerMember = null, [CallerFilePath] string callerFile = null)
         {
-            return new When(new Runnable(step), callerMember, callerFile, TestId);
+            return new When(new Runnable(step), callerMember, callerFile, TestId, this);
         }
 
         public void WithContext<TContext>(Func<TContext, Scenario> test) where TContext : new()
@@ -58,5 +58,10 @@ namespace BDTest.Test
         }
         
         public HtmlWriter ScenarioHtmlWriter => new HtmlWriter(TestId);
+
+        public virtual Task OnRetry()
+        {
+            return Task.CompletedTask;
+        }
     }
 }
