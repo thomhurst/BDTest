@@ -35,6 +35,9 @@ I worked on some projects that had SpecFlow tests, and I had a few problems with
 
 So think of this as a code-based version of SpecFlow.
 
+## Report Server
+One of the biggest benefits is the accompanying report server. It gives you a report UI out of the box, and a way to keep test data and send it to team members with a URL. You can compare different test runs and it also gives you things like graphs so you can identify trends over time.
+
 #### What next?
 
 View the [wiki!](https://github.com/thomhurst/BDTest/wiki)
