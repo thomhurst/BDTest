@@ -23,13 +23,7 @@ namespace BDTest.ReportGenerator.RazorServer
         {
             services
                 .AddControllersWithViews()
-                .AddBdTestReportControllersAndViews(options =>
-                {
-                    options.DataStore = new CosmosBDTestDataStore(
-                        "AccountEndpoint=https://localhost:8081/;AccountKey=C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==;");
-                    options.CustomSidebarLinksProvider = new CustomSidebarLinkProvider();
-                    options.CustomHeaderLinksProvider = new CustomHeaderProvider();
-                });
+                .AddBdTestReportControllersAndViews();
 
             services.AddRazorPages();
         }
@@ -57,6 +51,14 @@ namespace BDTest.ReportGenerator.RazorServer
                     ctx.Context.Response.Headers[HeaderNames.CacheControl] =
                         "public,max-age=" + durationInSeconds;
                 }
+            });
+            
+            app.UseBDTestReportServer(options =>
+            {
+                options.DataStore = new CosmosBDTestDataStore(
+                    "AccountEndpoint=https://localhost:8081/;AccountKey=C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==;");
+                options.CustomSidebarLinksProvider = new CustomSidebarLinkProvider();
+                options.CustomHeaderLinksProvider = new CustomHeaderProvider();
             });
 
             app.UseRouting();
