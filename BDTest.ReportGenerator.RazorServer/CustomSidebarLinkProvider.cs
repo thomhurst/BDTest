@@ -1,13 +1,15 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
+using BDTest.Maps;
 using BDTest.NetCore.Razor.ReportMiddleware.Interfaces;
 using BDTest.NetCore.Razor.ReportMiddleware.Models;
 
 namespace BDTest.ReportGenerator.RazorServer
 {
-    public class CustomTabProvider : IBDTestCustomTabsProvider
+    public class CustomSidebarLinkProvider : IBDTestCustomSidebarLinksProvider
     {
-        public IEnumerable<CustomLinkData> GetCustomLinks()
+        public IEnumerable<CustomLinkData> GetCustomLinks([AllowNull] BDTestOutputModel currentTestReport)
         {
             return new List<CustomLinkData>
             {

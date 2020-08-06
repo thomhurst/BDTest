@@ -1,9 +1,8 @@
-@using BDTest.NetCore.Razor.ReportMiddleware.Interfaces
-@using Microsoft.Extensions.DependencyInjection
-@inject IServiceProvider ServiceProvider
+@using BDTest.NetCore.Razor.ReportMiddleware.Models
+@inject BDTestReportServerOptions BdTestReportServerOptions
 
 @{
-    var customLinksProvider = ServiceProvider.GetService<IBDTestCustomHeaderLinksProvider>();
+    var customLinksProvider = BdTestReportServerOptions.CustomHeaderLinksProvider;
 }
 
 <nav class="navbar is-fixed-top" role="navigation" aria-label="main navigation">

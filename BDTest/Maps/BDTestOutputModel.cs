@@ -26,10 +26,10 @@ namespace BDTest.Maps
         public TestTimer TestTimer { get; set; }
         
         [JsonProperty]
-        public List<Scenario> Scenarios { get; set; }
+        public List<Scenario> Scenarios { get; set; } = new List<Scenario>();
         
         [JsonProperty]
-        public List<BuildableTest> NotRun { get; set; }
+        public List<BuildableTest> NotRun { get; set; } = new List<BuildableTest>();
 
         [JsonProperty] 
         public string Version { get; set; }

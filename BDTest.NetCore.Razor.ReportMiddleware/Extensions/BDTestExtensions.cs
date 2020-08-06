@@ -1,3 +1,4 @@
+using System;
 using BDTest.Maps;
 using BDTest.NetCore.Razor.ReportMiddleware.Controllers;
 using BDTest.NetCore.Razor.ReportMiddleware.Implementations;
@@ -16,6 +17,11 @@ namespace BDTest.NetCore.Razor.ReportMiddleware.Extensions
 
         public static IMvcBuilder AddBdTestReportControllersAndViews(this IMvcBuilder mvcBuilder)
         {
+            return AddBdTestReportControllersAndViews(mvcBuilder, options => { });
+        }
+
+        public static IMvcBuilder AddBdTestReportControllersAndViews(this IMvcBuilder mvcBuilder, Action<BDTestReportServerOptions> options)
+        {
             mvcBuilder
                 .AddApplicationPart(typeof(BDTestController).Assembly)
                 .AddNewtonsoftJson();
@@ -23,7 +29,11 @@ namespace BDTest.NetCore.Razor.ReportMiddleware.Extensions
             var services = mvcBuilder.Services;
             
             services.AddMemoryCache();
-
+            
+            var reportServerOptionsModel = new BDTestReportServerOptions();
+            options(reportServerOptionsModel);
+            services.AddSingleton(reportServerOptionsModel);
+            
             services.AddSingleton<IMemoryCacheBdTestDataStore, MemoryCacheBdTestDataStore>();
             services.AddSingleton<IDataController, DataController>();
 

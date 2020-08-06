@@ -1,5 +1,4 @@
 using BDTest.NetCore.Razor.ReportMiddleware.Extensions;
-using BDTest.NetCore.Razor.ReportMiddleware.Interfaces;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
@@ -24,11 +23,13 @@ namespace BDTest.ReportGenerator.RazorServer
         {
             services
                 .AddControllersWithViews()
-                .AddBdTestReportControllersAndViews();
-            
-            services.AddSingleton<IBDTestDataStore>(new CosmosBDTestDataStore("AccountEndpoint=https://localhost:8081/;AccountKey=C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==;"));
-            services.AddSingleton<IBDTestCustomTabsProvider, CustomTabProvider>();
-            services.AddSingleton<IBDTestCustomHeaderLinksProvider, CustomHeaderProvider>();
+                .AddBdTestReportControllersAndViews(options =>
+                {
+                    options.DataStore = new CosmosBDTestDataStore(
+                        "AccountEndpoint=https://localhost:8081/;AccountKey=C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==;");
+                    options.CustomSidebarLinksProvider = new CustomSidebarLinkProvider();
+                    options.CustomHeaderLinksProvider = new CustomHeaderProvider();
+                });
 
             services.AddRazorPages();
         }

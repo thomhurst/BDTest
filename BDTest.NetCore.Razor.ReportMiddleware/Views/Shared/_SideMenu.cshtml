@@ -1,15 +1,16 @@
 @using BDTest.Maps
 @using BDTest.NetCore.Razor.ReportMiddleware.Extensions
 @using BDTest.NetCore.Razor.ReportMiddleware.Interfaces
+@using BDTest.NetCore.Razor.ReportMiddleware.Models
 @using Microsoft.AspNetCore.Http.Extensions
-@using Microsoft.Extensions.DependencyInjection
 @{ var id = ViewBag.Id; }
-@inject IServiceProvider ServiceProvider
+@inject IDataController DataController;
+@inject BDTestReportServerOptions BdTestReportServerOptions
 
 @{
-    var customTabsProvider = ServiceProvider.GetService<IBDTestCustomTabsProvider>();
+    var customTabsProvider = BdTestReportServerOptions.CustomSidebarLinksProvider;
     
-    BDTestOutputModel currentTestReport = string.IsNullOrEmpty(id) ? null : await ServiceProvider.GetService<IDataController>().GetData(id);
+    BDTestOutputModel currentTestReport = string.IsNullOrEmpty(id) ? null : await DataController.GetData(id);
     var metrics = new OutputMetrics(currentTestReport);
 }
 
@@ -210,7 +211,7 @@
                 Custom Links
             </p>
             <ul class="menu-list">
-                @foreach (var customTabData in customTabsProvider.GetCustomLinks())
+                @foreach (var customTabData in customTabsProvider.GetCustomLinks(currentTestReport ?? new BDTestOutputModel()))
                 {
                     <li>
                         <a href="@customTabData.Url" target="_blank">

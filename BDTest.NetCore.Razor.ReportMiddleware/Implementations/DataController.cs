@@ -7,7 +7,6 @@ using BDTest.Maps;
 using BDTest.NetCore.Razor.ReportMiddleware.Extensions;
 using BDTest.NetCore.Razor.ReportMiddleware.Interfaces;
 using BDTest.NetCore.Razor.ReportMiddleware.Models;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace BDTest.NetCore.Razor.ReportMiddleware.Implementations
 {
@@ -17,10 +16,10 @@ namespace BDTest.NetCore.Razor.ReportMiddleware.Implementations
         private readonly IBDTestDataStore _customDatastore;
         private readonly SemaphoreSlim _methodLock = new SemaphoreSlim(1, 1);
         
-        public DataController(IMemoryCacheBdTestDataStore memoryCacheBdTestDataStore, IServiceProvider serviceProvider)
+        public DataController(IMemoryCacheBdTestDataStore memoryCacheBdTestDataStore, BDTestReportServerOptions options)
         {
             _memoryCacheBdTestDataStore = memoryCacheBdTestDataStore;
-            _customDatastore = serviceProvider.GetService<IBDTestDataStore>();
+            _customDatastore = options.DataStore;
             
             // Get all records on startup
             Task.Run(GetAllTestRunRecords);
