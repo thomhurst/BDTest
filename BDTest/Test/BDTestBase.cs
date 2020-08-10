@@ -81,7 +81,7 @@ namespace BDTest.Test
 
         public string GetScenarioText()
         {
-            return ScenarioTextHelper.GetScenarioText(null, out var _).Scenario;
+            return ScenarioTextHelper.GetScenarioTextWithParameters(null).ScenarioText.Scenario;
         }
     }
 }

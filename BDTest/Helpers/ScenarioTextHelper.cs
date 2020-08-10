@@ -11,26 +11,23 @@ namespace BDTest.Helpers
 {
     internal static class ScenarioTextHelper
     {
-        internal  static ScenarioText GetScenarioText(string callerMember, out IEnumerable<string> parameters)
+        internal static ScenarioTextWithParameters GetScenarioTextWithParameters(string callerMember)
         {
             var stackFrames = new StackTrace().GetFrames() ?? Array.Empty<StackFrame>();
 
             var stepAttributeFrame = stackFrames.FirstOrDefault(it => GetScenarioTextAttribute(it) != null);
             if (stepAttributeFrame != null)
             {
-                parameters = GetParameters(stepAttributeFrame);
-                return new ScenarioText($"{GetScenarioTextAttribute(stepAttributeFrame)}");
+                return new ScenarioTextWithParameters(new ScenarioText(GetScenarioTextAttribute(stepAttributeFrame)), GetParameters(stepAttributeFrame));
             }
 
             var callingFrame = stackFrames.FirstOrDefault(it => it.GetMethod().Name == callerMember);
             if (callingFrame != null)
             {
-                parameters = GetParameters(callingFrame);
-                return new ScenarioText($"{callingFrame.GetMethod().Name.Humanize()}");
+                return new ScenarioTextWithParameters(new ScenarioText(callingFrame.GetMethod().Name.Humanize()), GetParameters(callingFrame));
             }
-
-            parameters = Array.Empty<string>();
-            return new ScenarioText("No Scenario Text found (Use attribute [ScenarioText(\"...\")] on your tests");
+            
+            return new ScenarioTextWithParameters(new ScenarioText("No Scenario Text found (Use attribute [ScenarioText(\"...\")] on your tests"), Array.Empty<string>());
         }
         
         private static string GetScenarioTextAttribute(StackFrame it)
@@ -46,6 +43,18 @@ namespace BDTest.Helpers
         private static IEnumerable<string> GetParameters(StackFrame callingFrame)
         {
             return callingFrame?.GetMethod()?.GetParameters().Select(it => it.Name);
+        }
+    }
+
+    internal class ScenarioTextWithParameters
+    {
+        public ScenarioText ScenarioText { get; }
+        public IEnumerable<string> Parameters { get; }
+
+        internal ScenarioTextWithParameters(ScenarioText scenarioText, IEnumerable<string> parameters)
+        {
+            ScenarioText = scenarioText;
+            Parameters = parameters;
         }
     }
 }

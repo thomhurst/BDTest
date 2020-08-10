@@ -79,8 +79,9 @@ namespace BDTest.Test
 
         private void SetScenarioText()
         {
-            ScenarioText = ScenarioTextHelper.GetScenarioText(CallerMember, out var parameters);
-            Parameters = parameters;
+            var scenarioTextWithParameters = ScenarioTextHelper.GetScenarioTextWithParameters(CallerMember);
+            ScenarioText = scenarioTextWithParameters.ScenarioText;
+            Parameters = scenarioTextWithParameters.Parameters;
         }
 
         private static StackFrame[] GetStackFrames()
