@@ -36,7 +36,7 @@ namespace BDTest.Tests.Fixtures
         [Test]
         public void GetStoryTextFromBaseClassObject()
         {
-            Assert.That(GetStoryText(), Is.EqualTo("As a BDTest developer\r\nI want to make sure that BDTest works\r\nSo that other developers can use it confidently\r\n"));
+            Assert.That(GetStoryText(), Is.EqualTo($"As a BDTest developer{Environment.NewLine}I want to make sure that BDTest works{Environment.NewLine}So that other developers can use it confidently{Environment.NewLine}"));
         }
     }
 

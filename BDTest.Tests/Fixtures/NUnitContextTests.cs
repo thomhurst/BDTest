@@ -1,3 +1,4 @@
+using System;
 using System.Threading.Tasks;
 using BDTest.Attributes;
 using BDTest.NUnit;
@@ -35,8 +36,8 @@ namespace BDTest.Tests.Fixtures
         [Test]
         public void GetStoryTextFromBaseClassObjectInContext()
         {
-            Assert.That(BDTestContext.TestBase.GetStoryText(), Is.EqualTo("As a BDTest developer\r\nI want to make sure that test contexts are different for each test\r\nSo that tests don't share state\r\n"));
-            Assert.That(BDTestContext.GetStoryText(), Is.EqualTo("As a BDTest developer\r\nI want to make sure that test contexts are different for each test\r\nSo that tests don't share state\r\n"));
+            Assert.That(BDTestContext.TestBase.GetStoryText(), Is.EqualTo($"As a BDTest developer{Environment.NewLine}I want to make sure that test contexts are different for each test{Environment.NewLine}So that tests don't share state{Environment.NewLine}"));
+            Assert.That(BDTestContext.GetStoryText(), Is.EqualTo($"As a BDTest developer{Environment.NewLine}I want to make sure that test contexts are different for each test{Environment.NewLine}So that tests don't share state{Environment.NewLine}"));
         }
         
         [Test]
