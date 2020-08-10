@@ -5,36 +5,34 @@ namespace BDTest.Test
 {
     public abstract class AbstractContextBDTestBase<TContext> : BDTestBase where TContext : class, new()
     {
-        private readonly ConditionalWeakTable<string, TContext> _contexts = new ConditionalWeakTable<string, TContext>();
+        private readonly ConditionalWeakTable<string, BDTestContext<TContext>> _contexts = new ConditionalWeakTable<string, BDTestContext<TContext>>();
 
-        public TContext Context
+        public TContext Context => BDTestContext.TestContext;
+
+        public BDTestContext<TContext> BDTestContext
         {
             get
             {
-                _contexts.TryGetValue(TestId, out var context);
+                _contexts.TryGetValue(TestId, out var bdTestContext);
 
-                if (context != null)
+                if (bdTestContext != null)
                 {
-                    return context;
+                    return bdTestContext;
                 }
 
-                context = Activator.CreateInstance<TContext>();
+                var testContext = Activator.CreateInstance<TContext>();
+                bdTestContext = new BDTestContext<TContext>(this, testContext);
 
-                ContextAmendment?.Invoke(context);
+                ContextAmendment?.Invoke(bdTestContext);
                 
-                _contexts.Add(TestId, context);
-                return context;
+                _contexts.Add(TestId, bdTestContext);
+                return bdTestContext;
             }
         }
 
         public void OverwriteContext(TContext context)
         {
-            if (_contexts.TryGetValue(TestId, out _))
-            {
-                _contexts.Remove(TestId);
-            }
-            
-            _contexts.Add(TestId, context);
+            BDTestContext.TestContext = context;
         }
 
         protected void RemoveContext()
@@ -42,6 +40,6 @@ namespace BDTest.Test
             _contexts.Remove(TestId);
         }
         
-        public Action<TContext> ContextAmendment { get; set; }
+        public Action<BDTestContext<TContext>> ContextAmendment { get; set; }
     }
 }

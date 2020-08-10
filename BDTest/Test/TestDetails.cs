@@ -4,7 +4,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using BDTest.Attributes;
-using Humanizer;
+using BDTest.Helpers;
 using Newtonsoft.Json;
 
 namespace BDTest.Test
@@ -72,40 +72,15 @@ namespace BDTest.Test
             StoryText = new StoryText(classStoryAttribute.GetStoryText());
         }
 
-        private static StoryAttribute FindStoryAttribute()
+        private StoryAttribute FindStoryAttribute()
         {
-            if (GetStackFrames()
-                .FirstOrDefault(frame => frame.GetMethod()?.DeclaringType
-                    ?.GetCustomAttribute(typeof(StoryAttribute), true) is StoryAttribute)?.GetMethod()?.DeclaringType
-                ?.GetCustomAttribute(typeof(StoryAttribute), true) is StoryAttribute classStoryAttribute)
-            {
-                return classStoryAttribute;
-            }
-
-            return null;
+            return BdTestBase.GetType().GetCustomAttribute(typeof(StoryAttribute)) as StoryAttribute;
         }
 
         private void SetScenarioText()
         {
-            var stackFrames = GetStackFrames();
-
-            var stepAttributeFrame = stackFrames.FirstOrDefault(it => GetScenarioTextAttribute(it) != null);
-            if (stepAttributeFrame != null)
-            {
-                SetParameters(stepAttributeFrame);
-                ScenarioText = new ScenarioText($"{GetScenarioTextAttribute(stepAttributeFrame)}");
-                return;
-            }
-
-            var callingFrame = stackFrames.FirstOrDefault(it => it.GetMethod().Name == CallerMember);
-            if (callingFrame != null)
-            {
-                SetParameters(callingFrame);
-                ScenarioText = new ScenarioText($"{callingFrame.GetMethod().Name.Humanize()}");
-                return;
-            }
-
-            ScenarioText = new ScenarioText("No Scenario Text found (Use attribute [ScenarioText(\"...\")] on your tests");
+            ScenarioText = ScenarioTextHelper.GetScenarioText(CallerMember, out var parameters);
+            Parameters = parameters;
         }
 
         private static StackFrame[] GetStackFrames()
@@ -113,26 +88,11 @@ namespace BDTest.Test
             return new StackTrace().GetFrames() ?? Array.Empty<StackFrame>();
         }
 
-        private void SetParameters(StackFrame callingFrame)
-        {
-            Parameters = callingFrame?.GetMethod()?.GetParameters().Select(it => it.Name);
-        }
-
-        private static string GetScenarioTextAttribute(StackFrame it)
-        {
-            return GetScenarioTextAttribute(it.GetMethod());
-        }
-        
         private static IEnumerable<TestInformationAttribute> GetTestInformationAttribute(StackFrame it)
         {
             return GetBDTestInformationAttributes(it.GetMethod());
         }
 
-        private static string GetScenarioTextAttribute(ICustomAttributeProvider it)
-        {
-            return (it.GetCustomAttributes(typeof(ScenarioTextAttribute), true).FirstOrDefault() as ScenarioTextAttribute)?.Text;
-        }
-        
         private static IEnumerable<TestInformationAttribute> GetBDTestInformationAttributes(ICustomAttributeProvider it)
         {
             return it.GetCustomAttributes(typeof(TestInformationAttribute), true) as TestInformationAttribute[] ?? Enumerable.Empty<TestInformationAttribute>();

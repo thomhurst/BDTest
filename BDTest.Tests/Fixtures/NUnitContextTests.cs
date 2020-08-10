@@ -31,6 +31,21 @@ namespace BDTest.Tests.Fixtures
         {
             Assert.That(_context1.Id, Is.Not.EqualTo(_context2.Id));
         }
+        
+        [Test]
+        public void GetStoryTextFromBaseClassObjectInContext()
+        {
+            Assert.That(BDTestContext.TestBase.GetStoryText(), Is.EqualTo("As a BDTest developer\r\nI want to make sure that test contexts are different for each test\r\nSo that tests don't share state\r\n"));
+            Assert.That(BDTestContext.GetStoryText(), Is.EqualTo("As a BDTest developer\r\nI want to make sure that test contexts are different for each test\r\nSo that tests don't share state\r\n"));
+        }
+        
+        [Test]
+        [ScenarioText("I can get scenario text from the BDTestContext")]
+        public void GetScenarioTextFromBaseClassObjectInContext()
+        {
+            Assert.That(BDTestContext.TestBase.GetScenarioText(), Is.EqualTo("I can get scenario text from the BDTestContext"));
+            Assert.That(BDTestContext.GetScenarioText(), Is.EqualTo("I can get scenario text from the BDTestContext"));
+        }
     }
     
     [Parallelizable(ParallelScope.Fixtures)]
