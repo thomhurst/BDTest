@@ -10,15 +10,27 @@ namespace BDTest.Test
             TestBase = testBase;
             TestContext = testContext;
         }
-        
+
+        private string _storyText;
         public string GetStoryText()
         {
-            return TestBase.GetStoryText();
+            if (!string.IsNullOrEmpty(_storyText))
+            {
+                return _storyText;
+            }
+            
+            return _storyText = TestBase.GetStoryText();
         }
 
+        private string _scenarioText;
         public string GetScenarioText()
         {
-            return TestBase.GetScenarioText();
+            if (!string.IsNullOrEmpty(_scenarioText))
+            {
+                return _scenarioText;
+            }
+            
+            return _scenarioText = TestBase.GetScenarioText();
         }
     }
 }
