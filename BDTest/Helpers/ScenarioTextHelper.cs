@@ -9,9 +9,9 @@ using Humanizer;
 
 namespace BDTest.Helpers
 {
-    public static class ScenarioTextHelper
+    internal static class ScenarioTextHelper
     {
-        public static ScenarioText GetScenarioText(string callerMember, out IEnumerable<string> parameters)
+        internal  static ScenarioText GetScenarioText(string callerMember, out IEnumerable<string> parameters)
         {
             var stackFrames = new StackTrace().GetFrames() ?? Array.Empty<StackFrame>();
 
