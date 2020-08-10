@@ -114,7 +114,7 @@ namespace BDTest.Test
         {
             if (ShouldRetry)
             {
-                await SetRetryValues();
+                await SetRetryValues().ConfigureAwait(false);
                 return;
             }
             
@@ -146,7 +146,7 @@ namespace BDTest.Test
 
         private async Task ExecuteInternal()
         {
-            await CheckIfAlreadyExecuted();
+            await CheckIfAlreadyExecuted().ConfigureAwait(false);
             
             await Task.Run(async () =>
             {
