@@ -15,7 +15,7 @@ namespace BDTest.Output
 
     internal static class InternalTestTimeData
     {
-        [JsonIgnore] internal static DateTime? TestsStartedAt;
+        [JsonIgnore] internal static DateTime? TestsStartedAt { get; set; }
         [JsonIgnore] internal static DateTime ProcessStartTime => Process.GetCurrentProcess().StartTime;
     }
 }

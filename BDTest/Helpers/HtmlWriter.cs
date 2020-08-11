@@ -1,3 +1,4 @@
+using System;
 using BDTest.Output;
 
 namespace BDTest.Helpers
@@ -20,15 +21,20 @@ namespace BDTest.Helpers
         {
             Custom($"<a href=\"{url}\" target=\"_blank\">{text}</a><br>");
         }
+        
+        public void Link(Func<string> body, string url)
+        {
+            Custom($"<a href=\"{url}\" target=\"_blank\">{body()}</a><br>");
+        }
 
         public void Image(string url)
         {
-            Custom($"<img src=\"{url}\"/><br>");
+            Custom($"<img src=\"{url}\" loading=\"lazy\"/><br>");
         }
 
-        public void Text(string text)
+        public void Text(string value)
         {
-            Custom($"<span>{text}</span><br>");
+            Custom($"<span>{value}</span><br>");
         }
 
         public void LineBreak()
