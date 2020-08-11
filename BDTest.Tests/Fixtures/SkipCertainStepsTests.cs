@@ -23,7 +23,7 @@ namespace BDTest.Tests.Fixtures
         }
 
         [OneTimeTearDown]
-        public async Task Teardown()
+        public void Teardown()
         {
             BDTestReportGenerator.GenerateInFolder(nameof(SkipCertainStepsTests));
         }

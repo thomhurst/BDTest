@@ -2,11 +2,11 @@ using System;
 
 namespace BDTest.Attributes
 {
-    public class EnumOrderAttribute : Attribute
+    internal class EnumOrderAttribute : Attribute
     {
-        public readonly int Order;
+        internal readonly int Order;
 
-        public EnumOrderAttribute(int order)
+        internal EnumOrderAttribute(int order)
         {
             Order = order;
         }

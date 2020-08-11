@@ -1,7 +1,6 @@
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Threading.Tasks;
 using BDTest.Settings;
 using NUnit.Framework;
 
@@ -18,7 +17,7 @@ namespace BDTest.Tests.Fixtures
         }
         
         [OneTimeTearDown]
-        public async Task DeleteOutputDirectories()
+        public void DeleteOutputDirectories()
         {
             var bdTestOutputs = Directory
                 .GetDirectories(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location))
