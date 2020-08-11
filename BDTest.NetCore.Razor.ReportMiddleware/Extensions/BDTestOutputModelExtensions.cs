@@ -69,6 +69,6 @@ namespace BDTest.NetCore.Razor.ReportMiddleware.Extensions
         public bool AnyInconclusive { get; }
 
         public bool AnyFailed { get; }
-        public bool AllPassed => !AnyExceptions & !AnyFailed & !AnyInconclusive && !AnyNotImplemented & !AnySkipped;
+        public bool AllPassed => !AnyExceptions && !AnyFailed && !AnyInconclusive && !AnyNotImplemented && !AnySkipped;
     }
 }
