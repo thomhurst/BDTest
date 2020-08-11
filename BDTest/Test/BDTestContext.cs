@@ -5,10 +5,13 @@ namespace BDTest.Test
         public BDTestBase TestBase { get; }
         public TTestContext TestContext { get; internal set; }
 
-        internal BDTestContext(BDTestBase testBase, TTestContext testContext)
+        public string BDTestExecutionId { get; }
+        
+        internal BDTestContext(BDTestBase testBase, TTestContext testContext, string bdTestExecutionId)
         {
             TestBase = testBase;
             TestContext = testContext;
+            BDTestExecutionId = bdTestExecutionId;
         }
 
         private string _storyText;

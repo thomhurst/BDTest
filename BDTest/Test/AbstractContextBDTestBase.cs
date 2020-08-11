@@ -13,7 +13,7 @@ namespace BDTest.Test
         {
             get
             {
-                _contexts.TryGetValue(TestId, out var bdTestContext);
+                _contexts.TryGetValue(BDTestExecutionId, out var bdTestContext);
 
                 if (bdTestContext != null)
                 {
@@ -21,11 +21,11 @@ namespace BDTest.Test
                 }
 
                 var testContext = Activator.CreateInstance<TContext>();
-                bdTestContext = new BDTestContext<TContext>(this, testContext);
+                bdTestContext = new BDTestContext<TContext>(this, testContext, BDTestExecutionId);
 
                 ContextAmendment?.Invoke(bdTestContext);
                 
-                _contexts.Add(TestId, bdTestContext);
+                _contexts.Add(BDTestExecutionId, bdTestContext);
                 return bdTestContext;
             }
         }
@@ -37,7 +37,7 @@ namespace BDTest.Test
 
         protected void RemoveContext()
         {
-            _contexts.Remove(TestId);
+            _contexts.Remove(BDTestExecutionId);
         }
         
         public Action<BDTestContext<TContext>> ContextAmendment { get; set; }
