@@ -1,18 +1,30 @@
+using System.Linq;
+using BDTest.Maps;
+
 namespace BDTest.Test
 {
-    public class BDTestContext<TTestContext>
+    public class BDTestContext<TTestContext> : BDTestContext
     {
-        public BDTestBase TestBase { get; }
         public TTestContext TestContext { get; internal set; }
 
-        public string BDTestExecutionId { get; }
-        
-        internal BDTestContext(BDTestBase testBase, TTestContext testContext, string bdTestExecutionId)
+        internal BDTestContext(BDTestBase testBase, TTestContext testContext, string bdTestExecutionId) : base(testBase, bdTestExecutionId)
+        {
+            TestContext = testContext;
+        }
+
+    }
+
+    public class BDTestContext
+    {
+        internal BDTestContext(BDTestBase testBase, string bdTestExecutionId)
         {
             TestBase = testBase;
-            TestContext = testContext;
             BDTestExecutionId = bdTestExecutionId;
         }
+
+        public BDTestBase TestBase { get; }
+
+        public string BDTestExecutionId { get; }
 
         private string _storyText;
         public string GetStoryText()
@@ -32,8 +44,10 @@ namespace BDTest.Test
             {
                 return _scenarioText;
             }
-            
+
             return _scenarioText = TestBase.GetScenarioText();
         }
+
+        public Scenario Scenario => TestHolder.Scenarios.Values.FirstOrDefault(scenario => scenario.FrameworkTestId == BDTestExecutionId);
     }
 }
