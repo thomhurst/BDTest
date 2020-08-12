@@ -93,7 +93,7 @@
     <div class="container max-width-80">
     <div class="box" id="all-scenarios-container">
         <div class="buttons is-right">
-            @await Html.PartialAsync("_StatusDropdown")
+            @await Html.PartialAsync("_StatusDropdown", new StatusDropdownViewModel { IncludeScript = true })
             @await Html.PartialAsync("_OrderByDropdown")
             <div class="scenarios-buttons-row">
                 @await Html.PartialAsync("_CollapseExpandGroupedScenariosButtons", "all-scenarios-container")

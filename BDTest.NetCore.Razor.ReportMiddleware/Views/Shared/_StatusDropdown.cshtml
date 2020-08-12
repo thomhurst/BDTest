@@ -1,5 +1,6 @@
 @using BDTest.NetCore.Razor.ReportMiddleware.Constants
 @using BDTest.Test
+@model BDTest.NetCore.Razor.ReportMiddleware.Models.StatusDropdownViewModel
 <div class="dropdown">
   <div class="dropdown-trigger">
     <button class="button is-info is-rounded" aria-haspopup="true" aria-controls="dropdown-menu" id="dropdown-main-button">
@@ -44,7 +45,9 @@
   </div>
 </div>
 
-<script>
+@if (Model.IncludeScript)
+{
+  <script>
 
   function filterByStatus(status) {
     
@@ -70,6 +73,7 @@
         var stories =  document.querySelectorAll(".story-header.@HtmlClassConstants.HasSuccess");
         var scenarioGroups =  document.querySelectorAll(".scenario-group.@HtmlClassConstants.HasSuccess");
         var rows = document.querySelectorAll(".scenario-row.@Status.Passed");
+        var testRunRows = document.querySelectorAll(".test-run-row.@Status.Passed");
         break;
       case '@Status.Failed':
         mainDropdownButton.innerHTML = '<p>Show Failures <i class="arrow down"></i></p>';
@@ -78,6 +82,7 @@
         var stories =  document.querySelectorAll(".story-header.@HtmlClassConstants.HasFailures");
         var scenarioGroups =  document.querySelectorAll(".scenario-group.@HtmlClassConstants.HasFailures");
         var rows = document.querySelectorAll(".scenario-row.@Status.Failed");
+        var testRunRows = document.querySelectorAll(".test-run-row.@Status.Failed");
         break;
       case '@Status.Skipped':
         mainDropdownButton.innerHTML = '<p>Show Skipped <i class="arrow down"></i></p>';
@@ -86,6 +91,7 @@
         var stories =  document.querySelectorAll(".story-header.@HtmlClassConstants.HasSkipped");
         var scenarioGroups =  document.querySelectorAll(".scenario-group.@HtmlClassConstants.HasSkipped");
         var rows = document.querySelectorAll(".scenario-row.@Status.Skipped");
+        var testRunRows = document.querySelectorAll(".test-run-row.@Status.Skipped");
         break;
       case '@Status.Inconclusive':
         mainDropdownButton.innerHTML = '<p>Show Inconclusive <i class="arrow down"></i></p>';
@@ -94,6 +100,7 @@
         var stories =  document.querySelectorAll(".story-header.@HtmlClassConstants.HasInconclusive");
         var scenarioGroups =  document.querySelectorAll(".scenario-group.@HtmlClassConstants.HasInconclusive");
         var rows = document.querySelectorAll(".scenario-row.@Status.Inconclusive");
+        var testRunRows = document.querySelectorAll(".test-run-row.@Status.Inconclusive");
         break;
       case '@Status.NotImplemented':
         mainDropdownButton.innerHTML = '<p>Show Not Implemented <i class="arrow down"></i></p>';
@@ -102,6 +109,7 @@
         var stories =  document.querySelectorAll(".story-header.@HtmlClassConstants.HasNotImplemented");
         var scenarioGroups =  document.querySelectorAll(".scenario-group.@HtmlClassConstants.HasNotImplemented");
         var rows = document.querySelectorAll(".scenario-row.@Status.NotImplemented");
+        var testRunRows = document.querySelectorAll(".test-run-row.@Status.NotImplemented");
         break;
       }
       
@@ -118,6 +126,10 @@
       
       for (let row of rows) {
         setElementVisible(row);
+      }
+      
+      for (let testRunRow of testRunRows) {
+        setElementVisible(testRunRow);
       }
       
       checkIfFilterHiddenAllStories();
@@ -181,3 +193,4 @@
         }
     }
 </script>
+}

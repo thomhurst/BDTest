@@ -1,4 +1,6 @@
+@using BDTest.NetCore.Razor.ReportMiddleware.Constants
 @using BDTest.NetCore.Razor.ReportMiddleware.Extensions
+@using BDTest.NetCore.Razor.ReportMiddleware.Models
 @using BDTest.Test
 @model List<BDTest.NetCore.Razor.ReportMiddleware.Models.TestRunSummary>
 
@@ -8,6 +10,41 @@
 }
 
 <script>
+    function filterByStatus(status) {
+        
+        let mainDropdownButton = document.getElementById("dropdown-main-button");
+        
+        switch (status) {
+          case '@StatusConstants.All':
+            mainDropdownButton.innerHTML = '<p>Show All <i class="arrow down"></i></p>';
+            mainDropdownButton.className = "button has-text-centered is-info is-rounded";
+            break;
+          case '@Status.Passed':
+            mainDropdownButton.innerHTML = '<p>Show Success <i class="arrow down"></i></p>';
+            mainDropdownButton.className = "button has-text-centered is-success is-rounded";
+            break;
+          case '@Status.Failed':
+            mainDropdownButton.innerHTML = '<p>Show Failures <i class="arrow down"></i></p>';
+            mainDropdownButton.className = "button has-text-centered is-danger is-rounded";
+            break;
+          case '@Status.Skipped':
+            mainDropdownButton.innerHTML = '<p>Show Skipped <i class="arrow down"></i></p>';
+            mainDropdownButton.className = "button has-text-centered is-warning is-rounded";
+            break;
+          case '@Status.Inconclusive':
+            mainDropdownButton.innerHTML = '<p>Show Inconclusive <i class="arrow down"></i></p>';
+            mainDropdownButton.className = "button has-text-centered is-warning is-rounded";
+            break;
+          case '@Status.NotImplemented':
+            mainDropdownButton.innerHTML = '<p>Show Not Implemented <i class="arrow down"></i></p>';
+            mainDropdownButton.className = "button has-text-centered is-warning is-rounded";
+            break;
+        }
+        
+       window.selectedStatus = status;
+       performFilter();
+    }
+
     function getCheckedIdsAsQueryParameter() {
         let checkboxes = document.getElementsByName("checkbox");
                   let checkedIds = [];
@@ -69,6 +106,7 @@
             <div class="level-right mb-5">
                 <button class="button is-info is-rounded" id="compare-times">Compare Times</button>
                 <button class="button is-info is-rounded" id="check-flakiness">Check Flakiness</button>
+                @await Html.PartialAsync("_StatusDropdown", new StatusDropdownViewModel { IncludeScript = false })
             </div>
         </nav>
 
@@ -154,6 +192,13 @@
                         }
                      }
                  }
+                 
+                 if(!window.selectedStatus || window.selectedStatus !== "@StatusConstants.All") {
+                     let rowsNotMatchingStatus = document.querySelectorAll(".test-run-row:not(." + selectedStatus + ")");
+                     for (let rowNotMatchingStatus of rowsNotMatchingStatus) {
+                         setElementInvisible(rowNotMatchingStatus);
+                     }
+                  }
              }
         
             function filterRows(inputElementId, checkboxId, tableCellNamesToCheck) {
@@ -225,7 +270,7 @@
                 }
 
 
-                <tr class="off-white-bg-color">
+                <tr class="off-white-bg-color test-run-row @record.Status">
                     <td class="has-text-centered is-vcentered">
                         <input name="checkbox" type="checkbox" id="@record.RecordId"/>
                     </td>
