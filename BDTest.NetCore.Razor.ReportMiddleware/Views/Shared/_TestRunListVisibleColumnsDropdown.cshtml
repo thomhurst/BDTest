@@ -25,7 +25,7 @@
             setElementVisibility(columnField, checkbox.checked);
         }
         
-        setCookie("is-visible-test-run-list-" + target, checkbox.checked.toString())
+        setCookie("is-visible-test-run-list-" + target, checkbox.checked.toString(), 365)
     }
         
     onDomLoaded(function() {
