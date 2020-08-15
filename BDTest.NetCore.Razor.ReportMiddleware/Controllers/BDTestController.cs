@@ -68,7 +68,7 @@ namespace BDTest.NetCore.Razor.ReportMiddleware.Controllers
             
             await _dataController.DeleteReport(id);
             
-            return await TestRuns();
+            return await TestRuns().ConfigureAwait(false);
         }
 
         [HttpGet]

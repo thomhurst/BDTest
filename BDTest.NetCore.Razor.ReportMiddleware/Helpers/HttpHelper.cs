@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Http.Extensions;
 
 namespace BDTest.NetCore.Razor.ReportMiddleware.Helpers
 {
-    public class HttpHelper
+    public static class HttpHelper
     {
         public static string GetBaseUrl(HttpContext httpContext)
         {
