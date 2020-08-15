@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using BDTest.Maps;
 using BDTest.NetCore.Razor.ReportMiddleware.Interfaces;
+using BDTest.NetCore.Razor.ReportMiddleware.Models;
 using BDTest.NetCore.Razor.ReportMiddleware.Models.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -15,10 +16,12 @@ namespace BDTest.NetCore.Razor.ReportMiddleware.Controllers
     public class BDTestController : Controller
     {
         private readonly IDataController _dataController;
+        private readonly BDTestReportServerOptions _bdTestReportServerOptions;
 
-        public BDTestController(IDataController dataController)
+        public BDTestController(IDataController dataController, BDTestReportServerOptions bdTestReportServerOptions)
         {
             _dataController = dataController;
+            _bdTestReportServerOptions = bdTestReportServerOptions;
         }
         
         [HttpGet]
@@ -51,6 +54,21 @@ namespace BDTest.NetCore.Razor.ReportMiddleware.Controllers
         public IActionResult GetReport([FromRoute] string id)
         {
             return RedirectToAction("Summary", "BDTest", new { id });
+        }
+
+        [HttpGet]
+        [HttpDelete]
+        [Route("report/delete/{id}")]
+        public async Task<IActionResult> DeleteReport([FromRoute] string id)
+        {
+            if (await _bdTestReportServerOptions.AdminAuthorizer.IsAdminAsync(HttpContext) != true)
+            {
+                return Unauthorized();
+            }
+            
+            await _dataController.DeleteReport(id);
+            
+            return await TestRuns();
         }
 
         [HttpGet]
@@ -108,7 +126,7 @@ namespace BDTest.NetCore.Razor.ReportMiddleware.Controllers
         {
             var records = await _dataController.GetAllTestRunRecords();
 
-            return View("TestRunList", records.OrderByDescending(record => record.StartedAtDateTime).ToList());
+            return View("TestRunList", records);
         }
         
         [HttpGet]
@@ -117,7 +135,7 @@ namespace BDTest.NetCore.Razor.ReportMiddleware.Controllers
         {
             var records = await _dataController.GetAllTestRunRecords();
 
-            return View("Trends", records.OrderByDescending(record => record.StartedAtDateTime).ToList());
+            return View("Trends", records);
         }
 
         [HttpGet]

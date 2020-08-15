@@ -44,7 +44,12 @@ namespace BDTest.ReportGenerator.RazorServer
             }
         }
 
-        public async Task<TestRunSummary[]> GetAllTestRunRecords()
+        public Task DeleteTestData(string id)
+        {
+            return _testRunSummariesContainer.DeleteBlobIfExistsAsync(id);
+        }
+
+        public async Task<IEnumerable<TestRunSummary>> GetAllTestRunRecords()
         {
             var testRunSummaries = new List<TestRunSummary>();
             
@@ -69,8 +74,8 @@ namespace BDTest.ReportGenerator.RazorServer
         private async Task DeleteBlobItem(BlobItem blobItem)
         {
             await Task.WhenAll(
-                _testRunSummariesContainer.DeleteBlobIfExistsAsync(blobItem.Name),
-                _testDataContainer.DeleteBlobIfExistsAsync(blobItem.Name)
+                DeleteTestData(blobItem.Name),
+                DeleteTestRunRecord(blobItem.Name)
                 );
         }
 
@@ -82,6 +87,11 @@ namespace BDTest.ReportGenerator.RazorServer
         public Task StoreTestRunRecord(TestRunSummary testRunSummary)
         {
             return _testRunSummariesContainer.GetBlockBlobClient(testRunSummary.RecordId).UploadAsync(testRunSummary.AsStream());
+        }
+
+        public Task DeleteTestRunRecord(string id)
+        {
+            return _testDataContainer.DeleteBlobIfExistsAsync(id);
         }
     }
 }

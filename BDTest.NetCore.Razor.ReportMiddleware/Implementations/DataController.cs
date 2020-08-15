@@ -52,24 +52,26 @@ namespace BDTest.NetCore.Razor.ReportMiddleware.Implementations
         
         public async Task<IEnumerable<TestRunSummary>> GetAllTestRunRecords()
         {
-            return await _methodLock.RunAndReturnAsync(async () =>
+            return await _methodLock.RunAndReturnAsync<IEnumerable<TestRunSummary>>(async () =>
             {
                 // Check if it's already in-memory
-                var models = await _memoryCacheBdTestDataStore.GetAllTestRunRecords() ??
-                            Array.Empty<TestRunSummary>();
+                var memoryCachedModels = (await _memoryCacheBdTestDataStore.GetAllTestRunRecords()).ToList();
 
-                if (!models.Any() && _customDatastore != null)
+                if (memoryCachedModels.Any() || _customDatastore == null)
                 {
-                    // Search the backup persistent storage
-                    models = await _customDatastore.GetAllTestRunRecords() ?? Array.Empty<TestRunSummary>();
-
-                    foreach (var testRunRecord in models)
-                    {
-                        await _memoryCacheBdTestDataStore.StoreTestRunRecord(testRunRecord);
-                    }
+                    return memoryCachedModels;
+                }
+                
+                // Search the backup persistent storage
+                var dataStoredModels = await _customDatastore.GetAllTestRunRecords() ?? Array.Empty<TestRunSummary>();
+                var dataStoredModelsAsList = dataStoredModels.ToList();
+                
+                foreach (var testRunRecord in dataStoredModelsAsList)
+                {
+                    await _memoryCacheBdTestDataStore.StoreTestRunRecord(testRunRecord);
                 }
 
-                return models.OrderByDescending(record => record.StartedAtDateTime);
+                return dataStoredModelsAsList.OrderByDescending(record => record.StartedAtDateTime);
             }, CancellationToken.None);
         }
         
@@ -90,6 +92,22 @@ namespace BDTest.NetCore.Razor.ReportMiddleware.Implementations
                         await _customDatastore.StoreTestRunRecord(bdTestOutputModel.GetOverview());
                     }
                 }
+            }, CancellationToken.None);
+        }
+
+        public async Task DeleteReport(string id)
+        {
+            await _methodLock.RunAsync(async () =>
+            {
+                if (_customDatastore != null)
+                {
+                    // Save to persistent storage if it's configured!
+                    await _customDatastore.DeleteTestData(id);
+                    await _customDatastore.DeleteTestRunRecord(id);
+                }
+
+                await _memoryCacheBdTestDataStore.DeleteTestData(id);
+                await _memoryCacheBdTestDataStore.DeleteTestRunRecord(id);
             }, CancellationToken.None);
         }
 

@@ -13,7 +13,8 @@ namespace BDTest.NetCore.Razor.ReportMiddleware.Implementations
     {
         private readonly IMemoryCache _cache;
 
-        private readonly List<TestRunSummary> _testRunSummaries = new List<TestRunSummary>();
+        private readonly object _testRunSummariesLock = new object();
+        private List<TestRunSummary> _testRunSummaries = new List<TestRunSummary>();
 
         public MemoryCacheBdTestDataStore(IMemoryCache cache)
         {
@@ -30,9 +31,18 @@ namespace BDTest.NetCore.Razor.ReportMiddleware.Implementations
             return Task.FromResult(null as BDTestOutputModel);
         }
 
-        public Task<TestRunSummary[]> GetAllTestRunRecords()
+        public Task DeleteTestData(string id)
         {
-            return Task.FromResult(_testRunSummaries.OrderByDescending(record => record.StartedAtDateTime).ToArray());
+            _cache.Remove(id);
+            return Task.CompletedTask;
+        }
+
+        public Task<IEnumerable<TestRunSummary>> GetAllTestRunRecords()
+        {
+            lock (_testRunSummariesLock)
+            {
+                return Task.FromResult(_testRunSummaries.AsEnumerable());
+            }
         }
 
         public Task StoreTestData(string id, BDTestOutputModel data)
@@ -43,8 +53,30 @@ namespace BDTest.NetCore.Razor.ReportMiddleware.Implementations
 
         public Task StoreTestRunRecord(TestRunSummary testRunSummary)
         {
-            _testRunSummaries.Add(testRunSummary);
+            lock (_testRunSummariesLock)
+            {
+                _testRunSummaries.Add(testRunSummary);
 
+                _testRunSummaries = _testRunSummaries.OrderByDescending(record => record.StartedAtDateTime).ToList();
+            }
+
+            return Task.CompletedTask;
+        }
+
+        public Task DeleteTestRunRecord(string id)
+        {
+            lock (_testRunSummariesLock)
+            {
+                var itemToDelete = _testRunSummaries.FirstOrDefault(item => item.RecordId == id);
+
+                if (itemToDelete == null)
+                {
+                    return Task.CompletedTask;
+                }
+
+                _testRunSummaries.Remove(itemToDelete);
+            }
+            
             return Task.CompletedTask;
         }
     }

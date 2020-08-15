@@ -54,6 +54,11 @@ namespace BDTest.ReportGenerator.RazorServer
             await _testRecordContainer.CreateItemAsync(data, new PartitionKey(id));
         }
 
+        public Task DeleteTestData(string id)
+        {
+            throw new System.NotImplementedException();
+        }
+
         public async Task StoreTestRunRecord(TestRunSummary testRunSummary)
         {
             var records = new List<TestRunSummary>();
@@ -103,7 +108,12 @@ namespace BDTest.ReportGenerator.RazorServer
                             new PartitionKey(record.RecordId))));
         }
 
-        public async Task<TestRunSummary[]> GetAllTestRunRecords()
+        public Task DeleteTestRunRecord(string id)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public async Task<IEnumerable<TestRunSummary>> GetAllTestRunRecords()
         {
             var records = new List<TestRunSummary>();
 

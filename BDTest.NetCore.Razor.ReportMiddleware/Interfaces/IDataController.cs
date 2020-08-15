@@ -10,5 +10,6 @@ namespace BDTest.NetCore.Razor.ReportMiddleware.Interfaces
         Task<BDTestOutputModel> GetData(string id);
         Task<IEnumerable<TestRunSummary>> GetAllTestRunRecords();
         Task StoreData(BDTestOutputModel bdTestOutputModel, string id);
+        Task DeleteReport(string id);
     }
 }

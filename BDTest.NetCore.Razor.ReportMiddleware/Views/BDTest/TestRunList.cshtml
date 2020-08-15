@@ -1,15 +1,27 @@
 @using BDTest.NetCore.Razor.ReportMiddleware.Constants
 @using BDTest.NetCore.Razor.ReportMiddleware.Extensions
+@using BDTest.NetCore.Razor.ReportMiddleware.Helpers
 @using BDTest.NetCore.Razor.ReportMiddleware.Models
 @using BDTest.Test
-@model List<BDTest.NetCore.Razor.ReportMiddleware.Models.TestRunSummary>
+@model IEnumerable<BDTest.NetCore.Razor.ReportMiddleware.Models.TestRunSummary>
+@inject BDTestReportServerOptions BDTestReportServerOptions;
 
 @{
     ViewBag.Title = "Test Runs";
     Layout = "_Layout";
+    var isAdmin = await BDTestReportServerOptions.AdminAuthorizer.IsAdminAsync(Context);
 }
 
 <script>
+    function confirmDelete(testId) {
+        if (confirm('Are you sure you want to delete this test run? (' + testId +')')) {
+            @{
+                var baseUrl = HttpHelper.GetBaseUrl(Context);
+            }
+            window.location.href = "@baseUrl/bdtest/report/delete/" + testId;
+        }
+    }
+
     function filterByStatus(status) {
         
         let mainDropdownButton = document.getElementById("dropdown-main-button");
@@ -256,7 +268,13 @@
                 <th class="has-text-centered duration-column">Duration</th>
                 <th class="has-text-centered">Tests Run</th>
                 <th class="has-text-centered">Status</th>
+                @* View report column *@
                 <th></th>
+                @if (isAdmin)
+                {
+                    // Delete Test Run column
+                    <th></th>
+                }
             </tr>
             </thead>
             <tbody>
@@ -296,11 +314,17 @@
                             @status
                         </span>
                     </td>
-                    <td class=" is-vcentered">
+                    <td class="is-vcentered">
                         <a href="~/bdtest/report/@record.RecordId/summary">
                             <button class="button is-fullwidth is-dark is-outlined pointer is-rounded">View Report</button>
                         </a>
                     </td>
+                    @if (isAdmin)
+                    {
+                        <td class="is-vcentered">
+                            <button class="delete" onclick="confirmDelete('@record.RecordId')"></button>
+                        </td>
+                    }
                 </tr>
             }
 

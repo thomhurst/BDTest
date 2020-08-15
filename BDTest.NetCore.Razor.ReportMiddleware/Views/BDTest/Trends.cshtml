@@ -1,8 +1,9 @@
 @using System.Web
+@using BDTest.NetCore.Razor.ReportMiddleware.Helpers
 @using BDTest.NetCore.Razor.ReportMiddleware.Models
 @using BDTest.NetCore.Razor.ReportMiddleware.Views.BDTest
 @using Microsoft.AspNetCore.Http.Extensions
-@model List<BDTest.NetCore.Razor.ReportMiddleware.Models.TestRunSummary>
+@model IEnumerable<BDTest.NetCore.Razor.ReportMiddleware.Models.TestRunSummary>
 
 @functions {
 
@@ -88,12 +89,7 @@
 
     var testRunSummaries = testRunSummariesEnumerable.OrderBy(x => x.StartedAtDateTime).ToList();
     
-    var currentUrl = new Uri(Context.Request.GetEncodedUrl());
-    var baseUrl = currentUrl.Scheme + Uri.SchemeDelimiter + currentUrl.Host;
-    if (!currentUrl.IsDefaultPort)
-    {
-        baseUrl += ":" + currentUrl.Port;
-    }
+    var baseUrl = HttpHelper.GetBaseUrl(Context);
 }
 
 <section class="hero is-info">
