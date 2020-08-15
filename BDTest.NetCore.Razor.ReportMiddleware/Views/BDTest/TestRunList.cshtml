@@ -13,8 +13,21 @@
 }
 
 <script>
-    function confirmDelete(testId) {
-        if (confirm('Are you sure you want to delete this test run? (' + testId +')')) {
+    function confirmDelete(testId, tag, environment, branch, date) {
+        let message = 'Are you sure you want to delete this test run?\n';
+        message += '\nTest ID: ' + testId;
+        if (tag) {
+            message += '\nTag: ' + tag;
+        }
+        if (environment) {
+            message += '\nEnvironment: ' + environment;
+        }
+        if (branch) {
+            message += '\nBranch: ' + branch;
+        }
+        message += '\nDate: ' + date;
+        
+        if (confirm(message)) {
             @{
                 var baseUrl = HttpHelper.GetBaseUrl(Context);
             }
@@ -322,7 +335,7 @@
                     @if (isAdmin)
                     {
                         <td class="is-vcentered">
-                            <button class="delete" onclick="confirmDelete('@record.RecordId')"></button>
+                            <button class="delete" onclick="confirmDelete('@record.RecordId', '@record.Tag', '@record.Environment', '@record.BranchName', '@record.StartedAtDateTime')"></button>
                         </td>
                     }
                 </tr>
