@@ -46,6 +46,11 @@ namespace BDTest.NetCore.Razor.ReportMiddleware.Controllers
 
             await _dataController.StoreData(bdTestOutputModel, id);
 
+            if (_bdTestReportServerOptions.DataReceiver != null)
+            {
+                await _bdTestReportServerOptions.DataReceiver.OnReceiveTestDataAsync(bdTestOutputModel);
+            }
+
             return Ok(Url.ActionLink("Summary", "BDTest", new { id }));
         }
 

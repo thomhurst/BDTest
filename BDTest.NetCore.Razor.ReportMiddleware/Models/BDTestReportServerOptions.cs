@@ -13,5 +13,6 @@ namespace BDTest.NetCore.Razor.ReportMiddleware.Models
         public IBDTestCustomSidebarLinksProvider CustomSidebarLinksProvider { get; set; }
         public IBDTestCustomHeaderLinksProvider CustomHeaderLinksProvider { get; set; }
         public IAdminAuthorizer AdminAuthorizer { get; set; } = new NoOpAdminAuthorizer();
+        public IBDTestDataReceiver DataReceiver { get; set; }
     }
 }
