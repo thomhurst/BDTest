@@ -16,6 +16,23 @@ namespace BDTest.Tests.Fixtures
     {
         private int _retryMethodCallCount;
         
+        private int _setUpCounter = 0;
+        private int _tearDownCounter = 0;
+        
+        [BDTestRetrySetUp]
+        public async Task BDTestRetrySetup()
+        {
+            await Task.Delay(500);
+            _setUpCounter++;
+        }
+        
+        [BDTestRetryTearDown]
+        public async Task BDTestRetryTearDown()
+        {
+            await Task.Delay(500);
+            _tearDownCounter++;
+        }
+        
         [SetUp]
         public void Setup()
         {
@@ -44,6 +61,9 @@ namespace BDTest.Tests.Fixtures
             
             Assert.That(scenario.RetryCount, Is.EqualTo(throwIfRetryLessThan));
             Assert.That(_retryMethodCallCount, Is.EqualTo(throwIfRetryLessThan));
+            
+            Assert.That(_setUpCounter, Is.Positive);
+            Assert.That(_tearDownCounter, Is.Positive);
         }
 
         [TestCase(4)]

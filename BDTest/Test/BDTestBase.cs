@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Runtime.CompilerServices;
@@ -82,6 +83,24 @@ namespace BDTest.Test
         public string GetScenarioText()
         {
             return ScenarioTextHelper.GetScenarioTextWithParameters(null).ScenarioText.Scenario;
+        }
+
+        internal async Task RunMethodWithAttribute<TAttribute>()
+        {
+            var methodWithAttribute = GetType().GetMethods()
+                .FirstOrDefault(method =>
+                    method.GetCustomAttributes()
+                        .Any(attribute => attribute.GetType() == typeof(TAttribute)));
+
+            if (methodWithAttribute == null)
+            {
+                return;
+            }
+
+            if (methodWithAttribute.Invoke(this, Array.Empty<object>()) is Task invokedMethodTask)
+            {
+                await invokedMethodTask.ConfigureAwait(false);
+            }
         }
     }
 }

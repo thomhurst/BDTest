@@ -139,7 +139,17 @@ namespace BDTest.Test
 
             Status = Status.Inconclusive;
 
-            await _testDetails.BdTestBase.OnRetry();
+            try
+            {
+                await _testDetails.BdTestBase.RunMethodWithAttribute<BDTestRetryTearDownAttribute>();
+                await _testDetails.BdTestBase.RunMethodWithAttribute<BDTestRetrySetUpAttribute>();
+            
+                await _testDetails.BdTestBase.OnRetry();
+            }
+            catch (Exception e)
+            {
+                throw new ErrorOccurredDuringRetryActionException(e);
+            }
 
             _reporters.WriteLine("\nRetrying test...\n");
         }
