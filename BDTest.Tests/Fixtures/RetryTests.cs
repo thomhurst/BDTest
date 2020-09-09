@@ -1,8 +1,8 @@
 using System;
 using System.Threading.Tasks;
 using BDTest.Attributes;
+using BDTest.NUnit;
 using BDTest.Settings;
-using BDTest.Test;
 using BDTest.Tests.Helpers;
 using NUnit.Framework;
 
@@ -12,7 +12,7 @@ namespace BDTest.Tests.Fixtures
     [Story(AsA = "BDTest developer",
         IWant = "to make sure that tests can be retried",
         SoThat = "developers can mitigate against flakey tests")]
-    public class RetryTests : BDTestBase
+    public class RetryTests : NUnitBDTestBase<RetryContext>
     {
         private int _retryMethodCallCount;
         
@@ -73,8 +73,8 @@ namespace BDTest.Tests.Fixtures
         {
             try
             {
-                Given(() => ThrowException(throwIfRetryLessThan))
-                    .When(() => Console.WriteLine("my test has an exception"))
+                Given(() => CheckContextCounter())
+                    .When(() => ThrowException(throwIfRetryLessThan))
                     .Then(() => Console.WriteLine("the test should retry"))
                     .BDTest();
 
@@ -87,6 +87,13 @@ namespace BDTest.Tests.Fixtures
             }
         }
 
+        private void CheckContextCounter()
+        {
+            Assert.That(Context.ContextCounter, Is.Zero);
+            
+            Context.ContextCounter++;
+        }
+
         private void ThrowException(int throwIfRetryLessThan)
         {
             if (_retryCount++ < throwIfRetryLessThan)
@@ -95,11 +102,16 @@ namespace BDTest.Tests.Fixtures
             }
         }
 
-        public override Task OnRetry()
+        public override Task OnBeforeRetry()
         {
             _retryMethodCallCount++;
             return Task.CompletedTask;
         }
+    }
+
+    public class RetryContext
+    {
+        public int ContextCounter { get; set; }
     }
 
     public class MyCustomRetryException : Exception

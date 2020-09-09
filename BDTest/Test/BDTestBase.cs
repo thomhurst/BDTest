@@ -68,7 +68,7 @@ namespace BDTest.Test
 
         public HtmlWriter ScenarioHtmlWriter => new HtmlWriter(BDTestExecutionId);
 
-        public virtual Task OnRetry()
+        public virtual Task OnBeforeRetry()
         {
             return Task.CompletedTask;
         }

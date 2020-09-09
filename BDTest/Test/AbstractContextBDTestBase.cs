@@ -41,5 +41,11 @@ namespace BDTest.Test
         }
         
         public Action<BDTestContext<TContext>> ContextAmendment { get; set; }
+
+        internal void RecreateContextOnRetry()
+        {
+            OverwriteContext(Activator.CreateInstance<TContext>());   
+            ContextAmendment?.Invoke(BDTestContext);
+        }
     }
 }

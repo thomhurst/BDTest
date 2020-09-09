@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 using BDTest.Attributes;
 using BDTest.Exceptions;
@@ -142,9 +143,12 @@ namespace BDTest.Test
             try
             {
                 await _testDetails.BdTestBase.RunMethodWithAttribute<BDTestRetryTearDownAttribute>();
+                
+                await _testDetails.BdTestBase.OnBeforeRetry();
+
+                ResetContext();
+
                 await _testDetails.BdTestBase.RunMethodWithAttribute<BDTestRetrySetUpAttribute>();
-            
-                await _testDetails.BdTestBase.OnRetry();
             }
             catch (Exception e)
             {
@@ -152,6 +156,31 @@ namespace BDTest.Test
             }
 
             _reporters.WriteLine("\nRetrying test...\n");
+        }
+
+        private void ResetContext()
+        {
+            if (IsSuperClassOfAbstractContextBDTestBase())
+            {
+                _testDetails.BdTestBase.GetType().GetMethod("RecreateContextOnRetry", BindingFlags.NonPublic | BindingFlags.Instance)
+                    ?.Invoke(_testDetails.BdTestBase, Array.Empty<object>());
+            }
+        }
+
+        private bool IsSuperClassOfAbstractContextBDTestBase()
+        {
+            var type = _testDetails.BdTestBase.GetType();
+            do
+            {
+                if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(AbstractContextBDTestBase<>))
+                {
+                    return true;
+                }
+
+                type = type.BaseType;
+            } while (type != null);
+
+            return false;
         }
 
         private async Task ExecuteInternal()
