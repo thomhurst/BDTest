@@ -16,33 +16,48 @@ If you like using BDTest, consider buying me a coffee :)
 Please view the [wiki](https://github.com/thomhurst/BDTest/wiki) to see how to use BDTest and how to get setup: https://github.com/thomhurst/BDTest/wiki
 
 ### What is it?
+BDTest is a testing and reporting framework focusing on 'Behaviour Driven Testing' ideologies. 
+It's a way to structure and run your tests so that:
+- They are clear, concise and easy to understand
+- They are easy to run and debug
+- They don't share state. They are independent, side-effect free and able to run in parallel, meaning faster and more stable tests!
+- They translate into business criteria and focus on how the system under test would be used by an end user and their behaviours
+- You have an easy way to see test results and share them with your team or business
 
-BDTest is a testing and reporting framework for .NET
-
-#### Purpose
-- Fast Test Execution
-- Clean and Organised Tests
-- Tests That Are Clear, Concise and Make Sense
-- Tests That Follow Business Acceptance Criteria
-- Plain Human Readable Test Reports
+BDTest can be used standalone, or alongside an existing test running framework. For best results, I recommend NUnit, and installing the BDTest.NUnit package alongside the core BDTest package.
 
 #### Why?
-I worked on some projects that had SpecFlow tests, and I had a few problems with it:
+I was originally inspired to build BDTest due to SpecFlow.
+My team at work used SpecFlow (as does much of the .NET based industry) for their tests when I joined, and upon using it, realised I really didn't enjoy using it and found it to be difficult to work with, finnicky and long-winded.
+It turned out, my team also really disliked it, so I thought I'd change things.
 
-- Hard to debug - Exception stacktraces took you to horrible dynamically generated classes
-- IDE Support / Plugins - I didn't use Visual Studio, and so I didn't have proper support for specflow  
-- Just generally hard to navigate - Especially with no IDE support, so I couldn't go to step implementations automatically!
-- Felt slow and bloated
+Think of BDTest as a pure code-based alternative to SpecFlow.
 
-So think of this as a code-based version of SpecFlow.
+### What's the benefit over SpecFlow?
+- Passing in more complicated arguments to tests. Enums, models, etc.
+- You get the benefit of separating steps into Given, When, Then. However you can use and re-use existing steps without redefining or attributing them as Given step, or a When step, etc.
+- No auto-generated code. All code is your code! So you shouldn't see any weirdness. This also means no extra weird compilation steps and bringing in specific test compilers/runners.
+- Easier to debug. Test has failed and thrown an exception? The stacktrace should take you straight to where it happened. No being taken to strange auto-generated classes that you don't care about!
+- Step into all your code. I used Rider as my IDE, which didn't support SpecFlow, so I couldn't step into my test methods. I had to do a painful Find All! Now as it's all code, I can step straight into my test methods.
+- No learning and maintaining separate Gherkin files!
 
-## Report Server
-One of the biggest benefits is the accompanying report server. It gives you a report UI out of the box, and a way to keep test data and send it to team members with a URL. You can compare different test runs and it also gives you things like graphs so you can identify trends over time.
+### But non-technical can write tests using SpecFlow
+- Does that EVER actually happen though?
+- They can only use the high level methods. Any new methods, a developer will still need to code the steps for them. If they can only use the high level methods, make the method names human readable, and they can still use them!
 
-#### What next?
+### I need reports that translates to business acceptance criteria
+- BDTest does that!
+- BDTest produces you a clear, easy to understand report, showing what failed and what passed, with output and exceptions from tests automatically captured
+- Mark your classes and methods with [StoryText], [ScenarioText], and [StepText] attributes, providing the output you want, and your reports will produce clean text output
+- If you don't mark your methods with attributes, BDTest will automatically convert the method name to text (separating words by capitalisation or underscores)
+- If you use the report server, you can just send the relevant party a URL directly to your test report!
 
-View the [wiki!](https://github.com/thomhurst/BDTest/wiki)
+## Where can I use it?
+BDTest is written in .NET Standard, so you can use it in either .NET Framework or .NET Core
 
+## How do I get started?
+
+View the [wiki](https://github.com/thomhurst/BDTest/wiki) to see how to use BDTest and how to get setup: https://github.com/thomhurst/BDTest/wiki
 #### Example Test
 
 ```csharp
