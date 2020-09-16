@@ -68,6 +68,7 @@ namespace BDTest.Example
         SoThat = "people can get set up easier")]
     public class ExampleTest : NUnitBDTestContext<MyTestContext>
     {
+        // Context property is magically available, created by the `NUnitBDTestContext` base class. It's unique for each NUnit test!
         private AccountSteps AccountSteps => new AccountSteps(Context);
         
         [Test]
@@ -92,9 +93,9 @@ namespace BDTest.Example
     
     public class AccountSteps
     {
-        private MyTextContext _context;
+        private MyTestContext _context;
         
-        public class AccountSteps(MyTextContext context)
+        public class AccountSteps(MyTestContext context)
         {
             _context = context;
         }
