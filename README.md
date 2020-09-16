@@ -66,8 +66,10 @@ namespace BDTest.Example
     [Story(AsA = "BDTest author",
         IWant = "to show an example of how to use the framework",
         SoThat = "people can get set up easier")]
-    public class ExampleTest : MyTestBase
+    public class ExampleTest : NUnitBDTestContext<MyTestContext>
     {
+        private AccountSteps AccountSteps => new AccountSteps(Context);
+        
         [Test]
         [ScenarioText("A passing test using steps defined in a BDTestBase, with StoryText, ScenarioText and StepTexts")]
         public async Task TestPass()
@@ -85,6 +87,23 @@ namespace BDTest.Example
             await When(() => AccountSteps.CreateAnAccount())
                 .Then(() => HttpAssertions.TheHttpStatusCodeIs(HttpStatusCode.OK))
                 .BDTestAsync();
+        }
+    }
+    
+    public class AccountSteps
+    {
+        private MyTextContext _context;
+        
+        public class AccountSteps(MyTextContext context)
+        {
+            _context = context;
+        }
+        
+        [StepText("")
+        public async Task CreateAnAccount()
+        {
+            // ... Some code to create an account!
+            // You can use all the information stored in your test context object that was passed into the constructor!
         }
     }
 }
