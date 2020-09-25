@@ -72,8 +72,8 @@ namespace BDTest.Example
         private AccountSteps AccountSteps => new AccountSteps(Context);
         
         [Test]
-        [ScenarioText("A passing test using steps defined in a BDTestBase, with StoryText, ScenarioText and StepTexts")]
-        public async Task TestPass()
+        [ScenarioText("Searching for a non-existing account number returns Not Found")]
+        public async Task FindNonExistingAccountReturnsNotFound()
         {
             await When(() => AccountSteps.FindAccount(12345))
                 .Then(() => HttpAssertions.TheHttpStatusCodeIs(HttpStatusCode.NotFound))
@@ -82,8 +82,8 @@ namespace BDTest.Example
         
         [Test]
         [BugInformation("123456")]
-        [ScenarioText("A failing test using steps defined in a BDTestBase, with StoryText, ScenarioText and StepTexts")]
-        public async Task TestFail()
+        [ScenarioText("Can successfully create a new account")]
+        public async Task CreateNewAccountSuccessfully()
         {
             await When(() => AccountSteps.CreateAnAccount())
                 .Then(() => HttpAssertions.TheHttpStatusCodeIs(HttpStatusCode.OK))
