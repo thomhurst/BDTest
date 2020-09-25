@@ -75,7 +75,7 @@ namespace BDTest.Example
         [ScenarioText("A passing test using steps defined in a BDTestBase, with StoryText, ScenarioText and StepTexts")]
         public async Task TestPass()
         {
-            await When(() => AccountSteps.CreateAnAccount())
+            await When(() => AccountSteps.FindAccount(12345))
                 .Then(() => HttpAssertions.TheHttpStatusCodeIs(HttpStatusCode.NotFound))
                 .BDTestAsync();
         }
@@ -100,11 +100,17 @@ namespace BDTest.Example
             _context = context;
         }
         
-        [StepText("")
+        [StepText("I create an account")
         public async Task CreateAnAccount()
         {
             // ... Some code to create an account!
             // You can use all the information stored in your test context object that was passed into the constructor!
+        }
+        
+        [StepText("I search for the account with the customer ID '{0}'")
+        public async Task FindAccount(int customerId)
+        {
+            // ... Some code to find an account!
         }
     }
 }
