@@ -4,6 +4,12 @@ namespace BDTest
 {
     internal class BDTestServiceProvider
     {
-        internal static IScenarioExecutor ScenarioExecutor { get; } = new ScenarioExecutor();
+        static BDTestServiceProvider()
+        {
+            var typeMatcher = new TypeMatcher();
+            var scenarioRetryManager = new ScenarioRetryManager(typeMatcher);
+            ScenarioExecutor = new ScenarioExecutor(scenarioRetryManager);
+        }
+        internal static IScenarioExecutor ScenarioExecutor { get; }
     }
 }

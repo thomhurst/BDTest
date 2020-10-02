@@ -1,9 +1,7 @@
 using System;
 using System.Linq;
-using System.Reflection;
 using System.Threading.Tasks;
 using BDTest.Attributes;
-using BDTest.Exceptions;
 using BDTest.Output;
 using BDTest.Reporters;
 using BDTest.Settings;
@@ -18,9 +16,16 @@ namespace BDTest.Interfaces.Internal
 
     public class ScenarioExecutor : IScenarioExecutor
     {
+        private readonly IScenarioRetryManager _scenarioRetryManager;
+
+        public ScenarioExecutor(IScenarioRetryManager scenarioRetryManager)
+        {
+            _scenarioRetryManager = scenarioRetryManager;
+        }
+        
         public async Task ExecuteAsync(Scenario scenario)
         {
-            await CheckIfAlreadyExecuted(scenario).ConfigureAwait(false);
+            await _scenarioRetryManager.CheckIfAlreadyExecuted(scenario).ConfigureAwait(false);
             
             await Task.Run(async () =>
             {
@@ -100,79 +105,7 @@ namespace BDTest.Interfaces.Internal
                 }
             });
         }
-        
-        private async Task CheckIfAlreadyExecuted(Scenario scenario)
-        {
-            if (scenario.ShouldRetry)
-            {
-                await SetRetryValues(scenario).ConfigureAwait(false);
-                return;
-            }
-            
-            if (scenario._alreadyExecuted)
-            {
-                throw new AlreadyExecutedException("This scenario has already been executed");
-            }
 
-            scenario._alreadyExecuted = true;
-        }
-        
-        private async Task SetRetryValues(Scenario scenario)
-        {
-            scenario.ShouldRetry = false;
-            
-            scenario.RetryCount++;
-            
-            foreach (var step in scenario.Steps)
-            {
-                step.ResetData();
-            }
-
-            scenario.Status = Status.Inconclusive;
-
-            try
-            {
-                await scenario._testDetails.BdTestBase.RunMethodWithAttribute<BDTestRetryTearDownAttribute>();
-                
-                await scenario._testDetails.BdTestBase.OnBeforeRetry();
-
-                ResetContext(scenario);
-
-                await scenario._testDetails.BdTestBase.RunMethodWithAttribute<BDTestRetrySetUpAttribute>();
-            }
-            catch (Exception e)
-            {
-                throw new ErrorOccurredDuringRetryActionException(e);
-            }
-
-            ConsoleReporter.WriteLine("\nRetrying test...\n");
-        }
-        
-        private void ResetContext(Scenario scenario)
-        {
-            if (IsSuperClassOfAbstractContextBDTestBase(scenario))
-            {
-                scenario._testDetails.BdTestBase.GetType().GetMethod("RecreateContextOnRetry", BindingFlags.NonPublic | BindingFlags.Instance)
-                    ?.Invoke(scenario._testDetails.BdTestBase, Array.Empty<object>());
-            }
-        }
-        
-        private bool IsSuperClassOfAbstractContextBDTestBase(Scenario scenario)
-        {
-            var type = scenario._testDetails.BdTestBase.GetType();
-            do
-            {
-                if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(AbstractContextBDTestBase<>))
-                {
-                    return true;
-                }
-
-                type = type.BaseType;
-            } while (type != null);
-
-            return false;
-        }
-        
         private void WriteTestInformation(Scenario scenario)
         {
             WriteStoryAndScenario(scenario);
