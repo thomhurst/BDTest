@@ -53,13 +53,18 @@ namespace BDTest.Interfaces.Internal
 
             try
             {
-                await scenario.TestDetails.BdTestBase.RunMethodWithAttribute<BDTestRetryTearDownAttribute>();
+                var bdTestBase = scenario.TestDetails.BdTestBase;
                 
-                await scenario.TestDetails.BdTestBase.OnBeforeRetry();
-
+                // Run TearDown Attributed Method
+                await bdTestBase.RunMethodWithAttribute<BDTestRetryTearDownAttribute>();
+                
+                // Run Custom Test Hook In Base Class
+                await bdTestBase.OnBeforeRetry();
+                
                 ResetContext(scenario);
 
-                await scenario.TestDetails.BdTestBase.RunMethodWithAttribute<BDTestRetrySetUpAttribute>();
+                // Run SetUp Attributed Method
+                await bdTestBase.RunMethodWithAttribute<BDTestRetrySetUpAttribute>();
             }
             catch (Exception e)
             {
