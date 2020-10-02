@@ -3,15 +3,14 @@ using BDTest.Test;
 
 namespace BDTest.Reporters
 {
-    internal class ConsoleReporter : Reporter
+    internal static class ConsoleReporter
     {
-
-        public override void WriteLine(string text)
+        public static void WriteLine(string text)
         {
             Console.Out.WriteLine(text);
         }
 
-        public override void WriteStory(StoryText storyText)
+        public static void WriteStory(StoryText storyText)
         {
             if (storyText?.Story == null)
             {
@@ -21,7 +20,7 @@ namespace BDTest.Reporters
             WriteLine("Story: " + storyText.Story);
         }
 
-        public override void WriteScenario(ScenarioText scenarioText)
+        public static void WriteScenario(ScenarioText scenarioText)
         {
             if (scenarioText?.Scenario == null)
             {
@@ -29,11 +28,6 @@ namespace BDTest.Reporters
             }
 
             WriteLine("Scenario: " + scenarioText.Scenario);
-        }
-
-        public override void OnFinish()
-        {
-            // Nothing Needed to Finish with the console.
         }
     }
 }

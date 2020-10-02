@@ -23,10 +23,7 @@ namespace BDTest.Test
                 Console.SetOut(TestOutputData.Instance);
             }
         }
-        
-        [JsonIgnore]
-        private readonly Reporter _reporters;
-        
+
         [JsonIgnore]
         private readonly TestDetails _testDetails;
 
@@ -67,8 +64,7 @@ namespace BDTest.Test
             CustomTestInformation = testDetails.CustomTestInformation;
 
             FileName = testDetails.CallerFile;
-
-            _reporters = new Reporters.Reporters();
+            
             Steps = steps;
         }
 
@@ -155,7 +151,7 @@ namespace BDTest.Test
                 throw new ErrorOccurredDuringRetryActionException(e);
             }
 
-            _reporters.WriteLine("\nRetrying test...\n");
+            ConsoleReporter.WriteLine("\nRetrying test...\n");
         }
 
         private void ResetContext()
@@ -233,7 +229,7 @@ namespace BDTest.Test
                     
                     Status = Status.Failed;
                     
-                    _reporters.WriteLine($"{Environment.NewLine}Exception: {e.StackTrace}{Environment.NewLine}");
+                    ConsoleReporter.WriteLine($"{Environment.NewLine}Exception: {e.StackTrace}{Environment.NewLine}");
 
                     throw;
                 }
@@ -250,11 +246,11 @@ namespace BDTest.Test
                             notRunStep.SetStepText();
                         }
 
-                        _reporters.WriteLine($"{Environment.NewLine}Test Summary:{Environment.NewLine}");
+                        ConsoleReporter.WriteLine($"{Environment.NewLine}Test Summary:{Environment.NewLine}");
 
-                        Steps.ForEach(step => _reporters.WriteLine($"{step.StepText} > [{step.Status}]"));
+                        Steps.ForEach(step => ConsoleReporter.WriteLine($"{step.StepText} > [{step.Status}]"));
 
-                        _reporters.WriteLine($"{Environment.NewLine}Test Result: {Status}{Environment.NewLine}");
+                        ConsoleReporter.WriteLine($"{Environment.NewLine}Test Result: {Status}{Environment.NewLine}");
 
                         EndTime = DateTime.Now;
                         TimeTaken = EndTime - StartTime;
@@ -279,19 +275,19 @@ namespace BDTest.Test
         {
             foreach (var testInformationAttribute in CustomTestInformation ?? Array.Empty<TestInformationAttribute>())
             {
-                _reporters.WriteLine(testInformationAttribute.Print());
+                ConsoleReporter.WriteLine(testInformationAttribute.Print());
             }
             
-            _reporters.NewLine();
+            ConsoleReporter.WriteLine(Environment.NewLine);
         }
 
         private void WriteStoryAndScenario()
         {
-            _reporters.WriteStory(StoryText);
+            ConsoleReporter.WriteStory(StoryText);
             
-            _reporters.WriteScenario(ScenarioText);
+            ConsoleReporter.WriteScenario(ScenarioText);
             
-            _reporters.NewLine();
+            ConsoleReporter.WriteLine(Environment.NewLine);
         }
     }
 }
