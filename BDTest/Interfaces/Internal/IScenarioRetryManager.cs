@@ -26,7 +26,7 @@ namespace BDTest.Interfaces.Internal
         {
             if (scenario.ShouldRetry)
             {
-                await SetRetryValues(scenario).ConfigureAwait(false);
+                await ResetData(scenario).ConfigureAwait(false);
                 return;
             }
             
@@ -38,29 +38,31 @@ namespace BDTest.Interfaces.Internal
             scenario.AlreadyExecuted = true;
         }
         
-        private async Task SetRetryValues(Scenario scenario)
+        private async Task ResetData(Scenario scenario)
         {
-            scenario.ShouldRetry = false;
-            
-            scenario.RetryCount++;
-            
-            foreach (var step in scenario.Steps)
-            {
-                step.ResetData();
-            }
+            SetRetryData(scenario);
+
+            ResetStepData(scenario);
 
             scenario.Status = Status.Inconclusive;
 
+            await RunRetryTestHooks(scenario);
+
+            ConsoleReporter.WriteLine("\nRetrying test...\n");
+        }
+
+        private async Task RunRetryTestHooks(Scenario scenario)
+        {
             try
             {
                 var bdTestBase = scenario.TestDetails.BdTestBase;
-                
+
                 // Run TearDown Attributed Method
                 await bdTestBase.RunMethodWithAttribute<BDTestRetryTearDownAttribute>();
-                
+
                 // Run Custom Test Hook In Base Class
                 await bdTestBase.OnBeforeRetry();
-                
+
                 ResetContext(scenario);
 
                 // Run SetUp Attributed Method
@@ -70,10 +72,23 @@ namespace BDTest.Interfaces.Internal
             {
                 throw new ErrorOccurredDuringRetryActionException(e);
             }
-
-            ConsoleReporter.WriteLine("\nRetrying test...\n");
         }
-        
+
+        private static void ResetStepData(Scenario scenario)
+        {
+            foreach (var step in scenario.Steps)
+            {
+                step.ResetData();
+            }
+        }
+
+        private static void SetRetryData(Scenario scenario)
+        {
+            scenario.ShouldRetry = false;
+
+            scenario.RetryCount++;
+        }
+
         private void ResetContext(Scenario scenario)
         {
             if (_typeMatcher.IsSuperClassOfAbstractContextBDTestBase(scenario.TestDetails.BdTestBase))
