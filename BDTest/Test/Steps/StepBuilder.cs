@@ -12,7 +12,6 @@ namespace BDTest.Test.Steps
 
         internal readonly List<Step> ExistingSteps;
         protected abstract StepType StepType { get; }
-        protected string StepPrefix => StepType.GetValue();
 
         static StepBuilder()
         {
