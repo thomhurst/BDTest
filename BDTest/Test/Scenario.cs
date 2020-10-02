@@ -1,13 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
-using System.Threading.Tasks;
 using BDTest.Attributes;
-using BDTest.Exceptions;
 using BDTest.Maps;
 using BDTest.Output;
-using BDTest.Reporters;
 using BDTest.Settings;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
@@ -24,13 +20,12 @@ namespace BDTest.Test
             }
         }
 
-        [JsonIgnore]
-        private readonly TestDetails _testDetails;
+        [JsonIgnore] internal readonly TestDetails _testDetails;
 
         [JsonProperty] public string Guid { get; private set; }
-        [JsonProperty] public DateTime StartTime { get; private set; }
+        [JsonProperty] public DateTime StartTime { get; internal set; }
 
-        [JsonProperty] public DateTime EndTime { get; private set; }
+        [JsonProperty] public DateTime EndTime { get; internal set; }
 
         [JsonProperty] public string FileName { get; private set; }
         
@@ -48,7 +43,7 @@ namespace BDTest.Test
         {
         }
 
-        private bool _alreadyExecuted;
+        internal bool _alreadyExecuted;
 
         internal Scenario(List<Step> steps, TestDetails testDetails)
         {
@@ -71,18 +66,13 @@ namespace BDTest.Test
         [JsonProperty]
         public string FrameworkTestId { get; set; }
 
-        internal async Task Execute()
-        {
-            await ExecuteInternal().ConfigureAwait(false);
-        }
-
         [JsonProperty] public List<Step> Steps { get; private set; }
 
-        [JsonProperty] public string Output { get; private set; }
+        [JsonProperty] public string Output { get; internal set; }
 
         [JsonConverter(typeof(StringEnumConverter))]
         [JsonProperty]
-        public Status Status { get; private set; } = Status.Inconclusive;
+        public Status Status { get; internal set; } = Status.Inconclusive;
 
         [JsonProperty] internal StoryText StoryText { get; private set; }
 
@@ -90,8 +80,8 @@ namespace BDTest.Test
         
         [JsonProperty] public TestInformationAttribute[] CustomTestInformation { get; private set; }
         
-        [JsonIgnore] internal bool ShouldRetry { get; private set; }
-        [JsonProperty] public int RetryCount { get; private set; }
+        [JsonIgnore] internal bool ShouldRetry { get; set; }
+        [JsonProperty] public int RetryCount { get; internal set; }
 
         public string GetScenarioText()
         {
@@ -105,189 +95,6 @@ namespace BDTest.Test
 
         [JsonConverter(typeof(TimespanConverter))]
         [JsonProperty]
-        public TimeSpan TimeTaken { get; private set; }
-        
-        private async Task CheckIfAlreadyExecuted()
-        {
-            if (ShouldRetry)
-            {
-                await SetRetryValues().ConfigureAwait(false);
-                return;
-            }
-            
-            if (_alreadyExecuted)
-            {
-                throw new AlreadyExecutedException("This scenario has already been executed");
-            }
-
-            _alreadyExecuted = true;
-        }
-
-        private async Task SetRetryValues()
-        {
-            ShouldRetry = false;
-            
-            RetryCount++;
-            
-            foreach (var step in Steps)
-            {
-                step.ResetData();
-            }
-
-            Status = Status.Inconclusive;
-
-            try
-            {
-                await _testDetails.BdTestBase.RunMethodWithAttribute<BDTestRetryTearDownAttribute>();
-                
-                await _testDetails.BdTestBase.OnBeforeRetry();
-
-                ResetContext();
-
-                await _testDetails.BdTestBase.RunMethodWithAttribute<BDTestRetrySetUpAttribute>();
-            }
-            catch (Exception e)
-            {
-                throw new ErrorOccurredDuringRetryActionException(e);
-            }
-
-            ConsoleReporter.WriteLine("\nRetrying test...\n");
-        }
-
-        private void ResetContext()
-        {
-            if (IsSuperClassOfAbstractContextBDTestBase())
-            {
-                _testDetails.BdTestBase.GetType().GetMethod("RecreateContextOnRetry", BindingFlags.NonPublic | BindingFlags.Instance)
-                    ?.Invoke(_testDetails.BdTestBase, Array.Empty<object>());
-            }
-        }
-
-        private bool IsSuperClassOfAbstractContextBDTestBase()
-        {
-            var type = _testDetails.BdTestBase.GetType();
-            do
-            {
-                if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(AbstractContextBDTestBase<>))
-                {
-                    return true;
-                }
-
-                type = type.BaseType;
-            } while (type != null);
-
-            return false;
-        }
-
-        private async Task ExecuteInternal()
-        {
-            await CheckIfAlreadyExecuted().ConfigureAwait(false);
-            
-            await Task.Run(async () =>
-            {
-                try
-                {
-                    StartTime = DateTime.Now;
-                    
-                    TestOutputData.ClearCurrentTaskData();
-
-                    if (RetryCount == 0)
-                    {
-                        WriteTestInformation();
-                    }
-
-                    foreach (var step in Steps)
-                    {
-                        await step.Execute();
-                    }
-
-                    Status = Status.Passed;
-                }
-                catch (NotImplementedException)
-                {
-                    Status = Status.NotImplemented;
-                    throw;
-                }
-                catch (Exception e) when (BDTestSettings.CustomExceptionSettings.SuccessExceptionTypes.Contains(e.GetType()))
-                {
-                    Status = Status.Passed;
-                    throw;
-                }
-                catch (Exception e) when (BDTestSettings.CustomExceptionSettings.InconclusiveExceptionTypes.Contains(e.GetType()))
-                {
-                    Status = Status.Inconclusive;
-                    throw;
-                }
-                catch (Exception e)
-                {
-                    var validRetryRules = BDTestSettings.RetryTestRules.Rules.Where(rule => rule.Condition(e)).ToList();
-                    if (validRetryRules.Any() && RetryCount < validRetryRules.Max(x => x.RetryLimit))
-                    {
-                        ShouldRetry = true;
-                        return;
-                    }
-                    
-                    Status = Status.Failed;
-                    
-                    ConsoleReporter.WriteLine($"{Environment.NewLine}Exception: {e.StackTrace}{Environment.NewLine}");
-
-                    throw;
-                }
-                finally
-                {
-                    if (ShouldRetry)
-                    {
-                        await ExecuteInternal();
-                    }
-                    else
-                    {
-                        foreach (var notRunStep in Steps.Where(step => step.Status == Status.Inconclusive))
-                        {
-                            notRunStep.SetStepText();
-                        }
-
-                        ConsoleReporter.WriteLine($"{Environment.NewLine}Test Summary:{Environment.NewLine}");
-
-                        Steps.ForEach(step => ConsoleReporter.WriteLine($"{step.StepText} > [{step.Status}]"));
-
-                        ConsoleReporter.WriteLine($"{Environment.NewLine}Test Result: {Status}{Environment.NewLine}");
-
-                        EndTime = DateTime.Now;
-                        TimeTaken = EndTime - StartTime;
-
-                        Output = string.Join(Environment.NewLine,
-                            Steps.Where(step => !string.IsNullOrWhiteSpace(step.Output)).Select(step => step.Output));
-                    }
-                }
-            });
-        }
-
-        private void WriteTestInformation()
-        {
-            WriteStoryAndScenario();
-            
-            WriteCustomTestInformation();
-            
-            TestOutputData.ClearCurrentTaskData();
-        }
-
-        private void WriteCustomTestInformation()
-        {
-            foreach (var testInformationAttribute in CustomTestInformation ?? Array.Empty<TestInformationAttribute>())
-            {
-                ConsoleReporter.WriteLine(testInformationAttribute.Print());
-            }
-            
-            ConsoleReporter.WriteLine(Environment.NewLine);
-        }
-
-        private void WriteStoryAndScenario()
-        {
-            ConsoleReporter.WriteStory(StoryText);
-            
-            ConsoleReporter.WriteScenario(ScenarioText);
-            
-            ConsoleReporter.WriteLine(Environment.NewLine);
-        }
+        public TimeSpan TimeTaken { get; internal set; }
     }
 }

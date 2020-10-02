@@ -56,7 +56,7 @@ namespace BDTest.Test.Steps
         internal async Task<Scenario> Invoke(TestDetails testDetails)
         {
             var scenario = new Scenario(ExistingSteps, testDetails);
-            await scenario.Execute();
+            await BDTestServiceProvider.ScenarioExecutor.ExecuteAsync(scenario).ConfigureAwait(false);
             return scenario;
         }
     }
