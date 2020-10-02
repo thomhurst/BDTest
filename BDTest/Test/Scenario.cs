@@ -4,7 +4,6 @@ using System.Linq;
 using BDTest.Attributes;
 using BDTest.Maps;
 using BDTest.Output;
-using BDTest.Settings;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 
@@ -12,15 +11,7 @@ namespace BDTest.Test
 {
     public class Scenario
     {
-        static Scenario()
-        {
-            if (BDTestSettings.InterceptConsoleOutput)
-            {
-                Console.SetOut(TestOutputData.Instance);
-            }
-        }
-
-        [JsonIgnore] internal readonly TestDetails _testDetails;
+        [JsonIgnore] internal readonly TestDetails TestDetails;
 
         [JsonProperty] public string Guid { get; private set; }
         [JsonProperty] public DateTime StartTime { get; internal set; }
@@ -43,11 +34,11 @@ namespace BDTest.Test
         {
         }
 
-        internal bool _alreadyExecuted;
+        internal bool AlreadyExecuted;
 
         internal Scenario(List<Step> steps, TestDetails testDetails)
         {
-            _testDetails = testDetails;
+            TestDetails = testDetails;
             Guid = testDetails.GetGuid();
             FrameworkTestId = testDetails.TestId;
             

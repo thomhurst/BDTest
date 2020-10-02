@@ -30,12 +30,12 @@ namespace BDTest.Interfaces.Internal
                 return;
             }
             
-            if (scenario._alreadyExecuted)
+            if (scenario.AlreadyExecuted)
             {
                 throw new AlreadyExecutedException("This scenario has already been executed");
             }
 
-            scenario._alreadyExecuted = true;
+            scenario.AlreadyExecuted = true;
         }
         
         private async Task SetRetryValues(Scenario scenario)
@@ -53,13 +53,13 @@ namespace BDTest.Interfaces.Internal
 
             try
             {
-                await scenario._testDetails.BdTestBase.RunMethodWithAttribute<BDTestRetryTearDownAttribute>();
+                await scenario.TestDetails.BdTestBase.RunMethodWithAttribute<BDTestRetryTearDownAttribute>();
                 
-                await scenario._testDetails.BdTestBase.OnBeforeRetry();
+                await scenario.TestDetails.BdTestBase.OnBeforeRetry();
 
                 ResetContext(scenario);
 
-                await scenario._testDetails.BdTestBase.RunMethodWithAttribute<BDTestRetrySetUpAttribute>();
+                await scenario.TestDetails.BdTestBase.RunMethodWithAttribute<BDTestRetrySetUpAttribute>();
             }
             catch (Exception e)
             {
@@ -71,10 +71,10 @@ namespace BDTest.Interfaces.Internal
         
         private void ResetContext(Scenario scenario)
         {
-            if (_typeMatcher.IsSuperClassOfAbstractContextBDTestBase(scenario._testDetails.BdTestBase))
+            if (_typeMatcher.IsSuperClassOfAbstractContextBDTestBase(scenario.TestDetails.BdTestBase))
             {
-                scenario._testDetails.BdTestBase.GetType().GetMethod("RecreateContextOnRetry", BindingFlags.NonPublic | BindingFlags.Instance)
-                    ?.Invoke(scenario._testDetails.BdTestBase, Array.Empty<object>());
+                scenario.TestDetails.BdTestBase.GetType().GetMethod("RecreateContextOnRetry", BindingFlags.NonPublic | BindingFlags.Instance)
+                    ?.Invoke(scenario.TestDetails.BdTestBase, Array.Empty<object>());
             }
         }
     }
