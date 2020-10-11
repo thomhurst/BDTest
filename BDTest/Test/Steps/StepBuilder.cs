@@ -12,7 +12,6 @@ namespace BDTest.Test.Steps
 
         internal readonly List<Step> ExistingSteps;
         protected abstract StepType StepType { get; }
-        protected string StepPrefix => StepType.GetValue();
 
         static StepBuilder()
         {
@@ -56,7 +55,7 @@ namespace BDTest.Test.Steps
         internal async Task<Scenario> Invoke(TestDetails testDetails)
         {
             var scenario = new Scenario(ExistingSteps, testDetails);
-            await scenario.Execute();
+            await BDTestServiceProvider.ScenarioExecutor.ExecuteAsync(scenario).ConfigureAwait(false);
             return scenario;
         }
     }
