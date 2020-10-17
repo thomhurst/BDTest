@@ -77,7 +77,7 @@ namespace BDTest.Engine
                 {
                     if (scenario.ShouldRetry)
                     {
-                        await ExecuteAsync(scenario);
+                        await ExecuteAsync(scenario).ConfigureAwait(false);
                     }
                     else
                     {

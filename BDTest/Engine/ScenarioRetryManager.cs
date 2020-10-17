@@ -42,7 +42,7 @@ namespace BDTest.Engine
 
             scenario.Status = Status.Inconclusive;
 
-            await RunRetryTestHooks(scenario);
+            await RunRetryTestHooks(scenario).ConfigureAwait(false);
 
             ConsoleReporter.WriteLine("\nRetrying test...\n");
         }
