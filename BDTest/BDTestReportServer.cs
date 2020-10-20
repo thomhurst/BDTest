@@ -48,6 +48,8 @@ namespace BDTest
                 TestTimer = BDTestUtil.GetTestTimer(scenarios)
             };
 
+            AddCustomProperties(dataOutputModel);
+
             var stringContent = JsonConvert.SerializeObject(dataOutputModel);
             
             var httpRequestMessage = new HttpRequestMessage
@@ -62,6 +64,14 @@ namespace BDTest
             var content = await response.EnsureSuccessStatusCode().Content.ReadAsStringAsync();
             
             return new Uri(content);
+        }
+
+        private static void AddCustomProperties(BDTestOutputModel dataOutputModel)
+        {
+            foreach (var customProperty in BDTestSettings.CustomProperties)
+            {
+                dataOutputModel.CustomProperties.Add(customProperty.Key, customProperty.Value);
+            }
         }
     }
 }

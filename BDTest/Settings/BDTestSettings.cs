@@ -9,10 +9,15 @@ namespace BDTest.Settings
     public static class BDTestSettings
     {
         public static bool InterceptConsoleOutput { get; set; } = true;
+        
         public static string Environment { get; set; }
+        
         public static string Tag { get; set; }
+        
         public static string BranchName { get; set; }
-
+        
+        public static Dictionary<string, string> CustomProperties { get; } = new Dictionary<string, string>();
+        
         public static DebugSettings Debug { get; } = new DebugSettings();
 
         public static List<object> CustomStringConverters { get; } = new List<object>();

@@ -33,5 +33,8 @@ namespace BDTest.Maps
 
         [JsonProperty] 
         public string Version { get; set; }
+        
+        [JsonProperty]
+        public Dictionary<string, string> CustomProperties { get; private set; } = new Dictionary<string, string>();
     }
 }
