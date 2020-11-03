@@ -30,5 +30,11 @@ namespace BDTest.NUnit
         {
             RemoveContext();
         }
+
+        [TearDown]
+        protected override void MarkTestAsComplete()
+        {
+            base.MarkTestAsComplete();
+        }
     }
 }

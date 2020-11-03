@@ -18,7 +18,8 @@ namespace BDTest.Test
         private static readonly AsyncLocal<string> AsyncLocalBDTestExecutionId = new AsyncLocal<string>();
 
         private static string StaticBDTestExecutionId =>
-            AsyncLocalBDTestExecutionId.Value ?? (AsyncLocalBDTestExecutionId.Value = Guid.NewGuid().ToString("N"));
+            AsyncLocalBDTestExecutionId.Value ??
+            (AsyncLocalBDTestExecutionId.Value = Guid.NewGuid().ToString("N"));
 
         protected virtual string BDTestExecutionId => StaticBDTestExecutionId;
 
@@ -73,9 +74,24 @@ namespace BDTest.Test
             return Task.CompletedTask;
         }
 
+        protected virtual void MarkTestAsComplete()
+        {
+            AsyncLocalBDTestExecutionId.Value = null;
+        }
+
         public string GetStoryText()
         {
-            var storyAttribute = GetType().GetCustomAttribute(typeof(StoryAttribute)) as StoryAttribute;
+            var classType = GetType();
+            var storyAttribute = classType.GetCustomAttribute(typeof(StoryAttribute)) as StoryAttribute;
+
+            while (storyAttribute == null && classType != null)
+            {
+                classType = classType.DeclaringType;
+                if (classType != null)
+                {
+                    storyAttribute = classType.GetCustomAttribute(typeof(StoryAttribute)) as StoryAttribute;
+                }
+            }
 
             return storyAttribute?.GetStoryText();
         }
