@@ -17,6 +17,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BDTest.ReportGenerator.Razo
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BDTest.NetCore.Razor.ReportMiddleware", "BDTest.NetCore.Razor.ReportMiddleware\BDTest.NetCore.Razor.ReportMiddleware.csproj", "{867F1CC0-47A0-4EDA-AD5F-D2E128C92790}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BDTest.xUnit", "BDTest.xUnit\BDTest.xUnit.csproj", "{2E34B6A0-0A21-4F56-8420-2BE71824D7C5}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -51,6 +53,10 @@ Global
 		{867F1CC0-47A0-4EDA-AD5F-D2E128C92790}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{867F1CC0-47A0-4EDA-AD5F-D2E128C92790}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{867F1CC0-47A0-4EDA-AD5F-D2E128C92790}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2E34B6A0-0A21-4F56-8420-2BE71824D7C5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2E34B6A0-0A21-4F56-8420-2BE71824D7C5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2E34B6A0-0A21-4F56-8420-2BE71824D7C5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2E34B6A0-0A21-4F56-8420-2BE71824D7C5}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

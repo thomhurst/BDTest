@@ -17,11 +17,19 @@ namespace BDTest.Test
     {
         private static readonly AsyncLocal<string> AsyncLocalBDTestExecutionId = new AsyncLocal<string>();
 
-        private static string StaticBDTestExecutionId =>
-            AsyncLocalBDTestExecutionId.Value ??
-            (AsyncLocalBDTestExecutionId.Value = Guid.NewGuid().ToString("N"));
+        private static string StaticBDTestExecutionId
+        {
+            get =>
+                AsyncLocalBDTestExecutionId.Value ??
+                (AsyncLocalBDTestExecutionId.Value = Guid.NewGuid().ToString("N"));
+            set => AsyncLocalBDTestExecutionId.Value = value;
+        }
 
-        protected virtual string BDTestExecutionId => StaticBDTestExecutionId;
+        protected virtual string BDTestExecutionId
+        {
+            get => StaticBDTestExecutionId;
+            set => StaticBDTestExecutionId = value;
+        }
 
         public Given Given(Expression<Action> step, [CallerMemberName] string callerMember = null,
             [CallerFilePath] string callerFile = null)
