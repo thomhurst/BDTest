@@ -19,12 +19,12 @@ namespace BDTest.Test
         internal BDTestContext(BDTestBase testBase, string bdTestExecutionId)
         {
             TestBase = testBase;
-            BDTestExecutionId = bdTestExecutionId;
+            CurrentScenarioBDTestExecutionId = bdTestExecutionId;
         }
 
         public BDTestBase TestBase { get; }
 
-        public string BDTestExecutionId { get; }
+        public string CurrentScenarioBDTestExecutionId { get; }
 
         private string _storyText;
         public string GetStoryText()
@@ -45,11 +45,11 @@ namespace BDTest.Test
                 return _scenarioText;
             }
 
-            return _scenarioText = TestBase.GetScenarioText() ?? Scenario?.GetScenarioText();
+            return _scenarioText = TestBase.GetScenarioText() ?? CurrentScenario?.GetScenarioText();
         }
 
-        public Scenario Scenario => TestHolder.Scenarios.Values.FirstOrDefault(scenario => scenario.FrameworkTestId == BDTestExecutionId);
+        public Scenario CurrentScenario => TestHolder.Scenarios.Values.FirstOrDefault(scenario => scenario.FrameworkTestId == CurrentScenarioBDTestExecutionId);
 
-        public string TestRunnerId => TestHolder.InstanceGuid;
+        public string CurrentTestRunnerId => TestHolder.InstanceGuid;
     }
 }
