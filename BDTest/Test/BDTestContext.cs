@@ -49,5 +49,7 @@ namespace BDTest.Test
         }
 
         public Scenario Scenario => TestHolder.Scenarios.Values.FirstOrDefault(scenario => scenario.FrameworkTestId == BDTestExecutionId);
+
+        public string TestRunnerId => TestHolder.InstanceGuid;
     }
 }
