@@ -51,19 +51,37 @@ namespace BDTest
             AddCustomProperties(dataOutputModel);
 
             var stringContent = JsonConvert.SerializeObject(dataOutputModel);
+            var stringHttpContent  = new StringContent(stringContent, Encoding.UTF8, "application/json");
             
-            var httpRequestMessage = new HttpRequestMessage
+            var responseContent = string.Empty;
+            var attempts = 0;
+            while (true)
             {
-                RequestUri = uploadUri,
-                Method = HttpMethod.Post,
-                Content = new StringContent(stringContent, Encoding.UTF8, "application/json")
-            };
-            
-            var response = await httpClient.SendAsync(httpRequestMessage);
+                try
+                {
+                    var httpRequestMessage = new HttpRequestMessage
+                    {
+                        RequestUri = uploadUri,
+                        Method = HttpMethod.Post,
+                        Content = stringHttpContent 
+                    };
 
-            var content = await response.EnsureSuccessStatusCode().Content.ReadAsStringAsync();
+                    var response = await httpClient.SendAsync(httpRequestMessage);
+
+                    responseContent = await response.EnsureSuccessStatusCode().Content.ReadAsStringAsync();
+                    break;
+                }
+                catch (Exception)
+                {
+                    attempts++;
+                    if (attempts == 3)
+                    {
+                        throw;
+                    }
+                }
+            }
             
-            return new Uri(content);
+            return new Uri(responseContent);
         }
 
         private static void AddCustomProperties(BDTestOutputModel dataOutputModel)
