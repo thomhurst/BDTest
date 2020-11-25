@@ -53,7 +53,7 @@ namespace BDTest
             var stringContent = JsonConvert.SerializeObject(dataOutputModel);
             var stringHttpContent  = new StringContent(stringContent, Encoding.UTF8, "application/json");
             
-            var responseContent = string.Empty;
+            string responseContent;
             var attempts = 0;
             while (true)
             {
