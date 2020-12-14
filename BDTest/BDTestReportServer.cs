@@ -18,15 +18,24 @@ namespace BDTest
         
         public static async Task<Uri> SendDataAndGetReportUriAsync(Uri serverAddress)
         {
-            var httpClient = new HttpClient();
+            var httpClient = new HttpClient
+            {
+                Timeout = TimeSpan.FromMinutes(2)
+            };
             
             var pingUri = new UriBuilder(serverAddress)
             {
                 Path = "bdtest/ping"
             }.Uri;
-
-            // Result ignored - This is just to make sure the server is warmed up. If not, it'll warm it up!
-            await httpClient.GetAsync(pingUri);
+            
+            try
+            {
+                await httpClient.GetAsync(pingUri);
+            }
+            catch
+            {
+                // Result ignored - This is just to make sure the server is warmed up. If not, it'll warm it up!
+            }
             
             var uploadUri = new UriBuilder(serverAddress)
             {
