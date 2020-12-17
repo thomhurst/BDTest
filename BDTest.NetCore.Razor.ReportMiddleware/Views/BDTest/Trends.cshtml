@@ -35,6 +35,9 @@
     }
 }
 
+<link rel="stylesheet" href="~/_content/BDTest.NetCore.Razor.ReportMiddleware/css/simplepicker.css" asp-append-version="true">
+<script src="~/_content/BDTest.NetCore.Razor.ReportMiddleware/js/simplepicker.js" asp-append-version="true"></script>
+
 @{
     ViewBag.Title = "Trends";
     Layout = "_Layout";
@@ -42,10 +45,12 @@
     var testRunSummariesEnumerable = Model.AsEnumerable() ?? Enumerable.Empty<TestRunSummary>();
 
     var queryString = HttpUtility.ParseQueryString(new Uri(Context.Request.GetEncodedUrl()).Query);
+    
     var environmentQueryParameter = queryString.Get("environment");
     var tagQueryParameter = queryString.Get("tag");
     var machineQueryParameter = queryString.Get("machine");
     var branchQueryParameter = queryString.Get("branch");
+    var dateTimeangeQueryParameter = queryString.Get("datetimerange");
     
     if (!string.IsNullOrEmpty(environmentQueryParameter) && environmentQueryParameter != "All Environments")
     {
@@ -85,6 +90,27 @@
               document.getElementById("filter-by-branch-text").textContent = '@branchQueryParameter';
             })
         </script>
+    }
+    
+    if (!string.IsNullOrEmpty(dateTimeangeQueryParameter) && dateTimeangeQueryParameter != "All DateTimes" && dateTimeangeQueryParameter.Contains(".."))
+    {
+        var dateTimeStringArray = dateTimeangeQueryParameter.Split("..");
+        if (!DateTime.TryParse(dateTimeStringArray.ElementAtOrDefault(0), out var startDate)
+        || !DateTime.TryParse(dateTimeStringArray.ElementAtOrDefault(1), out var endDate))
+        {
+            return;
+        }
+            testRunSummariesEnumerable = testRunSummariesEnumerable.Where(summary => IsInDateRange(summary.StartedAtDateTime) || IsInDateRange(summary.FinishedAtDateTime));
+        <script>
+            onDomLoaded(function() {
+              document.getElementById("filter-by-datetimerange-text").textContent = '@dateTimeangeQueryParameter';
+            })
+        </script>
+        
+        bool IsInDateRange(DateTime dateTime)
+        {
+            return dateTime >= startDate && dateTime <= endDate;
+        }
     }
 
     var testRunSummaries = testRunSummariesEnumerable.OrderBy(x => x.StartedAtDateTime).ToList();
@@ -151,6 +177,12 @@
                     QueryParameterName = "branch",
                     DropdownValues = GetBranches()
                 })
+            </div>
+            
+            <div class="mb-6 has-text-right">
+                <button class="button is-info is-rounded" aria-haspopup="true" id="dateRangePicker">
+                    <p id="filter-by-datetimerange-text">Filter by Date + Time</p>
+                </button>
             </div>
         </nav>
 

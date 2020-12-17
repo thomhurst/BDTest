@@ -354,3 +354,21 @@ function getCookie(name) {
     }
     return null;
 }
+
+onDomLoaded(function () {
+   document.getElementById("dateRangePicker").addEventListener("click", selectDateRanges); 
+});
+
+function selectDateRanges() {
+    var startDatePicker = new SimplePicker();
+    startDatePicker.open()
+
+    startDatePicker.on('submit', function(startDate, readableStartDate){
+        var endDatePicker = new SimplePicker();
+        endDatePicker.open()
+
+        endDatePicker.on('submit', function(endDate, readableEndDate){
+            getUrlWithAppendedParameter("datetimerange", `${startDate}..${endDate}`)
+        })
+    })
+}
