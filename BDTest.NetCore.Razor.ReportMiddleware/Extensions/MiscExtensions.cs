@@ -42,9 +42,19 @@ namespace BDTest.NetCore.Razor.ReportMiddleware.Extensions
             return string.IsNullOrWhiteSpace(joinedResult) ? "< 1 ms" : joinedResult;
         }
 
-        public static string ToStringForReport(this DateTime dateTime)
+        public static string ToStringForReport(this DateTime dateTime, bool includeLineBreak = true)
         {
-            return dateTime == DateTime.MinValue ? "" : dateTime.ToString("dd/MM/yyyy\nHH:mm:ss.FFF");
+            if (dateTime == DateTime.MinValue)
+            {
+                return string.Empty;
+            }
+
+            if (!includeLineBreak)
+            {
+                return dateTime.ToString("dd/MM/yyyy HH:mm:ss.FFF");
+            }
+            
+            return dateTime.ToString("dd/MM/yyyy\nHH:mm:ss.FFF");
         }
 
         public static IEnumerable<TSource> DistinctBy<TSource, TKey>

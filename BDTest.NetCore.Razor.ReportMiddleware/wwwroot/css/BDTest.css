@@ -295,3 +295,7 @@ html {
 .max-width-80 {
 	max-width: 80vw;
 }
+
+.simplepicker-wrapper.active {
+	z-index: 999;
+}

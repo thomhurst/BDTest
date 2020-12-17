@@ -1,7 +1,9 @@
 @using System.Web
+@using BDTest.NetCore.Razor.ReportMiddleware.Extensions
 @using BDTest.NetCore.Razor.ReportMiddleware.Helpers
 @using BDTest.NetCore.Razor.ReportMiddleware.Models
 @using BDTest.NetCore.Razor.ReportMiddleware.Views.BDTest
+@using Microsoft.AspNetCore.Html
 @using Microsoft.AspNetCore.Http.Extensions
 @model IEnumerable<BDTest.NetCore.Razor.ReportMiddleware.Models.TestRunSummary>
 
@@ -100,10 +102,11 @@
         {
             return;
         }
-            testRunSummariesEnumerable = testRunSummariesEnumerable.Where(summary => IsInDateRange(summary.StartedAtDateTime) || IsInDateRange(summary.FinishedAtDateTime));
+        testRunSummariesEnumerable = testRunSummariesEnumerable.Where(summary => IsInDateRange(summary.StartedAtDateTime) || IsInDateRange(summary.FinishedAtDateTime));
+        var buttonText = $"{startDate.ToStringForReport(false)} to {endDate.ToStringForReport(false)}";
         <script>
             onDomLoaded(function() {
-              document.getElementById("filter-by-datetimerange-text").textContent = '@dateTimeangeQueryParameter';
+              document.getElementById("filter-by-datetimerange-text").textContent = '@buttonText';
             })
         </script>
         
@@ -117,6 +120,9 @@
     
     var baseUrl = HttpHelper.GetBaseUrl(Context);
 }
+
+<div id="startdatetimepickercontainer"></div>
+<div id="enddatetimepickercontainer"></div>
 
 <section class="hero is-info">
     <div class="hero-body">

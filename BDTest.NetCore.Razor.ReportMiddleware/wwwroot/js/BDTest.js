@@ -360,15 +360,17 @@ onDomLoaded(function () {
 });
 
 function selectDateRanges() {
-    var startDatePicker = new SimplePicker();
+    alert("Select the start date and time range");
+    var startDatePicker = new SimplePicker("#startdatetimepickercontainer", {compactMode:true});
     startDatePicker.open()
 
     startDatePicker.on('submit', function(startDate, readableStartDate){
-        var endDatePicker = new SimplePicker();
+        alert("Now select the end date and time range");
+        var endDatePicker = new SimplePicker("#enddatetimepickercontainer", {compactMode:true});
         endDatePicker.open()
 
         endDatePicker.on('submit', function(endDate, readableEndDate){
-            getUrlWithAppendedParameter("datetimerange", `${startDate}..${endDate}`)
+            window.location.href = getUrlWithAppendedParameter("datetimerange", `${startDate.toISOString()}..${endDate.toISOString()}`)
         })
     })
 }
