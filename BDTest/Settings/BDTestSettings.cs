@@ -28,5 +28,6 @@ namespace BDTest.Settings
 
         public static SkipStepRules SkipStepRules { get; } = new SkipStepRules();
         public static RetryTestRules RetryTestRules { get; } = new RetryTestRules();
+        public static SkipTestRules SkipTestRules { get; } = new SkipTestRules();
     }
 }
