@@ -35,6 +35,12 @@ namespace BDTest.Engine
                     {
                         WriteTestInformation(scenario);
                     }
+                    
+                    if (ShouldSkip(scenario))
+                    {
+                        scenario.Status = Status.Skipped;
+                        return;
+                    }
 
                     foreach (var step in scenario.Steps)
                     {
@@ -100,6 +106,11 @@ namespace BDTest.Engine
                     }
                 }
             });
+        }
+
+        private bool ShouldSkip(Scenario scenario)
+        {
+            return BDTestSettings.SkipTestRules.Rules.Any(x => x.Invoke(scenario));
         }
 
         private void WriteTestInformation(Scenario scenario)
