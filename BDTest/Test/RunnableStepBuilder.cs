@@ -39,7 +39,7 @@ namespace BDTest.Test
 
         public async Task<Scenario> BDTestAsync()
         {
-            return await Invoke(TestDetails);
+            return await Invoke(TestDetails).ConfigureAwait(false);
         }
 
         public TaskAwaiter<Scenario> GetAwaiter()
