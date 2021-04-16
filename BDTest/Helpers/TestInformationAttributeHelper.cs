@@ -7,7 +7,7 @@ using BDTest.Attributes;
 
 namespace BDTest.Helpers
 {
-    public class TestInformationAttributeHelper
+    public static class TestInformationAttributeHelper
     {
         public static TestInformationAttribute[] GetTestInformationAttributes()
         {
