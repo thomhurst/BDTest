@@ -16,7 +16,12 @@ namespace BDTest.Test
 
         public RunnableStepBuilder WithScenarioText(string scenarioText)
         {
-            TestDetails.ScenarioText = new ScenarioText(scenarioText);
+            var text = new ScenarioText(scenarioText);
+
+            // TODO: Not need to set both
+            ScenarioText = text;
+            TestDetails.ScenarioText = text;
+            
             return this;
         }
 
