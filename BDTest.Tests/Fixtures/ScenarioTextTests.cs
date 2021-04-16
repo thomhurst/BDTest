@@ -58,5 +58,28 @@ namespace BDTest.Tests.Fixtures
             Assert.That(scenario.GetScenarioText(), Is.EqualTo("No Scenario Text with Hyphens"));
             Assert.That(JsonHelper.GetTestDynamicJsonObject().SelectToken("$.Scenarios[0].ScenarioText").ToString(), Is.EqualTo("No Scenario Text with Hyphens"));
         }
+
+        [Test]
+        [ScenarioText("N/A Text")]
+        public void Attribute_ScenarioText_Is_Overwritten_When_WithScenarioText_MethodIsCalled()
+        {
+            var scenario = When(() => Console.WriteLine("my test an attribute scenario text"))
+                .Then(() => Console.WriteLine("the scenario text should be overwritten with the method value"))
+                .WithScenarioText("Method ScenarioText overwrites attribute ScenarioText")
+                .BDTest();
+            
+            Assert.That(scenario.GetScenarioText(), Is.EqualTo("Method ScenarioText overwrites attribute ScenarioText"));
+        }
+        
+        [Test]
+        public void WithScenarioText_WithNoAttribute_SetsScenarioText()
+        {
+            var scenario = When(() => Console.WriteLine("my test has no scenario text attribute"))
+                .Then(() => Console.WriteLine("the scenario text should be taken from the method value"))
+                .WithScenarioText("My Method ScenarioText")
+                .BDTest();
+            
+            Assert.That(scenario.GetScenarioText(), Is.EqualTo("My Method ScenarioText"));
+        }
     }
 }

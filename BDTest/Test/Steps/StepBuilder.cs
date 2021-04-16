@@ -9,7 +9,6 @@ namespace BDTest.Test.Steps
 {
     public abstract class StepBuilder : BuildableTest
     {
-
         internal readonly List<Step> ExistingSteps;
         protected abstract StepType StepType { get; }
 
@@ -50,13 +49,6 @@ namespace BDTest.Test.Steps
 
             ExistingSteps = previousSteps;
             ExistingSteps.Add(new Step(runnable, StepType));
-        }
-
-        internal async Task<Scenario> Invoke(TestDetails testDetails)
-        {
-            var scenario = new Scenario(ExistingSteps, testDetails);
-            await BDTestServiceProvider.ScenarioExecutor.ExecuteAsync(scenario).ConfigureAwait(false);
-            return scenario;
         }
     }
 }
