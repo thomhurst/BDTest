@@ -168,8 +168,6 @@ namespace BDTest.NetCore.Razor.ReportMiddleware.Controllers
                         scenariosGroupedByScenarioTextEnumerable.OrderByDescending(scenarios =>
                             BDTestUtil.GetTestTimer(scenarios.ToList()).TestsStartedAt);
                     break;
-                default:
-                    break;
             }
 
             return View("AllScenarios", scenariosGroupedByScenarioTextEnumerable.ToArray());
