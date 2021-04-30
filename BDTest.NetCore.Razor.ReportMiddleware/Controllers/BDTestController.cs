@@ -92,7 +92,7 @@ namespace BDTest.NetCore.Razor.ReportMiddleware.Controllers
         [Route("report/{id}/stories")]
         public async Task<IActionResult> Stories([FromRoute] string id)
         {
-            var data = await GetData(id);
+            var data = await GetData(id).ConfigureAwait(false);
 
             if (data == null)
             {
@@ -122,7 +122,7 @@ namespace BDTest.NetCore.Razor.ReportMiddleware.Controllers
         [Route("report/{id}/all-scenarios")]
         public async Task<IActionResult> AllScenarios([FromRoute] string id)
         {
-            var data = await GetData(id);
+            var data = await GetData(id).ConfigureAwait(false);
             
             if (data == null)
             {
@@ -167,6 +167,8 @@ namespace BDTest.NetCore.Razor.ReportMiddleware.Controllers
                     scenariosGroupedByScenarioTextEnumerable =
                         scenariosGroupedByScenarioTextEnumerable.OrderByDescending(scenarios =>
                             BDTestUtil.GetTestTimer(scenarios.ToList()).TestsStartedAt);
+                    break;
+                default:
                     break;
             }
 

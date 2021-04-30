@@ -6,11 +6,21 @@ namespace BDTest.NetCore.Razor.ReportMiddleware.Models
 {
     public class Pager<T>
     {
+        public Pager(T[] items, string currentPageString) : 
+            this(items, currentPageString, 25, int.MaxValue)
+        {
+        }
+        
+        public Pager(T[] items, string currentPageString, int pageSize) : 
+            this(items, currentPageString, pageSize, int.MaxValue)
+        {
+        }
+        
         public Pager(
             T[] items,
             string currentPageString,
-            int pageSize = 25,
-            int maxPages = int.MaxValue)
+            int pageSize,
+            int maxPages)
         {
             var totalItems = items.Length;
 
