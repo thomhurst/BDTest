@@ -1,9 +1,10 @@
 @using BDTest.NetCore.Razor.ReportMiddleware.Constants
 @using BDTest.NetCore.Razor.ReportMiddleware.Extensions
+@using BDTest.NetCore.Razor.ReportMiddleware.Helpers
 @using BDTest.NetCore.Razor.ReportMiddleware.Models
 @using BDTest.NetCore.Razor.ReportMiddleware.Models.ViewModels
 @using BDTest.Test
-@model BDTest.Maps.BDTestOutputModel
+@model IGrouping<string, Scenario>[]
 
 @{
     ViewBag.Title = "Stories";
@@ -11,11 +12,7 @@
 }
 
 @{
-    var scenariosGroupedByStories = Model.Scenarios
-        .Where(scenario => scenario != null)
-        .GroupBy(scenario => scenario.GetStoryText())
-        .OrderBy(group => group.GetTotalStatus().GetOrder())
-        .ThenBy(group => group.Key);
+    var pager = new Pager<IGrouping<string, Scenario>>(Model, Context.GetCurrentPageNumber(), pageSize:5);
 }
 
 <section class="hero is-info">
@@ -31,7 +28,7 @@
                     </h2>
                 </div>
                 <div class="column">
-                    @await Html.PartialAsync("_PreviousNextReportButtons", Model)
+                    @await Html.PartialAsync("_PreviousNextReportButtons", ViewBag.Id as string)
                 </div>
             </div>
         </div>
@@ -39,6 +36,14 @@
 </section>
 
 @{ var storyIndex = 0; }
+
+<div class="container mt-6">
+    <nav class="level">
+        <div class="level-item">
+            @await Html.PartialAsync("_PaginationButtons", pager.GetPaginationInformation())
+        </div>
+    </nav>
+</div>
 
 <div id="stories-container">
     
@@ -87,7 +92,7 @@
     }
     </script>
     
-    @foreach (var story in scenariosGroupedByStories)
+    @foreach (var story in pager.ItemsForCurrentPage)
     {
         storyIndex++;
         var scenariosForThisStory = story.ToList();
@@ -200,6 +205,17 @@
         Array.prototype.slice.call(document.getElementsByTagName("hr")).slice(-1)[0].remove()
     </script>
     
-    @await Html.PartialAsync("_WowSuchEmpty")
-    
+    @if (pager.TotalItems == 0)
+    {
+        @(await Html.PartialAsync("_WowSuchEmpty"))
+    }
+
+</div>
+
+<div class="container mb-6">
+    <nav class="level">
+        <div class="level-item">
+            @await Html.PartialAsync("_PaginationButtons", pager.GetPaginationInformation())
+        </div>
+    </nav>
 </div>

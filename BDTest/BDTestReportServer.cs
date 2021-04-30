@@ -15,14 +15,18 @@ namespace BDTest
     [SuppressMessage("ReSharper", "UnusedType.Global")]
     public static class BDTestReportServer
     {
-        
-        public static async Task<Uri> SendDataAndGetReportUriAsync(Uri serverAddress)
+        public static Task<Uri> SendDataAndGetReportUriAsync(Uri serverAddress)
         {
             var httpClient = new HttpClient
             {
                 Timeout = TimeSpan.FromMinutes(2)
             };
-            
+
+            return SendDataAndGetReportUriAsync(serverAddress, httpClient);
+        }
+        
+        public static async Task<Uri> SendDataAndGetReportUriAsync(Uri serverAddress, HttpClient httpClient)
+        {
             var pingUri = new UriBuilder(serverAddress)
             {
                 Path = "bdtest/ping"

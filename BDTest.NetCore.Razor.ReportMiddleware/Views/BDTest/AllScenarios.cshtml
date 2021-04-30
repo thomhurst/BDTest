@@ -1,72 +1,29 @@
 @using System.Web
-@using BDTest
-@using BDTest.NetCore.Razor.ReportMiddleware.Constants
-@using BDTest.NetCore.Razor.ReportMiddleware.Extensions
+@using BDTest.NetCore.Razor.ReportMiddleware.Helpers
 @using BDTest.NetCore.Razor.ReportMiddleware.Models
 @using BDTest.NetCore.Razor.ReportMiddleware.Models.ViewModels
 @using BDTest.Test
 @using Microsoft.AspNetCore.Http.Extensions
-@model BDTest.Maps.BDTestOutputModel
-
-@functions {
-    private static IOrderedEnumerable<IGrouping<string, Scenario>> SetOrder(string orderByQueryParameter,
-        IOrderedEnumerable<IGrouping<string, Scenario>> scenariosGroupedByScenarioTextEnumerable)
-    {
-        switch (orderByQueryParameter)
-        {
-            case OrderConstants.Name:
-                scenariosGroupedByScenarioTextEnumerable =
-                    scenariosGroupedByScenarioTextEnumerable.OrderBy(scenarios => scenarios.Key);
-                break;
-            case OrderConstants.Duration:
-                scenariosGroupedByScenarioTextEnumerable =
-                    scenariosGroupedByScenarioTextEnumerable.OrderByDescending(scenarios =>
-                        scenarios.Select(scenario => scenario.TimeTaken).Max());
-                break;
-            case OrderConstants.Status:
-                // Defaults to status. We don't need to do anything :)
-                break;
-            case OrderConstants.DateAscending:
-                scenariosGroupedByScenarioTextEnumerable = scenariosGroupedByScenarioTextEnumerable.OrderBy(scenarios =>
-                    BDTestUtil.GetTestTimer(scenarios.ToList()).TestsStartedAt);
-                break;
-            case OrderConstants.DateDescending:
-                scenariosGroupedByScenarioTextEnumerable =
-                    scenariosGroupedByScenarioTextEnumerable.OrderByDescending(scenarios =>
-                        BDTestUtil.GetTestTimer(scenarios.ToList()).TestsStartedAt);
-                break;
-        }
-
-        return scenariosGroupedByScenarioTextEnumerable;
-    }
-}
+@model IGrouping<string, Scenario>[]
 
 @{
     ViewBag.Title = "Stories";
     Layout = "_Layout";
     
     var filterByQueryParameter = HttpUtility.ParseQueryString(new Uri(Context.Request.GetEncodedUrl()).Query).Get("filterByStatus");
-    var orderByQueryParameter = HttpUtility.ParseQueryString(new Uri(Context.Request.GetEncodedUrl()).Query).Get("order");
 
-    var scenariosGroupedByScenarioTextEnumerable = Model.Scenarios.GroupBy(scenario => scenario.GetScenarioText())
-        .OrderBy(group => group.GetTotalStatus().GetOrder())
-        .ThenBy(group => group.Key);
+    var currentPageString = Context.GetCurrentPageNumber();
 
-    if (orderByQueryParameter != null)
+    if (filterByQueryParameter != null)
     {
-        scenariosGroupedByScenarioTextEnumerable = SetOrder(orderByQueryParameter, scenariosGroupedByScenarioTextEnumerable);
+        <script>
+            onDomLoaded(function() {
+              filterByStatus('@filterByQueryParameter');
+            });
+        </script>
     }
     
-    var scenariosGroupedByScenarioText = scenariosGroupedByScenarioTextEnumerable.ToList();
-}
-
-@if (filterByQueryParameter != null)
-{
-    <script>
-        onDomLoaded(function() {
-          filterByStatus('@filterByQueryParameter');
-        });
-    </script>
+    var pager = new Pager<IGrouping<string, Scenario>>(Model, currentPageString);
 }
 
 <section class="hero is-info">
@@ -82,12 +39,20 @@
                     </h2>
                 </div>
                 <div class="column">
-                    @await Html.PartialAsync("_PreviousNextReportButtons", Model)
+                    @await Html.PartialAsync("_PreviousNextReportButtons", ViewBag.Id as string)
                 </div>
             </div>
         </div>
     </div>
 </section>
+
+<div class="container mt-6">
+    <nav class="level">
+        <div class="level-item">
+            @await Html.PartialAsync("_PaginationButtons", pager.GetPaginationInformation())
+        </div>
+    </nav>
+</div>
 
 <section class="section">
     <div class="container max-width-80">
@@ -102,7 +67,7 @@
         </div>
 
         <div class="mt-4 container invisible" id="summary">
-            @await Html.PartialAsync("_SummaryGraphics", new SummaryViewModel {Scenarios = Model.Scenarios})
+            @await Html.PartialAsync("_SummaryGraphics", new SummaryViewModel {Scenarios = Model.SelectMany(x => x).ToList()})
         </div>
 
         <div class="scrollable-table-container">
@@ -120,7 +85,7 @@
 
                 @{ var scenarioIndex = new ReferenceInt(0); }
                 @{ var groupedScenariosCount = new ReferenceInt(0); }
-                @foreach (var groupedScenarios in scenariosGroupedByScenarioText)
+                @foreach (var groupedScenarios in pager.ItemsForCurrentPage)
                 {
                     @await Html.PartialAsync("_GroupedScenarioTableRow", new GroupedScenarioViewModel
                     {
@@ -134,12 +99,15 @@
             </table>
         </div>
 
-        @await Html.PartialAsync("_WowSuchEmpty")
+        @if (pager.TotalItems == 0)
+        {
+            @(await Html.PartialAsync("_WowSuchEmpty"))
+        }
     </div>
 
 
         @{
-            var allScenarios = scenariosGroupedByScenarioText.SelectMany(groupedScenarios => groupedScenarios).ToList();
+            var allScenarios = pager.ItemsForCurrentPage.SelectMany(groupedScenarios => groupedScenarios).ToList();
         }
         @for (var index = 0; index < allScenarios.Count; index++)
         {
@@ -157,3 +125,11 @@
 
     </div>
 </section>
+
+<div class="container mb-6">
+    <nav class="level">
+        <div class="level-item">
+            @await Html.PartialAsync("_PaginationButtons", pager.GetPaginationInformation())
+        </div>
+    </nav>
+</div>

@@ -1,11 +1,16 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using BDTest.Maps;
+using BDTest.NetCore.Razor.ReportMiddleware.Constants;
+using BDTest.NetCore.Razor.ReportMiddleware.Extensions;
+using BDTest.NetCore.Razor.ReportMiddleware.Helpers;
 using BDTest.NetCore.Razor.ReportMiddleware.Interfaces;
 using BDTest.NetCore.Razor.ReportMiddleware.Models;
 using BDTest.NetCore.Razor.ReportMiddleware.Models.ViewModels;
+using BDTest.Test;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
@@ -85,16 +90,87 @@ namespace BDTest.NetCore.Razor.ReportMiddleware.Controllers
 
         [HttpGet]
         [Route("report/{id}/stories")]
-        public Task<IActionResult> Stories([FromRoute] string id)
+        public async Task<IActionResult> Stories([FromRoute] string id)
         {
-            return GetView(id, model => View("Stories", model));
+            var data = await GetData(id).ConfigureAwait(false);
+
+            if (data == null)
+            {
+                return View("NotFoundSingle");
+            }
+            
+            var filterByQueryParameter = Request.GetQueryParameter("filterByStatus");
+
+            var scenariosGroupedByStories = data.Scenarios
+                .Where(scenario => scenario != null)
+                .GroupBy(scenario => scenario.GetStoryText())
+                .OrderBy(group => group.GetTotalStatus().GetOrder())
+                .ThenBy(group => group.Key)
+                .ToArray();
+
+            if (!string.IsNullOrEmpty(filterByQueryParameter) && filterByQueryParameter != "all")
+            {
+                scenariosGroupedByStories = scenariosGroupedByStories
+                    .Where(group => group.Any(scenario => string.Equals(filterByQueryParameter, scenario.Status.ToString(), StringComparison.OrdinalIgnoreCase)))
+                    .ToArray();
+            }
+
+            return View("Stories", scenariosGroupedByStories);
         }
 
         [HttpGet]
         [Route("report/{id}/all-scenarios")]
-        public Task<IActionResult> AllScenarios([FromRoute] string id)
+        public async Task<IActionResult> AllScenarios([FromRoute] string id)
         {
-            return GetView(id, model => View("AllScenarios", model));
+            var data = await GetData(id).ConfigureAwait(false);
+            
+            if (data == null)
+            {
+                return View("NotFoundSingle");
+            }
+            
+            var filterByQueryParameter = Request.GetQueryParameter("filterByStatus");
+
+            IEnumerable<Scenario> scenarios = data.Scenarios;
+            
+            if (!string.IsNullOrEmpty(filterByQueryParameter) && filterByQueryParameter != "all")
+            {
+                scenarios = data.Scenarios
+                    .Where(scenario => string.Equals(filterByQueryParameter, scenario.Status.ToString(), StringComparison.OrdinalIgnoreCase));
+            }
+            
+            var orderByQueryParameter = Request.GetQueryParameter("order");
+            
+            var scenariosGroupedByScenarioTextEnumerable = scenarios.GroupBy(scenario => scenario.GetScenarioText())
+                .OrderBy(group => group.GetTotalStatus().GetOrder())
+                .ThenBy(group => group.Key);
+            
+            switch (orderByQueryParameter)
+            {
+                case OrderConstants.Name:
+                    scenariosGroupedByScenarioTextEnumerable =
+                        scenariosGroupedByScenarioTextEnumerable.OrderBy(scenarios => scenarios.Key);
+                    break;
+                case OrderConstants.Duration:
+                    scenariosGroupedByScenarioTextEnumerable =
+                        scenariosGroupedByScenarioTextEnumerable.OrderByDescending(scenarios =>
+                            scenarios.Select(scenario => scenario.TimeTaken).Max());
+                    break;
+                case OrderConstants.Status:
+                    // Defaults to status. We don't need to do anything :)
+                    break;
+                case OrderConstants.DateAscending:
+                    scenariosGroupedByScenarioTextEnumerable = scenariosGroupedByScenarioTextEnumerable.OrderBy(scenarios =>
+                        BDTestUtil.GetTestTimer(scenarios.ToList()).TestsStartedAt);
+                    break;
+                case OrderConstants.DateDescending:
+                    scenariosGroupedByScenarioTextEnumerable =
+                        scenariosGroupedByScenarioTextEnumerable.OrderByDescending(scenarios =>
+                            BDTestUtil.GetTestTimer(scenarios.ToList()).TestsStartedAt);
+                    break;
+            }
+
+            return View("AllScenarios", scenariosGroupedByScenarioTextEnumerable.ToArray());
         }
 
         [HttpGet]
@@ -218,6 +294,12 @@ namespace BDTest.NetCore.Razor.ReportMiddleware.Controllers
             ViewBag.Id = id;
 
             return viewAction(model);
+        }
+
+        private Task<BDTestOutputModel> GetData(string id)
+        {
+            ViewBag.Id = id;
+            return _dataController.GetData(id);
         }
     }
 }

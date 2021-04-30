@@ -1,4 +1,5 @@
 @using BDTest.NetCore.Razor.ReportMiddleware.Constants
+@using BDTest.NetCore.Razor.ReportMiddleware.Helpers
 @using BDTest.Test
 @model BDTest.NetCore.Razor.ReportMiddleware.Models.StatusDropdownViewModel
 <div class="dropdown">
@@ -48,149 +49,41 @@
 @if (Model.IncludeScript)
 {
   <script>
-
   function filterByStatus(status) {
-    
-    let url = getUrlWithAppendedParameter("filterByStatus", status);
-    window.history.pushState({} , '', url);
+    let currentFilterQueryParameter = '@Context.Request.GetQueryParameter("filterByStatus")'
     
     let mainDropdownButton = document.getElementById("dropdown-main-button");
     
-    if(status === '@StatusConstants.All') {
-      mainDropdownButton.innerHTML = '<p>Show All <i class="arrow down"></i></p>';
-      mainDropdownButton.className = "button has-text-centered is-info is-rounded";
-      makeAllVisible();
-      return;
-    }
-    
-    makeAllInvisible();
-    
     switch (status) {
+      case '@StatusConstants.All':
+        mainDropdownButton.innerHTML = '<p>Show All <i class="arrow down"></i></p>';
+        mainDropdownButton.className = "button has-text-centered is-info is-rounded";
+        break;
       case '@Status.Passed':
         mainDropdownButton.innerHTML = '<p>Show Success <i class="arrow down"></i></p>';
         mainDropdownButton.className = "button has-text-centered is-success is-rounded";
-        
-        var stories =  document.querySelectorAll(".story-header.@HtmlClassConstants.HasSuccess");
-        var scenarioGroups =  document.querySelectorAll(".scenario-group.@HtmlClassConstants.HasSuccess");
-        var rows = document.querySelectorAll(".scenario-row.@Status.Passed");
-        var testRunRows = document.querySelectorAll(".test-run-row.@Status.Passed");
         break;
       case '@Status.Failed':
         mainDropdownButton.innerHTML = '<p>Show Failures <i class="arrow down"></i></p>';
         mainDropdownButton.className = "button has-text-centered is-danger is-rounded";
-        
-        var stories =  document.querySelectorAll(".story-header.@HtmlClassConstants.HasFailures");
-        var scenarioGroups =  document.querySelectorAll(".scenario-group.@HtmlClassConstants.HasFailures");
-        var rows = document.querySelectorAll(".scenario-row.@Status.Failed");
-        var testRunRows = document.querySelectorAll(".test-run-row.@Status.Failed");
         break;
       case '@Status.Skipped':
         mainDropdownButton.innerHTML = '<p>Show Skipped <i class="arrow down"></i></p>';
         mainDropdownButton.className = "button has-text-centered is-warning is-rounded";
-        
-        var stories =  document.querySelectorAll(".story-header.@HtmlClassConstants.HasSkipped");
-        var scenarioGroups =  document.querySelectorAll(".scenario-group.@HtmlClassConstants.HasSkipped");
-        var rows = document.querySelectorAll(".scenario-row.@Status.Skipped");
-        var testRunRows = document.querySelectorAll(".test-run-row.@Status.Skipped");
         break;
       case '@Status.Inconclusive':
         mainDropdownButton.innerHTML = '<p>Show Inconclusive <i class="arrow down"></i></p>';
         mainDropdownButton.className = "button has-text-centered is-warning is-rounded";
-        
-        var stories =  document.querySelectorAll(".story-header.@HtmlClassConstants.HasInconclusive");
-        var scenarioGroups =  document.querySelectorAll(".scenario-group.@HtmlClassConstants.HasInconclusive");
-        var rows = document.querySelectorAll(".scenario-row.@Status.Inconclusive");
-        var testRunRows = document.querySelectorAll(".test-run-row.@Status.Inconclusive");
         break;
       case '@Status.NotImplemented':
         mainDropdownButton.innerHTML = '<p>Show Not Implemented <i class="arrow down"></i></p>';
         mainDropdownButton.className = "button has-text-centered is-warning is-rounded";
-        
-        var stories =  document.querySelectorAll(".story-header.@HtmlClassConstants.HasNotImplemented");
-        var scenarioGroups =  document.querySelectorAll(".scenario-group.@HtmlClassConstants.HasNotImplemented");
-        var rows = document.querySelectorAll(".scenario-row.@Status.NotImplemented");
-        var testRunRows = document.querySelectorAll(".test-run-row.@Status.NotImplemented");
         break;
       }
       
-      for (let story of stories) {
-        setElementVisible(story.parentElement.parentElement.parentElement.parentElement.parentElement);
-        setElementVisible(story.parentElement.parentElement.parentElement.parentElement.parentElement.nextElementSibling);
+      if (currentFilterQueryParameter !== status) {
+        window.location.href = getUrlWithAppendedParameter("filterByStatus", status);
       }
-      
-      for (let scenarioGroup of scenarioGroups) {
-        scenarioGroup.classList.add("no-pointer");
-        scenarioGroup.querySelector(".button").disabled = true;
-        setElementVisible(scenarioGroup);
-      }
-      
-      for (let row of rows) {
-        setElementVisible(row);
-      }
-      
-      for (let testRunRow of testRunRows) {
-        setElementVisible(testRunRow);
-      }
-      
-      checkIfFilterHiddenAllStories();
-    }
-    
-    function makeAllVisible() {
-        let dividers = document.getElementsByTagName("hr");
-        for (let divider of dividers) {
-          setElementVisible(divider);
-        }
-    
-        let stories = document.querySelectorAll(".story-header");
-        for (let story of stories) {
-          setElementVisible(story.parentElement.parentElement.parentElement.parentElement.parentElement);
-        }
-          
-        let scenarioGroups = document.querySelectorAll(".scenario-group");
-        for (let scenarioGroup of scenarioGroups) {
-          scenarioGroup.classList.remove("no-pointer");
-          scenarioGroup.querySelector(".button").disabled = false;
-          setElementVisible(scenarioGroup);
-        }
-        
-        let scenarioRows = document.querySelectorAll(".scenario-row");
-        for (let scenarioRow of scenarioRows) {
-          setElementVisible(scenarioRow);
-        }
-        
-        let scenarioButtonsRows = document.querySelectorAll(".scenarios-buttons-row");
-        for (let scenarioButtonsRow of scenarioButtonsRows) {
-          setElementVisible(scenarioButtonsRow);
-        }
-    }
-    
-    function makeAllInvisible() {
-        let dividers = document.getElementsByTagName("hr");
-        for (let divider of dividers) {
-          setElementInvisible(divider);
-        }
-            
-        let stories = document.querySelectorAll(".story-header");
-        for (let story of stories) {
-          setElementInvisible(story.parentElement.parentElement.parentElement.parentElement.parentElement);
-        }
-          
-        let scenarioGroups = document.querySelectorAll(".scenario-group");
-        for (let scenarioGroup of scenarioGroups) {
-          scenarioGroup.classList.remove("no-pointer");
-          scenarioGroup.querySelector(".button").disabled = false;
-          setElementInvisible(scenarioGroup);
-        }
-        
-        let scenarioRows = document.querySelectorAll(".scenario-row");
-        for (let scenarioRow of scenarioRows) {
-          setElementInvisible(scenarioRow);
-        }
-        
-        let scenarioButtonsRows = document.querySelectorAll(".scenarios-buttons-row");
-        for (let scenarioButtonsRow of scenarioButtonsRows) {
-          setElementInvisible(scenarioButtonsRow);
-        }
     }
 </script>
 }
