@@ -14,6 +14,11 @@ namespace BDTest.NetCore.Razor.ReportMiddleware.Models
         {
             var totalItems = items.Length;
 
+            if (totalItems == 0)
+            {
+                return;
+            }
+
             if (!int.TryParse(currentPageString, out var currentPage))
             {
                 currentPage = 1;
@@ -82,19 +87,19 @@ namespace BDTest.NetCore.Razor.ReportMiddleware.Models
             StartIndex = startIndex;
             EndIndex = endIndex;
             Pages = pages;
-            ItemsForCurrentPage = items[startIndex..endIndex];
+            ItemsForCurrentPage = items[startIndex..(endIndex+1)];
         }
 
         public int TotalItems { get; }
-        public int CurrentPage { get; }
+        public int CurrentPage { get; } = 1;
         public int PageSize { get; }
-        public int TotalPages { get; }
-        public int StartPage { get; }
-        public int EndPage { get; }
+        public int TotalPages { get; } = 1;
+        public int StartPage { get; } = 1;
+        public int EndPage { get; } = 1;
         public int StartIndex { get; }
         public int EndIndex { get; }
-        public IEnumerable<int> Pages { get; }
-        public IEnumerable<T> ItemsForCurrentPage { get; }
+        public IEnumerable<int> Pages { get; } = Enumerable.Empty<int>();
+        public IEnumerable<T> ItemsForCurrentPage { get; } = Enumerable.Empty<T>();
 
         public PaginationInformation GetPaginationInformation() => new()
         {

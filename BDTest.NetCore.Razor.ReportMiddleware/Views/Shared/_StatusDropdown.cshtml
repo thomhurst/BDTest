@@ -1,4 +1,6 @@
 @using BDTest.NetCore.Razor.ReportMiddleware.Constants
+@using BDTest.NetCore.Razor.ReportMiddleware.Extensions
+@using BDTest.NetCore.Razor.ReportMiddleware.Helpers
 @using BDTest.Test
 @model BDTest.NetCore.Razor.ReportMiddleware.Models.StatusDropdownViewModel
 <div class="dropdown">
@@ -51,6 +53,7 @@
 
   function filterByStatus(status) {
     
+    let currentFilterQueryParameter = '@Context.Request.GetQueryParameter("filterByStatus")'
     let url = getUrlWithAppendedParameter("filterByStatus", status);
     window.history.pushState({} , '', url);
     
@@ -59,11 +62,11 @@
     if(status === '@StatusConstants.All') {
       mainDropdownButton.innerHTML = '<p>Show All <i class="arrow down"></i></p>';
       mainDropdownButton.className = "button has-text-centered is-info is-rounded";
-      makeAllVisible();
-      return;
+      //makeAllVisible();
+      //return;
     }
     
-    makeAllInvisible();
+    //makeAllInvisible();
     
     switch (status) {
       case '@Status.Passed':
@@ -112,6 +115,12 @@
         var testRunRows = document.querySelectorAll(".test-run-row.@Status.NotImplemented");
         break;
       }
+      
+      if (currentFilterQueryParameter !== status) {
+        window.location.href = url;
+      }
+      
+      return;
       
       for (let story of stories) {
         setElementVisible(story.parentElement.parentElement.parentElement.parentElement.parentElement);

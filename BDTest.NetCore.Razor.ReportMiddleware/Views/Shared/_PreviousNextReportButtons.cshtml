@@ -1,12 +1,12 @@
 @using BDTest.NetCore.Razor.ReportMiddleware.Extensions
 @using BDTest.NetCore.Razor.ReportMiddleware.Interfaces
 @using Microsoft.AspNetCore.Http.Extensions
-@model BDTest.Maps.BDTestOutputModel
-@inject IDataController DataController
+@model string
+@inject IDataController _dataController
 
 @{
-    var allReports = (await DataController.GetAllTestRunRecords()).ToList();
-    var thisIndex = allReports.FindIndex(report => report.RecordId == Model.Id);
+    var allReports = (await _dataController.GetAllTestRunRecords()).ToList();
+    var thisIndex = allReports.FindIndex(report => report.RecordId == Model);
     var lastReport = allReports.ElementAtOrDefault(thisIndex - 1);
     var nextReport = allReports.ElementAtOrDefault(thisIndex + 1);
 }

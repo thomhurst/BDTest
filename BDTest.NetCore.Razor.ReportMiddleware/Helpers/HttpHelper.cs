@@ -44,5 +44,15 @@ namespace BDTest.NetCore.Razor.ReportMiddleware.Helpers
         {
             return new (httpContext.Request.GetEncodedUrl());
         }
+
+        public static string GetQueryParameter(this HttpRequest httpRequest, string queryParameterName)
+        {
+            if (httpRequest.Query.TryGetValue(queryParameterName, out var queryParameterValue))
+            {
+                return queryParameterValue;
+            }
+            
+            return null;
+        }
     }
 }
