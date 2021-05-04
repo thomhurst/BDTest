@@ -6,23 +6,26 @@ namespace BDTest.NetCore.Razor.ReportMiddleware.Models
 {
     public class Pager<T>
     {
-        public Pager(T[] items, string currentPageString) : 
-            this(items, currentPageString, 25, int.MaxValue)
+        public T[] AllItems { get; }
+
+        public Pager(T[] allItems, string currentPageString) : 
+            this(allItems, currentPageString, 25, int.MaxValue)
         {
         }
         
-        public Pager(T[] items, string currentPageString, int pageSize) : 
-            this(items, currentPageString, pageSize, int.MaxValue)
+        public Pager(T[] allItems, string currentPageString, int pageSize) : 
+            this(allItems, currentPageString, pageSize, int.MaxValue)
         {
         }
         
         public Pager(
-            T[] items,
+            T[] allItems,
             string currentPageString,
             int pageSize,
             int maxPages)
         {
-            var totalItems = items.Length;
+            AllItems = allItems;
+            var totalItems = allItems.Length;
 
             if (totalItems == 0)
             {
@@ -97,7 +100,7 @@ namespace BDTest.NetCore.Razor.ReportMiddleware.Models
             StartIndex = startIndex;
             EndIndex = endIndex;
             Pages = pages;
-            ItemsForCurrentPage = items[startIndex..(endIndex+1)];
+            ItemsForCurrentPage = allItems[startIndex..(endIndex+1)];
         }
 
         public int TotalItems { get; }

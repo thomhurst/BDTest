@@ -1,16 +1,16 @@
-@using System.Web
 @using BDTest.NetCore.Razor.ReportMiddleware.Helpers
 @using BDTest.NetCore.Razor.ReportMiddleware.Models
 @using BDTest.NetCore.Razor.ReportMiddleware.Models.ViewModels
 @using BDTest.Test
-@using Microsoft.AspNetCore.Http.Extensions
+@using BDTest.NetCore.Razor.ReportMiddleware.Extensions
 @model IGrouping<string, Scenario>[]
 
 @{
     ViewBag.Title = "Stories";
     Layout = "_Layout";
     
-    var filterByQueryParameter = HttpUtility.ParseQueryString(new Uri(Context.Request.GetEncodedUrl()).Query).Get("filterByStatus");
+    var filterByQueryParameter = Context.Request.GetQueryParameter("filterByStatus");
+    var scenarioId = Context.Request.GetQueryParameter("scenarioId");
 
     var currentPageString = Context.GetCurrentPageNumber();
 
@@ -24,6 +24,15 @@
     }
     
     var pager = new Pager<IGrouping<string, Scenario>>(Model, currentPageString);
+
+    if (!string.IsNullOrEmpty(scenarioId))
+    {
+        var pageNumberOfScenario = pager.GetPageNumberWhere(grouping => grouping.ToList().FirstOrDefault(scenario => scenario.Guid == scenarioId) != null);
+        if (pageNumberOfScenario != null)
+        {
+            pager = new Pager<IGrouping<string, Scenario>>(Model, pageNumberOfScenario.Value.ToString());
+        }
+    }
 }
 
 <section class="hero is-info">
