@@ -73,7 +73,7 @@ namespace BDTest.Test
         
         [JsonIgnore] internal bool ShouldRetry { get; set; }
         [JsonProperty] public int RetryCount { get; internal set; }
-        [JsonIgnore] public BDTestBase BdTestBaseClass => TestDetails.BdTestBase;
+        [JsonIgnore] public BDTestBase BdTestBaseClass => TestDetails?.BdTestBase;
 
         public string GetScenarioText()
         {
