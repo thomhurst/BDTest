@@ -70,6 +70,7 @@ namespace BDTest.Example
     {
         // Context property is magically available, created by the `NUnitBDTestContext` base class. It's unique for each NUnit test!
         private AccountSteps AccountSteps => new AccountSteps(Context);
+        private HttpAssertionsSteps HttpAssertions => new HttpAssertionsSteps(Context);
         
         [Test]
         [ScenarioText("Searching for a non-existing account number returns Not Found")]
