@@ -106,12 +106,19 @@ namespace BDTest.Example
         {
             // ... Some code to create an account!
             // You can use all the information stored in your test context object that was passed into the constructor!
+            // And store stuff for later use - Such as assertions!
+            // e.g. 
+            // var request = new HttpRequestMessage { Method = POST, Body = SomeBody, Uri = SomeUri };
+            // _context.HttpResponse = await HttpHelper.SendAsync(request);
         }
         
         [StepText("I search for the account with the customer ID '{0}'")
         public async Task FindAccount(int customerId)
         {
             // ... Some code to find an account!
+            // e.g. 
+            // var request = new HttpRequestMessage { Method = GET, Uri = $"{SomeUri}/{customerId}" };
+            // _context.HttpResponse = await HttpHelper.SendAsync(request);
         }
     }
 }
