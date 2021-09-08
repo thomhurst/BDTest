@@ -70,6 +70,7 @@ namespace BDTest.Example
     {
         // Context property is magically available, created by the `NUnitBDTestContext` base class. It's unique for each NUnit test!
         private AccountSteps AccountSteps => new AccountSteps(Context);
+        private HttpAssertionsSteps HttpAssertions => new HttpAssertionsSteps(Context);
         
         [Test]
         [ScenarioText("Searching for a non-existing account number returns Not Found")]
@@ -105,12 +106,19 @@ namespace BDTest.Example
         {
             // ... Some code to create an account!
             // You can use all the information stored in your test context object that was passed into the constructor!
+            // And store stuff for later use - Such as assertions!
+            // e.g. 
+            // var request = new HttpRequestMessage { Method = POST, Body = SomeBody, Uri = SomeUri };
+            // _context.HttpResponse = await HttpHelper.SendAsync(request);
         }
         
         [StepText("I search for the account with the customer ID '{0}'")
         public async Task FindAccount(int customerId)
         {
             // ... Some code to find an account!
+            // e.g. 
+            // var request = new HttpRequestMessage { Method = GET, Uri = $"{SomeUri}/{customerId}" };
+            // _context.HttpResponse = await HttpHelper.SendAsync(request);
         }
     }
 }
