@@ -21,6 +21,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BDTest.xUnit", "BDTest.xUni
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BDTest.MSTest", "BDTest.MSTest\BDTest.MSTest.csproj", "{77FBDE60-B5B3-498E-913B-C542EFB0AB4D}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BDTest.xUnit.Tests", "BDTest.xUnit.Tests\BDTest.xUnit.Tests.csproj", "{558B4094-1698-4B57-A57D-D57A507F3818}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -63,6 +65,10 @@ Global
 		{77FBDE60-B5B3-498E-913B-C542EFB0AB4D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{77FBDE60-B5B3-498E-913B-C542EFB0AB4D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{77FBDE60-B5B3-498E-913B-C542EFB0AB4D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{558B4094-1698-4B57-A57D-D57A507F3818}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{558B4094-1698-4B57-A57D-D57A507F3818}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{558B4094-1698-4B57-A57D-D57A507F3818}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{558B4094-1698-4B57-A57D-D57A507F3818}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
