@@ -5,29 +5,32 @@ namespace BDTest.Test
 {
     public abstract class AbstractContextBDTestBase<TContext> : BDTestBase where TContext : class, new()
     {
+        private readonly object _contextLock = new object();
         private readonly ConditionalWeakTable<string, BDTestContext<TContext>> _contexts = new ConditionalWeakTable<string, BDTestContext<TContext>>();
 
         public TContext Context => BDTestContext.TestContext;
 
         public BDTestContext<TContext> BDTestContext
         {
-            [MethodImpl(MethodImplOptions.Synchronized)]
             get
             {
-                _contexts.TryGetValue(BDTestExecutionId, out var bdTestContext);
-
-                if (bdTestContext != null)
+                lock (_contextLock)
                 {
+                    _contexts.TryGetValue(BDTestExecutionId, out var bdTestContext);
+
+                    if (bdTestContext != null)
+                    {
+                        return bdTestContext;
+                    }
+
+                    var testContext = Activator.CreateInstance<TContext>();
+                    bdTestContext = new BDTestContext<TContext>(this, testContext, BDTestExecutionId);
+
+                    ContextAmendment?.Invoke(bdTestContext);
+
+                    _contexts.Add(BDTestExecutionId, bdTestContext);
                     return bdTestContext;
                 }
-
-                var testContext = Activator.CreateInstance<TContext>();
-                bdTestContext = new BDTestContext<TContext>(this, testContext, BDTestExecutionId);
-
-                ContextAmendment?.Invoke(bdTestContext);
-                
-                _contexts.Add(BDTestExecutionId, bdTestContext);
-                return bdTestContext;
             }
         }
 
@@ -38,11 +41,15 @@ namespace BDTest.Test
 
         protected void RemoveContext()
         {
-            _contexts.Remove(BDTestExecutionId);
+            lock (_contextLock)
+            {
+                _contexts.Remove(BDTestExecutionId);
+            }
         }
         
         public Action<BDTestContext<TContext>> ContextAmendment { get; set; }
 
+        // ReSharper disable once UnusedMember.Global
         internal void RecreateContextOnRetry()
         {
             OverwriteContext(Activator.CreateInstance<TContext>());   
