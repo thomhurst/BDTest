@@ -6,12 +6,12 @@ using Xunit.Abstractions;
 namespace BDTest.xUnit.Tests
 {
     [CollectionDefinition("Parallel Tests", DisableParallelization = false)]
-    public class XUnitParallelTests : XUnitBDTestBase<XUnitContext>
+    public class XUnitParallelTestsUniqueId : XUnitBDTestBase<XUnitContext>
     {
         private readonly ITestOutputHelper _testOutputHelper;
         private static readonly ConcurrentBag<string> Ids = new();
 
-        public XUnitParallelTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper)
+        public XUnitParallelTestsUniqueId(ITestOutputHelper testOutputHelper) : base(testOutputHelper)
         {
             _testOutputHelper = testOutputHelper;
         }

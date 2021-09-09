@@ -5,12 +5,12 @@ using Xunit.Abstractions;
 namespace BDTest.xUnit.Tests
 {
     [CollectionDefinition("Non-Parallel Tests", DisableParallelization = true)]
-    public class XUnitNonParallelTests : XUnitBDTestBase<XUnitContext>
+    public class XUnitNonParallelTestsUniqueId : XUnitBDTestBase<XUnitContext>
     {
         private readonly ITestOutputHelper _testOutputHelper;
         private static readonly List<string> Ids = new();
 
-        public XUnitNonParallelTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper)
+        public XUnitNonParallelTestsUniqueId(ITestOutputHelper testOutputHelper) : base(testOutputHelper)
         {
             _testOutputHelper = testOutputHelper;
         }
