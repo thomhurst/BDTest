@@ -11,6 +11,7 @@ namespace BDTest.Test
 
         public BDTestContext<TContext> BDTestContext
         {
+            [MethodImpl(MethodImplOptions.Synchronized)]
             get
             {
                 _contexts.TryGetValue(BDTestExecutionId, out var bdTestContext);
