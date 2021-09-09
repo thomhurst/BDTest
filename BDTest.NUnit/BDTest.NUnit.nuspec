@@ -41,7 +41,7 @@
         <summary>An NUnit Extension for BDTest</summary>
 
         <!-- Copyright information -->
-        <copyright>Copyright ©2020 Tom Longhurst</copyright>
+        <copyright>Copyright ©2021 Tom Longhurst</copyright>
 
         <!-- Tags appear in the gallery and can be used for tag searches -->
         <tags>test tdd bdd testing given when then</tags>
