@@ -10,6 +10,18 @@ namespace BDTest.Example
         SoThat = "users can see what a report would look like")]
     public class DifferentReportScenarioTests : MyTestBase
     {
+        [SetUp]
+        public void Setup()
+        {
+            WriteStartupOutput("This is some startup custom text");
+        }
+
+        [TearDown]
+        public void TearDown()
+        {
+            WriteTearDownOutput("This is some custom teardown text");
+        }
+
         [Test]
         [ScenarioText("An ignored test")]
         public async Task TestIgnored()
@@ -94,6 +106,32 @@ namespace BDTest.Example
                 .Then(() => Pass())
                 .And(() => Fail())
                 .BDTestAsync();
+        }
+        
+        [Test]
+        [ScenarioText("A test that passes")]
+        public async Task EverythingPasses()
+        {
+            await Given(() => Pass())
+                .And(() => Pass())
+                .When(() => Pass())
+                .Then(() => Pass())
+                .And(() => Pass())
+                .BDTestAsync();
+        }
+        
+        [Test]
+        [ScenarioText("A custom link to attach to the report server")]
+        public async Task CustomHtml()
+        {
+            await Given(() => Pass())
+                .And(() => Pass())
+                .When(() => Pass())
+                .Then(() => Pass())
+                .And(() => Pass())
+                .BDTestAsync();
+            
+            ScenarioHtmlWriter.Link("BDTest Wiki!", "https://github.com/thomhurst/BDTest");
         }
 
         [StepText("the step passes")]
