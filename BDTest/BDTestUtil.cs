@@ -37,13 +37,13 @@ namespace BDTest
                 }
             };
         }
-        
-        private static DateTime GetStartDateTime(this IEnumerable<Scenario> scenarios)
+
+        internal static DateTime GetStartDateTime(this IEnumerable<Scenario> scenarios)
         {
             return scenarios.OrderBy(scenario => scenario.StartTime).First().StartTime;
         }
 
-        private static DateTime GetEndDateTime(this IEnumerable<Scenario> scenarios)
+        internal static DateTime GetEndDateTime(this IEnumerable<Scenario> scenarios)
         {
             return scenarios.OrderByDescending(scenario => scenario.EndTime).First().EndTime;
         }

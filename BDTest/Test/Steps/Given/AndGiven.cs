@@ -10,7 +10,7 @@ namespace BDTest.Test.Steps.Given
 
         protected override StepType StepType { get; } = StepType.AndGiven;
 
-        internal AndGiven(List<Step> previousSteps, Runnable runnable, TestDetails testDetails) : base(previousSteps, runnable, testDetails)
+        internal AndGiven(List<Step> previousSteps, Runnable runnable, BuildableTest previousPartiallyBuiltTest) : base(previousSteps, runnable, previousPartiallyBuiltTest)
         {
         }
 
@@ -22,23 +22,23 @@ namespace BDTest.Test.Steps.Given
         // Actions
         public AndGiven And(Expression<Action> step)
         {
-            return new AndGiven(ExistingSteps, new Runnable(step), TestDetails);
+            return new AndGiven(ExistingSteps, new Runnable(step), this);
         }
 
         public When.When When(Expression<Action> step)
         {
-            return new When.When(ExistingSteps, new Runnable(step), TestDetails);
+            return new When.When(ExistingSteps, new Runnable(step), this);
         }
 
         // Tasks
         public AndGiven And(Expression<Func<Task>> step)
         {
-            return new AndGiven(ExistingSteps, new Runnable(step), TestDetails);
+            return new AndGiven(ExistingSteps, new Runnable(step), this);
         }
 
         public When.When When(Expression<Func<Task>> step)
         {
-            return new When.When(ExistingSteps, new Runnable(step), TestDetails);
+            return new When.When(ExistingSteps, new Runnable(step), this);
         }
     }
 }

@@ -11,8 +11,6 @@ namespace BDTest.Test
 {
     public class Scenario
     {
-        [JsonIgnore] internal readonly TestDetails TestDetails;
-
         [JsonProperty] public string Guid { get; private set; }
         [JsonProperty] public DateTime StartTime { get; internal set; }
 
@@ -21,13 +19,13 @@ namespace BDTest.Test
         [JsonProperty] public string FileName { get; private set; }
         
         [JsonProperty]
-        public string TestStartupInformation { get; set; }
+        public string TestStartupInformation { get; internal set; }
 
         [JsonIgnore] public ExceptionWrapper Exception => Steps.Select(step => step.Exception).FirstOrDefault(exception => exception != null);
         
-        [JsonProperty] public string TearDownOutput { get; set; }
+        [JsonProperty] public string TearDownOutput { get; internal set; }
         
-        [JsonProperty] public string CustomHtmlOutputForReport { get; set; }
+        [JsonProperty] public string CustomHtmlOutputForReport { get; internal set; }
 
         [JsonConstructor]
         private Scenario()
@@ -36,10 +34,10 @@ namespace BDTest.Test
 
         internal bool AlreadyExecuted;
 
-        internal Scenario(List<Step> steps, TestDetails testDetails)
+        internal Scenario(List<Step> steps, BuildableTest testDetails)
         {
-            TestDetails = testDetails;
-            Guid = testDetails.GetGuid();
+            BdTestBaseClass = testDetails.BdTestBase;
+            Guid = testDetails.Guid;
             FrameworkTestId = testDetails.TestId;
             
             TestHolder.NotRun.TryRemove(Guid, out _);
@@ -55,7 +53,7 @@ namespace BDTest.Test
         }
 
         [JsonProperty]
-        public string FrameworkTestId { get; set; }
+        public string FrameworkTestId { get; private set; }
 
         [JsonProperty] public List<Step> Steps { get; private set; }
 
@@ -73,7 +71,7 @@ namespace BDTest.Test
         
         [JsonIgnore] internal bool ShouldRetry { get; set; }
         [JsonProperty] public int RetryCount { get; internal set; }
-        [JsonIgnore] public BDTestBase BdTestBaseClass => TestDetails?.BdTestBase;
+        [JsonIgnore] public BDTestBase BdTestBaseClass { get; }
 
         public string GetScenarioText()
         {

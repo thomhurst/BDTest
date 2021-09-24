@@ -7,25 +7,23 @@ namespace BDTest.Test
 {
     public abstract class RunnableStepBuilder : StepBuilder
     {
-        internal RunnableStepBuilder(List<Step> previousSteps, Runnable runnable, TestDetails testDetails) : base(
+        internal RunnableStepBuilder(List<Step> previousSteps, Runnable runnable, BuildableTest previousPartiallyBuiltTest) : base(
             previousSteps,
             runnable,
-            testDetails)
+            previousPartiallyBuiltTest)
         {
         }
 
         public RunnableStepBuilder WithScenarioText(string scenarioText)
         {
             var text = new ScenarioText(scenarioText);
-
-            // TODO: Not need to set both
-            ScenarioText = text;
-            TestDetails.ScenarioText = text;
             
+            ScenarioText = text;
+
             return this;
         }
 
-        internal async Task<Scenario> Invoke(TestDetails testDetails)
+        internal async Task<Scenario> Invoke(BuildableTest testDetails)
         {
             var scenario = new Scenario(ExistingSteps, testDetails);
             await BDTestServiceProvider.ScenarioExecutor.ExecuteAsync(scenario).ConfigureAwait(false);
@@ -34,15 +32,14 @@ namespace BDTest.Test
 
         public Scenario BDTest()
         {
-            return Invoke(TestDetails).GetAwaiter().GetResult();
+            return Invoke(this).GetAwaiter().GetResult();
         }
 
         public async Task<Scenario> BDTestAsync()
         {
-            return await Invoke(TestDetails).ConfigureAwait(false);
+            return await this;
         }
 
-        public TaskAwaiter<Scenario> GetAwaiter()
-            => Invoke(TestDetails).GetAwaiter();
+        public TaskAwaiter<Scenario> GetAwaiter() => Invoke(this).GetAwaiter();
     }
 }

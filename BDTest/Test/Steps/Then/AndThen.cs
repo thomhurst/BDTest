@@ -9,7 +9,7 @@ namespace BDTest.Test.Steps.Then
         protected override StepType StepType { get; } = StepType.AndThen;
 
         // Actions
-        internal AndThen(List<Step> previousSteps, Runnable runnable, TestDetails testDetails) : base(previousSteps, runnable, testDetails)
+        internal AndThen(List<Step> previousSteps, Runnable runnable, BuildableTest previousPartiallyBuiltTest) : base(previousSteps, runnable, previousPartiallyBuiltTest)
         {
         }
         

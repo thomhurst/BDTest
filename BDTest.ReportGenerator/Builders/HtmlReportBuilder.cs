@@ -340,7 +340,7 @@ namespace BDTest.ReportGenerator.Builders
                                             new HtmlTag("td").AppendText(it.GetStoryText()),
                                             new HtmlTag("td").AppendText(it.GetScenarioText()),
                                             new HtmlTag("td").Append(
-                                                it.TestDetails.Parameters?.Select(parameterName =>
+                                                it.Parameters?.Select(parameterName =>
                                                     new HtmlTag("div").AppendText(parameterName)) ??
                                                 new List<HtmlTag> {HtmlTag.Empty()})
                                         )
