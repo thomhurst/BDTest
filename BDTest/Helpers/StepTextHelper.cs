@@ -73,18 +73,9 @@ namespace BDTest.Helpers
         
         private static List<string> GetMethodArguments(MethodCallExpression methodCallExpression)
         {
-            var arguments = new List<string>();
-
-            if (methodCallExpression?.Arguments != null)
-            {
-                foreach (var argument in methodCallExpression.Arguments)
-                {
-                    var value = GetExpressionValue(argument);
-                    arguments.Add(value ?? "null");
-                }
-            }
-
-            return arguments;
+            return methodCallExpression?.Arguments != null 
+                ? methodCallExpression.Arguments.Select(GetExpressionValue).Select(value => value ?? "null").ToList() 
+                : new List<string>();
         }
         
         private static string GetExpressionValue(Expression argument)
