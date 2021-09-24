@@ -11,21 +11,21 @@ namespace BDTest.Test
 {
     public class Scenario
     {
-        [JsonProperty] public string Guid { get; private set; }
+        [JsonProperty] public string Guid { get; }
         [JsonProperty] public DateTime StartTime { get; internal set; }
 
         [JsonProperty] public DateTime EndTime { get; internal set; }
 
-        [JsonProperty] public string FileName { get; private set; }
+        [JsonProperty] public string FileName { get; }
         
         [JsonProperty]
-        public string TestStartupInformation { get; set; }
+        public string TestStartupInformation { get; internal set; }
 
         [JsonIgnore] public ExceptionWrapper Exception => Steps.Select(step => step.Exception).FirstOrDefault(exception => exception != null);
         
-        [JsonProperty] public string TearDownOutput { get; set; }
+        [JsonProperty] public string TearDownOutput { get; internal set; }
         
-        [JsonProperty] public string CustomHtmlOutputForReport { get; set; }
+        [JsonProperty] public string CustomHtmlOutputForReport { get; internal set; }
 
         [JsonConstructor]
         private Scenario()
@@ -53,9 +53,9 @@ namespace BDTest.Test
         }
 
         [JsonProperty]
-        public string FrameworkTestId { get; set; }
+        public string FrameworkTestId { get; }
 
-        [JsonProperty] public List<Step> Steps { get; private set; }
+        [JsonProperty] public List<Step> Steps { get; }
 
         [JsonProperty] public string Output { get; internal set; }
 
@@ -63,11 +63,11 @@ namespace BDTest.Test
         [JsonProperty]
         public Status Status { get; internal set; } = Status.Inconclusive;
 
-        [JsonProperty] internal StoryText StoryText { get; private set; }
+        [JsonProperty] internal StoryText StoryText { get; }
 
-        [JsonProperty] internal ScenarioText ScenarioText { get; private set; }
+        [JsonProperty] internal ScenarioText ScenarioText { get; }
         
-        [JsonProperty] public TestInformationAttribute[] CustomTestInformation { get; private set; }
+        [JsonProperty] public TestInformationAttribute[] CustomTestInformation { get; }
         
         [JsonIgnore] internal bool ShouldRetry { get; set; }
         [JsonProperty] public int RetryCount { get; internal set; }
