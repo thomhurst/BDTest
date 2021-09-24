@@ -18,10 +18,10 @@ namespace BDTest.Test
         internal ScenarioText ScenarioText { get; set; }
 
         [JsonProperty] 
-        public IEnumerable<string> Parameters = Enumerable.Empty<string>();
+        public IEnumerable<string> Parameters { get; protected set; } = Enumerable.Empty<string>();
 
         [JsonProperty]
-        public TestInformationAttribute[] CustomTestInformation { get; set; } = Array.Empty<TestInformationAttribute>();
+        public TestInformationAttribute[] CustomTestInformation { get; protected set; } = Array.Empty<TestInformationAttribute>();
         
         [JsonProperty]
         public string CallerMember { get; protected set; }
@@ -34,12 +34,12 @@ namespace BDTest.Test
 
         public string GetScenarioText()
         {
-            return ScenarioText?.Scenario ?? "Scenario Text Not Defined";
+            return string.IsNullOrWhiteSpace(ScenarioText?.Scenario) ? "Scenario Text Not Defined" : ScenarioText.Scenario;
         }
 
         public string GetStoryText()
         {
-            return StoryText?.Story ?? "Story Text Not Defined";
+            return string.IsNullOrWhiteSpace(StoryText?.Story) ? "Story Text Not Defined" : StoryText.Story;
         }
     }
 }
