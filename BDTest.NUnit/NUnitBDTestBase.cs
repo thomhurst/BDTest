@@ -23,6 +23,11 @@ namespace BDTest.NUnit
             {
                 BDTestSettings.CustomExceptionSettings.InconclusiveExceptionTypes.Add(typeof(IgnoreException));
             }
+            
+            if (!BDTestSettings.CustomExceptionSettings.InconclusiveExceptionTypes.Contains(typeof(InconclusiveException)))
+            {
+                BDTestSettings.CustomExceptionSettings.InconclusiveExceptionTypes.Add(typeof(InconclusiveException));
+            }
         }
 
         [TearDown]
