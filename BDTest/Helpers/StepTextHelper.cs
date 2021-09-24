@@ -4,6 +4,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
 using BDTest.Attributes;
+using BDTest.Reporters;
 using BDTest.Settings;
 using Humanizer;
 
@@ -97,8 +98,10 @@ namespace BDTest.Helpers
                 if (stepTextStringConverter != null)
                 {
                     var method = stepTextStringConverter.GetType().GetMethod("ConvertToString");
-                    var expressionValue = method.Invoke(stepTextStringConverter, new[] {compiledExpression}) as string;
-                    return expressionValue;
+                    if (method != null)
+                    {
+                        return method.Invoke(stepTextStringConverter, new[] { compiledExpression }) as string;
+                    }
                 }
 
                 if (TypeHelper.IsFuncOrAction(compiledExpression.GetType()))
@@ -122,8 +125,9 @@ namespace BDTest.Helpers
 
                 return compiledExpression.ToString();
             }
-            catch (Exception)
+            catch (Exception e)
             {
+                ConsoleReporter.WriteLine($"BDTest Exception:{Environment.NewLine}Class: {nameof(StepTextHelper)}{Environment.NewLine}Method: {nameof(GetExpressionValue)}{Environment.NewLine}Exception: {e.Message}{Environment.NewLine}{e.StackTrace}");
                 return "null";
             }
         }
