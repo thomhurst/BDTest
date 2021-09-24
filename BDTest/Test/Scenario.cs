@@ -11,8 +11,6 @@ namespace BDTest.Test
 {
     public class Scenario
     {
-        [JsonIgnore] internal readonly BuildableTest BuildableTest;
-
         [JsonProperty] public string Guid { get; private set; }
         [JsonProperty] public DateTime StartTime { get; internal set; }
 
@@ -38,7 +36,7 @@ namespace BDTest.Test
 
         internal Scenario(List<Step> steps, BuildableTest testDetails)
         {
-            BuildableTest = testDetails;
+            BdTestBaseClass = testDetails.BdTestBase;
             Guid = testDetails.Guid;
             FrameworkTestId = testDetails.TestId;
             
@@ -73,7 +71,7 @@ namespace BDTest.Test
         
         [JsonIgnore] internal bool ShouldRetry { get; set; }
         [JsonProperty] public int RetryCount { get; internal set; }
-        [JsonIgnore] public BDTestBase BdTestBaseClass => BuildableTest?.BdTestBase;
+        [JsonIgnore] public BDTestBase BdTestBaseClass { get; }
 
         public string GetScenarioText()
         {
