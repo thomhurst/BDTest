@@ -54,7 +54,7 @@ namespace BDTest.Helpers
                 catch (Exception)
                 {
                     throw new ArgumentException(
-                        $"Step Text arguments are wrong.\nTemplate is: {customStepText}\nArguments are {string.Join(",", arguments)}");
+                        $"Step Text arguments are wrong.{Environment.NewLine}Template is: {customStepText}{Environment.NewLine}Arguments are {string.Join(",", arguments)}");
                 }
             }
 

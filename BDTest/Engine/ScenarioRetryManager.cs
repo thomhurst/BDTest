@@ -44,7 +44,7 @@ namespace BDTest.Engine
 
             await RunRetryTestHooks(scenario).ConfigureAwait(false);
 
-            ConsoleReporter.WriteLine("\nRetrying test...\n");
+            ConsoleReporter.WriteLine($"{Environment.NewLine}Retrying test...{Environment.NewLine}");
         }
 
         private async Task RunRetryTestHooks(Scenario scenario)
