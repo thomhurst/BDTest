@@ -121,6 +121,24 @@ namespace BDTest.Example
             // _context.HttpResponse = await HttpHelper.SendAsync(request);
         }
     }
+    
+    public class HttpAssertionsSteps
+    {
+        private MyTestContext _context;
+        
+        public class HttpAssertionsSteps(MyTestContext context)
+        {
+            _context = context;
+        }
+        
+        [StepText("the HTTP status code is {0}")
+        public async Task TheHttpStatusCodeIs(HttpStatusCode code)
+        {
+            // ... Some code to assert - Read data previously stored in your context object!
+            // e.g.
+            // Assert.That(_context.HttpResponse.StatusCode, Is.EqualTo(code));
+        }
+    }
 }
 ```
 
