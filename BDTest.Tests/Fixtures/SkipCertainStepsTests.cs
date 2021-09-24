@@ -144,17 +144,14 @@ namespace BDTest.Tests.Fixtures
 
     class SkipAttribute1 : SkipStepAttribute
     {
-        
     }
     
     class SkipAttribute2 : SkipStepAttribute
     {
-        
     }
     
     class SkipAttribute3 : SkipStepAttribute
     {
-        
     }
     
     class SkipAttributeWithParameter : SkipStepAttribute
@@ -169,6 +166,5 @@ namespace BDTest.Tests.Fixtures
     
     class NotRegisteredSkipAttribute : SkipStepAttribute
     {
-        
     }
 }
