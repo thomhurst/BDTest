@@ -255,14 +255,14 @@ function openSidebar() {
     setElementVisible(document.getElementById("sidebar"))
     document.getElementById("main-body").style.marginLeft = "250px";
 
-    document.getElementById("burger-sidebar-icon").classList.add("is-active");;
+    document.getElementById("burger-sidebar-icon").classList.add("is-active");
 }
 
 function closeSidebar() {
     setElementInvisible(document.getElementById("sidebar"))
     document.getElementById("main-body").style.marginLeft = "0";
 
-    document.getElementById("burger-sidebar-icon").classList.remove("is-active");;
+    document.getElementById("burger-sidebar-icon").classList.remove("is-active");
 }
 
 function openModal(targetId) {
