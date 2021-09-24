@@ -137,12 +137,13 @@ namespace BDTest.Example
         [StepText("the step passes")]
         private void Pass()
         {
+            Assert.That(1, Is.EqualTo(1));
         }
 
         [StepText("I fail the step")]
         private void Fail()
         {
-            throw new Exception();
+            throw new ArithmeticException();
         }
 
         private void Ignore()
