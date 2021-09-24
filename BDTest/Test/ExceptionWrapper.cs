@@ -20,7 +20,6 @@ namespace BDTest.Test
         [JsonConstructor]
         private ExceptionWrapper()
         {
-            
         }
 
         public ExceptionWrapper(Exception exception)

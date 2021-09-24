@@ -17,7 +17,6 @@ namespace BDTest.Test
         [JsonConstructor]
         private ScenarioText()
         {
-
         }
 
         public bool Equals(ScenarioText other)

@@ -4,7 +4,6 @@ namespace BDTest.Settings
     {
         internal DebugSettings()
         {
-            
         }
         
         public bool ShouldSkipWhenStep { get; set; }

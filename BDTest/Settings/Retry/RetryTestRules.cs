@@ -7,7 +7,6 @@ namespace BDTest.Settings.Retry
     {
         internal RetryTestRules()
         {
-            
         }
         
         internal List<RetryTestRule> Rules = new List<RetryTestRule>();

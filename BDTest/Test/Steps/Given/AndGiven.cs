@@ -7,7 +7,6 @@ namespace BDTest.Test.Steps.Given
 {
     public class AndGiven : StepBuilder
     {
-
         protected override StepType StepType { get; } = StepType.AndGiven;
 
         internal AndGiven(List<Step> previousSteps, Runnable runnable, BuildableTest previousPartiallyBuiltTest) : base(previousSteps, runnable, previousPartiallyBuiltTest)

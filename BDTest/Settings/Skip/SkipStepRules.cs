@@ -8,7 +8,6 @@ namespace BDTest.Settings.Skip
     {
         internal SkipStepRules()
         {
-            
         }
         
         internal List<SkipStepRule<object>> Rules = new List<SkipStepRule<object>>();

@@ -8,7 +8,6 @@ namespace BDTest.Settings.Skip
     {
         internal SkipTestRules()
         {
-            
         }
         
         internal List<Func<Scenario, bool>> Rules = new();

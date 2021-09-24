@@ -56,7 +56,6 @@ namespace BDTest.Test
         [JsonConstructor]
         private Step()
         {
-
         }
 
         [JsonProperty]

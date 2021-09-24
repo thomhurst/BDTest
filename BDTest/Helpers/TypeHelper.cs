@@ -18,8 +18,12 @@ namespace BDTest.Helpers
 
         public static bool IsFuncOrAction(Type type)
         {
-            return FuncActionSet.Contains(type) ||
-                   type.IsGenericType && FuncActionSet.Contains(type.GetGenericTypeDefinition());
+            return FuncActionSet.Contains(type) || IsGenericFuncOrAction();
+
+            bool IsGenericFuncOrAction()
+            {
+                return type.IsGenericType && FuncActionSet.Contains(type.GetGenericTypeDefinition());
+            }
         }
 
         public static bool IsIEnumerable<T>(T value)

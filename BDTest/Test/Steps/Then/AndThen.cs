@@ -5,7 +5,6 @@ namespace BDTest.Test.Steps.Then
 {
     public class AndThen : Then
     {
-
         protected override StepType StepType { get; } = StepType.AndThen;
 
         // Actions

@@ -70,6 +70,5 @@ namespace BDTest.Tests.Fixtures
 
     public class MyCustomIgnoreException : Exception
     {
-        
     }
 }

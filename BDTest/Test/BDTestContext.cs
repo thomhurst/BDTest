@@ -11,7 +11,6 @@ namespace BDTest.Test
         {
             TestContext = testContext;
         }
-
     }
 
     public class BDTestContext

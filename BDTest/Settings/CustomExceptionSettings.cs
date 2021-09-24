@@ -7,7 +7,6 @@ namespace BDTest.Settings
     {
         internal CustomExceptionSettings()
         {
-            
         }
         
         public ConcurrentBag<Type> SuccessExceptionTypes { get; } = new ConcurrentBag<Type>();

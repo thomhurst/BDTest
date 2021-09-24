@@ -62,6 +62,5 @@ namespace BDTest.Tests.Fixtures
 
     public class MyAllowedException : Exception
     {
-        
     }
 }

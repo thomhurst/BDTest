@@ -813,8 +813,6 @@ namespace BDTest.ReportGenerator.Builders
             return stringBuilder.ToString();
         }
 
-
-
         private string BuildChartScenarioStatusData(int i)
         {
             var scenarios = i == 0 ? _scenarios : _scenarios.Where(scenario => scenario.GetStoryText() == _stories[i - 1]).ToList();

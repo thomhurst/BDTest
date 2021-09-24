@@ -17,7 +17,6 @@ namespace BDTest.NetCore.Razor.ReportMiddleware.Extensions
     {
         public OutputMetrics()
         {
-            
         }
         
         public OutputMetrics(BDTestOutputModel bdTestOutputModel)

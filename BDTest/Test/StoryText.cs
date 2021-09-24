@@ -18,7 +18,6 @@ namespace BDTest.Test
         [JsonConstructor]
         private StoryText()
         {
-
         }
 
         protected bool Equals(StoryText other)
