@@ -152,57 +152,47 @@ namespace BDTest.Tests.Fixtures
         [StepText("the text is {0}")]
         public void StepWithStringConverterType(CustomClassToStepTextString obj)
         {
-            
         }
 
         [StepText("the func returns: {0}")]
         public void FuncReturningStepText(Func<string> func)
         {
-            
         }
         
         [StepText("the step text can display the list {0}")]
         public void StepWithListType(IList<string> list)
         {
-            
         }
 
         [StepText("I have a custom step 1")]
         public void Action1Custom()
         {
-            
         }
         
         [StepText("my name is {0} {1}")]
         public void StepThatPrintsMyName(string firstName, string lastName)
         {
-            
         }
         
         [StepText("I have a custom step 3")]
         public void Action3Custom()
         {
-            
         }
         
         public void Step1WithoutAStepTextAttribute()
         {
-            
         }
         
         public void Step2WithoutAStepTextAttribute()
         {
-            
         }
         
         public void Step_3_Without_A_StepTextAttribute_and_Hyphens()
         {
-            
         }
 
         public void StepWithParametersButWithoutStepText(string valueOne, string valueTwo)
         {
-            // Nothing
         }
     }
 }
