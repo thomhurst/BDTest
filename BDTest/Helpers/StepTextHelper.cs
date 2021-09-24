@@ -63,7 +63,7 @@ namespace BDTest.Helpers
 
         private static string LowercaseFirstLetter(string input)
         {
-            if (input != string.Empty && char.IsUpper(input[0]))
+            if (!string.IsNullOrWhiteSpace(input) && char.IsUpper(input[0]))
             {
                 return  char.ToLower(input[0]) + input.Substring(1);
             }
