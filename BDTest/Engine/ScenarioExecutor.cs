@@ -75,7 +75,7 @@ namespace BDTest.Engine
                     
                     scenario.Status = Status.Failed;
                     
-                    ConsoleReporter.WriteLine($"{Environment.NewLine}Exception: {e.StackTrace}{Environment.NewLine}");
+                    ConsoleReporter.WriteLine($"{Environment.NewLine}Exception: {e.Message}{Environment.NewLine}{e.StackTrace}{Environment.NewLine}");
 
                     throw;
                 }
