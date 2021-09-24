@@ -9,7 +9,7 @@ namespace BDTest.Test.Steps.When
     {
         protected override StepType StepType { get; } = StepType.When;
 
-        internal When(List<Step> previousSteps, Runnable runnable, TestDetails testDetails) : base(previousSteps, runnable, testDetails)
+        internal When(List<Step> previousSteps, Runnable runnable, BuildableTest previousPartiallyBuiltTest) : base(previousSteps, runnable, previousPartiallyBuiltTest)
         {
         }
         
@@ -26,13 +26,13 @@ namespace BDTest.Test.Steps.When
         // Actions
         public Then.Then Then(Expression<Action> step)
         {
-            return new Then.Then(ExistingSteps, new Runnable(step), TestDetails);
+            return new Then.Then(ExistingSteps, new Runnable(step), this);
         }
 
         // Tasks
         public Then.Then Then(Expression<Func<Task>> step)
         {
-            return new Then.Then(ExistingSteps, new Runnable(step), TestDetails);
+            return new Then.Then(ExistingSteps, new Runnable(step), this);
         }
     }
 }

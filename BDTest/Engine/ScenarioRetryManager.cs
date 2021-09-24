@@ -51,7 +51,7 @@ namespace BDTest.Engine
         {
             try
             {
-                var bdTestBase = scenario.TestDetails.BdTestBase;
+                var bdTestBase = scenario.BuildableTest.BdTestBase;
 
                 // Run TearDown Attributed Method
                 await bdTestBase.RunMethodWithAttribute<BDTestRetryTearDownAttribute>();
@@ -87,10 +87,10 @@ namespace BDTest.Engine
 
         private void ResetContext(Scenario scenario)
         {
-            if (_typeMatcher.IsSuperClassOfAbstractContextBDTestBase(scenario.TestDetails.BdTestBase))
+            if (_typeMatcher.IsSuperClassOfAbstractContextBDTestBase(scenario.BuildableTest.BdTestBase))
             {
-                scenario.TestDetails.BdTestBase.GetType().GetMethod("RecreateContextOnRetry", BindingFlags.NonPublic | BindingFlags.Instance)
-                    ?.Invoke(scenario.TestDetails.BdTestBase, Array.Empty<object>());
+                scenario.BuildableTest.BdTestBase.GetType().GetMethod("RecreateContextOnRetry", BindingFlags.NonPublic | BindingFlags.Instance)
+                    ?.Invoke(scenario.BuildableTest.BdTestBase, Array.Empty<object>());
             }
         }
     }
