@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
@@ -240,11 +241,11 @@ namespace BDTest.NetCore.Razor.ReportMiddleware.Controllers
             return View("MultipleTestRunsTimes", foundReports);
         }
         
-        [HttpGet]
+        [HttpPost]
         [Route("report/test-run-flakiness")]
-        public async Task<IActionResult> TestRunFlakiness([FromQuery] string reportIds)
+        public async Task<IActionResult> TestRunFlakiness([FromBody] FlakeyTestsPostModel reportIds)
         {
-            var reportIdsArray = reportIds?.Split(',') ?? Array.Empty<string>();
+            var reportIdsArray = reportIds?.ReportIds ?? new List<string>();
 
             if (!reportIdsArray.Any())
             {

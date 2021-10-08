@@ -5,7 +5,7 @@ using Newtonsoft.Json;
 namespace BDTest.Test
 {
     [JsonConverter(typeof(StoryTextConverter))]
-    public class StoryText : IEquatable<StoryText>
+    public record StoryText
     {
         [JsonProperty]
         public string Story { get; private set; }
@@ -18,36 +18,6 @@ namespace BDTest.Test
         [JsonConstructor]
         private StoryText()
         {
-        }
-
-        protected bool Equals(StoryText other)
-        {
-            return string.Equals(Story, other.Story);
-        }
-
-        public override bool Equals(object obj)
-        {
-            if (obj == null)
-            {
-                return false;
-            }
-
-            if (ReferenceEquals(this, obj))
-            {
-                return true;
-            }
-
-            return obj.GetType() == GetType() && Equals((StoryText)obj);
-        }
-
-        public override int GetHashCode()
-        {
-            return Story != null ? Story.GetHashCode() : 0;
-        }
-
-        bool IEquatable<StoryText>.Equals(StoryText other)
-        {
-            return Story == other.Story;
         }
     }
 }
