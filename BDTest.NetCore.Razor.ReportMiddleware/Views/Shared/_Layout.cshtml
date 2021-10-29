@@ -1,3 +1,4 @@
+@using Microsoft.AspNetCore.Mvc.Localization
 @{
     var title = ViewBag.Title ?? "BDTest Report";   
 } 
@@ -12,6 +13,7 @@
     @await Html.PartialAsync("_Javascript")
 </head>
 <body>
+@await Html.PartialAsync("_SvgIcons")
 <main>
     @* @await Html.PartialAsync("_NavBarHeader") *@
     @await Html.PartialAsync("_SideMenu")
