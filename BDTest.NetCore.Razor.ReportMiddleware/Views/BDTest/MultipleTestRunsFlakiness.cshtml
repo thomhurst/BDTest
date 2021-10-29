@@ -52,10 +52,9 @@
                 @foreach (var scenarioGroup in groupedScenarios)
                 {
                     index++;
-                    var scenarios = scenarioGroup.ToList();
+                    var scenarios = scenarioGroup.OrderBy(x => x.StartTime).ToList();
 
                     var scenarioText = scenarioGroup.Key.ScenarioText;
-                    var storyText = scenarioGroup.Key.StoryText;
 
                     var failed = scenarios.Count(scenario => scenario.Status == Status.Failed);
                     var passed = scenarios.Count(scenario => scenario.Status == Status.Passed);
@@ -76,6 +75,20 @@
                             <span class="tag is-medium px-5 is-info">
                                 @passRate%
                             </span>
+                            
+                            <div class="columns hero-body">
+                                <div class="column is-half">
+                                    <h5 class="subtitle is-5">Statuses</h5>
+                                    <canvas id="success-trend-chart-@index"></canvas>
+                                </div>
+                                <div class="column is-half">
+                                    <h5 class="subtitle is-5">Durations</h5>
+                                    <canvas id="duration-trend-chart-@index"></canvas>
+                                </div>
+                            </div>
+
+                            @await Html.PartialAsync("_Javascript_Flakey_Duration_Chart", new ChartViewModel { Index = index, Scenarios = scenarios})
+                            @await Html.PartialAsync("_Javascript_Flakey_Status_Chart", new ChartViewModel { Index = index, Scenarios = scenarios})
                         </div>
                     </div>
                 }
