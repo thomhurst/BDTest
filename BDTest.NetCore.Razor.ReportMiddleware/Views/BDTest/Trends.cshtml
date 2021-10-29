@@ -4,6 +4,7 @@
 @using BDTest.NetCore.Razor.ReportMiddleware.Helpers
 @using BDTest.NetCore.Razor.ReportMiddleware.Models
 @using BDTest.NetCore.Razor.ReportMiddleware.Views.BDTest
+@using Humanizer
 @using Microsoft.AspNetCore.Http.Extensions
 @model IEnumerable<BDTest.NetCore.Razor.ReportMiddleware.Models.TestRunSummary>
 
@@ -285,9 +286,9 @@ data = {
     }],
 
     labels: [
-        @for (var index = 0; index < testRunSummaries.Count; index++)
+        @foreach (var testRunSummary in testRunSummaries)
         {
-            @:"Test Run #@index",
+            @:"@testRunSummary.StartedAtDateTime.ToStringForReport(false)",
         }
     ]
 }
@@ -413,9 +414,9 @@ data = {
         ],
 
     labels: [
-        @for (var index = 0; index < testRunSummaries.Count; index++)
+        @foreach (var testRunSummary in testRunSummaries)
         {
-            @:"Test Run #@index",
+            @:"@testRunSummary.StartedAtDateTime.ToStringForReport(false)",
         }
     ]
 }

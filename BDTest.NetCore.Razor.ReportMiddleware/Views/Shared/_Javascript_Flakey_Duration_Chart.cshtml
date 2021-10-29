@@ -1,4 +1,5 @@
-﻿@model BDTest.NetCore.Razor.ReportMiddleware.Models.ChartViewModel
+﻿@using BDTest.NetCore.Razor.ReportMiddleware.Extensions
+@model BDTest.NetCore.Razor.ReportMiddleware.Models.ChartViewModel
 
 @* Duration Trend Chart *@
 <script>
@@ -37,9 +38,9 @@ data = {
     }],
 
     labels: [
-        @for (var index = 0; index < Model.Scenarios.Count; index++)
+        @foreach (var scenario in Model.Scenarios)
         {
-            @:"Test Run #@index",
+            @:"@scenario.StartTime.ToStringForReport(false)",
         }
     ]
 }
