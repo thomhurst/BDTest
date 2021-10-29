@@ -1,5 +1,6 @@
 using System;
 using BDTest.NetCore.Razor.ReportMiddleware.Extensions;
+using BDTest.NetCore.Razor.ReportMiddleware.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Extensions;
 
@@ -21,14 +22,14 @@ namespace BDTest.NetCore.Razor.ReportMiddleware.Helpers
 
         public static string GetCurrentPageNumber(this HttpContext httpContext)
         {
-            if(!httpContext.Request.Query.TryGetValue("page", out var stringPageNumber))
+            if(!httpContext.Request.Query.TryGetValue(PagerQueryParameters.Page, out var stringPageNumber))
             {
                 return "1";
             }
 
-            if (string.Equals(stringPageNumber, "all", StringComparison.OrdinalIgnoreCase))
+            if (string.Equals(stringPageNumber, PagerQueryParameters.All, StringComparison.OrdinalIgnoreCase))
             {
-                return "all";
+                return PagerQueryParameters.All;
             }
 
             return int.TryParse(stringPageNumber, out var pageNumber) ? pageNumber.ToString() : "1";
@@ -37,7 +38,7 @@ namespace BDTest.NetCore.Razor.ReportMiddleware.Helpers
         public static string GetUrlForPageNumber(this HttpContext httpContext, int pageNumber)
         {
             var currentUrl = GetCurrentUrl(httpContext);
-            return currentUrl.WithQueryParameter("page", pageNumber.ToString()).ToString();
+            return currentUrl.WithQueryParameter(PagerQueryParameters.Page, pageNumber.ToString()).ToString();
         }
 
         public static Uri GetCurrentUrl(this HttpContext httpContext)

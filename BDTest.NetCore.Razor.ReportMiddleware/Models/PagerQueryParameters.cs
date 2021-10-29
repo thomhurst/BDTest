@@ -4,6 +4,12 @@ using System.Linq;
 
 namespace BDTest.NetCore.Razor.ReportMiddleware.Models
 {
+    public class PagerQueryParameters
+    {
+        public const string Page = "page";
+        public const string All = "all";
+    }
+
     public class Pager<T>
     {
         public T[] AllItems { get; }

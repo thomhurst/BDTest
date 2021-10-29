@@ -1,5 +1,6 @@
 @using BDTest.NetCore.Razor.ReportMiddleware.Extensions
 @using BDTest.NetCore.Razor.ReportMiddleware.Helpers
+@using BDTest.NetCore.Razor.ReportMiddleware.Models
 @model BDTest.NetCore.Razor.ReportMiddleware.Models.PaginationInformation
 
 @if (Model.TotalPages <= 1)
@@ -16,7 +17,7 @@
     {
         <a class="pagination-next" href="@Context.GetUrlForPageNumber(Model.CurrentPage+1)">Next page</a>
     }
-    <a class="pagination-next" href="@Context.GetCurrentUrl().WithQueryParameter("page", "all")">Show All</a>
+    <a class="pagination-next" href="@Context.GetCurrentUrl().WithQueryParameter(PagerQueryParameters.Page, PagerQueryParameters.All)">Show All</a>
     <ul class="pagination-list">
 
         @if (Model.TotalPages <= 6)
