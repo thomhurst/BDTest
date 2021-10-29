@@ -5,66 +5,54 @@
     var customLinksProvider = BdTestReportServerOptions.CustomHeaderLinksProvider;
 }
 
-<nav class="navbar is-fixed-top" role="navigation" aria-label="main navigation">
+<nav class="navbar fixed-top navbar-expand-lg navbar-dark bg-dark" role="navigation" aria-label="main navigation">
+    <div class="container-fluid">
+        
+        @*<a role="button" id="burger-sidebar-icon" class="burger is-active" onclick="toggleSidebar()">
+            <span aria-hidden="true"></span>
+            <span aria-hidden="true"></span>
+            <span aria-hidden="true"></span>
+        </a>*@
 
-    <div class="navbar-brand">
-        <a role="button" id="burger-sidebar-icon" class="burger is-active" onclick="toggleSidebar()">
-            <span aria-hidden="true"></span>
-            <span aria-hidden="true"></span>
-            <span aria-hidden="true"></span>
+        <a class="navbar-brand" href="~/bdtest/report/test-runs">
+            BDTest
         </a>
+        
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarToggler" aria-controls="navbarToggler" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
 
-        <a class="navbar-item" href="~/bdtest/report/test-runs">
-            <h1 class="title">BDTest</h1>
-        </a>
+        <div class="collapse navbar-collapse" id="navbarToggler">
+            <ul class="navbar-nav">
+                <li class="nav-item"><a class="nav-link" href="https://github.com/thomhurst/BDTest" target="_blank">Github</a></li>
 
-        <a role="button" data-target="navMenu" class="navbar-burger" aria-label="menu" aria-expanded="false">
-            <span aria-hidden="true"></span>
-            <span aria-hidden="true"></span>
-            <span aria-hidden="true"></span>
-        </a>
-    </div>
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="navbarMoreDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">More</a>
 
-    <div class="navbar-menu" id="navMenu">
-        <div class="navbar-start">
-            <a class="navbar-item" href="https://github.com/thomhurst/BDTest" target="_blank">
-                Github
-            </a>
-
-            <div class="navbar-item has-dropdown is-hoverable">
-                <a class="navbar-link">
-                    More
-                </a>
-
-                <div class="navbar-dropdown">
-                    <a class="navbar-item" href="https://github.com/thomhurst/BDTest/wiki" target="_blank">
-                        Wiki
-                    </a>
-                    <hr class="navbar-divider">
-                    <a class="navbar-item" href="https://github.com/thomhurst/BDTest/issues" target="_blank">
-                        Report an issue
-                    </a>
-                </div>
-            </div>
+                    <ul class="dropdown-menu" aria-labelledby="navbarMoreDropdown">
+                        <li><a class="dropdown-item" href="https://github.com/thomhurst/BDTest/wiki" target="_blank">Wiki</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="https://github.com/thomhurst/BDTest/issues" target="_blank">Report an issue</a></li>
+                    </ul>
+                </li>
+            </ul>
         </div>
-
-        <div class="navbar-end">
-            @if (customLinksProvider != null)
+        
+        @if (customLinksProvider != null)
+        {
+            foreach (var customLinkData in customLinksProvider.GetCustomLinks())
             {
-                foreach (var customLinkData in customLinksProvider.GetCustomLinks())
+                if (customLinkData.Url == null)
                 {
-                    if (customLinkData.Url == null)
-                    {
-                        <span class="navbar-item">@customLinkData.Text</span>
-                    }
-                    else
-                    {
-                        <a class="navbar-item" href="@customLinkData.Url">
-                            <span>@customLinkData.Text</span>
-                        </a>
-                    }
+                    <span class="navbar-text">@customLinkData.Text</span>
+                }
+                else
+                {
+                    <a class="nav-item nav-link" href="@customLinkData.Url">
+                        <span>@customLinkData.Text</span>
+                    </a>
                 }
             }
-        </div>
+        }
     </div>
 </nav>
