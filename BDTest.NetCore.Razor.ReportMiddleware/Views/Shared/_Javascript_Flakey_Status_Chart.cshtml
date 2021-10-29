@@ -1,4 +1,5 @@
 ﻿@using BDTest.NetCore.Razor.ReportMiddleware.Extensions
+@using BDTest.NetCore.Razor.ReportMiddleware.Helpers
 @using BDTest.Test
 @model BDTest.NetCore.Razor.ReportMiddleware.Models.ChartViewModel
 
@@ -11,25 +12,14 @@
 @* Success Trend Chart *@
 <script>
 {              
-@* let reportIdsArray = [];
+let reportIdsArray = [];
+let scenarioIdsArray = [];
 
-@foreach (var report in Model.Scenarios)
+@foreach (var scenario in Model.Scenarios)
 {
-    @:reportIdsArray.push("@report.ssc");
+    @:reportIdsArray.push("@scenario.ReportId");
+    @:scenarioIdsArray.push("@scenario.Guid");
 }
-
-function chartOnClick(chart, event) {
-   let activePoint = chart.getElementAtEvent(event);
-      
-   if (activePoint.length > 0) {
-      let clickedDatasetIndex = activePoint[0]._datasetIndex;
-      let clickedElementindex = activePoint[0]._index;
-      
-      let clickedOnReportId = reportIdsArray[clickedElementindex];
-
-      window.location.href = '@baseUrl/bdtest/report/' + clickedOnReportId + '/summary'
-   }
-} *@
     
 let successChartContext = document.getElementById('success-trend-chart-@Model.Index').getContext('2d');
 data = {
@@ -133,5 +123,31 @@ var successChart = new Chart(successChartContext, {
           }
     }
 });
+
+@if (Model.Scenarios.All(x => !string.IsNullOrEmpty(x.ReportId)))
+{
+    <text>
+    
+    function chartOnClick(chart, event) {
+       let activePoint = chart.getElementAtEvent(event);
+          
+       if (activePoint.length > 0) {
+          let clickedDatasetIndex = activePoint[0]._datasetIndex;
+          let clickedElementindex = activePoint[0]._index;
+          
+          let clickedOnReportId = reportIdsArray[clickedElementindex];
+          let clickedOnScenarioId = scenarioIdsArray[clickedElementindex];
+    
+          window.location.href = '@Context.GetBaseUrl()/bdtest/report/' + clickedOnReportId + '/all-scenarios?page=all&scenarioId=' + clickedOnScenarioId;
+       }
+    }
+    
+    document.getElementById('duration-trend-chart-@Model.Index').onclick = function(evt) {
+        chartOnClick(durationChart, evt);
+    }
+    
+    </text>
+}
+
 }
 </script>
