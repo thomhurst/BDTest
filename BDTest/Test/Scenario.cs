@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using BDTest.Attributes;
+using BDTest.Constants;
 using BDTest.Maps;
 using BDTest.Output;
 using Newtonsoft.Json;
@@ -81,7 +82,7 @@ namespace BDTest.Test
 
         public string GetStoryText()
         {
-            return StoryText?.Story ?? "Story Text Not Defined";
+            return StoryText?.Story ?? DefaultValues.StoryTextNotDefined;
         }
 
         [JsonConverter(typeof(TimespanConverter))]

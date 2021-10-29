@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using BDTest.Attributes;
+using BDTest.Constants;
 using Newtonsoft.Json;
 
 namespace BDTest.Test
@@ -37,12 +38,12 @@ namespace BDTest.Test
 
         public string GetScenarioText()
         {
-            return string.IsNullOrWhiteSpace(ScenarioText?.Scenario) ? "Scenario Text Not Defined" : ScenarioText.Scenario;
+            return string.IsNullOrWhiteSpace(ScenarioText?.Scenario) ? DefaultValues.ScenarioTextNotDefined : ScenarioText.Scenario;
         }
 
         public string GetStoryText()
         {
-            return string.IsNullOrWhiteSpace(StoryText?.Story) ? "Story Text Not Defined" : StoryText.Story;
+            return string.IsNullOrWhiteSpace(StoryText?.Story) ? DefaultValues.StoryTextNotDefined : StoryText.Story;
         }
     }
 }

@@ -1,4 +1,5 @@
 @using System.Web
+@using BDTest.Constants
 @using BDTest.NetCore.Razor.ReportMiddleware.Constants
 @using BDTest.NetCore.Razor.ReportMiddleware.Extensions
 @using BDTest.NetCore.Razor.ReportMiddleware.Helpers
@@ -19,22 +20,22 @@
 
     private List<string> GetEnvironments()
     {
-        return GetGeneric(x => x.Environment, DefaultValues.AllEnvironments);
+        return GetGeneric(x => x.Environment, DefaultValues.ReportServer.AllEnvironments);
     }
 
     private List<string> GetTags()
     {
-        return GetGeneric(x => x.Tag, DefaultValues.AllTags);
+        return GetGeneric(x => x.Tag, DefaultValues.ReportServer.AllTags);
     }
     
     private List<string> GetMachineNames()
     {
-        return GetGeneric(x => x.MachineName, DefaultValues.AllMachines);
+        return GetGeneric(x => x.MachineName, DefaultValues.ReportServer.AllMachines);
     }
     
     private List<string> GetBranches()
     {
-        return GetGeneric(x => x.BranchName, DefaultValues.AllBranches);
+        return GetGeneric(x => x.BranchName, DefaultValues.ReportServer.AllBranches);
     }
 
     private bool TagNeedsSelecting(string tagQueryParameter)
@@ -46,7 +47,7 @@
             return false;
         }
         
-        return string.IsNullOrEmpty(tagQueryParameter) || tagQueryParameter == DefaultValues.AllTags;
+        return string.IsNullOrEmpty(tagQueryParameter) || tagQueryParameter == DefaultValues.ReportServer.AllTags;
     }
 }
 
@@ -72,7 +73,7 @@
     var machineValues = GetMachineNames();
     var branchValues = GetBranches();
     
-    if (!string.IsNullOrEmpty(environmentQueryParameter) && environmentQueryParameter != DefaultValues.AllEnvironments)
+    if (!string.IsNullOrEmpty(environmentQueryParameter) && environmentQueryParameter != DefaultValues.ReportServer.AllEnvironments)
     {
         testRunSummariesEnumerable = testRunSummariesEnumerable.Where(summary => summary.Environment == environmentQueryParameter);
         <script>
@@ -82,7 +83,7 @@
         </script>
     }
 
-    if (!string.IsNullOrEmpty(tagQueryParameter) && tagQueryParameter != DefaultValues.AllTags)
+    if (!string.IsNullOrEmpty(tagQueryParameter) && tagQueryParameter != DefaultValues.ReportServer.AllTags)
     {
         testRunSummariesEnumerable = testRunSummariesEnumerable.Where(summary => summary.Tag == tagQueryParameter);
         <script>
@@ -92,7 +93,7 @@
         </script>
     }
     
-    if (!string.IsNullOrEmpty(machineQueryParameter) && machineQueryParameter != DefaultValues.AllMachines)
+    if (!string.IsNullOrEmpty(machineQueryParameter) && machineQueryParameter != DefaultValues.ReportServer.AllMachines)
     {
         testRunSummariesEnumerable = testRunSummariesEnumerable.Where(summary => summary.MachineName == machineQueryParameter);
         <script>
@@ -102,7 +103,7 @@
         </script>
     }
     
-    if (!string.IsNullOrEmpty(branchQueryParameter) && branchQueryParameter != DefaultValues.AllBranches)
+    if (!string.IsNullOrEmpty(branchQueryParameter) && branchQueryParameter != DefaultValues.ReportServer.AllBranches)
     {
         testRunSummariesEnumerable = testRunSummariesEnumerable.Where(summary => summary.BranchName == branchQueryParameter);
         <script>
@@ -112,7 +113,7 @@
         </script>
     }
     
-    if (!string.IsNullOrEmpty(dateTimeangeQueryParameter) && dateTimeangeQueryParameter != DefaultValues.AllDateTimes && dateTimeangeQueryParameter.Contains(".."))
+    if (!string.IsNullOrEmpty(dateTimeangeQueryParameter) && dateTimeangeQueryParameter != DefaultValues.ReportServer.AllDateTimes && dateTimeangeQueryParameter.Contains(".."))
     {
         var dateTimeStringArray = dateTimeangeQueryParameter.Split("..");
         if (!DateTime.TryParse(dateTimeStringArray.ElementAtOrDefault(0), out var startDate)

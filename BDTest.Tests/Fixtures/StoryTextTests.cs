@@ -1,5 +1,6 @@
 using System;
 using BDTest.Attributes;
+using BDTest.Constants;
 using BDTest.ReportGenerator;
 using BDTest.Test;
 using BDTest.Tests.Helpers;
@@ -58,7 +59,7 @@ namespace BDTest.Tests.Fixtures
             
             BDTestReportGenerator.GenerateInFolder(FileHelpers.GetUniqueTestOutputFolder());
 
-            Assert.That(scenario.GetStoryText(), Is.EqualTo("Story Text Not Defined"));
+            Assert.That(scenario.GetStoryText(), Is.EqualTo(DefaultValues.StoryTextNotDefined));
             Assert.That(JsonHelper.GetTestDynamicJsonObject().SelectToken("$.Scenarios[0].StoryText").Type, Is.EqualTo(JTokenType.Null));
         }
     }
