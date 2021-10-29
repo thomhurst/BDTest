@@ -52,9 +52,12 @@ namespace BDTest.ReportGenerator.RazorServer
         public async Task<IEnumerable<TestRunSummary>> GetAllTestRunRecords()
         {
             var testRunSummaries = new List<TestRunSummary>();
-            
+            var amountToTake = 25;
+
+            var count = 0;
             await foreach (var blobItem in _testRunSummariesContainer.GetBlobsAsync())
             {
+                count++;
                 var downloadAsync = await _testRunSummariesContainer.GetBlockBlobClient(blobItem.Name).DownloadAsync();
                 var testRunSummary = _jsonSerializer.Deserialize<TestRunSummary>(new JsonTextReader(new StreamReader(downloadAsync.Value.Content)));
 
@@ -65,6 +68,11 @@ namespace BDTest.ReportGenerator.RazorServer
                 else
                 {
                     testRunSummaries.Add(testRunSummary);
+                }
+
+                if (count == amountToTake)
+                {
+                    break;
                 }
             }
 

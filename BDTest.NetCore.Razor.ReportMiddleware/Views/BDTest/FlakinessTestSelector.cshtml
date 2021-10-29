@@ -245,13 +245,16 @@ function getCheckedIds() {
             </div>
         </nav>
 
-        <nav class="level">
-            <div class="level-item">
-                <button id="compare-flakiness" class="button is-info is-rounded is-large">
-                    <p>Check Flakey Tests</p>
-                </button>
-            </div>
-        </nav>
+        @if (!TagNeedsSelecting(tagQueryParameter))
+        {
+            <nav class="level">
+                <div class="level-item">
+                    <button id="compare-flakiness" class="button is-info is-rounded is-large">
+                        <p>Check Flakey Tests</p>
+                    </button>
+                </div>
+            </nav>
+        }
         
         <script>
             let checkFlakeyTestsButton = document.getElementById("compare-flakiness");
