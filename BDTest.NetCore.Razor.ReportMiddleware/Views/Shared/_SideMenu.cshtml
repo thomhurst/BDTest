@@ -2,7 +2,6 @@
 @using BDTest.NetCore.Razor.ReportMiddleware.Extensions
 @using BDTest.NetCore.Razor.ReportMiddleware.Interfaces
 @using BDTest.NetCore.Razor.ReportMiddleware.Models
-@using Microsoft.AspNetCore.Http.Extensions
 @{ var id = ViewBag.Id; }
 @inject IDataRepository _dataRepository;
 @inject BDTestReportServerOptions BdTestReportServerOptions
@@ -14,219 +13,291 @@
     var metrics = new OutputMetrics(currentTestReport);
 }
 
-<div class="box menu-box off-white-bg-color" id="sidebar">
-    <aside class="menu mt-6">
-    
-        <p class="menu-label">
-            Navigation
-        </p>
-        
-        <ul class="menu-list">
-            <li>
-                <a class="@GetIsActive("/test-runs")" href="~/bdtest/report/test-runs">
-                    Home / Test Runs
-                </a>
-            </li>
-            <li>
-                <a class="@GetIsActive("/trends")" href="~/bdtest/report/trends">
-                    Trends
-                </a>
-            </li>
-            <li>
-                <a class="@GetIsActive("/test-run-flakiness")" href="~/bdtest/report/test-run-flakiness">
-                    Flakey Tests
-                </a>
-            </li>
-        </ul>
-        
-        @if (currentTestReport != null)
-        {
-            <p class="menu-label">
-                This Test Report
-            </p>
+<div class="d-flex flex-column flex-shrink-0 p-3 text-white bg-dark" style="width: 280px;">
+    <a href="/" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto text-white text-decoration-none">
+      <svg class="bi me-2" width="40" height="32"><use xlink:href="#bootstrap"/></svg>
+      <span class="fs-4">BDTest</span>
+    </a>
+    <hr>
+    <ul class="nav nav-pills flex-column mb-auto">
+      <li class="nav-item">
+        <a href="~/bdtest/report/test-runs" class="nav-link @GetIsActive("/test-runs")" aria-current="page">
+          <svg class="bi me-2" width="16" height="16"><use xlink:href="#home"/></svg>
+          Home / Test Runs
+        </a>
+      </li>
+      <li>
+        <a href="~/bdtest/report/trends" class="nav-link text-white @GetIsActive("/trends")">
+          <svg class="bi me-2" width="16" height="16"><use xlink:href="#speedometer2"/></svg>
+          Trends
+        </a>
+      </li>
+      <li>
+        <a href="~/bdtest/report/test-run-flakiness" class="nav-link text-white @GetIsActive("/test-run-flakiness")">
+          <svg class="bi me-2" width="16" height="16"><use xlink:href="#table"/></svg>
+          Flakey Tests
+        </a>
+      </li>
+      <li class="border-top my-3"></li>
+      <li>
+        <a href="#" class="nav-link text-white @GetIsActive("/test-runs")">
+          <svg class="bi me-2" width="16" height="16"><use xlink:href="#grid"/></svg>
+          Products
+        </a>
+      </li>
+      <li>
+        <a href="#" class="nav-link text-white @GetIsActive("/test-runs")">
+          <svg class="bi me-2" width="16" height="16"><use xlink:href="#people-circle"/></svg>
+          Customers
+        </a>
+      </li>
+    </ul>
+    <hr>
+    <div class="dropdown">
+      <a href="#" class="d-flex align-items-center text-white text-decoration-none dropdown-toggle" id="dropdownUser1" data-bs-toggle="dropdown" aria-expanded="false">
 
-            <ul class="menu-list">
-                <li>
-                    <a class="@GetIsActive("/summary")" href="~/bdtest/report/@id/summary">
-                        <span>Summary</span>
-                    </a>
-                </li>
-                
-                <li>
-                    <a class="@GetIsActive("/stories")" href="~/bdtest/report/@id/stories">
-                        <span>Stories</span>
-                    </a>
-                </li>
-                
-                <li>
-                    <a class="@GetIsActive("/all-scenarios")" href="~/bdtest/report/@id/all-scenarios">
-                        <span>Scenarios</span>
-                    </a>
-                    @if (!metrics.AllPassed)
-                    {
-                        <ul>
-
-                            <li>
-                                <a href="~/bdtest/report/@id/all-scenarios?filterByStatus=Passed">
-                                    <span>Passed</span>
-                                </a>
-                            </li>
-
-                            @if (metrics.AnyFailed)
-                            {
-                                <li>
-                                    <a href="~/bdtest/report/@id/all-scenarios?filterByStatus=Failed">
-                                        <span>Failed</span>
-                                    </a>
-                                </li>
-                            }
-
-                            @if (metrics.AnyInconclusive)
-                            {
-                                <li>
-                                    <a href="~/bdtest/report/@id/all-scenarios?filterByStatus=Inconclusive">
-                                        <span>Inconclusive</span>
-                                    </a>
-                                </li>
-                            }
-
-                            @if (metrics.AnySkipped)
-                            {
-                                <li>
-                                    <a href="~/bdtest/report/@id/all-scenarios?filterByStatus=Skipped">
-                                        <span>Skipped</span>
-                                    </a>
-                                </li>
-                            }
-
-                            @if (metrics.AnyNotImplemented)
-                            {
-                                <li>
-                                    <a href="~/bdtest/report/@id/all-scenarios?filterByStatus=NotImplemented">
-                                        <span>Not Implemented</span>
-                                    </a>
-                                </li>
-                            }
-
-                        </ul>
-                    }
-                </li>
-                
-                <li>
-                    <a class="@GetIsActive("/timings")" href="~/bdtest/report/@id/timings">
-                        <span>Timings</span>
-                    </a>
-                </li>
-                
-                @if (metrics.AnyFailed)
-                {
-                    <li>
-                        <a class="@GetIsActive("/top-defects")" href="~/bdtest/report/@id/top-defects">
-                            <span>Top Defects</span>
-                        </a>
-                    </li>
-                }
-                
-                @if (metrics.AnyWarnings)
-                {
-                    <li>
-                        <a class="@GetIsActive("/warnings")" href="~/bdtest/report/@id/warnings">
-                            <span>Warnings</span>
-                        </a>
-                    </li>
-                }
-            </ul>
-            
-            @if (!string.IsNullOrEmpty(currentTestReport?.Environment) || !string.IsNullOrEmpty(currentTestReport?.Tag))
-            {
-                @if (!string.IsNullOrEmpty(currentTestReport.Environment))
-                {
-                    <p class="menu-label mb-0">
-                        Environment
-                    </p>
-                    <ul class="menu-list">
-                        <li>
-                            <span class="menu-text">@currentTestReport.Environment</span>
-                        </li>
-                    </ul>
-                }
-
-                @if (!string.IsNullOrEmpty(currentTestReport.Tag))
-                {
-                    <p class="menu-label mb-0">
-                        Tag
-                    </p>
-                    <ul class="menu-list">
-                        <li>
-                            <span class="menu-text">@currentTestReport.Tag</span>
-                        </li>
-                    </ul>
-                }
-                
-                @if (!string.IsNullOrEmpty(currentTestReport.BranchName))
-                {
-                    <p class="menu-label mb-0">
-                        Branch
-                    </p>
-                    <ul class="menu-list">
-                        <li>
-                            <span class="menu-text">@currentTestReport.BranchName</span>
-                        </li>
-                    </ul>
-                }
-            }
-            
-            <p class="menu-label">
-                Status
-            </p>
-            var totalStatus = currentTestReport.Scenarios.GetTotalStatus();
-            <ul class="menu-list">
-                <li>
-                    <span class="menu-text button no-pointer is-fullwidth @totalStatus.GetCssColourValueForStatus()">@totalStatus</span>
-                </li>
-            </ul>
-            
+        @{
+          var profilePictureUri = BdTestReportServerOptions.UserPersonalizer.GetProfilePictureUri(Context);
         }
-        <p class="menu-label">
-            Actions
-        </p>
-        <ul class="menu-list">
-            <li>
-                @{
-                    var url = Context.Request.GetEncodedUrl();
-                }
-                <a onclick="copyToClipboard('@url');">
-                    <span>Copy URL to Clipboard</span>
-                </a>
-            </li>
-            @if (currentTestReport != null)
-            {
-                <li>
-                    <a href="~/bdtest/report/@currentTestReport.Id/raw-json-data" target="_blank">
-                        <span>Download Raw Json Data</span>
-                    </a>
-                </li>
-            }
-        </ul>
-
-        @if (customTabsProvider != null)
+        @if (profilePictureUri != null)
         {
-            <p class="menu-label">
-                Custom Links
-            </p>
-            <ul class="menu-list">
-                @foreach (var customTabData in customTabsProvider.GetCustomLinks(currentTestReport ?? new BDTestOutputModel()))
-                {
-                    <li>
-                        <a href="@customTabData.Url" target="_blank">
-                            <span>@customTabData.Text</span>
-                        </a>
-                    </li>
-                }
-            </ul>
+          <img src="@profilePictureUri" alt="" width="32" height="32" class="rounded-circle me-2">
         }
-    </aside>
-</div>
+
+        @{
+          var nameOfUser = BdTestReportServerOptions.UserPersonalizer.GetNameOfUser(Context);
+        }
+        @if (nameOfUser != null)
+        {
+          <strong>@nameOfUser</strong>
+        }
+      </a>
+      <ul class="dropdown-menu dropdown-menu-dark text-small shadow" aria-labelledby="dropdownUser1">
+        <li><a class="dropdown-item" href="#">New project...</a></li>
+        <li><a class="dropdown-item" href="#">Settings</a></li>
+        <li><a class="dropdown-item" href="#">Profile</a></li>
+        <li><hr class="dropdown-divider"></li>
+        <li><a class="dropdown-item" href="#">Sign out</a></li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="b-example-divider"></div>
+
+
+@* <div class="box menu-box off-white-bg-color" id="sidebar"> *@
+@*     <aside class="menu mt-6"> *@
+@*      *@
+@*         <p class="menu-label"> *@
+@*             Navigation *@
+@*         </p> *@
+@*          *@
+@*         <ul class="menu-list"> *@
+@*             <li> *@
+@*                 <a class="@GetIsActive("/test-runs")" href="~/bdtest/report/test-runs"> *@
+@*                     Home / Test Runs *@
+@*                 </a> *@
+@*             </li> *@
+@*             <li> *@
+@*                 <a class="@GetIsActive("/trends")" href="~/bdtest/report/trends"> *@
+@*                     Trends *@
+@*                 </a> *@
+@*             </li> *@
+@*             <li> *@
+@*                 <a class="@GetIsActive("/test-run-flakiness")" href="~/bdtest/report/test-run-flakiness"> *@
+@*                     Flakey Tests *@
+@*                 </a> *@
+@*             </li> *@
+@*         </ul> *@
+@*          *@
+@*         @if (currentTestReport != null) *@
+@*         { *@
+@*             <p class="menu-label"> *@
+@*                 This Test Report *@
+@*             </p> *@
+@* *@
+@*             <ul class="menu-list"> *@
+@*                 <li> *@
+@*                     <a class="@GetIsActive("/summary")" href="~/bdtest/report/@id/summary"> *@
+@*                         <span>Summary</span> *@
+@*                     </a> *@
+@*                 </li> *@
+@*                  *@
+@*                 <li> *@
+@*                     <a class="@GetIsActive("/stories")" href="~/bdtest/report/@id/stories"> *@
+@*                         <span>Stories</span> *@
+@*                     </a> *@
+@*                 </li> *@
+@*                  *@
+@*                 <li> *@
+@*                     <a class="@GetIsActive("/all-scenarios")" href="~/bdtest/report/@id/all-scenarios"> *@
+@*                         <span>Scenarios</span> *@
+@*                     </a> *@
+@*                     @if (!metrics.AllPassed) *@
+@*                     { *@
+@*                         <ul> *@
+@* *@
+@*                             <li> *@
+@*                                 <a href="~/bdtest/report/@id/all-scenarios?filterByStatus=Passed"> *@
+@*                                     <span>Passed</span> *@
+@*                                 </a> *@
+@*                             </li> *@
+@* *@
+@*                             @if (metrics.AnyFailed) *@
+@*                             { *@
+@*                                 <li> *@
+@*                                     <a href="~/bdtest/report/@id/all-scenarios?filterByStatus=Failed"> *@
+@*                                         <span>Failed</span> *@
+@*                                     </a> *@
+@*                                 </li> *@
+@*                             } *@
+@* *@
+@*                             @if (metrics.AnyInconclusive) *@
+@*                             { *@
+@*                                 <li> *@
+@*                                     <a href="~/bdtest/report/@id/all-scenarios?filterByStatus=Inconclusive"> *@
+@*                                         <span>Inconclusive</span> *@
+@*                                     </a> *@
+@*                                 </li> *@
+@*                             } *@
+@* *@
+@*                             @if (metrics.AnySkipped) *@
+@*                             { *@
+@*                                 <li> *@
+@*                                     <a href="~/bdtest/report/@id/all-scenarios?filterByStatus=Skipped"> *@
+@*                                         <span>Skipped</span> *@
+@*                                     </a> *@
+@*                                 </li> *@
+@*                             } *@
+@* *@
+@*                             @if (metrics.AnyNotImplemented) *@
+@*                             { *@
+@*                                 <li> *@
+@*                                     <a href="~/bdtest/report/@id/all-scenarios?filterByStatus=NotImplemented"> *@
+@*                                         <span>Not Implemented</span> *@
+@*                                     </a> *@
+@*                                 </li> *@
+@*                             } *@
+@* *@
+@*                         </ul> *@
+@*                     } *@
+@*                 </li> *@
+@*                  *@
+@*                 <li> *@
+@*                     <a class="@GetIsActive("/timings")" href="~/bdtest/report/@id/timings"> *@
+@*                         <span>Timings</span> *@
+@*                     </a> *@
+@*                 </li> *@
+@*                  *@
+@*                 @if (metrics.AnyFailed) *@
+@*                 { *@
+@*                     <li> *@
+@*                         <a class="@GetIsActive("/top-defects")" href="~/bdtest/report/@id/top-defects"> *@
+@*                             <span>Top Defects</span> *@
+@*                         </a> *@
+@*                     </li> *@
+@*                 } *@
+@*                  *@
+@*                 @if (metrics.AnyWarnings) *@
+@*                 { *@
+@*                     <li> *@
+@*                         <a class="@GetIsActive("/warnings")" href="~/bdtest/report/@id/warnings"> *@
+@*                             <span>Warnings</span> *@
+@*                         </a> *@
+@*                     </li> *@
+@*                 } *@
+@*             </ul> *@
+@*              *@
+@*             @if (!string.IsNullOrEmpty(currentTestReport?.Environment) || !string.IsNullOrEmpty(currentTestReport?.Tag)) *@
+@*             { *@
+@*                 @if (!string.IsNullOrEmpty(currentTestReport.Environment)) *@
+@*                 { *@
+@*                     <p class="menu-label mb-0"> *@
+@*                         Environment *@
+@*                     </p> *@
+@*                     <ul class="menu-list"> *@
+@*                         <li> *@
+@*                             <span class="menu-text">@currentTestReport.Environment</span> *@
+@*                         </li> *@
+@*                     </ul> *@
+@*                 } *@
+@* *@
+@*                 @if (!string.IsNullOrEmpty(currentTestReport.Tag)) *@
+@*                 { *@
+@*                     <p class="menu-label mb-0"> *@
+@*                         Tag *@
+@*                     </p> *@
+@*                     <ul class="menu-list"> *@
+@*                         <li> *@
+@*                             <span class="menu-text">@currentTestReport.Tag</span> *@
+@*                         </li> *@
+@*                     </ul> *@
+@*                 } *@
+@*                  *@
+@*                 @if (!string.IsNullOrEmpty(currentTestReport.BranchName)) *@
+@*                 { *@
+@*                     <p class="menu-label mb-0"> *@
+@*                         Branch *@
+@*                     </p> *@
+@*                     <ul class="menu-list"> *@
+@*                         <li> *@
+@*                             <span class="menu-text">@currentTestReport.BranchName</span> *@
+@*                         </li> *@
+@*                     </ul> *@
+@*                 } *@
+@*             } *@
+@*              *@
+@*             <p class="menu-label"> *@
+@*                 Status *@
+@*             </p> *@
+@*             var totalStatus = currentTestReport.Scenarios.GetTotalStatus(); *@
+@*             <ul class="menu-list"> *@
+@*                 <li> *@
+@*                     <span class="menu-text button no-pointer is-fullwidth @totalStatus.GetCssColourValueForStatus()">@totalStatus</span> *@
+@*                 </li> *@
+@*             </ul> *@
+@*              *@
+@*         } *@
+@*         <p class="menu-label"> *@
+@*             Actions *@
+@*         </p> *@
+@*         <ul class="menu-list"> *@
+@*             <li> *@
+@*                 @{ *@
+@*                     var url = Context.Request.GetEncodedUrl(); *@
+@*                 } *@
+@*                 <a onclick="copyToClipboard('@url');"> *@
+@*                     <span>Copy URL to Clipboard</span> *@
+@*                 </a> *@
+@*             </li> *@
+@*             @if (currentTestReport != null) *@
+@*             { *@
+@*                 <li> *@
+@*                     <a href="~/bdtest/report/@currentTestReport.Id/raw-json-data" target="_blank"> *@
+@*                         <span>Download Raw Json Data</span> *@
+@*                     </a> *@
+@*                 </li> *@
+@*             } *@
+@*         </ul> *@
+@* *@
+@*         @if (customTabsProvider != null) *@
+@*         { *@
+@*             <p class="menu-label"> *@
+@*                 Custom Links *@
+@*             </p> *@
+@*             <ul class="menu-list"> *@
+@*                 @foreach (var customTabData in customTabsProvider.GetCustomLinks(currentTestReport ?? new BDTestOutputModel())) *@
+@*                 { *@
+@*                     <li> *@
+@*                         <a href="@customTabData.Url" target="_blank"> *@
+@*                             <span>@customTabData.Text</span> *@
+@*                         </a> *@
+@*                     </li> *@
+@*                 } *@
+@*             </ul> *@
+@*         } *@
+@*     </aside> *@
+@* </div> *@
 
 @functions
 {
@@ -235,7 +306,7 @@
     {
         if (Context.Request.Path.Value?.ToLowerInvariant().Contains(path.ToLower()) == true)
         {
-            return "is-active";
+            return "active";
         }
 
         return string.Empty;
