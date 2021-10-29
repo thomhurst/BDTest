@@ -252,9 +252,9 @@ namespace BDTest.NetCore.Razor.ReportMiddleware.Controllers
         
         [HttpPost]
         [Route("report/test-run-flakiness")]
-        public async Task<IActionResult> TestRunFlakiness([FromForm] FlakeyTestsPostModel reportIds)
+        public async Task<IActionResult> TestRunFlakiness([FromForm] string reportIds)
         {
-            var reportIdsArray = reportIds?.ReportIds ?? new List<string>();
+            var reportIdsArray = reportIds?.Split(",") ?? Array.Empty<string>();
 
             if (!reportIdsArray.Any())
             {
