@@ -90,8 +90,8 @@
                                 </div>
                             </div>
 
-                            @await Html.PartialAsync("_Javascript_Flakey_Duration_Chart", new ChartViewModel { Index = index, Scenarios = scenarios})
-                            @await Html.PartialAsync("_Javascript_Flakey_Status_Chart", new ChartViewModel { Index = index, Scenarios = scenarios})
+                            @await Html.PartialAsync("_Javascript_Flakey_Duration_Chart", new ChartViewModel { Index = index, Scenarios = scenarios, Reports = Model})
+                            @await Html.PartialAsync("_Javascript_Flakey_Status_Chart", new ChartViewModel { Index = index, Scenarios = scenarios, Reports = Model})
                         </div>
                     </div>
                 }

@@ -1,13 +1,18 @@
-﻿@using BDTest.NetCore.Razor.ReportMiddleware.Extensions
+﻿@using BDTest.Maps
+@using BDTest.NetCore.Razor.ReportMiddleware.Extensions
 @using BDTest.NetCore.Razor.ReportMiddleware.Helpers
 @using BDTest.Test
 @model BDTest.NetCore.Razor.ReportMiddleware.Models.ChartViewModel
 
-@* Report IDs available for Javascript *@
-    <script>
+@functions {
+    private bool TryFindReportId(Scenario scenario, List<BDTestOutputModel> reports, out string reportId)
+    {
+        var foundReportForScenario = reports.FirstOrDefault(report => report.Scenarios.Select(x => x.Guid).Contains(scenario.Guid));
+        reportId = foundReportForScenario?.Id;
+        return foundReportForScenario != null;
+    }
 
-
-</script>
+}
 
 @* Success Trend Chart *@
 <script>
@@ -17,7 +22,13 @@ let scenarioIdsArray = [];
 
 @foreach (var scenario in Model.Scenarios)
 {
-    @:reportIdsArray.push("@scenario.ReportId");
+    var reportIdForScenario = scenario.ReportId;
+    if (string.IsNullOrEmpty(reportIdForScenario))
+    {
+        TryFindReportId(scenario, Model.Reports, out reportIdForScenario);
+    }
+
+    @:reportIdsArray.push("@reportIdForScenario");
     @:scenarioIdsArray.push("@scenario.Guid");
 }
     
@@ -99,7 +110,7 @@ data = {
     ]
 }
 
-var successChart = new Chart(successChartContext, {
+let successChart = new Chart(successChartContext, {
     type: 'line',
     data: data,
     options: {
@@ -124,7 +135,7 @@ var successChart = new Chart(successChartContext, {
     }
 });
 
-@if (Model.Scenarios.All(x => !string.IsNullOrEmpty(x.ReportId)))
+@if (Model.Scenarios.All(x => !string.IsNullOrEmpty(x.ReportId) || TryFindReportId(x, Model.Reports, out _)))
 {
     <text>
     
@@ -142,8 +153,8 @@ var successChart = new Chart(successChartContext, {
        }
     }
     
-    document.getElementById('duration-trend-chart-@Model.Index').onclick = function(evt) {
-        chartOnClick(durationChart, evt);
+    document.getElementById('success-trend-chart-@Model.Index').onclick = function(evt) {
+        chartOnClick(successChart, evt);
     }
     
     </text>

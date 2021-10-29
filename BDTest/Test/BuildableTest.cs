@@ -20,6 +20,9 @@ namespace BDTest.Test
         
         [JsonProperty]
         public string ScenarioId { get; internal set; }
+        
+        [JsonProperty]
+        public string ReportId { get; internal set; }
 
         [JsonProperty] 
         public IEnumerable<string> Parameters { get; protected set; } = Enumerable.Empty<string>();

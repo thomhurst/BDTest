@@ -19,7 +19,7 @@ namespace BDTest.Helpers
             
             var dataToOutput = new BDTestOutputModel
             {
-                Id = BDTestUtil.GetInstanceGuid,
+                Id = BDTestUtil.GetCurrentReportId,
                 Environment = BDTestSettings.Environment,
                 Tag = BDTestSettings.Tag,
                 BranchName = BDTestSettings.BranchName,

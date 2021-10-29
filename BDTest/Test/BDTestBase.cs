@@ -7,6 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using BDTest.Attributes;
 using BDTest.Helpers;
+using BDTest.Maps;
 using BDTest.Output;
 using BDTest.Test.Steps.Given;
 using BDTest.Test.Steps.When;
@@ -34,25 +35,25 @@ namespace BDTest.Test
         public Given Given(Expression<Action> step, [CallerMemberName] string callerMember = null,
             [CallerFilePath] string callerFile = null)
         {
-            return new Given(new Runnable(step), callerMember, callerFile, BDTestExecutionId, this);
+            return new Given(new Runnable(step), callerMember, callerFile, BDTestExecutionId, TestHolder.CurrentReportId, this);
         }
 
         public Given Given(Expression<Func<Task>> step, [CallerMemberName] string callerMember = null,
             [CallerFilePath] string callerFile = null)
         {
-            return new Given(new Runnable(step), callerMember, callerFile, BDTestExecutionId, this);
+            return new Given(new Runnable(step), callerMember, callerFile, BDTestExecutionId, TestHolder.CurrentReportId, this);
         }
 
         public When When(Expression<Action> step, [CallerMemberName] string callerMember = null,
             [CallerFilePath] string callerFile = null)
         {
-            return new When(new Runnable(step), callerMember, callerFile, BDTestExecutionId, this);
+            return new When(new Runnable(step), callerMember, callerFile, BDTestExecutionId, TestHolder.CurrentReportId, this);
         }
 
         public When When(Expression<Func<Task>> step, [CallerMemberName] string callerMember = null,
             [CallerFilePath] string callerFile = null)
         {
-            return new When(new Runnable(step), callerMember, callerFile, BDTestExecutionId, this);
+            return new When(new Runnable(step), callerMember, callerFile, BDTestExecutionId, TestHolder.CurrentReportId, this);
         }
 
         public void WithContext<TContext>(Func<TContext, Scenario> test) where TContext : new()

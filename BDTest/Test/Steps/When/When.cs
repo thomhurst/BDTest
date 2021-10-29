@@ -13,7 +13,7 @@ namespace BDTest.Test.Steps.When
         {
         }
         
-        internal When(Runnable runnable, string callerMember, string callerFile, string testId, BDTestBase bdTestBase) : base(runnable, callerMember, callerFile, testId, StepType.When, bdTestBase)
+        internal When(Runnable runnable, string callerMember, string callerFile, string testId, string reportId, BDTestBase bdTestBase) : base(runnable, callerMember, callerFile, testId, reportId, StepType.When, bdTestBase)
         {
             // Used for skipping a 'Given' step
         }

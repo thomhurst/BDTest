@@ -50,7 +50,7 @@ namespace BDTest
             
             var dataOutputModel = new BDTestOutputModel
             {
-                Id = TestHolder.InstanceGuid,
+                Id = TestHolder.CurrentReportId,
                 Environment = BDTestSettings.Environment,
                 Tag = BDTestSettings.Tag,
                 BranchName = BDTestSettings.BranchName,

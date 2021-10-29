@@ -24,18 +24,19 @@ namespace BDTest.Test.Steps
         }
 
         // First Test Construction - Given or When
-        internal StepBuilder(Runnable runnable, string callerMember, string callerFile, string testId, StepType stepType, BDTestBase bdTestBase)
+        internal StepBuilder(Runnable runnable, string callerMember, string callerFile, string testId, string reportId, StepType stepType, BDTestBase bdTestBase)
         {
             BdTestBase = bdTestBase;
             CallerMember = callerMember;
             CallerFile = callerFile;
             TestId = testId;
+            ReportId = ReportId;
 
             var testGuid = System.Guid.NewGuid();
             Guid = testGuid.ToString();
             TestOutputData.TestId = testGuid;
             
-            ExistingSteps = new List<Step> { new Step(runnable, stepType, Guid) };
+            ExistingSteps = new List<Step> { new Step(runnable, stepType, Guid, ReportId) };
             
             TestHolder.NotRun[testGuid.ToString()] = this;
             
@@ -58,7 +59,7 @@ namespace BDTest.Test.Steps
             TestHolder.NotRun[previousPartiallyBuiltTest.Guid] = this;
 
             ExistingSteps = previousSteps;
-            ExistingSteps.Add(new Step(runnable, StepType, Guid));
+            ExistingSteps.Add(new Step(runnable, StepType, Guid, ReportId));
         }
         
         private void SetScenarioText()

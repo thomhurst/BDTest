@@ -13,7 +13,7 @@ namespace BDTest.Test
     public class Scenario
     {
         [JsonProperty] public string Guid { get; private set; }
-        [JsonProperty] public string ReportId { get; private set; } = TestHolder.InstanceGuid;
+        [JsonProperty] public string ReportId { get; private set; }
         [JsonProperty] public DateTime StartTime { get; internal set; }
 
         [JsonProperty] public DateTime EndTime { get; internal set; }

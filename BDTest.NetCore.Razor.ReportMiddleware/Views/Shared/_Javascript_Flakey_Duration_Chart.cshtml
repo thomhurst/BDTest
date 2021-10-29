@@ -1,6 +1,18 @@
-﻿@using BDTest.NetCore.Razor.ReportMiddleware.Extensions
+﻿@using BDTest.Maps
+@using BDTest.NetCore.Razor.ReportMiddleware.Extensions
 @using BDTest.NetCore.Razor.ReportMiddleware.Helpers
+@using BDTest.Test
 @model BDTest.NetCore.Razor.ReportMiddleware.Models.ChartViewModel
+
+@functions {
+    private bool TryFindReportId(Scenario scenario, List<BDTestOutputModel> reports, out string reportId)
+    {
+        var foundReportForScenario = reports.FirstOrDefault(x => x.Scenarios.Select(x => x.Guid).Contains(scenario.Guid));
+        reportId = foundReportForScenario?.Id;
+        return foundReportForScenario != null;
+    }
+
+}
 
 @* Duration Trend Chart *@
 <script>
@@ -10,7 +22,13 @@ let scenarioIdsArray = [];
 
 @foreach (var scenario in Model.Scenarios)
 {
-    @:reportIdsArray.push("@scenario.ReportId");
+    var reportIdForScenario = scenario.ReportId;
+    if (string.IsNullOrEmpty(reportIdForScenario))
+    {
+        TryFindReportId(scenario, Model.Reports, out reportIdForScenario);
+    }
+
+    @:reportIdsArray.push("@reportIdForScenario");
     @:scenarioIdsArray.push("@scenario.Guid");
 }
     
@@ -66,7 +84,7 @@ let durationChart = new Chart(durationChartContext, {
     }
 });
 
-@if (Model.Scenarios.All(x => !string.IsNullOrEmpty(x.ReportId)))
+@if (Model.Scenarios.All(x => !string.IsNullOrEmpty(x.ReportId) || TryFindReportId(x, Model.Reports, out _)))
 {
     <text>
     
