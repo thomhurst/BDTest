@@ -27,7 +27,7 @@ namespace BDTest.NetCore.Razor.ReportMiddleware.Extensions
             services.AddMemoryCache();
 
             services.AddSingleton<IMemoryCacheBdTestDataStore, MemoryCacheBdTestDataStore>();
-            services.AddSingleton<IDataController, DataController>();
+            services.AddSingleton<IDataRepository, DataRepository>();
             services.AddSingleton(new BDTestReportServerOptions());
 
             return mvcBuilder;

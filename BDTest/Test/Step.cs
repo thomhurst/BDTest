@@ -4,6 +4,7 @@ using System.Linq.Expressions;
 using System.Threading.Tasks;
 using BDTest.Attributes;
 using BDTest.Helpers;
+using BDTest.Maps;
 using BDTest.Output;
 using BDTest.Settings;
 using BDTest.Test.Steps;
@@ -18,6 +19,12 @@ namespace BDTest.Test
         
         [JsonProperty]
         public string Guid { get; private set; }
+        
+        [JsonProperty] 
+        public string ReportId { get; private set; } = TestHolder.InstanceGuid;
+        
+        [JsonProperty]
+        public string ScenarioId { get; private set; }
 
         [JsonProperty]
         public DateTime StartTime { get; private set; }
@@ -45,9 +52,10 @@ namespace BDTest.Test
 
         private bool _shouldSkip;
 
-        internal Step(Runnable runnable, StepType stepType)
+        internal Step(Runnable runnable, StepType stepType, string scenarioId)
         {
             Guid = System.Guid.NewGuid().ToString("N");
+            ScenarioId = scenarioId;
             Runnable = runnable;
             StepType = stepType;
             SetStepText();

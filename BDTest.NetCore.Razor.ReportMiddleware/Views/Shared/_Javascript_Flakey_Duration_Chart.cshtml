@@ -1,0 +1,78 @@
+﻿@model BDTest.NetCore.Razor.ReportMiddleware.Models.ChartViewModel
+
+@* Duration Trend Chart *@
+<script>
+{
+@* let reportIdsArray = [];
+
+@foreach (var report in Model.Scenarios)
+{
+    @:reportIdsArray.push("@report.ssc");
+}
+
+function chartOnClick(chart, event) {
+   let activePoint = chart.getElementAtEvent(event);
+      
+   if (activePoint.length > 0) {
+      let clickedDatasetIndex = activePoint[0]._datasetIndex;
+      let clickedElementindex = activePoint[0]._index;
+      
+      let clickedOnReportId = reportIdsArray[clickedElementindex];
+
+      window.location.href = '@baseUrl/bdtest/report/' + clickedOnReportId + '/summary'
+   }
+} *@
+    
+let durationChartContext = document.getElementById('duration-trend-chart-@Model.Index').getContext('2d');
+data = {
+    datasets: [{
+        backgroundColor: "#3298dc",
+        borderColor: "#3298dc",
+        data: [
+            @foreach (var timespan in Model.Scenarios.Select(model => model.EndTime - model.StartTime))
+            {
+                @((long)timespan.TotalSeconds)@:,
+            }
+            ]
+    }],
+
+    labels: [
+        @for (var index = 0; index < Model.Scenarios.Count; index++)
+        {
+            @:"Test Run #@index",
+        }
+    ]
+}
+
+let durationChart = new Chart(durationChartContext, {
+    type: 'line',
+    data: data,
+    options: {
+        legend: {
+                    display: false
+                },
+        scales: {
+            yAxes: [{
+              scaleLabel: {
+                labelString: 'Seconds'
+              },
+              ticks: {
+                  beginAtZero:true,
+                  // Include a dollar sign in the ticks
+                  callback: function(value, index, values) {
+                      return value + "s";
+                  }
+                  }
+            }]
+          },
+        tooltips: {
+            callbacks: {
+                label: function(tooltipItem, data) {
+                  return data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index] + " seconds";
+                }
+            }
+        }
+    }
+});
+}
+</script>

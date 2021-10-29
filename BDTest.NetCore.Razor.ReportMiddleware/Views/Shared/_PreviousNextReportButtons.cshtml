@@ -2,10 +2,10 @@
 @using BDTest.NetCore.Razor.ReportMiddleware.Interfaces
 @using Microsoft.AspNetCore.Http.Extensions
 @model string
-@inject IDataController _dataController
+@inject IDataRepository _dataRepository
 
 @{
-    var allReports = (await _dataController.GetAllTestRunRecords()).ToList();
+    var allReports = (await _dataRepository.GetAllTestRunRecords()).ToList();
     var thisIndex = allReports.FindIndex(report => report.RecordId == Model);
     var lastReport = allReports.ElementAtOrDefault(thisIndex - 1);
     var nextReport = allReports.ElementAtOrDefault(thisIndex + 1);

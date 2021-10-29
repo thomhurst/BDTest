@@ -10,6 +10,7 @@ using Newtonsoft.Json;
 
 namespace BDTest.ReportGenerator.RazorServer
 {
+    // Cosmos only holds documents up to 2MB so this would only work for small test runs!
     public class CosmosBDTestDataStore : IBDTestDataStore
     {
         private const string RecordDateTimeModelsKey = "RecordDateTimeModels";

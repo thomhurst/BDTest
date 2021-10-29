@@ -19,9 +19,9 @@ namespace BDTest.ReportGenerator.RazorServer
         private readonly BlobContainerClient _testDataContainer;
         private readonly JsonSerializer _jsonSerializer = JsonSerializer.Create();
 
-        public AzureStorageDataStore()
+        public AzureStorageDataStore(AzureStorageConfig azureStorageConfig)
         {
-            var connectionString = "";
+            var connectionString = azureStorageConfig.ConnectionString;
             var blobClient = new BlobServiceClient(connectionString);
             
             _testRunSummariesContainer = blobClient.GetBlobContainerClient("test-runs-summaries");
@@ -52,19 +52,27 @@ namespace BDTest.ReportGenerator.RazorServer
         public async Task<IEnumerable<TestRunSummary>> GetAllTestRunRecords()
         {
             var testRunSummaries = new List<TestRunSummary>();
-            
+            var amountToTake = 25;
+
+            var count = 0;
             await foreach (var blobItem in _testRunSummariesContainer.GetBlobsAsync())
             {
+                count++;
                 var downloadAsync = await _testRunSummariesContainer.GetBlockBlobClient(blobItem.Name).DownloadAsync();
                 var testRunSummary = _jsonSerializer.Deserialize<TestRunSummary>(new JsonTextReader(new StreamReader(downloadAsync.Value.Content)));
 
-                if (blobItem.Properties.CreatedOn < DateTimeOffset.UtcNow - TimeSpan.FromDays(90))
+                if (blobItem.Properties.CreatedOn < DateTimeOffset.UtcNow - TimeSpan.FromDays(30))
                 {
                     await DeleteBlobItem(blobItem);
                 }
                 else
                 {
                     testRunSummaries.Add(testRunSummary);
+                }
+
+                if (count == amountToTake)
+                {
+                    break;
                 }
             }
 
@@ -92,6 +100,11 @@ namespace BDTest.ReportGenerator.RazorServer
         public Task DeleteTestRunRecord(string id)
         {
             return _testDataContainer.DeleteBlobIfExistsAsync(id);
+        }
+
+        public Task InitializeAsync()
+        {
+            return GetAllTestRunRecords();
         }
     }
 }

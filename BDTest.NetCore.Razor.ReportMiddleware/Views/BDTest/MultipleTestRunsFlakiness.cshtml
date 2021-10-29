@@ -16,7 +16,7 @@
         ScenarioText = scenario.GetScenarioText()
     })
         .Where(group => group.Any(scenario => scenario.Status == Status.Failed))
-        .OrderByDescending(group => group.Count(scenario => scenario.Status == Status.Failed));
+        .OrderBy(group => GetPassRate(group.ToList()));
 }
 
 <section class="hero is-info">
@@ -37,7 +37,7 @@
     <div class="container">
         <div class="box">
             
-            @if (!groupedScenarios.Any())
+            @if (groupedScenarios.All(x => x.GetTotalStatus() == Status.Passed))
             {
                 <div class="has-text-centered">
                     <h2 class="title is-4">No Flakey Tests!</h2>
@@ -45,80 +45,54 @@
             }
             else
             {
+                <div class="hero-body">
+                    <h1 class="title">Scenarios:</h1>
+                </div>
+                var index = 0;
+                @foreach (var scenarioGroup in groupedScenarios)
+                {
+                    index++;
+                    var scenarios = scenarioGroup.OrderBy(x => x.StartTime).ToList();
 
-                <table class="table is-fullwidth">
-                    <thead>
-                    <tr>
-                        <th class="has-text-centered">Scenario</th>
-                        <th class="has-text-centered">Passed</th>
-                        <th class="has-text-centered">Failed</th>
-                    </tr>
-                    </thead>
-                    <tbody>
+                    var scenarioText = scenarioGroup.Key.ScenarioText;
 
-                    @foreach (var scenarioGroup in groupedScenarios)
-                    {
-                        var scenarios = scenarioGroup.ToList();
+                    var failed = scenarios.Count(scenario => scenario.Status == Status.Failed);
+                    var passed = scenarios.Count(scenario => scenario.Status == Status.Passed);
+                    var passRate = Math.Round(GetPassRate(scenarios), 2);
 
-                        var failed = scenarios.Count(scenario => scenario.Status == Status.Failed);
-                        var passed = scenarios.Count(scenario => scenario.Status == Status.Passed);
+                    <div class="card">
+                        <div class="card-content">
+                            <h2 class="subtitle mb-0">@scenarioText</h2>
+                            <span>Passed: </span>
+                            <span class="tag is-medium px-5 is-success">
+                                @passed
+                            </span>
+                            <span>Failed: </span>
+                            <span class="tag is-medium px-5 is-danger">
+                                @failed
+                            </span>
+                            <span>Pass Rate: </span>
+                            <span class="tag is-medium px-5 is-info">
+                                @passRate%
+                            </span>
+                            
+                            <div class="columns hero-body">
+                                <div class="column is-half">
+                                    <h5 class="subtitle is-5">Statuses</h5>
+                                    <canvas id="success-trend-chart-@index"></canvas>
+                                </div>
+                                <div class="column is-half">
+                                    <h5 class="subtitle is-5">Durations</h5>
+                                    <canvas id="duration-trend-chart-@index"></canvas>
+                                </div>
+                            </div>
 
-                        <tr>
-                            <td class="is-vcentered">
-                                @* <button class="button is-fullwidth is-info no-pointer">@scenarios.First().GetScenarioText() (@scenarios.Count)</button> *@
-                                <details class="mr-5half">
-                                    <summary class="is-info is-fullwidth button is-rounded">
-                                        @scenarios.First().GetScenarioText() (@scenarios.Count)
-                                    </summary>
-
-                                    <table class="table is-fullwidth">
-                                        <thead>
-                                        <tr>
-                                            <th></th>
-                                            <th class="has-text-centered">Date and Time</th>
-                                            <th class="has-text-centered">Status</th>
-                                        </tr>
-                                        </thead>
-                                        <tbody>
-                                        @foreach (var scenario in scenarios)
-                                        {
-                                            <tr>
-                                                <td class="has-text-centered is-vcentered">
-                                                    <a href="~/bdtest/report/@GetOutputModel(scenario).Id/stories?scenarioId=@scenario.Guid">
-                                                        <button class="button is-dark is-outlined pointer is-rounded">View Report</button>
-                                                    </a>
-                                                </td>
-                                                <td class="has-text-centered is-vcentered">
-                                                    <span class="tag is-medium px-5 is-link">@scenario.StartTime</span>
-                                                </td>
-                                                <td class="has-text-centered is-vcentered">
-                                                    <span class="@scenario.Status.GetCssColourValueForStatus() tag px-5 is-medium">@scenario.Status.AsString()</span>
-                                                </td>
-                                            </tr>
-                                        }
-
-                                        </tbody>
-                                    </table>
-                                </details>
-                            </td>
-
-                            <td class="has-text-centered is-vcentered">
-                                <span class="tag is-medium px-5 is-success">
-                                    @passed
-                                </span>
-                            </td>
-                            <td class="has-text-centered is-vcentered">
-                                <span class="tag is-medium px-5 is-danger">
-                                    @failed
-                                </span>
-                            </td>
-                        </tr>
-                    }
-                    </tbody>
-                </table>
-
+                            @await Html.PartialAsync("_Javascript_Flakey_Duration_Chart", new ChartViewModel { Index = index, Scenarios = scenarios})
+                            @await Html.PartialAsync("_Javascript_Flakey_Status_Chart", new ChartViewModel { Index = index, Scenarios = scenarios})
+                        </div>
+                    </div>
+                }
             }
-
         </div>
     </div>
 </section>
@@ -128,5 +102,11 @@
     private BDTestOutputModel GetOutputModel(Scenario scenario)
     {
         return Model.FirstOrDefault(bdTestOutputModel => bdTestOutputModel.Scenarios.Any(s => s.Guid == scenario.Guid));
+    }
+
+    private static double GetPassRate(IReadOnlyCollection<Scenario> scenarios)
+    {
+        var failed = scenarios.Count(x => x.Status == Status.Failed);
+        return 100 - (((double)failed / scenarios.Count) * 100);
     }
 }

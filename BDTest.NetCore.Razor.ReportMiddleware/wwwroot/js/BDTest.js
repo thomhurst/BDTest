@@ -356,7 +356,35 @@ function getCookie(name) {
 }
 
 onDomLoaded(function () {
-   document.getElementById("dateRangePicker").addEventListener("click", selectDateRanges); 
+    let dateRangePicker = document.getElementById("dateRangePicker");
+    
+    if(dateRangePicker == null) {
+        return
+    }
+    
+    dateRangePicker.addEventListener("click", selectDateRanges); 
+});
+
+onDomLoaded(function () {
+    let headerCheckbox = document.getElementById("checkbox-header");
+    
+    if(headerCheckbox == null) {
+        return
+    }
+    
+    headerCheckbox.addEventListener('click', function() {
+        if(headerCheckbox.checked === false) {
+            for (let checkbox of document.getElementsByClassName("checkbox-child")) {
+                checkbox.checked = false;
+            }
+        } else {
+            for (let checkbox of document.getElementsByClassName("checkbox-child")) {
+                if(!checkbox.parentElement.parentElement.classList.contains("invisible")) {
+                    checkbox.checked = true;
+                }
+            }
+        }
+    }) 
 });
 
 function selectDateRanges() {
@@ -373,4 +401,27 @@ function selectDateRanges() {
             window.location.href = getUrlWithAppendedParameter("datetimerange", `${startDate.toISOString()}..${endDate.toISOString()}`)
         })
     })
+}
+
+function post(path, params, method='post') {
+
+    // The rest of this code assumes you are not using a library.
+    // It can be made less verbose if you use one.
+    const form = document.createElement('form');
+    form.method = method;
+    form.action = path;
+
+    for (const key in params) {
+        if (params.hasOwnProperty(key)) {
+            const hiddenField = document.createElement('input');
+            hiddenField.type = 'hidden';
+            hiddenField.name = key;
+            hiddenField.value = params[key];
+
+            form.appendChild(hiddenField);
+        }
+    }
+
+    document.body.appendChild(form);
+    form.submit();
 }

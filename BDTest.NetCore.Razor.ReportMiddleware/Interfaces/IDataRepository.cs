@@ -5,7 +5,7 @@ using BDTest.NetCore.Razor.ReportMiddleware.Models;
 
 namespace BDTest.NetCore.Razor.ReportMiddleware.Interfaces
 {
-    public interface IDataController
+    public interface IDataRepository
     {
         Task<BDTestOutputModel> GetData(string id);
         Task<IEnumerable<TestRunSummary>> GetAllTestRunRecords();

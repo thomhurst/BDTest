@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using BDTest.NetCore.Razor.ReportMiddleware.Constants;
 
 namespace BDTest.NetCore.Razor.ReportMiddleware.Models
 {
@@ -122,14 +123,5 @@ namespace BDTest.NetCore.Razor.ReportMiddleware.Models
             StartPage = StartPage,
             TotalPages = TotalPages
         };
-    }
-
-    public class PaginationInformation
-    {
-        public int CurrentPage { get; set; }
-        public int PageSize { get; set; }
-        public int TotalPages { get; set; }
-        public int StartPage { get; set; }
-        public int EndPage { get; set; }
     }
 }

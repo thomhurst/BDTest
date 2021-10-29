@@ -1,4 +1,6 @@
+using System.Threading.Tasks;
 using BDTest.NetCore.Razor.ReportMiddleware.Extensions;
+using BDTest.NetCore.Razor.ReportMiddleware.Interfaces;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
@@ -24,11 +26,19 @@ namespace BDTest.ReportGenerator.RazorServer
             services
                 .AddControllersWithViews()
                 .AddBdTestReportControllersAndViews();
+            
+            services.AddSingleton<AzureStorageDataStore>();
+            services.AddSingleton<CustomSidebarLinkProvider>();
+            services.AddSingleton<CustomHeaderProvider>();
+            services.AddSingleton<AdminAuthorizer>();
+
+            AddConfig(services);
 
             services.AddRazorPages();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
+
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
             if (env.IsDevelopment())
@@ -55,11 +65,10 @@ namespace BDTest.ReportGenerator.RazorServer
             
             app.UseBDTestReportServer(options =>
             {
-                options.DataStore = new CosmosBDTestDataStore(
-                    "AccountEndpoint=https://localhost:8081/;AccountKey=C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==;");
-                options.CustomSidebarLinksProvider = new CustomSidebarLinkProvider();
-                options.CustomHeaderLinksProvider = new CustomHeaderProvider();
-                options.AdminAuthorizer = new AdminAuthorizer();
+                options.DataStore = app.ApplicationServices.GetRequiredService<AzureStorageDataStore>();
+                options.CustomSidebarLinksProvider = app.ApplicationServices.GetRequiredService<CustomSidebarLinkProvider>();
+                options.CustomHeaderLinksProvider = app.ApplicationServices.GetRequiredService<CustomHeaderProvider>();
+                options.AdminAuthorizer = app.ApplicationServices.GetRequiredService<AdminAuthorizer>();
             });
 
             app.UseRouting();
@@ -71,6 +80,15 @@ namespace BDTest.ReportGenerator.RazorServer
                     pattern: "{controller=Home}/{action=Index}/{id?}");
                 endpoints.MapRazorPages();
             });
+
+            Task.Run(() => app.ApplicationServices.GetRequiredService<IDataRepository>().GetAllTestRunRecords());
+        }
+
+        private void AddConfig(IServiceCollection services)
+        {
+            var config = Configuration.Get<Config>();
+            
+            services.AddSingleton(config.AzureStorage);
         }
     }
 }

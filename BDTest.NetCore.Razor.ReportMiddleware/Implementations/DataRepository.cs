@@ -10,13 +10,13 @@ using BDTest.NetCore.Razor.ReportMiddleware.Models;
 
 namespace BDTest.NetCore.Razor.ReportMiddleware.Implementations
 {
-    internal class DataController : IDataController, IDisposable
+    internal class DataRepository : IDataRepository, IDisposable
     {
         private readonly IMemoryCacheBdTestDataStore _memoryCacheBdTestDataStore;
         private readonly IBDTestDataStore _customDatastore;
         private readonly SemaphoreSlim _methodLock = new SemaphoreSlim(1, 1);
         
-        public DataController(IMemoryCacheBdTestDataStore memoryCacheBdTestDataStore, BDTestReportServerOptions options)
+        public DataRepository(IMemoryCacheBdTestDataStore memoryCacheBdTestDataStore, BDTestReportServerOptions options)
         {
             _memoryCacheBdTestDataStore = memoryCacheBdTestDataStore;
             _customDatastore = options.DataStore;
