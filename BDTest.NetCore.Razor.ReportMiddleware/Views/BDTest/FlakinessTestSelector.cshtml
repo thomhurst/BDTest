@@ -1,11 +1,13 @@
-@using System.Web
+﻿@using System.Web
 @using BDTest.NetCore.Razor.ReportMiddleware.Constants
 @using BDTest.NetCore.Razor.ReportMiddleware.Extensions
 @using BDTest.NetCore.Razor.ReportMiddleware.Helpers
 @using BDTest.NetCore.Razor.ReportMiddleware.Models
 @using BDTest.NetCore.Razor.ReportMiddleware.Views.BDTest
+@using BDTest.Test
 @using Microsoft.AspNetCore.Http.Extensions
 @model IEnumerable<BDTest.NetCore.Razor.ReportMiddleware.Models.TestRunSummary>
+@inject BDTestReportServerOptions BDTestReportServerOptions;
 
 @functions {
 
@@ -49,13 +51,10 @@
     }
 }
 
-<link rel="stylesheet" href="~/_content/BDTest.NetCore.Razor.ReportMiddleware/css/simplepicker.css" asp-append-version="true">
-<script src="~/_content/BDTest.NetCore.Razor.ReportMiddleware/js/simplepicker.js" asp-append-version="true"></script>
-
 @{
-    ViewBag.Title = "Trends";
+    ViewBag.Title = "Select Tests to Compare";
     Layout = "_Layout";
-
+    
     var testRunSummariesEnumerable = Model.AsEnumerable() ?? Enumerable.Empty<TestRunSummary>();
 
     var queryString = HttpUtility.ParseQueryString(new Uri(Context.Request.GetEncodedUrl()).Query);
@@ -110,12 +109,12 @@
             })
         </script>
     }
-    
+
     if (!string.IsNullOrEmpty(dateTimeangeQueryParameter) && dateTimeangeQueryParameter != DefaultValues.AllDateTimes && dateTimeangeQueryParameter.Contains(".."))
     {
         var dateTimeStringArray = dateTimeangeQueryParameter.Split("..");
         if (!DateTime.TryParse(dateTimeStringArray.ElementAtOrDefault(0), out var startDate)
-        || !DateTime.TryParse(dateTimeStringArray.ElementAtOrDefault(1), out var endDate))
+            || !DateTime.TryParse(dateTimeStringArray.ElementAtOrDefault(1), out var endDate))
         {
             return;
         }
@@ -138,6 +137,25 @@
     var baseUrl = Context.GetBaseUrl();
 }
 
+<script>
+function getCheckedIds() {
+        let checkboxes = document.getElementsByName("checkbox");
+                  let checkedIds = [];
+                  
+                  for (let i=0; i<checkboxes.length; i++) {
+                       // And stick the checked ones onto an array...
+                       if (checkboxes[i].checked) {
+                          checkedIds.push(checkboxes[i].id);
+                       }
+                    }
+                  
+                  return checkedIds;
+    }
+</script>
+
+<link rel="stylesheet" href="~/_content/BDTest.NetCore.Razor.ReportMiddleware/css/simplepicker.css" asp-append-version="true">
+<script src="~/_content/BDTest.NetCore.Razor.ReportMiddleware/js/simplepicker.js" asp-append-version="true"></script>
+
 <div id="startdatetimepickercontainer"></div>
 <div id="enddatetimepickercontainer"></div>
 
@@ -147,10 +165,10 @@
             <div class="columns is-vcentered">
                 <div class="column">
                     <h1 class="title">
-                        Trends
+                        Flakey Tests
                     </h1>
                     <h2 class="subtitle">
-                        Here are some trends from your tests
+                        Select the test runs that you'd like to compare
                     </h2>
                 </div>
             </div>
@@ -227,227 +245,86 @@
             </div>
         </nav>
 
+        <nav class="level">
+            <div class="level-item">
+                <button id="compare-flakiness" class="button is-info is-rounded is-large">
+                    <p>Check Flakey Tests</p>
+                </button>
+            </div>
+        </nav>
+        
+        <script>
+            let checkFlakeyTestsButton = document.getElementById("compare-flakiness");
+            checkFlakeyTestsButton.addEventListener('click', function() {
+                let checkedIds = getCheckedIds();
+                if (checkedIds.length < 2) {
+                    alert("Select 2 or more runs to check flakey tests!");   
+                    return
+                }
+                post("test-run-flakiness", { ReportIds: checkedIds });
+            });
+        </script>
+
         @if (!TagNeedsSelecting(tagQueryParameter))
         {
-            <div class="columns">
-                <div class="column is-half">
-                    <h5 class="subtitle is-5">Durations</h5>
-                    <canvas id="duration-trend-chart"></canvas>
-                </div>
-                <div class="column is-half">
-                    <h5 class="subtitle is-5">Statuses</h5>
-                    <canvas id="success-trend-chart"></canvas>
-                </div>
+            <table class="table is-fullwidth">
 
-            </div>
+                <thead>
+                <tr class="off-white-bg-color">
+                    <th class="has-text-centered">
+                        <input id="checkbox-header" type="checkbox"/>
+                    </th>
+                    <th class="has-text-centered tag-column">Tag</th>
+                    <th class="has-text-centered environment-column">Environment</th>
+                    <th class="has-text-centered machine-column">Machine Name</th>
+                    <th class="has-text-centered branch-column">Branch</th>
+                    <th class="has-text-centered date-column">Date and Time</th>
+                    <th class="has-text-centered duration-column">Duration</th>
+                    <th class="has-text-centered">Tests Run</th>
+                    <th class="has-text-centered">Status</th>
+                </tr>
+                </thead>
+                <tbody>
+
+                @foreach (var record in testRunSummariesEnumerable)
+                {
+                    var status = record.Status.ToString();
+                    if (record.Status == Status.Failed)
+                    {
+                        status += $" ({record.Counts.Failed})";
+                    }
+                    
+                    <tr class="off-white-bg-color test-run-row @record.Status">
+                        <td class="has-text-centered is-vcentered">
+                            <input name="checkbox" type="checkbox" class="checkbox-child" id="@record.RecordId"/>
+                        </td>
+                        <td name="tag-field" class="has-text-centered is-vcentered tag-column">@record.Tag</td>
+                        <td name="environment-field" class="has-text-centered is-vcentered environment-column">@record.Environment</td>
+                        <td name="machine-name-field" class="has-text-centered is-vcentered machine-column">@record.MachineName</td>
+                        <td name="branch-field" class="has-text-centered is-vcentered branch-column">@record.BranchName</td>
+                        <td class="has-text-centered is-vcentered date-column">@record.StartedAtDateTime.ToStringForReport()</td>
+                        <td class="has-text-centered is-vcentered duration-column">
+                            <div class="tooltip">
+                                @{
+                                    var timeTaken = record.FinishedAtDateTime - record.StartedAtDateTime;
+                                }
+                                @timeTaken.ToString()
+                                <span class="tooltiptext">@timeTaken.ToPrettyFormat()</span>
+                            </div>
+                        </td>
+                        <td class="has-text-centered is-vcentered">
+                            <span class="title is-4">@record.Counts.Total</span>
+                        </td>
+                        <td class="has-text-centered is-vcentered">
+                            <span class="@record.Status.GetCssColourValueForStatus() tag px-5 is-medium">
+                                @status
+                            </span>
+                        </td>
+                    </tr>
+                }
+
+                </tbody>
+            </table>
         }
     </div>
 </section>
-
-@if (!TagNeedsSelecting(tagQueryParameter))
-{
-@* Report IDs available for Javascript *@
-    <script>
-
-let reportIdsArray = [];
-
-@foreach (var report in testRunSummaries)
-{
-    @:reportIdsArray.push("@report.RecordId");
-}
-
-function chartOnClick(chart, event) {
-   let activePoint = chart.getElementAtEvent(event);
-      
-   if (activePoint.length > 0) {
-      let clickedDatasetIndex = activePoint[0]._datasetIndex;
-      let clickedElementindex = activePoint[0]._index;
-      
-      let clickedOnReportId = reportIdsArray[clickedElementindex];
-
-      window.location.href = '@baseUrl/bdtest/report/' + clickedOnReportId + '/summary'
-   }
-}
-</script>
-
-@* Duration Trend Chart *@
-    <script>
-var durationChartContext = document.getElementById('duration-trend-chart').getContext('2d');
-data = {
-    datasets: [{
-        backgroundColor: "#3298dc",
-        borderColor: "#3298dc",
-        data: [
-            @foreach (var timespan in testRunSummaries.Select(model => model.FinishedAtDateTime - model.StartedAtDateTime))
-            {
-                @((long)timespan.TotalSeconds)@:,
-            }
-            ]
-    }],
-
-    labels: [
-        @for (var index = 0; index < testRunSummaries.Count; index++)
-        {
-            @:"Test Run #@index",
-        }
-    ]
-}
-
-let durationChart = new Chart(durationChartContext, {
-    type: 'line',
-    data: data,
-    options: {
-        legend: {
-                    display: false
-                },
-        scales: {
-            yAxes: [{
-              scaleLabel: {
-                labelString: 'Seconds'
-              },
-              ticks: {
-                  beginAtZero:true,
-                  // Include a dollar sign in the ticks
-                  callback: function(value, index, values) {
-                      return value + "s";
-                  }
-                  }
-            }]
-          },
-        tooltips: {
-            callbacks: {
-                label: function(tooltipItem, data) {
-                  return data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index] + " seconds";
-                }
-            }
-        }
-    }
-});
-
-document.getElementById('duration-trend-chart').onclick = function(evt) {
-    chartOnClick(durationChart, evt);
-}
-</script>
-
-
-@* Success Trend Chart *@
-    <script>
-              
-var successChartContext = document.getElementById('success-trend-chart').getContext('2d');
-data = {
-    datasets: [ 
-        {
-            label: "Not Run",
-            borderColor: "rgba(0,0,0,0)",
-            pointRadius: 0,
-            pointHitRadius: 15,
-            borderWidth: 0,
-            data: [
-                @string.Join(",", testRunSummaries.Select(summary => summary.Counts.NotRun))
-            ]    
-        },
-        {
-            label: "Failed",
-            backgroundColor: "#f14668",
-            borderColor: "rgba(0,0,0,0)",
-            pointBorderColor: "#f14668",
-            pointBackgroundColor: "#f14668",
-            pointHitRadius: 15,
-            pointRadius: 0,
-            borderWidth: 0,
-            data: [
-                @string.Join(",", testRunSummaries.Select(summary => summary.Counts.Failed))
-            ]    
-        },
-        {
-            label: "Inconclusive",
-            backgroundColor: "#ffdd57",
-            borderColor: "rgba(0,0,0,0)",
-            pointBorderColor: "#ffdd57",
-            pointBackgroundColor: "#ffdd57",
-            pointHitRadius: 15,
-            pointRadius: 0,
-            borderWidth: 0,
-            data: [
-                @string.Join(",", testRunSummaries.Select(summary => summary.Counts.Inconclusive))
-            ]    
-        },
-        {
-            label: "Not Implemented",
-            backgroundColor: "#ffdd57",
-            borderColor: "rgba(0,0,0,0)",
-            pointBorderColor: "#ffdd57",
-            pointBackgroundColor: "#ffdd57",
-            pointHitRadius: 15,
-            pointRadius: 0,
-            borderWidth: 0,
-            data: [
-                @string.Join(",", testRunSummaries.Select(summary => summary.Counts.NotImplemented))
-            ]    
-        },
-        {
-            label: "Skipped",
-            backgroundColor: "#ffdd57",
-            borderColor: "rgba(0,0,0,0)",
-            pointBorderColor: "#ffdd57",
-            pointBackgroundColor: "#ffdd57",
-            pointHitRadius: 15,
-            pointRadius: 0,
-            borderWidth: 0,
-            data: [
-                @string.Join(",", testRunSummaries.Select(summary => summary.Counts.Skipped))
-            ]    
-        },
-        {
-            label: "Passed",
-            backgroundColor: "#48c774",
-            borderColor: "rgba(0,0,0,0)",
-            pointBorderColor: "#48c774",
-            pointBackgroundColor: "#48c774",
-            pointHitRadius: 15,
-            pointRadius: 0,
-            borderWidth: 0,
-            data: [
-                @string.Join(",", testRunSummaries.Select(summary => summary.Counts.Passed))
-            ]    
-        }
-        ],
-
-    labels: [
-        @for (var index = 0; index < testRunSummaries.Count; index++)
-        {
-            @:"Test Run #@index",
-        }
-    ]
-}
-
-var successChart = new Chart(successChartContext, {
-    type: 'line',
-    data: data,
-    options: {
-        legend: {
-                    display: false
-                },
-        scales: {
-            yAxes: [{
-              scaleLabel: {
-                labelString: 'Seconds'
-              },
-              stacked: true,
-              ticks: {
-                  beginAtZero:true,
-                  // Include a dollar sign in the ticks
-                  callback: function(value, index, values) {
-                      return "";
-                  }
-                  }
-            }]
-          }
-    }
-});
-
-document.getElementById('success-trend-chart').onclick = function(evt) {
-    chartOnClick(successChart, evt);
-}
-</script>
-}

@@ -240,10 +240,19 @@ namespace BDTest.NetCore.Razor.ReportMiddleware.Controllers
 
             return View("MultipleTestRunsTimes", foundReports);
         }
+
+        [HttpGet]
+        [Route("report/test-run-flakiness")]
+        public async Task<IActionResult> TestRunFlakiness()
+        {
+            var records = await _dataRepository.GetAllTestRunRecords();
+
+            return View("FlakinessTestSelector", records);
+        }
         
         [HttpPost]
         [Route("report/test-run-flakiness")]
-        public async Task<IActionResult> TestRunFlakiness([FromBody] FlakeyTestsPostModel reportIds)
+        public async Task<IActionResult> TestRunFlakiness([FromForm] FlakeyTestsPostModel reportIds)
         {
             var reportIdsArray = reportIds?.ReportIds ?? new List<string>();
 

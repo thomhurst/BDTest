@@ -251,29 +251,17 @@
             }
         </script>
 
-        <script>
+        @if (Context.GetCurrentPageNumber() == PagerQueryParameters.All)
+        {
+            <script>
             onDomLoaded(function() {
                 filterRows("filter-tag", "filter-tag-checkbox", "tag-field");
                 filterRows("filter-environment", "filter-environment-checkbox", "environment-field");
                 filterRows("filter-machine-name", "filter-machine-name-checkbox", "machine-name-field");
                 filterRows("filter-branch", "filter-branch-checkbox", "branch-field");
-                
-                let headerCheckbox = document.getElementById("checkbox-header");
-                headerCheckbox.addEventListener('click', function() {
-                  if(headerCheckbox.checked === false) {
-                      for (let checkbox of document.getElementsByName("checkbox")) {
-                          checkbox.checked = false;
-                      }
-                  } else {
-                      for (let checkbox of document.getElementsByName("checkbox")) {
-                        if(!checkbox.parentElement.parentElement.classList.contains("invisible")) {
-                            checkbox.checked = true;
-                        }
-                      }
-                  }
-                })
             })
-        </script>
+            </script>
+        }
 
         <table class="table is-fullwidth">
 
@@ -312,7 +300,7 @@
 
                 <tr class="off-white-bg-color test-run-row @record.Status">
                     <td class="has-text-centered is-vcentered">
-                        <input name="checkbox" type="checkbox" id="@record.RecordId"/>
+                        <input name="checkbox" type="checkbox" class="checkbox-child" id="@record.RecordId"/>
                     </td>
                     <td name="tag-field" class="has-text-centered is-vcentered tag-column">@record.Tag</td>
                     <td name="environment-field" class="has-text-centered is-vcentered environment-column">@record.Environment</td>
