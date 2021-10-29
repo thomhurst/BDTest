@@ -1,6 +1,6 @@
 ﻿namespace BDTest.NetCore.Razor.ReportMiddleware.Constants
 {
-    public class DefaultValues
+    public static class DefaultValues
     {
         public const string AllEnvironments = "All Environments";
         public const string AllTags = "All Tags";
