@@ -30,11 +30,12 @@ namespace BDTest.Test.Steps
             CallerMember = callerMember;
             CallerFile = callerFile;
             TestId = testId;
-            ExistingSteps = new List<Step> { new Step(runnable, stepType) };
 
             var testGuid = System.Guid.NewGuid();
             Guid = testGuid.ToString();
             TestOutputData.TestId = testGuid;
+            
+            ExistingSteps = new List<Step> { new Step(runnable, stepType, Guid) };
             
             TestHolder.NotRun[testGuid.ToString()] = this;
             
@@ -57,7 +58,7 @@ namespace BDTest.Test.Steps
             TestHolder.NotRun[previousPartiallyBuiltTest.Guid] = this;
 
             ExistingSteps = previousSteps;
-            ExistingSteps.Add(new Step(runnable, StepType));
+            ExistingSteps.Add(new Step(runnable, StepType, Guid));
         }
         
         private void SetScenarioText()

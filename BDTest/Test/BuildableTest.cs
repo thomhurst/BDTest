@@ -16,6 +16,9 @@ namespace BDTest.Test
 
         [JsonProperty]
         internal ScenarioText ScenarioText { get; set; }
+        
+        [JsonProperty]
+        public string ScenarioId { get; internal set; }
 
         [JsonProperty] 
         public IEnumerable<string> Parameters { get; protected set; } = Enumerable.Empty<string>();
