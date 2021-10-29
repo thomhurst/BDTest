@@ -118,7 +118,7 @@
 
     var testRunSummaries = testRunSummariesEnumerable.OrderBy(x => x.StartedAtDateTime).ToList();
     
-    var baseUrl = HttpHelper.GetBaseUrl(Context);
+    var baseUrl = Context.GetBaseUrl();
 }
 
 <div id="startdatetimepickercontainer"></div>

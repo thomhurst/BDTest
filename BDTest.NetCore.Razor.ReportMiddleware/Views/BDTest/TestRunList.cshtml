@@ -30,7 +30,7 @@
         
         if (confirm(message)) {
             @{
-                var baseUrl = HttpHelper.GetBaseUrl(Context);
+                var baseUrl = Context.GetBaseUrl();
             }
             window.location.href = "@baseUrl/bdtest/report/delete/" + testId;
         }
