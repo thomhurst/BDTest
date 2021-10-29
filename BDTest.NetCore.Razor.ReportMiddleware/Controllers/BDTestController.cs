@@ -21,12 +21,12 @@ namespace BDTest.NetCore.Razor.ReportMiddleware.Controllers
     [Route("bdtest")]
     public class BDTestController : Controller
     {
-        private readonly IDataController _dataController;
+        private readonly IDataRepository _dataRepository;
         private readonly BDTestReportServerOptions _bdTestReportServerOptions;
 
-        public BDTestController(IDataController dataController, BDTestReportServerOptions bdTestReportServerOptions)
+        public BDTestController(IDataRepository dataRepository, BDTestReportServerOptions bdTestReportServerOptions)
         {
-            _dataController = dataController;
+            _dataRepository = dataRepository;
             _bdTestReportServerOptions = bdTestReportServerOptions;
         }
         
@@ -50,7 +50,7 @@ namespace BDTest.NetCore.Razor.ReportMiddleware.Controllers
 
             var id = bdTestOutputModel.Id ?? Guid.NewGuid().ToString("N");
 
-            await _dataController.StoreData(bdTestOutputModel, id);
+            await _dataRepository.StoreData(bdTestOutputModel, id);
 
             if (_bdTestReportServerOptions.DataReceiver != null)
             {
@@ -77,7 +77,7 @@ namespace BDTest.NetCore.Razor.ReportMiddleware.Controllers
                 return Unauthorized();
             }
             
-            await _dataController.DeleteReport(id);
+            await _dataRepository.DeleteReport(id);
             
             return await TestRuns().ConfigureAwait(false);
         }
@@ -206,7 +206,7 @@ namespace BDTest.NetCore.Razor.ReportMiddleware.Controllers
         [Route("report/test-runs")]
         public async Task<IActionResult> TestRuns()
         {
-            var records = await _dataController.GetAllTestRunRecords();
+            var records = await _dataRepository.GetAllTestRunRecords();
 
             return View("TestRunList", records);
         }
@@ -215,7 +215,7 @@ namespace BDTest.NetCore.Razor.ReportMiddleware.Controllers
         [Route("report/trends")]
         public async Task<IActionResult> Trends()
         {
-            var records = await _dataController.GetAllTestRunRecords();
+            var records = await _dataRepository.GetAllTestRunRecords();
 
             return View("Trends", records);
         }
@@ -231,7 +231,7 @@ namespace BDTest.NetCore.Razor.ReportMiddleware.Controllers
                 return RedirectToAction("TestRuns", "BDTest");
             }
             
-            var foundReports = (await Task.WhenAll(reportIdsArray.Select(_dataController.GetData))).Where(data => data != null).ToList();
+            var foundReports = (await Task.WhenAll(reportIdsArray.Select(_dataRepository.GetData))).Where(data => data != null).ToList();
 
             if (!foundReports.Any())
             {
@@ -252,7 +252,7 @@ namespace BDTest.NetCore.Razor.ReportMiddleware.Controllers
                 return RedirectToAction("TestRuns", "BDTest");
             }
             
-            var foundReports = (await Task.WhenAll(reportIdsArray.Select(_dataController.GetData))).Where(data => data != null).ToList();
+            var foundReports = (await Task.WhenAll(reportIdsArray.Select(_dataRepository.GetData))).Where(data => data != null).ToList();
 
             if (!foundReports.Any())
             {
@@ -266,7 +266,7 @@ namespace BDTest.NetCore.Razor.ReportMiddleware.Controllers
         [Route("report/{id}/raw-json-data")]
         public async Task<IActionResult> RawJsonData([FromRoute] string id)
         {
-            var model = await _dataController.GetData(id);
+            var model = await _dataRepository.GetData(id);
             
             if (model == null)
             {
@@ -285,7 +285,7 @@ namespace BDTest.NetCore.Razor.ReportMiddleware.Controllers
 
         private async Task<IActionResult> GetView(string id, Func<BDTestOutputModel, IActionResult> viewAction)
         {
-            var model = await _dataController.GetData(id);
+            var model = await _dataRepository.GetData(id);
             
             if (model == null)
             {
@@ -300,7 +300,7 @@ namespace BDTest.NetCore.Razor.ReportMiddleware.Controllers
         private Task<BDTestOutputModel> GetData(string id)
         {
             ViewBag.Id = id;
-            return _dataController.GetData(id);
+            return _dataRepository.GetData(id);
         }
     }
 }

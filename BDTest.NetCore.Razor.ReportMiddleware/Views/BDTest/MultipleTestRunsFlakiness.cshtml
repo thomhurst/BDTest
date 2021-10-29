@@ -56,12 +56,53 @@
                     </thead>
                     <tbody>
 
+                    @{
+                        var index = 0;
+                    }
                     @foreach (var scenarioGroup in groupedScenarios)
                     {
+                        index++;
                         var scenarios = scenarioGroup.ToList();
+
+                        var scenarioText = scenarioGroup.Key.ScenarioText;
+                        var storyText = scenarioGroup.Key.StoryText;
 
                         var failed = scenarios.Count(scenario => scenario.Status == Status.Failed);
                         var passed = scenarios.Count(scenario => scenario.Status == Status.Passed);
+                        
+                        <div class="columns is-centered">
+                            <div class="column is-three-quarters">
+                                <section class="section">
+                                    <section class="rounded-top-corners hero">
+                                        <div class="hero-body">
+                                            <div id="story-header-@index" class="container pointer story-header">
+                                                <h1 class="title">Scenario:</h1>
+                                                @{
+                                                    <h2 class="subtitle mb-0">@scenarioText</h2>
+                                                }
+                                            </div>
+                                        </div>
+                                    </section>
+
+                                    <div class="box mb-0 rounded-bottom-corners" id="story-@index">
+
+                                        <div class="scrollable-table-container">
+                                            
+                                        </div>
+                                    </div>
+                                </section>
+                            </div>
+                        </div>
+
+
+
+
+
+
+
+
+
+
 
                         <tr>
                             <td class="is-vcentered">

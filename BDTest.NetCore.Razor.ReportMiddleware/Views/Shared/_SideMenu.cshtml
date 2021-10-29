@@ -4,13 +4,13 @@
 @using BDTest.NetCore.Razor.ReportMiddleware.Models
 @using Microsoft.AspNetCore.Http.Extensions
 @{ var id = ViewBag.Id; }
-@inject IDataController DataController;
+@inject IDataRepository _dataRepository;
 @inject BDTestReportServerOptions BdTestReportServerOptions
 
 @{
     var customTabsProvider = BdTestReportServerOptions.CustomSidebarLinksProvider;
     
-    BDTestOutputModel currentTestReport = string.IsNullOrEmpty(id) ? null : await DataController.GetData(id);
+    BDTestOutputModel currentTestReport = string.IsNullOrEmpty(id) ? null : await _dataRepository.GetData(id);
     var metrics = new OutputMetrics(currentTestReport);
 }
 
