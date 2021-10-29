@@ -26,6 +26,11 @@ namespace BDTest.ReportGenerator.RazorServer
             services
                 .AddControllersWithViews()
                 .AddBdTestReportControllersAndViews();
+            
+            services.AddSingleton<AzureStorageDataStore>();
+            services.AddSingleton<CustomSidebarLinkProvider>();
+            services.AddSingleton<CustomHeaderProvider>();
+            services.AddSingleton<AdminAuthorizer>();
 
             AddConfig(services);
 
@@ -60,10 +65,10 @@ namespace BDTest.ReportGenerator.RazorServer
             
             app.UseBDTestReportServer(options =>
             {
-                options.DataStore = new AzureStorageDataStore(app.ApplicationServices.GetService<AzureStorageConfig>());
-                options.CustomSidebarLinksProvider = new CustomSidebarLinkProvider();
-                options.CustomHeaderLinksProvider = new CustomHeaderProvider();
-                options.AdminAuthorizer = new AdminAuthorizer();
+                options.DataStore = app.ApplicationServices.GetRequiredService<AzureStorageDataStore>();
+                options.CustomSidebarLinksProvider = app.ApplicationServices.GetRequiredService<CustomSidebarLinkProvider>();
+                options.CustomHeaderLinksProvider = app.ApplicationServices.GetRequiredService<CustomHeaderProvider>();
+                options.AdminAuthorizer = app.ApplicationServices.GetRequiredService<AdminAuthorizer>();
             });
 
             app.UseRouting();
