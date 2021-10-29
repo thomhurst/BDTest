@@ -141,51 +141,54 @@
             </div>
         </nav>
 
-        <nav class="level">
-            <div class="">
-                <div class="mx-4">
-                    <label>Filter by Tag</label>
-                    <input class="input" type="text" id="filter-tag" placeholder="Tag">
-                    <div class="has-text-right">
-                        <label>Exact Match</label>
-                        <input type="checkbox" id="filter-tag-checkbox"/>
+        @if (Context.GetCurrentPageNumber() == PagerQueryParameters.All)
+        {
+            <nav class="level">
+                <div class="">
+                    <div class="mx-4">
+                        <label>Filter by Tag</label>
+                        <input class="input" type="text" id="filter-tag" placeholder="Tag">
+                        <div class="has-text-right">
+                            <label>Exact Match</label>
+                            <input type="checkbox" id="filter-tag-checkbox"/>
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            <div class="">
-                <div class="mx-4">
-                    <label>Filter by Environment</label>
-                    <input class="input" type="text" id="filter-environment" placeholder="Environment">
-                    <div class="has-text-right">
-                        <label>Exact Match</label>
-                        <input type="checkbox" id="filter-environment-checkbox"/>
+                <div class="">
+                    <div class="mx-4">
+                        <label>Filter by Environment</label>
+                        <input class="input" type="text" id="filter-environment" placeholder="Environment">
+                        <div class="has-text-right">
+                            <label>Exact Match</label>
+                            <input type="checkbox" id="filter-environment-checkbox"/>
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            <div class="">
-                <div class="mx-4">
-                    <label>Filter by Machine</label>
-                    <input class="input" type="text" id="filter-machine-name" placeholder="Machine Name">
-                    <div class="has-text-right">
-                        <label>Exact Match</label>
-                        <input type="checkbox" id="filter-machine-name-checkbox"/>
+                <div class="">
+                    <div class="mx-4">
+                        <label>Filter by Machine</label>
+                        <input class="input" type="text" id="filter-machine-name" placeholder="Machine Name">
+                        <div class="has-text-right">
+                            <label>Exact Match</label>
+                            <input type="checkbox" id="filter-machine-name-checkbox"/>
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            <div class="">
-                <div class="mx-4">
-                    <label>Filter by Branch</label>
-                    <input class="input" type="text" id="filter-branch" placeholder="Branch">
-                    <div class="has-text-right">
-                        <label>Exact Match</label>
-                        <input type="checkbox" id="filter-branch-checkbox"/>
+                <div class="">
+                    <div class="mx-4">
+                        <label>Filter by Branch</label>
+                        <input class="input" type="text" id="filter-branch" placeholder="Branch">
+                        <div class="has-text-right">
+                            <label>Exact Match</label>
+                            <input type="checkbox" id="filter-branch-checkbox"/>
+                        </div>
                     </div>
                 </div>
-            </div>
-        </nav>
+            </nav>
+        }
 
         <script>
             let filterObjectsArray = [];
