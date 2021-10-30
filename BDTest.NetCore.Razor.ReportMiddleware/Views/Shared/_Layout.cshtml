@@ -11,14 +11,14 @@
     <title>@title</title>
     @await Html.PartialAsync("_Css")
     @await Html.PartialAsync("_Javascript")
-</head>
+</head>4
 <body>
 @await Html.PartialAsync("_SvgIcons")
 <main>
     @* @await Html.PartialAsync("_NavBarHeader") *@
     @await Html.PartialAsync("_SideMenu")
     @* @await Html.PartialAsync("_Tabs") *@
-    <div id="main-body" class="main-body" style="overflow: auto">
+    <div id="main-body" class="main-body container-fluid" style="overflow-y: auto">
         @RenderBody()
     </div>
 </main>
