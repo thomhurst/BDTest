@@ -15,11 +15,8 @@
     <td class="align-middle">
         <button type="button" class="btn @Model.Scenario.Status.GetCssColourValueForStatus()">@Model.Scenario.Status.AsString()</button>
     </td>
-    <td class="align-middle">
-        <div class="bdtesttooltip">
-            @Model.Scenario.TimeTaken.ToString()
-            <span class="bdtesttooltiptext">@Model.Scenario.TimeTaken.ToPrettyFormat()</span>
-        </div>
+    <td class="align-middle" data-bs-toggle="popover" data-bs-trigger="hover focus" data-bs-content="Top popover" data-bs-content="@Model.Scenario.TimeTaken.ToPrettyFormat()">
+        @Model.Scenario.TimeTaken.ToString()
     </td>
     <td class="align-middle">@Model.Scenario.StartTime.ToStringForReport()</td>
     <td class="align-middle">@Model.Scenario.EndTime.ToStringForReport()</td>

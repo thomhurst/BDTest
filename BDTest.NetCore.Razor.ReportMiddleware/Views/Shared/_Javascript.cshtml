@@ -21,3 +21,12 @@
 <script src="~/_content/BDTest.NetCore.Razor.ReportMiddleware/js/BDTest.js" asp-append-version="true"></script>
 <script src="~/_content/BDTest.NetCore.Razor.ReportMiddleware/js/Chart.min.js" asp-append-version="true"></script>
 @await Html.PartialAsync("_GoToScenarioJavascript")
+
+<script>
+onDomLoaded(function() {
+var popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'))
+var popoverList = popoverTriggerList.map(function (popoverTriggerEl) {
+  return new bootstrap.Popover(popoverTriggerEl)
+})
+});
+</script>
