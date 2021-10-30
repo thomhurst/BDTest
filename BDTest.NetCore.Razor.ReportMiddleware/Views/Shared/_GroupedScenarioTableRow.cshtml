@@ -25,7 +25,7 @@
         <td class="align-middle">
             <button type="button" class="btn @Model.Scenarios.GetTotalStatus().GetCssColourValueForStatus()">@Model.Scenarios.GetTotalStatus().AsString()</button>
         </td>
-        <td class="align-middle" data-bs-toggle="popover" data-bs-trigger="hover focus" data-bs-content="Top popover" data-bs-content="@testTimer.ElapsedTime.ToPrettyFormat()">
+        <td class="align-middle" data-bs-toggle="popover" data-bs-trigger="hover focus" data-bs-placement="top" data-bs-content="@testTimer.ElapsedTime.ToPrettyFormat()">
             @testTimer.ElapsedTime.ToString()
         </td>
         <td class="align-middle">@testTimer.TestsStartedAt.ToStringForReport()</td>
