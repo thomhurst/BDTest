@@ -13,60 +13,81 @@
     var metrics = new OutputMetrics(currentTestReport);
 }
 
-<div class="d-flex flex-column flex-shrink-0 p-3 text-white bg-dark" style="width: 280px;">
-  <a href="/" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto text-white text-decoration-none">
+<div class="d-flex flex-column flex-shrink-0 p-3 bg-light" style="width: 280px;">
+  <a href="/" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto link-dark text-decoration-none">
     <svg class="bi me-2" width="40" height="32"><use xlink:href="#bootstrap"/></svg>
     <span class="fs-4">BDTest</span>
   </a>
   <hr>
   <ul class="nav nav-pills flex-column mb-auto">
     <li class="nav-item">
-      <a href="~/bdtest/report/test-runs" class="nav-link @GetIsActive("/test-runs")" aria-current="page">
+      <a href="~/bdtest/report/test-runs" class="nav-link link-dark @GetIsActive("/test-runs")" aria-current="page">
         <svg class="bi me-2" width="16" height="16"><use xlink:href="#home"/></svg>
         Home / Test Runs
       </a>
     </li>
     <li>
-      <a href="~/bdtest/report/trends" class="nav-link text-white @GetIsActive("/trends")">
+      <a href="~/bdtest/report/trends" class="nav-link link-dark @GetIsActive("/trends")">
         <svg class="bi me-2" width="16" height="16"><use xlink:href="#speedometer2"/></svg>
         Trends
       </a>
     </li>
     <li>
-      <a href="~/bdtest/report/test-run-flakiness" class="nav-link text-white @GetIsActive("/test-run-flakiness")">
+      <a href="~/bdtest/report/test-run-flakiness" class="nav-link link-dark @GetIsActive("/test-run-flakiness")">
         <svg class="bi me-2" width="16" height="16"><use xlink:href="#table"/></svg>
         Flakey Tests
       </a>
     </li>
-    <li class="border-top my-3"></li>
-    <li>
-      <a href="#" class="nav-link text-white @GetIsActive("/test-runs")">
-        <svg class="bi me-2" width="16" height="16"><use xlink:href="#grid"/></svg>
-        Products
-      </a>
+    
+    @if (currentTestReport != null)
+    {
+      <li class="border-top my-3"></li>
+
+      <li class="mb-1">
+        <button class="btn btn-toggle align-items-center rounded" data-bs-toggle="collapse" data-bs-target="#custom-links-collapse" aria-expanded="true">
+          <svg class="bi me-2" width="16" height="16"><use xlink:href="#grid"/></svg>
+          This Test Report
+        </button>
+        <div class="" id="custom-links-collapse">
+          <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small">
+            <li><a href="~/bdtest/report/@currentTestReport.Id/summary" class="link-dark rounded nav-link">Summary</a></li>
+            <li><a href="~/bdtest/report/@currentTestReport.Id/stories" class="link-dark rounded nav-link">Stories</a></li>
+            <li><a href="~/bdtest/report/@currentTestReport.Id/all-scenarios" class="link-dark rounded nav-link">Scenarios</a></li>
+            <li><a href="~/bdtest/report/@currentTestReport.Id/timings" class="link-dark rounded nav-link">Timings</a></li>
+          </ul>
+        </div>
     </li>
-    <li>
-      <a href="#" class="nav-link text-white @GetIsActive("/test-runs")">
-        <svg class="bi me-2" width="16" height="16"><use xlink:href="#people-circle"/></svg>
-        Customers
-      </a>
-    </li>
+    @*    *@
+    @*   <li> *@
+    @*     <a href="#" class="nav-link link-dark @GetIsActive("/test-runs")"> *@
+    @*       <svg class="bi me-2" width="16" height="16"><use xlink:href="#grid"/></svg> *@
+    @*       Products *@
+    @*     </a> *@
+    @*   </li> *@
+    @*   <li> *@
+    @*     <a href="#" class="nav-link link-dark @GetIsActive("/test-runs")"> *@
+    @*       <svg class="bi me-2" width="16" height="16"><use xlink:href="#people-circle"/></svg> *@
+    @*       Customers *@
+    @*     </a> *@
+    @*   </li> *@
+    }
 
     @{
-      var customLinks = BdTestReportServerOptions.CustomSidebarLinksProvider?.GetCustomLinks(currentTestReport);
+      var customLinks = BdTestReportServerOptions.CustomSidebarLinksProvider?.GetCustomLinks(currentTestReport)?.ToList();
     }
     @if (customLinks?.Any() == true)
     {
       <li class="border-top my-3"></li>
       <li class="mb-1">
-        <button class="btn btn-toggle align-items-center rounded collapsed text-white btn-close-white" data-bs-toggle="collapse" data-bs-target="#account-collapse" aria-expanded="false">
+        <button class="btn btn-toggle align-items-center rounded collapsed" data-bs-toggle="collapse" data-bs-target="#custom-links-collapse" aria-expanded="false">
+          <svg class="bi me-2" width="16" height="16"><use xlink:href="#grid"/></svg>
           Custom Links
         </button>
-        <div class="collapse" id="account-collapse">
+        <div class="collapse" id="custom-links-collapse">
           <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small">
             @foreach (var customLinkData in customLinks)
             {
-              <li><a href="@(customLinkData.Url ?? "#")" class="link-dark rounded nav-link text-white">@customLinkData.Text</a></li>  
+              <li><a href="@(customLinkData.Url ?? "#")" class="link-dark rounded nav-link">@customLinkData.Text</a></li>  
             }
           </ul>
         </div>
@@ -83,7 +104,7 @@
     <hr>
     
     <div class="dropdown">
-      <a href="#" class="d-flex align-items-center text-white text-decoration-none dropdown-toggle" id="dropdownUser1" data-bs-toggle="dropdown" aria-expanded="false">
+      <a href="#" class="d-flex align-items-center link-dark text-decoration-none dropdown-toggle" id="dropdownUser1" data-bs-toggle="dropdown" aria-expanded="false">
         @if (profilePictureUri != null)
         {
           <img src="@profilePictureUri" alt="" width="32" height="32" class="rounded-circle me-2">
@@ -105,7 +126,7 @@
   }
 </div>
 
-<div class="b-example-divider"></div>
+@* <div class="b-example-divider"></div> *@
 
 
 @* <div class="box menu-box off-white-bg-color" id="sidebar"> *@

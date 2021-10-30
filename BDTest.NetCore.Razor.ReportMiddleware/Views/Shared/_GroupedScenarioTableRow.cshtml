@@ -19,20 +19,20 @@
     var hasNotImplemented = Model.Scenarios.Any(scenario => scenario.Status == Status.NotImplemented) ? HtmlClassConstants.HasNotImplemented : string.Empty;
     
     <tr scenario-group="@Model.GroupedScenarioIndex.Get()" class="pointer scenario-group @hasSuccess @hasFailures @hasSkipped @hasInconclusive @hasNotImplemented">
-        <td class="has-text-centered is-vcentered">
-            <button class="button is-fullwidth is-link is-rounded">@Model.Scenarios.First().GetScenarioText() (@Model.Scenarios.Count Tests)</button>
+        <td>
+            @Model.Scenarios.First().GetScenarioText() (@Model.Scenarios.Count Tests)
         </td>
-        <td class="has-text-centered is-vcentered">
-            <span class="@Model.Scenarios.GetTotalStatus().GetCssColourValueForStatus() tag px-5 is-medium invisible scenario-group-status">@Model.Scenarios.GetTotalStatus().AsString()</span>
+        <td class="align-middle">
+            <button type="button" class="btn @Model.Scenarios.GetTotalStatus().GetCssColourValueForStatus()">@Model.Scenarios.GetTotalStatus().AsString()</button>
         </td>
-        <td class="has-text-centered is-vcentered">
-            <div class="tooltip">
+        <td class="align-middle">
+            <div class="bdtesttooltip">
                 @testTimer.ElapsedTime.ToString()
-                <span class="tooltiptext">@testTimer.ElapsedTime.ToPrettyFormat()</span>
+                <span class="bdtesttooltiptext">@testTimer.ElapsedTime.ToPrettyFormat()</span>
             </div>
         </td>
-        <td class="has-text-centered is-vcentered">@testTimer.TestsStartedAt.ToStringForReport()</td>
-        <td class="has-text-centered is-vcentered">@testTimer.TestsFinishedAt.ToStringForReport()</td>
+        <td class="align-middle">@testTimer.TestsStartedAt.ToStringForReport()</td>
+        <td class="align-middle">@testTimer.TestsFinishedAt.ToStringForReport()</td>
     </tr>
 }
 

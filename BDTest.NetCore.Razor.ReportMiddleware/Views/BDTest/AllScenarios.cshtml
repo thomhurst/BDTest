@@ -6,7 +6,7 @@
 @model IGrouping<string, Scenario>[]
 
 @{
-    ViewBag.Title = "Stories";
+    ViewBag.Title = "Scenarios";
     Layout = "_Layout";
     
     var filterByQueryParameter = Context.Request.GetQueryParameter("filterByStatus");
@@ -35,25 +35,12 @@
     }
 }
 
-<section class="hero is-info">
-    <div class="hero-body">
-        <div class="container">
-            <div class="columns is-vcentered">
-                <div class="column">
-                    <h1 class="title">
-                        Scenarios
-                    </h1>
-                    <h2 class="subtitle">
-                        Here are the scenarios in this test run:
-                    </h2>
-                </div>
-                <div class="column">
-                    @await Html.PartialAsync("_PreviousNextReportButtons", ViewBag.Id as string)
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
+@await Html.PartialAsync("_TestPageHeaderHero", new TestPageHeaderHeroViewModel
+{
+    Title = "Scenarios",
+    Description = "Here are the scenarios in this test run",
+    ReportId = ViewBag.Id
+})
 
 <div class="container mt-6">
     <nav class="level">
@@ -63,8 +50,7 @@
     </nav>
 </div>
 
-<section class="section">
-    <div class="container max-width-80">
+    <div class="container-fluid">
     <div class="box" id="all-scenarios-container">
         <div class="buttons is-right">
             @await Html.PartialAsync("_StatusDropdown", new StatusDropdownViewModel { IncludeScript = true })
@@ -80,14 +66,14 @@
         </div>
 
         <div class="scrollable-table-container">
-            <table class="table is-fullwidth">
+            <table class="table table-hover">
                 <thead>
                 <tr>
-                    <th class="has-text-centered">Scenario</th>
-                    <th class="has-text-centered">Status</th>
-                    <th class="has-text-centered">Duration</th>
-                    <th class="has-text-centered">Start</th>
-                    <th class="has-text-centered">End</th>
+                    <th scope="col">Scenario</th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Duration</th>
+                    <th scope="col">Start</th>
+                    <th scope="col">End</th>
                 </tr>
                 </thead>
                 <tbody>
@@ -133,7 +119,6 @@
         }
 
     </div>
-</section>
 
 <div class="container mb-6">
     <nav class="level">
