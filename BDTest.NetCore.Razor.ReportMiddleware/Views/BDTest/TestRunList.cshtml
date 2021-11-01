@@ -2,6 +2,7 @@
 @using BDTest.NetCore.Razor.ReportMiddleware.Extensions
 @using BDTest.NetCore.Razor.ReportMiddleware.Helpers
 @using BDTest.NetCore.Razor.ReportMiddleware.Models
+@using BDTest.NetCore.Razor.ReportMiddleware.Models.ViewModels
 @using BDTest.Test
 @model IEnumerable<BDTest.NetCore.Razor.ReportMiddleware.Models.TestRunSummary>
 @inject BDTestReportServerOptions BDTestReportServerOptions;
@@ -110,18 +111,11 @@
     });
 </script>
 
-<section class="hero is-info">
-    <div class="hero-body">
-        <div class="container">
-            <h1 class="title">
-                Test Runs
-            </h1>
-            <h2 class="subtitle">
-                View a report from the list or select some test runs to compare:
-            </h2>
-        </div>
-    </div>
-</section>
+@await Html.PartialAsync("_TestPageHeaderHero", new TestPageHeaderHeroViewModel
+{
+    Title = "Test Runs",
+    Description = "View a report from the list or select some test runs to compare"
+})
 
 <section class="section">
     <div class="container">

@@ -4,6 +4,7 @@
 @using BDTest.NetCore.Razor.ReportMiddleware.Extensions
 @using BDTest.NetCore.Razor.ReportMiddleware.Helpers
 @using BDTest.NetCore.Razor.ReportMiddleware.Models
+@using BDTest.NetCore.Razor.ReportMiddleware.Models.ViewModels
 @using BDTest.NetCore.Razor.ReportMiddleware.Views.BDTest
 @using Humanizer
 @using Microsoft.AspNetCore.Http.Extensions
@@ -143,22 +144,12 @@
 <div id="startdatetimepickercontainer"></div>
 <div id="enddatetimepickercontainer"></div>
 
-<section class="hero is-info">
-    <div class="hero-body">
-        <div class="container">
-            <div class="columns is-vcentered">
-                <div class="column">
-                    <h1 class="title">
-                        Trends
-                    </h1>
-                    <h2 class="subtitle">
-                        Here are some trends from your tests
-                    </h2>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
+@await Html.PartialAsync("_TestPageHeaderHero", new TestPageHeaderHeroViewModel
+{
+    Title = "Trends",
+    Description = "Here are some trends from your tests",
+    ReportId = ViewBag.Id
+})
 
 <section class="section">
     <div class="container">

@@ -15,25 +15,12 @@
     var pager = new Pager<IGrouping<string, Scenario>>(Model, Context.GetCurrentPageNumber(), pageSize:5);
 }
 
-<section class="hero is-info">
-    <div class="hero-body">
-        <div class="container">
-            <div class="columns is-vcentered">
-                <div class="column">
-                    <h1 class="title">
-                        Stories
-                    </h1>
-                    <h2 class="subtitle">
-                        Here are the stories that you've tested:
-                    </h2>
-                </div>
-                <div class="column">
-                    @await Html.PartialAsync("_PreviousNextReportButtons", ViewBag.Id as string)
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
+@await Html.PartialAsync("_TestPageHeaderHero", new TestPageHeaderHeroViewModel
+{
+    Title = "Stories!",
+    Description = "Here are the stories that you've tested",
+    ReportId = ViewBag.Id
+})
 
 @{ var storyIndex = 0; }
 

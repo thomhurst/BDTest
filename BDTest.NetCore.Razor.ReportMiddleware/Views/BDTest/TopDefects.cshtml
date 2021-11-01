@@ -1,4 +1,5 @@
 @using BDTest.NetCore.Razor.ReportMiddleware.Models
+@using BDTest.NetCore.Razor.ReportMiddleware.Models.ViewModels
 @using BDTest.NetCore.Razor.ReportMiddleware.Views.BDTest
 @model BDTest.Maps.BDTestOutputModel
 
@@ -17,26 +18,12 @@
     @(await Html.PartialAsync("_RedirectViaJavascript", new RedirectViaJavascriptViewModel("/top-defects", "/summary")))
 }
 
-<section class="hero is-info">
-    <div class="hero-body">
-        <div class="container">
-            <div class="columns is-vcentered">
-                <div class="column">
-                    <h1 class="title">
-                        Top Defects
-                    </h1>
-                    <h2 class="subtitle">
-                        Here are the top defects from your tests:
-                    </h2>
-                </div>
-
-                <div class="column">
-                    @await Html.PartialAsync("_PreviousNextReportButtons", Model.Id)
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
+@await Html.PartialAsync("_TestPageHeaderHero", new TestPageHeaderHeroViewModel
+{
+    Title = "Top Defects",
+    Description = "Here are the top defects from your tests",
+    ReportId = Model.Id
+})
 
 <section class="section">
     <div class="container">

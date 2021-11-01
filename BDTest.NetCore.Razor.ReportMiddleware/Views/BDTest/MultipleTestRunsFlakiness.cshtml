@@ -1,6 +1,7 @@
 @using BDTest.Maps
 @using BDTest.NetCore.Razor.ReportMiddleware.Extensions
 @using BDTest.NetCore.Razor.ReportMiddleware.Models
+@using BDTest.NetCore.Razor.ReportMiddleware.Models.ViewModels
 @using BDTest.Test
 @model List<BDTest.Maps.BDTestOutputModel>
 
@@ -19,18 +20,11 @@
         .OrderBy(group => GetPassRate(group.ToList()));
 }
 
-<section class="hero is-info">
-    <div class="hero-body">
-        <div class="container">
-            <h1 class="title">
-                Flakey Tests
-            </h1>
-            <h2 class="subtitle">
-                Here are how your flakey your tests are across multiple runs:
-            </h2>
-        </div>
-    </div>
-</section>
+@await Html.PartialAsync("_TestPageHeaderHero", new TestPageHeaderHeroViewModel
+{
+    Title = "Flakey Tests",
+    Description = "Here are how your flakey your tests are across multiple runs"
+})
 
 <section class="section">
     
