@@ -10,25 +10,14 @@
     }
 </script>
 
-<div class="dropdown">
-    <div class="dropdown-trigger">
-        <button class="btn btn-primary" aria-haspopup="true" aria-controls="dropdown-menu">
-            <p id="@Model.ButtonId">@Model.ButtonText <i class="arrow down"></i></p>
-            @* <span class="icon is-small"> *@
-            @*   <i class="fas fa-angle-down" aria-hidden="true"></i> *@
-            @* </span> *@
-        </button>
-    </div>
-    <div class="dropdown-menu has-text-centered" id="environment-dropdown-menu" role="menu">
-        <div class="dropdown-content has-text-centered">
-            @foreach (var value in Model.DropdownValues)
-            {
-                <a class="dropdown-item">
-                    <button class="btn" onclick="@javascriptMethodName ('@value');">
-                        @value
-                    </button>
-                </a>
-            }
-        </div>
-    </div>
-</div>
+<li class="nav-item dropdown">
+    <a id="@Model.ButtonId" class="bg-primary text-white nav-link dropdown-toggle" aria-haspopup="true" aria-controls="dropdown-menu" data-bs-toggle="dropdown" href="#" aria-expanded="false">
+        @Model.ButtonText <i class="arrow down"></i>
+    </a>
+    <ul class="dropdown-menu">
+        @foreach (var value in Model.DropdownValues)
+        {
+            <li><a class="dropdown-item" href="#" onclick="@javascriptMethodName ('@value');">@value</a></li>
+        }
+    </ul>
+</li>

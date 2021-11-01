@@ -9,3 +9,7 @@
 .pointer {
     cursor: pointer;
 }
+
+.simplepicker-wrapper.active {
+    z-index: 999;
+}

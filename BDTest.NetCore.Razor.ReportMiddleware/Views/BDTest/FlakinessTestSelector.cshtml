@@ -170,16 +170,10 @@ function getCheckedIds() {
 <section class="section">
     <div class="container">
         
-        <nav class="level">
-            @if (tagValues != null && tagValues.Any())
-            {
-                <div class="mb-6 has-text-right">
-                    @{
-                        if (TagNeedsSelecting(tagQueryParameter))
-                        {
-                            <h2>Please select a tag.</h2>
-                        }
-                    }
+        <nav class="nav mb-5">
+            <div class="container-fluid d-flex justify-content-center">
+                @if (tagValues != null && tagValues.Any())
+                {
                     @await Html.PartialAsync("_TrendsPageGenericDropdown", new TrendsPageGenericDropdownViewModel
                     {
                         ButtonId = "filter-by-tag-text",
@@ -187,12 +181,10 @@ function getCheckedIds() {
                         QueryParameterName = "tag",
                         DropdownValues = tagValues
                     })
-                </div>
-            }
+                }
 
-            @if (environmentValues != null && environmentValues.Any())
-            {
-                <div class="mb-6 has-text-right">
+                @if (environmentValues != null && environmentValues.Any())
+                {
                     @await Html.PartialAsync("_TrendsPageGenericDropdown", new TrendsPageGenericDropdownViewModel
                     {
                         ButtonId = "filter-by-environment-text",
@@ -200,12 +192,10 @@ function getCheckedIds() {
                         QueryParameterName = "environment",
                         DropdownValues = environmentValues
                     })
-                </div>
-            }
+                }
 
-            @if (machineValues != null && machineValues.Any())
-            {
-                <div class="mb-6 has-text-right">
+                @if (machineValues != null && machineValues.Any())
+                {
                     @await Html.PartialAsync("_TrendsPageGenericDropdown", new TrendsPageGenericDropdownViewModel
                     {
                         ButtonId = "filter-by-machine-text",
@@ -213,12 +203,10 @@ function getCheckedIds() {
                         QueryParameterName = "machine",
                         DropdownValues = machineValues
                     })
-                </div>
-            }
+                }
 
-            @if (branchValues != null && branchValues.Any())
-            {
-                <div class="mb-6 has-text-right">
+                @if (branchValues != null && branchValues.Any())
+                {
                     @await Html.PartialAsync("_TrendsPageGenericDropdown", new TrendsPageGenericDropdownViewModel
                     {
                         ButtonId = "filter-by-branch-text",
@@ -226,25 +214,29 @@ function getCheckedIds() {
                         QueryParameterName = "branch",
                         DropdownValues = branchValues
                     })
-                </div>
-            }
+                }
 
-            <div class="mb-6 has-text-right">
-                <button class="btn btn-primary" aria-haspopup="true" id="dateRangePicker">
-                    <p id="filter-by-datetimerange-text">Filter by Date + Time</p>
-                </button>
+                <li class="nav-item">
+                    <a class="bg-primary text-white nav-link" href="#" aria-haspopup="true" id="dateRangePicker">
+                        Filter by Date + Time
+                    </a>
+                </li>
             </div>
         </nav>
 
         @if (!TagNeedsSelecting(tagQueryParameter))
         {
-            <nav class="level">
-                <div class="level-item">
-                    <button id="compare-flakiness" class="btn btn-primary is-large">
-                        <p>Check Flakey Tests</p>
-                    </button>
-                </div>
-            </nav>
+            <div class="d-flex justify-content-center my-5">
+                <button id="compare-flakiness" class="btn btn-primary">
+                    Check Flakey Tests
+                </button>
+            </div>
+        }
+        else
+        {
+            <div class="d-flex justify-content-center">
+                <span>Please select a tag to continue.</span>
+            </div>
         }
         
         <script>
@@ -310,9 +302,11 @@ function getCheckedIds() {
                             <span class="title is-4">@record.Counts.Total</span>
                         </td>
                         <td class="has-text-centered align-middle">
-                            <span class="@record.Status.GetCssColourValueForStatus() tag px-5 is-medium">
-                                @status
-                            </span>
+                            <div class="d-grid">
+                                <button class="btn @record.Status.GetCssColourValueForStatus() tag px-5 is-medium">
+                                    @status
+                                </button>
+                            </div>
                         </td>
                     </tr>
                 }
