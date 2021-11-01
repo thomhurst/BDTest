@@ -44,27 +44,27 @@
         switch (status) {
           case '@StatusConstants.All':
             mainDropdownButton.innerHTML = '<p>Show All <i class="arrow down"></i></p>';
-            mainDropdownButton.className = "btn has-text-centered btn-primary is-rounded";
+            mainDropdownButton.className = "btn has-text-centered btn-primary";
             break;
           case '@Status.Passed':
             mainDropdownButton.innerHTML = '<p>Show Success <i class="arrow down"></i></p>';
-            mainDropdownButton.className = "btn has-text-centered btn-success is-rounded";
+            mainDropdownButton.className = "btn has-text-centered btn-success";
             break;
           case '@Status.Failed':
             mainDropdownButton.innerHTML = '<p>Show Failures <i class="arrow down"></i></p>';
-            mainDropdownButton.className = "btn has-text-centered btn-danger is-rounded";
+            mainDropdownButton.className = "btn has-text-centered btn-danger";
             break;
           case '@Status.Skipped':
             mainDropdownButton.innerHTML = '<p>Show Skipped <i class="arrow down"></i></p>';
-            mainDropdownButton.className = "btn has-text-centered btn-warning is-rounded";
+            mainDropdownButton.className = "btn has-text-centered btn-warning";
             break;
           case '@Status.Inconclusive':
             mainDropdownButton.innerHTML = '<p>Show Inconclusive <i class="arrow down"></i></p>';
-            mainDropdownButton.className = "btn has-text-centered btn-warning is-rounded";
+            mainDropdownButton.className = "btn has-text-centered btn-warning";
             break;
           case '@Status.NotImplemented':
             mainDropdownButton.innerHTML = '<p>Show Not Implemented <i class="arrow down"></i></p>';
-            mainDropdownButton.className = "btn has-text-centered btn-warning is-rounded";
+            mainDropdownButton.className = "btn has-text-centered btn-warning";
             break;
         }
         
@@ -129,8 +129,8 @@
                 @await Html.PartialAsync("_TestRunListVisibleColumnsDropdown")
             </div>
             <div class="level-right mb-5">
-                <button class="btn btn-primary is-rounded" id="compare-times">Compare Times</button>
-                <button class="btn btn-primary is-rounded" id="check-flakiness">Check Flakiness</button>
+                <button class="btn btn-primary" id="compare-times">Compare Times</button>
+                <button class="btn btn-primary" id="check-flakiness">Check Flakiness</button>
                 @await Html.PartialAsync("_StatusDropdown", new StatusDropdownViewModel {IncludeScript = false})
             </div>
         </nav>
@@ -293,15 +293,15 @@
 
 
                 <tr class="off-white-bg-color test-run-row @record.Status">
-                    <td class="has-text-centered is-vcentered">
+                    <td class="has-text-centered align-middle">
                         <input name="checkbox" type="checkbox" class="checkbox-child" id="@record.RecordId"/>
                     </td>
-                    <td name="tag-field" class="has-text-centered is-vcentered tag-column">@record.Tag</td>
-                    <td name="environment-field" class="has-text-centered is-vcentered environment-column">@record.Environment</td>
-                    <td name="machine-name-field" class="has-text-centered is-vcentered machine-column">@record.MachineName</td>
-                    <td name="branch-field" class="has-text-centered is-vcentered branch-column">@record.BranchName</td>
-                    <td class="has-text-centered is-vcentered date-column">@record.StartedAtDateTime.ToStringForReport()</td>
-                    <td class="has-text-centered is-vcentered duration-column">
+                    <td name="tag-field" class="has-text-centered align-middle tag-column">@record.Tag</td>
+                    <td name="environment-field" class="has-text-centered align-middle environment-column">@record.Environment</td>
+                    <td name="machine-name-field" class="has-text-centered align-middle machine-column">@record.MachineName</td>
+                    <td name="branch-field" class="has-text-centered align-middle branch-column">@record.BranchName</td>
+                    <td class="has-text-centered align-middle date-column">@record.StartedAtDateTime.ToStringForReport()</td>
+                    <td class="has-text-centered align-middle duration-column">
                         <div class="tooltip">
                             @{
                                 var timeTaken = record.FinishedAtDateTime - record.StartedAtDateTime;
@@ -310,22 +310,22 @@
                             <span class="tooltiptext">@timeTaken.ToPrettyFormat()</span>
                         </div>
                     </td>
-                    <td class="has-text-centered is-vcentered">
+                    <td class="has-text-centered align-middle">
                         <span class="title is-4">@record.Counts.Total</span>
                     </td>
-                    <td class="has-text-centered is-vcentered">
-                        <span class="@record.Status.GetCssColourValueForStatus() tag px-5 is-medium">
+                    <td class="has-text-centered align-middle">
+                        <button class="btn @record.Status.GetCssColourValueForStatus() tag px-5 is-medium">
                             @status
-                        </span>
+                        </button>
                     </td>
-                    <td class="is-vcentered">
+                    <td class="align-middle">
                         <a href="~/bdtest/report/@record.RecordId/summary">
-                            <button class="btn btn-fullwidth is-dark is-outlined pointer is-rounded">View Report</button>
+                            <button class="btn btn-dark pointer">View Report</button>
                         </a>
                     </td>
                     @if (isAdmin)
                     {
-                        <td class="is-vcentered">
+                        <td class="align-middle">
                             <button class="delete" onclick="confirmDelete('@record.RecordId', '@record.Tag', '@record.Environment', '@record.BranchName', '@record.StartedAtDateTime')"></button>
                         </td>
                     }

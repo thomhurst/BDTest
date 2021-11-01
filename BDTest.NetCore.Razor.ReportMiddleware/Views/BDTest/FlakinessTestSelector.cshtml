@@ -230,7 +230,7 @@ function getCheckedIds() {
             }
 
             <div class="mb-6 has-text-right">
-                <button class="btn btn-primary is-rounded" aria-haspopup="true" id="dateRangePicker">
+                <button class="btn btn-primary" aria-haspopup="true" id="dateRangePicker">
                     <p id="filter-by-datetimerange-text">Filter by Date + Time</p>
                 </button>
             </div>
@@ -240,7 +240,7 @@ function getCheckedIds() {
         {
             <nav class="level">
                 <div class="level-item">
-                    <button id="compare-flakiness" class="btn btn-primary is-rounded is-large">
+                    <button id="compare-flakiness" class="btn btn-primary is-large">
                         <p>Check Flakey Tests</p>
                     </button>
                 </div>
@@ -289,15 +289,15 @@ function getCheckedIds() {
                     }
                     
                     <tr class="off-white-bg-color test-run-row @record.Status">
-                        <td class="has-text-centered is-vcentered">
+                        <td class="has-text-centered align-middle">
                             <input name="checkbox" type="checkbox" class="checkbox-child" id="@record.RecordId"/>
                         </td>
-                        <td name="tag-field" class="has-text-centered is-vcentered tag-column">@record.Tag</td>
-                        <td name="environment-field" class="has-text-centered is-vcentered environment-column">@record.Environment</td>
-                        <td name="machine-name-field" class="has-text-centered is-vcentered machine-column">@record.MachineName</td>
-                        <td name="branch-field" class="has-text-centered is-vcentered branch-column">@record.BranchName</td>
-                        <td class="has-text-centered is-vcentered date-column">@record.StartedAtDateTime.ToStringForReport()</td>
-                        <td class="has-text-centered is-vcentered duration-column">
+                        <td name="tag-field" class="has-text-centered align-middle tag-column">@record.Tag</td>
+                        <td name="environment-field" class="has-text-centered align-middle environment-column">@record.Environment</td>
+                        <td name="machine-name-field" class="has-text-centered align-middle machine-column">@record.MachineName</td>
+                        <td name="branch-field" class="has-text-centered align-middle branch-column">@record.BranchName</td>
+                        <td class="has-text-centered align-middle date-column">@record.StartedAtDateTime.ToStringForReport()</td>
+                        <td class="has-text-centered align-middle duration-column">
                             <div class="tooltip">
                                 @{
                                     var timeTaken = record.FinishedAtDateTime - record.StartedAtDateTime;
@@ -306,10 +306,10 @@ function getCheckedIds() {
                                 <span class="tooltiptext">@timeTaken.ToPrettyFormat()</span>
                             </div>
                         </td>
-                        <td class="has-text-centered is-vcentered">
+                        <td class="has-text-centered align-middle">
                             <span class="title is-4">@record.Counts.Total</span>
                         </td>
-                        <td class="has-text-centered is-vcentered">
+                        <td class="has-text-centered align-middle">
                             <span class="@record.Status.GetCssColourValueForStatus() tag px-5 is-medium">
                                 @status
                             </span>

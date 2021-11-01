@@ -4,7 +4,7 @@
 @model BDTest.NetCore.Razor.ReportMiddleware.Models.StatusDropdownViewModel
 <div class="dropdown">
   <div class="dropdown-trigger">
-    <button class="btn btn-primary is-rounded" aria-haspopup="true" aria-controls="dropdown-menu" id="dropdown-main-button">
+    <button class="btn btn-primary" aria-haspopup="true" aria-controls="dropdown-menu" id="dropdown-main-button">
       Show All <i class="arrow down"></i>
       @* <span class="icon is-small"> *@
       @*   <i class="fas fa-angle-down" aria-hidden="true"></i> *@
@@ -18,27 +18,27 @@
     <hr class="dropdown-divider">
     <div class="dropdown-content has-text-centered">
       <a href="#" class="dropdown-item">
-        <button class="btn btn-fullwidth is-success is-rounded" onclick="filterByStatus('@Status.Passed');">
+        <button class="btn is-success" onclick="filterByStatus('@Status.Passed');">
           Show Passed
         </button>
       </a>
       <a class="dropdown-item">
-        <button class="btn btn-fullwidth is-danger is-rounded" onclick="filterByStatus('@Status.Failed');">
+        <button class="btn is-danger" onclick="filterByStatus('@Status.Failed');">
           Show Failures
         </button>
       </a>
       <a href="#" class="dropdown-item">
-        <button class="btn btn-fullwidth is-warning is-rounded" onclick="filterByStatus('@Status.Skipped');">
+        <button class="btn is-warning" onclick="filterByStatus('@Status.Skipped');">
           Show Skipped
         </button>
       </a>
       <a href="#" class="dropdown-item">
-        <button class="btn btn-fullwidth is-warning is-rounded" onclick="filterByStatus('@Status.Inconclusive');">
+        <button class="btn is-warning" onclick="filterByStatus('@Status.Inconclusive');">
           Show Inconclusive
         </button>
       </a>
       <a href="#" class="dropdown-item">
-        <button class="btn btn-fullwidth is-warning is-rounded" onclick="filterByStatus('@Status.NotImplemented');">
+        <button class="btn is-warning" onclick="filterByStatus('@Status.NotImplemented');">
           Show Not Implemented
         </button>
       </a>
@@ -57,27 +57,27 @@
     switch (status) {
       case '@StatusConstants.All':
         mainDropdownButton.innerHTML = '<p>Show All <i class="arrow down"></i></p>';
-        mainDropdownButton.className = "button has-text-centered is-info is-rounded";
+        mainDropdownButton.className = "button has-text-centered is-info";
         break;
       case '@Status.Passed':
         mainDropdownButton.innerHTML = '<p>Show Success <i class="arrow down"></i></p>';
-        mainDropdownButton.className = "button has-text-centered is-success is-rounded";
+        mainDropdownButton.className = "button has-text-centered is-success";
         break;
       case '@Status.Failed':
         mainDropdownButton.innerHTML = '<p>Show Failures <i class="arrow down"></i></p>';
-        mainDropdownButton.className = "button has-text-centered is-danger is-rounded";
+        mainDropdownButton.className = "button has-text-centered is-danger";
         break;
       case '@Status.Skipped':
         mainDropdownButton.innerHTML = '<p>Show Skipped <i class="arrow down"></i></p>';
-        mainDropdownButton.className = "button has-text-centered is-warning is-rounded";
+        mainDropdownButton.className = "button has-text-centered is-warning";
         break;
       case '@Status.Inconclusive':
         mainDropdownButton.innerHTML = '<p>Show Inconclusive <i class="arrow down"></i></p>';
-        mainDropdownButton.className = "button has-text-centered is-warning is-rounded";
+        mainDropdownButton.className = "button has-text-centered is-warning";
         break;
       case '@Status.NotImplemented':
         mainDropdownButton.innerHTML = '<p>Show Not Implemented <i class="arrow down"></i></p>';
-        mainDropdownButton.className = "button has-text-centered is-warning is-rounded";
+        mainDropdownButton.className = "button has-text-centered is-warning";
         break;
       }
       

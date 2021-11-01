@@ -40,15 +40,15 @@
             @foreach (var scenarioExceptions in exceptionsGrouped)
             {
                 <tr class="off-white-bg-color">
-                    <td class="is-vcentered has-text-centered">
+                    <td class="align-middle has-text-centered">
                         <span class="title">@scenarioExceptions.Count()</span>
                     </td>
-                    <td class="is-vcentered has-text-centered">
+                    <td class="align-middle has-text-centered">
                         <div class="off-white-bg-color like-pre" style="max-width: 50vw;">@scenarioExceptions.First().ExceptionMessage.TypeName: @scenarioExceptions.First().ExceptionMessage.Message.Trim()</div>
                     </td>
-                    <td class="is-vcentered">
+                    <td class="align-middle">
                         <a href="~/bdtest/report/@Model.Id/stories?scenarioId=@scenarioExceptions.First().TestGuid">
-                            <button class="btn btn-fullwidth is-dark is-outlined pointer is-rounded">View in a Report</button>
+                            <button class="btn btn-dark pointer">View in a Report</button>
                         </a>
                     </td>
                 </tr>

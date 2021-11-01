@@ -17,14 +17,14 @@
             <nav class="level">
                 @if (Model.LastScenario != null)
                 {
-                    <button class="button @Model.Scenario.Status.GetCssColourValueForStatus() mx-1 is-rounded" onclick="openModal('scenario-modal-@Model.LastScenario.Guid');">Previous</button>
+                    <button class="button @Model.Scenario.Status.GetCssColourValueForStatus() mx-1" onclick="openModal('scenario-modal-@Model.LastScenario.Guid');">Previous</button>
                 }
                 @if (Model.NextScenario != null)
                 {
-                    <button class="button @Model.Scenario.Status.GetCssColourValueForStatus() mx-1 is-rounded" onclick="openModal('scenario-modal-@Model.NextScenario.Guid');">Next</button>
+                    <button class="button @Model.Scenario.Status.GetCssColourValueForStatus() mx-1" onclick="openModal('scenario-modal-@Model.NextScenario.Guid');">Next</button>
                 }
 
-                <button class="button @Model.Scenario.Status.GetCssColourValueForStatus() is-small is-rounded mx-3">
+                <button class="button @Model.Scenario.Status.GetCssColourValueForStatus() is-small mx-3">
                     <img src="~/_content/BDTest.NetCore.Razor.ReportMiddleware/icons/share-white-18dp.svg" class="pointer" alt="Share" onclick="copyToClipboard('@shareUrl.ToString()')"/>
                 </button>
                 <button class="delete is-large @Model.Scenario.Status.GetCssColourValueForStatus()-background-color" aria-label="close"></button>
@@ -55,7 +55,7 @@
                     @foreach (var step in Model.Scenario.Steps)
                     {
                         <tr>
-                            <td class="has-text-centered is-vcentered">
+                            <td class="has-text-centered align-middle">
                                 @if (!IsExpandable(step))
                                 {
                                     <span>
@@ -95,17 +95,17 @@
                                     </details>
                                 }
                             </td>
-                            <td class="has-text-centered is-vcentered">
+                            <td class="has-text-centered align-middle">
                                 <span class="@step.Status.GetCssColourValueForStatus() tag px-5 is-medium">@step.Status.AsString()</span>
                             </td>
-                            <td class="has-text-centered is-vcentered">
+                            <td class="has-text-centered align-middle">
                                 <div class="tooltip">
                                     @step.TimeTaken.ToString()
                                     <span class="tooltiptext">@step.TimeTaken.ToPrettyFormat()</span>
                                 </div>
                             </td>
-                            <td class="has-text-centered is-vcentered">@step.StartTime.ToStringForReport()</td>
-                            <td class="has-text-centered is-vcentered">@step.EndTime.ToStringForReport()</td>
+                            <td class="has-text-centered align-middle">@step.StartTime.ToStringForReport()</td>
+                            <td class="has-text-centered align-middle">@step.EndTime.ToStringForReport()</td>
                         </tr>
                     }
 
