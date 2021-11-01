@@ -43,28 +43,28 @@
         
         switch (status) {
           case '@StatusConstants.All':
-            mainDropdownButton.innerHTML = '<p>Show All <i class="arrow down"></i></p>';
-            mainDropdownButton.className = "btn has-text-centered btn-primary";
+            mainDropdownButton.innerHTML = 'Show All';
+            mainDropdownButton.className = "btn dropdown-toggle has-text-centered btn-primary";
             break;
           case '@Status.Passed':
-            mainDropdownButton.innerHTML = '<p>Show Success <i class="arrow down"></i></p>';
-            mainDropdownButton.className = "btn has-text-centered btn-success";
+            mainDropdownButton.innerHTML = 'Show Success';
+            mainDropdownButton.className = "btn dropdown-toggle has-text-centered btn-success";
             break;
           case '@Status.Failed':
-            mainDropdownButton.innerHTML = '<p>Show Failures <i class="arrow down"></i></p>';
-            mainDropdownButton.className = "btn has-text-centered btn-danger";
+            mainDropdownButton.innerHTML = 'Show Failures';
+            mainDropdownButton.className = "btn dropdown-toggle has-text-centered btn-danger";
             break;
           case '@Status.Skipped':
-            mainDropdownButton.innerHTML = '<p>Show Skipped <i class="arrow down"></i></p>';
-            mainDropdownButton.className = "btn has-text-centered btn-warning";
+            mainDropdownButton.innerHTML = 'Show Skipped';
+            mainDropdownButton.className = "btn dropdown-toggle has-text-centered btn-warning";
             break;
           case '@Status.Inconclusive':
-            mainDropdownButton.innerHTML = '<p>Show Inconclusive <i class="arrow down"></i></p>';
-            mainDropdownButton.className = "btn has-text-centered btn-warning";
+            mainDropdownButton.innerHTML = 'Show Inconclusive';
+            mainDropdownButton.className = "btn dropdown-toggle has-text-centered btn-warning";
             break;
           case '@Status.NotImplemented':
-            mainDropdownButton.innerHTML = '<p>Show Not Implemented <i class="arrow down"></i></p>';
-            mainDropdownButton.className = "btn has-text-centered btn-warning";
+            mainDropdownButton.innerHTML = 'Show Not Implemented';
+            mainDropdownButton.className = "btn dropdown-toggle has-text-centered btn-warning";
             break;
         }
         
@@ -124,16 +124,14 @@
                 @await Html.PartialAsync("_PaginationButtons", pager.GetPaginationInformation())
             </div>
         </nav>
-        <nav class="level">
-            <div class="level-left mb-5">
+        <div class="container-fluid d-flex">
+            <div class="level-left mb-5 me-auto">
                 @await Html.PartialAsync("_TestRunListVisibleColumnsDropdown")
             </div>
             <div class="level-right mb-5">
-                <button class="btn btn-primary" id="compare-times">Compare Times</button>
-                <button class="btn btn-primary" id="check-flakiness">Check Flakiness</button>
                 @await Html.PartialAsync("_StatusDropdown", new StatusDropdownViewModel {IncludeScript = false})
             </div>
-        </nav>
+        </div>
 
         @if (Context.GetCurrentPageNumber() == PagerQueryParameters.All)
         {
