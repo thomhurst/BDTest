@@ -425,3 +425,9 @@ function post(path, params, method='post') {
     document.body.appendChild(form);
     form.submit();
 }
+
+function disableButtonAndSpin(element) {
+    element.disabled = true;
+    element.innerHTML = "<span class=\"spinner-border spinner-border-sm\" role=\"status\" aria-hidden=\"true\"></span>\n" +
+        "<span class=\"visually-hidden\">Loading...</span";
+}

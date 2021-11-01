@@ -14,13 +14,13 @@
 @if (lastReport != null)
 {
     <a href="@GenerateUrl(lastReport.RecordId)">
-        <button type="button" class="btn btn-primary px-4 gap-3">Previous Test Run</button>
+        <button type="button" class="btn btn-primary px-4 gap-3" onclick="disableButtonAndSpin(this)">Previous Test Run</button>
     </a>
 }
 @if (nextReport != null)
 {
     <a href="@GenerateUrl(nextReport.RecordId)">
-        <button type="button" class="btn btn-primary px-4 gap-3">Next Test Run</button>
+        <button type="button" class="btn btn-primary px-4 gap-3" onclick="disableButtonAndSpin(this)">Next Test Run</button>
     </a>
 }
 

@@ -71,44 +71,6 @@
        window.selectedStatus = status;
        performFilter();
     }
-
-    function getCheckedIdsAsQueryParameter() {
-        let checkboxes = document.getElementsByName("checkbox");
-                  let checkedIds = [];
-                  
-                  for (let i=0; i<checkboxes.length; i++) {
-                       // And stick the checked ones onto an array...
-                       if (checkboxes[i].checked) {
-                          checkedIds.push(checkboxes[i].id);
-                       }
-                    }
-                  
-                  let queryString = "?reportIds=" + checkedIds.join(",");
-                  
-                  return queryString;
-    }
-
-    onDomLoaded(function() {
-        const compareTimesButton = document.getElementById("compare-times");
-                compareTimesButton.addEventListener('click', function() {
-                    let checkIdsQueryParameter = getCheckedIdsAsQueryParameter();
-                    if(checkIdsQueryParameter === "?reportIds=") {
-                        showSnackbar("Please check some test runs to compare");
-                        return;
-                    }
-                  window.location = "@Url.Action("TestRunTimes", "BDTest")" + checkIdsQueryParameter;
-                });
-                
-                const checkFlakinessButton = document.getElementById("check-flakiness");
-                        checkFlakinessButton.addEventListener('click', function() {
-                        let checkIdsQueryParameter = getCheckedIdsAsQueryParameter();
-                        if(checkIdsQueryParameter === "?reportIds=") {
-                            showSnackbar("Please check some test runs to compare");
-                            return;
-                        }
-                          window.location = "@Url.Action("TestRunFlakiness", "BDTest")" + checkIdsQueryParameter;
-                        });
-    });
 </script>
 
 @await Html.PartialAsync("_TestPageHeaderHero", new TestPageHeaderHeroViewModel
@@ -259,9 +221,6 @@
 
             <thead>
             <tr class="off-white-bg-color">
-                <th class="has-text-centered">
-                    <input id="checkbox-header" type="checkbox"/>
-                </th>
                 <th class="has-text-centered tag-column">Tag</th>
                 <th class="has-text-centered environment-column">Environment</th>
                 <th class="has-text-centered machine-column">Machine Name</th>
@@ -292,9 +251,6 @@
 
 
                 <tr class="off-white-bg-color test-run-row @record.Status">
-                    <td class="has-text-centered align-middle">
-                        <input name="checkbox" type="checkbox" class="checkbox-child" id="@record.RecordId"/>
-                    </td>
                     <td name="tag-field" class="has-text-centered align-middle tag-column">@record.Tag</td>
                     <td name="environment-field" class="has-text-centered align-middle environment-column">@record.Environment</td>
                     <td name="machine-name-field" class="has-text-centered align-middle machine-column">@record.MachineName</td>
@@ -315,7 +271,7 @@
                     </td>
                     <td class="align-middle">
                         <a href="~/bdtest/report/@record.RecordId/summary">
-                            <button class="btn btn-dark pointer">View Report</button>
+                            <button class="btn btn-dark pointer" onclick="disableButtonAndSpin(this)">View Report</button>
                         </a>
                     </td>
                     @if (isAdmin)

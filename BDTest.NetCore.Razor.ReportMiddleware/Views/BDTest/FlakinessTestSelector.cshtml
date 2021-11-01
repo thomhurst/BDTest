@@ -227,7 +227,7 @@ function getCheckedIds() {
         @if (!TagNeedsSelecting(tagQueryParameter))
         {
             <div class="d-flex justify-content-center my-5">
-                <button id="compare-flakiness" class="btn btn-primary">
+                <button id="compare-flakiness" class="btn btn-primary" onclick="disableButtonAndSpin(this)">
                     Check Flakey Tests
                 </button>
             </div>
