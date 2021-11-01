@@ -7,8 +7,8 @@
 
 <div class="dropdown">
     <div class="dropdown-trigger">
-        <button class="button is-info is-rounded" aria-haspopup="true" aria-controls="dropdown-menu">
-            <p>Order By <i class="arrow down"></i></p>
+        <button class="btn btn-primary is-rounded" aria-haspopup="true" aria-controls="dropdown-menu">
+            Order By <i class="arrow down"></i>
             @* <span class="icon is-small"> *@
             @*   <i class="fas fa-angle-down" aria-hidden="true"></i> *@
             @* </span> *@
@@ -17,27 +17,27 @@
     <div class="dropdown-menu has-text-centered" id="dropdown-menu" role="menu">
         <div class="dropdown-content has-text-centered">
             <a href="#" class="dropdown-item">
-                <button class="button is-fullwidth is-rounded" onclick="orderBy('@OrderConstants.Name');">
+                <button class="btn btn-fullwidth is-rounded" onclick="orderBy('@OrderConstants.Name');">
                     Order by Name
                 </button>
             </a>
             <a class="dropdown-item">
-                <button class="button is-fullwidth is-rounded" onclick="orderBy('@OrderConstants.Duration');">
+                <button class="btn btn-fullwidth is-rounded" onclick="orderBy('@OrderConstants.Duration');">
                     Order by Duration
                 </button>
             </a>
             <a href="#" class="dropdown-item">
-                <button class="button is-fullwidth is-rounded" onclick="orderBy('@OrderConstants.DateDescending');">
+                <button class="btn btn-fullwidth is-rounded" onclick="orderBy('@OrderConstants.DateDescending');">
                     Order by Time Descending
                 </button>
             </a>
             <a href="#" class="dropdown-item">
-                <button class="button is-fullwidth is-rounded" onclick="orderBy('@OrderConstants.DateAscending');">
+                <button class="btn btn-fullwidth is-rounded" onclick="orderBy('@OrderConstants.DateAscending');">
                     Order by Time Ascending
                 </button>
             </a>
             <a href="#" class="dropdown-item">
-                <button class="button is-fullwidth is-rounded" onclick="orderBy('@OrderConstants.Status');">
+                <button class="btn btn-fullwidth is-rounded" onclick="orderBy('@OrderConstants.Status');">
                     Order by Status
                 </button>
             </a>

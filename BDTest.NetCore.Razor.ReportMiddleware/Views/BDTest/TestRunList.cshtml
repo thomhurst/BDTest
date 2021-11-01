@@ -43,27 +43,27 @@
         switch (status) {
           case '@StatusConstants.All':
             mainDropdownButton.innerHTML = '<p>Show All <i class="arrow down"></i></p>';
-            mainDropdownButton.className = "button has-text-centered is-info is-rounded";
+            mainDropdownButton.className = "btn has-text-centered btn-primary is-rounded";
             break;
           case '@Status.Passed':
             mainDropdownButton.innerHTML = '<p>Show Success <i class="arrow down"></i></p>';
-            mainDropdownButton.className = "button has-text-centered is-success is-rounded";
+            mainDropdownButton.className = "btn has-text-centered btn-success is-rounded";
             break;
           case '@Status.Failed':
             mainDropdownButton.innerHTML = '<p>Show Failures <i class="arrow down"></i></p>';
-            mainDropdownButton.className = "button has-text-centered is-danger is-rounded";
+            mainDropdownButton.className = "btn has-text-centered btn-danger is-rounded";
             break;
           case '@Status.Skipped':
             mainDropdownButton.innerHTML = '<p>Show Skipped <i class="arrow down"></i></p>';
-            mainDropdownButton.className = "button has-text-centered is-warning is-rounded";
+            mainDropdownButton.className = "btn has-text-centered btn-warning is-rounded";
             break;
           case '@Status.Inconclusive':
             mainDropdownButton.innerHTML = '<p>Show Inconclusive <i class="arrow down"></i></p>';
-            mainDropdownButton.className = "button has-text-centered is-warning is-rounded";
+            mainDropdownButton.className = "btn has-text-centered btn-warning is-rounded";
             break;
           case '@Status.NotImplemented':
             mainDropdownButton.innerHTML = '<p>Show Not Implemented <i class="arrow down"></i></p>';
-            mainDropdownButton.className = "button has-text-centered is-warning is-rounded";
+            mainDropdownButton.className = "btn has-text-centered btn-warning is-rounded";
             break;
         }
         
@@ -135,8 +135,8 @@
                 @await Html.PartialAsync("_TestRunListVisibleColumnsDropdown")
             </div>
             <div class="level-right mb-5">
-                <button class="button is-info is-rounded" id="compare-times">Compare Times</button>
-                <button class="button is-info is-rounded" id="check-flakiness">Check Flakiness</button>
+                <button class="btn btn-primary is-rounded" id="compare-times">Compare Times</button>
+                <button class="btn btn-primary is-rounded" id="check-flakiness">Check Flakiness</button>
                 @await Html.PartialAsync("_StatusDropdown", new StatusDropdownViewModel {IncludeScript = false})
             </div>
         </nav>
@@ -326,7 +326,7 @@
                     </td>
                     <td class="is-vcentered">
                         <a href="~/bdtest/report/@record.RecordId/summary">
-                            <button class="button is-fullwidth is-dark is-outlined pointer is-rounded">View Report</button>
+                            <button class="btn btn-fullwidth is-dark is-outlined pointer is-rounded">View Report</button>
                         </a>
                     </td>
                     @if (isAdmin)

@@ -12,7 +12,7 @@
 
 <div class="dropdown">
     <div class="dropdown-trigger">
-        <button class="button is-info is-rounded" aria-haspopup="true" aria-controls="dropdown-menu">
+        <button class="btn btn-primary is-rounded" aria-haspopup="true" aria-controls="dropdown-menu">
             <p id="@Model.ButtonId">@Model.ButtonText <i class="arrow down"></i></p>
             @* <span class="icon is-small"> *@
             @*   <i class="fas fa-angle-down" aria-hidden="true"></i> *@
@@ -24,7 +24,7 @@
             @foreach (var value in Model.DropdownValues)
             {
                 <a class="dropdown-item">
-                    <button class="button is-fullwidth is-rounded" onclick="@javascriptMethodName ('@value');">
+                    <button class="btn btn-fullwidth is-rounded" onclick="@javascriptMethodName ('@value');">
                         @value
                     </button>
                 </a>
