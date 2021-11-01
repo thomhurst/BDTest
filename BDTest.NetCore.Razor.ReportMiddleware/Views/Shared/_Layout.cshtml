@@ -15,10 +15,10 @@
 <body>
 @await Html.PartialAsync("_SvgIcons")
 <main>
-    @* @await Html.PartialAsync("_NavBarHeader") *@
+    @await Html.PartialAsync("_NavBarHeader")
     @await Html.PartialAsync("_SideMenu")
     @* @await Html.PartialAsync("_Tabs") *@
-    <div id="main-body" class="main-body container-fluid" style="overflow-y: auto">
+    <div id="main-body" class="main-body container-fluid" style="overflow-y: auto; padding-top: 80px">
         @RenderBody()
     </div>
 </main>

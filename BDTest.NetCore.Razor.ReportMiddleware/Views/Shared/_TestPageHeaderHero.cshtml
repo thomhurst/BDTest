@@ -8,11 +8,5 @@
         {
             <p class="lead mb-4">@Model.Description</p>
         }
-        @if (!string.IsNullOrEmpty(Model.ReportId))
-        {
-            <div class="d-grid gap-2 d-sm-flex justify-content-sm-center">
-                @await Html.PartialAsync("_PreviousNextReportButtons", Model.ReportId)
-            </div>
-        }
     </div>
 </div>
