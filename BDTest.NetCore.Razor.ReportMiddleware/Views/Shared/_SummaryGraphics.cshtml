@@ -6,10 +6,13 @@
 @{
     var total = Model.Scenarios.Count;
     var passed = Model.Scenarios.Count(scenario => scenario.Status == Status.Passed);
+    var passedPercent = GetPercentage(passed, total);
     var failed = Model.Scenarios.Count(scenario => scenario.Status == Status.Failed);
+    var failedPercent = GetPercentage(failed, total);
     var skipped = Model.Scenarios.Count(scenario => scenario.Status == Status.Skipped);
     var notImplemented = Model.Scenarios.Count(scenario => scenario.Status == Status.NotImplemented);
     var inconclusive = Model.Scenarios.Count(scenario => scenario.Status == Status.Inconclusive);
+    var otherPercent = GetPercentage(skipped + notImplemented + inconclusive, total);
     var testTimer = BDTestUtil.GetTestTimer(Model.Scenarios, Model.TotalReportData);
 
     var currentUri = new Uri(Context.Request.GetEncodedUrl());
@@ -18,6 +21,14 @@
     var pointerClassIfSummaryPage = _isSummaryPage ? "pointer" : string.Empty;
     var currentId = currentUri.ToString().Split("report/")[1].Split("/")[0];
     var allScenariosUri = currentUri.WithPath($"bdtest/report/{currentId}/all-scenarios");
+}
+
+@functions
+{
+    private double GetPercentage(double scenarioCount, double total)
+    {
+        return (scenarioCount / total) * 100;
+    }
 }
 
 <div id="summary-boxes">
@@ -34,6 +45,45 @@
         </div>
     </div>
     
+    <div class="progress">
+      <div class="progress-bar bg-success progress-bar-striped progress-bar-animated" role="progressbar" style="width: @passedPercent%" aria-valuenow="@passedPercent" aria-valuemin="0" aria-valuemax="100"></div>
+      <div class="progress-bar bg-danger progress-bar-striped progress-bar-animated" role="progressbar" style="width: @failedPercent%" aria-valuenow="@failedPercent" aria-valuemin="0" aria-valuemax="100"></div>
+      <div class="progress-bar bg-warning progress-bar-striped progress-bar-animated" role="progressbar" style="width: @otherPercent%" aria-valuenow="@otherPercent" aria-valuemin="0" aria-valuemax="100"></div>
+    </div>
+    
+    <div class="card text-center text-white bg-primary mb-3 mx-auto" style="max-width: 18rem;">
+        <div class="card-header">Tests Run</div>
+        <div class="card-body">
+            <h5 class="card-title">@total</h5>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="card-columns d-flex justify-content-center">
+            <div class="card text-center text-dark bg-light mb-3 mx-auto" style="max-width: 18rem;">
+                <div class="card-header">Started at</div>
+                <div class="card-body">
+                    <h5 class="card-title">@testTimer.TestsStartedAt.ToStringForReport()</h5>
+                </div>
+            </div>
+
+            <div class="card text-center text-dark bg-light mb-3 mx-auto" style="max-width: 18rem;">
+                <div class="card-header">Time Taken</div>
+                <div class="card-body">
+                    <h5 class="card-title">@testTimer.ElapsedTime.ToPrettyFormat()</h5>
+                </div>
+            </div>
+    
+            <div class="card text-center text-dark bg-light mb-3 mx-auto" style="max-width: 18rem;">
+                <div class="card-header">Finished at</div>
+                <div class="card-body">
+                    <h5 class="card-title">@testTimer.TestsFinishedAt.ToStringForReport()</h5>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
     <div class="tile is-ancestor" id="summary-boxes-time-taken">
         <div class="tile is-parent">
             <article class="tile is-child box notification is-link has-text-centered">
