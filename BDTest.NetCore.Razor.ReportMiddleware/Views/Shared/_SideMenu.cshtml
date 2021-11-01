@@ -2,6 +2,7 @@
 @using BDTest.NetCore.Razor.ReportMiddleware.Extensions
 @using BDTest.NetCore.Razor.ReportMiddleware.Interfaces
 @using BDTest.NetCore.Razor.ReportMiddleware.Models
+@using Microsoft.AspNetCore.Http.Extensions
 @{ var id = ViewBag.Id; }
 @inject IDataRepository _dataRepository;
 @inject BDTestReportServerOptions BdTestReportServerOptions
@@ -49,7 +50,7 @@
           This Test Report
         </btn>
       </li>
-      
+
       <li class="mb-1 ms-2">
         <button class="btn btn-toggle align-items-center rounded" data-bs-toggle="collapse" data-bs-target="#this-test-report-navigation-collapse" aria-expanded="true">
           Navigation
@@ -63,7 +64,7 @@
           </ul>
         </div>
       </li>
-      
+
       <li class="mb-1 ms-2">
         <button class="btn btn-toggle align-items-center rounded" data-bs-toggle="collapse" data-bs-target="#this-test-report-details-collapse" aria-expanded="true">
           Details
@@ -72,7 +73,8 @@
           <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small">
             <li><a class="nav-link link-dark pb-0"><strong>Status:</strong></a></li>
             @{ var totalStatus = @currentTestReport.Scenarios.GetTotalStatus(); }
-            <li><div class="d-grid"><button class="btn @totalStatus.GetCssColourValueForStatus() ms-4">@totalStatus</button></div></li>
+            <li>
+              <div class="d-grid"><button class="btn @totalStatus.GetCssColourValueForStatus() ms-4">@totalStatus</button></div></li>
             @if (currentTestReport.Environment != null)
             {
               <li><a class="nav-link link-dark pb-0"><strong>Environment:</strong></a></li>
@@ -91,24 +93,31 @@
           </ul>
         </div>
       </li>
-    @*    *@
-    @*   <li> *@
-    @*     <a href="#" class="nav-link link-dark @GetIsActive("/test-runs")"> *@
-    @*       <svg class="bi me-2" width="16" height="16"><use xlink:href="#grid"/></svg> *@
-    @*       Products *@
-    @*     </a> *@
-    @*   </li> *@
-    @*   <li> *@
-    @*     <a href="#" class="nav-link link-dark @GetIsActive("/test-runs")"> *@
-    @*       <svg class="bi me-2" width="16" height="16"><use xlink:href="#people-circle"/></svg> *@
-    @*       Customers *@
-    @*     </a> *@
-    @*   </li> *@
     }
 
-    @{
-      var customLinks = BdTestReportServerOptions.CustomSidebarLinksProvider?.GetCustomLinks(currentTestReport)?.ToList();
-    }
+
+    <li class="border-top my-3"></li>
+          <li class="mb-1">
+            <button class="btn btn-toggle align-items-center rounded collapsed" data-bs-toggle="collapse" data-bs-target="#actions-links-collapse" aria-expanded="false">
+              <svg class="bi me-2" width="16" height="16"><use xlink:href="#grid"/></svg>
+              Actions
+            </button>
+            <div class="collapse" id="actions-links-collapse">
+              <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small">
+                @{ var url = Context.Request.GetEncodedUrl(); }
+                <li><a href="#" onclick="copyToClipboard('@url');" class="link-dark rounded nav-link">Copy URL to Clipboard</a></li>
+                @if (currentTestReport != null)
+                {
+                  <li><a href="~/bdtest/report/@currentTestReport.Id/raw-json-data" class="link-dark rounded nav-link">Download Raw Json Data</a></li>
+                }
+              </ul>
+            </div>
+          </li>
+
+      @{
+        var customLinks = BdTestReportServerOptions.CustomSidebarLinksProvider?.GetCustomLinks(currentTestReport)?.ToList();
+      }
+    
     @if (customLinks?.Any() == true)
     {
       <li class="border-top my-3"></li>
