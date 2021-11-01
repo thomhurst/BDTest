@@ -57,27 +57,27 @@
     switch (status) {
       case '@StatusConstants.All':
         mainDropdownButton.innerHTML = '<p>Show All <i class="arrow down"></i></p>';
-        mainDropdownButton.className = "button has-text-centered is-info";
+        mainDropdownButton.className = "btn has-text-centered btn-primary";
         break;
       case '@Status.Passed':
         mainDropdownButton.innerHTML = '<p>Show Success <i class="arrow down"></i></p>';
-        mainDropdownButton.className = "button has-text-centered is-success";
+        mainDropdownButton.className = "btn has-text-centered btn-success";
         break;
       case '@Status.Failed':
         mainDropdownButton.innerHTML = '<p>Show Failures <i class="arrow down"></i></p>';
-        mainDropdownButton.className = "button has-text-centered is-danger";
+        mainDropdownButton.className = "btn has-text-centered btn-danger";
         break;
       case '@Status.Skipped':
         mainDropdownButton.innerHTML = '<p>Show Skipped <i class="arrow down"></i></p>';
-        mainDropdownButton.className = "button has-text-centered is-warning";
+        mainDropdownButton.className = "btn has-text-centered btn-warning";
         break;
       case '@Status.Inconclusive':
         mainDropdownButton.innerHTML = '<p>Show Inconclusive <i class="arrow down"></i></p>';
-        mainDropdownButton.className = "button has-text-centered is-warning";
+        mainDropdownButton.className = "btn has-text-centered btn-warning";
         break;
       case '@Status.NotImplemented':
         mainDropdownButton.innerHTML = '<p>Show Not Implemented <i class="arrow down"></i></p>';
-        mainDropdownButton.className = "button has-text-centered is-warning";
+        mainDropdownButton.className = "btn has-text-centered btn-warning";
         break;
       }
       

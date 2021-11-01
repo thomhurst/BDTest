@@ -43,12 +43,18 @@
     {
       <li class="border-top my-3"></li>
 
-      <li class="mb-1">
-        <button class="btn btn-toggle align-items-center rounded" data-bs-toggle="collapse" data-bs-target="#this-test-report-collapse" aria-expanded="true">
+      <li>
+        <btn class="btn btn-lg">
           <svg class="bi me-2" width="16" height="16"><use xlink:href="#grid"/></svg>
           This Test Report
+        </btn>
+      </li>
+      
+      <li class="mb-1 ms-2">
+        <button class="btn btn-toggle align-items-center rounded" data-bs-toggle="collapse" data-bs-target="#this-test-report-navigation-collapse" aria-expanded="true">
+          Navigation
         </button>
-        <div class="collapse show" id="this-test-report-collapse">
+        <div class="collapse show" id="this-test-report-navigation-collapse">
           <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small">
             <li><a href="~/bdtest/report/@currentTestReport.Id/summary" class="link-dark rounded nav-link">Summary</a></li>
             <li><a href="~/bdtest/report/@currentTestReport.Id/stories" class="link-dark rounded nav-link">Stories</a></li>
@@ -56,7 +62,32 @@
             <li><a href="~/bdtest/report/@currentTestReport.Id/timings" class="link-dark rounded nav-link">Timings</a></li>
           </ul>
         </div>
-    </li>
+      </li>
+      
+      <li class="mb-1 ms-2">
+        <button class="btn btn-toggle align-items-center rounded" data-bs-toggle="collapse" data-bs-target="#this-test-report-details-collapse" aria-expanded="true">
+          Details
+        </button>
+        <div class="collapse show" id="this-test-report-details-collapse">
+          <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small">
+            @if (currentTestReport.Environment != null)
+            {
+              <li><a class="nav-link link-dark pb-0"><strong>Environment:</strong></a></li>
+              <li class="ms-2"><a class="nav-link link-dark pt-0">@currentTestReport.Environment</a></li>
+            }
+            @if (currentTestReport.Tag != null)
+            {
+              <li><a class="nav-link link-dark pb-0"><strong>Tag:</strong></a></li>
+              <li class="ms-2"><a class="nav-link link-dark pt-0">@currentTestReport.Tag</a></li>
+            }
+            @if (currentTestReport.BranchName != null)
+            {
+              <li><a class="nav-link link-dark pb-0"><strong>Branch:</strong></a></li>
+              <li class="ms-2"><a class="nav-link link-dark pt-0">@currentTestReport.BranchName</a></li>
+            }
+          </ul>
+        </div>
+      </li>
     @*    *@
     @*   <li> *@
     @*     <a href="#" class="nav-link link-dark @GetIsActive("/test-runs")"> *@
