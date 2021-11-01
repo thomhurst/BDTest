@@ -31,27 +31,15 @@
     }
 }
 
-<div id="summary-boxes">
-    <div class="columns is-centered">
-        <div class="column is-half">
-            <div class="tile is-ancestor" id="summary-boxes-total">
-                <div class="tile is-parent @pointerClassIfSummaryPage" onclick="@MakeUrl(allScenariosUri)">
-                    <article class="tile is-child box notification is-info has-text-centered">
-                        <p class="subtitle">Tests Run</p>
-                        <p class="title">@total</p>
-                    </article>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <div class="progress">
+<div class="progress mb-5">
       <div class="progress-bar bg-success progress-bar-striped progress-bar-animated" role="progressbar" style="width: @passedPercent%" aria-valuenow="@passedPercent" aria-valuemin="0" aria-valuemax="100"></div>
       <div class="progress-bar bg-danger progress-bar-striped progress-bar-animated" role="progressbar" style="width: @failedPercent%" aria-valuenow="@failedPercent" aria-valuemin="0" aria-valuemax="100"></div>
       <div class="progress-bar bg-warning progress-bar-striped progress-bar-animated" role="progressbar" style="width: @otherPercent%" aria-valuenow="@otherPercent" aria-valuemin="0" aria-valuemax="100"></div>
     </div>
-    
-    <div class="card text-center text-white bg-primary mb-3 mx-auto" style="max-width: 18rem;">
+
+<div id="summary-boxes">
+
+    <div class="card text-center text-white bg-primary mb-3 mx-auto @pointerClassIfSummaryPage" style="max-width: 18rem;" onclick="@MakeUrl(allScenariosUri)">
         <div class="card-header">Tests Run</div>
         <div class="card-body">
             <h5 class="card-title">@total</h5>
@@ -82,80 +70,45 @@
             </div>
         </div>
     </div>
+    
+    <div class="container">
+        <div class="card-columns d-flex justify-content-center">
+            <div class="card text-center text-white bg-success mb-3 mx-auto @pointerClassIfSummaryPage" style="min-width: 12rem; max-width: 18rem;" onclick="@MakeUrl(allScenariosUri.WithQueryParameter("filterByStatus", Status.Passed.ToString()))">
+                <div class="card-header">Passed</div>
+                <div class="card-body">
+                    <h5 class="card-title">@passed</h5>
+                </div>
+            </div>
 
-
-    <div class="tile is-ancestor" id="summary-boxes-time-taken">
-        <div class="tile is-parent">
-            <article class="tile is-child box notification is-link has-text-centered">
-                <p class="subtitle">Started at</p>
-                <p class="title is-4">@testTimer.TestsStartedAt.ToStringForReport()</p>
-            </article>
-        </div>
+            <div class="card text-center text-white bg-warning mb-3 mx-auto @pointerClassIfSummaryPage" style="min-width: 12rem; max-width: 18rem;" onclick="@MakeUrl(allScenariosUri.WithQueryParameter("filterByStatus", Status.Skipped.ToString()))">
+                <div class="card-header">Skipped</div>
+                <div class="card-body">
+                    <h5 class="card-title">@skipped</h5>
+                </div>
+            </div>
             
-        <div class="tile is-parent">
-            <article class="tile is-child box notification is-link has-text-centered">
-                <p class="subtitle">Time Taken</p>
-                <p class="title is-4">@testTimer.ElapsedTime.ToPrettyFormat()</p>
-            </article>
-        </div>
+            <div class="card text-center text-white bg-warning mb-3 mx-auto @pointerClassIfSummaryPage" style="min-width: 12rem; max-width: 18rem;" onclick="@MakeUrl(allScenariosUri.WithQueryParameter("filterByStatus", Status.NotImplemented.ToString()))">
+                <div class="card-header">Not Implemented</div>
+                <div class="card-body">
+                    <h5 class="card-title">@notImplemented</h5>
+                </div>
+            </div>
             
-        <div class="tile is-parent">
-            <article class="tile is-child box notification is-link has-text-centered">
-                <p class="subtitle">Finished at</p>
-                <p class="title is-4">@testTimer.TestsFinishedAt.ToStringForReport()</p>
-            </article>
-        </div>
-    </div>
+            <div class="card text-center text-white bg-warning mb-3 mx-auto @pointerClassIfSummaryPage" style="min-width: 12rem; max-width: 18rem;" onclick="@MakeUrl(allScenariosUri.WithQueryParameter("filterByStatus", Status.Inconclusive.ToString()))">
+                <div class="card-header">Inconclusive</div>
+                <div class="card-body">
+                    <h5 class="card-title">@inconclusive</h5>
+                </div>
+            </div>
 
-    <div class="tile is-ancestor" id="summary-boxes-others">
-            <div class="tile is-parent @pointerClassIfSummaryPage" onclick="@MakeUrl(allScenariosUri.WithQueryParameter("filterByStatus",Status.Passed.ToString()))">
-                <article class="tile is-child box notification is-success has-text-centered">
-                    <p class="subtitle">Passed</p>
-                    <p class="title">@passed</p>
-                </article>
-            </div>
-            <div class="tile is-parent @pointerClassIfSummaryPage" onclick="@MakeUrl(allScenariosUri.WithQueryParameter("filterByStatus",Status.Skipped.ToString()))">
-                <article class="tile is-child box notification is-warning has-text-centered">
-                    <p class="subtitle">Skipped</p>
-                    <p class="title">@skipped</p>
-                </article>
-            </div>
-            <div class="tile is-parent @pointerClassIfSummaryPage" onclick="@MakeUrl(allScenariosUri.WithQueryParameter("filterByStatus",Status.NotImplemented.ToString()))">
-                <article class="tile is-child box notification is-warning has-text-centered">
-                    <p class="subtitle">Not Implemented</p>
-                    <p class="title">@notImplemented</p>
-                </article>
-            </div>
-            <div class="tile is-parent @pointerClassIfSummaryPage" onclick="@MakeUrl(allScenariosUri.WithQueryParameter("filterByStatus",Status.Inconclusive.ToString()))">
-                <article class="tile is-child box notification is-warning has-text-centered">
-                    <p class="subtitle">Inconclusive</p>
-                    <p class="title">@inconclusive</p>
-                </article>
-            </div>
-            <div class="tile is-parent @pointerClassIfSummaryPage" onclick="@MakeUrl(allScenariosUri.WithQueryParameter("filterByStatus",Status.Failed.ToString()))">
-                <article class="tile is-child box notification is-danger has-text-centered">
-                    <p class="subtitle">Failed</p>
-                    <p class="title">@failed</p>
-                </article>
+            <div class="card text-center text-white bg-danger mb-3 mx-auto @pointerClassIfSummaryPage" style="min-width: 12rem; max-width: 18rem;" onclick="@MakeUrl(allScenariosUri.WithQueryParameter("filterByStatus", Status.Failed.ToString()))">
+                <div class="card-header">Failed</div>
+                <div class="card-body">
+                    <h5 class="card-title">@failed</h5>
+                </div>
             </div>
         </div>
     </div>
-
-<div class="box mb-6" id="progress-bars">
-    <span>Passed</span>
-    <progress class="progress is-success" value="@passed" max="@total">Passed (@passed / @total)</progress>
-
-    <span>Failed</span>
-    <progress class="progress is-danger" value="@failed" max="@total">Failed (@failed / @total)</progress>
-
-    <span>Skipped</span>
-    <progress class="progress is-warning" value="@skipped" max="@total">Skipped (@skipped / @total)</progress>
-
-    <span>Not Implemented</span>
-    <progress class="progress is-warning" value="@notImplemented" max="@total">Not Implemented (@notImplemented / @total)</progress>
-
-    <span>Inconclusive</span>
-    <progress class="progress is-warning" value="@inconclusive" max="@total">Inconclusive (@inconclusive / @total)</progress>
 </div>
 
 @functions

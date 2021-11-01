@@ -5,3 +5,7 @@
 .indent-text-2 {
     text-indent: 2em;
 }
+
+.pointer {
+    cursor: pointer;
+}
