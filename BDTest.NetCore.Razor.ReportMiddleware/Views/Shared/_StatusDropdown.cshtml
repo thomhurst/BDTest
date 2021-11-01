@@ -18,27 +18,27 @@
     <hr class="dropdown-divider">
     <div class="dropdown-content has-text-centered">
       <a href="#" class="dropdown-item">
-        <button class="btn is-success" onclick="filterByStatus('@Status.Passed');">
+        <button class="btn btn-success" onclick="filterByStatus('@Status.Passed');">
           Show Passed
         </button>
       </a>
       <a class="dropdown-item">
-        <button class="btn is-danger" onclick="filterByStatus('@Status.Failed');">
+        <button class="btn btn-danger" onclick="filterByStatus('@Status.Failed');">
           Show Failures
         </button>
       </a>
       <a href="#" class="dropdown-item">
-        <button class="btn is-warning" onclick="filterByStatus('@Status.Skipped');">
+        <button class="btn btn-warning" onclick="filterByStatus('@Status.Skipped');">
           Show Skipped
         </button>
       </a>
       <a href="#" class="dropdown-item">
-        <button class="btn is-warning" onclick="filterByStatus('@Status.Inconclusive');">
+        <button class="btn btn-warning" onclick="filterByStatus('@Status.Inconclusive');">
           Show Inconclusive
         </button>
       </a>
       <a href="#" class="dropdown-item">
-        <button class="btn is-warning" onclick="filterByStatus('@Status.NotImplemented');">
+        <button class="btn btn-warning" onclick="filterByStatus('@Status.NotImplemented');">
           Show Not Implemented
         </button>
       </a>
@@ -56,27 +56,27 @@
     
     switch (status) {
       case '@StatusConstants.All':
-        mainDropdownButton.innerHTML = '<p>Show All <i class="arrow down"></i></p>';
+        mainDropdownButton.innerHTML = 'Show All <i class="arrow down"></i>';
         mainDropdownButton.className = "btn has-text-centered btn-primary";
         break;
       case '@Status.Passed':
-        mainDropdownButton.innerHTML = '<p>Show Success <i class="arrow down"></i></p>';
+        mainDropdownButton.innerHTML = 'Show Success <i class="arrow down"></i>';
         mainDropdownButton.className = "btn has-text-centered btn-success";
         break;
       case '@Status.Failed':
-        mainDropdownButton.innerHTML = '<p>Show Failures <i class="arrow down"></i></p>';
+        mainDropdownButton.innerHTML = 'Show Failures <i class="arrow down"></i>';
         mainDropdownButton.className = "btn has-text-centered btn-danger";
         break;
       case '@Status.Skipped':
-        mainDropdownButton.innerHTML = '<p>Show Skipped <i class="arrow down"></i></p>';
+        mainDropdownButton.innerHTML = 'Show Skipped <i class="arrow down"></i>';
         mainDropdownButton.className = "btn has-text-centered btn-warning";
         break;
       case '@Status.Inconclusive':
-        mainDropdownButton.innerHTML = '<p>Show Inconclusive <i class="arrow down"></i></p>';
+        mainDropdownButton.innerHTML = 'Show Inconclusive <i class="arrow down"></i>';
         mainDropdownButton.className = "btn has-text-centered btn-warning";
         break;
       case '@Status.NotImplemented':
-        mainDropdownButton.innerHTML = '<p>Show Not Implemented <i class="arrow down"></i></p>';
+        mainDropdownButton.innerHTML = 'Show Not Implemented <i class="arrow down"></i>';
         mainDropdownButton.className = "btn has-text-centered btn-warning";
         break;
       }

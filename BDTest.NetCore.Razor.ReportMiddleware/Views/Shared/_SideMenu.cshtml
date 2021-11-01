@@ -70,6 +70,9 @@
         </button>
         <div class="collapse show" id="this-test-report-details-collapse">
           <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small">
+            <li><a class="nav-link link-dark pb-0"><strong>Status:</strong></a></li>
+            @{ var totalStatus = @currentTestReport.Scenarios.GetTotalStatus(); }
+            <li><div class="d-grid"><button class="btn @totalStatus.GetCssColourValueForStatus() ms-4">@totalStatus</button></div></li>
             @if (currentTestReport.Environment != null)
             {
               <li><a class="nav-link link-dark pb-0"><strong>Environment:</strong></a></li>
