@@ -23,7 +23,9 @@
             @Model.Scenarios.First().GetScenarioText() (@Model.Scenarios.Count Tests)
         </td>
         <td class="align-middle">
-            <button type="button" class="btn @Model.Scenarios.GetTotalStatus().GetCssColourValueForStatus()">@Model.Scenarios.GetTotalStatus().AsString()</button>
+            <div class="d-grid">
+                <button type="button" class="btn @Model.Scenarios.GetTotalStatus().GetCssColourValueForStatus()">@Model.Scenarios.GetTotalStatus().AsString()</button>
+            </div>
         </td>
         <td class="align-middle" data-bs-toggle="popover" data-bs-trigger="hover focus" data-bs-placement="top" data-bs-content="@testTimer.ElapsedTime.ToPrettyFormat()">
             @testTimer.ElapsedTime.ToString()

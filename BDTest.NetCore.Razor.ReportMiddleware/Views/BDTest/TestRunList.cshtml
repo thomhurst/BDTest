@@ -257,7 +257,7 @@
             </script>
         }
 
-        <table class="table is-fullwidth">
+        <table class="table table-hover">
 
             <thead>
             <tr class="off-white-bg-color">
@@ -290,6 +290,7 @@
                 {
                     status += $" ({record.Counts.Failed})";
                 }
+                var timeTaken = record.FinishedAtDateTime - record.StartedAtDateTime;
 
 
                 <tr class="off-white-bg-color test-run-row @record.Status">
@@ -301,22 +302,18 @@
                     <td name="machine-name-field" class="has-text-centered align-middle machine-column">@record.MachineName</td>
                     <td name="branch-field" class="has-text-centered align-middle branch-column">@record.BranchName</td>
                     <td class="has-text-centered align-middle date-column">@record.StartedAtDateTime.ToStringForReport()</td>
-                    <td class="has-text-centered align-middle duration-column">
-                        <div class="tooltip">
-                            @{
-                                var timeTaken = record.FinishedAtDateTime - record.StartedAtDateTime;
-                            }
-                            @timeTaken.ToString()
-                            <span class="tooltiptext">@timeTaken.ToPrettyFormat()</span>
-                        </div>
+                    <td class="align-middle duration-column" data-bs-toggle="popover" data-bs-trigger="hover focus" data-bs-placement="top" data-bs-content="@timeTaken.ToPrettyFormat()">
+                        @timeTaken.ToString()
                     </td>
                     <td class="has-text-centered align-middle">
                         <span class="title is-4">@record.Counts.Total</span>
                     </td>
                     <td class="has-text-centered align-middle">
-                        <button class="btn @record.Status.GetCssColourValueForStatus() tag px-5 is-medium">
-                            @status
-                        </button>
+                        <div class="d-grid">
+                            <button class="btn @record.Status.GetCssColourValueForStatus() tag px-5 is-medium">
+                                @status
+                            </button>
+                        </div>
                     </td>
                     <td class="align-middle">
                         <a href="~/bdtest/report/@record.RecordId/summary">

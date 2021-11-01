@@ -13,7 +13,9 @@
          @Model.Scenario.GetScenarioText() @scenarioCountInsideParentGroup
     </td>
     <td class="align-middle">
-        <button type="button" class="btn @Model.Scenario.Status.GetCssColourValueForStatus()">@Model.Scenario.Status.AsString()</button>
+        <div class="d-grid">
+            <button type="button" class="btn @Model.Scenario.Status.GetCssColourValueForStatus()">@Model.Scenario.Status.AsString()</button>
+        </div>
     </td>
     <td class="align-middle" data-bs-toggle="popover" data-bs-trigger="hover focus" data-bs-placement="top" data-bs-content="@Model.Scenario.TimeTaken.ToPrettyFormat()">
         @Model.Scenario.TimeTaken.ToString()
