@@ -61,10 +61,6 @@
             </div>
         </div>
 
-        <div class="mt-4 container invisible" id="summary">
-            @await Html.PartialAsync("_SummaryGraphics", new SummaryViewModel {Scenarios = Model.SelectMany(x => x).ToList()})
-        </div>
-
         <div class="scrollable-table-container">
             <table class="table table-hover">
                 <thead>
@@ -104,19 +100,19 @@
         @{
             var allScenarios = pager.ItemsForCurrentPage.SelectMany(groupedScenarios => groupedScenarios).ToList();
         }
-        @for (var index = 0; index < allScenarios.Count; index++)
-        {
-            var lastScenario = allScenarios.ElementAtOrDefault(index - 1);
-            var scenario = allScenarios[index];
-            var nextScenario = allScenarios.ElementAtOrDefault(index + 1);
-            
-            @await Html.PartialAsync("_ScenarioModalPopup", new ScenarioModalViewModel
-            {
-                LastScenario = lastScenario,
-                Scenario = scenario,
-                NextScenario = nextScenario
-            })
-        }
+        @* @for (var index = 0; index < allScenarios.Count; index++) *@
+        @* { *@
+        @*     var lastScenario = allScenarios.ElementAtOrDefault(index - 1); *@
+        @*     var scenario = allScenarios[index]; *@
+        @*     var nextScenario = allScenarios.ElementAtOrDefault(index + 1); *@
+        @*      *@
+        @*     @await Html.PartialAsync("_ScenarioModalPopup", new ScenarioModalViewModel *@
+        @*     { *@
+        @*         LastScenario = lastScenario, *@
+        @*         Scenario = scenario, *@
+        @*         NextScenario = nextScenario *@
+        @*     }) *@
+        @* } *@
 
     </div>
 
