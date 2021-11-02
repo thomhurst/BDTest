@@ -242,28 +242,16 @@ let reportIdsArray = [];
 {
     @:reportIdsArray.push("@report.RecordId");
 }
-
-function chartOnClick(chart, event) {
-   let activePoint = chart.getElementAtEvent(event);
-      
-   if (activePoint.length > 0) {
-      let clickedDatasetIndex = activePoint[0]._datasetIndex;
-      let clickedElementindex = activePoint[0]._index;
-      
-      let clickedOnReportId = reportIdsArray[clickedElementindex];
-
-      window.location.href = '@baseUrl/bdtest/report/' + clickedOnReportId + '/summary'
-   }
-}
 </script>
 
 @* Duration Trend Chart *@
     <script>
-var durationChartContext = document.getElementById('duration-trend-chart').getContext('2d');
-data = {
+
+let durationChartData = {
     datasets: [{
         backgroundColor: "#3298dc",
         borderColor: "#3298dc",
+        label: "Seconds",
         data: [
             @foreach (var timespan in testRunSummaries.Select(model => model.FinishedAtDateTime - model.StartedAtDateTime))
             {
@@ -280,15 +268,15 @@ data = {
     ]
 }
 
-let durationChart = new Chart(durationChartContext, {
+let durationChartConfig = {
     type: 'line',
-    data: data,
+    data: durationChartData,
     options: {
         legend: {
                     display: false
                 },
         scales: {
-            yAxes: [{
+            y:{
               scaleLabel: {
                 labelString: 'Seconds'
               },
@@ -299,7 +287,7 @@ let durationChart = new Chart(durationChartContext, {
                       return value + "s";
                   }
                   }
-            }]
+            }
           },
         tooltips: {
             callbacks: {
@@ -307,24 +295,32 @@ let durationChart = new Chart(durationChartContext, {
                   return data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index] + " seconds";
                 }
             }
+        },
+        onClick: (e) => {
+            let canvasPosition = Chart.helpers.getRelativePosition(e, e.chart);
+            let clickedElementindex = e.chart.scales.x.getValueForPixel(canvasPosition.x);
+            
+            let clickedOnReportId = reportIdsArray[clickedElementindex];
+            let clickedOnScenarioId = scenarioIdsArray[clickedElementindex];
+    
+            window.location.href = '@Context.GetBaseUrl()/bdtest/report/' + clickedOnReportId + '/scenarios/' + clickedOnScenarioId;
         }
     }
-});
+};
 
-document.getElementById('duration-trend-chart').onclick = function(evt) {
-    chartOnClick(durationChart, evt);
-}
+let durationChart = new Chart(document.getElementById('duration-trend-chart'), durationChartConfig);
 </script>
 
 
 @* Success Trend Chart *@
     <script>
               
-var successChartContext = document.getElementById('success-trend-chart').getContext('2d');
-data = {
+let successChartData = {
     datasets: [ 
         {
             label: "Not Run",
+            axis: 'y',
+            fill: true,
             borderColor: "rgba(0,0,0,0)",
             pointRadius: 0,
             pointHitRadius: 15,
@@ -335,10 +331,12 @@ data = {
         },
         {
             label: "Failed",
-            backgroundColor: "#f14668",
+            axis: 'y',
+            fill: true,
+            backgroundColor: "@ColourConstants.DangerHex",
             borderColor: "rgba(0,0,0,0)",
-            pointBorderColor: "#f14668",
-            pointBackgroundColor: "#f14668",
+            pointBorderColor: "@ColourConstants.DangerHex",
+            pointBackgroundColor: "@ColourConstants.DangerHex",
             pointHitRadius: 15,
             pointRadius: 0,
             borderWidth: 0,
@@ -348,10 +346,12 @@ data = {
         },
         {
             label: "Inconclusive",
-            backgroundColor: "#ffdd57",
+            axis: 'y',
+            fill: true,
+            backgroundColor: "@ColourConstants.WarningHex",
             borderColor: "rgba(0,0,0,0)",
-            pointBorderColor: "#ffdd57",
-            pointBackgroundColor: "#ffdd57",
+            pointBorderColor: "@ColourConstants.WarningHex",
+            pointBackgroundColor: "@ColourConstants.WarningHex",
             pointHitRadius: 15,
             pointRadius: 0,
             borderWidth: 0,
@@ -361,10 +361,12 @@ data = {
         },
         {
             label: "Not Implemented",
-            backgroundColor: "#ffdd57",
+            axis: 'y',
+            fill: true,
+            backgroundColor: "@ColourConstants.WarningHex",
             borderColor: "rgba(0,0,0,0)",
-            pointBorderColor: "#ffdd57",
-            pointBackgroundColor: "#ffdd57",
+            pointBorderColor: "@ColourConstants.WarningHex",
+            pointBackgroundColor: "@ColourConstants.WarningHex",
             pointHitRadius: 15,
             pointRadius: 0,
             borderWidth: 0,
@@ -374,10 +376,12 @@ data = {
         },
         {
             label: "Skipped",
-            backgroundColor: "#ffdd57",
+            axis: 'y',
+            fill: true,
+            backgroundColor: "@ColourConstants.WarningHex",
             borderColor: "rgba(0,0,0,0)",
-            pointBorderColor: "#ffdd57",
-            pointBackgroundColor: "#ffdd57",
+            pointBorderColor: "@ColourConstants.WarningHex",
+            pointBackgroundColor: "@ColourConstants.WarningHex",
             pointHitRadius: 15,
             pointRadius: 0,
             borderWidth: 0,
@@ -387,10 +391,12 @@ data = {
         },
         {
             label: "Passed",
-            backgroundColor: "#48c774",
+            axis: 'y',
+            fill: true,
+            backgroundColor: "@ColourConstants.SuccessHex",
             borderColor: "rgba(0,0,0,0)",
-            pointBorderColor: "#48c774",
-            pointBackgroundColor: "#48c774",
+            pointBorderColor: "@ColourConstants.SuccessHex",
+            pointBackgroundColor: "@ColourConstants.SuccessHex",
             pointHitRadius: 15,
             pointRadius: 0,
             borderWidth: 0,
@@ -408,15 +414,15 @@ data = {
     ]
 }
 
-var successChart = new Chart(successChartContext, {
+let successChartConfig = {
     type: 'line',
-    data: data,
+    data: successChartData,
     options: {
         legend: {
                     display: false
                 },
         scales: {
-            yAxes: [{
+            y: {
               scaleLabel: {
                 labelString: 'Seconds'
               },
@@ -428,13 +434,19 @@ var successChart = new Chart(successChartContext, {
                       return "";
                   }
                   }
-            }]
+            }
+          },
+          onClick: (e) => {
+              let canvasPosition = Chart.helpers.getRelativePosition(e, e.chart);
+              let clickedElementindex = e.chart.scales.x.getValueForPixel(canvasPosition.x);
+              
+              let clickedOnReportId = reportIdsArray[clickedElementindex];
+      
+              window.location.href = '@Context.GetBaseUrl()/bdtest/report/' + clickedOnReportId + '/summary';
           }
     }
-});
+};
 
-document.getElementById('success-trend-chart').onclick = function(evt) {
-    chartOnClick(successChart, evt);
-}
+let successChart = new Chart(document.getElementById('success-trend-chart'), successChartConfig);
 </script>
 }

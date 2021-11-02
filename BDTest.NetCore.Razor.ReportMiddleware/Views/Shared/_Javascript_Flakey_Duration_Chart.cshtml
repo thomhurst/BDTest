@@ -1,4 +1,5 @@
 ﻿@using BDTest.Maps
+@using BDTest.NetCore.Razor.ReportMiddleware.Constants
 @using BDTest.NetCore.Razor.ReportMiddleware.Extensions
 @using BDTest.NetCore.Razor.ReportMiddleware.Helpers
 @using BDTest.Test
@@ -32,15 +33,15 @@ let scenarioIdsArray = [];
     @:scenarioIdsArray.push("@scenario.Guid");
 }
     
-let durationChartContext = document.getElementById('duration-trend-chart-@Model.Index').getContext('2d');
-data = {
+let chartData = {
     datasets: [{
-        backgroundColor: "#3298dc",
-        borderColor: "#3298dc",
+        backgroundColor: "@ColourConstants.PrimaryHex",
+        borderColor: "@ColourConstants.PrimaryHex",
+        label: "Milliseconds",
         data: [
             @foreach (var timespan in Model.Scenarios.Select(model => model.EndTime - model.StartTime))
             {
-                @((long)timespan.TotalSeconds)@:,
+                @((long)timespan.TotalMilliseconds)@:,
             }
             ]
     }],
@@ -53,60 +54,46 @@ data = {
     ]
 }
 
-let durationChart = new Chart(durationChartContext, {
+let chartConfig = {
     type: 'line',
-    data: data,
+    data: chartData,
     options: {
-        legend: {
-                    display: false
-                },
-        scales: {
-            yAxes: [{
-              scaleLabel: {
-                labelString: 'Seconds'
-              },
-              ticks: {
-                  beginAtZero:true,
-                  // Include a dollar sign in the ticks
-                  callback: function(value, index, values) {
-                      return value + "s";
-                  }
-                  }
-            }]
-          },
-        tooltips: {
-            callbacks: {
-                label: function(tooltipItem, data) {
-                  return data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index] + " seconds";
+            legend: {
+                        display: false
+                    },
+            scales: {
+                y: {
+                  scaleLabel: {
+                    labelString: 'Milliseconds'
+                  },
+                  ticks: {
+                      beginAtZero:true,
+                      // Include a dollar sign in the ticks
+                      callback: function(value, index, values) {
+                          return value + "s";
+                      }
+                      }
                 }
+              },
+            tooltips: {
+                callbacks: {
+                    label: function(tooltipItem, data) {
+                      return data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index] + " seconds";
+                    }
+                }
+            },
+            onClick: (e) => {
+                let canvasPosition = Chart.helpers.getRelativePosition(e, e.chart);
+                let clickedElementindex = e.chart.scales.x.getValueForPixel(canvasPosition.x);
+                
+                let clickedOnReportId = reportIdsArray[clickedElementindex];
+                let clickedOnScenarioId = scenarioIdsArray[clickedElementindex];
+        
+                window.location.href = '@Context.GetBaseUrl()/bdtest/report/' + clickedOnReportId + '/scenarios/' + clickedOnScenarioId;
             }
         }
     }
-});
 
-@if (Model.Scenarios.All(x => !string.IsNullOrEmpty(x.ReportId) || TryFindReportId(x, Model.Reports, out _)))
-{
-    <text>
-    
-    function chartOnClick(chart, event) {
-       let activePoint = chart.getElementAtEvent(event);
-          
-       if (activePoint.length > 0) {
-          let clickedDatasetIndex = activePoint[0]._datasetIndex;
-          let clickedElementindex = activePoint[0]._index;
-          
-          let clickedOnReportId = reportIdsArray[clickedElementindex];
-          let clickedOnScenarioId = scenarioIdsArray[clickedElementindex];
-    
-          window.location.href = '@Context.GetBaseUrl()/bdtest/report/' + clickedOnReportId + '/all-scenarios?page=all&scenarioId=' + clickedOnScenarioId;
-       }
-    }
-    
-    document.getElementById('duration-trend-chart-@Model.Index').onclick = function(evt) {
-        chartOnClick(durationChart, evt);
-    }
-    
-    </text>
-}
+let durationChart = new Chart(document.getElementById('duration-trend-chart-@Model.Index'), chartConfig);
 }
 </script>
