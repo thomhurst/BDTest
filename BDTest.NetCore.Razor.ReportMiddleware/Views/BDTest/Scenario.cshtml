@@ -1,0 +1,72 @@
+@using BDTest.NetCore.Razor.ReportMiddleware.Helpers
+@using BDTest.NetCore.Razor.ReportMiddleware.Models
+@using BDTest.NetCore.Razor.ReportMiddleware.Models.ViewModels
+@using BDTest.Test
+@using BDTest.NetCore.Razor.ReportMiddleware.Extensions
+@model Scenario
+
+@{
+    ViewBag.Title = Model.GetScenarioText();
+    Layout = "_Layout";
+}
+
+@await Html.PartialAsync("_TestPageHeaderHero", new TestPageHeaderHeroViewModel
+{
+    Title = "Scenario",
+    Description = Model.GetScenarioText()
+})
+
+<div class="container-fluid">
+    <div class="box" id="all-scenarios-container">
+        <div class="btn-group" role="group" >
+            @await Html.PartialAsync("_CollapseExpandGroupedScenariosButtons", "all-scenarios-container")
+        </div>
+
+        <div class="scrollable-table-container">
+            <table class="table table-hover">
+                <thead>
+                <tr>
+                    <th scope="col">Step</th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Duration</th>
+                    <th scope="col">Start</th>
+                    <th scope="col">End</th>
+                </tr>
+                </thead>
+                <tbody>
+                
+                @if (!string.IsNullOrEmpty(Model.TestStartupInformation))
+                {
+                    // TODO
+                }
+
+                @foreach (var step in Model.Steps)
+                {
+                    <tr step-id="@step.Guid" class="pointer">
+                        <td>
+                            @step.StepText
+                        </td>
+                        <td class="align-middle">
+                            <div class="d-grid">
+                                <button type="button" class="btn @step.Status.GetCssColourValueForStatus()">@step.Status.AsString()</button>
+                            </div>
+                        </td>
+                        <td class="align-middle" data-bs-toggle="popover" data-bs-trigger="hover focus" data-bs-placement="top" data-bs-content="@step.TimeTaken.ToPrettyFormat()">
+                            @step.TimeTaken.ToString()
+                        </td>
+                        <td class="align-middle">@step.StartTime.ToStringForReport()</td>
+                        <td class="align-middle">@step.EndTime.ToStringForReport()</td>
+                    </tr>
+                }
+                
+                @if (!string.IsNullOrEmpty(Model.TearDownOutput))
+                {
+                    // TODO
+                }
+
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>

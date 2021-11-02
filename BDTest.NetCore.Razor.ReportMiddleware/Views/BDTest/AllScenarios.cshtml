@@ -11,6 +11,7 @@
     
     var filterByQueryParameter = Context.Request.GetQueryParameter("filterByStatus");
     var scenarioId = Context.Request.GetQueryParameter("scenarioId");
+    var reportId = ViewBag.Id;
 
     var currentPageString = Context.GetCurrentPageNumber();
 
@@ -122,3 +123,14 @@
         </div>
     </nav>
 </div>
+
+<script>
+    let scenarioRows = document.getElementsByClassName("scenario-row");
+    for (let scenarioRow of scenarioRows) {
+        scenarioRow.addEventListener("click", function() {
+            let scenarioId = scenarioRow.getAttribute("scenario-id");
+            window.location.href = '@Context.GetBaseUrl()/bdtest/report/@ViewBag.Id/scenario/' + scenarioId;
+            spinnerCursor();
+        });
+    }
+</script>

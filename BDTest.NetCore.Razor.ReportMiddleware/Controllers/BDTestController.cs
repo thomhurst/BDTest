@@ -173,6 +173,22 @@ namespace BDTest.NetCore.Razor.ReportMiddleware.Controllers
 
             return View("AllScenarios", scenariosGroupedByScenarioTextEnumerable.ToArray());
         }
+        
+        [HttpGet]
+        [Route("report/{reportId}/scenario/{scenarioId}")]
+        public async Task<IActionResult> SpecificScenario([FromRoute] string reportId, string scenarioId)
+        {
+            var data = await GetData(reportId).ConfigureAwait(false);
+
+            var scenario = data?.Scenarios?.FirstOrDefault(x => x.Guid == scenarioId);
+            
+            if (scenario == null)
+            {
+                return View("NotFoundSingle");
+            }
+
+            return View("Scenario", scenario);
+        }
 
         [HttpGet]
         [Route("report/{id}/timings")]
