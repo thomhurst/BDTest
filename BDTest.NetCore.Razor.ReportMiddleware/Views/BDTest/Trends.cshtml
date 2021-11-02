@@ -301,9 +301,8 @@ let durationChartConfig = {
             let clickedElementindex = e.chart.scales.x.getValueForPixel(canvasPosition.x);
             
             let clickedOnReportId = reportIdsArray[clickedElementindex];
-            let clickedOnScenarioId = scenarioIdsArray[clickedElementindex];
     
-            window.location.href = '@Context.GetBaseUrl()/bdtest/report/' + clickedOnReportId + '/scenarios/' + clickedOnScenarioId;
+            window.location.href = '@Context.GetBaseUrl()/bdtest/report/' + clickedOnReportId + '/summary';
         }
     }
 };
