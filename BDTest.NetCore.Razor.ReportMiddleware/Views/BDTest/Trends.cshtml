@@ -303,6 +303,8 @@ let durationChartConfig = {
             let clickedOnReportId = reportIdsArray[clickedElementindex];
     
             window.location.href = '@Context.GetBaseUrl()/bdtest/report/' + clickedOnReportId + '/summary';
+            
+            spinnerCursor();
         }
     }
 };
@@ -442,6 +444,8 @@ let successChartConfig = {
               let clickedOnReportId = reportIdsArray[clickedElementindex];
       
               window.location.href = '@Context.GetBaseUrl()/bdtest/report/' + clickedOnReportId + '/summary';
+              
+              spinnerCursor();
           }
     }
 };

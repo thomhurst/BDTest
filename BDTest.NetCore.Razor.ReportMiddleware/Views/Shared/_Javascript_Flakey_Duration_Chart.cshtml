@@ -90,6 +90,8 @@ let chartConfig = {
                 let clickedOnScenarioId = scenarioIdsArray[clickedElementindex];
         
                 window.location.href = '@Context.GetBaseUrl()/bdtest/report/' + clickedOnReportId + '/scenarios/' + clickedOnScenarioId;
+                
+                spinnerCursor();
             }
         }
     }

@@ -427,7 +427,12 @@ function post(path, params, method='post') {
 }
 
 function disableButtonAndSpin(element) {
+    spinnerCursor();
     element.disabled = true;
     element.innerHTML = "<span class=\"spinner-border spinner-border-sm\" role=\"status\" aria-hidden=\"true\"></span>\n" +
         "<span class=\"visually-hidden\">Loading...</span";
+}
+
+function spinnerCursor() {
+    document.body.style.cursor = 'wait';
 }
