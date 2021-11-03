@@ -1,5 +1,3 @@
-@using BDTest.NetCore.Razor.ReportMiddleware.Helpers
-@using BDTest.NetCore.Razor.ReportMiddleware.Models
 @using BDTest.NetCore.Razor.ReportMiddleware.Models.ViewModels
 @using BDTest.Test
 @using BDTest.NetCore.Razor.ReportMiddleware.Extensions
@@ -9,6 +7,8 @@
     ViewBag.Title = Model.GetScenarioText();
     Layout = "_Layout";
 }
+
+<button class="btn btn-primary ms-2 mt-2" onclick="window.history.back()">Back</button>
 
 @await Html.PartialAsync("_TestPageHeaderHero", new TestPageHeaderHeroViewModel
 {
@@ -39,14 +39,33 @@
                 
                 @if (!string.IsNullOrEmpty(Model.TestStartupInformation))
                 {
-                    // TODO
+                    <tr step-id="step-startup" data-bs-toggle="collapse" data-bs-target="#step-startup-expanded" class="accordion-toggle pointer" onclick="document.getElementById('step-startup-toggle-container').classList.toggle('dropend')">
+                        <td class="align-middle">
+                            <div class="d-grid dropend" id="step-startup-toggle-container">
+                                <button class="btn dropdown-toggle"></button>
+                            </div>
+                        </td>
+                        <td class="align-middle">
+                            Test Startup Information
+                        </td>
+                    </tr>
+                    <tr>
+                        <td colspan="6" class="hiddenRow">
+                            <div class="accordion-body collapse" id="step-startup-expanded">
+                                <div class="container" style="overflow-x: auto;">
+                                    <h5>Startup Info:</h5>
+                                    <pre class="py-4">@Model.TestStartupInformation</pre>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
                 }
 
 
                 @for (var index = 0; index < Model.Steps.Count; index++)
                 {
                     var step = Model.Steps[index];
-                    <tr step-id="step-@step.Guid" data-bs-toggle="collapse" data-bs-target="#step-@step.Guid-expanded" class="accordion-toggle pointer" onclick="document.getElementById('step-@step.Guid-toggle-container').classList.toggle('dropend')">
+                    <tr step-id="step-@step.Guid" data-bs-toggle="collapse" data-bs-target="#step-@step.Guid-expanded" class="accordion-toggle @(IsExpandable(step) ? "pointer": "")" onclick="document.getElementById('step-@step.Guid-toggle-container').classList.toggle('dropend')">
                         <td class="align-middle">
                             @if (IsExpandable(step))
                             {
