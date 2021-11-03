@@ -152,9 +152,14 @@ namespace BDTest.NetCore.Razor.ReportMiddleware.Controllers
                     scenariosGroupedByScenarioTextEnumerable =
                         scenariosGroupedByScenarioTextEnumerable.OrderBy(scenarios => scenarios.Key);
                     break;
-                case OrderConstants.Duration:
+                case OrderConstants.DurationDescending:
                     scenariosGroupedByScenarioTextEnumerable =
                         scenariosGroupedByScenarioTextEnumerable.OrderByDescending(scenarios =>
+                            scenarios.Select(scenario => scenario.TimeTaken).Max());
+                    break;
+                case OrderConstants.DurationAscending:
+                    scenariosGroupedByScenarioTextEnumerable =
+                        scenariosGroupedByScenarioTextEnumerable.OrderBy(scenarios =>
                             scenarios.Select(scenario => scenario.TimeTaken).Max());
                     break;
                 case OrderConstants.Status:
