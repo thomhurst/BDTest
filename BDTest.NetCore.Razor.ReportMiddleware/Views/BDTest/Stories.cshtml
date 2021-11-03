@@ -95,7 +95,7 @@
                 @{ var storyTextSplitByLines = story.Key.SplitOnNewLines(); }
                 @foreach (var line in storyTextSplitByLines)
                 {
-                    <h1 class="display-6 fs-3 text fw-bold">@line</h1>
+                    <h1 class="display-6 fs-4 text fw-bold">@line</h1>
                 }
                 <div class="col-lg-6 mx-auto">
                     <button class="btn btn-lg @story.GetTotalStatus().GetCssColourValueForStatus() lead mb-4">@story.GetTotalStatus()</button>
