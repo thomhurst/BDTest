@@ -38,78 +38,49 @@
       <div class="progress-bar bg-warning progress-bar-striped progress-bar-animated" role="progressbar" style="width: @otherPercent%" aria-valuenow="@otherPercent" aria-valuemin="0" aria-valuemax="100"></div>
     </div>
 
-<div id="summary-boxes">
+<div id="summary-boxes" class="d-grid justify-content-center mx-auto">
+    
+        <button type="button" class="btn btn-primary btn-lg position-relative mb-5 py-3" onclick="@MakeUrl(allScenariosUri)">
+          @total  <span class="badge position-absolute start-50 top-0 translate-middle bg-primary">Tests Run</span>
+        </button>
 
-    <div class="card text-center text-white bg-primary mb-3 mx-auto @pointerClassIfSummaryPage" style="max-width: 18rem;" onclick="@MakeUrl(allScenariosUri)">
-        <div class="card-header">Tests Run</div>
-        <div class="card-body">
-            <h5 class="card-title">@total</h5>
-        </div>
-    </div>
-
-    <div class="container">
-        <div class="card-columns d-flex justify-content-center">
-            <div class="card text-center text-dark bg-light mb-3 mx-auto" style="max-width: 18rem;">
-                <div class="card-header">Started at</div>
-                <div class="card-body">
-                    <h5 class="card-title">@testTimer.TestsStartedAt.ToStringForReport()</h5>
-                </div>
-            </div>
-
-            <div class="card text-center text-dark bg-light mb-3 mx-auto" style="max-width: 18rem;">
-                <div class="card-header">Time Taken</div>
-                <div class="card-body">
-                    <h5 class="card-title">@testTimer.ElapsedTime.ToPrettyFormat()</h5>
-                </div>
+            <div class="d-flex justify-content-center">
+                
+                <button type="button" class="btn btn-dark btn-lg position-relative mb-5 mx-3 py-3" onclick="@MakeUrl(allScenariosUri)">
+                    @testTimer.TestsStartedAt.ToStringForReport() <span class="badge position-absolute start-50 top-0 translate-middle bg-dark">Started at</span>
+                </button>
+                
+                <button type="button" class="btn btn-dark btn-lg position-relative mb-5 mx-3 py-3" onclick="@MakeUrl(allScenariosUri)">
+                    @testTimer.ElapsedTime.ToPrettyFormat()<span class="badge position-absolute start-50 top-0 translate-middle bg-dark">Time Taken</span>
+                </button>
+                
+                <button type="button" class="btn btn-dark btn-lg position-relative mb-5 mx-3 py-3" onclick="@MakeUrl(allScenariosUri)">
+                    @testTimer.TestsFinishedAt.ToStringForReport() <span class="badge position-absolute start-50 top-0 translate-middle bg-dark">Finished At</span>
+                </button>
             </div>
     
-            <div class="card text-center text-dark bg-light mb-3 mx-auto" style="max-width: 18rem;">
-                <div class="card-header">Finished at</div>
-                <div class="card-body">
-                    <h5 class="card-title">@testTimer.TestsFinishedAt.ToStringForReport()</h5>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <div class="container">
-        <div class="card-columns d-flex justify-content-center">
-            <div class="card text-center text-white bg-success mb-3 mx-auto @pointerClassIfSummaryPage" style="min-width: 12rem; max-width: 18rem;" onclick="@MakeUrl(allScenariosUri.WithQueryParameter(StatusConstants.FilterByStatusQueryParameterName, Status.Passed.ToString()))">
-                <div class="card-header">Passed</div>
-                <div class="card-body">
-                    <h5 class="card-title">@passed</h5>
-                </div>
-            </div>
-
-            <div class="card text-center text-white bg-warning mb-3 mx-auto @pointerClassIfSummaryPage" style="min-width: 12rem; max-width: 18rem;" onclick="@MakeUrl(allScenariosUri.WithQueryParameter(StatusConstants.FilterByStatusQueryParameterName, Status.Skipped.ToString()))">
-                <div class="card-header">Skipped</div>
-                <div class="card-body">
-                    <h5 class="card-title">@skipped</h5>
-                </div>
-            </div>
+        <div class="d-flex justify-content-center">
             
-            <div class="card text-center text-white bg-warning mb-3 mx-auto @pointerClassIfSummaryPage" style="min-width: 12rem; max-width: 18rem;" onclick="@MakeUrl(allScenariosUri.WithQueryParameter(StatusConstants.FilterByStatusQueryParameterName, Status.NotImplemented.ToString()))">
-                <div class="card-header">Not Implemented</div>
-                <div class="card-body">
-                    <h5 class="card-title">@notImplemented</h5>
-                </div>
-            </div>
-            
-            <div class="card text-center text-white bg-warning mb-3 mx-auto @pointerClassIfSummaryPage" style="min-width: 12rem; max-width: 18rem;" onclick="@MakeUrl(allScenariosUri.WithQueryParameter(StatusConstants.FilterByStatusQueryParameterName, Status.Inconclusive.ToString()))">
-                <div class="card-header">Inconclusive</div>
-                <div class="card-body">
-                    <h5 class="card-title">@inconclusive</h5>
-                </div>
-            </div>
+            <button type="button" class="btn btn-success btn-lg position-relative mb-5 mx-2 py-3" style="min-width: 12rem" onclick="@MakeUrl(allScenariosUri.WithQueryParameter(StatusConstants.FilterByStatusQueryParameterName, Status.Passed.ToString()))">
+                @passed <span class="badge position-absolute start-50 top-0 translate-middle bg-success">Passed</span>
+            </button>
 
-            <div class="card text-center text-white bg-danger mb-3 mx-auto @pointerClassIfSummaryPage" style="min-width: 12rem; max-width: 18rem;" onclick="@MakeUrl(allScenariosUri.WithQueryParameter(StatusConstants.FilterByStatusQueryParameterName, Status.Failed.ToString()))">
-                <div class="card-header">Failed</div>
-                <div class="card-body">
-                    <h5 class="card-title">@failed</h5>
-                </div>
-            </div>
+            <button type="button" class="btn btn-warning btn-lg position-relative mb-5 mx-2 py-3" style="min-width: 12rem" onclick="@MakeUrl(allScenariosUri.WithQueryParameter(StatusConstants.FilterByStatusQueryParameterName, Status.Skipped.ToString()))">
+                @skipped <span class="badge position-absolute start-50 top-0 translate-middle bg-warning">Skipped</span>
+            </button>
+            
+            <button type="button" class="btn btn-warning btn-lg position-relative mb-5 mx-2 py-3" style="min-width: 12rem" onclick="@MakeUrl(allScenariosUri.WithQueryParameter(StatusConstants.FilterByStatusQueryParameterName, Status.NotImplemented.ToString()))">
+                @notImplemented <span class="badge position-absolute start-50 top-0 translate-middle bg-warning">Not Implemented</span>
+            </button>
+            
+            <button type="button" class="btn btn-warning btn-lg position-relative mb-5 mx-2 py-3" style="min-width: 12rem" onclick="@MakeUrl(allScenariosUri.WithQueryParameter(StatusConstants.FilterByStatusQueryParameterName, Status.Inconclusive.ToString()))">
+                @inconclusive <span class="badge position-absolute start-50 top-0 translate-middle bg-warning">Inconclusive</span>
+            </button>
+            
+            <button type="button" class="btn btn-danger btn-lg position-relative mb-5 mx-2 py-3" style="min-width: 12rem" onclick="@MakeUrl(allScenariosUri.WithQueryParameter(StatusConstants.FilterByStatusQueryParameterName, Status.Failed.ToString()))">
+                @failed <span class="badge position-absolute start-50 top-0 translate-middle bg-danger">Failed</span>
+            </button>
         </div>
-    </div>
 </div>
 
 @functions
