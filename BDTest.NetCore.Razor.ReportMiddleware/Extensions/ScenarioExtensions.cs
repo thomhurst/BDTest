@@ -25,13 +25,13 @@ namespace BDTest.NetCore.Razor.ReportMiddleware.Extensions
             switch (status)
             {
                 case Status.Passed:
-                    return "is-success";
+                    return "btn-success";
                 case Status.Failed:
-                    return "is-danger";
+                    return "btn-danger";
                 case Status.Inconclusive:
                 case Status.NotImplemented:
                 case Status.Skipped:
-                    return "is-warning";
+                    return "btn-warning";
                 default:
                     throw new ArgumentOutOfRangeException(nameof(status), status, null);
             }

@@ -6,23 +6,14 @@
 @model IGrouping<string, Scenario>[]
 
 @{
-    ViewBag.Title = "Stories";
+    ViewBag.Title = "Scenarios";
     Layout = "_Layout";
     
-    var filterByQueryParameter = Context.Request.GetQueryParameter("filterByStatus");
     var scenarioId = Context.Request.GetQueryParameter("scenarioId");
+    var reportId = ViewBag.Id;
 
     var currentPageString = Context.GetCurrentPageNumber();
 
-    if (filterByQueryParameter != null)
-    {
-        <script>
-            onDomLoaded(function() {
-              filterByStatus('@filterByQueryParameter');
-            });
-        </script>
-    }
-    
     var pager = new Pager<IGrouping<string, Scenario>>(Model, currentPageString);
 
     if (!string.IsNullOrEmpty(scenarioId))
@@ -35,25 +26,11 @@
     }
 }
 
-<section class="hero is-info">
-    <div class="hero-body">
-        <div class="container">
-            <div class="columns is-vcentered">
-                <div class="column">
-                    <h1 class="title">
-                        Scenarios
-                    </h1>
-                    <h2 class="subtitle">
-                        Here are the scenarios in this test run:
-                    </h2>
-                </div>
-                <div class="column">
-                    @await Html.PartialAsync("_PreviousNextReportButtons", ViewBag.Id as string)
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
+@await Html.PartialAsync("_TestPageHeaderHero", new TestPageHeaderHeroViewModel
+{
+    Title = "Scenarios",
+    Description = "Here are the scenarios in this test run"
+})
 
 <div class="container mt-6">
     <nav class="level">
@@ -63,31 +40,28 @@
     </nav>
 </div>
 
-<section class="section">
-    <div class="container max-width-80">
+    <div class="container-fluid">
     <div class="box" id="all-scenarios-container">
-        <div class="buttons is-right">
+        <div class="btn-group" role="group" >
             @await Html.PartialAsync("_StatusDropdown", new StatusDropdownViewModel { IncludeScript = true })
             @await Html.PartialAsync("_OrderByDropdown")
             <div class="scenarios-buttons-row">
-                @await Html.PartialAsync("_CollapseExpandGroupedScenariosButtons", "all-scenarios-container")
-                @* <button class="button toggle-hide pointer" toggle-alternative-text="Hide Summary" element-id-to-hide="summary">Show Summary</button> *@
+                <button class="btn btn-light" onclick="expandScenarioGroups(toggleActions.EXPAND)">Expand All</button>
+                <button class="btn btn-light" onclick="expandScenarioGroups(toggleActions.COLLAPSE)">Collapse All</button>
             </div>
         </div>
 
-        <div class="mt-4 container invisible" id="summary">
-            @await Html.PartialAsync("_SummaryGraphics", new SummaryViewModel {Scenarios = Model.SelectMany(x => x).ToList()})
-        </div>
-
         <div class="scrollable-table-container">
-            <table class="table is-fullwidth">
+            <table class="table table-hover">
                 <thead>
                 <tr>
-                    <th class="has-text-centered">Scenario</th>
-                    <th class="has-text-centered">Status</th>
-                    <th class="has-text-centered">Duration</th>
-                    <th class="has-text-centered">Start</th>
-                    <th class="has-text-centered">End</th>
+                    @* Expand Toggle *@
+                    <th scope="col"></th>
+                    <th scope="col">Scenario</th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Duration</th>
+                    <th scope="col">Start</th>
+                    <th scope="col">End</th>
                 </tr>
                 </thead>
                 <tbody>
@@ -118,22 +92,21 @@
         @{
             var allScenarios = pager.ItemsForCurrentPage.SelectMany(groupedScenarios => groupedScenarios).ToList();
         }
-        @for (var index = 0; index < allScenarios.Count; index++)
-        {
-            var lastScenario = allScenarios.ElementAtOrDefault(index - 1);
-            var scenario = allScenarios[index];
-            var nextScenario = allScenarios.ElementAtOrDefault(index + 1);
-            
-            @await Html.PartialAsync("_ScenarioModalPopup", new ScenarioModalViewModel
-            {
-                LastScenario = lastScenario,
-                Scenario = scenario,
-                NextScenario = nextScenario
-            })
-        }
+        @* @for (var index = 0; index < allScenarios.Count; index++) *@
+        @* { *@
+        @*     var lastScenario = allScenarios.ElementAtOrDefault(index - 1); *@
+        @*     var scenario = allScenarios[index]; *@
+        @*     var nextScenario = allScenarios.ElementAtOrDefault(index + 1); *@
+        @*      *@
+        @*     @await Html.PartialAsync("_ScenarioModalPopup", new ScenarioModalViewModel *@
+        @*     { *@
+        @*         LastScenario = lastScenario, *@
+        @*         Scenario = scenario, *@
+        @*         NextScenario = nextScenario *@
+        @*     }) *@
+        @* } *@
 
     </div>
-</section>
 
 <div class="container mb-6">
     <nav class="level">
@@ -142,3 +115,14 @@
         </div>
     </nav>
 </div>
+
+<script>
+    let scenarioRows = document.getElementsByClassName("scenario-row");
+    for (let scenarioRow of scenarioRows) {
+        scenarioRow.addEventListener("click", function() {
+            let scenarioId = scenarioRow.getAttribute("scenario-id");
+            window.location.href = '@Context.GetBaseUrl()/bdtest/report/@ViewBag.Id/scenario/' + scenarioId;
+            spinnerCursor();
+        });
+    }
+</script>

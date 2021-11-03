@@ -1,4 +1,5 @@
 ﻿@using BDTest.Maps
+@using BDTest.NetCore.Razor.ReportMiddleware.Constants
 @using BDTest.NetCore.Razor.ReportMiddleware.Extensions
 @using BDTest.NetCore.Razor.ReportMiddleware.Helpers
 @using BDTest.Test
@@ -32,15 +33,16 @@ let scenarioIdsArray = [];
     @:scenarioIdsArray.push("@scenario.Guid");
 }
     
-let successChartContext = document.getElementById('success-trend-chart-@Model.Index').getContext('2d');
-data = {
+let chartData = {
     datasets: [ 
         {
             label: "Failed",
-            backgroundColor: "#f14668",
+            axis: 'y',
+            fill: true,
+            backgroundColor: "@ColourConstants.DangerHex",
             borderColor: "rgba(0,0,0,0)",
-            pointBorderColor: "#f14668",
-            pointBackgroundColor: "#f14668",
+            pointBorderColor: "@ColourConstants.DangerHex",
+            pointBackgroundColor: "@ColourConstants.DangerHex",
             pointHitRadius: 15,
             pointRadius: 0,
             borderWidth: 0,
@@ -50,10 +52,12 @@ data = {
         },
         {
             label: "Inconclusive",
-            backgroundColor: "#ffdd57",
+            axis: 'y',
+            fill: true,
+            backgroundColor: "@ColourConstants.WarningHex",
             borderColor: "rgba(0,0,0,0)",
-            pointBorderColor: "#ffdd57",
-            pointBackgroundColor: "#ffdd57",
+            pointBorderColor: "@ColourConstants.WarningHex",
+            pointBackgroundColor: "@ColourConstants.WarningHex",
             pointHitRadius: 15,
             pointRadius: 0,
             borderWidth: 0,
@@ -63,10 +67,12 @@ data = {
         },
         {
             label: "Not Implemented",
-            backgroundColor: "#ffdd57",
+            axis: 'y',
+            fill: true,
+            backgroundColor: "@ColourConstants.WarningHex",
             borderColor: "rgba(0,0,0,0)",
-            pointBorderColor: "#ffdd57",
-            pointBackgroundColor: "#ffdd57",
+            pointBorderColor: "@ColourConstants.WarningHex",
+            pointBackgroundColor: "@ColourConstants.WarningHex",
             pointHitRadius: 15,
             pointRadius: 0,
             borderWidth: 0,
@@ -76,10 +82,12 @@ data = {
         },
         {
             label: "Skipped",
-            backgroundColor: "#ffdd57",
+            axis: 'y',
+            fill: true,
+            backgroundColor: "@ColourConstants.WarningHex",
             borderColor: "rgba(0,0,0,0)",
-            pointBorderColor: "#ffdd57",
-            pointBackgroundColor: "#ffdd57",
+            pointBorderColor: "@ColourConstants.WarningHex",
+            pointBackgroundColor: "@ColourConstants.WarningHex",
             pointHitRadius: 15,
             pointRadius: 0,
             borderWidth: 0,
@@ -89,10 +97,12 @@ data = {
         },
         {
             label: "Passed",
-            backgroundColor: "#48c774",
+            axis: 'y',
+            fill: true,
+            backgroundColor: "@ColourConstants.SuccessHex",
             borderColor: "rgba(0,0,0,0)",
-            pointBorderColor: "#48c774",
-            pointBackgroundColor: "#48c774",
+            pointBorderColor: "@ColourConstants.SuccessHex",
+            pointBackgroundColor: "@ColourConstants.SuccessHex",
             pointHitRadius: 15,
             pointRadius: 0,
             borderWidth: 0,
@@ -110,17 +120,18 @@ data = {
     ]
 }
 
-let successChart = new Chart(successChartContext, {
+let chartConfig = {
     type: 'line',
-    data: data,
+    data: chartData,
     options: {
+        resizeDelay: 100,
         legend: {
                     display: false
                 },
         scales: {
-            yAxes: [{
+            y: {
               scaleLabel: {
-                labelString: 'Seconds'
+                labelString: 'Status'
               },
               stacked: true,
               ticks: {
@@ -129,36 +140,24 @@ let successChart = new Chart(successChartContext, {
                   callback: function(value, index, values) {
                       return "";
                   }
-                  }
-            }]
-          }
+              }
+            }
+          },
+          onClick: (e) => {
+            let canvasPosition = Chart.helpers.getRelativePosition(e, e.chart);
+            let clickedElementindex = e.chart.scales.x.getValueForPixel(canvasPosition.x);
+            
+            let clickedOnReportId = reportIdsArray[clickedElementindex];
+            let clickedOnScenarioId = scenarioIdsArray[clickedElementindex];
+    
+            window.location.href = '@Context.GetBaseUrl()/bdtest/report/' + clickedOnReportId + '/scenario/' + clickedOnScenarioId;
+            
+            spinnerCursor();
+        }
     }
-});
+};
 
-@if (Model.Scenarios.All(x => !string.IsNullOrEmpty(x.ReportId) || TryFindReportId(x, Model.Reports, out _)))
-{
-    <text>
-    
-    function chartOnClick(chart, event) {
-       let activePoint = chart.getElementAtEvent(event);
-          
-       if (activePoint.length > 0) {
-          let clickedDatasetIndex = activePoint[0]._datasetIndex;
-          let clickedElementindex = activePoint[0]._index;
-          
-          let clickedOnReportId = reportIdsArray[clickedElementindex];
-          let clickedOnScenarioId = scenarioIdsArray[clickedElementindex];
-    
-          window.location.href = '@Context.GetBaseUrl()/bdtest/report/' + clickedOnReportId + '/all-scenarios?page=all&scenarioId=' + clickedOnScenarioId;
-       }
-    }
-    
-    document.getElementById('success-trend-chart-@Model.Index').onclick = function(evt) {
-        chartOnClick(successChart, evt);
-    }
-    
-    </text>
-}
+let successChart = new Chart(document.getElementById('success-trend-chart-@Model.Index'), chartConfig);
 
 }
 </script>

@@ -3,8 +3,8 @@
 @model (int PageNumberForLink, int CurrentPageNumber)
 
 @{
-    var isCurrentAttribute = Model.PageNumberForLink == Model.CurrentPageNumber ? "is-current" : "";
+    var isCurrentAttribute = Model.PageNumberForLink == Model.CurrentPageNumber ? "active" : "";
 }
-<li>
-    <a class="pagination-link @isCurrentAttribute" href="@Context.GetUrlForPageNumber(Model.PageNumberForLink)" aria-label="Page @Model.PageNumberForLink">@Model.PageNumberForLink</a>
+<li class="page-item @isCurrentAttribute">
+    <a class="page-link" href="@Context.GetUrlForPageNumber(Model.PageNumberForLink)" aria-label="Page @Model.PageNumberForLink">@Model.PageNumberForLink</a>
 </li>

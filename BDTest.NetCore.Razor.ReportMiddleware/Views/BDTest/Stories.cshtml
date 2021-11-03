@@ -1,4 +1,3 @@
-@using BDTest.NetCore.Razor.ReportMiddleware.Constants
 @using BDTest.NetCore.Razor.ReportMiddleware.Extensions
 @using BDTest.NetCore.Razor.ReportMiddleware.Helpers
 @using BDTest.NetCore.Razor.ReportMiddleware.Models
@@ -15,25 +14,11 @@
     var pager = new Pager<IGrouping<string, Scenario>>(Model, Context.GetCurrentPageNumber(), pageSize:5);
 }
 
-<section class="hero is-info">
-    <div class="hero-body">
-        <div class="container">
-            <div class="columns is-vcentered">
-                <div class="column">
-                    <h1 class="title">
-                        Stories
-                    </h1>
-                    <h2 class="subtitle">
-                        Here are the stories that you've tested:
-                    </h2>
-                </div>
-                <div class="column">
-                    @await Html.PartialAsync("_PreviousNextReportButtons", ViewBag.Id as string)
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
+@await Html.PartialAsync("_TestPageHeaderHero", new TestPageHeaderHeroViewModel
+{
+    Title = "Stories",
+    Description = "Here are the stories that you've tested"
+})
 
 @{ var storyIndex = 0; }
 
@@ -47,156 +32,123 @@
 
 <div id="stories-container">
     
-    <div class="buttons is-right mr-4 mt-4">
+    <div class="btn-group mb-1" role="group" >
         @await Html.PartialAsync("_StatusDropdown", new StatusDropdownViewModel { IncludeScript = true })
-        <button class="button is-rounded" onclick="expandCollapseStories(true);">Expand All</button>
-        <button class="button is-rounded" onclick="expandCollapseStories(false);">Collapse All</button>
+        <button class="btn" onclick="setVisibilityOfStories(toggleActions.EXPAND);">Expand All</button>
+        <button class="btn" onclick="setVisibilityOfStories(toggleActions.COLLAPSE);">Collapse All</button>
     </div>
     
     <script>
-          function expandStory(storyHeader, elementToHide){
-                  storyHeader.parentElement.parentElement.classList.remove("rounded-all-corners")
-                  storyHeader.parentElement.parentElement.classList.add("rounded-top-corners")
-                  setElementVisible(elementToHide);
+         function setVisibilityOfStories(toggleAction) {
+          let storyBodies = document.getElementsByClassName("story-container-body");
+          for (let storyBody of storyBodies) {
+                setElementVisibility(storyBody, toggleAction);
           }
-          
-          function collapseStory(storyHeader, elementToHide){
-              storyHeader.parentElement.parentElement.classList.remove("rounded-top-corners")
-              storyHeader.parentElement.parentElement.classList.add("rounded-all-corners")
-              setElementInvisible(elementToHide);
-          }
-          
-          function toggleStoryHeader(storyHeaderId, shouldExpand) {
-            let storyHeader = document.getElementById(storyHeaderId);
-            let elementIdToHide = storyHeader.getAttribute("element-id-to-hide");
-            let elementToHide = document.getElementById(elementIdToHide);
-            
-            let expand = shouldExpand;
-            if(shouldExpand == null) 
-            {
-                expand = elementToHide.classList.contains("invisible");
-            }
-                                  
-              if(expand) {
-                  expandStory(storyHeader, elementToHide);
-              } else {
-                  collapseStory(storyHeader, elementToHide);
-              }
-          }
-    
-    function expandCollapseStories(shouldExpand) {
-      let storyHeaders = document.getElementsByClassName("story-header");
-      for (let storyHeader of storyHeaders) {
-          toggleStoryHeader(storyHeader.id, shouldExpand);
-      }
-    }
+         }
+         
+         function toggleSpecificScenarioGroup(expandOrCollapseButtonElement, toggleAction) {
+             let storyBody = expandOrCollapseButtonElement.parentElement.parentElement;
+             let scenarioGroupRows = storyBody.getElementsByClassName("scenario-group");
+             for (let scenarioGroupRow of scenarioGroupRows) {
+              expandScenarioGroup(scenarioGroupRow, toggleAction) 
+             }
+         }
     </script>
     
+    @{ var groupedScenariosCount = new ReferenceInt(0); }
     @foreach (var story in pager.ItemsForCurrentPage)
     {
         storyIndex++;
         var scenariosForThisStory = story.ToList();
         var scenariosGroupedByScenarioText = scenariosForThisStory.GroupBy(scenario => scenario.GetScenarioText()).ToList();
 
-        var hasSuccess = scenariosForThisStory.Any(scenario => scenario.Status == Status.Passed) ? HtmlClassConstants.HasSuccess : string.Empty;
-        var hasFailures = scenariosForThisStory.Any(scenario => scenario.Status == Status.Failed) ? HtmlClassConstants.HasFailures : string.Empty;
-        var hasSkipped = scenariosForThisStory.Any(scenario => scenario.Status == Status.Skipped) ? HtmlClassConstants.HasSkipped : string.Empty;
-        var hasInconclusive = scenariosForThisStory.Any(scenario => scenario.Status == Status.Inconclusive) ? HtmlClassConstants.HasInconclusive : string.Empty;
-        var hasNotImplemented = scenariosForThisStory.Any(scenario => scenario.Status == Status.NotImplemented) ? HtmlClassConstants.HasNotImplemented : string.Empty;
+        <div class="container-xlg border border-2 rounded border-primary story-container-parent">
+            <div class="px-4 my-5 text-center story-container-header pointer" onclick="toggleElementVisibility(document.getElementById('story-@storyIndex'))">
+                @{ var storyTextSplitByLines = story.Key.SplitOnNewLines(); }
+                @foreach (var line in storyTextSplitByLines)
+                {
+                    <h1 class="display-6 fs-4 text fw-bold">@line</h1>
+                }
+                <div class="col-lg-6 mx-auto">
+                    <button class="btn btn-lg @story.GetTotalStatus().GetCssColourValueForStatus() lead mb-4">@story.GetTotalStatus()</button>
+                </div>
+            </div>
 
-        <div class="columns is-centered">
-            <div class="column is-three-quarters">
-                <section class="section">
-                    <section class="rounded-top-corners hero @scenariosForThisStory.GetTotalStatus().GetCssColourValueForStatus()">
-                        <div class="hero-body">
-                            <div id="story-header-@storyIndex" class="container pointer story-header @hasSuccess @hasFailures @hasSkipped @hasInconclusive @hasNotImplemented" element-id-to-hide="story-@storyIndex" onclick="toggleStoryHeader('story-header-@storyIndex', null)">
-                                <h1 class="title">Story:</h1>
-                                @{
-                                    var storyTextSplitByLines = story.Key.SplitOnNewLines();
-                                    foreach (var line in storyTextSplitByLines)
-                                    {
-                                        <h2 class="subtitle mb-0">@line</h2>
-                                    }
-                                }
-                            </div>
-                        </div>
-                    </section>
-
-                    <div class="box mb-0 rounded-bottom-corners" id="story-@storyIndex">
-                        <div class="has-text-right scenarios-buttons-row">
-                            @if (scenariosGroupedByScenarioText.Any(scenarios => scenarios.Count() > 1))
-                            {
-                                @await Html.PartialAsync("_CollapseExpandGroupedScenariosButtons", $"story-{storyIndex}")
-                            }
-                            <button class="button toggle-hide pointer is-rounded" toggle-alternative-text="Hide Summary" element-id-to-hide="story-summary-@storyIndex">Show Summary</button>
-                            <button class="button toggle-hide pointer is-rounded" toggle-alternative-text="Hide Timings Chart" element-id-to-hide="story-summary-pie-chart-times-@storyIndex">Show Timings Chart</button>
-                        </div>
-
-                        <div class="mt-4 container invisible" id="story-summary-@storyIndex">
-                            @await Html.PartialAsync("_SummaryGraphics", new SummaryViewModel {Scenarios = scenariosForThisStory})
-                        </div>
-
-                        <div class="mt-4 mb-6 container invisible story-chart-container" id="story-summary-pie-chart-times-@storyIndex">
-                            @await Html.PartialAsync("_TestTimesPieChart", new TestTimesPieChartViewModel { Scenarios = scenariosForThisStory, StoryIndex = storyIndex })
-                        </div>
-
-                        <div class="scrollable-table-container">
-                            <table class="table is-fullwidth mt-4">
-                                <thead>
-                                <tr>
-                                    <th class="has-text-centered">Scenario</th>
-                                    <th class="has-text-centered">Status</th>
-                                    <th class="has-text-centered">Duration</th>
-                                    <th class="has-text-centered">Start</th>
-                                    <th class="has-text-centered">End</th>
-                                </tr>
-                                </thead>
-                                <tbody>
-
-                                @{ var scenarioIndex = new ReferenceInt(0); }
-                                @{ var groupedScenariosCount = new ReferenceInt(0); }
-                                @foreach (var groupedScenarios in scenariosGroupedByScenarioText)
-                                {
-                                    @await Html.PartialAsync("_GroupedScenarioTableRow", new GroupedScenarioViewModel
-                                    {
-                                        Scenarios = groupedScenarios.ToList(),
-                                        ScenarioIndex = scenarioIndex,
-                                        GroupedScenarioIndex = groupedScenariosCount,
-                                    })
-                                }
-
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-
-
-                    @{
-                        var allScenarioGroups = scenariosGroupedByScenarioText.Select(groupedScenarios => groupedScenarios.ToList()).ToList();
-                    }
-
-                    @for (var outerIndex = 0; outerIndex < allScenarioGroups.Count; outerIndex++)
+            <div class="box mb-0 rounded-bottom-corners invisibleElement story-container-body" id="story-@storyIndex">
+                <div class="has-text-right scenarios-buttons-row btn-group" role="group">
+                    @if (scenariosGroupedByScenarioText.Any(scenarios => scenarios.Count() > 1))
                     {
-                        var groupedScenario = allScenarioGroups[outerIndex];
-                        for (var innerIndex = 0; innerIndex < groupedScenario.Count; innerIndex++)
-                        {
-                            var lastScenario = groupedScenario.ElementAtOrDefault(innerIndex - 1) ?? allScenarioGroups.ElementAtOrDefault(outerIndex - 1)?.LastOrDefault();
-                            var scenario = groupedScenario[innerIndex];
-                            var nextScenario = groupedScenario.ElementAtOrDefault(innerIndex + 1) ?? allScenarioGroups.ElementAtOrDefault(outerIndex + 1)?.FirstOrDefault();
+                        <button class="btn btn-light" onclick="toggleSpecificScenarioGroup(this, toggleActions.EXPAND);">Expand All</button>
+                        <button class="btn btn-light" onclick="toggleSpecificScenarioGroup(this, toggleActions.COLLAPSE);">Collapse All</button>
+                    }
+                    <button class="btn toggle-hide pointer" toggle-alternative-text="Hide Summary" onclick="toggleElementVisibility(document.getElementById('story-summary-@storyIndex')); toggleAlternativeText(this);">Show Summary</button>
+                    <button class="btn toggle-hide pointer" toggle-alternative-text="Hide Timings Chart" onclick="toggleElementVisibility(document.getElementById('story-summary-pie-chart-times-@storyIndex')); toggleAlternativeText(this);">Show Timings Chart</button>
+                </div>
 
-                            @await Html.PartialAsync("_ScenarioModalPopup", new ScenarioModalViewModel
+                <div class="mt-4 container invisibleElement" id="story-summary-@storyIndex">
+                    @await Html.PartialAsync("_SummaryGraphics", new SummaryViewModel { Scenarios = scenariosForThisStory })
+                </div>
+
+                <div class="mt-4 mb-6 container invisibleElement story-chart-container" id="story-summary-pie-chart-times-@storyIndex">
+                    @await Html.PartialAsync("_TestTimesPieChart", new TestTimesPieChartViewModel { Scenarios = scenariosForThisStory, StoryIndex = storyIndex })
+                </div>
+
+                <div class="scrollable-table-container">
+                    <table class="table is-fullwidth mt-4">
+                        <thead>
+                        <tr>
+                            @* Expand Toggle *@
+                            <th scope="col"></th>
+                            <th class="has-text-centered">Scenario</th>
+                            <th class="has-text-centered">Status</th>
+                            <th class="has-text-centered">Duration</th>
+                            <th class="has-text-centered">Start</th>
+                            <th class="has-text-centered">End</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+
+                        @{ var scenarioIndex = new ReferenceInt(0); }
+                        @foreach (var groupedScenarios in scenariosGroupedByScenarioText)
+                        {
+                            @await Html.PartialAsync("_GroupedScenarioTableRow", new GroupedScenarioViewModel
                             {
-                                LastScenario = lastScenario,
-                                Scenario = scenario,
-                                NextScenario = nextScenario
+                                Scenarios = groupedScenarios.ToList(),
+                                ScenarioIndex = scenarioIndex,
+                                GroupedScenarioIndex = groupedScenariosCount,
                             })
                         }
-                    }
 
-                </section>
+                        </tbody>
+                    </table>
+                </div>
             </div>
+
+
+            @{
+                var allScenarioGroups = scenariosGroupedByScenarioText.Select(groupedScenarios => groupedScenarios.ToList()).ToList();
+            }
+
+            @* @for (var outerIndex = 0; outerIndex < allScenarioGroups.Count; outerIndex++) *@
+            @* { *@
+            @*     var groupedScenario = allScenarioGroups[outerIndex]; *@
+            @*     for (var innerIndex = 0; innerIndex < groupedScenario.Count; innerIndex++) *@
+            @*     { *@
+            @*         var lastScenario = groupedScenario.ElementAtOrDefault(innerIndex - 1) ?? allScenarioGroups.ElementAtOrDefault(outerIndex - 1)?.LastOrDefault(); *@
+            @*         var scenario = groupedScenario[innerIndex]; *@
+            @*         var nextScenario = groupedScenario.ElementAtOrDefault(innerIndex + 1) ?? allScenarioGroups.ElementAtOrDefault(outerIndex + 1)?.FirstOrDefault(); *@
+            @* *@
+            @*         @await Html.PartialAsync("_ScenarioModalPopup", new ScenarioModalViewModel *@
+            @*         { *@
+            @*             LastScenario = lastScenario, *@
+            @*             Scenario = scenario, *@
+            @*             NextScenario = nextScenario *@
+            @*         }) *@
+            @*     } *@
+            @* } *@
+                    
         </div>
-        
+
         <hr class="rounded quarter-width center-horizontally">
     }
     
@@ -212,10 +164,17 @@
 
 </div>
 
-<div class="container mb-6">
-    <nav class="level">
-        <div class="level-item">
-            @await Html.PartialAsync("_PaginationButtons", pager.GetPaginationInformation())
-        </div>
-    </nav>
+<div class="container mt-3 mb-6">
+    @await Html.PartialAsync("_PaginationButtons", pager.GetPaginationInformation())
 </div>
+
+<script>
+    let scenarioRows = document.getElementsByClassName("scenario-row");
+    for (let scenarioRow of scenarioRows) {
+        scenarioRow.addEventListener("click", function() {
+            let scenarioId = scenarioRow.getAttribute("scenario-id");
+            window.location.href = '@Context.GetBaseUrl()/bdtest/report/@ViewBag.Id/scenario/' + scenarioId;
+            spinnerCursor();
+        });
+    }
+</script>

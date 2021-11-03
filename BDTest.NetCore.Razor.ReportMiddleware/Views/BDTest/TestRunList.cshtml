@@ -2,6 +2,7 @@
 @using BDTest.NetCore.Razor.ReportMiddleware.Extensions
 @using BDTest.NetCore.Razor.ReportMiddleware.Helpers
 @using BDTest.NetCore.Razor.ReportMiddleware.Models
+@using BDTest.NetCore.Razor.ReportMiddleware.Models.ViewModels
 @using BDTest.Test
 @model IEnumerable<BDTest.NetCore.Razor.ReportMiddleware.Models.TestRunSummary>
 @inject BDTestReportServerOptions BDTestReportServerOptions;
@@ -42,86 +43,41 @@
         
         switch (status) {
           case '@StatusConstants.All':
-            mainDropdownButton.innerHTML = '<p>Show All <i class="arrow down"></i></p>';
-            mainDropdownButton.className = "button has-text-centered is-info is-rounded";
+            mainDropdownButton.innerHTML = 'Show All';
+            mainDropdownButton.className = "btn dropdown-toggle btn-primary";
             break;
           case '@Status.Passed':
-            mainDropdownButton.innerHTML = '<p>Show Success <i class="arrow down"></i></p>';
-            mainDropdownButton.className = "button has-text-centered is-success is-rounded";
+            mainDropdownButton.innerHTML = 'Show Success';
+            mainDropdownButton.className = "btn dropdown-toggle btn-success";
             break;
           case '@Status.Failed':
-            mainDropdownButton.innerHTML = '<p>Show Failures <i class="arrow down"></i></p>';
-            mainDropdownButton.className = "button has-text-centered is-danger is-rounded";
+            mainDropdownButton.innerHTML = 'Show Failures';
+            mainDropdownButton.className = "btn dropdown-toggle btn-danger";
             break;
           case '@Status.Skipped':
-            mainDropdownButton.innerHTML = '<p>Show Skipped <i class="arrow down"></i></p>';
-            mainDropdownButton.className = "button has-text-centered is-warning is-rounded";
+            mainDropdownButton.innerHTML = 'Show Skipped';
+            mainDropdownButton.className = "btn dropdown-toggle btn-warning";
             break;
           case '@Status.Inconclusive':
-            mainDropdownButton.innerHTML = '<p>Show Inconclusive <i class="arrow down"></i></p>';
-            mainDropdownButton.className = "button has-text-centered is-warning is-rounded";
+            mainDropdownButton.innerHTML = 'Show Inconclusive';
+            mainDropdownButton.className = "btn dropdown-toggle btn-warning";
             break;
           case '@Status.NotImplemented':
-            mainDropdownButton.innerHTML = '<p>Show Not Implemented <i class="arrow down"></i></p>';
-            mainDropdownButton.className = "button has-text-centered is-warning is-rounded";
+            mainDropdownButton.innerHTML = 'Show Not Implemented';
+            mainDropdownButton.className = "btn dropdown-toggle btn-warning";
             break;
         }
         
        window.selectedStatus = status;
        performFilter();
     }
-
-    function getCheckedIdsAsQueryParameter() {
-        let checkboxes = document.getElementsByName("checkbox");
-                  let checkedIds = [];
-                  
-                  for (let i=0; i<checkboxes.length; i++) {
-                       // And stick the checked ones onto an array...
-                       if (checkboxes[i].checked) {
-                          checkedIds.push(checkboxes[i].id);
-                       }
-                    }
-                  
-                  let queryString = "?reportIds=" + checkedIds.join(",");
-                  
-                  return queryString;
-    }
-
-    onDomLoaded(function() {
-        const compareTimesButton = document.getElementById("compare-times");
-                compareTimesButton.addEventListener('click', function() {
-                    let checkIdsQueryParameter = getCheckedIdsAsQueryParameter();
-                    if(checkIdsQueryParameter === "?reportIds=") {
-                        showSnackbar("Please check some test runs to compare");
-                        return;
-                    }
-                  window.location = "@Url.Action("TestRunTimes", "BDTest")" + checkIdsQueryParameter;
-                });
-                
-                const checkFlakinessButton = document.getElementById("check-flakiness");
-                        checkFlakinessButton.addEventListener('click', function() {
-                        let checkIdsQueryParameter = getCheckedIdsAsQueryParameter();
-                        if(checkIdsQueryParameter === "?reportIds=") {
-                            showSnackbar("Please check some test runs to compare");
-                            return;
-                        }
-                          window.location = "@Url.Action("TestRunFlakiness", "BDTest")" + checkIdsQueryParameter;
-                        });
-    });
 </script>
 
-<section class="hero is-info">
-    <div class="hero-body">
-        <div class="container">
-            <h1 class="title">
-                Test Runs
-            </h1>
-            <h2 class="subtitle">
-                View a report from the list or select some test runs to compare:
-            </h2>
-        </div>
-    </div>
-</section>
+@await Html.PartialAsync("_TestPageHeaderHero", new TestPageHeaderHeroViewModel
+{
+    Title = "Test Runs",
+    Description = "View a report from the list or select some test runs to compare"
+})
 
 <section class="section">
     <div class="container">
@@ -130,122 +86,114 @@
                 @await Html.PartialAsync("_PaginationButtons", pager.GetPaginationInformation())
             </div>
         </nav>
-        <nav class="level">
-            <div class="level-left mb-5">
+        <div class="container-fluid d-flex">
+            <div class="level-left mb-5 me-auto">
                 @await Html.PartialAsync("_TestRunListVisibleColumnsDropdown")
             </div>
-            <div class="level-right mb-5">
-                <button class="button is-info is-rounded" id="compare-times">Compare Times</button>
-                <button class="button is-info is-rounded" id="check-flakiness">Check Flakiness</button>
-                @await Html.PartialAsync("_StatusDropdown", new StatusDropdownViewModel {IncludeScript = false})
-            </div>
-        </nav>
+            @if (Context.GetCurrentPageNumber() == PagerQueryParameters.All)
+            {
+                <div class="level-right mb-5">
+                    @await Html.PartialAsync("_StatusDropdown", new StatusDropdownViewModel { IncludeScript = false })
+                </div>
+            }
+        </div>
 
         @if (Context.GetCurrentPageNumber() == PagerQueryParameters.All)
         {
-            <nav class="level">
-                <div class="">
-                    <div class="mx-4">
-                        <label>Filter by Tag</label>
-                        <input class="input" type="text" id="filter-tag" placeholder="Tag">
-                        <div class="has-text-right">
-                            <label>Exact Match</label>
-                            <input type="checkbox" id="filter-tag-checkbox"/>
-                        </div>
+            <div class="row g-2">
+                <div class="col-md">
+                    <div class="form-floating">
+                        <select class="form-select" id="filter-tag" aria-label="Floating label select example">
+                            <option value="all">All</option>
+                            @foreach (var tag in Model.Select(x => x.Tag).Distinct())
+                            {
+                                <option value="@tag">@tag</option>
+                            }
+                        </select>
+                        <label for="filter-tag">Filter by Tag</label>
                     </div>
                 </div>
-
-                <div class="">
-                    <div class="mx-4">
-                        <label>Filter by Environment</label>
-                        <input class="input" type="text" id="filter-environment" placeholder="Environment">
-                        <div class="has-text-right">
-                            <label>Exact Match</label>
-                            <input type="checkbox" id="filter-environment-checkbox"/>
-                        </div>
+                <div class="col-md">
+                    <div class="form-floating">
+                        <select class="form-select" id="filter-environment" aria-label="Floating label select example">
+                            <option value="all">All</option>
+                            @foreach (var environment in Model.Select(x => x.Environment).Distinct())
+                            {
+                                <option value="@environment">@environment</option>
+                            }
+                        </select>
+                        <label for="filter-environment">Filter by Environment</label>
                     </div>
                 </div>
-
-                <div class="">
-                    <div class="mx-4">
-                        <label>Filter by Machine</label>
-                        <input class="input" type="text" id="filter-machine-name" placeholder="Machine Name">
-                        <div class="has-text-right">
-                            <label>Exact Match</label>
-                            <input type="checkbox" id="filter-machine-name-checkbox"/>
-                        </div>
+            </div>
+            
+            <div class="row g-2">
+                <div class="col-md">
+                    <div class="form-floating">
+                        <select class="form-select" id="filter-machine-name" aria-label="Floating label select example">
+                            <option value="all">All</option>
+                            @foreach (var machineName in Model.Select(x => x.MachineName).Distinct())
+                            {
+                                <option value="@machineName">@machineName</option>
+                            }
+                        </select>
+                        <label for="filter-machine-name">Filter by Machine</label>
                     </div>
                 </div>
-
-                <div class="">
-                    <div class="mx-4">
-                        <label>Filter by Branch</label>
-                        <input class="input" type="text" id="filter-branch" placeholder="Branch">
-                        <div class="has-text-right">
-                            <label>Exact Match</label>
-                            <input type="checkbox" id="filter-branch-checkbox"/>
-                        </div>
+                <div class="col-md">
+                    <div class="form-floating">
+                        <select class="form-select" id="filter-branch" aria-label="Floating label select example">
+                            <option value="all">All</option>
+                            @foreach (var branch in Model.Select(x => x.BranchName).Distinct())
+                            {
+                                <option value="@branch">@branch</option>
+                            }
+                        </select>
+                        <label for="filter-branch">Filter by Branch</label>
                     </div>
                 </div>
-            </nav>
+            </div>
         }
 
         <script>
             let filterObjectsArray = [];
-        
-             function matches(tag, filterValue, checkbox){
-                 if(checkbox.checked === false) {
-                    return tag.textContent.toLowerCase().includes(filterValue.toLowerCase());
-                 }
-                 
-                 return tag.textContent === filterValue;
-             }
              
              function performFilter() {
                  
                  // Make all visible
-                 for (const filterObject of filterObjectsArray) {
-                     let tags = document.getElementsByName(filterObject.tableCellNamesToCheck);
-                     for (const tag of tags) {
-                        setElementVisible(tag.parentElement);   
-                     }
+                 for (let tableRow of document.getElementsByTagName("tr")) {
+                     showElement(tableRow);   
                  }
                  
                  for (const filterObject of filterObjectsArray) {
                      let filterValue = filterObject.filterInput.value;
                      
-                     if(!filterValue) {
+                     if(!filterValue || filterValue === "all") {
                          continue;
                      }
                      
                      let tags = document.getElementsByName(filterObject.tableCellNamesToCheck);
-                     for (const tag of tags) {
-                         
-                        if(!matches(tag, filterValue, filterObject.checkbox)) {
-                            setElementInvisible(tag.parentElement);
+                     for (const tag of tags) {                        
+                        if(tag.textContent !== filterValue) {
+                            hideElement(tag.parentElement);
                         }
                      }
                  }
                  
-                 if(!window.selectedStatus || window.selectedStatus !== "@StatusConstants.All") {
+                 if(window.selectedStatus && window.selectedStatus !== "@StatusConstants.All") {
                      let rowsNotMatchingStatus = document.querySelectorAll(".test-run-row:not(." + selectedStatus + ")");
                      for (let rowNotMatchingStatus of rowsNotMatchingStatus) {
-                         setElementInvisible(rowNotMatchingStatus);
+                         hideElement(rowNotMatchingStatus);
                      }
                   }
              }
         
-            function filterRows(inputElementId, checkboxId, tableCellNamesToCheck) {
+            function filterRows(inputElementId, tableCellNamesToCheck) {
               let filterInput = document.getElementById(inputElementId);
-              let checkbox = document.getElementById(checkboxId);
               
-              filterObjectsArray.push({filterInput: filterInput, checkbox: checkbox, tableCellNamesToCheck: tableCellNamesToCheck});
+              filterObjectsArray.push({filterInput: filterInput, tableCellNamesToCheck: tableCellNamesToCheck});
               
-              filterInput.addEventListener('input', function() {
-                  performFilter();
-              });
-              
-              checkbox.addEventListener('change', function() {
+              filterInput.addEventListener('change', function() {
                   performFilter();
               });
             }
@@ -255,21 +203,18 @@
         {
             <script>
             onDomLoaded(function() {
-                filterRows("filter-tag", "filter-tag-checkbox", "tag-field");
-                filterRows("filter-environment", "filter-environment-checkbox", "environment-field");
-                filterRows("filter-machine-name", "filter-machine-name-checkbox", "machine-name-field");
-                filterRows("filter-branch", "filter-branch-checkbox", "branch-field");
+                filterRows("filter-tag", "tag-field");
+                filterRows("filter-environment", "environment-field");
+                filterRows("filter-machine-name", "machine-name-field");
+                filterRows("filter-branch", "branch-field");
             })
             </script>
         }
 
-        <table class="table is-fullwidth">
+        <table class="table table-hover">
 
             <thead>
             <tr class="off-white-bg-color">
-                <th class="has-text-centered">
-                    <input id="checkbox-header" type="checkbox"/>
-                </th>
                 <th class="has-text-centered tag-column">Tag</th>
                 <th class="has-text-centered environment-column">Environment</th>
                 <th class="has-text-centered machine-column">Machine Name</th>
@@ -296,42 +241,36 @@
                 {
                     status += $" ({record.Counts.Failed})";
                 }
+                var timeTaken = record.FinishedAtDateTime - record.StartedAtDateTime;
 
 
                 <tr class="off-white-bg-color test-run-row @record.Status">
-                    <td class="has-text-centered is-vcentered">
-                        <input name="checkbox" type="checkbox" class="checkbox-child" id="@record.RecordId"/>
+                    <td name="tag-field" class="has-text-centered align-middle tag-column">@record.Tag</td>
+                    <td name="environment-field" class="has-text-centered align-middle environment-column">@record.Environment</td>
+                    <td name="machine-name-field" class="has-text-centered align-middle machine-column">@record.MachineName</td>
+                    <td name="branch-field" class="has-text-centered align-middle branch-column">@record.BranchName</td>
+                    <td class="has-text-centered align-middle date-column">@record.StartedAtDateTime.ToStringForReport()</td>
+                    <td class="align-middle duration-column" data-bs-toggle="popover" data-bs-trigger="hover focus" data-bs-placement="top" data-bs-content="@timeTaken.ToPrettyFormat()">
+                        @timeTaken.ToString()
                     </td>
-                    <td name="tag-field" class="has-text-centered is-vcentered tag-column">@record.Tag</td>
-                    <td name="environment-field" class="has-text-centered is-vcentered environment-column">@record.Environment</td>
-                    <td name="machine-name-field" class="has-text-centered is-vcentered machine-column">@record.MachineName</td>
-                    <td name="branch-field" class="has-text-centered is-vcentered branch-column">@record.BranchName</td>
-                    <td class="has-text-centered is-vcentered date-column">@record.StartedAtDateTime.ToStringForReport()</td>
-                    <td class="has-text-centered is-vcentered duration-column">
-                        <div class="tooltip">
-                            @{
-                                var timeTaken = record.FinishedAtDateTime - record.StartedAtDateTime;
-                            }
-                            @timeTaken.ToString()
-                            <span class="tooltiptext">@timeTaken.ToPrettyFormat()</span>
-                        </div>
-                    </td>
-                    <td class="has-text-centered is-vcentered">
+                    <td class="has-text-centered align-middle">
                         <span class="title is-4">@record.Counts.Total</span>
                     </td>
-                    <td class="has-text-centered is-vcentered">
-                        <span class="@record.Status.GetCssColourValueForStatus() tag px-5 is-medium">
-                            @status
-                        </span>
+                    <td class="has-text-centered align-middle">
+                        <div class="d-grid">
+                            <button class="btn @record.Status.GetCssColourValueForStatus() tag px-5 is-medium">
+                                @status
+                            </button>
+                        </div>
                     </td>
-                    <td class="is-vcentered">
+                    <td class="align-middle">
                         <a href="~/bdtest/report/@record.RecordId/summary">
-                            <button class="button is-fullwidth is-dark is-outlined pointer is-rounded">View Report</button>
+                            <button class="btn btn-dark pointer" onclick="disableButtonAndSpin(this)">View Report</button>
                         </a>
                     </td>
                     @if (isAdmin)
                     {
-                        <td class="is-vcentered">
+                        <td class="align-middle">
                             <button class="delete" onclick="confirmDelete('@record.RecordId', '@record.Tag', '@record.Environment', '@record.BranchName', '@record.StartedAtDateTime')"></button>
                         </td>
                     }

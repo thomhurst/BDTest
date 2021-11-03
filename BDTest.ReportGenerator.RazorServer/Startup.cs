@@ -31,6 +31,7 @@ namespace BDTest.ReportGenerator.RazorServer
             services.AddSingleton<CustomSidebarLinkProvider>();
             services.AddSingleton<CustomHeaderProvider>();
             services.AddSingleton<AdminAuthorizer>();
+            services.AddSingleton<UserPersonalizer>();
 
             AddConfig(services);
 
@@ -69,6 +70,7 @@ namespace BDTest.ReportGenerator.RazorServer
                 options.CustomSidebarLinksProvider = app.ApplicationServices.GetRequiredService<CustomSidebarLinkProvider>();
                 options.CustomHeaderLinksProvider = app.ApplicationServices.GetRequiredService<CustomHeaderProvider>();
                 options.AdminAuthorizer = app.ApplicationServices.GetRequiredService<AdminAuthorizer>();
+                options.UserPersonalizer = app.ApplicationServices.GetRequiredService<UserPersonalizer>();
             });
 
             app.UseRouting();

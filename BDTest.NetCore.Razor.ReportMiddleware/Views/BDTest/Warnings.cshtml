@@ -16,7 +16,7 @@
 <section class="hero is-info">
     <div class="hero-body">
         <div class="container">
-            <div class="columns is-vcentered">
+            <div class="columns align-middle">
                 <div class="column">
                     <h1 class="title">
                         Warnings
@@ -58,16 +58,16 @@
                 foreach (var warning in warningStory)
                 {
                     <tr class="off-white-bg-color">
-                        <td class="is-vcentered has-text-centered">
+                        <td class="align-middle has-text-centered">
                             <span>@warning.GetStoryText()</span>
                         </td>
-                        <td class="is-vcentered has-text-centered">
+                        <td class="align-middle has-text-centered">
                             <span>@warning.GetScenarioText()</span>
                         </td>
-                        <td class="is-vcentered has-text-centered">
+                        <td class="align-middle has-text-centered">
                             <pre class="off-white-bg-color">@warning.CallerFile</pre>
                         </td>
-                        <td class="is-vcentered has-text-centered">
+                        <td class="align-middle has-text-centered">
                             <pre class="off-white-bg-color">@warning.CallerMember</pre>
                         </td>
                     </tr>

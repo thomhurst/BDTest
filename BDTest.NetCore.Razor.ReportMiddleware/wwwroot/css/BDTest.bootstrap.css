@@ -1,0 +1,31 @@
+﻿.smaller-font {
+    font-size: 90%;
+}
+
+.indent-text-2 {
+    text-indent: 2em;
+}
+
+.pointer {
+    cursor: pointer;
+}
+
+.simplepicker-wrapper.active {
+    z-index: 999;
+}
+
+.hiddenRow {
+    padding: 0 !important;
+}
+
+.invisibleRow {
+    display: none;
+}
+
+.invisibleRow.show{
+    display: table-row;
+}
+
+.invisibleElement {
+    display: none;
+}

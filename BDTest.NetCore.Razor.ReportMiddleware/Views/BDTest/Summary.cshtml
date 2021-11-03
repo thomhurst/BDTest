@@ -5,26 +5,11 @@
     Layout = "_Layout";
 }
 
-<section class="hero is-info">
-    <div class="hero-body">
-        <div class="container">
-            <div class="columns is-vcentered">
-                <div class="column">
-                    <h1 class="title">
-                        Welcome to your report by <strong>BDTest</strong>!
-                    </h1>
-                    <h2 class="subtitle">
-                        Here is a summary of your tests:
-                    </h2>
-                </div>
-
-                <div class="column">
-                    @await Html.PartialAsync("_PreviousNextReportButtons", Model.Id)
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
+@await Html.PartialAsync("_TestPageHeaderHero", new TestPageHeaderHeroViewModel
+{
+    Title = "Welcome to your report by BDTest!",
+    Description = "Here is a summary of your tests"
+})
 
 <section class="section">
     <div class="container">

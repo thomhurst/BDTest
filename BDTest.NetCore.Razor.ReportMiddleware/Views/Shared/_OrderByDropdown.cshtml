@@ -1,46 +1,18 @@
 @using BDTest.NetCore.Razor.ReportMiddleware.Constants
 <script>
     function orderBy(value) {
-      window.location.href = getUrlWithAppendedParameter('order', value);
+      window.location.href = getUrlWithAppendedParameter('@OrderConstants.OrderByQueryParameterName', value);
     }
 </script>
 
-<div class="dropdown">
-    <div class="dropdown-trigger">
-        <button class="button is-info is-rounded" aria-haspopup="true" aria-controls="dropdown-menu">
-            <p>Order By <i class="arrow down"></i></p>
-            @* <span class="icon is-small"> *@
-            @*   <i class="fas fa-angle-down" aria-hidden="true"></i> *@
-            @* </span> *@
-        </button>
-    </div>
-    <div class="dropdown-menu has-text-centered" id="dropdown-menu" role="menu">
-        <div class="dropdown-content has-text-centered">
-            <a href="#" class="dropdown-item">
-                <button class="button is-fullwidth is-rounded" onclick="orderBy('@OrderConstants.Name');">
-                    Order by Name
-                </button>
-            </a>
-            <a class="dropdown-item">
-                <button class="button is-fullwidth is-rounded" onclick="orderBy('@OrderConstants.Duration');">
-                    Order by Duration
-                </button>
-            </a>
-            <a href="#" class="dropdown-item">
-                <button class="button is-fullwidth is-rounded" onclick="orderBy('@OrderConstants.DateDescending');">
-                    Order by Time Descending
-                </button>
-            </a>
-            <a href="#" class="dropdown-item">
-                <button class="button is-fullwidth is-rounded" onclick="orderBy('@OrderConstants.DateAscending');">
-                    Order by Time Ascending
-                </button>
-            </a>
-            <a href="#" class="dropdown-item">
-                <button class="button is-fullwidth is-rounded" onclick="orderBy('@OrderConstants.Status');">
-                    Order by Status
-                </button>
-            </a>
-        </div>
-    </div>
-</div>
+<button class="btn btn-primary dropdown-toggle" aria-haspopup="true" aria-controls="dropdown-menu" data-bs-toggle="dropdown" aria-expanded="false">
+        Order By
+</button>
+<ul class="dropdown-menu" id="dropdown-menu" role="menu">
+    <li><a href="#" class="dropdown-item" onclick="orderBy('@OrderConstants.Name');">Order by Name</a></li>
+    <li><a href="#" class="dropdown-item" onclick="orderBy('@OrderConstants.DurationDescending');">Order by Duration Descending</a></li>
+    <li><a href="#" class="dropdown-item" onclick="orderBy('@OrderConstants.DurationAscending');">Order by Duration Ascending</a></li>
+    <li><a href="#" class="dropdown-item" onclick="orderBy('@OrderConstants.DateDescending');">Order by Time Descending</a></li>
+    <li><a href="#" class="dropdown-item" onclick="orderBy('@OrderConstants.DateAscending');">Order by Time Ascending</a></li>
+    <li><a href="#" class="dropdown-item" onclick="orderBy('@OrderConstants.Status');">Order by Status</a></li>
+</ul>

@@ -2,88 +2,95 @@
 @using BDTest.NetCore.Razor.ReportMiddleware.Helpers
 @using BDTest.Test
 @model BDTest.NetCore.Razor.ReportMiddleware.Models.StatusDropdownViewModel
+@{
+  var currentFilterByQueryParameter = Context.Request.GetQueryParameter(StatusConstants.FilterByStatusQueryParameterName);
+}
 <div class="dropdown">
-  <div class="dropdown-trigger">
-    <button class="button is-info is-rounded" aria-haspopup="true" aria-controls="dropdown-menu" id="dropdown-main-button">
-      <p>Show All <i class="arrow down"></i></p>
-      @* <span class="icon is-small"> *@
-      @*   <i class="fas fa-angle-down" aria-hidden="true"></i> *@
-      @* </span> *@
-    </button>
-  </div>
-  <div class="dropdown-menu has-text-centered" id="dropdown-menu" role="menu">
-    <button class="button is-info is-fullwidth" onclick="filterByStatus('@StatusConstants.All');">
-              Show All
-            </button>
+  <button class="btn btn-primary dropdown-toggle" type="button" aria-haspopup="true" aria-controls="dropdown-menu" id="dropdown-main-button" data-bs-toggle="dropdown" aria-expanded="false">
+    Show All
+    @* <span class="icon is-small"> *@
+    @*   <i class="fas fa-angle-down" aria-hidden="true"></i> *@
+    @* </span> *@
+  </button>
+  <ul class="dropdown-menu" id="dropdown-menu" role="menu">
+    <li>
+      <a class="dropdown-item" onclick="filterByStatus('@StatusConstants.All');">
+        Show All
+      </a>
+    </li>
     <hr class="dropdown-divider">
-    <div class="dropdown-content has-text-centered">
-      <a href="#" class="dropdown-item">
-        <button class="button is-fullwidth is-success is-rounded" onclick="filterByStatus('@Status.Passed');">
-          Show Passed
-        </button>
+    <li>
+      <a href="#" class="dropdown-item" onclick="filterByStatus('@Status.Passed');">
+        Show Passed
       </a>
-      <a class="dropdown-item">
-        <button class="button is-fullwidth is-danger is-rounded" onclick="filterByStatus('@Status.Failed');">
-          Show Failures
-        </button>
+    </li>
+    <li>
+      <a class="dropdown-item" onclick="filterByStatus('@Status.Failed');">
+        Show Failures
       </a>
-      <a href="#" class="dropdown-item">
-        <button class="button is-fullwidth is-warning is-rounded" onclick="filterByStatus('@Status.Skipped');">
-          Show Skipped
-        </button>
+    </li>
+    <li>
+      <a href="#" class="dropdown-item" onclick="filterByStatus('@Status.Skipped');">
+        Show Skipped
       </a>
-      <a href="#" class="dropdown-item">
-        <button class="button is-fullwidth is-warning is-rounded" onclick="filterByStatus('@Status.Inconclusive');">
-          Show Inconclusive
-        </button>
+    </li>
+    <li>
+      <a href="#" class="dropdown-item" onclick="filterByStatus('@Status.Inconclusive');">
+        Show Inconclusive
       </a>
-      <a href="#" class="dropdown-item">
-        <button class="button is-fullwidth is-warning is-rounded" onclick="filterByStatus('@Status.NotImplemented');">
-          Show Not Implemented
-        </button>
+    </li>
+    <li>
+      <a href="#" class="dropdown-item" onclick="filterByStatus('@Status.NotImplemented');">
+        Show Not Implemented
       </a>
-    </div>
-  </div>
+    </li>
+  </ul>
 </div>
+
 
 @if (Model.IncludeScript)
 {
   <script>
   function filterByStatus(status) {
-    let currentFilterQueryParameter = '@Context.Request.GetQueryParameter("filterByStatus")'
+    let currentFilterQueryParameter = '@currentFilterByQueryParameter'
     
     let mainDropdownButton = document.getElementById("dropdown-main-button");
     
     switch (status) {
       case '@StatusConstants.All':
-        mainDropdownButton.innerHTML = '<p>Show All <i class="arrow down"></i></p>';
-        mainDropdownButton.className = "button has-text-centered is-info is-rounded";
+        mainDropdownButton.innerHTML = 'Show All';
+        mainDropdownButton.className = "btn dropdown-toggle btn-primary";
         break;
       case '@Status.Passed':
-        mainDropdownButton.innerHTML = '<p>Show Success <i class="arrow down"></i></p>';
-        mainDropdownButton.className = "button has-text-centered is-success is-rounded";
+        mainDropdownButton.innerHTML = 'Show Passed';
+        mainDropdownButton.className = "btn dropdown-toggle btn-success";
         break;
       case '@Status.Failed':
-        mainDropdownButton.innerHTML = '<p>Show Failures <i class="arrow down"></i></p>';
-        mainDropdownButton.className = "button has-text-centered is-danger is-rounded";
+        mainDropdownButton.innerHTML = 'Show Failures';
+        mainDropdownButton.className = "btn dropdown-toggle btn-danger";
         break;
       case '@Status.Skipped':
-        mainDropdownButton.innerHTML = '<p>Show Skipped <i class="arrow down"></i></p>';
-        mainDropdownButton.className = "button has-text-centered is-warning is-rounded";
+        mainDropdownButton.innerHTML = 'Show Skipped';
+        mainDropdownButton.className = "btn dropdown-toggle btn-warning";
         break;
       case '@Status.Inconclusive':
-        mainDropdownButton.innerHTML = '<p>Show Inconclusive <i class="arrow down"></i></p>';
-        mainDropdownButton.className = "button has-text-centered is-warning is-rounded";
+        mainDropdownButton.innerHTML = 'Show Inconclusive';
+        mainDropdownButton.className = "btn dropdown-toggle btn-warning";
         break;
       case '@Status.NotImplemented':
-        mainDropdownButton.innerHTML = '<p>Show Not Implemented <i class="arrow down"></i></p>';
-        mainDropdownButton.className = "button has-text-centered is-warning is-rounded";
+        mainDropdownButton.innerHTML = 'Show Not Implemented';
+        mainDropdownButton.className = "btn dropdown-toggle btn-warning";
         break;
       }
       
       if (currentFilterQueryParameter !== status) {
-        window.location.href = getUrlWithAppendedParameter("filterByStatus", status);
+        window.location.href = getUrlWithAppendedParameter('@StatusConstants.FilterByStatusQueryParameterName', status);
+        spinnerCursor()
       }
     }
+    
+    onDomLoaded(function() {
+      filterByStatus('@currentFilterByQueryParameter');
+    });
 </script>
 }

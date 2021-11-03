@@ -2,26 +2,26 @@
 @model BDTest.NetCore.Razor.ReportMiddleware.Models.ViewModels.ScenarioRowViewModel
 
 @{
-    var isGroupedScenarioIndentCssClass = Model.IsPartOfGroupedScenarios ? "pl-6" : "";
-    var isGroupedScenarioColourCssClass = Model.IsPartOfGroupedScenarios ? "is-outlined" : "";
-    var rowIsChildScenarioCssClass = Model.IsPartOfGroupedScenarios ? "grouped-scenario-child" : "";
+    var indexTextClass = Model.IsPartOfGroupedScenarios ? "indent-text-2" : "";
+    var invisibleClass = Model.IsPartOfGroupedScenarios ? "invisibleRow" : "";
+    var rowIsChildScenarioCssClass = Model.IsPartOfGroupedScenarios ? "smaller-font" : "";
     var parentScenarioGroupId = Model.IsPartOfGroupedScenarios ? Model.GroupedScenarioParentIndex.Get() : -1;
     var scenarioCountInsideParentGroup = Model.IsPartOfGroupedScenarios ? $"(Test {Model.IndexOfScenarioInParent.Get()})" : "";
 }
 
-<tr class="modal-link pointer scenario-row @rowIsChildScenarioCssClass @Model.Scenario.Status" data-target="scenario-modal-@Model.Scenario.Guid" parent-scenario-group="@parentScenarioGroupId">
-    <td class="@isGroupedScenarioIndentCssClass has-text-centered is-vcentered">
-         <button class="button is-fullwidth is-info is-rounded @isGroupedScenarioColourCssClass">@Model.Scenario.GetScenarioText() @scenarioCountInsideParentGroup</button>
+<tr class="modal-link @invisibleClass pointer scenario-row @rowIsChildScenarioCssClass @Model.Scenario.Status" scenario-id="@Model.Scenario.Guid" parent-scenario-group="@parentScenarioGroupId">
+    <td></td>
+    <td class="@indexTextClass">
+         @Model.Scenario.GetScenarioText() @scenarioCountInsideParentGroup
     </td>
-    <td class="has-text-centered is-vcentered">
-        <span class="@Model.Scenario.Status.GetCssColourValueForStatus() tag px-5 is-medium">@Model.Scenario.Status.AsString()</span>
-    </td>
-    <td class="has-text-centered is-vcentered">
-        <div class="tooltip">
-            @Model.Scenario.TimeTaken.ToString()
-            <span class="tooltiptext">@Model.Scenario.TimeTaken.ToPrettyFormat()</span>
+    <td class="align-middle">
+        <div class="d-grid">
+            <button type="button" class="btn @Model.Scenario.Status.GetCssColourValueForStatus()">@Model.Scenario.Status.AsString()</button>
         </div>
     </td>
-    <td class="has-text-centered is-vcentered">@Model.Scenario.StartTime.ToStringForReport()</td>
-    <td class="has-text-centered is-vcentered">@Model.Scenario.EndTime.ToStringForReport()</td>
+    <td class="align-middle" data-bs-toggle="popover" data-bs-trigger="hover focus" data-bs-placement="top" data-bs-content="@Model.Scenario.TimeTaken.ToPrettyFormat()">
+        @Model.Scenario.TimeTaken.ToString()
+    </td>
+    <td class="align-middle">@Model.Scenario.StartTime.ToStringForReport()</td>
+    <td class="align-middle">@Model.Scenario.EndTime.ToStringForReport()</td>
 </tr>

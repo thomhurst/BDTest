@@ -9,18 +9,14 @@
     return;
 }
 
-<nav class="pagination is-rounded is-centered" role="navigation" aria-label="pagination">
-    @if (Model.CurrentPage != Model.StartPage)
-    {
-        <a class="pagination-previous" href="@Context.GetUrlForPageNumber(Model.CurrentPage - 1)">Previous</a>
-    }
-    @if (Model.CurrentPage != Model.EndPage)
-    {
-        <a class="pagination-next" href="@Context.GetUrlForPageNumber(Model.CurrentPage+1)">Next page</a>
-    }
-    <a class="pagination-next" href="@Context.GetCurrentUrl().WithQueryParameter(PagerQueryParameters.Page, PagerQueryParameters.All)">Show All</a>
-    <ul class="pagination-list">
+<nav role="navigation" aria-label="pagination">
+    <ul class="pagination justify-content-center">
 
+        @if (Model.CurrentPage != Model.StartPage)
+        {
+            <li class="page-item"><a class="page-link" href="@Context.GetUrlForPageNumber(Model.CurrentPage - 1)">Previous</a></li>
+        }
+        
         @if (Model.TotalPages <= 6)
         {
             for (var i = 1; i <= Model.TotalPages; i++)
@@ -32,8 +28,8 @@
         {
             @await Html.PartialAsync("_PageButton", (1, Model.CurrentPage))
 
-            <li>
-                <span class="pagination-ellipsis">&hellip;</span>
+            <li class="page-item">
+                <span class="page-link">&hellip;</span>
             </li>
               
             @await Html.PartialAsync("_PageButton", (Model.CurrentPage-1, Model.CurrentPage))
@@ -42,10 +38,10 @@
             
             @await Html.PartialAsync("_PageButton", (Model.CurrentPage+1, Model.CurrentPage))
             
-            <li>
-                <span class="pagination-ellipsis">&hellip;</span>
+            <li class="page-item">
+                <span class="page-link">&hellip;</span>
             </li>
-            
+
             @await Html.PartialAsync("_PageButton", (Model.EndPage, Model.CurrentPage))
         }
         else if (Model.CurrentPage <= 2)
@@ -56,18 +52,18 @@
             
             @await Html.PartialAsync("_PageButton", (3, Model.CurrentPage))
             
-            <li>
-                <span class="pagination-ellipsis">&hellip;</span>
+            <li class="page-item">
+                <span class="page-link">&hellip;</span>
             </li>
-            
+
             @await Html.PartialAsync("_PageButton", (Model.EndPage, Model.CurrentPage))
         }
         else if (Model.CurrentPage >= Model.EndPage - 2)
         {
             @await Html.PartialAsync("_PageButton", (1, Model.CurrentPage))
             
-            <li>           
-                <span class="pagination-ellipsis">&hellip;</span>
+            <li class="page-item">
+                <span class="page-link">&hellip;</span>
             </li>
 
             @await Html.PartialAsync("_PageButton", (Model.EndPage-2, Model.CurrentPage))
@@ -77,5 +73,11 @@
             @await Html.PartialAsync("_PageButton", (Model.EndPage, Model.CurrentPage))
         }
 
+        @if (Model.CurrentPage != Model.EndPage)
+        {
+            <li class="page-item"><a class="page-link" href="@Context.GetUrlForPageNumber(Model.CurrentPage + 1)">Next</a></li>
+        }
+        
+        <li class="page-item"><a class="page-link" href="@Context.GetCurrentUrl().WithQueryParameter(PagerQueryParameters.Page, PagerQueryParameters.All)">Show All</a></li>
     </ul>
 </nav>

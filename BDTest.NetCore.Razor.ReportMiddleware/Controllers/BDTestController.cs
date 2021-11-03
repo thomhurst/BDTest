@@ -97,10 +97,10 @@ namespace BDTest.NetCore.Razor.ReportMiddleware.Controllers
 
             if (data == null)
             {
-                return View("NotFoundSingle");
+                return View("NotFoundSingle", id);
             }
             
-            var filterByQueryParameter = Request.GetQueryParameter("filterByStatus");
+            var filterByQueryParameter = Request.GetQueryParameter(StatusConstants.FilterByStatusQueryParameterName);
 
             var scenariosGroupedByStories = data.Scenarios
                 .Where(scenario => scenario != null)
@@ -109,10 +109,10 @@ namespace BDTest.NetCore.Razor.ReportMiddleware.Controllers
                 .ThenBy(group => group.Key)
                 .ToArray();
 
-            if (!string.IsNullOrEmpty(filterByQueryParameter) && filterByQueryParameter != "all")
+            if (!string.IsNullOrEmpty(filterByQueryParameter) && filterByQueryParameter != StatusConstants.All)
             {
                 scenariosGroupedByStories = scenariosGroupedByStories
-                    .Where(group => group.Any(scenario => string.Equals(filterByQueryParameter, scenario.Status.ToString(), StringComparison.OrdinalIgnoreCase)))
+                    .Where(group => string.Equals(filterByQueryParameter, group.GetTotalStatus().ToString(), StringComparison.OrdinalIgnoreCase))
                     .ToArray();
             }
 
@@ -127,20 +127,20 @@ namespace BDTest.NetCore.Razor.ReportMiddleware.Controllers
             
             if (data == null)
             {
-                return View("NotFoundSingle");
+                return View("NotFoundSingle", id);
             }
             
-            var filterByQueryParameter = Request.GetQueryParameter("filterByStatus");
+            var filterByQueryParameter = Request.GetQueryParameter(StatusConstants.FilterByStatusQueryParameterName);
 
             IEnumerable<Scenario> scenarios = data.Scenarios;
             
-            if (!string.IsNullOrEmpty(filterByQueryParameter) && filterByQueryParameter != "all")
+            if (!string.IsNullOrEmpty(filterByQueryParameter) && filterByQueryParameter != StatusConstants.All)
             {
                 scenarios = data.Scenarios
                     .Where(scenario => string.Equals(filterByQueryParameter, scenario.Status.ToString(), StringComparison.OrdinalIgnoreCase));
             }
             
-            var orderByQueryParameter = Request.GetQueryParameter("order");
+            var orderByQueryParameter = Request.GetQueryParameter(OrderConstants.OrderByQueryParameterName);
             
             var scenariosGroupedByScenarioTextEnumerable = scenarios.GroupBy(scenario => scenario.GetScenarioText())
                 .OrderBy(group => group.GetTotalStatus().GetOrder())
@@ -152,9 +152,14 @@ namespace BDTest.NetCore.Razor.ReportMiddleware.Controllers
                     scenariosGroupedByScenarioTextEnumerable =
                         scenariosGroupedByScenarioTextEnumerable.OrderBy(scenarios => scenarios.Key);
                     break;
-                case OrderConstants.Duration:
+                case OrderConstants.DurationDescending:
                     scenariosGroupedByScenarioTextEnumerable =
                         scenariosGroupedByScenarioTextEnumerable.OrderByDescending(scenarios =>
+                            scenarios.Select(scenario => scenario.TimeTaken).Max());
+                    break;
+                case OrderConstants.DurationAscending:
+                    scenariosGroupedByScenarioTextEnumerable =
+                        scenariosGroupedByScenarioTextEnumerable.OrderBy(scenarios =>
                             scenarios.Select(scenario => scenario.TimeTaken).Max());
                     break;
                 case OrderConstants.Status:
@@ -172,6 +177,22 @@ namespace BDTest.NetCore.Razor.ReportMiddleware.Controllers
             }
 
             return View("AllScenarios", scenariosGroupedByScenarioTextEnumerable.ToArray());
+        }
+        
+        [HttpGet]
+        [Route("report/{reportId}/scenario/{scenarioId}")]
+        public async Task<IActionResult> SpecificScenario([FromRoute] string reportId, string scenarioId)
+        {
+            var data = await GetData(reportId).ConfigureAwait(false);
+
+            var scenario = data?.Scenarios?.FirstOrDefault(x => x.Guid == scenarioId);
+            
+            if (scenario == null)
+            {
+                return View("NotFoundSingle", reportId);
+            }
+
+            return View("Scenario", scenario);
         }
 
         [HttpGet]

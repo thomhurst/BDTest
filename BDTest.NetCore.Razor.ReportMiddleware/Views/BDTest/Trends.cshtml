@@ -4,6 +4,7 @@
 @using BDTest.NetCore.Razor.ReportMiddleware.Extensions
 @using BDTest.NetCore.Razor.ReportMiddleware.Helpers
 @using BDTest.NetCore.Razor.ReportMiddleware.Models
+@using BDTest.NetCore.Razor.ReportMiddleware.Models.ViewModels
 @using BDTest.NetCore.Razor.ReportMiddleware.Views.BDTest
 @using Humanizer
 @using Microsoft.AspNetCore.Http.Extensions
@@ -143,36 +144,19 @@
 <div id="startdatetimepickercontainer"></div>
 <div id="enddatetimepickercontainer"></div>
 
-<section class="hero is-info">
-    <div class="hero-body">
-        <div class="container">
-            <div class="columns is-vcentered">
-                <div class="column">
-                    <h1 class="title">
-                        Trends
-                    </h1>
-                    <h2 class="subtitle">
-                        Here are some trends from your tests
-                    </h2>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
+@await Html.PartialAsync("_TestPageHeaderHero", new TestPageHeaderHeroViewModel
+{
+    Title = "Trends",
+    Description = "Here are some trends from your tests"
+})
 
 <section class="section">
-    <div class="container">
+    <div class="container-fluid">
         
-        <nav class="level">
-            @if (tagValues != null && tagValues.Any())
-            {
-                <div class="mb-6 has-text-right">
-                    @{
-                        if (TagNeedsSelecting(tagQueryParameter))
-                        {
-                            <h2>Please select a tag.</h2>
-                        }
-                    }
+        <nav class="nav mb-5">
+            <div class="container-fluid d-flex justify-content-center">
+                @if (tagValues != null && tagValues.Any())
+                {
                     @await Html.PartialAsync("_TrendsPageGenericDropdown", new TrendsPageGenericDropdownViewModel
                     {
                         ButtonId = "filter-by-tag-text",
@@ -180,12 +164,10 @@
                         QueryParameterName = "tag",
                         DropdownValues = tagValues
                     })
-                </div>
-            }
+                }
 
-            @if (environmentValues != null && environmentValues.Any())
-            {
-                <div class="mb-6 has-text-right">
+                @if (environmentValues != null && environmentValues.Any())
+                {
                     @await Html.PartialAsync("_TrendsPageGenericDropdown", new TrendsPageGenericDropdownViewModel
                     {
                         ButtonId = "filter-by-environment-text",
@@ -193,12 +175,10 @@
                         QueryParameterName = "environment",
                         DropdownValues = environmentValues
                     })
-                </div>
-            }
+                }
 
-            @if (machineValues != null && machineValues.Any())
-            {
-                <div class="mb-6 has-text-right">
+                @if (machineValues != null && machineValues.Any())
+                {
                     @await Html.PartialAsync("_TrendsPageGenericDropdown", new TrendsPageGenericDropdownViewModel
                     {
                         ButtonId = "filter-by-machine-text",
@@ -206,12 +186,10 @@
                         QueryParameterName = "machine",
                         DropdownValues = machineValues
                     })
-                </div>
-            }
+                }
 
-            @if (branchValues != null && branchValues.Any())
-            {
-                <div class="mb-6 has-text-right">
+                @if (branchValues != null && branchValues.Any())
+                {
                     @await Html.PartialAsync("_TrendsPageGenericDropdown", new TrendsPageGenericDropdownViewModel
                     {
                         ButtonId = "filter-by-branch-text",
@@ -219,27 +197,35 @@
                         QueryParameterName = "branch",
                         DropdownValues = branchValues
                     })
-                </div>
-            }
+                }
 
-            <div class="mb-6 has-text-right">
-                <button class="button is-info is-rounded" aria-haspopup="true" id="dateRangePicker">
-                    <p id="filter-by-datetimerange-text">Filter by Date + Time</p>
-                </button>
+                <li class="nav-item">
+                    <a class="bg-primary text-white nav-link" href="#" aria-haspopup="true" id="dateRangePicker">
+                        Filter by Date + Time
+                    </a>
+                </li>
             </div>
         </nav>
 
         @if (!TagNeedsSelecting(tagQueryParameter))
         {
-            <div class="columns">
-                <div class="column is-half">
-                    <h5 class="subtitle is-5">Durations</h5>
-                    <canvas id="duration-trend-chart"></canvas>
+            <div class="container-fluid">
+                <div class="row">
+                    <div class="col">
+                        <h5 class="subtitle is-5">Durations</h5>
+                        <canvas id="duration-trend-chart"></canvas>
+                    </div>
+                    <div class="col">
+                        <h5 class="subtitle is-5">Statuses</h5>
+                        <canvas id="success-trend-chart"></canvas>
+                    </div>
                 </div>
-                <div class="column is-half">
-                    <h5 class="subtitle is-5">Statuses</h5>
-                    <canvas id="success-trend-chart"></canvas>
-                </div>
+            </div>
+        }
+        else
+        {
+            <div class="d-flex justify-content-center">
+                <span>Please select a tag to continue.</span>
             </div>
         }
     </div>
@@ -256,28 +242,16 @@ let reportIdsArray = [];
 {
     @:reportIdsArray.push("@report.RecordId");
 }
-
-function chartOnClick(chart, event) {
-   let activePoint = chart.getElementAtEvent(event);
-      
-   if (activePoint.length > 0) {
-      let clickedDatasetIndex = activePoint[0]._datasetIndex;
-      let clickedElementindex = activePoint[0]._index;
-      
-      let clickedOnReportId = reportIdsArray[clickedElementindex];
-
-      window.location.href = '@baseUrl/bdtest/report/' + clickedOnReportId + '/summary'
-   }
-}
 </script>
 
 @* Duration Trend Chart *@
     <script>
-var durationChartContext = document.getElementById('duration-trend-chart').getContext('2d');
-data = {
+
+let durationChartData = {
     datasets: [{
         backgroundColor: "#3298dc",
         borderColor: "#3298dc",
+        label: "Seconds",
         data: [
             @foreach (var timespan in testRunSummaries.Select(model => model.FinishedAtDateTime - model.StartedAtDateTime))
             {
@@ -294,15 +268,15 @@ data = {
     ]
 }
 
-let durationChart = new Chart(durationChartContext, {
+let durationChartConfig = {
     type: 'line',
-    data: data,
+    data: durationChartData,
     options: {
         legend: {
                     display: false
                 },
         scales: {
-            yAxes: [{
+            y:{
               scaleLabel: {
                 labelString: 'Seconds'
               },
@@ -313,7 +287,7 @@ let durationChart = new Chart(durationChartContext, {
                       return value + "s";
                   }
                   }
-            }]
+            }
           },
         tooltips: {
             callbacks: {
@@ -321,24 +295,33 @@ let durationChart = new Chart(durationChartContext, {
                   return data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index] + " seconds";
                 }
             }
+        },
+        onClick: (e) => {
+            let canvasPosition = Chart.helpers.getRelativePosition(e, e.chart);
+            let clickedElementindex = e.chart.scales.x.getValueForPixel(canvasPosition.x);
+            
+            let clickedOnReportId = reportIdsArray[clickedElementindex];
+    
+            window.location.href = '@Context.GetBaseUrl()/bdtest/report/' + clickedOnReportId + '/summary';
+            
+            spinnerCursor();
         }
     }
-});
+};
 
-document.getElementById('duration-trend-chart').onclick = function(evt) {
-    chartOnClick(durationChart, evt);
-}
+let durationChart = new Chart(document.getElementById('duration-trend-chart'), durationChartConfig);
 </script>
 
 
 @* Success Trend Chart *@
     <script>
               
-var successChartContext = document.getElementById('success-trend-chart').getContext('2d');
-data = {
+let successChartData = {
     datasets: [ 
         {
             label: "Not Run",
+            axis: 'y',
+            fill: true,
             borderColor: "rgba(0,0,0,0)",
             pointRadius: 0,
             pointHitRadius: 15,
@@ -349,10 +332,12 @@ data = {
         },
         {
             label: "Failed",
-            backgroundColor: "#f14668",
+            axis: 'y',
+            fill: true,
+            backgroundColor: "@ColourConstants.DangerHex",
             borderColor: "rgba(0,0,0,0)",
-            pointBorderColor: "#f14668",
-            pointBackgroundColor: "#f14668",
+            pointBorderColor: "@ColourConstants.DangerHex",
+            pointBackgroundColor: "@ColourConstants.DangerHex",
             pointHitRadius: 15,
             pointRadius: 0,
             borderWidth: 0,
@@ -362,10 +347,12 @@ data = {
         },
         {
             label: "Inconclusive",
-            backgroundColor: "#ffdd57",
+            axis: 'y',
+            fill: true,
+            backgroundColor: "@ColourConstants.WarningHex",
             borderColor: "rgba(0,0,0,0)",
-            pointBorderColor: "#ffdd57",
-            pointBackgroundColor: "#ffdd57",
+            pointBorderColor: "@ColourConstants.WarningHex",
+            pointBackgroundColor: "@ColourConstants.WarningHex",
             pointHitRadius: 15,
             pointRadius: 0,
             borderWidth: 0,
@@ -375,10 +362,12 @@ data = {
         },
         {
             label: "Not Implemented",
-            backgroundColor: "#ffdd57",
+            axis: 'y',
+            fill: true,
+            backgroundColor: "@ColourConstants.WarningHex",
             borderColor: "rgba(0,0,0,0)",
-            pointBorderColor: "#ffdd57",
-            pointBackgroundColor: "#ffdd57",
+            pointBorderColor: "@ColourConstants.WarningHex",
+            pointBackgroundColor: "@ColourConstants.WarningHex",
             pointHitRadius: 15,
             pointRadius: 0,
             borderWidth: 0,
@@ -388,10 +377,12 @@ data = {
         },
         {
             label: "Skipped",
-            backgroundColor: "#ffdd57",
+            axis: 'y',
+            fill: true,
+            backgroundColor: "@ColourConstants.WarningHex",
             borderColor: "rgba(0,0,0,0)",
-            pointBorderColor: "#ffdd57",
-            pointBackgroundColor: "#ffdd57",
+            pointBorderColor: "@ColourConstants.WarningHex",
+            pointBackgroundColor: "@ColourConstants.WarningHex",
             pointHitRadius: 15,
             pointRadius: 0,
             borderWidth: 0,
@@ -401,10 +392,12 @@ data = {
         },
         {
             label: "Passed",
-            backgroundColor: "#48c774",
+            axis: 'y',
+            fill: true,
+            backgroundColor: "@ColourConstants.SuccessHex",
             borderColor: "rgba(0,0,0,0)",
-            pointBorderColor: "#48c774",
-            pointBackgroundColor: "#48c774",
+            pointBorderColor: "@ColourConstants.SuccessHex",
+            pointBackgroundColor: "@ColourConstants.SuccessHex",
             pointHitRadius: 15,
             pointRadius: 0,
             borderWidth: 0,
@@ -422,15 +415,15 @@ data = {
     ]
 }
 
-var successChart = new Chart(successChartContext, {
+let successChartConfig = {
     type: 'line',
-    data: data,
+    data: successChartData,
     options: {
         legend: {
                     display: false
                 },
         scales: {
-            yAxes: [{
+            y: {
               scaleLabel: {
                 labelString: 'Seconds'
               },
@@ -442,13 +435,21 @@ var successChart = new Chart(successChartContext, {
                       return "";
                   }
                   }
-            }]
+            }
+          },
+          onClick: (e) => {
+              let canvasPosition = Chart.helpers.getRelativePosition(e, e.chart);
+              let clickedElementindex = e.chart.scales.x.getValueForPixel(canvasPosition.x);
+              
+              let clickedOnReportId = reportIdsArray[clickedElementindex];
+      
+              window.location.href = '@Context.GetBaseUrl()/bdtest/report/' + clickedOnReportId + '/summary';
+              
+              spinnerCursor();
           }
     }
-});
+};
 
-document.getElementById('success-trend-chart').onclick = function(evt) {
-    chartOnClick(successChart, evt);
-}
+let successChart = new Chart(document.getElementById('success-trend-chart'), successChartConfig);
 </script>
 }

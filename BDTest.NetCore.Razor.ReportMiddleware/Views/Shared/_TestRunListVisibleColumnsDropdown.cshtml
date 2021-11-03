@@ -1,10 +1,11 @@
 <script>
     function clickColumnVisibilityButton(element) {
-        if(window.event.toElement.tagName === "INPUT") {
-            return;   
+        if (window.event.srcElement.tagName === "INPUT")
+        {
+            return;
         }
         
-        let checkbox = element.firstElementChild.firstElementChild;
+        let checkbox = element.getElementsByTagName("input")[0];
         
         changeCheckboxValueAndFireEvent(checkbox);
     }
@@ -22,7 +23,11 @@
         let columnFields = document.getElementsByClassName(target)
         
         for (let columnField of columnFields) {
-            setElementVisibility(columnField, checkbox.checked);
+            if (checkbox.checked === true) {
+                setElementVisibility(columnField, toggleActions.EXPAND);
+            } else {
+                setElementVisibility(columnField, toggleActions.COLLAPSE);
+            }
         }
         
         setCookie("is-visible-test-run-list-" + target, checkbox.checked.toString(), 365)
@@ -49,59 +54,50 @@
 </script>
 
 <div class="dropdown">
-    <div class="dropdown-trigger">
-        <button class="button is-info is-rounded" aria-haspopup="true" aria-controls="dropdown-menu">
-            <p id="visible-columns-dropdown">Visible Columns <i class="arrow down"></i></p>
-            @* <span class="icon is-small"> *@
-            @*   <i class="fas fa-angle-down" aria-hidden="true"></i> *@
-            @* </span> *@
+    <button class="btn btn-primary dropdown-toggle" type="button" aria-haspopup="true" aria-controls="dropdown-menu" data-bs-toggle="dropdown" aria-expanded="false">
+            Visible Columns
         </button>
-    </div>
-    <div class="dropdown-menu has-text-centered" id="environment-dropdown-menu" role="menu">
-        <div class="dropdown-content has-text-centered">
-            
-            <div class="dropdown-item" onclick="clickColumnVisibilityButton(this)">
-                <button class="button is-fullwidth is-rounded">
+    <ul class="dropdown-menu" id="environment-dropdown-menu" role="menu">
+        <div class="dropdown-item" onclick="clickColumnVisibilityButton(this)">
+                <div class="form-check">
                     <input id="tag-visible-column-checkbox" type="checkbox" class="mr-4" checked="checked" data-target="tag-column" onchange="toggleColumnVisibility(this)"/>
-                    Tag
-                </button>
+                    <label class="form-check-label" for="tag-visible-column-checkbox">Tag</label>
+                </div>
             </div>
             
             <div class="dropdown-item" onclick="clickColumnVisibilityButton(this)">
-                <button class="button is-fullwidth is-rounded">
+                <div class="form-check">
                     <input id="environment-visible-column-checkbox" type="checkbox" class="mr-4" checked="checked" data-target="environment-column" onchange="toggleColumnVisibility(this)"/>
-                    Environment
-                </button>
+                    <label class="form-check-label" for="environment-visible-column-checkbox">Environment</label>
+                </div>
             </div>
             
             <div class="dropdown-item" onclick="clickColumnVisibilityButton(this)">
-                <button class="button is-fullwidth is-rounded">
+                <div class="form-check">
                     <input id="machine-visible-column-checkbox" type="checkbox" class="mr-4" checked="checked" data-target="machine-column" onchange="toggleColumnVisibility(this)"/>
-                    Machine
-                </button>
+                    <label class="form-check-label" for="machine-visible-column-checkbox">Machine</label>
+                </div>
             </div>
             
             <div class="dropdown-item" onclick="clickColumnVisibilityButton(this)">
-                <button class="button is-fullwidth is-rounded">
+                <div class="form-check">
                     <input id="branch-visible-column-checkbox" type="checkbox" class="mr-4" checked="checked" data-target="branch-column" onchange="toggleColumnVisibility(this)"/>
-                    Branch
-                </button>
+                    <label class="form-check-label" for="branch-visible-column-checkbox">Branch</label>
+                </div>
             </div>
             
             <div class="dropdown-item" onclick="clickColumnVisibilityButton(this)">
-                <button class="button is-fullwidth is-rounded">
+                <div class="form-check">
                     <input id="date-visible-column-checkbox" type="checkbox" class="mr-4" checked="checked" data-target="date-column" onchange="toggleColumnVisibility(this)"/>
-                    Date
-                </button>
+                    <label class="form-check-label" for="date-visible-column-checkbox">Date</label>
+                </div>
             </div>
             
             <div class="dropdown-item" onclick="clickColumnVisibilityButton(this)">
-                <button class="button is-fullwidth is-rounded">
+                <div class="form-check">
                     <input id="duration-visible-column-checkbox" type="checkbox" class="mr-4" checked="checked" data-target="duration-column" onchange="toggleColumnVisibility(this)"/>
-                    Duration
-                </button>
+                    <label class="form-check-label" for="duration-visible-column-checkbox">Duration</label>
+                </div>
             </div>
-
-        </div>
-    </div>
+    </ul>
 </div>
