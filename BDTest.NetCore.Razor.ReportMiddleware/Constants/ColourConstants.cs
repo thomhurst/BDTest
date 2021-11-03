@@ -1,6 +1,6 @@
 ﻿namespace BDTest.NetCore.Razor.ReportMiddleware.Constants
 {
-    public class ColourConstants
+    public static class ColourConstants
     {
         public static readonly string PrimaryHex = "#2c3e50";
         public static readonly string SuccessHex = "#18bc9c";
