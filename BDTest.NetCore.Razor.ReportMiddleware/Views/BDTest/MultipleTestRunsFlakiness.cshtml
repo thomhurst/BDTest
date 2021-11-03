@@ -48,7 +48,7 @@
             var passed = scenarios.Count(scenario => scenario.Status == Status.Passed);
             var passRate = Math.Round(GetPassRate(scenarios), 2);
 
-            <div class="container-fluid">
+            <div class="container-fluid border border-2 rounded border-primary my-3">
                 <div class="d-flex justify-content-center mt-4">
                     <h4>@scenarioText</h4>
                 </div>
@@ -65,13 +65,13 @@
                         <div class="col">
                             <h5>Statuses</h5>
                             <div>
-                                <canvas id="success-trend-chart-@index"></canvas>
+                                <canvas id="success-trend-chart-@index" style="max-width: 100%"></canvas>
                             </div>
                         </div>
                         <div class="col">
                             <h5>Durations</h5>
                             <div>
-                                <canvas id="duration-trend-chart-@index"></canvas>
+                                <canvas id="duration-trend-chart-@index" style="max-width: 100%"></canvas>
                             </div>
                         </div>
                     </div>
