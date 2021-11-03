@@ -100,7 +100,7 @@ namespace BDTest.NetCore.Razor.ReportMiddleware.Controllers
                 return View("NotFoundSingle", id);
             }
             
-            var filterByQueryParameter = Request.GetQueryParameter("filterByStatus");
+            var filterByQueryParameter = Request.GetQueryParameter(StatusConstants.FilterByStatus);
 
             var scenariosGroupedByStories = data.Scenarios
                 .Where(scenario => scenario != null)
@@ -109,10 +109,10 @@ namespace BDTest.NetCore.Razor.ReportMiddleware.Controllers
                 .ThenBy(group => group.Key)
                 .ToArray();
 
-            if (!string.IsNullOrEmpty(filterByQueryParameter) && filterByQueryParameter != "all")
+            if (!string.IsNullOrEmpty(filterByQueryParameter) && filterByQueryParameter != StatusConstants.All)
             {
                 scenariosGroupedByStories = scenariosGroupedByStories
-                    .Where(group => group.Any(scenario => string.Equals(filterByQueryParameter, scenario.Status.ToString(), StringComparison.OrdinalIgnoreCase)))
+                    .Where(group => string.Equals(filterByQueryParameter, group.GetTotalStatus().ToString(), StringComparison.OrdinalIgnoreCase))
                     .ToArray();
             }
 
@@ -130,11 +130,11 @@ namespace BDTest.NetCore.Razor.ReportMiddleware.Controllers
                 return View("NotFoundSingle", id);
             }
             
-            var filterByQueryParameter = Request.GetQueryParameter("filterByStatus");
+            var filterByQueryParameter = Request.GetQueryParameter(StatusConstants.FilterByStatus);
 
             IEnumerable<Scenario> scenarios = data.Scenarios;
             
-            if (!string.IsNullOrEmpty(filterByQueryParameter) && filterByQueryParameter != "all")
+            if (!string.IsNullOrEmpty(filterByQueryParameter) && filterByQueryParameter != StatusConstants.All)
             {
                 scenarios = data.Scenarios
                     .Where(scenario => string.Equals(filterByQueryParameter, scenario.Status.ToString(), StringComparison.OrdinalIgnoreCase));

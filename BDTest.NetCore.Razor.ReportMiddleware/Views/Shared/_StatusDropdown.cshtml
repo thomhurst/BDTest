@@ -2,7 +2,9 @@
 @using BDTest.NetCore.Razor.ReportMiddleware.Helpers
 @using BDTest.Test
 @model BDTest.NetCore.Razor.ReportMiddleware.Models.StatusDropdownViewModel
-
+@{
+  var currentFilterByQueryParameter = Context.Request.GetQueryParameter(StatusConstants.FilterByStatus);
+}
   <button class="btn btn-primary dropdown-toggle" type="button" aria-haspopup="true" aria-controls="dropdown-menu" id="dropdown-main-button" data-bs-toggle="dropdown" aria-expanded="false">
     Show All
     @* <span class="icon is-small"> *@
@@ -48,7 +50,7 @@
 {
   <script>
   function filterByStatus(status) {
-    let currentFilterQueryParameter = '@Context.Request.GetQueryParameter("filterByStatus")'
+    let currentFilterQueryParameter = '@currentFilterByQueryParameter'
     
     let mainDropdownButton = document.getElementById("dropdown-main-button");
     
@@ -58,7 +60,7 @@
         mainDropdownButton.className = "btn dropdown-toggle btn-primary";
         break;
       case '@Status.Passed':
-        mainDropdownButton.innerHTML = 'Show Success';
+        mainDropdownButton.innerHTML = 'Show Passed';
         mainDropdownButton.className = "btn dropdown-toggle btn-success";
         break;
       case '@Status.Failed':
@@ -80,9 +82,13 @@
       }
       
       if (currentFilterQueryParameter !== status) {
-        window.location.href = getUrlWithAppendedParameter("filterByStatus", status);
+        window.location.href = getUrlWithAppendedParameter(@StatusConstants.FilterByStatus, status);
         spinnerCursor()
       }
     }
+    
+    onDomLoaded(function() {
+      filterByStatus('@currentFilterByQueryParameter');
+    });
 </script>
 }

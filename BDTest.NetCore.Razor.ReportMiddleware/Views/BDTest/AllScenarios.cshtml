@@ -9,21 +9,11 @@
     ViewBag.Title = "Scenarios";
     Layout = "_Layout";
     
-    var filterByQueryParameter = Context.Request.GetQueryParameter("filterByStatus");
     var scenarioId = Context.Request.GetQueryParameter("scenarioId");
     var reportId = ViewBag.Id;
 
     var currentPageString = Context.GetCurrentPageNumber();
 
-    if (filterByQueryParameter != null)
-    {
-        <script>
-            onDomLoaded(function() {
-              filterByStatus('@filterByQueryParameter');
-            });
-        </script>
-    }
-    
     var pager = new Pager<IGrouping<string, Scenario>>(Model, currentPageString);
 
     if (!string.IsNullOrEmpty(scenarioId))
