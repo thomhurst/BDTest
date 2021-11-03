@@ -106,7 +106,8 @@
                 <div class="has-text-right scenarios-buttons-row btn-group" role="group">
                     @if (scenariosGroupedByScenarioText.Any(scenarios => scenarios.Count() > 1))
                     {
-                        @await Html.PartialAsync("_CollapseExpandGroupedScenariosButtons", $"story-{storyIndex}")
+                        <button class="btn btn-light" onclick="expandScenarioGroups(toggleActions.EXPAND);">Expand All</button>
+                        <button class="btn btn-light" onclick="expandScenarioGroups(toggleActions.COLLAPSE);">Collapse All</button>
                     }
                     <button class="btn toggle-hide pointer" toggle-alternative-text="Hide Summary" onclick="toggleElementVisibility(document.getElementById('story-summary-@storyIndex'))">Show Summary</button>
                     <button class="btn toggle-hide pointer" toggle-alternative-text="Hide Timings Chart" onclick="toggleElementVisibility(document.getElementById('story-summary-pie-chart-times-@storyIndex'))">Show Timings Chart</button>
@@ -192,10 +193,6 @@
 
 </div>
 
-<div class="container mb-6">
-    <nav class="level">
-        <div class="level-item">
-            @await Html.PartialAsync("_PaginationButtons", pager.GetPaginationInformation())
-        </div>
-    </nav>
+<div class="container mt-3 mb-6">
+    @await Html.PartialAsync("_PaginationButtons", pager.GetPaginationInformation())
 </div>
