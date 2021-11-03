@@ -16,10 +16,27 @@
     Description = Model.GetScenarioText()
 })
 
+<script>
+    function expandAllSteps() {
+        let expandables = document.getElementsByClassName("accordion-body");
+        for (let expandable of expandables) {
+            expandable.classList.remove("collapse")
+        }
+    }
+    
+    function collapseAllSteps() {
+            let expandables = document.getElementsByClassName("accordion-body");
+            for (let expandable of expandables) {
+                expandable.classList.add("collapse")
+            }
+        }
+</script>
+
 <div class="container-fluid">
     <div class="box" id="all-scenarios-container">
         <div class="btn-group" role="group" >
-            @await Html.PartialAsync("_CollapseExpandGroupedScenariosButtons", "all-scenarios-container")
+            <button class="btn btn-light" onclick="expandAllSteps();">Expand All</button>
+            <button class="btn btn-light" onclick="collapseAllSteps();">Collapse All</button>
         </div>
 
         <div class="scrollable-table-container">
@@ -39,7 +56,7 @@
                 
                 @if (!string.IsNullOrEmpty(Model.TestStartupInformation))
                 {
-                    <tr step-id="step-startup" data-bs-toggle="collapse" data-bs-target="#step-startup-expanded" class="accordion-toggle pointer" onclick="document.getElementById('step-startup-toggle-container').classList.toggle('dropend')">
+                    <tr step-id="step-startup" data-bs-toggle="collapse" data-bs-target="#step-startup-expanded" class="accordion-toggle pointer opacity-75" onclick="document.getElementById('step-startup-toggle-container').classList.toggle('dropend')">
                         <td class="align-middle">
                             <div class="d-grid dropend" id="step-startup-toggle-container">
                                 <button class="btn dropdown-toggle"></button>
@@ -48,6 +65,7 @@
                         <td class="align-middle">
                             Test Startup Information
                         </td>
+                        <td colspan="4"></td>
                     </tr>
                     <tr>
                         <td colspan="6" class="hiddenRow">
@@ -115,7 +133,52 @@
 
                 @if (!string.IsNullOrEmpty(Model.TearDownOutput))
                 {
-                    // TODO
+                    <tr step-id="step-teardown" data-bs-toggle="collapse" data-bs-target="#step-teardown-expanded" class="accordion-toggle pointer opacity-75" onclick="document.getElementById('step-teardown-toggle-container').classList.toggle('dropend')">
+                        <td class="align-middle">
+                            <div class="d-grid dropend" id="step-teardown-toggle-container">
+                                <button class="btn dropdown-toggle"></button>
+                            </div>
+                        </td>
+                        <td class="align-middle">
+                            Test TearDown Information
+                        </td>
+                        <td colspan="4"></td>
+                    </tr>
+                    <tr>
+                        <td colspan="6" class="hiddenRow">
+                            <div class="accordion-body collapse" id="step-teardown-expanded">
+                                <div class="container" style="overflow-x: auto;">
+                                    <h5>TearDown Info:</h5>
+                                    <pre class="py-4">@Model.TearDownOutput</pre>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                }
+                
+                @if (!string.IsNullOrEmpty(Model.CustomHtmlOutputForReport))
+                {
+                    <tr step-id="step-custom-output" data-bs-toggle="collapse" data-bs-target="#step-custom-output-expanded" class="accordion-toggle pointer opacity-75" onclick="document.getElementById('step-custom-output-toggle-container').classList.toggle('dropend')">
+                        <td class="align-middle">
+                            <div class="d-grid dropend" id="step-custom-output-toggle-container">
+                                <button class="btn dropdown-toggle"></button>
+                            </div>
+                        </td>
+                        <td class="align-middle">
+                            Custom Test Output
+                        </td>
+                        <td colspan="4"></td>
+                    </tr>
+                    <tr>
+                        <td colspan="6" class="hiddenRow">
+                            <div class="accordion-body collapse" id="step-custom-output-expanded">
+                                <div class="container" style="overflow-x: auto;">
+                                    <h5>Custom Output:</h5>
+                                    @Html.Raw(Model.CustomHtmlOutputForReport)
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
                 }
 
                 </tbody>
