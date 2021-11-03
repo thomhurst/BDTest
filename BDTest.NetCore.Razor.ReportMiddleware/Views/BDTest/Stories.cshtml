@@ -1,4 +1,3 @@
-@using BDTest.NetCore.Razor.ReportMiddleware.Constants
 @using BDTest.NetCore.Razor.ReportMiddleware.Extensions
 @using BDTest.NetCore.Razor.ReportMiddleware.Helpers
 @using BDTest.NetCore.Razor.ReportMiddleware.Models
@@ -35,63 +34,36 @@
     
     <div class="btn-group mb-1" role="group" >
         @await Html.PartialAsync("_StatusDropdown", new StatusDropdownViewModel { IncludeScript = true })
-        <button class="btn" onclick="expandCollapseStories(true);">Expand All</button>
-        <button class="btn" onclick="expandCollapseStories(false);">Collapse All</button>
+        <button class="btn" onclick="setVisibilityOfStories(toggleActions.EXPAND);">Expand All</button>
+        <button class="btn" onclick="setVisibilityOfStories(toggleActions.COLLAPSE);">Collapse All</button>
     </div>
     
     <script>
-          function expandStory(storyHeader, elementToHide){
-                  storyHeader.parentElement.parentElement.classList.remove("rounded-all-corners")
-                  storyHeader.parentElement.parentElement.classList.add("rounded-top-corners")
-                  setElementVisible(elementToHide);
+         function setVisibilityOfStories(toggleAction) {
+          let storyBodies = document.getElementsByClassName("story-container-body");
+          for (let storyBody of storyBodies) {
+                setElementVisibility(storyBody, toggleAction);
           }
-          
-          function collapseStory(storyHeader, elementToHide){
-              storyHeader.parentElement.parentElement.classList.remove("rounded-top-corners")
-              storyHeader.parentElement.parentElement.classList.add("rounded-all-corners")
-              setElementInvisible(elementToHide);
-          }
-          
-          function toggleStoryHeader(storyHeaderId, shouldExpand) {
-            let storyHeader = document.getElementById(storyHeaderId);
-            let elementIdToHide = storyHeader.getAttribute("element-id-to-hide");
-            let elementToHide = document.getElementById(elementIdToHide);
-            
-            let expand = shouldExpand;
-            if(shouldExpand == null) 
-            {
-                expand = elementToHide.classList.contains("invisible");
-            }
-                                  
-              if(expand) {
-                  expandStory(storyHeader, elementToHide);
-              } else {
-                  collapseStory(storyHeader, elementToHide);
-              }
-          }
-    
-    function expandCollapseStories(shouldExpand) {
-      let storyHeaders = document.getElementsByClassName("story-header");
-      for (let storyHeader of storyHeaders) {
-          toggleStoryHeader(storyHeader.id, shouldExpand);
-      }
-    }
+         }
+         
+         function toggleSpecificScenarioGroup(expandOrCollapseButtonElement, toggleAction) {
+             let storyBody = expandOrCollapseButtonElement.parentElement.parentElement;
+             let scenarioGroupRows = storyBody.getElementsByClassName("scenario-group");
+             for (let scenarioGroupRow of scenarioGroupRows) {
+              expandScenarioGroup(scenarioGroupRow, toggleAction) 
+             }
+         }
     </script>
     
+    @{ var groupedScenariosCount = new ReferenceInt(0); }
     @foreach (var story in pager.ItemsForCurrentPage)
     {
         storyIndex++;
         var scenariosForThisStory = story.ToList();
         var scenariosGroupedByScenarioText = scenariosForThisStory.GroupBy(scenario => scenario.GetScenarioText()).ToList();
 
-        var hasSuccess = scenariosForThisStory.Any(scenario => scenario.Status == Status.Passed) ? HtmlClassConstants.HasSuccess : string.Empty;
-        var hasFailures = scenariosForThisStory.Any(scenario => scenario.Status == Status.Failed) ? HtmlClassConstants.HasFailures : string.Empty;
-        var hasSkipped = scenariosForThisStory.Any(scenario => scenario.Status == Status.Skipped) ? HtmlClassConstants.HasSkipped : string.Empty;
-        var hasInconclusive = scenariosForThisStory.Any(scenario => scenario.Status == Status.Inconclusive) ? HtmlClassConstants.HasInconclusive : string.Empty;
-        var hasNotImplemented = scenariosForThisStory.Any(scenario => scenario.Status == Status.NotImplemented) ? HtmlClassConstants.HasNotImplemented : string.Empty;
-
-        <div class="container-xlg border border-2 rounded border-primary">
-            <div class="px-4 my-5 text-center">
+        <div class="container-xlg border border-2 rounded border-primary story-container-parent">
+            <div class="px-4 my-5 text-center story-container-header pointer" onclick="toggleElementVisibility(document.getElementById('story-@storyIndex'))">
                 @{ var storyTextSplitByLines = story.Key.SplitOnNewLines(); }
                 @foreach (var line in storyTextSplitByLines)
                 {
@@ -102,15 +74,15 @@
                 </div>
             </div>
 
-            <div class="box mb-0 rounded-bottom-corners" id="story-@storyIndex">
+            <div class="box mb-0 rounded-bottom-corners invisibleElement story-container-body" id="story-@storyIndex">
                 <div class="has-text-right scenarios-buttons-row btn-group" role="group">
                     @if (scenariosGroupedByScenarioText.Any(scenarios => scenarios.Count() > 1))
                     {
-                        <button class="btn btn-light" onclick="expandScenarioGroups(toggleActions.EXPAND);">Expand All</button>
-                        <button class="btn btn-light" onclick="expandScenarioGroups(toggleActions.COLLAPSE);">Collapse All</button>
+                        <button class="btn btn-light" onclick="toggleSpecificScenarioGroup(this, toggleActions.EXPAND);">Expand All</button>
+                        <button class="btn btn-light" onclick="toggleSpecificScenarioGroup(this, toggleActions.COLLAPSE);">Collapse All</button>
                     }
-                    <button class="btn toggle-hide pointer" onclick="toggleElementVisibility(document.getElementById('story-summary-@storyIndex'))">Toggle Summary</button>
-                    <button class="btn toggle-hide pointer" onclick="toggleElementVisibility(document.getElementById('story-summary-pie-chart-times-@storyIndex'))">Toggle Timings Chart</button>
+                    <button class="btn toggle-hide pointer" toggle-alternative-text="Hide Summary" onclick="toggleElementVisibility(document.getElementById('story-summary-@storyIndex')); toggleAlternativeText(this);">Show Summary</button>
+                    <button class="btn toggle-hide pointer" toggle-alternative-text="Hide Timings Chart" onclick="toggleElementVisibility(document.getElementById('story-summary-pie-chart-times-@storyIndex')); toggleAlternativeText(this);">Show Timings Chart</button>
                 </div>
 
                 <div class="mt-4 container invisibleElement" id="story-summary-@storyIndex">
@@ -137,7 +109,6 @@
                         <tbody>
 
                         @{ var scenarioIndex = new ReferenceInt(0); }
-                        @{ var groupedScenariosCount = new ReferenceInt(0); }
                         @foreach (var groupedScenarios in scenariosGroupedByScenarioText)
                         {
                             @await Html.PartialAsync("_GroupedScenarioTableRow", new GroupedScenarioViewModel

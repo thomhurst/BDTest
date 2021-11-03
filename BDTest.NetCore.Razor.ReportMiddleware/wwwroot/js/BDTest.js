@@ -66,18 +66,6 @@ function toggleAlternativeText(element) {
     }
 }
 
-function toggleIcon(element) {
-
-    var toggleOnIconUrl = "/_content/BDTest.NetCore.Razor.ReportMiddleware/icons/toggle_on-24px.svg";
-    var toggleOffIconUrl = "/_content/BDTest.NetCore.Razor.ReportMiddleware/icons/toggle_off-24px.svg";
-
-    if (element.src.includes(toggleOffIconUrl)) {
-        element.src = toggleOnIconUrl;
-    } else if (element.src.includes(toggleOnIconUrl)) {
-        element.src = toggleOffIconUrl;
-    }
-}
-
 function getAll(selector) {
     let parent = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : document;
 
@@ -218,14 +206,28 @@ function expandScenarioGroup(scenarioGroupRow, toggleAction) {
     }
 }
 
+function setElementVisibility(element, toggleAction) {
+    switch (toggleAction) {
+        case toggleActions.TOGGLE:
+            element.classList.toggle("invisibleElement");
+            break;
+        case toggleActions.EXPAND:
+            element.classList.remove("invisibleElement");
+            break;
+        case toggleActions.COLLAPSE:
+            element.classList.add("invisibleElement");
+            break;
+    }
+}
+
 function toggleElementVisibility(element) {
-    element.classList.toggle("invisibleElement");
+    setElementVisibility(element, toggleActions.TOGGLE);
 }
 
 function showElement(element) {
-    element.classList.remove("invisibleElement");
+    setElementVisibility(element, toggleActions.EXPAND);
 }
 
 function hideElement(element) {
-    element.classList.add("invisibleElement");
+    setElementVisibility(element, toggleActions.COLLAPSE);
 }
