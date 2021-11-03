@@ -108,7 +108,7 @@
                 <li><a href="#" onclick="copyToClipboard('@url');" class="link-dark rounded nav-link">Copy URL to Clipboard</a></li>
                 @if (currentTestReport != null)
                 {
-                  <li><a href="~/bdtest/report/@currentTestReport.Id/raw-json-data" class="link-dark rounded nav-link">Download Raw Json Data</a></li>
+                  <li><a download href="~/bdtest/report/@currentTestReport.Id/raw-json-data" class="link-dark rounded nav-link">Download Raw Json Data</a></li>
                 }
               </ul>
             </div>
