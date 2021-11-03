@@ -100,7 +100,7 @@ namespace BDTest.NetCore.Razor.ReportMiddleware.Controllers
                 return View("NotFoundSingle", id);
             }
             
-            var filterByQueryParameter = Request.GetQueryParameter(StatusConstants.FilterByStatus);
+            var filterByQueryParameter = Request.GetQueryParameter(StatusConstants.FilterByStatusQueryParameterName);
 
             var scenariosGroupedByStories = data.Scenarios
                 .Where(scenario => scenario != null)
@@ -130,7 +130,7 @@ namespace BDTest.NetCore.Razor.ReportMiddleware.Controllers
                 return View("NotFoundSingle", id);
             }
             
-            var filterByQueryParameter = Request.GetQueryParameter(StatusConstants.FilterByStatus);
+            var filterByQueryParameter = Request.GetQueryParameter(StatusConstants.FilterByStatusQueryParameterName);
 
             IEnumerable<Scenario> scenarios = data.Scenarios;
             
@@ -140,7 +140,7 @@ namespace BDTest.NetCore.Razor.ReportMiddleware.Controllers
                     .Where(scenario => string.Equals(filterByQueryParameter, scenario.Status.ToString(), StringComparison.OrdinalIgnoreCase));
             }
             
-            var orderByQueryParameter = Request.GetQueryParameter("order");
+            var orderByQueryParameter = Request.GetQueryParameter(OrderConstants.OrderByQueryParameterName);
             
             var scenariosGroupedByScenarioTextEnumerable = scenarios.GroupBy(scenario => scenario.GetScenarioText())
                 .OrderBy(group => group.GetTotalStatus().GetOrder())

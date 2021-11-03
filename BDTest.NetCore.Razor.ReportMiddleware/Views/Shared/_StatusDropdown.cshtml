@@ -3,7 +3,7 @@
 @using BDTest.Test
 @model BDTest.NetCore.Razor.ReportMiddleware.Models.StatusDropdownViewModel
 @{
-  var currentFilterByQueryParameter = Context.Request.GetQueryParameter(StatusConstants.FilterByStatus);
+  var currentFilterByQueryParameter = Context.Request.GetQueryParameter(StatusConstants.FilterByStatusQueryParameterName);
 }
   <button class="btn btn-primary dropdown-toggle" type="button" aria-haspopup="true" aria-controls="dropdown-menu" id="dropdown-main-button" data-bs-toggle="dropdown" aria-expanded="false">
     Show All
@@ -82,7 +82,7 @@
       }
       
       if (currentFilterQueryParameter !== status) {
-        window.location.href = getUrlWithAppendedParameter(@StatusConstants.FilterByStatus, status);
+        window.location.href = getUrlWithAppendedParameter('@StatusConstants.FilterByStatusQueryParameterName', status);
         spinnerCursor()
       }
     }

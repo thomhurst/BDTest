@@ -74,35 +74,35 @@
     
     <div class="container">
         <div class="card-columns d-flex justify-content-center">
-            <div class="card text-center text-white bg-success mb-3 mx-auto @pointerClassIfSummaryPage" style="min-width: 12rem; max-width: 18rem;" onclick="@MakeUrl(allScenariosUri.WithQueryParameter(StatusConstants.FilterByStatus, Status.Passed.ToString()))">
+            <div class="card text-center text-white bg-success mb-3 mx-auto @pointerClassIfSummaryPage" style="min-width: 12rem; max-width: 18rem;" onclick="@MakeUrl(allScenariosUri.WithQueryParameter(StatusConstants.FilterByStatusQueryParameterName, Status.Passed.ToString()))">
                 <div class="card-header">Passed</div>
                 <div class="card-body">
                     <h5 class="card-title">@passed</h5>
                 </div>
             </div>
 
-            <div class="card text-center text-white bg-warning mb-3 mx-auto @pointerClassIfSummaryPage" style="min-width: 12rem; max-width: 18rem;" onclick="@MakeUrl(allScenariosUri.WithQueryParameter(StatusConstants.FilterByStatus, Status.Skipped.ToString()))">
+            <div class="card text-center text-white bg-warning mb-3 mx-auto @pointerClassIfSummaryPage" style="min-width: 12rem; max-width: 18rem;" onclick="@MakeUrl(allScenariosUri.WithQueryParameter(StatusConstants.FilterByStatusQueryParameterName, Status.Skipped.ToString()))">
                 <div class="card-header">Skipped</div>
                 <div class="card-body">
                     <h5 class="card-title">@skipped</h5>
                 </div>
             </div>
             
-            <div class="card text-center text-white bg-warning mb-3 mx-auto @pointerClassIfSummaryPage" style="min-width: 12rem; max-width: 18rem;" onclick="@MakeUrl(allScenariosUri.WithQueryParameter(StatusConstants.FilterByStatus, Status.NotImplemented.ToString()))">
+            <div class="card text-center text-white bg-warning mb-3 mx-auto @pointerClassIfSummaryPage" style="min-width: 12rem; max-width: 18rem;" onclick="@MakeUrl(allScenariosUri.WithQueryParameter(StatusConstants.FilterByStatusQueryParameterName, Status.NotImplemented.ToString()))">
                 <div class="card-header">Not Implemented</div>
                 <div class="card-body">
                     <h5 class="card-title">@notImplemented</h5>
                 </div>
             </div>
             
-            <div class="card text-center text-white bg-warning mb-3 mx-auto @pointerClassIfSummaryPage" style="min-width: 12rem; max-width: 18rem;" onclick="@MakeUrl(allScenariosUri.WithQueryParameter(StatusConstants.FilterByStatus, Status.Inconclusive.ToString()))">
+            <div class="card text-center text-white bg-warning mb-3 mx-auto @pointerClassIfSummaryPage" style="min-width: 12rem; max-width: 18rem;" onclick="@MakeUrl(allScenariosUri.WithQueryParameter(StatusConstants.FilterByStatusQueryParameterName, Status.Inconclusive.ToString()))">
                 <div class="card-header">Inconclusive</div>
                 <div class="card-body">
                     <h5 class="card-title">@inconclusive</h5>
                 </div>
             </div>
 
-            <div class="card text-center text-white bg-danger mb-3 mx-auto @pointerClassIfSummaryPage" style="min-width: 12rem; max-width: 18rem;" onclick="@MakeUrl(allScenariosUri.WithQueryParameter(StatusConstants.FilterByStatus, Status.Failed.ToString()))">
+            <div class="card text-center text-white bg-danger mb-3 mx-auto @pointerClassIfSummaryPage" style="min-width: 12rem; max-width: 18rem;" onclick="@MakeUrl(allScenariosUri.WithQueryParameter(StatusConstants.FilterByStatusQueryParameterName, Status.Failed.ToString()))">
                 <div class="card-header">Failed</div>
                 <div class="card-body">
                     <h5 class="card-title">@failed</h5>

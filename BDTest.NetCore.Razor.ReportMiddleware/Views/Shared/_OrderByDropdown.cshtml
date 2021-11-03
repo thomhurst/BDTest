@@ -1,7 +1,7 @@
 @using BDTest.NetCore.Razor.ReportMiddleware.Constants
 <script>
     function orderBy(value) {
-      window.location.href = getUrlWithAppendedParameter('order', value);
+      window.location.href = getUrlWithAppendedParameter('@OrderConstants.OrderByQueryParameterName', value);
     }
 </script>
 
