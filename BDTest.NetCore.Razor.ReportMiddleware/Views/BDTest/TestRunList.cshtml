@@ -158,11 +158,8 @@
              function performFilter() {
                  
                  // Make all visible
-                 for (const filterObject of filterObjectsArray) {
-                     let tags = document.getElementsByName(filterObject.tableCellNamesToCheck);
-                     for (const tag of tags) {
-                        setElementVisible(tag.parentElement);   
-                     }
+                 for (let tableRow of document.getElementsByTagName("tr")) {
+                     showElement(tableRow);   
                  }
                  
                  for (const filterObject of filterObjectsArray) {
@@ -176,15 +173,15 @@
                      for (const tag of tags) {
                          
                         if(!matches(tag, filterValue, filterObject.checkbox)) {
-                            setElementInvisible(tag.parentElement);
+                            hideElement(tag.parentElement);
                         }
                      }
                  }
                  
-                 if(!window.selectedStatus || window.selectedStatus !== "@StatusConstants.All") {
+                 if(window.selectedStatus && window.selectedStatus !== "@StatusConstants.All") {
                      let rowsNotMatchingStatus = document.querySelectorAll(".test-run-row:not(." + selectedStatus + ")");
                      for (let rowNotMatchingStatus of rowsNotMatchingStatus) {
-                         setElementInvisible(rowNotMatchingStatus);
+                         hideElement(rowNotMatchingStatus);
                      }
                   }
              }
