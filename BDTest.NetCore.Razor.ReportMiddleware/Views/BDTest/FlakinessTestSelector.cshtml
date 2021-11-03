@@ -227,7 +227,7 @@ function getCheckedIds() {
         @if (!TagNeedsSelecting(tagQueryParameter))
         {
             <div class="d-flex justify-content-center my-5">
-                <button id="compare-flakiness" class="btn btn-primary" onclick="disableButtonAndSpin(this)">
+                <button id="compare-flakiness" class="btn btn-primary">
                     Check Flakey Tests
                 </button>
             </div>
@@ -247,6 +247,7 @@ function getCheckedIds() {
                     alert("Select 2 or more runs to check flakey tests!");   
                     return
                 }
+                disableButtonAndSpin(checkFlakeyTestsButton);
                 post("test-run-flakiness", { ReportIds: checkedIds });
             });
         </script>
