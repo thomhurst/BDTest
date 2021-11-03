@@ -10,18 +10,17 @@
 @if (orderedByTime.Count > 10)
 {
     <div class="d-flex justify-content-center">
-        <h2 class="subtitle is-5 mb-4">
+        <h1 class="display-6 fs-3 text fw-bold">
             Showing the fastest 5 and slowest 5
-        </h2>
+        </h1>
     </div>
 }
 
 <canvas id="myChart-@Model.StoryIndex"></canvas>
 
 <script>
-              
-var ctx = document.getElementById('myChart-@Model.StoryIndex').getContext('2d');
-data = {
+{       
+let chartData = {
     datasets: [{
         data: [
             @foreach (var scenario in scenarios)
@@ -29,6 +28,7 @@ data = {
                         @((long)scenario.TimeTaken.TotalMilliseconds)@:,
                     }
             ],
+            label: 'Milliseconds',
             backgroundColor: [
                 @for (var index = 0; index < scenarios.Count; index++)
                 {
@@ -45,25 +45,22 @@ data = {
     ]
 }
 
-var myPieChart = new Chart(ctx, {
+let chartConfig = {
     type: 'bar',
-    data: data,
+    data: chartData,
     options: {
         legend: {
                     display: false
                 },
         scales: {
-            yAxes: [{
-              scaleLabel: {
-                labelString: 'Milliseconds'
-              },
+            y: {
               ticks: {
                       // Include a dollar sign in the ticks
                       callback: function(value, index, values) {
                           return value + "ms";
                       }
                   }
-            }]
+            }
           },
         tooltips: {
             callbacks: {
@@ -73,5 +70,8 @@ var myPieChart = new Chart(ctx, {
             }
         }
     }
-})
+}
+
+let chart = new Chart(document.getElementById("myChart-@Model.StoryIndex"), chartConfig)
+}
 </script>
