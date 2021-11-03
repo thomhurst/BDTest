@@ -109,8 +109,8 @@
                         <button class="btn btn-light" onclick="expandScenarioGroups(toggleActions.EXPAND);">Expand All</button>
                         <button class="btn btn-light" onclick="expandScenarioGroups(toggleActions.COLLAPSE);">Collapse All</button>
                     }
-                    <button class="btn toggle-hide pointer" toggle-alternative-text="Hide Summary" onclick="toggleElementVisibility(document.getElementById('story-summary-@storyIndex'))">Show Summary</button>
-                    <button class="btn toggle-hide pointer" toggle-alternative-text="Hide Timings Chart" onclick="toggleElementVisibility(document.getElementById('story-summary-pie-chart-times-@storyIndex'))">Show Timings Chart</button>
+                    <button class="btn toggle-hide pointer" onclick="toggleElementVisibility(document.getElementById('story-summary-@storyIndex'))">Toggle Summary</button>
+                    <button class="btn toggle-hide pointer" onclick="toggleElementVisibility(document.getElementById('story-summary-pie-chart-times-@storyIndex'))">Toggle Timings Chart</button>
                 </div>
 
                 <div class="mt-4 container invisibleElement" id="story-summary-@storyIndex">
