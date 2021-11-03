@@ -5,6 +5,7 @@
 @{
   var currentFilterByQueryParameter = Context.Request.GetQueryParameter(StatusConstants.FilterByStatusQueryParameterName);
 }
+<div class="dropdown">
   <button class="btn btn-primary dropdown-toggle" type="button" aria-haspopup="true" aria-controls="dropdown-menu" id="dropdown-main-button" data-bs-toggle="dropdown" aria-expanded="false">
     Show All
     @* <span class="icon is-small"> *@
@@ -20,30 +21,31 @@
     <hr class="dropdown-divider">
     <li>
       <a href="#" class="dropdown-item" onclick="filterByStatus('@Status.Passed');">
-          Show Passed
+        Show Passed
       </a>
     </li>
     <li>
       <a class="dropdown-item" onclick="filterByStatus('@Status.Failed');">
-          Show Failures
+        Show Failures
       </a>
     </li>
     <li>
       <a href="#" class="dropdown-item" onclick="filterByStatus('@Status.Skipped');">
-          Show Skipped
+        Show Skipped
       </a>
     </li>
     <li>
       <a href="#" class="dropdown-item" onclick="filterByStatus('@Status.Inconclusive');">
-          Show Inconclusive
+        Show Inconclusive
       </a>
     </li>
     <li>
       <a href="#" class="dropdown-item" onclick="filterByStatus('@Status.NotImplemented');">
-          Show Not Implemented
+        Show Not Implemented
       </a>
     </li>
   </ul>
+</div>
 
 
 @if (Model.IncludeScript)

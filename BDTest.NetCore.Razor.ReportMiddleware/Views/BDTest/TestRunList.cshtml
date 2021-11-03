@@ -90,9 +90,12 @@
             <div class="level-left mb-5 me-auto">
                 @await Html.PartialAsync("_TestRunListVisibleColumnsDropdown")
             </div>
-            <div class="level-right mb-5">
-                @await Html.PartialAsync("_StatusDropdown", new StatusDropdownViewModel {IncludeScript = false})
-            </div>
+            @if (Context.GetCurrentPageNumber() == PagerQueryParameters.All)
+            {
+                <div class="level-right mb-5">
+                    @await Html.PartialAsync("_StatusDropdown", new StatusDropdownViewModel { IncludeScript = false })
+                </div>
+            }
         </div>
 
         @if (Context.GetCurrentPageNumber() == PagerQueryParameters.All)
