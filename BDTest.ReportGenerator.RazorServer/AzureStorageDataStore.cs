@@ -52,7 +52,7 @@ namespace BDTest.ReportGenerator.RazorServer
         public async Task<IEnumerable<TestRunSummary>> GetAllTestRunRecords()
         {
             var testRunSummaries = new List<TestRunSummary>();
-            var amountToTake = 25;
+            var amountToTake = 50;
 
             var count = 0;
             await foreach (var blobItem in _testRunSummariesContainer.GetBlobsAsync())
