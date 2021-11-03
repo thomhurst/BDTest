@@ -17,3 +17,11 @@
 .hiddenRow {
     padding: 0 !important;
 }
+
+.invisibleRow {
+    display: none;
+}
+
+.invisibleRow.show{
+    display: table-row;
+}
