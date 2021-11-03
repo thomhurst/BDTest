@@ -130,7 +130,7 @@
           <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small">
             @foreach (var customLinkData in customLinks)
             {
-              <li><a href="@(customLinkData.Url ?? "#")" class="link-dark rounded nav-link">@customLinkData.Text</a></li>  
+              <li><a href="@(customLinkData.Url ?? "#")" class="link-dark rounded nav-link" target="_blank">@customLinkData.Text</a></li>  
             }
           </ul>
         </div>
@@ -149,7 +149,7 @@
     <hr>
     
     <div class="dropdown">
-      <a href="#" class="d-flex align-items-center link-dark text-decoration-none @(hasUserSpecificLinks ? "dropdown-toggle" : "")" id="dropdownUser" data-bs-toggle="dropdown" aria-expanded="false">
+      <a href="#" class="d-flex align-items-center link-dark text-decoration-none @(hasUserSpecificLinks ? "dropdown-toggle" : "") @(profilePictureUri == null ? "indent-text-2" : "")" id="dropdownUser" data-bs-toggle="dropdown" aria-expanded="false">
         @if (profilePictureUri != null)
         {
           <img src="@profilePictureUri" alt="" width="32" height="32" class="rounded-circle me-2">
