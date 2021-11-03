@@ -141,30 +141,37 @@
   @{
     var profilePictureUri = BdTestReportServerOptions.UserPersonalizer?.GetProfilePictureUri(Context);
     var nameOfUser = BdTestReportServerOptions.UserPersonalizer?.GetNameOfUser(Context);
+    var customLinkDatas = BdTestReportServerOptions.UserPersonalizer?.GetLinksForUser(Context);
+    var hasUserSpecificLinks = customLinkDatas?.Any() == true;
   }
   @if (profilePictureUri != null || nameOfUser != null)
   {
     <hr>
     
     <div class="dropdown">
-      <a href="#" class="d-flex align-items-center link-dark text-decoration-none dropdown-toggle" id="dropdownUser1" data-bs-toggle="dropdown" aria-expanded="false">
+      <a href="#" class="d-flex align-items-center link-dark text-decoration-none @(hasUserSpecificLinks ? "dropdown-toggle" : "")" id="dropdownUser" data-bs-toggle="dropdown" aria-expanded="false">
         @if (profilePictureUri != null)
         {
           <img src="@profilePictureUri" alt="" width="32" height="32" class="rounded-circle me-2">
         }
-        
+
         @if (nameOfUser != null)
         {
           <strong>@nameOfUser</strong>
         }
       </a>
-      <ul class="dropdown-menu dropdown-menu-dark text-small shadow" aria-labelledby="dropdownUser1">
-        <li><a class="dropdown-item" href="#">New project...</a></li>
-        <li><a class="dropdown-item" href="#">Settings</a></li>
-        <li><a class="dropdown-item" href="#">Profile</a></li>
-        <li><hr class="dropdown-divider"></li>
-        <li><a class="dropdown-item" href="#">Sign out</a></li>
-      </ul>
+      
+      @if (hasUserSpecificLinks)
+      {
+        <ul class="dropdown-menu dropdown-menu-dark text-small shadow" aria-labelledby="dropdownUser">
+          @foreach (var customLinkData in customLinkDatas)
+          {
+            <li><a class="dropdown-item" href="@(customLinkData.Url ?? "#")" target="_blank">@customLinkData.Text</a></li>
+          }
+          @* <li><hr class="dropdown-divider"></li> *@
+          @* <li><a class="dropdown-item" href="#">Sign out</a></li> *@
+        </ul>
+      }
     </div>
   }
 </div>
