@@ -3,47 +3,45 @@
 @using BDTest.Test
 @model BDTest.NetCore.Razor.ReportMiddleware.Models.StatusDropdownViewModel
 <div class="dropdown">
-  <div class="dropdown-trigger">
-    <button class="btn btn-primary dropdown-toggle" aria-haspopup="true" aria-controls="dropdown-menu" id="dropdown-main-button">
-      Show All
-      @* <span class="icon is-small"> *@
-      @*   <i class="fas fa-angle-down" aria-hidden="true"></i> *@
-      @* </span> *@
-    </button>
-  </div>
-  <div class="dropdown-menu has-text-centered" id="dropdown-menu" role="menu">
-    <button class="btn btn-primary is-fullwidth" onclick="filterByStatus('@StatusConstants.All');">
-              Show All
-            </button>
+  <button class="btn btn-primary dropdown-toggle" type="button" aria-haspopup="true" aria-controls="dropdown-menu" id="dropdown-main-button" data-bs-toggle="dropdown" aria-expanded="false">
+    Show All
+    @* <span class="icon is-small"> *@
+    @*   <i class="fas fa-angle-down" aria-hidden="true"></i> *@
+    @* </span> *@
+  </button>
+  <ul class="dropdown-menu" id="dropdown-menu" role="menu">
+    <li>
+      <a class="dropdown-item" onclick="filterByStatus('@StatusConstants.All');">
+        Show All
+      </a>
+    </li>
     <hr class="dropdown-divider">
-    <div class="dropdown-content has-text-centered">
-      <a href="#" class="dropdown-item">
-        <button class="btn btn-success" onclick="filterByStatus('@Status.Passed');">
+    <li>
+      <a href="#" class="dropdown-item" onclick="filterByStatus('@Status.Passed');">
           Show Passed
-        </button>
       </a>
-      <a class="dropdown-item">
-        <button class="btn btn-danger" onclick="filterByStatus('@Status.Failed');">
+    </li>
+    <li>
+      <a class="dropdown-item" onclick="filterByStatus('@Status.Failed');">
           Show Failures
-        </button>
       </a>
-      <a href="#" class="dropdown-item">
-        <button class="btn btn-warning" onclick="filterByStatus('@Status.Skipped');">
+    </li>
+    <li>
+      <a href="#" class="dropdown-item" onclick="filterByStatus('@Status.Skipped');">
           Show Skipped
-        </button>
       </a>
-      <a href="#" class="dropdown-item">
-        <button class="btn btn-warning" onclick="filterByStatus('@Status.Inconclusive');">
+    </li>
+    <li>
+      <a href="#" class="dropdown-item" onclick="filterByStatus('@Status.Inconclusive');">
           Show Inconclusive
-        </button>
       </a>
-      <a href="#" class="dropdown-item">
-        <button class="btn btn-warning" onclick="filterByStatus('@Status.NotImplemented');">
+    </li>
+    <li>
+      <a href="#" class="dropdown-item" onclick="filterByStatus('@Status.NotImplemented');">
           Show Not Implemented
-        </button>
       </a>
-    </div>
-  </div>
+    </li>
+  </ul>
 </div>
 
 @if (Model.IncludeScript)
@@ -83,6 +81,7 @@
       
       if (currentFilterQueryParameter !== status) {
         window.location.href = getUrlWithAppendedParameter("filterByStatus", status);
+        spinnerCursor()
       }
     }
 </script>

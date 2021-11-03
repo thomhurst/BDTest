@@ -97,7 +97,7 @@ namespace BDTest.NetCore.Razor.ReportMiddleware.Controllers
 
             if (data == null)
             {
-                return View("NotFoundSingle");
+                return View("NotFoundSingle", id);
             }
             
             var filterByQueryParameter = Request.GetQueryParameter("filterByStatus");
@@ -127,7 +127,7 @@ namespace BDTest.NetCore.Razor.ReportMiddleware.Controllers
             
             if (data == null)
             {
-                return View("NotFoundSingle");
+                return View("NotFoundSingle", id);
             }
             
             var filterByQueryParameter = Request.GetQueryParameter("filterByStatus");
@@ -184,7 +184,7 @@ namespace BDTest.NetCore.Razor.ReportMiddleware.Controllers
             
             if (scenario == null)
             {
-                return View("NotFoundSingle");
+                return View("NotFoundSingle", reportId);
             }
 
             return View("Scenario", scenario);
