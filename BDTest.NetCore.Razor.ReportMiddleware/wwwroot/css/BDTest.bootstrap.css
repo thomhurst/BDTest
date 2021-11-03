@@ -25,3 +25,7 @@
 .invisibleRow.show{
     display: table-row;
 }
+
+.invisibleElement {
+    display: none;
+}

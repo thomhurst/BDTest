@@ -39,7 +39,7 @@ namespace BDTest.Attributes
                 AsA = AsAn;
             }
 
-            if (AsA.ToLowerInvariant().StartsWith("as a"))
+            if (AsA.StartsWith("as a", StringComparison.InvariantCultureIgnoreCase))
             {
                 return;
             }
@@ -48,7 +48,11 @@ namespace BDTest.Attributes
             {
                 AsA = $"As an {AsAn}";
             }
-            else
+            else if(AsA.StartsWith("a", StringComparison.InvariantCultureIgnoreCase))
+            {
+                AsA = $"As an {AsA}";
+            } 
+            else 
             {
                 AsA = $"As a {AsA}";
             }

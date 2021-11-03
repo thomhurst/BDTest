@@ -217,3 +217,15 @@ function expandScenarioGroup(scenarioGroupRow, toggleAction) {
         }
     }
 }
+
+function toggleElementVisibility(element) {
+    element.classList.toggle("invisibleElement");
+}
+
+function showElement(element) {
+    element.classList.remove("invisibleElement");
+}
+
+function hideElement(element) {
+    element.classList.add("invisibleElement");
+}
