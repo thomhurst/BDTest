@@ -1,10 +1,11 @@
 <script>
     function clickColumnVisibilityButton(element) {
-        if(window.event.toElement.tagName === "INPUT") {
-            return;   
+        if (window.event.srcElement.tagName === "INPUT")
+        {
+            return;
         }
         
-        let checkbox = element.firstElementChild.firstElementChild;
+        let checkbox = element.getElementsByTagName("input")[0];
         
         changeCheckboxValueAndFireEvent(checkbox);
     }
