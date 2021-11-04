@@ -15,7 +15,7 @@
 <section class="section">
     <div class="container">
 
-        @await Html.PartialAsync("_TestTimesPieChart", new TestTimesPieChartViewModel { Scenarios = Model.Scenarios })
+        @await Html.PartialAsync("_TestTimesPieChart", new TestTimesPieChartViewModel { Scenarios = Model.Scenarios, ReportId = Model.Id})
 
         </div>
 </section>
