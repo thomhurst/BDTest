@@ -71,7 +71,7 @@ let chartConfig = {
                       beginAtZero:true,
                       // Include a dollar sign in the ticks
                       callback: function(value, index, values) {
-                          return value + "s";
+                          return value + "ms";
                       }
                       }
                 }
@@ -79,7 +79,7 @@ let chartConfig = {
             tooltips: {
                 callbacks: {
                     label: function(tooltipItem, data) {
-                      return data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index] + " seconds";
+                      return data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index] + " ms";
                     }
                 }
             },
