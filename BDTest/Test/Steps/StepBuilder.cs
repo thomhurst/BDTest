@@ -30,7 +30,7 @@ namespace BDTest.Test.Steps
             CallerMember = callerMember;
             CallerFile = callerFile;
             TestId = testId;
-            ReportId = ReportId;
+            ReportId = reportId;
 
             var testGuid = System.Guid.NewGuid();
             Guid = testGuid.ToString();

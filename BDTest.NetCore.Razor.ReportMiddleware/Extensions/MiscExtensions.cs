@@ -42,7 +42,12 @@ namespace BDTest.NetCore.Razor.ReportMiddleware.Extensions
             return string.IsNullOrWhiteSpace(joinedResult) ? "< 1 ms" : joinedResult;
         }
 
-        public static string ToStringForReport(this DateTime dateTime, bool includeLineBreak = true)
+        public static string ToStringForReport(this DateTime dateTime)
+        {
+            return ToStringForReport(dateTime, true);
+        }
+
+        public static string ToStringForReport(this DateTime dateTime, bool includeLineBreak)
         {
             if (dateTime == DateTime.MinValue)
             {
