@@ -13,7 +13,8 @@
 @await Html.PartialAsync("_TestPageHeaderHero", new TestPageHeaderHeroViewModel
 {
     Title = "Scenario",
-    Description = Model.GetScenarioText()
+    Description = Model.GetScenarioText(),
+    ButtonViewModel = new ButtonViewModel { Status = Model.Status, Text = Model.Status.AsString()}
 })
 
 <script>
