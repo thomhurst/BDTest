@@ -23,8 +23,16 @@ function getRandomColor() {
     return color;
 }
 
+function trimEnd(value, stringToTrim) {
+    if(value.substring(value.length - 1, value.length) === stringToTrim) {
+        return value.substring(0, value.length - 1);
+    }
+    
+    return value;
+}
+
 function getUrlWithAppendedParameter(paramName, paramValue) {
-    let url = window.location.href;
+    let url = trimEnd(window.location.href, "#");
     if (url.indexOf(paramName + "=") >= 0) {
         let prefix = url.substring(0, url.indexOf(paramName));
         let suffix = url.substring(url.indexOf(paramName));
@@ -94,16 +102,6 @@ function getCookie(name) {
 }
 
 onDomLoaded(function () {
-    let dateRangePicker = document.getElementById("dateRangePicker");
-    
-    if(dateRangePicker == null) {
-        return
-    }
-    
-    dateRangePicker.addEventListener("click", selectDateRanges); 
-});
-
-onDomLoaded(function () {
     let headerCheckbox = document.getElementById("checkbox-header");
     
     if(headerCheckbox == null) {
@@ -125,19 +123,20 @@ onDomLoaded(function () {
     }) 
 });
 
-function selectDateRanges() {
-    alert("Select the start date and time range");
-    var startDatePicker = new SimplePicker("#startdatetimepickercontainer", {compactMode:true});
-    startDatePicker.open()
-
-    startDatePicker.on('submit', function(startDate, readableStartDate){
-        alert("Now select the end date and time range");
-        var endDatePicker = new SimplePicker("#enddatetimepickercontainer", {compactMode:true});
-        endDatePicker.open()
-
-        endDatePicker.on('submit', function(endDate, readableEndDate){
-            window.location.href = getUrlWithAppendedParameter("datetimerange", `${startDate.toISOString()}..${endDate.toISOString()}`)
-        })
+function getDatePicker() {
+    return new Litepicker({
+        element: document.getElementById("date-time-input-button"),
+        elementEnd: document.getElementById("date-time-input-end"),
+        position: 'bottom',
+        allowRepick: true,
+        singleMode: false,
+        autoApply: true,
+        plugins: ['ranges'],
+        setup: (picker) => {
+            picker.on('selected', (startDate, endDate) => {
+                window.location.href = getUrlWithAppendedParameter("datetimerange", `${startDate.dateInstance.toISOString()}..${new Date(endDate.dateInstance.setUTCHours(23, 59, 59, 999)).toISOString()}`)
+            });
+        }
     })
 }
 

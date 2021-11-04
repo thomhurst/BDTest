@@ -121,10 +121,10 @@
             return;
         }
         testRunSummariesEnumerable = testRunSummariesEnumerable.Where(summary => IsInDateRange(summary.StartedAtDateTime) || IsInDateRange(summary.FinishedAtDateTime));
-        var buttonText = $"{startDate.ToStringForReport(false)} to {endDate.ToStringForReport(false)}";
+        var buttonText = $"{startDate.ToShortDateString()} to {endDate.ToShortDateString()}";
         <script>
             onDomLoaded(function() {
-              document.getElementById("filter-by-datetimerange-text").textContent = '@buttonText';
+              document.getElementById("date-time-input-button").textContent = '@buttonText';
             })
         </script>
         
@@ -154,9 +154,6 @@ function getCheckedIds() {
                   return checkedIds;
     }
 </script>
-
-<link rel="stylesheet" href="~/_content/BDTest.NetCore.Razor.ReportMiddleware/css/simplepicker.css" asp-append-version="true">
-<script src="~/_content/BDTest.NetCore.Razor.ReportMiddleware/js/simplepicker.js" asp-append-version="true"></script>
 
 <div id="startdatetimepickercontainer"></div>
 <div id="enddatetimepickercontainer"></div>
@@ -217,9 +214,16 @@ function getCheckedIds() {
                 }
 
                 <li class="nav-item">
-                    <a class="bg-primary text-white nav-link" href="#" aria-haspopup="true" id="dateRangePicker">
+                    <input id="date-time-input-end" type="hidden"/>
+                    <a class="bg-primary text-white nav-link" href="#" aria-haspopup="true" id="date-time-input-button">
                         Filter by Date + Time
                     </a>
+                    <script>
+                        let datePicker = getDatePicker();
+                        document.getElementById("date-time-input-button").addEventListener("click", function () {
+                            datePicker.show();
+                        });
+                    </script>
                 </li>
             </div>
         </nav>
