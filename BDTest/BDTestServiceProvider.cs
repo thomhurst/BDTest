@@ -6,7 +6,7 @@ using BDTest.Settings;
 
 namespace BDTest
 {
-    internal class BDTestServiceProvider
+    internal static class BDTestServiceProvider
     {
         static BDTestServiceProvider()
         {
