@@ -43,11 +43,13 @@
                         <span class="title">@scenarioExceptions.Count()</span>
                     </td>
                     <td class="align-middle has-text-centered">
-                        <div class="off-white-bg-color like-pre" style="max-width: 50vw;">@scenarioExceptions.First().ExceptionMessage.TypeName: @scenarioExceptions.First().ExceptionMessage.Message.Trim()</div>
+                        <div class="off-white-bg-color like-pre" style="max-width: 50vw;">
+                            <pre class="my-2">@scenarioExceptions.First().ExceptionMessage.TypeName: @scenarioExceptions.First().ExceptionMessage.Message.Trim()</pre>
+                        </div>
                     </td>
                     <td class="align-middle">
-                        <a href="~/bdtest/report/@Model.Id/stories?scenarioId=@scenarioExceptions.First().TestGuid">
-                            <button class="btn btn-dark pointer">View in a Report</button>
+                        <a href="~/bdtest/report/@Model.Id/scenario/@scenarioExceptions.First().TestGuid">
+                            <button class="btn btn-danger pointer">View in a Report</button>
                         </a>
                     </td>
                 </tr>

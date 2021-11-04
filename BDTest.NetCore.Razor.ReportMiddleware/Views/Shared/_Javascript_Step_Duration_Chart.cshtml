@@ -27,7 +27,7 @@ let chartData = {
     labels: [
         @foreach (var step in Model)
         {
-            @:"@step.StartTime.ToStringForReport(false)",
+            @:"@step.StepText",
         }
     ]
 }

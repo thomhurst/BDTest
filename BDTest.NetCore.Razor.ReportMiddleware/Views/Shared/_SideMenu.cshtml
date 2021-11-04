@@ -58,6 +58,10 @@
         <div class="collapse show" id="this-test-report-navigation-collapse">
           <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small">
             <li><a href="~/bdtest/report/@currentTestReport.Id/summary" class="link-dark rounded nav-link">Summary</a></li>
+            @if (metrics.AnyExceptions)
+            {
+              <li><a href="~/bdtest/report/@currentTestReport.Id/top-defects" class="link-dark rounded nav-link">Top Defects</a></li>
+            }
             <li><a href="~/bdtest/report/@currentTestReport.Id/stories" class="link-dark rounded nav-link">Stories</a></li>
             <li><a href="~/bdtest/report/@currentTestReport.Id/all-scenarios" class="link-dark rounded nav-link">Scenarios</a></li>
             <li><a href="~/bdtest/report/@currentTestReport.Id/timings" class="link-dark rounded nav-link">Timings</a></li>
