@@ -64,12 +64,13 @@ namespace BDTest
             AddCustomProperties(dataOutputModel);
 
             var stringContent = JsonConvert.SerializeObject(dataOutputModel);
-            var stringHttpContent  = new StringContent(stringContent, Encoding.UTF8, "application/json");
-            
+
             string responseContent;
             var attempts = 0;
             while (true)
             {
+                var stringHttpContent  = new StringContent(stringContent, Encoding.UTF8, "application/json");
+                
                 try
                 {
                     var httpRequestMessage = new HttpRequestMessage
