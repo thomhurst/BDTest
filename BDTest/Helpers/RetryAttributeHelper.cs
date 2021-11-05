@@ -28,14 +28,14 @@ namespace BDTest.Helpers
                 return GetBDTestRetryAttribute(stepAttributeFrame);
             }
 
-            var storyClass = scenario.GetStoryClass();
-            bdTestRetryAttribute = storyClass.GetCustomAttribute<BDTestRetryAttribute>();
+            var storyClass = scenario?.GetStoryClass();
+            bdTestRetryAttribute = storyClass?.GetCustomAttribute<BDTestRetryAttribute>();
             if (bdTestRetryAttribute != null)
             {
                 return bdTestRetryAttribute;
             }
 
-            var callingFrame = stackFrames.FirstOrDefault(it => it.GetMethod().Name == scenario.RuntimeInformation.CallerMember);
+            var callingFrame = stackFrames.FirstOrDefault(it => it.GetMethod().Name == scenario?.RuntimeInformation?.CallerMember);
             return callingFrame?.GetMethod()?.GetCustomAttribute<BDTestRetryAttribute>();
         }
         
