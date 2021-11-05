@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using BDTest.Extensions;
 using BDTest.Helpers;
 using BDTest.Maps;
 using BDTest.Output;
@@ -64,7 +65,7 @@ namespace BDTest.Test.Steps
         
         private void SetScenarioText()
         {
-            var scenarioTextWithParameters = ScenarioTextHelper.GetScenarioTextWithParameters(CallerMember);
+            var scenarioTextWithParameters = ScenarioTextHelper.GetScenarioTextWithParameters(this.GetTestMethod(), CallerMember);
             ScenarioText = scenarioTextWithParameters.ScenarioText;
             Parameters = scenarioTextWithParameters.Parameters;
         }

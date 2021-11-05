@@ -107,7 +107,7 @@ namespace BDTest.Test
 
         public string GetScenarioText()
         {
-            return ScenarioTextHelper.GetScenarioTextWithParameters(null).ScenarioText.Scenario;
+            return ScenarioTextHelper.GetScenarioTextWithParameters(null, null).ScenarioText.Scenario;
         }
 
         internal async Task RunMethodWithAttribute<TAttribute>()

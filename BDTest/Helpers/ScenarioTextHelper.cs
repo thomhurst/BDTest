@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using BDTest.Attributes;
+using BDTest.Extensions;
 using BDTest.Test;
 using Humanizer;
 
@@ -11,7 +12,7 @@ namespace BDTest.Helpers
 {
     internal static class ScenarioTextHelper
     {
-        internal static ScenarioTextWithParameters GetScenarioTextWithParameters(string callerMember)
+        internal static ScenarioTextWithParameters GetScenarioTextWithParameters(MethodInfo testMethod, string callerMember)
         {
             var stackFrames = new StackTrace().GetFrames() ?? Array.Empty<StackFrame>();
 
@@ -25,6 +26,13 @@ namespace BDTest.Helpers
             if (callingFrame != null)
             {
                 return new ScenarioTextWithParameters(new ScenarioText(callingFrame.GetMethod().Name.Humanize()), GetParameters(callingFrame));
+            }
+            
+            var scenarioTextAttribute = testMethod?.GetCustomAttribute<ScenarioTextAttribute>();
+            if (scenarioTextAttribute != null)
+            {
+                return new ScenarioTextWithParameters(new ScenarioText(scenarioTextAttribute.Text),
+                    Enumerable.Empty<string>());
             }
             
             return new ScenarioTextWithParameters(new ScenarioText("No Scenario Text found (Use attribute [ScenarioText(\"...\")] on your tests"), Array.Empty<string>());

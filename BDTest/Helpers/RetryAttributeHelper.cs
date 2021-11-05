@@ -13,19 +13,19 @@ namespace BDTest.Helpers
     {
         internal static BDTestRetryAttribute GetBDTestRetryAttribute(Scenario scenario)
         {
+            var scenarioMethod = scenario?.GetScenarioMethod();
+            var bdTestRetryAttribute = scenarioMethod?.GetCustomAttribute<BDTestRetryAttribute>();
+            if (bdTestRetryAttribute != null)
+            {
+                return bdTestRetryAttribute;
+            }
+            
             var stackFrames = new StackTrace().GetFrames() ?? Array.Empty<StackFrame>();
 
             var stepAttributeFrame = stackFrames.FirstOrDefault(it => GetBDTestRetryAttribute(it) != null);
             if (stepAttributeFrame != null)
             {
                 return GetBDTestRetryAttribute(stepAttributeFrame);
-            }
-
-            var scenarioMethod = scenario.GetScenarioMethod();
-            var bdTestRetryAttribute = scenarioMethod?.GetCustomAttribute<BDTestRetryAttribute>();
-            if (bdTestRetryAttribute != null)
-            {
-                return bdTestRetryAttribute;
             }
 
             var storyClass = scenario.GetStoryClass();
