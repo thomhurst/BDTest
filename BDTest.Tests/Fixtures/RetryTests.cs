@@ -44,7 +44,7 @@ namespace BDTest.Tests.Fixtures
         [OneTimeSetUp]
         public void OneTimeSetUp()
         {
-            BDTestSettings.RetryTestRules.Add(exception => exception is MyCustomRetryException, 3);
+            BDTestSettings.GlobalRetryTestRules.Add(exception => exception is MyCustomRetryException, 3);
         }
 
         private int _retryCount;

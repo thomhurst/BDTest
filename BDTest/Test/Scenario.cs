@@ -29,6 +29,8 @@ namespace BDTest.Test
         
         [JsonProperty] public string CustomHtmlOutputForReport { get; internal set; }
 
+        [JsonIgnore] internal BDTestRuntimeInformation RuntimeInformation { get; set; }
+
         [JsonConstructor]
         private Scenario()
         {
@@ -38,9 +40,15 @@ namespace BDTest.Test
 
         internal Scenario(List<Step> steps, BuildableTest testDetails)
         {
-            BdTestBaseClass = testDetails.BdTestBase;
             Guid = testDetails.Guid;
             FrameworkTestId = testDetails.TestId;
+
+            RuntimeInformation = new BDTestRuntimeInformation
+            {
+                CallerFile = testDetails.CallerFile,
+                CallerMember = testDetails.CallerMember,
+                BdTestBase = testDetails.BdTestBase
+            };
             
             TestHolder.NotRun.TryRemove(Guid, out _);
             TestHolder.AddScenario(this);
@@ -73,7 +81,7 @@ namespace BDTest.Test
         
         [JsonIgnore] internal bool ShouldRetry { get; set; }
         [JsonProperty] public int RetryCount { get; internal set; }
-        [JsonIgnore] public BDTestBase BdTestBaseClass { get; }
+        [JsonIgnore] public BDTestBase BdTestBaseClass => RuntimeInformation.BdTestBase;
 
         public string GetScenarioText()
         {

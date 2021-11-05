@@ -16,7 +16,7 @@ namespace BDTest.Tests.Fixtures
         [OneTimeSetUp]
         public void Setup()
         {
-            BDTestSettings.SkipTestRules.Add(test => test.BdTestBaseClass?.GetType() == typeof(SkipCertainTestsTests));
+            BDTestSettings.GlobalSkipTestRules.Add(test => test.BdTestBaseClass?.GetType() == typeof(SkipCertainTestsTests));
         }
 
         [OneTimeTearDown]

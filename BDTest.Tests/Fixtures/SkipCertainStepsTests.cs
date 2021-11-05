@@ -16,10 +16,10 @@ namespace BDTest.Tests.Fixtures
         [OneTimeSetUp]
         public void Setup()
         {
-            BDTestSettings.SkipStepRules.Add<SkipAttribute1>(attr => true);
-            BDTestSettings.SkipStepRules.Add<SkipAttribute2>(attr => true);
-            BDTestSettings.SkipStepRules.Add<SkipAttribute3>(attr => true);
-            BDTestSettings.SkipStepRules.Add<SkipAttributeWithParameter>(attr => attr.ShouldSkip);
+            BDTestSettings.GlobalSkipStepRules.Add<SkipAttribute1>(attr => true);
+            BDTestSettings.GlobalSkipStepRules.Add<SkipAttribute2>(attr => true);
+            BDTestSettings.GlobalSkipStepRules.Add<SkipAttribute3>(attr => true);
+            BDTestSettings.GlobalSkipStepRules.Add<SkipAttributeWithParameter>(attr => attr.ShouldSkip);
         }
 
         [OneTimeTearDown]

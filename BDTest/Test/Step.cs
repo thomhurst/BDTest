@@ -112,7 +112,7 @@ namespace BDTest.Test
 
             foreach (var skipStepAttributeOnStep in skipStepAttributes)
             {
-                if (BDTestSettings.SkipStepRules.Rules.Any(skipStepRuleInSettings =>
+                if (BDTestSettings.GlobalSkipStepRules.Rules.Any(skipStepRuleInSettings =>
                     skipStepRuleInSettings.AssociatedSkipAttributeType == skipStepAttributeOnStep.GetType()
                     && skipStepRuleInSettings.Condition(skipStepAttributeOnStep)))
                 {

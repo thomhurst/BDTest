@@ -24,10 +24,10 @@ namespace BDTest.Settings
 
         public static CustomExceptionSettings CustomExceptionSettings { get; } = new CustomExceptionSettings();
 
-        public static ReportSettings ReportSettings { get; } = new ReportSettings();
+        public static ReportSettings LegacyReportSettings { get; } = new ReportSettings();
 
-        public static SkipStepRules SkipStepRules { get; } = new SkipStepRules();
-        public static RetryTestRules RetryTestRules { get; } = new RetryTestRules();
-        public static SkipTestRules SkipTestRules { get; } = new SkipTestRules();
+        public static SkipStepRules GlobalSkipStepRules { get; } = new SkipStepRules();
+        public static RetryTestRules GlobalRetryTestRules { get; } = new RetryTestRules();
+        public static SkipTestRules GlobalSkipTestRules { get; } = new SkipTestRules();
     }
 }

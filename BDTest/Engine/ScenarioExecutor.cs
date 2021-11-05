@@ -2,10 +2,12 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using BDTest.Attributes;
+using BDTest.Helpers;
 using BDTest.Interfaces.Internal;
 using BDTest.Output;
 using BDTest.Reporters;
 using BDTest.Settings;
+using BDTest.Settings.Retry;
 using BDTest.Test;
 
 namespace BDTest.Engine
@@ -66,8 +68,15 @@ namespace BDTest.Engine
                 }
                 catch (Exception e)
                 {
-                    var validRetryRules = BDTestSettings.RetryTestRules.Rules.Where(rule => rule.Condition(e)).ToList();
+                    var validRetryRules = BDTestSettings.GlobalRetryTestRules.Rules.Where(rule => rule.Condition(e)).ToList();
                     if (validRetryRules.Any() && scenario.RetryCount < validRetryRules.Max(x => x.RetryLimit))
+                    {
+                        scenario.ShouldRetry = true;
+                        return;
+                    }
+
+                    var bdTestRetryAttribute = RetryAttributeHelper.GetBDTestRetryAttribute(scenario);
+                    if (bdTestRetryAttribute != null && scenario.RetryCount < bdTestRetryAttribute.Count)
                     {
                         scenario.ShouldRetry = true;
                         return;
@@ -110,7 +119,7 @@ namespace BDTest.Engine
 
         private bool ShouldSkip(Scenario scenario)
         {
-            return BDTestSettings.SkipTestRules.Rules.Any(x => x.Invoke(scenario));
+            return BDTestSettings.GlobalSkipTestRules.Rules.Any(x => x.Invoke(scenario));
         }
 
         private void WriteTestInformation(Scenario scenario)

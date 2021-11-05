@@ -9,7 +9,7 @@ namespace BDTest.Tests.Helpers
         public static List<Scenario> ClearedScenarios { get; } = new List<Scenario>();
         public static void ResetData()
         {
-            BDTestSettings.ReportSettings.ReportFolderName = "CustomFolder";
+            BDTestSettings.LegacyReportSettings.ReportFolderName = "CustomFolder";
             
             ClearedScenarios.AddRange(BDTestUtil.GetScenarios());
             BDTestUtil.ClearScenarios();
