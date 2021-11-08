@@ -3,6 +3,9 @@ using BDTest.Settings;
 using BDTest.Test;
 using NUnit.Framework;
 using NUnitTestContext = NUnit.Framework.TestContext;
+using BDTest.Maps;
+using NUnit.Framework.Interfaces;
+using NUnit.Framework.Internal;
 
 namespace BDTest.NUnit
 {
@@ -33,7 +36,17 @@ namespace BDTest.NUnit
         [TearDown]
         public void PruneContext()
         {
+            MarkPassIfRetriedSuccessfully();
             RemoveContext();
+        }
+
+        private void MarkPassIfRetriedSuccessfully()
+        {
+            var allScenarios = TestHolder.ScenariosByTestFrameworkId;
+            if (allScenarios != null && allScenarios.TryGetValue(BDTestExecutionId, out var scenario) && scenario?.Status == Status.Passed)
+            {
+                TestExecutionContext.CurrentContext.CurrentResult.SetResult(ResultState.Success);
+            }
         }
 
         [TearDown]
