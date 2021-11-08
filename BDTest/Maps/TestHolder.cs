@@ -9,10 +9,11 @@ namespace BDTest.Maps
     internal static class TestHolder
     {
         internal static readonly string CurrentReportId = Guid.NewGuid().ToString("N");
-        internal static ConcurrentDictionary<string, BuildableTest> NotRun { get; } = new ConcurrentDictionary<string, BuildableTest>();
-        internal static ConcurrentDictionary<string, Scenario> Scenarios { get; } = new ConcurrentDictionary<string, Scenario>();
+        internal static ConcurrentDictionary<string, BuildableTest> NotRun { get; } = new();
+        internal static ConcurrentDictionary<string, Scenario> ScenariosByInternalId { get; } = new();
+        internal static ConcurrentDictionary<string, Scenario> ScenariosByTestFrameworkId { get; } = new();
         
-        private static readonly ConcurrentDictionary<string, List<Action<Scenario>>> ScenarioListeners = new ConcurrentDictionary<string, List<Action<Scenario>>>();
+        private static readonly ConcurrentDictionary<string, List<Action<Scenario>>> ScenarioListeners = new();
 
         internal static void ListenForScenario(string testId, Action<Scenario> @delegate)
         {
@@ -22,7 +23,8 @@ namespace BDTest.Maps
 
         internal static void AddScenario(Scenario scenario)
         {
-            Scenarios[scenario.Guid] = scenario;
+            ScenariosByInternalId[scenario.Guid] = scenario;
+            ScenariosByTestFrameworkId[scenario.FrameworkTestId] = scenario;
             
             if (ScenarioListeners.TryGetValue(scenario.FrameworkTestId, out var delegateList))
             {
