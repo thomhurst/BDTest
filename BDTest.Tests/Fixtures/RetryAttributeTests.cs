@@ -2,7 +2,6 @@
 using System.Linq;
 using BDTest.Attributes;
 using BDTest.Test;
-using BDTest.Test.Steps.When;
 using NUnit.Framework;
 
 namespace BDTest.Tests.Fixtures
@@ -19,17 +18,17 @@ namespace BDTest.Tests.Fixtures
                 _counter++;
             }
 
-            private int testRetryCount = 0;
+            private int _testRetryCount = 0;
             [Test, ScenarioText("RetryOnScenarioTests"), BDTestRetry(3)]
             public void Test()
             {
                 Given(() => Console.WriteLine("I run a test with a retry attribute"))
-                    .And(() => IncrementCount(ref testRetryCount))
-                    .When(() => ThrowIfLessThan(testRetryCount))
-                    .Then(() => Assert.That(_counter, Is.EqualTo(testRetryCount)))
+                    .And(() => IncrementCount(ref _testRetryCount))
+                    .When(() => ThrowIfLessThan(_testRetryCount))
+                    .Then(() => Assert.That(_counter, Is.EqualTo(_testRetryCount)))
                     .And(() => Assert.That(_counter, Is.Positive))
-                    .And(() => Assert.That(testRetryCount, Is.Positive))
-                    .And(() => Console.WriteLine($"Counter: {_counter} | TestRetryCount: {testRetryCount}"))
+                    .And(() => Assert.That(_testRetryCount, Is.Positive))
+                    .And(() => Console.WriteLine($"Counter: {_counter} | TestRetryCount: {_testRetryCount}"))
                     .BDTest();
             }
 
@@ -66,17 +65,17 @@ namespace BDTest.Tests.Fixtures
                 _counter++;
             }
 
-            private int testRetryCount = 0;
+            private int _testRetryCount = 0;
             [Test, ScenarioText("RetryOnStoryTests")]
             public void Test()
             {
                 Given(() => Console.WriteLine("I run a test with a retry attribute"))
-                    .And(() => IncrementCount(ref testRetryCount))
-                    .When(() => ThrowIfLessThan(testRetryCount))
-                    .Then(() => Assert.That(_counter, Is.EqualTo(testRetryCount)))
+                    .And(() => IncrementCount(ref _testRetryCount))
+                    .When(() => ThrowIfLessThan(_testRetryCount))
+                    .Then(() => Assert.That(_counter, Is.EqualTo(_testRetryCount)))
                     .And(() => Assert.That(_counter, Is.Positive))
-                    .And(() => Assert.That(testRetryCount, Is.Positive))
-                    .And(() => Console.WriteLine($"Counter: {_counter} | TestRetryCount: {testRetryCount}"))
+                    .And(() => Assert.That(_testRetryCount, Is.Positive))
+                    .And(() => Console.WriteLine($"Counter: {_counter} | TestRetryCount: {_testRetryCount}"))
                     .BDTest();
             }
 
