@@ -77,12 +77,9 @@ namespace BDTest.Output
                 return;
             }
 
-            var foundScenario =
-                TestHolder.Scenarios.FirstOrDefault(scenario => scenario.Value.FrameworkTestId == testId);
-            
-            if (!foundScenario.Equals(default) && foundScenario.Value != null)
+            if (TestHolder.ScenariosByTestFrameworkId.TryGetValue(testId, out var foundScenario))
             {
-                foundScenario.Value.TearDownOutput += $"{text}{Environment.NewLine}";
+                foundScenario.TearDownOutput += $"{text}{Environment.NewLine}";
             }
 
             Console.Out.WriteLine(Environment.NewLine + text);
@@ -103,12 +100,9 @@ namespace BDTest.Output
 
         internal static void WriteCustomHtmlForReport(string testId, string htmlValue)
         {
-            var foundScenario =
-                TestHolder.Scenarios.FirstOrDefault(scenario => scenario.Value.FrameworkTestId == testId);
-
-            if (!foundScenario.Equals(default) && foundScenario.Value != null)
+            if (TestHolder.ScenariosByTestFrameworkId.TryGetValue(testId, out var foundScenario))
             {
-                foundScenario.Value.CustomHtmlOutputForReport += htmlValue;
+                foundScenario.CustomHtmlOutputForReport += htmlValue;
             }
             else
             {

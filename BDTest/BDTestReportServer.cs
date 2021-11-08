@@ -46,7 +46,7 @@ namespace BDTest
                 Path = "bdtest/data"
             }.Uri;
 
-            var scenarios = TestHolder.Scenarios.Values.ToList();
+            var scenarios = TestHolder.ScenariosByInternalId.Values.ToList();
             
             var dataOutputModel = new BDTestOutputModel
             {
