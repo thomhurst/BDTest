@@ -144,4 +144,4 @@ namespace BDTest.Example
 ```
 
 ### Report Server Example Image
-![Report Server Example Image](https://github.com/thomhurst/BDTest/blob/master/Images/Test%20Luns%20List.png?raw=true)
+![Report Server Example Image](https://github.com/thomhurst/BDTest/blob/master/Images/Test%20Runs%20List.png?raw=true)
