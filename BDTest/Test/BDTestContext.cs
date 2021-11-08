@@ -47,7 +47,7 @@ namespace BDTest.Test
             return _scenarioText = TestBase.GetScenarioText() ?? CurrentScenario?.GetScenarioText();
         }
 
-        public Scenario CurrentScenario => TestHolder.Scenarios.Values.FirstOrDefault(scenario => scenario.FrameworkTestId == CurrentScenarioBDTestExecutionId);
+        public Scenario CurrentScenario => TestHolder.ScenariosByInternalId.Values.FirstOrDefault(scenario => scenario.FrameworkTestId == CurrentScenarioBDTestExecutionId);
 
         public string CurrentTestRunnerId => TestHolder.CurrentReportId;
     }

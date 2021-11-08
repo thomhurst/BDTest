@@ -9,11 +9,11 @@ namespace BDTest
 {
     public static class BDTestUtil
     {
-        public static List<Scenario> GetScenarios() => TestHolder.Scenarios.Values.ToList();
+        public static List<Scenario> GetScenarios() => TestHolder.ScenariosByInternalId.Values.ToList();
         public static string GetCurrentReportId => TestHolder.CurrentReportId;
         public static List<BuildableTest> GetNotRunScenarios() => TestHolder.NotRun.Values.ToList();
 
-        public static void ClearScenarios() => TestHolder.Scenarios.Clear();
+        public static void ClearScenarios() => TestHolder.ScenariosByInternalId.Clear();
 
         public static TestTimer GetTestTimer(IReadOnlyCollection<Scenario> scenarios)
         {
