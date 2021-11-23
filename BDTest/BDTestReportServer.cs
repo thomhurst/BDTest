@@ -17,15 +17,21 @@ namespace BDTest
     {
         public static Task<Uri> SendDataAndGetReportUriAsync(Uri serverAddress)
         {
+            return SendDataAndGetReportUriAsync(serverAddress, new BDTestRunDescriptor());
+        }
+        
+        public static Task<Uri> SendDataAndGetReportUriAsync(Uri serverAddress, BDTestRunDescriptor bdTestRunDescriptor)
+        {
             var httpClient = new HttpClient
             {
                 Timeout = TimeSpan.FromMinutes(2)
             };
 
-            return SendDataAndGetReportUriAsync(serverAddress, httpClient);
+            return SendDataAndGetReportUriAsync(serverAddress, bdTestRunDescriptor, httpClient);
         }
         
-        public static async Task<Uri> SendDataAndGetReportUriAsync(Uri serverAddress, HttpClient httpClient)
+        public static async Task<Uri> SendDataAndGetReportUriAsync(Uri serverAddress, BDTestRunDescriptor bdTestRunDescriptor,
+            HttpClient httpClient)
         {
             var pingUri = new UriBuilder(serverAddress)
             {
@@ -51,9 +57,9 @@ namespace BDTest
             var dataOutputModel = new BDTestOutputModel
             {
                 Id = TestHolder.CurrentReportId,
-                Environment = BDTestSettings.Environment,
-                Tag = BDTestSettings.Tag,
-                BranchName = BDTestSettings.BranchName,
+                Environment = bdTestRunDescriptor?.Environment ?? BDTestSettings.Environment,
+                Tag = bdTestRunDescriptor?.Tag ?? BDTestSettings.Tag,
+                BranchName = bdTestRunDescriptor?.BranchName ?? BDTestSettings.BranchName,
                 MachineName = Environment.MachineName,
                 Scenarios = scenarios,
                 Version = BDTestVersionHelper.CurrentVersion,
