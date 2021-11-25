@@ -171,7 +171,11 @@ namespace BDTest.NetCore.Razor.ReportMiddleware.Controllers
                         scenariosGroupedByScenarioTextEnumerable.OrderByDescending(scenarios =>
                             BDTestUtil.GetTestTimer(scenarios.ToList()).TestsStartedAt);
                     break;
+                case OrderConstants.Status:
+                    // Defaults to status. We don't need to do anything :)
+                    break;
                 default:
+                    Console.WriteLine($"Unknown order: {orderByQueryParameter}");
                     break;
             }
 
