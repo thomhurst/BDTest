@@ -175,7 +175,7 @@ namespace BDTest.NetCore.Razor.ReportMiddleware.Controllers
                     // Defaults to status. We don't need to do anything :)
                     break;
                 default:
-                    Console.WriteLine($"Unknown order: {orderByQueryParameter}");
+                    await Console.Out.WriteLineAsync($"Unknown order: {orderByQueryParameter}");
                     break;
             }
 
