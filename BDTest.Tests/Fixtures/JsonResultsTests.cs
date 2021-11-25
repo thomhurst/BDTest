@@ -27,7 +27,7 @@ namespace BDTest.Tests.Fixtures
         
         [Test]
         [TestInformation("Some info!")]
-        [ScenarioText("Can Deserialize Persistent JSON File")]
+        [ScenarioText("Can Deserialize JSON")]
         public void CanDeserializeJsonResultsSuccessfully()
         {
             When(() => Console.WriteLine("A persistent json file is written")).WithStepText(() => "I write custom when step text")

@@ -8,7 +8,7 @@ namespace BDTest.Tests.Fixtures
     public class NUnitRetryTests : NUnitBDTestBase<MyTestContext>
     {
         private int _testRetryCount = 0;
-        [Test, ScenarioText("RetryOnScenarioTests"), BDTestRetry(3)]
+        [Test, ScenarioText("NUnitRetryOnScenarioTests"), BDTestRetry(3)]
         public void Test()
         {
             Given(() => Console.WriteLine("I run a test with a retry attribute"))
