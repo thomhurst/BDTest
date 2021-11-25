@@ -127,5 +127,10 @@ namespace BDTest.Test
                 await invokedMethodTask.ConfigureAwait(false);
             }
         }
+
+        internal virtual void RecreateContextOnRetry()
+        {
+            // No context for non-generic type
+        }
     }
 }

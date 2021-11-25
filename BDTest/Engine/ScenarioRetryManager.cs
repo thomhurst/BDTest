@@ -11,13 +11,6 @@ namespace BDTest.Engine
 {
     public class ScenarioRetryManager : IScenarioRetryManager
     {
-        private readonly ITypeMatcher _typeMatcher;
-
-        public ScenarioRetryManager(ITypeMatcher typeMatcher)
-        {
-            _typeMatcher = typeMatcher;
-        }
-        
         public async Task CheckIfAlreadyExecuted(Scenario scenario)
         {
             if (scenario.ShouldRetry)
@@ -87,11 +80,7 @@ namespace BDTest.Engine
 
         private void ResetContext(Scenario scenario)
         {
-            if (_typeMatcher.IsSuperClassOfAbstractContextBDTestBase(scenario.BdTestBaseClass))
-            {
-                scenario.BdTestBaseClass.GetType().GetMethod("RecreateContextOnRetry", BindingFlags.NonPublic | BindingFlags.Instance)
-                    ?.Invoke(scenario.BdTestBaseClass, Array.Empty<object>());
-            }
+            scenario.BdTestBaseClass.RecreateContextOnRetry();
         }
     }
 }

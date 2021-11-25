@@ -34,9 +34,16 @@ namespace BDTest.Test
             }
         }
 
-        public void OverwriteContext(TContext context)
+        public void OverwriteContext(TContext testContext)
         {
-            BDTestContext.TestContext = context;
+            lock (_contextLock)
+            {
+                RemoveContext();
+                
+                var bdTestContext = new BDTestContext<TContext>(this, testContext, BDTestExecutionId);
+                
+                _contexts.Add(BDTestExecutionId, bdTestContext);
+            }
         }
 
         protected void RemoveContext()
@@ -49,8 +56,7 @@ namespace BDTest.Test
         
         public Action<BDTestContext<TContext>> ContextAmendment { get; set; }
 
-        // ReSharper disable once UnusedMember.Global
-        internal void RecreateContextOnRetry()
+        internal override void RecreateContextOnRetry()
         {
             OverwriteContext(Activator.CreateInstance<TContext>());   
             ContextAmendment?.Invoke(BDTestContext);

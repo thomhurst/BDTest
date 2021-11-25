@@ -12,8 +12,7 @@ namespace BDTest
         {
             InitialiseBDTest();
             
-            var typeMatcher = new TypeMatcher();
-            var scenarioRetryManager = new ScenarioRetryManager(typeMatcher);
+            var scenarioRetryManager = new ScenarioRetryManager();
             ScenarioExecutor = new ScenarioExecutor(scenarioRetryManager);
         }
 
