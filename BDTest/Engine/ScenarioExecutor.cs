@@ -12,11 +12,11 @@ using BDTest.Test;
 
 namespace BDTest.Engine
 {
-    public class ScenarioExecutor : IScenarioExecutor
+    internal class ScenarioExecutor : IScenarioExecutor
     {
         private readonly IScenarioRetryManager _scenarioRetryManager;
 
-        public ScenarioExecutor(IScenarioRetryManager scenarioRetryManager)
+        internal ScenarioExecutor(IScenarioRetryManager scenarioRetryManager)
         {
             _scenarioRetryManager = scenarioRetryManager;
         }

@@ -3,7 +3,7 @@ using BDTest.Test;
 
 namespace BDTest.Interfaces.Internal
 {
-    public interface IScenarioRetryManager
+    internal interface IScenarioRetryManager
     {
         Task CheckIfAlreadyExecuted(Scenario scenario);
     }

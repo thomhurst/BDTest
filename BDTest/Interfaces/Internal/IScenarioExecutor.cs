@@ -3,8 +3,8 @@ using BDTest.Test;
 
 namespace BDTest.Interfaces.Internal
 {
-    public interface IScenarioExecutor
+    internal interface IScenarioExecutor
     {
-        public Task ExecuteAsync(Scenario scenario);
+        Task ExecuteAsync(Scenario scenario);
     }
 }

@@ -2,6 +2,6 @@ namespace BDTest.Interfaces
 {
     public interface IStepTextStringConverter<in T>
     {
-        public string ConvertToString(T t);
+        string ConvertToString(T t);
     }
 }

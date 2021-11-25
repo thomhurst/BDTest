@@ -9,7 +9,7 @@ using BDTest.Test;
 
 namespace BDTest.Engine
 {
-    public class ScenarioRetryManager : IScenarioRetryManager
+    internal class ScenarioRetryManager : IScenarioRetryManager
     {
         public async Task CheckIfAlreadyExecuted(Scenario scenario)
         {

@@ -4,6 +4,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
 using BDTest.Attributes;
+using BDTest.Interfaces;
 using BDTest.Reporters;
 using BDTest.Settings;
 using Humanizer;
@@ -92,12 +93,12 @@ namespace BDTest.Helpers
 
                 var stepTextStringConverter = BDTestSettings.CustomStringConverters
                     .FirstOrDefault(type => 
-                        type.GetType().GetInterfaces().FirstOrDefault()?.Name.StartsWith("IStepTextStringConverter") == true 
+                        type.GetType().GetInterfaces().FirstOrDefault()?.Name.StartsWith(nameof(IStepTextStringConverter<object>)) == true 
                         && type.GetType().GetInterfaces().FirstOrDefault()?.GetGenericArguments().FirstOrDefault() == compiledExpression.GetType());
                 
                 if (stepTextStringConverter != null)
                 {
-                    var method = stepTextStringConverter.GetType().GetMethod("ConvertToString");
+                    var method = stepTextStringConverter.GetType().GetMethod(nameof(IStepTextStringConverter<object>.ConvertToString));
                     if (method != null)
                     {
                         return method.Invoke(stepTextStringConverter, new[] { compiledExpression }) as string;
