@@ -14,6 +14,7 @@ using BDTest.NetCore.Razor.ReportMiddleware.Models.ViewModels;
 using BDTest.Test;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 
 namespace BDTest.NetCore.Razor.ReportMiddleware.Controllers
@@ -175,7 +176,7 @@ namespace BDTest.NetCore.Razor.ReportMiddleware.Controllers
                     // Defaults to status. We don't need to do anything :)
                     break;
                 default:
-                    await Console.Out.WriteLineAsync($"Unknown order: {orderByQueryParameter}");
+                    _bdTestReportServerOptions.Logger?.LogWarning("Unknown order: {OrderByQueryParameter}", orderByQueryParameter);
                     break;
             }
 
