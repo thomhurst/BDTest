@@ -15,7 +15,7 @@ namespace BDTest.NUnit
         protected override string BDTestExecutionId => NUnitTestContext.CurrentContext.Test.ID;
 
         [OneTimeSetUp]
-        public void SetupNUnitExceptions()
+        public static void SetupNUnitExceptions()
         {
             if (!BDTestSettings.CustomExceptionSettings.SuccessExceptionTypes.Contains(typeof(SuccessException)))
             {

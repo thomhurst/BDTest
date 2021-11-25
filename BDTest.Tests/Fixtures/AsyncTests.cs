@@ -8,7 +8,7 @@ using NUnit.Framework;
 
 namespace BDTest.Tests.Fixtures
 {
-    [Parallelizable(ParallelScope.None)]
+    [Parallelizable(ParallelScope.All)]
     [Story(AsA = "BDTest developer",
         IWant = "to make sure that BDTest works asynchronously",
         SoThat = "tests run with maxiumum performance")]

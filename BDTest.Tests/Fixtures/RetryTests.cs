@@ -8,7 +8,8 @@ using NUnit.Framework;
 
 namespace BDTest.Tests.Fixtures
 {
-    [Parallelizable(ParallelScope.None)]
+    [Parallelizable(ParallelScope.All)]
+    [FixtureLifeCycle(LifeCycle.InstancePerTestCase)]
     [Story(AsA = "BDTest developer",
         IWant = "to make sure that tests can be retried",
         SoThat = "developers can mitigate against flakey tests")]
@@ -18,6 +19,12 @@ namespace BDTest.Tests.Fixtures
         
         private int _setUpCounter = 0;
         private int _tearDownCounter = 0;
+
+        public RetryTests()
+        {
+            _retryCount = 0;
+            _retryMethodCallCount = 0;
+        }
         
         [BDTestRetrySetUp]
         public async Task BDTestRetrySetup()
@@ -32,17 +39,9 @@ namespace BDTest.Tests.Fixtures
             await Task.Delay(500);
             _tearDownCounter++;
         }
-        
-        [SetUp]
-        public void Setup()
-        {
-            _retryCount = 0;
-            _retryMethodCallCount = 0;
-            TestResetHelper.ResetData();
-        }
-        
+
         [OneTimeSetUp]
-        public void OneTimeSetUp()
+        public static void OneTimeSetUp()
         {
             BDTestSettings.GlobalRetryTestRules.Add(exception => exception is MyCustomRetryException, 3);
         }
