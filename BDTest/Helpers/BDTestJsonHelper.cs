@@ -13,6 +13,11 @@ namespace BDTest.Helpers
     {
         public static string GetTestJsonData()
         {
+            return GetTestJsonData(new BDTestRunDescriptor());
+        }
+
+        public static string GetTestJsonData(BDTestRunDescriptor bdTestRunDescriptor)
+        {
             var scenarios = BDTestUtil.GetScenarios();
             
             var testTimer = GetTestTimer(scenarios);
@@ -20,9 +25,9 @@ namespace BDTest.Helpers
             var dataToOutput = new BDTestOutputModel
             {
                 Id = BDTestUtil.GetCurrentReportId,
-                Environment = BDTestSettings.Environment,
-                Tag = BDTestSettings.Tag,
-                BranchName = BDTestSettings.BranchName,
+                Environment = bdTestRunDescriptor?.Environment ?? BDTestSettings.Environment,
+                Tag = bdTestRunDescriptor?.Tag ?? BDTestSettings.Tag,
+                BranchName = bdTestRunDescriptor?.BranchName ?? BDTestSettings.BranchName,
                 MachineName = Environment.MachineName,
                 Scenarios = scenarios,
                 TestTimer = testTimer,

@@ -1,7 +1,5 @@
 using System;
-using System.Threading.Tasks;
 using BDTest.Attributes;
-using BDTest.ReportGenerator;
 using BDTest.Settings;
 using BDTest.Test;
 using NUnit.Framework;
@@ -17,12 +15,6 @@ namespace BDTest.Tests.Fixtures
         public void Setup()
         {
             BDTestSettings.GlobalSkipTestRules.Add(test => test.BdTestBaseClass?.GetType() == typeof(SkipCertainTestsTests));
-        }
-
-        [OneTimeTearDown]
-        public void Teardown()
-        {
-            BDTestReportGenerator.GenerateInFolder(nameof(SkipCertainTestsTests));
         }
 
         [Test]

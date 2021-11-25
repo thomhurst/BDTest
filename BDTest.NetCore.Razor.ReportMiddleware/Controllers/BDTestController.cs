@@ -14,6 +14,7 @@ using BDTest.NetCore.Razor.ReportMiddleware.Models.ViewModels;
 using BDTest.Test;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 
 namespace BDTest.NetCore.Razor.ReportMiddleware.Controllers
@@ -162,9 +163,6 @@ namespace BDTest.NetCore.Razor.ReportMiddleware.Controllers
                         scenariosGroupedByScenarioTextEnumerable.OrderBy(scenarios =>
                             scenarios.Select(scenario => scenario.TimeTaken).Max());
                     break;
-                case OrderConstants.Status:
-                    // Defaults to status. We don't need to do anything :)
-                    break;
                 case OrderConstants.DateAscending:
                     scenariosGroupedByScenarioTextEnumerable = scenariosGroupedByScenarioTextEnumerable.OrderBy(scenarios =>
                         BDTestUtil.GetTestTimer(scenarios.ToList()).TestsStartedAt);
@@ -173,6 +171,12 @@ namespace BDTest.NetCore.Razor.ReportMiddleware.Controllers
                     scenariosGroupedByScenarioTextEnumerable =
                         scenariosGroupedByScenarioTextEnumerable.OrderByDescending(scenarios =>
                             BDTestUtil.GetTestTimer(scenarios.ToList()).TestsStartedAt);
+                    break;
+                case OrderConstants.Status:
+                    // Defaults to status. We don't need to do anything :)
+                    break;
+                default:
+                    _bdTestReportServerOptions.Logger?.LogWarning("Unknown order: {OrderByQueryParameter}", orderByQueryParameter);
                     break;
             }
 

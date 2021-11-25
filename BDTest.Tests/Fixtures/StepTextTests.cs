@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using BDTest.Attributes;
-using BDTest.ReportGenerator;
 using BDTest.Settings;
 using BDTest.Test;
 using BDTest.Tests.Helpers;
@@ -29,8 +28,6 @@ namespace BDTest.Tests.Fixtures
                 .Then(() => Action3Custom())
                 .BDTest();
             
-            BDTestReportGenerator.GenerateInFolder(FileHelpers.GetUniqueTestOutputFolder());
-
             Assert.That(scenario.Steps[0].StepText, Is.EqualTo("Given I have a custom step 1"));
             Assert.That(scenario.Steps[1].StepText, Is.EqualTo("When my name is Tom Longhurst"));
             Assert.That(scenario.Steps[2].StepText, Is.EqualTo("Then I have a custom step 3"));
@@ -48,8 +45,6 @@ namespace BDTest.Tests.Fixtures
                 .Then(() => Action3Custom())
                 .BDTest();
             
-            BDTestReportGenerator.GenerateInFolder(FileHelpers.GetUniqueTestOutputFolder());
-
             Assert.That(scenario.Steps[0].StepText, Is.EqualTo("Given I have a custom step 1"));
             Assert.That(scenario.Steps[1].StepText, Is.EqualTo("When my name is Tom Longhurst"));
             Assert.That(scenario.Steps[2].StepText, Is.EqualTo("Then I have a custom step 3"));
@@ -72,8 +67,6 @@ namespace BDTest.Tests.Fixtures
                 .And(() => Action3Custom()).WithStepText(() => text3)
                 .BDTest();
             
-            BDTestReportGenerator.GenerateInFolder(FileHelpers.GetUniqueTestOutputFolder());
-
             Assert.That(scenario.Steps[0].StepText, Is.EqualTo("Given " + text1));
             Assert.That(scenario.Steps[1].StepText, Is.EqualTo("When " + text2));
             Assert.That(scenario.Steps[2].StepText, Is.EqualTo("Then " + text3));
@@ -93,8 +86,6 @@ namespace BDTest.Tests.Fixtures
                 .Then(() => Step_3_Without_A_StepTextAttribute_and_Hyphens())
                 .BDTest();
             
-            BDTestReportGenerator.GenerateInFolder(FileHelpers.GetUniqueTestOutputFolder());
-
             Assert.That(scenario.Steps[0].StepText, Is.EqualTo("Given step 1 without a step text attribute"));
             Assert.That(scenario.Steps[1].StepText, Is.EqualTo("When step 2 without a step text attribute"));
             Assert.That(scenario.Steps[2].StepText, Is.EqualTo("Then step 3 Without A StepTextAttribute and Hyphens"));

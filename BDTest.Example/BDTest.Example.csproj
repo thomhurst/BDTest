@@ -16,7 +16,6 @@
 
     <ItemGroup>
       <ProjectReference Include="..\BDTest.NUnit\BDTest.NUnit.csproj" />
-      <ProjectReference Include="..\BDTest.ReportGenerator\BDTest.ReportGenerator.csproj" />
       <ProjectReference Include="..\BDTest\BDTest.csproj" />
     </ItemGroup>
 

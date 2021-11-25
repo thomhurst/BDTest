@@ -3,11 +3,11 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using BDTest.Attributes;
+using BDTest.Helpers;
 using BDTest.NUnit;
-using BDTest.ReportGenerator;
-using BDTest.Settings;
 using BDTest.Test;
 using BDTest.Tests.Helpers;
+using KellermanSoftware.CompareNetObjects;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using NUnit.Framework;
@@ -18,9 +18,9 @@ namespace BDTest.Tests.Fixtures
         IWant = "to make sure that BDTest works",
         SoThat = "other developers can use it confidently")]
     [Parallelizable(ParallelScope.None)]
-    public class PersistentResultsTests : NUnitBDTestBase<MyTestContext>
+    public class JsonResultsTests : NUnitBDTestBase<MyTestContext>
     {
-        [SetUp]
+        [SetUp, TearDown]
         public void Setup()
         { 
             TestResetHelper.ResetData();    
@@ -28,28 +28,44 @@ namespace BDTest.Tests.Fixtures
         
         [Test]
         [TestInformation("Some info!")]
-        [ScenarioText("Can Deserialize Persistent JSON File")]
-        public void CanDeserializePersistentTestResultsSuccessfully()
+        [ScenarioText("Can Deserialize JSON")]
+        public void CanDeserializeJsonResultsSuccessfully()
         {
-            BDTestSettings.LegacyReportSettings.PersistentResultsDirectory =
-                Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"), "Persistent");
-
             When(() => Console.WriteLine("A persistent json file is written")).WithStepText(() => "I write custom when step text")
                 .Then(() => CustomStep("1", "2"))
                 .BDTest();
-            
-            BDTestReportGenerator.Generate();
 
-            var persistentJson = Directory.GetFiles(BDTestSettings.LegacyReportSettings.PersistentResultsDirectory).First();
-            var jObject = JObject.Load(new JsonTextReader(new StringReader(File.ReadAllText(persistentJson))));
+            var inMemoryScenario = BDTestUtil.GetScenarios().Single();
+            
+            var json = BDTestJsonHelper.GetTestJsonData();
+            var jObject = JObject.Load(new JsonTextReader(new StringReader(json)));
 
             var scenarios = JsonConvert.DeserializeObject<List<Scenario>>(jObject.GetValue("Scenarios").ToString());
             
             Assert.That(scenarios, Is.Not.Null);
-            Assert.That(scenarios.Count, Is.GreaterThanOrEqualTo(1));
+            Assert.That(scenarios.Count, Is.EqualTo(1));
+
+            var deserializedScenario = scenarios.First();
             
-            Assert.That(scenarios.First().Steps[0].StepText, Is.EqualTo("When I write custom when step text"));
-            Assert.That(scenarios.First().Steps[1].StepText, Is.EqualTo("Then 1 2"));
+            Assert.That(deserializedScenario.Steps[0].StepText, Is.EqualTo("When I write custom when step text"));
+            Assert.That(deserializedScenario.Steps[1].StepText, Is.EqualTo("Then 1 2"));
+
+            var compareLogic = new CompareLogic
+            {
+                Config = new ComparisonConfig
+                {
+                    MaxDifferences = int.MaxValue,
+                    // The below are runtime only, and so we don't serialize.
+                    MembersToIgnore =
+                    {
+                        nameof(Scenario.BdTestBaseClass)
+                    }
+                }
+            };
+
+            var comparisonResult = compareLogic.Compare(inMemoryScenario, deserializedScenario);
+            
+            Assert.That(comparisonResult.AreEqual, Is.True);
         }
         
         [StepText("{0} {1}")]

@@ -15,6 +15,7 @@ namespace BDTest
     [SuppressMessage("ReSharper", "UnusedType.Global")]
     public static class BDTestReportServer
     {
+        [Obsolete("SendDataAndGetReportUriAsync(Uri) is obsolete. You should instead use SendDataAndGetReportUriAsync(Uri, BDTestRunDescriptor)")]
         public static Task<Uri> SendDataAndGetReportUriAsync(Uri serverAddress)
         {
             return SendDataAndGetReportUriAsync(serverAddress, new BDTestRunDescriptor());

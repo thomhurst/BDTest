@@ -1,7 +1,6 @@
 using System;
 using BDTest.Attributes;
 using BDTest.Constants;
-using BDTest.ReportGenerator;
 using BDTest.Test;
 using BDTest.Tests.Helpers;
 using Newtonsoft.Json.Linq;
@@ -27,9 +26,7 @@ namespace BDTest.Tests.Fixtures
             var scenario = When(() => Console.WriteLine("my test has a story text"))
                 .Then(() => Console.WriteLine("the attribute should be serialized to the json output"))
                 .BDTest();
-
-            BDTestReportGenerator.GenerateInFolder(FileHelpers.GetUniqueTestOutputFolder());
-
+            
             Assert.That(scenario.GetStoryText(), Is.EqualTo($"As a BDTest developer{Environment.NewLine}I want to make sure that BDTest works{Environment.NewLine}So that other developers can use it confidently{Environment.NewLine}"));
             Assert.That(JsonHelper.GetTestDynamicJsonObject().SelectToken("$.Scenarios[0].StoryText").ToString(), Is.EqualTo($"As a BDTest developer{Environment.NewLine}I want to make sure that BDTest works{Environment.NewLine}So that other developers can use it confidently{Environment.NewLine}"));
         }
@@ -57,8 +54,6 @@ namespace BDTest.Tests.Fixtures
                 .Then(() => Console.WriteLine("the scenario text should be null"))
                 .BDTest();
             
-            BDTestReportGenerator.GenerateInFolder(FileHelpers.GetUniqueTestOutputFolder());
-
             Assert.That(scenario.GetStoryText(), Is.EqualTo(DefaultValues.StoryTextNotDefined));
             Assert.That(JsonHelper.GetTestDynamicJsonObject().SelectToken("$.Scenarios[0].StoryText").Type, Is.EqualTo(JTokenType.Null));
         }
