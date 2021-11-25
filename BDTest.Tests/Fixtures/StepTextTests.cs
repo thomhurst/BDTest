@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using BDTest.Attributes;
+using BDTest.Helpers;
 using BDTest.Settings;
 using BDTest.Test;
 using BDTest.Tests.Helpers;
@@ -14,6 +16,8 @@ namespace BDTest.Tests.Fixtures
         SoThat = "tests can be translated to plain English")]
     public class StepTextTests : BDTestBase
     {
+        private InnerStepsClass InnerSteps => new InnerStepsClass();
+        
         [SetUp]
         public void Setup()
         {
@@ -124,7 +128,7 @@ namespace BDTest.Tests.Fixtures
             
             var scenario = Given(() => Console.WriteLine("Empty Step"))
                 .When(() => Console.WriteLine("Empty Step"))
-                .Then(() => StepWithStringConverterType(new CustomClassToStepTextString()))
+                .Then(() => StepWithStrongTypeAndStepText(new CustomClassToStepTextString()))
                 .BDTest();
             
             Assert.That(scenario.Steps[2].StepText, Is.EqualTo("Then the text is 123..................4....................................5"));
@@ -139,9 +143,91 @@ namespace BDTest.Tests.Fixtures
             
             Assert.That(scenario.Steps[1].StepText, Is.EqualTo("Then step with parameters but without step text One Two"));
         }
+
+        [Test]
+        public void StepTextForStrongTypeWithoutConvertor()
+        {
+            BDTestSettings.CustomStringConverters.RemoveAll(x => x.GetType() == typeof(CustomClassToStepTextStringStringConverter));
+                        
+            var scenario = Given(() => Console.WriteLine("Empty Step"))
+                .When(() => Console.WriteLine("Empty Step"))
+                .Then(() => StepWithStrongTypeAndStepText(new CustomClassToStepTextString
+                {
+                    One = "1", Two = "2", Three = "3", Four = "4", Five = "5"
+                }))
+                .BDTest();
+
+            var thenStep = scenario.Steps.Last();
+            
+            Assert.That(thenStep.StepText, Is.EqualTo("Then the text is Out of the box ToString() called"));
+        }
+        
+        [Test]
+        public void StepTextForStrongTypeInInnerStepsClassWithoutConvertor()
+        {
+            BDTestSettings.CustomStringConverters.RemoveAll(x => x.GetType() == typeof(CustomClassToStepTextStringStringConverter));
+                        
+            var scenario = Given(() => Console.WriteLine("Empty Step"))
+                .When(() => Console.WriteLine("Empty Step"))
+                .Then(() => InnerSteps.StepWithStrongTypeAndStepText(new CustomClassToStepTextString
+                {
+                    One = "1", Two = "2", Three = "3", Four = "4", Five = "5"
+                }))
+                .BDTest();
+
+            var thenStep = scenario.Steps.Last();
+            
+            Assert.That(thenStep.StepText, Is.EqualTo("Then the text is Out of the box ToString() called"));
+        }
+        
+        [Test]
+        public void StepTextForStrongTypeInInnerStepsWithoutStepTextAttribute()
+        {
+            BDTestSettings.CustomStringConverters.RemoveAll(x => x.GetType() == typeof(CustomClassToStepTextStringStringConverter));
+                        
+            var scenario = Given(() => Console.WriteLine("Empty Step"))
+                .When(() => Console.WriteLine("Empty Step"))
+                .Then(() => InnerSteps.StepWithStrongTypeAndNoStepText(new CustomClassToStepTextString
+                {
+                    One = "1", Two = "2", Three = "3", Four = "4", Five = "5"
+                }))
+                .BDTest();
+
+            var thenStep = scenario.Steps.Last();
+            
+            Assert.That(thenStep.StepText, Is.EqualTo("Then step with strong type and no step text Out of the box ToString() called"));
+        }
+
+        private int _retryCount;
+        [TestCase(1)]
+        [TestCase(2)]
+        [TestCase(3)]
+        [BDTestRetry(3)]
+        public void RetrySuccessfully(int throwIfRetryLessThan)
+        {
+            var scenario = Given(() => ThrowException(throwIfRetryLessThan))
+                .When(() => Console.WriteLine("my test has an exception"))
+                .Then(() => InnerSteps.StepWithStrongTypeAndNoStepText(new CustomClassToStepTextString
+                {
+                    One = "1", Two = "2", Three = "3", Four = "4", Five = "5"
+                }))
+                .BDTest();
+            
+            var thenStep = scenario.Steps.Last();
+            
+            Assert.That(thenStep.StepText, Is.EqualTo("Then step with strong type and no step text Out of the box ToString() called"));
+        }
+        
+        private void ThrowException(int throwIfRetryLessThan)
+        {
+            if (_retryCount++ < throwIfRetryLessThan)
+            {
+                throw new MyCustomRetryException("Blah");
+            }
+        }
         
         [StepText("the text is {0}")]
-        public void StepWithStringConverterType(CustomClassToStepTextString obj)
+        public void StepWithStrongTypeAndStepText(CustomClassToStepTextString obj)
         {
         }
 
@@ -184,6 +270,18 @@ namespace BDTest.Tests.Fixtures
 
         public void StepWithParametersButWithoutStepText(string valueOne, string valueTwo)
         {
+        }
+
+        private class InnerStepsClass
+        {
+            [StepText("the text is {0}")]
+            public void StepWithStrongTypeAndStepText(CustomClassToStepTextString obj)
+            {
+            }
+            
+            public void StepWithStrongTypeAndNoStepText(CustomClassToStepTextString obj)
+            {
+            }
         }
     }
 }

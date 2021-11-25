@@ -67,9 +67,12 @@ namespace BDTest.Test
 
         [JsonProperty]
         public string StepText { get; private set; }
-        
+
         [JsonIgnore]
         internal Func<string> OverriddenStepText { get; set; }
+
+        [JsonIgnore]
+        public bool IsRetry { get; set; }
 
         internal void ResetData()
         {
@@ -79,8 +82,9 @@ namespace BDTest.Test
             EndTime = DateTime.MinValue;
             TimeTaken = TimeSpan.Zero;
             Status = Status.Inconclusive;
+            IsRetry = true;
         }
-        
+
         internal void SetStepText()
         {
             if (OverriddenStepText != null)
@@ -124,7 +128,10 @@ namespace BDTest.Test
 
         internal async Task Execute()
         {
-            SetStepText();
+            if (!IsRetry)
+            {
+                SetStepText();   
+            }
 
             await Task.Run(async () =>
             {
