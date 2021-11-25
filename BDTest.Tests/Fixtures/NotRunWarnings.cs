@@ -1,7 +1,6 @@
 using System;
 using System.Linq;
 using BDTest.Attributes;
-using BDTest.ReportGenerator;
 using BDTest.Test;
 using BDTest.Tests.Helpers;
 using NUnit.Framework;
@@ -42,9 +41,6 @@ namespace BDTest.Tests.Fixtures
 I want to make sure that BDTest flags tests not executed
 So that consumers aren't missing any test coverage accidentally
 "));
-
-            // Generate Report
-            BDTestReportGenerator.GenerateInFolder("NotRunWarnings-Reports");
         }
 
         [ScenarioText("Custom NotRunTest3")]

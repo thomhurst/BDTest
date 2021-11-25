@@ -3,9 +3,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using BDTest.Attributes;
+using BDTest.Helpers;
 using BDTest.NUnit;
-using BDTest.ReportGenerator;
-using BDTest.Settings;
 using BDTest.Test;
 using BDTest.Tests.Helpers;
 using Newtonsoft.Json;
@@ -18,7 +17,7 @@ namespace BDTest.Tests.Fixtures
         IWant = "to make sure that BDTest works",
         SoThat = "other developers can use it confidently")]
     [Parallelizable(ParallelScope.None)]
-    public class PersistentResultsTests : NUnitBDTestBase<MyTestContext>
+    public class JsonResultsTests : NUnitBDTestBase<MyTestContext>
     {
         [SetUp]
         public void Setup()
@@ -29,19 +28,14 @@ namespace BDTest.Tests.Fixtures
         [Test]
         [TestInformation("Some info!")]
         [ScenarioText("Can Deserialize Persistent JSON File")]
-        public void CanDeserializePersistentTestResultsSuccessfully()
+        public void CanDeserializeJsonResultsSuccessfully()
         {
-            BDTestSettings.LegacyReportSettings.PersistentResultsDirectory =
-                Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"), "Persistent");
-
             When(() => Console.WriteLine("A persistent json file is written")).WithStepText(() => "I write custom when step text")
                 .Then(() => CustomStep("1", "2"))
                 .BDTest();
             
-            BDTestReportGenerator.Generate();
-
-            var persistentJson = Directory.GetFiles(BDTestSettings.LegacyReportSettings.PersistentResultsDirectory).First();
-            var jObject = JObject.Load(new JsonTextReader(new StringReader(File.ReadAllText(persistentJson))));
+            var json = BDTestJsonHelper.GetTestJsonData();
+            var jObject = JObject.Load(new JsonTextReader(new StringReader(json)));
 
             var scenarios = JsonConvert.DeserializeObject<List<Scenario>>(jObject.GetValue("Scenarios").ToString());
             

@@ -1,7 +1,6 @@
 using System;
 using System.Linq;
 using BDTest.Attributes;
-using BDTest.ReportGenerator;
 using BDTest.Test;
 using BDTest.Tests.Helpers;
 using NUnit.Framework;
@@ -27,8 +26,6 @@ namespace BDTest.Tests.Fixtures
                 .Then(() => Console.WriteLine("the information array should be empty"))
                 .BDTest();
             
-            BDTestReportGenerator.GenerateInFolder(FileHelpers.GetUniqueTestOutputFolder());
-            
             Assert.That(scenario.CustomTestInformation, Is.Empty);
             Assert.That(JsonHelper.GetTestDynamicJsonObject().SelectToken("$.Scenarios[0].CustomTestInformation").ToString(), Is.EqualTo("[]"));
         }
@@ -40,8 +37,6 @@ namespace BDTest.Tests.Fixtures
             var scenario = When(() => Console.WriteLine("my test has an attribute"))
                 .Then(() => Console.WriteLine("the attribute should be serialized to the json output"))
                 .BDTest();
-            
-            BDTestReportGenerator.GenerateInFolder(FileHelpers.GetUniqueTestOutputFolder());
             
             Assert.That(scenario.CustomTestInformation.First().Print(), Is.EqualTo($"{nameof(TestInformationAttribute)} - Testing 1 Information Attribute"));
             Assert.That(JsonHelper.GetTestDynamicJsonObject().SelectToken("$.Scenarios[0].CustomTestInformation[0]").ToString(), Is.EqualTo("Testing 1 Information Attribute"));
@@ -55,8 +50,6 @@ namespace BDTest.Tests.Fixtures
             var scenario = When(() => Console.WriteLine("my test has multiple attributes"))
                 .Then(() => Console.WriteLine("the attributes should be serialized to the json output"))
                 .BDTest();
-            
-            BDTestReportGenerator.GenerateInFolder(FileHelpers.GetUniqueTestOutputFolder());
             
             Assert.That(scenario.CustomTestInformation.First().Print(), Is.EqualTo($"{nameof(TestInformationAttribute)} - Testing 1 Information Attribute"));
             Assert.That(JsonHelper.GetTestDynamicJsonObject().SelectToken("$.Scenarios[0].CustomTestInformation[0]").ToString(), Is.EqualTo("Testing 1 Information Attribute"));

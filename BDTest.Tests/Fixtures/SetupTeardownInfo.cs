@@ -1,6 +1,5 @@
 using System;
 using BDTest.NUnit;
-using BDTest.ReportGenerator;
 using BDTest.Test;
 using BDTest.Tests.Helpers;
 using NUnit.Framework;
@@ -25,8 +24,6 @@ namespace BDTest.Tests.Fixtures
             
             Assert.That(_scenario.TearDownOutput.Trim(), Is.EqualTo("Some teardown info!"));
             
-            BDTestReportGenerator.GenerateInFolder(FileHelpers.GetUniqueTestOutputFolder());
-            
             Assert.That(JsonHelper.GetTestDynamicJsonObject().SelectToken("$.Scenarios[0].TearDownOutput").ToString().Trim(), Is.EqualTo("Some teardown info!"));
         }
         
@@ -37,8 +34,6 @@ namespace BDTest.Tests.Fixtures
                 .Then(() => Console.WriteLine("the results should have set up and tear down information added"))
                 .BDTest();
             
-            BDTestReportGenerator.GenerateInFolder(FileHelpers.GetUniqueTestOutputFolder());
-
             Assert.That(_scenario.TestStartupInformation.Trim(), Is.EqualTo("Some startup info!"));
             
             Assert.That(JsonHelper.GetTestDynamicJsonObject().SelectToken("$.Scenarios[0].TestStartupInformation").ToString().Trim(), Is.EqualTo("Some startup info!"));
