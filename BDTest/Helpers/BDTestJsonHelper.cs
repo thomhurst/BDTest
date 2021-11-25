@@ -11,7 +11,12 @@ namespace BDTest.Helpers
 {
     public static class BDTestJsonHelper
     {
-        public static string GetTestJsonData(BDTestRunDescriptor bdTestRunDescriptor = null)
+        public static string GetTestJsonData()
+        {
+            return GetTestJsonData(new BDTestRunDescriptor());
+        }
+
+        public static string GetTestJsonData(BDTestRunDescriptor bdTestRunDescriptor)
         {
             var scenarios = BDTestUtil.GetScenarios();
             
