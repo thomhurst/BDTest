@@ -162,9 +162,6 @@ namespace BDTest.NetCore.Razor.ReportMiddleware.Controllers
                         scenariosGroupedByScenarioTextEnumerable.OrderBy(scenarios =>
                             scenarios.Select(scenario => scenario.TimeTaken).Max());
                     break;
-                case OrderConstants.Status:
-                    // Defaults to status. We don't need to do anything :)
-                    break;
                 case OrderConstants.DateAscending:
                     scenariosGroupedByScenarioTextEnumerable = scenariosGroupedByScenarioTextEnumerable.OrderBy(scenarios =>
                         BDTestUtil.GetTestTimer(scenarios.ToList()).TestsStartedAt);
@@ -173,6 +170,8 @@ namespace BDTest.NetCore.Razor.ReportMiddleware.Controllers
                     scenariosGroupedByScenarioTextEnumerable =
                         scenariosGroupedByScenarioTextEnumerable.OrderByDescending(scenarios =>
                             BDTestUtil.GetTestTimer(scenarios.ToList()).TestsStartedAt);
+                    break;
+                default:
                     break;
             }
 
