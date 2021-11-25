@@ -5,7 +5,6 @@ using System.Reflection;
 using BDTest.Attributes;
 using BDTest.Extensions;
 using BDTest.Test;
-using Humanizer;
 
 namespace BDTest.Helpers
 {

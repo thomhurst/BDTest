@@ -1,5 +1,4 @@
-﻿using System;
-using BDTest.Helpers.JsonConverters;
+﻿using BDTest.Helpers.JsonConverters;
 using Newtonsoft.Json;
 
 namespace BDTest.Test

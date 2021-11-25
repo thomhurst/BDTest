@@ -7,7 +7,6 @@ using BDTest.Interfaces.Internal;
 using BDTest.Output;
 using BDTest.Reporters;
 using BDTest.Settings;
-using BDTest.Settings.Retry;
 using BDTest.Test;
 
 namespace BDTest.Engine
