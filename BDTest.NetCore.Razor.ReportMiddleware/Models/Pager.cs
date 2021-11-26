@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using BDTest.NetCore.Razor.ReportMiddleware.Constants;
 
 namespace BDTest.NetCore.Razor.ReportMiddleware.Models
 {

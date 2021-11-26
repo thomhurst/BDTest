@@ -1,7 +1,6 @@
 using System;
 using BDTest.NetCore.Razor.ReportMiddleware.Constants;
 using BDTest.NetCore.Razor.ReportMiddleware.Extensions;
-using BDTest.NetCore.Razor.ReportMiddleware.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Extensions;
 
