@@ -271,7 +271,7 @@
                     @if (isAdmin)
                     {
                         <td class="align-middle">
-                            <button class="delete" onclick="confirmDelete('@record.RecordId', '@record.Tag', '@record.Environment', '@record.BranchName', '@record.StartedAtDateTime')"></button>
+                            <button class="btn btn-danger btn-sm" onclick="confirmDelete('@record.RecordId', '@record.Tag', '@record.Environment', '@record.BranchName', '@record.StartedAtDateTime')">Delete</button>
                         </td>
                     }
                 </tr>
