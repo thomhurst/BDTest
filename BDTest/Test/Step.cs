@@ -14,6 +14,7 @@ namespace BDTest.Test
 {
     public class Step
     {
+        [JsonIgnore]
         internal Runnable Runnable { get; }
         
         [JsonProperty]
@@ -128,10 +129,7 @@ namespace BDTest.Test
 
         internal async Task Execute()
         {
-            if (!IsRetry)
-            {
-                SetStepText();   
-            }
+            SetStepText();
 
             await Task.Run(async () =>
             {

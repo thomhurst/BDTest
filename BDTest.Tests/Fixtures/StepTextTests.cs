@@ -205,17 +205,17 @@ namespace BDTest.Tests.Fixtures
         [BDTestRetry(3)]
         public void RetrySuccessfully(int throwIfRetryLessThan)
         {
-            var scenario = Given(() => ThrowException(throwIfRetryLessThan))
-                .When(() => Console.WriteLine("my test has an exception"))
-                .Then(() => InnerSteps.StepWithStrongTypeAndNoStepText(new CustomClassToStepTextString
+            var scenario = Given(() => InnerSteps.StepWithStrongTypeAndNoStepText(new CustomClassToStepTextString
                 {
                     One = "1", Two = "2", Three = "3", Four = "4", Five = "5"
                 }))
+                .When(() => ThrowException(throwIfRetryLessThan))
+                .Then(() => Console.WriteLine("the test passed"))
                 .BDTest();
             
-            var thenStep = scenario.Steps.Last();
+            var thenStep = scenario.Steps.First();
             
-            Assert.That(thenStep.StepText, Is.EqualTo("Then step with strong type and no step text Out of the box ToString() called"));
+            Assert.That(thenStep.StepText, Is.EqualTo("Given step with strong type and no step text Out of the box ToString() called"));
         }
         
         private void ThrowException(int throwIfRetryLessThan)

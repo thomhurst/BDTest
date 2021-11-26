@@ -15,12 +15,12 @@ namespace BDTest.Helpers
     {
         public static string GetStepText(Expression<Action> action)
         {
-            return GetStepText(action.Body as MethodCallExpression);
+            return GetStepText(action?.Body as MethodCallExpression);
         }
         
         public static string GetStepText(Expression<Func<Task>> action)
         {
-            return GetStepText(action.Body as MethodCallExpression);
+            return GetStepText(action?.Body as MethodCallExpression);
         }
         
         public static string GetStepText(Expression expression)

@@ -2,6 +2,7 @@
 using System.Linq.Expressions;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
+using BDTest.Reporters;
 
 namespace BDTest
 {
@@ -22,6 +23,12 @@ namespace BDTest
 
         internal async Task Run()
         {
+            if (Task == null && Action == null)
+            {
+                ConsoleReporter.WriteLine($"{nameof(Task)} and {nameof(Action)} are both null in {nameof(Runnable)}");
+                return;
+            }
+            
             if (Task != null)
             {
                 await Task.Compile().Invoke();
