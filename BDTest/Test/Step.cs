@@ -58,6 +58,7 @@ namespace BDTest.Test
             ScenarioId = scenarioId;
             Runnable = runnable;
             StepType = stepType;
+            ReportId = reportId;
             SetStepText();
         }
 
