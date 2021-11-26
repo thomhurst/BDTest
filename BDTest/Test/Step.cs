@@ -14,6 +14,7 @@ namespace BDTest.Test
 {
     public class Step
     {
+        [JsonIgnore]
         internal Runnable Runnable { get; }
         
         [JsonProperty]
@@ -57,6 +58,7 @@ namespace BDTest.Test
             ScenarioId = scenarioId;
             Runnable = runnable;
             StepType = stepType;
+            ReportId = reportId;
             SetStepText();
         }
 
@@ -67,9 +69,12 @@ namespace BDTest.Test
 
         [JsonProperty]
         public string StepText { get; private set; }
-        
+
         [JsonIgnore]
         internal Func<string> OverriddenStepText { get; set; }
+
+        [JsonIgnore]
+        public bool IsRetry { get; set; }
 
         internal void ResetData()
         {
@@ -79,8 +84,9 @@ namespace BDTest.Test
             EndTime = DateTime.MinValue;
             TimeTaken = TimeSpan.Zero;
             Status = Status.Inconclusive;
+            IsRetry = true;
         }
-        
+
         internal void SetStepText()
         {
             if (OverriddenStepText != null)
