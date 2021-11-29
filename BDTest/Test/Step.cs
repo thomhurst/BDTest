@@ -91,8 +91,12 @@ namespace BDTest.Test
         {
             if (OverriddenStepText != null)
             {
-                StepText = $"{StepPrefix} {OverriddenStepText.Invoke()}";
-                return;
+                var invokedStepText = OverriddenStepText.Invoke();
+                if (!string.IsNullOrWhiteSpace(invokedStepText))
+                {
+                    StepText = $"{StepPrefix} {invokedStepText}";
+                    return;
+                }
             }
 
             var customStepText = Runnable.Action != null ? StepTextHelper.GetStepText(Runnable.Action) : StepTextHelper.GetStepText(Runnable.Task);
