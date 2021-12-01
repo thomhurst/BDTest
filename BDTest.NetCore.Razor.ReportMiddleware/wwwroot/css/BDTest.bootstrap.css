@@ -67,3 +67,9 @@
     -o-transform: translateY(-12px);
     transform: translateY(-12px);
 }
+
+.sidebar-height {
+    height: -webkit-calc(100% - 87px);
+    height: -moz-calc(100% - 87px);
+    height: calc(100% - 87px);
+}
