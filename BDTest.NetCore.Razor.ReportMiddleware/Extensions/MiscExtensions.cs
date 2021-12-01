@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace BDTest.NetCore.Razor.ReportMiddleware.Extensions
 {
@@ -78,9 +79,11 @@ namespace BDTest.NetCore.Razor.ReportMiddleware.Extensions
         public static IEnumerable<string> SplitOnNewLines(this string text)
         {
             return text.Split(
-                new[] { Environment.NewLine },
+                new[] { "\r\n", "\n" },
                 StringSplitOptions.RemoveEmptyEntries
-            );
+            )
+                .Select(x => x.Trim())
+                .Where(x => !string.IsNullOrWhiteSpace(x));
         }
     }
 }

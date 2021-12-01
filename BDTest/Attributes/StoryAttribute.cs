@@ -17,12 +17,12 @@ namespace BDTest.Attributes
             
             PopulateAsA();
 
-            if (!IWant.ToLowerInvariant().StartsWith("i want"))
+            if (!IWant.StartsWith("i want", StringComparison.InvariantCultureIgnoreCase))
             {
                 IWant = $"I want {IWant}";
             }
 
-            if (!SoThat.ToLowerInvariant().StartsWith("so that"))
+            if (!SoThat.StartsWith("so that", StringComparison.InvariantCultureIgnoreCase))
             {
                 SoThat = $"So that {SoThat}";
             }
