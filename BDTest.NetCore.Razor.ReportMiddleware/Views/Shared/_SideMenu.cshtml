@@ -60,7 +60,7 @@
             <li><a href="~/bdtest/report/@currentTestReport.Id/all-scenarios" class="link-dark rounded nav-link">Scenarios</a></li>
             @if (!metrics.AllPassed)
             {
-              <li><a href="~/bdtest/report/@currentTestReport.Id/all-scenarios?filterByStatus=Failed" class="link-dark rounded nav-link indent-text-2">Success</a></li>
+              <li><a href="~/bdtest/report/@currentTestReport.Id/all-scenarios?filterByStatus=Passed" class="link-dark rounded nav-link indent-text-2">Passed</a></li>
               @if (metrics.AnyFailed)
               {
                 <li><a href="~/bdtest/report/@currentTestReport.Id/all-scenarios?filterByStatus=Failed" class="link-dark rounded nav-link indent-text-2">Failed</a></li>
