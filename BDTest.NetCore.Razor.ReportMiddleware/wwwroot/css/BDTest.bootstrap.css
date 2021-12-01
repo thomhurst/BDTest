@@ -44,7 +44,7 @@
     height: 2px;
     background-color: #ecf0f1;
     display: block;
-    margin: -2px auto -2px 2em;
+    margin-left: 1em;
     -webkit-transition: all 0.3s ease-in-out;
     -o-transition: all 0.3s ease-in-out;
     transition: all 0.3s ease-in-out;
