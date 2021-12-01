@@ -64,6 +64,26 @@
             }
             <li><a href="~/bdtest/report/@currentTestReport.Id/stories" class="link-dark rounded nav-link">Stories</a></li>
             <li><a href="~/bdtest/report/@currentTestReport.Id/all-scenarios" class="link-dark rounded nav-link">Scenarios</a></li>
+            @if (!metrics.AllPassed)
+            {
+              <li><a href="~/bdtest/report/@currentTestReport.Id/all-scenarios?filterByStatus=Failed" class="link-dark rounded nav-link indent-text-2">Success</a></li>
+              @if (metrics.AnyFailed)
+              {
+                <li><a href="~/bdtest/report/@currentTestReport.Id/all-scenarios?filterByStatus=Failed" class="link-dark rounded nav-link indent-text-2">Failed</a></li>
+              }
+              @if (metrics.AnySkipped)
+              {
+                <li><a href="~/bdtest/report/@currentTestReport.Id/all-scenarios?filterByStatus=Skipped" class="link-dark rounded nav-link indent-text-2">Skipped</a></li>
+              }
+              @if (metrics.AnyNotImplemented)
+              {
+                <li><a href="~/bdtest/report/@currentTestReport.Id/all-scenarios?filterByStatus=NotImplemented" class="link-dark rounded nav-link indent-text-2">Not Implemented</a></li>
+              }
+              @if (metrics.AnyInconclusive)
+              {
+                <li><a href="~/bdtest/report/@currentTestReport.Id/all-scenarios?filterByStatus=Inconclusive" class="link-dark rounded nav-link indent-text-2">Inconclusive</a></li>
+              }
+            }
             <li><a href="~/bdtest/report/@currentTestReport.Id/timings" class="link-dark rounded nav-link">Timings</a></li>
           </ul>
         </div>
