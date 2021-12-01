@@ -5,20 +5,8 @@ using BDTest.Test;
 
 namespace BDTest.NetCore.Razor.ReportMiddleware.Extensions
 {
-    internal static class BDTestOutputModelExtensions
-    {
-        public static OutputMetrics ToOutputMetrics(this BDTestOutputModel bdTestOutputModel)
-        {
-            return bdTestOutputModel == null ? new OutputMetrics() : new OutputMetrics(bdTestOutputModel);
-        }
-    }
-
     public class OutputMetrics
     {
-        public OutputMetrics()
-        {
-        }
-        
         public OutputMetrics(BDTestOutputModel bdTestOutputModel)
         {
             if (bdTestOutputModel == null)
@@ -32,17 +20,22 @@ namespace BDTest.NetCore.Razor.ReportMiddleware.Extensions
                 {
                     case Status.Failed:
                         AnyFailed = true;
+                        AllPassed = false;
                         break;
                     case Status.Inconclusive:
                         AnyInconclusive = true;
+                        AllPassed = false;
                         break;
                     case Status.Skipped:
                         AnySkipped = true;
+                        AllPassed = false;
                         break;
                     case Status.NotImplemented:
                         AnyNotImplemented = true;
+                        AllPassed = false;
                         break;
                     case Status.Passed:
+                        AnyPassed = true;
                         break;
                     default:
                         throw new ArgumentOutOfRangeException();
@@ -57,7 +50,9 @@ namespace BDTest.NetCore.Razor.ReportMiddleware.Extensions
             AnyWarnings = bdTestOutputModel.NotRun.Any();
         }
 
-        public bool AnyWarnings { get; set; }
+        public bool AnyPassed { get; }
+
+        public bool AnyWarnings { get; }
 
         public bool AnyExceptions { get; }
 
@@ -68,6 +63,6 @@ namespace BDTest.NetCore.Razor.ReportMiddleware.Extensions
         public bool AnyInconclusive { get; }
 
         public bool AnyFailed { get; }
-        public bool AllPassed => !AnyExceptions && !AnyFailed && !AnyInconclusive && !AnyNotImplemented && !AnySkipped;
+        public bool AllPassed { get; } = true;
     }
 }
