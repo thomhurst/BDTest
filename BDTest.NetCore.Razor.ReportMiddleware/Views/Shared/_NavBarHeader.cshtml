@@ -14,15 +14,15 @@
 <nav class="navbar fixed-top navbar-expand-lg navbar-primary bg-primary" role="navigation" aria-label="main navigation">
     <div class="container-fluid">
 
-        <a href="#" class="text-white pointer" data-bs-toggle="collapse" data-bs-target="#sidemenu" aria-controls="sidemenu" aria-expanded="true">
-            <div class="hamburger" onclick="this.classList.toggle('is-active')">
-                <span class="line"></span>
-                <span class="line"></span>
-                <span class="line"></span>
-            </div>
-        </a>
+        <button class="menu active" class="text-white" data-bs-toggle="collapse" data-bs-target="#sidemenu" aria-controls="sidemenu" aria-expanded="true" onclick="this.classList.toggle('active')">
+            <svg viewBox="0 0 64 48">
+                <path d="M19,15 L45,15 C70,15 58,-2 49.0177126,7 L19,37"></path>
+                <path d="M19,24 L45,24 C61.2371586,24 57,49 41,33 L32,24"></path>
+                <path d="M45,33 L19,33 C-8,33 6,-2 22,14 L45,37"></path>
+            </svg>
+        </button>
 
-        <a class="navbar-brand text-white indent-text-1" href="~/bdtest/report/test-runs">
+        <a class="navbar-brand text-white indent-text-2" href="~/bdtest/report/test-runs">
             <svg class="bi me-2" width="40" height="32"><use xlink:href="#shield-check"/></svg>
             <span style="font-size: 30px">BDTest</span>
         </a>

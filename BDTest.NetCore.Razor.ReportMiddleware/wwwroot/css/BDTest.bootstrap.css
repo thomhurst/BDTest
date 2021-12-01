@@ -38,38 +38,73 @@
     max-width: 100%;
 }
 
-/*Burger Menu*/
-.hamburger .line{
-    width: 30px;
-    height: 2px;
-    background-color: #ecf0f1;
-    display: block;
-    margin-left: 1em;
-    -webkit-transition: all 0.3s ease-in-out;
-    -o-transition: all 0.3s ease-in-out;
-    transition: all 0.3s ease-in-out;
-}
-
-.hamburger:hover{
-    cursor: pointer;
-}
-
-.hamburger.is-active .line:nth-child(1){
-    -webkit-transform: translateY(12px);
-    -ms-transform: translateY(12px);
-    -o-transform: translateY(12px);
-    transform: translateY(12px);
-}
-
-.hamburger.is-active .line:nth-child(3){
-    -webkit-transform: translateY(-12px);
-    -ms-transform: translateY(-12px);
-    -o-transform: translateY(-12px);
-    transform: translateY(-12px);
-}
-
 .sidebar-height {
     height: -webkit-calc(100% - 87px);
     height: -moz-calc(100% - 87px);
     height: calc(100% - 87px);
+}
+
+/*Burger Menu*/
+* {
+    box-sizing: inherit;
+}
+*:before, *:after {
+    box-sizing: inherit;
+}
+
+.menu {
+    --color: #fff;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    margin: 0;
+    outline: none;
+    position: relative;
+    border: none;
+    background: none;
+    cursor: pointer;
+    -webkit-appearence: none;
+    -webkit-tap-highlight-color: transparent;
+}
+.menu svg {
+    margin-left: 1em;
+    width: 48px;
+    height: 36px;
+    stroke: var(--color);
+    stroke-width: 4px;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    fill: none;
+    display: block;
+}
+.menu svg path {
+    transition: stroke-dasharray var(--duration, 0.85s) var(--easing, ease) var(--delay, 0s), stroke-dashoffset var(--duration, 0.85s) var(--easing, ease) var(--delay, 0s);
+    stroke-dasharray: var(--array-1, 26px) var(--array-2, 100px);
+    stroke-dashoffset: var(--offset, 126px);
+    transform: translateZ(0);
+}
+.menu svg path:nth-child(2) {
+    --duration: .7s;
+    --easing: ease-in;
+    --offset: 100px;
+    --array-2: 74px;
+}
+.menu svg path:nth-child(3) {
+    --offset: 133px;
+    --array-2: 107px;
+}
+.menu.active svg path {
+    --offset: 57px;
+}
+.menu.active svg path:nth-child(1), .menu.active svg path:nth-child(3) {
+    --delay: .15s;
+    --easing: cubic-bezier(.2, .4, .2, 1.1);
+}
+.menu.active svg path:nth-child(2) {
+    --duration: .4s;
+    --offset: 2px;
+    --array-1: 1px;
+}
+.menu.active svg path:nth-child(3) {
+    --offset: 58px;
 }
