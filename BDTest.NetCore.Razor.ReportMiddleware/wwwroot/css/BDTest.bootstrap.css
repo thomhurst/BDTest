@@ -2,6 +2,10 @@
     font-size: 90%;
 }
 
+.indent-text-1 {
+    text-indent: 1em;
+}
+
 .indent-text-2 {
     text-indent: 2em;
 }
@@ -32,4 +36,34 @@
 
 .max-width-100 {
     max-width: 100%;
+}
+
+/*Burger Menu*/
+.hamburger .line{
+    width: 30px;
+    height: 2px;
+    background-color: #ecf0f1;
+    display: block;
+    margin: -2px auto -2px 2em;
+    -webkit-transition: all 0.3s ease-in-out;
+    -o-transition: all 0.3s ease-in-out;
+    transition: all 0.3s ease-in-out;
+}
+
+.hamburger:hover{
+    cursor: pointer;
+}
+
+.hamburger.is-active .line:nth-child(1){
+    -webkit-transform: translateY(12px);
+    -ms-transform: translateY(12px);
+    -o-transform: translateY(12px);
+    transform: translateY(12px);
+}
+
+.hamburger.is-active .line:nth-child(3){
+    -webkit-transform: translateY(-12px);
+    -ms-transform: translateY(-12px);
+    -o-transform: translateY(-12px);
+    transform: translateY(-12px);
 }

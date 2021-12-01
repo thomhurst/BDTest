@@ -13,14 +13,16 @@
 
 <nav class="navbar fixed-top navbar-expand-lg navbar-primary bg-primary" role="navigation" aria-label="main navigation">
     <div class="container-fluid">
-        
-        @*<a role="button" id="burger-sidebar-icon" class="burger is-active" onclick="toggleSidebar()">
-            <span aria-hidden="true"></span>
-            <span aria-hidden="true"></span>
-            <span aria-hidden="true"></span>
-        </a>*@
 
-        <a class="navbar-brand text-white" href="~/bdtest/report/test-runs">
+        <a href="#" class="text-white pointer" data-bs-toggle="collapse" data-bs-target="#sidemenu" aria-controls="sidemenu" aria-expanded="true">
+            <div class="hamburger" onclick="this.classList.toggle('is-active')">
+                <span class="line"></span>
+                <span class="line"></span>
+                <span class="line"></span>
+            </div>
+        </a>
+
+        <a class="navbar-brand text-white indent-text-1" href="~/bdtest/report/test-runs">
             <svg class="bi me-2" width="40" height="32"><use xlink:href="#shield-check"/></svg>
             <span style="font-size: 30px">BDTest</span>
         </a>
