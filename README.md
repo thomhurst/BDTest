@@ -42,7 +42,7 @@ Think of BDTest as a pure code-based alternative to SpecFlow.
 - Step into all your code. I used Rider as my IDE, which didn't support SpecFlow, so I couldn't step into my test methods. I had to do a painful Find All! Now as it's all code, I can step straight into my test methods.
 - No learning and maintaining separate Gherkin files!
 
-### But non-technical can write tests using SpecFlow
+### But non-technical team members can write tests using SpecFlow
 - Does that EVER actually happen though?
 - They can only use the high level methods. Any new methods, a developer will still need to code the steps for them. If they can only use the high level methods, make the method names human readable, and they can still use them!
 
