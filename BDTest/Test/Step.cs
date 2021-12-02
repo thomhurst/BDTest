@@ -45,7 +45,7 @@ namespace BDTest.Test
 
         [JsonConverter(typeof(StringEnumConverter))]
         [JsonProperty]
-        public Status Status { get; private set; } = Status.Inconclusive;
+        public Status Status { get; internal set; } = Status.Inconclusive;
 
         [JsonProperty]
         public ExceptionWrapper Exception { get; private set; }

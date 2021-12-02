@@ -40,6 +40,7 @@ namespace BDTest.Engine
                     if (ShouldSkip(scenario))
                     {
                         scenario.Status = Status.Skipped;
+                        scenario.Steps.ForEach(step => step.Status = Status.Skipped);
                         return;
                     }
 
