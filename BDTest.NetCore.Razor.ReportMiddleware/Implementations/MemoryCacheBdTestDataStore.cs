@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -11,29 +12,31 @@ namespace BDTest.NetCore.Razor.ReportMiddleware.Implementations
 {
     public class MemoryCacheBdTestDataStore : IMemoryCacheBdTestDataStore
     {
-        private readonly IMemoryCache _cache;
+        private readonly IMemoryCache _testRecordCache;
 
         private readonly object _testRunSummariesLock = new object();
+
+        private readonly ConcurrentDictionary<string, TestRunSummary> _testRunSummariesDictionary = new();
         private List<TestRunSummary> _testRunSummaries = new List<TestRunSummary>();
 
-        public MemoryCacheBdTestDataStore(IMemoryCache cache)
+        public MemoryCacheBdTestDataStore(IMemoryCache testRecordCache)
         {
-            _cache = cache;
+            _testRecordCache = testRecordCache;
         }
 
         public Task<BDTestOutputModel> GetTestData(string id)
         {
-            if (_cache.TryGetValue<BDTestOutputModel>(id, out var model))
+            if (_testRecordCache.TryGetValue<BDTestOutputModel>(id, out var model))
             {
                 return Task.FromResult(model);
             }
 
-            return Task.FromResult(null as BDTestOutputModel);
+            return Task.FromResult<BDTestOutputModel>(null);
         }
 
         public Task DeleteTestData(string id)
         {
-            _cache.Remove(id);
+            _testRecordCache.Remove(id);
             return Task.CompletedTask;
         }
 
@@ -47,7 +50,7 @@ namespace BDTest.NetCore.Razor.ReportMiddleware.Implementations
 
         public Task StoreTestData(string id, BDTestOutputModel data)
         {
-            _cache.Set(id, data, TimeSpan.FromHours(8));
+            _testRecordCache.Set(id, data, TimeSpan.FromHours(8));
             return Task.CompletedTask;
         }
 
@@ -55,9 +58,12 @@ namespace BDTest.NetCore.Razor.ReportMiddleware.Implementations
         {
             lock (_testRunSummariesLock)
             {
-                _testRunSummaries.Add(testRunSummary);
+                _testRunSummariesDictionary.TryAdd(testRunSummary.RecordId, testRunSummary);
 
-                _testRunSummaries = _testRunSummaries.OrderByDescending(record => record.StartedAtDateTime).ToList();
+                _testRunSummaries = _testRunSummariesDictionary
+                    .Values
+                    .OrderByDescending(record => record.StartedAtDateTime)
+                    .ToList();
             }
 
             return Task.CompletedTask;
