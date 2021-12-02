@@ -14,10 +14,10 @@ namespace BDTest.NetCore.Razor.ReportMiddleware.Implementations
     {
         private readonly IMemoryCache _testRecordCache;
 
-        private readonly object _testRunSummariesLock = new object();
+        private readonly object _testRunSummariesLock = new();
 
         private readonly ConcurrentDictionary<string, TestRunSummary> _testRunSummariesDictionary = new();
-        private List<TestRunSummary> _testRunSummaries = new List<TestRunSummary>();
+        private List<TestRunSummary> _testRunSummaries = new();
 
         public MemoryCacheBdTestDataStore(IMemoryCache testRecordCache)
         {
@@ -73,14 +73,8 @@ namespace BDTest.NetCore.Razor.ReportMiddleware.Implementations
         {
             lock (_testRunSummariesLock)
             {
-                var itemToDelete = _testRunSummaries.FirstOrDefault(item => item.RecordId == id);
-
-                if (itemToDelete == null)
-                {
-                    return Task.CompletedTask;
-                }
-
-                _testRunSummaries.Remove(itemToDelete);
+                _testRunSummariesDictionary.TryRemove(id, out _);
+                _testRunSummaries.RemoveAll(x => x.RecordId == id);
             }
             
             return Task.CompletedTask;
