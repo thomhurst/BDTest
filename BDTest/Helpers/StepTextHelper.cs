@@ -84,6 +84,11 @@ namespace BDTest.Helpers
         {
             try
             {
+                if (argument is ConstantExpression constantExpression)
+                {
+                    return constantExpression.Value.ToString();
+                }
+                
                 var compiledExpression = Expression.Lambda(argument).Compile().DynamicInvoke();
 
                 if (compiledExpression == null)
