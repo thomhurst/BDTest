@@ -89,7 +89,7 @@ namespace BDTest.Helpers
                     return constantExpression.Value.ToString();
                 }
                 
-                var compiledExpression = Expression.Lambda(argument).Compile().DynamicInvoke();
+                var compiledExpression = Expression.Lambda(Expression.Convert(argument, argument.Type)).Compile().DynamicInvoke();
 
                 if (compiledExpression == null)
                 {
