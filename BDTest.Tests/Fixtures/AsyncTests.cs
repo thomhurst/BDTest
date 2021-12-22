@@ -2,6 +2,7 @@ using System;
 using System.Diagnostics;
 using System.Threading.Tasks;
 using BDTest.Attributes;
+using BDTest.ReportGenerator.PDF;
 using BDTest.Test;
 using BDTest.Tests.Extensions;
 using NUnit.Framework;
@@ -53,6 +54,13 @@ namespace BDTest.Tests.Fixtures
 
             Assert.That(stopwatch.StopAndGetElapsed().Seconds, Is.GreaterThanOrEqualTo(3));
             Assert.That(scenario.TimeTaken > TimeSpan.FromSeconds(3));
+        }
+
+        [OneTimeTearDown]
+        public void PDF()
+        {
+            var filePath = BDTestPdfGenerator.GeneratePdfFile(new BDTestRunDescriptor());
+            Console.WriteLine(filePath);
         }
     }
 }

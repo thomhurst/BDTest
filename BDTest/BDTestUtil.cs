@@ -1,10 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using BDTest.Maps;
 using BDTest.Output;
 using BDTest.Test;
 
+[assembly: InternalsVisibleTo("BDTest.ReportGenerator.PDF")]
 namespace BDTest
 {
     public static class BDTestUtil
