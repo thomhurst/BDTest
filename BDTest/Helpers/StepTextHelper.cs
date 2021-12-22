@@ -84,14 +84,11 @@ namespace BDTest.Helpers
         {
             try
             {
-                if (argument is ConstantExpression constantExpression)
-                {
-                    return constantExpression.Value.ToString();
-                }
-                
-                var compiledExpression = Expression.Lambda(Expression.Convert(argument, argument.Type)).Compile().DynamicInvoke();
+                var argumentValue = argument is ConstantExpression constantExpression
+                    ? constantExpression.Value.ToString()
+                    : Expression.Lambda(Expression.Convert(argument, argument.Type)).Compile().DynamicInvoke();
 
-                if (compiledExpression == null)
+                if (argumentValue == null)
                 {
                     return "null";
                 }
@@ -99,37 +96,37 @@ namespace BDTest.Helpers
                 var stepTextStringConverter = BDTestSettings.CustomStringConverters
                     .FirstOrDefault(type => 
                         type.GetType().GetInterfaces().FirstOrDefault()?.Name.StartsWith(nameof(IStepTextStringConverter<object>)) == true 
-                        && type.GetType().GetInterfaces().FirstOrDefault()?.GetGenericArguments().FirstOrDefault() == compiledExpression.GetType());
+                        && type.GetType().GetInterfaces().FirstOrDefault()?.GetGenericArguments().FirstOrDefault() == argumentValue.GetType());
                 
                 if (stepTextStringConverter != null)
                 {
                     var method = stepTextStringConverter.GetType().GetMethod(nameof(IStepTextStringConverter<object>.ConvertToString));
                     if (method != null)
                     {
-                        return method.Invoke(stepTextStringConverter, new[] { compiledExpression }) as string;
+                        return method.Invoke(stepTextStringConverter, new[] { argumentValue }) as string;
                     }
                 }
 
-                if (TypeHelper.IsFuncOrAction(compiledExpression.GetType()))
+                if (TypeHelper.IsFuncOrAction(argumentValue.GetType()))
                 {
-                    var func = (Delegate) compiledExpression;
+                    var func = (Delegate) argumentValue;
 
                     return func.DynamicInvoke()?.ToString();
                 }
 
-                if (TypeHelper.IsIEnumerable(compiledExpression) || compiledExpression.GetType().IsArray)
+                if (TypeHelper.IsIEnumerable(argumentValue) || argumentValue.GetType().IsArray)
                 {
-                    return string.Join(", ", (IEnumerable<object>) compiledExpression);
+                    return string.Join(", ", (IEnumerable<object>) argumentValue);
                 }
 
-                if (TypeHelper.IsIDictionary(compiledExpression))
+                if (TypeHelper.IsIDictionary(argumentValue))
                 {
                     return string.Join(",",
-                        ((IDictionary<object, object>) compiledExpression).Select(kv => $"{kv.Key}={kv.Value}")
+                        ((IDictionary<object, object>) argumentValue).Select(kv => $"{kv.Key}={kv.Value}")
                     );
                 }
 
-                return compiledExpression.ToString();
+                return argumentValue.ToString();
             }
             catch (Exception e)
             {
