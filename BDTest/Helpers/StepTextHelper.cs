@@ -85,7 +85,7 @@ namespace BDTest.Helpers
             try
             {
                 var argumentValue = argument is ConstantExpression constantExpression
-                    ? constantExpression.Value.ToString()
+                    ? constantExpression.Value?.ToString()
                     : Expression.Lambda(Expression.Convert(argument, argument.Type)).Compile().DynamicInvoke();
 
                 if (argumentValue == null)
