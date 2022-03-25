@@ -1,4 +1,6 @@
-﻿using BDTest.Test;
+﻿using BDTest.Output;
+using BDTest.Settings;
+using BDTest.Test;
 
 namespace BDTest.Reporters;
 
@@ -12,6 +14,25 @@ internal static class ConsoleReporter
         }
             
         await Console.Out.WriteLineAsync(text);
+        Console.ResetColor();
+    }
+    
+    public static async Task WriteLineToConsoleOnly(string text, ConsoleColor? consoleColor = null)
+    {
+        if (consoleColor != null)
+        {
+            Console.ForegroundColor = consoleColor.Value;
+        }
+
+        if (BDTestSettings.InterceptConsoleOutput)
+        {
+            await TestOutputData.Instance.One.WriteLineAsync(text);
+        }
+        else
+        {
+            await Console.Out.WriteLineAsync(text);
+        }
+
         Console.ResetColor();
     }
         

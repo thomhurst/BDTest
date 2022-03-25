@@ -41,7 +41,7 @@ internal class ScenarioExecutor : IScenarioExecutor
                     return;
                 }
 
-                await ConsoleReporter.WriteLine($"↓↓↓ Test Output Start ↓↓↓{Environment.NewLine}");
+                await ConsoleReporter.WriteLineToConsoleOnly($"--------------------------------------------------{Environment.NewLine}", ConsoleColor.Yellow);
 
                 foreach (var step in scenario.Steps)
                 {
@@ -83,13 +83,18 @@ internal class ScenarioExecutor : IScenarioExecutor
                     
                 scenario.Status = Status.Failed;
                     
-                await ConsoleReporter.WriteLine($"{Environment.NewLine}Exception: {e.Message}{Environment.NewLine}{e.StackTrace}{Environment.NewLine}");
+                await ConsoleReporter.WriteLine($"{Environment.NewLine}Exception: {e.Message}{Environment.NewLine}{e.StackTrace}{Environment.NewLine}", ConsoleColor.DarkRed);
 
                 throw;
             }
             finally
             {
-                await ConsoleReporter.WriteLine($"{Environment.NewLine}↑↑↑ Test Output End ↑↑↑{Environment.NewLine}");
+                if (!string.IsNullOrEmpty(scenario.Output))
+                {
+                    await ConsoleReporter.WriteLineToConsoleOnly($"{Environment.NewLine}--------------------------------------------------{Environment.NewLine}", ConsoleColor.Yellow);
+                }
+                
+
                 if (scenario.ShouldRetry)
                 {
                     await ExecuteAsync(scenario).ConfigureAwait(false);
@@ -101,14 +106,16 @@ internal class ScenarioExecutor : IScenarioExecutor
                         notRunStep.SetStepText();
                     }
 
-                    await ConsoleReporter.WriteLine($"Test Summary:{Environment.NewLine}");
+                    await ConsoleReporter.WriteLineToConsoleOnly($"Test Summary:{Environment.NewLine}");
 
                     foreach (var step in scenario.Steps)
                     {
-                        await ConsoleReporter.WriteLine($"{step.StepText} > [{step.Status}]");
+                        await ConsoleReporter.WriteLineToConsoleOnly($"{step.StepText} > [{step.Status}]");
                     }
 
-                    await ConsoleReporter.WriteLine($"{Environment.NewLine}Test Result: {scenario.Status}");
+                    await ConsoleReporter.WriteLineToConsoleOnly($"{Environment.NewLine}--------------------------------------------------{Environment.NewLine}", ConsoleColor.Yellow);
+                    
+                    await ConsoleReporter.WriteLineToConsoleOnly($"Test Result: {scenario.Status}");
 
                     scenario.EndTime = DateTime.Now;
                     scenario.TimeTaken = scenario.EndTime - scenario.StartTime;

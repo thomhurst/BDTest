@@ -4,32 +4,32 @@ namespace BDTest.Output;
 
 internal class ConsoleOutputInterceptor : TextWriter
 {
-    private readonly TextWriter _one;
-    private readonly TestOutputData _two;
+    internal readonly TextWriter One;
+    internal readonly TestOutputData Two;
 
     public ConsoleOutputInterceptor()
     {
-        _one = Console.Out;
-        _two = new TestOutputData();
+        One = Console.Out;
+        Two = new TestOutputData();
     }
 
-    public override Encoding Encoding => _one.Encoding;
+    public override Encoding Encoding => One.Encoding;
 
     public override void Flush()
     {
-        _one.Flush();
-        _two.Flush();
+        One.Flush();
+        Two.Flush();
     }
 
     public override void Write(char value)
     {
-        _one.Write(value);
-        _two.Write(value);
+        One.Write(value);
+        Two.Write(value);
     }
 
     public override string ToString()
     {
-        return _two.ToString();
+        return Two.ToString();
     }
 
     public static void ClearCurrentTaskData()
