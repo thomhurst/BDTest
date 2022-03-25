@@ -52,6 +52,16 @@ public abstract class AbstractContextBDTestBase<TContext> : BDTestBase where TCo
             _contexts.Remove(BDTestExecutionId);
         }
     }
+
+    protected T Inject<T>()
+    {
+        if (typeof(T).GetConstructors().Any(c => c.GetParameters().Any(p => p.ParameterType == typeof(TContext))))
+        {
+            return (T)Activator.CreateInstance(typeof(T), Context);
+        }
+        
+        return (T)Activator.CreateInstance(typeof(T));
+    }
         
     public Action<BDTestContext<TContext>> ContextAmendment { get; set; }
 
