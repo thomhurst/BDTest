@@ -1,5 +1,4 @@
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using Xunit;
 using Xunit.Abstractions;
 

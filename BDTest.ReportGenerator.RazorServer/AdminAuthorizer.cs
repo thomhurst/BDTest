@@ -1,14 +1,11 @@
-using System.Threading.Tasks;
 using BDTest.NetCore.Razor.ReportMiddleware.Interfaces;
-using Microsoft.AspNetCore.Http;
 
-namespace BDTest.ReportGenerator.RazorServer
+namespace BDTest.ReportGenerator.RazorServer;
+
+public class AdminAuthorizer : IAdminAuthorizer
 {
-    public class AdminAuthorizer : IAdminAuthorizer
+    public Task<bool> IsAdminAsync(HttpContext httpContext)
     {
-        public Task<bool> IsAdminAsync(HttpContext httpContext)
-        {
-            return Task.FromResult(httpContext.Request.Cookies.ContainsKey("admin"));
-        }
+        return Task.FromResult(httpContext.Request.Cookies.ContainsKey("admin"));
     }
 }

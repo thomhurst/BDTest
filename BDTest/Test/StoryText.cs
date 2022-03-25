@@ -1,22 +1,21 @@
 ﻿using BDTest.Helpers.JsonConverters;
 using Newtonsoft.Json;
 
-namespace BDTest.Test
+namespace BDTest.Test;
+
+[JsonConverter(typeof(StoryTextConverter))]
+public record StoryText
 {
-    [JsonConverter(typeof(StoryTextConverter))]
-    public record StoryText
+    [JsonProperty]
+    public string Story { get; private set; }
+
+    public StoryText(string story)
     {
-        [JsonProperty]
-        public string Story { get; private set; }
+        Story = story;
+    }
 
-        public StoryText(string story)
-        {
-            Story = story;
-        }
-
-        [JsonConstructor]
-        private StoryText()
-        {
-        }
+    [JsonConstructor]
+    private StoryText()
+    {
     }
 }

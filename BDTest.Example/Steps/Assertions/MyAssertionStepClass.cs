@@ -3,21 +3,20 @@ using BDTest.Attributes;
 using BDTest.Example.Context;
 using NUnit.Framework;
 
-namespace BDTest.Example.Steps.Assertions
+namespace BDTest.Example.Steps.Assertions;
+
+public class MyAssertionStepClass
 {
-    public class MyAssertionStepClass
+    private readonly MyTestContext _context;
+
+    public MyAssertionStepClass(MyTestContext context)
     {
-        private readonly MyTestContext _context;
+        _context = context;
+    }
 
-        public MyAssertionStepClass(MyTestContext context)
-        {
-            _context = context;
-        }
-
-        [StepText("the HTTP status code is {0}")]
-        public void TheHttpStatusCodeIs(HttpStatusCode httpStatusCode)
-        {
-            Assert.That(_context.ApiContext.ResponseMessage.StatusCode, Is.EqualTo(httpStatusCode));
-        }
+    [StepText("the HTTP status code is {0}")]
+    public void TheHttpStatusCodeIs(HttpStatusCode httpStatusCode)
+    {
+        Assert.That(_context.ApiContext.ResponseMessage.StatusCode, Is.EqualTo(httpStatusCode));
     }
 }

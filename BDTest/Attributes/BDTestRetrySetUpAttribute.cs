@@ -1,9 +1,6 @@
-using System;
+namespace BDTest.Attributes;
 
-namespace BDTest.Attributes
+[AttributeUsage(AttributeTargets.Method, AllowMultiple = false, Inherited = true)]
+public class BDTestRetrySetUpAttribute : Attribute
 {
-    [AttributeUsage(AttributeTargets.Method, AllowMultiple = false, Inherited = true)]
-    public class BDTestRetrySetUpAttribute : Attribute
-    {
-    }
 }

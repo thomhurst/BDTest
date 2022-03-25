@@ -1,11 +1,10 @@
-namespace BDTest.Settings
+namespace BDTest.Settings;
+
+public class DebugSettings
 {
-    public class DebugSettings
+    internal DebugSettings()
     {
-        internal DebugSettings()
-        {
-        }
-        
-        public bool ShouldSkipWhenStep { get; set; }
     }
+        
+    public bool ShouldSkipWhenStep { get; set; }
 }

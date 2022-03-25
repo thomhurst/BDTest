@@ -1,18 +1,15 @@
-﻿using System;
-using System.IO;
-using BDTest.Helpers;
+﻿using BDTest.Helpers;
 using NUnit.Framework;
 
-namespace BDTest.Example
+namespace BDTest.Example;
+
+[SetUpFixture]
+public class SetUpFixture
 {
-    [SetUpFixture]
-    public class SetUpFixture
+    [OneTimeTearDown]
+    public void WriteJsonTestData()
     {
-        [OneTimeTearDown]
-        public void WriteJsonTestData()
-        {
-            var jsonData = BDTestJsonHelper.GetTestJsonData();
-            File.WriteAllText(Path.Combine(Directory.GetCurrentDirectory(), $"JsonData-{Guid.NewGuid():N}.json"), jsonData);
-        }
+        var jsonData = BDTestJsonHelper.GetTestJsonData();
+        File.WriteAllText(Path.Combine(Directory.GetCurrentDirectory(), $"JsonData-{Guid.NewGuid():N}.json"), jsonData);
     }
 }

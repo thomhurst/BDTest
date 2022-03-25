@@ -1,15 +1,12 @@
-﻿using System;
+﻿namespace BDTest.Attributes;
 
-namespace BDTest.Attributes
+[AttributeUsage(AttributeTargets.Method)]
+public class ScenarioTextAttribute : Attribute
 {
-    [AttributeUsage(AttributeTargets.Method)]
-    public class ScenarioTextAttribute : Attribute
-    {
-        public string Text { get; }
+    public string Text { get; }
 
-        public ScenarioTextAttribute(string stepText)
-        {
-            Text = stepText;
-        }
+    public ScenarioTextAttribute(string stepText)
+    {
+        Text = stepText;
     }
 }

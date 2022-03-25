@@ -1,7 +1,6 @@
-namespace BDTest.Helpers
+namespace BDTest.Helpers;
+
+public static class BDTestVersionHelper
 {
-    public static class BDTestVersionHelper
-    {
-        public static readonly string CurrentVersion = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString(); 
-    }
+    public static readonly string CurrentVersion = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString(); 
 }

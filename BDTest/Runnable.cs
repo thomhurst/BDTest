@@ -1,59 +1,61 @@
-﻿using System;
-using System.Linq.Expressions;
+﻿using System.Linq.Expressions;
 using System.Runtime.CompilerServices;
-using System.Threading.Tasks;
 using BDTest.Reporters;
 
-namespace BDTest
+namespace BDTest;
+
+internal class Runnable
 {
-    internal class Runnable
+    internal Expression<Func<Task>> Task { get; }
+    internal Expression<Action> Action { get; }
+
+    internal Runnable(Expression<Func<Task>> task)
     {
-        internal Expression<Func<Task>> Task { get; }
-        internal Expression<Action> Action { get; }
+        Task = task;
+    }
 
-        internal Runnable(Expression<Func<Task>> task)
+    public Runnable(Expression<Action> action)
+    {
+        Action = action;
+    }
+
+    internal async Task Run()
+    {
+        if (Task == null && Action == null)
         {
-            Task = task;
+            await ConsoleReporter.WriteLine($"{nameof(Task)} and {nameof(Action)} are both null in {nameof(Runnable)}");
+            return;
         }
-
-        public Runnable(Expression<Action> action)
-        {
-            Action = action;
-        }
-
-        internal async Task Run()
-        {
-            if (Task == null && Action == null)
-            {
-                ConsoleReporter.WriteLine($"{nameof(Task)} and {nameof(Action)} are both null in {nameof(Runnable)}");
-                return;
-            }
             
-            if (Task != null)
-            {
-                await Task.Compile().Invoke();
-                return;
-            }
-
-            var compiledAction = Action.Compile();
-            if (IsThisAsync(compiledAction))
-            {
-                await System.Threading.Tasks.Task.Run(compiledAction);
-                return;
-            }
-
-            compiledAction.Invoke();
-        }
-
-        private static bool IsThisAsync(Action action)
+        if (Task != null)
         {
-            if (action.Method.ReturnType.GetMethod(nameof(System.Threading.Tasks.Task.GetAwaiter)) != null)
-            {
-                return true;
-            }
-            
-            return action.Method.IsDefined(typeof(AsyncStateMachineAttribute),
-                false);
+            await Task.Compile().Invoke();
+            return;
         }
+
+        var compiledAction = Action.Compile();
+        if (IsThisAsync(compiledAction))
+        {
+            await System.Threading.Tasks.Task.Run(compiledAction);
+            return;
+        }
+
+        compiledAction.Invoke();
+    }
+
+    internal string GetExpressionString()
+    {
+        return Task?.Body?.ToString() ?? Action?.Body?.ToString();
+    }
+
+    private static bool IsThisAsync(Action action)
+    {
+        if (action.Method.ReturnType.GetMethod(nameof(System.Threading.Tasks.Task.GetAwaiter)) != null)
+        {
+            return true;
+        }
+            
+        return action.Method.IsDefined(typeof(AsyncStateMachineAttribute),
+            false);
     }
 }

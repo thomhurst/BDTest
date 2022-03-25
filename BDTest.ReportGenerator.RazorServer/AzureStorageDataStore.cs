@@ -1,7 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Threading.Tasks;
 using Azure;
 using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
@@ -11,100 +7,99 @@ using BDTest.NetCore.Razor.ReportMiddleware.Interfaces;
 using BDTest.NetCore.Razor.ReportMiddleware.Models;
 using Newtonsoft.Json;
 
-namespace BDTest.ReportGenerator.RazorServer
+namespace BDTest.ReportGenerator.RazorServer;
+
+public class AzureStorageDataStore : IBDTestDataStore
 {
-    public class AzureStorageDataStore : IBDTestDataStore
+    private readonly BlobContainerClient _testRunSummariesContainer;
+    private readonly BlobContainerClient _testDataContainer;
+    private readonly JsonSerializer _jsonSerializer = JsonSerializer.Create();
+
+    public AzureStorageDataStore(AzureStorageConfig azureStorageConfig)
     {
-        private readonly BlobContainerClient _testRunSummariesContainer;
-        private readonly BlobContainerClient _testDataContainer;
-        private readonly JsonSerializer _jsonSerializer = JsonSerializer.Create();
-
-        public AzureStorageDataStore(AzureStorageConfig azureStorageConfig)
-        {
-            var connectionString = azureStorageConfig.ConnectionString;
-            var blobClient = new BlobServiceClient(connectionString);
+        var connectionString = azureStorageConfig.ConnectionString;
+        var blobClient = new BlobServiceClient(connectionString);
             
-            _testRunSummariesContainer = blobClient.GetBlobContainerClient("test-runs-summaries");
-            _testRunSummariesContainer.CreateIfNotExists();
+        _testRunSummariesContainer = blobClient.GetBlobContainerClient("test-runs-summaries");
+        _testRunSummariesContainer.CreateIfNotExists();
             
-            _testDataContainer = blobClient.GetBlobContainerClient("test-data");
-            _testDataContainer.CreateIfNotExists();
-        }
+        _testDataContainer = blobClient.GetBlobContainerClient("test-data");
+        _testDataContainer.CreateIfNotExists();
+    }
         
-        public async Task<BDTestOutputModel> GetTestData(string id)
+    public async Task<BDTestOutputModel> GetTestData(string id)
+    {
+        try
         {
-            try
-            {
-                var blobData = await _testDataContainer.GetBlockBlobClient(id).DownloadAsync();
-                return _jsonSerializer.Deserialize<BDTestOutputModel>(new JsonTextReader(new StreamReader(blobData.Value.Content)));
-            }
-            catch (RequestFailedException e) when(e.Status == 404)
-            {
-                return null;
-            }
+            var blobData = await _testDataContainer.GetBlockBlobClient(id).DownloadAsync();
+            return _jsonSerializer.Deserialize<BDTestOutputModel>(new JsonTextReader(new StreamReader(blobData.Value.Content)));
         }
-
-        public Task DeleteTestData(string id)
+        catch (RequestFailedException e) when(e.Status == 404)
         {
-            return _testRunSummariesContainer.DeleteBlobIfExistsAsync(id);
+            return null;
         }
+    }
 
-        public async Task<IEnumerable<TestRunSummary>> GetAllTestRunRecords()
+    public Task DeleteTestData(string id)
+    {
+        return _testRunSummariesContainer.DeleteBlobIfExistsAsync(id);
+    }
+
+    public async Task<IEnumerable<TestRunSummary>> GetAllTestRunRecords()
+    {
+        var testRunSummaries = new List<TestRunSummary>();
+        var amountToTake = 50;
+
+        var count = 0;
+        await foreach (var blobItem in _testRunSummariesContainer.GetBlobsAsync())
         {
-            var testRunSummaries = new List<TestRunSummary>();
-            var amountToTake = 50;
+            count++;
+            var downloadAsync = await _testRunSummariesContainer.GetBlockBlobClient(blobItem.Name).DownloadAsync();
+            var testRunSummary = _jsonSerializer.Deserialize<TestRunSummary>(new JsonTextReader(new StreamReader(downloadAsync.Value.Content)));
 
-            var count = 0;
-            await foreach (var blobItem in _testRunSummariesContainer.GetBlobsAsync())
+            if (blobItem.Properties.CreatedOn < DateTimeOffset.UtcNow - TimeSpan.FromDays(30))
             {
-                count++;
-                var downloadAsync = await _testRunSummariesContainer.GetBlockBlobClient(blobItem.Name).DownloadAsync();
-                var testRunSummary = _jsonSerializer.Deserialize<TestRunSummary>(new JsonTextReader(new StreamReader(downloadAsync.Value.Content)));
-
-                if (blobItem.Properties.CreatedOn < DateTimeOffset.UtcNow - TimeSpan.FromDays(30))
-                {
-                    await DeleteBlobItem(blobItem);
-                }
-                else
-                {
-                    testRunSummaries.Add(testRunSummary);
-                }
-
-                if (count == amountToTake)
-                {
-                    break;
-                }
+                await DeleteBlobItem(blobItem);
+            }
+            else
+            {
+                testRunSummaries.Add(testRunSummary);
             }
 
-            return testRunSummaries.ToArray();
+            if (count == amountToTake)
+            {
+                break;
+            }
         }
 
-        private async Task DeleteBlobItem(BlobItem blobItem)
-        {
-            await Task.WhenAll(
-                DeleteTestData(blobItem.Name),
-                DeleteTestRunRecord(blobItem.Name)
-                );
-        }
+        return testRunSummaries.ToArray();
+    }
 
-        public Task StoreTestData(string id, BDTestOutputModel data)
-        {
-            return _testDataContainer.GetBlockBlobClient(id).UploadAsync(data.AsStream());
-        }
+    private async Task DeleteBlobItem(BlobItem blobItem)
+    {
+        await Task.WhenAll(
+            DeleteTestData(blobItem.Name),
+            DeleteTestRunRecord(blobItem.Name)
+        );
+    }
 
-        public Task StoreTestRunRecord(TestRunSummary testRunSummary)
-        {
-            return _testRunSummariesContainer.GetBlockBlobClient(testRunSummary.RecordId).UploadAsync(testRunSummary.AsStream());
-        }
+    public Task StoreTestData(string id, BDTestOutputModel data)
+    {
+        return _testDataContainer.GetBlockBlobClient(id).UploadAsync(data.AsStream());
+    }
 
-        public Task DeleteTestRunRecord(string id)
-        {
-            return _testDataContainer.DeleteBlobIfExistsAsync(id);
-        }
+    public Task StoreTestRunRecord(TestRunSummary testRunSummary)
+    {
+        return _testRunSummariesContainer.GetBlockBlobClient(testRunSummary.RecordId).UploadAsync(testRunSummary.AsStream());
+    }
 
-        public Task InitializeAsync()
-        {
-            return GetAllTestRunRecords();
-        }
+    public Task DeleteTestRunRecord(string id)
+    {
+        return _testDataContainer.DeleteBlobIfExistsAsync(id);
+    }
+
+    public Task InitializeAsync()
+    {
+        return GetAllTestRunRecords();
     }
 }

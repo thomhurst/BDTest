@@ -1,10 +1,8 @@
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 
-namespace BDTest.NetCore.Razor.ReportMiddleware.Interfaces
+namespace BDTest.NetCore.Razor.ReportMiddleware.Interfaces;
+
+public interface IAdminAuthorizer
 {
-    public interface IAdminAuthorizer
-    {
-        Task<bool> IsAdminAsync(HttpContext httpContext);
-    }
+    Task<bool> IsAdminAsync(HttpContext httpContext);
 }

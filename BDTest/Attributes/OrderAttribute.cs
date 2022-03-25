@@ -1,14 +1,11 @@
-using System;
+namespace BDTest.Attributes;
 
-namespace BDTest.Attributes
+internal class EnumOrderAttribute : Attribute
 {
-    internal class EnumOrderAttribute : Attribute
-    {
-        internal readonly int Order;
+    internal readonly int Order;
 
-        internal EnumOrderAttribute(int order)
-        {
-            Order = order;
-        }
+    internal EnumOrderAttribute(int order)
+    {
+        Order = order;
     }
 }

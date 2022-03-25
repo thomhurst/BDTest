@@ -1,19 +1,16 @@
-using System;
+namespace BDTest.Exceptions;
 
-namespace BDTest.Exceptions
+public class ErrorOccurredDuringRetryActionException : Exception
 {
-    public class ErrorOccurredDuringRetryActionException : Exception
-    {
-        private Exception Exception { get; }
+    private Exception Exception { get; }
         
-        public override Exception GetBaseException()
-        {
-            return Exception;
-        }
+    public override Exception GetBaseException()
+    {
+        return Exception;
+    }
 
-        public ErrorOccurredDuringRetryActionException(Exception exception)
-        {
-            Exception = exception;
-        }
+    public ErrorOccurredDuringRetryActionException(Exception exception)
+    {
+        Exception = exception;
     }
 }

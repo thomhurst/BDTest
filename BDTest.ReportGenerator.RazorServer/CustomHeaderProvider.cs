@@ -1,17 +1,15 @@
-using System.Collections.Generic;
 using BDTest.NetCore.Razor.ReportMiddleware.Interfaces;
 using BDTest.NetCore.Razor.ReportMiddleware.Models;
 
-namespace BDTest.ReportGenerator.RazorServer
+namespace BDTest.ReportGenerator.RazorServer;
+
+public class CustomHeaderProvider : IBDTestCustomHeaderLinksProvider
 {
-    public class CustomHeaderProvider : IBDTestCustomHeaderLinksProvider
+    public IEnumerable<CustomLinkData> GetCustomLinks()
     {
-        public IEnumerable<CustomLinkData> GetCustomLinks()
+        return new List<CustomLinkData>
         {
-            return new List<CustomLinkData>
-            {
-                new CustomLinkData("Hi, Tom!", null)
-            };
-        }
+            new("Hi, Tom!", null)
+        };
     }
 }

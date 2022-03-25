@@ -1,11 +1,10 @@
 using BDTest.Attributes;
 
-namespace BDTest.Example
+namespace BDTest.Example;
+
+public class BugInformationAttribute : TestInformationAttribute
 {
-    public class BugInformationAttribute : TestInformationAttribute
+    public BugInformationAttribute(string bugNumber) : base($"Bug #{bugNumber} - http://www.mybugtrackingsite.com/bugs/{bugNumber}")
     {
-        public BugInformationAttribute(string bugNumber) : base($"Bug #{bugNumber} - http://www.mybugtrackingsite.com/bugs/{bugNumber}")
-        {
-        }
     }
 }

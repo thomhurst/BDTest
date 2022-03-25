@@ -1,6 +1,3 @@
-using System;
-using System.Linq;
-using System.Threading.Tasks;
 using BDTest.Attributes;
 using BDTest.Helpers;
 using BDTest.Interfaces.Internal;
@@ -9,145 +6,164 @@ using BDTest.Reporters;
 using BDTest.Settings;
 using BDTest.Test;
 
-namespace BDTest.Engine
+namespace BDTest.Engine;
+
+internal class ScenarioExecutor : IScenarioExecutor
 {
-    internal class ScenarioExecutor : IScenarioExecutor
+    private readonly IScenarioRetryManager _scenarioRetryManager;
+
+    internal ScenarioExecutor(IScenarioRetryManager scenarioRetryManager)
     {
-        private readonly IScenarioRetryManager _scenarioRetryManager;
-
-        internal ScenarioExecutor(IScenarioRetryManager scenarioRetryManager)
-        {
-            _scenarioRetryManager = scenarioRetryManager;
-        }
+        _scenarioRetryManager = scenarioRetryManager;
+    }
         
-        public async Task ExecuteAsync(Scenario scenario)
-        {
-            await _scenarioRetryManager.CheckIfAlreadyExecuted(scenario).ConfigureAwait(false);
+    public async Task ExecuteAsync(Scenario scenario)
+    {
+        await _scenarioRetryManager.CheckIfAlreadyExecuted(scenario).ConfigureAwait(false);
             
-            await Task.Run(async () =>
+        await Task.Run(async () =>
+        {
+            try
             {
-                try
-                {
-                    scenario.StartTime = DateTime.Now;
+                scenario.StartTime = DateTime.Now;
                     
-                    TestOutputData.ClearCurrentTaskData();
+                TestOutputData.ClearCurrentTaskData();
 
-                    if (scenario.RetryCount == 0)
-                    {
-                        WriteTestInformation(scenario);
-                    }
+                if (scenario.RetryCount == 0)
+                {
+                    await WriteTestInformation(scenario);
+                }
                     
-                    if (ShouldSkip(scenario))
+                if (ShouldSkip(scenario))
+                {
+                    scenario.Status = Status.Skipped;
+                    scenario.Steps.ForEach(step => step.Status = Status.Skipped);
+                    return;
+                }
+
+                await ConsoleReporter.WriteLineToConsoleOnly($"--------------------------------------------------{Environment.NewLine}", ConsoleColor.Yellow);
+
+                foreach (var step in scenario.Steps)
+                {
+                    await step.Execute();
+                }
+
+                scenario.Status = Status.Passed;
+            }
+            catch (NotImplementedException)
+            {
+                scenario.Status = Status.NotImplemented;
+                throw;
+            }
+            catch (Exception e) when (BDTestSettings.CustomExceptionSettings.SuccessExceptionTypes.Contains(e.GetType()))
+            {
+                scenario.Status = Status.Passed;
+                throw;
+            }
+            catch (Exception e) when (BDTestSettings.CustomExceptionSettings.InconclusiveExceptionTypes.Contains(e.GetType()))
+            {
+                scenario.Status = Status.Inconclusive;
+                throw;
+            }
+            catch (Exception e)
+            {
+                var validRetryRules = BDTestSettings.GlobalRetryTestRules.Rules.Where(rule => rule.Condition(e)).ToList();
+                if (validRetryRules.Any() && scenario.RetryCount < validRetryRules.Max(x => x.RetryLimit))
+                {
+                    scenario.ShouldRetry = true;
+                    return;
+                }
+
+                var bdTestRetryAttribute = RetryAttributeHelper.GetBDTestRetryAttribute(scenario);
+                if (bdTestRetryAttribute != null && scenario.RetryCount < bdTestRetryAttribute.Count)
+                {
+                    scenario.ShouldRetry = true;
+                    return;
+                }
+                    
+                scenario.Status = Status.Failed;
+                    
+                await ConsoleReporter.WriteLine($"{Environment.NewLine}Exception: {e.Message}{Environment.NewLine}{e.StackTrace}{Environment.NewLine}", ConsoleColor.DarkRed);
+
+                throw;
+            }
+            finally
+            {
+                if (!string.IsNullOrEmpty(scenario.Output))
+                {
+                    await ConsoleReporter.WriteLineToConsoleOnly($"{Environment.NewLine}--------------------------------------------------{Environment.NewLine}", ConsoleColor.Yellow);
+                }
+                
+
+                if (scenario.ShouldRetry)
+                {
+                    await ExecuteAsync(scenario).ConfigureAwait(false);
+                }
+                else
+                {
+                    foreach (var notRunStep in scenario.Steps.Where(step => step.Status == Status.Inconclusive))
                     {
-                        scenario.Status = Status.Skipped;
-                        scenario.Steps.ForEach(step => step.Status = Status.Skipped);
-                        return;
+                        notRunStep.SetStepText();
                     }
+
+                    await ConsoleReporter.WriteLineToConsoleOnly($"Test Summary:{Environment.NewLine}");
 
                     foreach (var step in scenario.Steps)
                     {
-                        await step.Execute();
+                        await ConsoleReporter.WriteLineToConsoleOnly($"{step.StepText} > [{step.Status}]");
                     }
 
-                    scenario.Status = Status.Passed;
-                }
-                catch (NotImplementedException)
-                {
-                    scenario.Status = Status.NotImplemented;
-                    throw;
-                }
-                catch (Exception e) when (BDTestSettings.CustomExceptionSettings.SuccessExceptionTypes.Contains(e.GetType()))
-                {
-                    scenario.Status = Status.Passed;
-                    throw;
-                }
-                catch (Exception e) when (BDTestSettings.CustomExceptionSettings.InconclusiveExceptionTypes.Contains(e.GetType()))
-                {
-                    scenario.Status = Status.Inconclusive;
-                    throw;
-                }
-                catch (Exception e)
-                {
-                    var validRetryRules = BDTestSettings.GlobalRetryTestRules.Rules.Where(rule => rule.Condition(e)).ToList();
-                    if (validRetryRules.Any() && scenario.RetryCount < validRetryRules.Max(x => x.RetryLimit))
-                    {
-                        scenario.ShouldRetry = true;
-                        return;
-                    }
-
-                    var bdTestRetryAttribute = RetryAttributeHelper.GetBDTestRetryAttribute(scenario);
-                    if (bdTestRetryAttribute != null && scenario.RetryCount < bdTestRetryAttribute.Count)
-                    {
-                        scenario.ShouldRetry = true;
-                        return;
-                    }
+                    await ConsoleReporter.WriteLineToConsoleOnly($"{Environment.NewLine}--------------------------------------------------{Environment.NewLine}", ConsoleColor.Yellow);
                     
-                    scenario.Status = Status.Failed;
-                    
-                    ConsoleReporter.WriteLine($"{Environment.NewLine}Exception: {e.Message}{Environment.NewLine}{e.StackTrace}{Environment.NewLine}");
+                    await ConsoleReporter.WriteLineToConsoleOnly($"Test Result: {scenario.Status}");
 
-                    throw;
+                    scenario.EndTime = DateTime.Now;
+                    scenario.TimeTaken = scenario.EndTime - scenario.StartTime;
+
+                    scenario.Output = string.Join(Environment.NewLine,
+                        scenario.Steps.Where(step => !string.IsNullOrWhiteSpace(step.Output)).Select(step => step.Output));
                 }
-                finally
-                {
-                    if (scenario.ShouldRetry)
-                    {
-                        await ExecuteAsync(scenario).ConfigureAwait(false);
-                    }
-                    else
-                    {
-                        foreach (var notRunStep in scenario.Steps.Where(step => step.Status == Status.Inconclusive))
-                        {
-                            notRunStep.SetStepText();
-                        }
-
-                        ConsoleReporter.WriteLine($"{Environment.NewLine}Test Summary:{Environment.NewLine}");
-
-                        scenario.Steps.ForEach(step => ConsoleReporter.WriteLine($"{step.StepText} > [{step.Status}]"));
-
-                        ConsoleReporter.WriteLine($"{Environment.NewLine}Test Result: {scenario.Status}{Environment.NewLine}");
-
-                        scenario.EndTime = DateTime.Now;
-                        scenario.TimeTaken = scenario.EndTime - scenario.StartTime;
-
-                        scenario.Output = string.Join(Environment.NewLine,
-                            scenario.Steps.Where(step => !string.IsNullOrWhiteSpace(step.Output)).Select(step => step.Output));
-                    }
-                }
-            });
-        }
-
-        private bool ShouldSkip(Scenario scenario)
-        {
-            return BDTestSettings.GlobalSkipTestRules.Rules.Any(x => x.Invoke(scenario));
-        }
-
-        private void WriteTestInformation(Scenario scenario)
-        {
-            WriteStoryAndScenario(scenario);
-            
-            WriteCustomTestInformation(scenario);
-            
-            TestOutputData.ClearCurrentTaskData();
-        }
-
-        private void WriteCustomTestInformation(Scenario scenario)
-        {
-            foreach (var testInformationAttribute in scenario.CustomTestInformation ?? Array.Empty<TestInformationAttribute>())
-            {
-                ConsoleReporter.WriteLine(testInformationAttribute.Print());
             }
-            
-            ConsoleReporter.WriteLine(Environment.NewLine);
-        }
+        });
+    }
 
-        private void WriteStoryAndScenario(Scenario scenario)
+    private bool ShouldSkip(Scenario scenario)
+    {
+        return BDTestSettings.GlobalSkipTestRules.Rules.Any(x => x.Invoke(scenario));
+    }
+
+    private async Task WriteTestInformation(Scenario scenario)
+    {
+        await WriteStoryAndScenario(scenario);
+            
+        await WriteCustomTestInformation(scenario);
+            
+        TestOutputData.ClearCurrentTaskData();
+    }
+
+    private async Task WriteCustomTestInformation(Scenario scenario)
+    {
+        var scenarioCustomTestInformation = scenario.CustomTestInformation ?? Array.Empty<TestInformationAttribute>();
+
+        if (!scenarioCustomTestInformation.Any())
         {
-            ConsoleReporter.WriteStory(scenario.StoryText);
-            
-            ConsoleReporter.WriteScenario(scenario.ScenarioText);
-            
-            ConsoleReporter.WriteLine(Environment.NewLine);
+            return;
         }
+            
+        foreach (var testInformationAttribute in scenarioCustomTestInformation)
+        {
+            await ConsoleReporter.WriteLine(testInformationAttribute.Print());
+        }
+            
+        await ConsoleReporter.WriteLine(Environment.NewLine);
+    }
+
+    private async Task WriteStoryAndScenario(Scenario scenario)
+    {
+        await ConsoleReporter.WriteStory(scenario.StoryText);
+            
+        await ConsoleReporter.WriteScenario(scenario.ScenarioText);
+            
+        await ConsoleReporter.WriteLine(string.Empty);
     }
 }

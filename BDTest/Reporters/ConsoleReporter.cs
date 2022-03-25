@@ -1,33 +1,71 @@
-﻿using System;
+﻿using BDTest.Output;
+using BDTest.Settings;
 using BDTest.Test;
 
-namespace BDTest.Reporters
+namespace BDTest.Reporters;
+
+internal static class ConsoleReporter
 {
-    internal static class ConsoleReporter
+    public static async Task WriteLine(string text, ConsoleColor? consoleColor = null)
     {
-        public static void WriteLine(string text)
+        if (consoleColor != null)
         {
-            Console.Out.WriteLine(text);
+            Console.ForegroundColor = consoleColor.Value;
+        }
+            
+        await Console.Out.WriteLineAsync(text);
+        Console.ResetColor();
+    }
+    
+    public static async Task WriteLineToConsoleOnly(string text, ConsoleColor? consoleColor = null)
+    {
+        if (consoleColor != null)
+        {
+            Console.ForegroundColor = consoleColor.Value;
         }
 
-        public static void WriteStory(StoryText storyText)
+        if (BDTestSettings.InterceptConsoleOutput)
         {
-            if (storyText?.Story == null)
-            {
-                return;
-            }
-
-            WriteLine("Story: " + storyText.Story);
+            await TestOutputData.Instance.One.WriteLineAsync(text);
+        }
+        else
+        {
+            await Console.Out.WriteLineAsync(text);
         }
 
-        public static void WriteScenario(ScenarioText scenarioText)
+        Console.ResetColor();
+    }
+        
+    public static async Task Write(string text, ConsoleColor? consoleColor = null)
+    {
+        if (consoleColor != null)
         {
-            if (scenarioText?.Scenario == null)
-            {
-                return;
-            }
-
-            WriteLine("Scenario: " + scenarioText.Scenario);
+            Console.ForegroundColor = consoleColor.Value;
         }
+
+        await Console.Out.WriteAsync(text);
+        Console.ResetColor();
+    }
+
+    public static async Task WriteStory(StoryText storyText)
+    {
+        if (storyText?.Story == null)
+        {
+            return;
+        }
+
+        await Write("Story: ", ConsoleColor.DarkRed);
+        await WriteLine(storyText.Story);
+    }
+
+    public static async Task WriteScenario(ScenarioText scenarioText)
+    {
+        if (scenarioText?.Scenario == null)
+        {
+            return;
+        }
+
+        await Write("Scenario: ", ConsoleColor.DarkRed);
+        await WriteLine(scenarioText.Scenario?.Trim());
     }
 }

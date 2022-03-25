@@ -1,6 +1,5 @@
-namespace BDTest.NetCore.Razor.ReportMiddleware.Interfaces
+namespace BDTest.NetCore.Razor.ReportMiddleware.Interfaces;
+
+internal interface IMemoryCacheBdTestDataStore : IBDTestDataStore
 {
-    internal interface IMemoryCacheBdTestDataStore : IBDTestDataStore
-    {
-    }
 }
