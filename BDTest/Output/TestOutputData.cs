@@ -27,7 +27,7 @@ internal class TestOutputData : TextWriter
     {
         lock (Lock)
         {
-            if (TestId == null && AsyncLocalFrameworkExecutionId == null)
+            if (TestId == null && FrameworkExecutionId == null)
             {
                 return;
             }
