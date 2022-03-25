@@ -2,10 +2,10 @@ using BDTest.NetCore.Razor.ReportMiddleware.Implementations;
 using BDTest.NetCore.Razor.ReportMiddleware.Interfaces;
 using Microsoft.Extensions.Logging;
 
-namespace BDTest.NetCore.Razor.ReportMiddleware.Models
+namespace BDTest.NetCore.Razor.ReportMiddleware.Models;
+
+public class BDTestReportServerOptions
 {
-    public class BDTestReportServerOptions
-    {
         internal BDTestReportServerOptions()
         {
         }
@@ -23,5 +23,4 @@ namespace BDTest.NetCore.Razor.ReportMiddleware.Models
         public IUserPersonalizer UserPersonalizer { get; set; }
 #nullable enable
         public ILogger? Logger { get; set; }
-    }
 }

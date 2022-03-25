@@ -5,34 +5,79 @@ using BDTest.Settings;
 using BDTest.Test;
 using NUnit.Framework;
 
-namespace BDTest.Tests.Fixtures
-{
-    [Story(AsA = "BDTest developer",
-        IWant = "to make sure that certain steps can be skipped conditionally",
-        SoThat = "tests can be run with different behaviour for different test environments")]
-    public class SkipCertainStepsTests : BDTestBase
-    {
-        [OneTimeSetUp]
-        public void Setup()
-        {
-            BDTestSettings.GlobalSkipStepRules.Add<SkipAttribute1>(attr => true);
-            BDTestSettings.GlobalSkipStepRules.Add<SkipAttribute2>(attr => true);
-            BDTestSettings.GlobalSkipStepRules.Add<SkipAttribute3>(attr => true);
-            BDTestSettings.GlobalSkipStepRules.Add<SkipAttributeWithParameter>(attr => attr.ShouldSkip);
-        }
+namespace BDTest.Tests.Fixtures;
 
-        [Test]
-        public void Skip1Step()
+[Story(AsA = "BDTest developer",
+    IWant = "to make sure that certain steps can be skipped conditionally",
+    SoThat = "tests can be run with different behaviour for different test environments")]
+public class SkipCertainStepsTests : BDTestBase
+{
+    [OneTimeSetUp]
+    public void Setup()
+    {
+        BDTestSettings.GlobalSkipStepRules.Add<SkipAttribute1>(attr => true);
+        BDTestSettings.GlobalSkipStepRules.Add<SkipAttribute2>(attr => true);
+        BDTestSettings.GlobalSkipStepRules.Add<SkipAttribute3>(attr => true);
+        BDTestSettings.GlobalSkipStepRules.Add<SkipAttributeWithParameter>(attr => attr.ShouldSkip);
+    }
+
+    [Test]
+    public void Skip1Step()
+    {
+        Given(() => Console.WriteLine("A test"))
+            .When(() => Console.WriteLine())
+            .Then(() => Console.WriteLine("The test passes because the exception step was skipped"))
+            .And(() => ThrowException1())
+            .BDTest();
+    }
+        
+    [Test]
+    public void Skip3Steps()
+    {
+        Given(() => Console.WriteLine("A test"))
+            .When(() => Console.WriteLine())
+            .Then(() => Console.WriteLine("The test passes because the exception step was skipped"))
+            .And(() => ThrowException1())
+            .And(() => ThrowException2())
+            .And(() => ThrowException3())
+            .BDTest();
+    }
+        
+    [Test]
+    public void ShouldSkipTrue()
+    {
+        Given(() => Console.WriteLine("A test"))
+            .When(() => Console.WriteLine())
+            .Then(() => Console.WriteLine("The test passes because the exception step was skipped"))
+            .And(() => ThrowExceptionShouldSkipTrue())
+            .BDTest();
+    }
+        
+    [Test]
+    public void ShouldSkipFalse()
+    {
+        try
         {
             Given(() => Console.WriteLine("A test"))
                 .When(() => Console.WriteLine())
                 .Then(() => Console.WriteLine("The test passes because the exception step was skipped"))
-                .And(() => ThrowException1())
+                .And(() => ThrowExceptionShouldSkipFalse())
                 .BDTest();
+                
+            Assert.Fail("The last exception should not be skipped - And should stop us getting here.");
         }
+        catch (Exception e) when(e.Message == "ThrowExceptionShouldSkipFalse")
+        {
+            Assert.Pass();
+        }
+            
+        Assert.Fail();
+    }
         
-        [Test]
-        public void Skip3Steps()
+    [Test]
+    public void NotRegisteredSkipException()
+    {
+        try
         {
             Given(() => Console.WriteLine("A test"))
                 .When(() => Console.WriteLine())
@@ -40,124 +85,78 @@ namespace BDTest.Tests.Fixtures
                 .And(() => ThrowException1())
                 .And(() => ThrowException2())
                 .And(() => ThrowException3())
+                .And(() => ThrowNotRegisteredSkipException())
                 .BDTest();
-        }
-        
-        [Test]
-        public void ShouldSkipTrue()
-        {
-            Given(() => Console.WriteLine("A test"))
-                .When(() => Console.WriteLine())
-                .Then(() => Console.WriteLine("The test passes because the exception step was skipped"))
-                .And(() => ThrowExceptionShouldSkipTrue())
-                .BDTest();
-        }
-        
-        [Test]
-        public void ShouldSkipFalse()
-        {
-            try
-            {
-                Given(() => Console.WriteLine("A test"))
-                    .When(() => Console.WriteLine())
-                    .Then(() => Console.WriteLine("The test passes because the exception step was skipped"))
-                    .And(() => ThrowExceptionShouldSkipFalse())
-                    .BDTest();
                 
-                Assert.Fail("The last exception should not be skipped - And should stop us getting here.");
-            }
-            catch (Exception e) when(e.Message == "ThrowExceptionShouldSkipFalse")
-            {
-                Assert.Pass();
-            }
+            Assert.Fail("The last exception should not be skipped - And should stop us getting here.");
+        }
+        catch (Exception e) when(e.Message == "ThrowNotRegisteredSkipException")
+        {
+            Assert.Pass();
+        }
             
-            Assert.Fail();
-        }
-        
-        [Test]
-        public void NotRegisteredSkipException()
-        {
-            try
-            {
-                Given(() => Console.WriteLine("A test"))
-                    .When(() => Console.WriteLine())
-                    .Then(() => Console.WriteLine("The test passes because the exception step was skipped"))
-                    .And(() => ThrowException1())
-                    .And(() => ThrowException2())
-                    .And(() => ThrowException3())
-                    .And(() => ThrowNotRegisteredSkipException())
-                    .BDTest();
-                
-                Assert.Fail("The last exception should not be skipped - And should stop us getting here.");
-            }
-            catch (Exception e) when(e.Message == "ThrowNotRegisteredSkipException")
-            {
-                Assert.Pass();
-            }
-            
-            Assert.Fail();
-        }
-
-        [NotRegisteredSkip]
-        private void ThrowNotRegisteredSkipException()
-        {
-            throw new Exception("ThrowNotRegisteredSkipException");
-        }
-
-        [SkipAttribute1]
-        private static Task ThrowException1()
-        {
-            throw new Exception("ThrowException1");
-        }
-        
-        [SkipAttribute2]
-        private static Task ThrowException2()
-        {
-            throw new Exception("ThrowException2");
-        }
-        
-        [SkipAttribute3]
-        private static Task ThrowException3()
-        {
-            throw new Exception("ThrowException3");
-        }
-        
-        [SkipAttributeWithParameter(true)]
-        private static Task ThrowExceptionShouldSkipTrue()
-        {
-            throw new Exception("ThrowExceptionShouldSkipTrue");
-        }
-        
-        [SkipAttributeWithParameter(false)]
-        private static Task ThrowExceptionShouldSkipFalse()
-        {
-            throw new Exception("ThrowExceptionShouldSkipFalse");
-        }
+        Assert.Fail();
     }
 
-    class SkipAttribute1 : SkipStepAttribute
+    [NotRegisteredSkip]
+    private void ThrowNotRegisteredSkipException()
     {
+        throw new Exception("ThrowNotRegisteredSkipException");
     }
-    
-    class SkipAttribute2 : SkipStepAttribute
-    {
-    }
-    
-    class SkipAttribute3 : SkipStepAttribute
-    {
-    }
-    
-    class SkipAttributeWithParameter : SkipStepAttribute
-    {
-        public bool ShouldSkip { get; }
 
-        public SkipAttributeWithParameter(bool shouldSkip)
-        {
-            ShouldSkip = shouldSkip;
-        }
-    }
-    
-    class NotRegisteredSkipAttribute : SkipStepAttribute
+    [SkipAttribute1]
+    private static Task ThrowException1()
     {
+        throw new Exception("ThrowException1");
     }
+        
+    [SkipAttribute2]
+    private static Task ThrowException2()
+    {
+        throw new Exception("ThrowException2");
+    }
+        
+    [SkipAttribute3]
+    private static Task ThrowException3()
+    {
+        throw new Exception("ThrowException3");
+    }
+        
+    [SkipAttributeWithParameter(true)]
+    private static Task ThrowExceptionShouldSkipTrue()
+    {
+        throw new Exception("ThrowExceptionShouldSkipTrue");
+    }
+        
+    [SkipAttributeWithParameter(false)]
+    private static Task ThrowExceptionShouldSkipFalse()
+    {
+        throw new Exception("ThrowExceptionShouldSkipFalse");
+    }
+}
+
+class SkipAttribute1 : SkipStepAttribute
+{
+}
+    
+class SkipAttribute2 : SkipStepAttribute
+{
+}
+    
+class SkipAttribute3 : SkipStepAttribute
+{
+}
+    
+class SkipAttributeWithParameter : SkipStepAttribute
+{
+    public bool ShouldSkip { get; }
+
+    public SkipAttributeWithParameter(bool shouldSkip)
+    {
+        ShouldSkip = shouldSkip;
+    }
+}
+    
+class NotRegisteredSkipAttribute : SkipStepAttribute
+{
 }

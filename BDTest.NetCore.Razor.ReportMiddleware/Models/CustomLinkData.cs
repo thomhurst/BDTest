@@ -1,35 +1,34 @@
 using System;
 
-namespace BDTest.NetCore.Razor.ReportMiddleware.Models
+namespace BDTest.NetCore.Razor.ReportMiddleware.Models;
+
+public class CustomLinkData
 {
-    public class CustomLinkData
+    private readonly Uri _url;
+
+    public CustomLinkData(string text, Uri url)
     {
-        private readonly Uri _url;
+        Text = text;
+        _url = url;
+    }
 
-        public CustomLinkData(string text, Uri url)
+    public string Text { get; }
+
+    public string Url
+    {
+        get
         {
-            Text = text;
-            _url = url;
-        }
-
-        public string Text { get; }
-
-        public string Url
-        {
-            get
+            if (_url == null)
             {
-                if (_url == null)
-                {
-                    return null;
-                }
-
-                if (_url.IsAbsoluteUri)
-                {
-                    return _url.AbsoluteUri;
-                }
-
-                return _url.ToString();
+                return null;
             }
+
+            if (_url.IsAbsoluteUri)
+            {
+                return _url.AbsoluteUri;
+            }
+
+            return _url.ToString();
         }
     }
 }

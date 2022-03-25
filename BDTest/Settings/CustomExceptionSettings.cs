@@ -1,15 +1,14 @@
 using System;
 using System.Collections.Concurrent;
 
-namespace BDTest.Settings
+namespace BDTest.Settings;
+
+public class CustomExceptionSettings
 {
-    public class CustomExceptionSettings
+    internal CustomExceptionSettings()
     {
-        internal CustomExceptionSettings()
-        {
-        }
-        
-        public ConcurrentBag<Type> SuccessExceptionTypes { get; } = new ConcurrentBag<Type>();
-        public ConcurrentBag<Type> InconclusiveExceptionTypes { get; } = new ConcurrentBag<Type>();
     }
+        
+    public ConcurrentBag<Type> SuccessExceptionTypes { get; } = new();
+    public ConcurrentBag<Type> InconclusiveExceptionTypes { get; } = new();
 }

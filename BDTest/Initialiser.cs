@@ -2,23 +2,22 @@
 using System.Runtime.CompilerServices;
 using BDTest.Output;
 
-namespace BDTest
+namespace BDTest;
+
+internal static class Initialiser
 {
-    internal static class Initialiser
+    private static bool _alreadyRun;
+
+    [MethodImpl(MethodImplOptions.Synchronized)]
+    public static void Initialise()
     {
-        private static bool _alreadyRun;
-
-        [MethodImpl(MethodImplOptions.Synchronized)]
-        public static void Initialise()
+        if (_alreadyRun)
         {
-            if (_alreadyRun)
-            {
-                return;
-            }
-
-            _alreadyRun = true;
-            
-            InternalTestTimeData.TestsStartedAt = DateTime.Now;
+            return;
         }
+
+        _alreadyRun = true;
+            
+        InternalTestTimeData.TestsStartedAt = DateTime.Now;
     }
 }

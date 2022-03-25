@@ -1,32 +1,31 @@
 ﻿using System;
 
-namespace BDTest.Test.Steps
-{
-    public enum StepType
-    {
-        Given,
-        AndGiven,
-        When,
-        Then,
-        AndThen
-    }
+namespace BDTest.Test.Steps;
 
-    public static class StepTypeExtensions
+public enum StepType
+{
+    Given,
+    AndGiven,
+    When,
+    Then,
+    AndThen
+}
+
+public static class StepTypeExtensions
+{
+    public static string GetValue(this StepType stepType)
     {
-        public static string GetValue(this StepType stepType)
+        switch (stepType)
         {
-            switch (stepType)
-            {
-                case StepType.Given:
-                case StepType.When:
-                case StepType.Then:
-                    return stepType.ToString();
-                case StepType.AndGiven:
-                case StepType.AndThen:
-                    return "And";
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(stepType), stepType, null);
-            }
+            case StepType.Given:
+            case StepType.When:
+            case StepType.Then:
+                return stepType.ToString();
+            case StepType.AndGiven:
+            case StepType.AndThen:
+                return "And";
+            default:
+                throw new ArgumentOutOfRangeException(nameof(stepType), stepType, null);
         }
     }
 }

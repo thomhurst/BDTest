@@ -1,7 +1,6 @@
-namespace BDTest.NetCore.Razor.ReportMiddleware.Models
+namespace BDTest.NetCore.Razor.ReportMiddleware.Models;
+
+public class StatusDropdownViewModel
 {
-    public class StatusDropdownViewModel
-    {
-        public bool IncludeScript { get; set; }
-    }
+    public bool IncludeScript { get; set; }
 }

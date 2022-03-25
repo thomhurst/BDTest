@@ -1,54 +1,53 @@
 using System.Linq;
 using BDTest.Maps;
 
-namespace BDTest.Test
+namespace BDTest.Test;
+
+public class BDTestContext<TTestContext> : BDTestContext
 {
-    public class BDTestContext<TTestContext> : BDTestContext
-    {
-        public TTestContext TestContext { get; internal set; }
+    public TTestContext TestContext { get; internal set; }
 
-        internal BDTestContext(BDTestBase testBase, TTestContext testContext, string bdTestExecutionId) : base(testBase, bdTestExecutionId)
-        {
-            TestContext = testContext;
-        }
+    internal BDTestContext(BDTestBase testBase, TTestContext testContext, string bdTestExecutionId) : base(testBase, bdTestExecutionId)
+    {
+        TestContext = testContext;
+    }
+}
+
+public class BDTestContext
+{
+    internal BDTestContext(BDTestBase testBase, string bdTestExecutionId)
+    {
+        TestBase = testBase;
+        CurrentScenarioBDTestExecutionId = bdTestExecutionId;
     }
 
-    public class BDTestContext
+    public BDTestBase TestBase { get; }
+
+    public string CurrentScenarioBDTestExecutionId { get; }
+
+    private string _storyText;
+    public string GetStoryText()
     {
-        internal BDTestContext(BDTestBase testBase, string bdTestExecutionId)
+        if (!string.IsNullOrEmpty(_storyText))
         {
-            TestBase = testBase;
-            CurrentScenarioBDTestExecutionId = bdTestExecutionId;
+            return _storyText;
         }
-
-        public BDTestBase TestBase { get; }
-
-        public string CurrentScenarioBDTestExecutionId { get; }
-
-        private string _storyText;
-        public string GetStoryText()
-        {
-            if (!string.IsNullOrEmpty(_storyText))
-            {
-                return _storyText;
-            }
             
-            return _storyText = TestBase.GetStoryText();
-        }
-
-        private string _scenarioText;
-        public string GetScenarioText()
-        {
-            if (!string.IsNullOrEmpty(_scenarioText))
-            {
-                return _scenarioText;
-            }
-
-            return _scenarioText = TestBase.GetScenarioText() ?? CurrentScenario?.GetScenarioText();
-        }
-
-        public Scenario CurrentScenario => TestHolder.ScenariosByInternalId.Values.FirstOrDefault(scenario => scenario.FrameworkTestId == CurrentScenarioBDTestExecutionId);
-
-        public string CurrentTestRunnerId => TestHolder.CurrentReportId;
+        return _storyText = TestBase.GetStoryText();
     }
+
+    private string _scenarioText;
+    public string GetScenarioText()
+    {
+        if (!string.IsNullOrEmpty(_scenarioText))
+        {
+            return _scenarioText;
+        }
+
+        return _scenarioText = TestBase.GetScenarioText() ?? CurrentScenario?.GetScenarioText();
+    }
+
+    public Scenario CurrentScenario => TestHolder.ScenariosByInternalId.Values.FirstOrDefault(scenario => scenario.FrameworkTestId == CurrentScenarioBDTestExecutionId);
+
+    public string CurrentTestRunnerId => TestHolder.CurrentReportId;
 }

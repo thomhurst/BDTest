@@ -1,10 +1,9 @@
 using System.Threading.Tasks;
 using BDTest.Test;
 
-namespace BDTest.Interfaces.Internal
+namespace BDTest.Interfaces.Internal;
+
+internal interface IScenarioRetryManager
 {
-    internal interface IScenarioRetryManager
-    {
-        Task CheckIfAlreadyExecuted(Scenario scenario);
-    }
+    Task CheckIfAlreadyExecuted(Scenario scenario);
 }

@@ -1,11 +1,10 @@
 using System;
 
-namespace BDTest.Attributes
+namespace BDTest.Attributes;
+
+public abstract class SkipStepAttribute : Attribute
 {
-    public abstract class SkipStepAttribute : Attribute
+    protected SkipStepAttribute()
     {
-        protected SkipStepAttribute()
-        {
-        }
     }
 }

@@ -1,10 +1,9 @@
 using System.Threading.Tasks;
 using BDTest.Test;
 
-namespace BDTest.Interfaces.Internal
+namespace BDTest.Interfaces.Internal;
+
+internal interface IScenarioExecutor
 {
-    internal interface IScenarioExecutor
-    {
-        Task ExecuteAsync(Scenario scenario);
-    }
+    Task ExecuteAsync(Scenario scenario);
 }

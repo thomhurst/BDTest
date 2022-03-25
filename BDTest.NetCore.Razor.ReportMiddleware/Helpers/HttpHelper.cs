@@ -4,56 +4,55 @@ using BDTest.NetCore.Razor.ReportMiddleware.Extensions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Extensions;
 
-namespace BDTest.NetCore.Razor.ReportMiddleware.Helpers
+namespace BDTest.NetCore.Razor.ReportMiddleware.Helpers;
+
+public static class HttpHelper
 {
-    public static class HttpHelper
+    public static string GetBaseUrl(this HttpContext httpContext)
     {
-        public static string GetBaseUrl(this HttpContext httpContext)
+        var currentUrl = new Uri(httpContext.Request.GetEncodedUrl());
+        var baseUrl = currentUrl.Scheme + Uri.SchemeDelimiter + currentUrl.Host;
+        if (!currentUrl.IsDefaultPort)
         {
-            var currentUrl = new Uri(httpContext.Request.GetEncodedUrl());
-            var baseUrl = currentUrl.Scheme + Uri.SchemeDelimiter + currentUrl.Host;
-            if (!currentUrl.IsDefaultPort)
-            {
-                baseUrl += $":{currentUrl.Port}";
-            }
-
-            return baseUrl;
+            baseUrl += $":{currentUrl.Port}";
         }
 
-        public static string GetCurrentPageNumber(this HttpContext httpContext)
+        return baseUrl;
+    }
+
+    public static string GetCurrentPageNumber(this HttpContext httpContext)
+    {
+        if(!httpContext.Request.Query.TryGetValue(PagerQueryParameters.Page, out var stringPageNumber))
         {
-            if(!httpContext.Request.Query.TryGetValue(PagerQueryParameters.Page, out var stringPageNumber))
-            {
-                return "1";
-            }
-
-            if (string.Equals(stringPageNumber, PagerQueryParameters.All, StringComparison.OrdinalIgnoreCase))
-            {
-                return PagerQueryParameters.All;
-            }
-
-            return int.TryParse(stringPageNumber, out var pageNumber) ? pageNumber.ToString() : "1";
+            return "1";
         }
 
-        public static string GetUrlForPageNumber(this HttpContext httpContext, int pageNumber)
+        if (string.Equals(stringPageNumber, PagerQueryParameters.All, StringComparison.OrdinalIgnoreCase))
         {
-            var currentUrl = GetCurrentUrl(httpContext);
-            return currentUrl.WithQueryParameter(PagerQueryParameters.Page, pageNumber.ToString()).ToString();
+            return PagerQueryParameters.All;
         }
 
-        public static Uri GetCurrentUrl(this HttpContext httpContext)
-        {
-            return new (httpContext.Request.GetEncodedUrl());
-        }
+        return int.TryParse(stringPageNumber, out var pageNumber) ? pageNumber.ToString() : "1";
+    }
 
-        public static string GetQueryParameter(this HttpRequest httpRequest, string queryParameterName)
+    public static string GetUrlForPageNumber(this HttpContext httpContext, int pageNumber)
+    {
+        var currentUrl = GetCurrentUrl(httpContext);
+        return currentUrl.WithQueryParameter(PagerQueryParameters.Page, pageNumber.ToString()).ToString();
+    }
+
+    public static Uri GetCurrentUrl(this HttpContext httpContext)
+    {
+        return new Uri(httpContext.Request.GetEncodedUrl());
+    }
+
+    public static string GetQueryParameter(this HttpRequest httpRequest, string queryParameterName)
+    {
+        if (httpRequest.Query.TryGetValue(queryParameterName, out var queryParameterValue))
         {
-            if (httpRequest.Query.TryGetValue(queryParameterName, out var queryParameterValue))
-            {
-                return queryParameterValue;
-            }
+            return queryParameterValue;
+        }
             
-            return null;
-        }
+        return null;
     }
 }

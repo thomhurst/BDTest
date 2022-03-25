@@ -1,12 +1,11 @@
-namespace BDTest.Exceptions
-{
-    public class InvalidStepTextParameterException : BDTestException
-    {
-        public override string Message { get; }
+namespace BDTest.Exceptions;
 
-        public InvalidStepTextParameterException(string message)
-        {
-            Message = message;
-        }
+public class InvalidStepTextParameterException : BDTestException
+{
+    public override string Message { get; }
+
+    public InvalidStepTextParameterException(string message)
+    {
+        Message = message;
     }
 }

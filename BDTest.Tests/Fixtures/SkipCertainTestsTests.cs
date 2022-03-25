@@ -4,60 +4,59 @@ using BDTest.Settings;
 using BDTest.Test;
 using NUnit.Framework;
 
-namespace BDTest.Tests.Fixtures
+namespace BDTest.Tests.Fixtures;
+
+[Story(AsA = "BDTest developer",
+    IWant = "to make sure that certain tests can be skipped conditionally",
+    SoThat = "tests can be run with different behaviour for different test environments")]
+public class SkipCertainTestsTests : BDTestBase
 {
-    [Story(AsA = "BDTest developer",
-        IWant = "to make sure that certain tests can be skipped conditionally",
-        SoThat = "tests can be run with different behaviour for different test environments")]
-    public class SkipCertainTestsTests : BDTestBase
+    [OneTimeSetUp]
+    public void Setup()
     {
-        [OneTimeSetUp]
-        public void Setup()
-        {
-            BDTestSettings.GlobalSkipTestRules.Add(test => test.BdTestBaseClass?.GetType() == typeof(SkipCertainTestsTests));
-        }
+        BDTestSettings.GlobalSkipTestRules.Add(test => test.BdTestBaseClass?.GetType() == typeof(SkipCertainTestsTests));
+    }
 
-        [Test]
-        public void Skip1()
-        {
-            var test = Given(() => Console.WriteLine("A test"))
-                .When(() => Console.WriteLine())
-                .Then(() => Console.WriteLine("The test passes because the exception step was skipped"))
-                .And(() => ThrowException1())
-                .BDTest();
+    [Test]
+    public void Skip1()
+    {
+        var test = Given(() => Console.WriteLine("A test"))
+            .When(() => Console.WriteLine())
+            .Then(() => Console.WriteLine("The test passes because the exception step was skipped"))
+            .And(() => ThrowException1())
+            .BDTest();
             
-            Assert.That(test.Status, Is.EqualTo(Status.Skipped));
-        }
+        Assert.That(test.Status, Is.EqualTo(Status.Skipped));
+    }
         
-        [Test]
-        public void Skip2()
-        {
-            var test = Given(() => Console.WriteLine("A test"))
-                .When(() => Console.WriteLine())
-                .Then(() => Console.WriteLine("The test passes because the exception step was skipped"))
-                .And(() => ThrowException1())
-                .And(() => ThrowException1())
-                .And(() => ThrowException1())
-                .BDTest();
+    [Test]
+    public void Skip2()
+    {
+        var test = Given(() => Console.WriteLine("A test"))
+            .When(() => Console.WriteLine())
+            .Then(() => Console.WriteLine("The test passes because the exception step was skipped"))
+            .And(() => ThrowException1())
+            .And(() => ThrowException1())
+            .And(() => ThrowException1())
+            .BDTest();
             
-            Assert.That(test.Status, Is.EqualTo(Status.Skipped));
-        }
+        Assert.That(test.Status, Is.EqualTo(Status.Skipped));
+    }
 
-        [Test]
-        public void Skip3()
-        {
-            var test = Given(() => Console.WriteLine("A test"))
-                .When(() => Console.WriteLine())
-                .Then(() => Console.WriteLine("The test passes because the exception step was skipped"))
-                .And(() => ThrowException1())
-                .BDTest();
+    [Test]
+    public void Skip3()
+    {
+        var test = Given(() => Console.WriteLine("A test"))
+            .When(() => Console.WriteLine())
+            .Then(() => Console.WriteLine("The test passes because the exception step was skipped"))
+            .And(() => ThrowException1())
+            .BDTest();
             
-            Assert.That(test.Status, Is.EqualTo(Status.Skipped));
-        }
+        Assert.That(test.Status, Is.EqualTo(Status.Skipped));
+    }
 
-        private void ThrowException1()
-        {
-            throw new Exception();
-        }
+    private void ThrowException1()
+    {
+        throw new Exception();
     }
 }

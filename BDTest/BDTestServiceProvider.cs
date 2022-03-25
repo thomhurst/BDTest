@@ -4,26 +4,25 @@ using BDTest.Interfaces.Internal;
 using BDTest.Output;
 using BDTest.Settings;
 
-namespace BDTest
+namespace BDTest;
+
+internal static class BDTestServiceProvider
 {
-    internal static class BDTestServiceProvider
+    static BDTestServiceProvider()
     {
-        static BDTestServiceProvider()
-        {
-            InitialiseBDTest();
+        InitialiseBDTest();
             
-            var scenarioRetryManager = new ScenarioRetryManager();
-            ScenarioExecutor = new ScenarioExecutor(scenarioRetryManager);
-        }
-
-        private static void InitialiseBDTest()
-        {
-            if (BDTestSettings.InterceptConsoleOutput)
-            {
-                Console.SetOut(TestOutputData.Instance);
-            }
-        }
-
-        internal static IScenarioExecutor ScenarioExecutor { get; }
+        var scenarioRetryManager = new ScenarioRetryManager();
+        ScenarioExecutor = new ScenarioExecutor(scenarioRetryManager);
     }
+
+    private static void InitialiseBDTest()
+    {
+        if (BDTestSettings.InterceptConsoleOutput)
+        {
+            Console.SetOut(TestOutputData.Instance);
+        }
+    }
+
+    internal static IScenarioExecutor ScenarioExecutor { get; }
 }

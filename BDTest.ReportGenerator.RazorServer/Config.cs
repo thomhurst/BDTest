@@ -1,7 +1,6 @@
-﻿namespace BDTest.ReportGenerator.RazorServer
+﻿namespace BDTest.ReportGenerator.RazorServer;
+
+public class Config
 {
-    public class Config
-    {
-        public AzureStorageConfig AzureStorage { get; set; }
-    }
+    public AzureStorageConfig AzureStorage { get; set; }
 }

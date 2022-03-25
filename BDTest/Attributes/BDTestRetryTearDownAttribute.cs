@@ -1,9 +1,8 @@
 using System;
 
-namespace BDTest.Attributes
+namespace BDTest.Attributes;
+
+[AttributeUsage(AttributeTargets.Method, AllowMultiple = false, Inherited = true)]
+public class BDTestRetryTearDownAttribute : Attribute
 {
-    [AttributeUsage(AttributeTargets.Method, AllowMultiple = false, Inherited = true)]
-    public class BDTestRetryTearDownAttribute : Attribute
-    {
-    }
 }

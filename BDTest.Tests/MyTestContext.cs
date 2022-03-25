@@ -1,9 +1,8 @@
 using System;
 
-namespace BDTest.Tests
+namespace BDTest.Tests;
+
+public class MyTestContext
 {
-    public class MyTestContext
-    {
-        public string Id = Guid.NewGuid().ToString();
-    }
+    public string Id = Guid.NewGuid().ToString();
 }
