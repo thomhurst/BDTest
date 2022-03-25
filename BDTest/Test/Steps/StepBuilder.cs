@@ -28,6 +28,7 @@ public abstract class StepBuilder : BuildableTest
         var testGuid = System.Guid.NewGuid();
         Guid = testGuid.ToString();
         TestOutputData.TestId = testGuid;
+        TestOutputData.FrameworkExecutionId = testId;
             
         ExistingSteps = new List<Step> { new(runnable, stepType, Guid, ReportId) };
             

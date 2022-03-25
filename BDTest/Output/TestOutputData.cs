@@ -43,6 +43,7 @@ internal class TestOutputData : TextWriter
             if (scenario.EndTime != default)
             {
                 scenario.TearDownOutput += value;
+                return;
             }
 
             if (ThreadAndChars.TryGetValue((Guid) TestId, out var existingStringBuilder))
