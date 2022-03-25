@@ -1,11 +1,5 @@
-using System.Threading.Tasks;
 using BDTest.NetCore.Razor.ReportMiddleware.Extensions;
 using BDTest.NetCore.Razor.ReportMiddleware.Interfaces;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using Microsoft.Net.Http.Headers;
 
 namespace BDTest.ReportGenerator.RazorServer;

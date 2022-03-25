@@ -1,5 +1,3 @@
-using System;
-using System.Threading.Tasks;
 using BDTest.Attributes;
 using BDTest.Settings;
 using BDTest.Test;

@@ -1,4 +1,3 @@
-using System.Linq;
 using BDTest.Maps;
 
 namespace BDTest.Test;

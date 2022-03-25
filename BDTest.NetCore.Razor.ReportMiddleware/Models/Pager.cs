@@ -1,7 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-
 namespace BDTest.NetCore.Razor.ReportMiddleware.Models;
 
 public class Pager<T>

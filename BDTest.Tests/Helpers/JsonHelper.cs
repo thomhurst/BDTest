@@ -1,4 +1,3 @@
-using System.IO;
 using BDTest.Helpers;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;

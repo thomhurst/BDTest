@@ -1,6 +1,4 @@
-﻿using System;
-using System.IO;
-using BDTest.Helpers;
+﻿using BDTest.Helpers;
 using NUnit.Framework;
 
 namespace BDTest.Example;

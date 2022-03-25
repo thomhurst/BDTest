@@ -1,5 +1,3 @@
-using System;
-
 namespace BDTest.NetCore.Razor.ReportMiddleware.Models;
 
 public class CustomLinkData

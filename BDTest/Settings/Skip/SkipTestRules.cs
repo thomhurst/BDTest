@@ -1,5 +1,3 @@
-using System;
-using System.Collections.Generic;
 using BDTest.Test;
 
 namespace BDTest.Settings.Skip;

@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using BDTest.Output;
+﻿using BDTest.Output;
 using BDTest.Test;
 using Newtonsoft.Json;
 

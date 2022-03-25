@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using BDTest.Settings.Retry;
+﻿using BDTest.Settings.Retry;
 using BDTest.Settings.Skip;
 
 // ReSharper disable UnusedAutoPropertyAccessor.Global

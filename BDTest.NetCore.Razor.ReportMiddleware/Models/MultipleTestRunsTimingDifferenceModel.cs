@@ -1,5 +1,3 @@
-using System;
-using System.Linq;
 using BDTest.Test;
 
 namespace BDTest.NetCore.Razor.ReportMiddleware.Models;

@@ -1,5 +1,3 @@
-using System;
-using System.Linq;
 using BDTest.NetCore.Razor.ReportMiddleware.Models;
 
 namespace BDTest.NetCore.Razor.ReportMiddleware.Extensions;

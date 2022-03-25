@@ -1,6 +1,3 @@
-using System;
-using System.Collections.Generic;
-
 namespace BDTest.Settings.Retry;
 
 public class RetryTestRules

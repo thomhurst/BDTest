@@ -1,6 +1,3 @@
-using System;
-using System.Linq;
-using System.Threading.Tasks;
 using BDTest.Attributes;
 using BDTest.Test;
 using BDTest.Tests.Helpers;

@@ -1,6 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using BDTest.Maps;
 using BDTest.Output;
 using BDTest.Test;

@@ -1,4 +1,3 @@
-using System.Threading.Tasks;
 using BDTest.Maps;
 
 namespace BDTest.NetCore.Razor.ReportMiddleware.Interfaces;

@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using BDTest.Maps;
 using BDTest.Test;
 

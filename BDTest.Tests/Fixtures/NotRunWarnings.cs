@@ -1,5 +1,3 @@
-using System;
-using System.Linq;
 using BDTest.Attributes;
 using BDTest.Test;
 using BDTest.Tests.Helpers;

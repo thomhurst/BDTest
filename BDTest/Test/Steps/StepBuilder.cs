@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using BDTest.Extensions;
+﻿using BDTest.Extensions;
 using BDTest.Helpers;
 using BDTest.Maps;
 using BDTest.Output;

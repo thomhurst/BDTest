@@ -1,5 +1,4 @@
-﻿using System.Linq;
-using BDTest.Settings;
+﻿using BDTest.Settings;
 using BDTest.Test;
 using NUnit.Framework;
 using NUnitTestContext = NUnit.Framework.TestContext;

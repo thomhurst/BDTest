@@ -1,5 +1,3 @@
-using System.Collections.Generic;
-
 namespace BDTest.NetCore.Razor.ReportMiddleware.Views.BDTest;
 
 public class TrendsPageGenericDropdownViewModel

@@ -1,4 +1,3 @@
-using System;
 using BDTest.Attributes;
 using BDTest.Constants;
 using BDTest.Test;

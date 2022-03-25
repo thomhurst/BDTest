@@ -1,5 +1,3 @@
-using System;
-using System.Linq;
 using BDTest.Maps;
 using BDTest.Test;
 

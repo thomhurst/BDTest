@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace BDTest.Test.Steps;
+﻿namespace BDTest.Test.Steps;
 
 public enum StepType
 {

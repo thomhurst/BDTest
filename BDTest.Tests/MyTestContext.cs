@@ -1,5 +1,3 @@
-using System;
-
 namespace BDTest.Tests;
 
 public class MyTestContext

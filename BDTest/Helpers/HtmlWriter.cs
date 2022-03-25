@@ -1,4 +1,3 @@
-using System;
 using BDTest.Output;
 
 namespace BDTest.Helpers;

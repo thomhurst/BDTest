@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using System.Diagnostics;
 using BDTest.Maps;
 using BDTest.NetCore.Razor.ReportMiddleware.Constants;
 using BDTest.NetCore.Razor.ReportMiddleware.Extensions;

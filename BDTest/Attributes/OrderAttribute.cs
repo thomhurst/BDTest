@@ -1,5 +1,3 @@
-using System;
-
 namespace BDTest.Attributes;
 
 internal class EnumOrderAttribute : Attribute

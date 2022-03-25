@@ -1,6 +1,4 @@
-﻿using System;
-using System.Threading.Tasks;
-using BDTest.Test;
+﻿using BDTest.Test;
 
 namespace BDTest.Reporters;
 

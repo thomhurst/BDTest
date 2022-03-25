@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-
-namespace BDTest.NetCore.Razor.ReportMiddleware.Extensions;
+﻿namespace BDTest.NetCore.Razor.ReportMiddleware.Extensions;
 
 public static class MiscExtensions
 {

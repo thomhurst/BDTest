@@ -1,5 +1,3 @@
-using System.Collections.Generic;
-using System.Threading.Tasks;
 using BDTest.Maps;
 using BDTest.NetCore.Razor.ReportMiddleware.Models;
 

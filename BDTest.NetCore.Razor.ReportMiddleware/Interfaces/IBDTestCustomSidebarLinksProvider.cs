@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using BDTest.Maps;
 using BDTest.NetCore.Razor.ReportMiddleware.Models;

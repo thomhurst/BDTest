@@ -1,4 +1,3 @@
-using System;
 using BDTest.Maps;
 using BDTest.NetCore.Razor.ReportMiddleware.Extensions;
 using BDTest.Test;

@@ -1,4 +1,3 @@
-using System.Threading.Tasks;
 using BDTest.NetCore.Razor.ReportMiddleware.Interfaces;
 using Microsoft.AspNetCore.Http;
 

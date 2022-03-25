@@ -1,6 +1,4 @@
-﻿using System;
-using System.Linq;
-using BDTest.Attributes;
+﻿using BDTest.Attributes;
 
 namespace BDTest.Test;
 

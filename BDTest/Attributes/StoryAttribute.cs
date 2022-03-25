@@ -1,5 +1,4 @@
-﻿using System;
-using BDTest.Exceptions;
+﻿using BDTest.Exceptions;
 
 namespace BDTest.Attributes;
 

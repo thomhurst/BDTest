@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using BDTest.Test;
 
 namespace BDTest.Tests.Helpers;

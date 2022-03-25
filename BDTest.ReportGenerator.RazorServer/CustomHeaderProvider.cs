@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using BDTest.NetCore.Razor.ReportMiddleware.Interfaces;
 using BDTest.NetCore.Razor.ReportMiddleware.Models;
 

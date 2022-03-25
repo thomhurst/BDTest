@@ -1,4 +1,3 @@
-using System;
 using System.Web;
 
 namespace BDTest.NetCore.Razor.ReportMiddleware.Extensions;

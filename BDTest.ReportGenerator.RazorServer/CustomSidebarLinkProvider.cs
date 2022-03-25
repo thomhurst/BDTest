@@ -1,5 +1,3 @@
-using System;
-using System.Collections.Generic;
 using BDTest.Maps;
 using BDTest.NetCore.Razor.ReportMiddleware.Interfaces;
 using BDTest.NetCore.Razor.ReportMiddleware.Models;

@@ -1,6 +1,3 @@
-using System;
-using System.Threading.Tasks;
-
 namespace BDTest.NetCore.Razor.ReportMiddleware.Extensions;
 
 public static class SemaphoreSlimExtension

@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace BDTest.Attributes;
+﻿namespace BDTest.Attributes;
 
 [AttributeUsage(AttributeTargets.Method)]
 public class ScenarioTextAttribute : Attribute

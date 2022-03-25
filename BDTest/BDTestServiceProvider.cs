@@ -1,4 +1,3 @@
-using System;
 using BDTest.Engine;
 using BDTest.Interfaces.Internal;
 using BDTest.Output;

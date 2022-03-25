@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-
-namespace BDTest.Test.Steps.Then;
+﻿namespace BDTest.Test.Steps.Then;
 
 public class AndThen : Then
 {

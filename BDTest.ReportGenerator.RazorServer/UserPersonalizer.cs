@@ -1,8 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using BDTest.NetCore.Razor.ReportMiddleware.Interfaces;
+﻿using BDTest.NetCore.Razor.ReportMiddleware.Interfaces;
 using BDTest.NetCore.Razor.ReportMiddleware.Models;
-using Microsoft.AspNetCore.Http;
 
 namespace BDTest.ReportGenerator.RazorServer;
 
