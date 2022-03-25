@@ -10,11 +10,6 @@ public abstract class StepBuilder : BuildableTest
     internal readonly List<Step> ExistingSteps;
     protected abstract StepType StepType { get; }
 
-    static StepBuilder()
-    {
-        Initialiser.Initialise();
-    }
-
     protected T WithStepText<T>(Func<string> overridingStepText) where T : StepBuilder
     {
         ExistingSteps.Last().OverriddenStepText = overridingStepText;

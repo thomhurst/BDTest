@@ -13,13 +13,13 @@ public class SetupTeardownInfo : NUnitBDTestBase<MyTestContext>
     public void Setup()
     {
         TestResetHelper.ResetData();
-        WriteStartupOutput("Some startup info!");
+        Console.Out.WriteLine("Some startup info!");
     }
         
     [TearDown]
     public void TearDown()
     {
-        WriteTearDownOutput("Some teardown info!");
+        Console.Out.WriteLine("Some teardown info!");
             
         Assert.That(_scenario.TearDownOutput.Trim(), Is.EqualTo("Some teardown info!"));
             

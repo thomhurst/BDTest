@@ -3,6 +3,7 @@ using BDTest.Test;
 using NUnit.Framework;
 using NUnitTestContext = NUnit.Framework.TestContext;
 using BDTest.Maps;
+using BDTest.Output;
 using NUnit.Framework.Interfaces;
 using NUnit.Framework.Internal;
 
@@ -30,6 +31,12 @@ public abstract class NUnitBDTestBase<TContext> : AbstractContextBDTestBase<TCon
         {
             BDTestSettings.CustomExceptionSettings.InconclusiveExceptionTypes.Add(typeof(InconclusiveException));
         }
+    }
+
+    [SetUp]
+    public void Setup()
+    {
+        TestOutputData.FrameworkExecutionId = BDTestExecutionId;
     }
 
     [TearDown]
