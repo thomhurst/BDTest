@@ -12,9 +12,9 @@ internal static class TestHolder
         
     private static readonly ConcurrentDictionary<string, List<Action<Scenario>>> ScenarioListeners = new();
 
-    internal static void ListenForScenario(string testId, Action<Scenario> @delegate)
+    internal static void ListenForScenario(string frameworkExecutionId, Action<Scenario> @delegate)
     {
-        var list = ScenarioListeners.GetOrAdd(testId, new List<Action<Scenario>>());
+        var list = ScenarioListeners.GetOrAdd(frameworkExecutionId, new List<Action<Scenario>>());
         list.Add(@delegate);
     }
 

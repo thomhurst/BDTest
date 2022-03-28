@@ -1,27 +1,30 @@
+using System.Runtime.CompilerServices;
 using BDTest.Engine;
 using BDTest.Interfaces.Internal;
 using BDTest.Output;
-using BDTest.Settings;
 
-namespace BDTest;
-
-internal static class BDTestServiceProvider
+namespace BDTest
 {
-    static BDTestServiceProvider()
+    internal static class BDTestServiceProvider
     {
-        InitialiseBDTest();
-            
-        var scenarioRetryManager = new ScenarioRetryManager();
-        ScenarioExecutor = new ScenarioExecutor(scenarioRetryManager);
-    }
+        private static bool _alreadyRun;
+        internal static IScenarioExecutor ScenarioExecutor { private set; get; }
 
-    private static void InitialiseBDTest()
-    {
-        if (BDTestSettings.InterceptConsoleOutput)
+        // ReSharper disable once UnusedMember.Global
+        [ModuleInitializerAttribute]
+        internal static void InitialiseBDTest()
         {
-            Console.SetOut(TestOutputData.Instance);
+            if (_alreadyRun)
+            {
+                return;
+            }
+
+            _alreadyRun = true;
+
+            InternalTestTimeData.TestsStartedAt = DateTime.Now;
+
+            var scenarioRetryManager = new ScenarioRetryManager();
+            ScenarioExecutor = new ScenarioExecutor(scenarioRetryManager);
         }
     }
-
-    internal static IScenarioExecutor ScenarioExecutor { get; }
 }

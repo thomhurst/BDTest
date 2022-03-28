@@ -22,11 +22,7 @@ public abstract class BDTestBase
         set => AsyncLocalBDTestExecutionId.Value = value;
     }
 
-    protected virtual string BDTestExecutionId
-    {
-        get => StaticBDTestExecutionId;
-        set => StaticBDTestExecutionId = value;
-    }
+    protected virtual string BDTestExecutionId => StaticBDTestExecutionId;
 
     public Given Given(Expression<Action> step, [CallerMemberName] string callerMember = null,
         [CallerFilePath] string callerFile = null)
@@ -82,6 +78,8 @@ public abstract class BDTestBase
     protected virtual void MarkTestAsComplete()
     {
         AsyncLocalBDTestExecutionId.Value = null;
+        TestOutputData.TestId = null;
+        TestOutputData.FrameworkExecutionId = null;
     }
 
     public string GetStoryText()

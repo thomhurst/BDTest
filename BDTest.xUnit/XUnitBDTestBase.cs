@@ -1,4 +1,5 @@
 ﻿using System.Reflection;
+using BDTest.Output;
 using BDTest.Test;
 using Xunit.Abstractions;
 
@@ -14,9 +15,12 @@ public abstract class XUnitBDTestBase<TContext> : AbstractContextBDTestBase<TCon
         var type = outputHelper.GetType();
         var testMember = type.GetField("test", BindingFlags.Instance | BindingFlags.NonPublic);
         _test = (ITest) testMember.GetValue(outputHelper);
+        
+        BDTestExecutionId = _test.TestCase.UniqueID;
+        TestOutputData.FrameworkExecutionId = BDTestExecutionId;
     }
 
-    protected override string BDTestExecutionId => _test.TestCase.UniqueID;
+    protected override string BDTestExecutionId { get; }
 
     public void Dispose()
     {
