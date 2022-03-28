@@ -16,7 +16,7 @@ internal static class ConsoleReporter
         await Console.Out.WriteLineAsync(text);
         Console.ResetColor();
     }
-    
+
     public static void WriteLineToConsoleOnly(string text, ConsoleColor? consoleColor = null)
     {
         if (consoleColor != null)
@@ -24,18 +24,11 @@ internal static class ConsoleReporter
             Console.ForegroundColor = consoleColor.Value;
         }
 
-        if (BDTestSettings.InterceptConsoleOutput)
-        {
-            TestOutputData.Instance.One.WriteLine(text);
-        }
-        else
-        {
-            Console.Out.WriteLine(text);
-        }
+        TestOutputData.Instance.One.WriteLine(text);
 
         Console.ResetColor();
     }
-        
+
     public static async Task Write(string text, ConsoleColor? consoleColor = null)
     {
         if (consoleColor != null)

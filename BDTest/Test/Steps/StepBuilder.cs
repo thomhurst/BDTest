@@ -10,6 +10,11 @@ public abstract class StepBuilder : BuildableTest
     internal readonly List<Step> ExistingSteps;
     protected abstract StepType StepType { get; }
 
+    static StepBuilder()
+    {
+        Console.SetOut(TestOutputData.Instance);
+    }
+
     protected T WithStepText<T>(Func<string> overridingStepText) where T : StepBuilder
     {
         ExistingSteps.Last().OverriddenStepText = overridingStepText;
@@ -24,15 +29,14 @@ public abstract class StepBuilder : BuildableTest
         CallerFile = callerFile;
         TestId = testId;
         ReportId = reportId;
-
-        var testGuid = System.Guid.NewGuid();
-        Guid = testGuid.ToString();
-        TestOutputData.TestId = testGuid;
+        
+        Guid = System.Guid.NewGuid().ToString();
+        TestOutputData.TestId = Guid;
         TestOutputData.FrameworkExecutionId = testId;
             
         ExistingSteps = new List<Step> { new(runnable, stepType, Guid, ReportId) };
             
-        TestHolder.NotRun[testGuid.ToString()] = this;
+        TestHolder.NotRun[Guid] = this;
             
         StoryText = StoryTextHelper.GetStoryText(bdTestBase);
         SetScenarioText();

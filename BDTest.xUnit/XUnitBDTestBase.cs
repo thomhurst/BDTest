@@ -16,10 +16,11 @@ public abstract class XUnitBDTestBase<TContext> : AbstractContextBDTestBase<TCon
         var testMember = type.GetField("test", BindingFlags.Instance | BindingFlags.NonPublic);
         _test = (ITest) testMember.GetValue(outputHelper);
         
+        BDTestExecutionId = _test.TestCase.UniqueID;
         TestOutputData.FrameworkExecutionId = BDTestExecutionId;
     }
 
-    protected override string BDTestExecutionId => _test.TestCase.UniqueID;
+    protected override string BDTestExecutionId { get; }
 
     public void Dispose()
     {

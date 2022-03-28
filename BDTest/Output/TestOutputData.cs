@@ -1,23 +1,23 @@
 ﻿using System.Text;
 using BDTest.Maps;
-using BDTest.Reporters;
 using BDTest.Test;
 
 namespace BDTest.Output;
 
 internal class TestOutputData : TextWriter
 {
-    private static readonly Dictionary<Guid, StringBuilder> ThreadAndChars = new();
+    private static readonly Dictionary<string, StringBuilder> ThreadAndChars = new();
     public static readonly ConsoleOutputInterceptor Instance = new();
+    private static TextWriter Console => Instance.One;
     private static readonly object Lock = new();
     
-    private static readonly AsyncLocal<Guid?> AsyncLocalTestId = new();
-    internal static Guid? TestId {
+    private static readonly AsyncLocal<string> AsyncLocalTestId = new();
+    internal static string TestId {
         get => AsyncLocalTestId.Value;
         set => AsyncLocalTestId.Value = value;
     }
 
-    private static readonly AsyncLocal<string?> AsyncLocalFrameworkExecutionId = new();
+    private static readonly AsyncLocal<string> AsyncLocalFrameworkExecutionId = new();
     public static string FrameworkExecutionId {
         get => AsyncLocalFrameworkExecutionId.Value;
         set => AsyncLocalFrameworkExecutionId.Value = value;
@@ -32,8 +32,8 @@ internal class TestOutputData : TextWriter
                 return;
             }
 
-            if (TestId == null 
-                || !TestHolder.ScenariosByInternalId.TryGetValue(TestId.ToString(), out var scenario)
+            if (string.IsNullOrEmpty(TestId) 
+                || !TestHolder.ScenariosByInternalId.TryGetValue(TestId, out var scenario)
                 || (scenario.Status == Status.Inconclusive && scenario.StartTime == default))
             {
                 WriteStartupOutput(FrameworkExecutionId, value.ToString());
@@ -46,13 +46,13 @@ internal class TestOutputData : TextWriter
                 return;
             }
 
-            if (ThreadAndChars.TryGetValue((Guid) TestId, out var existingStringBuilder))
+            if (ThreadAndChars.TryGetValue(TestId, out var existingStringBuilder))
             {
                 existingStringBuilder.Append(value);
             }
             else
             {
-                ThreadAndChars.Add((Guid) TestId, new StringBuilder(value.ToString()));
+                ThreadAndChars.Add(TestId, new StringBuilder(value.ToString()));
             }
         }
     }
@@ -61,12 +61,22 @@ internal class TestOutputData : TextWriter
     {
         lock (Lock)
         {
+            if (TestId == null && FrameworkExecutionId == null)
+            {
+                return string.Empty;
+            }
+
+            if (TestId == null && TestHolder.ScenariosByTestFrameworkId.TryGetValue(FrameworkExecutionId, out var scenario))
+            {
+                TestId = scenario.Guid;
+            }
+
             if (TestId == null)
             {
                 return string.Empty;
             }
-                
-            return ThreadAndChars.TryGetValue((Guid) TestId, out var stringBuilder)
+
+            return ThreadAndChars.TryGetValue(TestId, out var stringBuilder)
                 ? stringBuilder.ToString()
                 : string.Empty;
         }
@@ -76,12 +86,12 @@ internal class TestOutputData : TextWriter
     {
         lock (Lock)
         {
-            if (TestId == null)
+            if (string.IsNullOrEmpty(TestId))
             {
                 return;
             }
                 
-            ThreadAndChars.Remove((Guid) TestId);
+            ThreadAndChars.Remove(TestId);
         }
     }
 
@@ -91,7 +101,7 @@ internal class TestOutputData : TextWriter
     {
         if (frameworkExecutionId == null)
         {
-            Console.Out.WriteLine("Attempting to write tear down output but no unique test ID has been set in the base class");
+            Console.WriteLine("Attempting to write tear down output but no unique test ID has been set in the base class");
             return;
         }
 
@@ -100,14 +110,14 @@ internal class TestOutputData : TextWriter
             foundScenario.TearDownOutput += $"{text}{Environment.NewLine}";
         }
 
-        Console.Out.WriteLine(Environment.NewLine + text);
+        Console.WriteLine(Environment.NewLine + text);
     }
         
     internal static void WriteStartupOutput(string frameworkExecutionId, string text)
     {
         if (frameworkExecutionId == null)
         {
-            ConsoleReporter.WriteLineToConsoleOnly("Attempting to write test startup output but no unique test ID has been set in the base class");
+            Console.WriteLine("Attempting to write test startup output but no unique test ID has been set in the base class");
             return;
         }
 
@@ -118,7 +128,7 @@ internal class TestOutputData : TextWriter
         
         TestHolder.ListenForScenario(frameworkExecutionId, scenario => scenario.TestStartupInformation += text);
 
-        ConsoleReporter.WriteLineToConsoleOnly(Environment.NewLine + text);
+        Console.WriteLine(Environment.NewLine + text);
     }
 
     internal static void WriteCustomHtmlForReport(string testId, string htmlValue)

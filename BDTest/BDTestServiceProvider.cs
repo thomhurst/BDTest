@@ -2,7 +2,6 @@ using System.Runtime.CompilerServices;
 using BDTest.Engine;
 using BDTest.Interfaces.Internal;
 using BDTest.Output;
-using BDTest.Settings;
 
 namespace BDTest
 {
@@ -21,16 +20,11 @@ namespace BDTest
             }
 
             _alreadyRun = true;
-            
+
             InternalTestTimeData.TestsStartedAt = DateTime.Now;
-        
+
             var scenarioRetryManager = new ScenarioRetryManager();
             ScenarioExecutor = new ScenarioExecutor(scenarioRetryManager);
-        
-            if (BDTestSettings.InterceptConsoleOutput)
-            {
-                Console.SetOut(TestOutputData.Instance);
-            }
         }
     }
 }

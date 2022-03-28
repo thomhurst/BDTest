@@ -31,9 +31,4 @@ internal class ConsoleOutputInterceptor : TextWriter
     {
         return Two.ToString();
     }
-
-    public static void ClearCurrentTaskData()
-    {
-        TestOutputData.ClearCurrentTaskData();
-    }
 }

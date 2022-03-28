@@ -7,8 +7,6 @@ namespace BDTest.Settings;
 
 public static class BDTestSettings
 {
-    public static bool InterceptConsoleOutput { get; set; } = true;
-        
     [Obsolete("BDTestSettings.Environment is obsolete. This should instead be passed in via BDTestRunDescriptor")]
     public static string Environment { get; set; }
         
