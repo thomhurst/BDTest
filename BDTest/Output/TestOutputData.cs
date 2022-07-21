@@ -36,7 +36,7 @@ internal class TestOutputData : TextWriter
                 || !TestHolder.ScenariosByInternalId.TryGetValue(TestId, out var scenario)
                 || (scenario.Status == Status.Inconclusive && scenario.StartTime == default))
             {
-                WriteStartupOutput(FrameworkExecutionId, value.ToString());
+                CollectStartupOutput(FrameworkExecutionId, value.ToString(), false);
                 return;
             }
 
@@ -97,23 +97,7 @@ internal class TestOutputData : TextWriter
 
     public override Encoding Encoding { get; } = Encoding.UTF8;
 
-    internal static void WriteTearDownOutput(string frameworkExecutionId, string text)
-    {
-        if (frameworkExecutionId == null)
-        {
-            Console.WriteLine("Attempting to write tear down output but no unique test ID has been set in the base class");
-            return;
-        }
-
-        if (TestHolder.ScenariosByTestFrameworkId.TryGetValue(frameworkExecutionId, out var foundScenario))
-        {
-            foundScenario.TearDownOutput += $"{text}{Environment.NewLine}";
-        }
-
-        Console.WriteLine(Environment.NewLine + text);
-    }
-        
-    internal static void WriteStartupOutput(string frameworkExecutionId, string text)
+    internal static void CollectStartupOutput(string frameworkExecutionId, string text, bool shouldWriteToConsole)
     {
         if (frameworkExecutionId == null)
         {
@@ -128,7 +112,29 @@ internal class TestOutputData : TextWriter
         
         TestHolder.ListenForScenario(frameworkExecutionId, scenario => scenario.TestStartupInformation += text);
 
-        Console.WriteLine(Environment.NewLine + text);
+        if (shouldWriteToConsole)
+        {
+            Console.WriteLine(Environment.NewLine + text);
+        }
+    }
+
+    internal static void CollectTearDownOutput(string frameworkExecutionId, string text, bool shouldWriteToConsole)
+    {
+        if (frameworkExecutionId == null)
+        {
+            Console.WriteLine("Attempting to write tear down output but no unique test ID has been set in the base class");
+            return;
+        }
+
+        if (TestHolder.ScenariosByTestFrameworkId.TryGetValue(frameworkExecutionId, out var foundScenario))
+        {
+            foundScenario.TearDownOutput += $"{text}{Environment.NewLine}";
+        }
+
+        if (shouldWriteToConsole)
+        {
+            Console.WriteLine(Environment.NewLine + text);
+        }
     }
 
     internal static void WriteCustomHtmlForReport(string testId, string htmlValue)

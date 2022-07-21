@@ -60,12 +60,12 @@ public abstract class BDTestBase
 
     public void WriteStartupOutput(string text)
     {
-        TestOutputData.WriteStartupOutput(BDTestExecutionId, text);
+        TestOutputData.CollectStartupOutput(BDTestExecutionId, text, true);
     }
 
     public void WriteTearDownOutput(string text)
     {
-        TestOutputData.WriteTearDownOutput(BDTestExecutionId, text);
+        TestOutputData.CollectTearDownOutput(BDTestExecutionId, text, true);
     }
 
     public HtmlWriter ScenarioHtmlWriter => new(BDTestExecutionId);
