@@ -254,7 +254,7 @@ public class BDTestController : Controller
         }
         
         var allReports = await reportIdsArray.ToAsyncProcessorBuilder()
-            .SelectAsync(reportId => _dataRepository.GetData(reportId, cancellationToken))
+            .SelectAsync(reportId => _dataRepository.GetData(reportId, cancellationToken), cancellationToken)
             .ProcessInParallel(100, TimeSpan.FromSeconds(1));
 
         var foundReports = allReports.Where(report => report != null).ToList();
@@ -288,7 +288,7 @@ public class BDTestController : Controller
         }
 
         var allReports = await reportIdsArray.ToAsyncProcessorBuilder()
-            .SelectAsync(reportId => _dataRepository.GetData(reportId, cancellationToken))
+            .SelectAsync(reportId => _dataRepository.GetData(reportId, cancellationToken), cancellationToken)
             .ProcessInParallel(100, TimeSpan.FromSeconds(1));
 
         var foundReports = allReports.Where(report => report != null).ToList();
