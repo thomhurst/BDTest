@@ -10,8 +10,6 @@ internal class DataRepository : IDataRepository
     private readonly IMemoryCacheBdTestDataStore _memoryCacheBdTestDataStore;
     private readonly IBDTestDataStore _customDatastore;
 
-    private readonly SemaphoreSlim _testRunsListLock = new(1, 1);
-        
     public DataRepository(IMemoryCacheBdTestDataStore memoryCacheBdTestDataStore, BDTestReportServerOptions options)
     {
         _memoryCacheBdTestDataStore = memoryCacheBdTestDataStore;
@@ -53,25 +51,16 @@ internal class DataRepository : IDataRepository
             return memoryCachedModels;
         }
 
-        await _testRunsListLock.WaitAsync();
-            
         // Search the backup persistent storage
-        try
-        {
-            var dataStoredModels = await _customDatastore.GetAllTestRunRecords() ?? Array.Empty<TestRunSummary>();
-            var dataStoredModelsAsList = dataStoredModels.ToList();
+        var dataStoredModels = await _customDatastore.GetAllTestRunRecords() ?? Array.Empty<TestRunSummary>();
+        var dataStoredModelsAsList = dataStoredModels.ToList();
 
-            foreach (var testRunRecord in dataStoredModelsAsList)
-            {
-                await _memoryCacheBdTestDataStore.StoreTestRunRecord(testRunRecord);
-            }
-                
-            return dataStoredModelsAsList.OrderByDescending(record => record.StartedAtDateTime);
-        }
-        finally
+        foreach (var testRunRecord in dataStoredModelsAsList)
         {
-            _testRunsListLock.Release();   
+            await _memoryCacheBdTestDataStore.StoreTestRunRecord(testRunRecord);
         }
+                
+        return dataStoredModelsAsList.OrderByDescending(record => record.StartedAtDateTime);
     }
 
     public async Task StoreData(BDTestOutputModel bdTestOutputModel, string id)
@@ -93,23 +82,14 @@ internal class DataRepository : IDataRepository
 
     public async Task DeleteReport(string id)
     {
-        await _testRunsListLock.WaitAsync();
-            
-        try
+        if (_customDatastore != null)
         {
-            if (_customDatastore != null)
-            {
-                // Save to persistent storage if it's configured!
-                await _customDatastore.DeleteTestData(id);
-                await _customDatastore.DeleteTestRunRecord(id);
-            }
+            // Save to persistent storage if it's configured!
+            await _customDatastore.DeleteTestData(id);
+            await _customDatastore.DeleteTestRunRecord(id);
+        }
 
-            await _memoryCacheBdTestDataStore.DeleteTestData(id);
-            await _memoryCacheBdTestDataStore.DeleteTestRunRecord(id);
-        }
-        finally
-        {
-            _testRunsListLock.Release();
-        }
+        await _memoryCacheBdTestDataStore.DeleteTestData(id);
+        await _memoryCacheBdTestDataStore.DeleteTestRunRecord(id);
     }
 }

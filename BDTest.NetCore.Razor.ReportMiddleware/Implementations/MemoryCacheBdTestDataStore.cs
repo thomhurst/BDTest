@@ -9,9 +9,6 @@ namespace BDTest.NetCore.Razor.ReportMiddleware.Implementations;
 public class MemoryCacheBdTestDataStore : IMemoryCacheBdTestDataStore
 {
     private readonly IMemoryCache _testRecordCache;
-
-    private readonly object _testRunSummariesLock = new();
-
     private readonly ConcurrentDictionary<string, TestRunSummary> _testRunSummariesDictionary = new();
     private List<TestRunSummary> _testRunSummaries = new();
 
@@ -38,10 +35,7 @@ public class MemoryCacheBdTestDataStore : IMemoryCacheBdTestDataStore
 
     public Task<IEnumerable<TestRunSummary>> GetAllTestRunRecords()
     {
-        lock (_testRunSummariesLock)
-        {
-            return Task.FromResult(_testRunSummaries.AsEnumerable());
-        }
+        return Task.FromResult(_testRunSummaries.AsEnumerable());
     }
 
     public Task StoreTestData(string id, BDTestOutputModel data)
@@ -52,27 +46,28 @@ public class MemoryCacheBdTestDataStore : IMemoryCacheBdTestDataStore
 
     public Task StoreTestRunRecord(TestRunSummary testRunSummary)
     {
-        lock (_testRunSummariesLock)
-        {
-            _testRunSummariesDictionary.TryAdd(testRunSummary.RecordId, testRunSummary);
-
-            _testRunSummaries = _testRunSummariesDictionary
+        var testRunSummariesCopy = _testRunSummariesDictionary
                 .Values
                 .OrderByDescending(record => record.StartedAtDateTime)
                 .ToList();
-        }
+        
+        Interlocked.Exchange(ref _testRunSummaries, testRunSummariesCopy);
+        
+        _testRunSummariesDictionary.TryAdd(testRunSummary.RecordId, testRunSummary);
 
         return Task.CompletedTask;
     }
 
     public Task DeleteTestRunRecord(string id)
     {
-        lock (_testRunSummariesLock)
-        {
-            _testRunSummariesDictionary.TryRemove(id, out _);
-            _testRunSummaries.RemoveAll(x => x.RecordId == id);
-        }
-            
+        _testRunSummariesDictionary.TryRemove(id, out _);
+        
+        var testRunSummariesCopy = _testRunSummaries.ToList();
+
+        testRunSummariesCopy.RemoveAll(x => x.RecordId == id);
+
+        Interlocked.Exchange(ref _testRunSummaries, testRunSummariesCopy);
+
         return Task.CompletedTask;
     }
 }
