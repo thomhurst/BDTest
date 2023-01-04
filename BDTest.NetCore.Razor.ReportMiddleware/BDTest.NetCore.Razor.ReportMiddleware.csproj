@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk.Razor">
 
     <PropertyGroup>
-        <TargetFramework>netcoreapp3.1</TargetFramework>
+        <TargetFramework>net6.0</TargetFramework>
         <RazorLangVersion>3.0</RazorLangVersion>
         <LangVersion>latest</LangVersion>
         <AddRazorSupportForMvc>true</AddRazorSupportForMvc>
@@ -16,6 +16,7 @@
         <PackageReference Include="Microsoft.Extensions.Caching.Abstractions" Version="3.1.5" />
         <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="3.1.5" />
         <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="3.1.5" />
+        <PackageReference Include="TomLonghurst.EnumerableAsyncProcessor" Version="1.1.0" />
     </ItemGroup>
 
 

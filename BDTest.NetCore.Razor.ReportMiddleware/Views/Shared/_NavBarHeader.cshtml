@@ -8,7 +8,7 @@
 @{
     var customLinksProvider = BdTestReportServerOptions.CustomHeaderLinksProvider;
     var id = ViewBag.Id;
-    BDTestOutputModel currentTestReport = string.IsNullOrEmpty(id) ? null : await _dataRepository.GetData(id);
+    BDTestOutputModel currentTestReport = string.IsNullOrEmpty(id) ? null : await _dataRepository.GetData(id, CancellationToken.None);
 }
 
 <nav class="navbar fixed-top navbar-expand-lg navbar-primary bg-primary" role="navigation" aria-label="main navigation">

@@ -5,7 +5,7 @@ namespace BDTest.NetCore.Razor.ReportMiddleware.Interfaces;
 
 public interface IBDTestDataStore
 {
-    Task<BDTestOutputModel> GetTestData(string id);
+    Task<BDTestOutputModel> GetTestData(string id, CancellationToken cancellationToken);
     Task StoreTestData(string id, BDTestOutputModel data);
     Task DeleteTestData(string id);
         

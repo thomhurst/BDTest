@@ -34,11 +34,11 @@ public class CosmosBDTestDataStore : IBDTestDataStore
             .GetAwaiter().GetResult();
     }
         
-    public async Task<BDTestOutputModel> GetTestData(string id)
+    public async Task<BDTestOutputModel> GetTestData(string id, CancellationToken cancellationToken)
     {
         try
         {
-            var item = await _testRecordContainer.ReadItemAsync<BDTestOutputModel>(id, new PartitionKey(id));
+            var item = await _testRecordContainer.ReadItemAsync<BDTestOutputModel>(id, new PartitionKey(id), cancellationToken: cancellationToken);
             return item.Resource;
         }
         catch (CosmosException e) when(e.StatusCode == HttpStatusCode.NotFound)

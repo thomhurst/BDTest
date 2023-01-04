@@ -20,7 +20,7 @@ public class MemoryCacheBdTestDataStore : IMemoryCacheBdTestDataStore
         _testRecordCache = testRecordCache;
     }
 
-    public Task<BDTestOutputModel> GetTestData(string id)
+    public Task<BDTestOutputModel> GetTestData(string id, CancellationToken cancellationToken)
     {
         if (_testRecordCache.TryGetValue<BDTestOutputModel>(id, out var model))
         {

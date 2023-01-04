@@ -21,15 +21,15 @@ internal class DataRepository : IDataRepository
         Task.Run(GetAllTestRunRecords);
     }
 
-    public async Task<BDTestOutputModel> GetData(string id)
+    public async Task<BDTestOutputModel> GetData(string id, CancellationToken cancellationToken)
     {
         // Check if it's already in-memory
-        var model = await _memoryCacheBdTestDataStore.GetTestData(id);
+        var model = await _memoryCacheBdTestDataStore.GetTestData(id, cancellationToken);
 
         if (model == null && _customDatastore != null)
         {
             // Search the backup persistent storage
-            model = await _customDatastore.GetTestData(id);
+            model = await _customDatastore.GetTestData(id, cancellationToken);
         }
 
         if (model == null)
@@ -76,7 +76,7 @@ internal class DataRepository : IDataRepository
 
     public async Task StoreData(BDTestOutputModel bdTestOutputModel, string id)
     {
-        if (await _memoryCacheBdTestDataStore.GetTestData(id) == null)
+        if (await _memoryCacheBdTestDataStore.GetTestData(id, default) == null)
         {
             // Save to in-memory cache for 8 hours for quick fetching
             await _memoryCacheBdTestDataStore.StoreTestData(id, bdTestOutputModel);

@@ -8,7 +8,7 @@
 
 @{
   var id = ViewBag.Id;
-  BDTestOutputModel currentTestReport = string.IsNullOrEmpty(id) ? null : await _dataRepository.GetData(id);
+  BDTestOutputModel currentTestReport = string.IsNullOrEmpty(id) ? null : await _dataRepository.GetData(id, CancellationToken.None);
   var metrics = new OutputMetrics(currentTestReport);
 }
 

@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
+using TomLonghurst.EnumerableAsyncProcessor.Extensions;
 
 namespace BDTest.NetCore.Razor.ReportMiddleware.Controllers;
 
@@ -80,16 +81,16 @@ public class BDTestController : Controller
 
     [HttpGet]
     [Route("report/{id}/summary")]
-    public Task<IActionResult> Summary([FromRoute] string id)
+    public Task<IActionResult> Summary([FromRoute] string id, CancellationToken cancellationToken)
     {
-        return GetView(id, model => View("Summary", model));
+        return GetView(id, model => View("Summary", model), cancellationToken);
     }
 
     [HttpGet]
     [Route("report/{id}/stories")]
-    public async Task<IActionResult> Stories([FromRoute] string id)
+    public async Task<IActionResult> Stories([FromRoute] string id, CancellationToken cancellationToken)
     {
-        var data = await GetData(id).ConfigureAwait(false);
+        var data = await GetData(id, cancellationToken);
 
         if (data == null)
         {
@@ -117,9 +118,9 @@ public class BDTestController : Controller
 
     [HttpGet]
     [Route("report/{id}/all-scenarios")]
-    public async Task<IActionResult> AllScenarios([FromRoute] string id)
+    public async Task<IActionResult> AllScenarios([FromRoute] string id, CancellationToken cancellationToken)
     {
-        var data = await GetData(id).ConfigureAwait(false);
+        var data = await GetData(id, cancellationToken);
             
         if (data == null)
         {
@@ -180,9 +181,10 @@ public class BDTestController : Controller
         
     [HttpGet]
     [Route("report/{reportId}/scenario/{scenarioId}")]
-    public async Task<IActionResult> SpecificScenario([FromRoute] string reportId, string scenarioId)
+    public async Task<IActionResult> SpecificScenario([FromRoute] string reportId, string scenarioId,
+        CancellationToken cancellationToken)
     {
-        var data = await GetData(reportId).ConfigureAwait(false);
+        var data = await GetData(reportId, cancellationToken);
 
         var scenario = data?.Scenarios?.FirstOrDefault(x => x.Guid == scenarioId);
             
@@ -196,23 +198,23 @@ public class BDTestController : Controller
 
     [HttpGet]
     [Route("report/{id}/timings")]
-    public Task<IActionResult> Timings([FromRoute] string id)
+    public Task<IActionResult> Timings([FromRoute] string id, CancellationToken cancellationToken)
     {
-        return GetView(id, model => View("TestTimesSummary", model));
+        return GetView(id, model => View("TestTimesSummary", model), cancellationToken);
     }
         
     [HttpGet]
     [Route("report/{id}/top-defects")]
-    public Task<IActionResult> TopDefects([FromRoute] string id)
+    public Task<IActionResult> TopDefects([FromRoute] string id, CancellationToken cancellationToken)
     {
-        return GetView(id, model => View("TopDefects", model));
+        return GetView(id, model => View("TopDefects", model), cancellationToken);
     }
         
     [HttpGet]
     [Route("report/{id}/warnings")]
-    public Task<IActionResult> Warnings([FromRoute] string id)
+    public Task<IActionResult> Warnings([FromRoute] string id, CancellationToken cancellationToken)
     {
-        return GetView(id, model => View("Warnings", model));
+        return GetView(id, model => View("Warnings", model), cancellationToken);
     }
 
     [HttpGet]
@@ -242,7 +244,7 @@ public class BDTestController : Controller
 
     [HttpGet]
     [Route("report/test-run-times")]
-    public async Task<IActionResult> TestRunTimes([FromQuery] string reportIds)
+    public async Task<IActionResult> TestRunTimes([FromQuery] string reportIds, CancellationToken cancellationToken)
     {
         var reportIdsArray = reportIds?.Split(',') ?? Array.Empty<string>();
 
@@ -250,8 +252,12 @@ public class BDTestController : Controller
         {
             return RedirectToAction("TestRuns", "BDTest");
         }
-            
-        var foundReports = (await Task.WhenAll(reportIdsArray.Select(_dataRepository.GetData))).Where(data => data != null).ToList();
+        
+        var allReports = await reportIdsArray.ToAsyncProcessorBuilder()
+            .SelectAsync(reportId => _dataRepository.GetData(reportId, cancellationToken))
+            .ProcessInParallel(100, TimeSpan.FromSeconds(1));
+
+        var foundReports = allReports.Where(report => report != null).ToList();
 
         if (!foundReports.Any())
         {
@@ -272,7 +278,7 @@ public class BDTestController : Controller
         
     [HttpPost]
     [Route("report/test-run-flakiness")]
-    public async Task<IActionResult> TestRunFlakiness([FromForm] string reportIds)
+    public async Task<IActionResult> TestRunFlakiness([FromForm] string reportIds, CancellationToken cancellationToken)
     {
         var reportIdsArray = reportIds?.Split(",") ?? Array.Empty<string>();
 
@@ -280,8 +286,12 @@ public class BDTestController : Controller
         {
             return RedirectToAction("TestRuns", "BDTest");
         }
-            
-        var foundReports = (await Task.WhenAll(reportIdsArray.Select(_dataRepository.GetData))).Where(data => data != null).ToList();
+
+        var allReports = await reportIdsArray.ToAsyncProcessorBuilder()
+            .SelectAsync(reportId => _dataRepository.GetData(reportId, cancellationToken))
+            .ProcessInParallel(100, TimeSpan.FromSeconds(1));
+
+        var foundReports = allReports.Where(report => report != null).ToList();
 
         if (!foundReports.Any())
         {
@@ -293,9 +303,9 @@ public class BDTestController : Controller
 
     [HttpGet]
     [Route("report/{id}/raw-json-data")]
-    public async Task<IActionResult> RawJsonData([FromRoute] string id)
+    public async Task<IActionResult> RawJsonData([FromRoute] string id, CancellationToken cancellationToken)
     {
-        var model = await _dataRepository.GetData(id);
+        var model = await _dataRepository.GetData(id, cancellationToken);
             
         if (model == null)
         {
@@ -312,9 +322,9 @@ public class BDTestController : Controller
         return View(new ErrorViewModel {RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier});
     }
 
-    private async Task<IActionResult> GetView(string id, Func<BDTestOutputModel, IActionResult> viewAction)
+    private async Task<IActionResult> GetView(string id, Func<BDTestOutputModel, IActionResult> viewAction, CancellationToken cancellationToken)
     {
-        var model = await _dataRepository.GetData(id);
+        var model = await _dataRepository.GetData(id, cancellationToken);
             
         if (model == null)
         {
@@ -326,9 +336,9 @@ public class BDTestController : Controller
         return viewAction(model);
     }
 
-    private Task<BDTestOutputModel> GetData(string id)
+    private Task<BDTestOutputModel> GetData(string id, CancellationToken cancellationToken)
     {
         ViewBag.Id = id;
-        return _dataRepository.GetData(id);
+        return _dataRepository.GetData(id, cancellationToken);
     }
 }

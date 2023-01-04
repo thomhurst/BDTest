@@ -27,11 +27,11 @@ public class AzureStorageDataStore : IBDTestDataStore
         _testDataContainer.CreateIfNotExists();
     }
         
-    public async Task<BDTestOutputModel> GetTestData(string id)
+    public async Task<BDTestOutputModel> GetTestData(string id, CancellationToken cancellationToken)
     {
         try
         {
-            var blobData = await _testDataContainer.GetBlockBlobClient(id).DownloadAsync();
+            var blobData = await _testDataContainer.GetBlockBlobClient(id).DownloadAsync(cancellationToken);
             return _jsonSerializer.Deserialize<BDTestOutputModel>(new JsonTextReader(new StreamReader(blobData.Value.Content)));
         }
         catch (RequestFailedException e) when(e.Status == 404)
