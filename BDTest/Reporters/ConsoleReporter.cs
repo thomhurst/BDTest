@@ -1,5 +1,4 @@
 ﻿using BDTest.Output;
-using BDTest.Settings;
 using BDTest.Test;
 
 namespace BDTest.Reporters;
