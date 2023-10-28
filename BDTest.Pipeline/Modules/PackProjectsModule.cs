@@ -40,7 +40,9 @@ public class PackProjectsModule : Module<List<CommandResult>>
             return false;
         }
 
-        if (path.EndsWith("TomLonghurst.Nupendencies.Pipeline.csproj") || path.Contains("Example"))
+        if (path.Contains("Pipeline", StringComparison.InvariantCultureIgnoreCase) 
+            || path.Contains("Example", StringComparison.InvariantCultureIgnoreCase)
+            || path.Contains("ReportGenerator", StringComparison.InvariantCultureIgnoreCase))
         {
             return false;
         }
