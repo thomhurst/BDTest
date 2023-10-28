@@ -108,7 +108,7 @@
       <PackageReference Include="Azure.Storage.Blobs" Version="12.18.0" />
       <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="3.1.5" />
       <PackageReference Include="Microsoft.Azure.Cosmos" Version="3.36.0" />
-      <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="3.1.5" />
+      <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="3.1.32" />
       <PackageReference Include="Microsoft.AspNetCore.Authentication.AzureAD.UI" Version="6.0.24" />
       <PackageReference Include="Microsoft.Identity.Web" Version="0.1.5-preview" />
       <PackageReference Include="Microsoft.Identity.Web.UI" Version="0.1.5-preview" />
