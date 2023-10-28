@@ -12,7 +12,6 @@ namespace BDTest.Pipeline.Modules;
 
 [DependsOn<PackageFilesRemovalModule>]
 [DependsOn<NugetVersionGeneratorModule>]
-[DependsOn<BuildNetSdkLocatorExecutablesModule>]
 public class PackProjectsModule : Module<List<CommandResult>>
 {
     protected override async Task<List<CommandResult>?> ExecuteAsync(IPipelineContext context, CancellationToken cancellationToken)
