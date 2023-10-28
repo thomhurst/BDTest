@@ -1,6 +1,5 @@
-namespace BDTest.xUnit.Tests
+namespace BDTest.xUnit.Tests;
+
+public class XUnitContext
 {
-    public class XUnitContext
-    {
-    }
 }

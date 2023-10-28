@@ -12,7 +12,8 @@ namespace BDTest.NUnit;
 [TestFixture]
 public abstract class NUnitBDTestBase<TContext> : AbstractContextBDTestBase<TContext> where TContext : class, new()
 {
-    protected override string BDTestExecutionId => NUnitTestContext.CurrentContext.Test.ID;
+    protected override string BDTestExecutionId =>
+        $"{NUnitTestContext.CurrentContext.Test.ID}_{NUnitTestContext.CurrentContext.CurrentRepeatCount}";
 
     [OneTimeSetUp]
     public static void SetupNUnitExceptions()
