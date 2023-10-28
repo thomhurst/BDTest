@@ -12,7 +12,7 @@
         <PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="3.1.5" />
         <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="3.1.5" />
         <PackageReference Include="Microsoft.AspNetCore.Mvc.ViewFeatures" Version="2.0.0" />
-        <PackageReference Include="Microsoft.Extensions.Caching.Abstractions" Version="3.1.5" />
+        <PackageReference Include="Microsoft.Extensions.Caching.Abstractions" Version="3.1.32" />
         <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="3.1.5" />
         <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="3.1.5" />
         <PackageReference Include="TomLonghurst.EnumerableAsyncProcessor" Version="1.1.0" />
