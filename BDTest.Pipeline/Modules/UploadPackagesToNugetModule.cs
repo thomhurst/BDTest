@@ -7,7 +7,6 @@ using ModularPipelines.Extensions;
 using ModularPipelines.Git.Extensions;
 using ModularPipelines.Models;
 using ModularPipelines.Modules;
-using ModularPipelines.Enums;
 using ModularPipelines.NuGet.Extensions;
 using ModularPipelines.NuGet.Options;
 
