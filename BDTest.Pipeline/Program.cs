@@ -32,7 +32,6 @@ await PipelineHostBuilder.Create()
     .AddModule<RunUnitTestsModule>()
     .AddModule<NugetVersionGeneratorModule>()
     .AddModule<PackProjectsModule>()
-    .AddModule<BuildNetSdkLocatorExecutablesModule>()
     .AddModule<PackageFilesRemovalModule>()
     .AddModule<PackagePathsParserModule>()
     .ExecutePipelineAsync();
