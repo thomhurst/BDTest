@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+<Project Sdk="Microsoft.NET.Sdk.Web">
 
     <PropertyGroup>
         <TargetFramework>net6.0</TargetFramework>
@@ -105,7 +105,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="Azure.Storage.Blobs" Version="12.13.0" />
+      <PackageReference Include="Azure.Storage.Blobs" Version="12.18.0" />
       <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="3.1.5" />
       <PackageReference Include="Microsoft.Azure.Cosmos" Version="3.10.1" />
       <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="3.1.5" />
