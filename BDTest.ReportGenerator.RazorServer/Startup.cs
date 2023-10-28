@@ -1,5 +1,5 @@
-using BDTest.NetCore.Razor.ReportMiddleware.Extensions;
-using BDTest.NetCore.Razor.ReportMiddleware.Interfaces;
+using BDTest.Razor.Reports.Extensions;
+using BDTest.Razor.Reports.Interfaces;
 using Microsoft.Net.Http.Headers;
 
 namespace BDTest.ReportGenerator.RazorServer;

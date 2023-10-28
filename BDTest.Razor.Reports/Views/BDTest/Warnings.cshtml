@@ -1,0 +1,80 @@
+@using BDTest.Razor.Reports.Views.BDTest
+@model BDTest.Maps.BDTestOutputModel
+
+@{
+    ViewBag.Title = "Warnings";
+    Layout = "_Layout";
+
+    var warningStories = Model.NotRun.GroupBy(x => x.GetStoryText());
+}
+
+@if (!Model.NotRun.Any())
+{
+    @(await Html.PartialAsync("_RedirectViaJavascript", new RedirectViaJavascriptViewModel("/warnings", "/summary")))
+}
+
+<section class="hero is-info">
+    <div class="hero-body">
+        <div class="container">
+            <div class="columns align-middle">
+                <div class="column">
+                    <h1 class="title">
+                        Warnings
+                    </h1>
+                    <h2 class="subtitle">
+                        There are some warnings about your tests!
+                    </h2>
+                </div>
+
+                <div class="column">
+                    @await Html.PartialAsync("_PreviousNextReportButtons", Model.Id)
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="section">
+    <div class="container">
+        
+        <div class="has-text-centered is-centered mb-6">
+            <h4 class="title is-4">Not Run Tests</h4>
+            <h6 class="title is-6 mb-6">Looks like you forgot to call .BDTest() !</h6>
+        </div>
+
+        <table class="table is-fullwidth">
+            <thead>
+            <tr class="off-white-bg-color">
+                <th class="has-text-centered">Story</th>
+                <th class="has-text-centered">Scenario</th>
+                <th class="has-text-centered">File</th>
+                <th class="has-text-centered">Test Method</th>
+            </tr>
+            </thead>
+            <tbody>
+
+            @foreach (var warningStory in warningStories)
+            {
+                foreach (var warning in warningStory)
+                {
+                    <tr class="off-white-bg-color">
+                        <td class="align-middle has-text-centered">
+                            <span>@warning.GetStoryText()</span>
+                        </td>
+                        <td class="align-middle has-text-centered">
+                            <span>@warning.GetScenarioText()</span>
+                        </td>
+                        <td class="align-middle has-text-centered">
+                            <pre class="off-white-bg-color">@warning.CallerFile</pre>
+                        </td>
+                        <td class="align-middle has-text-centered">
+                            <pre class="off-white-bg-color">@warning.CallerMember</pre>
+                        </td>
+                    </tr>
+                }
+            }
+
+            </tbody>
+        </table>
+    </div>
+</section>

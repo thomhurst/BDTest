@@ -1,7 +1,7 @@
 using System.Net;
 using BDTest.Maps;
-using BDTest.NetCore.Razor.ReportMiddleware.Interfaces;
-using BDTest.NetCore.Razor.ReportMiddleware.Models;
+using BDTest.Razor.Reports.Interfaces;
+using BDTest.Razor.Reports.Models;
 using Microsoft.Azure.Cosmos;
 using Newtonsoft.Json;
 

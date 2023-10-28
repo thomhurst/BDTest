@@ -115,7 +115,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\BDTest.NetCore.Razor.ReportMiddleware\BDTest.NetCore.Razor.ReportMiddleware.csproj" />
+      <ProjectReference Include="..\BDTest.Razor.Reports\BDTest.Razor.Reports.csproj" />
     </ItemGroup>
 
 </Project>

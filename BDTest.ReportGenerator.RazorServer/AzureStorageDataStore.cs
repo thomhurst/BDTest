@@ -3,8 +3,8 @@ using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
 using Azure.Storage.Blobs.Specialized;
 using BDTest.Maps;
-using BDTest.NetCore.Razor.ReportMiddleware.Interfaces;
-using BDTest.NetCore.Razor.ReportMiddleware.Models;
+using BDTest.Razor.Reports.Interfaces;
+using BDTest.Razor.Reports.Models;
 using Newtonsoft.Json;
 
 namespace BDTest.ReportGenerator.RazorServer;

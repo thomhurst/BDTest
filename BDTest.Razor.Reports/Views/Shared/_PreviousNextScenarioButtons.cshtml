@@ -1,0 +1,34 @@
+@using BDTest.Razor.Reports.Extensions
+@using BDTest.Razor.Reports.Helpers
+@using BDTest.Razor.Reports.Interfaces
+@model string
+@inject IDataRepository _dataRepository
+
+@{
+    var thisReport = await _dataRepository.GetData(Model, CancellationToken.None);
+    var currentScenarioId = Context.GetCurrentUrl().AbsolutePath.Split("/scenario/")[1].TrimEnd('/');
+    var thisScenarioIndex = thisReport.Scenarios.FindIndex(scenario => scenario.Guid == currentScenarioId);
+    var lastScenario = thisReport.Scenarios.ElementAtOrDefault(thisScenarioIndex - 1);
+    var nextScenario = thisReport.Scenarios.ElementAtOrDefault(thisScenarioIndex + 1);
+}
+
+@if (lastScenario != null)
+{
+    <a href="@GenerateUrl(lastScenario.Guid)">
+        <button type="button" class="btn btn-primary px-4 gap-3" onclick="disableButtonAndSpin(this)">Previous Scenario</button>
+    </a>
+}
+@if (nextScenario != null)
+{
+    <a href="@GenerateUrl(nextScenario.Guid)">
+        <button type="button" class="btn btn-primary px-4 gap-3" onclick="disableButtonAndSpin(this)">Next Scenario</button>
+    </a>
+}
+
+@functions
+{
+    private string GenerateUrl(string id)
+    {
+        return Context.GetCurrentUrl().WithPath($"/bdtest/report/{Model}/scenario/{id}").ToString();
+    }
+}

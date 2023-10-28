@@ -1,0 +1,54 @@
+@using BDTest
+@using BDTest.Razor.Reports.Constants
+@using BDTest.Razor.Reports.Extensions
+@using BDTest.Razor.Reports.Models
+@using BDTest.Razor.Reports.Models.ViewModels
+@using BDTest.Test
+@model BDTest.Razor.Reports.Models.ViewModels.GroupedScenarioViewModel
+
+@{ var testTimer = BDTestUtil.GetTestTimer(Model.Scenarios); }
+
+@if (Model.Scenarios.Count != 1)
+{
+    var index = Model.GroupedScenarioIndex.IncrementAndGet();
+    
+    var hasSuccess = Model.Scenarios.Any(scenario => scenario.Status == Status.Passed) ? HtmlClassConstants.HasSuccess : string.Empty;
+    var hasFailures = Model.Scenarios.Any(scenario => scenario.Status == Status.Failed) ? HtmlClassConstants.HasFailures : string.Empty;
+    var hasSkipped = Model.Scenarios.Any(scenario => scenario.Status == Status.Skipped) ? HtmlClassConstants.HasSkipped : string.Empty;
+    var hasInconclusive = Model.Scenarios.Any(scenario => scenario.Status == Status.Inconclusive) ? HtmlClassConstants.HasInconclusive : string.Empty;
+    var hasNotImplemented = Model.Scenarios.Any(scenario => scenario.Status == Status.NotImplemented) ? HtmlClassConstants.HasNotImplemented : string.Empty;
+
+    <tr scenario-group="@Model.GroupedScenarioIndex.Get()" class="pointer scenario-group @hasSuccess @hasFailures @hasSkipped @hasInconclusive @hasNotImplemented" onclick="expandScenarioGroup(this, toggleActions.TOGGLE)">
+        <td class="align-middle">
+            <div class="d-grid dropend" id="scenario-group-@index.Get()-toggle-container">
+                <button class="btn dropdown-toggle"></button>
+            </div>
+        </td>
+        <td class="align-middle">
+            @Model.Scenarios.First().GetScenarioText() (@Model.Scenarios.Count Tests)
+        </td>
+        <td class="align-middle">
+            <div class="d-grid">
+                <button type="button" class="btn @Model.Scenarios.GetTotalStatus().GetCssColourValueForStatus()">@Model.Scenarios.GetTotalStatus().AsString()</button>
+            </div>
+        </td>
+        <td class="align-middle" data-bs-toggle="popover" data-bs-trigger="hover focus" data-bs-placement="top" data-bs-content="@testTimer.ElapsedTime.ToPrettyFormat()">
+            @testTimer.ElapsedTime.ToString()
+        </td>
+        <td class="align-middle">@testTimer.TestsStartedAt.ToStringForReport()</td>
+        <td class="align-middle">@testTimer.TestsFinishedAt.ToStringForReport()</td>
+    </tr>
+}
+
+@{ var indexOfScenarioInParent = new ReferenceInt(0); }
+@foreach (var scenario in Model.Scenarios)
+{
+    @(await Html.PartialAsync("_SingleScenarioTableRow", new ScenarioRowViewModel
+    {
+        Scenario = scenario,
+        GroupedScenarioParentIndex = Model.GroupedScenarioIndex,
+        IndexOfScenarioInParent = indexOfScenarioInParent.IncrementAndGet(),
+        IsPartOfGroupedScenarios = Model.Scenarios.Count != 1
+    }))
+}
+

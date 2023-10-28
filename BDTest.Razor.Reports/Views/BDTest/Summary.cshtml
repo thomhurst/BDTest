@@ -1,0 +1,22 @@
+@using BDTest.Razor.Reports.Models.ViewModels
+@model BDTest.Maps.BDTestOutputModel
+@{
+    ViewBag.Title = "Summary";
+    Layout = "_Layout";
+}
+
+@await Html.PartialAsync("_TestPageHeaderHero", new TestPageHeaderHeroViewModel
+{
+    Title = "Welcome to your report by BDTest!",
+    Description = "Here is a summary of your tests"
+})
+
+<section class="section">
+    <div class="container">
+        @await Html.PartialAsync("_SummaryGraphics", new SummaryViewModel
+        {
+            Scenarios = Model.Scenarios,
+            TotalReportData = Model
+        })
+    </div>
+</section>

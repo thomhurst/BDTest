@@ -13,7 +13,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BDTest.Tests", "BDTest.Test
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BDTest.ReportGenerator.RazorServer", "BDTest.ReportGenerator.RazorServer\BDTest.ReportGenerator.RazorServer.csproj", "{26D8DE39-2C9D-402D-A769-B7A8FBDF26BA}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BDTest.NetCore.Razor.ReportMiddleware", "BDTest.NetCore.Razor.ReportMiddleware\BDTest.NetCore.Razor.ReportMiddleware.csproj", "{867F1CC0-47A0-4EDA-AD5F-D2E128C92790}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BDTest.Razor.Reports", "BDTest.Razor.Reports\BDTest.Razor.Reports.csproj", "{867F1CC0-47A0-4EDA-AD5F-D2E128C92790}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BDTest.xUnit", "BDTest.xUnit\BDTest.xUnit.csproj", "{2E34B6A0-0A21-4F56-8420-2BE71824D7C5}"
 EndProject
