@@ -17,7 +17,7 @@ public class RunUnitTestsModule : Module<List<DotNetTestResult>>
         foreach (var unitTestProjectFile in context
                      .Git().RootDirectory!
                      .GetFiles(file => file.Path.EndsWith(".csproj", StringComparison.OrdinalIgnoreCase)
-                                       && file.Path.Contains("UnitTests", StringComparison.OrdinalIgnoreCase)))
+                                       && file.Path.Contains("Tests", StringComparison.OrdinalIgnoreCase)))
         {
             results.Add(await context.DotNet().Test(new DotNetTestOptions
             {
