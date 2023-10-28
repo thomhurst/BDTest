@@ -1,0 +1,23 @@
+@model BDTest.Razor.Reports.Models.ViewModels.SetupTeardownOutputViewModel
+
+@if (!string.IsNullOrEmpty(Model?.Content))
+{
+    <tr>
+        <td class="has-text-centered align-middle">
+            <details class="mr-5half">
+                <summary class="btn btn-fullwidth">
+                    @Model.Header
+                </summary>
+                
+                <div class="container">
+                    <article class="message is-link mt-4 has-text-left">
+                        @* <div class="message-header"> *@
+                        @*     <p>Output</p> *@
+                        @* </div> *@
+                        <pre class="message-body">@Model.Content.Trim()</pre>
+                    </article>
+                </div>
+            </details>
+        </td>
+    </tr>
+}

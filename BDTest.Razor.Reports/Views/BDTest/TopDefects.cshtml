@@ -1,0 +1,61 @@
+@using BDTest.Razor.Reports.Models
+@using BDTest.Razor.Reports.Models.ViewModels
+@using BDTest.Razor.Reports.Views.BDTest
+@model BDTest.Maps.BDTestOutputModel
+
+@{
+    ViewBag.Title = "Test Times";
+    Layout = "_Layout";
+    
+    var exceptionsGrouped = new GroupedExceptions(Model.Scenarios)
+        .GroupedScenarioExceptions
+        .Take(10)
+        .ToList();
+}
+
+@if (!exceptionsGrouped.Any())
+{
+    @(await Html.PartialAsync("_RedirectViaJavascript", new RedirectViaJavascriptViewModel("/top-defects", "/summary")))
+}
+
+@await Html.PartialAsync("_TestPageHeaderHero", new TestPageHeaderHeroViewModel
+{
+    Title = "Top Defects",
+    Description = "Here are the top defects from your tests"
+})
+
+<section class="section">
+    <div class="container">
+        <table class="table is-fullwidth">
+            <thead>
+            <tr class="off-white-bg-color">
+                <th class="has-text-centered">Count</th>
+                <th class="has-text-centered">Exception</th>
+                <th></th>
+            </tr>
+            </thead>
+            <tbody>
+            
+            @foreach (var scenarioExceptions in exceptionsGrouped)
+            {
+                <tr class="off-white-bg-color">
+                    <td class="align-middle has-text-centered">
+                        <span class="title">@scenarioExceptions.Count()</span>
+                    </td>
+                    <td class="align-middle has-text-centered">
+                        <div class="off-white-bg-color like-pre" style="max-width: 50vw;">
+                            <pre class="my-2">@scenarioExceptions.First().ExceptionMessage.TypeName: @scenarioExceptions.First().ExceptionMessage.Message.Trim()</pre>
+                        </div>
+                    </td>
+                    <td class="align-middle">
+                        <a href="~/bdtest/report/@Model.Id/scenario/@scenarioExceptions.First().TestGuid">
+                            <button class="btn btn-danger pointer">View in a Report</button>
+                        </a>
+                    </td>
+                </tr>
+            }
+
+            </tbody>
+        </table>
+    </div>
+</section>

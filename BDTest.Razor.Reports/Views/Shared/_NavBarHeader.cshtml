@@ -1,0 +1,98 @@
+@using BDTest.Maps
+@using BDTest.Razor.Reports.Helpers
+@using BDTest.Razor.Reports.Interfaces
+@using BDTest.Razor.Reports.Models
+@inject BDTestReportServerOptions BdTestReportServerOptions
+@inject IDataRepository _dataRepository;
+
+@{
+    var customLinksProvider = BdTestReportServerOptions.CustomHeaderLinksProvider;
+    var id = ViewBag.Id;
+    BDTestOutputModel currentTestReport = string.IsNullOrEmpty(id) ? null : await _dataRepository.GetData(id, CancellationToken.None);
+}
+
+<nav class="navbar fixed-top navbar-expand-lg navbar-primary bg-primary" role="navigation" aria-label="main navigation">
+    <div class="container-fluid">
+
+        <button class="menu active" class="text-white" data-bs-toggle="collapse" data-bs-target="#sidemenu" aria-controls="sidemenu" aria-expanded="true" onclick="this.classList.toggle('active')">
+            <svg viewBox="0 0 64 48">
+                <path d="M19,15 L45,15 C70,15 58,-2 49.0177126,7 L19,37"></path>
+                <path d="M19,24 L45,24 C61.2371586,24 57,49 41,33 L32,24"></path>
+                <path d="M45,33 L19,33 C-8,33 6,-2 22,14 L45,37"></path>
+            </svg>
+        </button>
+
+        <a class="navbar-brand text-white indent-text-2" href="~/bdtest/report/test-runs">
+            <svg class="bi me-2" width="40" height="32"><use xlink:href="#shield-check"/></svg>
+            <span style="font-size: 30px">BDTest</span>
+        </a>
+        
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarToggler" aria-controls="navbarToggler" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="navbarToggler">
+            <ul class="navbar-nav">
+                <li class="nav-item">
+                    <a class="nav-link text-white" href="https://github.com/thomhurst/BDTest" target="_blank">
+                        <svg class="bi me-2" width="16" height="16"><use xlink:href="#github"/></svg>
+                        Github
+                    </a>
+                </li>
+
+                <li class="nav-item dropdown">
+                    <a class="nav-link text-white dropdown-toggle" href="#" id="navbarMoreDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">More</a>
+
+                    <ul class="dropdown-menu" aria-labelledby="navbarMoreDropdown">
+                        <li><a class="dropdown-item" href="https://github.com/thomhurst/BDTest/wiki" target="_blank">Wiki</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="https://github.com/thomhurst/BDTest/issues" target="_blank">Report an issue</a></li>
+                    </ul>
+                </li>
+                
+                @if (customLinksProvider != null)
+                {
+                    <li class="nav-item dropdown">
+                        <a class="nav-link text-white dropdown-toggle" href="#" id="navbarCustomLinksDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">Custom Links</a>
+
+                        <ul class="dropdown-menu" aria-labelledby="navbarCustomLinksDropdown">
+                            @{
+                                var customLinkDatas = customLinksProvider.GetCustomLinks().ToList();
+                            }
+                            @for(var i = 0; i < customLinkDatas.Count; i++)
+                            {
+                                var customLinkData = customLinkDatas[i];
+                                if (customLinkData.Url == null)
+                                {
+                                    <li><span class="dropdown-item" href="@customLinkData.Url" target="_blank">@customLinkData.Text</span></li>
+                                }
+                                else
+                                {
+                                    <li><a class="dropdown-item" href="@customLinkData.Url" target="_blank">@customLinkData.Text</a></li>
+                                }
+
+                                if (i < customLinkDatas.Count - 1)
+                                {
+                                    <li><hr class="dropdown-divider"></li>
+                                }
+                            }
+                        </ul>
+                    </li>
+                }
+            </ul>
+        </div>
+        
+        @if (currentTestReport != null && Context.GetCurrentUrl().ToString().Contains("/scenario/"))
+        {
+            <div class="d-flex">
+                @await Html.PartialAsync("_PreviousNextScenarioButtons", currentTestReport.Id)
+            </div>    
+        }
+        else if (currentTestReport != null)
+        {
+            <div class="d-flex">
+                @await Html.PartialAsync("_PreviousNextReportButtons", currentTestReport.Id)
+            </div>
+        }
+    </div>
+</nav>

@@ -1,0 +1,27 @@
+@using BDTest.Razor.Reports.Extensions
+@model BDTest.Razor.Reports.Models.ViewModels.ScenarioRowViewModel
+
+@{
+    var indexTextClass = Model.IsPartOfGroupedScenarios ? "indent-text-2" : "";
+    var invisibleClass = Model.IsPartOfGroupedScenarios ? "invisibleRow" : "";
+    var rowIsChildScenarioCssClass = Model.IsPartOfGroupedScenarios ? "smaller-font" : "";
+    var parentScenarioGroupId = Model.IsPartOfGroupedScenarios ? Model.GroupedScenarioParentIndex.Get() : -1;
+    var scenarioCountInsideParentGroup = Model.IsPartOfGroupedScenarios ? $"(Test {Model.IndexOfScenarioInParent.Get()})" : "";
+}
+
+<tr class="modal-link @invisibleClass pointer scenario-row @rowIsChildScenarioCssClass @Model.Scenario.Status" scenario-id="@Model.Scenario.Guid" parent-scenario-group="@parentScenarioGroupId">
+    <td></td>
+    <td class="@indexTextClass">
+         @Model.Scenario.GetScenarioText() @scenarioCountInsideParentGroup
+    </td>
+    <td class="align-middle">
+        <div class="d-grid">
+            <button type="button" class="btn @Model.Scenario.Status.GetCssColourValueForStatus()">@Model.Scenario.Status.AsString()</button>
+        </div>
+    </td>
+    <td class="align-middle" data-bs-toggle="popover" data-bs-trigger="hover focus" data-bs-placement="top" data-bs-content="@Model.Scenario.TimeTaken.ToPrettyFormat()">
+        @Model.Scenario.TimeTaken.ToString()
+    </td>
+    <td class="align-middle">@Model.Scenario.StartTime.ToStringForReport()</td>
+    <td class="align-middle">@Model.Scenario.EndTime.ToStringForReport()</td>
+</tr>

@@ -1,0 +1,22 @@
+@using BDTest.Razor.Reports.Extensions
+@model BDTest.Razor.Reports.Models.ViewModels.CollapsableArticicleViewModel
+
+@{
+    var randomGuid = Guid.NewGuid().ToString("N");
+    var initialIcon = Model.StartCollapsed ? Url.Content("~/_content/BDTest.NetCore.Razor.ReportMiddleware/icons/toggle_off-24px.svg") : Url.Content("~/_content/BDTest.NetCore.Razor.ReportMiddleware/icons/toggle_on-24px.svg");
+    var collapsedClass = Model.StartCollapsed ? "invisible" : string.Empty;
+}
+
+<article class="message is-info mt-4">
+    <div class="message-header">
+        <p>@Model.Header</p>
+        <img class="toggle-hide pointer" element-id-to-hide="@randomGuid" src="@initialIcon" alt="toggle"/>
+    </div>
+    <div class="message-body @collapsedClass" id="@randomGuid">
+        @foreach (var line in Model.Body.SplitOnNewLines())
+        {
+            <span>@line</span>
+            <br/>
+        }
+    </div>
+</article>

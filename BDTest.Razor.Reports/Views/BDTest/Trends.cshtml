@@ -1,0 +1,458 @@
+@using System.Web
+@using BDTest.Constants
+@using BDTest.Razor.Reports.Constants
+@using BDTest.Razor.Reports.Extensions
+@using BDTest.Razor.Reports.Helpers
+@using BDTest.Razor.Reports.Models
+@using BDTest.Razor.Reports.Models.ViewModels
+@using BDTest.Razor.Reports.Views.BDTest
+@using Microsoft.AspNetCore.Http.Extensions
+@model IEnumerable<TestRunSummary>
+
+@functions {
+
+    private List<string> GetGeneric(Func<TestRunSummary, string> func, string defaultValue)
+    {
+        var values = Model.Select(func).Where(x => !string.IsNullOrEmpty(x)).Distinct().ToList();
+        values.Insert(0, defaultValue);
+        return values;
+    }
+
+    private List<string> GetEnvironments()
+    {
+        return GetGeneric(x => x.Environment, DefaultValues.ReportServer.AllEnvironments);
+    }
+
+    private List<string> GetTags()
+    {
+        return GetGeneric(x => x.Tag, DefaultValues.ReportServer.AllTags);
+    }
+    
+    private List<string> GetMachineNames()
+    {
+        return GetGeneric(x => x.MachineName, DefaultValues.ReportServer.AllMachines);
+    }
+    
+    private List<string> GetBranches()
+    {
+        return GetGeneric(x => x.BranchName, DefaultValues.ReportServer.AllBranches);
+    }
+
+    private bool TagNeedsSelecting(string tagQueryParameter)
+    {
+        var tagValues = GetTags();
+        
+        if(tagValues == null || !tagValues.Any())
+        {
+            return false;
+        }
+        
+        return string.IsNullOrEmpty(tagQueryParameter) || tagQueryParameter == DefaultValues.ReportServer.AllTags;
+    }
+}
+
+@{
+    ViewBag.Title = "Trends";
+    Layout = "_Layout";
+
+    var testRunSummariesEnumerable = Model.AsEnumerable() ?? Enumerable.Empty<TestRunSummary>();
+
+    var queryString = HttpUtility.ParseQueryString(new Uri(Context.Request.GetEncodedUrl()).Query);
+    
+    var environmentQueryParameter = queryString.Get("environment");
+    var tagQueryParameter = queryString.Get("tag");
+    var machineQueryParameter = queryString.Get("machine");
+    var branchQueryParameter = queryString.Get("branch");
+    var dateTimeangeQueryParameter = queryString.Get("datetimerange");
+
+    var tagValues = GetTags();
+    var environmentValues = GetEnvironments();
+    var machineValues = GetMachineNames();
+    var branchValues = GetBranches();
+    
+    if (!string.IsNullOrEmpty(environmentQueryParameter) && environmentQueryParameter != DefaultValues.ReportServer.AllEnvironments)
+    {
+        testRunSummariesEnumerable = testRunSummariesEnumerable.Where(summary => summary.Environment == environmentQueryParameter);
+        <script>
+            onDomLoaded(function() {
+              document.getElementById("filter-by-environment-text").textContent = '@environmentQueryParameter';
+            })
+        </script>
+    }
+
+    if (!string.IsNullOrEmpty(tagQueryParameter) && tagQueryParameter != DefaultValues.ReportServer.AllTags)
+    {
+        testRunSummariesEnumerable = testRunSummariesEnumerable.Where(summary => summary.Tag == tagQueryParameter);
+        <script>
+            onDomLoaded(function() {
+              document.getElementById("filter-by-tag-text").textContent = '@tagQueryParameter';
+            })
+        </script>
+    }
+    
+    if (!string.IsNullOrEmpty(machineQueryParameter) && machineQueryParameter != DefaultValues.ReportServer.AllMachines)
+    {
+        testRunSummariesEnumerable = testRunSummariesEnumerable.Where(summary => summary.MachineName == machineQueryParameter);
+        <script>
+            onDomLoaded(function() {
+              document.getElementById("filter-by-machine-text").textContent = '@machineQueryParameter';
+            })
+        </script>
+    }
+    
+    if (!string.IsNullOrEmpty(branchQueryParameter) && branchQueryParameter != DefaultValues.ReportServer.AllBranches)
+    {
+        testRunSummariesEnumerable = testRunSummariesEnumerable.Where(summary => summary.BranchName == branchQueryParameter);
+        <script>
+            onDomLoaded(function() {
+              document.getElementById("filter-by-branch-text").textContent = '@branchQueryParameter';
+            })
+        </script>
+    }
+    
+    if (!string.IsNullOrEmpty(dateTimeangeQueryParameter) && dateTimeangeQueryParameter != DefaultValues.ReportServer.AllDateTimes && dateTimeangeQueryParameter.Contains(".."))
+    {
+        var dateTimeStringArray = dateTimeangeQueryParameter.Split("..");
+        if (!DateTime.TryParse(dateTimeStringArray.ElementAtOrDefault(0), out var startDate)
+        || !DateTime.TryParse(dateTimeStringArray.ElementAtOrDefault(1), out var endDate))
+        {
+            return;
+        }
+        testRunSummariesEnumerable = testRunSummariesEnumerable.Where(summary => IsInDateRange(summary.StartedAtDateTime) || IsInDateRange(summary.FinishedAtDateTime));
+        var buttonText = $"{startDate.ToShortDateString()} to {endDate.ToShortDateString()}";
+        <script>
+            onDomLoaded(function() {
+              document.getElementById("date-time-input-button").textContent = '@buttonText';
+            })
+        </script>
+        
+        bool IsInDateRange(DateTime dateTime)
+        {
+            return dateTime >= startDate && dateTime <= endDate;
+        }
+    }
+
+    var testRunSummaries = testRunSummariesEnumerable.OrderBy(x => x.StartedAtDateTime).ToList();
+    
+    var baseUrl = Context.GetBaseUrl();
+}
+
+<div id="startdatetimepickercontainer"></div>
+<div id="enddatetimepickercontainer"></div>
+
+@await Html.PartialAsync("_TestPageHeaderHero", new TestPageHeaderHeroViewModel
+{
+    Title = "Trends",
+    Description = "Here are some trends from your tests"
+})
+
+<section class="section">
+    <div class="container-fluid">
+        
+        <nav class="nav mb-5">
+            <div class="container-fluid d-flex justify-content-center">
+                @if (tagValues != null && tagValues.Any())
+                {
+                    @await Html.PartialAsync("_TrendsPageGenericDropdown", new TrendsPageGenericDropdownViewModel
+                    {
+                        ButtonId = "filter-by-tag-text",
+                        ButtonText = "Filter by Tag",
+                        QueryParameterName = "tag",
+                        DropdownValues = tagValues
+                    })
+                }
+
+                @if (environmentValues != null && environmentValues.Any())
+                {
+                    @await Html.PartialAsync("_TrendsPageGenericDropdown", new TrendsPageGenericDropdownViewModel
+                    {
+                        ButtonId = "filter-by-environment-text",
+                        ButtonText = "Filter by Environment",
+                        QueryParameterName = "environment",
+                        DropdownValues = environmentValues
+                    })
+                }
+
+                @if (machineValues != null && machineValues.Any())
+                {
+                    @await Html.PartialAsync("_TrendsPageGenericDropdown", new TrendsPageGenericDropdownViewModel
+                    {
+                        ButtonId = "filter-by-machine-text",
+                        ButtonText = "Filter by Machine",
+                        QueryParameterName = "machine",
+                        DropdownValues = machineValues
+                    })
+                }
+
+                @if (branchValues != null && branchValues.Any())
+                {
+                    @await Html.PartialAsync("_TrendsPageGenericDropdown", new TrendsPageGenericDropdownViewModel
+                    {
+                        ButtonId = "filter-by-branch-text",
+                        ButtonText = "Filter by Branch",
+                        QueryParameterName = "branch",
+                        DropdownValues = branchValues
+                    })
+                }
+
+                <li class="nav-item">
+                    <input id="date-time-input-end" type="hidden"/>
+                    <a class="bg-primary text-white nav-link" href="#" aria-haspopup="true" id="date-time-input-button">
+                        Filter by Date + Time
+                    </a>
+                    <script>
+                        let datePicker = getDatePicker();
+                        document.getElementById("date-time-input-button").addEventListener("click", function () {
+                            datePicker.show();
+                        });
+                    </script>
+                </li>
+            </div>
+        </nav>
+
+        @if (!TagNeedsSelecting(tagQueryParameter))
+        {
+            <div class="container-fluid">
+                <div class="row">
+                    <div class="col">
+                        <h5 class="subtitle is-5">Durations</h5>
+                        <canvas id="duration-trend-chart" class="max-width-100"></canvas>
+                    </div>
+                    <div class="col">
+                        <h5 class="subtitle is-5">Statuses</h5>
+                        <canvas id="success-trend-chart" class="max-width-100"></canvas>
+                    </div>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="d-flex justify-content-center">
+                <span>Please select a tag to continue.</span>
+            </div>
+        }
+    </div>
+</section>
+
+@if (!TagNeedsSelecting(tagQueryParameter))
+{
+@* Report IDs available for Javascript *@
+    <script>
+
+let reportIdsArray = [];
+
+@foreach (var report in testRunSummaries)
+{
+    @:reportIdsArray.push("@report.RecordId");
+}
+</script>
+
+@* Duration Trend Chart *@
+    <script>
+
+let durationChartData = {
+    datasets: [{
+        backgroundColor: "#3298dc",
+        borderColor: "#3298dc",
+        label: "Seconds",
+        data: [
+            @foreach (var timespan in testRunSummaries.Select(model => model.FinishedAtDateTime - model.StartedAtDateTime))
+            {
+                @((long)timespan.TotalSeconds)@:,
+            }
+            ]
+    }],
+
+    labels: [
+        @foreach (var testRunSummary in testRunSummaries)
+        {
+            @:"@testRunSummary.StartedAtDateTime.ToStringForReport(false)",
+        }
+    ]
+}
+
+let durationChartConfig = {
+    type: 'line',
+    data: durationChartData,
+    options: {
+        legend: {
+                    display: false
+                },
+        scales: {
+            y:{
+              scaleLabel: {
+                labelString: 'Seconds'
+              },
+              ticks: {
+                  beginAtZero:true,
+                  // Include a dollar sign in the ticks
+                  callback: function(value, index, values) {
+                      return value + "s";
+                  }
+                  }
+            }
+          },
+        tooltips: {
+            callbacks: {
+                label: function(tooltipItem, data) {
+                  return data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index] + " seconds";
+                }
+            }
+        },
+        onClick: (e) => {
+            let canvasPosition = Chart.helpers.getRelativePosition(e, e.chart);
+            let clickedElementindex = e.chart.scales.x.getValueForPixel(canvasPosition.x);
+            
+            let clickedOnReportId = reportIdsArray[clickedElementindex];
+    
+            window.location.href = '@Context.GetBaseUrl()/bdtest/report/' + clickedOnReportId + '/summary';
+            
+            spinnerCursor();
+        }
+    }
+};
+
+let durationChart = new Chart(document.getElementById('duration-trend-chart'), durationChartConfig);
+</script>
+
+
+@* Success Trend Chart *@
+    <script>
+              
+let successChartData = {
+    datasets: [ 
+        {
+            label: "Not Run",
+            axis: 'y',
+            fill: true,
+            borderColor: "rgba(0,0,0,0)",
+            pointRadius: 0,
+            pointHitRadius: 15,
+            borderWidth: 0,
+            data: [
+                @string.Join(",", testRunSummaries.Select(summary => summary.Counts.NotRun))
+            ]    
+        },
+        {
+            label: "Failed",
+            axis: 'y',
+            fill: true,
+            backgroundColor: "@ColourConstants.DangerHex",
+            borderColor: "rgba(0,0,0,0)",
+            pointBorderColor: "@ColourConstants.DangerHex",
+            pointBackgroundColor: "@ColourConstants.DangerHex",
+            pointHitRadius: 15,
+            pointRadius: 0,
+            borderWidth: 0,
+            data: [
+                @string.Join(",", testRunSummaries.Select(summary => summary.Counts.Failed))
+            ]    
+        },
+        {
+            label: "Inconclusive",
+            axis: 'y',
+            fill: true,
+            backgroundColor: "@ColourConstants.WarningHex",
+            borderColor: "rgba(0,0,0,0)",
+            pointBorderColor: "@ColourConstants.WarningHex",
+            pointBackgroundColor: "@ColourConstants.WarningHex",
+            pointHitRadius: 15,
+            pointRadius: 0,
+            borderWidth: 0,
+            data: [
+                @string.Join(",", testRunSummaries.Select(summary => summary.Counts.Inconclusive))
+            ]    
+        },
+        {
+            label: "Not Implemented",
+            axis: 'y',
+            fill: true,
+            backgroundColor: "@ColourConstants.WarningHex",
+            borderColor: "rgba(0,0,0,0)",
+            pointBorderColor: "@ColourConstants.WarningHex",
+            pointBackgroundColor: "@ColourConstants.WarningHex",
+            pointHitRadius: 15,
+            pointRadius: 0,
+            borderWidth: 0,
+            data: [
+                @string.Join(",", testRunSummaries.Select(summary => summary.Counts.NotImplemented))
+            ]    
+        },
+        {
+            label: "Skipped",
+            axis: 'y',
+            fill: true,
+            backgroundColor: "@ColourConstants.WarningHex",
+            borderColor: "rgba(0,0,0,0)",
+            pointBorderColor: "@ColourConstants.WarningHex",
+            pointBackgroundColor: "@ColourConstants.WarningHex",
+            pointHitRadius: 15,
+            pointRadius: 0,
+            borderWidth: 0,
+            data: [
+                @string.Join(",", testRunSummaries.Select(summary => summary.Counts.Skipped))
+            ]    
+        },
+        {
+            label: "Passed",
+            axis: 'y',
+            fill: true,
+            backgroundColor: "@ColourConstants.SuccessHex",
+            borderColor: "rgba(0,0,0,0)",
+            pointBorderColor: "@ColourConstants.SuccessHex",
+            pointBackgroundColor: "@ColourConstants.SuccessHex",
+            pointHitRadius: 15,
+            pointRadius: 0,
+            borderWidth: 0,
+            data: [
+                @string.Join(",", testRunSummaries.Select(summary => summary.Counts.Passed))
+            ]    
+        }
+        ],
+
+    labels: [
+        @foreach (var testRunSummary in testRunSummaries)
+        {
+            @:"@testRunSummary.StartedAtDateTime.ToStringForReport(false)",
+        }
+    ]
+}
+
+let successChartConfig = {
+    type: 'line',
+    data: successChartData,
+    options: {
+        legend: {
+                    display: false
+                },
+        scales: {
+            y: {
+              scaleLabel: {
+                labelString: 'Seconds'
+              },
+              stacked: true,
+              ticks: {
+                  beginAtZero:true,
+                  // Include a dollar sign in the ticks
+                  callback: function(value, index, values) {
+                      return "";
+                  }
+                  }
+            }
+          },
+          onClick: (e) => {
+              let canvasPosition = Chart.helpers.getRelativePosition(e, e.chart);
+              let clickedElementindex = e.chart.scales.x.getValueForPixel(canvasPosition.x);
+              
+              let clickedOnReportId = reportIdsArray[clickedElementindex];
+      
+              window.location.href = '@Context.GetBaseUrl()/bdtest/report/' + clickedOnReportId + '/summary';
+              
+              spinnerCursor();
+          }
+    }
+};
+
+let successChart = new Chart(document.getElementById('success-trend-chart'), successChartConfig);
+</script>
+}
