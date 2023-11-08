@@ -105,7 +105,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="Azure.Storage.Blobs" Version="12.18.0" />
+      <PackageReference Include="Azure.Storage.Blobs" Version="12.19.0" />
       <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="3.1.5" />
       <PackageReference Include="Microsoft.Azure.Cosmos" Version="3.36.0" />
       <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="3.1.32" />
