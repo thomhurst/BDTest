@@ -1,11 +1,11 @@
+using EnumerableAsyncProcessor.Extensions;
 using Microsoft.Extensions.Logging;
 using ModularPipelines.Attributes;
 using ModularPipelines.Context;
-using ModularPipelines.Extensions;
+using ModularPipelines.DotNet.Extensions;
+using ModularPipelines.DotNet.Options;
 using ModularPipelines.Models;
 using ModularPipelines.Modules;
-using ModularPipelines.NuGet.Extensions;
-using ModularPipelines.NuGet.Options;
 
 namespace BDTest.Pipeline.Modules.LocalMachine;
 
@@ -29,6 +29,10 @@ public class UploadPackagesToLocalNuGetModule : Module<CommandResult[]>
     {
         var localRepoLocation = await GetModule<CreateLocalNugetFolderModule>();
         var packagePaths = await GetModule<PackagePathsParserModule>();
-        return await context.NuGet().UploadPackages(new NuGetUploadOptions(packagePaths.Value!.AsPaths(), new Uri(localRepoLocation.Value!)));
-    }
+        return await packagePaths.Value!.SelectAsync(async file => await context.DotNet()
+            .Nuget
+            .Push(new DotNetNugetPushOptions(file)
+            {
+                Source = localRepoLocation.Value!
+            }, cancellationToken), cancellationToken: cancellationToken).ProcessOneAtATime();    }
 }

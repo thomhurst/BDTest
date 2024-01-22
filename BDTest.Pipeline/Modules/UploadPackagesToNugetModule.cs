@@ -1,14 +1,15 @@
 using BDTest.Pipeline.Settings;
+using EnumerableAsyncProcessor.Extensions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using ModularPipelines.Attributes;
 using ModularPipelines.Context;
+using ModularPipelines.DotNet.Extensions;
+using ModularPipelines.DotNet.Options;
 using ModularPipelines.Extensions;
 using ModularPipelines.Git.Extensions;
 using ModularPipelines.Models;
 using ModularPipelines.Modules;
-using ModularPipelines.NuGet.Extensions;
-using ModularPipelines.NuGet.Options;
 
 namespace BDTest.Pipeline.Modules;
 
@@ -68,11 +69,12 @@ public class UploadPackagesToNugetModule : Module<CommandResult[]>
 
         var packagePaths = await GetModule<PackagePathsParserModule>();
 
-        return await context.NuGet()
-            .UploadPackages(new NuGetUploadOptions(packagePaths.Value!.AsPaths(), new Uri("https://api.nuget.org/v3/index.json"))
+        return await packagePaths.Value!.SelectAsync(async file => await context.DotNet()
+            .Nuget
+            .Push(new DotNetNugetPushOptions(file)
             {
-                ApiKey = _options.Value.ApiKey!,
-                NoSymbols = true
-            });
+                Source = "https://api.nuget.org/v3/index.json",
+                ApiKey = _options.Value.ApiKey!
+            }, cancellationToken), cancellationToken: cancellationToken).ProcessOneAtATime();
     }
 }

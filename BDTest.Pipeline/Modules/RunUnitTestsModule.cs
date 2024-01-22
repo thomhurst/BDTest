@@ -21,7 +21,7 @@ public class RunUnitTestsModule : Module<List<DotNetTestResult>>
         {
             results.Add(await context.DotNet().Test(new DotNetTestOptions
             {
-                TargetPath = unitTestProjectFile.Path,
+                ProjectSolutionDirectoryDllExe = unitTestProjectFile.Path,
                 CommandLogging = CommandLogging.Input | CommandLogging.Error,
             }, cancellationToken));
         }
