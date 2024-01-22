@@ -1,10 +1,10 @@
 ﻿using ModularPipelines.Attributes;
 using ModularPipelines.Context;
+using ModularPipelines.DotNet.Extensions;
+using ModularPipelines.DotNet.Options;
 using ModularPipelines.Exceptions;
 using ModularPipelines.Models;
 using ModularPipelines.Modules;
-using ModularPipelines.NuGet.Extensions;
-using ModularPipelines.NuGet.Options;
 
 namespace BDTest.Pipeline.Modules.LocalMachine;
 
@@ -15,14 +15,17 @@ public class AddLocalNugetSourceModule : Module<CommandResult>
     {
         await Task.Yield();
         return exception is CommandException commandException &&
-                               commandException.CommandResult.StandardOutput.Contains("The name specified has already been added to the list of available package sources");
+                               commandException.StandardOutput.Contains("The name specified has already been added to the list of available package sources");
     }
 
     protected override async Task<CommandResult?> ExecuteAsync(IPipelineContext context, CancellationToken cancellationToken)
     {
         var localNugetPathResult = await GetModule<CreateLocalNugetFolderModule>();
 
-        return await context.NuGet()
-            .AddSource(new NuGetSourceOptions(new Uri(localNugetPathResult.Value!), "ModularPipelinesLocalNuGet"));
+        return await context.DotNet().Nuget.Add
+            .Source(new DotNetNugetAddSourceOptions(localNugetPathResult.Value!)
+            {
+                Name = "ModularPipelinesLocalNuGet"
+            }, cancellationToken);
     }
 }
