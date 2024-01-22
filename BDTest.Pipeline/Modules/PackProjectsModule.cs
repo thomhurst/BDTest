@@ -23,9 +23,13 @@ public class PackProjectsModule : Module<List<CommandResult>>
         {
             results.Add(await context.DotNet().Pack(new DotNetPackOptions
             {
-                ProjectSolution = projectFile.Path, Configuration = Configuration.Release,
+                ProjectSolution = projectFile.Path,
+                Configuration = Configuration.Release,
                 Properties = new KeyValue[]
-                    { ("PackageVersion", packageVersion.Value)!, ("Version",packageVersion.Value)!, }
+                {
+                    ("PackageVersion", packageVersion.Value)!,
+                    ("Version", packageVersion.Value)!
+                }
             }, cancellationToken));
         }
 
