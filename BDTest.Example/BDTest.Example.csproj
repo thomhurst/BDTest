@@ -6,6 +6,10 @@
         <IsPackable>false</IsPackable>
 
         <LangVersion>latest</LangVersion>
+
+        <SignAssembly>True</SignAssembly>
+
+        <AssemblyOriginatorKeyFile>..\StrongNameKeyPair.snk</AssemblyOriginatorKeyFile>
     </PropertyGroup>
 
     <ItemGroup>

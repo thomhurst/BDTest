@@ -5,6 +5,8 @@
         <RazorLangVersion>3.0</RazorLangVersion>
         <LangVersion>latest</LangVersion>
         <AddRazorSupportForMvc>true</AddRazorSupportForMvc>
+        <SignAssembly>True</SignAssembly>
+        <AssemblyOriginatorKeyFile>..\StrongNameKeyPair.snk</AssemblyOriginatorKeyFile>
     </PropertyGroup>
 
     <ItemGroup>
