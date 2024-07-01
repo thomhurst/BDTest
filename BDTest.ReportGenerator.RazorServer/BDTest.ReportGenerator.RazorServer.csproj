@@ -109,8 +109,8 @@
       <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="7.0.13" />
       <PackageReference Include="Microsoft.Azure.Cosmos" Version="3.38.1" />
       <PackageReference Include="Microsoft.AspNetCore.Authentication.AzureAD.UI" Version="6.0.30" />
-      <PackageReference Include="Microsoft.Identity.Web" Version="2.15.3" />
-      <PackageReference Include="Microsoft.Identity.Web.UI" Version="2.15.3" />
+      <PackageReference Include="Microsoft.Identity.Web" Version="2.20.0" />
+      <PackageReference Include="Microsoft.Identity.Web.UI" Version="2.20.0" />
     </ItemGroup>
 
     <ItemGroup>
