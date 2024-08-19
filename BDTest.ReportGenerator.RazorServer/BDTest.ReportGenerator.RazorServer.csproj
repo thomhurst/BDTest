@@ -111,6 +111,7 @@
       <PackageReference Include="Microsoft.AspNetCore.Authentication.AzureAD.UI" Version="6.0.30" />
       <PackageReference Include="Microsoft.Identity.Web" Version="2.15.3" />
       <PackageReference Include="Microsoft.Identity.Web.UI" Version="2.15.3" />
+      <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     </ItemGroup>
 
     <ItemGroup>
