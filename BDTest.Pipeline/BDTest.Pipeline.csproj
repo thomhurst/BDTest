@@ -11,8 +11,8 @@
 
     <ItemGroup>
       <PackageReference Include="FluentAssertions" Version="6.12.1" />
-      <PackageReference Include="ModularPipelines.DotNet" Version="2.42.47" />
-      <PackageReference Include="ModularPipelines.Git" Version="2.42.47" />
+      <PackageReference Include="ModularPipelines.DotNet" Version="2.42.53" />
+      <PackageReference Include="ModularPipelines.Git" Version="2.42.53" />
     </ItemGroup>
 
 </Project>
