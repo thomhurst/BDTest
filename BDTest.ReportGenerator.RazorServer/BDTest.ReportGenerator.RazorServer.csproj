@@ -110,7 +110,7 @@
       <PackageReference Include="Microsoft.Azure.Cosmos" Version="3.47.2" />
       <PackageReference Include="Microsoft.AspNetCore.Authentication.AzureAD.UI" Version="6.0.36" />
       <PackageReference Include="Microsoft.Identity.Web" Version="3.8.1" />
-      <PackageReference Include="Microsoft.Identity.Web.UI" Version="3.8.0" />
+      <PackageReference Include="Microsoft.Identity.Web.UI" Version="3.8.1" />
     </ItemGroup>
 
     <ItemGroup>
