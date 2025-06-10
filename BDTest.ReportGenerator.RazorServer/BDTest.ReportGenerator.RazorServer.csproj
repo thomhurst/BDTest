@@ -106,7 +106,7 @@
 
     <ItemGroup>
       <PackageReference Include="Azure.Storage.Blobs" Version="12.24.0" />
-      <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="9.0.5" />
+      <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="9.0.6" />
       <PackageReference Include="Microsoft.Azure.Cosmos" Version="3.51.0" />
       <PackageReference Include="Microsoft.AspNetCore.Authentication.AzureAD.UI" Version="6.0.36" />
       <PackageReference Include="Microsoft.Identity.Web" Version="3.9.3" />
