@@ -22,9 +22,4 @@ public class NugetVersionGeneratorModule : Module<string>
         return $"{gitVersionInformation.Major}.{gitVersionInformation.Minor}.{gitVersionInformation.Patch}-{gitVersionInformation.PreReleaseLabel}-{gitVersionInformation.CommitsSinceVersionSource}";
     }
 
-    protected override async Task OnAfterExecute(IPipelineContext context)
-    {
-        var moduleResult = await this;
-        context.Logger.LogInformation("NuGet Version to Package: {Version}", moduleResult.Value);
-    }
 }

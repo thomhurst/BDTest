@@ -7,9 +7,9 @@ namespace BDTest.Example;
 public class SetUpFixture
 {
     [OneTimeTearDown]
-    public void WriteJsonTestData()
+    public void WriteTestData()
     {
-        var jsonData = BDTestJsonHelper.GetTestJsonData();
-        File.WriteAllText(Path.Combine(Directory.GetCurrentDirectory(), $"JsonData-{Guid.NewGuid():N}.json"), jsonData);
+        // Use the example class to generate reports
+        HtmlReportGenerationExample.GenerateReports();
     }
 }
