@@ -10,7 +10,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="FluentAssertions" Version="8.7.1" />
+      <PackageReference Include="FluentAssertions" Version="8.8.0" />
       <PackageReference Include="ModularPipelines.DotNet" Version="2.47.8" />
       <PackageReference Include="ModularPipelines.Git" Version="2.47.8" />
     </ItemGroup>
