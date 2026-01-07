@@ -13,7 +13,7 @@
         <PackageReference Include="Microsoft.AspNetCore.Components" Version="10.0.1" />
         <PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="10.0.1" />
         <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="10.0.1" />
-        <PackageReference Include="Microsoft.AspNetCore.Mvc.ViewFeatures" Version="2.3.8" />
+        <PackageReference Include="Microsoft.AspNetCore.Mvc.ViewFeatures" Version="2.3.9" />
         <PackageReference Include="Microsoft.Extensions.Caching.Abstractions" Version="10.0.1" />
         <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="10.0.1" />
         <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.1" />
