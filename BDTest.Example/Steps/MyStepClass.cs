@@ -27,4 +27,14 @@ public class MyStepClass
             })
         });
     }
+
+    [StepText("I navigate to the home page")]
+    public async Task NavigateToHomePage()
+    {
+        await _context.ApiContext.ExecuteRequest(new HttpRequestMessage
+        {
+            RequestUri = new Uri("https://www.example.com/"),
+            Method = HttpMethod.Get
+        });
+    }
 }
