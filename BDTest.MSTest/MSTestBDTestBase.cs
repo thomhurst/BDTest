@@ -7,6 +7,10 @@ namespace BDTest.MSTest;
 public abstract class MSTestBDTestBase<TContext> : AbstractContextBDTestBase<TContext>
     where TContext : class, new()
 {
+    // MSTest creates a fixture instance per test, including each data-driven case.
+    // An instance ID survives the separate execution flows used by async setup/body.
+    protected override string BDTestExecutionId { get; } = Guid.NewGuid().ToString("N");
+
     [TestCleanup]
     public void TearDown()
     {

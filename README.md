@@ -62,6 +62,45 @@ BDTest is written in .NET Standard, so you can use it in either .NET Framework o
 
 View the [wiki](https://github.com/thomhurst/BDTest/wiki) to see how to use BDTest and how to get setup: https://github.com/thomhurst/BDTest/wiki
 
+### Execution identity and asynchronous setup
+
+Use a new `BDTestBuilder` for each standalone test. Its execution ID is assigned
+when it is constructed, so startup output written from async setup or `Task.Run`
+uses the same ID as the scenario. `MSTestBDTestBase<TContext>` also assigns an ID
+per fixture instance, keeping async setup, context access, and teardown together.
+
+For a custom adapter inheriting `BDTestBase` or `AbstractContextBDTestBase<TContext>`,
+override `BDTestExecutionId` with the runner's stable per-test ID, or call the
+protected `MarkTestAsStarted()` synchronously in the flow that runs setup and the
+test. Call it before starting any async work, and call `MarkTestAsComplete()` in
+teardown. For example, a custom runner entry point can return an async helper:
+
+```csharp
+public Task RunTestAsync()
+{
+    MarkTestAsStarted();
+    return RunStartedTestAsync();
+}
+
+private async Task RunStartedTestAsync()
+{
+    try
+    {
+        await SetupAsync();
+        await When(() => ActAsync()).Then(() => Verify()).BDTestAsync();
+    }
+    finally
+    {
+        MarkTestAsComplete();
+    }
+}
+```
+
+Calling the start hook inside a separate async setup method or `Task.Run` does
+not propagate its `AsyncLocal` value back to the caller. The legacy default still
+creates an ID on first access for compatibility; custom adapters using async
+setup should use the explicit lifecycle or a stable framework ID instead.
+
 ### Running a scenario once
 
 A runnable Given/When/Then builder supports one execution through `BDTest()`,
