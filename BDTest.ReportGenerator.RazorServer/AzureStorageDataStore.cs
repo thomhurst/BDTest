@@ -13,7 +13,14 @@ public class AzureStorageDataStore : IBDTestDataStore
 {
     private readonly BlobContainerClient _testRunSummariesContainer;
     private readonly BlobContainerClient _testDataContainer;
-    private readonly JsonSerializer _jsonSerializer = JsonSerializer.Create();
+    private const int MaximumSummaries = 50;
+    private const int MaximumConcurrentDownloads = 8;
+
+    public AzureStorageDataStore(BlobContainerClient testRunSummariesContainer, BlobContainerClient testDataContainer)
+    {
+        _testRunSummariesContainer = testRunSummariesContainer;
+        _testDataContainer = testDataContainer;
+    }
 
     public AzureStorageDataStore(AzureStorageConfig azureStorageConfig)
     {
@@ -32,7 +39,9 @@ public class AzureStorageDataStore : IBDTestDataStore
         try
         {
             var blobData = await _testDataContainer.GetBlockBlobClient(id).DownloadAsync(cancellationToken);
-            return _jsonSerializer.Deserialize<BDTestOutputModel>(new JsonTextReader(new StreamReader(blobData.Value.Content)));
+            using var content = blobData.Value.Content;
+            using var reader = new JsonTextReader(new StreamReader(content));
+            return JsonSerializer.Create().Deserialize<BDTestOutputModel>(reader);
         }
         catch (RequestFailedException e) when(e.Status == 404)
         {
@@ -47,40 +56,39 @@ public class AzureStorageDataStore : IBDTestDataStore
 
     public async Task<IEnumerable<TestRunSummary>> GetAllTestRunRecords()
     {
-        var testRunSummaries = new List<TestRunSummary>();
-        var amountToTake = 50;
-
-        var count = 0;
-        await foreach (var blobItem in _testRunSummariesContainer.GetBlobsAsync())
+        // Blob names are report IDs, not timestamps. Inspect every listing page before
+        // downloading, retaining only the newest candidates between pages.
+        var newestBlobs = Array.Empty<BlobItem>();
+        await foreach (var page in _testRunSummariesContainer.GetBlobsAsync().AsPages())
         {
-            count++;
-            var downloadAsync = await _testRunSummariesContainer.GetBlockBlobClient(blobItem.Name).DownloadAsync();
-            var testRunSummary = _jsonSerializer.Deserialize<TestRunSummary>(new JsonTextReader(new StreamReader(downloadAsync.Value.Content)));
-
-            if (blobItem.Properties.CreatedOn < DateTimeOffset.UtcNow - TimeSpan.FromDays(30))
-            {
-                await DeleteBlobItem(blobItem);
-            }
-            else
-            {
-                testRunSummaries.Add(testRunSummary);
-            }
-
-            if (count == amountToTake)
-            {
-                break;
-            }
+            newestBlobs = newestBlobs.Concat(page.Values)
+                .OrderByDescending(blob => blob.Properties.CreatedOn ?? blob.Properties.LastModified ?? DateTimeOffset.MinValue)
+                .ThenBy(blob => blob.Name, StringComparer.Ordinal)
+                .Take(MaximumSummaries)
+                .ToArray();
         }
 
-        return testRunSummaries.ToArray();
-    }
+        var summaries = new TestRunSummary[newestBlobs.Length];
+        await Parallel.ForEachAsync(Enumerable.Range(0, newestBlobs.Length),
+            new ParallelOptions { MaxDegreeOfParallelism = MaximumConcurrentDownloads },
+            async (index, cancellationToken) =>
+            {
+                try
+                {
+                    var download = await _testRunSummariesContainer.GetBlockBlobClient(newestBlobs[index].Name)
+                        .DownloadAsync(cancellationToken);
+                    using var content = download.Value.Content;
+                    using var reader = new JsonTextReader(new StreamReader(content));
+                    // Each concurrent download needs its own serializer and reader.
+                    summaries[index] = JsonSerializer.Create().Deserialize<TestRunSummary>(reader);
+                }
+                catch (RequestFailedException exception) when (exception.Status == 404)
+                {
+                    // An administrator or lifecycle policy can delete a blob after listing.
+                }
+            });
 
-    private async Task DeleteBlobItem(BlobItem blobItem)
-    {
-        await Task.WhenAll(
-            DeleteTestData(blobItem.Name),
-            DeleteTestRunRecord(blobItem.Name)
-        );
+        return summaries.Where(summary => summary != null).ToArray();
     }
 
     public Task StoreTestData(string id, BDTestOutputModel data)

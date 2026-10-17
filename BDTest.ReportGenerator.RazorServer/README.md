@@ -44,3 +44,35 @@ against an administrator role or policy. Never authorize solely from the presenc
 value of a client-controlled cookie, header, or query parameter. Register authentication
 and authorization services and run `UseAuthentication()` and `UseAuthorization()` after
 routing and before report endpoints. The library's default authorizer denies admin access.
+
+## Azure report listing and retention
+
+The Azure store returns up to 50 summaries, newest blob creation time first (last
+modified time is the fallback when creation time is absent). Names break timestamp
+ties in ordinal order. This is upload order, not the test run's start time. Existing
+GUID blob names remain readable; no rename or migration is required.
+
+Listing scans all metadata pages but keeps only 50 candidates between pages. It
+then downloads those summaries with at most eight concurrent requests per listing,
+returning them in the selected order. A summary deleted between listing and download
+is omitted. Other storage errors still fail the request. Listing cost grows with
+the number of stored blobs, so configure retention for long-running installations.
+
+Reads and server initialization no longer delete reports or hide them by age.
+Configure retention separately on the storage account before upgrading if you
+require automatic cleanup. Without a policy, reports remain until explicitly deleted.
+
+[azure-storage-lifecycle.json](azure-storage-lifecycle.json) provides a 30-day Azure
+lifecycle rule scoped to both `test-runs-summaries/` and `test-data/`. In the Azure
+portal, open the storage account's **Lifecycle management** page and merge this
+rule into the existing policy using **Code view**, preserving any other rules.
+The server does not install the policy or require management-plane permissions.
+
+The rule expires current blobs 30 days after their last modification and snapshots
+and previous versions 30 days after creation. The store writes immutable report
+IDs, so modification normally coincides with upload; a manual overwrite restarts
+the retention period. Azure applies the rule asynchronously and independently to
+each blob, so summary and report deletion is not atomic. Soft-delete and immutable
+storage settings can delay physical removal. See Microsoft's
+[lifecycle policy documentation](https://learn.microsoft.com/en-us/azure/storage/blobs/lifecycle-management-policy-structure)
+and [configuration instructions](https://learn.microsoft.com/en-us/azure/storage/blobs/lifecycle-management-policy-configure).

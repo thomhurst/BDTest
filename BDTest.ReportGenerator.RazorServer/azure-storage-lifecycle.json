@@ -1,0 +1,26 @@
+{
+  "rules": [
+    {
+      "enabled": true,
+      "name": "DeleteBDTestReportsAfter30Days",
+      "type": "Lifecycle",
+      "definition": {
+        "filters": {
+          "blobTypes": ["blockBlob"],
+          "prefixMatch": ["test-runs-summaries/", "test-data/"]
+        },
+        "actions": {
+          "baseBlob": {
+            "delete": { "daysAfterModificationGreaterThan": 30 }
+          },
+          "snapshot": {
+            "delete": { "daysAfterCreationGreaterThan": 30 }
+          },
+          "version": {
+            "delete": { "daysAfterCreationGreaterThan": 30 }
+          }
+        }
+      }
+    }
+  ]
+}
