@@ -331,21 +331,21 @@ public class BDTestController : Controller
 
     private async Task<IActionResult> GetView(string id, Func<BDTestOutputModel, IActionResult> viewAction, CancellationToken cancellationToken)
     {
-        var model = await _dataRepository.GetData(id, cancellationToken);
-            
+        var model = await GetData(id, cancellationToken);
+
         if (model == null)
         {
             return View("NotFoundSingle", id);
         }
 
-        ViewBag.Id = id;
-
         return viewAction(model);
     }
 
-    private Task<BDTestOutputModel> GetData(string id, CancellationToken cancellationToken)
+    private async Task<BDTestOutputModel> GetData(string id, CancellationToken cancellationToken)
     {
         ViewBag.Id = id;
-        return _dataRepository.GetData(id, cancellationToken);
+        var model = await _dataRepository.GetData(id, cancellationToken);
+        ViewData[nameof(ReportLayoutViewModel)] = new ReportLayoutViewModel { Report = model };
+        return model;
     }
 }
