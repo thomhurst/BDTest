@@ -145,5 +145,67 @@ namespace BDTest.Example
 }
 ```
 
+### Securing a report server
+
+`BDTest.Razor.Reports` supplies controllers and views, but does not configure authentication or authorization for your host. Report pages, lists, and `/bdtest/report/{id}/raw-json-data` can contain sensitive test output. Configure your host before exposing it to other users.
+
+The sample `BDTest.ReportGenerator.RazorServer` uses Microsoft Entra ID with `Microsoft.Identity.Web` and requires a signed-in user by default. Register a single-tenant web application, register `https://<your-report-host>/signin-oidc` as its redirect URI, and set these values through environment variables or a secret store:
+
+- `AzureAd__TenantId`: your tenant ID.
+- `AzureAd__ClientId`: the application's client ID.
+- `AzureAd__ClientSecret`: the application's client secret (or configure a certificate through Microsoft.Identity.Web).
+- `AzureStorage__ConnectionString`: the existing report storage connection string.
+- `ReportUpload__ApiKey`: a long, randomly generated secret shared only with report-uploading test jobs.
+
+For local development, use `dotnet user-secrets set "<Section>:<Key>" "<value>" --project BDTest.ReportGenerator.RazorServer`. Keep secrets out of committed configuration. Configure access to the enterprise application in Entra ID to restrict who may sign in; by default the server allows every authenticated user accepted by that application to read every report. It does not provide per-report permissions.
+
+The upload endpoint, `POST /bdtest/data`, bypasses interactive sign-in but requires the `X-BDTest-Api-Key` header in the sample host. Missing, incorrect, or multiple keys return HTTP 401; leaving the server's key empty disables uploads. A reader's sign-in cookie cannot replace the upload key, and an upload key does not grant read access. `/bdtest/ping` remains anonymous for warm-up, as does the library's error action. Static CSS, JavaScript, and images remain public.
+
+Pass a configured `HttpClient` to the existing upload overload:
+
+```csharp
+using var client = new HttpClient();
+client.DefaultRequestHeaders.Add(
+    "X-BDTest-Api-Key",
+    Environment.GetEnvironmentVariable("BDTEST_REPORT_UPLOAD_API_KEY"));
+
+var reportUri = await BDTestReportServer.SendDataAndGetReportUriAsync(
+    new Uri("https://your-report-host"),
+    new BDTestRunDescriptor(),
+    client);
+```
+
+For your own ASP.NET Core host, register an authentication provider and a fallback authorization policy. For example, with the `Microsoft.Identity.Web` and `Microsoft.Identity.Web.UI` packages:
+
+```csharp
+services.AddAuthentication(OpenIdConnectDefaults.AuthenticationScheme)
+    .AddMicrosoftIdentityWebApp(Configuration.GetSection("AzureAd"));
+services.AddAuthorization(options => options.FallbackPolicy = options.DefaultPolicy);
+services.AddControllersWithViews()
+    .AddMicrosoftIdentityUI()
+    .AddBdTestReportControllersAndViews();
+services.AddRazorPages();
+```
+
+Use the `Microsoft.AspNetCore.Authentication.OpenIdConnect`, `Microsoft.Identity.Web`, `Microsoft.Identity.Web.UI`, and `BDTest.Razor.Reports.Extensions` namespaces. Configure `UseBDTestReportServer` with your data store as usual. The request pipeline must select the endpoint before checking its authorization:
+
+```csharp
+app.UseHttpsRedirection();
+app.UseStaticFiles(); // Only public assets belong in the web root.
+app.UseRouting();
+app.UseMiddleware<ReportUploadApiKeyMiddleware>();
+app.UseAuthentication();
+app.UseAuthorization();
+app.UseEndpoints(endpoints =>
+{
+    endpoints.MapControllers();
+    endpoints.MapRazorPages();
+});
+```
+
+`ReportUploadApiKeyMiddleware` is sample-host code, not part of the NuGet library: copy [its implementation](BDTest.ReportGenerator.RazorServer/ReportUploadApiKeyMiddleware.cs) into your host (and change its namespace), or provide an equivalent upload authorization check. The library marks uploads `[AllowAnonymous]`, so a fallback policy alone does **not** secure uploads. The sample check uses the selected controller action rather than a URL prefix, so only the upload action gets this exception. Use HTTPS for both browser sessions and uploads.
+
+See [Microsoft Identity Web setup](https://github.com/AzureAD/microsoft-identity-web/wiki/web-apps) and [ASP.NET Core authorization policies](https://learn.microsoft.com/aspnet/core/security/authorization/policies) for provider configuration and policy customization.
+
 ### Report Server Example Image
 ![Report Server Example Image](https://github.com/thomhurst/BDTest/blob/master/Images/Test%20Runs%20List.png?raw=true)
