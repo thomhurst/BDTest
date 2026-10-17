@@ -19,8 +19,15 @@ internal class DataRepository : IDataRepository
         Task.Run(GetAllTestRunRecords);
     }
 
-    public async Task<BDTestOutputModel> GetData(string id, CancellationToken cancellationToken)
+    public Task<BDTestOutputModel> GetData(string id, CancellationToken cancellationToken)
+        => GetData(id, cancellationToken, cacheResult: true);
+
+    public Task<BDTestOutputModel> GetDataForBulkRead(string id, CancellationToken cancellationToken)
+        => GetData(id, cancellationToken, cacheResult: false);
+
+    private async Task<BDTestOutputModel> GetData(string id, CancellationToken cancellationToken, bool cacheResult)
     {
+        cancellationToken.ThrowIfCancellationRequested();
         // Check if it's already in-memory
         var model = await _memoryCacheBdTestDataStore.GetTestData(id, cancellationToken);
 
@@ -35,8 +42,11 @@ internal class DataRepository : IDataRepository
             return null;
         }
 
-        // Re-cache it to extend the time
-        await _memoryCacheBdTestDataStore.StoreTestData(id, model);
+        if (cacheResult)
+        {
+            // Single-report reads re-cache it to extend the time. Bulk reads must not retain full reports.
+            await _memoryCacheBdTestDataStore.StoreTestData(id, model);
+        }
 
         return model;
     }

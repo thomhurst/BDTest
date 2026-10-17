@@ -236,3 +236,16 @@ See [Microsoft Identity Web setup](https://github.com/AzureAD/microsoft-identity
 
 ### Report Server Example Image
 ![Report Server Example Image](https://github.com/thomhurst/BDTest/blob/master/Images/Test%20Runs%20List.png?raw=true)
+
+### Bulk report comparisons
+
+The Razor report server accepts up to 50 comma-separated IDs for `GET /bdtest/report/test-run-times`
+and `POST /bdtest/report/test-run-flakiness` (form field `reportIds`). Each ID must be 1-128 ASCII
+letters, digits, dots, hyphens or underscores; `.` and `..` are invalid. Generated report GUIDs
+are supported. Invalid lists receive HTTP 400 before any reports are read. An empty selection
+redirects to the test-run list. Duplicate IDs count toward the limit but are fetched only once.
+
+Comparisons read at most five reports concurrently. The built-in repository reuses cached reports
+without adding or refreshing full-report cache entries. Normal single-report reads still cache
+results. Custom `IDataRepository` implementations can override `GetDataForBulkRead` to apply the
+same cache policy; its default implementation delegates to `GetData` for compatibility.
