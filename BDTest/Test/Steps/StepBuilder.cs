@@ -51,13 +51,19 @@ public abstract class StepBuilder : BuildableTest
         CallerMember = previousPartiallyBuiltTest.CallerMember;
         CallerFile = previousPartiallyBuiltTest.CallerFile;
         TestId = previousPartiallyBuiltTest.TestId;
-        Guid = previousPartiallyBuiltTest.Guid;
+        Guid = System.Guid.NewGuid().ToString();
+        ReportId = previousPartiallyBuiltTest.ReportId;
+        Parameters = previousPartiallyBuiltTest.Parameters;
         CustomTestInformation = previousPartiallyBuiltTest.CustomTestInformation;
 
-        TestHolder.NotRun[previousPartiallyBuiltTest.Guid] = this;
-
-        ExistingSteps = previousSteps;
+        // An extension replaces its prefix in the not-run list, but sibling
+        // extensions remain independent scenarios with their own step state.
+        ExistingSteps = previousSteps.Select(step => new Step(step, Guid)).ToList();
         ExistingSteps.Add(new Step(runnable, StepType, Guid, ReportId));
+
+        TestHolder.NotRun.TryRemove(previousPartiallyBuiltTest.Guid, out _);
+        TestHolder.NotRun[Guid] = this;
+        TestOutputData.TestId = Guid;
     }
         
     private void SetScenarioText()

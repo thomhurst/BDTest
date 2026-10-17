@@ -59,6 +59,19 @@ public class Step
         SetStepText();
     }
 
+    // Copy only the step definition. Execution results belong to one scenario.
+    internal Step(Step source, string scenarioId)
+    {
+        Guid = System.Guid.NewGuid().ToString("N");
+        ScenarioId = scenarioId;
+        ReportId = source.ReportId;
+        Runnable = source.Runnable;
+        StepType = source.StepType;
+        StepText = source.StepText;
+        OverriddenStepText = source.OverriddenStepText;
+        _shouldSkip = source._shouldSkip;
+    }
+
     [JsonConstructor]
     private Step()
     {
