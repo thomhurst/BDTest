@@ -258,6 +258,46 @@ public class AuthenticationTests
         Assert.That(HttpUtility.ParseQueryString(location.Query)["redirect_uri"], Is.EqualTo("https://localhost/signin-oidc"));
     }
 
+    [TestCase(false)]
+    [TestCase(true)]
+    public async Task ProductionErrorsRenderTheErrorPage(bool upload)
+    {
+        using var host = CreateHost(ApiKey, new TestDataStore { FailRequests = true }, Environments.Production);
+        using var client = host.GetTestClient();
+        client.BaseAddress = new Uri("https://localhost");
+        if (upload)
+        {
+            client.DefaultRequestHeaders.Add("X-BDTest-Upload-Key", ApiKey);
+        }
+        else
+        {
+            SignIn(host.GetTestServer(), client, "Reader");
+        }
+
+        using var response = upload
+            ? await client.PostAsync("/bdtest/data", UploadBody())
+            : await client.GetAsync("/bdtest/report/failing-report/summary");
+        var body = await response.Content.ReadAsStringAsync();
+
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.InternalServerError), body);
+        Assert.That(response.Headers.Location, Is.Null);
+        Assert.That(response.Content.Headers.ContentType?.MediaType, Is.EqualTo("text/html"));
+        Assert.That(body, Does.Contain("An error occurred while processing your request."));
+        Assert.That(body, Does.Match(@"Request ID:</strong> <code>[^<]+</code>"));
+        Assert.That(body, Does.Not.Contain("Test storage failure"));
+        Assert.That(response.Headers.CacheControl?.NoStore, Is.True);
+    }
+
+    [Test]
+    public async Task ErrorPageRemainsAnonymous()
+    {
+        using var response = await _client.GetAsync("/bdtest/error");
+
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        Assert.That(await response.Content.ReadAsStringAsync(),
+            Does.Contain("An error occurred while processing your request."));
+    }
+
     private Task<HttpResponseMessage> Upload() => _client.PostAsync("/bdtest/data", UploadBody());
 
     private static StringContent UploadBody() => new(
@@ -267,9 +307,11 @@ public class AuthenticationTests
             TestTimer = new TestTimer()
         }), Encoding.UTF8, "application/json");
 
-    private void SignIn(string name = "Reader")
+    private void SignIn(string name = "Reader") => SignIn(_server, _client, name);
+
+    private static void SignIn(TestServer server, HttpClient client, string name)
     {
-        var options = _server.Services.GetRequiredService<IOptionsMonitor<CookieAuthenticationOptions>>()
+        var options = server.Services.GetRequiredService<IOptionsMonitor<CookieAuthenticationOptions>>()
             .Get(CookieAuthenticationDefaults.AuthenticationScheme);
         var principal = new ClaimsPrincipal(new ClaimsIdentity(
             new[] { new Claim(ClaimTypes.NameIdentifier, "reader"), new Claim(ClaimTypes.Name, name) },
@@ -281,14 +323,14 @@ public class AuthenticationTests
             Items = { [".AuthScheme"] = OpenIdConnectDefaults.AuthenticationScheme }
         }, CookieAuthenticationDefaults.AuthenticationScheme);
 
-        _client.DefaultRequestHeaders.Add("Cookie", $"{options.Cookie.Name}={options.TicketDataFormat.Protect(ticket)}");
+        client.DefaultRequestHeaders.Add("Cookie", $"{options.Cookie.Name}={options.TicketDataFormat.Protect(ticket)}");
     }
 
-    private static IHost CreateHost(string apiKey, TestDataStore store)
+    private static IHost CreateHost(string apiKey, TestDataStore store, string environment = "Development")
     {
         return new HostBuilder()
             .ConfigureWebHostDefaults(web => web.UseTestServer()
-                .UseEnvironment("Development")
+                .UseEnvironment(environment)
                 .UseSetting(WebHostDefaults.ApplicationKey, typeof(Startup).Assembly.GetName().Name)
                 .ConfigureAppConfiguration(builder => builder.AddJsonFile(Path.Combine(AppContext.BaseDirectory, "sample-appsettings.json")).AddInMemoryCollection(new Dictionary<string, string>
                 {
@@ -319,18 +361,29 @@ public class AuthenticationTests
 
     private sealed class TestDataStore : IBDTestDataStore
     {
+        public bool FailRequests { get; init; }
         public int ReportReads { get; private set; }
         public int Uploads { get; private set; }
 
         public Task<BDTestOutputModel> GetTestData(string id, CancellationToken cancellationToken)
         {
             ReportReads++;
+            if (FailRequests)
+            {
+                throw new InvalidOperationException("Test storage failure");
+            }
+
             return Task.FromResult(new BDTestOutputModel { Id = id, TestTimer = new TestTimer() });
         }
 
         public Task StoreTestData(string id, BDTestOutputModel data)
         {
             Uploads++;
+            if (FailRequests)
+            {
+                throw new InvalidOperationException("Test storage failure");
+            }
+
             return Task.CompletedTask;
         }
 

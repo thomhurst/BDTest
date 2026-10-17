@@ -321,6 +321,8 @@ public class BDTestController : Controller
     }
 
     [AllowAnonymous]
+    // Exception handling re-executes the original HTTP method, including upload POSTs.
+    [Route("error")]
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
     public IActionResult Error()
     {
