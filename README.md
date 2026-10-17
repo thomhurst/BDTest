@@ -62,6 +62,17 @@ BDTest is written in .NET Standard, so you can use it in either .NET Framework o
 
 View the [wiki](https://github.com/thomhurst/BDTest/wiki) to see how to use BDTest and how to get setup: https://github.com/thomhurst/BDTest/wiki
 
+### Running a scenario once
+
+A runnable Given/When/Then builder supports one execution through `BDTest()`,
+`BDTestAsync()`, or direct `await`. Calling any of these again on the same builder,
+including while it is running or after it fails, throws
+`BDTest.Exceptions.AlreadyExecutedException` before another scenario is created or
+any steps run again. Each continuation (such as `Then.And(...)`) creates an independent
+builder with its own execution limit, step state, and report entry, even when the
+original builder has already run. Create a new chain or continuation to run another scenario. Configured BDTest
+retries still run within the original execution and retain one report entry.
+
 ### Report date formatting
 
 Razor report tables and chart labels use the current request culture's short date
