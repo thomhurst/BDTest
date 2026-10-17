@@ -41,7 +41,7 @@ public class StepTextAttribute : Attribute
 
         foreach (var parameterOverride in parameterOverrides)
         {
-            if (!string.IsNullOrEmpty(parameterOverride) && Regex.IsMatch(parameterOverride, "^(\\d+):"))
+            if (!string.IsNullOrEmpty(parameterOverride) && !Regex.IsMatch(parameterOverride, "^(\\d+):"))
             {
                 throw new InvalidStepTextParameterException(
                     "The parameter override must begin with an index and a colon. E.g. \"0:Overriding Parameter 0\"");
