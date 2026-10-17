@@ -1,5 +1,6 @@
 using System.Runtime.CompilerServices;
 using BDTest.Test.Steps;
+using BDTest.Output;
 
 namespace BDTest.Test;
 
@@ -21,9 +22,17 @@ public abstract class RunnableStepBuilder : StepBuilder
         return this;
     }
 
-    internal async Task<Scenario> Invoke(BuildableTest testDetails)
+    internal Task<Scenario> Invoke(BuildableTest testDetails)
     {
-        var scenario = new Scenario(ExistingSteps, testDetails);
+        // Select the executing branch, which need not be the last one built.
+        // Set these before entering an async method so teardown keeps this ID too.
+        TestOutputData.TestId = testDetails.Guid;
+        TestOutputData.FrameworkExecutionId = testDetails.TestId;
+        return ExecuteAsync(new Scenario(ExistingSteps, testDetails));
+    }
+
+    private static async Task<Scenario> ExecuteAsync(Scenario scenario)
+    {
         await BDTestServiceProvider.ScenarioExecutor.ExecuteAsync(scenario).ConfigureAwait(false);
         return scenario;
     }
@@ -33,9 +42,9 @@ public abstract class RunnableStepBuilder : StepBuilder
         return Invoke(this).GetAwaiter().GetResult();
     }
 
-    public async Task<Scenario> BDTestAsync()
+    public Task<Scenario> BDTestAsync()
     {
-        return await this;
+        return Invoke(this);
     }
 
     public TaskAwaiter<Scenario> GetAwaiter() => Invoke(this).GetAwaiter();
