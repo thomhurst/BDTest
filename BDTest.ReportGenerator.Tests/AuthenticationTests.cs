@@ -174,6 +174,23 @@ public class AuthenticationTests
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK), await response.Content.ReadAsStringAsync());
     }
 
+    [TestCase("Alex Morgan")]
+    [TestCase("Jordan Lee")]
+    public async Task ReportPersonalizationUsesTheSignedInReader(string name)
+    {
+        SignIn(name);
+
+        using var response = await _client.GetAsync("/bdtest/report/private-report/summary");
+        var body = await response.Content.ReadAsStringAsync();
+
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK), body);
+        Assert.That(body, Does.Contain($"<strong>{name}</strong>"));
+        Assert.That(body, Does.Not.Contain("fbcdn.net"));
+        Assert.That(body, Does.Not.Contain("Tom Longhurst"));
+        Assert.That(body, Does.Not.Contain("Hi, Tom!"));
+        Assert.That(body, Does.Not.Contain("navbarCustomLinksDropdown"));
+    }
+
     private Task<HttpResponseMessage> Upload() => _client.PostAsync("/bdtest/data", UploadBody());
 
     private static StringContent UploadBody() => new(
@@ -183,12 +200,12 @@ public class AuthenticationTests
             TestTimer = new TestTimer()
         }), Encoding.UTF8, "application/json");
 
-    private void SignIn()
+    private void SignIn(string name = "Reader")
     {
         var options = _server.Services.GetRequiredService<IOptionsMonitor<CookieAuthenticationOptions>>()
             .Get(CookieAuthenticationDefaults.AuthenticationScheme);
         var principal = new ClaimsPrincipal(new ClaimsIdentity(
-            new[] { new Claim(ClaimTypes.NameIdentifier, "reader"), new Claim(ClaimTypes.Name, "Reader") },
+            new[] { new Claim(ClaimTypes.NameIdentifier, "reader"), new Claim(ClaimTypes.Name, name) },
             CookieAuthenticationDefaults.AuthenticationScheme));
         var ticket = new AuthenticationTicket(principal, new AuthenticationProperties
         {
