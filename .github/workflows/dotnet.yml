@@ -31,6 +31,9 @@ jobs:
         uses: actions/setup-dotnet@v6.0.0
         with:
           dotnet-version: 10.0.402
+      - name: Verify skip outcomes from test runners
+        shell: pwsh
+        run: ./scripts/Test-SkipOutcomes.ps1
       - name: Run Pipeline
         run: dotnet run -c Release
         working-directory: "BDTest.Pipeline"
@@ -39,6 +42,3 @@ jobs:
           NuGet__ApiKey: ${{ secrets.NUGET__APIKEY }}
           PULL_REQUEST_BRANCH: ${{ github.event.pull_request.head.ref }}
           PUBLISH_PACKAGES: ${{ github.event.inputs.publish-packages }}
-      - name: Verify skip outcomes from test runners
-        shell: pwsh
-        run: ./scripts/Test-SkipOutcomes.ps1
