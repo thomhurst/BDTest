@@ -1,5 +1,8 @@
 using BDTest.Razor.Reports.Extensions;
 using BDTest.Razor.Reports.Interfaces;
+using Microsoft.AspNetCore.Authentication.OpenIdConnect;
+using Microsoft.Identity.Web;
+using Microsoft.Identity.Web.UI;
 using Microsoft.Net.Http.Headers;
 
 namespace BDTest.ReportGenerator.RazorServer;
@@ -17,11 +20,16 @@ public class Startup
 
     public void ConfigureServices(IServiceCollection services)
     {
+        services.AddAuthentication(OpenIdConnectDefaults.AuthenticationScheme)
+            .AddMicrosoftIdentityWebApp(Configuration.GetSection("AzureAd"));
+        services.AddAuthorization(options => options.FallbackPolicy = options.DefaultPolicy);
+
         services
             .AddControllersWithViews()
+            .AddMicrosoftIdentityUI()
             .AddBdTestReportControllersAndViews();
             
-        services.AddSingleton<AzureStorageDataStore>();
+        services.AddSingleton<IBDTestDataStore, AzureStorageDataStore>();
         services.AddSingleton<CustomSidebarLinkProvider>();
         services.AddSingleton<CustomHeaderProvider>();
         services.AddSingleton<AdminAuthorizer>();
@@ -60,7 +68,7 @@ public class Startup
             
         app.UseBDTestReportServer(options =>
         {
-            options.DataStore = app.ApplicationServices.GetRequiredService<AzureStorageDataStore>();
+            options.DataStore = app.ApplicationServices.GetRequiredService<IBDTestDataStore>();
             options.CustomSidebarLinksProvider = app.ApplicationServices.GetRequiredService<CustomSidebarLinkProvider>();
             options.CustomHeaderLinksProvider = app.ApplicationServices.GetRequiredService<CustomHeaderProvider>();
             options.AdminAuthorizer = app.ApplicationServices.GetRequiredService<AdminAuthorizer>();
@@ -68,6 +76,9 @@ public class Startup
         });
 
         app.UseRouting();
+        app.UseMiddleware<ReportUploadApiKeyMiddleware>();
+        app.UseAuthentication();
+        app.UseAuthorization();
 
         app.UseEndpoints(endpoints =>
         {
