@@ -29,7 +29,7 @@ public abstract class RunnableStepBuilder : StepBuilder
         return this;
     }
 
-    internal Task<Scenario> Invoke(BuildableTest testDetails)
+    internal Task<Scenario> Invoke(BuildableTest testDetails, bool runOnThreadPool = false)
     {
         if (Interlocked.Exchange(ref _executionStarted, 1) != 0)
         {
@@ -40,7 +40,10 @@ public abstract class RunnableStepBuilder : StepBuilder
         // Set these before entering an async method so teardown keeps this ID too.
         TestOutputData.TestId = testDetails.Guid;
         TestOutputData.FrameworkExecutionId = testDetails.TestId;
-        return ExecuteAsync(new Scenario(ExistingSteps, testDetails));
+        var scenario = new Scenario(ExistingSteps, testDetails);
+        // Only the blocking entry point needs a scheduling boundary. Keep IDs in
+        // the caller's flow so output written after BDTest() still reaches teardown.
+        return runOnThreadPool ? Task.Run(() => ExecuteAsync(scenario)) : ExecuteAsync(scenario);
     }
 
     private static async Task<Scenario> ExecuteAsync(Scenario scenario)
@@ -50,9 +53,10 @@ public abstract class RunnableStepBuilder : StepBuilder
     }
 
     /// <exception cref="AlreadyExecutedException">Execution has already started on this builder.</exception>
+    /// <remarks>Runs the scenario on the thread pool and blocks until completion. Prefer BDTestAsync() for async callers.</remarks>
     public Scenario BDTest()
     {
-        return Invoke(this).GetAwaiter().GetResult();
+        return Invoke(this, runOnThreadPool: true).GetAwaiter().GetResult();
     }
 
     /// <exception cref="AlreadyExecutedException">Execution has already started on this builder.</exception>

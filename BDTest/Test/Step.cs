@@ -146,53 +146,50 @@ public class Step
     {
         SetStepText();
 
-        await Task.Run(async () =>
+        try
         {
-            try
-            {
-                StartTime = DateTime.Now;
+            StartTime = DateTime.Now;
 
-                if (ShouldSkip())
-                {
-                    StepText = $"[Skipped] {StepText}";
-                    Status = Status.Skipped;
-                    return;
-                }
+            if (ShouldSkip())
+            {
+                StepText = $"[Skipped] {StepText}";
+                Status = Status.Skipped;
+                return;
+            }
 
-                await Runnable.Run();
-                Status = Status.Passed;
-            }
-            catch (NotImplementedException e)
-            {
-                Status = Status.NotImplemented;
-                Exception = new ExceptionWrapper(e);
-                throw;
-            }
-            catch (Exception e) when (BDTestSettings.CustomExceptionSettings.SuccessExceptionTypes.Contains(e.GetType()))
-            {
-                Status = Status.Passed;
-                throw;
-            }
-            catch (Exception e) when (BDTestSettings.CustomExceptionSettings.InconclusiveExceptionTypes.Contains(e.GetType()))
-            {
-                Status = Status.Inconclusive;
-                throw;
-            }
-            catch (Exception e)
-            {
-                Status = Status.Failed;
-                Exception = new ExceptionWrapper(e);
-                await Console.Out.WriteLineAsync($"{Environment.NewLine}{e.GetType().Name} on '{StepPrefix}' step executing '{Runnable.GetExpressionString()}'");
-                throw;
-            }
-            finally
-            {
-                EndTime = DateTime.Now;
-                TimeTaken = EndTime - StartTime;
-                Output = TestOutputData.Instance.ToString().Trim();
-                TestOutputData.ClearCurrentTaskData();
-            }
-        });
+            await Runnable.Run().ConfigureAwait(false);
+            Status = Status.Passed;
+        }
+        catch (NotImplementedException e)
+        {
+            Status = Status.NotImplemented;
+            Exception = new ExceptionWrapper(e);
+            throw;
+        }
+        catch (Exception e) when (BDTestSettings.CustomExceptionSettings.SuccessExceptionTypes.Contains(e.GetType()))
+        {
+            Status = Status.Passed;
+            throw;
+        }
+        catch (Exception e) when (BDTestSettings.CustomExceptionSettings.InconclusiveExceptionTypes.Contains(e.GetType()))
+        {
+            Status = Status.Inconclusive;
+            throw;
+        }
+        catch (Exception e)
+        {
+            Status = Status.Failed;
+            Exception = new ExceptionWrapper(e);
+            await Console.Out.WriteLineAsync($"{Environment.NewLine}{e.GetType().Name} on '{StepPrefix}' step executing '{Runnable.GetExpressionString()}'").ConfigureAwait(false);
+            throw;
+        }
+        finally
+        {
+            EndTime = DateTime.Now;
+            TimeTaken = EndTime - StartTime;
+            Output = TestOutputData.Instance.ToString().Trim();
+            TestOutputData.ClearCurrentTaskData();
+        }
     }
 
     private bool ShouldSkip()
