@@ -173,7 +173,7 @@
     for (let scenarioRow of scenarioRows) {
         scenarioRow.addEventListener("click", function() {
             let scenarioId = scenarioRow.getAttribute("scenario-id");
-            window.location.href = '@Context.GetBaseUrl()/bdtest/report/@ViewBag.Id/scenario/' + scenarioId;
+            window.location.href = @Json.Serialize(Url.Content($"~/bdtest/report/{Uri.EscapeDataString((string)ViewBag.Id)}/scenario/")) + scenarioId;
             spinnerCursor();
         });
     }

@@ -120,9 +120,9 @@ public class ReportHandlerEncodingTests
     {
         var html = await RenderAsync<object>("/Views/Shared/_SideMenu.cshtml", null, query: query);
         var link = ReadElement(html, "<a[^>]*>Copy URL to Clipboard</a>");
-        Assert.That((string)link.Attribute("onclick"), Is.EqualTo("copyToClipboard(this.dataset.url);"));
+        Assert.That((string)link.Attribute("onclick"), Is.EqualTo("copyToClipboard(new URL(this.dataset.url, window.location.href).href);"));
         Assert.That((string)link.Attribute("data-url"),
-            Is.EqualTo("https://reports.example.test/bdtest/report/O'Brien/test-runs" + query));
+            Is.EqualTo("/bdtest/report/O'Brien/test-runs" + query));
         Assert.That(link.Attributes().Select(x => x.Name.LocalName),
             Is.EquivalentTo(new[] { "href", "data-url", "onclick", "class" }));
     }
@@ -140,11 +140,13 @@ public class ReportHandlerEncodingTests
         var html = await RenderAsync("/Views/Shared/_ScenarioModalPopup.cshtml",
             new ScenarioModalViewModel { Scenario = scenario }, query: query);
         var image = ReadElement(html, "<img[^>]*alt=\"Share\"[^>]*/>");
-        Assert.That((string)image.Attribute("onclick"), Is.EqualTo("copyToClipboard(this.dataset.url)"));
+        Assert.That((string)image.Attribute("onclick"), Is.EqualTo("copyToClipboard(new URL(this.dataset.url, window.location.href).href)"));
         Assert.That(image.Attributes().Select(x => x.Name.LocalName),
             Is.EquivalentTo(new[] { "src", "class", "alt", "data-url", "onclick" }));
 
-        var url = new Uri((string)image.Attribute("data-url"));
+        var localUrl = (string)image.Attribute("data-url");
+        Assert.That(localUrl, Does.StartWith("/bdtest/"));
+        var url = new Uri(new Uri("https://reports.example.test"), localUrl);
         Assert.That(url.GetLeftPart(UriPartial.Path),
             Is.EqualTo("https://reports.example.test/bdtest/report/O'Brien/test-runs"));
         var actualQuery = HttpUtility.ParseQueryString(url.Query);
@@ -164,7 +166,7 @@ public class ReportHandlerEncodingTests
         return XElement.Parse(match.Value, LoadOptions.PreserveWhitespace);
     }
 
-    private static async Task<string> RenderAsync<T>(string path, T model, bool isAdmin = false, string query = "")
+    internal static async Task<string> RenderAsync<T>(string path, T model, bool isAdmin = false, string query = "", string pathBase = "", string host = "reports.example.test", string requestPath = "/bdtest/report/O'Brien/test-runs")
     {
         var builder = WebApplication.CreateBuilder();
         builder.Services.AddControllersWithViews().AddBdTestReportControllersAndViews();
@@ -174,8 +176,9 @@ public class ReportHandlerEncodingTests
         services.GetRequiredService<BDTestReportServerOptions>().AdminAuthorizer = new AdminAuthorizer(isAdmin);
         var httpContext = new DefaultHttpContext { RequestServices = services };
         httpContext.Request.Scheme = "https";
-        httpContext.Request.Host = new HostString("reports.example.test");
-        httpContext.Request.Path = "/bdtest/report/O'Brien/test-runs";
+        httpContext.Request.Host = new HostString(host);
+        httpContext.Request.PathBase = pathBase;
+        httpContext.Request.Path = requestPath;
         httpContext.Request.QueryString = new QueryString(query);
         var actionContext = new ActionContext(httpContext, new RouteData(), new ActionDescriptor());
         var view = services.GetRequiredService<ICompositeViewEngine>().GetView(null, path, isMainPage: false);

@@ -173,6 +173,18 @@ namespace BDTest.Example
 }
 ```
 
+### Hosting the sample server behind a reverse proxy
+
+Report navigation uses local URLs and preserves `Request.PathBase`. Clipboard sharing resolves these URLs against the browser's origin. Hosts embedding the Razor library should configure their own host filtering and forwarded headers middleware.
+
+The sample `BDTest.ReportGenerator.RazorServer` accepts only `localhost`, `127.0.0.1`, and `[::1]` by default. Set `AllowedHosts` to your deployment's semicolon-separated host names (without schemes, ports, or paths), for example `reports.example.com;report-backend.internal`. Include the backend host if your proxy sends it in the original Host header. The same allowlist constrains `X-Forwarded-Host`; avoid `*`.
+
+Forwarded headers run before HTTPS redirection and authentication. Only loopback proxies are trusted by default. For a remote proxy, set its actual connection IP through `ReverseProxy__KnownProxies__0` (and `__1`, etc. for additional trusted addresses). IPv4-mapped IPv6 connections need the mapped address. The default limit is one forwarding hop; more complex chains require explicit `ForwardedHeadersOptions` configuration in `Startup`.
+
+Configure the proxy to overwrite client-supplied forwarding headers and send `X-Forwarded-For`, `X-Forwarded-Proto`, and `X-Forwarded-Host`. When stripping a public URL prefix such as `/reports`, also send `X-Forwarded-Prefix: /reports`. If the proxy preserves the prefix in the forwarded request path, configure `UsePathBase("/reports")` before routing instead. Include the prefix in the Entra redirect URI, for example `https://reports.example.com/reports/signin-oidc`. Do not enable blanket forwarding with `ASPNETCORE_FORWARDEDHEADERS_ENABLED` or clear the trusted proxy lists.
+
+See [ASP.NET Core proxy configuration](https://learn.microsoft.com/en-us/aspnet/core/host-and-deploy/proxy-load-balancer?view=aspnetcore-10.0) for deployment-specific trust and path handling.
+
 ### Securing a report server
 
 `BDTest.Razor.Reports` supplies controllers and views, but does not configure authentication or authorization for your host. Report pages, lists, and `/bdtest/report/{id}/raw-json-data` can contain sensitive test output. Configure your host before exposing it to other users.

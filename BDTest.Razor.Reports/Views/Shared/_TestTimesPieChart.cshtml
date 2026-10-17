@@ -92,7 +92,7 @@ let slowestTestsChartConfig = {
              
              let clickedOnScenarioId = slowestIdsArray[clickedElementindex];
                   
-             window.location.href = '@Context.GetBaseUrl()/bdtest/report/@Model.ReportId/scenario/' + clickedOnScenarioId;
+             window.location.href = @Json.Serialize(Url.Content($"~/bdtest/report/{Uri.EscapeDataString(Model.ReportId)}/scenario/")) + clickedOnScenarioId;
              
              spinnerCursor();
          }
@@ -156,7 +156,7 @@ let fastestTestsChartConfig = {
              
              let clickedOnScenarioId = fastestIdsArray[clickedElementindex];
      
-             window.location.href = '@Context.GetBaseUrl()/bdtest/report/@Model.ReportId/scenario/' + clickedOnScenarioId;
+             window.location.href = @Json.Serialize(Url.Content($"~/bdtest/report/{Uri.EscapeDataString(Model.ReportId)}/scenario/")) + clickedOnScenarioId;
              
              spinnerCursor();
          }

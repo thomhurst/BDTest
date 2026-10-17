@@ -77,6 +77,6 @@
             <li class="page-item"><a class="page-link" href="@Context.GetUrlForPageNumber(Model.CurrentPage + 1)">Next</a></li>
         }
         
-        <li class="page-item"><a class="page-link" href="@Context.GetCurrentUrl().WithQueryParameter(PagerQueryParameters.Page, PagerQueryParameters.All)">Show All</a></li>
+        <li class="page-item"><a class="page-link" href="@Context.GetLocalUrlWithQueryParameter(PagerQueryParameters.Page, PagerQueryParameters.All)">Show All</a></li>
     </ul>
 </nav>

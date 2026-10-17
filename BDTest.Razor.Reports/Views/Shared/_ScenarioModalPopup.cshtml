@@ -1,11 +1,11 @@
 @using BDTest.Razor.Reports.Extensions
 @using BDTest.Razor.Reports.Models.ViewModels
 @using BDTest.Test
-@using Microsoft.AspNetCore.Http.Extensions
+@using BDTest.Razor.Reports.Helpers
 @model BDTest.Razor.Reports.Models.ViewModels.ScenarioModalViewModel
 
 @{
-    var shareUrl = new Uri(Context.Request.GetEncodedUrl()).WithQueryParameter("scenarioId", Model.Scenario.Guid);
+    var shareUrl = Context.GetLocalUrlWithQueryParameter("scenarioId", Model.Scenario.Guid);
 }
 
 <div class="modal" id="scenario-modal-@Model.Scenario.Guid">
@@ -25,7 +25,7 @@
                 }
 
                 <button class="btn @Model.Scenario.Status.GetCssColourValueForStatus() is-small mx-3">
-                    <img src="~/_content/BDTest.NetCore.Razor.ReportMiddleware/icons/share-white-18dp.svg" class="pointer" alt="Share" data-url="@shareUrl.ToString()" onclick="copyToClipboard(this.dataset.url)"/>
+                    <img src="~/_content/BDTest.NetCore.Razor.ReportMiddleware/icons/share-white-18dp.svg" class="pointer" alt="Share" data-url="@shareUrl.ToString()" onclick="copyToClipboard(new URL(this.dataset.url, window.location.href).href)"/>
                 </button>
                 <button class="delete is-large @Model.Scenario.Status.GetCssColourValueForStatus()-background-color" aria-label="close"></button>
             </nav>

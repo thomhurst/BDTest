@@ -1,5 +1,5 @@
 using BDTest.Razor.Reports.Constants;
-using BDTest.Razor.Reports.Extensions;
+using System.Web;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Extensions;
 
@@ -36,8 +36,25 @@ public static class HttpHelper
 
     public static string GetUrlForPageNumber(this HttpContext httpContext, int pageNumber)
     {
-        var currentUrl = GetCurrentUrl(httpContext);
-        return currentUrl.WithQueryParameter(PagerQueryParameters.Page, pageNumber.ToString()).ToString();
+        return httpContext.GetLocalUrlWithQueryParameter(PagerQueryParameters.Page, pageNumber.ToString());
+    }
+
+    // Keep navigation independent of the untrusted Host header, including behind a proxy.
+    public static string GetLocalUrl(this HttpContext httpContext, string path = null)
+    {
+        var request = httpContext.Request;
+        var localPath = request.PathBase.Add(path == null ? request.Path : new PathString(path)).ToUriComponent();
+        // A leading double slash is a network-path reference in browsers.
+        return "/" + localPath.TrimStart('/') + request.QueryString.ToUriComponent();
+    }
+
+    public static string GetLocalUrlWithQueryParameter(this HttpContext httpContext, string name, string value, string path = null)
+    {
+        var query = HttpUtility.ParseQueryString(httpContext.Request.QueryString.Value ?? string.Empty);
+        query[name] = value;
+        var localUrl = httpContext.GetLocalUrl(path);
+        var queryIndex = localUrl.IndexOf('?');
+        return (queryIndex < 0 ? localUrl : localUrl.Substring(0, queryIndex)) + "?" + query;
     }
 
     public static Uri GetCurrentUrl(this HttpContext httpContext)

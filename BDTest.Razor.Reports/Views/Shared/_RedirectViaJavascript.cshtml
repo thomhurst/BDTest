@@ -1,11 +1,10 @@
-@using Microsoft.AspNetCore.Http.Extensions
+@using BDTest.Razor.Reports.Helpers
 @model BDTest.Razor.Reports.Views.BDTest.RedirectViaJavascriptViewModel
 
 @{
-    var currentUrl = Context.Request.GetEncodedUrl();
-    var urlToRedirect = currentUrl.Replace(Model.FromPath, Model.ToPath);
+    var urlToRedirect = Context.GetLocalUrl(Context.Request.Path.Value.Replace(Model.FromPath, Model.ToPath));
 }
 
 <script>
-    window.location.href = '@urlToRedirect';
+    window.location.href = @Json.Serialize(urlToRedirect);
 </script>

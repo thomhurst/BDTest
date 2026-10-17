@@ -1,6 +1,8 @@
 using System.Net;
 using System.Security.Claims;
 using System.Text;
+using System.Web;
+using Microsoft.AspNetCore.Http;
 using BDTest.Maps;
 using BDTest.Output;
 using BDTest.Razor.Reports.Interfaces;
@@ -191,6 +193,71 @@ public class AuthenticationTests
         Assert.That(body, Does.Not.Contain("navbarCustomLinksDropdown"));
     }
 
+    [Test]
+    public async Task Unexpected_host_is_rejected_by_the_sample_host_filter()
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Get, "/bdtest/ping");
+        request.Headers.Host = "attacker.example";
+        using var response = await _client.SendAsync(request);
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
+    }
+
+    [TestCase("127.0.0.1")]
+    [TestCase("192.0.2.10")]
+    public async Task Trusted_proxy_applies_https_and_path_prefix_before_authentication(string proxy)
+    {
+        var context = await _server.SendAsync(context =>
+        {
+            context.Connection.RemoteIpAddress = IPAddress.Parse(proxy);
+            context.Request.Scheme = "http";
+            context.Request.Host = new HostString("localhost");
+            context.Request.Path = "/bdtest/report/test-runs";
+            context.Request.Headers["X-Forwarded-For"] = "198.51.100.20";
+            context.Request.Headers["X-Forwarded-Proto"] = "https";
+            context.Request.Headers["X-Forwarded-Host"] = "localhost:8443";
+            context.Request.Headers["X-Forwarded-Prefix"] = "/reports";
+        });
+
+        Assert.That(context.Response.StatusCode, Is.EqualTo(302));
+        var location = new Uri(context.Response.Headers.Location.ToString());
+        Assert.That(location.Host, Is.EqualTo("login.microsoftonline.com"));
+        Assert.That(HttpUtility.ParseQueryString(location.Query)["redirect_uri"],
+            Is.EqualTo("https://localhost:8443/reports/signin-oidc"));
+    }
+
+    [Test]
+    public async Task Untrusted_proxy_cannot_override_the_origin_or_path_prefix()
+    {
+        var context = await _server.SendAsync(context =>
+        {
+            context.Connection.RemoteIpAddress = IPAddress.Parse("198.51.100.30");
+            context.Request.Scheme = "https";
+            context.Request.Host = new HostString("localhost");
+            context.Request.Path = "/bdtest/report/test-runs";
+            context.Request.Headers["X-Forwarded-Proto"] = "http";
+            context.Request.Headers["X-Forwarded-Host"] = "attacker.example";
+            context.Request.Headers["X-Forwarded-Prefix"] = "/evil";
+        });
+        var location = new Uri(context.Response.Headers.Location.ToString());
+        Assert.That(location.Host, Is.EqualTo("login.microsoftonline.com"));
+        Assert.That(HttpUtility.ParseQueryString(location.Query)["redirect_uri"], Is.EqualTo("https://localhost/signin-oidc"));
+    }
+
+    [Test]
+    public async Task Trusted_proxy_cannot_supply_a_host_outside_AllowedHosts()
+    {
+        var context = await _server.SendAsync(context =>
+        {
+            context.Connection.RemoteIpAddress = IPAddress.Loopback;
+            context.Request.Scheme = "https";
+            context.Request.Host = new HostString("localhost");
+            context.Request.Path = "/bdtest/report/test-runs";
+            context.Request.Headers["X-Forwarded-Host"] = "attacker.example";
+        });
+        var location = new Uri(context.Response.Headers.Location.ToString());
+        Assert.That(HttpUtility.ParseQueryString(location.Query)["redirect_uri"], Is.EqualTo("https://localhost/signin-oidc"));
+    }
+
     private Task<HttpResponseMessage> Upload() => _client.PostAsync("/bdtest/data", UploadBody());
 
     private static StringContent UploadBody() => new(
@@ -220,17 +287,18 @@ public class AuthenticationTests
     private static IHost CreateHost(string apiKey, TestDataStore store)
     {
         return new HostBuilder()
-            .ConfigureWebHost(web => web.UseTestServer()
+            .ConfigureWebHostDefaults(web => web.UseTestServer()
                 .UseEnvironment("Development")
                 .UseSetting(WebHostDefaults.ApplicationKey, typeof(Startup).Assembly.GetName().Name)
-                .ConfigureAppConfiguration(builder => builder.AddInMemoryCollection(new Dictionary<string, string>
+                .ConfigureAppConfiguration(builder => builder.AddJsonFile(Path.Combine(AppContext.BaseDirectory, "sample-appsettings.json")).AddInMemoryCollection(new Dictionary<string, string>
                 {
                     ["AzureAd:Instance"] = "https://login.microsoftonline.com/",
                     ["AzureAd:TenantId"] = "11111111-1111-1111-1111-111111111111",
                     ["AzureAd:ClientId"] = "22222222-2222-2222-2222-222222222222",
                     ["AzureAd:ClientSecret"] = "test-only-secret",
                     ["AzureStorage:ConnectionString"] = "unused",
-                    ["BDTest:UploadApiKey"] = apiKey
+                    ["BDTest:UploadApiKey"] = apiKey,
+                    ["ReverseProxy:KnownProxies:0"] = "192.0.2.10"
                 }))
                 .UseStartup<Startup>()
                 .ConfigureTestServices(services =>

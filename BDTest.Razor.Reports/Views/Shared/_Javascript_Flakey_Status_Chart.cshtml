@@ -150,7 +150,7 @@ let chartConfig = {
             let clickedOnReportId = reportIdsArray[clickedElementindex];
             let clickedOnScenarioId = scenarioIdsArray[clickedElementindex];
     
-            window.location.href = '@Context.GetBaseUrl()/bdtest/report/' + clickedOnReportId + '/scenario/' + clickedOnScenarioId;
+            window.location.href = @Json.Serialize(Url.Content("~/bdtest/report/")) + clickedOnReportId + '/scenario/' + clickedOnScenarioId;
             
             spinnerCursor();
         }
