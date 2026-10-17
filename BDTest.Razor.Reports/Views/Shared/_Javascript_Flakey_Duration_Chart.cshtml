@@ -49,7 +49,7 @@ let chartData = {
     labels: [
         @foreach (var scenario in Model.Scenarios)
         {
-            @:"@scenario.StartTime.ToStringForReport(false)",
+            @:@Json.Serialize(scenario.StartTime.ToStringForReport(false)),
         }
     ]
 }

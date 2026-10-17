@@ -62,6 +62,30 @@ BDTest is written in .NET Standard, so you can use it in either .NET Framework o
 
 View the [wiki](https://github.com/thomhurst/BDTest/wiki) to see how to use BDTest and how to get setup: https://github.com/thomhurst/BDTest/wiki
 
+### Report date formatting
+
+Razor report tables and chart labels use the current request culture's short date
+pattern. For example, the same date appears as `17/10/2026` in `en-GB`, `10/17/2026`
+in `en-US`, and `17.10.2026` in `de-DE`. Times retain their 24-hour format and up to
+three fractional second digits; formatting does not convert time zones.
+
+To select dates using the viewer's browser language, configure ASP.NET Core request
+localization in your report host before routing and report endpoints:
+
+```csharp
+var reportCultures = new[] { "en-GB", "en-US", "de-DE" };
+app.UseRequestLocalization(new RequestLocalizationOptions()
+    .SetDefaultCulture("en-GB")
+    .AddSupportedCultures(reportCultures)
+    .AddSupportedUICultures(reportCultures));
+```
+
+The default localization providers check the culture query parameter, culture cookie,
+then the `Accept-Language` header, falling back to the configured default. Hosts can
+also customize `DateTimeFormat.ShortDatePattern` on the `CultureInfo` instances they
+register in `RequestLocalizationOptions.SupportedCultures`. Without request
+localization, the host's current culture determines the date format.
+
 ### Report server uploads
 
 Report uploads require an API key. Configure a strong secret on both the server and the uploader before upgrading; an unset or blank key disables uploads (`401`). Existing reports and the ping endpoint remain available.

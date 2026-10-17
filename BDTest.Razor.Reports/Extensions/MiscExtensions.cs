@@ -1,4 +1,6 @@
-﻿namespace BDTest.Razor.Reports.Extensions;
+﻿using System.Globalization;
+
+namespace BDTest.Razor.Reports.Extensions;
 
 public static class MiscExtensions
 {
@@ -51,12 +53,10 @@ public static class MiscExtensions
             return string.Empty;
         }
 
-        if (!includeLineBreak)
-        {
-            return dateTime.ToString("dd/MM/yyyy HH:mm:ss.FFF");
-        }
-            
-        return dateTime.ToString("dd/MM/yyyy\nHH:mm:ss.FFF");
+        // Request localization selects the culture; hosts can also customize its short date pattern.
+        var culture = CultureInfo.CurrentCulture;
+        var separator = includeLineBreak ? "\n" : " ";
+        return dateTime.ToString("d", culture) + separator + dateTime.ToString("HH:mm:ss.FFF", culture);
     }
 
     public static IEnumerable<TSource> DistinctBy<TSource, TKey>
