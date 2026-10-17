@@ -12,7 +12,7 @@ namespace BDTest.Test;
 public class Step
 {
     [JsonIgnore]
-    internal Runnable Runnable { get; }
+    internal Runnable Runnable { get; private set; }
         
     [JsonProperty]
     public string Guid { get; private set; }
@@ -85,6 +85,12 @@ public class Step
 
     [JsonIgnore]
     public bool IsRetry { get; set; }
+
+    internal void ReleaseRuntimeReferences()
+    {
+        Runnable = null;
+        OverriddenStepText = null;
+    }
 
     internal void ResetData()
     {

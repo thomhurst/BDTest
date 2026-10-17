@@ -10,7 +10,9 @@ public static class BDTestUtil
     public static string GetCurrentReportId => TestHolder.CurrentReportId;
     public static List<BuildableTest> GetNotRunScenarios() => TestHolder.NotRun.Values.ToList();
 
-    public static void ClearScenarios() => TestHolder.ScenariosByInternalId.Clear();
+    /// <summary>Clears recorded and not-run scenarios, pending output, and scenario listeners.</summary>
+    /// <remarks>Call between test runs. This does not cancel executing tests or change the report ID.</remarks>
+    public static void ClearScenarios() => TestOutputData.ClearAllData();
 
     public static TestTimer GetTestTimer(IReadOnlyCollection<Scenario> scenarios)
     {

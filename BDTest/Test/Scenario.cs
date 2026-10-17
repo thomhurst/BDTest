@@ -90,7 +90,18 @@ public class Scenario
         
     [JsonIgnore] internal bool ShouldRetry { get; set; }
     [JsonProperty] public int RetryCount { get; internal set; }
+    /// <summary>The executing test instance, or null if it has been collected after execution.</summary>
+    /// <remarks>Completed scenarios retain only a weak reference to the test instance.</remarks>
     [JsonIgnore] public BDTestBase BdTestBaseClass => RuntimeInformation?.BdTestBase;
+
+    internal void ReleaseRuntimeReferences()
+    {
+        foreach (var step in Steps)
+        {
+            step.ReleaseRuntimeReferences();
+        }
+        RuntimeInformation?.ReleaseRuntimeReferences();
+    }
 
     public string GetScenarioText()
     {

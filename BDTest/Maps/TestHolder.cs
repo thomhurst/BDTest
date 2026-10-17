@@ -89,6 +89,18 @@ internal static class TestHolder
         }
     }
 
+    internal static void Clear()
+    {
+        lock (ScenarioLock)
+        {
+            ScenariosByInternalId.Clear();
+            ScenariosByTestFrameworkId.Clear();
+            NotRun.Clear();
+            ScenarioListeners.Clear();
+            PendingStartupOutput.Clear();
+        }
+    }
+
     internal static void CompleteTest(string frameworkExecutionId)
     {
         lock (ScenarioLock)

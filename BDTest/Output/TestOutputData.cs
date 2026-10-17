@@ -133,6 +133,16 @@ internal class TestOutputData : TextWriter
         }
     }
 
+    internal static void ClearAllData()
+    {
+        // Use the same lock order as WriteCore: output, then scenario registry.
+        lock (Lock)
+        {
+            ThreadAndChars.Clear();
+            TestHolder.Clear();
+        }
+    }
+
     public static void ClearCurrentTaskData()
     {
         lock (Lock)

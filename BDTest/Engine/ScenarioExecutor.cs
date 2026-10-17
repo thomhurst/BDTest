@@ -19,13 +19,22 @@ internal class ScenarioExecutor : IScenarioExecutor
 
     public async Task ExecuteAsync(Scenario scenario)
     {
-        // Completed steps and retry hooks can run inline. Iterate attempts so
-        // repeated synchronous failures cannot grow the execution stack.
-        do
+        try
         {
-            await _scenarioRetryManager.CheckIfAlreadyExecuted(scenario).ConfigureAwait(false);
-            await ExecuteAttemptAsync(scenario).ConfigureAwait(false);
-        } while (scenario.ShouldRetry);
+            // Completed steps and retry hooks can run inline. Iterate attempts so
+            // repeated synchronous failures cannot grow the execution stack.
+            do
+            {
+                await _scenarioRetryManager.CheckIfAlreadyExecuted(scenario).ConfigureAwait(false);
+                await ExecuteAttemptAsync(scenario).ConfigureAwait(false);
+            } while (scenario.ShouldRetry);
+        }
+        finally
+        {
+            // Keep closures and the fixture alive through retries and text
+            // formatting, but release them even when a retry hook fails.
+            scenario.ReleaseRuntimeReferences();
+        }
     }
 
     private async Task ExecuteAttemptAsync(Scenario scenario)
