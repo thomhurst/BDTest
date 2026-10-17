@@ -20,6 +20,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using Microsoft.IdentityModel.Protocols;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using NUnit.Framework;
 
 namespace BDTest.ReportGenerator.Tests;
@@ -78,6 +79,23 @@ public class AuthenticationTests
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK), await response.Content.ReadAsStringAsync());
         var body = await response.Content.ReadAsStringAsync();
         Assert.That(body, Does.Contain(path.EndsWith("/test-runs") ? "BDTest" : "private-report"));
+    }
+
+    [TestCase(null)]
+    [TestCase("application/json")]
+    [TestCase("text/plain")]
+    public async Task RawReportDownloadIsAJsonObjectRegardlessOfAcceptHeader(string accept)
+    {
+        SignIn();
+        using var request = new HttpRequestMessage(HttpMethod.Get, "/bdtest/report/private-report/raw-json-data");
+        if (accept != null) request.Headers.Accept.ParseAdd(accept);
+
+        using var response = await _client.SendAsync(request);
+
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        Assert.That(response.Content.Headers.ContentType?.MediaType, Is.EqualTo("application/json"));
+        var json = JObject.Parse(await response.Content.ReadAsStringAsync());
+        Assert.That(json.Value<string>("id"), Is.EqualTo("private-report"));
     }
 
     [TestCase(null)]
