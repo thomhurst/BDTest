@@ -58,10 +58,9 @@ permissions before restarting. Initialization receives the host cancellation tok
 the existing report-listing interface has no cancellation token, so an in-flight
 cache load is awaited until the store completes or fails.
 
-Blob and Cosmos store constructors only create client/container references. When
-using these sample stores outside this host, await `InitializeAsync` before issuing
-reads or writes. Cosmos initialization creates the database once and then both
-containers. Hosts using only the reporting library load summaries on demand;
+The Blob store constructor only creates client/container references. When using
+this sample store outside this host, await `InitializeAsync` before issuing reads
+or writes. Hosts using only the reporting library load summaries on demand;
 constructing the repository no longer starts background storage work.
 
 ## Azure report listing and retention

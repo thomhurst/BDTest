@@ -47,7 +47,7 @@ Core uses `InternalsVisibleTo` for `BDTest.NUnit`, `BDTest.xUnit`, `BDTest.TUnit
 
 **Reporting**
 - `BDTest.Razor.Reports`: ASP.NET Core MVC controllers/views. Hosts add it with `AddBdTestReportControllersAndViews()` + `UseBDTestReportServer(...)`. Storage is pluggable through interfaces in `Interfaces/`.
-- `BDTest.ReportGenerator.RazorServer`: deployable report server using that library, with Azure Blob / Cosmos data stores and Azure AD auth. Not packed.
+- `BDTest.ReportGenerator.RazorServer`: deployable report server using that library, with an Azure Blob data store and Azure AD auth. Not packed.
 
 **Tests / samples**
 - `BDTest.Example`: sample NUnit tests, also referenced by `BDTest.Tests`.

@@ -2,7 +2,6 @@ using Azure;
 using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
 using BDTest.ReportGenerator.RazorServer;
-using Microsoft.Azure.Cosmos;
 using NUnit.Framework;
 
 namespace BDTest.ReportGenerator.Tests;
@@ -45,21 +44,6 @@ public class StorageInitializationTests
         Assert.That(reports.Calls, Is.Zero);
     }
 
-    [Test]
-    public async Task Cosmos_constructor_does_no_network_work_and_initialization_observes_failure()
-    {
-        using var client = new RecordingCosmosClient();
-        using var store = new CosmosBDTestDataStore(client);
-        using var cancellation = new CancellationTokenSource();
-        Assert.That(client.Creations, Is.Zero);
-        Assert.That(client.Containers, Is.EqualTo(new[] { "bdtest-reports/test-data", "bdtest-reports/test-run-summary" }));
-
-        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => store.InitializeAsync(cancellation.Token));
-        Assert.That(exception, Is.SameAs(client.Failure));
-        Assert.That(client.Creations, Is.EqualTo(1));
-        Assert.That(client.Token, Is.EqualTo(cancellation.Token));
-    }
-
     private sealed class RecordingContainer : BlobContainerClient
     {
         public int Calls;
@@ -80,29 +64,4 @@ public class StorageInitializationTests
         }
     }
 
-    private sealed class RecordingCosmosClient : CosmosClient
-    {
-        // The SDK's protected mocking constructor has no client context to dispose.
-        protected override void Dispose(bool disposing) { }
-
-        public List<string> Containers { get; } = new();
-        public int Creations;
-        public CancellationToken Token;
-        public Exception Failure { get; } = new InvalidOperationException("Database unavailable");
-
-        public override Container GetContainer(string databaseId, string containerId)
-        {
-            Containers.Add(databaseId + "/" + containerId);
-            return null;
-        }
-
-        public override Task<DatabaseResponse> CreateDatabaseIfNotExistsAsync(string id, int? throughput = null,
-            RequestOptions requestOptions = null, CancellationToken cancellationToken = default)
-        {
-            Creations++;
-            Token = cancellationToken;
-            Assert.That(id, Is.EqualTo("bdtest-reports"));
-            return Task.FromException<DatabaseResponse>(Failure);
-        }
-    }
 }
