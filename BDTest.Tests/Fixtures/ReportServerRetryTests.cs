@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Net;
 using System.Net.Http.Headers;
 using BDTest.Settings;
@@ -13,6 +14,7 @@ public class ReportServerRetryTests
     public async Task RateLimitedUploadWaitsForRetryAfter(bool useDate)
     {
         DateTimeOffset retryAt = default;
+        var elapsed = new Stopwatch();
         var requests = new List<string>();
         using var handler = new UploadHandler(async (request, attempt) =>
         {
@@ -20,6 +22,7 @@ public class ReportServerRetryTests
             Assert.That(request.Headers.GetValues("X-BDTest-Upload-Key"), Is.EqualTo(new[] { "secret" }));
             if (attempt == 1)
             {
+                elapsed.Restart();
                 retryAt = useDate
                     ? DateTimeOffset.FromUnixTimeSeconds(DateTimeOffset.UtcNow.ToUnixTimeSeconds() + 2)
                     : DateTimeOffset.UtcNow.AddSeconds(1);
@@ -30,7 +33,15 @@ public class ReportServerRetryTests
                 return response;
             }
 
-            Assert.That(DateTimeOffset.UtcNow, Is.GreaterThanOrEqualTo(retryAt));
+            if (useDate)
+            {
+                Assert.That(DateTimeOffset.UtcNow, Is.GreaterThanOrEqualTo(retryAt));
+            }
+            else
+            {
+                // Relative delays must use a monotonic clock; UTC can be adjusted while waiting.
+                Assert.That(elapsed.Elapsed, Is.GreaterThanOrEqualTo(TimeSpan.FromSeconds(1)));
+            }
             return Success();
         });
         using var client = new HttpClient(handler);
