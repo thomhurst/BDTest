@@ -20,7 +20,7 @@ public static class PagerExtensions
         for (var i = 1; i <= pager.TotalPages; i++)
         {
             var itemsIteratedThrough = i * pager.PageSize;
-            if (indexOfItem <= itemsIteratedThrough)
+            if (indexOfItem < itemsIteratedThrough)
             {
                 return i;
             }
