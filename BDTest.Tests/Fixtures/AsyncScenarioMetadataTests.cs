@@ -1,0 +1,65 @@
+using BDTest.Attributes;
+using BDTest.Test;
+using BDTest.Tests.Helpers;
+using NUnit.Framework;
+
+namespace BDTest.Tests.Fixtures;
+
+[NonParallelizable]
+public class AsyncScenarioMetadataTests : BDTestBase
+{
+    [SetUp]
+    public void Setup() => TestResetHelper.ResetData();
+
+    [Test]
+    public async Task Unannotated_test_keeps_its_name_after_suspension()
+    {
+        await Task.Yield();
+
+        var scenario = await When(() => NoOp()).Then(() => NoOp()).BDTestAsync();
+
+        Assert.That(scenario.GetScenarioText(), Is.EqualTo("Unannotated test keeps its name after suspension"));
+        Assert.That(scenario.CustomTestInformation, Is.Empty);
+    }
+
+    [Test]
+    [ScenarioText("Explicit text after suspension")]
+    public async Task Explicit_scenario_text_survives_suspension()
+    {
+        await Task.Yield();
+
+        var scenario = await When(() => NoOp()).Then(() => NoOp()).BDTestAsync();
+
+        Assert.That(scenario.GetScenarioText(), Is.EqualTo("Explicit text after suspension"));
+    }
+
+    [Test]
+    [TestInformation("First piece of information")]
+    [CustomInformation("Custom information")]
+    public async Task Test_information_survives_suspension()
+    {
+        await Task.Yield();
+
+        var scenario = await Given(() => NoOp()).When(() => NoOp()).Then(() => NoOp()).BDTestAsync();
+
+        Assert.That(scenario.CustomTestInformation.Select(attribute => attribute.Print()), Is.EquivalentTo(new[]
+        {
+            "TestInformationAttribute - First piece of information",
+            "CustomInformationAttribute - Custom information"
+        }));
+    }
+
+    [Test]
+    [ScenarioText("Attribute text")]
+    public async Task Fluent_scenario_text_overrides_attribute_after_suspension()
+    {
+        await Task.Yield();
+
+        var scenario = await When(() => NoOp()).Then(() => NoOp())
+            .WithScenarioText("Fluent text after suspension").BDTestAsync();
+
+        Assert.That(scenario.GetScenarioText(), Is.EqualTo("Fluent text after suspension"));
+    }
+
+    private static void NoOp() { }
+}
