@@ -5,6 +5,7 @@ using BDTest.Maps;
 using BDTest.Razor.Reports.Extensions;
 using BDTest.Razor.Reports.Interfaces;
 using BDTest.Razor.Reports.Models;
+using BDTest.Test;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
@@ -134,6 +135,100 @@ public class ReportUploadTests
         finally
         {
             foreach (var response in responses) response.Dispose();
+        }
+    }
+
+    [TestCase("{}")]
+    [TestCase("{\"Scenarios\":null}")]
+    [TestCase("{\"NotRun\":null}")]
+    [TestCase("{\"TestTimer\":null}")]
+    [TestCase("{\"Scenarios\":null,\"NotRun\":null,\"TestTimer\":null}")]
+    public async Task IncompleteUploadsAreStoredAndRenderedAsEmptyReports(string json)
+    {
+        await using var server = await UploadServer.Start();
+        using var response = await server.Post(json);
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        var report = server.Store.Received.Single();
+        Assert.That(report.Scenarios, Is.Empty);
+        Assert.That(report.NotRun, Is.Empty);
+        Assert.That(report.TestTimer.TestsStartedAt, Is.EqualTo(default(DateTime)));
+        Assert.That(report.TestTimer.TestsFinishedAt, Is.EqualTo(default(DateTime)));
+        var summary = server.Store.Summaries[report.Id];
+        Assert.That(summary.Counts.Total, Is.Zero);
+        Assert.That(summary.Counts.NotRun, Is.Zero);
+        Assert.That(summary.Status, Is.EqualTo(Status.Inconclusive));
+        Assert.That(summary.StartedAtDateTime, Is.EqualTo(default(DateTime)));
+        Assert.That(summary.FinishedAtDateTime, Is.EqualTo(default(DateTime)));
+        await AssertReportPagesRender(server, report.Id);
+    }
+
+    [TestCase(false)]
+    [TestCase(true)]
+    public async Task IncompleteStoredReportsAreNormalizedBeforeRendering(bool bulkRead)
+    {
+        await using var server = await UploadServer.Start();
+        // Simulate a legacy report loaded from persistent storage without an upload.
+        server.Store.Data["legacy"] = new BDTestOutputModel { Id = "legacy", Scenarios = null, NotRun = null };
+        if (bulkRead)
+        {
+            using var response = await server.Client.GetAsync("bdtest/report/test-run-times?reportIds=legacy");
+            Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+            Assert.That(response.Content.Headers.ContentType?.MediaType, Is.EqualTo("text/html"));
+        }
+        else
+        {
+            await AssertReportPagesRender(server, "legacy");
+        }
+    }
+
+    [Test]
+    public async Task PopulatedUploadsKeepTheirCountsStatusAndTimestamps()
+    {
+        await using var server = await UploadServer.Start();
+        using var response = await server.Post("""
+            {"Scenarios":[{"Status":"Passed","Steps":[]},{"Status":"Failed","Steps":[]}],
+             "NotRun":[{}],"TestTimer":{"TestsStartedAt":"2026-01-01T12:00:00Z","TestsFinishedAt":"2026-01-01T12:01:00Z"}}
+            """);
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        var report = server.Store.Received.Single();
+        var summary = server.Store.Summaries[report.Id];
+        Assert.That(summary.Counts.Total, Is.EqualTo(2));
+        Assert.That(summary.Counts.Passed, Is.EqualTo(1));
+        Assert.That(summary.Counts.Failed, Is.EqualTo(1));
+        Assert.That(summary.Counts.NotRun, Is.EqualTo(1));
+        Assert.That(summary.Status, Is.EqualTo(Status.Failed));
+        Assert.That(summary.StartedAtDateTime, Is.EqualTo(new DateTime(2026, 1, 1, 12, 0, 0, DateTimeKind.Utc)));
+        Assert.That(summary.FinishedAtDateTime, Is.EqualTo(new DateTime(2026, 1, 1, 12, 1, 0, DateTimeKind.Utc)));
+        Assert.That(report.TestTimer.TestsStartedAt, Is.EqualTo(summary.StartedAtDateTime));
+        Assert.That(report.TestTimer.TestsFinishedAt, Is.EqualTo(summary.FinishedAtDateTime));
+        Assert.That(report.Scenarios, Has.Count.EqualTo(2));
+        Assert.That(report.NotRun, Has.Count.EqualTo(1));
+    }
+
+    [TestCase("{}", false, false)]
+    [TestCase("{\"Scenarios\":null,\"NotRun\":null}", false, false)]
+    [TestCase("{\"Scenarios\":null,\"NotRun\":[{}]}", false, true)]
+    [TestCase("{\"Scenarios\":[{\"Status\":\"Failed\",\"Steps\":[]}],\"NotRun\":null}", true, false)]
+    public void MetricsTreatNullCollectionsAsEmpty(string json, bool failed, bool warnings)
+    {
+        var metrics = new OutputMetrics(JsonConvert.DeserializeObject<BDTestOutputModel>(json));
+        Assert.That(metrics.AnyFailed, Is.EqualTo(failed));
+        Assert.That(metrics.AllPassed, Is.EqualTo(!failed));
+        Assert.That(metrics.AnyWarnings, Is.EqualTo(warnings));
+        Assert.That(metrics.AnyPassed, Is.False);
+        Assert.That(metrics.AnyExceptions, Is.False);
+        Assert.That(metrics.AnySkipped, Is.False);
+        Assert.That(metrics.AnyInconclusive, Is.False);
+        Assert.That(metrics.AnyNotImplemented, Is.False);
+    }
+
+    private static async Task AssertReportPagesRender(UploadServer server, string id)
+    {
+        foreach (var page in new[] { "summary", "stories", "all-scenarios", "warnings", "timings", "top-defects" })
+        {
+            using var response = await server.Client.GetAsync($"bdtest/report/{id}/{page}");
+            Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK), page);
+            Assert.That(response.Content.Headers.ContentType?.MediaType, Is.EqualTo("text/html"), page);
         }
     }
 

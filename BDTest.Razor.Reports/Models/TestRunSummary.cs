@@ -15,9 +15,9 @@ public class TestRunSummary
     internal TestRunSummary(BDTestOutputModel bdTestOutputModel)
     {
         RecordId = bdTestOutputModel.Id;
-        StartedAtDateTime = bdTestOutputModel.TestTimer.TestsStartedAt;
-        FinishedAtDateTime = bdTestOutputModel.TestTimer.TestsFinishedAt;
-        Status = bdTestOutputModel.Scenarios.GetTotalStatus();
+        StartedAtDateTime = bdTestOutputModel.TestTimer?.TestsStartedAt ?? default;
+        FinishedAtDateTime = bdTestOutputModel.TestTimer?.TestsFinishedAt ?? default;
+        Status = (bdTestOutputModel.Scenarios ?? Enumerable.Empty<Scenario>()).GetTotalStatus();
         Tag = bdTestOutputModel.Tag;
         Environment = bdTestOutputModel.Environment;
         Version = bdTestOutputModel.Version;
@@ -29,10 +29,10 @@ public class TestRunSummary
 
     private void SetCounts(BDTestOutputModel bdTestOutputModel)
     {
-        Counts.Total = bdTestOutputModel.Scenarios.Count;
+        Counts.Total = bdTestOutputModel.Scenarios?.Count ?? 0;
         Counts.NotRun = bdTestOutputModel.NotRun?.Count ?? 0;
 
-        foreach (var scenario in bdTestOutputModel.Scenarios)
+        foreach (var scenario in bdTestOutputModel.Scenarios ?? Enumerable.Empty<Scenario>())
         {
             switch (scenario.Status)
             {
