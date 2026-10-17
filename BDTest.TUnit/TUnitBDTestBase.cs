@@ -15,11 +15,13 @@ public abstract class TUnitBDTestBase<TContext> : AbstractContextBDTestBase<TCon
     [Before(HookType.Class)]
     public static void SetupTUnitExceptions()
     {
-        if (!BDTestSettings.CustomExceptionSettings.InconclusiveExceptionTypes.Contains(typeof(SkipTestException)))
+        if (!BDTestSettings.CustomExceptionSettings.SkipExceptionTypes.Contains(typeof(SkipTestException)))
         {
-            BDTestSettings.CustomExceptionSettings.InconclusiveExceptionTypes.Add(typeof(SkipTestException));
+            BDTestSettings.CustomExceptionSettings.SkipExceptionTypes.Add(typeof(SkipTestException));
         }
     }
+
+    protected override void OnScenarioSkipped(string reason) => throw new SkipTestException(reason);
 
     [Before(HookType.Test)]
     public void Setup()

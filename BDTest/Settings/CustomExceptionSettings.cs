@@ -9,5 +9,9 @@ public class CustomExceptionSettings
     }
         
     public ConcurrentBag<Type> SuccessExceptionTypes { get; } = new();
+
+    /// <summary>Exception types that abort a scenario as skipped, without retrying it.</summary>
+    public ConcurrentBag<Type> SkipExceptionTypes { get; } = new();
+
     public ConcurrentBag<Type> InconclusiveExceptionTypes { get; } = new();
 }

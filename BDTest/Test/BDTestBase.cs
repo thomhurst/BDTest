@@ -74,6 +74,17 @@ public abstract class BDTestBase
 
     public HtmlWriter ScenarioHtmlWriter => new(BDTestExecutionId);
 
+    /// <summary>Reports a completed whole-scenario skip to the test runner.</summary>
+    /// <remarks>
+    /// Custom adapters can override this method to invoke their runner's skip mechanism.
+    /// The standalone base leaves the skipped scenario available to the caller.
+    /// </remarks>
+    protected virtual void OnScenarioSkipped(string reason)
+    {
+    }
+
+    internal void NotifyScenarioSkipped(string reason) => OnScenarioSkipped(reason);
+
     public virtual Task OnBeforeRetry()
     {
         return Task.CompletedTask;

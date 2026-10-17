@@ -18,7 +18,7 @@ public class TUnitScenarioTests : TUnitBDTestBase<TUnitContext>
     }
 
     [Test]
-    public async Task SkippedScenarioIsInconclusive()
+    public async Task SkippedScenarioIsSkipped()
     {
         var testId = TestContext.Current!.Id;
 
@@ -35,7 +35,7 @@ public class TUnitScenarioTests : TUnitBDTestBase<TUnitContext>
         {
             var scenario = BDTestUtil.GetScenarios().Single(s => s.FrameworkTestId == testId);
 
-            await Assert.That(scenario.Status).IsEqualTo(Status.Inconclusive);
+            await Assert.That(scenario.Status).IsEqualTo(Status.Skipped);
         }
     }
 }

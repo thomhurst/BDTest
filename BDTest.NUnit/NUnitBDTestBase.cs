@@ -23,9 +23,9 @@ public abstract class NUnitBDTestBase<TContext> : AbstractContextBDTestBase<TCon
             BDTestSettings.CustomExceptionSettings.SuccessExceptionTypes.Add(typeof(SuccessException));
         }
             
-        if (!BDTestSettings.CustomExceptionSettings.InconclusiveExceptionTypes.Contains(typeof(IgnoreException)))
+        if (!BDTestSettings.CustomExceptionSettings.SkipExceptionTypes.Contains(typeof(IgnoreException)))
         {
-            BDTestSettings.CustomExceptionSettings.InconclusiveExceptionTypes.Add(typeof(IgnoreException));
+            BDTestSettings.CustomExceptionSettings.SkipExceptionTypes.Add(typeof(IgnoreException));
         }
             
         if (!BDTestSettings.CustomExceptionSettings.InconclusiveExceptionTypes.Contains(typeof(InconclusiveException)))
@@ -33,6 +33,8 @@ public abstract class NUnitBDTestBase<TContext> : AbstractContextBDTestBase<TCon
             BDTestSettings.CustomExceptionSettings.InconclusiveExceptionTypes.Add(typeof(InconclusiveException));
         }
     }
+
+    protected override void OnScenarioSkipped(string reason) => Assert.Ignore(reason);
 
     [SetUp]
     public void Setup()

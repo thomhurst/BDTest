@@ -29,6 +29,13 @@ internal class ScenarioExecutor : IScenarioExecutor
                 await _scenarioRetryManager.CheckIfAlreadyExecuted(scenario).ConfigureAwait(false);
                 await ExecuteAttemptAsync(scenario).ConfigureAwait(false);
             } while (scenario.ShouldRetry);
+
+            // Notify after finalizing the scenario, outside retry/exception classification.
+            // For example, MSTest uses an inconclusive exception to signal a runtime skip.
+            if (scenario.Status == Status.Skipped)
+            {
+                scenario.BdTestBaseClass?.NotifyScenarioSkipped("BDTest scenario was skipped.");
+            }
         }
         finally
         {
@@ -66,7 +73,9 @@ internal class ScenarioExecutor : IScenarioExecutor
                 await step.Execute().ConfigureAwait(false);
             }
 
-            scenario.Status = Status.Passed;
+            scenario.Status = scenario.Steps.Count > 0 && scenario.Steps.All(step => step.Status == Status.Skipped)
+                ? Status.Skipped
+                : Status.Passed;
         }
         catch (NotImplementedException)
         {
@@ -76,6 +85,16 @@ internal class ScenarioExecutor : IScenarioExecutor
         catch (Exception e) when (BDTestSettings.CustomExceptionSettings.SuccessExceptionTypes.Contains(e.GetType()))
         {
             scenario.Status = Status.Passed;
+            throw;
+        }
+        catch (Exception e) when (BDTestSettings.CustomExceptionSettings.SkipExceptionTypes.Contains(e.GetType()))
+        {
+            scenario.Status = Status.Skipped;
+            foreach (var step in scenario.Steps.Where(step => step.Status == Status.Inconclusive))
+            {
+                step.SetStepText();
+                step.Status = Status.Skipped;
+            }
             throw;
         }
         catch (Exception e) when (BDTestSettings.CustomExceptionSettings.InconclusiveExceptionTypes.Contains(e.GetType()))

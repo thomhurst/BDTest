@@ -183,6 +183,11 @@ public class Step
             Status = Status.Passed;
             throw;
         }
+        catch (Exception e) when (BDTestSettings.CustomExceptionSettings.SkipExceptionTypes.Contains(e.GetType()))
+        {
+            Status = Status.Skipped;
+            throw;
+        }
         catch (Exception e) when (BDTestSettings.CustomExceptionSettings.InconclusiveExceptionTypes.Contains(e.GetType()))
         {
             Status = Status.Inconclusive;
