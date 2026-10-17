@@ -7,6 +7,7 @@ using BDTest.Maps;
 using BDTest.Output;
 using BDTest.Test.Steps.Given;
 using BDTest.Test.Steps.When;
+using BDTest.Test.Steps.GenericStep;
 
 namespace BDTest.Test;
 
@@ -46,6 +47,18 @@ public abstract class BDTestBase
         [CallerFilePath] string callerFile = null)
     {
         return new When(new Runnable(step), callerMember, callerFile, BDTestExecutionId, TestHolder.CurrentReportId, this);
+    }
+
+    public GenericStep Step(Expression<Action> step, [CallerMemberName] string callerMember = null,
+        [CallerFilePath] string callerFile = null)
+    {
+        return new GenericStep(new Runnable(step), callerMember, callerFile, BDTestExecutionId, TestHolder.CurrentReportId, this);
+    }
+
+    public GenericStep Step(Expression<Func<Task>> step, [CallerMemberName] string callerMember = null,
+        [CallerFilePath] string callerFile = null)
+    {
+        return new GenericStep(new Runnable(step), callerMember, callerFile, BDTestExecutionId, TestHolder.CurrentReportId, this);
     }
 
     public void WithContext<TContext>(Func<TContext, Scenario> test) where TContext : new()
