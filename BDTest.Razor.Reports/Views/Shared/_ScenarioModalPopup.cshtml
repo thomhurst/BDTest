@@ -118,7 +118,7 @@
             @if (!string.IsNullOrEmpty(Model.Scenario.CustomHtmlOutputForReport))
             {
                 <div class="mx-4 mt-4">
-                    @Html.Raw(Model.Scenario.CustomHtmlOutputForReport)
+                    @await Html.PartialAsync("_CustomHtmlOutput", Model.Scenario.CustomHtmlOutputForReport)
                 </div>
             }
             
