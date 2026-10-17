@@ -72,9 +72,14 @@ public class ReportHandlerEncodingTests
         record.FinishedAtDateTime = record.StartedAtDateTime.AddSeconds(1);
 
         var html = await RenderAsync("/Views/BDTest/TestRunList.cshtml", new[] { record }, isAdmin: true);
+        var form = ReadElement(html, "<form[^>]*>.*?</form>");
+        Assert.That((string)form.Attribute("action"),
+            Is.EqualTo("/bdtest/report/delete/" + Uri.EscapeDataString(record.RecordId ?? "")));
+        Assert.That((string)form.Attribute("method"), Is.EqualTo("post"));
         var button = ReadElement(html, "<button[^>]*>Delete</button>");
+        Assert.That((string)button.Attribute("type"), Is.EqualTo("submit"));
         Assert.That((string)button.Attribute("onclick"), Is.EqualTo(
-            "confirmDelete(this.dataset.testId, this.dataset.tag, this.dataset.environment, this.dataset.branch, this.dataset.date)"));
+            "return confirmDelete(this.dataset.testId, this.dataset.tag, this.dataset.environment, this.dataset.branch, this.dataset.date)"));
         Assert.That((string)button.Attribute("data-test-id"), Is.EqualTo(record.RecordId ?? ""));
         Assert.That((string)button.Attribute("data-tag"), Is.EqualTo(value ?? ""));
         Assert.That((string)button.Attribute("data-environment"), Is.EqualTo(value ?? ""));
@@ -82,7 +87,7 @@ public class ReportHandlerEncodingTests
         Assert.That((string)button.Attribute("data-date"), Is.EqualTo(record.StartedAtDateTime.ToString()));
         Assert.That(button.Attributes().Select(x => x.Name.LocalName), Is.EquivalentTo(new[]
         {
-            "class", "onclick", "data-test-id", "data-tag", "data-environment", "data-branch", "data-date"
+            "type", "class", "onclick", "data-test-id", "data-tag", "data-environment", "data-branch", "data-date"
         }));
     }
 

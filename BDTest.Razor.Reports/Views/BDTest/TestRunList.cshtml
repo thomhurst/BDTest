@@ -29,12 +29,7 @@
         }
         message += '\nDate: ' + date;
         
-        if (confirm(message)) {
-            @{
-                var baseUrl = Context.GetBaseUrl();
-            }
-            window.location.href = "@baseUrl/bdtest/report/delete/" + testId;
-        }
+        return confirm(message);
     }
 
     function filterByStatus(status) {
@@ -271,13 +266,16 @@
                     @if (isAdmin)
                     {
                         <td class="align-middle">
-                            <button class="btn btn-danger btn-sm"
-                                    data-test-id="@record.RecordId"
-                                    data-tag="@record.Tag"
-                                    data-environment="@record.Environment"
-                                    data-branch="@record.BranchName"
-                                    data-date="@record.StartedAtDateTime"
-                                    onclick="confirmDelete(this.dataset.testId, this.dataset.tag, this.dataset.environment, this.dataset.branch, this.dataset.date)">Delete</button>
+                            <form method="post" action="@Url.Content("~/bdtest/report/delete/" + Uri.EscapeDataString(record.RecordId ?? ""))">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="btn btn-danger btn-sm"
+                                        data-test-id="@record.RecordId"
+                                        data-tag="@record.Tag"
+                                        data-environment="@record.Environment"
+                                        data-branch="@record.BranchName"
+                                        data-date="@record.StartedAtDateTime"
+                                        onclick="return confirmDelete(this.dataset.testId, this.dataset.tag, this.dataset.environment, this.dataset.branch, this.dataset.date)">Delete</button>
+                            </form>
                         </td>
                     }
                 </tr>
