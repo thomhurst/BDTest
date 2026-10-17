@@ -8,32 +8,43 @@ using Newtonsoft.Json;
 namespace BDTest.ReportGenerator.RazorServer;
 
 // Cosmos only holds documents up to 2MB so this would only work for small test runs!
-public class CosmosBDTestDataStore : IBDTestDataStore
+public class CosmosBDTestDataStore : IBDTestDataStore, IAsyncDataStoreInitializer, IDisposable
 {
     private const string RecordDateTimeModelsKey = "RecordDateTimeModels";
 
     private readonly Container _testRecordContainer;
     private readonly Container _testRunSummaryContainer;
 
-    public CosmosBDTestDataStore(string connectionString)
+    private readonly CosmosClient _cosmosClient;
+    private readonly bool _ownsClient;
+
+    public CosmosBDTestDataStore(string connectionString) : this(new CosmosClient(connectionString))
     {
-        var cosmosClient = new CosmosClient(connectionString);
-            
-        _testRecordContainer = cosmosClient
-            .CreateDatabaseIfNotExistsAsync("bdtest-reports")
-            .GetAwaiter().GetResult()
-            .Database
-            .CreateContainerIfNotExistsAsync(new ContainerProperties("test-data", "/id"))
-            .GetAwaiter().GetResult();
-            
-        _testRunSummaryContainer = cosmosClient
-            .CreateDatabaseIfNotExistsAsync("bdtest-reports")
-            .GetAwaiter().GetResult()
-            .Database
-            .CreateContainerIfNotExistsAsync(new ContainerProperties("test-run-summary", "/id"))
-            .GetAwaiter().GetResult();
+        _ownsClient = true;
     }
-        
+
+    public CosmosBDTestDataStore(CosmosClient cosmosClient)
+    {
+        _cosmosClient = cosmosClient;
+        _testRecordContainer = cosmosClient.GetContainer("bdtest-reports", "test-data");
+        _testRunSummaryContainer = cosmosClient.GetContainer("bdtest-reports", "test-run-summary");
+    }
+
+    public async Task InitializeAsync(CancellationToken cancellationToken = default)
+    {
+        var response = await _cosmosClient.CreateDatabaseIfNotExistsAsync("bdtest-reports",
+            cancellationToken: cancellationToken);
+        await response.Database.CreateContainerIfNotExistsAsync(new ContainerProperties("test-data", "/id"),
+            cancellationToken: cancellationToken);
+        await response.Database.CreateContainerIfNotExistsAsync(new ContainerProperties("test-run-summary", "/id"),
+            cancellationToken: cancellationToken);
+    }
+
+    public void Dispose()
+    {
+        if (_ownsClient) _cosmosClient.Dispose();
+    }
+
     public async Task<BDTestOutputModel> GetTestData(string id, CancellationToken cancellationToken)
     {
         try
