@@ -40,7 +40,8 @@ public class AzureStorageDataStore : IBDTestDataStore
         {
             var blobData = await _testDataContainer.GetBlockBlobClient(id).DownloadAsync(cancellationToken);
             using var content = blobData.Value.Content;
-            using var reader = new JsonTextReader(new StreamReader(content));
+            using var streamReader = new StreamReader(content);
+            using var reader = new JsonTextReader(streamReader);
             return JsonSerializer.Create().Deserialize<BDTestOutputModel>(reader);
         }
         catch (RequestFailedException e) when(e.Status == 404)
@@ -78,7 +79,8 @@ public class AzureStorageDataStore : IBDTestDataStore
                     var download = await _testRunSummariesContainer.GetBlockBlobClient(newestBlobs[index].Name)
                         .DownloadAsync(cancellationToken);
                     using var content = download.Value.Content;
-                    using var reader = new JsonTextReader(new StreamReader(content));
+                    using var streamReader = new StreamReader(content);
+                    using var reader = new JsonTextReader(streamReader);
                     // Each concurrent download needs its own serializer and reader.
                     summaries[index] = JsonSerializer.Create().Deserialize<TestRunSummary>(reader);
                 }
