@@ -25,7 +25,14 @@ public class RunUnitTestsModule : Module<List<CommandResult>>
                 results.Add(await context.DotNet().Run(new DotNetRunOptions
                 {
                     Project = unitTestProjectFile.Path,
-                    CommandLogging = CommandLogging.Input | CommandLogging.Error,
+                }, new CommandExecutionOptions
+                {
+                    LogSettings = new CommandLoggingOptions
+                    {
+                        ShowCommandArguments = true,
+                        ShowStandardOutput = false,
+                        ShowStandardError = true,
+                    }
                 }, cancellationToken));
                 continue;
             }
