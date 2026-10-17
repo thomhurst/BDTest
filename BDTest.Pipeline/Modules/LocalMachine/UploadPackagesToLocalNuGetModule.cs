@@ -14,25 +14,26 @@ namespace BDTest.Pipeline.Modules.LocalMachine;
 [DependsOn<CreateLocalNugetFolderModule>]
 public class UploadPackagesToLocalNuGetModule : Module<CommandResult[]>
 {
-    protected override async Task OnBeforeExecute(IPipelineContext context)
+    protected override async Task OnBeforeExecuteAsync(IModuleContext context, CancellationToken cancellationToken)
     {
-        var packagePaths = await GetModule<PackagePathsParserModule>();
-        foreach (var packagePath in packagePaths.Value!)
+        var packagePaths = await context.GetModule<PackagePathsParserModule>();
+        foreach (var packagePath in packagePaths.ValueOrDefault!)
         {
             context.Logger.LogInformation("[Local Directory] Uploading {File}", packagePath);
         }
 
-        await base.OnBeforeExecute(context);
+        await base.OnBeforeExecuteAsync(context, cancellationToken);
     }
 
-    protected override async Task<CommandResult[]?> ExecuteAsync(IPipelineContext context, CancellationToken cancellationToken)
+    protected override async Task<CommandResult[]?> ExecuteAsync(IModuleContext context, CancellationToken cancellationToken)
     {
-        var localRepoLocation = await GetModule<CreateLocalNugetFolderModule>();
-        var packagePaths = await GetModule<PackagePathsParserModule>();
-        return await packagePaths.Value!.SelectAsync(async file => await context.DotNet()
+        var localRepoLocation = await context.GetModule<CreateLocalNugetFolderModule>();
+        var packagePaths = await context.GetModule<PackagePathsParserModule>();
+        return await packagePaths.ValueOrDefault!.SelectAsync(async file => await context.DotNet()
             .Nuget
-            .Push(new DotNetNugetPushOptions(file)
+            .Push(new DotNetNugetPushOptions
             {
-                Source = localRepoLocation.Value!
-            }, cancellationToken), cancellationToken: cancellationToken).ProcessOneAtATime();    }
+                Path = file,
+                Source = localRepoLocation.ValueOrDefault!
+            }, cancellationToken: cancellationToken), cancellationToken: cancellationToken).ProcessOneAtATime();    }
 }
