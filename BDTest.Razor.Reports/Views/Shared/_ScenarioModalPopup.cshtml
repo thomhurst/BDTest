@@ -25,7 +25,7 @@
                 }
 
                 <button class="btn @Model.Scenario.Status.GetCssColourValueForStatus() is-small mx-3">
-                    <img src="~/_content/BDTest.NetCore.Razor.ReportMiddleware/icons/share-white-18dp.svg" class="pointer" alt="Share" onclick="copyToClipboard('@shareUrl.ToString()')"/>
+                    <img src="~/_content/BDTest.NetCore.Razor.ReportMiddleware/icons/share-white-18dp.svg" class="pointer" alt="Share" data-url="@shareUrl.ToString()" onclick="copyToClipboard(this.dataset.url)"/>
                 </button>
                 <button class="delete is-large @Model.Scenario.Status.GetCssColourValueForStatus()-background-color" aria-label="close"></button>
             </nav>
