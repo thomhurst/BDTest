@@ -73,6 +73,24 @@ builder with its own execution limit, step state, and report entry, even when th
 original builder has already run. Create a new chain or continuation to run another scenario. Configured BDTest
 retries still run within the original execution and retain one report entry.
 
+### Step text and argument values
+
+Automatically generated step text captures argument values when the step is added
+to a builder. BDTest reuses that text during execution, retries, reporting, and
+builder continuations. Argument expressions are evaluated once for this initial
+text and again when the step itself runs, so keep those expressions free of side
+effects. If a value changes during the scenario, use `.WithStepText(() => ...)`
+to generate text when the step executes. An empty override falls back to the
+cached automatic text.
+
+Delegate arguments are displayed with `ToString()` without invoking the delegate.
+Collections display their elements, and dictionaries implementing `IDictionary`
+display `key=value` pairs. Registered `IStepTextStringConverter<T>` converters
+take precedence over default formatting and accept values assignable to `T`,
+including derived classes and interface implementations. The first matching
+registered converter is used; within that converter, an exact type match takes
+precedence over an assignable match.
+
 ### Asynchronous steps
 
 Asynchronous step expressions must return `Task` (including `Task<T>`). Convert

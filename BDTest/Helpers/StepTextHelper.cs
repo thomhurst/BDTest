@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Diagnostics;
 using System.Linq.Expressions;
 using BDTest.Attributes;
@@ -81,7 +82,7 @@ public static class StepTextHelper
         try
         {
             var argumentValue = argument is ConstantExpression constantExpression
-                ? constantExpression.Value?.ToString()
+                ? constantExpression.Value
                 : Expression.Lambda(Expression.Convert(argument, argument.Type)).Compile().DynamicInvoke();
 
             if (argumentValue == null)
@@ -89,37 +90,42 @@ public static class StepTextHelper
                 return "null";
             }
 
-            var stepTextStringConverter = BDTestSettings.CustomStringConverters
-                .FirstOrDefault(type => 
-                    type.GetType().GetInterfaces().FirstOrDefault()?.Name.StartsWith(nameof(IStepTextStringConverter<object>)) == true 
-                    && type.GetType().GetInterfaces().FirstOrDefault()?.GetGenericArguments().FirstOrDefault() == argumentValue.GetType());
-                
-            if (stepTextStringConverter != null)
+            foreach (var converter in BDTestSettings.CustomStringConverters)
             {
-                var method = stepTextStringConverter.GetType().GetMethod(nameof(IStepTextStringConverter<object>.ConvertToString));
-                if (method != null)
+                var converterInterface = converter.GetType().GetInterfaces()
+                    .Where(type => type.IsGenericType && type.GetGenericTypeDefinition() == typeof(IStepTextStringConverter<>))
+                    .Where(type => type.GetGenericArguments()[0].IsInstanceOfType(argumentValue))
+                    .OrderByDescending(type => type.GetGenericArguments()[0] == argumentValue.GetType())
+                    .FirstOrDefault();
+
+                if (converterInterface != null)
                 {
-                    return method.Invoke(stepTextStringConverter, new[] { argumentValue }) as string;
+                    // Invoke through the interface to support explicit implementations.
+                    var method = converterInterface.GetMethod(nameof(IStepTextStringConverter<object>.ConvertToString));
+                    return method.Invoke(converter, new[] { argumentValue }) as string;
                 }
             }
 
-            if (TypeHelper.IsFuncOrAction(argumentValue.GetType()))
+            // Delegate arguments are values, not callbacks for generating step text.
+            if (argumentValue is Delegate || argumentValue is string)
             {
-                var func = (Delegate) argumentValue;
-
-                return func.DynamicInvoke()?.ToString();
+                return argumentValue.ToString();
             }
 
-            if (TypeHelper.IsIEnumerable(argumentValue) || argumentValue.GetType().IsArray)
+            if (argumentValue is IDictionary dictionary)
             {
-                return string.Join(", ", (IEnumerable<object>) argumentValue);
+                var entries = new List<string>();
+                foreach (DictionaryEntry entry in dictionary)
+                {
+                    entries.Add($"{entry.Key}={entry.Value}");
+                }
+
+                return string.Join(",", entries);
             }
 
-            if (TypeHelper.IsIDictionary(argumentValue))
+            if (argumentValue is IEnumerable enumerable)
             {
-                return string.Join(",",
-                    ((IDictionary<object, object>) argumentValue).Select(kv => $"{kv.Key}={kv.Value}")
-                );
+                return string.Join(", ", enumerable.Cast<object>());
             }
 
             return argumentValue.ToString();
