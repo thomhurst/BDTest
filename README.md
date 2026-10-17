@@ -73,6 +73,24 @@ builder with its own execution limit, step state, and report entry, even when th
 original builder has already run. Create a new chain or continuation to run another scenario. Configured BDTest
 retries still run within the original execution and retain one report entry.
 
+### Asynchronous steps
+
+Asynchronous step expressions must return `Task` (including `Task<T>`). Convert
+`ValueTask` and `ValueTask<T>` at the call site so BDTest waits for completion and
+reports asynchronous exceptions:
+
+```csharp
+await When(() => SaveAsync().AsTask())
+    .Then(() => VerifySaved())
+    .BDTestAsync();
+```
+
+A directly returned `ValueTask`, configured awaitable, or custom awaitable with a
+public instance `GetAwaiter()` is rejected before the step runs, because binding it
+to `Action` would discard its asynchronous work. For other awaitables, write an
+`async Task` helper that awaits the operation and use that helper as the step.
+Avoid hiding asynchronous work inside a synchronous or `async void` helper.
+
 ### Report date formatting
 
 Razor report tables and chart labels use the current request culture's short date

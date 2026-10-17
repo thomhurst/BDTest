@@ -1,5 +1,5 @@
 ﻿using System.Linq.Expressions;
-using System.Runtime.CompilerServices;
+using System.Reflection;
 using BDTest.Reporters;
 
 namespace BDTest;
@@ -26,36 +26,31 @@ internal class Runnable
             await ConsoleReporter.WriteLine($"{nameof(Task)} and {nameof(Action)} are both null in {nameof(Runnable)}");
             return;
         }
-            
+
         if (Task != null)
         {
             await Task.Compile().Invoke();
             return;
         }
 
-        var compiledAction = Action.Compile();
-        if (IsThisAsync(compiledAction))
+        // An Action expression can discard a method's result. Inspect the original
+        // body before invoking it: the compiled delegate's return type is always void.
+        var resultType = Action.Body.Type;
+        if (resultType != typeof(void) && resultType.GetMethods(BindingFlags.Public | BindingFlags.Instance)
+                .Any(method => method.Name == "GetAwaiter" && !method.IsGenericMethod
+                    && method.GetParameters().Length == 0))
         {
-            await System.Threading.Tasks.Task.Run(compiledAction);
-            return;
+            throw new InvalidOperationException(
+                $"The step returns awaitable type '{resultType.FullName}', but is bound to Action and would discard its result. " +
+                "Return Task from the step expression instead. For ValueTask or ValueTask<T>, call AsTask(); " +
+                "for other awaitables, use an async Task helper that awaits the operation.");
         }
 
-        compiledAction.Invoke();
+        Action.Compile().Invoke();
     }
 
     internal string GetExpressionString()
     {
         return Task?.Body?.ToString() ?? Action?.Body?.ToString();
-    }
-
-    private static bool IsThisAsync(Action action)
-    {
-        if (action.Method.ReturnType.GetMethod(nameof(System.Threading.Tasks.Task.GetAwaiter)) != null)
-        {
-            return true;
-        }
-            
-        return action.Method.IsDefined(typeof(AsyncStateMachineAttribute),
-            false);
     }
 }
