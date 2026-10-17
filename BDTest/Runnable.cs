@@ -1,4 +1,5 @@
 ﻿using System.Linq.Expressions;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using BDTest.Reporters;
 
@@ -26,36 +27,78 @@ internal class Runnable
             await ConsoleReporter.WriteLine($"{nameof(Task)} and {nameof(Action)} are both null in {nameof(Runnable)}");
             return;
         }
-            
+
         if (Task != null)
         {
             await Task.Compile().Invoke();
             return;
         }
 
-        var compiledAction = Action.Compile();
-        if (IsThisAsync(compiledAction))
+        // An Action expression can discard a method's result. Inspect the original
+        // body before invoking it: the compiled delegate's return type is always void.
+        var resultType = Action.Body.Type;
+        if (resultType != typeof(void) && resultType.GetMethods(BindingFlags.Public | BindingFlags.Instance)
+                .Any(method => method.Name == "GetAwaiter" && !method.IsGenericMethod
+                    && method.GetParameters().Length == 0 && IsAwaiterType(method.ReturnType)))
         {
-            await System.Threading.Tasks.Task.Run(compiledAction);
-            return;
+            throw new InvalidOperationException(
+                $"The step returns awaitable type '{resultType.FullName}', but is bound to Action and would discard its result. " +
+                "Return Task from the step expression instead. For ValueTask or ValueTask<T>, call AsTask(); " +
+                "for other awaitables, use an async Task helper that awaits the operation.");
         }
 
-        compiledAction.Invoke();
+        Action.Compile().Invoke();
+    }
+
+    private static bool IsAwaiterType(Type type)
+    {
+        if (!typeof(INotifyCompletion).IsAssignableFrom(type))
+        {
+            return false;
+        }
+
+        // Reflection on an interface does not include members from its base interfaces.
+        var memberTypes = type.IsInterface ? new[] { type }.Concat(type.GetInterfaces()) : new[] { type };
+        const BindingFlags flags = BindingFlags.Public | BindingFlags.Instance;
+        var completionMembers = GetCompletionMembers(type).ToArray();
+        return completionMembers.Length == 1 && completionMembers.OfType<PropertyInfo>()
+                   .Any(property => property.Name == "IsCompleted" && property.PropertyType == typeof(bool)
+                       && property.GetIndexParameters().Length == 0 && property.GetGetMethod() != null && !property.GetGetMethod().IsStatic)
+               && memberTypes.SelectMany(memberType => memberType.GetMethods(flags))
+                   .Any(method => method.Name == "GetResult" && !method.IsGenericMethod
+                       && method.GetParameters().Length == 0);
+    }
+
+    private static IEnumerable<MemberInfo> GetCompletionMembers(Type type)
+    {
+        const BindingFlags flags = BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static
+                                   | BindingFlags.DeclaredOnly;
+        if (type.IsInterface)
+        {
+            var declarations = new[] { type }.Concat(type.GetInterfaces())
+                .Select(memberType => new { Type = memberType, Members = memberType.GetMember("IsCompleted", flags) })
+                .Where(declaration => declaration.Members.Length != 0).ToArray();
+            return declarations.Where(declaration => !declarations.Any(other =>
+                    other.Type != declaration.Type && declaration.Type.IsAssignableFrom(other.Type)))
+                .SelectMany(declaration => declaration.Members);
+        }
+
+        // Look up the name before validating its shape: a derived member hides a
+        // base property even when the derived member is not a Boolean property.
+        for (var current = type; current != null; current = current.BaseType)
+        {
+            var members = current.GetMember("IsCompleted", flags);
+            if (members.Length != 0)
+            {
+                return members;
+            }
+        }
+
+        return Array.Empty<MemberInfo>();
     }
 
     internal string GetExpressionString()
     {
         return Task?.Body?.ToString() ?? Action?.Body?.ToString();
-    }
-
-    private static bool IsThisAsync(Action action)
-    {
-        if (action.Method.ReturnType.GetMethod(nameof(System.Threading.Tasks.Task.GetAwaiter)) != null)
-        {
-            return true;
-        }
-            
-        return action.Method.IsDefined(typeof(AsyncStateMachineAttribute),
-            false);
     }
 }
