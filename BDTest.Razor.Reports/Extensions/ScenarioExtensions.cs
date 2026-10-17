@@ -7,6 +7,11 @@ public static class ScenarioExtensions
     public static Status GetTotalStatus(this IEnumerable<Scenario> scenarios)
     {
         var scenariosList = scenarios.ToList();
+        if (scenariosList.Count > 0 && scenariosList.All(scenario => scenario.Status == Status.Skipped))
+        {
+            return Status.Skipped;
+        }
+
         var firstScenario = scenariosList.FirstOrDefault(scenario => scenario.Status == Status.Failed)
                             ?? scenariosList.FirstOrDefault(scenario => scenario.Status == Status.NotImplemented)
                             ?? scenariosList.FirstOrDefault(scenario => scenario.Status == Status.Inconclusive)
