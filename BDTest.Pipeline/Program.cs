@@ -1,37 +1,38 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using ModularPipelines;
 using ModularPipelines.Extensions;
-using ModularPipelines.Host;
 using BDTest.Pipeline.Modules;
 using BDTest.Pipeline.Modules.LocalMachine;
 using BDTest.Pipeline.Settings;
 
-await PipelineHostBuilder.Create()
-    .ConfigureAppConfiguration((_, builder) =>
-    {
-        builder.AddJsonFile("appsettings.json")
-            .AddUserSecrets<Program>()
-            .AddEnvironmentVariables();
-    })
-    .ConfigureServices((context, collection) =>
-    {
-        collection.Configure<NuGetSettings>(context.Configuration.GetSection("NuGet"));
+var builder = Pipeline.CreateBuilder(args);
 
-        if (context.HostingEnvironment.IsDevelopment())
-        {
-            collection.AddModule<CreateLocalNugetFolderModule>()
-                .AddModule<AddLocalNugetSourceModule>()
-                .AddModule<UploadPackagesToLocalNuGetModule>();
-        }
-        else
-        {
-            collection.AddModule<UploadPackagesToNugetModule>();
-        }
-    })
+builder.Configuration
+    .AddJsonFile("appsettings.json")
+    .AddUserSecrets<Program>()
+    .AddEnvironmentVariables();
+
+builder.Services.Configure<NuGetSettings>(builder.Configuration.GetSection("NuGet"));
+
+if (builder.Environment.IsDevelopment())
+{
+    builder.Services
+        .AddModule<CreateLocalNugetFolderModule>()
+        .AddModule<AddLocalNugetSourceModule>()
+        .AddModule<UploadPackagesToLocalNuGetModule>();
+}
+else
+{
+    builder.Services.AddModule<UploadPackagesToNugetModule>();
+}
+
+builder.Services
     .AddModule<RunUnitTestsModule>()
     .AddModule<NugetVersionGeneratorModule>()
     .AddModule<PackProjectsModule>()
     .AddModule<PackageFilesRemovalModule>()
-    .AddModule<PackagePathsParserModule>()
-    .ExecutePipelineAsync();
+    .AddModule<PackagePathsParserModule>();
+
+await builder.Build().RunAsync();

@@ -210,10 +210,10 @@ public class UniqueContextTests
             }
         }
 
-        [Test, Timeout(30000)]
+        [Test]
         public void ZZZ_EnsureContextsAreUnique()
         {
-            _completionSource.Task.GetAwaiter().GetResult();
+            Assert.That(_completionSource.Task.Wait(TimeSpan.FromSeconds(30)), Is.True, "Timed out waiting for other tests to complete");
                 
             var distinctContexts = _contexts.Select(x => x.Id).Distinct().ToList();
 
