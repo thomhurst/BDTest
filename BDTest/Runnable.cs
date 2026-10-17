@@ -1,5 +1,6 @@
 ﻿using System.Linq.Expressions;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using BDTest.Reporters;
 
 namespace BDTest;
@@ -38,7 +39,7 @@ internal class Runnable
         var resultType = Action.Body.Type;
         if (resultType != typeof(void) && resultType.GetMethods(BindingFlags.Public | BindingFlags.Instance)
                 .Any(method => method.Name == "GetAwaiter" && !method.IsGenericMethod
-                    && method.GetParameters().Length == 0))
+                    && method.GetParameters().Length == 0 && IsAwaiterType(method.ReturnType)))
         {
             throw new InvalidOperationException(
                 $"The step returns awaitable type '{resultType.FullName}', but is bound to Action and would discard its result. " +
@@ -47,6 +48,24 @@ internal class Runnable
         }
 
         Action.Compile().Invoke();
+    }
+
+    private static bool IsAwaiterType(Type type)
+    {
+        if (!typeof(INotifyCompletion).IsAssignableFrom(type))
+        {
+            return false;
+        }
+
+        // Reflection on an interface does not include members from its base interfaces.
+        var memberTypes = type.IsInterface ? new[] { type }.Concat(type.GetInterfaces()) : new[] { type };
+        const BindingFlags flags = BindingFlags.Public | BindingFlags.Instance;
+        return memberTypes.SelectMany(memberType => memberType.GetProperties(flags))
+                   .Any(property => property.Name == "IsCompleted" && property.PropertyType == typeof(bool)
+                       && property.GetIndexParameters().Length == 0 && property.GetGetMethod() != null)
+               && memberTypes.SelectMany(memberType => memberType.GetMethods(flags))
+                   .Any(method => method.Name == "GetResult" && !method.IsGenericMethod
+                       && method.GetParameters().Length == 0);
     }
 
     internal string GetExpressionString()

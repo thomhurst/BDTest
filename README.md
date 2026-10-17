@@ -86,7 +86,9 @@ await When(() => SaveAsync().AsTask())
 ```
 
 A directly returned `ValueTask`, configured awaitable, or custom awaitable with a
-public instance `GetAwaiter()` is rejected before the step runs, because binding it
+public instance `GetAwaiter()` returning an awaiter that implements `INotifyCompletion`
+and exposes a readable Boolean `IsCompleted` and parameterless `GetResult()` is
+rejected before the step runs, because binding it
 to `Action` would discard its asynchronous work. For other awaitables, write an
 `async Task` helper that awaits the operation and use that helper as the step.
 Avoid hiding asynchronous work inside a synchronous or `async void` helper.

@@ -138,6 +138,77 @@ public class AwaitableStepTests : BDTestBase
         Assert.That(scenario.Status, Is.EqualTo(Status.Passed));
     }
 
+    [TestCase(typeof(int))]
+    [TestCase(typeof(MissingNotification))]
+    [TestCase(typeof(MissingCompletion))]
+    [TestCase(typeof(NonBooleanCompletion))]
+    [TestCase(typeof(PrivateCompletionGetter))]
+    [TestCase(typeof(MissingResult))]
+    [TestCase(typeof(GenericResult))]
+    public async Task Unrelated_GetAwaiter_methods_do_not_prevent_synchronous_steps(Type awaiterType)
+    {
+        var calls = new List<string>();
+        var method = GetType().GetMethod(nameof(ReturnSynchronousResult),
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static)!
+            .MakeGenericMethod(awaiterType);
+        var step = Expression.Lambda<Action>(Expression.Call(method, Expression.Constant(calls)));
+
+        var scenario = await When(step).Then(() => calls.Add("then")).BDTestAsync();
+
+        Assert.That(calls, Is.EqualTo(new[] { "step", "then" }));
+        Assert.That(scenario.Status, Is.EqualTo(Status.Passed));
+    }
+
+    private static SynchronousResult<TAwaiter> ReturnSynchronousResult<TAwaiter>(List<string> calls)
+    {
+        calls.Add("step");
+        return new();
+    }
+
+    private sealed class SynchronousResult<TAwaiter>
+    {
+        public TAwaiter GetAwaiter() => throw new AssertionException("GetAwaiter must not be invoked.");
+    }
+
+    private sealed class MissingNotification
+    {
+        public bool IsCompleted => true;
+        public void GetResult() { }
+    }
+
+    private sealed class MissingCompletion : INotifyCompletion
+    {
+        public void OnCompleted(Action continuation) { }
+        public void GetResult() { }
+    }
+
+    private sealed class NonBooleanCompletion : INotifyCompletion
+    {
+        public int IsCompleted => 1;
+        public void OnCompleted(Action continuation) { }
+        public void GetResult() { }
+    }
+
+    private sealed class PrivateCompletionGetter : INotifyCompletion
+    {
+        public bool IsCompleted { private get; set; }
+        public void OnCompleted(Action continuation) { }
+        public void GetResult() { }
+    }
+
+    private sealed class MissingResult : INotifyCompletion
+    {
+        public bool IsCompleted => true;
+        public void OnCompleted(Action continuation) { }
+    }
+
+    private sealed class GenericResult : INotifyCompletion
+    {
+        public bool IsCompleted => true;
+        public void OnCompleted(Action continuation) { }
+        public void GetResult<T>() { }
+    }
+
     private static void NoOp() { }
 
     private sealed class DelayedWork
