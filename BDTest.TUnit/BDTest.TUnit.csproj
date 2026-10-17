@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <IsPackable>true</IsPackable>
+        <OutputType>Library</OutputType>
+        <TargetFramework>netstandard2.0</TargetFramework>
+        <SignAssembly>True</SignAssembly>
+        <AssemblyOriginatorKeyFile>..\StrongNameKeyPair.snk</AssemblyOriginatorKeyFile>
+        <PackageId>BDTest.TUnit</PackageId>
+        <Title>BDTest - TUnit</Title>
+        <Authors>Tom Longhurst</Authors>
+        <Description>A TUnit Extension for BDTest</Description>
+        <PackageTags>test tdd bdd testing given when then tunit</PackageTags>
+        <PackageProjectUrl>https://github.com/thomhurst/BDTest</PackageProjectUrl>
+        <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+        <PackageIcon>nuget_icon.png</PackageIcon>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <None Include="..\nuget_icon.png" Pack="true" PackagePath="" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\BDTest\BDTest.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="TUnit.Core" Version="1.75.0" />
+    </ItemGroup>
+
+</Project>
