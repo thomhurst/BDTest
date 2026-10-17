@@ -108,10 +108,56 @@ public class DefaultExecutionIdTests
         }
     }
 
+    [TestCase(false)]
+    [TestCase(true)]
+    public async Task AsyncEntryPointPreservesCallerIdentity(bool fail)
+    {
+        var fixture = new ContextFixture();
+        fixture.Start();
+        var callerContext = fixture.BDTestContext;
+        var callerOutputId = BDTest.Output.TestOutputData.FrameworkExecutionId;
+        try
+        {
+            try
+            {
+                await fixture.RunTestAsync(fail);
+                Assert.That(fail, Is.False);
+            }
+            catch (InvalidOperationException) when (fail)
+            {
+            }
+
+            Assert.That(fixture.BDTestContext, Is.SameAs(callerContext));
+            Assert.That(BDTest.Output.TestOutputData.FrameworkExecutionId, Is.EqualTo(callerOutputId));
+        }
+        finally
+        {
+            fixture.Complete();
+        }
+    }
+
     private sealed class ContextFixture : AbstractContextBDTestBase<MyTestContext>
     {
         public void Start() => MarkTestAsStarted();
         public void Complete() => MarkTestAsComplete();
+
+        public async Task RunTestAsync(bool fail)
+        {
+            MarkTestAsStarted();
+            try
+            {
+                await SetupAsync();
+                if (fail)
+                {
+                    throw new InvalidOperationException("setup failed");
+                }
+                await When(() => NoOp()).Then(() => NoOp()).BDTestAsync();
+            }
+            finally
+            {
+                MarkTestAsComplete();
+            }
+        }
 
         public async Task<BDTestContext<MyTestContext>> SetupAsync()
         {

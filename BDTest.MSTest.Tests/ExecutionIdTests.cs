@@ -15,9 +15,11 @@ public class ExecutionIdTests : MSTestBDTestBase<ExecutionIdTests.TestContextDat
     [TestInitialize]
     public async Task AsyncSetup()
     {
+        Console.WriteLine("sync console startup " + BDTestExecutionId);
         await Task.Yield();
         await Task.Run(() =>
         {
+            Console.WriteLine("async console startup " + BDTestExecutionId);
             _setupContext = Context;
             _setupId = BDTestContext.CurrentScenarioBDTestExecutionId;
             WriteStartupOutput("startup " + _setupId);
@@ -39,6 +41,8 @@ public class ExecutionIdTests : MSTestBDTestBase<ExecutionIdTests.TestContextDat
 
         Assert.AreEqual(_setupId, scenario.FrameworkTestId);
         Assert.Contains("startup " + _setupId, scenario.TestStartupInformation);
+        Assert.Contains("sync console startup " + _setupId, scenario.TestStartupInformation);
+        Assert.Contains("async console startup " + _setupId, scenario.TestStartupInformation);
         WriteTearDownOutput("teardown " + _setupId);
         Assert.Contains("teardown " + _setupId, scenario.TearDownOutput);
     }

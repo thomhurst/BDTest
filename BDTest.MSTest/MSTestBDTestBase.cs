@@ -11,6 +11,12 @@ public abstract class MSTestBDTestBase<TContext> : AbstractContextBDTestBase<TCo
     // An instance ID survives the separate execution flows used by async setup/body.
     protected override string BDTestExecutionId { get; } = Guid.NewGuid().ToString("N");
 
+    [TestInitialize]
+    public void InitializeBDTest()
+    {
+        MarkTestAsStarted();
+    }
+
     [TestCleanup]
     public void TearDown()
     {

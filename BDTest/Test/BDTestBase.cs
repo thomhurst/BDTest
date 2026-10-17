@@ -93,6 +93,7 @@ public abstract class BDTestBase
         StaticBDTestExecutionId = Guid.NewGuid().ToString("N");
         TestOutputData.TestId = null;
         TestOutputData.FrameworkExecutionId = BDTestExecutionId;
+        Console.SetOut(TestOutputData.Instance);
     }
 
     protected virtual void MarkTestAsComplete()

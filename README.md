@@ -73,17 +73,13 @@ For a custom adapter inheriting `BDTestBase` or `AbstractContextBDTestBase<TCont
 override `BDTestExecutionId` with the runner's stable per-test ID, or call the
 protected `MarkTestAsStarted()` synchronously in the flow that runs setup and the
 test. Call it before starting any async work, and call `MarkTestAsComplete()` in
-teardown. For example, a custom runner entry point can return an async helper:
+teardown. Keep both lifecycle calls inside the same async entry method so its
+execution identity does not leak into the caller:
 
 ```csharp
-public Task RunTestAsync()
+public async Task RunTestAsync()
 {
     MarkTestAsStarted();
-    return RunStartedTestAsync();
-}
-
-private async Task RunStartedTestAsync()
-{
     try
     {
         await SetupAsync();
