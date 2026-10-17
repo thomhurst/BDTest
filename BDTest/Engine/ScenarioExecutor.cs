@@ -90,6 +90,7 @@ internal class ScenarioExecutor : IScenarioExecutor
             scenario.Status = Status.Skipped;
             foreach (var step in scenario.Steps.Where(step => step.Status == Status.Inconclusive))
             {
+                step.SetStepText();
                 step.Status = Status.Skipped;
             }
             throw;
