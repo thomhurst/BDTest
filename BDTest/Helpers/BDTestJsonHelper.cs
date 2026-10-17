@@ -32,12 +32,17 @@ public static class BDTestJsonHelper
             Version = BDTestVersionHelper.CurrentVersion
         };
             
+        return Serialize(dataToOutput, Formatting.Indented);
+    }
+
+    internal static string Serialize(BDTestOutputModel model, Formatting formatting = Formatting.None)
+    {
         var settings = new JsonSerializerSettings
         {
             PreserveReferencesHandling = PreserveReferencesHandling.Objects
         };
 
-        return JsonConvert.SerializeObject(dataToOutput, Formatting.Indented, settings);
+        return JsonConvert.SerializeObject(model, formatting, settings);
     }
         
     private static TestTimer GetTestTimer(IEnumerable<Scenario> scenarios)
