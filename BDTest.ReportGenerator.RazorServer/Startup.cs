@@ -31,7 +31,6 @@ public class Startup
             
         services.AddSingleton<IBDTestDataStore, AzureStorageDataStore>();
         services.AddSingleton<CustomSidebarLinkProvider>();
-        services.AddSingleton<CustomHeaderProvider>();
         services.AddSingleton<AdminAuthorizer>();
         services.AddSingleton<UserPersonalizer>();
 
@@ -70,7 +69,6 @@ public class Startup
         {
             options.DataStore = app.ApplicationServices.GetRequiredService<IBDTestDataStore>();
             options.CustomSidebarLinksProvider = app.ApplicationServices.GetRequiredService<CustomSidebarLinkProvider>();
-            options.CustomHeaderLinksProvider = app.ApplicationServices.GetRequiredService<CustomHeaderProvider>();
             options.AdminAuthorizer = app.ApplicationServices.GetRequiredService<AdminAuthorizer>();
             options.UserPersonalizer = app.ApplicationServices.GetRequiredService<UserPersonalizer>();
         });
