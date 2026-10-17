@@ -61,5 +61,33 @@ public class AsyncScenarioMetadataTests : BDTestBase
         Assert.That(scenario.GetScenarioText(), Is.EqualTo("Fluent text after suspension"));
     }
 
+    [TestCase(1)]
+    [ScenarioText("Integer overload")]
+    [TestInformation("Integer information")]
+    public async Task Overloaded_test_keeps_its_metadata_after_suspension(int value)
+    {
+        await Task.Yield();
+
+        var scenario = await When(() => NoOp()).Then(() => NoOp()).BDTestAsync();
+
+        Assert.That(scenario.GetScenarioText(), Is.EqualTo("Integer overload"));
+        Assert.That(scenario.CustomTestInformation.Select(attribute => attribute.Print()),
+            Is.EqualTo(new[] { "TestInformationAttribute - Integer information" }));
+    }
+
+    [TestCase("value")]
+    [ScenarioText("String overload")]
+    [TestInformation("String information")]
+    public async Task Overloaded_test_keeps_its_metadata_after_suspension(string value)
+    {
+        await Task.Yield();
+
+        var scenario = await When(() => NoOp()).Then(() => NoOp()).BDTestAsync();
+
+        Assert.That(scenario.GetScenarioText(), Is.EqualTo("String overload"));
+        Assert.That(scenario.CustomTestInformation.Select(attribute => attribute.Print()),
+            Is.EqualTo(new[] { "TestInformationAttribute - String information" }));
+    }
+
     private static void NoOp() { }
 }
