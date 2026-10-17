@@ -51,7 +51,7 @@ public class AzureStorageDataStore : IBDTestDataStore
 
     public Task DeleteTestData(string id)
     {
-        return _testRunSummariesContainer.DeleteBlobIfExistsAsync(id);
+        return _testDataContainer.DeleteBlobIfExistsAsync(id);
     }
 
     public async Task<IEnumerable<TestRunSummary>> GetAllTestRunRecords()
@@ -103,7 +103,7 @@ public class AzureStorageDataStore : IBDTestDataStore
 
     public Task DeleteTestRunRecord(string id)
     {
-        return _testDataContainer.DeleteBlobIfExistsAsync(id);
+        return _testRunSummariesContainer.DeleteBlobIfExistsAsync(id);
     }
 
     public Task InitializeAsync()
