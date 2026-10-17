@@ -39,11 +39,11 @@ public static class BDTestUtil
 
     internal static DateTime GetStartDateTime(this IEnumerable<Scenario> scenarios)
     {
-        return scenarios.OrderBy(scenario => scenario.StartTime).First().StartTime;
+        return scenarios.Select(scenario => scenario.StartTime).Where(time => time != default).DefaultIfEmpty().Min();
     }
 
     internal static DateTime GetEndDateTime(this IEnumerable<Scenario> scenarios)
     {
-        return scenarios.OrderByDescending(scenario => scenario.EndTime).First().EndTime;
+        return scenarios.Select(scenario => scenario.EndTime).Where(time => time != default).DefaultIfEmpty().Max();
     }
 }

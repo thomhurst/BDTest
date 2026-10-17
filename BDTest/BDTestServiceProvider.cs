@@ -21,7 +21,7 @@ internal static class BDTestServiceProvider
 
         _alreadyRun = true;
 
-        InternalTestTimeData.TestsStartedAt = DateTime.Now;
+        InternalTestTimeData.TestsStartedAt = DateTime.UtcNow;
 
         var scenarioRetryManager = new ScenarioRetryManager();
         ScenarioExecutor = new ScenarioExecutor(scenarioRetryManager);
