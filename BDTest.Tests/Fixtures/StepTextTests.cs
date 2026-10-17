@@ -96,14 +96,14 @@ public class StepTextTests : BDTestBase
     }
         
     [Test]
-    public void FuncStepTextTest()
+    public void FuncStepTextDoesNotInvokeTheArgument()
     {
         var scenario = Given(() => Console.WriteLine("I have a func that returns a strring"))
             .When(() => FuncReturningStepText(() => "Blah"))
             .Then(() => Console.WriteLine("the steptext should correctly have the func response"))
             .BDTest();
             
-        Assert.That(scenario.Steps[1].StepText, Is.EqualTo("When the func returns: Blah"));
+        Assert.That(scenario.Steps[1].StepText, Is.EqualTo($"When the func returns: {typeof(Func<string>)}"));
     }
         
     [Test]

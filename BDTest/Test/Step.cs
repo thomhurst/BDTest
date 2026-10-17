@@ -48,6 +48,7 @@ public class Step
     public ExceptionWrapper Exception { get; private set; }
 
     private bool _shouldSkip;
+    private readonly string _generatedStepText;
 
     internal Step(Runnable runnable, StepType stepType, string scenarioId, string reportId)
     {
@@ -56,6 +57,10 @@ public class Step
         Runnable = runnable;
         StepType = stepType;
         ReportId = reportId;
+        // Capture automatic text once; execution and reporting must not re-evaluate arguments.
+        _generatedStepText = Runnable.Action != null
+            ? StepTextHelper.GetStepText(Runnable.Action)
+            : StepTextHelper.GetStepText(Runnable.Task);
         SetStepText();
     }
 
@@ -67,6 +72,7 @@ public class Step
         ReportId = source.ReportId;
         Runnable = source.Runnable;
         StepType = source.StepType;
+        _generatedStepText = source._generatedStepText;
         StepText = source.StepText;
         OverriddenStepText = source.OverriddenStepText;
         _shouldSkip = source._shouldSkip;
@@ -115,11 +121,9 @@ public class Step
             }
         }
 
-        var customStepText = Runnable.Action != null ? StepTextHelper.GetStepText(Runnable.Action) : StepTextHelper.GetStepText(Runnable.Task);
-
         SetShouldSkip();
             
-        StepText = $"{StepPrefix} {customStepText}";
+        StepText = $"{StepPrefix} {_generatedStepText}";
     }
 
     private void SetShouldSkip()
