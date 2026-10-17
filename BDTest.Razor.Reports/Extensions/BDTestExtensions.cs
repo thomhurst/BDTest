@@ -3,6 +3,7 @@ using BDTest.Razor.Reports.Controllers;
 using BDTest.Razor.Reports.Implementations;
 using BDTest.Razor.Reports.Interfaces;
 using BDTest.Razor.Reports.Models;
+using BDTest.Razor.Reports.Security;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -38,5 +39,20 @@ public static class BDTestExtensions
         var reportServerOptionsModel = applicationBuilder.ApplicationServices.GetService<BDTestReportServerOptions>();
             
         options(reportServerOptionsModel);
+
+        applicationBuilder.Use(async (context, next) =>
+        {
+            if (reportServerOptionsModel.EnableSecurityHeaders && context.Request.Path.StartsWithSegments("/bdtest"))
+            {
+                // Register before MVC so redirects, rejected requests and errors also receive headers.
+                context.Response.OnStarting(() =>
+                {
+                    ReportSecurityHeaders.Apply(context);
+                    return Task.CompletedTask;
+                });
+            }
+
+            await next();
+        });
     }
 }

@@ -24,6 +24,12 @@ public class BDTestReportServerOptions
 #nullable enable
         public ILogger? Logger { get; set; }
 
+        /// <summary>
+        /// Enables security headers on /bdtest responses. Disable only when the host supplies its own
+        /// compatible policy. Register UseBDTestReportServer before endpoint/authentication middleware.
+        /// </summary>
+        public bool EnableSecurityHeaders { get; set; } = true;
+
         /// <summary>The secret required in the X-BDTest-Upload-Key header. Uploads are disabled when unset.</summary>
         public string? UploadApiKey { get; set; }
 

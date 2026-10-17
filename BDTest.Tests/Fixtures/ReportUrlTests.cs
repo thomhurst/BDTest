@@ -87,10 +87,10 @@ public class ReportUrlTests
             new SummaryViewModel { Scenarios = [], TotalReportData = new BDTestOutputModel { TestTimer = new TestTimer() } },
             query: "?tag=O%27Brien", pathBase: "/reports", host: "attacker.example",
             requestPath: "/bdtest/report/run/summary");
-        var handlers = Regex.Matches(html, "onclick=\"([^\"]+)\"")
+        var urls = Regex.Matches(html, "data-url=\"([^\"]+)\"")
             .Select(m => HttpUtility.HtmlDecode(m.Groups[1].Value)).ToArray();
-        Assert.That(handlers, Has.Length.EqualTo(9));
-        var urls = handlers.Select(h => JsonSerializer.Deserialize<string>(h["window.location = ".Length..])).ToArray();
+        Assert.That(urls, Has.Length.EqualTo(9));
+        Assert.That(html, Does.Not.Contain("onclick="));
         Assert.That(urls, Has.All.StartsWith("/reports/bdtest/report/run/all-scenarios?"));
         Assert.That(urls, Has.All.Contains("tag=O%27Brien"));
         Assert.That(urls, Has.Some.Contains("filterByStatus=Passed"));

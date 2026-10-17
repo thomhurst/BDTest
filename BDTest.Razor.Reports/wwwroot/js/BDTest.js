@@ -230,3 +230,87 @@ function showElement(element) {
 function hideElement(element) {
     setElementVisibility(element, toggleActions.COLLAPSE);
 }
+
+// Bind trusted functions to data attributes; report values are never evaluated as JavaScript.
+onDomLoaded(function () {
+    for (const element of document.querySelectorAll('[data-bdtest-action]')) {
+        element.addEventListener('click', function (event) {
+            if (element.tagName === 'A' && element.getAttribute('href') === '#') {
+                event.preventDefault();
+            }
+
+            switch (element.dataset.bdtestAction) {
+                case 'spin':
+                    disableButtonAndSpin(element);
+                    break;
+                case 'toggle-menu':
+                    element.classList.toggle('active');
+                    break;
+                case 'back':
+                    window.history.back();
+                    break;
+                case 'copy-url':
+                    copyToClipboard(new URL(element.dataset.url, window.location.href).href);
+                    break;
+                case 'navigate':
+                    if (element.dataset.url) window.location.href = element.dataset.url;
+                    break;
+                case 'filter':
+                    window.location.href = getUrlWithAppendedParameter(element.dataset.parameter, element.dataset.value);
+                    break;
+                case 'order':
+                    orderBy(element.dataset.value);
+                    break;
+                case 'status':
+                    filterByStatus(element.dataset.value);
+                    break;
+                case 'modal':
+                    openModal(element.dataset.value);
+                    break;
+                case 'toggle-group':
+                    expandScenarioGroup(element, toggleActions.TOGGLE);
+                    break;
+                case 'groups':
+                    expandScenarioGroups(element.dataset.mode);
+                    break;
+                case 'stories':
+                    setVisibilityOfStories(element.dataset.mode);
+                    break;
+                case 'story-groups':
+                    toggleSpecificScenarioGroup(element, element.dataset.mode);
+                    break;
+                case 'toggle-element':
+                    toggleElementVisibility(document.getElementById(element.dataset.target));
+                    toggleAlternativeText(element);
+                    break;
+                case 'toggle-step':
+                    document.getElementById(element.dataset.target).classList.toggle('dropend');
+                    break;
+                case 'expand-steps':
+                    expandAllSteps();
+                    break;
+                case 'collapse-steps':
+                    collapseAllSteps();
+                    break;
+                case 'column':
+                    // Let native input/label clicks toggle exactly once.
+                    if (!event.target.closest('input, label')) {
+                        changeCheckboxValueAndFireEvent(element.querySelector('input'));
+                    }
+                    break;
+                case 'delete':
+                    if (!confirmDelete(element.dataset.testId, element.dataset.tag,
+                        element.dataset.environment, element.dataset.branch, element.dataset.date)) {
+                        event.preventDefault();
+                    }
+                    break;
+            }
+        });
+    }
+
+    for (const checkbox of document.querySelectorAll('[data-bdtest-change="column"]')) {
+        checkbox.addEventListener('change', function () {
+            toggleColumnVisibility(checkbox);
+        });
+    }
+});

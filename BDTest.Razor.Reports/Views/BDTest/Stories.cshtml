@@ -34,8 +34,8 @@
     
     <div class="btn-group mb-1" role="group" >
         @await Html.PartialAsync("_StatusDropdown", new StatusDropdownViewModel { IncludeScript = true })
-        <button class="btn" onclick="setVisibilityOfStories(toggleActions.EXPAND);">Expand All</button>
-        <button class="btn" onclick="setVisibilityOfStories(toggleActions.COLLAPSE);">Collapse All</button>
+        <button class="btn" data-bdtest-action="stories" data-mode="expand">Expand All</button>
+        <button class="btn" data-bdtest-action="stories" data-mode="collapse">Collapse All</button>
     </div>
     
     <script>
@@ -63,7 +63,7 @@
         var scenariosGroupedByScenarioText = scenariosForThisStory.GroupBy(scenario => scenario.GetScenarioText()).ToList();
 
         <div class="container-xlg border border-2 rounded border-primary story-container-parent">
-            <div class="px-4 my-5 text-center story-container-header pointer" onclick="toggleElementVisibility(document.getElementById('story-@storyIndex'))">
+            <div class="px-4 my-5 text-center story-container-header pointer" data-bdtest-action="toggle-element" data-target="story-@storyIndex">
                 @{ var storyTextSplitByLines = story.Key.SplitOnNewLines(); }
                 @foreach (var line in storyTextSplitByLines)
                 {
@@ -78,11 +78,11 @@
                 <div class="has-text-right scenarios-buttons-row btn-group" role="group">
                     @if (scenariosGroupedByScenarioText.Any(scenarios => scenarios.Count() > 1))
                     {
-                        <button class="btn btn-light" onclick="toggleSpecificScenarioGroup(this, toggleActions.EXPAND);">Expand All</button>
-                        <button class="btn btn-light" onclick="toggleSpecificScenarioGroup(this, toggleActions.COLLAPSE);">Collapse All</button>
+                        <button class="btn btn-light" data-bdtest-action="story-groups" data-mode="expand">Expand All</button>
+                        <button class="btn btn-light" data-bdtest-action="story-groups" data-mode="collapse">Collapse All</button>
                     }
-                    <button class="btn toggle-hide pointer" toggle-alternative-text="Hide Summary" onclick="toggleElementVisibility(document.getElementById('story-summary-@storyIndex')); toggleAlternativeText(this);">Show Summary</button>
-                    <button class="btn toggle-hide pointer" toggle-alternative-text="Hide Timings Chart" onclick="toggleElementVisibility(document.getElementById('story-summary-pie-chart-times-@storyIndex')); toggleAlternativeText(this);">Show Timings Chart</button>
+                    <button class="btn toggle-hide pointer" toggle-alternative-text="Hide Summary" data-bdtest-action="toggle-element" data-target="story-summary-@storyIndex">Show Summary</button>
+                    <button class="btn toggle-hide pointer" toggle-alternative-text="Hide Timings Chart" data-bdtest-action="toggle-element" data-target="story-summary-pie-chart-times-@storyIndex">Show Timings Chart</button>
                 </div>
 
                 <div class="mt-4 container invisibleElement" id="story-summary-@storyIndex">

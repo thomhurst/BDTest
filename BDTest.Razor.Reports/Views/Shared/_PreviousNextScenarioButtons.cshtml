@@ -13,13 +13,13 @@
 @if (lastScenario != null)
 {
     <a href="@GenerateUrl(lastScenario.Guid)">
-        <button type="button" class="btn btn-primary px-4 gap-3" onclick="disableButtonAndSpin(this)">Previous Scenario</button>
+        <button type="button" class="btn btn-primary px-4 gap-3" data-bdtest-action="spin">Previous Scenario</button>
     </a>
 }
 @if (nextScenario != null)
 {
     <a href="@GenerateUrl(nextScenario.Guid)">
-        <button type="button" class="btn btn-primary px-4 gap-3" onclick="disableButtonAndSpin(this)">Next Scenario</button>
+        <button type="button" class="btn btn-primary px-4 gap-3" data-bdtest-action="spin">Next Scenario</button>
     </a>
 }
 

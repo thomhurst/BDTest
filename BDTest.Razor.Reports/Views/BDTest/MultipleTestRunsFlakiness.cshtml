@@ -49,7 +49,7 @@
             var passRate = Math.Round(GetPassRate(scenarios), 2);
 
             <div class="container-fluid border border-2 rounded border-primary my-3">
-                <div id="flakey-scenario-header-@index" class="pointer" onclick="toggleElementVisibility(document.getElementById('flakey-scenario-body-@index'))">
+                <div id="flakey-scenario-header-@index" class="pointer" data-bdtest-action="toggle-element" data-target="flakey-scenario-body-@index">
                     <div class="d-flex justify-content-center mt-4">
                         <h4>@scenarioText</h4>
                     </div>

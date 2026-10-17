@@ -54,12 +54,12 @@ public class ReportHandlerEncodingTests
 
         // Parse the rendered element so attribute entities are decoded, just as in a browser.
         var link = ReadElement(html, "<a class=\"dropdown-item\"[^>]*>.*?</a>");
-        Assert.That((string)link.Attribute("onclick"),
-            Is.EqualTo($"filter{queryParameterName} (this.dataset.value);"));
+        Assert.That((string)link.Attribute("data-bdtest-action"), Is.EqualTo("filter"));
+        Assert.That((string)link.Attribute("data-parameter"), Is.EqualTo(queryParameterName));
         Assert.That((string)link.Attribute("data-value"), Is.EqualTo(value ?? ""));
         Assert.That(link.Value, Is.EqualTo(value ?? ""));
         Assert.That(link.Attributes().Select(x => x.Name.LocalName),
-            Is.EquivalentTo(new[] { "class", "href", "data-value", "onclick" }));
+            Is.EquivalentTo(new[] { "class", "href", "data-value", "data-bdtest-action", "data-parameter" }));
     }
 
     [Test]
@@ -81,8 +81,7 @@ public class ReportHandlerEncodingTests
         Assert.That((string)form.Attribute("method"), Is.EqualTo("post"));
         var button = ReadElement(html, "<button[^>]*>Delete</button>");
         Assert.That((string)button.Attribute("type"), Is.EqualTo("submit"));
-        Assert.That((string)button.Attribute("onclick"), Is.EqualTo(
-            "return confirmDelete(this.dataset.testId, this.dataset.tag, this.dataset.environment, this.dataset.branch, this.dataset.date)"));
+        Assert.That((string)button.Attribute("data-bdtest-action"), Is.EqualTo("delete"));
         Assert.That((string)button.Attribute("data-test-id"), Is.EqualTo(record.RecordId ?? ""));
         Assert.That((string)button.Attribute("data-tag"), Is.EqualTo(value ?? ""));
         Assert.That((string)button.Attribute("data-environment"), Is.EqualTo(value ?? ""));
@@ -90,7 +89,7 @@ public class ReportHandlerEncodingTests
         Assert.That((string)button.Attribute("data-date"), Is.EqualTo(record.StartedAtDateTime.ToString()));
         Assert.That(button.Attributes().Select(x => x.Name.LocalName), Is.EquivalentTo(new[]
         {
-            "type", "class", "onclick", "data-test-id", "data-tag", "data-environment", "data-branch", "data-date"
+            "type", "class", "data-bdtest-action", "data-test-id", "data-tag", "data-environment", "data-branch", "data-date"
         }));
     }
 
@@ -120,11 +119,11 @@ public class ReportHandlerEncodingTests
     {
         var html = await RenderAsync<object>("/Views/Shared/_SideMenu.cshtml", null, query: query);
         var link = ReadElement(html, "<a[^>]*>Copy URL to Clipboard</a>");
-        Assert.That((string)link.Attribute("onclick"), Is.EqualTo("copyToClipboard(new URL(this.dataset.url, window.location.href).href);"));
+        Assert.That((string)link.Attribute("data-bdtest-action"), Is.EqualTo("copy-url"));
         Assert.That((string)link.Attribute("data-url"),
             Is.EqualTo("/bdtest/report/O'Brien/test-runs" + query));
         Assert.That(link.Attributes().Select(x => x.Name.LocalName),
-            Is.EquivalentTo(new[] { "href", "data-url", "onclick", "class" }));
+            Is.EquivalentTo(new[] { "href", "data-url", "data-bdtest-action", "class" }));
     }
 
     [Test]
@@ -140,9 +139,9 @@ public class ReportHandlerEncodingTests
         var html = await RenderAsync("/Views/Shared/_ScenarioModalPopup.cshtml",
             new ScenarioModalViewModel { Scenario = scenario }, query: query);
         var image = ReadElement(html, "<img[^>]*alt=\"Share\"[^>]*/>");
-        Assert.That((string)image.Attribute("onclick"), Is.EqualTo("copyToClipboard(new URL(this.dataset.url, window.location.href).href)"));
+        Assert.That((string)image.Attribute("data-bdtest-action"), Is.EqualTo("copy-url"));
         Assert.That(image.Attributes().Select(x => x.Name.LocalName),
-            Is.EquivalentTo(new[] { "src", "class", "alt", "data-url", "onclick" }));
+            Is.EquivalentTo(new[] { "src", "class", "alt", "data-url", "data-bdtest-action" }));
 
         var localUrl = (string)image.Attribute("data-url");
         Assert.That(localUrl, Does.StartWith("/bdtest/"));

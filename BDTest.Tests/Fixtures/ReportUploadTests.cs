@@ -1,6 +1,8 @@
 using System.Collections.Concurrent;
 using System.Net;
 using System.Text;
+using System.Text.RegularExpressions;
+using System.Web;
 using BDTest.Maps;
 using BDTest.Razor.Reports.Extensions;
 using BDTest.Razor.Reports.Interfaces;
@@ -8,6 +10,7 @@ using BDTest.Razor.Reports.Models;
 using BDTest.Test;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
@@ -18,6 +21,124 @@ namespace BDTest.Tests.Fixtures;
 public class ReportUploadTests
 {
     private const string Key = "test-upload-secret";
+
+    [TestCase("bdtest/ping", HttpStatusCode.OK)]
+    [TestCase("bdtest/report/missing", HttpStatusCode.Found)]
+    [TestCase("bdtest/report/missing/raw-json-data", HttpStatusCode.NotFound)]
+    [TestCase("bdtest/not-a-route", HttpStatusCode.NotFound)]
+    public async Task ReportResponsesHaveSecurityHeaders(string path, HttpStatusCode status)
+    {
+        await using var server = await UploadServer.Start();
+        using var response = await server.Client.GetAsync(path);
+        Assert.That(response.StatusCode, Is.EqualTo(status));
+        AssertSecurityHeaders(response);
+    }
+
+    [Test]
+    public async Task ReportScriptsUseTheResponseNonceAndRequestsDoNotReuseIt()
+    {
+        await using var server = await UploadServer.Start();
+        string previousNonce = null;
+        for (var i = 0; i < 2; i++)
+        {
+            using var response = await server.Client.GetAsync("bdtest/report/missing/summary");
+            var nonce = AssertSecurityHeaders(response);
+            Assert.That(nonce, Is.Not.EqualTo(previousNonce));
+            previousNonce = nonce;
+            var html = await response.Content.ReadAsStringAsync();
+            AssertReportScripts(html, nonce);
+        }
+    }
+
+    private static void AssertReportScripts(string html, string nonce)
+    {
+        var scripts = Regex.Matches(html, @"<script\b[^>]*>");
+        Assert.That(scripts, Is.Not.Empty);
+        foreach (Match script in scripts)
+        {
+            var attribute = Regex.Match(script.Value, @"nonce=""([^""]+)""");
+            Assert.That(HttpUtility.HtmlDecode(attribute.Groups[1].Value), Is.EqualTo(nonce), script.Value);
+        }
+        Assert.That(Regex.IsMatch(html, @"\son[a-z]+\s*=", RegexOptions.IgnoreCase), Is.False);
+    }
+
+    private static string AssertSecurityHeaders(HttpResponseMessage response)
+    {
+        Assert.That(response.Headers.GetValues("X-Content-Type-Options"), Is.EqualTo(new[] { "nosniff" }));
+        Assert.That(response.Headers.GetValues("Referrer-Policy"), Is.EqualTo(new[] { "no-referrer" }));
+        Assert.That(response.Headers.GetValues("X-Frame-Options"), Is.EqualTo(new[] { "DENY" }));
+        Assert.That(response.Headers.CacheControl?.NoStore, Is.True);
+        var policy = response.Headers.GetValues("Content-Security-Policy").Single();
+        Assert.That(policy, Does.Contain("frame-ancestors 'none'"));
+        Assert.That(policy, Does.Contain("base-uri 'none'"));
+        Assert.That(policy, Does.Contain("object-src 'none'"));
+        Assert.That(policy, Does.Contain("form-action 'self'"));
+        Assert.That(policy, Does.Contain("script-src-attr 'none'"));
+        var scripts = Regex.Match(policy, @"(?:^|; )script-src ([^;]+)").Groups[1].Value;
+        Assert.That(scripts, Does.Not.Contain("'unsafe-inline'").And.Not.Contain("'unsafe-eval'"));
+        var nonce = Regex.Match(scripts, "'nonce-([^']+)'").Groups[1].Value;
+        Assert.That(Convert.FromBase64String(nonce), Has.Length.GreaterThanOrEqualTo(16));
+        return nonce;
+    }
+
+    [Test]
+    public async Task SecurityHeadersRespectPathBaseAndLeaveHostRoutesAlone()
+    {
+        await using var server = await UploadServer.Start(configureApp: app =>
+        {
+            app.UsePathBase("/reports");
+            app.MapGet("/host", () => "Host content");
+        });
+        using var report = await server.Client.GetAsync("reports/bdtest/ping");
+        AssertSecurityHeaders(report);
+        using var host = await server.Client.GetAsync("reports/host");
+        Assert.That(host.Headers.Contains("Content-Security-Policy"), Is.False);
+        using var similarPrefix = await server.Client.GetAsync("bdtest-other");
+        Assert.That(similarPrefix.Headers.Contains("Content-Security-Policy"), Is.False);
+    }
+
+    [Test]
+    public async Task HostsCanDisableBuiltInHeaders()
+    {
+        await using var server = await UploadServer.Start(options => options.EnableSecurityHeaders = false);
+        using var response = await server.Client.GetAsync("bdtest/ping");
+        Assert.That(response.Headers.Contains("Content-Security-Policy"), Is.False);
+        Assert.That(response.Headers.Contains("X-Content-Type-Options"), Is.False);
+    }
+
+    [Test]
+    public async Task ExistingHostPolicyRemainsEnforced()
+    {
+        await using var server = await UploadServer.Start(configureApp: app => app.Use(async (context, next) =>
+        {
+            context.Response.Headers["Content-Security-Policy"] = "img-src 'none'";
+            await next();
+        }));
+        using var response = await server.Client.GetAsync("bdtest/ping");
+        var policies = response.Headers.GetValues("Content-Security-Policy").ToArray();
+        Assert.That(policies, Has.Some.EqualTo("img-src 'none'"));
+        Assert.That(policies, Has.Some.Contains("script-src 'nonce-"));
+    }
+
+    [Test]
+    public async Task RejectedUploadsAndHandledErrorsHaveSecurityHeaders()
+    {
+        await using var server = await UploadServer.Start(configureApp: app =>
+        {
+            app.UseExceptionHandler(error => error.Run(context =>
+            {
+                context.Response.StatusCode = 500;
+                return context.Response.WriteAsync("Error");
+            }));
+            app.MapGet("/bdtest/test-error", (HttpContext _) => Task.FromException(new InvalidOperationException("Test error")));
+        });
+        using var rejected = await server.Post("not json", key: null);
+        Assert.That(rejected.StatusCode, Is.EqualTo(HttpStatusCode.Unauthorized));
+        AssertSecurityHeaders(rejected);
+        using var error = await server.Client.GetAsync("bdtest/test-error");
+        Assert.That(error.StatusCode, Is.EqualTo(HttpStatusCode.InternalServerError));
+        AssertSecurityHeaders(error);
+    }
 
     [TestCase("application/json")]
     [TestCase("text/html")]
@@ -290,6 +411,9 @@ public class ReportUploadTests
             using var response = await server.Client.GetAsync($"bdtest/report/{id}/{page}");
             Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK), page);
             Assert.That(response.Content.Headers.ContentType?.MediaType, Is.EqualTo("text/html"), page);
+            var nonce = AssertSecurityHeaders(response);
+            var html = await response.Content.ReadAsStringAsync();
+            AssertReportScripts(html, nonce);
         }
     }
 
@@ -305,7 +429,7 @@ public class ReportUploadTests
         public HttpClient Client { get; } = client;
         public RecordingStore Store { get; } = store;
 
-        public static async Task<UploadServer> Start(Action<BDTestReportServerOptions> configure = null)
+        public static async Task<UploadServer> Start(Action<BDTestReportServerOptions> configure = null, Action<WebApplication> configureApp = null)
         {
             var builder = WebApplication.CreateBuilder();
             builder.Logging.ClearProviders();
@@ -313,6 +437,7 @@ public class ReportUploadTests
             builder.Services.AddControllersWithViews().AddBdTestReportControllersAndViews();
             var app = builder.Build();
             var store = new RecordingStore();
+            configureApp?.Invoke(app);
             app.UseBDTestReportServer(options =>
             {
                 options.UploadApiKey = Key;
@@ -322,7 +447,7 @@ public class ReportUploadTests
             });
             app.MapControllers();
             await app.StartAsync();
-            return new UploadServer(app, new HttpClient { BaseAddress = new Uri(app.Urls.Single()) }, store);
+            return new UploadServer(app, new HttpClient(new HttpClientHandler { AllowAutoRedirect = false }) { BaseAddress = new Uri(app.Urls.Single()) }, store);
         }
 
         public async Task<HttpResponseMessage> Post(string body, string key = Key)

@@ -94,3 +94,32 @@ each blob, so summary and report deletion is not atomic. Soft-delete and immutab
 storage settings can delay physical removal. See Microsoft's
 [lifecycle policy documentation](https://learn.microsoft.com/en-us/azure/storage/blobs/lifecycle-management-policy-structure)
 and [configuration instructions](https://learn.microsoft.com/en-us/azure/storage/blobs/lifecycle-management-policy-configure).
+
+## Report security headers
+
+UseBDTestReportServer enables security headers for /bdtest responses,
+including rejected uploads, redirects, and missing reports. Register it after
+UsePathBase (when used), and before authentication, authorization, and endpoints.
+Other host routes and static asset responses keep the host's policies.
+
+The default Content Security Policy requires a fresh nonce on every report script,
+blocks inline event handlers, plugins, base URL changes, and embedding reports in
+other pages, and restricts forms and connections to the same origin. Report Razor
+views apply the nonce automatically; click handlers use the bundled JavaScript.
+X-Content-Type-Options: nosniff, Referrer-Policy: no-referrer, and
+X-Frame-Options: DENY are also sent. Report responses use Cache-Control: no-store
+so HTML and its nonce are not reused by caches.
+
+Inline styles remain allowed for Bootstrap, charts, and custom output formatting.
+The theme's existing Google Fonts stylesheet and font origins are also allowed.
+Images may use HTTP(S) or data URLs so sandboxed custom HTML can still display
+screenshots; scripts in that custom output remain blocked by its iframe sandbox
+and its own CSP. The report CSP is appended to any existing host CSP, so both
+policies must permit a resource for it to load.
+
+Hosts with custom views or embedding requirements can set
+options.EnableSecurityHeaders = false and provide their own compatible security
+headers. A replacement policy must accommodate the report's scripts; do not simply
+remove CSP protection. This setting does not change the custom-output iframe
+sandbox. See the [CSP specification](https://www.w3.org/TR/CSP/) for nonce and
+multiple-policy behavior.

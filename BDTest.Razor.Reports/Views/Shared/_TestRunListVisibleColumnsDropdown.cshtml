@@ -1,15 +1,4 @@
 <script>
-    function clickColumnVisibilityButton(element) {
-        if (window.event.srcElement.tagName === "INPUT")
-        {
-            return;
-        }
-        
-        let checkbox = element.getElementsByTagName("input")[0];
-        
-        changeCheckboxValueAndFireEvent(checkbox);
-    }
-    
     function changeCheckboxValueAndFireEvent(checkbox) {
       checkbox.checked = !checkbox.checked;
         
@@ -58,44 +47,44 @@
             Visible Columns
         </button>
     <ul class="dropdown-menu" id="environment-dropdown-menu" role="menu">
-        <div class="dropdown-item" onclick="clickColumnVisibilityButton(this)">
+        <div class="dropdown-item" data-bdtest-action="column">
                 <div class="form-check">
-                    <input id="tag-visible-column-checkbox" type="checkbox" class="mr-4" checked="checked" data-target="tag-column" onchange="toggleColumnVisibility(this)"/>
+                    <input id="tag-visible-column-checkbox" type="checkbox" class="mr-4" checked="checked" data-target="tag-column" data-bdtest-change="column"/>
                     <label class="form-check-label" for="tag-visible-column-checkbox">Tag</label>
                 </div>
             </div>
             
-            <div class="dropdown-item" onclick="clickColumnVisibilityButton(this)">
+            <div class="dropdown-item" data-bdtest-action="column">
                 <div class="form-check">
-                    <input id="environment-visible-column-checkbox" type="checkbox" class="mr-4" checked="checked" data-target="environment-column" onchange="toggleColumnVisibility(this)"/>
+                    <input id="environment-visible-column-checkbox" type="checkbox" class="mr-4" checked="checked" data-target="environment-column" data-bdtest-change="column"/>
                     <label class="form-check-label" for="environment-visible-column-checkbox">Environment</label>
                 </div>
             </div>
             
-            <div class="dropdown-item" onclick="clickColumnVisibilityButton(this)">
+            <div class="dropdown-item" data-bdtest-action="column">
                 <div class="form-check">
-                    <input id="machine-visible-column-checkbox" type="checkbox" class="mr-4" checked="checked" data-target="machine-column" onchange="toggleColumnVisibility(this)"/>
+                    <input id="machine-visible-column-checkbox" type="checkbox" class="mr-4" checked="checked" data-target="machine-column" data-bdtest-change="column"/>
                     <label class="form-check-label" for="machine-visible-column-checkbox">Machine</label>
                 </div>
             </div>
             
-            <div class="dropdown-item" onclick="clickColumnVisibilityButton(this)">
+            <div class="dropdown-item" data-bdtest-action="column">
                 <div class="form-check">
-                    <input id="branch-visible-column-checkbox" type="checkbox" class="mr-4" checked="checked" data-target="branch-column" onchange="toggleColumnVisibility(this)"/>
+                    <input id="branch-visible-column-checkbox" type="checkbox" class="mr-4" checked="checked" data-target="branch-column" data-bdtest-change="column"/>
                     <label class="form-check-label" for="branch-visible-column-checkbox">Branch</label>
                 </div>
             </div>
             
-            <div class="dropdown-item" onclick="clickColumnVisibilityButton(this)">
+            <div class="dropdown-item" data-bdtest-action="column">
                 <div class="form-check">
-                    <input id="date-visible-column-checkbox" type="checkbox" class="mr-4" checked="checked" data-target="date-column" onchange="toggleColumnVisibility(this)"/>
+                    <input id="date-visible-column-checkbox" type="checkbox" class="mr-4" checked="checked" data-target="date-column" data-bdtest-change="column"/>
                     <label class="form-check-label" for="date-visible-column-checkbox">Date</label>
                 </div>
             </div>
             
-            <div class="dropdown-item" onclick="clickColumnVisibilityButton(this)">
+            <div class="dropdown-item" data-bdtest-action="column">
                 <div class="form-check">
-                    <input id="duration-visible-column-checkbox" type="checkbox" class="mr-4" checked="checked" data-target="duration-column" onchange="toggleColumnVisibility(this)"/>
+                    <input id="duration-visible-column-checkbox" type="checkbox" class="mr-4" checked="checked" data-target="duration-column" data-bdtest-change="column"/>
                     <label class="form-check-label" for="duration-visible-column-checkbox">Duration</label>
                 </div>
             </div>
