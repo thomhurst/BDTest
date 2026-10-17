@@ -1,7 +1,6 @@
 ﻿using System.Linq.Expressions;
 using System.Reflection;
 using System.Runtime.CompilerServices;
-using BDTest.Reporters;
 
 namespace BDTest;
 
@@ -10,24 +9,18 @@ internal class Runnable
     internal Expression<Func<Task>> Task { get; }
     internal Expression<Action> Action { get; }
 
-    internal Runnable(Expression<Func<Task>> task)
+    internal Runnable(Expression<Func<Task>> step)
     {
-        Task = task;
+        Task = step ?? throw new ArgumentNullException(nameof(step));
     }
 
-    public Runnable(Expression<Action> action)
+    public Runnable(Expression<Action> step)
     {
-        Action = action;
+        Action = step ?? throw new ArgumentNullException(nameof(step));
     }
 
     internal async Task Run()
     {
-        if (Task == null && Action == null)
-        {
-            await ConsoleReporter.WriteLine($"{nameof(Task)} and {nameof(Action)} are both null in {nameof(Runnable)}");
-            return;
-        }
-
         if (Task != null)
         {
             await Task.Compile().Invoke();
