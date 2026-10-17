@@ -95,25 +95,22 @@ public class StartupTests
         Assert.That(store.Loads, Is.Zero);
     }
 
-    private static IHost CreateHost(RecordingStore store, string connectionString = "UseDevelopmentStorage=true", RecordingLogger logger = null) =>
-        new HostBuilder()
-            .ConfigureWebHostDefaults(web => web.UseTestServer()
-                .UseEnvironment("Development")
-                .UseSetting(WebHostDefaults.ApplicationKey, typeof(Startup).Assembly.GetName().Name)
-                .ConfigureAppConfiguration(builder => builder.AddInMemoryCollection(new Dictionary<string, string>
-                {
-                    ["AzureAd:Instance"] = "https://login.microsoftonline.com/",
-                    ["AzureAd:TenantId"] = "11111111-1111-1111-1111-111111111111",
-                    ["AzureAd:ClientId"] = "22222222-2222-2222-2222-222222222222",
-                    ["AzureStorage:ConnectionString"] = connectionString
-                }))
-                .UseStartup<Startup>()
-                .ConfigureTestServices(services =>
-                {
-                    services.AddSingleton<IBDTestDataStore>(store);
-                    if (logger != null) services.AddLogging(builder => builder.AddProvider(logger));
-                }))
-            .Build();
+    private static IHost CreateHost(RecordingStore store, string connectionString = "UseDevelopmentStorage=true", RecordingLogger logger = null)
+    {
+        var builder = Program.CreateBuilder(["--environment", Environments.Development]);
+        builder.WebHost.UseTestServer();
+        builder.Configuration.Sources.Clear();
+        builder.Configuration.AddInMemoryCollection(new Dictionary<string, string>
+        {
+            ["AzureAd:Instance"] = "https://login.microsoftonline.com/",
+            ["AzureAd:TenantId"] = "11111111-1111-1111-1111-111111111111",
+            ["AzureAd:ClientId"] = "22222222-2222-2222-2222-222222222222",
+            ["AzureStorage:ConnectionString"] = connectionString
+        });
+        builder.Services.AddSingleton<IBDTestDataStore>(store);
+        if (logger != null) builder.Services.AddLogging(logging => logging.AddProvider(logger));
+        return Program.BuildApplication(builder);
+    }
 
     private sealed class RecordingStore : IBDTestDataStore, IAsyncDataStoreInitializer
     {

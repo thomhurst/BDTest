@@ -316,6 +316,27 @@ public class AuthenticationTests
             Does.Contain("An error occurred while processing your request."));
     }
 
+    [Test]
+    public async Task Identity_sign_in_route_challenges_with_OpenIdConnect()
+    {
+        SignIn();
+        using var response = await _client.GetAsync("/MicrosoftIdentity/Account/SignIn");
+
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.Redirect));
+        Assert.That(response.Headers.Location?.Host, Is.EqualTo("login.microsoftonline.com"));
+    }
+
+    [Test]
+    public async Task Report_static_assets_are_anonymous_and_cached()
+    {
+        using var response = await _client.GetAsync("/_content/BDTest.Razor.Reports/css/BDTest.css");
+
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        Assert.That(response.Content.Headers.ContentType?.MediaType, Is.EqualTo("text/css"));
+        Assert.That(response.Headers.CacheControl?.Public, Is.True);
+        Assert.That(response.Headers.CacheControl?.MaxAge, Is.EqualTo(TimeSpan.FromDays(1)));
+    }
+
     private Task<HttpResponseMessage> Upload() => _client.PostAsync("/bdtest/data", UploadBody());
 
     private static StringContent UploadBody() => new(
@@ -346,35 +367,33 @@ public class AuthenticationTests
 
     private static IHost CreateHost(string apiKey, TestDataStore store, string environment = "Development")
     {
-        return new HostBuilder()
-            .ConfigureWebHostDefaults(web => web.UseTestServer()
-                .UseEnvironment(environment)
-                .UseSetting(WebHostDefaults.ApplicationKey, typeof(Startup).Assembly.GetName().Name)
-                .ConfigureAppConfiguration(builder => builder.AddJsonFile(Path.Combine(AppContext.BaseDirectory, "sample-appsettings.json")).AddInMemoryCollection(new Dictionary<string, string>
-                {
-                    ["AzureAd:Instance"] = "https://login.microsoftonline.com/",
-                    ["AzureAd:TenantId"] = "11111111-1111-1111-1111-111111111111",
-                    ["AzureAd:ClientId"] = "22222222-2222-2222-2222-222222222222",
-                    ["AzureAd:ClientSecret"] = "test-only-secret",
-                    ["AzureStorage:ConnectionString"] = "UseDevelopmentStorage=true",
-                    ["BDTest:UploadApiKey"] = apiKey,
-                    ["ReverseProxy:KnownProxies:0"] = "192.0.2.10"
-                }))
-                .UseStartup<Startup>()
-                .ConfigureTestServices(services =>
-                {
-                    services.AddSingleton<IBDTestDataStore>(store);
-                    // Exercise the real cookie/OIDC handlers without contacting Entra ID.
-                    services.PostConfigure<OpenIdConnectOptions>(OpenIdConnectDefaults.AuthenticationScheme, options =>
-                    {
-                        options.ConfigurationManager = new StaticConfigurationManager<OpenIdConnectConfiguration>(new OpenIdConnectConfiguration
-                        {
-                            Issuer = "https://login.microsoftonline.com/test/v2.0",
-                            AuthorizationEndpoint = "https://login.microsoftonline.com/test/oauth2/v2.0/authorize"
-                        });
-                    });
-                }))
-            .Start();
+        var builder = Program.CreateBuilder(["--environment", environment]);
+        builder.WebHost.UseTestServer();
+        builder.Configuration.Sources.Clear();
+        builder.Configuration.AddJsonFile(Path.Combine(AppContext.BaseDirectory, "sample-appsettings.json"))
+            .AddInMemoryCollection(new Dictionary<string, string>
+            {
+                ["AzureAd:Instance"] = "https://login.microsoftonline.com/",
+                ["AzureAd:TenantId"] = "11111111-1111-1111-1111-111111111111",
+                ["AzureAd:ClientId"] = "22222222-2222-2222-2222-222222222222",
+                ["AzureAd:ClientSecret"] = "test-only-secret",
+                ["AzureStorage:ConnectionString"] = "UseDevelopmentStorage=true",
+                ["BDTest:UploadApiKey"] = apiKey,
+                ["ReverseProxy:KnownProxies:0"] = "192.0.2.10"
+            });
+        builder.Services.AddSingleton<IBDTestDataStore>(store);
+        // Exercise the real cookie/OIDC handlers without contacting Entra ID.
+        builder.Services.PostConfigure<OpenIdConnectOptions>(OpenIdConnectDefaults.AuthenticationScheme, options =>
+        {
+            options.ConfigurationManager = new StaticConfigurationManager<OpenIdConnectConfiguration>(new OpenIdConnectConfiguration
+            {
+                Issuer = "https://login.microsoftonline.com/test/v2.0",
+                AuthorizationEndpoint = "https://login.microsoftonline.com/test/oauth2/v2.0/authorize"
+            });
+        });
+        var app = Program.BuildApplication(builder);
+        app.Start();
+        return app;
     }
 
     private sealed class TestDataStore : IBDTestDataStore

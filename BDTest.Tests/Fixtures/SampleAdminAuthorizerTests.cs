@@ -109,7 +109,8 @@ public class SampleAdminAuthorizerTests
 
     private static WebApplication CreateApp()
     {
-        var builder = WebApplication.CreateBuilder();
+        var builder = Program.CreateBuilder([]);
+        builder.Configuration.Sources.Clear();
         builder.Configuration.AddInMemoryCollection(new Dictionary<string, string>
         {
             ["AzureStorage:ConnectionString"] = "UseDevelopmentStorage=true",
@@ -117,7 +118,6 @@ public class SampleAdminAuthorizerTests
             ["AzureAd:TenantId"] = "11111111-1111-1111-1111-111111111111",
             ["AzureAd:ClientId"] = "22222222-2222-2222-2222-222222222222"
         });
-        new Startup(builder.Configuration).ConfigureServices(builder.Services);
         return builder.Build();
     }
 }
