@@ -48,25 +48,27 @@ public class RunnableStepBuilderTests : BDTestBase
     }
 
     [Test]
-    public async Task ConcurrentMixedEntryPointsExecuteOnlyOnce()
+    public async Task ConcurrentMixedEntryPointsExecuteOnlyOncePerBuilder([Values] bool useContinuation)
     {
         const int callerCount = 12;
+        var expectedExecutions = useContinuation ? 2 : 1;
         var start = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
         var entered = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
         var finish = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
         var rejected = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
         var rejectionCount = 0;
         var builder = Given(() => HoldExecution(entered, finish.Task)).When(() => NoOp()).Then(() => NoOp());
+        var continuation = useContinuation ? builder.And(() => NoOp()) : builder;
         var callers = Enumerable.Range(0, callerCount).Select(index => Task.Run(async () =>
         {
             await start.Task;
             try
             {
-                return await Execute(builder, (EntryPoint)(index % 3));
+                return await Execute(index % 2 == 0 ? builder : continuation, (EntryPoint)(index % 3));
             }
             catch (AlreadyExecutedException)
             {
-                if (Interlocked.Increment(ref rejectionCount) == callerCount - 1)
+                if (Interlocked.Increment(ref rejectionCount) == callerCount - expectedExecutions)
                 {
                     rejected.SetResult(true);
                 }
@@ -80,7 +82,7 @@ public class RunnableStepBuilderTests : BDTestBase
             await entered.Task.WaitAsync(TimeSpan.FromSeconds(20));
             // All other calls must fail while the first execution is still running.
             await rejected.Task.WaitAsync(TimeSpan.FromSeconds(20));
-            Assert.That(_executions, Is.EqualTo(1));
+            // Rejections prove the guards are claimed; the winners may still be entering their steps.
         }
         finally
         {
@@ -89,10 +91,50 @@ public class RunnableStepBuilderTests : BDTestBase
         }
 
         var scenarios = await Task.WhenAll(callers);
-        var scenario = scenarios.Single(x => x != null);
-        Assert.That(rejectionCount, Is.EqualTo(callerCount - 1));
-        Assert.That(_executions, Is.EqualTo(1));
-        AssertReportedOnce(scenario);
+        var completed = scenarios.Where(x => x != null).ToArray();
+        Assert.That(rejectionCount, Is.EqualTo(callerCount - expectedExecutions));
+        Assert.That(_executions, Is.EqualTo(expectedExecutions));
+        Assert.That(completed, Has.Length.EqualTo(expectedExecutions));
+        var reported = BDTestUtil.GetScenarios().Where(x => x.FrameworkTestId == builder.TestId).ToArray();
+        Assert.That(reported, Is.EquivalentTo(completed));
+        Assert.That(completed.Select(x => x.Guid).Distinct().Count(), Is.EqualTo(expectedExecutions));
+    }
+
+    [Test]
+    public async Task ContinuationsExecuteOnceIndependently([Values] bool executeChildFirst)
+    {
+        var parent = Given(() => CountExecution()).When(() => NoOp()).Then(() => NoOp());
+        var child = parent.And(() => NoOp());
+        var first = executeChildFirst ? child : parent;
+        var second = executeChildFirst ? parent : child;
+
+        var firstResult = await first;
+        var secondResult = await second;
+        await Assert.ThrowsAsync<AlreadyExecutedException>(async () => await first);
+        await Assert.ThrowsAsync<AlreadyExecutedException>(async () => await second);
+
+        Assert.That(_executions, Is.EqualTo(2));
+        Assert.That(firstResult.Guid, Is.Not.EqualTo(secondResult.Guid));
+        Assert.That(BDTestUtil.GetScenarios().Where(x => x.FrameworkTestId == parent.TestId),
+            Is.EquivalentTo(new[] { firstResult, secondResult }));
+    }
+
+    [Test]
+    public async Task ExtendingExecutedBuilderPreservesOriginalReportAndExecutionGuard()
+    {
+        var parent = Given(() => CountExecution()).When(() => NoOp()).Then(() => NoOp());
+        var original = await parent;
+        var child = parent.And(() => NoOp());
+        var extended = await child;
+
+        await Assert.ThrowsAsync<AlreadyExecutedException>(async () => await parent);
+        await Assert.ThrowsAsync<AlreadyExecutedException>(async () => await child);
+        Assert.That(_executions, Is.EqualTo(2));
+        Assert.That(original.Steps, Has.Count.EqualTo(3));
+        Assert.That(extended.Steps, Has.Count.EqualTo(4));
+        Assert.That(original.Steps.Intersect(extended.Steps), Is.Empty);
+        Assert.That(BDTestUtil.GetScenarios().Where(x => x.FrameworkTestId == parent.TestId),
+            Is.EquivalentTo(new[] { original, extended }));
     }
 
     [Test, BDTestRetry(1)]
