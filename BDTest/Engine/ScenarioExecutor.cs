@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using BDTest.Attributes;
 using BDTest.Helpers;
 using BDTest.Interfaces.Internal;
@@ -39,9 +40,10 @@ internal class ScenarioExecutor : IScenarioExecutor
 
     private async Task ExecuteAttemptAsync(Scenario scenario)
     {
+        var stopwatch = Stopwatch.StartNew();
         try
         {
-            scenario.StartTime = DateTime.Now;
+            scenario.StartTime = DateTime.UtcNow;
 
             TestOutputData.ClearCurrentTaskData();
 
@@ -129,8 +131,9 @@ internal class ScenarioExecutor : IScenarioExecutor
 
                 ConsoleReporter.WriteLineToConsoleOnly($"Test Result: {scenario.Status}");
 
-                scenario.EndTime = DateTime.Now;
-                scenario.TimeTaken = scenario.EndTime - scenario.StartTime;
+                scenario.EndTime = DateTime.UtcNow;
+                stopwatch.Stop();
+                scenario.TimeTaken = stopwatch.Elapsed;
 
                 scenario.Output = string.Join(Environment.NewLine,
                     scenario.Steps.Where(step => !string.IsNullOrWhiteSpace(step.Output)).Select(step => step.Output));

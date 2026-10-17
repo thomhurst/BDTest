@@ -1,4 +1,5 @@
-﻿using System.Linq.Expressions;
+﻿using System.Diagnostics;
+using System.Linq.Expressions;
 using BDTest.Attributes;
 using BDTest.Helpers;
 using BDTest.Output;
@@ -156,9 +157,10 @@ public class Step
     {
         SetStepText();
 
+        var stopwatch = Stopwatch.StartNew();
         try
         {
-            StartTime = DateTime.Now;
+            StartTime = DateTime.UtcNow;
 
             if (ShouldSkip())
             {
@@ -195,8 +197,9 @@ public class Step
         }
         finally
         {
-            EndTime = DateTime.Now;
-            TimeTaken = EndTime - StartTime;
+            EndTime = DateTime.UtcNow;
+            stopwatch.Stop();
+            TimeTaken = stopwatch.Elapsed;
             Output = TestOutputData.Instance.ToString().Trim();
             TestOutputData.ClearCurrentTaskData();
         }
