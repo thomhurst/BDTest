@@ -145,6 +145,9 @@ public class AwaitableStepTests : BDTestBase
     [TestCase(typeof(PrivateCompletionGetter))]
     [TestCase(typeof(MissingResult))]
     [TestCase(typeof(GenericResult))]
+    [TestCase(typeof(HiddenCompletion))]
+    [TestCase(typeof(HiddenCompletionField))]
+    [TestCase(typeof(IHiddenCompletion))]
     public async Task Unrelated_GetAwaiter_methods_do_not_prevent_synchronous_steps(Type awaiterType)
     {
         var calls = new List<string>();
@@ -207,6 +210,53 @@ public class AwaitableStepTests : BDTestBase
         public bool IsCompleted => true;
         public void OnCompleted(Action continuation) { }
         public void GetResult<T>() { }
+    }
+
+    [TestCase(typeof(CompleteAwaiter))]
+    [TestCase(typeof(InheritedCompletion))]
+    [TestCase(typeof(ICompleteAwaiter))]
+    public async Task Inherited_awaiter_properties_still_cause_rejection(Type awaiterType)
+    {
+        var calls = new List<string>();
+        var method = GetType().GetMethod(nameof(ReturnSynchronousResult),
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static)!
+            .MakeGenericMethod(awaiterType);
+        var step = Expression.Lambda<Action>(Expression.Call(method, Expression.Constant(calls)));
+
+        await Assert.ThrowsAsync<InvalidOperationException>(async () =>
+            await When(step).Then(() => calls.Add("then")).BDTestAsync());
+
+        Assert.That(calls, Is.Empty);
+    }
+
+    private interface ICompleteAwaiter : INotifyCompletion
+    {
+        bool IsCompleted { get; }
+        void GetResult();
+    }
+
+    private interface IHiddenCompletion : ICompleteAwaiter
+    {
+        new int IsCompleted { get; }
+    }
+
+    private sealed class InheritedCompletion : CompleteAwaiter { }
+
+    private class CompleteAwaiter : INotifyCompletion
+    {
+        public bool IsCompleted => true;
+        public void OnCompleted(Action continuation) { }
+        public void GetResult() { }
+    }
+
+    private sealed class HiddenCompletion : CompleteAwaiter
+    {
+        public new int IsCompleted => 1;
+    }
+
+    private sealed class HiddenCompletionField : CompleteAwaiter
+    {
+        public new bool IsCompleted = true;
     }
 
     private static void NoOp() { }

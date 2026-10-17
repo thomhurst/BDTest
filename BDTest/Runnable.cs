@@ -60,12 +60,41 @@ internal class Runnable
         // Reflection on an interface does not include members from its base interfaces.
         var memberTypes = type.IsInterface ? new[] { type }.Concat(type.GetInterfaces()) : new[] { type };
         const BindingFlags flags = BindingFlags.Public | BindingFlags.Instance;
-        return memberTypes.SelectMany(memberType => memberType.GetProperties(flags))
+        var completionMembers = GetCompletionMembers(type).ToArray();
+        return completionMembers.Length == 1 && completionMembers.OfType<PropertyInfo>()
                    .Any(property => property.Name == "IsCompleted" && property.PropertyType == typeof(bool)
-                       && property.GetIndexParameters().Length == 0 && property.GetGetMethod() != null)
+                       && property.GetIndexParameters().Length == 0 && property.GetGetMethod() != null && !property.GetGetMethod().IsStatic)
                && memberTypes.SelectMany(memberType => memberType.GetMethods(flags))
                    .Any(method => method.Name == "GetResult" && !method.IsGenericMethod
                        && method.GetParameters().Length == 0);
+    }
+
+    private static IEnumerable<MemberInfo> GetCompletionMembers(Type type)
+    {
+        const BindingFlags flags = BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static
+                                   | BindingFlags.DeclaredOnly;
+        if (type.IsInterface)
+        {
+            var declarations = new[] { type }.Concat(type.GetInterfaces())
+                .Select(memberType => new { Type = memberType, Members = memberType.GetMember("IsCompleted", flags) })
+                .Where(declaration => declaration.Members.Length != 0).ToArray();
+            return declarations.Where(declaration => !declarations.Any(other =>
+                    other.Type != declaration.Type && declaration.Type.IsAssignableFrom(other.Type)))
+                .SelectMany(declaration => declaration.Members);
+        }
+
+        // Look up the name before validating its shape: a derived member hides a
+        // base property even when the derived member is not a Boolean property.
+        for (var current = type; current != null; current = current.BaseType)
+        {
+            var members = current.GetMember("IsCompleted", flags);
+            if (members.Length != 0)
+            {
+                return members;
+            }
+        }
+
+        return Array.Empty<MemberInfo>();
     }
 
     internal string GetExpressionString()
