@@ -46,13 +46,13 @@ public class AzureStorageDataStoreTests
 
     [TestCase(false)]
     [TestCase(true)]
-    public void InvalidJsonDisposesDownload(bool summary)
+    public async Task InvalidJsonDisposesDownload(bool summary)
     {
         using var storage = new StorageHandler(1) { DownloadJson = "{invalid json" };
         using var client = new HttpClient(storage);
         var store = CreateStore(client);
 
-        Assert.ThrowsAsync<JsonReaderException>(async () =>
+        await Assert.ThrowsAsync<JsonReaderException>(async () =>
         {
             if (summary)
                 await store.GetAllTestRunRecords();
