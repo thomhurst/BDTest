@@ -1,0 +1,239 @@
+$ErrorActionPreference = 'Stop'
+
+$cleanupScript = Join-Path $PSScriptRoot 'WorktreeCleanup.ps1'
+$testRoot = Join-Path ([System.IO.Path]::GetTempPath()) ("worktree-cleanup-{0}" -f [guid]::NewGuid())
+$primaryRoot = Join-Path $testRoot 'primary'
+$isolatedRoot = Join-Path $testRoot 'isolated'
+$aliasRoot = Join-Path $testRoot 'primary-alias'
+$casePrimaryRoot = Join-Path $testRoot 'Repo'
+$caseIsolatedRoot = Join-Path $testRoot 'repo'
+$script:gitCalled = $false
+
+New-Item -ItemType Directory -Path $primaryRoot | Out-Null
+New-Item -ItemType Directory -Path $isolatedRoot | Out-Null
+New-Item -ItemType Directory -Path (Join-Path $primaryRoot '.git') | Out-Null
+Set-Content -LiteralPath (Join-Path $isolatedRoot '.git') -Value 'gitdir: /tmp/fake-worktree'
+if (-not $IsWindows) {
+    New-Item -ItemType Directory -Path (Join-Path $casePrimaryRoot '.git') | Out-Null
+    New-Item -ItemType Directory -Path $caseIsolatedRoot | Out-Null
+    Set-Content -LiteralPath (Join-Path $caseIsolatedRoot '.git') -Value 'gitdir: /tmp/fake-case-worktree'
+}
+if ($IsWindows) {
+    New-Item -ItemType Junction -Path $aliasRoot -Target $primaryRoot | Out-Null
+}
+else {
+    New-Item -ItemType SymbolicLink -Path $aliasRoot -Target $primaryRoot | Out-Null
+}
+
+$script:ancestors = @()
+
+function global:git {
+    $global:LASTEXITCODE = 0
+    $script:gitCalled = $true
+    if ($args -contains 'merge-base') {
+        if ($args.Count -ne 6 -or $args[0] -cne '-C' -or
+            $args[1] -cne $isolatedRoot -or $args[2] -cne 'merge-base' -or
+            $args[3] -cne '--is-ancestor' -or $args[5] -cne 'zzz999') {
+            throw "Ancestry callback forwarded unexpected Git arguments: $($args -join ' ')"
+        }
+        # merge-base --is-ancestor <ancestor> <descendant>: exit 0 only for known ancestors.
+        $global:LASTEXITCODE = if ($script:ancestors -ccontains $args[-2]) { 0 } else { 1 }
+        return
+    }
+    if ($args -contains 'remove') {
+        $target = $args[-1]
+        if ($target -eq $aliasRoot) {
+            Remove-Item -LiteralPath $aliasRoot -Force
+        }
+        else {
+            Remove-Item -LiteralPath $target -Recurse -Force
+        }
+    }
+}
+
+try {
+    . $cleanupScript
+
+    $missingWorktree = Join-Path $testRoot 'missing'
+    $output = @(Remove-MergedWorktree -Repo $primaryRoot -Worktree $missingWorktree -WhatIf 6>&1)
+    if (($output -join "`n") -notmatch 'sweep: WOULD prune missing worktree registrations') {
+        throw 'Missing-worktree prune preview was not captured through the information stream.'
+    }
+    if ($script:gitCalled) {
+        throw 'Missing-worktree preview ran git.'
+    }
+
+    if ((Get-PrNumberFromWorktreePath -Path (Join-Path $testRoot 'pr-3045-review')) -ne 3045) {
+        throw 'Canonical PR worktree number was not parsed.'
+    }
+    if ($null -ne (Get-PrNumberFromWorktreePath -Path (Join-Path $testRoot 'issue-3045-review'))) {
+        throw 'Issue worktree was incorrectly parsed as a PR worktree.'
+    }
+    if (-not (Test-BranchIdentifiesPrNumber -Branch 'codex/pr-3045-r3' -PrNumber 3045)) {
+        throw 'PR-numbered review branch was not recognized.'
+    }
+    if (-not (Test-BranchIdentifiesPrNumber -Branch 'codex-pr-3045-r3' -PrNumber 3045)) {
+        throw 'Hyphen-delimited PR-numbered review branch was not recognized.'
+    }
+    if (Test-BranchIdentifiesPrNumber -Branch 'codex-pr-30450-r3' -PrNumber 3045) {
+        throw 'PR number was matched as a prefix of another PR number.'
+    }
+    if (Test-BranchIdentifiesPrNumber -Branch 'fix/signalr-reconnect-handoff' -PrNumber 3178) {
+        throw 'Unrelated branch was matched from a misleading worktree name.'
+    }
+
+    $canonicalPrRoot = Join-Path $testRoot 'primary-worktrees'
+    $canonicalPrWorktree = Join-Path $canonicalPrRoot 'pr-3045-review'
+    if (-not (Test-IsCanonicalPrWorktree -Path $canonicalPrWorktree -WorktreeRoot $canonicalPrRoot `
+            -Branch 'codex/pr-3045-r3' -PrNumber 3045)) {
+        throw 'Canonical named PR worktree identity was not recognized.'
+    }
+    if (-not (Test-IsCanonicalPrWorktree -Path $canonicalPrWorktree -WorktreeRoot $canonicalPrRoot `
+            -Detached -PrNumber 3045)) {
+        throw 'Canonical detached PR worktree identity was not recognized.'
+    }
+    if (Test-IsCanonicalPrWorktree -Path $canonicalPrWorktree -WorktreeRoot $canonicalPrRoot `
+            -Branch 'codex/pr-9999' -PrNumber 3045) {
+        throw 'Mismatched branch/path PR identity was accepted.'
+    }
+    if (-not (Test-IsDescendantPath -Path (Join-Path $primaryRoot '.claude/worktrees/test') -Parent $primaryRoot)) {
+        throw 'Harness-managed descendant worktree was not recognized.'
+    }
+
+    # origin/main's tip is the squash commit of #4512; a fresh issue branch sitting on it
+    # is not #4512's worktree.
+    $squashAssociation = @([pscustomobject]@{
+        number = 4512; merged_at = '2026-09-05T23:00:00Z'; head = @{ ref = 'issue-4377-run-id'; sha = 'aaa111' }
+    })
+    $containsOldHead = { param($sha) $sha -ceq 'aaa111' }
+    if ($null -ne (Get-MergedAssociationReason -Associations $squashAssociation -Branch 'issue-4638-publicapi-removed-markers' -IsAncestor $containsOldHead)) {
+        throw 'Fresh issue branch on the merged squash commit was treated as merged.'
+    }
+    if (-not (Get-MergedAssociationReason -Associations $squashAssociation -Branch 'issue-4377-run-id' -IsAncestor $containsOldHead)) {
+        throw 'Merged PR head branch was not recognized through commit association.'
+    }
+    if ($null -ne (Get-MergedAssociationReason -Associations $squashAssociation -Branch 'issue-4377-run-id' -IsAncestor { $false })) {
+        throw 'Branch recreated under its old name on the squash commit was treated as merged.'
+    }
+    if ($null -ne (Get-MergedAssociationReason -Associations $squashAssociation -Branch 'Issue-4377-Run-Id' -IsAncestor $containsOldHead)) {
+        throw 'Branch name differing only by case was matched.'
+    }
+    if (-not (Get-MergedAssociationReason -Associations $squashAssociation)) {
+        throw 'Detached checkout of a merged commit was not recognized.'
+    }
+    $unmergedAssociation = @([pscustomobject]@{ number = 4600; merged_at = $null; head = @{ ref = 'issue-4377-run-id'; sha = 'aaa111' } })
+    if ($null -ne (Get-MergedAssociationReason -Associations $unmergedAssociation -Branch 'issue-4377-run-id' -IsAncestor $containsOldHead)) {
+        throw 'Closed-unmerged PR association was treated as merge evidence.'
+    }
+
+    # Two merged PRs reused the branch name; the worktree descends from the older head only.
+    $containsOlderHead = { param($sha) $sha -ceq 'aaa111' }
+    if (-not (Get-MergedNameReason -Branch 'issue-4377-run-id' -MergedHeadShas @('bbb222', 'aaa111') -IsAncestor $containsOlderHead)) {
+        throw 'Worktree descending from an earlier merged head of a reused branch name was not recognized.'
+    }
+    if ($null -ne (Get-MergedNameReason -Branch 'issue-4377-run-id' -MergedHeadShas @('bbb222', 'ccc333') -IsAncestor $containsOlderHead)) {
+        throw 'Branch name reuse without ancestry was treated as merged.'
+    }
+    if ($null -ne (Get-MergedNameReason -Branch 'issue-4377-run-id' -MergedHeadShas @() -IsAncestor $containsOlderHead)) {
+        throw 'Empty merged head list was treated as merge evidence.'
+    }
+
+    $script:ancestors = @('aaa111')
+    if (-not (Test-IsAncestorCommit -RepoPath $isolatedRoot -Ancestor 'aaa111' -Descendant 'zzz999')) {
+        throw 'Known ancestor commit was not recognized.'
+    }
+    if (Test-IsAncestorCommit -RepoPath $isolatedRoot -Ancestor 'bbb222' -Descendant 'zzz999') {
+        throw 'Unknown commit was treated as an ancestor.'
+    }
+    # Exercise the same closed callback used by the sweep. Script-local helpers are
+    # not automatically visible inside GetNewClosure's dynamic module.
+    $containsCommit = Get-CommitAncestorPredicate -RepoPath $isolatedRoot -Descendant 'zzz999'
+    if (-not (Get-MergedNameReason -Branch 'reused-branch' -MergedHeadShas @('aaa111') -IsAncestor $containsCommit)) {
+        throw 'Closed ancestry callback did not recognize a known ancestor.'
+    }
+    if ($null -ne (Get-MergedNameReason -Branch 'reused-branch' -MergedHeadShas @('bbb222') -IsAncestor $containsCommit)) {
+        throw 'Closed ancestry callback treated an unrelated head as merged.'
+    }
+    $script:gitCalled = $false
+
+    $explicitSelection = Select-MergeCleanupWorktree `
+        -ValidatedWorktree $isolatedRoot `
+        -CurrentBranchWorktree $null `
+        -WasExplicit `
+        -IdentityValid
+    if ($explicitSelection -ne $isolatedRoot) {
+        throw 'Explicit worktree override was not preserved for cleanup.'
+    }
+
+    $replacementRoot = Join-Path $testRoot 'replacement'
+    $replacementSelection = Select-MergeCleanupWorktree `
+        -ValidatedWorktree $isolatedRoot `
+        -CurrentBranchWorktree $replacementRoot `
+        -IdentityValid
+    if ($null -ne $replacementSelection) {
+        throw 'A replacement worktree was selected for cleanup.'
+    }
+
+    $invalidIdentitySelection = Select-MergeCleanupWorktree `
+        -ValidatedWorktree $isolatedRoot `
+        -CurrentBranchWorktree $isolatedRoot
+    if ($null -ne $invalidIdentitySelection) {
+        throw 'A worktree with a changed identity was selected for cleanup.'
+    }
+
+    $primarySpelling = if ($IsWindows) { ($primaryRoot + '\').ToUpperInvariant() } else { $primaryRoot + '/' }
+    $output = Remove-MergedWorktree -Repo $primaryRoot -Worktree $primarySpelling -Label '#test' 6>&1
+
+    if ($script:gitCalled) {
+        throw 'Primary-checkout protection ran after a git operation.'
+    }
+
+    if (-not (Test-Path -LiteralPath $primaryRoot)) {
+        throw 'Primary checkout was removed.'
+    }
+
+    if (($output -join "`n") -notmatch 'primary checkout') {
+        throw 'Cleanup must explain why the primary checkout was preserved.'
+    }
+
+    $script:gitCalled = $false
+    Remove-MergedWorktree -Repo $primaryRoot -Worktree $aliasRoot -Label '#alias'
+
+    if ($script:gitCalled) {
+        throw 'A primary-checkout alias reached a git operation.'
+    }
+
+    if (-not (Test-Path -LiteralPath $primaryRoot)) {
+        throw 'Primary checkout was removed through an alias.'
+    }
+
+    Remove-MergedWorktree -Repo $primaryRoot -Worktree $isolatedRoot -Label '#test'
+
+    if (-not $script:gitCalled) {
+        throw 'Normal isolated-worktree cleanup did not run git.'
+    }
+
+    if (Test-Path -LiteralPath $isolatedRoot) {
+        throw 'Normal isolated worktree was not removed.'
+    }
+
+    if (-not $IsWindows) {
+        $script:gitCalled = $false
+        Remove-MergedWorktree -Repo $casePrimaryRoot -Worktree $caseIsolatedRoot -Label '#case'
+
+        if (-not $script:gitCalled -or (Test-Path -LiteralPath $caseIsolatedRoot)) {
+            throw 'Case-distinct isolated worktree was incorrectly preserved.'
+        }
+
+        if (-not (Test-Path -LiteralPath $casePrimaryRoot)) {
+            throw 'Case-distinct primary checkout was removed.'
+        }
+    }
+}
+finally {
+    Remove-Item -LiteralPath Function:\git -ErrorAction SilentlyContinue
+    Remove-Item -LiteralPath $aliasRoot -Force -ErrorAction SilentlyContinue
+    Remove-Item -LiteralPath $testRoot -Recurse -Force -ErrorAction SilentlyContinue
+}
+
+Write-Output 'OK primary checkout cleanup guard passed.'
