@@ -317,7 +317,7 @@ public class BDTestController : Controller
             return View("NotFoundSingle", id);
         }
             
-        return Ok(JsonConvert.SerializeObject(model));
+        return Content(JsonConvert.SerializeObject(model), "application/json");
     }
 
     [AllowAnonymous]
