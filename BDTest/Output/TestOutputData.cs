@@ -23,7 +23,34 @@ internal class TestOutputData : TextWriter
         set => AsyncLocalFrameworkExecutionId.Value = value;
     }
 
-    public override void Write(char value)
+    public override void Write(string value)
+    {
+        if (string.IsNullOrEmpty(value))
+        {
+            return;
+        }
+
+        WriteCore(value);
+    }
+
+    public override void Write(char[] buffer, int index, int count)
+    {
+        Write(new string(buffer, index, count));
+    }
+
+    public override void WriteLine() => Write(NewLine);
+
+    public override void WriteLine(string value) => Write(value + NewLine);
+
+    public override void WriteLine(char value) => Write(value + NewLine);
+
+    public override void WriteLine(char[] buffer) => WriteLine(buffer == null ? null : new string(buffer));
+
+    public override void WriteLine(char[] buffer, int index, int count) => WriteLine(new string(buffer, index, count));
+
+    public override void Write(char value) => WriteCore(null, value);
+
+    private static void WriteCore(string value, char? character = null)
     {
         lock (Lock)
         {
@@ -36,23 +63,29 @@ internal class TestOutputData : TextWriter
                 || !TestHolder.ScenariosByInternalId.TryGetValue(TestId, out var scenario)
                 || (scenario.Status == Status.Inconclusive && scenario.StartTime == default))
             {
-                CollectStartupOutput(FrameworkExecutionId, value.ToString(), false);
+                CollectStartupOutput(FrameworkExecutionId, value ?? character.Value.ToString(), false, appendNewLine: false);
                 return;
             }
 
             if (scenario.EndTime != default)
             {
-                scenario.TearDownOutput += value;
+                scenario.TearDownOutput += value ?? character.Value.ToString();
                 return;
             }
 
-            if (ThreadAndChars.TryGetValue(TestId, out var existingStringBuilder))
+            if (!ThreadAndChars.TryGetValue(TestId, out var existingStringBuilder))
             {
-                existingStringBuilder.Append(value);
+                existingStringBuilder = new StringBuilder();
+                ThreadAndChars.Add(TestId, existingStringBuilder);
+            }
+
+            if (character.HasValue)
+            {
+                existingStringBuilder.Append(character.Value);
             }
             else
             {
-                ThreadAndChars.Add(TestId, new StringBuilder(value.ToString()));
+                existingStringBuilder.Append(value);
             }
         }
     }
@@ -97,7 +130,7 @@ internal class TestOutputData : TextWriter
 
     public override Encoding Encoding { get; } = Encoding.UTF8;
 
-    internal static void CollectStartupOutput(string frameworkExecutionId, string text, bool shouldWriteToConsole)
+    internal static void CollectStartupOutput(string frameworkExecutionId, string text, bool shouldWriteToConsole, bool appendNewLine = true)
     {
         if (frameworkExecutionId == null)
         {
@@ -105,7 +138,7 @@ internal class TestOutputData : TextWriter
             return;
         }
 
-        if (text.Length > 1)
+        if (appendNewLine && text.Length > 1)
         {
             text += Environment.NewLine;
         }
