@@ -1,5 +1,6 @@
 using BDTest.Razor.Reports.Extensions;
 using BDTest.Razor.Reports.Interfaces;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.Identity.Web;
 using Microsoft.Identity.Web.UI;
@@ -20,9 +21,18 @@ public class Startup
 
     public void ConfigureServices(IServiceCollection services)
     {
-        services.AddAuthentication(OpenIdConnectDefaults.AuthenticationScheme)
+        services.AddAuthentication(options =>
+            {
+                options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme = OpenIdConnectDefaults.AuthenticationScheme;
+            })
             .AddMicrosoftIdentityWebApp(Configuration.GetSection("AzureAd"));
-        services.AddAuthorization(options => options.FallbackPolicy = options.DefaultPolicy);
+        services.AddAuthorization(options =>
+        {
+            options.FallbackPolicy = options.DefaultPolicy;
+            options.AddPolicy(AdminAuthorizer.PolicyName, policy =>
+                policy.RequireAuthenticatedUser().RequireRole(AdminAuthorizer.RoleName));
+        });
 
         services
             .AddControllersWithViews()
