@@ -85,7 +85,7 @@ public class AuthenticationTests
     {
         if (key != null)
         {
-            _client.DefaultRequestHeaders.Add("X-BDTest-Api-Key", key);
+            _client.DefaultRequestHeaders.Add("X-BDTest-Upload-Key", key);
         }
 
         using var response = await Upload();
@@ -119,19 +119,19 @@ public class AuthenticationTests
     [TestCase("/BDTEST/DATA/")]
     public async Task UploadKeyAllowsMachineUploadWithoutSignIn(string path)
     {
-        _client.DefaultRequestHeaders.Add("X-BDTest-Api-Key", ApiKey);
+        _client.DefaultRequestHeaders.Add("X-BDTest-Upload-Key", ApiKey);
 
         using var response = await _client.PostAsync(path, UploadBody());
 
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK), await response.Content.ReadAsStringAsync());
-        Assert.That(await response.Content.ReadAsStringAsync(), Does.Contain("/bdtest/report/uploaded-report/summary"));
+        Assert.That(await response.Content.ReadAsStringAsync(), Does.Match(@"/bdtest/report/[0-9a-f]{32}/summary$"));
         Assert.That(_store.Uploads, Is.EqualTo(1));
     }
 
     [Test]
     public async Task UploadKeyDoesNotGrantReportReadAccess()
     {
-        _client.DefaultRequestHeaders.Add("X-BDTest-Api-Key", ApiKey);
+        _client.DefaultRequestHeaders.Add("X-BDTest-Upload-Key", ApiKey);
 
         using var response = await _client.GetAsync("/bdtest/report/private-report/raw-json-data");
 
@@ -147,7 +147,7 @@ public class AuthenticationTests
         using var host = CreateHost(configuredKey, _store);
         using var client = host.GetTestClient();
         client.BaseAddress = new Uri("https://localhost");
-        client.DefaultRequestHeaders.Add("X-BDTest-Api-Key", ApiKey);
+        client.DefaultRequestHeaders.Add("X-BDTest-Upload-Key", ApiKey);
 
         using var response = await client.PostAsync("/bdtest/data", UploadBody());
 
@@ -158,7 +158,7 @@ public class AuthenticationTests
     [Test]
     public async Task MultipleKeysAreRejected()
     {
-        _client.DefaultRequestHeaders.Add("X-BDTest-Api-Key", new[] { ApiKey, ApiKey });
+        _client.DefaultRequestHeaders.Add("X-BDTest-Upload-Key", new[] { ApiKey, ApiKey });
 
         using var response = await Upload();
 
@@ -213,7 +213,7 @@ public class AuthenticationTests
                     ["AzureAd:ClientId"] = "22222222-2222-2222-2222-222222222222",
                     ["AzureAd:ClientSecret"] = "test-only-secret",
                     ["AzureStorage:ConnectionString"] = "unused",
-                    ["ReportUpload:ApiKey"] = apiKey
+                    ["BDTest:UploadApiKey"] = apiKey
                 }))
                 .UseStartup<Startup>()
                 .ConfigureTestServices(services =>

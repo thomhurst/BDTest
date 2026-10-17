@@ -77,7 +77,6 @@ public class Startup
         });
 
         app.UseRouting();
-        app.UseMiddleware<ReportUploadApiKeyMiddleware>();
         app.UseAuthentication();
         app.UseAuthorization();
 
