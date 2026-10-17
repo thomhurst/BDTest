@@ -1,0 +1,128 @@
+using BDTest.Attributes;
+using BDTest.Settings.Retry;
+using BDTest.Settings.Skip;
+using NUnit.Framework;
+
+namespace BDTest.Tests.Fixtures;
+
+public class SettingsRuleConcurrencyTests
+{
+    [TestCase("retry")]
+    [TestCase("skip-step")]
+    [TestCase("skip-test")]
+    public async Task RegistrationDuringEvaluationUsesAStableSnapshot(string kind)
+    {
+        var (add, read) = CreateRules(kind);
+        using var entered = new ManualResetEventSlim();
+        using var resume = new ManualResetEventSlim();
+        var calls = new List<int>();
+        add(() =>
+        {
+            calls.Add(1);
+            entered.Set();
+            if (!resume.Wait(TimeSpan.FromSeconds(20)))
+            {
+                throw new TimeoutException("Registration did not release the predicate.");
+            }
+            return false;
+        });
+        add(() => { calls.Add(2); return false; });
+
+        var evaluation = Task.Run(() => read().Any(condition => condition()));
+        try
+        {
+            Assert.That(entered.Wait(TimeSpan.FromSeconds(20)), Is.True);
+            // Registration must finish while a user predicate is still running.
+            await Task.Run(() => add(() => { calls.Add(3); return true; }))
+                .WaitAsync(TimeSpan.FromSeconds(20));
+        }
+        finally
+        {
+            resume.Set();
+            await evaluation.WaitAsync(TimeSpan.FromSeconds(20));
+        }
+
+        Assert.That(await evaluation, Is.False);
+        Assert.That(calls, Is.EqualTo(new[] { 1, 2 }));
+        calls.Clear();
+        Assert.That(read().Any(condition => condition()), Is.True);
+        Assert.That(calls, Is.EqualTo(new[] { 1, 2, 3 }));
+    }
+
+    [TestCase("retry")]
+    [TestCase("skip-step")]
+    [TestCase("skip-test")]
+    public void PredicateCanRegisterARuleForTheNextEvaluation(string kind)
+    {
+        var (add, read) = CreateRules(kind);
+        var registered = false;
+        add(() =>
+        {
+            if (!registered)
+            {
+                registered = true;
+                add(() => true);
+            }
+            return false;
+        });
+
+        Assert.That(read().Any(condition => condition()), Is.False);
+        Assert.That(read().Any(condition => condition()), Is.True);
+    }
+
+    [TestCase("retry")]
+    [TestCase("skip-step")]
+    [TestCase("skip-test")]
+    public async Task ConcurrentRegistrationsRetainEveryRule(string kind)
+    {
+        var (add, read) = CreateRules(kind);
+        var calls = new List<int>();
+        var start = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        const int writerCount = 8;
+        const int rulesPerWriter = 64;
+        var writers = Enumerable.Range(0, writerCount).Select(writer => Task.Run(async () =>
+        {
+            await start.Task;
+            for (var index = 0; index < rulesPerWriter; index++)
+            {
+                var id = writer * rulesPerWriter + index;
+                add(() => { calls.Add(id); return false; });
+            }
+        })).ToArray();
+
+        start.SetResult(true);
+        await Task.WhenAll(writers).WaitAsync(TimeSpan.FromSeconds(20));
+        Assert.That(read().Any(condition => condition()), Is.False);
+        Assert.That(calls, Is.EquivalentTo(Enumerable.Range(0, writerCount * rulesPerWriter)));
+        for (var writer = 0; writer < writerCount; writer++)
+        {
+            Assert.That(calls.Where(id => id / rulesPerWriter == writer),
+                Is.EqualTo(Enumerable.Range(writer * rulesPerWriter, rulesPerWriter)));
+        }
+    }
+
+    private static (Action<Func<bool>> Add, Func<IEnumerable<Func<bool>>> Read) CreateRules(string kind)
+    {
+        switch (kind)
+        {
+            case "retry":
+                var retryRules = new RetryTestRules();
+                var exception = new Exception();
+                return (condition => retryRules.Add(_ => condition(), 1),
+                    () => retryRules.Rules.Select(rule => new Func<bool>(() => rule.Condition(exception))));
+            case "skip-step":
+                var stepRules = new SkipStepRules();
+                var attribute = new TestSkipAttribute();
+                return (condition => stepRules.Add<TestSkipAttribute>(_ => condition()),
+                    () => stepRules.Rules.Select(rule => new Func<bool>(() => rule.Condition(attribute))));
+            case "skip-test":
+                var testRules = new SkipTestRules();
+                return (condition => testRules.Add(_ => condition()),
+                    () => testRules.Rules.Select(rule => new Func<bool>(() => rule(null))));
+            default:
+                throw new ArgumentOutOfRangeException(nameof(kind));
+        }
+    }
+
+    private sealed class TestSkipAttribute : SkipStepAttribute;
+}

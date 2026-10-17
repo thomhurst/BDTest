@@ -8,10 +8,16 @@ public class SkipTestRules
     {
     }
         
-    internal List<Func<Scenario, bool>> Rules = new();
+    private readonly RuleCollection<Func<Scenario, bool>> _rules = new();
 
+    internal IReadOnlyList<Func<Scenario, bool>> Rules => _rules.Snapshot;
+
+    /// <summary>
+    /// Registers a rule safely during concurrent evaluation. Rules added during
+    /// an evaluation take effect on subsequent evaluations.
+    /// </summary>
     public void Add(Func<Scenario, bool> condition)
     {
-        Rules.Add(condition);
+        _rules.Add(condition);
     }
 }
