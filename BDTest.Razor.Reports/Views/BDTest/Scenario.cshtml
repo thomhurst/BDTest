@@ -180,7 +180,7 @@
                             <div class="accordion-body collapse" id="step-custom-output-expanded">
                                 <div class="container" style="overflow-x: auto;">
                                     <h5>Custom Output:</h5>
-                                    @Html.Raw(Model.CustomHtmlOutputForReport)
+                                    @await Html.PartialAsync("_CustomHtmlOutput", Model.CustomHtmlOutputForReport)
                                 </div>
                             </div>
                         </td>

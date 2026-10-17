@@ -22,6 +22,7 @@
     <ItemGroup>
       <ProjectReference Include="..\BDTest.Example\BDTest.Example.csproj" />
       <ProjectReference Include="..\BDTest.NUnit\BDTest.NUnit.csproj" />
+      <ProjectReference Include="..\BDTest.Razor.Reports\BDTest.Razor.Reports.csproj" />
     </ItemGroup>
 
     <ItemGroup>
