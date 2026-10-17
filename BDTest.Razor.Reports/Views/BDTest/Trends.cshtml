@@ -6,7 +6,6 @@
 @using BDTest.Razor.Reports.Models
 @using BDTest.Razor.Reports.Models.ViewModels
 @using BDTest.Razor.Reports.Views.BDTest
-@using Microsoft.AspNetCore.Http.Extensions
 @model IEnumerable<TestRunSummary>
 
 @functions {
@@ -57,7 +56,7 @@
 
     var testRunSummariesEnumerable = Model.AsEnumerable() ?? Enumerable.Empty<TestRunSummary>();
 
-    var queryString = HttpUtility.ParseQueryString(new Uri(Context.Request.GetEncodedUrl()).Query);
+    var queryString = HttpUtility.ParseQueryString(Context.Request.QueryString.Value ?? string.Empty);
     
     var environmentQueryParameter = queryString.Get("environment");
     var tagQueryParameter = queryString.Get("tag");
@@ -133,8 +132,6 @@
     }
 
     var testRunSummaries = testRunSummariesEnumerable.OrderBy(x => x.StartedAtDateTime).ToList();
-    
-    var baseUrl = Context.GetBaseUrl();
 }
 
 <div id="startdatetimepickercontainer"></div>
@@ -305,7 +302,7 @@ let durationChartConfig = {
             
             let clickedOnReportId = reportIdsArray[clickedElementindex];
     
-            window.location.href = '@Context.GetBaseUrl()/bdtest/report/' + clickedOnReportId + '/summary';
+            window.location.href = @Json.Serialize(Url.Content("~/bdtest/report/")) + clickedOnReportId + '/summary';
             
             spinnerCursor();
         }
@@ -446,7 +443,7 @@ let successChartConfig = {
               
               let clickedOnReportId = reportIdsArray[clickedElementindex];
       
-              window.location.href = '@Context.GetBaseUrl()/bdtest/report/' + clickedOnReportId + '/summary';
+              window.location.href = @Json.Serialize(Url.Content("~/bdtest/report/")) + clickedOnReportId + '/summary';
               
               spinnerCursor();
           }

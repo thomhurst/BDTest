@@ -6,7 +6,6 @@
 @using BDTest.Razor.Reports.Models.ViewModels
 @using BDTest.Razor.Reports.Views.BDTest
 @using BDTest.Test
-@using Microsoft.AspNetCore.Http.Extensions
 @model IEnumerable<TestRunSummary>
 @inject BDTestReportServerOptions BDTestReportServerOptions;
 
@@ -58,7 +57,7 @@
     
     var testRunSummariesEnumerable = Model.AsEnumerable() ?? Enumerable.Empty<TestRunSummary>();
 
-    var queryString = HttpUtility.ParseQueryString(new Uri(Context.Request.GetEncodedUrl()).Query);
+    var queryString = HttpUtility.ParseQueryString(Context.Request.QueryString.Value ?? string.Empty);
     
     var environmentQueryParameter = queryString.Get("environment");
     var tagQueryParameter = queryString.Get("tag");
@@ -134,8 +133,6 @@
     }
 
     var testRunSummaries = testRunSummariesEnumerable.OrderBy(x => x.StartedAtDateTime).ToList();
-    
-    var baseUrl = Context.GetBaseUrl();
 }
 
 <script>

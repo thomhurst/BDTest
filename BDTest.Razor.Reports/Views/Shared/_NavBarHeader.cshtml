@@ -82,7 +82,7 @@
             </ul>
         </div>
         
-        @if (currentTestReport != null && Context.GetCurrentUrl().ToString().Contains("/scenario/"))
+        @if (currentTestReport != null && Context.Request.Path.Value.Contains("/scenario/"))
         {
             <div class="d-flex">
                 @await Html.PartialAsync("_PreviousNextScenarioButtons", currentTestReport.Id)

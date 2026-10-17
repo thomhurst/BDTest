@@ -2,7 +2,8 @@
 @using BDTest.Razor.Reports.Constants
 @using BDTest.Razor.Reports.Extensions
 @using BDTest.Test
-@using Microsoft.AspNetCore.Http.Extensions
+@using BDTest.Razor.Reports.Helpers
+@using System.Text.Json
 @model BDTest.Razor.Reports.Models.ViewModels.SummaryViewModel
 @{
     var total = Model.Scenarios.Count;
@@ -16,12 +17,13 @@
     var otherPercent = GetPercentage(skipped + notImplemented + inconclusive, total);
     var testTimer = BDTestUtil.GetTestTimer(Model.Scenarios, Model.TotalReportData);
 
-    var currentUri = new Uri(Context.Request.GetEncodedUrl());
-    _isSummaryPage = currentUri.AbsolutePath.Contains("/summary");
+    var currentPath = Context.Request.Path.Value;
+    _isSummaryPage = currentPath.Contains("/summary");
 
     var pointerClassIfSummaryPage = _isSummaryPage ? "pointer" : string.Empty;
-    var currentId = currentUri.ToString().Split("report/")[1].Split("/")[0];
-    var allScenariosUri = currentUri.WithPath($"bdtest/report/{currentId}/all-scenarios");
+    var currentId = currentPath.Split("report/")[1].Split("/")[0];
+    var allScenariosPath = $"/bdtest/report/{Uri.EscapeDataString(currentId)}/all-scenarios";
+    var allScenariosUrl = Context.GetLocalUrl(allScenariosPath);
 }
 
 @functions
@@ -40,44 +42,44 @@
 
 <div id="summary-boxes" class="d-grid justify-content-center mx-auto">
     
-        <button type="button" class="btn btn-primary btn-lg position-relative mb-5 py-3" onclick="@MakeUrl(allScenariosUri)">
+        <button type="button" class="btn btn-primary btn-lg position-relative mb-5 py-3" onclick="@MakeUrl(allScenariosUrl)">
           @total  <span class="badge position-absolute start-50 top-0 translate-middle bg-primary">Tests Run</span>
         </button>
 
             <div class="d-flex justify-content-center">
                 
-                <button type="button" class="btn btn-dark btn-lg position-relative mb-5 mx-3 py-3" onclick="@MakeUrl(allScenariosUri)">
+                <button type="button" class="btn btn-dark btn-lg position-relative mb-5 mx-3 py-3" onclick="@MakeUrl(allScenariosUrl)">
                     @testTimer.TestsStartedAt.ToStringForReport() <span class="badge position-absolute start-50 top-0 translate-middle bg-dark">Started at</span>
                 </button>
                 
-                <button type="button" class="btn btn-dark btn-lg position-relative mb-5 mx-3 py-3" onclick="@MakeUrl(allScenariosUri)">
+                <button type="button" class="btn btn-dark btn-lg position-relative mb-5 mx-3 py-3" onclick="@MakeUrl(allScenariosUrl)">
                     @testTimer.ElapsedTime.ToPrettyFormat()<span class="badge position-absolute start-50 top-0 translate-middle bg-dark">Time Taken</span>
                 </button>
                 
-                <button type="button" class="btn btn-dark btn-lg position-relative mb-5 mx-3 py-3" onclick="@MakeUrl(allScenariosUri)">
+                <button type="button" class="btn btn-dark btn-lg position-relative mb-5 mx-3 py-3" onclick="@MakeUrl(allScenariosUrl)">
                     @testTimer.TestsFinishedAt.ToStringForReport() <span class="badge position-absolute start-50 top-0 translate-middle bg-dark">Finished At</span>
                 </button>
             </div>
     
         <div class="d-flex justify-content-center">
             
-            <button type="button" class="btn btn-success btn-lg position-relative mb-5 mx-2 py-3" style="min-width: 12rem" onclick="@MakeUrl(allScenariosUri.WithQueryParameter(StatusConstants.FilterByStatusQueryParameterName, Status.Passed.ToString()))">
+            <button type="button" class="btn btn-success btn-lg position-relative mb-5 mx-2 py-3" style="min-width: 12rem" onclick="@MakeUrl(Context.GetLocalUrlWithQueryParameter(StatusConstants.FilterByStatusQueryParameterName, Status.Passed.ToString(), allScenariosPath))">
                 @passed <span class="badge position-absolute start-50 top-0 translate-middle bg-success">Passed</span>
             </button>
 
-            <button type="button" class="btn btn-warning btn-lg position-relative mb-5 mx-2 py-3" style="min-width: 12rem" onclick="@MakeUrl(allScenariosUri.WithQueryParameter(StatusConstants.FilterByStatusQueryParameterName, Status.Skipped.ToString()))">
+            <button type="button" class="btn btn-warning btn-lg position-relative mb-5 mx-2 py-3" style="min-width: 12rem" onclick="@MakeUrl(Context.GetLocalUrlWithQueryParameter(StatusConstants.FilterByStatusQueryParameterName, Status.Skipped.ToString(), allScenariosPath))">
                 @skipped <span class="badge position-absolute start-50 top-0 translate-middle bg-warning">Skipped</span>
             </button>
             
-            <button type="button" class="btn btn-warning btn-lg position-relative mb-5 mx-2 py-3" style="min-width: 12rem" onclick="@MakeUrl(allScenariosUri.WithQueryParameter(StatusConstants.FilterByStatusQueryParameterName, Status.NotImplemented.ToString()))">
+            <button type="button" class="btn btn-warning btn-lg position-relative mb-5 mx-2 py-3" style="min-width: 12rem" onclick="@MakeUrl(Context.GetLocalUrlWithQueryParameter(StatusConstants.FilterByStatusQueryParameterName, Status.NotImplemented.ToString(), allScenariosPath))">
                 @notImplemented <span class="badge position-absolute start-50 top-0 translate-middle bg-warning">Not Implemented</span>
             </button>
             
-            <button type="button" class="btn btn-warning btn-lg position-relative mb-5 mx-2 py-3" style="min-width: 12rem" onclick="@MakeUrl(allScenariosUri.WithQueryParameter(StatusConstants.FilterByStatusQueryParameterName, Status.Inconclusive.ToString()))">
+            <button type="button" class="btn btn-warning btn-lg position-relative mb-5 mx-2 py-3" style="min-width: 12rem" onclick="@MakeUrl(Context.GetLocalUrlWithQueryParameter(StatusConstants.FilterByStatusQueryParameterName, Status.Inconclusive.ToString(), allScenariosPath))">
                 @inconclusive <span class="badge position-absolute start-50 top-0 translate-middle bg-warning">Inconclusive</span>
             </button>
             
-            <button type="button" class="btn btn-danger btn-lg position-relative mb-5 mx-2 py-3" style="min-width: 12rem" onclick="@MakeUrl(allScenariosUri.WithQueryParameter(StatusConstants.FilterByStatusQueryParameterName, Status.Failed.ToString()))">
+            <button type="button" class="btn btn-danger btn-lg position-relative mb-5 mx-2 py-3" style="min-width: 12rem" onclick="@MakeUrl(Context.GetLocalUrlWithQueryParameter(StatusConstants.FilterByStatusQueryParameterName, Status.Failed.ToString(), allScenariosPath))">
                 @failed <span class="badge position-absolute start-50 top-0 translate-middle bg-danger">Failed</span>
             </button>
         </div>
@@ -85,9 +87,9 @@
 
 @functions
 {
-    private string MakeUrl(Uri url)
+    private string MakeUrl(string url)
     {
-        return _isSummaryPage ? $"window.location = '{url}'" : "return false;";
+        return _isSummaryPage ? $"window.location = {JsonSerializer.Serialize(url)}" : "return false;";
     }
 
     private bool _isSummaryPage;

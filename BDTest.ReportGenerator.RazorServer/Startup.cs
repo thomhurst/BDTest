@@ -1,7 +1,9 @@
+using System.Net;
 using BDTest.Razor.Reports.Extensions;
 using BDTest.Razor.Reports.Interfaces;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.Identity.Web;
 using Microsoft.Identity.Web.UI;
 using Microsoft.Net.Http.Headers;
@@ -21,6 +23,22 @@ public class Startup
 
     public void ConfigureServices(IServiceCollection services)
     {
+        services.Configure<ForwardedHeadersOptions>(options =>
+        {
+            options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+                | ForwardedHeaders.XForwardedHost | ForwardedHeaders.XForwardedPrefix;
+            // Retain the framework's loopback trust and one-hop limit. Never trust arbitrary senders.
+            foreach (var proxy in Configuration.GetSection("ReverseProxy:KnownProxies").Get<string[]>() ?? [])
+            {
+                options.KnownProxies.Add(IPAddress.Parse(proxy));
+            }
+
+            foreach (var host in (Configuration["AllowedHosts"] ?? "localhost").Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+            {
+                options.AllowedHosts.Add(host);
+            }
+        });
+
         services.AddAuthentication(options =>
             {
                 options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
@@ -53,6 +71,8 @@ public class Startup
 
     public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
     {
+        app.UseForwardedHeaders();
+
         if (env.IsDevelopment())
         {
             app.UseDeveloperExceptionPage();

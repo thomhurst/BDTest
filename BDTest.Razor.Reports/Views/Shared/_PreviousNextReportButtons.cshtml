@@ -1,6 +1,6 @@
 @using BDTest.Razor.Reports.Extensions
 @using BDTest.Razor.Reports.Interfaces
-@using Microsoft.AspNetCore.Http.Extensions
+@using BDTest.Razor.Reports.Helpers
 @model string
 @inject IDataRepository _dataRepository
 
@@ -28,15 +28,14 @@
 {
     private string GenerateUrl(string id)
     {
-        var currentUrl = Context.Request.GetEncodedUrl();
-        try
+        var path = Context.Request.Path.Value;
+        var segments = path.Split('/');
+        if (segments.Length > 4 && segments[1] == "bdtest" && segments[2] == "report")
         {
-            var currentId = currentUrl.Split("report/")[1].Split("/")[0];
-            return currentUrl.Replace(currentId, id);
+            segments[3] = Uri.EscapeDataString(id);
+            return Context.GetLocalUrl(string.Join("/", segments));
         }
-        catch
-        {
-            return new Uri(currentUrl).WithPath($"/bdtest/report/{id}/summary").ToString();
-        }
+
+        return Context.GetLocalUrl($"/bdtest/report/{Uri.EscapeDataString(id)}/summary");
     }
 }
