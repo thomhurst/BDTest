@@ -24,6 +24,9 @@ public abstract class BDTestBase
 
     protected virtual string BDTestExecutionId => StaticBDTestExecutionId;
 
+    internal static bool IsDefaultExecutionId(string executionId) =>
+        ReferenceEquals(AsyncLocalBDTestExecutionId.Value, executionId);
+
     public Given Given(Expression<Action> step, [CallerMemberName] string callerMember = null,
         [CallerFilePath] string callerFile = null)
     {
