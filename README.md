@@ -93,6 +93,32 @@ to `Action` would discard its asynchronous work. For other awaitables, write an
 `async Task` helper that awaits the operation and use that helper as the step.
 Avoid hiding asynchronous work inside a synchronous or `async void` helper.
 
+### Execution and synchronization contexts
+
+`BDTestAsync()` and direct `await` execute steps in order without scheduling a
+thread-pool task for each scenario or step. Execution begins inline; when reporting
+and all steps complete synchronously, the whole scenario can complete on the calling
+thread. Each asynchronous step must finish before the next step starts.
+
+BDTest does not guarantee a synchronization context, thread, or STA apartment across
+steps or retries. A step can initially see the caller's synchronization context, but
+framework continuations may run without it after an incomplete await. Await the async
+entry points instead of blocking on their returned tasks. Code requiring a UI thread
+or a particular apartment should explicitly dispatch to that thread.
+
+The synchronous `BDTest()` API remains supported and blocks until completion. It runs
+the scenario through one thread-pool boundary so that asynchronous steps do not capture
+the blocked caller's synchronization context. It flows the caller's execution context
+(including existing `AsyncLocal` values), and preserves original exceptions and output
+attribution. A step that explicitly dispatches back to the blocked caller can still
+deadlock; prefer `BDTestAsync()` for asynchronous work.
+
+Changes to an `AsyncLocal` value inside a step are not a mechanism for passing data to
+later steps or back to the caller. Use the test's `Context` object for shared step data.
+The scheduling regression tests cover inline completion, ordered asynchronous steps,
+ambient-value isolation, and synchronous execution from a single-thread context. No
+throughput or thread-pool-starvation improvement is claimed from these checks.
+
 ### Report date formatting
 
 Razor report tables and chart labels use the current request culture's short date
