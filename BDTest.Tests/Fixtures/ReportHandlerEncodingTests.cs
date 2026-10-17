@@ -1,8 +1,11 @@
 using System.Text.RegularExpressions;
 using System.Xml.Linq;
+using System.Web;
 using BDTest.Razor.Reports.Extensions;
 using BDTest.Razor.Reports.Interfaces;
 using BDTest.Razor.Reports.Models;
+using BDTest.Razor.Reports.Models.ViewModels;
+using BDTest.Test;
 using BDTest.Razor.Reports.Views.BDTest;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
@@ -100,6 +103,60 @@ public class ReportHandlerEncodingTests
         Assert.That(Regex.IsMatch(html, "<button[^>]*>Delete</button>"), Is.False);
     }
 
+    private static readonly string[] UrlQueries =
+    [
+        "",
+        "?filter=Passed&scenarioId=previous-scenario",
+        "?filter=');alert(1);//",
+        "?filter=\" onmouseover=\"alert(1)",
+        "?filter=</script><script>alert(1)</script>",
+        "?filter=café%20雪&other=%27%22%26%3C%3E%5C",
+        "?filter=&other=one+two&scenarioId=old&scenarioId=duplicate"
+    ];
+
+    [Test]
+    public async Task Sidebar_copy_url_is_data_and_never_executable_handler_source(
+        [ValueSource(nameof(UrlQueries))] string query)
+    {
+        var html = await RenderAsync<object>("/Views/Shared/_SideMenu.cshtml", null, query: query);
+        var link = ReadElement(html, "<a[^>]*>Copy URL to Clipboard</a>");
+        Assert.That((string)link.Attribute("onclick"), Is.EqualTo("copyToClipboard(this.dataset.url);"));
+        Assert.That((string)link.Attribute("data-url"),
+            Is.EqualTo("https://reports.example.test/bdtest/report/O'Brien/test-runs" + query));
+        Assert.That(link.Attributes().Select(x => x.Name.LocalName),
+            Is.EquivalentTo(new[] { "href", "data-url", "onclick", "class" }));
+    }
+
+    [Test]
+    public async Task Scenario_copy_url_is_data_and_preserves_the_selected_scenario(
+        [ValueSource(nameof(UrlQueries))] string query)
+    {
+        var scenario = JsonConvert.DeserializeObject<Scenario>(JsonConvert.SerializeObject(new
+        {
+            Guid = "selected-scenario",
+            Steps = Array.Empty<object>(),
+            CustomTestInformation = Array.Empty<object>()
+        }));
+        var html = await RenderAsync("/Views/Shared/_ScenarioModalPopup.cshtml",
+            new ScenarioModalViewModel { Scenario = scenario }, query: query);
+        var image = ReadElement(html, "<img[^>]*alt=\"Share\"[^>]*/>");
+        Assert.That((string)image.Attribute("onclick"), Is.EqualTo("copyToClipboard(this.dataset.url)"));
+        Assert.That(image.Attributes().Select(x => x.Name.LocalName),
+            Is.EquivalentTo(new[] { "src", "class", "alt", "data-url", "onclick" }));
+
+        var url = new Uri((string)image.Attribute("data-url"));
+        Assert.That(url.GetLeftPart(UriPartial.Path),
+            Is.EqualTo("https://reports.example.test/bdtest/report/O'Brien/test-runs"));
+        var actualQuery = HttpUtility.ParseQueryString(url.Query);
+        var expectedQuery = HttpUtility.ParseQueryString(query);
+        expectedQuery["scenarioId"] = scenario.Guid;
+        Assert.That(actualQuery.AllKeys, Is.EquivalentTo(expectedQuery.AllKeys));
+        foreach (var key in expectedQuery.AllKeys)
+        {
+            Assert.That(actualQuery.GetValues(key), Is.EqualTo(expectedQuery.GetValues(key)));
+        }
+    }
+
     private static XElement ReadElement(string html, string pattern)
     {
         var match = Regex.Match(html, pattern, RegexOptions.Singleline);
@@ -107,7 +164,7 @@ public class ReportHandlerEncodingTests
         return XElement.Parse(match.Value, LoadOptions.PreserveWhitespace);
     }
 
-    private static async Task<string> RenderAsync<T>(string path, T model, bool isAdmin = false)
+    private static async Task<string> RenderAsync<T>(string path, T model, bool isAdmin = false, string query = "")
     {
         var builder = WebApplication.CreateBuilder();
         builder.Services.AddControllersWithViews().AddBdTestReportControllersAndViews();
@@ -118,7 +175,8 @@ public class ReportHandlerEncodingTests
         var httpContext = new DefaultHttpContext { RequestServices = services };
         httpContext.Request.Scheme = "https";
         httpContext.Request.Host = new HostString("reports.example.test");
-        httpContext.Request.Path = "/bdtest/report/test-runs";
+        httpContext.Request.Path = "/bdtest/report/O'Brien/test-runs";
+        httpContext.Request.QueryString = new QueryString(query);
         var actionContext = new ActionContext(httpContext, new RouteData(), new ActionDescriptor());
         var view = services.GetRequiredService<ICompositeViewEngine>().GetView(null, path, isMainPage: false);
         Assert.That(view.Success, Is.True, $"Razor view not found: {path}");
