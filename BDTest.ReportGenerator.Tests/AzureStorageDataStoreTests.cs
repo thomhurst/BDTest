@@ -12,6 +12,26 @@ namespace BDTest.ReportGenerator.Tests;
 
 public class AzureStorageDataStoreTests
 {
+    [TestCase(true, "/test-data/report-123")]
+    [TestCase(false, "/test-runs-summaries/report-123")]
+    public async Task DeleteTargetsOnlyItsOwnContainer(bool deleteTestData, string expectedPath)
+    {
+        using var storage = new StorageHandler(0);
+        using var client = new HttpClient(storage);
+        var store = CreateStore(client);
+
+        if (deleteTestData)
+        {
+            await store.DeleteTestData("report-123");
+        }
+        else
+        {
+            await store.DeleteTestRunRecord("report-123");
+        }
+
+        Assert.That(storage.DeletedPaths, Is.EqualTo(new[] { expectedPath }));
+    }
+
     [Test]
     public async Task Lists_newest_fifty_across_pages_in_creation_order_without_deleting()
     {
@@ -128,6 +148,7 @@ public class AzureStorageDataStoreTests
         public DateTimeOffset[] CreatedOn { get; } = Enumerable.Range(0, count)
             .Select(index => DateTimeOffset.UtcNow.AddDays(-2).AddMinutes(index)).ToArray();
         public ConcurrentBag<string> Downloads { get; } = new();
+        public ConcurrentBag<string> DeletedPaths { get; } = new();
         public int ListRequests;
         public int Deletes;
         public int DisposedDownloads;
@@ -143,6 +164,7 @@ public class AzureStorageDataStoreTests
         {
             if (request.Method == HttpMethod.Delete)
             {
+                DeletedPaths.Add(request.RequestUri!.AbsolutePath);
                 Interlocked.Increment(ref Deletes);
                 return new HttpResponseMessage(HttpStatusCode.Accepted);
             }
