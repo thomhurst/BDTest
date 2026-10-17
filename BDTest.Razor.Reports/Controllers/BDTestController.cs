@@ -11,7 +11,6 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
-using TomLonghurst.EnumerableAsyncProcessor.Extensions;
 
 namespace BDTest.Razor.Reports.Controllers;
 
@@ -247,25 +246,7 @@ public class BDTestController : Controller
     [Route("report/test-run-times")]
     public async Task<IActionResult> TestRunTimes([FromQuery] string reportIds, CancellationToken cancellationToken)
     {
-        var reportIdsArray = reportIds?.Split(',') ?? Array.Empty<string>();
-
-        if (!reportIdsArray.Any())
-        {
-            return RedirectToAction("TestRuns", "BDTest");
-        }
-        
-        var allReports = await reportIdsArray.ToAsyncProcessorBuilder()
-            .SelectAsync(reportId => _dataRepository.GetData(reportId, cancellationToken), cancellationToken)
-            .ProcessInParallel(100, TimeSpan.FromSeconds(1));
-
-        var foundReports = allReports.Where(report => report != null).ToList();
-
-        if (!foundReports.Any())
-        {
-            return View("NotFoundMultiple");
-        }
-
-        return View("MultipleTestRunsTimes", foundReports);
+        return await GetBulkReportsView(reportIds, "MultipleTestRunsTimes", cancellationToken);
     }
 
     [HttpGet]
@@ -281,25 +262,42 @@ public class BDTestController : Controller
     [Route("report/test-run-flakiness")]
     public async Task<IActionResult> TestRunFlakiness([FromForm] string reportIds, CancellationToken cancellationToken)
     {
-        var reportIdsArray = reportIds?.Split(",") ?? Array.Empty<string>();
+        return await GetBulkReportsView(reportIds, "MultipleTestRunsFlakiness", cancellationToken);
+    }
 
-        if (!reportIdsArray.Any())
+    private async Task<IActionResult> GetBulkReportsView(string reportIds, string viewName, CancellationToken cancellationToken)
+    {
+        const int maximumReports = 50;
+        const int maximumIdLength = 128;
+
+        if (string.IsNullOrEmpty(reportIds))
         {
             return RedirectToAction("TestRuns", "BDTest");
         }
 
-        var allReports = await reportIdsArray.ToAsyncProcessorBuilder()
-            .SelectAsync(reportId => _dataRepository.GetData(reportId, cancellationToken), cancellationToken)
-            .ProcessInParallel(100, TimeSpan.FromSeconds(1));
-
-        var foundReports = allReports.Where(report => report != null).ToList();
-
-        if (!foundReports.Any())
+        // Bound allocation before splitting, and validate the entire request before any storage reads.
+        if (reportIds.Length > maximumReports * (maximumIdLength + 1) - 1)
         {
-            return View("NotFoundMultiple");
+            return BadRequest("Select at most 50 reports with IDs of at most 128 characters.");
         }
 
-        return View("MultipleTestRunsFlakiness", foundReports);
+        var ids = reportIds.Split(',');
+        if (ids.Length > maximumReports || ids.Any(id => id.Length == 0 || id.Length > maximumIdLength
+                || id is "." or ".." || id.Any(character => !char.IsAsciiLetterOrDigit(character)
+                    && character != '-' && character != '_' && character != '.')))
+        {
+            return BadRequest("Select at most 50 reports. IDs must contain 1-128 letters, digits, dots, hyphens or underscores, and cannot be '.' or '..'.");
+        }
+
+        var foundReports = new List<BDTestOutputModel>();
+        foreach (var batch in ids.Distinct(StringComparer.Ordinal).Chunk(5))
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            var reports = await Task.WhenAll(batch.Select(id => _dataRepository.GetDataForBulkRead(id, cancellationToken)));
+            foundReports.AddRange(reports.Where(report => report != null));
+        }
+
+        return foundReports.Count == 0 ? View("NotFoundMultiple") : View(viewName, foundReports);
     }
 
     [HttpGet]
