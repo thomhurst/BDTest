@@ -33,6 +33,53 @@ public class AzureStorageDataStoreTests
     }
 
     [Test]
+    public async Task GetTestDataDisposesDownloadAfterReading()
+    {
+        using var storage = new StorageHandler(1) { DownloadJson = "{\"id\":\"report\"}" };
+        using var client = new HttpClient(storage);
+
+        var result = await CreateStore(client).GetTestData("report", CancellationToken.None);
+
+        Assert.That(result.Id, Is.EqualTo("report"));
+        Assert.That(storage.DisposedDownloads, Is.EqualTo(1));
+    }
+
+    [TestCase(false)]
+    [TestCase(true)]
+    public void InvalidJsonDisposesDownload(bool summary)
+    {
+        using var storage = new StorageHandler(1) { DownloadJson = "{invalid json" };
+        using var client = new HttpClient(storage);
+        var store = CreateStore(client);
+
+        Assert.ThrowsAsync<JsonReaderException>(async () =>
+        {
+            if (summary)
+                await store.GetAllTestRunRecords();
+            else
+                await store.GetTestData("report", CancellationToken.None);
+        });
+
+        Assert.That(storage.DisposedDownloads, Is.EqualTo(1),
+            "Failed deserialization must also close the download.");
+    }
+
+    [TestCase(2)]
+    [TestCase(51)]
+    public async Task GetAllTestRunRecordsDisposesEveryDownload(int availableRecords)
+    {
+        using var storage = new StorageHandler(availableRecords);
+        using var client = new HttpClient(storage);
+
+        var records = (await CreateStore(client).GetAllTestRunRecords()).ToArray();
+
+        Assert.That(records, Has.Length.EqualTo(Math.Min(availableRecords, 50)));
+        Assert.That(storage.Downloads, Has.Count.EqualTo(records.Length));
+        Assert.That(storage.DisposedDownloads, Is.EqualTo(records.Length),
+            "All downloads must be closed before returning, including when the record limit applies.");
+    }
+
+    [Test]
     public async Task Lists_newest_fifty_across_pages_in_creation_order_without_deleting()
     {
         using var storage = new StorageHandler(75);
@@ -155,6 +202,7 @@ public class AzureStorageDataStoreTests
         public int PeakDownloads;
         private int _activeDownloads;
         public bool GateDownloads { get; init; }
+        public string DownloadJson { get; init; }
         public HttpStatusCode? FailedDownloadStatus { get; init; }
         public TaskCompletionSource FirstBatchStarted { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
         public TaskCompletionSource ReleaseDownloads { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -209,7 +257,7 @@ public class AzureStorageDataStoreTests
                     if (active == 8) FirstBatchStarted.TrySetResult();
                     await ReleaseDownloads.Task.WaitAsync(cancellationToken);
                 }
-                var content = new StreamContent(new TrackedStream(JsonConvert.SerializeObject(new { RecordId = name }),
+                var content = new StreamContent(new TrackedStream(DownloadJson ?? JsonConvert.SerializeObject(new { RecordId = name }),
                     () => Interlocked.Increment(ref DisposedDownloads)));
                 content.Headers.LastModified = DateTimeOffset.UtcNow;
                 var response = new HttpResponseMessage(HttpStatusCode.OK) { Content = content };
