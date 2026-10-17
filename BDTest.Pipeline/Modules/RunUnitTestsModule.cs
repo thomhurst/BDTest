@@ -20,7 +20,7 @@ public class RunUnitTestsModule : Module<List<CommandResult>>
                                        && file.Path.Contains("Tests", StringComparison.OrdinalIgnoreCase)))
         {
             // TUnit runs on Microsoft.Testing.Platform, which no longer supports the VSTest-based dotnet test on the .NET 10 SDK
-            if (unitTestProjectFile.Path.Contains("TUnit", StringComparison.OrdinalIgnoreCase))
+            if (Path.GetFileName(unitTestProjectFile.Path).Contains("TUnit", StringComparison.OrdinalIgnoreCase))
             {
                 results.Add(await context.DotNet().Run(new DotNetRunOptions
                 {
