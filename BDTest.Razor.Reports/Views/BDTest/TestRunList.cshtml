@@ -271,7 +271,13 @@
                     @if (isAdmin)
                     {
                         <td class="align-middle">
-                            <button class="btn btn-danger btn-sm" onclick="confirmDelete('@record.RecordId', '@record.Tag', '@record.Environment', '@record.BranchName', '@record.StartedAtDateTime')">Delete</button>
+                            <button class="btn btn-danger btn-sm"
+                                    data-test-id="@record.RecordId"
+                                    data-tag="@record.Tag"
+                                    data-environment="@record.Environment"
+                                    data-branch="@record.BranchName"
+                                    data-date="@record.StartedAtDateTime"
+                                    onclick="confirmDelete(this.dataset.testId, this.dataset.tag, this.dataset.environment, this.dataset.branch, this.dataset.date)">Delete</button>
                         </td>
                     }
                 </tr>

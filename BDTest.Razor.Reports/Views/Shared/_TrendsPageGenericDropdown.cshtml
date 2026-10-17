@@ -17,7 +17,7 @@
     <ul class="dropdown-menu">
         @foreach (var value in Model.DropdownValues)
         {
-            <li><a class="dropdown-item" href="#" onclick="@javascriptMethodName ('@value');">@value</a></li>
+            <li><a class="dropdown-item" href="#" data-value="@value" onclick="@javascriptMethodName (this.dataset.value);">@value</a></li>
         }
     </ul>
 </li>
