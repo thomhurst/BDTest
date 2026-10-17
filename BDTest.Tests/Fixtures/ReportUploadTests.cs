@@ -138,6 +138,7 @@ public class ReportUploadTests
         }
     }
 
+    [TestCase("{\"TestTimer\":{}}")]
     [TestCase("{}")]
     [TestCase("{\"Scenarios\":null}")]
     [TestCase("{\"NotRun\":null}")]
@@ -159,6 +160,26 @@ public class ReportUploadTests
         Assert.That(summary.Status, Is.EqualTo(Status.Inconclusive));
         Assert.That(summary.StartedAtDateTime, Is.EqualTo(default(DateTime)));
         Assert.That(summary.FinishedAtDateTime, Is.EqualTo(default(DateTime)));
+        await AssertReportPagesRender(server, report.Id);
+    }
+
+    [TestCase("TestsStartedAt")]
+    [TestCase("TestsFinishedAt")]
+    public async Task PartialTimersPreserveSuppliedTimestampAndDefaultMissingTimestamp(string member)
+    {
+        await using var server = await UploadServer.Start();
+        using var response = await server.Post(
+            "{\"TestTimer\":{\"" + member + "\":\"2026-01-01T12:00:00Z\"}}");
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        var report = server.Store.Received.Single();
+        var summary = server.Store.Summaries[report.Id];
+        var supplied = new DateTime(2026, 1, 1, 12, 0, 0, DateTimeKind.Utc);
+        var expectedStart = member == "TestsStartedAt" ? supplied : default;
+        var expectedFinish = member == "TestsFinishedAt" ? supplied : default;
+        Assert.That(report.TestTimer.TestsStartedAt, Is.EqualTo(expectedStart));
+        Assert.That(report.TestTimer.TestsFinishedAt, Is.EqualTo(expectedFinish));
+        Assert.That(summary.StartedAtDateTime, Is.EqualTo(expectedStart));
+        Assert.That(summary.FinishedAtDateTime, Is.EqualTo(expectedFinish));
         await AssertReportPagesRender(server, report.Id);
     }
 
