@@ -25,6 +25,8 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
+          # GitVersion's Mainline strategy fails on the synthetic PR merge commit, so build the PR branch itself
+          ref: ${{ github.head_ref }}
       - name: Setup .NET
         uses: actions/setup-dotnet@v6.0.0
         with:
