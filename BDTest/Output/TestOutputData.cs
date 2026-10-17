@@ -1,4 +1,4 @@
-﻿using System.Text;
+using System.Text;
 using BDTest.Maps;
 using BDTest.Test;
 
@@ -63,13 +63,31 @@ internal class TestOutputData : TextWriter
                 || !TestHolder.ScenariosByInternalId.TryGetValue(TestId, out var scenario)
                 || (scenario.Status == Status.Inconclusive && scenario.StartTime == default))
             {
-                CollectStartupOutput(FrameworkExecutionId, value ?? character.Value.ToString(), false, appendNewLine: false);
+                if (FrameworkExecutionId == null)
+                {
+                    Console.WriteLine("Attempting to write test startup output but no unique test ID has been set in the base class");
+                }
+                else if (character.HasValue)
+                {
+                    TestHolder.AppendStartupOutput(FrameworkExecutionId, character.Value);
+                }
+                else
+                {
+                    TestHolder.AppendStartupOutput(FrameworkExecutionId, value, appendNewLine: false);
+                }
                 return;
             }
 
             if (scenario.EndTime != default)
             {
-                scenario.TearDownOutput += value ?? character.Value.ToString();
+                if (character.HasValue)
+                {
+                    scenario.TeardownOutputBuffer.Append(character.Value);
+                }
+                else
+                {
+                    scenario.TeardownOutputBuffer.Append(value);
+                }
                 return;
             }
 
@@ -138,16 +156,12 @@ internal class TestOutputData : TextWriter
             return;
         }
 
-        if (appendNewLine && text.Length > 1)
-        {
-            text += Environment.NewLine;
-        }
-        
-        TestHolder.ListenForScenario(frameworkExecutionId, scenario => scenario.TestStartupInformation += text);
+        appendNewLine = appendNewLine && text.Length > 1;
+        TestHolder.AppendStartupOutput(frameworkExecutionId, text, appendNewLine);
 
         if (shouldWriteToConsole)
         {
-            Console.WriteLine(Environment.NewLine + text);
+            Console.WriteLine(Environment.NewLine + text + (appendNewLine ? Environment.NewLine : string.Empty));
         }
     }
 
@@ -161,7 +175,7 @@ internal class TestOutputData : TextWriter
 
         if (TestHolder.ScenariosByTestFrameworkId.TryGetValue(frameworkExecutionId, out var foundScenario))
         {
-            foundScenario.TearDownOutput += $"{text}{Environment.NewLine}";
+            foundScenario.TeardownOutputBuffer.Append(text, appendNewLine: true);
         }
 
         if (shouldWriteToConsole)
@@ -172,13 +186,6 @@ internal class TestOutputData : TextWriter
 
     internal static void WriteCustomHtmlForReport(string testId, string htmlValue)
     {
-        if (TestHolder.ScenariosByTestFrameworkId.TryGetValue(testId, out var foundScenario))
-        {
-            foundScenario.CustomHtmlOutputForReport += htmlValue;
-        }
-        else
-        {
-            TestHolder.ListenForScenario(testId, scenario => scenario.CustomHtmlOutputForReport += htmlValue);
-        }
+        TestHolder.ListenForScenario(testId, scenario => scenario.CustomHtmlOutputForReport += htmlValue);
     }
 }
