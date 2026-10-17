@@ -14,6 +14,7 @@ public abstract class BDTestBase
 {
     private static readonly AsyncLocal<string> AsyncLocalBDTestExecutionId = new();
 
+    // Retained for existing custom adapters that do not call MarkTestAsStarted.
     private static string StaticBDTestExecutionId
     {
         get =>
@@ -76,6 +77,23 @@ public abstract class BDTestBase
     public virtual Task OnBeforeRetry()
     {
         return Task.CompletedTask;
+    }
+
+    /// <summary>
+    /// Starts a new execution for a custom adapter that uses the default execution ID.
+    /// </summary>
+    /// <remarks>
+    /// Call synchronously in the execution flow that will run both setup and the test,
+    /// before starting any asynchronous work. Values assigned inside an async method
+    /// or Task.Run do not flow back to its caller. Call MarkTestAsComplete at teardown.
+    /// Framework adapters that override BDTestExecutionId supply their own identity.
+    /// </remarks>
+    protected void MarkTestAsStarted()
+    {
+        StaticBDTestExecutionId = Guid.NewGuid().ToString("N");
+        TestOutputData.TestId = null;
+        TestOutputData.FrameworkExecutionId = BDTestExecutionId;
+        Console.SetOut(TestOutputData.Instance);
     }
 
     protected virtual void MarkTestAsComplete()
