@@ -14,8 +14,10 @@ namespace BDTest.Tests.Fixtures;
 public class ScenarioRetentionTests
 {
     [OneTimeSetUp]
-    public void RegisterOutcomeExceptions()
+    public void RegisterOutcomeRulesAndExceptions()
     {
+        // Global rules persist for the process lifetime, so never capture a fixture here.
+        BDTestSettings.GlobalSkipTestRules.Add(static scenario => scenario.BdTestBaseClass is Capture { ShouldSkip: true });
         BDTestSettings.CustomExceptionSettings.InconclusiveExceptionTypes.Add(typeof(InconclusiveOutcomeException));
         BDTestSettings.CustomExceptionSettings.SuccessExceptionTypes.Add(typeof(SuccessOutcomeException));
     }
@@ -102,27 +104,18 @@ public class ScenarioRetentionTests
         var fixture = new Capture(outcome);
         var text = new TextSource();
         var context = fixture.Context;
-        var skip = new Func<Scenario, bool>(scenario => scenario.FrameworkTestId == fixture.Id && outcome == "skipped");
-        BDTestSettings.GlobalSkipTestRules.Add(skip);
         try
         {
-            try
-            {
-                fixture.Run(text);
-                Assert.That(outcome, Is.AnyOf("passed", "skipped", "retry"));
-            }
-            catch (Exception exception) when (exception is InvalidOperationException or NotImplementedException
-                or InconclusiveOutcomeException or SuccessOutcomeException or ErrorOccurredDuringRetryActionException)
-            {
-                Assert.That(outcome, Is.AnyOf("failed", "not-implemented", "inconclusive", "success-exception", "retry-hook-failed"));
-            }
-            var scenario = TestHolder.ScenariosByTestFrameworkId[fixture.Id];
-            return (scenario, new WeakReference(fixture), new WeakReference(context), new WeakReference(text));
+            fixture.Run(text);
+            Assert.That(outcome, Is.AnyOf("passed", "skipped", "retry"));
         }
-        finally
+        catch (Exception exception) when (exception is InvalidOperationException or NotImplementedException
+            or InconclusiveOutcomeException or SuccessOutcomeException or ErrorOccurredDuringRetryActionException)
         {
-            BDTestSettings.GlobalSkipTestRules.Rules.Remove(skip);
+            Assert.That(outcome, Is.AnyOf("failed", "not-implemented", "inconclusive", "success-exception", "retry-hook-failed"));
         }
+        var scenario = TestHolder.ScenariosByTestFrameworkId[fixture.Id];
+        return (scenario, new WeakReference(fixture), new WeakReference(context), new WeakReference(text));
     }
 
     private sealed class TextSource
@@ -135,6 +128,7 @@ public class ScenarioRetentionTests
     private sealed class Capture(string outcome, string id = null) : AbstractContextBDTestBase<CaptureContext>
     {
         public string Id { get; } = id ?? Guid.NewGuid().ToString();
+        public bool ShouldSkip => outcome == "skipped";
         protected override string BDTestExecutionId => Id;
         private int _attempts;
 
