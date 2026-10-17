@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <OutputType>Exe</OutputType>
+
+        <IsPackable>false</IsPackable>
+
+        <SignAssembly>True</SignAssembly>
+
+        <AssemblyOriginatorKeyFile>..\StrongNameKeyPair.snk</AssemblyOriginatorKeyFile>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="TUnit" Version="1.75.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\BDTest.TUnit\BDTest.TUnit.csproj" />
+    </ItemGroup>
+
+</Project>

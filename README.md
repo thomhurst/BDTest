@@ -27,6 +27,8 @@ It's a way to structure and run your tests so that:
 
 BDTest can be used standalone, or alongside an existing test running framework. For best results, I recommend NUnit, and installing the BDTest.NUnit package alongside the core BDTest package.
 
+Packages are also available for other frameworks: BDTest.xUnit, BDTest.MSTest and BDTest.TUnit. With TUnit, inherit from `TUnitBDTestBase<TContext>`.
+
 #### Why?
 I was originally inspired to build BDTest due to SpecFlow.
 My team at work used SpecFlow (as does much of the .NET based industry) for their tests when I joined, and upon using it, realised I really didn't enjoy using it and found it to be difficult to work with, finnicky and long-winded.
