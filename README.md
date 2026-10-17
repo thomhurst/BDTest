@@ -414,3 +414,31 @@ This policy restricts schemes, not destination hosts.
 Use `ScenarioHtmlWriter.Custom(html)` explicitly when you need raw HTML. It preserves
 your markup. The report server continues to isolate custom output in its sandboxed
 iframe; helper URL acceptance does not grant navigation or script permissions to that iframe.
+
+### Skipped scenarios and steps
+
+A global skip-test rule skips the entire scenario. A scenario whose steps are all
+skipped is also `Skipped`. A mix of executed and intentionally skipped steps is
+`Passed` when the executed steps pass; this includes `Debug.ShouldSkipWhenStep`.
+A framework skip exception aborts the scenario without retries, records that step
+and remaining unexecuted steps as `Skipped`, and preserves previously passed steps.
+Genuine inconclusive exceptions remain `Inconclusive`.
+
+NUnit and TUnit adapters propagate whole-scenario skips to their runners. MSTest
+uses `Assert.Inconclusive`, which appears as a skipped/not-executed runner result;
+BDTest still records a rule-driven or all-steps skip as `Skipped`. An explicit
+MSTest `Assert.Inconclusive` in a step remains `Inconclusive` in BDTest.
+
+The xUnit adapter targets xUnit v2, which has no built-in runtime skip mechanism.
+It throws `NotSupportedException` for a whole-scenario skip so the runner cannot
+silently report success. Use `[Fact(Skip = "reason")]` or `[Theory(Skip = "reason")]`
+for discovery-time skipping. See [xUnit's runtime skip support](https://api.xunit.net/v3/3.2.2/Xunit.Sdk.SkipException.html).
+
+Standalone `BDTestBase`/`BDTestBuilder` callers can still inspect the returned
+skipped scenario. Custom adapters can override `OnScenarioSkipped(string reason)`
+to invoke their runner's skip mechanism. Register runner skip exception types in
+`BDTestSettings.CustomExceptionSettings.SkipExceptionTypes`, keeping genuine
+inconclusive exceptions in `InconclusiveExceptionTypes`.
+
+Run `pwsh scripts/Test-SkipOutcomes.ps1` to verify actual NUnit, MSTest and TUnit
+runner outcomes as well as BDTest's scenario and step statuses.

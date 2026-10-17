@@ -35,7 +35,7 @@ public class IgnoreTests : NUnitBDTestBase<MyTestContext>
         {
             var scenario = BDTestUtil.GetScenarios().First();
                 
-            Assert.That(scenario.Status, Is.EqualTo(Status.Inconclusive));
+            Assert.That(scenario.Status, Is.EqualTo(Status.Skipped));
         }
     }
         

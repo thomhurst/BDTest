@@ -1,4 +1,5 @@
 ﻿using BDTest.Test;
+using BDTest.Settings;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace BDTest.MSTest;
@@ -11,9 +12,15 @@ public abstract class MSTestBDTestBase<TContext> : AbstractContextBDTestBase<TCo
     // An instance ID survives the separate execution flows used by async setup/body.
     protected override string BDTestExecutionId { get; } = Guid.NewGuid().ToString("N");
 
+    protected override void OnScenarioSkipped(string reason) => Assert.Inconclusive(reason);
+
     [TestInitialize]
     public void InitializeBDTest()
     {
+        if (!BDTestSettings.CustomExceptionSettings.InconclusiveExceptionTypes.Contains(typeof(AssertInconclusiveException)))
+        {
+            BDTestSettings.CustomExceptionSettings.InconclusiveExceptionTypes.Add(typeof(AssertInconclusiveException));
+        }
         MarkTestAsStarted();
     }
 

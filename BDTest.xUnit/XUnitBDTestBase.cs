@@ -22,6 +22,10 @@ public abstract class XUnitBDTestBase<TContext> : AbstractContextBDTestBase<TCon
 
     protected override string BDTestExecutionId { get; }
 
+    protected override void OnScenarioSkipped(string reason) => throw new NotSupportedException(
+        "xUnit v2 does not support runtime skipping. Use [Fact(Skip = \"reason\")] or [Theory(Skip = \"reason\")] " +
+        "to skip at discovery time. " + reason);
+
     public void Dispose()
     {
         RemoveContext();
