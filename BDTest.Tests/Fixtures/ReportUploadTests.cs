@@ -19,6 +19,46 @@ public class ReportUploadTests
 {
     private const string Key = "test-upload-secret";
 
+    [TestCase("application/json")]
+    [TestCase("text/html")]
+    public async Task MissingRawJsonReportReturns404WithoutHtml(string accept)
+    {
+        await using var server = await UploadServer.Start();
+        using var request = new HttpRequestMessage(HttpMethod.Get, "bdtest/report/missing/raw-json-data");
+        request.Headers.Accept.ParseAdd(accept);
+        using var response = await server.Client.SendAsync(request);
+
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.NotFound));
+        Assert.That(await response.Content.ReadAsStringAsync(), Is.Empty);
+        Assert.That(response.Content.Headers.ContentType?.MediaType, Is.Not.EqualTo("text/html"));
+    }
+
+    [Test]
+    public async Task ExistingRawJsonReportReturnsReportAsJson()
+    {
+        await using var server = await UploadServer.Start();
+        using var upload = await server.Post(Report());
+        Assert.That(upload.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        var report = server.Store.Received.Single();
+        using var response = await server.Client.GetAsync($"bdtest/report/{report.Id}/raw-json-data");
+
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        Assert.That(response.Content.Headers.ContentType?.MediaType, Is.EqualTo("application/json"));
+        var data = JsonConvert.DeserializeObject<BDTestOutputModel>(await response.Content.ReadAsStringAsync());
+        Assert.That(data.Id, Is.EqualTo(report.Id));
+        Assert.That(data.Tag, Is.EqualTo("uploaded"));
+    }
+
+    [Test]
+    public async Task MissingReportSummaryStillRendersHtml()
+    {
+        await using var server = await UploadServer.Start();
+        using var response = await server.Client.GetAsync("bdtest/report/missing/summary");
+
+        Assert.That(response.Content.Headers.ContentType?.MediaType, Is.EqualTo("text/html"));
+        Assert.That(await response.Content.ReadAsStringAsync(), Does.Contain("doesn't seem to exist!"));
+    }
+
     [TestCase(null)]
     [TestCase("")]
     [TestCase("wrong-key")]

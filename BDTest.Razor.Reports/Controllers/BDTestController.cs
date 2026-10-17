@@ -314,7 +314,7 @@ public class BDTestController : Controller
             
         if (model == null)
         {
-            return View("NotFoundSingle", id);
+            return NotFound();
         }
             
         return Content(JsonConvert.SerializeObject(model), "application/json");
