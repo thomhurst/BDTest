@@ -1,10 +1,10 @@
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Net;
 using System.Text;
 using BDTest.Helpers;
 using BDTest.Maps;
 using BDTest.Settings;
-using Newtonsoft.Json;
 
 namespace BDTest;
 
@@ -18,14 +18,14 @@ public static class BDTestReportServer
         return SendDataAndGetReportUriAsync(serverAddress, new BDTestRunDescriptor());
     }
         
-    public static Task<Uri> SendDataAndGetReportUriAsync(Uri serverAddress, BDTestRunDescriptor bdTestRunDescriptor)
+    public static async Task<Uri> SendDataAndGetReportUriAsync(Uri serverAddress, BDTestRunDescriptor bdTestRunDescriptor)
     {
-        var httpClient = new HttpClient
+        using var httpClient = new HttpClient
         {
             Timeout = TimeSpan.FromMinutes(2)
         };
 
-        return SendDataAndGetReportUriAsync(serverAddress, bdTestRunDescriptor, httpClient);
+        return await SendDataAndGetReportUriAsync(serverAddress, bdTestRunDescriptor, httpClient).ConfigureAwait(false);
     }
         
     public static async Task<Uri> SendDataAndGetReportUriAsync(Uri serverAddress, BDTestRunDescriptor bdTestRunDescriptor,
@@ -38,7 +38,7 @@ public static class BDTestReportServer
             
         try
         {
-            await httpClient.GetAsync(pingUri);
+            using var response = await httpClient.GetAsync(pingUri).ConfigureAwait(false);
         }
         catch
         {
@@ -67,15 +67,15 @@ public static class BDTestReportServer
 
         AddCustomProperties(dataOutputModel);
 
-        var stringContent = JsonConvert.SerializeObject(dataOutputModel);
+        var stringContent = BDTestJsonHelper.Serialize(dataOutputModel);
 
         string responseContent;
-        var attempts = 0;
-        while (true)
+        for (var attempt = 1; ; attempt++)
         {
-            using var stringHttpContent = new StringContent(stringContent, Encoding.UTF8, "application/json");
-            var retryDelay = TimeSpan.Zero;
+            // Three attempts, with 250ms then 500ms backoff unless the server asks for longer.
+            var retryDelay = TimeSpan.FromMilliseconds(250 * attempt);
             DateTimeOffset? retryAt = null;
+            var retryable = true;
                 
             try
             {
@@ -83,28 +83,27 @@ public static class BDTestReportServer
                 {
                     RequestUri = uploadUri,
                     Method = HttpMethod.Post,
-                    Content = stringHttpContent 
+                    Content = new StringContent(stringContent, Encoding.UTF8, "application/json")
                 };
 
-                using var response = await httpClient.SendAsync(httpRequestMessage);
-                if ((int)response.StatusCode == 429)
+                using var response = await httpClient.SendAsync(httpRequestMessage).ConfigureAwait(false);
+                retryable = response.IsSuccessStatusCode || IsTransient(response.StatusCode);
+                if (IsTransient(response.StatusCode))
                 {
                     var retryAfter = response.Headers.RetryAfter;
-                    retryDelay = retryAfter?.Delta ?? TimeSpan.Zero;
+                    if (retryAfter?.Delta > retryDelay)
+                    {
+                        retryDelay = retryAfter.Delta.Value;
+                    }
                     retryAt = retryAfter?.Date;
                 }
 
-                responseContent = await response.EnsureSuccessStatusCode().Content.ReadAsStringAsync();
+                responseContent = await response.EnsureSuccessStatusCode().Content.ReadAsStringAsync().ConfigureAwait(false);
                 break;
             }
-            catch (Exception)
+            catch (Exception exception) when (attempt < 3 && retryable
+                && (exception is HttpRequestException || exception is TaskCanceledException))
             {
-                attempts++;
-                if (attempts == 3)
-                {
-                    throw;
-                }
-
                 await WaitForRetryAfterAsync(retryDelay, retryAt).ConfigureAwait(false);
             }
         }
@@ -112,14 +111,20 @@ public static class BDTestReportServer
         return new Uri(responseContent);
     }
 
+    private static bool IsTransient(HttpStatusCode statusCode) => statusCode is
+        HttpStatusCode.RequestTimeout or (HttpStatusCode)429 or HttpStatusCode.InternalServerError
+        or HttpStatusCode.BadGateway or HttpStatusCode.ServiceUnavailable or HttpStatusCode.GatewayTimeout;
+
     private static async Task WaitForRetryAfterAsync(TimeSpan delay, DateTimeOffset? retryAt)
     {
         var elapsed = Stopwatch.StartNew();
         while (true)
         {
-            var remaining = retryAt.HasValue
-                ? retryAt.Value - DateTimeOffset.UtcNow
-                : delay - elapsed.Elapsed;
+            var remaining = delay - elapsed.Elapsed;
+            if (retryAt.HasValue && retryAt.Value - DateTimeOffset.UtcNow > remaining)
+            {
+                remaining = retryAt.Value - DateTimeOffset.UtcNow;
+            }
             if (remaining <= TimeSpan.Zero)
             {
                 return;
