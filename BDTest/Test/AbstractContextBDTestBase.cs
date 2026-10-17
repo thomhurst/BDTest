@@ -35,14 +35,29 @@ public abstract class AbstractContextBDTestBase<TContext> : BDTestBase where TCo
                     return bdTestContext;
                 }
 
-                var testContext = Activator.CreateInstance<TContext>();
-                bdTestContext = new BDTestContext<TContext>(this, testContext, executionId);
-
-                ContextAmendment?.Invoke(bdTestContext);
-
-                StoreContext(executionId, bdTestContext);
-                return bdTestContext;
+                return CreateContext(executionId);
             }
+        }
+    }
+
+    // Called only while holding _contextLock, including during retry recreation.
+    private BDTestContext<TContext> CreateContext(string executionId)
+    {
+        var context = new BDTestContext<TContext>(this, Activator.CreateInstance<TContext>(), executionId);
+
+        // Amendments may read Context or BDTestContext through the reentrant lock.
+        StoreContext(executionId, context);
+        try
+        {
+            ContextAmendment?.Invoke(context);
+            return context;
+        }
+        catch
+        {
+            // Never reuse a partially initialized context after an amendment fails.
+            _defaultContexts.Remove(executionId);
+            _contexts.Remove(executionId);
+            throw;
         }
     }
 
@@ -102,7 +117,9 @@ public abstract class AbstractContextBDTestBase<TContext> : BDTestBase where TCo
 
     internal override void RecreateContextOnRetry()
     {
-        OverwriteContext(Activator.CreateInstance<TContext>());   
-        ContextAmendment?.Invoke(BDTestContext);
+        lock (_contextLock)
+        {
+            CreateContext(BDTestExecutionId);
+        }
     }
 }
