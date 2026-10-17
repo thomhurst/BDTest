@@ -12,7 +12,7 @@ public class OutputMetrics
             return;
         }
             
-        foreach (var scenario in bdTestOutputModel.Scenarios)
+        foreach (var scenario in bdTestOutputModel.Scenarios ?? Enumerable.Empty<Scenario>())
         {
             switch (scenario.Status)
             {
@@ -45,7 +45,7 @@ public class OutputMetrics
             }
         }
 
-        AnyWarnings = bdTestOutputModel.NotRun.Any();
+        AnyWarnings = bdTestOutputModel.NotRun?.Any() == true;
     }
 
     public bool AnyPassed { get; }

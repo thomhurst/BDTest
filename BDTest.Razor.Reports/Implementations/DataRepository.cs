@@ -1,4 +1,5 @@
 using BDTest.Maps;
+using BDTest.Output;
 using BDTest.Razor.Reports.Extensions;
 using BDTest.Razor.Reports.Interfaces;
 using BDTest.Razor.Reports.Models;
@@ -39,6 +40,8 @@ internal class DataRepository : IDataRepository
             return null;
         }
 
+        NormalizeReport(model);
+
         if (cacheResult)
         {
             // Single-report reads re-cache it to extend the time. Bulk reads must not retain full reports.
@@ -72,6 +75,8 @@ internal class DataRepository : IDataRepository
 
     public async Task StoreData(BDTestOutputModel bdTestOutputModel, string id)
     {
+        NormalizeReport(bdTestOutputModel);
+
         if (await _memoryCacheBdTestDataStore.GetTestData(id, default) == null)
         {
             // Save to in-memory cache for 8 hours for quick fetching
@@ -85,6 +90,14 @@ internal class DataRepository : IDataRepository
                 await _customDatastore.StoreTestRunRecord(bdTestOutputModel.GetOverview());
             }
         }
+    }
+
+    private static void NormalizeReport(BDTestOutputModel model)
+    {
+        model.Scenarios ??= new();
+        model.NotRun ??= new();
+        // Missing timing data must not become the report server's process/startup time.
+        model.TestTimer ??= new TestTimer { TestsStartedAt = default, TestsFinishedAt = default };
     }
 
     public async Task DeleteReport(string id)
