@@ -18,11 +18,23 @@ public class Scenario
     [JsonProperty] public string FileName { get; private set; }
         
     [JsonProperty]
-    public string TestStartupInformation { get; internal set; }
+    public string TestStartupInformation
+    {
+        get => StartupOutput.Value;
+        internal set => StartupOutput.Value = value;
+    }
+
+    [JsonIgnore] internal BufferedOutput StartupOutput { get; set; } = new();
+    [JsonIgnore] internal BufferedOutput TeardownOutputBuffer { get; } = new();
 
     [JsonIgnore] public ExceptionWrapper Exception => Steps.Select(step => step.Exception).FirstOrDefault(exception => exception != null);
         
-    [JsonProperty] public string TearDownOutput { get; internal set; }
+    [JsonProperty]
+    public string TearDownOutput
+    {
+        get => TeardownOutputBuffer.Value;
+        internal set => TeardownOutputBuffer.Value = value;
+    }
         
     [JsonProperty] public string CustomHtmlOutputForReport { get; internal set; }
 

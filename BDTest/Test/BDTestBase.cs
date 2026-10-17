@@ -80,6 +80,8 @@ public abstract class BDTestBase
 
     protected virtual void MarkTestAsComplete()
     {
+        TestHolder.CompleteTest(BDTestExecutionId);
+        TestOutputData.ClearCurrentTaskData();
         AsyncLocalBDTestExecutionId.Value = null;
         TestOutputData.TestId = null;
         TestOutputData.FrameworkExecutionId = null;
