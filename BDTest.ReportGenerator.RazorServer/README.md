@@ -45,6 +45,25 @@ value of a client-controlled cookie, header, or query parameter. Register authen
 and authorization services and run `UseAuthentication()` and `UseAuthorization()` after
 routing and before report endpoints. The library's default authorizer denies admin access.
 
+## Storage startup
+
+Set `AzureStorage:ConnectionString` using user secrets or the
+`AzureStorage__ConnectionString` environment variable. Missing, blank, or malformed
+values fail startup with an options validation error naming that setting.
+
+The sample host awaits storage initialization and one cache warm-up before serving
+requests. It creates the Blob containers asynchronously, then loads report summaries.
+Storage failures are logged and fail startup, so check storage connectivity and
+permissions before restarting. Initialization receives the host cancellation token;
+the existing report-listing interface has no cancellation token, so an in-flight
+cache load is awaited until the store completes or fails.
+
+Blob and Cosmos store constructors only create client/container references. When
+using these sample stores outside this host, await `InitializeAsync` before issuing
+reads or writes. Cosmos initialization creates the database once and then both
+containers. Hosts using only the reporting library load summaries on demand;
+constructing the repository no longer starts background storage work.
+
 ## Azure report listing and retention
 
 The Azure store returns up to 50 summaries, newest blob creation time first (last

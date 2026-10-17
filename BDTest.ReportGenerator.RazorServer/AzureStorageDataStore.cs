@@ -9,7 +9,7 @@ using Newtonsoft.Json;
 
 namespace BDTest.ReportGenerator.RazorServer;
 
-public class AzureStorageDataStore : IBDTestDataStore
+public class AzureStorageDataStore : IBDTestDataStore, IAsyncDataStoreInitializer
 {
     private readonly BlobContainerClient _testRunSummariesContainer;
     private readonly BlobContainerClient _testDataContainer;
@@ -28,10 +28,8 @@ public class AzureStorageDataStore : IBDTestDataStore
         var blobClient = new BlobServiceClient(connectionString);
             
         _testRunSummariesContainer = blobClient.GetBlobContainerClient("test-runs-summaries");
-        _testRunSummariesContainer.CreateIfNotExists();
             
         _testDataContainer = blobClient.GetBlobContainerClient("test-data");
-        _testDataContainer.CreateIfNotExists();
     }
         
     public async Task<BDTestOutputModel> GetTestData(string id, CancellationToken cancellationToken)
@@ -106,8 +104,9 @@ public class AzureStorageDataStore : IBDTestDataStore
         return _testDataContainer.DeleteBlobIfExistsAsync(id);
     }
 
-    public Task InitializeAsync()
+    public async Task InitializeAsync(CancellationToken cancellationToken = default)
     {
-        return GetAllTestRunRecords();
+        await _testRunSummariesContainer.CreateIfNotExistsAsync(cancellationToken: cancellationToken);
+        await _testDataContainer.CreateIfNotExistsAsync(cancellationToken: cancellationToken);
     }
 }

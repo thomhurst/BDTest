@@ -14,9 +14,6 @@ internal class DataRepository : IDataRepository
     {
         _memoryCacheBdTestDataStore = memoryCacheBdTestDataStore;
         _customDatastore = options.DataStore;
-            
-        // Get all records on startup
-        Task.Run(GetAllTestRunRecords);
     }
 
     public Task<BDTestOutputModel> GetData(string id, CancellationToken cancellationToken)

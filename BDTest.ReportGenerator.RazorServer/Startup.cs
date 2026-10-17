@@ -4,6 +4,7 @@ using BDTest.Razor.Reports.Interfaces;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.Extensions.Options;
 using Microsoft.Identity.Web;
 using Microsoft.Identity.Web.UI;
 using Microsoft.Net.Http.Headers;
@@ -63,6 +64,7 @@ public class Startup
         services.AddSingleton<UserPersonalizer>();
 
         AddConfig(services);
+        services.AddHostedService<ReportStorageStartupService>();
 
         services.AddRazorPages();
     }
@@ -115,14 +117,15 @@ public class Startup
                 pattern: "{controller=Home}/{action=Index}/{id?}");
             endpoints.MapRazorPages();
         });
-
-        Task.Run(() => app.ApplicationServices.GetRequiredService<IDataRepository>().GetAllTestRunRecords());
     }
 
     private void AddConfig(IServiceCollection services)
     {
-        var config = Configuration.Get<Config>();
-            
-        services.AddSingleton(config.AzureStorage);
+        services.AddOptions<AzureStorageConfig>()
+            .Bind(Configuration.GetSection("AzureStorage"))
+            .Validate(config => config.HasValidConnectionString(),
+                "AzureStorage:ConnectionString must be a valid Azure Blob Storage connection string.")
+            .ValidateOnStart();
+        services.AddSingleton(provider => provider.GetRequiredService<IOptions<AzureStorageConfig>>().Value);
     }
 }
