@@ -6,7 +6,9 @@ namespace BDTest.Helpers;
 
 public static class TestInformationAttributeHelper
 {
-    public static TestInformationAttribute[] GetTestInformationAttributes()
+    public static TestInformationAttribute[] GetTestInformationAttributes() => GetTestInformationAttributes(null);
+
+    internal static TestInformationAttribute[] GetTestInformationAttributes(MethodInfo testMethod)
     {
         var stackFrame = StackFramesHelper.GetStackFrames().FirstOrDefault(it =>
         {
@@ -19,7 +21,8 @@ public static class TestInformationAttributeHelper
             return GetTestInformationAttribute(stackFrame)?.ToArray() ?? Array.Empty<TestInformationAttribute>();
         }
 
-        return Array.Empty<TestInformationAttribute>();
+        return testMethod?.GetCustomAttributes<TestInformationAttribute>(true).ToArray()
+            ?? Array.Empty<TestInformationAttribute>();
     }
         
     private static IEnumerable<TestInformationAttribute> GetTestInformationAttribute(StackFrame it)

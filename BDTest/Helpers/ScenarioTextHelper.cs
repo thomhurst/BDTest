@@ -31,6 +31,11 @@ internal static class ScenarioTextHelper
                 Enumerable.Empty<string>());
         }
             
+        if (!string.IsNullOrEmpty(callerMember))
+        {
+            return new ScenarioTextWithParameters(new ScenarioText(callerMember.Humanize()), Array.Empty<string>());
+        }
+
         return new ScenarioTextWithParameters(new ScenarioText("No Scenario Text found (Use attribute [ScenarioText(\"...\")] on your tests"), Array.Empty<string>());
     }
         

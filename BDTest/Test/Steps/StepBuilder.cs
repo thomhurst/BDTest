@@ -40,7 +40,7 @@ public abstract class StepBuilder : BuildableTest
             
         StoryText = StoryTextHelper.GetStoryText(bdTestBase);
         SetScenarioText();
-        CustomTestInformation = TestInformationAttributeHelper.GetTestInformationAttributes();
+        CustomTestInformation = TestInformationAttributeHelper.GetTestInformationAttributes(this.GetTestMethod());
     }
 
     internal StepBuilder(List<Step> previousSteps, Runnable runnable, BuildableTest previousPartiallyBuiltTest)
