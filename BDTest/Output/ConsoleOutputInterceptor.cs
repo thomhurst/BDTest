@@ -7,9 +7,13 @@ internal class ConsoleOutputInterceptor : TextWriter
     internal readonly TextWriter One;
     internal readonly TestOutputData Two;
 
-    public ConsoleOutputInterceptor()
+    public ConsoleOutputInterceptor() : this(Console.Out)
     {
-        One = Console.Out;
+    }
+
+    internal ConsoleOutputInterceptor(TextWriter originalWriter)
+    {
+        One = originalWriter;
         Two = new TestOutputData();
     }
 
@@ -26,6 +30,33 @@ internal class ConsoleOutputInterceptor : TextWriter
         One.Write(value);
         Two.Write(value);
     }
+
+    public override void Write(string value)
+    {
+        if (string.IsNullOrEmpty(value))
+        {
+            return;
+        }
+
+        One.Write(value);
+        Two.Write(value);
+    }
+
+    public override void Write(char[] buffer, int index, int count)
+    {
+        // Validate the slice before either destination sees any output.
+        Write(new string(buffer, index, count));
+    }
+
+    public override void WriteLine() => Write(NewLine);
+
+    public override void WriteLine(string value) => Write(value + NewLine);
+
+    public override void WriteLine(char value) => Write(value + NewLine);
+
+    public override void WriteLine(char[] buffer) => WriteLine(buffer == null ? null : new string(buffer));
+
+    public override void WriteLine(char[] buffer, int index, int count) => WriteLine(new string(buffer, index, count));
 
     public override string ToString()
     {
