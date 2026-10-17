@@ -23,4 +23,10 @@ public class BDTestReportServerOptions
         public IUserPersonalizer UserPersonalizer { get; set; }
 #nullable enable
         public ILogger? Logger { get; set; }
+
+        /// <summary>The secret required in the X-BDTest-Upload-Key header. Uploads are disabled when unset.</summary>
+        public string? UploadApiKey { get; set; }
+
+        /// <summary>Maximum authenticated upload attempts per minute, shared by all clients of this server instance.</summary>
+        public int UploadsPerMinute { get; set; } = 60;
 }

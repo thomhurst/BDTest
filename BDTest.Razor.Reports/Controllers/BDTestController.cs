@@ -3,6 +3,7 @@ using BDTest.Maps;
 using BDTest.Razor.Reports.Constants;
 using BDTest.Razor.Reports.Extensions;
 using BDTest.Razor.Reports.Helpers;
+using BDTest.Razor.Reports.Implementations;
 using BDTest.Razor.Reports.Interfaces;
 using BDTest.Razor.Reports.Models;
 using BDTest.Razor.Reports.Models.ViewModels;
@@ -35,17 +36,22 @@ public class BDTestController : Controller
         return Ok();
     }
 
+    // Upload clients authenticate with the upload key, independently of the host's interactive login.
     [AllowAnonymous]
     [HttpPost]
     [Route("data")]
+    [ServiceFilter(typeof(ReportUploadFilter))]
+    [RequestSizeLimit(10 * 1024 * 1024)]
     public async Task<IActionResult> Index([FromBody] BDTestOutputModel bdTestOutputModel)
     {
-        if (!ModelState.IsValid)
+        if (!ModelState.IsValid || bdTestOutputModel == null)
         {
             return BadRequest();
         }
 
-        var id = bdTestOutputModel.Id ?? Guid.NewGuid().ToString("N");
+        // Never let an uploader choose a storage key, including after cache expiry.
+        var id = Guid.NewGuid().ToString("N");
+        bdTestOutputModel.Id = id;
 
         await _dataRepository.StoreData(bdTestOutputModel, id);
 

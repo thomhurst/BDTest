@@ -68,6 +68,7 @@ public class Startup
             
         app.UseBDTestReportServer(options =>
         {
+            options.UploadApiKey = Configuration["BDTest:UploadApiKey"];
             options.DataStore = app.ApplicationServices.GetRequiredService<IBDTestDataStore>();
             options.CustomSidebarLinksProvider = app.ApplicationServices.GetRequiredService<CustomSidebarLinkProvider>();
             options.CustomHeaderLinksProvider = app.ApplicationServices.GetRequiredService<CustomHeaderProvider>();

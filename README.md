@@ -61,6 +61,34 @@ BDTest is written in .NET Standard, so you can use it in either .NET Framework o
 ## How do I get started?
 
 View the [wiki](https://github.com/thomhurst/BDTest/wiki) to see how to use BDTest and how to get setup: https://github.com/thomhurst/BDTest/wiki
+
+### Report server uploads
+
+Report uploads require an API key. Configure a strong secret on both the server and the uploader before upgrading; an unset or blank key disables uploads (`401`). Existing reports and the ping endpoint remain available.
+
+For an embedded report server:
+
+```csharp
+app.UseBDTestReportServer(options =>
+{
+    options.UploadApiKey = configuration["BDTest:UploadApiKey"];
+    options.UploadsPerMinute = 60; // Positive limit shared by authenticated clients of this instance.
+});
+```
+
+The bundled Razor server reads `BDTest:UploadApiKey` from configuration (for example the `BDTest__UploadApiKey` environment variable). Keep the secret out of source control and use HTTPS. Send it using the existing `HttpClient` overload:
+
+```csharp
+using var client = new HttpClient();
+client.DefaultRequestHeaders.Add("X-BDTest-Upload-Key", uploadApiKey);
+var reportUri = await BDTestReportServer.SendDataAndGetReportUriAsync(
+    serverAddress, new BDTestRunDescriptor(), client);
+```
+
+`POST /bdtest/data` checks the key and rate limit before parsing JSON. Uploads are limited to 10 MiB per request, including chunked requests, using ASP.NET Core's request size limit (Kestrel/IIS). Configure equivalent or stricter limits in any reverse proxy or alternative host. The default rate limit is 60 authenticated attempts per minute per server instance; excess attempts return `429` with `Retry-After`. For multiple server instances, enforce a shared limit at the gateway as well.
+
+The server ignores client-supplied report IDs and creates a new GUID for each accepted upload. Use the returned URL to locate the report. Re-uploading (including a retry after a lost response) creates a separate report instead of replacing an existing report. Stored models, summaries, and data-receiver callbacks all receive the server-generated ID.
+
 #### Example Test
 
 ```csharp
