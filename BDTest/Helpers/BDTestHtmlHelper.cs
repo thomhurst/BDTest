@@ -1,5 +1,6 @@
 using BDTest.Maps;
 using BDTest.Output;
+using BDTest.Settings;
 using BDTest.Test;
 using System.Text;
 
@@ -20,9 +21,9 @@ public static class BDTestHtmlHelper
         var dataToOutput = new BDTestOutputModel
         {
             Id = BDTestUtil.GetCurrentReportId,
-            Environment = bdTestRunDescriptor?.Environment ?? "Not Specified",
-            Tag = bdTestRunDescriptor?.Tag ?? "Not Specified", 
-            BranchName = bdTestRunDescriptor?.BranchName ?? "Not Specified",
+            Environment = bdTestRunDescriptor?.Environment ?? BDTestSettings.Environment ?? "Not Specified",
+            Tag = bdTestRunDescriptor?.Tag ?? BDTestSettings.Tag ?? "Not Specified",
+            BranchName = bdTestRunDescriptor?.BranchName ?? BDTestSettings.BranchName ?? "Not Specified",
             MachineName = Environment.MachineName,
             Scenarios = scenarios,
             TestTimer = testTimer,
@@ -148,7 +149,7 @@ public static class BDTestHtmlHelper
         html.AppendLine("            <button class=\"filter-btn\" data-status=\"failed\">Failed</button>");
         html.AppendLine("            <button class=\"filter-btn\" data-status=\"skipped\">Skipped</button>");
         html.AppendLine("            <button class=\"filter-btn\" data-status=\"inconclusive\">Inconclusive</button>");
-        html.AppendLine("            <button class=\"filter-btn\" data-status=\"notImplemented\">Not Implemented</button>");
+        html.AppendLine("            <button class=\"filter-btn\" data-status=\"notimplemented\">Not Implemented</button>");
         html.AppendLine("        </div>");
 
         html.AppendLine("        <div class=\"scenarios-list\">");
@@ -194,7 +195,7 @@ public static class BDTestHtmlHelper
             html.AppendLine($"                    <h4>Steps:</h4>");
             foreach (var step in scenario.Steps)
             {
-                var stepStatusClass = step.Exception != null ? "failed" : "passed";
+                var stepStatusClass = step.Status.ToString().ToLowerInvariant();
                 html.AppendLine($"                    <div class=\"step {stepStatusClass}\">");
                 html.AppendLine($"                        <div class=\"step-text\">{EscapeHtml(step.StepText)}</div>");
                 if (step.Exception != null)
@@ -481,6 +482,10 @@ public static class BDTestHtmlHelper
             border-left: 4px solid #28a745;
         }
         
+        .step.inconclusive { border-left-color: #17a2b8; }
+        .step.skipped { border-left-color: #ffc107; }
+        .step.notimplemented { border-left-color: #6c757d; }
+
         .step.failed {
             border-left-color: #dc3545;
             background-color: #f8f9fa;

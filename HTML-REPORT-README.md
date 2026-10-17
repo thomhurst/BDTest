@@ -64,11 +64,17 @@ public class TestReportSetup
 
 ## Azure DevOps Integration
 
-The generated HTML file can be easily published to Azure DevOps build summaries:
+Generate the report after your tests, then publish it as a downloadable artifact in Azure DevOps Services. For example, if your teardown writes `BDTest-Report.html` to `$(Build.ArtifactStagingDirectory)`:
 
-1. Generate the HTML report in your build pipeline
-2. Use the "Publish Build Artifacts" task or "Publish Test Results" task
-3. The HTML file will be available in the build summary for easy viewing and sharing
+```yaml
+- publish: '$(Build.ArtifactStagingDirectory)/BDTest-Report.html'
+  artifact: BDTestReport
+  condition: succeededOrFailed()
+```
+
+Download the file from the run's artifacts and open it in a browser. The `publish` step uploads the file; displaying interactive HTML in a build tab requires a separate HTML viewer extension. See [Publish pipeline artifacts](https://learn.microsoft.com/en-us/azure/devops/pipelines/artifacts/pipeline-artifacts?view=azure-devops).
+
+`PublishTestResults@2` accepts test-result formats such as TRX, NUnit, and JUnit, not this HTML report. Publish those results separately if you also want Azure DevOps test analytics. See [supported test-result formats](https://learn.microsoft.com/en-us/azure/devops/pipelines/tasks/reference/publish-test-results-v2?view=azure-pipelines).
 
 ## Report Structure
 
@@ -84,7 +90,7 @@ Each test scenario shows:
 - Scenario and story text
 - Execution duration and retry count
 - Expandable details including:
-  - Step-by-step execution with pass/fail status
+  - Step-by-step execution with passed, failed, skipped, inconclusive, or not-implemented status
   - Exception details with stack traces
   - Console output
   - Custom HTML content
