@@ -27,6 +27,7 @@ public static class BDTestExtensions
 
         services.AddSingleton<IMemoryCacheBdTestDataStore, MemoryCacheBdTestDataStore>();
         services.AddSingleton<IDataRepository, DataRepository>();
+        services.AddSingleton<ReportUploadFilter>();
         services.AddSingleton(new BDTestReportServerOptions());
 
         return mvcBuilder;

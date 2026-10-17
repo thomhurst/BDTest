@@ -61,6 +61,34 @@ BDTest is written in .NET Standard, so you can use it in either .NET Framework o
 ## How do I get started?
 
 View the [wiki](https://github.com/thomhurst/BDTest/wiki) to see how to use BDTest and how to get setup: https://github.com/thomhurst/BDTest/wiki
+
+### Report server uploads
+
+Report uploads require an API key. Configure a strong secret on both the server and the uploader before upgrading; an unset or blank key disables uploads (`401`). Existing reports and the ping endpoint remain available.
+
+For an embedded report server:
+
+```csharp
+app.UseBDTestReportServer(options =>
+{
+    options.UploadApiKey = configuration["BDTest:UploadApiKey"];
+    options.UploadsPerMinute = 60; // Positive limit shared by authenticated clients of this instance.
+});
+```
+
+The bundled Razor server reads `BDTest:UploadApiKey` from configuration (for example the `BDTest__UploadApiKey` environment variable). Keep the secret out of source control and use HTTPS. Send it using the existing `HttpClient` overload:
+
+```csharp
+using var client = new HttpClient();
+client.DefaultRequestHeaders.Add("X-BDTest-Upload-Key", uploadApiKey);
+var reportUri = await BDTestReportServer.SendDataAndGetReportUriAsync(
+    serverAddress, new BDTestRunDescriptor(), client);
+```
+
+`POST /bdtest/data` checks the key and rate limit before parsing JSON. Uploads are limited to 10 MiB per request, including chunked requests, using ASP.NET Core's request size limit (Kestrel/IIS). Configure equivalent or stricter limits in any reverse proxy or alternative host. The default rate limit is 60 authenticated attempts per minute per server instance; excess attempts return `429` with `Retry-After`. The built-in uploader waits for that delay (seconds or an HTTP date) before retrying, with at most three upload attempts. For multiple server instances, enforce a shared limit at the gateway as well.
+
+The server ignores client-supplied report IDs and creates a new GUID for each accepted upload. Use the returned URL to locate the report. Re-uploading (including a retry after a lost response) creates a separate report instead of replacing an existing report. Stored models, summaries, and data-receiver callbacks all receive the server-generated ID.
+
 #### Example Test
 
 ```csharp
@@ -155,18 +183,18 @@ The sample `BDTest.ReportGenerator.RazorServer` uses Microsoft Entra ID with `Mi
 - `AzureAd__ClientId`: the application's client ID.
 - `AzureAd__ClientSecret`: the application's client secret (or configure a certificate through Microsoft.Identity.Web).
 - `AzureStorage__ConnectionString`: the existing report storage connection string.
-- `ReportUpload__ApiKey`: a long, randomly generated secret shared only with report-uploading test jobs.
+- `BDTest__UploadApiKey`: a long, randomly generated secret shared only with report-uploading test jobs.
 
 For local development, use `dotnet user-secrets set "<Section>:<Key>" "<value>" --project BDTest.ReportGenerator.RazorServer`. Keep secrets out of committed configuration. Configure access to the enterprise application in Entra ID to restrict who may sign in; by default the server allows every authenticated user accepted by that application to read every report. It does not provide per-report permissions.
 
-The upload endpoint, `POST /bdtest/data`, bypasses interactive sign-in but requires the `X-BDTest-Api-Key` header in the sample host. Missing, incorrect, or multiple keys return HTTP 401; leaving the server's key empty disables uploads. A reader's sign-in cookie cannot replace the upload key, and an upload key does not grant read access. `/bdtest/ping` remains anonymous for warm-up, as does the library's error action. Static CSS, JavaScript, and images remain public.
+The upload endpoint, `POST /bdtest/data`, bypasses interactive sign-in but requires the `X-BDTest-Upload-Key` header in the sample host. Missing, incorrect, or multiple keys return HTTP 401; leaving the server's key empty disables uploads. A reader's sign-in cookie cannot replace the upload key, and an upload key does not grant read access. `/bdtest/ping` remains anonymous for warm-up, as does the library's error action. Static CSS, JavaScript, and images remain public.
 
 Pass a configured `HttpClient` to the existing upload overload:
 
 ```csharp
 using var client = new HttpClient();
 client.DefaultRequestHeaders.Add(
-    "X-BDTest-Api-Key",
+    "X-BDTest-Upload-Key",
     Environment.GetEnvironmentVariable("BDTEST_REPORT_UPLOAD_API_KEY"));
 
 var reportUri = await BDTestReportServer.SendDataAndGetReportUriAsync(
@@ -187,13 +215,12 @@ services.AddControllersWithViews()
 services.AddRazorPages();
 ```
 
-Use the `Microsoft.AspNetCore.Authentication.OpenIdConnect`, `Microsoft.Identity.Web`, `Microsoft.Identity.Web.UI`, and `BDTest.Razor.Reports.Extensions` namespaces. Configure `UseBDTestReportServer` with your data store as usual. The request pipeline must select the endpoint before checking its authorization:
+Use the `Microsoft.AspNetCore.Authentication.OpenIdConnect`, `Microsoft.Identity.Web`, `Microsoft.Identity.Web.UI`, and `BDTest.Razor.Reports.Extensions` namespaces. Configure `UseBDTestReportServer` with your data store and `UploadApiKey` as shown above. The request pipeline must select the endpoint before checking its authorization:
 
 ```csharp
 app.UseHttpsRedirection();
 app.UseStaticFiles(); // Only public assets belong in the web root.
 app.UseRouting();
-app.UseMiddleware<ReportUploadApiKeyMiddleware>();
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseEndpoints(endpoints =>
@@ -203,7 +230,7 @@ app.UseEndpoints(endpoints =>
 });
 ```
 
-`ReportUploadApiKeyMiddleware` is sample-host code, not part of the NuGet library: copy [its implementation](BDTest.ReportGenerator.RazorServer/ReportUploadApiKeyMiddleware.cs) into your host (and change its namespace), or provide an equivalent upload authorization check. The library marks uploads `[AllowAnonymous]`, so a fallback policy alone does **not** secure uploads. The sample check uses the selected controller action rather than a URL prefix, so only the upload action gets this exception. Use HTTPS for both browser sessions and uploads.
+The library marks uploads `[AllowAnonymous]` to bypass interactive sign-in, and its upload authorization filter requires `X-BDTest-Upload-Key` independently. Configure `UploadApiKey` for every host; no separate upload authentication middleware is needed. Use HTTPS for both browser sessions and uploads.
 
 See [Microsoft Identity Web setup](https://github.com/AzureAD/microsoft-identity-web/wiki/web-apps) and [ASP.NET Core authorization policies](https://learn.microsoft.com/aspnet/core/security/authorization/policies) for provider configuration and policy customization.
 

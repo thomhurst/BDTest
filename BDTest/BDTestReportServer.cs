@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using BDTest.Helpers;
@@ -72,18 +73,26 @@ public static class BDTestReportServer
         var attempts = 0;
         while (true)
         {
-            var stringHttpContent  = new StringContent(stringContent, Encoding.UTF8, "application/json");
+            using var stringHttpContent = new StringContent(stringContent, Encoding.UTF8, "application/json");
+            var retryDelay = TimeSpan.Zero;
+            DateTimeOffset? retryAt = null;
                 
             try
             {
-                var httpRequestMessage = new HttpRequestMessage
+                using var httpRequestMessage = new HttpRequestMessage
                 {
                     RequestUri = uploadUri,
                     Method = HttpMethod.Post,
                     Content = stringHttpContent 
                 };
 
-                var response = await httpClient.SendAsync(httpRequestMessage);
+                using var response = await httpClient.SendAsync(httpRequestMessage);
+                if ((int)response.StatusCode == 429)
+                {
+                    var retryAfter = response.Headers.RetryAfter;
+                    retryDelay = retryAfter?.Delta ?? TimeSpan.Zero;
+                    retryAt = retryAfter?.Date;
+                }
 
                 responseContent = await response.EnsureSuccessStatusCode().Content.ReadAsStringAsync();
                 break;
@@ -95,10 +104,32 @@ public static class BDTestReportServer
                 {
                     throw;
                 }
+
+                await WaitForRetryAfterAsync(retryDelay, retryAt).ConfigureAwait(false);
             }
         }
             
         return new Uri(responseContent);
+    }
+
+    private static async Task WaitForRetryAfterAsync(TimeSpan delay, DateTimeOffset? retryAt)
+    {
+        var elapsed = Stopwatch.StartNew();
+        while (true)
+        {
+            var remaining = retryAt.HasValue
+                ? retryAt.Value - DateTimeOffset.UtcNow
+                : delay - elapsed.Elapsed;
+            if (remaining <= TimeSpan.Zero)
+            {
+                return;
+            }
+
+            // Timers have millisecond resolution and can wake before the deadline.
+            // Round up, then recheck; cap each wait to Task.Delay's supported range.
+            var milliseconds = (int)Math.Min(Math.Ceiling(remaining.TotalMilliseconds), int.MaxValue - 1);
+            await Task.Delay(milliseconds).ConfigureAwait(false);
+        }
     }
 
     private static void AddCustomProperties(BDTestOutputModel dataOutputModel)
