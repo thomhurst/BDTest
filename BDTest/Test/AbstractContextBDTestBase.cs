@@ -44,6 +44,12 @@ public abstract class AbstractContextBDTestBase<TContext> : BDTestBase where TCo
         }
     }
 
+    protected override void MarkTestAsComplete()
+    {
+        RemoveContext();
+        base.MarkTestAsComplete();
+    }
+
     protected void RemoveContext()
     {
         lock (_contextLock)
