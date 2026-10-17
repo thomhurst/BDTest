@@ -1,14 +1,11 @@
-@using BDTest.Maps
+@model BDTest.Razor.Reports.Models.ViewModels.ReportLayoutViewModel
 @using BDTest.Razor.Reports.Helpers
-@using BDTest.Razor.Reports.Interfaces
 @using BDTest.Razor.Reports.Models
 @inject BDTestReportServerOptions BdTestReportServerOptions
-@inject IDataRepository _dataRepository;
 
 @{
     var customLinksProvider = BdTestReportServerOptions.CustomHeaderLinksProvider;
-    var id = ViewBag.Id;
-    BDTestOutputModel currentTestReport = string.IsNullOrEmpty(id) ? null : await _dataRepository.GetData(id, CancellationToken.None);
+    var currentTestReport = Model?.Report;
 }
 
 <nav class="navbar fixed-top navbar-expand-lg navbar-primary bg-primary" role="navigation" aria-label="main navigation">
@@ -85,7 +82,7 @@
         @if (currentTestReport != null && Context.Request.Path.Value.Contains("/scenario/"))
         {
             <div class="d-flex">
-                @await Html.PartialAsync("_PreviousNextScenarioButtons", currentTestReport.Id)
+                @await Html.PartialAsync("_PreviousNextScenarioButtons", currentTestReport)
             </div>    
         }
         else if (currentTestReport != null)

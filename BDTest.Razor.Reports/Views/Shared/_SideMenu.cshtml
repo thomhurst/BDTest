@@ -1,14 +1,11 @@
-@using BDTest.Maps
+@model BDTest.Razor.Reports.Models.ViewModels.ReportLayoutViewModel
 @using BDTest.Razor.Reports.Extensions
-@using BDTest.Razor.Reports.Interfaces
 @using BDTest.Razor.Reports.Models
 @using BDTest.Razor.Reports.Helpers
-@inject IDataRepository _dataRepository;
 @inject BDTestReportServerOptions BdTestReportServerOptions
 
 @{
-  var id = ViewBag.Id;
-  BDTestOutputModel currentTestReport = string.IsNullOrEmpty(id) ? null : await _dataRepository.GetData(id, CancellationToken.None);
+  var currentTestReport = Model?.Report;
   var metrics = new OutputMetrics(currentTestReport);
 }
 
