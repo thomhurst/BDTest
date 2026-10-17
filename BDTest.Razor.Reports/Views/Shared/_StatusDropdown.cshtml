@@ -14,33 +14,33 @@
   </button>
   <ul class="dropdown-menu" id="dropdown-menu" role="menu">
     <li>
-      <a class="dropdown-item" onclick="filterByStatus('@StatusConstants.All');">
+      <a class="dropdown-item" data-bdtest-action="status" data-value="@StatusConstants.All">
         Show All
       </a>
     </li>
     <hr class="dropdown-divider">
     <li>
-      <a href="#" class="dropdown-item" onclick="filterByStatus('@Status.Passed');">
+      <a href="#" class="dropdown-item" data-bdtest-action="status" data-value="@Status.Passed">
         Show Passed
       </a>
     </li>
     <li>
-      <a class="dropdown-item" onclick="filterByStatus('@Status.Failed');">
+      <a class="dropdown-item" data-bdtest-action="status" data-value="@Status.Failed">
         Show Failures
       </a>
     </li>
     <li>
-      <a href="#" class="dropdown-item" onclick="filterByStatus('@Status.Skipped');">
+      <a href="#" class="dropdown-item" data-bdtest-action="status" data-value="@Status.Skipped">
         Show Skipped
       </a>
     </li>
     <li>
-      <a href="#" class="dropdown-item" onclick="filterByStatus('@Status.Inconclusive');">
+      <a href="#" class="dropdown-item" data-bdtest-action="status" data-value="@Status.Inconclusive">
         Show Inconclusive
       </a>
     </li>
     <li>
-      <a href="#" class="dropdown-item" onclick="filterByStatus('@Status.NotImplemented');">
+      <a href="#" class="dropdown-item" data-bdtest-action="status" data-value="@Status.NotImplemented">
         Show Not Implemented
       </a>
     </li>

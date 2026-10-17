@@ -8,7 +8,7 @@
     Layout = "_Layout";
 }
 
-<button class="btn btn-primary ms-2 mt-2" onclick="window.history.back()">Back</button>
+<button class="btn btn-primary ms-2 mt-2" data-bdtest-action="back">Back</button>
 
 @await Html.PartialAsync("_TestPageHeaderHero", new TestPageHeaderHeroViewModel
 {
@@ -36,9 +36,9 @@
 <div class="container-fluid">
     <div class="box" id="all-scenarios-container">
         <div class="btn-group" role="group" >
-            <button class="btn btn-light" onclick="expandAllSteps();">Expand All</button>
-            <button class="btn btn-light" onclick="collapseAllSteps();">Collapse All</button>
-            <button class="btn toggle-hide pointer" toggle-alternative-text="Hide Timings Chart" onclick="toggleElementVisibility(document.getElementById('step-chart-times')); toggleAlternativeText(this);">Show Timings Chart</button>
+            <button class="btn btn-light" data-bdtest-action="expand-steps">Expand All</button>
+            <button class="btn btn-light" data-bdtest-action="collapse-steps">Collapse All</button>
+            <button class="btn toggle-hide pointer" toggle-alternative-text="Hide Timings Chart" data-bdtest-action="toggle-element" data-target="step-chart-times">Show Timings Chart</button>
         </div>
         
         <div class="mt-4 mb-6 container invisibleElement container mb-5" id="step-chart-times" style="max-width:66%">
@@ -62,7 +62,7 @@
                 
                 @if (!string.IsNullOrEmpty(Model.TestStartupInformation))
                 {
-                    <tr step-id="step-startup" data-bs-toggle="collapse" data-bs-target="#step-startup-expanded" class="accordion-toggle pointer opacity-75" onclick="document.getElementById('step-startup-toggle-container').classList.toggle('dropend')">
+                    <tr step-id="step-startup" data-bs-toggle="collapse" data-bs-target="#step-startup-expanded" class="accordion-toggle pointer opacity-75" data-bdtest-action="toggle-step" data-target="step-startup-toggle-container">
                         <td class="align-middle">
                             <div class="d-grid dropend" id="step-startup-toggle-container">
                                 <button class="btn dropdown-toggle"></button>
@@ -89,7 +89,7 @@
                 @for (var index = 0; index < Model.Steps.Count; index++)
                 {
                     var step = Model.Steps[index];
-                    <tr step-id="step-@step.Guid" data-bs-toggle="collapse" data-bs-target="#step-@step.Guid-expanded" class="accordion-toggle @(IsExpandable(step) ? "pointer": "")" onclick="document.getElementById('step-@step.Guid-toggle-container').classList.toggle('dropend')">
+                    <tr step-id="step-@step.Guid" data-bs-toggle="collapse" data-bs-target="#step-@step.Guid-expanded" class="accordion-toggle @(IsExpandable(step) ? "pointer": "")" data-bdtest-action="toggle-step" data-target="step-@step.Guid-toggle-container">
                         <td class="align-middle">
                             @if (IsExpandable(step))
                             {
@@ -139,7 +139,7 @@
 
                 @if (!string.IsNullOrEmpty(Model.TearDownOutput))
                 {
-                    <tr step-id="step-teardown" data-bs-toggle="collapse" data-bs-target="#step-teardown-expanded" class="accordion-toggle pointer opacity-75" onclick="document.getElementById('step-teardown-toggle-container').classList.toggle('dropend')">
+                    <tr step-id="step-teardown" data-bs-toggle="collapse" data-bs-target="#step-teardown-expanded" class="accordion-toggle pointer opacity-75" data-bdtest-action="toggle-step" data-target="step-teardown-toggle-container">
                         <td class="align-middle">
                             <div class="d-grid dropend" id="step-teardown-toggle-container">
                                 <button class="btn dropdown-toggle"></button>
@@ -164,7 +164,7 @@
                 
                 @if (!string.IsNullOrEmpty(Model.CustomHtmlOutputForReport))
                 {
-                    <tr step-id="step-custom-output" data-bs-toggle="collapse" data-bs-target="#step-custom-output-expanded" class="accordion-toggle pointer opacity-75" onclick="document.getElementById('step-custom-output-toggle-container').classList.toggle('dropend')">
+                    <tr step-id="step-custom-output" data-bs-toggle="collapse" data-bs-target="#step-custom-output-expanded" class="accordion-toggle pointer opacity-75" data-bdtest-action="toggle-step" data-target="step-custom-output-toggle-container">
                         <td class="align-middle">
                             <div class="d-grid dropend" id="step-custom-output-toggle-container">
                                 <button class="btn dropdown-toggle"></button>

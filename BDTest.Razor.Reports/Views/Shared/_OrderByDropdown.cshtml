@@ -9,10 +9,10 @@
         Order By
 </button>
 <ul class="dropdown-menu" id="dropdown-menu" role="menu">
-    <li><a href="#" class="dropdown-item" onclick="orderBy('@OrderConstants.Name');">Order by Name</a></li>
-    <li><a href="#" class="dropdown-item" onclick="orderBy('@OrderConstants.DurationDescending');">Order by Duration Descending</a></li>
-    <li><a href="#" class="dropdown-item" onclick="orderBy('@OrderConstants.DurationAscending');">Order by Duration Ascending</a></li>
-    <li><a href="#" class="dropdown-item" onclick="orderBy('@OrderConstants.DateDescending');">Order by Time Descending</a></li>
-    <li><a href="#" class="dropdown-item" onclick="orderBy('@OrderConstants.DateAscending');">Order by Time Ascending</a></li>
-    <li><a href="#" class="dropdown-item" onclick="orderBy('@OrderConstants.Status');">Order by Status</a></li>
+    <li><a href="#" class="dropdown-item" data-bdtest-action="order" data-value="@OrderConstants.Name">Order by Name</a></li>
+    <li><a href="#" class="dropdown-item" data-bdtest-action="order" data-value="@OrderConstants.DurationDescending">Order by Duration Descending</a></li>
+    <li><a href="#" class="dropdown-item" data-bdtest-action="order" data-value="@OrderConstants.DurationAscending">Order by Duration Ascending</a></li>
+    <li><a href="#" class="dropdown-item" data-bdtest-action="order" data-value="@OrderConstants.DateDescending">Order by Time Descending</a></li>
+    <li><a href="#" class="dropdown-item" data-bdtest-action="order" data-value="@OrderConstants.DateAscending">Order by Time Ascending</a></li>
+    <li><a href="#" class="dropdown-item" data-bdtest-action="order" data-value="@OrderConstants.Status">Order by Status</a></li>
 </ul>

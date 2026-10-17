@@ -1,15 +1,5 @@
 @model BDTest.Razor.Reports.Views.BDTest.TrendsPageGenericDropdownViewModel
 
-@{
-    var javascriptMethodName = $"filter{Model.QueryParameterName}";
-}
-
-<script>
-    function @javascriptMethodName (value) {
-      window.location.href = getUrlWithAppendedParameter('@Model.QueryParameterName', value);
-    }
-</script>
-
 <li class="nav-item dropdown">
     <a id="@Model.ButtonId" class="bg-primary text-white nav-link dropdown-toggle" aria-haspopup="true" aria-controls="dropdown-menu" data-bs-toggle="dropdown" href="#" aria-expanded="false">
         @Model.ButtonText
@@ -17,7 +7,7 @@
     <ul class="dropdown-menu">
         @foreach (var value in Model.DropdownValues)
         {
-            <li><a class="dropdown-item" href="#" data-value="@value" onclick="@javascriptMethodName (this.dataset.value);">@value</a></li>
+            <li><a class="dropdown-item" href="#" data-value="@value" data-bdtest-action="filter" data-parameter="@Model.QueryParameterName">@value</a></li>
         }
     </ul>
 </li>

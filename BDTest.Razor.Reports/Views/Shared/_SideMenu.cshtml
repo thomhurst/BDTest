@@ -121,7 +121,7 @@
         <div class="collapse" id="actions-links-collapse">
           <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small">
             @{ var url = Context.GetLocalUrl(); }
-            <li><a href="#" data-url="@url" onclick="copyToClipboard(new URL(this.dataset.url, window.location.href).href);" class="link-dark rounded nav-link">Copy URL to Clipboard</a></li>
+            <li><a href="#" data-url="@url" data-bdtest-action="copy-url" class="link-dark rounded nav-link">Copy URL to Clipboard</a></li>
             @if (currentTestReport != null)
             {
               <li><a download href="~/bdtest/report/@currentTestReport.Id/raw-json-data" class="link-dark rounded nav-link">Download Raw Json Data</a></li>

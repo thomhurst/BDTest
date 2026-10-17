@@ -260,7 +260,7 @@
                     </td>
                     <td class="align-middle">
                         <a href="~/bdtest/report/@record.RecordId/summary">
-                            <button class="btn btn-dark pointer" onclick="disableButtonAndSpin(this)">View Report</button>
+                            <button class="btn btn-dark pointer" data-bdtest-action="spin">View Report</button>
                         </a>
                     </td>
                     @if (isAdmin)
@@ -274,7 +274,7 @@
                                         data-environment="@record.Environment"
                                         data-branch="@record.BranchName"
                                         data-date="@record.StartedAtDateTime"
-                                        onclick="return confirmDelete(this.dataset.testId, this.dataset.tag, this.dataset.environment, this.dataset.branch, this.dataset.date)">Delete</button>
+                                        data-bdtest-action="delete">Delete</button>
                             </form>
                         </td>
                     }

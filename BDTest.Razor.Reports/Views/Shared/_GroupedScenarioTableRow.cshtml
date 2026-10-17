@@ -18,7 +18,7 @@
     var hasInconclusive = Model.Scenarios.Any(scenario => scenario.Status == Status.Inconclusive) ? HtmlClassConstants.HasInconclusive : string.Empty;
     var hasNotImplemented = Model.Scenarios.Any(scenario => scenario.Status == Status.NotImplemented) ? HtmlClassConstants.HasNotImplemented : string.Empty;
 
-    <tr scenario-group="@Model.GroupedScenarioIndex.Get()" class="pointer scenario-group @hasSuccess @hasFailures @hasSkipped @hasInconclusive @hasNotImplemented" onclick="expandScenarioGroup(this, toggleActions.TOGGLE)">
+    <tr scenario-group="@Model.GroupedScenarioIndex.Get()" class="pointer scenario-group @hasSuccess @hasFailures @hasSkipped @hasInconclusive @hasNotImplemented" data-bdtest-action="toggle-group">
         <td class="align-middle">
             <div class="d-grid dropend" id="scenario-group-@index.Get()-toggle-container">
                 <button class="btn dropdown-toggle"></button>
