@@ -19,8 +19,7 @@ public sealed class ReportStorageStartupService(
             }
 
             cancellationToken.ThrowIfCancellationRequested();
-            // Hosted services start before Startup.Configure. Set the store before constructing
-            // the repository; the remaining report options are configured with the HTTP pipeline.
+            // Set the store before resolving the repository so cache warm-up uses the initialized store.
             services.GetRequiredService<BDTestReportServerOptions>().DataStore = store;
             await services.GetRequiredService<IDataRepository>().GetAllTestRunRecords();
             cancellationToken.ThrowIfCancellationRequested();
