@@ -85,7 +85,7 @@ var reportUri = await BDTestReportServer.SendDataAndGetReportUriAsync(
     serverAddress, new BDTestRunDescriptor(), client);
 ```
 
-`POST /bdtest/data` checks the key and rate limit before parsing JSON. Uploads are limited to 10 MiB per request, including chunked requests, using ASP.NET Core's request size limit (Kestrel/IIS). Configure equivalent or stricter limits in any reverse proxy or alternative host. The default rate limit is 60 authenticated attempts per minute per server instance; excess attempts return `429` with `Retry-After`. For multiple server instances, enforce a shared limit at the gateway as well.
+`POST /bdtest/data` checks the key and rate limit before parsing JSON. Uploads are limited to 10 MiB per request, including chunked requests, using ASP.NET Core's request size limit (Kestrel/IIS). Configure equivalent or stricter limits in any reverse proxy or alternative host. The default rate limit is 60 authenticated attempts per minute per server instance; excess attempts return `429` with `Retry-After`. The built-in uploader waits for that delay (seconds or an HTTP date) before retrying, with at most three upload attempts. For multiple server instances, enforce a shared limit at the gateway as well.
 
 The server ignores client-supplied report IDs and creates a new GUID for each accepted upload. Use the returned URL to locate the report. Re-uploading (including a retry after a lost response) creates a separate report instead of replacing an existing report. Stored models, summaries, and data-receiver callbacks all receive the server-generated ID.
 

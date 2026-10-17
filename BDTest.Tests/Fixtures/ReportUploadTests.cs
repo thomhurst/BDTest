@@ -103,6 +103,9 @@ public class ReportUploadTests
         using var request = new HttpRequestMessage(HttpMethod.Post, "bdtest/data") { Content = Json(json) };
         request.Headers.Add("X-BDTest-Upload-Key", Key);
         request.Headers.TransferEncodingChunked = chunked;
+        // Let Kestrel reject a known oversized Content-Length before the client writes
+        // the body into a closed connection. Chunked requests still stream the body.
+        request.Headers.ExpectContinue = true;
         using var response = await server.Client.SendAsync(request);
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.RequestEntityTooLarge));
         Assert.That(server.Store.Data, Is.Empty);
