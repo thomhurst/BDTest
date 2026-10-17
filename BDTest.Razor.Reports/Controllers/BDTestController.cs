@@ -64,8 +64,9 @@ public class BDTestController : Controller
         return RedirectToAction("Summary", "BDTest", new { id });
     }
 
-    [HttpGet]
+    [HttpPost]
     [HttpDelete]
+    [ValidateAntiForgeryToken]
     [Route("report/delete/{id}")]
     public async Task<IActionResult> DeleteReport([FromRoute] string id)
     {
@@ -76,7 +77,7 @@ public class BDTestController : Controller
             
         await _dataRepository.DeleteReport(id);
             
-        return await TestRuns().ConfigureAwait(false);
+        return RedirectToAction(nameof(TestRuns));
     }
 
     [HttpGet]
