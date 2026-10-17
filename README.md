@@ -342,3 +342,22 @@ Comparisons read at most five reports concurrently. The built-in repository reus
 without adding or refreshing full-report cache entries. Normal single-report reads still cache
 results. Custom `IDataRepository` implementations can override `GetDataForBulkRead` to apply the
 same cache policy; its default implementation delegates to `GetData` for compatibility.
+
+### Custom HTML in reports
+
+`ScenarioHtmlWriter.Text(...)`, both `Link(...)` overloads, and `Image(...)` HTML-encode
+supplied text and attribute values. Pass plain text and URLs, without pre-encoding HTML
+entities. The delegate overload of `Link` also treats its result as plain text.
+
+Links and images accept HTTP/HTTPS URLs (case-insensitive schemes), protocol-relative
+URLs (`//example.com/...`), and relative paths, queries, or fragments. Links also accept
+`mailto:` URLs. Other schemes, including `javascript:`, `vbscript:`, `data:`, `file:`,
+and `blob:`, are rejected with `ArgumentException`. URLs must be nonempty and cannot
+contain control characters, backslashes, or leading/trailing whitespace; null URLs
+throw `ArgumentNullException`. Scheme-like colons before the first `/`, `?`, or `#`
+must belong to an allowed scheme; use `./name:part.png` for a relative filename with a colon.
+This policy restricts schemes, not destination hosts.
+
+Use `ScenarioHtmlWriter.Custom(html)` explicitly when you need raw HTML. It preserves
+your markup. The report server continues to isolate custom output in its sandboxed
+iframe; helper URL acceptance does not grant navigation or script permissions to that iframe.
