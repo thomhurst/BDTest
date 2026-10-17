@@ -1,11 +1,9 @@
-using System.Runtime.CompilerServices;
-
 namespace BDTest.Test;
 
 public abstract class AbstractContextBDTestBase<TContext> : BDTestBase where TContext : class, new()
 {
     private readonly object _contextLock = new();
-    private readonly ConditionalWeakTable<string, BDTestContext<TContext>> _contexts = new();
+    private readonly Dictionary<string, BDTestContext<TContext>> _contexts = new(StringComparer.Ordinal);
 
     public TContext Context => BDTestContext.TestContext;
 
@@ -15,7 +13,8 @@ public abstract class AbstractContextBDTestBase<TContext> : BDTestBase where TCo
         {
             lock (_contextLock)
             {
-                _contexts.TryGetValue(BDTestExecutionId, out var bdTestContext);
+                var executionId = BDTestExecutionId;
+                _contexts.TryGetValue(executionId, out var bdTestContext);
 
                 if (bdTestContext != null)
                 {
@@ -23,11 +22,11 @@ public abstract class AbstractContextBDTestBase<TContext> : BDTestBase where TCo
                 }
 
                 var testContext = Activator.CreateInstance<TContext>();
-                bdTestContext = new BDTestContext<TContext>(this, testContext, BDTestExecutionId);
+                bdTestContext = new BDTestContext<TContext>(this, testContext, executionId);
 
                 ContextAmendment?.Invoke(bdTestContext);
 
-                _contexts.Add(BDTestExecutionId, bdTestContext);
+                _contexts.Add(executionId, bdTestContext);
                 return bdTestContext;
             }
         }
@@ -37,11 +36,11 @@ public abstract class AbstractContextBDTestBase<TContext> : BDTestBase where TCo
     {
         lock (_contextLock)
         {
-            RemoveContext();
+            var executionId = BDTestExecutionId;
                 
-            var bdTestContext = new BDTestContext<TContext>(this, testContext, BDTestExecutionId);
+            var bdTestContext = new BDTestContext<TContext>(this, testContext, executionId);
                 
-            _contexts.Add(BDTestExecutionId, bdTestContext);
+            _contexts[executionId] = bdTestContext;
         }
     }
 
