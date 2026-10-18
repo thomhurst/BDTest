@@ -169,6 +169,29 @@ exit 0
         Assert-Fixture ([bool]($calls -match '^acquire pr-900003 ')) 'Cleanup did not reserve its item lock before deleting.'
         Assert-Fixture ([bool]($calls -match '^release pr-900003 ')) 'Cleanup did not release its reservation.'
 
+        if ($IsWindows) {
+            # Git follows junctions while deleting; cleanup must delete the link, not its target.
+            $outside = Join-Path $fixtureRoot 'outside-store'
+            New-Item -ItemType Directory -Path $outside -Force | Out-Null
+            Set-Content -LiteralPath (Join-Path $outside 'keep.txt') -Value 'outside the worktree'
+            $path = New-FixtureWorktree 'pr-900007-junction' -Marker 'pr-900007'
+            New-Item -ItemType Directory -Path (Join-Path $path 'node_modules') | Out-Null
+            New-Item -ItemType Junction -Path (Join-Path $path 'node_modules/pkg') -Target $outside | Out-Null
+            Set-FixtureLock 'pr-900007' 'FREE'
+            Invoke-FixtureSweep
+            Assert-Fixture (-not (Test-Path -LiteralPath $path)) 'Merged worktree containing a junction was not removed.'
+            Assert-Fixture (Test-Path -LiteralPath (Join-Path $outside 'keep.txt')) 'Merged-worktree cleanup deleted a junction target outside the worktree.'
+
+            $path = Join-Path $fixtureWorktrees 'pr-999999-junction-orphan'
+            New-Item -ItemType Directory -Path $path | Out-Null
+            Set-Content -LiteralPath (Join-Path $path '.git') -Value "gitdir: $fixtureRepo/.git/worktrees/missing"
+            New-Item -ItemType Junction -Path (Join-Path $path 'pkg') -Target $outside | Out-Null
+            Set-FixtureLock 'pr-999999' 'FREE'
+            Invoke-FixtureSweep
+            Assert-Fixture (-not (Test-Path -LiteralPath $path)) 'Orphan containing a junction was not removed.'
+            Assert-Fixture (Test-Path -LiteralPath (Join-Path $outside 'keep.txt')) 'Orphan cleanup deleted a junction target outside the worktree.'
+        }
+
         foreach ($state in @('ERROR', 'RACE')) {
             $path = New-FixtureWorktree "pr-900004-$state"
             Set-FixtureLock 'pr-900004' $state

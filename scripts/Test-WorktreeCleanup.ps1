@@ -82,6 +82,15 @@ try {
         throw 'Unrelated branch was matched from a misleading worktree name.'
     }
 
+    foreach ($generated in @('docs/.docusaurus/', 'docs/build/')) {
+        if (-not (Test-DisposableWorktreePath -Path $generated)) {
+            throw "Docusaurus output $generated was not treated as disposable."
+        }
+    }
+    if (Test-DisposableWorktreePath -Path 'docs/docs/build.md') {
+        throw 'Docs source was treated as Docusaurus output.'
+    }
+
     $canonicalPrRoot = Join-Path $testRoot 'primary-worktrees'
     $canonicalPrWorktree = Join-Path $canonicalPrRoot 'pr-3045-review'
     if (-not (Test-IsCanonicalPrWorktree -Path $canonicalPrWorktree -WorktreeRoot $canonicalPrRoot `
