@@ -94,7 +94,7 @@ public abstract class TUnitHookCollisionTests : TUnitBDTestBase<TUnitContext>
 
         await Assert.That(hasPendingOutput).IsFalse();
         await Assert.That(hasPendingListener).IsFalse();
-        var scenario = BDTestUtil.GetScenarios().SingleOrDefault(s => s.FrameworkTestId == _testId);
+        var scenario = BDTestUtil.GetScenarios(TestRun).SingleOrDefault(s => s.FrameworkTestId == _testId);
         if (scenario != null)
         {
             await Assert.That(scenario.TearDownOutput)

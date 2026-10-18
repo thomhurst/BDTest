@@ -5,6 +5,9 @@ description: Skip individual steps with SkipStepAttribute rules, skip whole scen
 
 # Skipping steps and scenarios
 
+For built-in adapters, configure `BDTestOptions` through [assembly configuration](../configuration/assembly-runs.md). Examples using `BDTestSettings` below apply only to the legacy standalone default run; use the corresponding option registrations for adapter-owned runs.
+
+
 ## Skipping individual steps
 
 Create an attribute that derives from `SkipStepAttribute`, put it on step methods, and register a rule that decides when those steps are skipped:

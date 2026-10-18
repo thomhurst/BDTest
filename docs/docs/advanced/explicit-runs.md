@@ -5,7 +5,7 @@ description: Isolate scenario storage and reporting with BDTestRun in custom ada
 
 # Explicit runs
 
-By default, every scenario in a process goes into one shared store, and the report helpers read from it. Custom adapters and long-lived hosts can own a `BDTestRun` instead, to keep a separate set of scenarios and produce a separate report.
+Built-in adapters use [isolated assembly runs](../configuration/assembly-runs.md). The legacy standalone base and report overloads without a run still use a shared default store. Custom adapters and long-lived hosts can own a `BDTestRun` instead, to keep a separate set of scenarios and produce a separate report.
 
 ```csharp
 using var run = BDTestRun.Start();
@@ -30,7 +30,7 @@ public class MyTests(BDTestRun run) : BDTestBase
 - Override `TestRun` and keep it stable for the test instance. Builders and scenarios capture their run, including builders executed later and scenario outline rows.
 - Each run has a new `ReportId` and its own stores for scenarios, unfinished definitions, listeners and output. An explicit run also has its own executor.
 - The JSON and HTML helpers and the report upload accept a run, for example `BDTestReportServer.SendDataAndGetReportUriAsync(run, serverAddress, descriptor)`.
-- Overloads without a run and the framework adapters use the shared default run.
+- Report overloads without a run use the legacy shared default run. Pass the adapter assembly run explicitly.
 - Upload overloads accept a final `CancellationToken`, for example `BDTestReportServer.SendDataAndGetReportUriAsync(serverAddress, descriptor, httpClient, run, cancellationToken)`. Cancellation stops warm-up, requests and retry waits while preserving run isolation and caller-owned client lifetime; see [upload cancellation](../report-server/sending-results.md#cancellation). Await completion or cancellation before disposing the run.
 
 ## Lifetime
@@ -101,7 +101,7 @@ Register `BDTest.Interfaces.IScenarioHook` instances on `ScenarioHooks`. Hooks r
 
 ## The default run
 
-`BDTestSettings` configures the shared default run used by the framework adapters and the overloads without a run parameter.
+`BDTestSettings` configures the legacy standalone default run. Built-in adapters use assembly configuration and do not read these execution settings.
 
 ## Execution clock (.NET 8+)
 

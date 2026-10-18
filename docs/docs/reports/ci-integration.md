@@ -5,6 +5,9 @@ description: Publish BDTest HTML reports from GitHub Actions and Azure DevOps, a
 
 # CI integration
 
+For built-in adapters, pass the [configured assembly run](../configuration/assembly-runs.md) to report/utility helpers. Overloads without a run still select the legacy standalone store and do not contain adapter-owned scenarios. Export all reports before disposing through the assembly owner.
+
+
 Write the [HTML report](html-report.md) to a known folder in your assembly-level teardown, then publish that folder as a build artifact. To make results available as a link instead, upload them to a [report server](../report-server/sending-results.md).
 
 Use `succeededOrFailed()` / `if: always()` so the report is published when tests fail. That is when you need it most.
@@ -26,13 +29,14 @@ Use `succeededOrFailed()` / `if: always()` so the report is published when tests
 ```
 
 ```csharp
+var run = BDTest.TUnit.TUnitBDTestAssembly.GetRun(typeof(MyTests).Assembly);
 var directory = Environment.GetEnvironmentVariable("BDTEST_REPORT_DIR") ?? AppContext.BaseDirectory;
 Directory.CreateDirectory(directory);
 File.WriteAllText(Path.Combine(directory, "BDTest-Report.html"), BDTestHtmlHelper.GetTestHtmlReport(new BDTestRunDescriptor
 {
     BranchName = Environment.GetEnvironmentVariable("GITHUB_REF_NAME"),
     Environment = "CI",
-}));
+}, run));
 ```
 
 ## Azure DevOps

@@ -5,6 +5,9 @@ description: Use BDTest with NUnit through composition or an optional base class
 
 # NUnit
 
+The adapter uses a [configured assembly run](../configuration/assembly-runs.md). Configure `BDTestOptions` with `[assembly: BDTestConfiguration(typeof(TestConfiguration))]`; `BDTestSettings` execution settings no longer affect this adapter. Use `NUnitBDTestAssembly.GetRun(typeof(MyTests).Assembly)` for reports and call `NUnitBDTestAssembly.Dispose(assembly)` after all tests and exports finish. Explicit-run overrides remain supported.
+
+
 ```bash
 dotnet add package BDTest.NUnit
 ```
@@ -13,7 +16,7 @@ dotnet add package BDTest.NUnit
 
 ## Composition with an existing base class
 
-Use `[BDTestFixture]` and implement `INUnitBDTest`. Create one stable NUnit host for the actual fixture instance and select its explicit run:
+Use `[BDTestFixture]` and implement `INUnitBDTest`. Create one stable NUnit host for the actual fixture instance using its assembly run (or pass an explicitly owned run):
 
 ```csharp
 using BDTest;
@@ -28,7 +31,7 @@ public class BasketTests : CompanyTestBase, INUnitBDTest
 
     public BasketTests()
     {
-        _bdt = NUnitBDTestScenario.For<BasketContext>(this, AssemblyReports.Run);
+        _bdt = NUnitBDTestScenario.For<BasketContext>(this);
     }
 
     BDTestBase INUnitBDTest.BDTestHost => _bdt;
@@ -91,7 +94,7 @@ Contexts may have constructor dependencies: override `CreateContextAsync(Context
 ## What the adapter does
 
 - **Execution ID:** `TestContext.CurrentContext.Test.ID` plus the current repeat count, so `[Repeat]` runs stay separate.
-- **Exceptions:** registers `SuccessException` (from `Assert.Pass`) as success, `IgnoreException` (from `Assert.Ignore`) as skip and `InconclusiveException` as inconclusive. The base class registers these outcomes on the legacy default run in `[OneTimeSetUp]`; explicit runs register them through options before starting.
+- **Exceptions:** registers `SuccessException` (from `Assert.Pass`) as success, `IgnoreException` (from `Assert.Ignore`) as skip and `InconclusiveException` as inconclusive. The adapter registers these outcomes only on its assembly run. Explicitly owned runs register them through options before starting.
 - **Lifecycle:** the base class supplies the same `BDTestFixture` registration and lifecycle path as composition. Capture starts before setup and finishes after teardown. Its callable `Setup`, `PruneContext` and `BDTestNUnitTearDown` methods remain compatibility shims for manual harnesses. Existing `MarkTestAsComplete()` overrides remain supported through the synchronous compatibility path.
 - **Retries:** each attempt runs its steps and step hooks through NUnit's public exception constraint API. A failed attempt does not change the NUnit result when a later attempt passes. Failures outside the scenario remain failures, and scenario warnings remain visible. When the final attempt throws after recording other assertion failures, NUnit reports the exception together with those assertion diagnostics. Retry rules still receive the original exception. The adapter never overwrites the NUnit result during teardown.
 - **Skips:** a whole-scenario skip calls `Assert.Ignore(reason)`.
@@ -100,34 +103,9 @@ You can add your own `[SetUp]` and `[TearDown]` methods. They run alongside the 
 
 ## Reports after the run
 
-Composition requires an explicit run. Register `NUnitBDTestScenario.OutcomeMap` before starting it. The following assembly owner is an application convention, not automatic adapter configuration:
+Inheritance and the no-run composition overload share `NUnitBDTestAssembly.GetRun(assembly)`. Pass that run explicitly to report helpers. The adapter completes each test but leaves run disposal to assembly cleanup, after reporting. Reused hosts must dispose the previous assembly run and create new fixtures for the next execution.
 
-```csharp
-using BDTest;
-using BDTest.NUnit;
-
-public static class AssemblyReports
-{
-    public static BDTestRun Run { get; } = CreateRun();
-
-    private static BDTestRun CreateRun()
-    {
-        var options = new BDTestOptions();
-        options.RegisterFrameworkOutcomes(NUnitBDTestScenario.OutcomeMap);
-        return BDTestRun.Start(options);
-    }
-}
-```
-
-All fixtures that select this run contribute to the same report. For the inheritance example above, add this override to `BasketTests` so its scenarios appear in the report below:
-
-```csharp
-public override BDTestRun TestRun => AssemblyReports.Run;
-```
-
-Without this override, inheritance uses `BDTestRun.Default`; generate that report from the default run instead. Select different explicitly owned runs to isolate reports, options, contexts and output; overlapping framework IDs in different runs are supported. The adapter completes each test but never disposes the run. Generate reports after all fixtures finish, then dispose the run. A reused test host must create a fresh run for the next assembly execution. Assembly-wide automatic configuration and legacy global-state removal are tracked in [#844](https://github.com/thomhurst/BDTest/issues/844).
-
-Use an NUnit `[SetUpFixture]` in the root namespace of the test assembly (or with no namespace) to run code after all tests:
+Use an NUnit `[SetUpFixture]` with no namespace so it covers the entire test assembly to run code after all tests:
 
 ```csharp
 using BDTest;
@@ -140,19 +118,21 @@ public class BDTestReports
     [OneTimeTearDown]
     public async Task AfterAllTests()
     {
+        var assembly = typeof(BDTestReports).Assembly;
+        var run = BDTest.NUnit.NUnitBDTestAssembly.GetRun(assembly);
         var descriptor = new BDTestRunDescriptor { Environment = "CI", Tag = "Acceptance" };
 
         try
         {
             File.WriteAllText("BDTest-Report.html",
-                BDTestHtmlHelper.GetTestHtmlReport(descriptor, AssemblyReports.Run));
+                BDTestHtmlHelper.GetTestHtmlReport(descriptor, run));
 
             // Or upload to a report server before disposing the run:
-            // var uri = await BDTestReportServer.SendDataAndGetReportUriAsync(serverUri, descriptor, httpClient, AssemblyReports.Run);
+            // var uri = await BDTestReportServer.SendDataAndGetReportUriAsync(serverUri, descriptor, httpClient, run);
         }
         finally
         {
-            AssemblyReports.Run.Dispose();
+            BDTest.NUnit.NUnitBDTestAssembly.Dispose(assembly);
         }
     }
 }

@@ -8,6 +8,12 @@ namespace BDTest.xUnit;
 /// <summary>Creates framework-owned composition hosts without requiring a test base class.</summary>
 public static class XUnitBDTestScenario
 {
+    /// <summary>Creates a host using the run owned by the actual test instance's assembly.</summary>
+    /// <remarks>Complete assembly reporting and call XUnitBDTestAssembly.Dispose after all tests finish.</remarks>
+    public static BDTestScenario<TContext> For<TContext>(object testInstance) where TContext : class =>
+        For<TContext>(testInstance, XUnitBDTestAssembly.GetRun(
+            (testInstance ?? throw new ArgumentNullException(nameof(testInstance))).GetType().Assembly));
+
     /// <summary>The xUnit outcome declaration. Register on options before starting the explicit run.</summary>
     public static FrameworkOutcomeMap OutcomeMap => XUnitExceptionRegistration.OutcomeMap;
 

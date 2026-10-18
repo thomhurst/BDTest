@@ -60,6 +60,6 @@ Preserve the execution flow across setup, test body, and teardown. A fixture ins
 
 ## Run ownership and outcomes
 
-Pass an [explicit run](../advanced/explicit-runs.md) to isolate scenarios, contexts, and captured output. Different runs can use the same framework execution ID. The host does not dispose the run: dispose it after all tests, teardown, and output writers finish. Creating a host for a disposed run throws. Omitting the run selects the legacy default run and its global settings.
+Pass an [explicit run](../advanced/explicit-runs.md) to isolate scenarios, contexts, and captured output. Different runs can use the same framework execution ID. The host does not dispose the run: dispose it after all tests, teardown, and output writers finish. Creating a host for a disposed run throws. Omitting the run on the core `BDTestScenario.For` selects the legacy default run. The framework-specific `NUnitBDTestScenario`, `XUnitBDTestScenario`, `MSTestBDTestScenario` and `TUnitBDTestScenario` factories instead select the [configured assembly run](../configuration/assembly-runs.md).
 
 Register the adapter's `OutcomeMap` on `BDTestOptions` before starting an explicit run to classify framework exceptions and notify the runner about whole-scenario skips. Without an outcome map, the standalone host returns skipped scenarios for the caller to inspect. See [exception classification](../configuration/exceptions.md) and [custom adapters](custom-adapters.md).

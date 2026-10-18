@@ -5,6 +5,9 @@ description: Use BDTest with MSTest through composition or MSTestBDTestBase<TCon
 
 # MSTest
 
+The adapter uses a [configured assembly run](../configuration/assembly-runs.md). Configure `BDTestOptions` with `[assembly: BDTestConfiguration(typeof(TestConfiguration))]`; `BDTestSettings` execution settings no longer affect this adapter. Use `MSTestBDTestAssembly.GetRun(typeof(MyTests).Assembly)` for reports and call `MSTestBDTestAssembly.Dispose(assembly)` after all tests and exports finish. Explicit-run overrides remain supported.
+
+
 ```bash
 dotnet add package BDTest.MSTest
 ```
@@ -77,7 +80,7 @@ internal static class TestRuns
 }
 ```
 
-The host selects its owning run when constructed. Register the MSTest outcome map **before** `BDTestRun.Start`, because explicit runs freeze their options. Each run owns its contexts, captured output, scenarios, and report. Hosts do not dispose runs. Create shared runs before their tests, export reports during assembly cleanup, then dispose runs after all their tests have completed. Multiple runs can execute in parallel, including identical framework IDs, without sharing reports or settings. Assembly-wide automatic run configuration is separate work; this opt-in does not create an assembly run or replace global settings.
+The host selects its owning run when constructed. Register the MSTest outcome map **before** `BDTestRun.Start`, because explicit runs freeze their options. Each run owns its contexts, captured output, scenarios, and report. Hosts do not dispose runs. Create shared runs before their tests, export reports during assembly cleanup, then dispose runs after all their tests have completed. Multiple runs can execute in parallel, including identical framework IDs, without sharing reports or settings. Alternatively, `MSTestBDTestScenario.For<TContext>(this)` selects the configured assembly run, including its framework outcomes. Keep the same lifecycle registration and context injection.
 
 MSTest injects `TestContext` before instance `[TestInitialize]` methods. The setter starts BDTest synchronously, so async setup and the body share context and console capture. `[BDTestClass]` wraps each native `ITestMethod.InvokeAsync` call and awaits `EndTestAsync` after MSTest finishes instance setup, body, cleanup, and disposal. Completion also runs after setup/body/cleanup failures, including tests that never construct a scenario. Context disposal failures reach the runner. Do not dispose a run in per-test cleanup while its host is still active.
 
@@ -132,7 +135,13 @@ public class BDTestReports
     [AssemblyCleanup]
     public static async Task AfterAllTests()
     {
-        File.WriteAllText("BDTest-Report.html", BDTestHtmlHelper.GetTestHtmlReport());
+        var assembly = typeof(BDTestReports).Assembly;
+        try
+        {
+            var run = BDTest.MSTest.MSTestBDTestAssembly.GetRun(assembly);
+            File.WriteAllText("BDTest-Report.html", BDTestHtmlHelper.GetTestHtmlReport(null, run));
+        }
+        finally { BDTest.MSTest.MSTestBDTestAssembly.Dispose(assembly); }
         // or: await BDTestReportServer.SendDataAndGetReportUriAsync(...)
     }
 }

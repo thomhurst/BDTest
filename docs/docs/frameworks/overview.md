@@ -24,7 +24,7 @@ If your test class already has another base class, use [NUnit composition regist
 Adapter base classes derive from `AbstractContextBDTestBase<TContext>`. NUnit, TUnit and MSTest also provide framework-native composition. Each adapter:
 
 1. supplies a unique execution ID for each test from the framework's test context, so context and output stay isolated in parallel runs,
-2. declares the framework's success, skip and inconclusive exceptions in one [`FrameworkOutcomeMap`](../configuration/exceptions.md#framework-outcome-maps), registered idempotently for the default run,
+2. declares the framework's success, skip and inconclusive exceptions in one [`FrameworkOutcomeMap`](../configuration/exceptions.md#framework-outcome-maps), registered on its own frozen assembly run,
 3. marks each test as started and completed, and removes its context afterwards,
 4. maps a whole-scenario [skip](../writing-tests/skipping.md#test-runner-outcome) onto the runner's skip mechanism.
 

@@ -5,6 +5,9 @@ description: Read collected scenarios with BDTestUtil, and the Scenario, Step an
 
 # Utilities and model
 
+For built-in adapters, pass the [configured assembly run](../configuration/assembly-runs.md) to report/utility helpers. Overloads without a run still select the legacy standalone store and do not contain adapter-owned scenarios. Export all reports before disposing through the assembly owner.
+
+
 ## `BDTestUtil`
 
 `BDTest.BDTestUtil` is the public read API over the scenarios collected in the process.
@@ -20,7 +23,8 @@ description: Read collected scenarios with BDTestUtil, and the Scenario, Step an
 Use it to build custom reports or to assert on results in a teardown:
 
 ```csharp
-var failed = BDTestUtil.GetScenarios().Where(scenario => scenario.Status == Status.Failed).ToList();
+var run = BDTest.NUnit.NUnitBDTestAssembly.GetRun(typeof(MyTests).Assembly);
+var failed = BDTestUtil.GetScenarios(run).Where(scenario => scenario.Status == Status.Failed).ToList();
 ```
 
 ## Pending definitions

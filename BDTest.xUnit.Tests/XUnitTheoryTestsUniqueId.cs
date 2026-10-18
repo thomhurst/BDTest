@@ -37,7 +37,7 @@ public class XUnitTheoryTestsUniqueId : XUnitBDTestBase<XUnitContext>
 
         Assert.Equal(id, scenario.FrameworkTestId);
         Assert.Equal(Status.Passed, scenario.Status);
-        Assert.Single(BDTestUtil.GetScenarios(), s => s.FrameworkTestId == id);
+        Assert.Single(BDTestUtil.GetScenarios(TestRun), s => s.FrameworkTestId == id);
     }
 
     private static async Task Yield() => await Task.Yield();

@@ -5,6 +5,9 @@ description: Run code before and after every step, globally or per test class, f
 
 # Step hooks
 
+For built-in adapters, configure `BDTestOptions` through [assembly configuration](../configuration/assembly-runs.md). Examples using `BDTestSettings` below apply only to the legacy standalone default run; use the corresponding option registrations for adapter-owned runs.
+
+
 Step hooks run code around every step. Typical uses are logging, taking screenshots on failure and collecting diagnostics.
 
 ## Global hooks

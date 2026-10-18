@@ -16,7 +16,7 @@ namespace BDTest.Tests.Fixtures;
     IWant = "to make sure that BDTest works",
     SoThat = "other developers can use it confidently")]
 [Parallelizable(ParallelScope.None)]
-public class JsonResultsTests : NUnitBDTestBase<MyTestContext>
+public class JsonResultsTests : LegacyNUnitBDTestBase<MyTestContext>
 {
     [SetUp, TearDown]
     public void ResetScenarioData()

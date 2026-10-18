@@ -11,7 +11,7 @@ namespace BDTest.Tests.Fixtures;
 [Story(AsA = "BDTest developer",
     IWant = "to make sure that specific exceptions can be registered as 'passable'",
     SoThat = "BDTest works well with other frameworks such as NUnit")]
-public class CustomPassExceptionsTests : NUnitBDTestBase<MyTestContext>
+public class CustomPassExceptionsTests : LegacyNUnitBDTestBase<MyTestContext>
 {
     [Test]
     public async Task NUNitSuccessException()

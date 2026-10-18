@@ -38,7 +38,6 @@ public static class MSTestBDTestLifecycle
                     throw new InvalidOperationException("BDTestHost changed during an MSTest invocation.");
                 return;
             }
-            MSTestExceptionRegistration.EnsureRegistered();
             // Display names include data rows; the suffix distinguishes repeats with identical data.
             host.BeginTest($"{context.FullyQualifiedTestClassName}.{context.TestDisplayName ?? context.TestName}_{Guid.NewGuid():N}", method);
             _host = host;

@@ -5,6 +5,9 @@ description: Export, read and write BDTest report data as JSON with BDTestJsonHe
 
 # JSON data
 
+For built-in adapters, pass the [configured assembly run](../configuration/assembly-runs.md) to report/utility helpers. Overloads without a run still select the legacy standalone store and do not contain adapter-owned scenarios. Export all reports before disposing through the assembly owner.
+
+
 The JSON report is the raw data behind every BDTest report: the same model the report server stores.
 
 The independent [versioned contracts package](contracts.md) provides immutable DTOs
@@ -16,14 +19,15 @@ legacy model described here until their migrations land.
 ```csharp
 using BDTest.Helpers;
 
-var json = BDTestJsonHelper.GetTestJsonData(new BDTestRunDescriptor { Tag = "Nightly" });
+var run = BDTest.NUnit.NUnitBDTestAssembly.GetRun(typeof(MyTests).Assembly);
+var json = BDTestJsonHelper.GetTestJsonData(new BDTestRunDescriptor { Tag = "Nightly" }, run);
 File.WriteAllText("BDTest-Report.json", json);
 ```
 
 | Overload | Use |
 | --- | --- |
-| `GetTestJsonData()` | Default descriptor. |
-| `GetTestJsonData(BDTestRunDescriptor)` | Label the run. |
+| `GetTestJsonData()` | Legacy default run and descriptor. |
+| `GetTestJsonData(BDTestRunDescriptor)` | Label the legacy default run. |
 | `GetTestJsonData(BDTestRunDescriptor, BDTestRun)` | Export an [explicit run](../advanced/explicit-runs.md). |
 
 The output is indented.

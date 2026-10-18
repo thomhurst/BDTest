@@ -53,6 +53,7 @@ const sidebars = {
       type: 'category',
       label: 'Configuration',
       items: [
+        'configuration/assembly-runs',
         'configuration/settings',
         'configuration/exceptions',
         'configuration/statuses',

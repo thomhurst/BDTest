@@ -11,7 +11,7 @@ namespace BDTest.Tests.Fixtures;
     IWant = "to make sure that specific exceptions can be marked as 'skippable'",
     SoThat = "BDTest works well with other frameworks such as NUnit")]
 [Parallelizable(ParallelScope.None)]
-public class IgnoreTests : NUnitBDTestBase<MyTestContext>
+public class IgnoreTests : LegacyNUnitBDTestBase<MyTestContext>
 {
     [Test]
     public async Task NUNitIgnoreException()
