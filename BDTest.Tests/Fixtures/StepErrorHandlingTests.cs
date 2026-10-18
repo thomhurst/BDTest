@@ -63,11 +63,13 @@ public class StepErrorHandlingTests : BDTestBase
         Assert.That(exception.InnerException.StackTrace, Does.Contain(nameof(StepTextHelper)));
     }
 
+#pragma warning disable BDT002 // These methods exercise runtime handling of invalid templates.
     [StepText("invalid {1}")]
     private static void InvalidText(string value) { }
 
     [StepText("invalid {1}")]
     private static Task InvalidTextAsync(string value) => Task.CompletedTask;
+#pragma warning restore BDT002
 
     private static void NoOp() { }
 

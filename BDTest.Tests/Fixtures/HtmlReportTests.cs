@@ -263,6 +263,7 @@ public class HtmlReportTests : BDTestBase
 
     [TestCase(false)]
     [TestCase(true)]
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("BDTest", "BDT001", Justification = "The report must include an intentionally unexecuted scenario.")]
     public async Task UnexecutedDefinitionsAppearInSummaryAndPreventAllPassed(bool includePassingScenario)
     {
         if (includePassingScenario)

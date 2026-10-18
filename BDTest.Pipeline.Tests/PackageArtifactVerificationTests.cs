@@ -34,6 +34,7 @@ public class PackageArtifactVerificationTests
             CreatePackage(id, ".snupkg");
         }
         CreatePackage("BDTest.SourceGenerator", ".nupkg");
+        CreatePackage("BDTest.Analyzers", ".nupkg");
     }
 
     [TearDown]
@@ -44,7 +45,7 @@ public class PackageArtifactVerificationTests
     {
         File.Delete(PackagePath("BDTest", ".nupkg"));
 
-        await AssertRejected("primary packages", "found 6");
+        await AssertRejected("primary packages", "found 7");
     }
 
     [Test]
@@ -202,6 +203,10 @@ public class PackageArtifactVerificationTests
         }
 
         archive.CreateEntry("nuget_icon.png");
+        if (id is "BDTest.SourceGenerator" or "BDTest.Analyzers")
+        {
+            archive.CreateEntry($"analyzers/dotnet/cs/{id}.dll");
+        }
     }
 
     private string PackagePath(string id, string extension) => Path.Combine(_packageDirectory, $"{id}.1.0.0{extension}");

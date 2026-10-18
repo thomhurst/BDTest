@@ -214,6 +214,7 @@ public class ScenarioOutlineTests : AbstractContextBDTestBase<ScenarioOutlineTes
     }
 
     [Test]
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("BDTest", "BDT001", Justification = "An empty outline must throw during construction.")]
     public void Empty_examples_are_rejected_before_execution()
     {
         Assert.Throws<ArgumentException>(() => ScenarioOutline("Empty", Array.Empty<object>(),

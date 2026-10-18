@@ -91,6 +91,7 @@ const sidebars = {
         'advanced/explicit-runs',
         'advanced/utilities',
         'advanced/source-generator',
+        'advanced/analyzers',
       ],
     },
     {

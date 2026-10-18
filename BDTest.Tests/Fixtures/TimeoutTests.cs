@@ -117,6 +117,7 @@ public class TimeoutTests : BDTestBase
     }
 
     [Test]
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("BDTest", "BDT001", Justification = "Null steps must throw during construction.")]
     public void Null_token_expressions_fail_at_construction()
     {
         Func<CancellationToken, Task> missing = null;
