@@ -25,6 +25,7 @@ public class RunUnitTestsModule : Module<List<CommandResult>>
                 results.Add(await context.DotNet().Run(new DotNetRunOptions
                 {
                     Project = unitTestProjectFile.Path,
+                    Configuration = "Release",
                 }, new CommandExecutionOptions
                 {
                     LogSettings = new CommandLoggingOptions
@@ -40,6 +41,7 @@ public class RunUnitTestsModule : Module<List<CommandResult>>
             results.Add(await context.DotNet().Test(new DotNetTestOptions
             {
                 Arguments = [unitTestProjectFile.Path],
+                Configuration = "Release",
             }, new CommandExecutionOptions
             {
                 LogSettings = new CommandLoggingOptions
