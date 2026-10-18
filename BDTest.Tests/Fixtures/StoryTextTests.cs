@@ -20,11 +20,11 @@ public class StoryTextTests : BDTestBase
     }
 
     [Test]
-    public void CustomStoryText()
+    public async Task CustomStoryText()
     {
-        var scenario = When(() => Console.WriteLine("my test has a story text"))
+        var scenario = await When(() => Console.WriteLine("my test has a story text"))
             .Then(() => Console.WriteLine("the attribute should be serialized to the json output"))
-            .BDTest();
+            .BDTestAsync();
             
         Assert.That(scenario.GetStoryText(), Is.EqualTo($"As a BDTest developer{Environment.NewLine}I want to make sure that BDTest works{Environment.NewLine}So that other developers can use it confidently{Environment.NewLine}"));
         Assert.That(JsonHelper.GetTestDynamicJsonObject().SelectToken("$.Scenarios[0].StoryText").ToString(), Is.EqualTo($"As a BDTest developer{Environment.NewLine}I want to make sure that BDTest works{Environment.NewLine}So that other developers can use it confidently{Environment.NewLine}"));
@@ -47,11 +47,11 @@ public class NoStoryTextTests : BDTestBase
     }
         
     [Test]
-    public void NoStoryText()
+    public async Task NoStoryText()
     {
-        var scenario = When(() => Console.WriteLine("my test has no story text"))
+        var scenario = await When(() => Console.WriteLine("my test has no story text"))
             .Then(() => Console.WriteLine("the scenario text should be null"))
-            .BDTest();
+            .BDTestAsync();
             
         Assert.That(scenario.GetStoryText(), Is.EqualTo(DefaultValues.StoryTextNotDefined));
         Assert.That(JsonHelper.GetTestDynamicJsonObject().SelectToken("$.Scenarios[0].StoryText").Type, Is.EqualTo(JTokenType.Null));

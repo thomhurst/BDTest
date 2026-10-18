@@ -14,10 +14,10 @@ public class ParameterisedTests : BDTestBase
     [TestCase(3)]
     [TestCase(4)]
     [TestCase(5)]
-    public void Test(int integer)
+    public async Task Test(int integer)
     {
-        When(() => Console.WriteLine(integer))
+        await When(() => Console.WriteLine(integer))
             .Then(() => Console.WriteLine(integer))
-            .BDTest();
+            .BDTestAsync();
     }
 }

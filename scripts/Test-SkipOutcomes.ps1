@@ -17,9 +17,9 @@ New-Item -ItemType Directory -Path $resultRoot -Force | Out-Null
 # Exit success alone cannot detect a regression from Skipped to Passed.
 # Inspect the runner's TRX as well as the status assertions inside each probe.
 $projects = @(
-    @{ Name = 'BDTest.Tests'; Skips = @('GlobalRuleSkips', 'GlobalRuleSkipsSynchronously', 'AllStepsSkip', 'FrameworkSkipInStep', 'GenuineInconclusive') },
-    @{ Name = 'BDTest.MSTest.Tests'; Skips = @('GlobalRuleSkips', 'GlobalRuleSkipsSynchronously', 'AllStepsSkip', 'GenuineInconclusive') },
-    @{ Name = 'BDTest.TUnit.Tests'; Skips = @('GlobalRuleSkips', 'GlobalRuleSkipsSynchronously', 'AllStepsSkip', 'FrameworkSkipInStep') }
+    @{ Name = 'BDTest.Tests'; Skips = @('GlobalRuleSkips', 'GlobalRuleSkipsWithDirectAwait', 'AllStepsSkip', 'FrameworkSkipInStep', 'GenuineInconclusive') },
+    @{ Name = 'BDTest.MSTest.Tests'; Skips = @('GlobalRuleSkips', 'GlobalRuleSkipsWithDirectAwait', 'AllStepsSkip', 'GenuineInconclusive') },
+    @{ Name = 'BDTest.TUnit.Tests'; Skips = @('GlobalRuleSkips', 'GlobalRuleSkipsWithDirectAwait', 'AllStepsSkip', 'FrameworkSkipInStep') }
 )
 
 foreach ($project in $projects) {

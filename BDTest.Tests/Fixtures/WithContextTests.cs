@@ -13,26 +13,26 @@ public class WithContextTests : BDTestBase
     private MyTestContext _context2;
 
     [Test, Order(1)]
-    public void TestWithContext1()
+    public async Task TestWithContext1()
     {
-        WithContext<MyTestContext>(context =>
+        await WithContext<MyTestContext>(async context =>
         {
             _context1 = context;
-            return When(() => Console.WriteLine())
+            return await When(() => Console.WriteLine())
                 .Then(() => Console.WriteLine())
-                .BDTest();
+                .BDTestAsync();
         });
     }
         
     [Test, Order(2)]
-    public void TestWithContext2()
+    public async Task TestWithContext2()
     {
-        WithContext<MyTestContext>(context =>
+        await WithContext<MyTestContext>(async context =>
         {
             _context2 = context;
-            return When(() => Console.WriteLine())
+            return await When(() => Console.WriteLine())
                 .Then(() => Console.WriteLine())
-                .BDTest();
+                .BDTestAsync();
         });
     }
         

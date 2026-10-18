@@ -145,7 +145,6 @@ public class StepBuilderBranchTests : BDTestBase
         Assert.That(results.All(result => result.Status == Status.Passed), Is.True);
     }
 
-    [TestCase("sync")]
     [TestCase("async")]
     [TestCase("await")]
     public async Task Execution_entry_points_select_output_and_teardown_for_the_executing_branch(string mode)
@@ -158,10 +157,6 @@ public class StepBuilderBranchTests : BDTestBase
         Scenario firstResult;
         switch (mode)
         {
-            case "sync":
-                secondResult = second.BDTest();
-                firstResult = first.BDTest();
-                break;
             case "async":
                 secondResult = await second.BDTestAsync();
                 firstResult = await first.BDTestAsync();

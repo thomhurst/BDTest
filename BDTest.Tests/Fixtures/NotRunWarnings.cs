@@ -18,9 +18,9 @@ public class NotRunWarnings : BDTestBase
     }
 
     [Test, Order(4)]
-    public void Test()
+    public async Task Test()
     {
-        SuccessTest();
+        await SuccessTest();
 
         NotRunTest1();
 
@@ -63,10 +63,10 @@ So that consumers aren't missing any test coverage accidentally
     }
 
     [ScenarioText("Success Test")]
-    private void SuccessTest()
+    private async Task SuccessTest()
     {
-        When(() => Console.WriteLine("Run a test successfully"))
+        await When(() => Console.WriteLine("Run a test successfully"))
             .Then(() => Console.WriteLine("It shows in the report successfully."))
-            .BDTest();
+            .BDTestAsync();
     }
 }

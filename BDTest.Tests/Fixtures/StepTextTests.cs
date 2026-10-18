@@ -21,12 +21,12 @@ public class StepTextTests : BDTestBase
     }
 
     [Test]
-    public void CustomStepTexts_ConstantArgumentValue()
+    public async Task CustomStepTexts_ConstantArgumentValue()
     {
-        var scenario = Given(() => Action1Custom())
+        var scenario = await Given(() => Action1Custom())
             .When(() => StepThatPrintsMyName("Tom", "Longhurst"))
             .Then(() => Action3Custom())
-            .BDTest();
+            .BDTestAsync();
             
         Assert.That(scenario.Steps[0].StepText, Is.EqualTo("Given I have a custom step 1"));
         Assert.That(scenario.Steps[1].StepText, Is.EqualTo("When my name is Tom Longhurst"));
@@ -38,12 +38,12 @@ public class StepTextTests : BDTestBase
     }
         
     [TestCase("Tom", "Longhurst")]
-    public void CustomStepTexts_DynamicArgumentValue(string firstName, string lastName)
+    public async Task CustomStepTexts_DynamicArgumentValue(string firstName, string lastName)
     {
-        var scenario = Given(() => Action1Custom())
+        var scenario = await Given(() => Action1Custom())
             .When(() => StepThatPrintsMyName(firstName, lastName))
             .Then(() => Action3Custom())
-            .BDTest();
+            .BDTestAsync();
             
         Assert.That(scenario.Steps[0].StepText, Is.EqualTo("Given I have a custom step 1"));
         Assert.That(scenario.Steps[1].StepText, Is.EqualTo("When my name is Tom Longhurst"));
@@ -55,17 +55,17 @@ public class StepTextTests : BDTestBase
     }
         
     [Test]
-    public void OverriddenStepTexts()
+    public async Task OverriddenStepTexts()
     {
         var text1 = "My first overridden steptext";
         var text2 = "My second overridden steptext";
         var text3 = "My third overridden steptext";
             
-        var scenario = Given(() => Action1Custom()).WithStepText(() => text1)
+        var scenario = await Given(() => Action1Custom()).WithStepText(() => text1)
             .When(() => StepThatPrintsMyName("Tom", "Longhurst")).WithStepText(() => text2)
             .Then(() => Action3Custom()).WithStepText(() => text3)
             .And(() => Action3Custom()).WithStepText(() => text3)
-            .BDTest();
+            .BDTestAsync();
             
         Assert.That(scenario.Steps[0].StepText, Is.EqualTo("Given " + text1));
         Assert.That(scenario.Steps[1].StepText, Is.EqualTo("When " + text2));
@@ -79,12 +79,12 @@ public class StepTextTests : BDTestBase
     }
         
     [Test]
-    public void DefaultMethodNameStepTexts()
+    public async Task DefaultMethodNameStepTexts()
     {
-        var scenario = Given(() => Step1WithoutAStepTextAttribute())
+        var scenario = await Given(() => Step1WithoutAStepTextAttribute())
             .When(() => Step2WithoutAStepTextAttribute())
             .Then(() => Step_3_Without_A_StepTextAttribute_and_Hyphens())
-            .BDTest();
+            .BDTestAsync();
             
         Assert.That(scenario.Steps[0].StepText, Is.EqualTo("Given step 1 without a step text attribute"));
         Assert.That(scenario.Steps[1].StepText, Is.EqualTo("When step 2 without a step text attribute"));
@@ -96,62 +96,62 @@ public class StepTextTests : BDTestBase
     }
         
     [Test]
-    public void FuncStepTextDoesNotInvokeTheArgument()
+    public async Task FuncStepTextDoesNotInvokeTheArgument()
     {
-        var scenario = Given(() => Console.WriteLine("I have a func that returns a strring"))
+        var scenario = await Given(() => Console.WriteLine("I have a func that returns a strring"))
             .When(() => FuncReturningStepText(() => "Blah"))
             .Then(() => Console.WriteLine("the steptext should correctly have the func response"))
-            .BDTest();
+            .BDTestAsync();
             
         Assert.That(scenario.Steps[1].StepText, Is.EqualTo($"When the func returns: {typeof(Func<string>)}"));
     }
         
     [Test]
-    public void WithStepTextList()
+    public async Task WithStepTextList()
     {
-        var scenario = Given(() => Console.WriteLine("Empty Step"))
+        var scenario = await Given(() => Console.WriteLine("Empty Step"))
             .When(() => Console.WriteLine("Empty Step"))
             .Then(() => StepWithListType(new List<string> {"Blah1", "Blah2", "Blah3"}))
-            .BDTest();
+            .BDTestAsync();
             
         Assert.That(scenario.Steps[2].StepText, Is.EqualTo("Then the step text can display the list Blah1, Blah2, Blah3"));
     }
         
     [Test]
-    public void WithCustomStepTextStringConverter()
+    public async Task WithCustomStepTextStringConverter()
     {
         BDTestSettings.CustomStringConverters.Add(new CustomClassToStepTextStringStringConverter());
             
-        var scenario = Given(() => Console.WriteLine("Empty Step"))
+        var scenario = await Given(() => Console.WriteLine("Empty Step"))
             .When(() => Console.WriteLine("Empty Step"))
             .Then(() => StepWithStrongTypeAndStepText(new CustomClassToStepTextString()))
-            .BDTest();
+            .BDTestAsync();
             
         Assert.That(scenario.Steps[2].StepText, Is.EqualTo("Then the text is 123..................4....................................5"));
     }
         
     [Test]
-    public void NoStepTextIncludesParameterValues()
+    public async Task NoStepTextIncludesParameterValues()
     {
-        var scenario = When(() => StepWithParametersButWithoutStepText("One", "Two"))
+        var scenario = await When(() => StepWithParametersButWithoutStepText("One", "Two"))
             .Then(() => StepWithParametersButWithoutStepText("One", "Two"))
-            .BDTest();
+            .BDTestAsync();
             
         Assert.That(scenario.Steps[1].StepText, Is.EqualTo("Then step with parameters but without step text One Two"));
     }
 
     [Test]
-    public void StepTextForStrongTypeWithoutConvertor()
+    public async Task StepTextForStrongTypeWithoutConvertor()
     {
         BDTestSettings.CustomStringConverters.RemoveAll(x => x.GetType() == typeof(CustomClassToStepTextStringStringConverter));
                         
-        var scenario = Given(() => Console.WriteLine("Empty Step"))
+        var scenario = await Given(() => Console.WriteLine("Empty Step"))
             .When(() => Console.WriteLine("Empty Step"))
             .Then(() => StepWithStrongTypeAndStepText(new CustomClassToStepTextString
             {
                 One = "1", Two = "2", Three = "3", Four = "4", Five = "5"
             }))
-            .BDTest();
+            .BDTestAsync();
 
         var thenStep = scenario.Steps.Last();
             
@@ -159,17 +159,17 @@ public class StepTextTests : BDTestBase
     }
         
     [Test]
-    public void StepTextForStrongTypeInInnerStepsClassWithoutConvertor()
+    public async Task StepTextForStrongTypeInInnerStepsClassWithoutConvertor()
     {
         BDTestSettings.CustomStringConverters.RemoveAll(x => x.GetType() == typeof(CustomClassToStepTextStringStringConverter));
                         
-        var scenario = Given(() => Console.WriteLine("Empty Step"))
+        var scenario = await Given(() => Console.WriteLine("Empty Step"))
             .When(() => Console.WriteLine("Empty Step"))
             .Then(() => InnerSteps.StepWithStrongTypeAndStepText(new CustomClassToStepTextString
             {
                 One = "1", Two = "2", Three = "3", Four = "4", Five = "5"
             }))
-            .BDTest();
+            .BDTestAsync();
 
         var thenStep = scenario.Steps.Last();
             
@@ -177,17 +177,17 @@ public class StepTextTests : BDTestBase
     }
         
     [Test]
-    public void StepTextForStrongTypeInInnerStepsWithoutStepTextAttribute()
+    public async Task StepTextForStrongTypeInInnerStepsWithoutStepTextAttribute()
     {
         BDTestSettings.CustomStringConverters.RemoveAll(x => x.GetType() == typeof(CustomClassToStepTextStringStringConverter));
                         
-        var scenario = Given(() => Console.WriteLine("Empty Step"))
+        var scenario = await Given(() => Console.WriteLine("Empty Step"))
             .When(() => Console.WriteLine("Empty Step"))
             .Then(() => InnerSteps.StepWithStrongTypeAndNoStepText(new CustomClassToStepTextString
             {
                 One = "1", Two = "2", Three = "3", Four = "4", Five = "5"
             }))
-            .BDTest();
+            .BDTestAsync();
 
         var thenStep = scenario.Steps.Last();
             
@@ -199,15 +199,15 @@ public class StepTextTests : BDTestBase
     [TestCase(2)]
     [TestCase(3)]
     [BDTestRetry(3)]
-    public void RetrySuccessfully(int throwIfRetryLessThan)
+    public async Task RetrySuccessfully(int throwIfRetryLessThan)
     {
-        var scenario = Given(() => InnerSteps.StepWithStrongTypeAndNoStepText(new CustomClassToStepTextString
+        var scenario = await Given(() => InnerSteps.StepWithStrongTypeAndNoStepText(new CustomClassToStepTextString
             {
                 One = "1", Two = "2", Three = "3", Four = "4", Five = "5"
             }))
             .When(() => ThrowException(throwIfRetryLessThan))
             .Then(() => Console.WriteLine("the test passed"))
-            .BDTest();
+            .BDTestAsync();
             
         var thenStep = scenario.Steps.First();
             

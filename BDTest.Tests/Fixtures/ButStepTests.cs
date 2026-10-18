@@ -33,7 +33,7 @@ public class ButStepTests : BDTestBase
                 .And(() => RecordAsync(calls, "and then"))
                 .But(() => RecordAsync(calls, "but after and then"))
                 .BDTestAsync()
-            : given.But(() => Record(calls, "but given")).WithStepText(() => "given override")
+            : await given.But(() => Record(calls, "but given")).WithStepText(() => "given override")
                 .But(() => Record(calls, "second but given"))
                 .And(() => Record(calls, "and given"))
                 .But(() => Record(calls, "but after and given"))
@@ -45,7 +45,7 @@ public class ButStepTests : BDTestBase
                 .But(() => Record(calls, "second but then"))
                 .And(() => Record(calls, "and then"))
                 .But(() => Record(calls, "but after and then"))
-                .BDTest();
+                .BDTestAsync();
 
         Assert.That(calls, Is.EqualTo(new[]
         {

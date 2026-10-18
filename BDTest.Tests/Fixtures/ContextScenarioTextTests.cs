@@ -12,39 +12,39 @@ public class ContextScenarioTextTests : NUnitBDTestBase<MyTestContext>
     [TestCase(false)]
     [TestCase(true)]
     [MethodImpl(MethodImplOptions.NoInlining)]
-    public void MissingAttributeReturnsMissingText(bool readBeforeExecution)
+    public async Task MissingAttributeReturnsMissingText(bool readBeforeExecution)
     {
-        AssertContextScenarioText(MissingScenarioText, readBeforeExecution);
+        await AssertContextScenarioText(MissingScenarioText, readBeforeExecution);
     }
 
     [TestCase(false)]
     [TestCase(true)]
     [ScenarioText(null)]
     [MethodImpl(MethodImplOptions.NoInlining)]
-    public void NullAttributeTextReturnsMissingText(bool readBeforeExecution)
+    public async Task NullAttributeTextReturnsMissingText(bool readBeforeExecution)
     {
-        AssertContextScenarioText(MissingScenarioText, readBeforeExecution);
+        await AssertContextScenarioText(MissingScenarioText, readBeforeExecution);
     }
 
     [TestCase(false)]
     [TestCase(true)]
     [ScenarioText("")]
     [MethodImpl(MethodImplOptions.NoInlining)]
-    public void EmptyAttributeTextRemainsEmpty(bool readBeforeExecution)
+    public async Task EmptyAttributeTextRemainsEmpty(bool readBeforeExecution)
     {
-        AssertContextScenarioText("", readBeforeExecution);
+        await AssertContextScenarioText("", readBeforeExecution);
     }
 
     [TestCase(false)]
     [TestCase(true)]
     [ScenarioText("Custom scenario text")]
     [MethodImpl(MethodImplOptions.NoInlining)]
-    public void AttributeTextIsPreserved(bool readBeforeExecution)
+    public async Task AttributeTextIsPreserved(bool readBeforeExecution)
     {
-        AssertContextScenarioText("Custom scenario text", readBeforeExecution);
+        await AssertContextScenarioText("Custom scenario text", readBeforeExecution);
     }
 
-    private void AssertContextScenarioText(string expected, bool readBeforeExecution)
+    private async Task AssertContextScenarioText(string expected, bool readBeforeExecution)
     {
         var context = BDTestContext;
         Assert.That(context.CurrentScenario, Is.Null);
@@ -54,9 +54,9 @@ public class ContextScenarioTextTests : NUnitBDTestBase<MyTestContext>
             Assert.That(context.GetScenarioText(), Is.EqualTo(expected));
         }
 
-        var scenario = When(() => NoOp()).Then(() => NoOp())
+        var scenario = await When(() => NoOp()).Then(() => NoOp())
             .WithScenarioText("Fluent scenario text")
-            .BDTest();
+            .BDTestAsync();
 
         Assert.That(context.CurrentScenario, Is.SameAs(scenario));
         Assert.That(scenario.GetScenarioText(), Is.EqualTo("Fluent scenario text"));

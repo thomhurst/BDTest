@@ -54,11 +54,7 @@ public sealed class ScenarioOutlineBuilder<TExample> : BuildableTest
         Run.Store.RegisterPending(this);
     }
 
-    public Task<Scenario> BDTestAsync() => Invoke(false);
-    public Scenario BDTest() => Invoke(true).GetAwaiter().GetResult();
-    public TaskAwaiter<Scenario> GetAwaiter() => BDTestAsync().GetAwaiter();
-
-    private Task<Scenario> Invoke(bool runOnThreadPool)
+    public Task<Scenario> BDTestAsync()
     {
         Run.ThrowIfDisposed();
         if (Interlocked.Exchange(ref _executionStarted, 1) != 0)
@@ -68,8 +64,10 @@ public sealed class ScenarioOutlineBuilder<TExample> : BuildableTest
         TestOutputData.TestId = Guid;
         TestOutputData.FrameworkExecutionId = TestId;
         var outline = new Scenario(new List<Step>(), this) { IsOutline = true };
-        return runOnThreadPool ? Task.Run(() => ExecuteAsync(outline)) : ExecuteAsync(outline);
+        return ExecuteAsync(outline);
     }
+
+    public TaskAwaiter<Scenario> GetAwaiter() => BDTestAsync().GetAwaiter();
 
     private static Status ClassifyOutcome(Exception exception)
     {
@@ -114,7 +112,7 @@ public sealed class ScenarioOutlineBuilder<TExample> : BuildableTest
                         TestOutputData.Run = Run;
                         TestOutputData.ConstructionOutput = previousOutput;
                     }
-                    await builder.Invoke(builder, outline: outline, exampleValues: _values[index]).ConfigureAwait(false);
+                    await builder.Invoke(builder, outline: outline, exampleValues: _values[index]);
                 }
                 catch (Exception exception)
                 {

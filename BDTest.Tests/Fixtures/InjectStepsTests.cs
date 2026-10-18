@@ -13,12 +13,12 @@ public class InjectStepsTests : AbstractContextBDTestBase<MyTestContext>
     private readonly ConcurrentBag<string> _usedIds = new();
 
     [Test]
-    public void Test()
+    public async Task Test()
     {
-        var scenario = Given(() => InjectableStep1.Print())
+        var scenario = await Given(() => InjectableStep1.Print())
             .When(() => InjectableStep2.Print())
             .Then(() => InjectableStep3.Print())
-            .BDTest();
+            .BDTestAsync();
         
         Assert.That(scenario.Steps[0].Output, Does.StartWith("1:"));
         Assert.That(scenario.Steps[1].Output, Does.StartWith("2:"));
@@ -29,12 +29,12 @@ public class InjectStepsTests : AbstractContextBDTestBase<MyTestContext>
     }
     
     [Test]
-    public void Test2()
+    public async Task Test2()
     {
-        var scenario = Given(() => InjectableStep1.Print())
+        var scenario = await Given(() => InjectableStep1.Print())
             .When(() => InjectableStep2.Print())
             .Then(() => InjectableStep3.Print())
-            .BDTest();
+            .BDTestAsync();
         
         Assert.That(scenario.Steps[0].Output, Does.StartWith("1:"));
         Assert.That(scenario.Steps[1].Output, Does.StartWith("2:"));
@@ -45,12 +45,12 @@ public class InjectStepsTests : AbstractContextBDTestBase<MyTestContext>
     }
     
     [Test]
-    public void Test3()
+    public async Task Test3()
     {
-        var scenario = Given(() => InjectableStep1.Print())
+        var scenario = await Given(() => InjectableStep1.Print())
             .When(() => InjectableStep2.Print())
             .Then(() => InjectableStep3.Print())
-            .BDTest();
+            .BDTestAsync();
         
         Assert.That(scenario.Steps[0].Output, Does.StartWith("1:"));
         Assert.That(scenario.Steps[1].Output, Does.StartWith("2:"));

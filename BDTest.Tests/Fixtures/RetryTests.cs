@@ -43,12 +43,12 @@ public class RetryTests : NUnitBDTestBase<RetryContext>
     [TestCase(1)]
     [TestCase(2)]
     [TestCase(3)]
-    public void RetrySuccessfully(int throwIfRetryLessThan)
+    public async Task RetrySuccessfully(int throwIfRetryLessThan)
     {
-        var scenario = Given(() => ThrowException(throwIfRetryLessThan))
+        var scenario = await Given(() => ThrowException(throwIfRetryLessThan))
             .When(() => Console.WriteLine("my test has an exception"))
             .Then(() => Console.WriteLine("the test should retry"))
-            .BDTest();
+            .BDTestAsync();
             
         Assert.That(scenario.RetryCount, Is.EqualTo(throwIfRetryLessThan));
         Assert.That(scenario.Attempts, Has.Count.EqualTo(throwIfRetryLessThan + 1));
@@ -64,14 +64,14 @@ public class RetryTests : NUnitBDTestBase<RetryContext>
     [TestCase(4)]
     [TestCase(5)]
     [TestCase(6)]
-    public void RetryPastLimit(int throwIfRetryLessThan)
+    public async Task RetryPastLimit(int throwIfRetryLessThan)
     {
         try
         {
-            Given(() => CheckContextCounter())
+            await Given(() => CheckContextCounter())
                 .When(() => ThrowException(throwIfRetryLessThan))
                 .Then(() => Console.WriteLine("the test should retry"))
-                .BDTest();
+                .BDTestAsync();
 
             Assert.Fail();
         }

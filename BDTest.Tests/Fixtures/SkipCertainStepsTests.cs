@@ -20,47 +20,47 @@ public class SkipCertainStepsTests : BDTestBase
     }
 
     [Test]
-    public void Skip1Step()
+    public async Task Skip1Step()
     {
-        Given(() => Console.WriteLine("A test"))
+        await Given(() => Console.WriteLine("A test"))
             .When(() => Console.WriteLine())
             .Then(() => Console.WriteLine("The test passes because the exception step was skipped"))
             .And(() => ThrowException1())
-            .BDTest();
+            .BDTestAsync();
     }
         
     [Test]
-    public void Skip3Steps()
+    public async Task Skip3Steps()
     {
-        Given(() => Console.WriteLine("A test"))
+        await Given(() => Console.WriteLine("A test"))
             .When(() => Console.WriteLine())
             .Then(() => Console.WriteLine("The test passes because the exception step was skipped"))
             .And(() => ThrowException1())
             .And(() => ThrowException2())
             .And(() => ThrowException3())
-            .BDTest();
+            .BDTestAsync();
     }
         
     [Test]
-    public void ShouldSkipTrue()
+    public async Task ShouldSkipTrue()
     {
-        Given(() => Console.WriteLine("A test"))
+        await Given(() => Console.WriteLine("A test"))
             .When(() => Console.WriteLine())
             .Then(() => Console.WriteLine("The test passes because the exception step was skipped"))
             .And(() => ThrowExceptionShouldSkipTrue())
-            .BDTest();
+            .BDTestAsync();
     }
         
     [Test]
-    public void ShouldSkipFalse()
+    public async Task ShouldSkipFalse()
     {
         try
         {
-            Given(() => Console.WriteLine("A test"))
+            await Given(() => Console.WriteLine("A test"))
                 .When(() => Console.WriteLine())
                 .Then(() => Console.WriteLine("The test passes because the exception step was skipped"))
                 .And(() => ThrowExceptionShouldSkipFalse())
-                .BDTest();
+                .BDTestAsync();
                 
             Assert.Fail("The last exception should not be skipped - And should stop us getting here.");
         }
@@ -73,18 +73,18 @@ public class SkipCertainStepsTests : BDTestBase
     }
         
     [Test]
-    public void NotRegisteredSkipException()
+    public async Task NotRegisteredSkipException()
     {
         try
         {
-            Given(() => Console.WriteLine("A test"))
+            await Given(() => Console.WriteLine("A test"))
                 .When(() => Console.WriteLine())
                 .Then(() => Console.WriteLine("The test passes because the exception step was skipped"))
                 .And(() => ThrowException1())
                 .And(() => ThrowException2())
                 .And(() => ThrowException3())
                 .And(() => ThrowNotRegisteredSkipException())
-                .BDTest();
+                .BDTestAsync();
                 
             Assert.Fail("The last exception should not be skipped - And should stop us getting here.");
         }

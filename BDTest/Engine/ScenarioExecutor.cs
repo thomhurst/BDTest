@@ -24,10 +24,11 @@ internal class ScenarioExecutor : IScenarioExecutor
         {
             // Completed steps and retry hooks can run inline. Iterate attempts so
             // repeated synchronous failures cannot grow the execution stack.
+            // Capture the caller's synchronization context for subsequent steps and retries.
             do
             {
-                await _scenarioRetryManager.CheckIfAlreadyExecuted(scenario).ConfigureAwait(false);
-                await ExecuteAttemptAsync(scenario).ConfigureAwait(false);
+                await _scenarioRetryManager.CheckIfAlreadyExecuted(scenario);
+                await ExecuteAttemptAsync(scenario);
             } while (scenario.ShouldRetry);
 
             // Notify after finalizing the scenario, outside retry/exception classification.
@@ -58,7 +59,7 @@ internal class ScenarioExecutor : IScenarioExecutor
 
             if (scenario.RetryCount == 0)
             {
-                await WriteTestInformation(scenario).ConfigureAwait(false);
+                await WriteTestInformation(scenario);
             }
 
             if (ShouldSkip(scenario))
@@ -77,7 +78,7 @@ internal class ScenarioExecutor : IScenarioExecutor
             var stepBudget = scenario.Timeout.HasValue ? Stopwatch.StartNew() : null;
             foreach (var step in scenario.Steps)
             {
-                await step.Execute(scenario.BdTestBaseClass, scenario.Timeout, scenario.Timeout - stepBudget?.Elapsed).ConfigureAwait(false);
+                await step.Execute(scenario.BdTestBaseClass, scenario.Timeout, scenario.Timeout - stepBudget?.Elapsed);
             }
 
             scenario.Status = scenario.Steps.Count > 0 && scenario.Steps.All(step => step.Status == Status.Skipped)
@@ -132,7 +133,7 @@ internal class ScenarioExecutor : IScenarioExecutor
                 return;
             }
 
-            await ConsoleReporter.WriteLine($"{Environment.NewLine}Exception: {e.Message}{Environment.NewLine}{e.StackTrace}{Environment.NewLine}", ConsoleColor.DarkRed).ConfigureAwait(false);
+            await ConsoleReporter.WriteLine($"{Environment.NewLine}Exception: {e.Message}{Environment.NewLine}{e.StackTrace}{Environment.NewLine}", ConsoleColor.DarkRed);
 
             throw;
         }
@@ -186,9 +187,9 @@ internal class ScenarioExecutor : IScenarioExecutor
 
     private async Task WriteTestInformation(Scenario scenario)
     {
-        await WriteStoryAndScenario(scenario).ConfigureAwait(false);
+        await WriteStoryAndScenario(scenario);
 
-        await WriteCustomTestInformation(scenario).ConfigureAwait(false);
+        await WriteCustomTestInformation(scenario);
 
         TestOutputData.ClearCurrentTaskData();
     }
@@ -204,18 +205,18 @@ internal class ScenarioExecutor : IScenarioExecutor
 
         foreach (var testInformationAttribute in scenarioCustomTestInformation)
         {
-            await ConsoleReporter.WriteLine(testInformationAttribute.Print()).ConfigureAwait(false);
+            await ConsoleReporter.WriteLine(testInformationAttribute.Print());
         }
 
-        await ConsoleReporter.WriteLine(Environment.NewLine).ConfigureAwait(false);
+        await ConsoleReporter.WriteLine(Environment.NewLine);
     }
 
     private async Task WriteStoryAndScenario(Scenario scenario)
     {
-        await ConsoleReporter.WriteStory(scenario.StoryText).ConfigureAwait(false);
+        await ConsoleReporter.WriteStory(scenario.StoryText);
 
-        await ConsoleReporter.WriteScenario(scenario.ScenarioText).ConfigureAwait(false);
+        await ConsoleReporter.WriteScenario(scenario.ScenarioText);
 
-        await ConsoleReporter.WriteLine(string.Empty).ConfigureAwait(false);
+        await ConsoleReporter.WriteLine(string.Empty);
     }
 }

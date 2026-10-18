@@ -10,7 +10,6 @@ namespace BDTest.Tests.Fixtures;
     SoThat = "tests run with maximum performance")]
 public class AsyncTests : BDTestBase
 {
-    [TestCase("blocking")]
     [TestCase("async")]
     [TestCase("await-builder")]
     public async Task StepsWaitForAsyncCompletion(string entryPoint)
@@ -24,7 +23,6 @@ public class AsyncTests : BDTestBase
 
         var execution = entryPoint switch
         {
-            "blocking" => Task.Run(() => builder.BDTest()),
             "async" => builder.BDTestAsync(),
             _ => AwaitBuilder(builder)
         };

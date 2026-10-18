@@ -8,6 +8,9 @@ public class ExecutionSchedulingTests : BDTestBase
 {
     private readonly string _executionId = Guid.NewGuid().ToString();
     protected override string BDTestExecutionId => _executionId;
+    private SynchronizationContext _callerContext;
+    private int _callerThread;
+    private int _contextAttempts;
 
     [Test]
     public async Task CompletedStepsExecuteInline([Values] bool directAwait)
@@ -50,65 +53,95 @@ public class ExecutionSchedulingTests : BDTestBase
         Assert.That((await task).Steps.All(step => step.Status == Status.Passed), Is.True);
     }
 
-    [Test]
-    public async Task SyncEntryPointDoesNotCaptureBlockedCallersContext([Values] bool fail)
+    [Test, BDTest.Attributes.BDTestRetry(1)]
+    public async Task CallerContextSurvivesStepsHooksRetriesAndOutlineRows(
+        [Values] bool directAwait, [Values] bool outline)
     {
-        var context = new QueuedSynchronizationContext();
+        var scenario = await RunOnSingleThreadContext(async () =>
+        {
+            if (outline)
+            {
+                var builder = ScenarioOutline("Context rows", new[] { 1, 2 },
+                    _ => Given(() => YieldOnCallerContext()).When(() => FailFirstContextAttempt())
+                        .Then(() => YieldOnCallerContext()));
+                return directAwait ? await builder : await builder.BDTestAsync();
+            }
+
+            var chain = Given(() => YieldOnCallerContext()).When(() => FailFirstContextAttempt())
+                .Then(() => YieldOnCallerContext());
+            return directAwait ? await chain : await chain.BDTestAsync();
+        });
+
+        Assert.That(scenario.Status, Is.EqualTo(Status.Passed));
+        Assert.That(_contextAttempts, Is.EqualTo(outline ? 3 : 2));
+        Assert.That(outline ? scenario.Examples[0].RetryCount : scenario.RetryCount, Is.EqualTo(1));
+    }
+
+    [Test]
+    public async Task StepCanOptOutWithoutMovingLaterStepsOffCallerContext()
+    {
+        var scenario = await RunOnSingleThreadContext(async () =>
+            await Given(() => OptOutOfCallerContext()).When(() => YieldOnCallerContext())
+                .Then(() => YieldOnCallerContext()));
+        Assert.That(scenario.Status, Is.EqualTo(Status.Passed));
+    }
+
+    public override Task OnBeforeStep(Step step) => CheckHookContext();
+    public override Task OnAfterStep(Step step) => CheckHookContext();
+    public override Task OnBeforeRetry() => CheckHookContext();
+
+    private Task CheckHookContext() => _callerContext == null ? Task.CompletedTask : YieldOnCallerContext();
+
+    private async Task YieldOnCallerContext()
+    {
+        CheckCallerContext();
+        await Task.Yield();
+        CheckCallerContext();
+    }
+
+    private void CheckCallerContext()
+    {
+        Assert.That(SynchronizationContext.Current, Is.SameAs(_callerContext));
+        Assert.That(Environment.CurrentManagedThreadId, Is.EqualTo(_callerThread));
+    }
+
+    private void FailFirstContextAttempt()
+    {
+        CheckCallerContext();
+        if (++_contextAttempts == 1) throw new InvalidOperationException("Retry on caller context");
+    }
+
+    private async Task OptOutOfCallerContext()
+    {
+        CheckCallerContext();
+        var finish = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        SynchronizationContext.Current.Post(_ => finish.SetResult(), null);
+        await finish.Task.ConfigureAwait(false);
+        Assert.That(SynchronizationContext.Current, Is.Null);
+        Assert.That(Environment.CurrentManagedThreadId, Is.Not.EqualTo(_callerThread));
+    }
+
+    private async Task<Scenario> RunOnSingleThreadContext(Func<Task<Scenario>> run)
+    {
         var completed = new TaskCompletionSource<Scenario>(TaskCreationOptions.RunContinuationsAsynchronously);
-        var ambient = new AsyncLocal<string>();
-        var failure = new InvalidOperationException("Async step failure");
         var thread = new Thread(() =>
         {
+            using var context = new PumpedSynchronizationContext();
             SynchronizationContext.SetSynchronizationContext(context);
-            ambient.Value = "caller";
+            _callerContext = context;
+            _callerThread = Environment.CurrentManagedThreadId;
             try
             {
-                var scenario = Given(() => YieldAndCheckAmbient(ambient, fail, failure))
-                    .When(() => CheckAmbient(ambient)).Then(() => Console.WriteLine("last step"))
-                    .BDTest();
-                Console.WriteLine("caller teardown");
-                completed.SetResult(scenario);
+                var execution = run();
+                context.PumpUntilCompleted(execution);
+                completed.SetResult(execution.GetAwaiter().GetResult());
             }
-            catch (Exception exception)
-            {
-                completed.SetException(exception);
-            }
-            finally
-            {
-                SynchronizationContext.SetSynchronizationContext(null);
-            }
+            catch (Exception exception) { completed.SetException(exception); }
+            finally { SynchronizationContext.SetSynchronizationContext(null); }
         }) { IsBackground = true };
         thread.Start();
-
-        try
-        {
-            var winner = await Task.WhenAny(completed.Task, context.Posted.Task)
-                .WaitAsync(TimeSpan.FromSeconds(20));
-            Assert.That(winner, Is.SameAs(completed.Task), "Execution posted to the blocked caller's context.");
-            if (fail)
-            {
-                var actual = await Assert.ThrowsAsync<InvalidOperationException>(async () => await completed.Task);
-                Assert.That(actual, Is.SameAs(failure));
-                var scenario = BDTestUtil.GetScenarios().Single(x => x.FrameworkTestId == _executionId);
-                Assert.That(scenario.Status, Is.EqualTo(Status.Failed));
-                Assert.That(scenario.Steps[0].Status, Is.EqualTo(Status.Failed));
-                Assert.That(scenario.Steps.Skip(1).All(step => step.Status == Status.NotRun), Is.True);
-            }
-            else
-            {
-                var scenario = await completed.Task;
-                Assert.That(scenario.Status, Is.EqualTo(Status.Passed));
-                Assert.That(scenario.Steps[0].Output, Is.EqualTo("async step"));
-                Assert.That(scenario.Steps[2].Output, Is.EqualTo("last step"));
-                Assert.That(scenario.TearDownOutput, Does.Contain("caller teardown"));
-            }
-        }
-        finally
-        {
-            // If the regression returns, unblock the worker before failing the test.
-            context.ReleaseToThreadPool();
-            Assert.That(thread.Join(TimeSpan.FromSeconds(20)), Is.True, "Execution thread did not exit.");
-        }
+        try { return await completed.Task.WaitAsync(TimeSpan.FromSeconds(30)); }
+        finally { Assert.That(thread.Join(TimeSpan.FromSeconds(30)), Is.True, "Context thread did not exit."); }
     }
 
     [Test]
@@ -121,12 +154,12 @@ public class ExecutionSchedulingTests : BDTestBase
     }
 
     [Test, BDTest.Attributes.BDTestRetry(64)]
-    public async Task SynchronousRetriesDoNotAccumulateStackFrames([Values] bool synchronous)
+    public async Task SynchronousRetriesDoNotAccumulateStackFrames([Values] bool directAwait)
     {
         var depths = new List<int>();
         var builder = Given(() => FailUntilLastAttempt(depths)).When(() => Console.WriteLine("retried"))
             .Then(() => Console.WriteLine("finished"));
-        var scenario = synchronous ? builder.BDTest() : await builder.BDTestAsync();
+        var scenario = directAwait ? await builder : await builder.BDTestAsync();
 
         Assert.That(scenario.Status, Is.EqualTo(Status.Passed));
         Assert.That(scenario.RetryCount, Is.EqualTo(64));
@@ -156,54 +189,25 @@ public class ExecutionSchedulingTests : BDTestBase
         events.Add("finished");
     }
 
-    private static async Task YieldAndCheckAmbient(AsyncLocal<string> ambient, bool fail, Exception failure)
-    {
-        CheckAmbient(ambient);
-        await Task.Yield();
-        CheckAmbient(ambient);
-        Console.WriteLine("async step");
-        if (fail)
-        {
-            throw failure;
-        }
-    }
-
     private static void ChangeAmbient(AsyncLocal<string> ambient) => ambient.Value = "step";
     private static void CheckAmbient(AsyncLocal<string> ambient) => Assert.That(ambient.Value, Is.EqualTo("caller"));
 
-    private sealed class QueuedSynchronizationContext : SynchronizationContext
+    private sealed class PumpedSynchronizationContext : SynchronizationContext, IDisposable
     {
-        private readonly List<Action> _callbacks = new();
-        private bool _released;
-        public TaskCompletionSource<bool> Posted { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        private readonly System.Collections.Concurrent.BlockingCollection<(SendOrPostCallback Callback, object State)> _callbacks = new();
 
-        public override void Post(SendOrPostCallback callback, object state)
+        public override void Post(SendOrPostCallback callback, object state) => _callbacks.Add((callback, state));
+
+        public void PumpUntilCompleted(Task execution)
         {
-            lock (_callbacks)
+            var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+            while (!execution.IsCompleted)
             {
-                if (_released)
-                {
-                    ThreadPool.QueueUserWorkItem(_ => callback(state));
-                }
-                else
-                {
-                    _callbacks.Add(() => callback(state));
-                }
-                Posted.TrySetResult(true);
+                if (stopwatch.Elapsed > TimeSpan.FromSeconds(20)) throw new TimeoutException("Context execution did not finish.");
+                if (_callbacks.TryTake(out var work, 50)) work.Callback(work.State);
             }
         }
 
-        public void ReleaseToThreadPool()
-        {
-            lock (_callbacks)
-            {
-                _released = true;
-                foreach (var callback in _callbacks)
-                {
-                    ThreadPool.QueueUserWorkItem(_ => callback());
-                }
-                _callbacks.Clear();
-            }
-        }
+        public void Dispose() => _callbacks.Dispose();
     }
 }

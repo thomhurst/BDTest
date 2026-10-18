@@ -27,11 +27,11 @@ public class JsonResultsTests : NUnitBDTestBase<MyTestContext>
     [Test]
     [TestInformation("Some info!")]
     [ScenarioText("Can Deserialize JSON")]
-    public void CanDeserializeJsonResultsSuccessfully()
+    public async Task CanDeserializeJsonResultsSuccessfully()
     {
-        When(() => Console.WriteLine("A persistent json file is written")).WithStepText(() => "I write custom when step text")
+        await When(() => Console.WriteLine("A persistent json file is written")).WithStepText(() => "I write custom when step text")
             .Then(() => CustomStep("1", "2"))
-            .BDTest();
+            .BDTestAsync();
 
         var inMemoryScenario = BDTestUtil.GetScenarios().Single();
             

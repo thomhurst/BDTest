@@ -14,7 +14,7 @@ namespace BDTest.Tests.Fixtures;
 public class CustomPassExceptionsTests : NUnitBDTestBase<MyTestContext>
 {
     [Test]
-    public void NUNitSuccessException()
+    public async Task NUNitSuccessException()
     {
         var builder = Given(() => Console.WriteLine("NUnit throws a success exception"))
             .When(() => Assert.Pass())
@@ -22,7 +22,7 @@ public class CustomPassExceptionsTests : NUnitBDTestBase<MyTestContext>
 
         try
         {
-            builder.BDTest();
+            await builder.BDTestAsync();
 
             Assert.Fail("An exception should be thrown to stop us getting here!");
         }
@@ -34,7 +34,7 @@ public class CustomPassExceptionsTests : NUnitBDTestBase<MyTestContext>
     }
 
     [Test]
-    public void CustomException()
+    public async Task CustomException()
     {
         using var registration = new ExceptionRegistration(
             BDTestSettings.CustomExceptionSettings.SuccessExceptionTypes, typeof(MyAllowedException));
@@ -45,7 +45,7 @@ public class CustomPassExceptionsTests : NUnitBDTestBase<MyTestContext>
 
         try
         {
-            builder.BDTest();
+            await builder.BDTestAsync();
 
             Assert.Fail("An exception should be thrown to stop us getting here!");
         }

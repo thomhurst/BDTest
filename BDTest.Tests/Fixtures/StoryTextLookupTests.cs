@@ -30,13 +30,13 @@ public class StoryTextLookupTests
     public void SetUp() => TestResetHelper.ResetData();
 
     [TestCaseSource(nameof(StoryCases))]
-    public void ScenarioAndReportUseTheSameStoryAsTheTest(BDTestBase test, string role)
+    public async Task ScenarioAndReportUseTheSameStoryAsTheTest(BDTestBase test, string role)
     {
         var expected = role == null
             ? null
             : $"As a {role}{Environment.NewLine}I want consistent stories{Environment.NewLine}So that reports match{Environment.NewLine}";
 
-        var scenario = test.When(() => Step()).Then(() => Step()).BDTest();
+        var scenario = await test.When(() => Step()).Then(() => Step()).BDTestAsync();
         var reportedStory = JsonHelper.GetTestDynamicJsonObject().SelectToken("$.Scenarios[0].StoryText");
 
         Assert.Multiple(() =>

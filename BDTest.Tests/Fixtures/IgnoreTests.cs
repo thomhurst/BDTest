@@ -14,7 +14,7 @@ namespace BDTest.Tests.Fixtures;
 public class IgnoreTests : NUnitBDTestBase<MyTestContext>
 {
     [Test]
-    public void NUNitIgnoreException()
+    public async Task NUNitIgnoreException()
     {
         var builder = Given(() => Console.WriteLine("NUnit throws an ignore exception"))
             .When(() => Assert.Ignore())
@@ -22,7 +22,7 @@ public class IgnoreTests : NUnitBDTestBase<MyTestContext>
 
         try
         {
-            builder.BDTest();
+            await builder.BDTestAsync();
                 
             Assert.Fail("An exception should be thrown to stop us getting here!");
         }
@@ -35,7 +35,7 @@ public class IgnoreTests : NUnitBDTestBase<MyTestContext>
     }
         
     [Test]
-    public void CustomIgnoreException()
+    public async Task CustomIgnoreException()
     {
         using var registration = new ExceptionRegistration(
             BDTestSettings.CustomExceptionSettings.InconclusiveExceptionTypes, typeof(MyCustomIgnoreException));
@@ -45,7 +45,7 @@ public class IgnoreTests : NUnitBDTestBase<MyTestContext>
 
         try
         {
-            builder.BDTest();
+            await builder.BDTestAsync();
                 
             Assert.Fail("An exception should be thrown to stop us getting here!");
         }

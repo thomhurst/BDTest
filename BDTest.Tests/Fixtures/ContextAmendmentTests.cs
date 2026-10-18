@@ -70,7 +70,7 @@ public class ContextAmendmentTests
 
     [TestCase(false)]
     [TestCase(true)]
-    public void RetryCreatesAndAmendsANewContextOnce(bool frameworkId)
+    public async Task RetryCreatesAndAmendsANewContextOnce(bool frameworkId)
     {
         var fixture = new ContextFixture(frameworkId);
         var attempts = new List<BDTestContext<MyTestContext>>();
@@ -85,7 +85,7 @@ public class ContextAmendmentTests
         try
         {
             var original = fixture.BDTestContext;
-            var scenario = fixture.RunRetriedScenario();
+            var scenario = await fixture.RunRetriedScenario();
             Assert.That(scenario.RetryCount, Is.EqualTo(1));
             Assert.That(scenario.Status, Is.EqualTo(Status.Passed));
             Assert.That(attempts.Count, Is.EqualTo(2));
@@ -100,7 +100,7 @@ public class ContextAmendmentTests
 
     [TestCase(false)]
     [TestCase(true)]
-    public void FailedRetryAmendmentDoesNotRetainPartiallyInitializedContext(bool frameworkId)
+    public async Task FailedRetryAmendmentDoesNotRetainPartiallyInitializedContext(bool frameworkId)
     {
         var fixture = new ContextFixture(frameworkId);
         var expected = new InvalidOperationException("retry amendment failed");
@@ -117,7 +117,7 @@ public class ContextAmendmentTests
         try
         {
             var original = fixture.BDTestContext;
-            var error = Assert.Throws<ErrorOccurredDuringRetryActionException>(() => fixture.RunRetriedScenario());
+            var error = await Assert.ThrowsAsync<ErrorOccurredDuringRetryActionException>(async () => await fixture.RunRetriedScenario());
             Assert.That(error.GetBaseException(), Is.SameAs(expected));
             var recovered = fixture.BDTestContext;
             Assert.That(attempts.Count, Is.EqualTo(3));
@@ -139,10 +139,10 @@ public class ContextAmendmentTests
 
         private int _attempts;
 
-        public Scenario RunRetriedScenario() => Given(() => ReadContext())
+        public async Task<Scenario> RunRetriedScenario() => await Given(() => ReadContext())
             .When(() => FailFirstAttempt())
             .Then(() => ReadContext())
-            .BDTest();
+            .BDTestAsync();
 
         private void ReadContext() => _ = Context;
 
