@@ -1,4 +1,3 @@
-﻿using BDTest.Helpers;
 using NUnit.Framework;
 
 namespace BDTest.Example;
@@ -9,7 +8,17 @@ public class SetUpFixture
     [OneTimeTearDown]
     public void WriteTestData()
     {
-        // Use the example class to generate reports
-        HtmlReportGenerationExample.GenerateReports();
+        var outputDirectory = Path.Combine(Path.GetTempPath(), "BDTest-Example-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            HtmlReportGenerationExample.GenerateReports(outputDirectory);
+        }
+        finally
+        {
+            if (Directory.Exists(outputDirectory))
+            {
+                Directory.Delete(outputDirectory, recursive: true);
+            }
+        }
     }
 }

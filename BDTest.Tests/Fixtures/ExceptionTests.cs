@@ -11,31 +11,28 @@ namespace BDTest.Tests.Fixtures;
     SoThat = "developers can see why their test failed")]
 public class ExceptionTests : BDTestBase
 {
-    [SetUp]
-    public void Setup()
-    {
-        TestResetHelper.ResetData();
-    }
-
     [TestCase(typeof(Exception), Status.Failed)]
     [TestCase(typeof(NotImplementedException), Status.NotImplemented)]
     public void ThrowsExceptionOnGiven(Type exceptionType, Status status)
     {
+        var builder = Given(() => ThrowException(exceptionType))
+            .When(() => Console.WriteLine("my test has an exception"))
+            .Then(() => Console.WriteLine("the exception should be serialized to the json output"))
+            .And(() => Console.WriteLine("the step is marked as failed"))
+            .And(() => Console.WriteLine("the scenario is marked as failed"))
+            .And(() => Console.WriteLine("subsequent steps are inconclusive"));
+
         try
         {
-            Given(() => ThrowException(exceptionType))
-                .When(() => Console.WriteLine("my test has an exception"))
-                .Then(() => Console.WriteLine("the exception should be serialized to the json output"))
-                .And(() => Console.WriteLine("the step is marked as failed"))
-                .And(() => Console.WriteLine("the scenario is marked as failed"))
-                .And(() => Console.WriteLine("subsequent steps are inconclusive"))
-                .BDTest();
+            builder.BDTest();
 
             Assert.Fail("An exception should be thrown to stop us getting here!");
         }
         catch
         {
-            var scenario = BDTestUtil.GetScenarios().First();
+            var scenario = BDTestUtil.GetScenarios().Single(scenario => scenario.Guid == builder.Guid);
+            var json = JsonHelper.GetTestDynamicJsonObject()["Scenarios"]
+                .Single(item => (string)item["Guid"] == builder.Guid);
 
             Assert.That(scenario.Steps[0].Exception.Message.Contains("BDTest Exception!"));
 
@@ -49,29 +46,29 @@ public class ExceptionTests : BDTestBase
             Assert.That(scenario.Status, Is.EqualTo(status));
 
             Assert.That(
-                JsonHelper.GetTestDynamicJsonObject().SelectToken("$.Scenarios[0].Steps[0].Exception")
+                json.SelectToken("$.Steps[0].Exception")
                     .ToString().Contains("BDTest Exception!"));
 
             Assert.That(
-                JsonHelper.GetTestDynamicJsonObject().SelectToken("$.Scenarios[0].Steps[0].Status").ToString(),
+                json.SelectToken("$.Steps[0].Status").ToString(),
                 Is.EqualTo(status.ToString()));
             Assert.That(
-                JsonHelper.GetTestDynamicJsonObject().SelectToken("$.Scenarios[0].Steps[1].Status").ToString(),
+                json.SelectToken("$.Steps[1].Status").ToString(),
                 Is.EqualTo("Inconclusive"));
             Assert.That(
-                JsonHelper.GetTestDynamicJsonObject().SelectToken("$.Scenarios[0].Steps[2].Status").ToString(),
+                json.SelectToken("$.Steps[2].Status").ToString(),
                 Is.EqualTo("Inconclusive"));
             Assert.That(
-                JsonHelper.GetTestDynamicJsonObject().SelectToken("$.Scenarios[0].Steps[3].Status").ToString(),
+                json.SelectToken("$.Steps[3].Status").ToString(),
                 Is.EqualTo("Inconclusive"));
             Assert.That(
-                JsonHelper.GetTestDynamicJsonObject().SelectToken("$.Scenarios[0].Steps[4].Status").ToString(),
+                json.SelectToken("$.Steps[4].Status").ToString(),
                 Is.EqualTo("Inconclusive"));
             Assert.That(
-                JsonHelper.GetTestDynamicJsonObject().SelectToken("$.Scenarios[0].Steps[5].Status").ToString(),
+                json.SelectToken("$.Steps[5].Status").ToString(),
                 Is.EqualTo("Inconclusive"));
 
-            Assert.That(JsonHelper.GetTestDynamicJsonObject().SelectToken("$.Scenarios[0].Status").ToString(),
+            Assert.That(json.SelectToken("$.Status").ToString(),
                 Is.EqualTo(status.ToString()));
         }
     }
@@ -80,21 +77,24 @@ public class ExceptionTests : BDTestBase
     [TestCase(typeof(NotImplementedException), Status.NotImplemented)]
     public void ThrowsExceptionOnThen(Type exceptionType, Status status)
     {
+        var builder = When(() => Console.WriteLine("my test has an exception"))
+            .Then(() => Console.WriteLine("the exception should be serialized to the json output"))
+            .And(() => Console.WriteLine("the step is marked as failed"))
+            .And(() => ThrowException(exceptionType))
+            .And(() => Console.WriteLine("subsequent steps are inconclusive"))
+            .And(() => Console.WriteLine("Previous steps should be marked as passed"));
+
         try
         {
-            When(() => Console.WriteLine("my test has an exception"))
-                .Then(() => Console.WriteLine("the exception should be serialized to the json output"))
-                .And(() => Console.WriteLine("the step is marked as failed"))
-                .And(() => ThrowException(exceptionType))
-                .And(() => Console.WriteLine("subsequent steps are inconclusive"))
-                .And(() => Console.WriteLine("Previous steps should be marked as passed"))
-                .BDTest();
+            builder.BDTest();
 
             Assert.Fail("An exception should be thrown to stop us getting here!");
         }
         catch
         {
-            var scenario = BDTestUtil.GetScenarios().First();
+            var scenario = BDTestUtil.GetScenarios().Single(scenario => scenario.Guid == builder.Guid);
+            var json = JsonHelper.GetTestDynamicJsonObject()["Scenarios"]
+                .Single(item => (string)item["Guid"] == builder.Guid);
 
             Assert.That(scenario.Steps[3].Exception.Message.Contains("BDTest Exception!"));
 
@@ -108,29 +108,29 @@ public class ExceptionTests : BDTestBase
             Assert.That(scenario.Status, Is.EqualTo(status));
 
             Assert.That(
-                JsonHelper.GetTestDynamicJsonObject().SelectToken("$.Scenarios[0].Steps[3].Exception")
+                json.SelectToken("$.Steps[3].Exception")
                     .ToString().Contains("BDTest Exception!"));
 
             Assert.That(
-                JsonHelper.GetTestDynamicJsonObject().SelectToken("$.Scenarios[0].Steps[0].Status").ToString(),
+                json.SelectToken("$.Steps[0].Status").ToString(),
                 Is.EqualTo("Passed"));
             Assert.That(
-                JsonHelper.GetTestDynamicJsonObject().SelectToken("$.Scenarios[0].Steps[1].Status").ToString(),
+                json.SelectToken("$.Steps[1].Status").ToString(),
                 Is.EqualTo("Passed"));
             Assert.That(
-                JsonHelper.GetTestDynamicJsonObject().SelectToken("$.Scenarios[0].Steps[2].Status").ToString(),
+                json.SelectToken("$.Steps[2].Status").ToString(),
                 Is.EqualTo("Passed"));
             Assert.That(
-                JsonHelper.GetTestDynamicJsonObject().SelectToken("$.Scenarios[0].Steps[3].Status").ToString(),
+                json.SelectToken("$.Steps[3].Status").ToString(),
                 Is.EqualTo(status.ToString()));
             Assert.That(
-                JsonHelper.GetTestDynamicJsonObject().SelectToken("$.Scenarios[0].Steps[4].Status").ToString(),
+                json.SelectToken("$.Steps[4].Status").ToString(),
                 Is.EqualTo("Inconclusive"));
             Assert.That(
-                JsonHelper.GetTestDynamicJsonObject().SelectToken("$.Scenarios[0].Steps[5].Status").ToString(),
+                json.SelectToken("$.Steps[5].Status").ToString(),
                 Is.EqualTo("Inconclusive"));
 
-            Assert.That(JsonHelper.GetTestDynamicJsonObject().SelectToken("$.Scenarios[0].Status").ToString(),
+            Assert.That(json.SelectToken("$.Status").ToString(),
                 Is.EqualTo(status.ToString()));
         }
     }
