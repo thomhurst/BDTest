@@ -7,7 +7,7 @@ namespace BDTest.Helpers;
 // Expand those references only when reading; current writers always emit plain values.
 internal static class LegacyReportJson
 {
-    internal static BDTestOutputModel Deserialize(JsonElement root, long maximumExpandedSize = long.MaxValue)
+    internal static BDTestOutputModel Deserialize(JsonElement root, long maximumExpandedSize)
     {
         if (root.ValueKind != JsonValueKind.Object || !root.TryGetProperty("$id", out _))
         {

@@ -9,6 +9,8 @@ namespace BDTest.Helpers;
 
 public static class BDTestJsonHelper
 {
+    private const long DefaultMaximumExpandedSize = 100 * 1024 * 1024;
+
     public static string GetTestJsonData()
     {
         return GetTestJsonData(new BDTestRunDescriptor());
@@ -53,10 +55,14 @@ public static class BDTestJsonHelper
     }
 
     /// <summary>Reads current reports and historical Newtonsoft reports with reference metadata.</summary>
-    public static BDTestOutputModel Deserialize(string json)
+    public static BDTestOutputModel Deserialize(string json, long maximumExpandedSize = DefaultMaximumExpandedSize)
     {
+        if (maximumExpandedSize < 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(maximumExpandedSize));
+        }
         using var document = JsonDocument.Parse(json);
-        return LegacyReportJson.Deserialize(document.RootElement);
+        return LegacyReportJson.Deserialize(document.RootElement, maximumExpandedSize);
     }
 
     /// <summary>Reads a UTF-8 report stream without closing the caller's stream.</summary>
@@ -64,7 +70,7 @@ public static class BDTestJsonHelper
     /// <param name="cancellationToken">Cancels reading the input.</param>
     /// <param name="maximumExpandedSize">Maximum UTF-8 bytes after expanding legacy references. Current JSON is not expanded.</param>
     public static async Task<BDTestOutputModel> DeserializeAsync(Stream stream, CancellationToken cancellationToken = default,
-        long maximumExpandedSize = long.MaxValue)
+        long maximumExpandedSize = DefaultMaximumExpandedSize)
     {
         if (maximumExpandedSize < 0)
         {

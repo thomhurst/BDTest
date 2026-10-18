@@ -10,8 +10,10 @@ Use `BDTestJsonHelper.Serialize(report)` and `BDTestJsonHelper.Deserialize(json)
 from `BDTest.Helpers`. The asynchronous reader accepts a UTF-8 stream and leaves
 that stream open. Both readers accept historical Newtonsoft reports, including
 `$id`/`$ref` references and `$values` collection wrappers. They reject missing,
-duplicate, or cyclic references. The report upload endpoint also limits expanded
-legacy JSON to its existing 10 MiB upload budget.
+duplicate, or cyclic references. Both readers limit expanded legacy JSON to
+100 MiB by default, including reads from persistent storage. Callers can set
+`maximumExpandedSize` explicitly for a different storage budget. The report upload
+endpoint uses its existing 10 MiB upload budget.
 
 Current writers emit plain JSON. Shared steps, metadata, and example values are
 written as independent values. Consumers must not depend on deserialized object

@@ -161,10 +161,22 @@ public class ReportSerializationTests
             {"$id":"report","Scenarios":[{"$id":"scenario","Output":"{{new string('x', 512)}}"},{"$ref":"scenario"},{"$ref":"scenario"}]}
             """;
         var bytes = System.Text.Encoding.UTF8.GetBytes(json);
+        Assert.Throws<JsonException>(() => BDTestJsonHelper.Deserialize(json, maximumExpandedSize: bytes.Length + 100));
         using var stream = new MemoryStream(bytes);
         await Assert.CatchAsync<JsonException>(async () =>
             await BDTestJsonHelper.DeserializeAsync(stream, maximumExpandedSize: bytes.Length + 100));
         Assert.That(stream.CanRead, Is.True, "The caller owns the input stream.");
+    }
+
+    [Test]
+    public void Legacy_expansion_has_a_finite_default_budget()
+    {
+        var references = string.Join(",", Enumerable.Repeat("{\"$ref\":\"scenario\"}", 100));
+        var json = $$"""
+            {"$id":"report","Scenarios":[{"$id":"scenario","Output":"{{new string('x', 1024 * 1024)}}"},{{references}}]}
+            """;
+
+        Assert.Throws<JsonException>(() => BDTestJsonHelper.Deserialize(json));
     }
 
     [Test]
