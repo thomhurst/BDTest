@@ -1,7 +1,6 @@
 using System.Diagnostics;
 using System.IO.Compression;
 using System.Xml.Linq;
-using NUnit.Framework;
 
 namespace BDTest.Pipeline.Tests;
 
@@ -10,12 +9,12 @@ public class PackageArtifactVerificationTests
     private string _packageDirectory = null!;
     private string _scriptPath = null!;
 
-    [SetUp]
+    [Before(HookType.Test)]
     public void SetUp()
     {
         _packageDirectory = Path.Combine(Path.GetTempPath(), "BDTest artifact verification", Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(_packageDirectory);
-        var directory = new DirectoryInfo(TestContext.CurrentContext.TestDirectory);
+        var directory = new DirectoryInfo(AppContext.BaseDirectory);
         while (directory != null && !File.Exists(Path.Combine(directory.FullName, "scripts", "Test-PackageArtifacts.ps1")))
         {
             directory = directory.Parent;
@@ -37,7 +36,7 @@ public class PackageArtifactVerificationTests
         CreatePackage("BDTest.Analyzers", ".nupkg");
     }
 
-    [TearDown]
+    [After(HookType.Test)]
     public void TearDown() => Directory.Delete(_packageDirectory, recursive: true);
 
     [Test]
@@ -48,7 +47,7 @@ public class PackageArtifactVerificationTests
         var scripts = Path.Combine(root, "scripts");
         Directory.CreateDirectory(scripts);
         File.Copy(_scriptPath, Path.Combine(scripts, "Test-PackageArtifacts.ps1"));
-        _scriptPath = Path.Combine(scripts, "Test-PackageArtifacts.ps1");
+        var fixtureScriptPath = Path.Combine(scripts, "Test-PackageArtifacts.ps1");
         await File.WriteAllTextAsync(Path.Combine(root, "Shipping.props"), """
             <Project><PropertyGroup>
               <IsPackable Condition="'$(Configuration)' == 'Release'">true</IsPackable>
@@ -73,11 +72,12 @@ public class PackageArtifactVerificationTests
         {
             File.Delete(package);
         }
-        CreatePackage("Custom.Shipping", ".nupkg");
+        CreatePackage("Custom.Shipping", ".nupkg",
+            projectPath: Path.Combine(root, "Example.Tests.Pipeline.ReportGenerator.csproj"));
 
-        var (exitCode, text) = await RunVerifier();
-        Assert.That(exitCode, Is.Zero, text);
-        Assert.That(text, Does.Contain("Verified Custom.Shipping"));
+        var (exitCode, text) = await RunVerifier(fixtureScriptPath);
+        await Assert.That(exitCode).IsZero().Because(text);
+        await Assert.That(text).Contains("Verified Custom.Shipping");
     }
 
     [Test]
@@ -142,8 +142,9 @@ public class PackageArtifactVerificationTests
         await AssertRejected("Missing or duplicate package icon");
     }
 
-    [TestCase("net8.0")]
-    [TestCase(".NETStandard2.0")]
+    [Test]
+    [Arguments("net8.0")]
+    [Arguments(".NETStandard2.0")]
     public async Task Rejects_a_stale_dependency_version(string target)
     {
         UpdateManifest(metadata => metadata.Descendants("group").Single(group => (string?)group.Attribute("targetFramework") == target)
@@ -168,8 +169,9 @@ public class PackageArtifactVerificationTests
         await AssertRejected("expected one group per target");
     }
 
-    [TestCase("Microsoft.NET.Test.Sdk", "18.11.0")]
-    [TestCase("Humanizer.Core", "3.0.10")]
+    [Test]
+    [Arguments("Microsoft.NET.Test.Sdk", "18.11.0")]
+    [Arguments("Humanizer.Core", "3.0.10")]
     public async Task Rejects_an_unexpected_dependency(string id, string version)
     {
         UpdateManifest(metadata => metadata.Element("dependencies")!.Add(
@@ -208,15 +210,15 @@ public class PackageArtifactVerificationTests
     private async Task AssertRejected(params string[] expectedMessages)
     {
         var (exitCode, text) = await RunVerifier();
-        Assert.That(exitCode, Is.Not.Zero, text);
+        await Assert.That(exitCode).IsNotZero().Because(text);
         foreach (var message in expectedMessages)
         {
-            Assert.That(text, Does.Contain(message));
+            await Assert.That(text).Contains(message);
         }
     }
 
-    private Task<(int ExitCode, string Text)> RunVerifier() => RunProcess("pwsh",
-        ["-NoProfile", "-File", _scriptPath, "-PackageDirectory", _packageDirectory], assertSuccess: false);
+    private Task<(int ExitCode, string Text)> RunVerifier(string? scriptPath = null) => RunProcess("pwsh",
+        ["-NoProfile", "-File", scriptPath ?? _scriptPath, "-PackageDirectory", _packageDirectory], assertSuccess: false);
 
     private static async Task<(int ExitCode, string Text)> RunProcess(string command, string[] arguments, bool assertSuccess = true)
     {
@@ -240,18 +242,16 @@ public class PackageArtifactVerificationTests
 
         if (assertSuccess)
         {
-            Assert.That(process.ExitCode, Is.Zero, text);
+            await Assert.That(process.ExitCode).IsZero().Because(text);
         }
         return (process.ExitCode, text);
     }
 
-    private void CreatePackage(string id, string extension, string version = "1.0.0")
+    private void CreatePackage(string id, string extension, string version = "1.0.0", string? projectPath = null)
     {
         File.Delete(PackagePath(id, extension));
         using var archive = ZipFile.Open(PackagePath(id, extension), ZipArchiveMode.Create);
-        var projectPath = id == "Custom.Shipping"
-            ? Path.Combine(Path.GetDirectoryName(Path.GetDirectoryName(_scriptPath))!, "Example.Tests.Pipeline.ReportGenerator.csproj")
-            : Path.Combine(Path.GetDirectoryName(Path.GetDirectoryName(_scriptPath))!, id, $"{id}.csproj");
+        projectPath ??= Path.Combine(Path.GetDirectoryName(Path.GetDirectoryName(_scriptPath))!, id, $"{id}.csproj");
         var project = XDocument.Load(projectPath);
         var targets = project.Descendants().Where(element => element.Name.LocalName is "TargetFramework" or "TargetFrameworks")
             .SelectMany(element => element.Value.Split(';'));

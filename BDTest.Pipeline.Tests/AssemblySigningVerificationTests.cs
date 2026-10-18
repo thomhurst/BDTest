@@ -1,6 +1,5 @@
 using System.Diagnostics;
 using System.Reflection.PortableExecutable;
-using NUnit.Framework;
 
 namespace BDTest.Pipeline.Tests;
 
@@ -10,11 +9,11 @@ public class AssemblySigningVerificationTests
     private string _scriptPath = null!;
     private string _assemblyPath = null!;
 
-    [SetUp]
+    [Before(HookType.Test)]
     public void SetUp()
     {
         _repositoryRoot = Path.Combine(Path.GetTempPath(), "BDTest signing verification", Guid.NewGuid().ToString("N"));
-        var directory = new DirectoryInfo(TestContext.CurrentContext.TestDirectory);
+        var directory = new DirectoryInfo(AppContext.BaseDirectory);
         while (directory != null && !File.Exists(Path.Combine(directory.FullName, "scripts", "Test-AssemblySigning.ps1")))
         {
             directory = directory.Parent;
@@ -38,7 +37,7 @@ public class AssemblySigningVerificationTests
         File.Copy(typeof(AssemblySigningVerificationTests).Assembly.Location, _assemblyPath);
     }
 
-    [TearDown]
+    [After(HookType.Test)]
     public void TearDown() => Directory.Delete(_repositoryRoot, recursive: true);
 
     [Test]
@@ -46,7 +45,7 @@ public class AssemblySigningVerificationTests
     {
         var (exitCode, output) = await Verify();
 
-        Assert.That(exitCode, Is.Zero, output);
+        await Assert.That(exitCode).IsZero().Because(output);
     }
 
     [Test]
@@ -56,8 +55,8 @@ public class AssemblySigningVerificationTests
 
         var (exitCode, output) = await Verify();
 
-        Assert.That(exitCode, Is.Not.Zero);
-        Assert.That(output, Does.Contain("Unexpected assembly name or public key"));
+        await Assert.That(exitCode).IsNotZero();
+        await Assert.That(output).Contains("Unexpected assembly name or public key");
     }
 
     [Test]
@@ -76,8 +75,8 @@ public class AssemblySigningVerificationTests
 
         var (exitCode, output) = await Verify();
 
-        Assert.That(exitCode, Is.Not.Zero);
-        Assert.That(output, Does.Contain("Unexpected strong-name signing flag"));
+        await Assert.That(exitCode).IsNotZero();
+        await Assert.That(output).Contains("Unexpected strong-name signing flag");
     }
 
     private async Task<(int ExitCode, string Output)> Verify()

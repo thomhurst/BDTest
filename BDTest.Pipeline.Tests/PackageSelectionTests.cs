@@ -1,7 +1,6 @@
 using System.Diagnostics;
 using System.Text.Json;
 using BDTest.Pipeline.Modules;
-using NUnit.Framework;
 
 namespace BDTest.Pipeline.Tests;
 
@@ -11,7 +10,7 @@ public class PackageSelectionTests
     {
         get
         {
-            var directory = new DirectoryInfo(TestContext.CurrentContext.TestDirectory);
+            var directory = new DirectoryInfo(AppContext.BaseDirectory);
             while (directory != null && !File.Exists(Path.Combine(directory.FullName, "BDTest.sln")))
             {
                 directory = directory.Parent;
@@ -34,11 +33,11 @@ public class PackageSelectionTests
             }
         }
 
-        Assert.That(selected, Is.EquivalentTo(new[]
+        await Assert.That(selected).IsEquivalentTo(new[]
         {
             "BDTest", "BDTest.Contracts", "BDTest.NUnit", "BDTest.xUnit", "BDTest.MSTest", "BDTest.TUnit",
             "BDTest.Razor.Reports", "BDTest.SourceGenerator", "BDTest.Analyzers"
-        }));
+        });
     }
 
     [Test]
@@ -60,19 +59,19 @@ public class PackageSelectionTests
             await File.WriteAllTextAsync(privateProject,
                 "<Project Sdk=\"Microsoft.NET.Sdk\"><PropertyGroup><TargetFramework>net10.0</TargetFramework></PropertyGroup></Project>");
 
-            Assert.That(bool.Parse(await RunDotNet(PackProjectsModule.CreatePackabilityQuery(shippingProject).Arguments!)), Is.True);
-            Assert.That(bool.Parse(await RunDotNet(PackProjectsModule.CreatePackabilityQuery(privateProject).Arguments!)), Is.False);
+            await Assert.That(bool.Parse(await RunDotNet(PackProjectsModule.CreatePackabilityQuery(shippingProject).Arguments!))).IsTrue();
+            await Assert.That(bool.Parse(await RunDotNet(PackProjectsModule.CreatePackabilityQuery(privateProject).Arguments!))).IsFalse();
             using var shipping = await QueryMetadata(shippingProject);
             using var privateLibrary = await QueryMetadata(privateProject);
-            Assert.Multiple(() =>
+            using (Assert.Multiple())
             {
-                Assert.That(shipping.RootElement.GetProperty("Properties").GetProperty("PackageIcon").GetString(), Is.EqualTo("nuget_icon.png"));
-                Assert.That(privateLibrary.RootElement.GetProperty("Properties").GetProperty("PackageIcon").GetString(), Is.Empty);
-                Assert.That(shipping.RootElement.GetProperty("Items").GetProperty("None").EnumerateArray()
-                    .Any(item => item.TryGetProperty("Pack", out var pack) && pack.GetString() == "true"), Is.True);
-                Assert.That(privateLibrary.RootElement.GetProperty("Items").GetProperty("None").EnumerateArray()
-                    .Any(item => item.TryGetProperty("Pack", out var pack) && pack.GetString() == "true"), Is.False);
-            });
+                await Assert.That(shipping.RootElement.GetProperty("Properties").GetProperty("PackageIcon").GetString()).IsEqualTo("nuget_icon.png");
+                await Assert.That(privateLibrary.RootElement.GetProperty("Properties").GetProperty("PackageIcon").GetString()).IsEmpty();
+                await Assert.That(shipping.RootElement.GetProperty("Items").GetProperty("None").EnumerateArray()
+                    .Any(item => item.TryGetProperty("Pack", out var pack) && pack.GetString() == "true")).IsTrue();
+                await Assert.That(privateLibrary.RootElement.GetProperty("Items").GetProperty("None").EnumerateArray()
+                    .Any(item => item.TryGetProperty("Pack", out var pack) && pack.GetString() == "true")).IsFalse();
+            }
         }
         finally
         {
@@ -80,28 +79,30 @@ public class PackageSelectionTests
         }
     }
 
-    [TestCase("BDTest.SourceGenerator")]
-    [TestCase("BDTest.Analyzers")]
+    [Test]
+    [Arguments("BDTest.SourceGenerator")]
+    [Arguments("BDTest.Analyzers")]
     public async Task Compiler_packages_keep_analyzer_assets_and_disable_symbols(string projectName)
     {
         using var metadata = await QueryMetadata(Path.Combine(RepositoryRoot, projectName, projectName + ".csproj"));
         var properties = metadata.RootElement.GetProperty("Properties");
-        Assert.Multiple(() =>
+        using (Assert.Multiple())
         {
-            Assert.That(properties.GetProperty("TargetFramework").GetString(), Is.EqualTo("netstandard2.0"));
-            Assert.That(properties.GetProperty("IncludeBuildOutput").GetString(), Is.EqualTo("false"));
-            Assert.That(properties.GetProperty("IncludeSymbols").GetString(), Is.EqualTo("false"));
-            Assert.That(properties.GetProperty("PackageIcon").GetString(), Is.EqualTo("nuget_icon.png"));
-            Assert.That(properties.GetProperty("Copyright").GetString(), Is.EqualTo("Copyright © Tom Longhurst"));
-            Assert.That(metadata.RootElement.GetProperty("Items").GetProperty("None").EnumerateArray()
-                .Any(item => item.TryGetProperty("PackagePath", out var path) && path.GetString() == "analyzers/dotnet/cs"), Is.True);
-        });
+            await Assert.That(properties.GetProperty("TargetFramework").GetString()).IsEqualTo("netstandard2.0");
+            await Assert.That(properties.GetProperty("IncludeBuildOutput").GetString()).IsEqualTo("false");
+            await Assert.That(properties.GetProperty("IncludeSymbols").GetString()).IsEqualTo("false");
+            await Assert.That(properties.GetProperty("PackageIcon").GetString()).IsEqualTo("nuget_icon.png");
+            await Assert.That(properties.GetProperty("Copyright").GetString()).IsEqualTo("Copyright © Tom Longhurst");
+            await Assert.That(metadata.RootElement.GetProperty("Items").GetProperty("None").EnumerateArray()
+                .Any(item => item.TryGetProperty("PackagePath", out var path) && path.GetString() == "analyzers/dotnet/cs")).IsTrue();
+        }
     }
 
-    [TestCase("BDTest", "netstandard2.0")]
-    [TestCase("BDTest", "net8.0")]
-    [TestCase("BDTest.Razor.Reports", "net10.0")]
-    [TestCase("BDTest.Contracts", "netstandard2.0")]
+    [Test]
+    [Arguments("BDTest", "netstandard2.0")]
+    [Arguments("BDTest", "net8.0")]
+    [Arguments("BDTest.Razor.Reports", "net10.0")]
+    [Arguments("BDTest.Contracts", "netstandard2.0")]
     public async Task Runtime_packages_initialize_documentation_before_sdk_defaults(string projectName, string target)
     {
         using var metadata = JsonDocument.Parse(await RunDotNet(new[]
@@ -111,12 +112,12 @@ public class PackageSelectionTests
             "-getProperty:DocumentationFile,IncludeSymbols,Copyright"
         }));
         var properties = metadata.RootElement.GetProperty("Properties");
-        Assert.Multiple(() =>
+        using (Assert.Multiple())
         {
-            Assert.That(properties.GetProperty("DocumentationFile").GetString(), Does.EndWith(projectName + ".xml"));
-            Assert.That(properties.GetProperty("IncludeSymbols").GetString(), Is.EqualTo("true"));
-            Assert.That(properties.GetProperty("Copyright").GetString(), Is.EqualTo("Copyright © Tom Longhurst"));
-        });
+            await Assert.That(properties.GetProperty("DocumentationFile").GetString()).EndsWith(projectName + ".xml");
+            await Assert.That(properties.GetProperty("IncludeSymbols").GetString()).IsEqualTo("true");
+            await Assert.That(properties.GetProperty("Copyright").GetString()).IsEqualTo("Copyright © Tom Longhurst");
+        }
     }
 
     private static async Task<JsonDocument> QueryMetadata(string project) => JsonDocument.Parse(await RunDotNet(new[]
@@ -144,7 +145,7 @@ public class PackageSelectionTests
         var error = process.StandardError.ReadToEndAsync();
         await process.WaitForExitAsync();
         var result = await output;
-        Assert.That(process.ExitCode, Is.Zero, result + await error);
+        await Assert.That(process.ExitCode).IsZero().Because(result + await error);
         return result.Trim();
     }
 }

@@ -1,3 +1,4 @@
+using System.Text.Json;
 using ModularPipelines.Context;
 using ModularPipelines.DotNet.Extensions;
 using ModularPipelines.DotNet.Options;
@@ -22,9 +23,14 @@ public class RunUnitTestsModule : Module<List<CommandResult>>
             var resultsDirectory = Path.Combine(context.Git().RootDirectory!.Path, "artifacts", "test-results",
                 Path.GetFileNameWithoutExtension(unitTestProjectFile.Path));
 
-            // This repository runs BDTest.TUnit.Tests via Microsoft.Testing.Platform with dotnet run;
-            // the other test projects use the VSTest-based dotnet test path.
-            if (UsesTUnitRunner(unitTestProjectFile.Path))
+            // Evaluate imports and Release conditions just as the test invocation does.
+            var evaluation = await context.Shell.Command.ExecuteCommandLineTool(
+                CreateRunnerQuery(unitTestProjectFile.Path), new CommandExecutionOptions
+                {
+                    WorkingDirectory = context.Git().RootDirectory!.Path,
+                    ThrowOnNonZeroExitCode = true
+                }, cancellationToken);
+            if (UsesTUnitRunner(evaluation.StandardOutput))
             {
                 results.Add(await context.DotNet().Run(new DotNetRunOptions
                 {
@@ -62,6 +68,17 @@ public class RunUnitTestsModule : Module<List<CommandResult>>
         return results;
     }
 
-    public static bool UsesTUnitRunner(string projectPath) =>
-        Path.GetFileName(projectPath).Equals("BDTest.TUnit.Tests.csproj", StringComparison.OrdinalIgnoreCase);
+    public static GenericCommandLineToolOptions CreateRunnerQuery(string projectPath) => new("dotnet")
+    {
+        Arguments = ["msbuild", projectPath, "-nologo", "-property:Configuration=Release", "-getItem:PackageReference"]
+    };
+
+    public static bool UsesTUnitRunner(string evaluatedProject)
+    {
+        using var evaluation = JsonDocument.Parse(evaluatedProject);
+        return evaluation.RootElement.GetProperty("Items").GetProperty("PackageReference")
+            .EnumerateArray()
+            .Any(package => string.Equals(package.GetProperty("Identity").GetString(), "TUnit",
+                StringComparison.OrdinalIgnoreCase));
+    }
 }
