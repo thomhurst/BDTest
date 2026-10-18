@@ -121,6 +121,7 @@
                         <tr>
                             <td colspan="6" class="hiddenRow">
                                 <div class="accordion-body collapse" id="step-@step.Guid-expanded">
+                                    @Html.Raw(BDTest.Helpers.StepArgumentHtmlHelper.GetHtml(step.Arguments))
                                     @if (!string.IsNullOrEmpty(step.Output))
                                     {
                                         <div class="container" style="overflow-x: auto;">
@@ -202,6 +203,6 @@
 {
     private bool IsExpandable(Step step)
     {
-        return !string.IsNullOrEmpty(step.Output) || step.Exception != null;
+        return !string.IsNullOrEmpty(step.Output) || step.Exception != null || step.Arguments?.Count > 0;
     }
 }

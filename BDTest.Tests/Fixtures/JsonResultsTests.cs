@@ -64,7 +64,7 @@ public class JsonResultsTests : NUnitBDTestBase<MyTestContext>
 
         var comparisonResult = compareLogic.Compare(inMemoryScenario, deserializedScenario);
             
-        Assert.That(comparisonResult.AreEqual, Is.True);
+        Assert.That(comparisonResult.AreEqual, Is.True, comparisonResult.DifferencesString);
     }
         
     [Test]

@@ -171,3 +171,44 @@ Rules:
 ## Scenario outline placeholders
 
 In a [scenario outline](scenario-outlines.md), `<Name>` placeholders in step text are replaced with the example row's property values.
+
+## Tables and doc strings
+
+Use `StepTable` and `StepDocString` from `BDTest.Test` for structured step arguments. Both the hosted Razor report and the standalone HTML report show tables and multiline code blocks with HTML-encoded values.
+
+```csharp
+using BDTest.Test;
+
+private StepTable Users => StepTable.From(new[]
+{
+    new { Name = "Alice", Age = 30 },
+    new { Name = "Bob", Age = 40 }
+});
+
+private StepDocString Payload => new StepDocString("{\n  \"active\": true\n}", "application/json");
+
+// With source-generated readers for these member properties:
+await Given(() => TheseUsersExist(Users))
+    .When(() => Post(Payload))
+    .Then(CheckResponse);
+```
+
+`StepTable.From<T>(rows)` snapshots public readable instance properties in ordinal name order, excluding indexers. `StepTable.From(new[] { "Name", "Age" }, new object[] { "Alice", 30 })` supplies explicit columns and rows. Every row must match the header count. Cells use invariant formatting; null cells and headers become empty strings. Headers and rows are immutable snapshots, so later changes to the input do not alter the report. Create a new table to capture changed values.
+
+Automatic capture follows the [generator's argument rules](#which-arguments-are-captured-automatically). Use a member property as above, or `.WithArgs(() => table)` for a captured local or factory expression. BDTest does not evaluate arbitrary factory calls from lambda source text. Structured arguments bypass custom string converters: inline text receives `(table: 2 rows)`, `(application/json)` or `(doc string)`, and the full value is stored in `Step.Arguments`.
+
+To keep an existing step method signature, attach report values to the most recent step:
+
+```csharp
+await Given(() => TheseUsersExist(users))
+    .WithTable(() => StepTable.From(users))
+    .When(() => Post(json))
+    .WithDocString(() => new StepDocString(json, "application/json"))
+    .Then(CheckResponse);
+```
+
+`WithTable` and `WithDocString` also accept an already constructed value. Multiple attachments are allowed. Lazy readers run after before-step hooks and skip checks, once per executed attempt. They are never called while building, inspecting or reporting an unexecuted chain. Retries refresh captured arguments; outline rows and sibling chains keep independent results. Reader failures become step diagnostics without failing the step.
+
+A nonempty `WithStepText` override still bypasses inline argument readers, including automatic structured arguments. Use explicit `WithTable` or `WithDocString` attachments with an override; those readers still run. Outline placeholders affect inline text only; structured content is preserved verbatim.
+
+Tables initially display 20 rows. **Show all** expands the remaining rows without discarding data. Doc strings preserve whitespace and carry an encoded `data-content-type` hint on the code element; the report does not load a syntax-highlighting service. Structured arguments are included in [JSON exports](../reports/json-data.md) and report uploads.

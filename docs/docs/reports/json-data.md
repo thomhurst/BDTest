@@ -69,6 +69,23 @@ Both readers accept reports written by older BDTest versions with Newtonsoft.Jso
 - Step, scenario and attempt `TimeTaken` values use the `d.hh:mm:ss:fffffff` format. Nullable timeouts and the timer's `ElapsedTime` use the standard invariant `TimeSpan` format.
 - Shared steps, metadata and example values are written as independent values. Do not depend on object identity after deserializing. Outline rows identify their parent through `OutlineId`.
 
+### Structured step arguments
+
+`Step.Arguments` is an `IReadOnlyList<StepArgument>` containing [tables and doc strings](../writing-tests/step-text.md#tables-and-doc-strings) captured for the final execution attempt. Older reports without this field load with an empty list. Outline example steps retain their own argument values.
+
+The source-generated `BDTestJsonContext` registers `StepArgument`, `StepTable` and `StepDocString`. Each argument has a `$type` discriminator:
+
+```json
+{
+  "Arguments": [
+    { "$type": "table", "Headers": ["Name"], "Rows": [["Alice"], ["Bob"]] },
+    { "$type": "docString", "Content": "{\n  \"active\": true\n}", "ContentType": "application/json" }
+  ]
+}
+```
+
+Table cells are strings, with null cells normalized to empty strings when creating a table. `ContentType` is optional. HTML encoding occurs during rendering; JSON preserves the complete values, including rows hidden by the HTML preview. The same contract is used for report uploads.
+
 ## Using System.Text.Json directly
 
 `BDTestJsonContext` provides source-generated metadata for the report types. Use its `JsonTypeInfo` properties when calling `System.Text.Json` yourself. Historical reports with references must go through the BDTest readers above. The serializer does not use global Newtonsoft settings or your host's MVC JSON options.
