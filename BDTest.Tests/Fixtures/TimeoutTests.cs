@@ -8,6 +8,12 @@ namespace BDTest.Tests.Fixtures;
 [FixtureLifeCycle(LifeCycle.InstancePerTestCase)]
 public class TimeoutTests : BDTestBase
 {
+    [SetUp]
+    public void BindMetadata() => BeginTest(TestContext.CurrentContext.Test.ID, global::NUnit.Framework.Internal.TestExecutionContext.CurrentContext.CurrentTest.Method.MethodInfo);
+
+    [TearDown]
+    public void FinishExecution() => EndTest();
+
     private readonly string _executionId = Guid.NewGuid().ToString();
     protected override string BDTestExecutionId => _executionId;
     private static readonly TimeSpan Timeout = TimeSpan.FromMilliseconds(150);

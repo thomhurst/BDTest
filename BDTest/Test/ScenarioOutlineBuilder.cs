@@ -3,7 +3,6 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.ExceptionServices;
 using BDTest.Exceptions;
-using BDTest.Extensions;
 using BDTest.Helpers;
 using BDTest.Output;
 
@@ -42,14 +41,14 @@ public sealed class ScenarioOutlineBuilder<TExample> : BuildableTest
         Guid = System.Guid.NewGuid().ToString("N");
         TestId = testId;
         BdTestBase = testBase;
+        TestMetadata = testBase.TestMetadata;
         CallerMember = callerMember;
         CallerFile = callerFile;
         ReportId = Run.ReportId;
         StoryText = StoryTextHelper.GetStoryText(testBase);
         ScenarioText = new ScenarioText(text);
-        var testMethod = this.GetTestMethod();
-        CustomTestInformation = TestInformationAttributeHelper.GetTestInformationAttributes(testMethod);
-        Tags = TagHelper.GetTags(this.GetTestClass(), testMethod);
+        CustomTestInformation = TestMetadata.CopyInformation();
+        Tags = TestMetadata.CopyTags();
         Run.Store.RegisterPending(this);
     }
 

@@ -13,14 +13,14 @@ dotnet add package BDTest.MSTest
 
 ## Writing tests
 
-Inherit from `MSTestBDTestBase<TContext>` and mark the class with `[TestClass]`:
+Inherit from `MSTestBDTestBase<TContext>` and mark the class with `[BDTestClass]`:
 
 ```csharp
 using BDTest.Attributes;
 using BDTest.MSTest;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-[TestClass]
+[BDTestClass]
 [Story(AsA = "shopper", IWant = "to add items to my basket", SoThat = "I can buy them")]
 public class BasketTests : MSTestBDTestBase<BasketContext>
 {
@@ -61,3 +61,9 @@ public class BDTestReports
     }
 }
 ```
+
+## Migrating method metadata
+
+Replace `[TestClass]` with `[BDTestClass]` on each concrete class that derives from `MSTestBDTestBase<TContext>`. MSTest does not inherit class attributes from the adapter base. `BDTestClassAttribute` wraps the original `TestMethodAttribute.ExecuteAsync` and supplies `ITestMethod.MethodInfo` before initialization, including data rows and overloads. Custom test-method attributes still execute through their original implementation. A plain `[TestClass]` on a BDTest fixture now produces a migration error during initialization.
+
+If you already derive your own class attribute from `TestClassAttribute`, delegate its `GetTestMethodAttribute` result to `new BDTestClassAttribute().GetTestMethodAttribute(original)` so both execution wrappers run.

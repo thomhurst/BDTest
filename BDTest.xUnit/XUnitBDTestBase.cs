@@ -3,6 +3,7 @@ using BDTest.Settings;
 using BDTest.Test;
 using Xunit;
 using Xunit.Sdk;
+using Xunit.v3;
 
 namespace BDTest.xUnit;
 
@@ -37,7 +38,7 @@ public abstract class XUnitBDTestBase<TContext> : AbstractContextBDTestBase<TCon
     private void InitializeExecution()
     {
         if (_executionStarted) return;
-        BeginTest(_frameworkTestId);
+        BeginTest(_frameworkTestId, (TestContext.Current.TestMethod as IXunitTestMethod)?.Method);
         _constructorOutput.Bind(TestRun, BDTestExecutionId);
         _executionStarted = true;
     }

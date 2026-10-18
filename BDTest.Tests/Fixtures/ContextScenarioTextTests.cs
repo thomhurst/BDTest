@@ -7,23 +7,21 @@ namespace BDTest.Tests.Fixtures;
 
 public class ContextScenarioTextTests : NUnitBDTestBase<MyTestContext>
 {
-    private const string MissingScenarioText = "No Scenario Text found (Use attribute [ScenarioText(\"...\")] on your tests";
-
     [TestCase(false)]
     [TestCase(true)]
     [MethodImpl(MethodImplOptions.NoInlining)]
-    public async Task MissingAttributeReturnsMissingText(bool readBeforeExecution)
+    public async Task MissingAttributeReturnsHumanizedTestName(bool readBeforeExecution)
     {
-        await AssertContextScenarioText(MissingScenarioText, readBeforeExecution);
+        await AssertContextScenarioText("Missing attribute returns humanized test name", readBeforeExecution);
     }
 
     [TestCase(false)]
     [TestCase(true)]
     [ScenarioText(null)]
     [MethodImpl(MethodImplOptions.NoInlining)]
-    public async Task NullAttributeTextReturnsMissingText(bool readBeforeExecution)
+    public async Task NullAttributeTextReturnsHumanizedTestName(bool readBeforeExecution)
     {
-        await AssertContextScenarioText(MissingScenarioText, readBeforeExecution);
+        await AssertContextScenarioText("Null attribute text returns humanized test name", readBeforeExecution);
     }
 
     [TestCase(false)]

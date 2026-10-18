@@ -20,6 +20,7 @@ public class ExceptionClassificationTests : BDTestBase
     [TearDown]
     public void DisposeRun()
     {
+        EndTest();
         _run?.Dispose();
         _run = null;
     }
@@ -108,6 +109,7 @@ public class ExceptionClassificationTests : BDTestBase
         _options.SuccessExceptionTypes.Add(typeof(SuccessSignal));
         _options.SkipExceptionTypes.Add(typeof(SkipSignal));
         _options.InconclusiveExceptionTypes.Add(typeof(InconclusiveSignal));
+        BeginTest(TestContext.CurrentContext.Test.ID, global::NUnit.Framework.Internal.TestExecutionContext.CurrentContext.CurrentTest.Method.MethodInfo);
         var exception = Wrap(CreateException(status, subclass: true), Wrapper.Nested);
         var builder = When(() => Throw(exception)).Then(() => NoOp());
 

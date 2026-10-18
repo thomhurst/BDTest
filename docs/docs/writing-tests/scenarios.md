@@ -20,7 +20,7 @@ Each step is a delegate, usually a lambda that calls one method. BDTest runs the
 
 ## Two ways to start
 
-**Inherit a base class** (recommended). Use a [framework adapter](../frameworks/overview.md) such as `TUnitBDTestBase<TContext>`, or `BDTestBase` with no context:
+**Inherit a base class** (recommended). Use a [framework adapter](../frameworks/overview.md) such as `TUnitBDTestBase<TContext>`. A standalone `BDTestBase` has no runner method identity; it uses caller text and does not discover method attributes:
 
 ```csharp
 public class MyTests : BDTestBase

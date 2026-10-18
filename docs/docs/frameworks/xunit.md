@@ -128,3 +128,5 @@ public sealed class BDTestReports : IAsyncDisposable
 2. Remove constructors that only passed `ITestOutputHelper` to `base(...)`. If you still need the helper, inject `Xunit.ITestOutputHelper` (not `Xunit.Abstractions.ITestOutputHelper`) in your derived class.
 3. Change existing `DisposeAsync()` and `InitializeAsync()` implementations to overrides; await `base.DisposeAsync()` in teardown.
 4. Remove workarounds for runtime skips: BDTest skip rules now produce skipped xUnit results instead of throwing `NotSupportedException`.
+
+The adapter supplies the runner's exact test method to `BeginTest(id, methodInfo)`. Scenario text, information, tags and retry attributes use cached method metadata, including when a helper constructs the scenario after an await. See [custom adapter migration](custom-adapters.md#method-identity-and-migration).

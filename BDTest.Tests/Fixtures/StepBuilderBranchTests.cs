@@ -7,6 +7,12 @@ namespace BDTest.Tests.Fixtures;
 [NonParallelizable]
 public class StepBuilderBranchTests : BDTestBase
 {
+    [SetUp]
+    public void BindMetadata() => BeginTest(TestContext.CurrentContext.Test.ID, global::NUnit.Framework.Internal.TestExecutionContext.CurrentContext.CurrentTest.Method.MethodInfo);
+
+    [TearDown]
+    public void FinishExecution() => EndTest();
+
     [Test]
     public async Task Branches_execute_only_their_own_steps_and_are_reported_separately()
     {

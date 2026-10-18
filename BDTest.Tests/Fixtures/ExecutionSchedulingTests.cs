@@ -6,6 +6,12 @@ namespace BDTest.Tests.Fixtures;
 [FixtureLifeCycle(LifeCycle.InstancePerTestCase)]
 public class ExecutionSchedulingTests : BDTestBase
 {
+    [SetUp]
+    public void BindMetadata() => BeginTest(TestContext.CurrentContext.Test.ID, global::NUnit.Framework.Internal.TestExecutionContext.CurrentContext.CurrentTest.Method.MethodInfo);
+
+    [TearDown]
+    public void FinishExecution() => EndTest();
+
     private readonly string _executionId = Guid.NewGuid().ToString();
     protected override string BDTestExecutionId => _executionId;
     private SynchronizationContext _callerContext;

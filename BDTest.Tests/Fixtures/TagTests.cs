@@ -14,6 +14,12 @@ namespace BDTest.Tests.Fixtures;
 public class TagTests : TaggedStoryBase
 {
     [SetUp]
+    public void BindMetadata() => BeginTest(TestContext.CurrentContext.Test.ID, global::NUnit.Framework.Internal.TestExecutionContext.CurrentContext.CurrentTest.Method.MethodInfo);
+
+    [TearDown]
+    public void FinishExecution() => EndTest();
+
+    [SetUp]
     public void Reset() => TestResetHelper.ResetData();
 
     [Test]

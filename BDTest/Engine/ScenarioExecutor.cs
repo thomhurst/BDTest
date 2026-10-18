@@ -137,8 +137,7 @@ internal class ScenarioExecutor : IScenarioExecutor
                 return;
             }
 
-            var bdTestRetryAttribute = RetryAttributeHelper.GetBDTestRetryAttribute(scenario);
-            if (bdTestRetryAttribute != null && scenario.RetryCount < bdTestRetryAttribute.Count)
+            if (scenario.TestMetadata?.RetryCount is int retryCount && scenario.RetryCount < retryCount)
             {
                 scenario.ShouldRetry = true;
                 return;

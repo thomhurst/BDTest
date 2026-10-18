@@ -2,6 +2,7 @@ using BDTest.Settings;
 using BDTest.Test;
 using TUnit.Core;
 using TUnit.Core.Exceptions;
+using TUnit.Core.Extensions;
 using TUnitTestContext = TUnit.Core.TestContext;
 
 namespace BDTest.TUnit;
@@ -27,7 +28,8 @@ public abstract class TUnitBDTestBase<TContext> : AbstractContextBDTestBase<TCon
 
     public void Setup()
     {
-        BeginTest(TUnitTestContext.Current?.Id ?? Guid.NewGuid().ToString("N"));
+        BeginTest(TUnitTestContext.Current?.Id ?? Guid.NewGuid().ToString("N"),
+            TUnitTestContext.Current?.Metadata.TestDetails.MethodMetadata.GetReflectionInfo());
         // TUnit isolates hook execution contexts unless their AsyncLocal values are exported.
         TUnitTestContext.Current?.AddAsyncLocalValues();
     }

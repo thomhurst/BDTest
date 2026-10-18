@@ -1,12 +1,15 @@
 using BDTest.Attributes;
 using BDTest.Constants;
 using BDTest.Output;
+using BDTest.Metadata;
 using System.Text.Json.Serialization;
 
 namespace BDTest.Test;
 
 public class Scenario
 {
+    [JsonIgnore] internal TestMethodMetadata TestMetadata { get; private set; }
+
     /// <summary>Gets the owning run, or null for a deserialized report.</summary>
     [JsonIgnore] public BDTestRun Run { get; private set; }
 
@@ -61,6 +64,7 @@ public class Scenario
         Dictionary<string, string> exampleValues = null)
     {
         Run = testDetails.Run;
+        TestMetadata = outline?.TestMetadata ?? testDetails.TestMetadata;
         Run.ThrowIfDisposed();
         ReportId = Run.ReportId;
         Timeout = testDetails.ScenarioTimeout;

@@ -18,5 +18,6 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="..\TestUtilities\AdapterConformanceTests.cs" Link="Conformance\AdapterConformanceTests.cs" />
+    <Compile Include="..\TestUtilities\MethodIdentityContract.cs" Link="Helpers\MethodIdentityContract.cs" />
   </ItemGroup>
 </Project>

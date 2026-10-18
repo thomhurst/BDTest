@@ -7,7 +7,7 @@ namespace BDTest.MSTest.Tests;
 
 // These tests deliberately reach the runner as skips. Test-SkipOutcomes.ps1 checks
 // the TRX outcomes, while the finally block checks BDTest's own recorded statuses.
-[TestClass]
+[BDTestClass]
 [BDTestRetry(2)]
 public class SkipOutcomeTests : MSTestBDTestBase<object>
 {

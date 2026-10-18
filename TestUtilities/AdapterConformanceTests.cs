@@ -22,7 +22,7 @@ namespace BDTest.Adapters.Conformance;
 #if BDTEST_NUNIT
 [global::NUnit.Framework.FixtureLifeCycle(global::NUnit.Framework.LifeCycle.InstancePerTestCase)]
 #elif BDTEST_MSTEST
-[Microsoft.VisualStudio.TestTools.UnitTesting.TestClass]
+[global::BDTest.MSTest.BDTestClass]
 #endif
 public class AdapterConformanceTests : Adapter
 {
