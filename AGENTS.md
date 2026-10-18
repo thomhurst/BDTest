@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-BDTest is a code-only BDD testing and reporting framework for .NET (an alternative to SpecFlow, no Gherkin or generated code). Tests are written as `Given(...).When(...).Then(...).BDTestAsync()` chains; step/scenario/story text comes from `[StepText]`, `[ScenarioText]`, `[Story]` attributes or is humanized from method names. Usage docs live in the GitHub wiki: https://github.com/thomhurst/BDTest/wiki
+BDTest is a code-only BDD testing and reporting framework for .NET (an alternative to SpecFlow, no Gherkin or generated code). Tests are written as `Given(...).When(...).Then(...).BDTestAsync()` chains; step/scenario/story text comes from `[StepText]`, `[ScenarioText]`, `[Story]` attributes or is humanized from method names. Usage docs live in the Docusaurus site under `docs/` (published to https://thomhurst.github.io/BDTest/).
 
 ## Commands
 
@@ -20,6 +20,10 @@ dotnet test BDTest.Tests/BDTest.Tests.csproj --filter "FullyQualifiedName~SomeTe
 # TUnit test project runs on Microsoft.Testing.Platform — use dotnet run, not dotnet test
 dotnet run --project BDTest.TUnit.Tests
 dotnet run --project BDTest.TUnit.Tests -- --treenode-filter "/*/*/TUnitScenarioTests/*"
+
+# Documentation site (Docusaurus, Node 24)
+cd docs && npm ci && npm run build   # build fails on broken links
+cd docs && npm start                 # local preview
 
 # Full CI pipeline (tests, version, pack, publish) — ModularPipelines
 cd BDTest.Pipeline && dotnet run -c Release
@@ -41,7 +45,7 @@ cd BDTest.Pipeline && dotnet run -c Release
 **Framework adapters** (`BDTest.NUnit`, `BDTest.xUnit`, `BDTest.MSTest`, `BDTest.TUnit`): each is one thin base class (e.g. `TUnitBDTestBase<TContext>`) deriving from `AbstractContextBDTestBase<TContext>`. Each one:
 1. Supplies `BDTestExecutionId` from the framework's test context.
 2. Registers framework-specific skip/ignore/success exceptions into `BDTestSettings.CustomExceptionSettings`.
-3. Sets `TestOutputData.FrameworkExecutionId` before each test, and calls `RemoveContext()` / `MarkTestAsComplete()` after.
+3. Calls `BeginTest(frameworkTestId)` before async setup and `EndTest()` after the test. xUnit buffers constructor output and binds the execution during initialization. Existing lifecycle overrides remain supported as compatibility shims.
 
 Core uses `InternalsVisibleTo` for `BDTest.NUnit`, `BDTest.xUnit`, `BDTest.TUnit`, and `BDTest.Tests`, with the public key from `StrongNameKeyPair.snk`. A new adapter that needs internals must be added to `BDTest/BDTest.csproj` and must also be signed.
 
@@ -63,4 +67,5 @@ Core uses `InternalsVisibleTo` for `BDTest.NUnit`, `BDTest.xUnit`, `BDTest.TUnit
 - `Directory.Build.props` sets `LangVersion=latest` and `ImplicitUsings=enable` for all projects.
 - Nullable analysis and warnings-as-errors currently apply to `BDTest.Pipeline` and `BDTest.Pipeline.Tests`; see `BUILDING.md` for the rollout plan.
 - Package metadata is generated from csproj properties and `PackageReference`s. Shared metadata, the packed icon, and SourceLink/symbol settings live in `Directory.Build.props`; each package supplies its ID, title, description, and tags. Preserve each project's target framework.
+- Keep the docs in sync with the library. Any change to how BDTest is used (public API, attributes, settings, adapter behavior, report formats, report server options or endpoints, package names or targets) must update the matching pages in `docs/docs/` in the same PR. Add new pages to `docs/sidebars.js`. Run `npm run build` in `docs/` to check links. `.github/workflows/docs.yml` builds the site on PRs and deploys it to GitHub Pages from `main`.
 - Dependency updates arrive via Renovate/Dependabot PRs and are auto-merged by workflow.

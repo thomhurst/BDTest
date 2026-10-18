@@ -1,3 +1,8 @@
+---
+title: Migrating to delegate steps
+description: Step builders now take delegates instead of expression trees. What changes for helpers, step text and arguments.
+---
+
 # Migrating to delegate steps
 
 This is a major-version API change. `Given`, `When`, `Then`, `And`, and `But` now accept delegates instead of expression trees. Existing simple step lambdas continue to compile. Helpers returning `Expression<Action>` or `Expression<Func<Task>>` must return `Action` or `Func<Task>` instead. The public expression-based `StepTextHelper.GetStepText` overloads have been removed; use the overload taking a selected `MethodInfo` and lazy argument readers if calling that helper directly.
@@ -20,7 +25,7 @@ The cancellation token retains the existing timeout behavior: steps receive a to
 
 ## Names, attributes, and arguments
 
-Install the optional [BDTest.SourceGenerator package](compiler-step-metadata.md) directly in every project containing step calls. For simple method calls, its metadata preserves humanized names, `[StepText]`, inherited skip attributes (including custom `SkipStepIf` attributes), and supported argument values. Caller file, line, and lambda text identify the call site. Continuation builders preserve these compiler values too. Method groups retain their selected method and attributes without the generator.
+Install the optional [BDTest.SourceGenerator package](../advanced/source-generator.md) directly in every project containing step calls. For simple method calls, its metadata preserves humanized names, `[StepText]`, inherited skip attributes (including custom `SkipStepIf` attributes), and supported argument values. Caller file, line, and lambda text identify the call site. Continuation builders preserve these compiler values too. Method groups retain their selected method and attributes without the generator.
 
 Automatic argument capture supports constants and field/property paths rooted in `this` or static state. Captured locals, method calls, allocations, and other unsupported argument expressions need explicit readers:
 

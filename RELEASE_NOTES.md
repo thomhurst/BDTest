@@ -37,6 +37,6 @@ blocking can deadlock a single-threaded synchronization context. Tests that reli
 on the old thread-pool scheduling must schedule that work explicitly. Use the
 fixture's `Context` to share state between steps, rather than mutations to `AsyncLocal` values.
 
-See the [wiki migration guide](https://github.com/thomhurst/BDTest/wiki/Migrating-to-async-only-execution)
+See the [migration guide](https://thomhurst.github.io/BDTest/docs/migration/async-only)
 for outlines and context helpers. This breaking change is tracked by
 [#801](https://github.com/thomhurst/BDTest/issues/801). No analyzer or code fix is included.

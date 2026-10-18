@@ -1,3 +1,9 @@
+---
+title: Compiler step metadata
+description: The optional BDTest.SourceGenerator package that records step call-site metadata at compile time.
+sidebar_label: Source generator
+---
+
 # Compiler step metadata
 
 `BDTest.SourceGenerator` is an optional incremental source generator. It records method identity and lazy argument descriptions for `Given`, `When`, `Then`, `And`, and `But` calls bound to BDTest builders. It targets `netstandard2.0`, uses Roslyn 4.8 APIs, and requires a C# 10 or newer compiler (Roslyn 4.8 or newer; .NET SDK 8 or newer). It does not require preview features, interceptors, or partial test classes. Delegate builders require a C# 13 or newer compiler (.NET SDK 9 or newer) so overload priority selects Task for ordinary async lambdas. The generator itself uses Roslyn 4.8 APIs.
@@ -14,7 +20,7 @@ Install matching versions of the core and generator packages directly in each pr
 
 The generator DLL ships under `analyzers/dotnet/cs`. It has no runtime Roslyn dependency. It is intentionally a separate package; adapters do not install it transitively. The metadata contract lives in the `netstandard2.0` core, in `BDTest.Metadata`.
 
-Builders consume this metadata while retaining plain delegates for execution. Method identity supplies humanized names, `[StepText]` and skip attributes. Supported arguments are read immediately before a reached step runs, after hooks and skip checks. Retries read current state again. Unreached steps retain placeholders or caller text and never evaluate readers. Rendering errors appear as `<error: ExceptionType>` plus a step diagnostic; they do not change the step outcome. See [delegate migration](delegate-step-migration.md) for explicit argument and fallback behavior.
+Builders consume this metadata while retaining plain delegates for execution. Method identity supplies humanized names, `[StepText]` and skip attributes. Supported arguments are read immediately before a reached step runs, after hooks and skip checks. Retries read current state again. Unreached steps retain placeholders or caller text and never evaluate readers. Rendering errors appear as `<error: ExceptionType>` plus a step diagnostic; they do not change the step outcome. See [delegate migration](../migration/delegate-steps.md) for explicit argument and fallback behavior.
 
 ## Runtime contract for builders
 
