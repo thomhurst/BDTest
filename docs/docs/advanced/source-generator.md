@@ -1,3 +1,9 @@
+---
+title: Compiler step metadata
+description: The optional BDTest.SourceGenerator package that records step call-site metadata at compile time.
+sidebar_label: Source generator
+---
+
 # Compiler step metadata
 
 `BDTest.SourceGenerator` is an optional incremental source generator. It records method identity and lazy argument descriptions for `Given`, `When`, `Then`, `And`, and `But` calls bound to BDTest builders. It targets `netstandard2.0`, uses Roslyn 4.8 APIs, and requires a C# 10 or newer compiler (Roslyn 4.8 or newer; .NET SDK 8 or newer). It does not require preview features, interceptors, partial test classes, or changes to existing expression APIs.

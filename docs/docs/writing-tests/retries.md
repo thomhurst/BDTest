@@ -1,0 +1,87 @@
+---
+title: Retries
+description: Retry failing scenarios with [BDTestRetry] or global retry rules, and reset state between attempts.
+---
+
+# Retries
+
+BDTest can retry a scenario that fails. Retries happen inside one execution: the report keeps one entry per scenario, together with the history of every attempt.
+
+Only failures are retried. Passed, skipped and inconclusive results, and exceptions registered as success, are never retried.
+
+## `[BDTestRetry]`
+
+Apply `[BDTestRetry(count)]` to a test method, a test class or the whole assembly. `count` is the number of retries after the first attempt.
+
+```csharp
+[Test]
+[BDTestRetry(2)] // up to 3 attempts in total
+public async Task CallsAFlakyService()
+{
+    await When(() => Api.CallTheService())
+        .Then(() => Assertions.TheCallSucceeded())
+        .BDTestAsync();
+}
+```
+
+```csharp
+[assembly: BDTest.Attributes.BDTestRetry(1)]
+```
+
+BDTest looks for the attribute on the scenario method first, then on the step frames, the story class, the calling frame and finally the assembly. The closest attribute wins, so `[BDTestRetry(0)]` on a method turns off a class or assembly default.
+
+## Global retry rules
+
+Retry based on the exception, for example for known transient errors:
+
+```csharp
+BDTestSettings.GlobalRetryTestRules.Add(
+    exception => exception is HttpRequestException,
+    retryLimit: 3);
+```
+
+When several rules match, the largest `retryLimit` applies. A scenario that a rule no longer allows to retry can still use a `[BDTestRetry]` attribute.
+
+## What happens between attempts
+
+Before each retry, BDTest:
+
+1. resets the scenario and its steps to `NotRun`,
+2. runs methods on the test class marked `[BDTestRetryTearDown]`,
+3. calls the test class's `OnBeforeRetry()` override,
+4. creates a new `Context` (and runs [`ContextAmendment`](test-context.md#amending-a-new-context) again),
+5. runs methods marked `[BDTestRetrySetUp]`,
+6. runs the steps again.
+
+```csharp
+public class OrderTests : TUnitBDTestBase<OrderContext>
+{
+    [BDTestRetryTearDown]
+    public async Task CleanUpPartialOrder() => await Orders.DeleteAsync(Context.OrderId);
+
+    [BDTestRetrySetUp]
+    public void RecreateClient() => Context.Client = new HttpClient();
+
+    public override Task OnBeforeRetry()
+    {
+        Console.WriteLine("Retrying...");
+        return Task.CompletedTask;
+    }
+}
+```
+
+An exception in any retry hook is wrapped in `ErrorOccurredDuringRetryActionException` and fails the scenario. [Step hooks](step-hooks.md) run again on every attempt. Each attempt also gets a fresh [scenario timeout](timeouts.md) budget.
+
+## Retry history
+
+| Member | Description |
+| --- | --- |
+| `Scenario.RetryCount` | Number of retries performed. |
+| `Scenario.Attempts` | Every completed attempt in order, including the first and the last. |
+| `Step.IsRetry` | Whether the step ran as part of a retry. |
+
+Each `ScenarioAttempt` has a one-based `Number`, `Status`, `Exception` (type, message and stack trace), `StartTime`, `EndTime` and `TimeTaken`. `Scenario.Status`, `Steps` and `TimeTaken` describe the final attempt.
+
+JSON reports include the history, and older reports load with an empty history. Both the HTML report and the report server show a **Retry history** section for retried scenarios, so a failure stays visible after a passing retry.
+
+With NUnit, if a retried scenario finally passes, the adapter marks the NUnit result as passed. TUnit's own `[Retry]` attribute retries the whole test method instead; use either, not both.

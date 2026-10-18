@@ -4,7 +4,7 @@ The sample host uses Microsoft Identity Web to sign users in with Microsoft Entr
 Administrator operations require both an authenticated user and the `BDTest.Admin` app role.
 Setting a cookie named `admin` does not grant access.
 
-Report reads require sign-in, and uploads require the separate `ReportUpload:ApiKey`.
+Report reads require sign-in, and uploads require the separate `BDTest:UploadApiKey`.
 See the [report host security setup](../README.md#securing-a-report-server) for upload configuration.
 
 Configure the `AzureAd` section for your app registration, alongside the existing

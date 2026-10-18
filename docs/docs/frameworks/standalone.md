@@ -1,0 +1,50 @@
+---
+title: Standalone
+description: Use BDTest without a framework adapter through BDTestBase, BDTestBuilder and WithContext.
+---
+
+# Standalone
+
+The core `BDTest` package works without an adapter. Use it with a framework that has no adapter, in a console app, or when you only want the builder syntax.
+
+```bash
+dotnet add package BDTest
+```
+
+## `BDTestBase`
+
+Inherit `BDTestBase` for the `Given` / `When` / `Then` methods without a context:
+
+```csharp
+public class SmokeTests : BDTestBase
+{
+    public async Task HomePageLoads()
+    {
+        await When(() => Browser.OpenTheHomePage())
+            .Then(() => Browser.TheTitleIs("Welcome"))
+            .BDTestAsync();
+    }
+}
+```
+
+Combine it with [`WithContext<T>`](../writing-tests/test-context.md#using-withcontext) for per-test state.
+
+## `BDTestBuilder`
+
+`BDTestBuilder` is a `BDTestBase` that you create instead of inheriting. Each builder gets its own execution ID when it is constructed, so output written from async setup or `Task.Run` before the scenario uses the same ID as the scenario. **Create a new builder for each test.**
+
+```csharp
+var scenario = await new BDTestBuilder()
+    .Given(() => Steps.Prepare())
+    .When(() => Steps.Act())
+    .Then(() => Steps.Verify())
+    .BDTestAsync();
+
+Console.WriteLine(scenario.Status);
+```
+
+## Things to know
+
+- No framework exceptions are registered. Register your framework's success, skip and inconclusive exceptions yourself; see [Exception classification](../configuration/exceptions.md).
+- A whole-scenario skip does not throw. Inspect the returned `Scenario.Status` instead.
+- If your runner runs tests in parallel and you inherit `BDTestBase` directly, give each test a stable execution ID. See [Custom adapters](custom-adapters.md).
