@@ -19,16 +19,16 @@ public static class NUnitBDTestScenario
     /// <summary>Creates a host for an INUnitBDTest fixture marked with BDTestFixtureAttribute.</summary>
     /// <remarks>The caller owns the run and must dispose it after all tests and teardown finish.</remarks>
     public static NUnitBDTestScenario<TContext> For<TContext>(object testInstance, BDTestRun run)
-        where TContext : class, new() => new(testInstance, run ?? throw new ArgumentNullException(nameof(run)));
+        where TContext : class => new(testInstance, run ?? throw new ArgumentNullException(nameof(run)));
 }
 
 /// <summary>An NUnit-aware core composition host, with assertion isolation for scenario retries.</summary>
 public class NUnitBDTestScenario<TContext> : BDTestScenario<TContext>, INUnitBDTestLifecycle
-    where TContext : class, new()
+    where TContext : class
 {
     protected internal NUnitBDTestScenario(object testInstance, BDTestRun run) : base(testInstance, run)
     {
-        Lifecycle = new NUnitTestLifecycle(BeginTest, EndTest);
+        Lifecycle = new NUnitTestLifecycle(BeginTest, () => NUnitTestLifecycle.CompleteOnRunner(EndTestAsync));
     }
 
     internal NUnitTestLifecycle Lifecycle { get; }

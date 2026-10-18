@@ -42,7 +42,7 @@ public abstract class NUnitBDTestBase<TContext> : AbstractContextBDTestBase<TCon
     }
 
     // Kept callable for existing consumers; normal NUnit teardown is asynchronous.
-    public void PruneContext() => EndTest();
+    public void PruneContext() => NUnitTestLifecycle.CompleteOnRunner(EndTestAsync);
 
     protected override Task ExecuteScenarioStepsAsync(Func<Task> executeSteps,
         Action<Action> registerTerminalFailure) =>
@@ -65,8 +65,7 @@ public abstract class NUnitBDTestBase<TContext> : AbstractContextBDTestBase<TCon
 
     private void Complete()
     {
-        // EndTest starts asynchronous disposal without the runner's synchronization
-        // context, then clears capture on the caller's flow even if disposal fails.
+        // Keep legacy completion overrides and synchronous disposal on the runner.
         try
         {
             if (HasCompletionOverride)
@@ -76,7 +75,7 @@ public abstract class NUnitBDTestBase<TContext> : AbstractContextBDTestBase<TCon
 #pragma warning restore CS0618
             }
         }
-        finally { EndTest(); }
+        finally { PruneContext(); }
     }
 
     // Retain the virtual hook so existing NUnit completion overrides still run.

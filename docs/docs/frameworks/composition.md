@@ -7,6 +7,8 @@ description: Use context, scenarios, and output helpers without inheriting a BDT
 
 `BDTestScenario.For<TContext>(testInstance, run)` creates a host for a test class with any base class. The host provides the same `Context`, `Given`, `When`, scenario outlines, and output helpers as the inheritance API. Read context through the host inside each step so retries use the new context.
 
+Contexts need no parameterless constructor when the run supplies a context factory. Without a factory or a `CreateContextAsync` override, the host creates contexts through their public parameterless constructor.
+
 ```csharp
 using BDTest;
 using BDTest.Test;

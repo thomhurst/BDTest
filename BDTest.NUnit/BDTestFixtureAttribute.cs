@@ -58,6 +58,19 @@ internal interface INUnitBDTestLifecycle
 
 internal sealed class NUnitTestLifecycle(Action<string, MethodInfo> begin, Action complete)
 {
+    internal static void CompleteOnRunner(Func<ValueTask> complete)
+    {
+        var synchronization = SynchronizationContext.Current;
+        try
+        {
+            // Start synchronous disposal on the runner thread, but prevent async
+            // disposal from posting back to the runner while it waits here.
+            SynchronizationContext.SetSynchronizationContext(null);
+            complete().AsTask().GetAwaiter().GetResult();
+        }
+        finally { SynchronizationContext.SetSynchronizationContext(synchronization); }
+    }
+
     private readonly AsyncLocal<bool> _wrapped = new();
     internal bool IsWrapped => _wrapped.Value;
 

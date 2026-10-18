@@ -13,6 +13,86 @@ namespace BDTest.Tests.Fixtures;
 
 public class NUnitCompositionTests
 {
+    [TestCase(false)]
+    [TestCase(true)]
+    public void Completion_disposes_thread_bound_context_on_runner_thread(bool inheritance)
+    {
+        using var run = BDTestRun.Start();
+        var owner = inheritance ? (INUnitBDTest)new ThreadBoundInheritedProbe(run) : new ThreadBoundCompositionProbe(run);
+        var host = (AbstractContextBDTestBase<ThreadBoundContext>)owner.BDTestHost;
+        var resource = new ThreadBoundContext(Environment.CurrentManagedThreadId);
+        var test = new TestMethod(new MethodWrapper(owner.GetType(), nameof(SynchronizationProbe.Body)));
+        var context = new TestExecutionContext
+        {
+            TestObject = owner, CurrentTest = test, CurrentResult = test.MakeTestResult()
+        };
+        var command = new BDTestFixtureAttribute().Wrap(new ActionCommand(test,
+            () => host.OverwriteContextAsync(resource, takeOwnership: true).GetAwaiter().GetResult()));
+        var result = command.Execute(context);
+        Assert.That(result.ResultState.Status, Is.EqualTo(TestStatus.Passed), result.Message);
+        Assert.That(resource.DisposalThread, Is.EqualTo(resource.OwnerThread));
+        Assert.That(BDTest.Output.TestOutputData.FrameworkExecutionId, Is.Null);
+    }
+
+    [TestCase(false)]
+    [TestCase(true)]
+    public async Task Composition_uses_factory_for_context_without_default_constructor(bool nunit)
+    {
+        var resource = new ConstructorContext("factory");
+        using var run = BDTestRun.Start(new BDTestOptions { ContextFactory = new ConstructorContextFactory(resource) });
+        var host = nunit
+            ? NUnitBDTestScenario.For<ConstructorContext>(this, run)
+            : BDTestScenario.For<ConstructorContext>(this, run);
+        host.BeginTest("constructor-context");
+        try
+        {
+            await host.InitializeContextAsync();
+            Assert.That(host.Context, Is.SameAs(resource));
+            Assert.That(host.Context.Value, Is.EqualTo("factory"));
+        }
+        finally { await host.EndTestAsync(); }
+    }
+
+    private sealed class ConstructorContext(string value)
+    {
+        internal string Value { get; } = value;
+    }
+
+    private sealed class ConstructorContextFactory(ConstructorContext context) : IBDTestContextFactory
+    {
+        public ValueTask<object> CreateContextAsync(Type contextType, ContextCreation creation) => new(context);
+    }
+
+    private sealed class ThreadBoundContext(int ownerThread) : IDisposable
+    {
+        internal int OwnerThread { get; } = ownerThread;
+        internal int DisposalThread { get; private set; }
+        public void Dispose() => DisposalThread = Environment.CurrentManagedThreadId;
+    }
+
+    private sealed class ThreadBoundCompositionProbe : INUnitBDTest
+    {
+        public ThreadBoundCompositionProbe(BDTestRun run) => BDTestHost = NUnitBDTestScenario.For<ThreadBoundContext>(this, run);
+        public BDTestBase BDTestHost { get; }
+        public void Body() { }
+    }
+
+    private sealed class ThreadBoundInheritedProbe(BDTestRun run) : NUnitBDTestBase<ThreadBoundContext>
+    {
+        public override BDTestRun TestRun => run;
+        public void Body() { }
+    }
+
+    private sealed class ActionCommand(TestMethod test, Action body) : TestCommand(test)
+    {
+        public override TestResult Execute(TestExecutionContext context)
+        {
+            body();
+            context.CurrentResult.SetResult(ResultState.Success);
+            return context.CurrentResult;
+        }
+    }
+
     [TestCase(typeof(NUnitComposedRunProbe))]
     [TestCase(typeof(NUnitInheritedRunProbe))]
     public void Native_lifecycle_isolates_two_runs_rows_repeats_and_async_cleanup(Type fixture)
@@ -68,11 +148,14 @@ public class NUnitCompositionTests
         Assert.That(NUnitCompositionEvidence.Contexts.All(context => context.Disposals == 1 && context.Disposed), Is.True);
     }
 
-    [Test]
-    public async Task Completion_starts_disposal_outside_runner_synchronization_context_and_clears_capture()
+    [TestCase(false)]
+    [TestCase(true)]
+    public async Task Completion_starts_disposal_outside_runner_synchronization_context_and_clears_capture(bool inheritance)
     {
         using var run = BDTestRun.Start();
-        var owner = new SynchronizationProbe(run);
+        var owner = inheritance ? (INUnitBDTest)new SynchronizationInheritedProbe(run) : new SynchronizationProbe(run);
+        var host = (AbstractContextBDTestBase<NUnitNativeContext>)owner.BDTestHost;
+        NUnitNativeContext resource = null;
         var synchronization = new QueuedSynchronizationContext();
         var execution = Task.Run(() =>
         {
@@ -80,14 +163,15 @@ public class NUnitCompositionTests
             try
             {
                 SynchronizationContext.SetSynchronizationContext(synchronization);
-                var test = new TestMethod(new MethodWrapper(typeof(SynchronizationProbe), nameof(SynchronizationProbe.Body)));
+                var test = new TestMethod(new MethodWrapper(owner.GetType(), nameof(SynchronizationProbe.Body)));
                 var context = new TestExecutionContext
                 {
                     TestObject = owner, CurrentTest = test, CurrentResult = test.MakeTestResult()
                 };
-                var command = new BDTestFixtureAttribute().Wrap(new ContextCommand(test, owner));
+                var command = new BDTestFixtureAttribute().Wrap(new ActionCommand(test, () => resource = host.Context));
                 var result = command.Execute(context);
-                return (result.ResultState.Status, BDTest.Output.TestOutputData.FrameworkExecutionId);
+                return (result.ResultState.Status, BDTest.Output.TestOutputData.FrameworkExecutionId,
+                    Restored: ReferenceEquals(SynchronizationContext.Current, synchronization));
             }
             finally { SynchronizationContext.SetSynchronizationContext(previous); }
         });
@@ -95,30 +179,25 @@ public class NUnitCompositionTests
         // before failing so the test cannot strand a worker thread.
         var completed = await Task.WhenAny(execution, Task.Delay(TimeSpan.FromSeconds(5))) == execution;
         synchronization.Drain();
-        var (status, capture) = await execution.WaitAsync(TimeSpan.FromSeconds(5));
+        var (status, capture, restored) = await execution.WaitAsync(TimeSpan.FromSeconds(5));
         Assert.That(completed, Is.True, "Context disposal captured the blocked runner synchronization context.");
         Assert.That(status, Is.EqualTo(TestStatus.Passed));
         Assert.That(capture, Is.Null);
-        Assert.That(owner.Resource.Disposed, Is.True);
+        Assert.That(restored, Is.True);
+        Assert.That(resource.Disposed, Is.True);
     }
 
     private sealed class SynchronizationProbe : INUnitBDTest
     {
-        internal readonly NUnitBDTestScenario<NUnitNativeContext> Host;
-        internal NUnitNativeContext Resource;
-        public SynchronizationProbe(BDTestRun run) => Host = NUnitBDTestScenario.For<NUnitNativeContext>(this, run);
-        public BDTestBase BDTestHost => Host;
-        public void Body() => Resource = Host.Context;
+        public SynchronizationProbe(BDTestRun run) => BDTestHost = NUnitBDTestScenario.For<NUnitNativeContext>(this, run);
+        public BDTestBase BDTestHost { get; }
+        public void Body() { }
     }
 
-    private sealed class ContextCommand(TestMethod test, SynchronizationProbe owner) : TestCommand(test)
+    private sealed class SynchronizationInheritedProbe(BDTestRun run) : NUnitBDTestBase<NUnitNativeContext>
     {
-        public override TestResult Execute(TestExecutionContext context)
-        {
-            owner.Body();
-            context.CurrentResult.SetResult(ResultState.Success);
-            return context.CurrentResult;
-        }
+        public override BDTestRun TestRun => run;
+        public void Body() { }
     }
 
     private sealed class QueuedSynchronizationContext : SynchronizationContext

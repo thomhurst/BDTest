@@ -11,7 +11,7 @@ public static class BDTestScenario
     /// Call BeginTest synchronously before asynchronous setup, and EndTest in teardown.
     /// </remarks>
     public static BDTestScenario<TContext> For<TContext>(object testInstance, BDTestRun run = null)
-        where TContext : class, new() => new(testInstance, run ?? BDTestRun.Default);
+        where TContext : class => new(testInstance, run ?? BDTestRun.Default);
 }
 
 /// <summary>Provides context, scenario builders and output helpers through composition.</summary>
@@ -20,7 +20,7 @@ public static class BDTestScenario
 /// with distinct framework execution IDs, and complete every execution with EndTest. Framework
 /// integrations must preserve execution flow identity across setup, body and teardown.
 /// </remarks>
-public class BDTestScenario<TContext> : AbstractContextBDTestBase<TContext> where TContext : class, new()
+public class BDTestScenario<TContext> : AbstractContextBDTestBase<TContext> where TContext : class
 {
     internal BDTestScenario(object testInstance, BDTestRun run)
     {

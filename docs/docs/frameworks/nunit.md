@@ -52,7 +52,7 @@ public class BasketTests : CompanyTestBase, INUnitBDTest
 
 `BDTestFixture` uses NUnit 5's `IWrapSetUpTearDown` extension. It binds the host before any per-test setup and completes it after all per-test teardown, including setup/body/teardown failures. Completion awaits owned async context disposal and preserves both runner failures and disposal diagnostics. Do not call `BeginTest` or `EndTest` from fixture hooks when using this registration.
 
-The host derives from the [core composition host](composition.md). Context factories, initialization, retries, outlines, console capture and reports use the same core implementation. Read `_bdt.Context` inside each step so retries use the replacement context. To customize scenario or step hooks, derive from `NUnitBDTestScenario<TContext>` and call its protected constructor with the fixture instance and run. Register run-wide hooks on `BDTestOptions`.
+The host derives from the [core composition host](composition.md). Context factories, initialization, retries, outlines, console capture and reports use the same core implementation. Contexts need no parameterless constructor when the run supplies a context factory. Read `_bdt.Context` inside each step so retries use the replacement context. To customize scenario or step hooks, derive from `NUnitBDTestScenario<TContext>` and call its protected constructor with the fixture instance and run. Register run-wide hooks on `BDTestOptions`.
 
 A fixture may share its host across parallel test methods: NUnit preserves the wrapper's execution flow, and each row/repeat receives a distinct identity. Alternatively, use `[FixtureLifeCycle(LifeCycle.InstancePerTestCase)]`. Return the same host on every `BDTestHost` access; a host created for another fixture is rejected. Constructor and one-time fixture output are outside per-test capture.
 
@@ -119,7 +119,13 @@ public static class AssemblyReports
 }
 ```
 
-All fixtures that select this run contribute to the same report. Select different explicitly owned runs to isolate reports, options, contexts and output; overlapping framework IDs in different runs are supported. The adapter completes each test but never disposes the run. Generate reports after all fixtures finish, then dispose the run. A reused test host must create a fresh run for the next assembly execution. Assembly-wide automatic configuration and legacy global-state removal are tracked in [#844](https://github.com/thomhurst/BDTest/issues/844).
+All fixtures that select this run contribute to the same report. For the inheritance example above, add this override to `BasketTests` so its scenarios appear in the report below:
+
+```csharp
+public override BDTestRun TestRun => AssemblyReports.Run;
+```
+
+Without this override, inheritance uses `BDTestRun.Default`; generate that report from the default run instead. Select different explicitly owned runs to isolate reports, options, contexts and output; overlapping framework IDs in different runs are supported. The adapter completes each test but never disposes the run. Generate reports after all fixtures finish, then dispose the run. A reused test host must create a fresh run for the next assembly execution. Assembly-wide automatic configuration and legacy global-state removal are tracked in [#844](https://github.com/thomhurst/BDTest/issues/844).
 
 Use an NUnit `[SetUpFixture]` in the root namespace of the test assembly (or with no namespace) to run code after all tests:
 
