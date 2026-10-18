@@ -26,6 +26,10 @@ public class BuildableTest
 
     [JsonProperty]
     public TestInformationAttribute[] CustomTestInformation { get; protected set; } = Array.Empty<TestInformationAttribute>();
+
+    /// <summary>Combined story and scenario tags, distinct ignoring case.</summary>
+    [JsonProperty]
+    public string[] Tags { get; protected set; } = Array.Empty<string>();
         
     [JsonProperty]
     public string CallerMember { get; protected set; }
