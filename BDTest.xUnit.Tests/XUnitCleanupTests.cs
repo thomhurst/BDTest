@@ -3,11 +3,13 @@ using Xunit;
 
 namespace BDTest.xUnit.Tests;
 
-// Fixture disposal happens after xUnit disposes the test instance. Missing or duplicate
+// Fixture disposal happens after xUnit disposes the test instance. Missing
 // adapter cleanup must fail the runner, even when the test body itself passes.
 public sealed class CleanupProbe : IDisposable
 {
-    public int CompletionCount { get; set; }
+    public Action VerifyCompletion { get; set; }
+    public object SetupContext { get; set; }
+    public string[] ExpectedStartupOutput { get; set; } = [];
     public bool AsyncTeardownFinished { get; set; }
     public bool RequiresAsyncTeardown { get; set; }
     public bool RequiresSyncTeardown { get; set; }
@@ -15,7 +17,8 @@ public sealed class CleanupProbe : IDisposable
 
     public void Dispose()
     {
-        Assert.Equal(1, CompletionCount);
+        Assert.NotNull(VerifyCompletion);
+        VerifyCompletion();
         if (RequiresAsyncTeardown)
         {
             Assert.True(AsyncTeardownFinished);
@@ -34,15 +37,13 @@ public abstract class XUnitCleanupTests(CleanupProbe probe) : XUnitBDTestBase<ob
     [Fact]
     public async Task ScenarioRunsBeforeRunnerCleanup()
     {
-        Assert.Equal(0, Probe.CompletionCount);
-        await When(() => Assert.NotNull(Context))
-            .Then(() => Assert.Equal(0, Probe.CompletionCount)).BDTestAsync();
-    }
-
-    protected override void MarkTestAsComplete()
-    {
-        base.MarkTestAsComplete();
-        Probe.CompletionCount++;
+        var originalContext = Context;
+        if (Probe.SetupContext != null) Assert.Same(Probe.SetupContext, originalContext);
+        var scenario = await When(() => Assert.Same(originalContext, Context))
+            .Then(() => Assert.Same(originalContext, Context)).BDTestAsync();
+        foreach (var expected in Probe.ExpectedStartupOutput)
+            Assert.Contains(expected, scenario.TestStartupInformation);
+        Probe.VerifyCompletion = () => Assert.NotSame(originalContext, Context);
     }
 }
 
@@ -85,15 +86,26 @@ public sealed class XUnitAsyncDisposableCleanupTests(CleanupProbe probe) : XUnit
     }
 }
 
-public sealed class XUnitAsyncLifetimeCleanupTests(CleanupProbe probe) : XUnitCleanupTests(probe),
+public sealed class XUnitAsyncLifetimeCleanupTests : XUnitCleanupTests,
     IClassFixture<CleanupProbe>, IAsyncLifetime
 {
+    private readonly BDTestRun _run;
     private bool _initialized;
+    public override BDTestRun TestRun => _run;
 
-    public async ValueTask InitializeAsync()
+    public XUnitAsyncLifetimeCleanupTests(CleanupProbe probe) : base(probe)
+    {
+        _run = BDTestRun.Start();
+        Console.WriteLine("reimplemented constructor");
+    }
+
+    public new async ValueTask InitializeAsync()
     {
         await Task.Yield();
         _initialized = true;
+        Probe.SetupContext = Context;
+        Probe.ExpectedStartupOutput = ["reimplemented constructor", "reimplemented async setup"];
+        Console.WriteLine("reimplemented async setup");
         Probe.RequiresAsyncTeardown = true;
     }
 
@@ -107,7 +119,8 @@ public sealed class XUnitAsyncLifetimeCleanupTests(CleanupProbe probe) : XUnitCl
         }
         finally
         {
-            await base.DisposeAsync();
+            try { await base.DisposeAsync(); }
+            finally { _run.Dispose(); }
         }
     }
 }

@@ -9,6 +9,7 @@ public class TUnitExecutionIdTests
     public async Task CurrentTestContextUsesRunnerId()
     {
         var fixture = new AdapterProbe();
+        fixture.Setup();
         try
         {
             var context = fixture.Context;
@@ -38,13 +39,17 @@ public class TUnitExecutionIdTests
         await Assert.That(scenario.Status).IsEqualTo(Status.Passed);
         await Assert.That(scenario.TestStartupInformation).Contains("background startup");
         await Assert.That(scenario.FrameworkTestId).IsNotEqualTo(TestContext.Current!.Id);
-        await Assert.That(new AdapterProbe().ExecutionId).IsEqualTo(TestContext.Current!.Id);
+        var next = new AdapterProbe();
+        next.Setup();
+        await Assert.That(next.ExecutionId).IsEqualTo(TestContext.Current!.Id);
+        next.TearDown();
     }
 
     private static async Task<Scenario> RunWithoutCurrentTestAsync(string startupOutput)
     {
         await Assert.That(TestContext.Current).IsNull();
         var fixture = new AdapterProbe();
+        fixture.Setup();
         try
         {
             var id = fixture.ExecutionId;
