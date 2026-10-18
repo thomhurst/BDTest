@@ -97,6 +97,49 @@ not propagate its `AsyncLocal` value back to the caller. The legacy default stil
 creates an ID on first access for compatibility; custom adapters using async
 setup should use the explicit lifecycle or a stable framework ID instead.
 
+### Before and after step hooks
+
+Register asynchronous global hooks during test-run setup:
+
+```csharp
+BDTestSettings.BeforeStep += step =>
+{
+    Console.WriteLine($"Starting: {step.StepText}");
+    return Task.CompletedTask;
+};
+
+BDTestSettings.AfterStep += async step =>
+{
+    if (step.Status == Status.Failed)
+    {
+        await SaveScreenshotAsync(step.ScenarioId, step.Guid);
+    }
+};
+```
+
+Use `BDTest.Settings` for `BDTestSettings` and `BDTest.Test` for `Step` and `Status`.
+For per-test hooks, override `OnBeforeStep(Step step)` and `OnAfterStep(Step step)`
+on your `BDTestBase` or framework adapter. These methods return `Task` and can
+access the test's context. Global handlers may run concurrently for different
+tests, so keep their shared state thread-safe. Remove a global handler with `-=`
+when its registration is no longer needed.
+
+For each reached step, BDTest awaits global before hooks in registration order,
+then the test's before hook, then the step, then the test's after hook, then global
+after hooks in registration order. Subscriptions are captured at step entry;
+changes during a step apply to subsequent steps. Before hooks stop at the first
+exception. Every after hook still runs if a before hook, the step, or another
+after hook throws. The original execution exception takes precedence; secondary
+after-hook exceptions are logged. Otherwise the first after-hook exception
+determines the result using the usual exception and retry rules.
+
+After hooks receive the step's `Status`, `Exception`, `Output`, `StartTime`,
+`EndTime`, and `TimeTaken`. Timing includes before hooks and the step, and excludes
+after hooks. Output written by hooks is included in the final step output. All
+after hooks observe the execution result before after-hook failures are applied.
+Hooks run for individually skipped steps and on each retry, but not for steps
+unreached after a failure or for a whole scenario skipped before execution.
+
 ### Running a scenario once
 
 A runnable Given/When/Then builder supports one execution through `BDTest()`,
