@@ -62,12 +62,29 @@ BDTest enforces a clear structure through its types. The compiler rejects a chai
 | *start* | `Given`, `When` |
 | `Given` | `And`, `But`, `When` |
 | `Given(...).And` / `.But` | `And`, `But`, `When` |
-| `When` | `But`, `Then` |
+| `When` | `And`, `But`, `Then` |
+| `When(...).And` / `.But` | `And`, `But`, `Then` |
 | `Then` | `And`, `But`, `BDTestAsync()`, `await` |
 | `Then(...).And` / `.But` | `And`, `But`, `BDTestAsync()`, `await` |
 
 - A scenario must contain a `When` and a `Then`. `Given` is optional: use it when the test needs setup to reach the required state.
-- There is no `And` after `When`. A scenario tests one action.
+- Use `And` after `When` for additional actions in the same scenario. Each action runs in order.
+
+### And steps in the When phase
+
+Use `.And(...)` after `When` to add another action. It remains in the `When` phase and renders as `And` in step text and reports:
+
+```csharp
+await Given(() => AccountExists())
+    .When(() => SignInAsync())
+    .And(() => UpdateProfileAsync())
+    .Then(() => ProfileIsUpdated())
+    .BDTestAsync();
+```
+
+`And` supports all the delegate overloads below, generated step metadata, lazy [`WithArgs`](step-text.md#withargs) and `WithStepText` overrides. You can continue with another `And`, a `But` or `Then`. Two continuations from the same `When` produce independent scenarios.
+
+`And` and `But` steps in the `When` phase are skipped when [`Debug.ShouldSkipWhenStep`](../configuration/settings.md#debugging-tests) is on. Explicit runs use the debug options frozen when the run starts.
 
 ### But steps
 

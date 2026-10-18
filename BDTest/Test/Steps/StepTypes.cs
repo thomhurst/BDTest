@@ -9,7 +9,8 @@ public enum StepType
     AndThen,
     ButGiven,
     ButWhen,
-    ButThen
+    ButThen,
+    AndWhen
 }
 
 public static class StepTypeExtensions
@@ -24,6 +25,7 @@ public static class StepTypeExtensions
                 return stepType.ToString();
             case StepType.AndGiven:
             case StepType.AndThen:
+            case StepType.AndWhen:
                 return "And";
             case StepType.ButGiven:
             case StepType.ButWhen:

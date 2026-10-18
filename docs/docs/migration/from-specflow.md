@@ -82,4 +82,4 @@ public class AccountSteps(AccountContext context)
 - Turn each regex step definition into a method with a readable name. Often the method name alone produces good step text, so `[StepText]` is optional.
 - Move `ScenarioContext` keys into properties on a typed context class.
 - Replace table arguments with typed objects or collections.
-- `When` cannot be followed by `And` in BDTest. Split scenarios that perform several actions, or move setup actions into `Given` steps.
+- Use `.When(...).And(...).Then(...)` for scenarios with multiple actions. `And` and `But` keep the current phase.
