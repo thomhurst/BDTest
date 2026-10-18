@@ -5,7 +5,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace BDTest.MSTest.Tests;
 
-[TestClass]
+[BDTestClass]
 public class ExecutionIdTests : MSTestBDTestBase<ExecutionIdTests.TestContextData>
 {
     private static readonly ConcurrentDictionary<string, byte> ExecutionIds = new();

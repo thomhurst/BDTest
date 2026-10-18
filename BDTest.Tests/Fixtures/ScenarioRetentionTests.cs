@@ -139,6 +139,7 @@ public class ScenarioRetentionTests
         [BDTestRetry(1)]
         public Scenario Run(TextSource text)
         {
+            BeginTest(Id, typeof(Capture).GetMethod(nameof(Run)));
             var builder = Build(text);
             return builder.BDTestAsync().GetAwaiter().GetResult();
         }

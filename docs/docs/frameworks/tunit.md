@@ -77,3 +77,5 @@ public class BDTestReports
 TUnit 1.75.0 reports a propagated `InconclusiveTestException` as Failed in TRX,
 while BDTest records Inconclusive. This difference is covered by the
 [adapter conformance suite](../configuration/exceptions.md#runner-differences).
+
+The adapter supplies the runner's exact test method to `BeginTest(id, methodInfo)`. Scenario text, information, tags and retry attributes use cached method metadata, including when a helper constructs the scenario after an await. See [custom adapter migration](custom-adapters.md#method-identity-and-migration).

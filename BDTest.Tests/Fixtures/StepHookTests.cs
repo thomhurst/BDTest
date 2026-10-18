@@ -550,6 +550,7 @@ public class StepHookTests
         private readonly string _id = Guid.NewGuid().ToString("N");
         protected override string BDTestExecutionId => _id;
         public string ExecutionId => _id;
+        public HookTest() => BeginTest(_id, global::NUnit.Framework.Internal.TestExecutionContext.CurrentContext.CurrentTest.Method.MethodInfo);
         public Func<Step, Task> Before { get; init; } = _ => Task.CompletedTask;
         public Func<Step, Task> After { get; init; } = _ => Task.CompletedTask;
         public override Task OnBeforeStep(Step step) => Before(step);

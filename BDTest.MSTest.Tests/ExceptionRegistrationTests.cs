@@ -3,7 +3,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace BDTest.MSTest.Tests;
 
-[TestClass]
+[BDTestClass]
 [DoNotParallelize]
 public class ExceptionRegistrationTests
 {

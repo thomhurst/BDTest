@@ -1,4 +1,3 @@
-using BDTest.Extensions;
 using BDTest.Helpers;
 using BDTest.Output;
 
@@ -35,6 +34,7 @@ public abstract class StepBuilder : BuildableTest
         Run.ThrowIfDisposed();
         TestOutputData.Run = Run;
         BdTestBase = bdTestBase;
+        TestMetadata = bdTestBase.TestMetadata;
         CallerMember = callerMember;
         CallerFile = callerFile;
         TestId = testId;
@@ -49,10 +49,10 @@ public abstract class StepBuilder : BuildableTest
         Run.Store.RegisterPending(this);
             
         StoryText = StoryTextHelper.GetStoryText(bdTestBase);
-        SetScenarioText();
-        var testMethod = this.GetTestMethod();
-        CustomTestInformation = TestInformationAttributeHelper.GetTestInformationAttributes(testMethod);
-        Tags = TagHelper.GetTags(this.GetTestClass(), testMethod);
+        ScenarioText = new ScenarioText(ScenarioTextHelper.GetScenarioText(TestMetadata, CallerMember));
+        Parameters = TestMetadata.CopyParameters();
+        CustomTestInformation = TestMetadata.CopyInformation();
+        Tags = TestMetadata.CopyTags();
     }
 
     internal StepBuilder(List<Step> previousSteps, Runnable runnable, BuildableTest previousPartiallyBuiltTest)
@@ -65,6 +65,7 @@ public abstract class StepBuilder : BuildableTest
         StoryText = previousPartiallyBuiltTest.StoryText;
         ScenarioText = previousPartiallyBuiltTest.ScenarioText;
         BdTestBase = previousPartiallyBuiltTest.BdTestBase;
+        TestMetadata = previousPartiallyBuiltTest.TestMetadata;
         CallerMember = previousPartiallyBuiltTest.CallerMember;
         CallerFile = previousPartiallyBuiltTest.CallerFile;
         TestId = previousPartiallyBuiltTest.TestId;
@@ -82,12 +83,5 @@ public abstract class StepBuilder : BuildableTest
         Run.Store.NotRun.TryRemove(previousPartiallyBuiltTest.Guid, out _);
         Run.Store.RegisterPending(this);
         TestOutputData.TestId = Guid;
-    }
-
-    private void SetScenarioText()
-    {
-        var scenarioTextWithParameters = ScenarioTextHelper.GetScenarioTextWithParameters(this.GetTestMethod(), CallerMember);
-        ScenarioText = scenarioTextWithParameters.ScenarioText;
-        Parameters = scenarioTextWithParameters.Parameters;
     }
 }

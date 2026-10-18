@@ -4,6 +4,7 @@ using System.Runtime.ExceptionServices;
 using System.Threading;
 using BDTest.Attributes;
 using BDTest.Helpers;
+using BDTest.Metadata;
 using BDTest.Output;
 using BDTest.Test.Steps.Given;
 using BDTest.Test.Steps.When;
@@ -26,15 +27,18 @@ public abstract class BDTestBase
     private TestExecution _lastExecution;
     private static readonly TestExecution EndedExecution = new(null, null) { Completed = 1 };
 
-    private sealed class TestExecution(string id, BDTestRun run)
+    private sealed class TestExecution(string id, BDTestRun run, TestMethodMetadata metadata = null)
     {
         internal string Id { get; set; } = id;
         internal string FrameworkId { get; } = id;
         internal BDTestRun Run { get; } = run;
+        internal TestMethodMetadata Metadata { get; } = metadata;
         internal int Completed;
     }
 
     private TestExecution CurrentExecution => _execution.Value ?? Volatile.Read(ref _lastExecution);
+
+    internal TestMethodMetadata TestMetadata => CurrentExecution?.Metadata ?? TestMethodMetadata.Get(TestInstance.GetType(), null);
 
     // Retained for existing custom adapters that do not call MarkTestAsStarted.
     private static string StaticBDTestExecutionId =>
@@ -238,6 +242,11 @@ public abstract class BDTestBase
     /// across async continuations. TUnit hooks must export their AsyncLocal values.
     /// </remarks>
     protected void BeginTest(string frameworkTestId)
+        => BeginTest(frameworkTestId, null);
+
+    /// <summary>Starts an execution with the runner's exact test method, including overload and data-row identity.</summary>
+    /// <remarks>Method metadata is cached. Without a method, builders use compiler-supplied caller text.</remarks>
+    protected void BeginTest(string frameworkTestId, MethodInfo testMethod)
     {
         if (string.IsNullOrWhiteSpace(frameworkTestId))
             throw new ArgumentException("A test execution ID is required.", nameof(frameworkTestId));
@@ -245,7 +254,7 @@ public abstract class BDTestBase
         run.ThrowIfDisposed();
         // Seed the base property with this execution's ID before resolving legacy
         // overrides, including overrides that decorate base.BDTestExecutionId.
-        var execution = new TestExecution(frameworkTestId, run);
+        var execution = new TestExecution(frameworkTestId, run, TestMethodMetadata.Get(TestInstance.GetType(), testMethod));
         _execution.Value = execution;
         execution.Id = BDTestExecutionId;
         Volatile.Write(ref _lastExecution, execution);
@@ -337,9 +346,9 @@ public abstract class BDTestBase
         return storyAttribute?.GetStoryText();
     }
 
-    public string GetScenarioText()
+    public string GetScenarioText([CallerMemberName] string callerMember = null)
     {
-        return ScenarioTextHelper.GetScenarioTextWithParameters(null, null).ScenarioText.Scenario;
+        return ScenarioTextHelper.GetScenarioText(TestMetadata, callerMember);
     }
 
     internal async Task RunMethodWithAttribute<TAttribute>()

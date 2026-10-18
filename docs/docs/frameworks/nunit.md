@@ -76,3 +76,5 @@ public class BDTestReports
 ```
 
 See [HTML report](../reports/html-report.md) and [Sending results](../report-server/sending-results.md).
+
+The adapter supplies the runner's exact test method to `BeginTest(id, methodInfo)`. Scenario text, information, tags and retry attributes use cached method metadata, including when a helper constructs the scenario after an await. See [custom adapter migration](custom-adapters.md#method-identity-and-migration).

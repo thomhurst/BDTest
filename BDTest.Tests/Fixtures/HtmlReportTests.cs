@@ -16,6 +16,12 @@ namespace BDTest.Tests.Fixtures;
 public class HtmlReportTests : BDTestBase
 {
     [SetUp]
+    public void BindMetadata() => BeginTest(TestContext.CurrentContext.Test.ID, global::NUnit.Framework.Internal.TestExecutionContext.CurrentContext.CurrentTest.Method.MethodInfo);
+
+    [TearDown]
+    public void FinishExecution() => EndTest();
+
+    [SetUp]
     public void SetUp() => TestResetHelper.ResetData();
 
     [Test]

@@ -27,7 +27,7 @@ public class CompositionHostTests
         using var run = BDTestRun.Start();
         owner.Host = BDTestScenario.For<State>(owner, run);
         owner.Failures = retries;
-        owner.Host.BeginTest("attributed-retry");
+        owner.Host.BeginTest("attributed-retry", ownerType.GetMethod(nameof(RetryOwner.Run)));
         try
         {
             var execution = owner.Run();
@@ -48,7 +48,7 @@ public class CompositionHostTests
         options.RetryTestRules.Add(exception => exception is TransientException, 1);
         using var run = BDTestRun.Start(options);
         var owner = new Owner(run);
-        owner.Host.BeginTest("retry");
+        owner.Host.BeginTest("retry", typeof(Owner).GetMethod(nameof(Owner.Pays)));
         try
         {
             var original = owner.Host.Context;
@@ -162,7 +162,7 @@ public class CompositionHostTests
             Assert.That(skipReason, Is.Not.Null.And.Not.Empty);
         }
         finally { owner.Host.EndTest(); }
-        owner.Host.BeginTest("outline");
+        owner.Host.BeginTest("outline", typeof(Owner).GetMethod(nameof(Owner.Examples)));
         try
         {
             var outline = await owner.Examples();
@@ -173,6 +173,27 @@ public class CompositionHostTests
             Assert.That(owner.Contexts.Distinct().Count(), Is.EqualTo(2));
         }
         finally { owner.Host.EndTest(); }
+    }
+
+    [Test]
+    public async Task Without_method_identity_composition_uses_owner_defaults_and_caller_text()
+    {
+        using var run = BDTestRun.Start();
+        var owner = new Owner(run);
+        foreach (var beginExecution in new[] { false, true })
+        {
+            if (beginExecution) owner.Host.BeginTest("fallback");
+            try
+            {
+                var scenario = await owner.Host.When(() => Complete()).Then(() => Complete()).BDTestAsync();
+                Assert.That(scenario.Tags, Is.EqualTo(new[] { "checkout" }));
+                Assert.That(scenario.CustomTestInformation, Is.Empty);
+                Assert.That(scenario.GetScenarioText(),
+                    Is.EqualTo("Without method identity composition uses owner defaults and caller text"));
+                Assert.That(scenario.GetStoryText(), Does.Contain("shopper"));
+            }
+            finally { owner.Host.EndTest(); }
+        }
     }
 
     [Test]

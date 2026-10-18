@@ -1,4 +1,5 @@
 using BDTest.Output;
+using System.Runtime.CompilerServices;
 
 namespace BDTest.Test;
 
@@ -36,14 +37,14 @@ public class BDTestContext
     }
 
     private string _scenarioText;
-    public string GetScenarioText()
+    public string GetScenarioText([CallerMemberName] string callerMember = null)
     {
         if (!string.IsNullOrEmpty(_scenarioText))
         {
             return _scenarioText;
         }
 
-        return _scenarioText = TestBase.GetScenarioText();
+        return _scenarioText = TestBase.GetScenarioText(callerMember);
     }
 
     /// <summary>The executing scenario, or null while an outline example is being constructed.</summary>

@@ -68,11 +68,14 @@ public class AssemblyRetryAttributeTests
 
         var type = assembly.DefineDynamicModule("Tests")
             .DefineType("Scenario", TypeAttributes.Public, baseType).CreateType()!;
-        return (RetryScenario)Activator.CreateInstance(type)!;
+        var fixture = (RetryScenario)Activator.CreateInstance(type)!;
+        fixture.Start();
+        return fixture;
     }
 
     public class RetryScenario : BDTestBase
     {
+        public void Start() => BeginTest(Guid.NewGuid().ToString("N"), GetType().GetMethod(nameof(Run)));
         public int Failures { get; set; }
         public int Executions { get; private set; }
 

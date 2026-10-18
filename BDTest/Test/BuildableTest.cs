@@ -1,11 +1,14 @@
 using BDTest.Attributes;
 using BDTest.Constants;
+using BDTest.Metadata;
 using System.Text.Json.Serialization;
 
 namespace BDTest.Test;
 
 public class BuildableTest
 {
+    [JsonIgnore] internal TestMethodMetadata TestMetadata { get; set; }
+
     /// <summary>Gets the run captured when this scenario definition was built.</summary>
     [JsonIgnore]
     public BDTestRun Run { get; internal set; } = BDTestRun.Default;

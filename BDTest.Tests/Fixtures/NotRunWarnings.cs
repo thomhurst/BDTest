@@ -41,28 +41,24 @@ So that consumers aren't missing any test coverage accidentally
 "));
     }
 
-    [ScenarioText("Custom NotRunTest3")]
     private void NotRunTest3()
     {
         When(() => Console.WriteLine("Don't execute a test properly"))
             .Then(() => Console.WriteLine("It shows as a warning in the report."))
-            .And(() => Console.WriteLine("I know that the test is"));
+            .And(() => Console.WriteLine("I know that the test is")).WithScenarioText("Custom NotRunTest3");
     }
 
-    [ScenarioText("Custom NotRunTest2")]
     private void NotRunTest2()
     {
         When(() => Console.WriteLine("Don't execute a test properly"))
-            .Then(() => Console.WriteLine("It shows as a warning in the report."));
+            .Then(() => Console.WriteLine("It shows as a warning in the report.")).WithScenarioText("Custom NotRunTest2");
     }
 
-    [ScenarioText("Custom NotRunTest1")]
     private void NotRunTest1()
     {
-        When(() => Console.WriteLine("Don't execute a test properly"));
+        When(() => Console.WriteLine("Don't execute a test properly")).Then(() => { }).WithScenarioText("Custom NotRunTest1");
     }
 
-    [ScenarioText("Success Test")]
     private async Task SuccessTest()
     {
         await When(() => Console.WriteLine("Run a test successfully"))

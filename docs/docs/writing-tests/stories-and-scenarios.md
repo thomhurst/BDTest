@@ -55,6 +55,8 @@ public async Task ResetLinkIsEmailed()
 }
 ```
 
+With a framework adapter, the runner supplies the exact test method even after async suspension or when construction happens in a helper. Attributes on helper methods are ignored. Metadata is cached per method and concrete fixture type. A null attribute text falls back to the humanized method name; an empty string remains empty.
+
 Without the attribute, BDTest humanises the test method name: `ResetLinkIsEmailed` becomes "Reset link is emailed".
 
 You can also set the text on the chain with `.WithScenarioText("...")` after the `Then` steps. For scenario outlines, the scenario text is the first argument of `ScenarioOutline(...)`.
@@ -62,3 +64,5 @@ You can also set the text on the chain with `.WithScenarioText("...")` after the
 ## Reading story and scenario text
 
 `BDTestBase.GetStoryText()` and `GetScenarioText()` return the resolved text for the current test. `BDTestContext` exposes the same methods, so a [`ContextAmendment`](test-context.md#amending-a-new-context) or step hook can read them.
+
+Without an adapter or explicit `BeginTest(id, methodInfo)`, BDTest uses the compiler-supplied caller name and file, without discovering method attributes. See [custom adapters](../frameworks/custom-adapters.md#custom-harnesses-without-a-runner).

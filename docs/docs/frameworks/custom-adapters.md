@@ -30,7 +30,7 @@ public abstract class MyRunnerBDTestBase<TContext> : AbstractContextBDTestBase<T
 
     // Called by the runner before each test, before any async setup starts.
     [MyRunnerBeforeTest]
-    public void BDTestSetUp() => BeginTest(MyRunner.CurrentTest.Id);
+    public void BDTestSetUp() => BeginTest(MyRunner.CurrentTest.Id, MyRunner.CurrentTest.MethodInfo);
 
     // Called by the runner after each test.
     [MyRunnerAfterTest]
@@ -43,7 +43,7 @@ public abstract class MyRunnerBDTestBase<TContext> : AbstractContextBDTestBase<T
 
 | Member | Purpose |
 | --- | --- |
-| `BeginTest(string frameworkTestId)` | Starts one test execution. Records the execution ID and the owning `TestRun`, installs console capture and clears stale capture state. |
+| `BeginTest(string frameworkTestId, MethodInfo testMethod)` | Starts one test execution. Records the execution ID, exact method metadata and the owning `TestRun`, installs console capture and clears stale capture state. |
 | `EndTest()` | Ends the execution. Removes its context and pending output from the owning run, then clears matching flow state. Calling it again is safe and never completes another active execution. |
 | `OnScenarioSkipped(string reason)` | Called when a whole scenario is skipped. Throw the runner's skip exception or call its skip API. |
 | `TestRun` | The [`BDTestRun`](../advanced/explicit-runs.md) that stores this test's scenarios. Override it with a stable run to isolate scenarios, output and completion from other runs. Defaults to the shared run. |
@@ -68,9 +68,9 @@ The built-in adapters use:
 Call `BeginTest` **synchronously** in the flow that runs setup and the test body, before any async work starts, and call `EndTest()` in teardown. Keep both calls in the same async entry method:
 
 ```csharp
-public async Task RunTestAsync(string frameworkTestId)
+public async Task RunTestAsync(string frameworkTestId, System.Reflection.MethodInfo testMethod)
 {
-    BeginTest(frameworkTestId);
+    BeginTest(frameworkTestId, testMethod);
     try
     {
         await SetupAsync();
@@ -87,7 +87,7 @@ public async Task RunTestAsync(string frameworkTestId)
 
 ### Migrating older adapters
 
-`MarkTestAsStarted()` and `MarkTestAsComplete()` are obsolete compatibility shims. Replace them with `BeginTest(id)` and `EndTest()`. Existing `BDTestExecutionId` overrides still work, but new adapters should pass the ID to `BeginTest` instead.
+`MarkTestAsStarted()` and `MarkTestAsComplete()` are obsolete compatibility shims. Replace them with `BeginTest(id, testMethod)` and `EndTest()`. Existing `BDTestExecutionId` overrides still work, but new adapters should pass the ID to `BeginTest` instead.
 
 ## Testing your adapter
 
@@ -100,3 +100,15 @@ default run, register the declaration through
 `BDTestSettings.CustomExceptionSettings.RegisterFrameworkOutcomes(map)` and invoke
 `map.ReportSkip(reason)` from `OnScenarioSkipped`. Explicit runs use their frozen
 map's skip callback before falling back to that virtual hook.
+
+## Method identity and migration
+
+Pass the runner's actual `System.Reflection.MethodInfo`, including the exact overload, to `BeginTest(id, testMethod)`. Do not look up a test by its display name. Data rows reuse the method metadata while retaining distinct execution IDs. The core caches scenario text, parameter names, combined class/method tags and the retry attribute count by method and concrete fixture type. Scenario arrays are separate copies. Test information attributes are constructed from the cached method identity for each scenario, so mutable fields in custom attribute subclasses are not shared between executions.
+
+BDTest no longer discovers test metadata from the call stack. Move `[ScenarioText]`, `[TestInformation]` and `[BDTestRetry]` attributes from scenario-construction helpers to the test method. Class and assembly retry defaults and class tags continue to apply. Exception stack traces remain in diagnostics and reports.
+
+The public `StackFramesHelper` and `TestInformationAttributeHelper` have been removed for the next major release. Custom adapters should use the lifecycle method above instead. `GetScenarioText` on the base and context now accepts an optional compiler-supplied caller member name.
+
+### Custom harnesses without a runner
+
+`BeginTest(id)` remains available when no `MethodInfo` exists. You may also use `BDTestBase` or `BDTestBuilder` directly. Scenario builders use `CallerMemberName` for humanized scenario text and `CallerFilePath` for the source file. They do not guess method attributes from a name or walk the stack. Class tags and class/assembly retry defaults still apply. Set `.WithScenarioText("...")` after `Then` when the caller name is not the desired scenario title. To use method attributes, call `BeginTest(id, methodInfo)` explicitly before construction.

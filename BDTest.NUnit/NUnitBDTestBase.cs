@@ -25,7 +25,11 @@ public abstract class NUnitBDTestBase<TContext> : AbstractContextBDTestBase<TCon
     [SetUp]
     public void Setup()
     {
-        BeginTest($"{NUnitTestContext.CurrentContext.Test.ID}_{NUnitTestContext.CurrentContext.CurrentRepeatCount}");
+        // NUnit's replacement MethodInfoAdapter does not expose the exact reflection method.
+#pragma warning disable CS0618 // Retain public Method access for overload-safe identity.
+        BeginTest($"{NUnitTestContext.CurrentContext.Test.ID}_{NUnitTestContext.CurrentContext.CurrentRepeatCount}",
+            NUnitTestContext.CurrentContext.Test.Method?.MethodInfo);
+#pragma warning restore CS0618
     }
 
     // Kept callable for existing consumers; NUnit teardown uses MarkTestAsComplete.

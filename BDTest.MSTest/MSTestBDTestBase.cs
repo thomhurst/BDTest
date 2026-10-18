@@ -21,7 +21,10 @@ public abstract class MSTestBDTestBase<TContext> : AbstractContextBDTestBase<TCo
         MSTestExceptionRegistration.EnsureRegistered();
         // TestDisplayName includes the runner's data-row display name. The suffix also
         // distinguishes repeated executions with identical data and display names.
-        BeginTest($"{TestContext?.FullyQualifiedTestClassName}.{TestContext?.TestDisplayName ?? TestContext?.TestName}_{Guid.NewGuid():N}");
+        if (TestContext != null && MSTestMethodIdentity.Current.Value == null)
+            throw new InvalidOperationException("Replace [TestClass] with [BDTestClass] to supply MSTest's test MethodInfo.");
+        BeginTest($"{TestContext?.FullyQualifiedTestClassName}.{TestContext?.TestDisplayName ?? TestContext?.TestName}_{Guid.NewGuid():N}",
+            MSTestMethodIdentity.Current.Value);
     }
 
     [TestCleanup]

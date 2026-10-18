@@ -13,6 +13,12 @@ namespace BDTest.Tests.Fixtures;
 [NonParallelizable]
 public class RunTimingTests : BDTestBase
 {
+    [SetUp]
+    public void BindMetadata() => BeginTest(TestContext.CurrentContext.Test.ID, global::NUnit.Framework.Internal.TestExecutionContext.CurrentContext.CurrentTest.Method.MethodInfo);
+
+    [TearDown]
+    public void FinishExecution() => EndTest();
+
     private static readonly DateTime StartedAt = new(2026, 10, 17, 12, 0, 0, DateTimeKind.Utc);
 
     [SetUp]

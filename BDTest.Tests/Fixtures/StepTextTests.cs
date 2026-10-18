@@ -12,6 +12,12 @@ namespace BDTest.Tests.Fixtures;
     SoThat = "tests can be translated to plain English")]
 public class StepTextTests : BDTestBase
 {
+    [SetUp]
+    public void BindMetadata() => BeginTest(TestContext.CurrentContext.Test.ID, global::NUnit.Framework.Internal.TestExecutionContext.CurrentContext.CurrentTest.Method.MethodInfo);
+
+    [TearDown]
+    public void FinishExecution() => EndTest();
+
     private InnerStepsClass InnerSteps => new();
         
     [SetUp]
