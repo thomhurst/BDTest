@@ -36,6 +36,8 @@ Include the prefix in your identity provider's redirect URI, for example `https:
 
 :::warning Uploads ignore the path prefix
 `BDTestReportServer.SendDataAndGetReportUriAsync` replaces the path of the server address with `bdtest/ping` and `bdtest/data`. A server address of `https://reports.example.com/reports` therefore uploads to `https://reports.example.com/bdtest/data`, outside the `/reports` mapping. When you host under a prefix, also route `/bdtest/ping` and `/bdtest/data` at the root of the upload host to the report server, or give test jobs a separate unprefixed host name for uploads.
+
+When using root upload routes with prefixed report navigation, keep the report path base on those routes too: send `X-Forwarded-Prefix: /reports` when stripping the prefix, or rewrite the backend path to `/reports/bdtest/...` when using `UsePathBase`. This keeps the returned report URL under `/reports`. Keep upload-key enforcement enabled and apply the same HTTPS and rate limits.
 :::
 
 ### Trust

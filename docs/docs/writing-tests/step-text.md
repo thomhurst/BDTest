@@ -120,7 +120,7 @@ await When(() => UpdateSteps.UpdateTheField(request => request.EmailAddress, new
     .BDTestAsync();
 ```
 
-The delegate runs when the step executes, so it can show values that change during the scenario. If it returns an empty string, BDTest uses the automatic text for that attempt.
+The delegate can run during builder construction and when the step executes, so keep it free of side effects. During execution it can show values changed by earlier steps. If it returns an empty string, BDTest uses the automatic text for that attempt.
 
 ## How arguments are formatted
 

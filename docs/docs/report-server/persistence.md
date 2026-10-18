@@ -38,9 +38,12 @@ Store reports and summaries as JSON. Use `BDTestJsonHelper` for `BDTestOutputMod
 ## Registering the store
 
 ```csharp
+var dataStore = new AzureStorageDataStore(connectionString);
+await dataStore.InitializeAsync();
+
 app.UseBDTestReportServer(options =>
 {
-    options.DataStore = new AzureStorageDataStore(connectionString);
+    options.DataStore = dataStore;
     options.UploadApiKey = builder.Configuration["BDTest:UploadApiKey"];
 });
 ```
