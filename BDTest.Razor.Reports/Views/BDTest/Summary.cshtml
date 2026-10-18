@@ -12,7 +12,7 @@
     ViewData["RunTab"] = "overview";
     Layout = "_Layout";
 
-    var reportUrl = Url.Content("~/bdtest/report/" + Uri.EscapeDataString(Model.Id ?? string.Empty));
+    var reportId = Model.Id ?? string.Empty;
     var scenarios = run.Scenarios;
     var total = scenarios.Count;
     var counts = run.Counts;
@@ -36,8 +36,8 @@
         .Where(duration => duration > TimeSpan.Zero).OrderBy(duration => duration).ToList();
     var medianDuration = durations.Count == 0 ? (TimeSpan?)null : durations[durations.Count / 2];
 
-    string ScenarioUrl(Scenario scenario) => reportUrl + "/scenario/" + Uri.EscapeDataString(scenario.Guid ?? string.Empty);
-    string StatusUrl(Status status) => reportUrl + "/all-scenarios?" + StatusConstants.FilterByStatusQueryParameterName + "=" + status;
+    string ScenarioUrl(Scenario scenario) => Url.ReportScenario(reportId, scenario.Guid);
+    string StatusUrl(Status status) => Url.ReportAction("AllScenarios", new { id = reportId }) + "?" + StatusConstants.FilterByStatusQueryParameterName + "=" + status;
 
     string Headline()
     {
@@ -73,7 +73,7 @@
             </p>
             @if (run.NotRunCount > 0)
             {
-                <a class="lnk" href="@reportUrl/warnings">See tests that didn’t run</a>
+                <a class="lnk" href="@(Url.ReportAction("Warnings", new { id = reportId }))">See tests that didn’t run</a>
             }
         </section>
     }
@@ -131,7 +131,7 @@
                     <section class="stack" aria-labelledby="attention">
                         <div class="spread">
                             <h2 id="attention" class="sec-title">Needs attention</h2>
-                            <a class="lnk" href="@reportUrl/top-defects">All failures by cause</a>
+                            <a class="lnk" href="@(Url.ReportAction("TopDefects", new { id = reportId }))">All failures by cause</a>
                         </div>
                         @foreach (var group in failures.Take(3))
                         {
@@ -175,13 +175,13 @@
                                 }
                                 @if (group.Scenarios.Count > 5)
                                 {
-                                    <a class="row lnk" href="@reportUrl/top-defects">@($"{group.Scenarios.Count - 5} more")</a>
+                                    <a class="row lnk" href="@(Url.ReportAction("TopDefects", new { id = reportId }))">@($"{group.Scenarios.Count - 5} more")</a>
                                 }
                             </article>
                         }
                         @if (failures.Count > 3)
                         {
-                            <a class="lnk" href="@reportUrl/top-defects">@($"{failures.Count - 3} more cause{(failures.Count - 3 == 1 ? "" : "s")}")</a>
+                            <a class="lnk" href="@(Url.ReportAction("TopDefects", new { id = reportId }))">@($"{failures.Count - 3} more cause{(failures.Count - 3 == 1 ? "" : "s")}")</a>
                         }
                     </section>
                 }
@@ -191,7 +191,7 @@
                     <section class="card clip" aria-labelledby="other">
                         <div class="card-head">
                             <h2 id="other" style="font-size: 17px">Didn’t pass, didn’t fail</h2>
-                            <a class="lnk" href="@reportUrl/all-scenarios?@StatusConstants.FilterByStatusQueryParameterName=@string.Join(",", others.Select(s => s.Status).Distinct())">Show in Scenarios</a>
+                            <a class="lnk" href="@(Url.ReportAction("AllScenarios", new { id = reportId }))?@StatusConstants.FilterByStatusQueryParameterName=@string.Join(",", others.Select(s => s.Status).Distinct())">Show in Scenarios</a>
                         </div>
                         @foreach (var scenario in others.Take(10))
                         {
@@ -206,14 +206,14 @@
                         }
                         @if (others.Count > 10)
                         {
-                            <a class="row lnk" href="@reportUrl/all-scenarios?@StatusConstants.FilterByStatusQueryParameterName=@string.Join(",", others.Select(s => s.Status).Distinct())">@($"{others.Count - 10} more")</a>
+                            <a class="row lnk" href="@(Url.ReportAction("AllScenarios", new { id = reportId }))?@StatusConstants.FilterByStatusQueryParameterName=@string.Join(",", others.Select(s => s.Status).Distinct())">@($"{others.Count - 10} more")</a>
                         }
                     </section>
                 }
 
                 @if (run.NotRunCount > 0)
                 {
-                    <a class="card row" href="@reportUrl/warnings" style="border-top: 1px solid var(--line); padding: 16px 20px; gap: 14px">
+                    <a class="card row" href="@(Url.ReportAction("Warnings", new { id = reportId }))" style="border-top: 1px solid var(--line); padding: 16px 20px; gap: 14px">
                         @ReportUi.Icon("i-notrun", "ico-r lg")
                         <div class="grow">
                             <div class="row-title">@($"{run.NotRunCount} test{(run.NotRunCount == 1 ? " was" : "s were")} declared but never ran")</div>
@@ -229,7 +229,7 @@
                 {
                     var tagName = string.IsNullOrEmpty(Model.Tag) ? "" : Model.Tag + " ";
                     <section class="card card-pad" aria-labelledby="hist">
-                        <div class="spread"><h2 id="hist">@($"Last {recent.Count} {tagName}runs")</h2><a class="lnk" href="@(Url.Content("~/bdtest/report/history") + (string.IsNullOrEmpty(Model.Tag) ? "" : "?tag=" + Uri.EscapeDataString(Model.Tag)))">History</a></div>
+                        <div class="spread"><h2 id="hist">@($"Last {recent.Count} {tagName}runs")</h2><a class="lnk" href="@(Url.ReportAction("Trends") + (string.IsNullOrEmpty(Model.Tag) ? "" : "?tag=" + Uri.EscapeDataString(Model.Tag)))">History</a></div>
                         @{
                             var failedRuns = recent.Count(record => record.Status == Status.Failed);
                         }
@@ -237,7 +237,7 @@
                             @foreach (var record in recent)
                             {
                                 var key = record.RunResult().Key();
-                                <a class="bg-@key @(record.RecordId == Model.Id ? "cur" : "")" href="@Url.Content("~/bdtest/report/" + Uri.EscapeDataString(record.RecordId ?? "") + "/summary")" title="@record.StartedAtDateTime.ToRunDate() · @record.RunResult().Label()" aria-label="@record.StartedAtDateTime.ToRunDate(): @record.RunResult().Label()"></a>
+                                <a class="bg-@key @(record.RecordId == Model.Id ? "cur" : "")" href="@Url.ReportAction("Summary", new { id = record.RecordId ?? "" })" title="@record.StartedAtDateTime.ToRunDate() · @record.RunResult().Label()" aria-label="@record.StartedAtDateTime.ToRunDate(): @record.RunResult().Label()"></a>
                             }
                         </div>
                         <div class="strip-axis"><span>@recent[0].StartedAtDateTime.ToDay()</span><span>This run</span></div>
@@ -255,7 +255,7 @@
                 }
 
                 <section class="card card-pad" aria-labelledby="slow">
-                    <div class="spread"><h2 id="slow">Slowest scenarios</h2><a class="lnk" href="@reportUrl/timings">Timings</a></div>
+                    <div class="spread"><h2 id="slow">Slowest scenarios</h2><a class="lnk" href="@(Url.ReportAction("Timings", new { id = reportId }))">Timings</a></div>
                     @foreach (var scenario in slowest)
                     {
                         <a href="@ScenarioUrl(scenario)" style="display: flex; flex-direction: column; gap: 4px; text-decoration: none; color: var(--ink)">

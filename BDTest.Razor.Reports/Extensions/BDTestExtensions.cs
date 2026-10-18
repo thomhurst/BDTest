@@ -4,8 +4,11 @@ using BDTest.Razor.Reports.Implementations;
 using BDTest.Razor.Reports.Interfaces;
 using BDTest.Razor.Reports.Models;
 using BDTest.Razor.Reports.Security;
+using BDTest.Razor.Reports.Routing;
 using BDTest.Razor.Reports.Storage;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -26,6 +29,11 @@ public static class BDTestExtensions
         Action<BDTestReportOptions> configure = null)
     {
         services.AddControllersWithViews().AddApplicationPart(typeof(BDTestController).Assembly);
+        services.TryAddSingleton<ReportRoutes>();
+        services.AddOptions<Microsoft.AspNetCore.Mvc.MvcOptions>().Configure<ReportRoutes>((options, routes) =>
+        {
+            if (!options.Conventions.Contains(routes)) options.Conventions.Add(routes);
+        });
         services.AddMemoryCache();
         services.TryAddSingleton<IMemoryCacheBdTestDataStore>(provider =>
         {
@@ -68,18 +76,41 @@ public static class BDTestExtensions
         return mvcBuilder;
     }
 
+    /// <summary>Maps report controllers and assets under a literal prefix. Call once before mapping other MVC controllers.</summary>
+    public static IEndpointConventionBuilder MapBDTestReports(this IEndpointRouteBuilder endpoints, string prefix = "/bdtest")
+    {
+        var routes = endpoints.ServiceProvider.GetRequiredService<ReportRoutes>();
+        routes.Map(prefix);
+        var assets = endpoints.MapGroup(routes.Prefix + "/assets");
+        MapAsset(assets, "/css/bdtest-report.css", "text/css");
+        MapAsset(assets, "/js/BDTest.js", "text/javascript");
+        MapAsset(assets, "/favicon.ico", "image/x-icon");
+        return new ReportRoutes.Conventions(ReportRoutes.MapControllers(endpoints), assets);
+    }
+
+    private static void MapAsset(RouteGroupBuilder assets, string path, string contentType)
+    {
+        assets.MapGet(path, (HttpContext context) =>
+        {
+            context.Response.Headers.CacheControl = "public,max-age=86400";
+            var stream = typeof(BDTestExtensions).Assembly.GetManifestResourceStream("BDTest.Razor.Reports.wwwroot" + path.Replace('/', '.'));
+            return Results.Stream(stream, contentType);
+        }).WithName("BDTest.Asset" + path).WithMetadata(new ReportRoutes.AssetMetadata());
+    }
+
     /// <summary>Adds report response security headers. Configure options through AddBDTestReports before Build.</summary>
     public static void UseBDTestReportServer(this IApplicationBuilder applicationBuilder)
     {
         var options = applicationBuilder.ApplicationServices.GetRequiredService<IOptions<BDTestReportOptions>>().Value;
+        var routes = applicationBuilder.ApplicationServices.GetRequiredService<ReportRoutes>();
         applicationBuilder.Use(async (context, next) =>
         {
-            if (options.EnableSecurityHeaders && context.Request.Path.StartsWithSegments("/bdtest"))
+            if (options.EnableSecurityHeaders && routes.Prefix != null && context.Request.Path.StartsWithSegments(routes.Prefix))
             {
                 // Register before MVC so redirects, rejected requests and errors also receive headers.
                 context.Response.OnStarting(() =>
                 {
-                    ReportSecurityHeaders.Apply(context);
+                    ReportSecurityHeaders.Apply(context, preventCaching: context.GetEndpoint()?.Metadata.GetMetadata<ReportRoutes.AssetMetadata>() == null);
                     return Task.CompletedTask;
                 });
             }

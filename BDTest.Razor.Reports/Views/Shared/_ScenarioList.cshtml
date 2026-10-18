@@ -147,7 +147,7 @@ else
                 PreviousUrl = selectedIndex > 0 ? SelectUrl(scenarios[selectedIndex - 1]) : null,
                 NextUrl = selectedIndex < scenarios.Count - 1 ? SelectUrl(scenarios[selectedIndex + 1]) : null,
                 CloseUrl = Context.GetLocalUrlWith(("scenarioId", null)),
-                FullPageUrl = Url.Content("~/bdtest/report/" + Uri.EscapeDataString(Model.ReportId ?? string.Empty) + "/scenario/" + Uri.EscapeDataString(selected.Guid ?? string.Empty))
+                FullPageUrl = Url.ReportScenario(Model.ReportId, selected.Guid)
             })
         }
     </div>

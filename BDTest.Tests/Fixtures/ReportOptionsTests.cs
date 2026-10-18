@@ -86,8 +86,9 @@ public class ReportOptionsTests
         Assert.That(exception.Message, Does.Contain(property.StartsWith("Maximum") ? "Attachment limits" : property));
     }
 
-    [Test]
-    public async Task Bound_options_and_constructor_injected_extensions_serve_reports()
+    [TestCase("/bdtest")]
+    [TestCase("/team/reports")]
+    public async Task Bound_options_and_constructor_injected_extensions_serve_reports(string prefix)
     {
         var builder = WebApplication.CreateBuilder();
         builder.WebHost.UseUrls("http://127.0.0.1:0");
@@ -112,10 +113,10 @@ public class ReportOptionsTests
         builder.Services.AddSingleton<IRunIndexStore>(provider => provider.GetRequiredService<InjectedStore>());
         await using var app = builder.Build();
         app.UseBDTestReportServer();
-        app.MapControllers();
+        app.MapBDTestReports(prefix);
         await app.StartAsync();
         using var client = new HttpClient { BaseAddress = new Uri(app.Urls.Single()) };
-        using var request = new HttpRequestMessage(HttpMethod.Post, "bdtest/data")
+        using var request = new HttpRequestMessage(HttpMethod.Post, prefix + "/data")
         {
             Content = new StringContent("{}", Encoding.UTF8, "application/json")
         };
@@ -125,7 +126,7 @@ public class ReportOptionsTests
 
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
         var id = response.Headers.GetValues("X-BDTest-Report-Id").Single();
-        var html = await client.GetStringAsync($"bdtest/report/{id}/summary");
+        var html = await client.GetStringAsync($"{prefix}/report/{id}/summary");
         Assert.That(html, Does.Contain("constructor injected header"));
         Assert.That(html, Does.Contain("constructor injected sidebar"));
         Assert.That(html, Does.Contain("constructor injected user"));

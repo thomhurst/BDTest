@@ -90,8 +90,8 @@ public class HistoryTests
             Assert.That(html, Does.Not.Contain("<tag>"));
             var links = Regex.Matches(html, "href=\"([^\"]*/summary)\"").Select(match => HttpUtility.HtmlDecode(match.Groups[1].Value)).ToList();
             // Each run is linked from the results chart, the duration chart and the table.
-            Assert.That(links.Count(link => link == "/team's reports/bdtest/report/O%27Brien/summary"), Is.EqualTo(3));
-            Assert.That(links, Has.All.StartsWith("/team's reports/bdtest/report/"));
+            Assert.That(links.Count(link => link == "/team's%20reports/bdtest/report/O%27Brien/summary"), Is.EqualTo(3));
+            Assert.That(links, Has.All.StartsWith("/team's%20reports/bdtest/report/"));
             Assert.That(html, Does.Not.Contain("attacker.example"));
         }
         finally
@@ -152,9 +152,9 @@ public class HistoryTests
         var links = Regex.Matches(html, "href=\"([^\"]+)\"").Select(match => HttpUtility.HtmlDecode(match.Groups[1].Value))
             .Where(link => link.Contains("/report/"))
             .ToList();
-        Assert.That(links, Does.Contain("/team's reports/bdtest/report/O%27Brien/scenario/scenario-O%27Brien"));
-        Assert.That(links, Does.Contain("/team's reports/bdtest/report/O%27Brien/top-defects"));
-        Assert.That(links, Does.Contain("/team's reports/bdtest/report/second/scenario/scenario-second"));
+        Assert.That(links, Does.Contain("/team's%20reports/bdtest/report/O%27Brien/scenario/scenario-O%27Brien"));
+        Assert.That(links, Does.Contain("/team's%20reports/bdtest/report/O%27Brien/failures"));
+        Assert.That(links, Does.Contain("/team's%20reports/bdtest/report/second/scenario/scenario-second"));
         Assert.That(html, Does.Not.Contain("attacker.example"));
     }
 

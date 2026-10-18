@@ -22,9 +22,8 @@ builder.Services.AddBDTestReports(options =>
 
 var app = builder.Build();
 app.UseBDTestReportServer();
-app.UseStaticFiles();
 app.UseRouting();
-app.MapControllers();
+app.MapBDTestReports();
 app.Run();
 ```
 

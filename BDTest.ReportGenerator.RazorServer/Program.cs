@@ -4,6 +4,8 @@ using BDTest.Razor.Reports.Interfaces;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc.Controllers;
 using Microsoft.Extensions.Options;
 using Microsoft.Identity.Web;
 using Microsoft.Identity.Web.UI;
@@ -116,6 +118,16 @@ public class Program
         app.UseAuthentication();
         app.UseAuthorization();
 
+        app.MapBDTestReports().Add(endpoint =>
+        {
+            // This host uses an upload key for ingestion, and allows error pages and assets before sign-in.
+            var action = endpoint.Metadata.OfType<ControllerActionDescriptor>().SingleOrDefault();
+            if (action == null || action.ControllerName == "BDTest" && action.ActionName is "Ping" or "Index" or "Error"
+                || action.ControllerName == "Attachments" && action.ActionName == "Upload")
+                endpoint.Metadata.Add(new AllowAnonymousAttribute());
+        });
+        app.MapGet("/", (HttpContext context) =>
+            Results.Redirect(context.Request.PathBase.Add("/bdtest/report/test-runs").ToUriComponent()));
         app.MapControllerRoute(
             name: "default",
             pattern: "{controller=Home}/{action=Index}/{id?}");

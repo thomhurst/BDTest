@@ -192,7 +192,7 @@ public class ReportStoreTests
         builder.Services.AddSingleton<IRunIndexStore>(store);
         await using var app = builder.Build();
         app.UseBDTestReportServer();
-        app.MapControllers();
+        app.MapBDTestReports();
         await app.StartAsync();
         using var client = new HttpClient { BaseAddress = new Uri(app.Urls.Single()) };
         using var response = await client.GetAsync("bdtest/report/run/raw-json-data");

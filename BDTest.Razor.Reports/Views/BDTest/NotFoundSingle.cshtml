@@ -9,7 +9,7 @@
     ViewBag.Title = scenarioMissing ? "Scenario not found" : "Run not found";
     Layout = "_Layout";
 
-    var reportUrl = Url.Content("~/bdtest/report/" + Uri.EscapeDataString(Model ?? string.Empty));
+    var reportId = Model ?? string.Empty;
     var latest = scenarioMissing
         ? null
         : (await DataRepository.GetAllTestRunRecords(Context.RequestAborted) ?? Enumerable.Empty<BDTest.Razor.Reports.Models.TestRunSummary>())
@@ -31,8 +31,8 @@
                 @(string.IsNullOrEmpty(started) ? "The run is here" : $"The run from {started} is here"), but it has no scenario with this ID. It may have been renamed.
             </p>
             <div class="cluster">
-                <a class="btn pri" href="@reportUrl/all-scenarios">Search this run</a>
-                <a class="btn" href="@reportUrl/summary">Run overview</a>
+                <a class="btn pri" href="@(Url.ReportAction("AllScenarios", new { id = reportId }))">Search this run</a>
+                <a class="btn" href="@(Url.ReportAction("Summary", new { id = reportId }))">Run overview</a>
             </div>
         </section>
     }
@@ -45,9 +45,9 @@
             <div class="cluster">
                 @if (latest != null)
                 {
-                    <a class="btn pri" href="@Url.Content("~/bdtest/report/" + Uri.EscapeDataString(latest.RecordId) + "/summary")">@($"Latest {(string.IsNullOrEmpty(latest.Tag) ? "" : latest.Tag + " ")}run")</a>
+                    <a class="btn pri" href="@Url.ReportAction("Summary", new { id = latest.RecordId })">@($"Latest {(string.IsNullOrEmpty(latest.Tag) ? "" : latest.Tag + " ")}run")</a>
                 }
-                <a class="btn @(latest == null ? "pri" : "")" href="~/bdtest/report/test-runs">All runs</a>
+                <a class="btn @(latest == null ? "pri" : "")" href="@Url.ReportAction("TestRuns")">All runs</a>
             </div>
         </section>
     }

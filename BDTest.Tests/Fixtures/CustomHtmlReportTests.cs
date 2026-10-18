@@ -5,6 +5,8 @@ using BDTest.Razor.Reports.Models.ViewModels;
 using BDTest.Test;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Logging;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Abstractions;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
@@ -23,14 +25,18 @@ public class CustomHtmlReportTests
     private WebApplication _application;
 
     [OneTimeSetUp]
-    public void CreateApplication()
+    public async Task CreateApplication()
     {
         var builder = WebApplication.CreateBuilder(new WebApplicationOptions
         {
             ApplicationName = typeof(BDTestExtensions).Assembly.GetName().Name
         });
         builder.Services.AddBDTestReports();
+        builder.WebHost.UseUrls("http://127.0.0.1:0");
+        builder.Logging.ClearProviders();
         _application = builder.Build();
+        _application.MapBDTestReports();
+        await _application.StartAsync();
     }
 
     [OneTimeTearDown]
@@ -101,6 +107,7 @@ public class CustomHtmlReportTests
         var scenario = ReportJson.DeserializeObject<Scenario>(ReportJson.SerializeObject(new
         {
             Guid = "custom-html-test",
+            ReportId = "custom-html-run",
             Steps = Array.Empty<object>(),
             CustomTestInformation = Array.Empty<object>(),
             CustomHtmlOutputForReport = payload

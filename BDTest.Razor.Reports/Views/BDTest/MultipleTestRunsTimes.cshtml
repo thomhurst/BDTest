@@ -55,7 +55,7 @@
                 @(sort switch { "average" => "Slowest average first.", "name" => "Sorted by name.", _ => "Sorted by slowest minus fastest." })
             </p>
         </div>
-        <form class="inline-field" method="get" action="@Url.Content(history.ChosenRuns ? "~/bdtest/report/test-run-times" : "~/bdtest/report/history/timing")" data-autosubmit>
+        <form class="inline-field" method="get" action="@(history.ChosenRuns ? Url.ReportAction("TestRunTimes") : Url.ReportAction("TimingVariance"))" data-autosubmit>
             @if (history.ChosenRuns)
             {
                 <input type="hidden" name="reportIds" value="@Context.Request.Query["reportIds"]">
@@ -86,7 +86,7 @@
             <p>@(reports.Count == 0 ? "Change the filters above to choose runs to compare." : "Timings are compared only for scenarios that passed.")</p>
             @if (reports.Count == 0)
             {
-                <div class="cluster"><a class="btn" href="@Url.Content("~/bdtest/report/history/timing")">Reset filters</a></div>
+                <div class="cluster"><a class="btn" href="@Url.ReportAction("TimingVariance")">Reset filters</a></div>
             }
         </section>
     }
@@ -113,7 +113,7 @@
                             <td>
                                 @if (hasLink)
                                 {
-                                    <a href="@Url.Content("~/bdtest/report/" + Uri.EscapeDataString(latest.Report.Id ?? string.Empty) + "/scenario/" + Uri.EscapeDataString(latest.Scenario.Guid ?? string.Empty))" style="text-decoration: none; color: var(--ink)">
+                                    <a href="@Url.ReportScenario(latest.Report.Id, latest.Scenario.Guid)" style="text-decoration: none; color: var(--ink)">
                                         <span class="row-title" style="display: block">@timing.ScenarioName</span>
                                     </a>
                                 }

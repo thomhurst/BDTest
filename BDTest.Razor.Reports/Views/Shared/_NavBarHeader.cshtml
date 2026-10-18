@@ -23,10 +23,10 @@
 
 <header class="app-header">
     <div class="wrap">
-        <a class="brand" href="~/bdtest/report/test-runs"><span class="brand-mark" aria-hidden="true">BD</span>BDTest</a>
+        <a class="brand" href="@Url.ReportAction("TestRuns")"><span class="brand-mark" aria-hidden="true">BD</span>BDTest</a>
         <nav class="main-nav" aria-label="Main">
-            <a class="navl @(isRuns ? "on" : "")" href="~/bdtest/report/test-runs" aria-current="@(isRuns ? "page" : null)">Runs</a>
-            <a class="navl @(isHistory ? "on" : "")" href="~/bdtest/report/history" aria-current="@(isHistory ? "page" : null)">History</a>
+            <a class="navl @(isRuns ? "on" : "")" href="@Url.ReportAction("TestRuns")" aria-current="@(isRuns ? "page" : null)">Runs</a>
+            <a class="navl @(isHistory ? "on" : "")" href="@Url.ReportAction("Trends")" aria-current="@(isHistory ? "page" : null)">History</a>
         </nav>
         <div class="grow"></div>
 

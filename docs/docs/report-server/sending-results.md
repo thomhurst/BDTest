@@ -63,8 +63,8 @@ All return `Task<Uri>`, the summary page of the new report.
 
 ## What happens during an upload
 
-1. A best-effort `GET /bdtest/ping` warms up the server. Any path in the server address is replaced, so both requests go to the host root; see [path prefixes](hosting.md#path-prefixes).
-2. The report is posted as JSON to `POST /bdtest/data`.
+1. A best-effort `GET /bdtest/ping` warms up the server. A bare origin uses `/bdtest`; a supplied path is the full report prefix and is preserved for every request; see [path prefixes](hosting.md#path-prefixes).
+2. The report is posted as JSON to `<report-base>/data` (`POST /bdtest/data` by default).
 3. On HTTP 408, 429, 500, 502, 503 or 504, a network error or a timeout, the client retries, up to three attempts in total. It honours a `Retry-After` header given in seconds or as an HTTP date.
 4. The server creates a new ID for the report and returns its URL. `X-BDTest-Report-Id` identifies it.
 5. For reports with attachments, the response also contains `X-BDTest-Attachment-Token`. The client sends that receipt and the upload key to `POST /bdtest/data/{reportId}/attachments/{attachmentId}`, once for each referenced attachment. Files stream from the selected run; each transient retry opens a fresh stream. The method returns only after every attachment succeeds.

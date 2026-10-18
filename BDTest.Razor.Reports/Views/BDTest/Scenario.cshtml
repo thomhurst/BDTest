@@ -12,9 +12,8 @@
     var run = ViewData[nameof(ReportLayoutViewModel)] as ReportLayoutViewModel;
     var report = run?.Report;
     var reportId = report?.Id ?? Model.ReportId ?? string.Empty;
-    var reportUrl = Url.Content("~/bdtest/report/" + Uri.EscapeDataString(reportId));
     var storyText = Model.GetStoryText();
-    var storyUrl = reportUrl + "/all-scenarios?story=" + Uri.EscapeDataString(storyText ?? string.Empty);
+    var storyUrl = Url.ReportAction("AllScenarios", new { id = reportId }) + "?story=" + Uri.EscapeDataString(storyText ?? string.Empty);
 
     var siblings = run?.Scenarios ?? (IReadOnlyList<Scenario>)new List<Scenario>();
     var index = siblings.ToList().FindIndex(scenario => scenario.Guid == Model.Guid);
@@ -39,17 +38,17 @@
     var file = string.IsNullOrEmpty(Model.FileName) ? null : Model.FileName.Replace('\\', '/');
     var fileName = file?.Split('/')[^1];
 
-    string ScenarioUrl(Scenario scenario) => reportUrl + "/scenario/" + Uri.EscapeDataString(scenario.Guid ?? string.Empty);
+    string ScenarioUrl(Scenario scenario) => Url.ReportScenario(reportId, scenario.Guid);
 }
 
 <section class="page-head padded" aria-label="Scenario">
     <div class="wrap">
         <nav class="crumbs" aria-label="Breadcrumb">
-            <a class="lnk" href="~/bdtest/report/test-runs">Runs</a><span aria-hidden="true">/</span>
+            <a class="lnk" href="@Url.ReportAction("TestRuns")">Runs</a><span aria-hidden="true">/</span>
             @if (run != null)
             {
                 var started = run.Timer.TestsStartedAt;
-                <a class="lnk" href="@reportUrl/summary">@run.Title@(started == default ? "" : " · " + started.ToRunDate(includeYear: false))</a><span aria-hidden="true">/</span>
+                <a class="lnk" href="@(Url.ReportAction("Summary", new { id = reportId }))">@run.Title@(started == default ? "" : " · " + started.ToRunDate(includeYear: false))</a><span aria-hidden="true">/</span>
                 <a class="lnk" href="@storyUrl">@ReportUi.StoryTitle(storyText)</a>
                 var total = run.Scenarios.Count;
                 var failed = run.Counts[Status.Failed];
@@ -81,7 +80,7 @@
                 {
                     <span class="small muted">@(index + 1) of @siblings.Count in this run</span>
                 }
-                @if (previous != null)
+                @if (previous != null && !string.IsNullOrEmpty(previous.Guid))
                 {
                     <a class="btn sm" href="@ScenarioUrl(previous)" rel="prev">@ReportUi.Icon("i-chev-l")Previous</a>
                 }
@@ -89,7 +88,7 @@
                 {
                     <span class="btn sm" aria-disabled="true">@ReportUi.Icon("i-chev-l")Previous</span>
                 }
-                @if (next != null)
+                @if (next != null && !string.IsNullOrEmpty(next.Guid))
                 {
                     <a class="btn sm" href="@ScenarioUrl(next)" rel="next">Next@(ReportUi.Icon("i-chev-r"))</a>
                 }
@@ -337,7 +336,7 @@
                             <dt>Branch</dt><dd>@report.BranchName</dd>
                         }
                     </dl>
-                    <div class="cluster"><a class="lnk" href="@reportUrl/summary">Run overview</a><a class="lnk" href="@reportUrl/raw-json-data" download>Run JSON</a></div>
+                    <div class="cluster"><a class="lnk" href="@(Url.ReportAction("Summary", new { id = reportId }))">Run overview</a><a class="lnk" href="@(Url.ReportAction("RawJsonData", new { id = reportId }))" download>Run JSON</a></div>
                 }
             </section>
         </aside>

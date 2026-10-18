@@ -51,7 +51,7 @@
         .ToList();
 
     string ScenarioUrl(BDTestOutputModel report, Scenario scenario) =>
-        Url.Content("~/bdtest/report/" + Uri.EscapeDataString(report.Id ?? string.Empty) + "/scenario/" + Uri.EscapeDataString(scenario.Guid ?? string.Empty));
+        Url.ReportScenario(report.Id, scenario.Guid);
     string F(double value) => value.ToString("0.##", CultureInfo.InvariantCulture);
     string Range(IEnumerable<TimeSpan> times)
     {
@@ -80,7 +80,7 @@
         </div>
         @if (!history.ChosenRuns)
         {
-            <form class="inline-field" method="get" action="@Url.Content("~/bdtest/report/history/flaky")" data-autosubmit>
+            <form class="inline-field" method="get" action="@Url.ReportAction("TestRunFlakiness")" data-autosubmit>
                 @foreach (var pair in history.Filter.ToQuery(false))
                 {
                     <input type="hidden" name="@pair.Key" value="@pair.Value">
@@ -103,7 +103,7 @@
             <span class="mark">@ReportUi.Icon("i-search", "xl")</span>
             <h2>No runs in this range</h2>
             <p>Change the filters above to choose runs to compare.</p>
-            <div class="cluster"><a class="btn" href="@Url.Content("~/bdtest/report/history/flaky")">Reset filters</a></div>
+            <div class="cluster"><a class="btn" href="@Url.ReportAction("TestRunFlakiness")">Reset filters</a></div>
         </section>
     }
     else if (flaky.Count == 0)
@@ -230,7 +230,7 @@
                                 }
                                 <div class="cluster" style="gap: 14px">
                                     <a class="lnk" href="@ScenarioUrl(lastFailure.Report, lastFailure.Scenario)">Open latest failure</a>
-                                    <a class="lnk" href="@Url.Content("~/bdtest/report/" + Uri.EscapeDataString(lastFailure.Report.Id ?? string.Empty) + "/top-defects")">Failures in that run</a>
+                                    <a class="lnk" href="@Url.ReportAction("TopDefects", new { id = lastFailure.Report.Id ?? string.Empty })">Failures in that run</a>
                                 </div>
                             </div>
                         </div>

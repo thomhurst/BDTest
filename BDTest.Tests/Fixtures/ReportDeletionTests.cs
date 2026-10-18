@@ -61,7 +61,7 @@ public class ReportDeletionTests
             });
             await next();
         });
-        _application.MapControllers();
+        _application.MapBDTestReports();
         await _application.StartAsync();
     }
 

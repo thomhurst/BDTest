@@ -14,6 +14,11 @@
     <ItemGroup>
         <FrameworkReference Include="Microsoft.AspNetCore.App" />
     </ItemGroup>
+
+    <ItemGroup>
+      <Content Remove="wwwroot\**\*" />
+      <EmbeddedResource Include="wwwroot\**\*" />
+    </ItemGroup>
     
     <ItemGroup>
       <ProjectReference Include="..\BDTest\BDTest.csproj" />

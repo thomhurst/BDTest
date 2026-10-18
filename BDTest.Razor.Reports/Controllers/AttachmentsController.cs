@@ -3,7 +3,6 @@ using BDTest.Razor.Reports.Implementations;
 using BDTest.Razor.Reports.Interfaces;
 using BDTest.Razor.Reports.Models;
 using BDTest.Razor.Reports.Storage;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Mvc;
@@ -11,14 +10,13 @@ using Microsoft.Extensions.Options;
 
 namespace BDTest.Razor.Reports.Controllers;
 
-[Route("bdtest")]
+[Route("")]
 [TypeFilter(typeof(ReportAuthorizationFilter), Arguments = new object[] { false })]
 public sealed class AttachmentsController(IDataRepository repository, IOptions<BDTestReportOptions> configuredOptions,
     ReportAttachmentGate attachmentGate, IBDTestAttachmentStore attachmentStore = null) : Controller
 {
     private readonly BDTestReportOptions options = configuredOptions.Value;
 
-    [AllowAnonymous]
     [HttpPost("data/{reportId}/attachments/{attachmentId}")]
     [ServiceFilter(typeof(ReportUploadFilter))]
     public async Task<IActionResult> Upload(string reportId, string attachmentId, CancellationToken cancellationToken)

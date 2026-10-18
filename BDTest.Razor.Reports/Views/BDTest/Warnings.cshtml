@@ -7,7 +7,7 @@
     ViewData["RunTab"] = "notrun";
     Layout = "_Layout";
 
-    var reportUrl = Url.Content("~/bdtest/report/" + Uri.EscapeDataString(Model.Id ?? string.Empty));
+    var reportId = Model.Id ?? string.Empty;
     var notRun = (Model.NotRun ?? new List<BDTest.Test.BuildableTest>()).Where(test => test != null)
         .OrderBy(test => test.GetStoryText()).ThenBy(test => test.GetScenarioText()).ToList();
 
@@ -23,7 +23,7 @@
             <span class="mark p">@ReportUi.Icon("i-pass", "xl")</span>
             <h2>Every declared test ran</h2>
             <p>No test finished without calling <span class="mono">.BDTestAsync()</span>, so nothing is missing from this run.</p>
-            <a class="lnk" href="@reportUrl/summary">Back to the overview</a>
+            <a class="lnk" href="@(Url.ReportAction("Summary", new { id = reportId }))">Back to the overview</a>
         </section>
     }
     else
