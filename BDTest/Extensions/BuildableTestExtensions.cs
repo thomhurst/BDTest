@@ -9,7 +9,7 @@ internal static class BuildableTestExtensions
 {
     internal static MethodInfo GetTestMethod(this BuildableTest buildableTest)
     {
-        var candidates = buildableTest?.BdTestBase?.GetType().GetMethods()
+        var candidates = buildableTest.GetTestClass()?.GetMethods()
             .Where(method => method.Name == buildableTest.CallerMember).ToArray();
         if (candidates == null || candidates.Length == 0)
         {
@@ -48,5 +48,5 @@ internal static class BuildableTestExtensions
     private static Type NormalizeGenericType(Type type) =>
         type?.IsGenericType == true ? type.GetGenericTypeDefinition() : type;
 
-    internal static Type GetTestClass(this BuildableTest buildableTest) => buildableTest?.BdTestBase?.GetType();
+    internal static Type GetTestClass(this BuildableTest buildableTest) => buildableTest?.BdTestBase?.TestInstance.GetType();
 }

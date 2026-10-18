@@ -12,6 +12,9 @@ namespace BDTest.Test;
 
 public abstract class BDTestBase
 {
+    // Composition hosts supply the fixture that owns metadata and attributed hooks.
+    internal virtual object TestInstance => this;
+
     /// <summary>Gets the run that owns this test's scenarios and output.</summary>
     /// <remarks>Custom adapters should override this property with a stable, explicitly owned run.</remarks>
     public virtual BDTestRun TestRun => BDTestRun.Default;
@@ -319,7 +322,7 @@ public abstract class BDTestBase
 
     public string GetStoryText()
     {
-        var classType = GetType();
+        var classType = TestInstance.GetType();
         var storyAttribute = classType.GetCustomAttribute(typeof(StoryAttribute)) as StoryAttribute;
 
         while (storyAttribute == null && classType != null)
@@ -346,7 +349,7 @@ public abstract class BDTestBase
             object result;
             try
             {
-                result = method.Invoke(this, Array.Empty<object>());
+                result = method.Invoke(TestInstance, Array.Empty<object>());
             }
             catch (TargetInvocationException exception) when (exception.InnerException != null)
             {
@@ -368,7 +371,7 @@ public abstract class BDTestBase
 
         // Walk every declaration to include private base hooks and hidden methods.
         // Select the most derived override once, then execute base classes first.
-        for (var type = GetType(); type != null; type = type.BaseType)
+        for (var type = TestInstance.GetType(); type != null; type = type.BaseType)
         {
             var methods = new List<MethodInfo>();
             foreach (var method in type.GetMethods(BindingFlags.Instance | BindingFlags.Public |

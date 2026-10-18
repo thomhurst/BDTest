@@ -43,6 +43,7 @@ const sidebars = {
         'frameworks/xunit',
         'frameworks/mstest',
         'frameworks/standalone',
+        'frameworks/composition',
         'frameworks/custom-adapters',
       ],
     },

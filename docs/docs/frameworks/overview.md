@@ -17,6 +17,8 @@ BDTest does not replace your test runner. It runs inside it. An adapter package 
 
 All adapter base classes take a [context](../writing-tests/test-context.md) type with the constraint `where TContext : class, new()`. There are no non-generic adapter base classes. Use an empty context class if you do not need state.
 
+If your test class already has another base class, the core [composition host](composition.md) provides a typed context, scenario builders, and output helpers with manual lifecycle integration.
+
 ## What an adapter does
 
 Each adapter is a thin class that derives from `AbstractContextBDTestBase<TContext>`. It:
