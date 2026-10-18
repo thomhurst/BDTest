@@ -10,35 +10,43 @@ internal class Runnable
     internal Expression<Func<Task>> Task { get; }
     internal Expression<Action> Action { get; }
     private readonly Expression<Func<CancellationToken, Task>> _cancellableTask;
+    // Keep compilation lazy so skipped definitions are never compiled. Lazy also
+    // shares one delegate safely when the same definition executes concurrently.
+    private readonly Lazy<Action> _compiledAction;
+    private readonly Lazy<Func<Task>> _compiledTask;
+    private readonly Lazy<Func<CancellationToken, Task>> _compiledCancellableTask;
     internal bool AcceptsCancellationToken => _cancellableTask != null;
     internal Expression ExpressionBody => Action?.Body ?? Task?.Body ?? _cancellableTask?.Body;
 
     internal Runnable(Expression<Func<Task>> step)
     {
         Task = step ?? throw new ArgumentNullException(nameof(step));
+        _compiledTask = new Lazy<Func<Task>>(step.Compile);
     }
 
     internal Runnable(Expression<Func<CancellationToken, Task>> step)
     {
         _cancellableTask = step ?? throw new ArgumentNullException(nameof(step));
+        _compiledCancellableTask = new Lazy<Func<CancellationToken, Task>>(step.Compile);
     }
 
     public Runnable(Expression<Action> step)
     {
         Action = step ?? throw new ArgumentNullException(nameof(step));
+        _compiledAction = new Lazy<Action>(step.Compile);
     }
 
     internal async Task Run(CancellationToken cancellationToken = default)
     {
         if (_cancellableTask != null)
         {
-            await _cancellableTask.Compile().Invoke(cancellationToken).ConfigureAwait(false);
+            await _compiledCancellableTask.Value.Invoke(cancellationToken).ConfigureAwait(false);
             return;
         }
 
         if (Task != null)
         {
-            await Task.Compile().Invoke();
+            await _compiledTask.Value.Invoke();
             return;
         }
 
@@ -55,7 +63,7 @@ internal class Runnable
                 "for other awaitables, use an async Task helper that awaits the operation.");
         }
 
-        Action.Compile().Invoke();
+        _compiledAction.Value.Invoke();
     }
 
     private static bool IsAwaiterType(Type type)
