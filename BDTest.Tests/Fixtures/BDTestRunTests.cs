@@ -153,7 +153,7 @@ public class BDTestRunTests
 
         Assert.That(firstFixture.BDTestContext.CurrentScenario, Is.SameAs(firstScenario));
         Assert.That(secondFixture.BDTestContext.CurrentScenario, Is.SameAs(secondScenario));
-        Assert.That(firstFixture.BDTestContext.CurrentTestRunnerId, Is.EqualTo(first.ReportId));
+        Assert.That(firstFixture.BDTestContext.ReportId, Is.EqualTo(first.ReportId));
         Assert.That(firstScenario.TestStartupInformation, Does.Contain("first startup").And.Not.Contain("second startup"));
         Assert.That(secondScenario.TestStartupInformation, Does.Contain("second startup").And.Not.Contain("first startup"));
         Assert.That(firstScenario.CustomHtmlOutputForReport, Does.Contain("first saved writer"));

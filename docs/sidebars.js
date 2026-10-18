@@ -102,6 +102,7 @@ const sidebars = {
         'migration/target-frameworks',
         'migration/delegate-steps',
         'migration/async-only',
+        'migration/fluent-builders',
         'migration/statuses',
         'migration/json-serialization',
         'migration/generated-name-text',

@@ -71,7 +71,7 @@ public class RunnableStepBuilderTests : BDTestBase
         var rejected = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
         var rejectionCount = 0;
         var builder = Given(() => HoldExecution(entered, finish.Task)).When(() => NoOp()).Then(() => NoOp());
-        var continuation = useContinuation ? builder.And(() => NoOp()) : builder;
+        RunnableStepBuilder continuation = useContinuation ? builder.And(() => NoOp()) : builder;
         var callers = Enumerable.Range(0, callerCount).Select(index => Task.Run(async () =>
         {
             await start.Task;
@@ -118,8 +118,8 @@ public class RunnableStepBuilderTests : BDTestBase
     {
         var parent = Given(() => CountExecution()).When(() => NoOp()).Then(() => NoOp());
         var child = parent.And(() => NoOp());
-        var first = executeChildFirst ? child : parent;
-        var second = executeChildFirst ? parent : child;
+        RunnableStepBuilder first = executeChildFirst ? child : parent;
+        RunnableStepBuilder second = executeChildFirst ? parent : child;
 
         var firstResult = await first;
         var secondResult = await second;

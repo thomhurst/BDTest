@@ -14,7 +14,7 @@ description: Read collected scenarios with BDTestUtil, and the Scenario, Step an
 | `GetScenarios()` / `GetScenarios(BDTestRun)` | Every executed scenario. Outlines appear once, with their rows in `Examples`. |
 | `GetNotRunScenarios()` / `GetNotRunScenarios(BDTestRun)` | `List<BuildableTest>` of chains that were built but not executed. |
 | `ClearScenarios()` / `ClearScenarios(BDTestRun)` | Clears collected scenarios. |
-| `GetCurrentReportId` | The current report ID. |
+| `CurrentReportId` | The default run's report ID; use `run.ReportId` for an explicit run. |
 | `GetTestTimer(IReadOnlyCollection<Scenario> scenarios)` | Start, finish and elapsed time for those scenarios. |
 
 Use it to build custom reports or to assert on results in a teardown:
@@ -76,5 +76,5 @@ Treat `BdTestBaseClass` as a best-effort runtime reference, not retained report 
 | `TestBase` | The test class instance. |
 | `CurrentScenario` | `Scenario?`: the running scenario, or `null` before one exists, including while an outline row is being created. |
 | `CurrentScenarioBDTestExecutionId` | The execution ID. |
-| `CurrentTestRunnerId` | The report ID of the test's run. |
+| `ReportId` | The report ID of the test's run. |
 | `GetStoryText()`, `GetScenarioText()` | Story and scenario text. |

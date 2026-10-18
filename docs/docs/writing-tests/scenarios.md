@@ -149,8 +149,11 @@ Each continuation (for example `Then(...).And(...)`) creates an independent buil
 await When(() => Action())
     .Then(() => Check())
     .WithScenarioText("Checking works")
+    .And(() => AnotherCheck())
     .BDTestAsync();
 ```
+
+`WithArgs` and `WithStepText` return the concrete builder on every step kind. `WithScenarioText` does the same on `Then`, `AndThen` and `ButThen`, so you can continue chaining after naming a scenario. Continuations inherit the text at construction; changing one branch later does not rename its siblings. The step kinds are sealed and do not inherit from each other. See the [migration guide](../migration/fluent-builders.md) for explicitly typed variables.
 
 ## Tests that are not run
 

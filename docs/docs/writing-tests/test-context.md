@@ -112,7 +112,16 @@ Cleanup must use the context object being disposed. Reading the fixture's `Conte
 
 ## Inline contexts
 
-`BDTestBase.WithContext<T>(...)` is the older parameterless-construction helper. It passes an object directly to your delegate and does not use adapter context storage, factories, initialization, retry recreation or ownership. Manage that object's lifetime yourself, or use a context base class for the managed lifetime above.
+Create the context explicitly when you do not need the adapter-managed lifetime:
+
+```csharp
+var context = new MyContext();
+await Given(() => Prepare(context))
+    .When(() => Act(context))
+    .Then(() => Verify(context));
+```
+
+You manage this object's lifetime, initialization and disposal. It is not recreated on retry. The `WithContext<T>(...)` helpers have been removed; see [public names and fluent builders](../migration/fluent-builders.md).
 
 ## Parallel tests
 

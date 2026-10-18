@@ -1,6 +1,6 @@
 namespace BDTest.Test.Steps.When;
 
-public class AndWhen : When
+public sealed class AndWhen : WhenStepBuilder
 {
     protected override StepType StepType { get; } = StepType.AndWhen;
 
@@ -9,13 +9,15 @@ public class AndWhen : When
     }
 
     /// <summary>Supplies lazy step-text arguments, evaluated once per executed attempt.</summary>
-    public new AndWhen WithArgs(params Func<object?>[] arguments)
+    public AndWhen WithArgs(params Func<object?>[] arguments)
     {
-        return WithArgs<AndWhen>(arguments);
+        SetArguments(arguments);
+        return this;
     }
 
-    public new AndWhen WithStepText(Func<string?>? overridingStepText)
+    public AndWhen WithStepText(Func<string?>? overridingStepText)
     {
-        return WithStepText<AndWhen>(overridingStepText);
+        SetStepText(overridingStepText);
+        return this;
     }
 }

@@ -39,8 +39,9 @@ public async Task Logins() => await ScenarioOutline("Login",
 [Test]
 public async Task WithSharedState()
 {
-    await WithContext<MyContext>(context => Given(() => Prepare(context))
-        .When(() => Act(context)).Then(() => Verify(context)).BDTestAsync());
+    var context = new MyContext();
+    await Given(() => Prepare(context))
+        .When(() => Act(context)).Then(() => Verify(context)).BDTestAsync();
 }
 ```
 
