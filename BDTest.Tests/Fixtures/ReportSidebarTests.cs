@@ -60,6 +60,52 @@ public class ReportSidebarTests
         await _application.DisposeAsync();
     }
 
+    [TestCase(false)]
+    [TestCase(true)]
+    public async Task Retry_history_renders_attempt_status_duration_and_encoded_exceptions(bool retryHookFailed)
+    {
+        _repository.Report.Scenarios = [JsonConvert.DeserializeObject<Scenario>("""
+            {
+              "Guid": "scenario-632", "Status": "Passed", "RetryCount": 1,
+              "Steps": [], "CustomTestInformation": [],
+              "Attempts": [
+                { "Number": 1, "Status": "Failed", "TimeTaken": "0.00:00:00:1250000",
+                  "Exception": { "TypeName": "InvalidOperationException", "Message": "<retry failure>",
+                    "AsString": "InvalidOperationException: <retry failure>\n   at FailingStep()" } },
+                { "Number": 2, "Status": "Passed", "TimeTaken": "0.00:00:00:2500000" }
+              ]
+            }
+            """)];
+
+        if (retryHookFailed)
+            _repository.Report.Scenarios.Single().Attempts.RemoveAt(1);
+
+        var html = await _client.GetStringAsync("/bdtest/report/run-632/scenario/scenario-632");
+
+        Assert.That(html, Does.Contain("Retry history"));
+        Assert.That(html, Does.Contain("Retries: 1"));
+        Assert.That(html, Does.Contain("Failed</span>"));
+        Assert.That(html, Does.Contain("00:00:00.1250000"));
+        if (!retryHookFailed)
+        {
+            Assert.That(html, Does.Contain("Passed</span>"));
+            Assert.That(html, Does.Contain("00:00:00.2500000"));
+        }
+        Assert.That(html, Does.Contain("&lt;retry failure&gt;"));
+        Assert.That(html, Does.Contain("at FailingStep()"));
+        Assert.That(html, Does.Not.Contain("<retry failure>"));
+
+        var list = await _client.GetStringAsync("/bdtest/report/run-632/all-scenarios");
+        Assert.That(list, Does.Contain("Retries: 1"));
+    }
+
+    [Test]
+    public async Task Old_reports_do_not_render_retry_history()
+    {
+        var html = await _client.GetStringAsync("/bdtest/report/run-632/scenario/scenario-632");
+        Assert.That(html, Does.Not.Contain("Retry history"));
+    }
+
     [Test]
     public async Task Scenario_navigation_uses_the_loaded_report()
     {

@@ -179,6 +179,15 @@ builder with its own execution limit, step state, and report entry, even when th
 original builder has already run. Create a new chain or continuation to run another scenario. Configured BDTest
 retries still run within the original execution and retain one report entry.
 
+`Scenario.Attempts` retains each completed attempt in execution order, including
+initial and final attempts. Each entry has a one-based `Number`, `Status`,
+`Exception` (type, message, and stack trace), `StartTime`, `EndTime`, and `TimeTaken`.
+Durations measure each attempt; retry hooks run between attempts. `Scenario.Status`,
+`Steps`, and `TimeTaken` continue to describe the final attempt, and `RetryCount`
+continues to count retries. JSON reports include the history; older reports load
+with an empty history. Retried scenarios show a **Retry history** section in both
+standalone HTML and Razor reports, so failures remain visible after a passing retry.
+
 ### But steps
 
 Use `.But(...)` after a Given, When, or Then step to express a contrast. It accepts

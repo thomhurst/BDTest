@@ -48,6 +48,7 @@ internal class ScenarioExecutor : IScenarioExecutor
     private async Task ExecuteAttemptAsync(Scenario scenario)
     {
         var stopwatch = Stopwatch.StartNew();
+        Exception attemptException = null;
         try
         {
             scenario.StartTime = DateTime.UtcNow;
@@ -77,18 +78,21 @@ internal class ScenarioExecutor : IScenarioExecutor
                 ? Status.Skipped
                 : Status.Passed;
         }
-        catch (NotImplementedException)
+        catch (NotImplementedException e)
         {
+            attemptException = e;
             scenario.Status = Status.NotImplemented;
             throw;
         }
         catch (Exception e) when (BDTestSettings.CustomExceptionSettings.SuccessExceptionTypes.Contains(e.GetType()))
         {
+            attemptException = e;
             scenario.Status = Status.Passed;
             throw;
         }
         catch (Exception e) when (BDTestSettings.CustomExceptionSettings.SkipExceptionTypes.Contains(e.GetType()))
         {
+            attemptException = e;
             scenario.Status = Status.Skipped;
             foreach (var step in scenario.Steps.Where(step => step.Status == Status.Inconclusive))
             {
@@ -99,11 +103,15 @@ internal class ScenarioExecutor : IScenarioExecutor
         }
         catch (Exception e) when (BDTestSettings.CustomExceptionSettings.InconclusiveExceptionTypes.Contains(e.GetType()))
         {
+            attemptException = e;
             scenario.Status = Status.Inconclusive;
             throw;
         }
         catch (Exception e)
         {
+            attemptException = e;
+            scenario.Status = Status.Failed;
+
             var validRetryRules = BDTestSettings.GlobalRetryTestRules.Rules.Where(rule => rule.Condition(e)).ToList();
             if (validRetryRules.Any() && scenario.RetryCount < validRetryRules.Max(x => x.RetryLimit))
             {
@@ -117,8 +125,6 @@ internal class ScenarioExecutor : IScenarioExecutor
                 scenario.ShouldRetry = true;
                 return;
             }
-
-            scenario.Status = Status.Failed;
 
             await ConsoleReporter.WriteLine($"{Environment.NewLine}Exception: {e.Message}{Environment.NewLine}{e.StackTrace}{Environment.NewLine}", ConsoleColor.DarkRed).ConfigureAwait(false);
 
@@ -150,12 +156,19 @@ internal class ScenarioExecutor : IScenarioExecutor
 
                 ConsoleReporter.WriteLineToConsoleOnly($"Test Result: {scenario.Status}");
 
-                scenario.EndTime = DateTime.UtcNow;
-                stopwatch.Stop();
-                scenario.TimeTaken = stopwatch.Elapsed;
-
                 scenario.Output = string.Join(Environment.NewLine,
                     scenario.Steps.Where(step => !string.IsNullOrWhiteSpace(step.Output)).Select(step => step.Output));
+            }
+
+            var endTime = DateTime.UtcNow;
+            stopwatch.Stop();
+            scenario.Attempts.Add(new ScenarioAttempt(scenario.Attempts.Count + 1, scenario.Status,
+                attemptException, scenario.StartTime, endTime, stopwatch.Elapsed));
+
+            if (!scenario.ShouldRetry)
+            {
+                scenario.EndTime = endTime;
+                scenario.TimeTaken = stopwatch.Elapsed;
             }
         }
     }

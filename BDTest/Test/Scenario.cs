@@ -95,6 +95,11 @@ public class Scenario
         
     [JsonIgnore] internal bool ShouldRetry { get; set; }
     [JsonProperty] public int RetryCount { get; internal set; }
+
+    /// <summary>Completed execution attempts, including the initial and final attempts, in execution order.</summary>
+    /// <remarks>Reports created before attempt tracking was introduced have an empty collection.</remarks>
+    [JsonProperty] public List<ScenarioAttempt> Attempts { get; private set; } = new();
+
     /// <summary>The executing test instance, or null if it has been collected after execution.</summary>
     /// <remarks>Completed scenarios retain only a weak reference to the test instance.</remarks>
     [JsonIgnore] public BDTestBase BdTestBaseClass => RuntimeInformation?.BdTestBase;

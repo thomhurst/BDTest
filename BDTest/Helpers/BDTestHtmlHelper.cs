@@ -188,6 +188,21 @@ public static class BDTestHtmlHelper
         
         html.AppendLine($"            <div class=\"scenario-details\" id=\"details-{scenario.Guid}\" style=\"display: none;\">");
         
+        if (scenario.RetryCount > 0 && scenario.Attempts?.Count > 0)
+        {
+            html.AppendLine("                <div class=\"retry-history\"><h4>Retry history</h4>");
+            foreach (var attempt in scenario.Attempts)
+            {
+                html.AppendLine($"                    <details><summary>Attempt {attempt.Number}: {attempt.Status} ({EscapeHtml(attempt.TimeTaken.ToString())})</summary>");
+                if (attempt.Exception != null)
+                {
+                    html.AppendLine($"                        <pre class=\"stack-trace\">{EscapeHtml(attempt.Exception.AsString)}</pre>");
+                }
+                html.AppendLine("                    </details>");
+            }
+            html.AppendLine("                </div>");
+        }
+
         // Steps
         if (scenario.Steps?.Any() == true)
         {
