@@ -5,6 +5,7 @@ using System.Threading;
 using BDTest.Attributes;
 using BDTest.Interfaces;
 using BDTest.Settings;
+using BDTest.Test;
 using Humanizer;
 
 namespace BDTest.Helpers;
@@ -21,7 +22,7 @@ public static class StepTextHelper
 
     internal static string GetStepText(MethodInfo method, IReadOnlyList<Func<object>> arguments,
         bool omitCancellationToken, Action<string> diagnostic, bool evaluateArguments,
-        IReadOnlyList<StepTextConverterRegistration> converters = null)
+        IReadOnlyList<StepTextConverterRegistration> converters = null, Action<StepArgument> structuredArgument = null)
     {
         var parameters = method.GetParameters();
         var visibleParameters = parameters.Where(p => !omitCancellationToken || p.ParameterType != typeof(CancellationToken)).ToArray();
@@ -34,7 +35,7 @@ public static class StepTextHelper
         {
             var argumentIndex = arguments?.Count == parameters.Length ? parameter.Position : index;
             return evaluateArguments && arguments != null
-                ? GetArgumentValue(arguments[argumentIndex], parameter.Name, diagnostic, converters)
+                ? GetArgumentValue(arguments[argumentIndex], parameter.Name, diagnostic, converters, structuredArgument)
                 : $"{{{parameter.Name}}}";
         }).ToArray();
 
@@ -67,7 +68,7 @@ public static class StepTextHelper
     }
 
     internal static string GetArgumentValue(Func<object> argument, string name, Action<string> diagnostic,
-        IReadOnlyList<StepTextConverterRegistration> converters = null)
+        IReadOnlyList<StepTextConverterRegistration> converters = null, Action<StepArgument> structuredArgument = null)
     {
         try
         {
@@ -75,6 +76,12 @@ public static class StepTextHelper
             if (argumentValue == null)
             {
                 return "null";
+            }
+
+            if (argumentValue is StepArgument structured)
+            {
+                structuredArgument?.Invoke(structured);
+                return structured.ToString();
             }
 
             if (converters != null)

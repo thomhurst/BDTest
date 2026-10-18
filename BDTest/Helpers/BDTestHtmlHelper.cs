@@ -555,6 +555,7 @@ public static class BDTestHtmlHelper
                 html.AppendLine("<p class=\"step-note\">This step has not started.</p>");
             if (step.Exception != null)
                 AppendError(html, step.Exception, step.Status == Status.NotImplemented);
+            html.AppendLine(StepArgumentHtmlHelper.GetHtml(step.Arguments));
             html.AppendLine("</li>");
         }
         html.AppendLine("</ol>");
@@ -843,6 +844,11 @@ font-family:var(--sans);color:var(--ink);background:var(--bg);min-height:100vh;f
 .step-row .glyph{margin-top:7px}
 .kw{font-family:var(--mono);font-size:11.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);padding-top:2px}
 .step-text{overflow-wrap:anywhere}
+.step-argument{margin:0 0 12px 75px}
+.step-argument-table{border-collapse:collapse;font-size:13px}
+.step-argument-table th,.step-argument-table td{border:1px solid var(--rule);padding:6px 10px;text-align:left;white-space:pre-wrap}
+.step-argument pre{padding:12px;background:var(--bg);white-space:pre;overflow-x:auto}
+.step-argument summary{cursor:pointer;padding:6px 0}
 .step-status{font-size:12px;color:var(--muted)}
 .step[data-status=failed] .step-text{font-weight:640}
 .step[data-status=notrun] .step-text{color:var(--muted)}

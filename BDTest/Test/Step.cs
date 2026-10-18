@@ -61,6 +61,19 @@ public class Step
     [JsonInclude]
     public List<string> Diagnostics { get; internal set; } = new();
 
+    /// <summary>Structured values captured for this execution attempt. Historical reports default to an empty list.</summary>
+    [JsonInclude]
+    public IReadOnlyList<StepArgument> Arguments
+    {
+        get => _arguments;
+        internal set => _arguments = Array.AsReadOnly((value ?? Array.Empty<StepArgument>()).ToArray());
+    }
+
+    private IReadOnlyList<StepArgument> _arguments = Array.AsReadOnly(Array.Empty<StepArgument>());
+
+    [JsonIgnore]
+    internal List<Func<StepArgument>> AttachedArguments { get; } = new();
+
     [JsonIgnore] private RunOptions Options { get; } = RunOptions.Legacy;
 
     private bool _shouldSkip;
@@ -96,6 +109,7 @@ public class Step
         OverriddenStepText = source.OverriddenStepText;
         Timeout = source.Timeout;
         _explicitArguments = source._explicitArguments;
+        AttachedArguments.AddRange(source.AttachedArguments);
     }
 
     [JsonConstructor]
@@ -138,6 +152,7 @@ public class Step
         Runnable = null;
         OverriddenStepText = null;
         ExplicitArguments = null;
+        AttachedArguments.Clear();
     }
 
     internal void ResetData()
@@ -145,6 +160,7 @@ public class Step
         _generatedStepText = _stepTextTemplate;
         StepText = SubstituteExampleValues($"{StepPrefix} {_stepTextTemplate}");
         Diagnostics.Clear();
+        Arguments = Array.Empty<StepArgument>();
         TimedOut = false;
         Exception = null;
         Output = null;
@@ -157,20 +173,28 @@ public class Step
 
     internal void SetStepText(bool evaluateArguments = false)
     {
-        if (OverriddenStepText != null)
-        {
-            var invokedStepText = OverriddenStepText.Invoke();
-            if (!string.IsNullOrWhiteSpace(invokedStepText))
-            {
-                StepText = SubstituteExampleValues($"{StepPrefix} {invokedStepText}");
-                return;
-            }
-        }
-
+        var invokedStepText = OverriddenStepText?.Invoke();
         if (evaluateArguments)
         {
-            _generatedStepText = Runnable.Definition.GetText(true, Diagnostics.Add, ExplicitArguments, Options.Converters);
+            var arguments = new List<StepArgument>();
+            // A nonempty text override retains its existing behavior: inline readers are bypassed.
+            if (string.IsNullOrWhiteSpace(invokedStepText))
+            {
+                _generatedStepText = Runnable.Definition.GetText(true, Diagnostics.Add, ExplicitArguments, Options.Converters, arguments.Add);
+            }
+            foreach (var reader in AttachedArguments)
+            {
+                StepTextHelper.GetArgumentValue(reader, "attachment", Diagnostics.Add, Options.Converters, arguments.Add);
+            }
+            Arguments = arguments;
         }
+
+        if (!string.IsNullOrWhiteSpace(invokedStepText))
+        {
+            StepText = SubstituteExampleValues($"{StepPrefix} {invokedStepText}");
+            return;
+        }
+
         StepText = SubstituteExampleValues($"{StepPrefix} {_generatedStepText}");
     }
 

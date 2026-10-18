@@ -14,6 +14,9 @@ namespace BDTest.Helpers;
 [JsonSerializable(typeof(ScenarioText))]
 [JsonSerializable(typeof(TestInformationAttribute))]
 [JsonSerializable(typeof(TimeSpan))]
+[JsonSerializable(typeof(StepArgument))]
+[JsonSerializable(typeof(StepTable))]
+[JsonSerializable(typeof(StepDocString))]
 public partial class BDTestJsonContext : JsonSerializerContext
 {
 }

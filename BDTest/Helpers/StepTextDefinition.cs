@@ -1,6 +1,7 @@
 using System.Reflection;
 using System.Threading;
 using BDTest.Metadata;
+using BDTest.Test;
 
 namespace BDTest.Helpers;
 
@@ -54,14 +55,14 @@ internal sealed class StepTextDefinition
 
     internal string GetText(bool evaluateArguments = false, Action<string> diagnostic = null,
         IReadOnlyList<Func<object>> explicitArguments = null,
-        IReadOnlyList<StepTextConverterRegistration> converters = null)
+        IReadOnlyList<StepTextConverterRegistration> converters = null, Action<StepArgument> structuredArgument = null)
     {
         // A known method can still have unsupported captures. Preserve caller text
         // until explicit readers supply those values, while keeping Method for skip rules.
         if (Method != null && (explicitArguments != null || _arguments != null))
         {
             return StepTextHelper.GetStepText(Method, explicitArguments ?? _arguments,
-                _omitCancellationToken, diagnostic, evaluateArguments, converters);
+                _omitCancellationToken, diagnostic, evaluateArguments, converters, structuredArgument);
         }
 
         if (!evaluateArguments || explicitArguments == null || explicitArguments.Count == 0)
@@ -70,7 +71,7 @@ internal sealed class StepTextDefinition
         }
 
         var values = explicitArguments.Select((argument, index) =>
-            StepTextHelper.GetArgumentValue(argument, index.ToString(), diagnostic, converters));
+            StepTextHelper.GetArgumentValue(argument, index.ToString(), diagnostic, converters, structuredArgument));
         return $"{_argumentExpression} {string.Join(" ", values)}".Trim();
     }
 }
