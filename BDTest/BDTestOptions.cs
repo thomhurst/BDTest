@@ -2,6 +2,7 @@ using BDTest.Interfaces;
 using BDTest.Settings;
 using BDTest.Settings.Retry;
 using BDTest.Settings.Skip;
+using BDTest.Test;
 
 namespace BDTest;
 
@@ -13,6 +14,12 @@ namespace BDTest;
 /// </remarks>
 public sealed class BDTestOptions
 {
+    /// <summary>Creates framework-owned contexts. Null uses a public parameterless constructor.</summary>
+    public IBDTestContextFactory ContextFactory { get; set; }
+
+    /// <summary>Caller-owned services available to context factories. BDTest does not dispose the provider.</summary>
+    public IServiceProvider Services { get; set; }
+
     public IList<Type> SuccessExceptionTypes { get; } = new List<Type>();
     public IList<Type> SkipExceptionTypes { get; } = new List<Type>();
     public IList<Type> InconclusiveExceptionTypes { get; } = new List<Type>();

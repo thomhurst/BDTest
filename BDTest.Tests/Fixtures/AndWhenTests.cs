@@ -144,7 +144,7 @@ public class AndWhenTests : BDTestBase
         Assert.That(restored.Steps[1].StepText, Is.EqualTo("And named report"));
         Assert.That(BDTestHtmlHelper.GetTestHtmlReport(null, run), Does.Contain("<span class=\"kw\">And</span><span class=\"step-text\">named report</span>"));
         Assert.That(await ReportHandlerEncodingTests.RenderAsync("/Views/BDTest/Scenario.cshtml", restored),
-            Does.Contain("And named report"));
+            Does.Contain("<b>And</b> named report"));
     }
 
     private static void NoOp() { }

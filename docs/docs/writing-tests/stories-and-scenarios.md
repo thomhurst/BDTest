@@ -63,6 +63,6 @@ You can also set the text on the chain with `.WithScenarioText("...")` after the
 
 ## Reading story and scenario text
 
-`BDTestBase.GetStoryText()` and `GetScenarioText()` return the resolved text for the current test. `BDTestContext` exposes the same methods, so a [`ContextAmendment`](test-context.md#amending-a-new-context) or step hook can read them.
+`BDTestBase.GetStoryText()` and `GetScenarioText()` return the resolved text for the current test. `BDTestContext` exposes the same methods, so a [`ConfigureContext`](test-context.md#configuring-a-new-context) or step hook can read them.
 
 Without an adapter or explicit `BeginTest(id, methodInfo)`, BDTest uses the compiler-supplied caller name and file, without discovering method attributes. See [custom adapters](../frameworks/custom-adapters.md#custom-harnesses-without-a-runner).

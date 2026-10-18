@@ -18,14 +18,16 @@ internal static class ScenarioHookExecutor
         TaskCompletionSource<bool> cleanupFinished = null;
         try
         {
-            var context = test?.CreateScenarioHookContext(scenario, cancellation.Token)
-                ?? new ScenarioHookContext(scenario, null, cancellation.Token);
+            ScenarioHookContext context = null;
             Exception executionException = null;
             try
             {
                 // Complete the adapter's assertion scope before exposing the result to cleanup.
                 await executeInScope(async () =>
                 {
+                    if (test != null) await test.InitializeExecutionContextAsync();
+                    context = test?.CreateScenarioHookContext(scenario, cancellation.Token)
+                        ?? new ScenarioHookContext(scenario, null, cancellation.Token);
                     if (beforeHooks != null)
                         foreach (Func<ScenarioHookContext, Task> hook in beforeHooks.GetInvocationList())
                             await hook(context);
@@ -52,10 +54,13 @@ internal static class ScenarioHookExecutor
                     await cancellationStarted.Task;
                 }
 
-                if (test != null) await InvokeAfter(test.OnAfterScenario);
-                if (afterHooks != null)
-                    foreach (Func<ScenarioHookContext, Task> hook in afterHooks.GetInvocationList())
-                        await InvokeAfter(hook);
+                if (context != null)
+                {
+                    if (test != null) await InvokeAfter(test.OnAfterScenario);
+                    if (afterHooks != null)
+                        foreach (Func<ScenarioHookContext, Task> hook in afterHooks.GetInvocationList())
+                            await InvokeAfter(hook);
+                }
             }
             // Throw only after every cleanup handler has had a chance to run.
             if (executionException != null) ExceptionDispatchInfo.Capture(executionException).Throw();

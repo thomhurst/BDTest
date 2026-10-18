@@ -5,11 +5,12 @@ using NUnitTestContext = NUnit.Framework.TestContext;
 using NUnit.Framework.Interfaces;
 using NUnit.Framework.Constraints;
 using System.Runtime.ExceptionServices;
+using System.Reflection;
 
 namespace BDTest.NUnit;
 
 [TestFixture]
-public abstract class NUnitBDTestBase<TContext> : AbstractContextBDTestBase<TContext> where TContext : class, new()
+public abstract class NUnitBDTestBase<TContext> : AbstractContextBDTestBase<TContext> where TContext : class
 {
     [OneTimeSetUp]
     public static void SetupNUnitExceptions()
@@ -32,7 +33,7 @@ public abstract class NUnitBDTestBase<TContext> : AbstractContextBDTestBase<TCon
 #pragma warning restore CS0618
     }
 
-    // Kept callable for existing consumers; NUnit teardown uses MarkTestAsComplete.
+    // Kept callable for existing consumers; normal NUnit teardown is asynchronous.
     public void PruneContext() => EndTest();
 
     internal override async Task ExecuteScenarioStepsAsync(Func<Task> executeSteps,
@@ -82,9 +83,24 @@ public abstract class NUnitBDTestBase<TContext> : AbstractContextBDTestBase<TCon
         }
     }
 
-    // Retain the virtual hook so existing NUnit completion overrides still run.
     [TearDown]
-    [Obsolete("Call EndTest() in new adapters. Retained for NUnit teardown compatibility.")]
+    public async Task BDTestNUnitTearDown()
+    {
+        // Existing overrides may inspect the live context before calling base.
+        if (GetType().GetMethod(nameof(MarkTestAsComplete), BindingFlags.Instance | BindingFlags.NonPublic)
+                ?.DeclaringType != typeof(NUnitBDTestBase<TContext>))
+        {
+#pragma warning disable CS0618
+            MarkTestAsComplete();
+#pragma warning restore CS0618
+            return;
+        }
+
+        await EndTestAsync();
+    }
+
+    // Retain the virtual hook so existing NUnit completion overrides still run.
+    [Obsolete("Await EndTestAsync() in new adapters. Retained for NUnit teardown compatibility.")]
     protected override void MarkTestAsComplete()
     {
         PruneContext();

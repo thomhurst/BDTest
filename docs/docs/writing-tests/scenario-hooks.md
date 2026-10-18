@@ -82,7 +82,9 @@ For the legacy default run, subscribe to `BDTestSettings.BeforeScenario` and `BD
 
 ## Order and failures
 
-For every attempt, BDTest awaits:
+BDTest creates, configures and asynchronously initializes the context before scenario hooks begin. Preparation runs inside the adapter assertion scope so a failed assertion can retry without contaminating the final runner result.
+
+For every prepared attempt, BDTest awaits:
 
 1. Run or global before hooks in registration order.
 2. Instance `OnBeforeScenario`.
@@ -90,7 +92,7 @@ For every attempt, BDTest awaits:
 4. Instance `OnAfterScenario`.
 5. Run or global after hooks in registration order.
 
-Before hooks stop at the first exception. Steps remain `NotRun` after an ordinary before-hook failure. Every after hook runs once the attempt's hook context has been created, even if a before hook or another after hook fails. A context-construction or retry-setup failure happens before scenario hooks begin.
+Before hooks stop at the first exception. Steps remain `NotRun` after an ordinary before-hook failure. Every after hook runs once the attempt's hook context has been created, even if a before hook or another after hook fails. A context construction, configuration, initialization or retry-setup failure happens before scenario hooks begin; no scenario hooks run for that failed preparation.
 
 An execution exception takes precedence over after-hook exceptions. Otherwise, the first after-hook exception determines the result. Hook exceptions follow the usual [exception classification](../configuration/exceptions.md) and [retry rules](retries.md). Later after hooks see a result updated by an earlier after-hook failure. Secondary failures are logged. Reports include console output from scenario hooks, including when a skip or before-hook failure prevents steps from running.
 

@@ -17,6 +17,8 @@ public class ScenarioOutlineTests : AbstractContextBDTestBase<ScenarioOutlineTes
 
     [TearDown]
     public void FinishExecution() => EndTest();
+    private Action<BDTestContext<RowContext>> Configure { get; set; }
+    protected override void ConfigureContext(BDTestContext<RowContext> context) => Configure?.Invoke(context);
 
     private readonly string _executionId = Guid.NewGuid().ToString();
     protected override string BDTestExecutionId => _executionId;
@@ -242,7 +244,7 @@ public class ScenarioOutlineTests : AbstractContextBDTestBase<ScenarioOutlineTes
     public async Task Retries_are_per_example_and_reset_its_context()
     {
         var amendmentScenarios = new List<Scenario>();
-        ContextAmendment = context => amendmentScenarios.Add(context.CurrentScenario);
+        Configure = context => amendmentScenarios.Add(context.CurrentScenario);
         var outline = await ScenarioOutline("Retries", new[] { new { Value = 1 }, new { Value = 2 } },
             row => Given(() => RetryRow(row.Value)).When(() => NoOp()).Then(() => NoOp()));
         Assert.That(outline.Examples.Select(row => row.RetryCount), Is.EqualTo(new[] { 1, 0 }));
@@ -270,7 +272,7 @@ public class ScenarioOutlineTests : AbstractContextBDTestBase<ScenarioOutlineTes
     public async Task Explicit_construction_output_stays_with_its_example(bool duringContext, bool fail)
     {
         var contextCount = 0;
-        ContextAmendment = _ =>
+        Configure = _ =>
         {
             if (duringContext) WriteConstructionOutput(++contextCount, fail);
         };
@@ -389,7 +391,7 @@ public class ScenarioOutlineTests : AbstractContextBDTestBase<ScenarioOutlineTes
     {
         var contextCount = 0;
         if (duringContext)
-            ContextAmendment = _ => { if (++contextCount == 1) Outcome(outcome); };
+            Configure = _ => { if (++contextCount == 1) Outcome(outcome); };
         Exception thrown = null;
         try
         {
@@ -426,7 +428,7 @@ public class ScenarioOutlineTests : AbstractContextBDTestBase<ScenarioOutlineTes
         var amendmentScenarios = new List<Scenario>();
         var factoryScenarios = new List<Scenario>();
         var stepScenarios = new List<Scenario>();
-        ContextAmendment = context => amendmentScenarios.Add(context.CurrentScenario);
+        Configure = context => amendmentScenarios.Add(context.CurrentScenario);
         Exception thrown = null;
         try
         {
@@ -456,7 +458,7 @@ public class ScenarioOutlineTests : AbstractContextBDTestBase<ScenarioOutlineTes
     public async Task Construction_output_belongs_to_its_example_even_when_construction_fails(bool duringContext, bool fail)
     {
         var contextCount = 0;
-        ContextAmendment = _ =>
+        Configure = _ =>
         {
             var value = ++contextCount;
             Console.WriteLine($"context output {value} {_executionId}");

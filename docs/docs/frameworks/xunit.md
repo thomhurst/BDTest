@@ -56,12 +56,14 @@ public class BasketTests : XUnitBDTestBase<BasketContext>
 }
 ```
 
+Contexts may have constructor dependencies: override `CreateContextAsync(ContextCreation)` to construct them. BDTest awaits `IBDTestContextLifetime.InitializeAsync()` before scenario steps and disposes owned contexts at teardown, preferring `IAsyncDisposable` over `IDisposable`. Call `await InitializeContextAsync()` when async fixture setup needs an initialized context before any scenario. See [Test context](../writing-tests/test-context.md) for factories, retries and ownership.
+
 ## What the adapter does
 
 - **Execution ID:** `TestContext.Current.Test.UniqueID`. Theory rows get separate IDs and contexts, even when their data is not serializable.
 - **Exceptions:** registers `Xunit.Sdk.SkipException` (from `Assert.Skip(...)`) as a skip exception.
 - **Start:** the class implements `IAsyncLifetime`. Its initialization hook calls `BeginTest` after your constructor finishes, then calls the virtual `InitializeAsync()`.
-- **Teardown:** disposal completes the BDTest execution, removes the context and clears pending output and listener state.
+- **Teardown:** `DisposeAsync()` awaits context disposal, completes the BDTest execution and clears pending output and listener state.
 - **Skips:** a whole-scenario skip calls `Assert.Skip(reason)`, so BDTest and the xUnit runner both report the test as skipped.
 - **Output:** BDTest captures console output itself. To also write to xUnit's output, inject `Xunit.ITestOutputHelper` into your own constructor.
 
@@ -100,7 +102,7 @@ public override async ValueTask DisposeAsync()
 
 If you hide the method or explicitly reimplement `IAsyncDisposable.DisposeAsync()`, you must still call `await base.DisposeAsync()`; xUnit does not also call `Dispose()`. See the [xUnit v3 migration guide](https://xunit.net/docs/getting-started/v3/migration#iasynclifetime-now-inherits-from-iasyncdisposable).
 
-Both disposal paths still call overrides of the obsolete `MarkTestAsComplete()` for compatibility. Such overrides must call the base method to complete BDTest cleanup. Use `DisposeAsync()` for new teardown code.
+Existing overrides of the obsolete `MarkTestAsComplete()` and reimplementations of `IDisposable` retain their synchronous teardown path for compatibility. Such overrides must call the base method to complete BDTest cleanup. Use `DisposeAsync()` for new teardown code.
 
 ## Reports after the run
 

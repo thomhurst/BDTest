@@ -56,6 +56,9 @@ try {
             ExplicitRunsUseDifferentMappings = 'Passed'
             ScenarioTimeoutHooks = 'Passed'
             ScenarioOutlineHooks = 'Passed'
+            ContextFactoryInitializationAndAsyncDisposal = 'Passed'
+            ContextRetryDisposesPreviousAttempt = 'Passed'
+            ContextDisposalFailureReachesRunner = 'Failed'
         }
         # TUnit 1.75.0 does not translate InconclusiveTestException into a runner skip.
         if ($project -eq 'BDTest.TUnit.Tests') { $expected.FrameworkInconclusive = 'Failed' }
@@ -72,6 +75,7 @@ try {
                     'Fail' { 'conformance failure' }
                     'NotImplemented' { 'conformance not implemented' }
                     'FrameworkInconclusive' { 'conformance inconclusive' }
+                    'ContextDisposalFailureReachesRunner' { 'conformance context disposal' }
                 }
                 $errorMessage = $matching[0].SelectSingleNode(".//*[local-name()='ErrorInfo']/*[local-name()='Message']")
                 if (-not $errorMessage -or $errorMessage.InnerText -notmatch [regex]::Escape($message)) {

@@ -4,11 +4,11 @@ using NUnit.Framework;
 
 namespace BDTest.Tests.Fixtures;
 
-public class InjectStepsTests : AbstractContextBDTestBase<MyTestContext>
+public class ExplicitStepConstructionTests : AbstractContextBDTestBase<MyTestContext>
 {
-    public InjectableStep1 InjectableStep1 => Inject<InjectableStep1>();
-    public InjectableStep2 InjectableStep2 => Inject<InjectableStep2>();
-    public InjectableStep3 InjectableStep3 => Inject<InjectableStep3>();
+    public InjectableStep1 InjectableStep1 => new(Context);
+    public InjectableStep2 InjectableStep2 => new(Context);
+    public InjectableStep3 InjectableStep3 => new();
 
     private readonly ConcurrentBag<string> _usedIds = new();
 

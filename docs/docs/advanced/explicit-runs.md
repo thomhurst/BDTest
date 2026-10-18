@@ -68,6 +68,7 @@ using var run = BDTestRun.Start(options);
 | `StepHooks` (`IStepHook`) | `BeforeStep` / `AfterStep` events |
 | `Attachments` ([byte limits](../writing-tests/attachments.md#limits)) | Fixed defaults on the shared default run |
 | `ScenarioHooks` (`IScenarioHook`) | `BeforeScenario` / `AfterScenario` events |
+| `ContextFactory`, `Services` | No global equivalent; see [test context](../writing-tests/test-context.md#factories) |
 
 - `Start(options)` copies the registrations into the run. Later changes to the options affect only runs started afterwards.
 - `Start()` uses empty registrations and default debug settings.

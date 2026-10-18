@@ -16,7 +16,7 @@ using BDTest.Settings;
 using BDTest.Test;
 
 public abstract class MyRunnerBDTestBase<TContext> : AbstractContextBDTestBase<TContext>
-    where TContext : class, new()
+    where TContext : class
 {
     private static readonly FrameworkOutcomeMap RunnerOutcomes =
         new FrameworkOutcomeMap(reason => throw new MyRunnerSkipException(reason))
@@ -34,7 +34,7 @@ public abstract class MyRunnerBDTestBase<TContext> : AbstractContextBDTestBase<T
 
     // Called by the runner after each test.
     [MyRunnerAfterTest]
-    public void BDTestTearDown() => EndTest();
+    public async Task BDTestTearDown() => await EndTestAsync();
 
     // Map a whole-scenario skip onto the runner.
     protected override void OnScenarioSkipped(string reason) => RunnerOutcomes.ReportSkip(reason);
@@ -44,7 +44,8 @@ public abstract class MyRunnerBDTestBase<TContext> : AbstractContextBDTestBase<T
 | Member | Purpose |
 | --- | --- |
 | `BeginTest(string frameworkTestId, MethodInfo testMethod)` | Starts one test execution. Records the execution ID, exact method metadata and the owning `TestRun`, installs console capture and clears stale capture state. |
-| `EndTest()` | Ends the execution. Removes its context and pending output from the owning run, then clears matching flow state. Calling it again is safe and never completes another active execution. |
+| `EndTestAsync()` | Awaits owned context disposal, removes pending output from the owning run and clears matching flow state, even when disposal throws. Calling it again is safe. |
+| `EndTest()` | Synchronous compatibility bridge for cleanup. Prefer awaiting `EndTestAsync()` for async contexts. |
 | `OnScenarioSkipped(string reason)` | Called when a whole scenario is skipped. Throw the runner's skip exception or call its skip API. |
 | `TestRun` | The [`BDTestRun`](../advanced/explicit-runs.md) that stores this test's scenarios. Override it with a stable run to isolate scenarios, output and completion from other runs. Defaults to the shared run. |
 
@@ -65,7 +66,7 @@ The built-in adapters use:
 | xUnit v3 | `TestContext.Current.Test.UniqueID` |
 | MSTest | class name and data-row display name, plus an execution suffix |
 
-Call `BeginTest` **synchronously** in the flow that runs setup and the test body, before any async work starts, and call `EndTest()` in teardown. Keep both calls in the same async entry method:
+Call `BeginTest` **synchronously** in the flow that runs setup and the test body, before any async work starts, and await `EndTestAsync()` in teardown. Keep both calls in the same async entry method:
 
 ```csharp
 public async Task RunTestAsync(string frameworkTestId, System.Reflection.MethodInfo testMethod)
@@ -78,7 +79,7 @@ public async Task RunTestAsync(string frameworkTestId, System.Reflection.MethodI
     }
     finally
     {
-        EndTest();
+        await EndTestAsync();
     }
 }
 ```
@@ -87,7 +88,7 @@ public async Task RunTestAsync(string frameworkTestId, System.Reflection.MethodI
 
 ### Migrating older adapters
 
-`MarkTestAsStarted()` and `MarkTestAsComplete()` are obsolete compatibility shims. Replace them with `BeginTest(id, testMethod)` and `EndTest()`. Existing `BDTestExecutionId` overrides still work, but new adapters should pass the ID to `BeginTest` instead.
+`MarkTestAsStarted()` and `MarkTestAsComplete()` are obsolete compatibility shims. Replace them with `BeginTest(id, testMethod)` and `EndTestAsync()`. Existing `BDTestExecutionId` overrides still work, but new adapters should pass the ID to `BeginTest` instead.
 
 ## Testing your adapter
 

@@ -165,6 +165,96 @@ public class AdapterConformanceTests : Adapter
     }
 
     [Test]
+    public async Task ContextFactoryInitializationAndAsyncDisposal()
+    {
+        using var run = BDTestRun.Start();
+        var fixture = new ContextLifetimeProbe(run);
+        await fixture.StartAsync();
+        await fixture.InitializeContextAsync();
+        var context = fixture.Context;
+        Require(context.Attempt == 0, "factory did not receive the zero-based initial attempt");
+        Require(context.InitializationCalls == 1, "explicit context initialization was not awaited");
+        await fixture.When(() => Require(context.InitializationCalls == 1, "step ran before initialization"))
+            .Then(() => Complete()).BDTestAsync();
+        Require(context.InitializationCalls == 1, "scenario initialized the context more than once");
+
+        var returned = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+#if BDTEST_XUNIT
+        var cancellationToken = Xunit.TestContext.Current.CancellationToken;
+#else
+        var cancellationToken = CancellationToken.None;
+#endif
+        // Release even if a regression blocks inside the teardown entry point.
+        var release = Task.Run(async () =>
+        {
+            await context.DisposalStarted.Task.WaitAsync(TimeSpan.FromSeconds(10), cancellationToken);
+            try { await returned.Task.WaitAsync(TimeSpan.FromSeconds(5), cancellationToken); }
+            finally { context.ReleaseDisposal.TrySetResult(); }
+        }, cancellationToken);
+        var completion = fixture.FinishAsync();
+        returned.SetResult();
+        await release;
+        await completion;
+        Require(context.DisposalCalls == 1 && context.Disposed, "adapter did not await context disposal");
+        await fixture.FinishAsync();
+        Require(context.DisposalCalls == 1, "adapter disposed the context more than once");
+    }
+
+    [Test]
+    public async Task ContextRetryDisposesPreviousAttempt()
+    {
+        var options = new BDTestOptions();
+        options.RetryTestRules.Add(exception => exception is TransientException, 1);
+        using var run = BDTestRun.Start(options);
+        var fixture = new ContextLifetimeProbe(run, gateDisposal: false);
+        await fixture.StartAsync();
+        void RetryOnce()
+        {
+            var context = fixture.Context;
+            Require(context.InitializationCalls == 1, "retry step ran before context initialization");
+            if (context.Attempt == 0) throw new TransientException();
+            Require(context.Attempt == 1, "factory received an incorrect retry attempt");
+            Require(fixture.Contexts[0].Disposed, "retry initialized before previous context disposal completed");
+        }
+
+        try
+        {
+            var scenario = await fixture.When(() => RetryOnce()).Then(() => Complete()).BDTestAsync();
+            Require(scenario.Status == Status.Passed && scenario.RetryCount == 1, "retry did not pass on its second attempt");
+            Require(fixture.Contexts.Count == 2, "retry did not create exactly one context per attempt");
+            Require(fixture.Contexts[0].DisposalCalls == 1, "previous attempt was not disposed exactly once");
+            Require(!fixture.Contexts[1].Disposed, "final context was disposed before adapter teardown");
+        }
+        finally
+        {
+            await fixture.FinishAsync();
+        }
+
+        Require(fixture.Contexts.All(context => context.InitializationCalls == 1 &&
+            context.DisposalCalls == 1 && context.Disposed), "attempt contexts were not initialized and disposed exactly once");
+    }
+
+    [Test]
+    public async Task ContextDisposalFailureReachesRunner()
+    {
+        using var run = BDTestRun.Start();
+        var fixture = new ContextLifetimeProbe(run, gateDisposal: false, failDisposal: true);
+        await fixture.StartAsync();
+        await fixture.When(() => Complete()).Then(() => Complete()).BDTestAsync();
+        var context = fixture.Context;
+        try
+        {
+            await CheckFailure(fixture.FinishAsync, "conformance context disposal");
+        }
+        finally
+        {
+            Require(context.Disposed && context.DisposalCalls == 1, "throwing context disposal was not awaited");
+            await fixture.FinishAsync();
+            Require(context.DisposalCalls == 1, "failed disposal was repeated by adapter teardown");
+        }
+    }
+
+    [Test]
     public async Task ExplicitRunsUseDifferentMappings()
     {
         var skipMap = new FrameworkOutcomeMap(_ => { }).Skip<SharedOutcomeException>();
@@ -269,12 +359,83 @@ public class AdapterConformanceTests : Adapter
     }
 #endif
 #if !BDTEST_XUNIT
-    public void DisposeRun()
+    public async Task DisposeRun()
     {
-        EndTest();
-        _run.Dispose();
+        try { await EndTestAsync(); }
+        finally { _run.Dispose(); }
     }
 #endif
+
+#if BDTEST_NUNIT
+    private sealed class ContextLifetimeProbe(BDTestRun run, bool gateDisposal = true, bool failDisposal = false) : BDTest.NUnit.NUnitBDTestBase<LifetimeContext>
+#elif BDTEST_MSTEST
+    private sealed class ContextLifetimeProbe(BDTestRun run, bool gateDisposal = true, bool failDisposal = false) : BDTest.MSTest.MSTestBDTestBase<LifetimeContext>
+#elif BDTEST_TUNIT
+    private sealed class ContextLifetimeProbe(BDTestRun run, bool gateDisposal = true, bool failDisposal = false) : BDTest.TUnit.TUnitBDTestBase<LifetimeContext>
+#elif BDTEST_XUNIT
+    private sealed class ContextLifetimeProbe(BDTestRun run, bool gateDisposal = true, bool failDisposal = false) : BDTest.xUnit.XUnitBDTestBase<LifetimeContext>
+#endif
+    {
+        public override BDTestRun TestRun => run;
+        public List<LifetimeContext> Contexts { get; } = new();
+
+        protected override async ValueTask<LifetimeContext> CreateContextAsync(ContextCreation creation)
+        {
+            await Task.Yield();
+            var context = new LifetimeContext(creation.Attempt, gateDisposal, failDisposal);
+            Contexts.Add(context);
+            return context;
+        }
+
+        public async Task StartAsync()
+        {
+#if BDTEST_XUNIT
+            await ((Xunit.IAsyncLifetime)this).InitializeAsync();
+#else
+            BeginTest(Guid.NewGuid().ToString("N"));
+            await Task.CompletedTask;
+#endif
+        }
+
+        public Task FinishAsync()
+        {
+#if BDTEST_NUNIT
+            return BDTestNUnitTearDown();
+#elif BDTEST_MSTEST
+            return BDTestMSTestTearDown();
+#elif BDTEST_TUNIT
+            return BDTestTUnitTearDown();
+#elif BDTEST_XUNIT
+            return DisposeAsync().AsTask();
+#endif
+        }
+    }
+
+    private sealed class LifetimeContext(int attempt, bool gateDisposal, bool failDisposal) : IBDTestContextLifetime, IAsyncDisposable
+    {
+        public int Attempt { get; } = attempt;
+        public int InitializationCalls { get; private set; }
+        public int DisposalCalls { get; private set; }
+        public bool Disposed { get; private set; }
+        public TaskCompletionSource DisposalStarted { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        public TaskCompletionSource ReleaseDisposal { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public async ValueTask InitializeAsync()
+        {
+            await Task.Yield();
+            InitializationCalls++;
+        }
+
+        public async ValueTask DisposeAsync()
+        {
+            DisposalCalls++;
+            DisposalStarted.SetResult();
+            if (gateDisposal) await ReleaseDisposal.Task;
+            await Task.Yield();
+            Disposed = true;
+            if (failDisposal) throw new InvalidOperationException("conformance context disposal");
+        }
+    }
 
     private sealed class Standalone(BDTestRun run) : BDTestBase
     {

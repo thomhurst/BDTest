@@ -25,6 +25,8 @@ internal sealed class RunOptions
 
     internal RunOptions(BDTestOptions options)
     {
+        ContextFactory = options.ContextFactory;
+        Services = options.Services;
         FrameworkOutcomes = options.FrameworkOutcomes;
         _success = options.SuccessExceptionTypes.ToArray();
         _skip = options.SkipExceptionTypes.ToArray();
@@ -49,6 +51,8 @@ internal sealed class RunOptions
     }
 
     internal FrameworkOutcomeMap FrameworkOutcomes { get; }
+    internal IBDTestContextFactory ContextFactory { get; }
+    internal IServiceProvider Services { get; }
 
     internal IEnumerable<Type> SuccessExceptionTypes => _legacy ? BDTestSettings.CustomExceptionSettings.SuccessExceptionTypes : _success;
     internal IEnumerable<Type> SkipExceptionTypes => _legacy ? BDTestSettings.CustomExceptionSettings.SkipExceptionTypes : _skip;
