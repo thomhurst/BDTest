@@ -33,7 +33,8 @@ internal static class RetryAttributeHelper
         }
 
         var callingFrame = stackFrames.FirstOrDefault(it => it.GetMethod().Name == scenario?.RuntimeInformation?.CallerMember);
-        return callingFrame?.GetMethod()?.GetCustomAttribute<BDTestRetryAttribute>();
+        return callingFrame?.GetMethod()?.GetCustomAttribute<BDTestRetryAttribute>()
+            ?? storyClass?.Assembly.GetCustomAttribute<BDTestRetryAttribute>();
     }
         
     private static BDTestRetryAttribute GetBDTestRetryAttribute(StackFrame it)
