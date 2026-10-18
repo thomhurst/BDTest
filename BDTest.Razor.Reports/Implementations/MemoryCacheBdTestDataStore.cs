@@ -34,15 +34,16 @@ public class MemoryCacheBdTestDataStore : IMemoryCacheBdTestDataStore, IDisposab
     }
 
     /// <summary>Creates a dedicated bounded report cache using the report server policy.</summary>
+    /// <param name="hasPersistentStorage">Whether another store retains reports when this cache evicts them.</param>
     public MemoryCacheBdTestDataStore(IMemoryCache testRecordCache, IOptions<BDTestReportOptions> options,
-        ReportAttachmentGate attachmentGate = null, IBDTestDataStore dataStore = null, IReportStore reportStore = null,
-        IBDTestAttachmentStore attachmentStore = null, ILogger<MemoryCacheBdTestDataStore> logger = null)
+        ReportAttachmentGate attachmentGate = null, IBDTestAttachmentStore attachmentStore = null,
+        ILogger<MemoryCacheBdTestDataStore> logger = null, bool hasPersistentStorage = false)
     {
         _options = options.Value;
         _attachmentGate = attachmentGate ?? new ReportAttachmentGate();
         _attachmentStore = attachmentStore;
         _logger = logger;
-        _hasPersistentStorage = dataStore != null || reportStore != null;
+        _hasPersistentStorage = hasPersistentStorage;
         _reportCacheCapacity = _options.ReportCacheSizeLimitBytes;
         _testRecordCache = new MemoryCache(new MemoryCacheOptions
         {

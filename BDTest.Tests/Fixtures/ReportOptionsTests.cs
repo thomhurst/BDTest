@@ -20,6 +20,48 @@ namespace BDTest.Tests.Fixtures;
 
 public class ReportOptionsTests
 {
+    [TestCase(false, false)]
+    [TestCase(false, true)]
+    [TestCase(true, false)]
+    [TestCase(true, true)]
+    public async Task Memory_store_resolves_through_storage_interfaces(bool shared, bool legacy)
+    {
+        var builder = WebApplication.CreateBuilder(new WebApplicationOptions { EnvironmentName = Environments.Development });
+        builder.WebHost.UseUrls("http://127.0.0.1:0");
+        builder.Services.AddBDTestReports();
+        if (shared) builder.Services.AddSingleton<MemoryCacheBdTestDataStore>();
+        if (legacy)
+        {
+            if (shared)
+                builder.Services.AddSingleton<IBDTestDataStore>(provider => provider.GetRequiredService<MemoryCacheBdTestDataStore>());
+            else
+                builder.Services.AddSingleton<IBDTestDataStore, MemoryCacheBdTestDataStore>();
+        }
+        else if (shared)
+        {
+            builder.Services.AddSingleton<IReportStore>(provider => provider.GetRequiredService<MemoryCacheBdTestDataStore>());
+            builder.Services.AddSingleton<IRunIndexStore>(provider => provider.GetRequiredService<MemoryCacheBdTestDataStore>());
+        }
+        else
+        {
+            builder.Services.AddSingleton<IReportStore, MemoryCacheBdTestDataStore>();
+            builder.Services.AddSingleton<IRunIndexStore, MemoryCacheBdTestDataStore>();
+        }
+        await using var app = builder.Build();
+        await app.StartAsync();
+        var repository = app.Services.GetRequiredService<IDataRepository>();
+        var report = new BDTestOutputModel { Id = "memory-store" };
+
+        await repository.StoreData(report.Id, report);
+
+        Assert.That((await repository.GetData(report.Id, default)).Id, Is.EqualTo(report.Id));
+        Assert.That((await repository.ListAsync(new RunIndexQuery(), default)).Entries.Select(entry => entry.RecordId),
+            Does.Contain(report.Id));
+        await using var raw = await repository.OpenReadAsync(report.Id, default);
+        using var reader = new StreamReader(raw);
+        Assert.That(await reader.ReadToEndAsync(), Does.Contain(report.Id));
+    }
+
     [TestCase(nameof(BDTestReportOptions.ReportCacheSizeLimitBytes), "0")]
     [TestCase(nameof(BDTestReportOptions.ReportCacheSizeLimitBytes), "-1")]
     [TestCase(nameof(BDTestReportOptions.ReportCacheRetention), "00:00:00")]
@@ -33,10 +75,11 @@ public class ReportOptionsTests
     [TestCase(nameof(BDTestReportOptions.MaximumAttachmentsPerReport), "-1")]
     public async Task Invalid_configuration_fails_host_startup_without_resolving_report_services(string property, string value)
     {
-        var builder = Host.CreateApplicationBuilder();
+        var builder = WebApplication.CreateBuilder(new WebApplicationOptions { EnvironmentName = Environments.Development });
+        builder.WebHost.UseUrls("http://127.0.0.1:0");
         builder.Configuration.AddInMemoryCollection(new Dictionary<string, string> { [$"BDTest:{property}"] = value });
         builder.Services.AddBDTestReports().BindConfiguration("BDTest");
-        using var host = builder.Build();
+        await using var host = builder.Build();
 
         var exception = await Assert.ThrowsAsync<OptionsValidationException>(async () => await host.StartAsync());
 

@@ -19,16 +19,14 @@ namespace BDTest.Tests.Fixtures;
 
 public class ReportStoreTests
 {
-    [TestCase("none")]
-    [TestCase("legacy")]
-    [TestCase("report")]
-    public async Task Oversized_memory_store_writes_fail_without_removing_existing_reports(string configuration)
+    [TestCase(false)]
+    [TestCase(true)]
+    public async Task Oversized_memory_store_writes_fail_without_removing_existing_reports(bool hasPersistentStorage)
     {
         using var hostCache = new MemoryCache(new MemoryCacheOptions());
         var options = new BDTestReportOptions { ReportCacheSizeLimitBytes = 8 };
         using var store = new MemoryCacheBdTestDataStore(hostCache, Options.Create(options),
-            dataStore: configuration == "legacy" ? new LegacyStore() : null,
-            reportStore: configuration == "report" ? new ByteStore() : null);
+            hasPersistentStorage: hasPersistentStorage);
         using var original = Bytes("original");
         await store.WriteAsync("run", original, default);
 

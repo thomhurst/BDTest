@@ -4,9 +4,12 @@ using BDTest.Razor.Reports.Implementations;
 using BDTest.Razor.Reports.Interfaces;
 using BDTest.Razor.Reports.Models;
 using BDTest.Razor.Reports.Security;
+using BDTest.Razor.Reports.Storage;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace BDTest.Razor.Reports.Extensions;
@@ -24,7 +27,15 @@ public static class BDTestExtensions
     {
         services.AddControllersWithViews().AddApplicationPart(typeof(BDTestController).Assembly);
         services.AddMemoryCache();
-        services.TryAddSingleton<IMemoryCacheBdTestDataStore, MemoryCacheBdTestDataStore>();
+        // Detect backing storage here so a MemoryCacheBdTestDataStore registered as a store
+        // does not depend on its own storage interface while DI constructs it.
+        services.TryAddSingleton<IMemoryCacheBdTestDataStore>(provider => new MemoryCacheBdTestDataStore(
+            provider.GetRequiredService<IMemoryCache>(),
+            provider.GetRequiredService<IOptions<BDTestReportOptions>>(),
+            provider.GetRequiredService<ReportAttachmentGate>(),
+            provider.GetService<IBDTestAttachmentStore>(),
+            provider.GetService<ILogger<MemoryCacheBdTestDataStore>>(),
+            hasPersistentStorage: provider.GetService<IBDTestDataStore>() != null || provider.GetService<IReportStore>() != null));
         services.TryAddSingleton<IDataRepository, DataRepository>();
         services.TryAddSingleton<ReportUploadFilter>();
         services.TryAddSingleton<ReportAttachmentGate>();

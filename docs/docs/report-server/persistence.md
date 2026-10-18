@@ -94,6 +94,19 @@ The sample server's [`AzureStorageDataStore.cs`](https://github.com/thomhurst/BD
 
 `MemoryCacheBdTestDataStore` also implements both interfaces, with bounded report storage and an in-memory index. Byte writes preserve original JSON. The repository can still cache parsed models for ordinary report pages. Without persistent storage, eviction, expiry and restart lose report details.
 
+To share one memory store across both storage interfaces, register its concrete type and forward each interface to that singleton:
+
+```csharp
+builder.Services.AddBDTestReports();
+builder.Services.AddSingleton<MemoryCacheBdTestDataStore>();
+builder.Services.AddSingleton<IReportStore>(services =>
+    services.GetRequiredService<MemoryCacheBdTestDataStore>());
+builder.Services.AddSingleton<IRunIndexStore>(services =>
+    services.GetRequiredService<MemoryCacheBdTestDataStore>());
+```
+
+The memory store is in `BDTest.Razor.Reports.Implementations`. Its constructor does not resolve another report store. The report cache registered by `AddBDTestReports` separately detects backing storage for cache bypass and attachment retention.
+
 ## Raw downloads and legacy stores
 
 `GET /bdtest/report/{id}/raw-json-data` copies the persistent stream directly to the response, preserving stored bytes without deserializing and serializing the report. MVC disposes the stream after the response, including failed copies. Ordinary pages continue to support historical Newtonsoft JSON through the repository's existing reader.
