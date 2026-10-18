@@ -11,7 +11,7 @@ In the next major version, fluent construction and pending report data use separ
 
 `BDTestUtil.GetNotRunScenarios()` and its explicit-run overload now return `List<BDTest.Test.ScenarioDefinitionSummary>`. `BDTestOutputModel.NotRun` uses the same type. Replace declarations of `List<BuildableTest>` used for pending report data with `List<ScenarioDefinitionSummary>`.
 
-Read `GetStoryText()`, `GetScenarioText()`, parameters, tags and caller details as before. The summary adds `Timeout` and `Steps`, where each step has `StepType`, template `StepText` and `Timeout`. `ScenarioId` identifies the pending definition and matches the fluent builder's `ScenarioId`. Compare this ID rather than comparing a summary with a builder instance. Summaries have no `BdTestBase` or `Run` reference and cannot be executed or extended.
+Read `GetStoryText()`, `GetScenarioText()`, `ParameterNames`, tags and caller details as before. The summary adds `Timeout` and `Steps`, where each step has `StepType`, template `StepText` and `Timeout`. `ScenarioId` identifies the pending definition and matches the fluent builder's `ScenarioId`. Compare this ID rather than comparing a summary with a builder instance. Summaries have no `BdTestBase` or `Run` reference and cannot be executed or extended.
 
 ```csharp
 using BDTest;
@@ -24,7 +24,7 @@ foreach (var definition in pending)
 }
 ```
 
-Each query returns independent snapshots. Changing a summary or its arrays does not change the builder or snapshots from another query. Pending JSON retains the previous text and metadata field names; historical reports without `Steps` or `Timeout` still load. Step templates are cached during construction and refreshed when `WithArgs` configures explicit readers. Pending queries and exports do not reconstruct custom `StepTextAttribute` instances. Export never evaluates lazy readers, including `WithStepText`, so pending steps show template text rather than callback-generated text.
+Each query returns independent snapshots. Changing a summary or its arrays does not change the builder or snapshots from another query. Pending JSON retains the previous text and metadata field names, including `Parameters` for `ParameterNames`; historical reports without `Steps` or `Timeout` still load. Step templates are cached during construction and refreshed when `WithArgs` configures explicit readers. Pending queries and exports do not reconstruct custom `StepTextAttribute` instances. Export never evaluates lazy readers, including `WithStepText`, so pending steps show template text rather than callback-generated text.
 
 Pending `CustomTestInformation` entries intentionally contain only the base `TestInformationAttribute` and its `Information` string. Custom attribute types, additional members and custom type names in `Print()` are not retained in these data-only snapshots. Replace subtype checks on pending summaries with reads of `Information`. Builders and executed scenarios still expose custom attribute instances; JSON continues to store only the information strings. This avoids retaining user objects or invoking custom constructors during pending export.
 
