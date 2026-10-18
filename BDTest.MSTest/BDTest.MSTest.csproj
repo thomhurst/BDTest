@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
+        <IsPackable>true</IsPackable>
         <PackageId>BDTest.MSTest</PackageId>
         <Title>BDTest - MSTest</Title>
         <Description>An MSTest Extension for BDTest</Description>

@@ -34,6 +34,12 @@ It gives you:
 - **Storage** is pluggable. Without a data store, reports live only in memory. See [Persistence](persistence.md).
 - **`BDTest.ReportGenerator.RazorServer`** in the repository is a complete sample host that uses Azure Blob Storage and Microsoft Entra ID. It is not published as a package. See [Sample server](sample-server.md).
 
+The report library's display title is **BDTest - ASP.NET Core Reports**. Install it
+using the existing `BDTest.Razor.Reports` ID. Its namespaces and static asset paths
+stay unchanged; `BDTest.ReportGenerator.RazorServer` remains a non-packable sample.
+Future store packages will use `BDTest.Reports.Storage.AzureBlob` and
+`BDTest.Reports.Storage.FileSystem`; those planned packages are not yet available.
+
 ## Pages and endpoints
 
 All routes are under `/bdtest`.

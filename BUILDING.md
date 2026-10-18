@@ -123,3 +123,34 @@ This verifies assembly names, public keys, signing flags and matching identities
 across targets, including the unsigned compiler extensions and tooling. The
 pipeline runs it in `VerifyPackageArtifactsModule` after packing and before
 either the NuGet or local-feed upload module. A failed check prevents publication.
+
+## Package selection and naming (#858)
+
+`Directory.Build.props` defaults `IsPackable` to `false`. Shipped projects opt in
+with `<IsPackable>true</IsPackable>` in their project files. The complete package
+set is `BDTest`, `BDTest.NUnit`, `BDTest.xUnit`, `BDTest.MSTest`, `BDTest.TUnit`,
+`BDTest.Razor.Reports`, `BDTest.SourceGenerator`, and `BDTest.Analyzers`.
+Tests, pipeline tools, examples and the sample report host are not packable.
+Project and directory names do not decide whether a project ships.
+
+`PackProjectsModule` evaluates `IsPackable` through `dotnet msbuild` for each
+project in Release configuration before packing it. `build/PackageMetadata.targets`
+applies shared package metadata and the icon through `BeforeMicrosoftNETSdkTargets`,
+after project opt-ins and before SDK defaults initialize XML documentation. It uses
+the same `IsPackable` condition. It supplies a year-free copyright
+and preserves compiler packages' explicit `IncludeSymbols=false` and analyzer
+payloads. Runtime packages retain symbol packages and SDK package validation.
+When adding a package, opt it in explicitly, supply its package ID, title,
+description and tags, and update `PackageSelectionTests` and artifact verification.
+
+Keep the existing package IDs for the next major version, including the
+`BDTest.xUnit` casing for xUnit v3. `BDTest.Razor.Reports` has the display title
+**BDTest - ASP.NET Core Reports**; its ID, namespaces and static asset paths do not
+change. Keep `BDTest.ReportGenerator.RazorServer` as the non-shipping sample host.
+Future store packages use the `BDTest.Reports.Storage` prefix; the planned IDs are
+`BDTest.Reports.Storage.AzureBlob` and `BDTest.Reports.Storage.FileSystem`.
+This decision requires no package rename or NuGet deprecation.
+
+`BDTest.Pipeline.Tests/PackageSelectionTests.cs` evaluates the complete package
+set, imported opt-ins, defaults, metadata and compiler payload settings. Run it
+with `dotnet test BDTest.Pipeline.Tests -c Release --filter FullyQualifiedName~PackageSelectionTests`.

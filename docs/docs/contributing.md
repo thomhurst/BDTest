@@ -50,7 +50,20 @@ Use `Development` locally. `Production` can publish packages to NuGet.
 | `BDTest.Pipeline` | CI pipeline. |
 | `docs` | This documentation site. |
 
-Every csproj outside paths containing `Tests`, `Pipeline`, `Example` or `ReportGenerator` is packed automatically.
+`Directory.Build.props` defaults `IsPackable` to `false`. Shipped projects explicitly
+set `IsPackable=true`. The pipeline evaluates that property with `dotnet msbuild`
+in Release configuration; directory and project names do not select packages.
+`build/PackageMetadata.targets` applies shared package metadata and the icon only to
+packable projects, after their properties are evaluated. Copyright has no fixed
+year. Compiler extensions keep their analyzer payloads and disable symbol packages.
+
+The complete package set is listed in [Installation](getting-started/installation.md#supported-targets).
+Keep existing IDs, including `BDTest.xUnit` for xUnit v3 and `BDTest.Razor.Reports`
+for ASP.NET Core report hosting. Future storage IDs use `BDTest.Reports.Storage.*`.
+The sample server remains non-packable. When adding a shipped project, opt it in,
+supply its package metadata, and update `PackageSelectionTests` and the artifact
+verification script. Run `dotnet test BDTest.Pipeline.Tests -c Release` to check
+selection and metadata, including SourceGenerator and Analyzers.
 
 ## Documentation
 
