@@ -33,6 +33,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BDTest.MSTest.Tests", "BDTe
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BDTest.Pipeline.Tests", "BDTest.Pipeline.Tests\BDTest.Pipeline.Tests.csproj", "{23885720-9209-4411-B270-37809CF1434C}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BDTest.SourceGenerator", "BDTest.SourceGenerator\BDTest.SourceGenerator.csproj", "{69F0D468-EA35-4FF5-8E8C-B26E358C2C35}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BDTest.SourceGenerator.Tests", "BDTest.SourceGenerator.Tests\BDTest.SourceGenerator.Tests.csproj", "{BB137432-2C9D-4DB7-BBB5-EB973FD4F75B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -99,6 +103,14 @@ Global
 		{23885720-9209-4411-B270-37809CF1434C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{23885720-9209-4411-B270-37809CF1434C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{23885720-9209-4411-B270-37809CF1434C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{69F0D468-EA35-4FF5-8E8C-B26E358C2C35}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{69F0D468-EA35-4FF5-8E8C-B26E358C2C35}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{69F0D468-EA35-4FF5-8E8C-B26E358C2C35}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{69F0D468-EA35-4FF5-8E8C-B26E358C2C35}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BB137432-2C9D-4DB7-BBB5-EB973FD4F75B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BB137432-2C9D-4DB7-BBB5-EB973FD4F75B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BB137432-2C9D-4DB7-BBB5-EB973FD4F75B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BB137432-2C9D-4DB7-BBB5-EB973FD4F75B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

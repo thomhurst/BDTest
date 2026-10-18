@@ -30,4 +30,14 @@ public sealed class PackageArtifacts(string repositoryRoot)
 
         return packages;
     }
+
+    public static IEnumerable<string> GetUploadPaths(IEnumerable<string> packages)
+    {
+        foreach (var package in packages)
+        {
+            yield return package;
+            var symbols = Path.ChangeExtension(package, ".snupkg");
+            if (System.IO.File.Exists(symbols)) yield return symbols;
+        }
+    }
 }

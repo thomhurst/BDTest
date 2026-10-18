@@ -47,17 +47,11 @@ foreach ($packageFile in $packages) {
     $package = [System.IO.Compression.ZipFile]::OpenRead($packagePath)
     $symbols = $null
     try {
-        $symbols = [System.IO.Compression.ZipFile]::OpenRead($symbolsPath)
         $manifestName = @($package.Entries | Where-Object { $_.FullName.EndsWith('.nuspec') })[0].FullName
         $manifest = Read-PackageXml $package $manifestName
-        $symbolManifest = Read-PackageXml $symbols $manifestName
         $packageId = [string] $manifest.package.metadata.id
         if ($packageId -notin $expectedIds -or -not $verifiedIds.Add($packageId)) {
             throw "Unexpected or duplicate package ID: $packageId"
-        }
-        if ($manifest.package.metadata.id -ne $symbolManifest.package.metadata.id -or
-            $manifest.package.metadata.version -ne $symbolManifest.package.metadata.version) {
-            throw "Package/symbol identity mismatch: $packagePath"
         }
 
         $metadata = $manifest.package.metadata
@@ -98,6 +92,23 @@ foreach ($packageFile in $packages) {
         }
         if (@($package.Entries | Where-Object { $_.FullName -match '^build/.*\.dll$' }).Count -ne 0) {
             throw "Redundant build-folder assembly: $packageId"
+        }
+
+        if ($projectXml.SelectSingleNode('//IsRoslynComponent')?.InnerText -eq 'true') {
+            $analyzerPath = "analyzers/dotnet/cs/$packageId.dll"
+            $analyzers = @($package.Entries | Where-Object { $_.FullName.EndsWith('.dll') })
+            if ($analyzers.Count -ne 1 -or $analyzers[0].FullName -ne $analyzerPath) {
+                throw "Expected only $analyzerPath in analyzer package: $packageId"
+            }
+            Write-Host "Verified $packageId $($metadata.version): metadata, dependencies and analyzer-only contents."
+            continue
+        }
+
+        $symbols = [System.IO.Compression.ZipFile]::OpenRead($symbolsPath)
+        $symbolManifest = Read-PackageXml $symbols $manifestName
+        if ($manifest.package.metadata.id -ne $symbolManifest.package.metadata.id -or
+            $manifest.package.metadata.version -ne $symbolManifest.package.metadata.version) {
+            throw "Package/symbol identity mismatch: $packagePath"
         }
 
         $assemblies = @($package.Entries | Where-Object { $_.FullName -match '^lib/.*\.dll$' })
