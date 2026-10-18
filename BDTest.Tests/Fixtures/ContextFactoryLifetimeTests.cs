@@ -203,6 +203,8 @@ public class ContextFactoryLifetimeTests
         {
             Assert.That(await Assert.ThrowsAsync<InvalidOperationException>(async () => await fixture.Run()), Is.SameAs(expected));
             Assert.That(run.Scenarios.Single().Status, Is.EqualTo(Status.Failed));
+            Assert.That(run.Scenarios.Single().Exception?.Message, Is.EqualTo(failure));
+            Assert.That(run.Scenarios.Single().ExecutionException?.TypeName, Is.EqualTo(nameof(InvalidOperationException)));
             Assert.That(events, Does.Not.Contain("step"));
             if (contexts.Count > 0) Assert.That(contexts[0].Disposals, Is.EqualTo(1));
             await fixture.InitializeContextAsync();
@@ -353,6 +355,121 @@ public class ContextFactoryLifetimeTests
             Assert.That(fixture.Context, Is.SameAs(contexts[1]));
         }
         finally { await fixture.Finish(); }
+    }
+
+    [TestCase("factory")]
+    [TestCase("configure")]
+    [TestCase("initialize")]
+    public async Task SuccessfulPreparationRetryDoesNotRetainTerminalError(string failure)
+    {
+        var calls = 0;
+        var options = new BDTestOptions { ContextFactory = new Factory(_ =>
+        {
+            if (++calls == 1 && failure == "factory") throw new TransientException();
+            return new ValueTask<object>(new ResourceContext(new List<string>(), new Dependency())
+            { InitializationError = calls == 1 && failure == "initialize" ? new TransientException() : null });
+        }) };
+        options.RetryTestRules.Add(error => error is TransientException, 1);
+        using var run = BDTestRun.Start(options);
+        var fixture = new Fixture(run) { Configure = _ =>
+        {
+            if (calls == 1 && failure == "configure") throw new TransientException();
+        } };
+        fixture.Start();
+        try
+        {
+            var scenario = await fixture.Run();
+            Assert.That(scenario.Status, Is.EqualTo(Status.Passed));
+            Assert.That(scenario.RetryCount, Is.EqualTo(1));
+            Assert.That(scenario.Exception, Is.Null);
+            Assert.That(scenario.ExecutionException, Is.Null);
+            Assert.That(scenario.Attempts[0].Exception, Is.Not.Null);
+        }
+        finally { await fixture.Finish(); }
+    }
+
+    [TestCase("teardown", false)]
+    [TestCase("teardown", true)]
+    [TestCase("retry", false)]
+    [TestCase("retry", true)]
+    [TestCase("replacement", false)]
+    [TestCase("replacement", true)]
+    [TestCase("preparation", false)]
+    [TestCase("preparation", true)]
+    public async Task CleanupReentryFailsWithoutDeadlock(string operation, bool asynchronous)
+    {
+        using var run = BDTestRun.Start();
+        var errors = new List<Exception>();
+        var fixture = new CleanupFixture(run, asynchronous);
+        fixture.Cleanup = () =>
+        {
+            foreach (var access in new Action[]
+            {
+                () => _ = fixture.Context,
+                () => _ = fixture.BDTestContext,
+                () => fixture.InitializeContextAsync().GetAwaiter().GetResult(),
+                () => fixture.OverwriteContext(new CleanupContext(() => { })),
+                fixture.Remove
+            })
+            {
+                try { access(); errors.Add(null); }
+                catch (Exception error) { errors.Add(error); }
+            }
+        };
+        fixture.FailPreparation = operation == "preparation";
+        fixture.Start();
+        var execution = Task.Run(async () =>
+        {
+            if (operation == "preparation")
+            {
+                await Assert.ThrowsAsync<InvalidOperationException>(async () => await fixture.InitializeContextAsync());
+                return;
+            }
+            await fixture.InitializeContextAsync();
+            if (operation == "retry") await fixture.RecreateContextOnRetryAsync(1);
+            else if (operation == "replacement") await fixture.OverwriteContextAsync(new CleanupContext(() => { }));
+            else await fixture.Finish();
+        });
+        try
+        {
+            await execution.WaitAsync(TimeSpan.FromSeconds(5));
+            Assert.That(errors, Has.Count.EqualTo(5));
+            Assert.That(errors.All(error => error is InvalidOperationException && error.Message.Contains("cleanup")), Is.True);
+        }
+        finally
+        {
+            if (execution.IsCompleted) await fixture.Finish();
+        }
+    }
+
+    private sealed class CleanupFixture(BDTestRun run, bool asynchronous) : AbstractContextBDTestBase<CleanupContext>
+    {
+        public override BDTestRun TestRun => run;
+        public Action Cleanup { get; set; }
+        public bool FailPreparation { get; set; }
+        protected override ValueTask<CleanupContext> CreateContextAsync(ContextCreation creation) =>
+            new(asynchronous ? new AsyncCleanupContext(() => Cleanup()) : new CleanupContext(() => Cleanup()));
+        protected override void ConfigureContext(BDTestContext<CleanupContext> context)
+        {
+            if (FailPreparation) throw new InvalidOperationException("preparation");
+        }
+        public void Start() => BeginTest(Guid.NewGuid().ToString("N"));
+        public ValueTask Finish() => EndTestAsync();
+        public void Remove() => RemoveContext();
+    }
+
+    private class CleanupContext(Action cleanup) : IDisposable
+    {
+        public void Dispose() => cleanup();
+    }
+
+    private sealed class AsyncCleanupContext(Action cleanup) : CleanupContext(cleanup), IAsyncDisposable
+    {
+        public async ValueTask DisposeAsync()
+        {
+            await Task.Yield();
+            Dispose();
+        }
     }
 
     private sealed class Fixture(BDTestRun run) : AbstractContextBDTestBase<ResourceContext>

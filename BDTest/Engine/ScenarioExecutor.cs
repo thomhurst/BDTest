@@ -159,6 +159,10 @@ internal class ScenarioExecutor : IScenarioExecutor
                 return;
             }
 
+            // Preparation can fail before a step records the terminal error.
+            if (scenario.Exception == null)
+                scenario.ExecutionException = new ExceptionWrapper(e);
+
             await ConsoleReporter.WriteLine($"{Environment.NewLine}Exception: {e.Message}{Environment.NewLine}{e.StackTrace}{Environment.NewLine}");
 
             // Keep the original exception for retry predicates. Only terminal failures

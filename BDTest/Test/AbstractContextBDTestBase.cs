@@ -9,6 +9,7 @@ public abstract class AbstractContextBDTestBase<TContext> : BDTestBase where TCo
     private readonly Dictionary<string, ContextEntry> _contexts = new(StringComparer.Ordinal);
     private readonly ConditionalWeakTable<string, ContextEntry> _defaultContexts = new();
     private readonly AsyncLocal<ContextEntry> _configuring = new();
+    private readonly AsyncLocal<ContextEntry> _disposing = new();
 
     private sealed class ContextEntry
     {
@@ -81,12 +82,20 @@ public abstract class AbstractContextBDTestBase<TContext> : BDTestBase where TCo
     {
         lock (_contextLock)
         {
+            ContextEntry entry;
             if (IsDefaultExecutionId(executionId))
-                return _defaultContexts.GetValue(executionId, _ => new ContextEntry());
-            if (!_contexts.TryGetValue(executionId, out var entry))
+                entry = _defaultContexts.GetValue(executionId, _ => new ContextEntry());
+            else if (!_contexts.TryGetValue(executionId, out entry))
                 _contexts.Add(executionId, entry = new ContextEntry());
+            ThrowIfDisposing(entry);
             return entry;
         }
+    }
+
+    private void ThrowIfDisposing(ContextEntry entry)
+    {
+        if (ReferenceEquals(_disposing.Value, entry))
+            throw new InvalidOperationException("Cannot access or change the context from its cleanup callback. Use the context object being disposed instead.");
     }
 
     private async ValueTask<BDTestContext<TContext>> PrepareContextAsync(string executionId, ContextEntry entry, bool initialize)
@@ -188,6 +197,7 @@ public abstract class AbstractContextBDTestBase<TContext> : BDTestBase where TCo
             else _contexts.TryGetValue(executionId, out entry);
             if (entry == null) return;
         }
+        ThrowIfDisposing(entry);
         await entry.Gate.WaitAsync().ConfigureAwait(false);
         try
         {
@@ -212,18 +222,24 @@ public abstract class AbstractContextBDTestBase<TContext> : BDTestBase where TCo
         }
     }
 
-    private static async ValueTask DisposeContextAsync(ContextEntry entry)
+    private async ValueTask DisposeContextAsync(ContextEntry entry)
     {
         var context = entry.Context?.TestContext;
         entry.Configured = false;
         entry.Initialized = false;
         entry.Context = null;
         if (!entry.Owned) return;
-        // Async disposal takes precedence when both interfaces are implemented.
-        if (context is IAsyncDisposable asyncDisposable)
-            await asyncDisposable.DisposeAsync().ConfigureAwait(false);
-        else if (context is IDisposable disposable)
-            disposable.Dispose();
+        var previous = _disposing.Value;
+        try
+        {
+            _disposing.Value = entry;
+            // Async disposal takes precedence when both interfaces are implemented.
+            if (context is IAsyncDisposable asyncDisposable)
+                await asyncDisposable.DisposeAsync().ConfigureAwait(false);
+            else if (context is IDisposable disposable)
+                disposable.Dispose();
+        }
+        finally { _disposing.Value = previous; }
     }
 
     internal override async ValueTask RecreateContextOnRetryAsync(int attempt)
