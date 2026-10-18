@@ -66,6 +66,7 @@ const sidebars = {
         'reports/html-report',
         'reports/html-report-security',
         'reports/json-data',
+        'reports/contracts',
         'reports/ci-integration',
       ],
     },

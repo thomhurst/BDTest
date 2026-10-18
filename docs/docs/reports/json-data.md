@@ -7,6 +7,10 @@ description: Export, read and write BDTest report data as JSON with BDTestJsonHe
 
 The JSON report is the raw data behind every BDTest report: the same model the report server stores.
 
+The independent [versioned contracts package](contracts.md) provides immutable DTOs
+for new report integrations. Existing core exports and hosted reports still use the
+legacy model described here until their migrations land.
+
 ## Exporting
 
 ```csharp

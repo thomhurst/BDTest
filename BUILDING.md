@@ -115,7 +115,7 @@ packing for stable, prerelease, metadata, minor, patch and major versions.
 `Directory.Build.props` defines `BDTestPublicKey` once and resolves
 `StrongNameKeyPair.snk` relative to the repository, independent of the working
 directory. The signed runtime packages are `BDTest`, `BDTest.NUnit`,
-`BDTest.xUnit`, `BDTest.MSTest`, `BDTest.TUnit` and `BDTest.Razor.Reports`.
+`BDTest.xUnit`, `BDTest.MSTest`, `BDTest.TUnit`, `BDTest.Contracts` and `BDTest.Razor.Reports`.
 Their assembly names, key and version policy remain unchanged for every target.
 Keep this explicit list current when adding a runtime package.
 
@@ -151,7 +151,7 @@ either the NuGet or local-feed upload module. A failed check prevents publicatio
 `Directory.Build.props` defaults `IsPackable` to `false`. Shipped projects opt in
 with `<IsPackable>true</IsPackable>` in their project files. The complete package
 set is `BDTest`, `BDTest.NUnit`, `BDTest.xUnit`, `BDTest.MSTest`, `BDTest.TUnit`,
-`BDTest.Razor.Reports`, `BDTest.SourceGenerator`, and `BDTest.Analyzers`.
+`BDTest.Contracts`, `BDTest.Razor.Reports`, `BDTest.SourceGenerator`, and `BDTest.Analyzers`.
 Tests, pipeline tools, examples and the sample report host are not packable.
 Project and directory names do not decide whether a project ships.
 
@@ -176,3 +176,11 @@ This decision requires no package rename or NuGet deprecation.
 `BDTest.Pipeline.Tests/PackageSelectionTests.cs` evaluates the complete package
 set, imported opt-ins, defaults, metadata and compiler payload settings. Run it
 with `dotnet test BDTest.Pipeline.Tests -c Release --filter FullyQualifiedName~PackageSelectionTests`.
+
+## Independent report contracts (#933)
+
+`BDTest.Contracts` targets `netstandard2.0` and enables nullable analysis and
+warnings-as-errors in its project. It has no reference to the execution package.
+`BDTest.Contracts.Tests` runs contract immutability and serialization checks with
+only a project reference to contracts. The package opts into the same metadata,
+strong-name signing, symbols and validation as the other runtime packages.

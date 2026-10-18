@@ -38,6 +38,10 @@ To use BDTest without a framework adapter, install only the core package (plus t
 dotnet add package BDTest
 ```
 
+For independent immutable report DTOs, add `BDTest.Contracts`. It has no dependency
+on the execution package. See [report contracts](../reports/contracts.md) for its
+versioned JSON shape and the current migration boundary.
+
 For a report server, add `BDTest.Razor.Reports` to an ASP.NET Core project. See [Report server setup](../report-server/setup.md).
 
 :::tip Keep versions aligned
@@ -75,6 +79,7 @@ The core `BDTest` package targets `netstandard2.0;net8.0`. Adapter and report se
 | Package | Target framework | Test framework dependency |
 | --- | --- | --- |
 | `BDTest` | `netstandard2.0;net8.0` | None |
+| `BDTest.Contracts` | `netstandard2.0` | None |
 | `BDTest.TUnit` | `netstandard2.0;net8.0` | TUnit |
 | `BDTest.NUnit` | `net8.0` | NUnit 5 |
 | `BDTest.xUnit` | `netstandard2.0;net8.0` | xUnit v3 |
