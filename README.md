@@ -537,6 +537,8 @@ app.UseBDTestReportServer(options =>
 
 Both settings must be positive. Each full report is charged its serialized UTF-8
 JSON size when cached, preserving shared object references as in report uploads.
+Accounting uses compact JSON with fixed settings, independent of the host's
+`JsonConvert.DefaultSettings`.
 Size measurement streams the JSON without retaining a complete serialized copy.
 The sum of those sizes cannot exceed the configured budget.
 This is an estimate of retained report size, not a hard limit on process memory:

@@ -71,8 +71,9 @@ public class MemoryCacheBdTestDataStore : IMemoryCacheBdTestDataStore, IDisposab
             using (var textWriter = new StreamWriter(counter, new UTF8Encoding(false), 1024, leaveOpen: true))
             using (var jsonWriter = new JsonTextWriter(textWriter))
             {
-                var serializer = JsonSerializer.CreateDefault(new JsonSerializerSettings
+                var serializer = JsonSerializer.Create(new JsonSerializerSettings
                 {
+                    Formatting = Formatting.None,
                     PreserveReferencesHandling = PreserveReferencesHandling.Objects
                 });
                 serializer.Serialize(jsonWriter, data);

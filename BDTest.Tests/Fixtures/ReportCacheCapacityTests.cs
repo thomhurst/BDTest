@@ -74,6 +74,44 @@ public class ReportCacheCapacityTests
             await smallerRepository.StoreData(report, report.Id));
     }
 
+    [TestCase(Formatting.Indented, NullValueHandling.Include)]
+    [TestCase(Formatting.None, NullValueHandling.Ignore)]
+    [NonParallelizable]
+    public async Task Host_JSON_defaults_do_not_change_report_capacity(Formatting formatting, NullValueHandling nullValueHandling)
+    {
+        var report = Report("host-defaults");
+        var size = Size(report);
+        using var exactServices = Services(size);
+        using var smallerServices = Services(size - 1);
+        var repository = exactServices.GetRequiredService<IDataRepository>();
+        var smallerRepository = smallerServices.GetRequiredService<IDataRepository>();
+        var originalDefaults = JsonConvert.DefaultSettings;
+        var defaultSettingsCalls = 0;
+        try
+        {
+            JsonConvert.DefaultSettings = () =>
+            {
+                defaultSettingsCalls++;
+                return new JsonSerializerSettings
+                {
+                    Formatting = formatting,
+                    NullValueHandling = nullValueHandling
+                };
+            };
+
+            await repository.StoreData(report, report.Id);
+
+            Assert.That(await repository.GetDataForBulkRead(report.Id, default), Is.SameAs(report));
+            await Assert.CatchAsync<InvalidOperationException>(async () =>
+                await smallerRepository.StoreData(report, report.Id));
+            Assert.That(defaultSettingsCalls, Is.Zero, "Cache accounting must not consult host JSON defaults.");
+        }
+        finally
+        {
+            JsonConvert.DefaultSettings = originalDefaults;
+        }
+    }
+
     [Test]
     public async Task Oversized_reports_bypass_cache_when_persistent_storage_is_configured()
     {
