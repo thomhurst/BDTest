@@ -10,6 +10,8 @@ internal class DataRepository : IDataRepository
 {
     private readonly IMemoryCacheBdTestDataStore _memoryCacheBdTestDataStore;
     private readonly IBDTestDataStore _customDatastore;
+    private readonly SemaphoreSlim _historyLock = new(1, 1);
+    private bool _historyLoaded;
 
     public DataRepository(IMemoryCacheBdTestDataStore memoryCacheBdTestDataStore, BDTestReportServerOptions options)
     {
@@ -53,24 +55,33 @@ internal class DataRepository : IDataRepository
 
     public async Task<IEnumerable<TestRunSummary>> GetAllTestRunRecords()
     {
-        // Check if it's already in-memory
-        var memoryCachedModels = (await _memoryCacheBdTestDataStore.GetAllTestRunRecords()).ToList();
-
-        if (memoryCachedModels.Any() || _customDatastore == null)
+        if (_customDatastore == null)
         {
-            return memoryCachedModels;
+            return await _memoryCacheBdTestDataStore.GetAllTestRunRecords();
         }
 
-        // Search the backup persistent storage
-        var dataStoredModels = await _customDatastore.GetAllTestRunRecords() ?? Array.Empty<TestRunSummary>();
-        var dataStoredModelsAsList = dataStoredModels.ToList();
-
-        foreach (var testRunRecord in dataStoredModelsAsList)
+        await _historyLock.WaitAsync();
+        try
         {
-            await _memoryCacheBdTestDataStore.StoreTestRunRecord(testRunRecord);
+            if (!_historyLoaded)
+            {
+                // A cached upload does not mean persisted history has been loaded.
+                var records = (await _customDatastore.GetAllTestRunRecords() ?? Array.Empty<TestRunSummary>()).ToList();
+                foreach (var record in records)
+                {
+                    // The cache deduplicates by RecordId and preserves uploads made during this load.
+                    await _memoryCacheBdTestDataStore.StoreTestRunRecord(record);
+                }
+
+                _historyLoaded = true;
+            }
+
+            return await _memoryCacheBdTestDataStore.GetAllTestRunRecords();
         }
-                
-        return dataStoredModelsAsList.OrderByDescending(record => record.StartedAtDateTime);
+        finally
+        {
+            _historyLock.Release();
+        }
     }
 
     public async Task StoreData(BDTestOutputModel bdTestOutputModel, string id)
@@ -102,14 +113,22 @@ internal class DataRepository : IDataRepository
 
     public async Task DeleteReport(string id)
     {
-        if (_customDatastore != null)
+        // Do not let an in-flight history snapshot reintroduce a deleted record.
+        await _historyLock.WaitAsync();
+        try
         {
-            // Save to persistent storage if it's configured!
-            await _customDatastore.DeleteTestData(id);
-            await _customDatastore.DeleteTestRunRecord(id);
-        }
+            if (_customDatastore != null)
+            {
+                await _customDatastore.DeleteTestData(id);
+                await _customDatastore.DeleteTestRunRecord(id);
+            }
 
-        await _memoryCacheBdTestDataStore.DeleteTestData(id);
-        await _memoryCacheBdTestDataStore.DeleteTestRunRecord(id);
+            await _memoryCacheBdTestDataStore.DeleteTestData(id);
+            await _memoryCacheBdTestDataStore.DeleteTestRunRecord(id);
+        }
+        finally
+        {
+            _historyLock.Release();
+        }
     }
 }
