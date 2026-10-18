@@ -94,6 +94,7 @@ public class ReportOptionsTests
         builder.Configuration.AddInMemoryCollection(new Dictionary<string, string>
         {
             ["BDTest:UploadApiKey"] = "injected-key",
+            ["BDTest:AllowAnonymousReports"] = "true",
             ["BDTest:ReportCacheSizeLimitBytes"] = "131072",
             ["BDTest:ReportCacheRetention"] = "00:15:00",
             ["BDTest:UploadsPerMinute"] = "7",
@@ -157,7 +158,6 @@ public class ReportOptionsTests
         public Uri GetProfilePictureUri(HttpContext httpContext) => null;
         public string GetNameOfUser(HttpContext httpContext) => marker.Text + " user";
         public List<CustomLinkData> GetLinksForUser(HttpContext httpContext) => [];
-        public Task<bool> IsAdminAsync(HttpContext httpContext) => Task.FromResult(marker.Text.Length > 0);
         public Task OnReceiveTestDataAsync(BDTestOutputModel report) { Received++; return Task.CompletedTask; }
     }
 }

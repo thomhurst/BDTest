@@ -764,20 +764,19 @@ services.AddAuthorization(options =>
         policy.RequireAuthenticatedUser().RequireRole("BDTest.Admin"));
 });
 services.AddControllersWithViews()
-    .AddMicrosoftIdentityUI()
-    .AddBdTestReportControllersAndViews();
-services.AddRazorPages();
-```
-
-Use the `Microsoft.AspNetCore.Authentication.OpenIdConnect`, `Microsoft.Identity.Web`, `Microsoft.Identity.Web.UI`, and `BDTest.Razor.Reports.Extensions` namespaces. Register storage interfaces with DI and configure `UploadApiKey` through `AddBDTestReports` as shown above. `AddBDTestReports` includes the report controllers and views; its options builder supports configuration binding and validates options on host startup. The request pipeline must select the endpoint before checking its authorization:
-
-```csharp
+    .AddMicrosoftIdentityUI();
 services.AddBDTestReports(options =>
 {
     options.ReportsAuthorizationPolicy = "BDTestReports.Read";
     options.AdminAuthorizationPolicy = "BDTestReports.Admin";
     options.UploadApiKey = Configuration["BDTest:UploadApiKey"];
 });
+services.AddRazorPages();
+```
+
+Use the `Microsoft.AspNetCore.Authentication.OpenIdConnect`, `Microsoft.Identity.Web`, `Microsoft.Identity.Web.UI`, and `BDTest.Razor.Reports.Extensions` namespaces. Register storage interfaces with DI and configure `UploadApiKey` through `AddBDTestReports` as shown above. `AddBDTestReports` includes the report controllers and views; its options builder supports configuration binding and validates options on host startup. The request pipeline must select the endpoint before checking its authorization:
+
+```csharp
 app.UseHttpsRedirection();
 app.UseStaticFiles(); // Only public assets belong in the web root.
 app.UseBDTestReportServer(); // Adds security headers to /bdtest responses.

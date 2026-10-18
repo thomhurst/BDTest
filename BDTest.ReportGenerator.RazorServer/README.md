@@ -38,6 +38,8 @@ and [Entra app role setup](https://learn.microsoft.com/en-us/entra/identity-plat
 
 ## Hosts using the reporting library
 
+Register services before building the host with `builder.Services.AddBDTestReports().BindConfiguration("BDTest")`, then call parameterless `app.UseBDTestReportServer()` before report endpoints. Configure policy names through `BDTestReportOptions` and register storage and UI extension points with DI. See [report options migration](../docs/docs/migration/report-options.md).
+
 Report reads fail closed until `ReportsAuthorizationPolicy` names a registered ASP.NET
 Core policy, the host applies explicit endpoint authorization, or
 `AllowAnonymousReports = true` explicitly enables public reads. The

@@ -33,7 +33,11 @@ public class ReportDeletionTests
     {
         var builder = WebApplication.CreateBuilder();
         builder.WebHost.UseUrls("http://127.0.0.1:0");
-        builder.Services.AddBDTestReports();
+        builder.Services.AddBDTestReports(options =>
+        {
+            options.AllowAnonymousReports = true;
+            options.AdminAuthorizationPolicy = "DeleteTests";
+        });
         builder.Services.AddSingleton<IDataRepository>(_repository);
         builder.Services.AddAuthentication("ReportTests")
             .AddScheme<AuthenticationSchemeOptions, ReportTestAuthenticationHandler>("ReportTests", _ => { })
@@ -45,11 +49,7 @@ public class ReportDeletionTests
                 .RequireAuthenticatedUser().RequireRole("BDTest.Admin"));
         });
         _application = builder.Build();
-        _application.UseBDTestReportServer(options =>
-        {
-            options.AllowAnonymousReports = true;
-            options.AdminAuthorizationPolicy = "DeleteTests";
-        });
+        _application.UseBDTestReportServer();
         _application.UsePathBase("/reports");
         _application.UseRouting();
         _application.Use(async (context, next) =>
@@ -69,7 +69,7 @@ public class ReportDeletionTests
     public void Reset()
     {
         _repository.DeletedIds.Clear();
-        _application.Services.GetRequiredService<BDTestReportServerOptions>().AdminAuthorizationPolicy = "DeleteTests";
+        _application.Services.GetRequiredService<IOptions<BDTestReportOptions>>().Value.AdminAuthorizationPolicy = "DeleteTests";
         _client = new HttpClient(new HttpClientHandler { AllowAutoRedirect = false })
         {
             BaseAddress = new Uri(_application.Urls.Single())
@@ -153,7 +153,7 @@ public class ReportDeletionTests
     [Test]
     public async Task Unknown_admin_policy_hides_delete_buttons_without_breaking_reads()
     {
-        _application.Services.GetRequiredService<BDTestReportServerOptions>().AdminAuthorizationPolicy = "MissingPolicy";
+        _application.Services.GetRequiredService<IOptions<BDTestReportOptions>>().Value.AdminAuthorizationPolicy = "MissingPolicy";
         using var response = await _client.GetAsync(ListPath);
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
         Assert.That(await response.Content.ReadAsStringAsync(), Does.Not.Contain("data-bdtest-action=\"delete\""));
@@ -166,7 +166,7 @@ public class ReportDeletionTests
     [TestCase("DELETE")]
     public async Task Separate_admin_scheme_shows_working_delete_form_and_preserves_reader(string method)
     {
-        _application.Services.GetRequiredService<BDTestReportServerOptions>().AdminAuthorizationPolicy = "SeparateAdmin";
+        _application.Services.GetRequiredService<IOptions<BDTestReportOptions>>().Value.AdminAuthorizationPolicy = "SeparateAdmin";
         _client.DefaultRequestHeaders.Remove("X-Test-Role");
         _client.DefaultRequestHeaders.Add("X-Test-Role", "Reader");
         _client.DefaultRequestHeaders.Add("X-Test-Admin", "true");
@@ -182,7 +182,7 @@ public class ReportDeletionTests
     [TestCase(true)]
     public async Task Separate_admin_scheme_without_admin_identity_hides_delete_buttons(bool authenticateReader)
     {
-        _application.Services.GetRequiredService<BDTestReportServerOptions>().AdminAuthorizationPolicy = "SeparateAdmin";
+        _application.Services.GetRequiredService<IOptions<BDTestReportOptions>>().Value.AdminAuthorizationPolicy = "SeparateAdmin";
         _client.DefaultRequestHeaders.Remove("X-Test-Role");
         if (authenticateReader) _client.DefaultRequestHeaders.Add("X-Test-Role", "BDTest.Admin");
         using var response = await _client.GetAsync(ListPath);

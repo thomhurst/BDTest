@@ -187,7 +187,7 @@ public class ReportStoreTests
         store.Reports["run"] = Encoding.UTF8.GetBytes(json);
         var builder = WebApplication.CreateBuilder();
         builder.WebHost.UseKestrel().UseUrls("http://127.0.0.1:0");
-        builder.Services.AddBDTestReports();
+        builder.Services.AddBDTestReports(options => options.AllowAnonymousReports = true);
         builder.Services.AddSingleton<IReportStore>(store);
         builder.Services.AddSingleton<IRunIndexStore>(store);
         await using var app = builder.Build();

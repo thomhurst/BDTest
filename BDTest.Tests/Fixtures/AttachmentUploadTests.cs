@@ -2,6 +2,7 @@ using System.Net;
 using System.Text;
 using BDTest.Helpers;
 using BDTest.Razor.Reports.Interfaces;
+using BDTest.Razor.Reports.Implementations;
 using BDTest.Razor.Reports.Storage;
 using BDTest.Test;
 using Microsoft.AspNetCore.Builder;
@@ -269,6 +270,58 @@ public partial class ReportUploadTests
         using var client = new HttpClient(handler);
         await Assert.ThrowsAsync<KeyNotFoundException>(async () =>
             await BDTestReportServer.SendDataAndGetReportUriAsync(new Uri("https://reports.test"), null, client, run));
+    }
+
+    [TestCase(false, false)]
+    [TestCase(false, true)]
+    [TestCase(true, false)]
+    [TestCase(true, true)]
+    public async Task Memory_storage_reads_keep_attachments_until_report_expiry(bool shared, bool legacy)
+    {
+        using var files = new AttachmentDirectory();
+        var observing = new ObservingAttachmentStore(files.Store);
+        MemoryCacheBdTestDataStore backing = null;
+        await using var server = await UploadServer.Start(options =>
+        {
+            options.ReportCacheRetention = TimeSpan.FromSeconds(2);
+        }, configureServices: services =>
+        {
+            services.RemoveAll<IBDTestDataStore>();
+            services.AddSingleton<IBDTestAttachmentStore>(observing);
+            MemoryCacheBdTestDataStore Create(IServiceProvider provider) =>
+                backing = ActivatorUtilities.CreateInstance<MemoryCacheBdTestDataStore>(provider);
+            if (shared) services.AddSingleton<MemoryCacheBdTestDataStore>(Create);
+            if (legacy)
+                services.AddSingleton<IBDTestDataStore>(provider => shared
+                    ? provider.GetRequiredService<MemoryCacheBdTestDataStore>() : Create(provider));
+            else
+            {
+                services.AddSingleton<IReportStore>(provider => shared
+                    ? provider.GetRequiredService<MemoryCacheBdTestDataStore>() : Create(provider));
+                services.AddSingleton<IRunIndexStore>(provider => (IRunIndexStore)provider.GetRequiredService<IReportStore>());
+            }
+        });
+        var attachmentId = Guid.NewGuid().ToString("N");
+        using var receipt = await server.Post(AttachmentReport(attachmentId));
+        var reportId = receipt.Headers.GetValues("X-BDTest-Report-Id").Single();
+        using var upload = await PostAttachment(server, reportId, attachmentId,
+            receipt.Headers.GetValues("X-BDTest-Attachment-Token").Single(), new byte[] { 1, 2 });
+        Assert.That(upload.StatusCode, Is.EqualTo(HttpStatusCode.NoContent));
+
+        await Task.Delay(1200);
+        Assert.That(await server.Repository.GetData(reportId, default), Is.Not.Null);
+        await Task.Delay(1200);
+        // A repository read must refresh the authoritative memory entry, not a separate front cache.
+        Assert.That(await backing.GetTestData(reportId, default), Is.Not.Null);
+        using var download = await server.Client.GetAsync($"bdtest/report/{reportId}/attachments/{attachmentId}");
+        Assert.That(download.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        Assert.That(await download.Content.ReadAsByteArrayAsync(), Is.EqualTo(new byte[] { 1, 2 }));
+        Assert.That(observing.Deleted.Task.IsCompleted, Is.False);
+
+        await Task.Delay(2200);
+        Assert.That(await server.Repository.GetDataForBulkRead(reportId, default), Is.Null);
+        Assert.That(await observing.Deleted.Task.WaitAsync(TimeSpan.FromSeconds(10)), Is.EqualTo(reportId));
+        Assert.That(Directory.GetFiles(files.Path, "*", SearchOption.AllDirectories), Is.Empty);
     }
 
     [Test]

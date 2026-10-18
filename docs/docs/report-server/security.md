@@ -36,21 +36,20 @@ builder.Services.AddAuthorization(options =>
         policy.RequireAuthenticatedUser().RequireRole("BDTest.Admin"));
 });
 builder.Services.AddControllersWithViews()
-    .AddMicrosoftIdentityUI()
-    .AddBdTestReportControllersAndViews();
+    .AddMicrosoftIdentityUI();
+builder.Services.AddBDTestReports(options =>
+{
+    options.ReportsAuthorizationPolicy = "BDTestReports.Read";
+    options.AdminAuthorizationPolicy = "BDTestReports.Admin";
+    options.UploadApiKey = builder.Configuration["BDTest:UploadApiKey"];
+});
 builder.Services.AddRazorPages();
 ```
 
 The pipeline must select the endpoint before checking its authorization:
 
 ```csharp
-builder.Services.AddBDTestReports(options =>
-{
-    options.UploadApiKey = builder.Configuration["BDTest:UploadApiKey"];
-    options.DataStore = dataStore;
-    options.ReportsAuthorizationPolicy = "BDTestReports.Read";
-    options.AdminAuthorizationPolicy = "BDTestReports.Admin";
-});
+app.UseBDTestReportServer();
 
 app.UseHttpsRedirection();
 app.UseStaticFiles(); // Only public assets belong in the web root.

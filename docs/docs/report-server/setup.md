@@ -22,7 +22,7 @@ using BDTest.Razor.Reports.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddBDTestReports()
+builder.Services.AddBDTestReports(options => options.AllowAnonymousReports = true)
     .BindConfiguration("BDTest");
 
 var app = builder.Build();
@@ -100,14 +100,12 @@ Supply `BDTest:UploadApiKey` through user secrets or an environment variable. Op
 | `ReportCacheSizeLimitBytes` | `long` | 64 MiB | Budget for cached full reports. Must be positive. |
 | `ReportCacheRetention` | `TimeSpan` | 8 hours | How long cached reports are kept after their last use. Must be positive. |
 | `EnableSecurityHeaders` | `bool` | `true` | Add CSP and other security headers to `/bdtest` responses. |
+| `MaximumAttachmentBytes` | `long` | 10 MiB | Maximum bytes per attachment. Must be nonnegative. |
+| `MaximumReportAttachmentBytes` | `long` | 100 MiB | Maximum attachment bytes per report. Must be nonnegative. |
+| `MaximumAttachmentsPerReport` | `int` | `1000` | Maximum attachments per report. Must be nonnegative. |
 | `ReportsAuthorizationPolicy` | `string?` | `null` | Named policy for all report reads. Unset denies reads unless endpoint authorization or anonymous access is enabled. |
 | `AllowAnonymousReports` | `bool` | `false` | Explicitly permit anonymous reads when no read policy is configured. Host authorization still applies. |
 | `AdminAuthorizationPolicy` | `string?` | `null` | Named policy for deleting reports. Unset disables deletion. See [Security](security.md#administrators). |
-| `DataReceiver` | `IBDTestDataReceiver` | `null` | Called after each upload. See [Customization](customization.md#reacting-to-uploads). |
-| `CustomHeaderLinksProvider` | `IBDTestCustomHeaderLinksProvider` | `null` | Extra links in the top bar. |
-| `CustomSidebarLinksProvider` | `IBDTestCustomSidebarLinksProvider` | `null` | Extra links for the current run, in the header **Links** menu. |
-| `UserPersonalizer` | `IUserPersonalizer` | `null` | User name, picture and links. |
-| `Logger` | `ILogger?` | `null` | Logger for report server diagnostics. |
 
 Register storage and UI extension points as DI services. Use `IReportStore` together with `IRunIndexStore` for [persistent storage](persistence.md), `IBDTestAttachmentStore` for attachments, named ASP.NET Core policies for [administrator access](security.md#administrators), and the interfaces in [Customization](customization.md) for links, personalization and upload callbacks. They can receive constructor dependencies. Diagnostics use the host's `ILogger<T>` services.
 

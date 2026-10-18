@@ -27,15 +27,23 @@ public static class BDTestExtensions
     {
         services.AddControllersWithViews().AddApplicationPart(typeof(BDTestController).Assembly);
         services.AddMemoryCache();
-        // Detect backing storage here so a MemoryCacheBdTestDataStore registered as a store
-        // does not depend on its own storage interface while DI constructs it.
-        services.TryAddSingleton<IMemoryCacheBdTestDataStore>(provider => new MemoryCacheBdTestDataStore(
-            provider.GetRequiredService<IMemoryCache>(),
-            provider.GetRequiredService<IOptions<BDTestReportOptions>>(),
-            provider.GetRequiredService<ReportAttachmentGate>(),
-            provider.GetService<IBDTestAttachmentStore>(),
-            provider.GetService<ILogger<MemoryCacheBdTestDataStore>>(),
-            hasPersistentStorage: provider.GetService<IBDTestDataStore>() != null || provider.GetService<IReportStore>() != null));
+        services.TryAddSingleton<IMemoryCacheBdTestDataStore>(provider =>
+        {
+            // Resolve storage outside its constructor to avoid a circular dependency.
+            var dataStore = provider.GetService<IBDTestDataStore>();
+            var reportStore = provider.GetService<IReportStore>();
+            // One memory entry must own retention and attachment cleanup. A second cache
+            // could retain a report after its backing memory store deletes the attachments.
+            if ((reportStore ?? dataStore as IReportStore) is IMemoryCacheBdTestDataStore memoryStore)
+                return memoryStore;
+            return new MemoryCacheBdTestDataStore(
+                provider.GetRequiredService<IMemoryCache>(),
+                provider.GetRequiredService<IOptions<BDTestReportOptions>>(),
+                provider.GetRequiredService<ReportAttachmentGate>(),
+                provider.GetService<IBDTestAttachmentStore>(),
+                provider.GetService<ILogger<MemoryCacheBdTestDataStore>>(),
+                hasPersistentStorage: dataStore != null || reportStore != null);
+        });
         services.TryAddSingleton<IDataRepository, DataRepository>();
         services.TryAddSingleton<ReportUploadFilter>();
         services.TryAddSingleton<ReportAttachmentGate>();

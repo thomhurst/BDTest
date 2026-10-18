@@ -16,6 +16,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddBDTestReports(options =>
 {
+    options.AllowAnonymousReports = true; // Explicitly public reports; use a read policy for private hosts.
     options.ReportCacheRetention = TimeSpan.FromHours(8);
 }).BindConfiguration("BDTest");
 
@@ -33,6 +34,8 @@ app.Run();
 
 `UseBDTestReportServer()` now only adds the report security-header middleware. Call it after any `UsePathBase` and before authentication, authorization and endpoints. The former configure-delegate overload is removed. `AddBdTestReportControllersAndViews()` remains an obsolete compatibility wrapper; replace it with `builder.Services.AddBDTestReports()`.
 
+Report authorization uses the named `ReportsAuthorizationPolicy` and `AdminAuthorizationPolicy` options. `IAdminAuthorizer` has been removed; move custom checks into ASP.NET Core requirements and handlers. Set `AllowAnonymousReports = true` only for intentionally public reports. See [Security](../report-server/security.md).
+
 ## Move extension points to DI
 
 Options contain only configuration values. Replace assignments of service instances with DI registrations before `builder.Build()`:
@@ -43,7 +46,6 @@ Options contain only configuration values. Replace assignments of service instan
 | `ReportStore` | `IReportStore` |
 | `RunIndexStore` | `IRunIndexStore` |
 | `AttachmentStore` | `IBDTestAttachmentStore` |
-| `AdminAuthorizer` | `IAdminAuthorizer` |
 | `DataReceiver` | `IBDTestDataReceiver` |
 | `UserPersonalizer` | `IUserPersonalizer` |
 | `CustomSidebarLinksProvider` | `IBDTestCustomSidebarLinksProvider` |
@@ -58,7 +60,6 @@ builder.Services.AddSingleton<IReportStore>(services =>
     services.GetRequiredService<MyReportStore>());
 builder.Services.AddSingleton<IRunIndexStore>(services =>
     services.GetRequiredService<MyReportStore>());
-builder.Services.AddSingleton<IAdminAuthorizer, MyAdminAuthorizer>();
 builder.Services.AddBDTestReports().BindConfiguration("BDTest");
 ```
 

@@ -105,7 +105,7 @@ builder.Services.AddSingleton<IRunIndexStore>(services =>
     services.GetRequiredService<MemoryCacheBdTestDataStore>());
 ```
 
-The memory store is in `BDTest.Razor.Reports.Implementations`. Its constructor does not resolve another report store. The report cache registered by `AddBDTestReports` separately detects backing storage for cache bypass and attachment retention.
+The memory store is in `BDTest.Razor.Reports.Implementations`. Its constructor does not resolve another report store. When a `MemoryCacheBdTestDataStore` supplies report storage through either storage API, `AddBDTestReports` reuses that instance as the report cache. Ordinary reads refresh the same entry that owns attachment cleanup, so a separate backing cache cannot expire attachments for a retained report. Other backing stores retain a separate front cache.
 
 ## Raw downloads and legacy stores
 

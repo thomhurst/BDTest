@@ -8,7 +8,6 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using NUnit.Framework;
-using Microsoft.Extensions.Options;
 
 namespace BDTest.Tests.Fixtures;
 

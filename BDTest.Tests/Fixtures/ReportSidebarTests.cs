@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Options;
 using System.Text.RegularExpressions;
 using BDTest.Maps;
 using BDTest.Razor.Reports.Controllers;
@@ -28,7 +29,7 @@ public class ReportSidebarTests
     {
         var builder = WebApplication.CreateBuilder();
         builder.WebHost.UseUrls("http://127.0.0.1:0");
-        builder.Services.AddBDTestReports();
+        builder.Services.AddBDTestReports(options => options.AllowAnonymousReports = true);
         builder.Services.AddSingleton<IDataRepository>(_repository);
         builder.Services.AddSingleton<IBDTestCustomSidebarLinksProvider>(_links);
         _application = builder.Build();
