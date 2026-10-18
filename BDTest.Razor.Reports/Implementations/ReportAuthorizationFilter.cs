@@ -46,11 +46,20 @@ public sealed class ReportAuthorizationFilter(
             return;
         }
 
-        var authentication = await policyEvaluator.AuthenticateAsync(policy, context.HttpContext);
-        var authorization = await policyEvaluator.AuthorizeAsync(policy, authentication, context.HttpContext, context.HttpContext);
-        if (authorization.Succeeded) return;
+        var reader = context.HttpContext.User;
+        try
+        {
+            var authentication = await policyEvaluator.AuthenticateAsync(policy, context.HttpContext);
+            var authorization = await policyEvaluator.AuthorizeAsync(policy, authentication, context.HttpContext, context.HttpContext);
+            if (authorization.Succeeded) return;
 
-        var schemes = policy.AuthenticationSchemes.ToArray();
-        context.Result = authorization.Challenged ? new ChallengeResult(schemes) : new ForbidResult(schemes);
+            var schemes = policy.AuthenticationSchemes.ToArray();
+            context.Result = authorization.Challenged ? new ChallengeResult(schemes) : new ForbidResult(schemes);
+        }
+        finally
+        {
+            // Keep antiforgery validation bound to the same reader that rendered the form.
+            if (requireAdmin) context.HttpContext.User = reader;
+        }
     }
 }

@@ -99,7 +99,7 @@ Generate a long random value, keep it out of source control and share it only wi
 
 ## Administrators
 
-Deleting a report (`POST`/`DELETE /bdtest/report/delete/{id}`) requires both the read policy (unless anonymous reads are enabled) and the named `AdminAuthorizationPolicy`. Without an admin policy, deletion returns 403, even when anonymous reads are enabled. Both methods also require an antiforgery token. The run list shows delete buttons only when the current user passes the same admin policy.
+Deleting a report (`POST`/`DELETE /bdtest/report/delete/{id}`) requires both the read policy (unless anonymous reads are enabled) and the named `AdminAuthorizationPolicy`. Without an admin policy, deletion returns 403, even when anonymous reads are enabled. Both methods also require an antiforgery token. The run list shows delete buttons only when the current user passes the same admin policy, including its authentication schemes. An unregistered admin policy hides delete buttons without breaking report reads; deletion still returns 403. Admin checks preserve the reader identity so antiforgery tokens remain valid when the admin policy uses a separate sign-in scheme.
 
 Register a policy that requires authentication and trusted role claims, as in the example above. Never authorize from the presence or value of a client-controlled cookie, header or query parameter.
 
