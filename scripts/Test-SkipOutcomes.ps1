@@ -1,10 +1,18 @@
 [CmdletBinding()]
-param([string] $Configuration = 'Release')
+param(
+    [string] $Configuration = 'Release',
+    [string] $ResultsDirectory
+)
 
 $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path $PSScriptRoot -Parent
-$resultRoot = Join-Path ([System.IO.Path]::GetTempPath()) ('bdtest-skip-outcomes-' + [guid]::NewGuid().ToString('N'))
-New-Item -ItemType Directory -Path $resultRoot | Out-Null
+$resultRoot = if ($ResultsDirectory) {
+    [System.IO.Path]::GetFullPath($ResultsDirectory)
+}
+else {
+    Join-Path ([System.IO.Path]::GetTempPath()) ('bdtest-skip-outcomes-' + [guid]::NewGuid().ToString('N'))
+}
+New-Item -ItemType Directory -Path $resultRoot -Force | Out-Null
 
 # Exit success alone cannot detect a regression from Skipped to Passed.
 # Inspect the runner's TRX as well as the status assertions inside each probe.

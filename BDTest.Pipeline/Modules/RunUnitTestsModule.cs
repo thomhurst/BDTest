@@ -19,12 +19,16 @@ public class RunUnitTestsModule : Module<List<CommandResult>>
                      .GetFiles(file => file.Path.EndsWith(".csproj", StringComparison.OrdinalIgnoreCase)
                                        && file.Path.Contains("Tests", StringComparison.OrdinalIgnoreCase)))
         {
+            var resultsDirectory = Path.Combine(context.Git().RootDirectory!.Path, "artifacts", "test-results",
+                Path.GetFileNameWithoutExtension(unitTestProjectFile.Path));
+
             // TUnit runs on Microsoft.Testing.Platform, which no longer supports the VSTest-based dotnet test on the .NET 10 SDK
             if (Path.GetFileName(unitTestProjectFile.Path).Contains("TUnit", StringComparison.OrdinalIgnoreCase))
             {
                 results.Add(await context.DotNet().Run(new DotNetRunOptions
                 {
                     Project = unitTestProjectFile.Path,
+                    RunSettings = ["--report-trx", "--results-directory", resultsDirectory],
                     Configuration = "Release",
                 }, new CommandExecutionOptions
                 {
@@ -40,7 +44,8 @@ public class RunUnitTestsModule : Module<List<CommandResult>>
 
             results.Add(await context.DotNet().Test(new DotNetTestOptions
             {
-                Arguments = [unitTestProjectFile.Path],
+                Arguments = [unitTestProjectFile.Path, "--logger", "trx"],
+                ResultsDirectory = resultsDirectory,
                 Configuration = "Release",
             }, new CommandExecutionOptions
             {
