@@ -450,7 +450,7 @@ public class Step
 
     private bool ShouldSkip()
     {
-        if ((StepType == StepType.When || StepType == StepType.ButWhen) && Options.ShouldSkipWhenStep)
+        if ((StepType == StepType.When || StepType == StepType.ButWhen || StepType == StepType.AndWhen) && Options.ShouldSkipWhenStep)
         {
             return true;
         }

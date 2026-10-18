@@ -20,6 +20,7 @@ public class JsonRoundTripTests
     [TestCase(StepType.When, "When")]
     [TestCase(StepType.Then, "Then")]
     [TestCase(StepType.AndThen, "And")]
+    [TestCase(StepType.AndWhen, "And")]
     [TestCase(StepType.ButGiven, "But")]
     [TestCase(StepType.ButWhen, "But")]
     [TestCase(StepType.ButThen, "But")]

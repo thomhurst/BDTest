@@ -136,6 +136,7 @@ public class ButStepTests : BDTestBase
     [TestCase(StepType.ButGiven, 5, "But")]
     [TestCase(StepType.ButWhen, 6, "But")]
     [TestCase(StepType.ButThen, 7, "But")]
+    [TestCase(StepType.AndWhen, 8, "And")]
     public void Step_types_keep_their_report_values(StepType stepType, int value, string keyword)
     {
         Assert.That((int)stepType, Is.EqualTo(value));

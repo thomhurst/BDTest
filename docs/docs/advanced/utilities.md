@@ -62,7 +62,7 @@ Treat `BdTestBaseClass` as a best-effort runtime reference, not retained report 
 | `Diagnostics` | Messages about step text generation. |
 | `Guid`, `ScenarioId`, `ReportId` | Identifiers. |
 
-`StepType` values are `Given`, `AndGiven`, `ButGiven`, `When`, `ButWhen`, `Then`, `AndThen` and `ButThen`.
+`StepType` values are `Given`, `AndGiven`, `ButGiven`, `When`, `AndWhen`, `ButWhen`, `Then`, `AndThen` and `ButThen`. `AndWhen` is appended as numeric value `8`; existing numeric values are unchanged. It renders as `And` in reports.
 
 ## `BDTestContext`
 

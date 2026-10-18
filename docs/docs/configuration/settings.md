@@ -52,7 +52,7 @@ Settings in older wiki pages, such as `PersistentResultsDirectory`, `ReportFolde
 BDTestSettings.Debug.ShouldSkipWhenStep = true;
 ```
 
-When `true`, BDTest does not execute `When` steps (including `But` steps in the `When` phase). Use it to find tests that do not test what you think they test:
+When `true`, BDTest does not execute `When` steps (including `And` and `But` steps in the `When` phase). Use it to find tests that do not test what you think they test:
 
 - With the action skipped, you would expect every test to fail.
 - A test that still passes is probably not asserting on the result of its action.
