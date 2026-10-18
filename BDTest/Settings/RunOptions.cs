@@ -18,6 +18,8 @@ internal sealed class RunOptions
     private readonly bool _skipWhen;
     private readonly Func<Step, Task> _beforeStep;
     private readonly Func<Step, Task> _afterStep;
+    private readonly Func<ScenarioHookContext, Task> _beforeScenario;
+    private readonly Func<ScenarioHookContext, Task> _afterScenario;
 
     private RunOptions() => _legacy = true;
 
@@ -38,6 +40,12 @@ internal sealed class RunOptions
             _beforeStep += hook.BeforeStepAsync;
             _afterStep += hook.AfterStepAsync;
         }
+        foreach (var hook in options.ScenarioHooks)
+        {
+            if (hook == null) throw new ArgumentException("Scenario hooks cannot contain null.", nameof(options));
+            _beforeScenario += hook.BeforeScenarioAsync;
+            _afterScenario += hook.AfterScenarioAsync;
+        }
     }
 
     internal FrameworkOutcomeMap FrameworkOutcomes { get; }
@@ -51,6 +59,8 @@ internal sealed class RunOptions
     internal bool ShouldSkipWhenStep => _legacy ? BDTestSettings.Debug.ShouldSkipWhenStep : _skipWhen;
     internal Func<Step, Task> BeforeStep => _legacy ? BDTestSettings.BeforeStepHooks : _beforeStep;
     internal Func<Step, Task> AfterStep => _legacy ? BDTestSettings.AfterStepHooks : _afterStep;
+    internal Func<ScenarioHookContext, Task> BeforeScenario => _legacy ? BDTestSettings.BeforeScenarioHooks : _beforeScenario;
+    internal Func<ScenarioHookContext, Task> AfterScenario => _legacy ? BDTestSettings.AfterScenarioHooks : _afterScenario;
     // Null selects legacy converters in the standalone StepTextHelper API.
     internal IReadOnlyList<StepTextConverterRegistration> Converters { get; }
 }

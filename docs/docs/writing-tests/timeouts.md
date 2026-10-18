@@ -50,6 +50,7 @@ Pass the token to every cancellable operation. Avoid retries when unfinished wor
 ## Hooks and the scenario budget
 
 - The scenario budget covers elapsed time across steps, including [step hooks](step-hooks.md).
-- Hooks are awaited outside the execution limits. Time spent in before-hooks reduces the remaining scenario budget when the step body starts.
-- If after-hooks use up the scenario budget, the active step fails once those hooks finish, including on the final step.
-- Retry hooks and initial report formatting run before the scenario budget starts.
+- Step hooks are awaited outside the execution limits. Time spent in before-step hooks reduces the remaining scenario budget when the step body starts.
+- If after-step hooks use up the scenario budget, the active step fails once those hooks finish, including on the final step.
+- [Scenario hooks](scenario-hooks.md) do not consume the step budget. Their attempt token is cancelled when a step times out, before scenario cleanup runs. Cleanup is awaited without a timeout.
+- Retry hooks, before-scenario hooks and initial report formatting run before the scenario budget starts.
