@@ -1,3 +1,47 @@
 {
-  "$schema": "https://docs.renovatebot.com/renovate-schema.json"
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended"
+  ],
+  "labels": [
+    "dependencies"
+  ],
+  "automerge": false,
+  "separateMajorMinor": true,
+  "packageRules": [
+    {
+      "description": "Only non-major updates may enter the repository CI and review merge gate",
+      "matchUpdateTypes": [
+        "minor",
+        "patch",
+        "pin",
+        "digest",
+        "pinDigest"
+      ],
+      "addLabels": [
+        "dependency-automerge"
+      ]
+    },
+    {
+      "description": "Major upgrades require manual review and merging",
+      "matchUpdateTypes": [
+        "major"
+      ],
+      "automerge": false,
+      "addLabels": [
+        "major-update"
+      ]
+    },
+    {
+      "description": "Keep framework-aligned Microsoft packages within the net10.0 release line",
+      "matchManagers": [
+        "nuget"
+      ],
+      "matchPackageNames": [
+        "Microsoft.AspNetCore.*",
+        "Microsoft.Extensions.*"
+      ],
+      "allowedVersions": "<11.0.0"
+    }
+  ]
 }

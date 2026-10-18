@@ -16,12 +16,21 @@ function Get-GitHubJson([string]$Endpoint, [switch]$Paginate) {
     $raw | ConvertFrom-Json
 }
 
+function Test-AutomergeEligible($Pull) {
+    # Renovate applies the opt-in label only to non-major updates. Reject a major
+    # label as well, so stale labels or mixed update groups cannot bypass policy.
+    $labels = @($Pull.labels.name)
+    $Pull.user.login -eq 'renovate[bot]' -and
+        'dependencies' -in $labels -and 'dependency-automerge' -in $labels -and
+        'major-update' -notin $labels
+}
+
 # Retry pending checks and reviews without rerunning CI. All state is revalidated
 # by the same run-specific path, using only code from the trusted workflow commit.
 if (-not $RunId) {
     $openPages = @(Get-GitHubJson "repos/$Repo/pulls?state=open&base=main&per_page=100" -Paginate)
     foreach ($pull in ($openPages | ForEach-Object { $_ })) {
-        if ($pull.user.login -ne 'dependabot[bot]' -and 'dependencies' -notin $pull.labels.name) { continue }
+        if (-not (Test-AutomergeEligible $pull)) { continue }
         $pullHead = [string]$pull.head.sha
         if ($pullHead -notmatch '^[0-9a-f]{40}$') { throw "#$($pull.number) has no valid head SHA." }
         $latest = Get-GitHubJson "repos/$Repo/actions/workflows/dotnet.yml/runs?event=pull_request&head_sha=$pullHead&per_page=1"
@@ -55,7 +64,7 @@ if ($pipeline.Count -ne 1 -or $pipeline[0].status -ne 'completed' -or $pipeline[
     return
 }
 
-# workflow_run.pull_requests can be empty (including on Dependabot runs).
+# workflow_run.pull_requests can be empty.
 # Resolve PRs through the tested commit, then fetch their current state.
 $pullPages = @(Get-GitHubJson "repos/$Repo/commits/$headSha/pulls?per_page=100" -Paginate)
 foreach ($associatedPull in ($pullPages | ForEach-Object { $_ })) {
@@ -63,7 +72,7 @@ foreach ($associatedPull in ($pullPages | ForEach-Object { $_ })) {
     if ($pr.state -ne 'open' -or $pr.draft -or $pr.base.ref -ne 'main' -or
         $pr.base.repo.full_name -ne $Repo -or $pr.head.sha -ne $headSha -or
         -not $pr.head.repo.full_name -or $pr.head.repo.full_name -ne $run.head_repository.full_name -or
-        ($pr.user.login -ne 'dependabot[bot]' -and 'dependencies' -notin $pr.labels.name)) {
+        -not (Test-AutomergeEligible $pr)) {
         continue
     }
 
