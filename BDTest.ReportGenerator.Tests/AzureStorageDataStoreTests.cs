@@ -5,6 +5,7 @@ using System.Xml.Linq;
 using Azure.Core.Pipeline;
 using Azure.Storage.Blobs;
 using BDTest.ReportGenerator.RazorServer;
+using BDTest.Razor.Reports.Storage;
 using BDTest.TestUtilities;
 using Newtonsoft.Json;
 using NUnit.Framework;
@@ -13,6 +14,202 @@ namespace BDTest.ReportGenerator.Tests;
 
 public class AzureStorageDataStoreTests
 {
+    [TestCase("read")]
+    [TestCase("write")]
+    [TestCase("delete report")]
+    [TestCase("list")]
+    [TestCase("upsert")]
+    [TestCase("delete index")]
+    public async Task Streaming_operations_observe_cancellation_before_start(string operation)
+    {
+        using var storage = new StorageHandler(0);
+        using var client = new HttpClient(storage);
+        using var cancellation = new CancellationTokenSource();
+        cancellation.Cancel();
+        using var input = new MemoryStream("{}"u8.ToArray());
+        var store = CreateStore(client);
+
+        await Assert.CatchAsync<OperationCanceledException>(async () =>
+        {
+            switch (operation)
+            {
+                case "read":
+                    using (await store.OpenReadAsync("report", cancellation.Token)) { }
+                    break;
+                case "write":
+                    await store.WriteAsync("report", input, cancellation.Token);
+                    break;
+                case "delete report":
+                    await ((IReportStore)store).DeleteAsync("report", cancellation.Token);
+                    break;
+                case "list":
+                    await store.ListAsync(new RunIndexQuery(), cancellation.Token);
+                    break;
+                case "upsert":
+                    await store.UpsertAsync(new RunIndexEntry { RecordId = "report" }, cancellation.Token);
+                    break;
+                case "delete index":
+                    await ((IRunIndexStore)store).DeleteAsync("report", cancellation.Token);
+                    break;
+            }
+        });
+
+        Assert.That(storage.Requests, Is.Zero);
+        Assert.That(input.CanRead, Is.True);
+    }
+
+    [Test]
+    public async Task Report_stream_is_raw_and_owned_by_caller()
+    {
+        const string json = "{\"unknown-report-shape\":[1,2,3]}";
+        using var storage = new StorageHandler(1) { DownloadJson = json };
+        using var client = new HttpClient(storage);
+        var stream = await CreateStore(client).OpenReadAsync("report");
+
+        Assert.That(storage.DisposedDownloads, Is.Zero);
+        using (stream)
+        using (var reader = new StreamReader(stream))
+        {
+            Assert.That(await reader.ReadToEndAsync(), Is.EqualTo(json));
+        }
+        Assert.That(storage.DisposedDownloads, Is.EqualTo(1));
+    }
+
+    [Test]
+    public async Task Missing_report_stream_returns_null()
+    {
+        using var storage = new StorageHandler(1) { FailedDownloadStatus = HttpStatusCode.NotFound };
+        using var client = new HttpClient(storage);
+
+        Assert.That(await CreateStore(client).OpenReadAsync(StorageHandler.Name(0)), Is.Null);
+    }
+
+    [Test]
+    public async Task Report_write_copies_raw_nonseekable_stream_without_disposing_input()
+    {
+        const string json = "{\"custom\":\"report payload\"}";
+        using var storage = new StorageHandler(0);
+        using var client = new HttpClient(storage);
+        var disposed = false;
+        using var input = new NonSeekableStream(json, () => disposed = true);
+
+        await CreateStore(client).WriteAsync("report", input);
+
+        Assert.That(storage.Uploads["/test-data/report"], Is.EqualTo(json));
+        Assert.That(disposed, Is.False);
+    }
+
+    [TestCase(true, "/test-data/report")]
+    [TestCase(false, "/test-runs-summaries/report")]
+    public async Task Streaming_delete_targets_only_its_container(bool report, string expectedPath)
+    {
+        using var storage = new StorageHandler(0);
+        using var client = new HttpClient(storage);
+        var store = CreateStore(client);
+
+        var deleted = report
+            ? await ((IReportStore)store).DeleteAsync("report", CancellationToken.None)
+            : await ((IRunIndexStore)store).DeleteAsync("report", CancellationToken.None);
+
+        Assert.That(deleted, Is.True);
+        Assert.That(storage.DeletedPaths, Is.EqualTo(new[] { expectedPath }));
+    }
+
+    [Test]
+    public async Task Index_reads_every_page_and_pages_filtered_entries_by_run_timestamp()
+    {
+        var started = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+        using var storage = new StorageHandler(75)
+        {
+            SummaryJson = index => ReportJson.SerializeObject(new
+            {
+                RecordId = StorageHandler.Name(index),
+                // Run order deliberately opposes blob creation order.
+                StartedAtDateTime = started.AddMinutes(-index),
+                BranchName = index % 2 == 0 ? "main" : "other",
+                Environment = "CI",
+                Tag = "release",
+                Counts = new { Total = index, Passed = index }
+            })
+        };
+        using var client = new HttpClient(storage);
+        var store = CreateStore(client);
+        var first = await store.ListAsync(new RunIndexQuery
+        {
+            PageSize = 30, BranchName = "main", Environment = "CI", Tag = "release"
+        });
+        var second = await store.ListAsync(new RunIndexQuery
+        {
+            PageSize = 30, BranchName = "main", Environment = "CI", Tag = "release",
+            ContinuationToken = first.ContinuationToken
+        });
+
+        Assert.That(first.Entries.Select(entry => entry.RecordId),
+            Is.EqualTo(Enumerable.Range(0, 30).Select(index => StorageHandler.Name(index * 2))));
+        Assert.That(second.Entries.Select(entry => entry.RecordId),
+            Is.EqualTo(Enumerable.Range(30, 8).Select(index => StorageHandler.Name(index * 2))));
+        Assert.That(first.Entries[1].Counts.Total, Is.EqualTo(2));
+        Assert.That(first.ContinuationToken, Is.Not.Null.And.Not.Empty);
+        Assert.That(second.ContinuationToken, Is.Null);
+        Assert.That(storage.ListRequests, Is.EqualTo(6));
+        Assert.That(storage.Downloads, Has.Count.EqualTo(150));
+        Assert.That(storage.DisposedDownloads, Is.EqualTo(150));
+        Assert.That(storage.Deletes, Is.Zero);
+    }
+
+    [Test]
+    public async Task Index_can_return_more_than_fifty_entries()
+    {
+        using var storage = new StorageHandler(75);
+        using var client = new HttpClient(storage);
+
+        var page = await CreateStore(client).ListAsync(new RunIndexQuery { PageSize = 100 });
+
+        Assert.That(page.Entries, Has.Count.EqualTo(75));
+        Assert.That(page.ContinuationToken, Is.Null);
+    }
+
+    [Test]
+    public async Task Index_downloads_are_bounded_and_observe_cancellation()
+    {
+        using var storage = new StorageHandler(75) { GateDownloads = true };
+        using var client = new HttpClient(storage);
+        using var cancellation = new CancellationTokenSource();
+        var listing = CreateStore(client).ListAsync(new RunIndexQuery(), cancellation.Token);
+        try
+        {
+            await storage.FirstBatchStarted.Task.WaitAsync(TimeSpan.FromSeconds(10));
+            Assert.That(storage.PeakDownloads, Is.EqualTo(8));
+            cancellation.Cancel();
+            await Assert.CatchAsync<OperationCanceledException>(async () => await listing);
+        }
+        finally
+        {
+            storage.ReleaseDownloads.TrySetResult();
+        }
+        Assert.That(storage.ListRequests, Is.EqualTo(1));
+    }
+
+    [Test]
+    public async Task Index_upsert_writes_compatible_summary_json()
+    {
+        using var storage = new StorageHandler(0);
+        using var client = new HttpClient(storage);
+        var entry = new RunIndexEntry
+        {
+            RecordId = "report", BranchName = "main", Counts = new RunIndexCounts { Total = 3, Passed = 2 }
+        };
+
+        await CreateStore(client).UpsertAsync(entry);
+
+        var json = System.Text.Json.JsonDocument.Parse(storage.Uploads["/test-runs-summaries/report"]);
+        using (json)
+        {
+            Assert.That(json.RootElement.GetProperty("RecordId").GetString(), Is.EqualTo("report"));
+            Assert.That(json.RootElement.GetProperty("Counts").GetProperty("Passed").GetInt32(), Is.EqualTo(2));
+        }
+    }
+
     [TestCase(true, "/test-data/report-123")]
     [TestCase(false, "/test-runs-summaries/report-123")]
     public async Task DeleteTargetsOnlyItsOwnContainer(bool deleteTestData, string expectedPath)
@@ -214,13 +411,16 @@ public class AzureStorageDataStoreTests
             .Select(index => DateTimeOffset.UtcNow.AddDays(-2).AddMinutes(index)).ToArray();
         public ConcurrentBag<string> Downloads { get; } = new();
         public ConcurrentBag<string> DeletedPaths { get; } = new();
+        public ConcurrentDictionary<string, string> Uploads { get; } = new();
         public int ListRequests;
+        public int Requests;
         public int Deletes;
         public int DisposedDownloads;
         public int PeakDownloads;
         private int _activeDownloads;
         public bool GateDownloads { get; init; }
         public string DownloadJson { get; init; }
+        public Func<int, string> SummaryJson { get; init; }
         public HttpStatusCode? FailedDownloadStatus { get; init; }
         public TaskCompletionSource FirstBatchStarted { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
         public TaskCompletionSource ReleaseDownloads { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -228,6 +428,16 @@ public class AzureStorageDataStoreTests
 
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
+            Interlocked.Increment(ref Requests);
+            if (request.Method == HttpMethod.Put)
+            {
+                if (!request.RequestUri!.Query.Contains("comp=blocklist"))
+                    Uploads[request.RequestUri.AbsolutePath] = await request.Content!.ReadAsStringAsync(cancellationToken);
+                var uploaded = new HttpResponseMessage(HttpStatusCode.Created);
+                uploaded.Headers.ETag = new System.Net.Http.Headers.EntityTagHeaderValue("\"etag\"");
+                uploaded.Headers.Add("x-ms-request-server-encrypted", "true");
+                return uploaded;
+            }
             if (request.Method == HttpMethod.Delete)
             {
                 DeletedPaths.Add(request.RequestUri!.AbsolutePath);
@@ -275,7 +485,7 @@ public class AzureStorageDataStoreTests
                     if (active == 8) FirstBatchStarted.TrySetResult();
                     await ReleaseDownloads.Task.WaitAsync(cancellationToken);
                 }
-                var content = new StreamContent(new TrackedStream(DownloadJson ?? ReportJson.SerializeObject(new { RecordId = name }),
+                var content = new StreamContent(new TrackedStream(DownloadJson ?? SummaryJson?.Invoke(int.Parse(name[^12..], CultureInfo.InvariantCulture)) ?? ReportJson.SerializeObject(new { RecordId = name }),
                     () => Interlocked.Increment(ref DisposedDownloads)));
                 content.Headers.LastModified = DateTimeOffset.UtcNow;
                 var response = new HttpResponseMessage(HttpStatusCode.OK) { Content = content };
@@ -296,6 +506,31 @@ public class AzureStorageDataStoreTests
         protected override void Dispose(bool disposing)
         {
             if (disposing && Interlocked.Exchange(ref _disposed, 1) == 0) onDispose();
+            base.Dispose(disposing);
+        }
+    }
+
+    private sealed class NonSeekableStream(string content, Action onDispose) : Stream
+    {
+        private readonly MemoryStream _inner = new(System.Text.Encoding.UTF8.GetBytes(content));
+        public override bool CanRead => true;
+        public override bool CanSeek => false;
+        public override bool CanWrite => false;
+        public override long Length => throw new NotSupportedException();
+        public override long Position { get => throw new NotSupportedException(); set => throw new NotSupportedException(); }
+        public override int Read(byte[] buffer, int offset, int count) => _inner.Read(buffer, offset, count);
+        public override ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken cancellationToken = default) => _inner.ReadAsync(buffer, cancellationToken);
+        public override void Flush() => throw new NotSupportedException();
+        public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
+        public override void SetLength(long value) => throw new NotSupportedException();
+        public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                onDispose();
+                _inner.Dispose();
+            }
             base.Dispose(disposing);
         }
     }

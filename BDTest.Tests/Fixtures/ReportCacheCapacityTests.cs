@@ -26,7 +26,7 @@ public class ReportCacheCapacityTests
 
         foreach (var report in reports)
         {
-            await repository.StoreData(report, report.Id);
+            await repository.StoreData(report.Id, report);
             await AssertWithinCapacity(repository, reports, capacity, store);
         }
 
@@ -53,7 +53,7 @@ public class ReportCacheCapacityTests
         using var services = Services(Size(report));
         var repository = services.GetRequiredService<IDataRepository>();
 
-        await repository.StoreData(report, report.Id);
+        await repository.StoreData(report.Id, report);
 
         Assert.That(await repository.GetDataForBulkRead(report.Id, default), Is.SameAs(report));
     }
@@ -65,13 +65,13 @@ public class ReportCacheCapacityTests
         report.Tag = new string('x', 1023) + "😀漢字é";
         using var exactServices = Services(Size(report));
         var repository = exactServices.GetRequiredService<IDataRepository>();
-        await repository.StoreData(report, report.Id);
+        await repository.StoreData(report.Id, report);
         Assert.That(await repository.GetDataForBulkRead(report.Id, default), Is.SameAs(report));
 
         using var smallerServices = Services(Size(report) - 1);
         var smallerRepository = smallerServices.GetRequiredService<IDataRepository>();
         await Assert.CatchAsync<InvalidOperationException>(async () =>
-            await smallerRepository.StoreData(report, report.Id));
+            await smallerRepository.StoreData(report.Id, report));
     }
 
     [TestCase(Formatting.Indented, NullValueHandling.Include)]
@@ -99,11 +99,11 @@ public class ReportCacheCapacityTests
                 };
             };
 
-            await repository.StoreData(report, report.Id);
+            await repository.StoreData(report.Id, report);
 
             Assert.That(await repository.GetDataForBulkRead(report.Id, default), Is.SameAs(report));
             await Assert.CatchAsync<InvalidOperationException>(async () =>
-                await smallerRepository.StoreData(report, report.Id));
+                await smallerRepository.StoreData(report.Id, report));
             Assert.That(defaultSettingsCalls, Is.Zero, "Cache accounting must not consult host JSON defaults.");
         }
         finally
@@ -120,7 +120,7 @@ public class ReportCacheCapacityTests
         using var services = Services(500, store);
         var repository = services.GetRequiredService<IDataRepository>();
 
-        await repository.StoreData(report, report.Id);
+        await repository.StoreData(report.Id, report);
         Assert.That(store.Reports, Contains.Key(report.Id));
         await repository.GetData(report.Id, default);
         await repository.GetData(report.Id, default);
@@ -133,10 +133,10 @@ public class ReportCacheCapacityTests
         using var services = Services(500);
         var repository = services.GetRequiredService<IDataRepository>();
         var small = Report("small");
-        await repository.StoreData(small, small.Id);
+        await repository.StoreData(small.Id, small);
 
         await Assert.CatchAsync<InvalidOperationException>(async () =>
-            await repository.StoreData(Report("large", 1000), "large"));
+            await repository.StoreData("large", Report("large", 1000)));
         Assert.That(await repository.GetData("small", default), Is.SameAs(small));
         Assert.That((await repository.GetAllTestRunRecords()).Select(x => x.RecordId), Is.EqualTo(new[] { "small" }));
     }
@@ -148,7 +148,7 @@ public class ReportCacheCapacityTests
         var hostCache = services.GetRequiredService<IMemoryCache>();
         hostCache.Set("same", "host value");
         var repository = services.GetRequiredService<IDataRepository>();
-        await repository.StoreData(Report("same"), "same");
+        await repository.StoreData("same", Report("same"));
         Assert.That(hostCache.Get<string>("same"), Is.EqualTo("host value"));
         await repository.DeleteReport("same");
         Assert.That(hostCache.Get<string>("same"), Is.EqualTo("host value"));
@@ -163,11 +163,11 @@ public class ReportCacheCapacityTests
         var repository = services.GetRequiredService<IDataRepository>();
 
         await Parallel.ForEachAsync(reports, async (report, _) =>
-            await repository.StoreData(report, report.Id));
+            await repository.StoreData(report.Id, report));
 
         await AssertWithinCapacity(repository, reports, capacity);
         var newest = Report("newest");
-        await repository.StoreData(newest, newest.Id);
+        await repository.StoreData(newest.Id, newest);
         Assert.That(await repository.GetDataForBulkRead(newest.Id, default), Is.SameAs(newest));
     }
 
@@ -177,7 +177,7 @@ public class ReportCacheCapacityTests
         var report = Report("same");
         using var services = Services(Size(report));
         var repository = services.GetRequiredService<IDataRepository>();
-        await repository.StoreData(report, report.Id);
+        await repository.StoreData(report.Id, report);
 
         await Parallel.ForEachAsync(Enumerable.Range(0, 2000), new ParallelOptions { MaxDegreeOfParallelism = 8 },
             async (_, _) => Assert.That(await repository.GetData(report.Id, default), Is.SameAs(report)));
@@ -191,7 +191,7 @@ public class ReportCacheCapacityTests
         var store = persistent ? new PersistentStore() : null;
         using var services = Services(Size(report), store);
         var repository = services.GetRequiredService<IDataRepository>();
-        await repository.StoreData(report, report.Id);
+        await repository.StoreData(report.Id, report);
 
         // A deliberate mutation detects size measurement without relying on serializer internals.
         // Callers must otherwise treat cached reports as immutable.
@@ -211,8 +211,8 @@ public class ReportCacheCapacityTests
         var options = services.GetRequiredService<BDTestReportServerOptions>();
         options.ReportCacheRetention = TimeSpan.FromMilliseconds(500);
         var repository = services.GetRequiredService<IDataRepository>();
-        await repository.StoreData(Report("ordinary"), "ordinary");
-        await repository.StoreData(Report("bulk"), "bulk");
+        await repository.StoreData("ordinary", Report("ordinary"));
+        await repository.StoreData("bulk", Report("bulk"));
 
         // A longer refresh policy makes the expiry difference observable with one short wait.
         options.ReportCacheRetention = TimeSpan.FromHours(1);
@@ -236,7 +236,7 @@ public class ReportCacheCapacityTests
         }).ToList();
         using var services = Services(Size(report) * 2);
         var repository = services.GetRequiredService<IDataRepository>();
-        await repository.StoreData(report, report.Id);
+        await repository.StoreData(report.Id, report);
         using var hostCache = new MemoryCache(new MemoryCacheOptions());
         using var baselineCache = new MemoryCacheBdTestDataStore(hostCache,
             services.GetRequiredService<BDTestReportServerOptions>());
@@ -268,7 +268,7 @@ public class ReportCacheCapacityTests
         using var services = Services(1000);
         services.GetRequiredService<BDTestReportServerOptions>().ReportCacheRetention = TimeSpan.FromMilliseconds(10);
         var repository = services.GetRequiredService<IDataRepository>();
-        await repository.StoreData(Report("expired"), "expired");
+        await repository.StoreData("expired", Report("expired"));
 
         await Task.Delay(40);
 

@@ -384,7 +384,8 @@ public class ReportUploadTests
         {
             Assert.That(Guid.TryParseExact(report.Id, "N", out _), Is.True);
             Assert.That(report.Id, Is.Not.EqualTo(suppliedId));
-            Assert.That(server.Store.Data[report.Id], Is.SameAs(report));
+            Assert.That(BDTest.Helpers.BDTestJsonHelper.Serialize(server.Store.Data[report.Id]),
+                Is.EqualTo(BDTest.Helpers.BDTestJsonHelper.Serialize(report)));
             Assert.That(server.Store.Summaries.ContainsKey(report.Id), Is.True);
         }
         Assert.That(server.Store.Received.Count, Is.EqualTo(2));

@@ -14,7 +14,8 @@ app.UseBDTestReportServer(options =>
 {
     options.ReportCacheSizeLimitBytes = 64L * 1024 * 1024; // Default: 64 MiB
     options.ReportCacheRetention = TimeSpan.FromHours(8);   // Default: eight hours
-    options.DataStore = persistentStore;                    // Optional; omit for cache-only hosting
+    options.ReportStore = reportStore;
+    options.RunIndexStore = runIndexStore;                    // Optional; omit for cache-only hosting
 });
 ```
 
@@ -35,7 +36,7 @@ Both values must be positive; otherwise the setter throws `ArgumentOutOfRangeExc
 
 ### With and without a data store
 
-**With a persistent `DataStore`,** evicted or expired reports are loaded again on demand. A report larger than the whole budget bypasses the cache: uploads still store it, and reads still return it.
+**With persistent stores,** evicted or expired reports are loaded again on demand. A report larger than the whole budget bypasses the cache: uploads still store it, and reads still return it.
 
 **Cache-only hosting** is supported, but retention is best effort. Eviction, expiry or a restart permanently removes report details. An ordinary read can extend retention but cannot prevent capacity eviction. Summaries can stay in the list after their details are gone; those links show a missing report. Uploads larger than the budget return HTTP 413 without adding a summary or calling the data receiver. Increase the budget or add persistent storage to accept them.
 
@@ -58,4 +59,4 @@ Configure the same or stricter limits in any reverse proxy or alternative host.
 - An invalid list returns HTTP 400 before any report is read. An empty selection redirects to the test run list.
 - At most five reports are read concurrently.
 
-The built-in repository reuses cached reports for these reads without adding or refreshing cache entries. Custom `IDataRepository` implementations can override `GetDataForBulkRead` to apply the same policy; by default it calls `GetData`.
+The built-in repository reuses cached reports for these reads without adding or refreshing cache entries. Custom `IDataRepository` implementations must implement `GetDataForBulkRead` and should apply the same policy.

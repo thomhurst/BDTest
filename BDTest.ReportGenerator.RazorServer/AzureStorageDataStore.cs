@@ -8,10 +8,11 @@ using BDTest.Razor.Reports.Models;
 using System.Text.Json;
 using BDTest.Helpers;
 using BDTest.Razor.Reports.Helpers;
+using BDTest.Razor.Reports.Storage;
 
 namespace BDTest.ReportGenerator.RazorServer;
 
-public class AzureStorageDataStore : IBDTestDataStore, IAsyncDataStoreInitializer
+public class AzureStorageDataStore : IBDTestDataStore, IReportStore, IRunIndexStore, IAsyncDataStoreInitializer
 {
     private readonly BlobContainerClient _testRunSummariesContainer;
     private readonly BlobContainerClient _testDataContainer;
@@ -32,6 +33,89 @@ public class AzureStorageDataStore : IBDTestDataStore, IAsyncDataStoreInitialize
         _testRunSummariesContainer = blobClient.GetBlobContainerClient("test-runs-summaries");
             
         _testDataContainer = blobClient.GetBlobContainerClient("test-data");
+    }
+
+    public async Task<Stream> OpenReadAsync(string reportId, CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        try
+        {
+            var download = await _testDataContainer.GetBlockBlobClient(reportId)
+                .DownloadStreamingAsync(cancellationToken: cancellationToken);
+            return download.Value.Content;
+        }
+        catch (RequestFailedException exception) when (exception.Status == 404)
+        {
+            return null;
+        }
+    }
+
+    public async Task WriteAsync(string reportId, Stream utf8Json, CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        await _testDataContainer.GetBlockBlobClient(reportId)
+            .UploadAsync(utf8Json, cancellationToken: cancellationToken);
+    }
+
+    async Task<bool> IReportStore.DeleteAsync(string reportId, CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        var deleted = await _testDataContainer.DeleteBlobIfExistsAsync(reportId, cancellationToken: cancellationToken);
+        return deleted.Value;
+    }
+
+    public async Task<RunIndexPage> ListAsync(RunIndexQuery query, CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        // Validate the query before making any storage requests.
+        RunIndexPaging.Apply(Array.Empty<RunIndexEntry>(), query);
+        var entries = new List<RunIndexEntry>();
+        await foreach (var page in _testRunSummariesContainer.GetBlobsAsync(cancellationToken: cancellationToken).AsPages())
+        {
+            var pageEntries = new RunIndexEntry[page.Values.Count];
+            await Parallel.ForEachAsync(Enumerable.Range(0, page.Values.Count),
+                new ParallelOptions
+                {
+                    MaxDegreeOfParallelism = MaximumConcurrentDownloads,
+                    CancellationToken = cancellationToken
+                },
+                async (index, token) =>
+                {
+                    try
+                    {
+                        var download = await _testRunSummariesContainer.GetBlockBlobClient(page.Values[index].Name)
+                            .DownloadStreamingAsync(cancellationToken: token);
+                        using var content = download.Value.Content;
+                        pageEntries[index] = await JsonSerializer.DeserializeAsync(content,
+                            ReportJsonContext.Default.RunIndexEntry, token);
+                    }
+                    catch (RequestFailedException exception) when (exception.Status == 404)
+                    {
+                        // A lifecycle policy can remove an entry between listing and downloading.
+                    }
+                });
+            entries.AddRange(pageEntries.Where(entry => entry != null));
+        }
+
+        cancellationToken.ThrowIfCancellationRequested();
+        return RunIndexPaging.Apply(entries, query);
+    }
+
+    public async Task UpsertAsync(RunIndexEntry entry, CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        using var json = new MemoryStream();
+        await JsonSerializer.SerializeAsync(json, entry, ReportJsonContext.Default.RunIndexEntry, cancellationToken);
+        json.Position = 0;
+        await _testRunSummariesContainer.GetBlockBlobClient(entry.RecordId)
+            .UploadAsync(json, cancellationToken: cancellationToken);
+    }
+
+    async Task<bool> IRunIndexStore.DeleteAsync(string reportId, CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        var deleted = await _testRunSummariesContainer.DeleteBlobIfExistsAsync(reportId, cancellationToken: cancellationToken);
+        return deleted.Value;
     }
         
     public async Task<BDTestOutputModel> GetTestData(string id, CancellationToken cancellationToken)

@@ -54,7 +54,7 @@ public class BDTestController : Controller
 
         try
         {
-            await _dataRepository.StoreData(bdTestOutputModel, id);
+            await _dataRepository.StoreData(id, bdTestOutputModel, HttpContext.RequestAborted);
         }
         catch (ReportTooLargeForCacheException exception)
         {
@@ -87,7 +87,7 @@ public class BDTestController : Controller
             return Unauthorized();
         }
             
-        await _dataRepository.DeleteReport(id);
+        await _dataRepository.DeleteReport(id, HttpContext.RequestAborted);
             
         return RedirectToAction(nameof(TestRuns));
     }
@@ -247,7 +247,7 @@ public class BDTestController : Controller
     [Route("report/test-runs")]
     public async Task<IActionResult> TestRuns()
     {
-        var records = await _dataRepository.GetAllTestRunRecords();
+        var records = await _dataRepository.GetAllTestRunRecords(HttpContext.RequestAborted);
 
         return View("TestRunList", records);
     }
@@ -256,7 +256,7 @@ public class BDTestController : Controller
     [Route("report/trends")]
     public async Task<IActionResult> Trends()
     {
-        var records = await _dataRepository.GetAllTestRunRecords();
+        var records = await _dataRepository.GetAllTestRunRecords(HttpContext.RequestAborted);
 
         return View("Trends", records);
     }
@@ -272,7 +272,7 @@ public class BDTestController : Controller
     [Route("report/test-run-flakiness")]
     public async Task<IActionResult> TestRunFlakiness()
     {
-        var records = await _dataRepository.GetAllTestRunRecords();
+        var records = await _dataRepository.GetAllTestRunRecords(HttpContext.RequestAborted);
 
         return View("FlakinessTestSelector", records);
     }
@@ -323,14 +323,10 @@ public class BDTestController : Controller
     [Route("report/{id}/raw-json-data")]
     public async Task<IActionResult> RawJsonData([FromRoute] string id, CancellationToken cancellationToken)
     {
-        var model = await _dataRepository.GetData(id, cancellationToken);
-            
-        if (model == null)
-        {
-            return NotFound();
-        }
-            
-        return Content(BDTestJsonHelper.Serialize(model), "application/json");
+        var stream = await _dataRepository.OpenReadAsync(id, cancellationToken);
+        if (stream == null) return NotFound();
+        // MVC owns and disposes the stream after copying it to the response.
+        return File(stream, "application/json");
     }
 
     [AllowAnonymous]

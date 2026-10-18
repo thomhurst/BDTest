@@ -63,7 +63,7 @@ dotnet run
 Open `/bdtest/report/test-runs`. You should see an empty list. Next, [send results from your tests](sending-results.md).
 
 :::warning In-memory only
-Without a `DataStore`, reports are kept only in a bounded memory cache. A restart, eviction or expiry loses them. Add [persistent storage](persistence.md) before relying on the server.
+Without persistent stores, reports are kept only in a bounded memory cache. A restart, eviction or expiry loses them. Add [persistent storage](persistence.md) before relying on the server.
 :::
 
 ## Options reference
@@ -72,7 +72,9 @@ Without a `DataStore`, reports are kept only in a bounded memory cache. A restar
 
 | Option | Type | Default | Description |
 | --- | --- | --- | --- |
-| `DataStore` | `IBDTestDataStore` | `null` | Persistent storage. See [Persistence](persistence.md). |
+| `ReportStore` | `IReportStore` | `null` | Persistent UTF-8 report bytes. Set with `RunIndexStore`. |
+| `RunIndexStore` | `IRunIndexStore` | `null` | Paged run metadata, independent of view models. |
+| `DataStore` | `IBDTestDataStore` | `null` | Legacy storage bridge. See [Persistence](persistence.md). |
 | `UploadApiKey` | `string?` | `null` | Shared secret required in the `X-BDTest-Upload-Key` header. Uploads are disabled when unset. |
 | `UploadsPerMinute` | `int` | `60` | Upload rate limit per server instance. |
 | `ReportCacheSizeLimitBytes` | `long` | 64 MiB | Budget for cached full reports. Must be positive. |

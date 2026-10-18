@@ -5,7 +5,7 @@ description: Add header and sidebar links, personalise the page for the signed-i
 
 # Customizing the report server
 
-All extension points are interfaces in `BDTest.Razor.Reports.Interfaces`. Set them as options in `UseBDTestReportServer`. Links use `CustomLinkData(string text, Uri url)`; pass `null` as the URL for plain text.
+UI extension points are interfaces in `BDTest.Razor.Reports.Interfaces`. Storage interfaces live in `BDTest.Razor.Reports.Storage`; see [Persistence](persistence.md) and [Storage migration](../migration/report-storage.md). Set them as options in `UseBDTestReportServer`. Links use `CustomLinkData(string text, Uri url)`; pass `null` as the URL for plain text.
 
 ## Header links
 

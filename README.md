@@ -786,7 +786,8 @@ app.UseBDTestReportServer(options =>
 {
     options.ReportCacheSizeLimitBytes = 64L * 1024 * 1024; // Default: 64 MiB
     options.ReportCacheRetention = TimeSpan.FromHours(8); // Default: eight hours
-    options.DataStore = persistentStore; // Optional; omit for cache-only hosting
+    options.ReportStore = reportStore;
+    options.RunIndexStore = runIndexStore; // Optional; omit for cache-only hosting
 });
 ```
 
@@ -810,7 +811,7 @@ before the incoming report is admitted. Bulk comparisons can reuse cached report
 but neither populate the cache nor restart retention. The host's unrelated cache
 entries need no size metadata and do not compete with full reports.
 
-With a persistent `DataStore`, evicted or expired reports are loaded again on demand.
+With persistent stores, evicted or expired reports are loaded again on demand.
 A report larger than the entire budget bypasses the cache; uploads still persist it
 and reads still return it. In cache-only hosting, uploads larger than the budget
 return HTTP 413 without adding a summary or notifying the data receiver. Increase
@@ -822,6 +823,25 @@ read can extend retention but cannot prevent capacity eviction. Summaries may re
 listed after their details expire or are evicted; those links show a missing report.
 Use a persistent store when reports must survive these events.
 
+### Writing a persistent store
+
+Implement `IReportStore` and `IRunIndexStore` in `BDTest.Razor.Reports.Storage`.
+`IReportStore` reads, overwrites and deletes UTF-8 report streams; reads return null
+when missing and transfer stream ownership to the caller. Writes leave the input open.
+`IRunIndexStore` upserts `RunIndexEntry` metadata and returns `RunIndexPage` results
+for `RunIndexQuery`: 1–500 entries, newest start time first, ordinal ID tie-breaking,
+continuation tokens, and optional exact branch/environment/tag filters. Pass cancellation
+to every I/O operation. Keep index metadata independent of `TestRunSummary` UI models.
+
+Configure both `ReportStore` and `RunIndexStore` as shown above. Raw JSON downloads
+stream persistent bytes directly; ordinary pages deserialize and cache in the repository.
+`IBDTestDataStore` and `DataStore` remain supported through `LegacyDataStoreAdapter`
+for one migration release, with the old model-loading and uncancellable I/O limitations.
+Custom repositories must implement the redesigned `IDataRepository`, including raw reads,
+paging and bulk reads; `StoreData` now takes the report ID first.
+See [Persistence](docs/docs/report-server/persistence.md) for contracts and a blob-store example,
+and [Storage migration](docs/docs/migration/report-storage.md) for migration details.
+
 ### Bulk report comparisons
 
 The Razor report server accepts up to 50 comma-separated IDs for `GET /bdtest/report/test-run-times`
@@ -832,8 +852,8 @@ redirects to the test-run list. Duplicate IDs count toward the limit but are fet
 
 Comparisons read at most five reports concurrently. The built-in repository reuses cached reports
 without adding or refreshing full-report cache entries. Normal single-report reads still cache
-results. Custom `IDataRepository` implementations can override `GetDataForBulkRead` to apply the
-same cache policy; its default implementation delegates to `GetData` for compatibility.
+results. Custom `IDataRepository` implementations must implement `GetDataForBulkRead` and should apply
+the same cache policy. Every repository operation accepts a cancellation token.
 
 ### Custom HTML in reports
 

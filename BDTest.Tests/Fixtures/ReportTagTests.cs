@@ -95,8 +95,16 @@ public class ReportTagTests
             }));
 
         public Task<BDTestOutputModel> GetData(string id, CancellationToken cancellationToken) => Task.FromResult(Report);
-        public Task<IEnumerable<TestRunSummary>> GetAllTestRunRecords() => throw new NotSupportedException();
-        public Task StoreData(BDTestOutputModel model, string id) => throw new NotSupportedException();
-        public Task DeleteReport(string id) => throw new NotSupportedException();
+        public Task<BDTestOutputModel> GetDataForBulkRead(string id, CancellationToken cancellationToken) => GetData(id, cancellationToken);
+        public async Task<Stream> OpenReadAsync(string id, CancellationToken cancellationToken)
+        {
+            var model = await GetData(id, cancellationToken);
+            return model == null ? null : new MemoryStream(System.Text.Encoding.UTF8.GetBytes(BDTest.Helpers.BDTestJsonHelper.Serialize(model)));
+        }
+        public Task<BDTest.Razor.Reports.Storage.RunIndexPage> ListAsync(BDTest.Razor.Reports.Storage.RunIndexQuery query, CancellationToken cancellationToken) => throw new NotSupportedException();
+
+        public Task<IEnumerable<TestRunSummary>> GetAllTestRunRecords(CancellationToken cancellationToken = default) => throw new NotSupportedException();
+        public Task StoreData(string id, BDTestOutputModel model, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+        public Task DeleteReport(string id, CancellationToken cancellationToken = default) => throw new NotSupportedException();
     }
 }

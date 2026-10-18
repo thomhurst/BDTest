@@ -21,7 +21,7 @@ public sealed class ReportStorageStartupService(
             cancellationToken.ThrowIfCancellationRequested();
             // Set the store before resolving the repository so cache warm-up uses the initialized store.
             services.GetRequiredService<BDTestReportServerOptions>().DataStore = store;
-            await services.GetRequiredService<IDataRepository>().GetAllTestRunRecords();
+            await services.GetRequiredService<IDataRepository>().GetAllTestRunRecords(cancellationToken);
             cancellationToken.ThrowIfCancellationRequested();
             logger.LogInformation("Report storage initialization and cache warm-up completed.");
         }
