@@ -80,7 +80,7 @@ internal class ScenarioExecutor : IScenarioExecutor
                 return;
             }
 
-            ConsoleReporter.WriteLineToConsoleOnly($"--------------------------------------------------{Environment.NewLine}", ConsoleColor.Yellow);
+            ConsoleReporter.WriteLineToConsoleOnly($"--------------------------------------------------{Environment.NewLine}");
 
             var stepBudget = scenario.Timeout.HasValue ? Stopwatch.StartNew() : null;
             foreach (var step in scenario.Steps)
@@ -100,7 +100,7 @@ internal class ScenarioExecutor : IScenarioExecutor
             scenario.ShouldRetry = false;
             scenario.ExecutionException = new ExceptionWrapper(attemptException);
 
-            await ConsoleReporter.WriteLine($"{Environment.NewLine}Exception: {attemptException.Message}{Environment.NewLine}{attemptException.StackTrace}{Environment.NewLine}", ConsoleColor.DarkRed);
+            await ConsoleReporter.WriteLine($"{Environment.NewLine}Exception: {attemptException.Message}{Environment.NewLine}{attemptException.StackTrace}{Environment.NewLine}");
             throw;
         }
         catch (Exception e)
@@ -131,7 +131,7 @@ internal class ScenarioExecutor : IScenarioExecutor
                 return;
             }
 
-            await ConsoleReporter.WriteLine($"{Environment.NewLine}Exception: {e.Message}{Environment.NewLine}{e.StackTrace}{Environment.NewLine}", ConsoleColor.DarkRed);
+            await ConsoleReporter.WriteLine($"{Environment.NewLine}Exception: {e.Message}{Environment.NewLine}{e.StackTrace}{Environment.NewLine}");
 
             throw;
         }
@@ -139,7 +139,7 @@ internal class ScenarioExecutor : IScenarioExecutor
         {
             if (!string.IsNullOrEmpty(scenario.Output))
             {
-                ConsoleReporter.WriteLineToConsoleOnly($"{Environment.NewLine}--------------------------------------------------{Environment.NewLine}", ConsoleColor.Yellow);
+                ConsoleReporter.WriteLineToConsoleOnly($"{Environment.NewLine}--------------------------------------------------{Environment.NewLine}");
             }
 
 
@@ -157,7 +157,7 @@ internal class ScenarioExecutor : IScenarioExecutor
                     ConsoleReporter.WriteLineToConsoleOnly($"{step.StepText} > [{step.Status}{(step.TimedOut ? " (Timed out)" : string.Empty)}]");
                 }
 
-                ConsoleReporter.WriteLineToConsoleOnly($"{Environment.NewLine}--------------------------------------------------{Environment.NewLine}", ConsoleColor.Yellow);
+                ConsoleReporter.WriteLineToConsoleOnly($"{Environment.NewLine}--------------------------------------------------{Environment.NewLine}");
 
                 ConsoleReporter.WriteLineToConsoleOnly($"Test Result: {scenario.Status}");
 
