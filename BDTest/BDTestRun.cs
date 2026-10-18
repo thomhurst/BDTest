@@ -2,6 +2,7 @@ using System.Text;
 using BDTest.Engine;
 using BDTest.Interfaces.Internal;
 using BDTest.Maps;
+using BDTest.Output;
 using BDTest.Settings;
 using BDTest.Test;
 
@@ -21,10 +22,19 @@ public sealed class BDTestRun : IDisposable
     internal IScenarioExecutor ScenarioExecutor { get; } = new ScenarioExecutor(new ScenarioRetryManager());
     internal RunOptions Options { get; }
     internal DateTime StartedAt { get; } = DateTime.UtcNow;
+    internal AttachmentFiles AttachmentFiles { get; }
 
-    private BDTestRun() => Options = RunOptions.Legacy;
+    private BDTestRun()
+    {
+        Options = RunOptions.Legacy;
+        AttachmentFiles = new AttachmentFiles(new AttachmentOptions());
+    }
 
-    private BDTestRun(BDTestOptions options) => Options = new RunOptions(options);
+    private BDTestRun(BDTestOptions options)
+    {
+        Options = new RunOptions(options);
+        AttachmentFiles = new AttachmentFiles(options.Attachments);
+    }
 
     /// <summary>Gets the unique report identifier created for this run.</summary>
     public string ReportId { get; } = Guid.NewGuid().ToString("N");
@@ -42,17 +52,30 @@ public sealed class BDTestRun : IDisposable
 
     internal void ThrowIfDisposed() => Store.ThrowIfDisposed();
 
+    /// <summary>Opens captured content owned by this run. The caller must dispose the stream.</summary>
+    /// <remarks>Throws if this run is disposed, or the attachment is unknown or has been cleared.</remarks>
+    public Stream OpenAttachment(string attachmentId)
+    {
+        if (attachmentId == null) throw new ArgumentNullException(nameof(attachmentId));
+        lock (Store.Gate)
+        {
+            ThrowIfDisposed();
+            return AttachmentFiles.Open(attachmentId);
+        }
+    }
+
     internal void Clear()
     {
         lock (Store.Gate)
         {
+            AttachmentFiles.Clear();
             OutputBuffers.Clear();
             Store.Clear();
         }
     }
 
-    /// <summary>Clears this run's stores and prevents new scenario construction or execution.</summary>
-    /// <remarks>Does not cancel tests in progress. Call after all tests and output writers finish.</remarks>
+    /// <summary>Clears stores, deletes temporary attachment files and prevents new scenario construction or execution.</summary>
+    /// <remarks>Does not cancel tests in progress. Call after all tests, output writers and attachment readers finish.</remarks>
     public void Dispose()
     {
         lock (Store.Gate)

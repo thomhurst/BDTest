@@ -193,6 +193,9 @@ public abstract class BDTestBase
 
     public HtmlWriter ScenarioHtmlWriter => new(BDTestExecutionId, TestRun);
 
+    /// <summary>Captures files for the current step, or for this test's scenario outside a step.</summary>
+    public Interfaces.IBDTestAttachments Attachments => new AttachmentWriter(TestRun, BDTestExecutionId);
+
     /// <summary>Reports a completed whole-scenario skip to the test runner.</summary>
     /// <remarks>
     /// Custom adapters can override this method to invoke their runner's skip mechanism.

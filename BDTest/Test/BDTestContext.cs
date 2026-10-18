@@ -22,6 +22,8 @@ public class BDTestContext
 
     public BDTestBase TestBase { get; }
 
+    public Interfaces.IBDTestAttachments Attachments => new AttachmentWriter(TestBase.TestRun, CurrentScenarioBDTestExecutionId);
+
     public string CurrentScenarioBDTestExecutionId { get; }
 
     private string _storyText;

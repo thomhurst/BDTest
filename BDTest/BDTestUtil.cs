@@ -24,7 +24,7 @@ public static class BDTestUtil
     /// <remarks>Call between test runs. This does not cancel executing tests or change the report ID.</remarks>
     public static void ClearScenarios() => ClearScenarios(BDTestRun.Default);
 
-    /// <summary>Clears this run's scenarios, pending definitions, listeners, and output.</summary>
+    /// <summary>Clears this run's scenarios, pending definitions, listeners, output, and temporary attachment files.</summary>
     /// <remarks>Call between executions. Does not cancel tests or change the report identifier.</remarks>
     public static void ClearScenarios(BDTestRun run) => (run ?? throw new ArgumentNullException(nameof(run))).Clear();
 

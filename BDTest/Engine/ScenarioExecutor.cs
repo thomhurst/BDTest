@@ -97,7 +97,7 @@ internal class ScenarioExecutor : IScenarioExecutor
                 var stepBudget = scenario.Timeout.HasValue ? Stopwatch.StartNew() : null;
                 foreach (var step in scenario.Steps)
                 {
-                    await step.Execute(scenario.BdTestBaseClass, scenario.Timeout, scenario.Timeout - stepBudget?.Elapsed);
+                    await step.Execute(scenario.BdTestBaseClass, scenario.Timeout, scenario.Timeout - stepBudget?.Elapsed, scenario);
                 }
             }
 

@@ -68,6 +68,7 @@ Both readers accept reports written by older BDTest versions with Newtonsoft.Jso
 - Statuses and step types are written as enum names. Historical numeric values remain readable.
 - Step, scenario and attempt `TimeTaken` values use the `d.hh:mm:ss:fffffff` format. Nullable timeouts and the timer's `ElapsedTime` use the standard invariant `TimeSpan` format.
 - Shared steps, metadata and example values are written as independent values. Do not depend on object identity after deserializing. Outline rows identify their parent through `OutlineId`.
+- `Step.Attachments` and `Scenario.Attachments` contain [attachment metadata](../writing-tests/attachments.md) with a one-based `AttemptNumber`. Content and local temporary paths are excluded. Historical reports without these properties read as empty collections; capture starts with a null `Uri`.
 
 ### Structured step arguments
 

@@ -1,0 +1,93 @@
+using System.Net.Http.Headers;
+using BDTest.Interfaces;
+using BDTest.Test;
+
+namespace BDTest.Output;
+
+internal sealed class AttachmentWriter(BDTestRun run, string frameworkExecutionId) : IBDTestAttachments
+{
+    public void Attach(string name, byte[] content, string mimeType)
+    {
+        if (content == null) throw new ArgumentNullException(nameof(content));
+        using var stream = new MemoryStream(content, writable: false);
+        Attach(name, stream, mimeType);
+    }
+
+    public void Attach(string name, Stream content, string mimeType)
+    {
+        if (string.IsNullOrWhiteSpace(name)) throw new ArgumentException("An attachment name is required.", nameof(name));
+        if (content == null) throw new ArgumentNullException(nameof(content));
+        if (!content.CanRead) throw new ArgumentException("The attachment stream must be readable.", nameof(content));
+        if (mimeType == null || mimeType.IndexOfAny(new[] { '\r', '\n', '\0' }) >= 0
+            || !MediaTypeHeaderValue.TryParse(mimeType, out var mediaType) || mediaType.MediaType.Contains("*"))
+            throw new ArgumentException("A concrete MIME type is required.", nameof(mimeType));
+
+        Action<Attachment> publish;
+        long generation;
+        lock (run.Store.Gate)
+        {
+            run.ThrowIfDisposed();
+            publish = GetPublisher();
+            generation = run.AttachmentFiles.Generation;
+        }
+        var attachment = run.AttachmentFiles.Save(name, content, mediaType.ToString(), generation);
+        try
+        {
+            lock (run.Store.Gate)
+            {
+                run.ThrowIfDisposed();
+                run.AttachmentFiles.EnsureAvailable(attachment.Id);
+                publish(attachment);
+            }
+        }
+        catch
+        {
+            run.AttachmentFiles.Remove(attachment.Id);
+            throw;
+        }
+    }
+
+    private Action<Attachment> GetPublisher()
+    {
+        var scope = AttachmentScope.Current;
+        if (scope?.Scenario.Run == run && scope.Scenario.FrameworkTestId == frameworkExecutionId)
+        {
+            scope.ThrowIfInactive();
+            return attachment =>
+            {
+                scope.ThrowIfInactive();
+                attachment.AttemptNumber = scope.AttemptNumber;
+                scope.Step.Attachments.Add(attachment);
+            };
+        }
+        var construction = TestOutputData.ConstructionOutput;
+        if (construction?.Run == run && construction.FrameworkExecutionId == frameworkExecutionId)
+        {
+            ThrowIfConstructionCompleted();
+            return attachment =>
+            {
+                ThrowIfConstructionCompleted();
+                attachment.AttemptNumber = 1;
+                construction.Attachments.Add(attachment);
+            };
+
+            void ThrowIfConstructionCompleted()
+            {
+                if (construction.AttachmentCaptureCompleted)
+                    throw new InvalidOperationException("The attachment's example factory has already completed.");
+            }
+        }
+        return attachment => run.Store.ListenForScenario(frameworkExecutionId, scenario =>
+        {
+            attachment.AttemptNumber = scenario.RetryCount + 1;
+            scenario.Attachments.Add(attachment);
+        });
+    }
+
+    public void AttachFile(string path, string mimeType = null)
+    {
+        if (string.IsNullOrWhiteSpace(path)) throw new ArgumentException("A file path is required.", nameof(path));
+        using var stream = File.OpenRead(path);
+        Attach(Path.GetFileName(path), stream, mimeType ?? "application/octet-stream");
+    }
+}

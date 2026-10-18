@@ -40,6 +40,8 @@ The text appears on the scenario as `TestStartupInformation` and `TearDownOutput
 
 ## Custom HTML in reports
 
+For binary content such as screenshots, logs and HAR files, use [attachments](attachments.md) to capture run-owned files and structured metadata. `HtmlWriter` remains available for custom markup and links to already hosted images. Automatic attachment upload and rendering are still pending; see the attachment page for current export support.
+
 `ScenarioHtmlWriter` on the base class adds content to the current scenario's report entry. Each access returns a new writer for the current test:
 
 ```csharp
