@@ -68,7 +68,7 @@ requirements differ:
 | Package | Target framework | Test framework dependency |
 | --- | --- | --- |
 | `BDTest.NUnit` | `net8.0` | NUnit 5 |
-| `BDTest.xUnit` | `netstandard2.0` | xUnit v2 |
+| `BDTest.xUnit` | `netstandard2.0` | xUnit v3 |
 | `BDTest.MSTest` | `netstandard2.0` | MSTest 4 |
 | `BDTest.TUnit` | `netstandard2.0` | TUnit |
 | `BDTest.Razor.Reports` | `net10.0` | ASP.NET Core report hosting |
@@ -83,6 +83,47 @@ the repository's test projects use .NET 10.
 Step builders now accept `Action`, `Func<Task>`, `Func<ValueTask>`, and cancellation-aware async delegates, including `ValueTask<T>` results. Statement bodies, `await`, null-conditionals, and patterns are supported. Consumers need C# 13 or newer (.NET SDK 9 or newer); the core still targets `netstandard2.0`.
 
 Install the optional `BDTest.SourceGenerator` package in each project containing steps to preserve method names, `[StepText]`, skip attributes, and supported automatic argument capture. Use `.WithArgs(...)` for captured locals and unsupported argument expressions, or `.WithStepText(...)` for a custom sentence. See the [migration guide](docs/delegate-step-migration.md) and [compiler metadata reference](docs/compiler-step-metadata.md).
+## xUnit v3 migration for the next major version
+
+`BDTest.xUnit` now requires xUnit v3. This is a breaking change in the next major
+BDTest release; existing xUnit v2 projects must migrate before upgrading.
+The adapter remains signed and targets `netstandard2.0`.
+
+Replace the `xunit` 2.x package with `xunit.v3.mtp-off` (currently `4.0.2`) to keep
+using VSTest, and set `<OutputType>Exe</OutputType>` in the test project. Keep
+`Microsoft.NET.Test.Sdk` and `xunit.runner.visualstudio` (4.x). The repository uses
+this setup with `dotnet test`, so no pipeline runner change is required. Projects
+that choose Microsoft.Testing.Platform instead can use `xunit.v3` and follow
+[xUnit's runner configuration](https://xunit.net/docs/getting-started/v3/microsoft-testing-platform).
+The version number `4.0.2` belongs to the xUnit v3 framework package family.
+
+Inherit from `XUnitBDTestBase<TContext>` without a constructor argument:
+
+```csharp
+using BDTest.Test;
+using BDTest.xUnit;
+using Xunit;
+
+public class CheckoutTests : XUnitBDTestBase<CheckoutContext>
+{
+    [Fact]
+    public async Task CompletesCheckout()
+    {
+        await Given(() => Context.AddItem())
+            .When(() => Context.Checkout())
+            .Then(() => Assert.True(Context.IsComplete))
+            .BDTestAsync();
+    }
+}
+```
+
+Remove constructors that only passed `ITestOutputHelper` to `base(...)`. If the
+helper is still needed for output, use `Xunit.ITestOutputHelper` instead of
+`Xunit.Abstractions.ITestOutputHelper` and keep it in your derived class only.
+Execution IDs come from the public `TestContext.Current.Test.UniqueID`, so theory
+rows have separate IDs and contexts even when their data is not serializable.
+Runtime BDTest skip rules now produce skipped xUnit results instead of throwing
+`NotSupportedException`.
 
 ## Status migration for the next major version
 
@@ -755,10 +796,9 @@ uses `Assert.Inconclusive`, which appears as a skipped/not-executed runner resul
 BDTest still records a rule-driven or all-steps skip as `Skipped`. An explicit
 MSTest `Assert.Inconclusive` in a step remains `Inconclusive` in BDTest.
 
-The xUnit adapter targets xUnit v2, which has no built-in runtime skip mechanism.
-It throws `NotSupportedException` for a whole-scenario skip so the runner cannot
-silently report success. Use `[Fact(Skip = "reason")]` or `[Theory(Skip = "reason")]`
-for discovery-time skipping. See [xUnit's runtime skip support](https://api.xunit.net/v3/3.2.2/Xunit.Sdk.SkipException.html).
+The xUnit v3 adapter uses `Assert.Skip(reason)` for whole-scenario skips and
+registers `Xunit.Sdk.SkipException` for skips raised inside steps. Both BDTest and
+the xUnit runner report these scenarios as skipped, without retries.
 
 Standalone `BDTestBase`/`BDTestBuilder` callers can still inspect the returned
 skipped scenario. Custom adapters can override `OnScenarioSkipped(string reason)`
@@ -766,7 +806,7 @@ to invoke their runner's skip mechanism. Register runner skip exception types in
 `BDTestSettings.CustomExceptionSettings.SkipExceptionTypes`, keeping genuine
 inconclusive exceptions in `InconclusiveExceptionTypes`.
 
-Run `pwsh scripts/Test-SkipOutcomes.ps1` to verify actual NUnit, MSTest and TUnit
+Run `pwsh scripts/Test-SkipOutcomes.ps1` to verify actual NUnit, xUnit, MSTest and TUnit
 runner outcomes as well as BDTest's scenario and step statuses.
 
 ### Step and scenario timeouts

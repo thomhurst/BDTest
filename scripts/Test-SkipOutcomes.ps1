@@ -19,6 +19,7 @@ New-Item -ItemType Directory -Path $resultRoot -Force | Out-Null
 $projects = @(
     @{ Name = 'BDTest.Tests'; Skips = @('GlobalRuleSkips', 'GlobalRuleSkipsWithDirectAwait', 'AllStepsSkip', 'FrameworkSkipInStep', 'GenuineInconclusive') },
     @{ Name = 'BDTest.MSTest.Tests'; Skips = @('GlobalRuleSkips', 'GlobalRuleSkipsWithDirectAwait', 'AllStepsSkip', 'GenuineInconclusive') },
+    @{ Name = 'BDTest.xUnit.Tests'; Skips = @('GlobalRuleSkips', 'GlobalRuleSkipsWithDirectAwait', 'AllStepsSkip', 'FrameworkSkipInStep') },
     @{ Name = 'BDTest.TUnit.Tests'; Skips = @('GlobalRuleSkips', 'GlobalRuleSkipsWithDirectAwait', 'AllStepsSkip', 'FrameworkSkipInStep') }
 )
 
