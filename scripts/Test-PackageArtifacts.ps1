@@ -29,11 +29,21 @@ function Open-PackageEntry($archive, [string] $entryName) {
 }
 
 # Match the projects selected by PackProjectsModule, including Razor reports.
-$projects = @(Get-ChildItem $repoRoot -Recurse -Filter '*.csproj' |
-    Where-Object { $_.FullName -notmatch 'Tests|Pipeline|Example|ReportGenerator' })
+$projects = @{}
+foreach ($project in Get-ChildItem $repoRoot -Recurse -Filter '*.csproj') {
+    $evaluation = & dotnet msbuild $project.FullName -nologo -p:Configuration=Release -getProperty:IsPackable,PackageId,AssemblyName
+    if ($LASTEXITCODE -ne 0) { throw "Cannot evaluate package properties for $($project.FullName): $evaluation" }
+    $properties = ($evaluation | Out-String | ConvertFrom-Json).Properties
+    if ($properties.IsPackable -ne 'true') { continue }
+    $packageId = [string] $properties.PackageId
+    if ([string]::IsNullOrWhiteSpace($packageId) -or $projects.ContainsKey($packageId)) {
+        throw "Missing or duplicate evaluated package ID: $packageId"
+    }
+    $projects[$packageId] = @{ FullName = $project.FullName; AssemblyName = $properties.AssemblyName }
+}
 if ($projects.Count -eq 0) { throw 'No package projects found.' }
 
-$expectedIds = @($projects | ForEach-Object { $_.BaseName })
+$expectedIds = @($projects.Keys)
 $verifiedIds = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
 $packages = @(Get-ChildItem $PackageDirectory -Filter '*.nupkg' -File |
     Where-Object { $_.Name -notlike '*.symbols.nupkg' } | Sort-Object Name)
@@ -71,7 +81,7 @@ foreach ($packageFile in $packages) {
         }
 
         # Evaluate references per asset: conditional references and project targets can differ.
-        $project = $projects | Where-Object BaseName -EQ $packageId
+        $project = $projects[$packageId]
         $projectXml = [xml] (Get-Content $project.FullName -Raw)
         $isAnalyzer = $projectXml.SelectSingleNode('//IsRoslynComponent')?.InnerText -eq 'true'
         $allDependencies = @($manifest.SelectNodes('//*[local-name()="dependencies"]//*[local-name()="dependency"]'))
@@ -120,7 +130,7 @@ foreach ($packageFile in $packages) {
         }
 
         if ($isAnalyzer) {
-            $analyzerPath = "analyzers/dotnet/cs/$packageId.dll"
+            $analyzerPath = "analyzers/dotnet/cs/$($project.AssemblyName).dll"
             $analyzers = @($package.Entries | Where-Object { $_.FullName.EndsWith('.dll') })
             if ($analyzers.Count -ne 1 -or $analyzers[0].FullName -ne $analyzerPath) {
                 throw "Expected only $analyzerPath in analyzer package: $packageId"

@@ -41,6 +41,46 @@ public class PackageArtifactVerificationTests
     public void TearDown() => Directory.Delete(_packageDirectory, recursive: true);
 
     [Test]
+    public async Task Verifies_imported_packability_and_package_id_independent_of_project_name()
+    {
+        var root = Path.Combine(_packageDirectory, "fixture");
+        var repositoryRoot = Path.GetDirectoryName(Path.GetDirectoryName(_scriptPath))!;
+        var scripts = Path.Combine(root, "scripts");
+        Directory.CreateDirectory(scripts);
+        File.Copy(_scriptPath, Path.Combine(scripts, "Test-PackageArtifacts.ps1"));
+        _scriptPath = Path.Combine(scripts, "Test-PackageArtifacts.ps1");
+        await File.WriteAllTextAsync(Path.Combine(root, "Shipping.props"), """
+            <Project><PropertyGroup>
+              <IsPackable Condition="'$(Configuration)' == 'Release'">true</IsPackable>
+              <PackageId>Custom.Shipping</PackageId>
+            </PropertyGroup></Project>
+            """);
+        await File.WriteAllTextAsync(Path.Combine(root, "Example.Tests.Pipeline.ReportGenerator.csproj"), """
+            <Project Sdk="Microsoft.NET.Sdk">
+              <PropertyGroup><TargetFramework>net10.0</TargetFramework><IsRoslynComponent>true</IsRoslynComponent></PropertyGroup>
+              <Import Project="Shipping.props" />
+            </Project>
+            """);
+        await File.WriteAllTextAsync(Path.Combine(root, "Library.csproj"), """
+            <Project Sdk="Microsoft.NET.Sdk">
+              <PropertyGroup><TargetFramework>net10.0</TargetFramework><IsPackable>false</IsPackable></PropertyGroup>
+            </Project>
+            """);
+        // The verifier reads HEAD for Source Link validation, even for analyzer-only fixtures.
+        var (_, gitDirectory) = await RunProcess("git", ["-C", repositoryRoot, "rev-parse", "--absolute-git-dir"]);
+        await File.WriteAllTextAsync(Path.Combine(root, ".git"), $"gitdir: {gitDirectory.Trim()}");
+        foreach (var package in Directory.EnumerateFiles(_packageDirectory))
+        {
+            File.Delete(package);
+        }
+        CreatePackage("Custom.Shipping", ".nupkg");
+
+        var (exitCode, text) = await RunVerifier();
+        Assert.That(exitCode, Is.Zero, text);
+        Assert.That(text, Does.Contain("Verified Custom.Shipping"));
+    }
+
+    [Test]
     public async Task Rejects_a_missing_primary_package()
     {
         File.Delete(PackagePath("BDTest", ".nupkg"));
@@ -167,36 +207,51 @@ public class PackageArtifactVerificationTests
 
     private async Task AssertRejected(params string[] expectedMessages)
     {
-        var startInfo = new ProcessStartInfo("pwsh")
-        {
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-            UseShellExecute = false
-        };
-        foreach (var argument in new[] { "-NoProfile", "-File", _scriptPath, "-PackageDirectory", _packageDirectory })
-        {
-            startInfo.ArgumentList.Add(argument);
-        }
-
-        using var process = Process.Start(startInfo)
-            ?? throw new InvalidOperationException("Could not start the artifact verification script.");
-        var output = process.StandardOutput.ReadToEndAsync();
-        var error = process.StandardError.ReadToEndAsync();
-        await process.WaitForExitAsync();
-        var text = await output + await error;
-
-        Assert.That(process.ExitCode, Is.Not.Zero, text);
+        var (exitCode, text) = await RunVerifier();
+        Assert.That(exitCode, Is.Not.Zero, text);
         foreach (var message in expectedMessages)
         {
             Assert.That(text, Does.Contain(message));
         }
     }
 
+    private Task<(int ExitCode, string Text)> RunVerifier() => RunProcess("pwsh",
+        ["-NoProfile", "-File", _scriptPath, "-PackageDirectory", _packageDirectory], assertSuccess: false);
+
+    private static async Task<(int ExitCode, string Text)> RunProcess(string command, string[] arguments, bool assertSuccess = true)
+    {
+        var startInfo = new ProcessStartInfo(command)
+        {
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            UseShellExecute = false
+        };
+        foreach (var argument in arguments)
+        {
+            startInfo.ArgumentList.Add(argument);
+        }
+
+        using var process = Process.Start(startInfo)
+            ?? throw new InvalidOperationException($"Could not start {command}.");
+        var output = process.StandardOutput.ReadToEndAsync();
+        var error = process.StandardError.ReadToEndAsync();
+        await process.WaitForExitAsync();
+        var text = await output + await error;
+
+        if (assertSuccess)
+        {
+            Assert.That(process.ExitCode, Is.Zero, text);
+        }
+        return (process.ExitCode, text);
+    }
+
     private void CreatePackage(string id, string extension, string version = "1.0.0")
     {
         File.Delete(PackagePath(id, extension));
         using var archive = ZipFile.Open(PackagePath(id, extension), ZipArchiveMode.Create);
-        var projectPath = Path.Combine(Path.GetDirectoryName(Path.GetDirectoryName(_scriptPath))!, id, $"{id}.csproj");
+        var projectPath = id == "Custom.Shipping"
+            ? Path.Combine(Path.GetDirectoryName(Path.GetDirectoryName(_scriptPath))!, "Example.Tests.Pipeline.ReportGenerator.csproj")
+            : Path.Combine(Path.GetDirectoryName(Path.GetDirectoryName(_scriptPath))!, id, $"{id}.csproj");
         var project = XDocument.Load(projectPath);
         var targets = project.Descendants().Where(element => element.Name.LocalName is "TargetFramework" or "TargetFrameworks")
             .SelectMany(element => element.Value.Split(';'));
@@ -226,9 +281,10 @@ public class PackageArtifactVerificationTests
         }
 
         archive.CreateEntry("nuget_icon.png");
-        if (id is "BDTest.SourceGenerator" or "BDTest.Analyzers")
+        if (id is "BDTest.SourceGenerator" or "BDTest.Analyzers" or "Custom.Shipping")
         {
-            archive.CreateEntry($"analyzers/dotnet/cs/{id}.dll");
+            var assemblyName = id == "Custom.Shipping" ? "Example.Tests.Pipeline.ReportGenerator" : id;
+            archive.CreateEntry($"analyzers/dotnet/cs/{assemblyName}.dll");
         }
     }
 
