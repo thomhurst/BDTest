@@ -124,6 +124,11 @@ public sealed class ScenarioOutlineBuilder<TExample> : BuildableTest
                         row.ReleaseRuntimeReferences();
                     }
                     else row = outline.Examples[index];
+                    if (row.EndTime == default)
+                    {
+                        row.EndTime = DateTime.UtcNow;
+                        row.TimeTaken = row.EndTime - row.StartTime;
+                    }
                     // Retry hooks can throw after resetting the row to Inconclusive.
                     row.Status = row.TimedOut ? Status.Failed : ClassifyOutcome(exception);
                     // Framework success exceptions must not fail the outline.

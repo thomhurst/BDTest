@@ -66,6 +66,17 @@ public class ScenarioOutlineTests : AbstractContextBDTestBase<ScenarioOutlineTes
         Assert.That(outline.Status, Is.EqualTo(Status.Failed));
         Assert.That(outline.Examples.Select(row => row.Status), Is.EqualTo(new[] { Status.Failed, Status.Passed }));
         Assert.That(outline.Examples[0].RetryCount, Is.EqualTo(1));
+        foreach (var result in new[] { outline, JsonConvert.DeserializeObject<Scenario>(JsonConvert.SerializeObject(outline)) })
+        {
+            var failedRow = result.Examples[0];
+            Assert.That(failedRow.EndTime, Is.GreaterThanOrEqualTo(failedRow.Attempts.Single().EndTime));
+            Assert.That(failedRow.TimeTaken, Is.GreaterThan(TimeSpan.Zero));
+            Assert.That(failedRow.TimeTaken, Is.EqualTo(failedRow.EndTime - failedRow.StartTime));
+            var razor = await ReportHandlerEncodingTests.RenderAsync("/Views/Shared/_ScenarioExamples.cshtml", result);
+            Assert.That(razor, Does.Contain($"<td>{failedRow.TimeTaken}</td>"));
+        }
+        Assert.That(BDTestHtmlHelper.GetTestHtmlReport(),
+            Does.Contain($"<td>{outline.Examples[0].TimeTaken}</td>"));
         Assert.That(_visited, Is.EqualTo(new[] { 1, 2 }));
         await AssertRowErrorReported(outline, "&lt;retry hook failed&gt;");
     }
@@ -178,6 +189,9 @@ public class ScenarioOutlineTests : AbstractContextBDTestBase<ScenarioOutlineTes
         Assert.That(outline.Status, Is.EqualTo(Status.Failed));
         Assert.That(outline.Exception, Is.Not.Null);
         Assert.That(outline.EndTime, Is.GreaterThanOrEqualTo(outline.StartTime));
+        var failedRow = outline.Examples[0];
+        Assert.That(failedRow.EndTime, Is.EqualTo(failedRow.Attempts.Single().EndTime));
+        Assert.That(failedRow.TimeTaken, Is.EqualTo(failedRow.Attempts.Single().TimeTaken));
         await Assert.ThrowsAsync<AlreadyExecutedException>(async () => await builder.BDTestAsync());
     }
 
