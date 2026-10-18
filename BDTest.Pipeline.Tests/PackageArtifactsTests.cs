@@ -4,8 +4,8 @@ namespace BDTest.Pipeline.Tests;
 
 public class PackageArtifactsTests
 {
-    private string _repositoryRoot;
-    private PackageArtifacts _artifacts;
+    private string _repositoryRoot = null!;
+    private PackageArtifacts _artifacts = null!;
 
     [SetUp]
     public void SetUp()
@@ -65,12 +65,13 @@ public class PackageArtifactsTests
 
         var exception = Assert.Throws<InvalidOperationException>(() => _artifacts.GetPackages());
 
-        Assert.That(exception.Message, Does.Contain(_artifacts.OutputDirectory));
+        Assert.That(exception?.Message, Does.Contain(_artifacts.OutputDirectory));
     }
 
     private static void WriteFile(string path)
     {
-        Directory.CreateDirectory(Path.GetDirectoryName(path));
+        Directory.CreateDirectory(Path.GetDirectoryName(path)
+            ?? throw new ArgumentException("The artifact path must have a parent directory.", nameof(path)));
         File.WriteAllText(path, "test artifact");
     }
 }

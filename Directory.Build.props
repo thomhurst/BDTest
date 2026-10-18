@@ -1,8 +1,13 @@
 <Project>
  <PropertyGroup>
   <LangVersion>latest</LangVersion>
-  <ImplicitUsings>true</ImplicitUsings>
+  <ImplicitUsings>enable</ImplicitUsings>
   <ContinuousIntegrationBuild Condition="'$(GITHUB_ACTIONS)' == 'true'">true</ContinuousIntegrationBuild>
+ </PropertyGroup>
+ <!-- Roll out strict diagnostics in non-shipping pipeline code first. See BUILDING.md. -->
+ <PropertyGroup Condition="'$(MSBuildProjectName)' == 'BDTest.Pipeline' Or '$(MSBuildProjectName)' == 'BDTest.Pipeline.Tests'">
+  <Nullable>enable</Nullable>
+  <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
  </PropertyGroup>
  <!-- Match the library projects selected by PackProjectsModule. -->
  <PropertyGroup Condition="!$([System.Text.RegularExpressions.Regex]::IsMatch('$(MSBuildProjectName)', '(?i)Tests|Pipeline|Example|ReportGenerator'))">
