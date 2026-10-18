@@ -4,6 +4,9 @@ using Xunit.Abstractions;
 namespace BDTest.xUnit.Tests;
 
 [CollectionDefinition("Non-Parallel Tests", DisableParallelization = true)]
+public class NonParallelTestCollection;
+
+[Collection("Non-Parallel Tests")]
 public class XUnitNonParallelTestsUniqueId : XUnitBDTestBase<XUnitContext>
 {
     private readonly ITestOutputHelper _testOutputHelper;

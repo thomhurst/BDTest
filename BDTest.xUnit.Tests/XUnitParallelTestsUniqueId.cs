@@ -1,62 +1,65 @@
 using System.Collections.Concurrent;
+using BDTest.Test;
 using Xunit;
 using Xunit.Abstractions;
 
+// Each concrete class has its own default collection. Allow all participants to start even on single-core runners.
+[assembly: CollectionBehavior(MaxParallelThreads = BDTest.xUnit.Tests.XUnitParallelTestsUniqueId.ParticipantCount)]
+
 namespace BDTest.xUnit.Tests;
 
-[CollectionDefinition("Parallel Tests", DisableParallelization = false)]
-public class XUnitParallelTestsUniqueId : XUnitBDTestBase<XUnitContext>
+public abstract class XUnitParallelTestsUniqueId : XUnitBDTestBase<XUnitContext>
 {
-    private readonly ITestOutputHelper _testOutputHelper;
-    private static readonly ConcurrentBag<string> Ids = new();
+    public const int ParticipantCount = 5;
 
-    public XUnitParallelTestsUniqueId(ITestOutputHelper testOutputHelper) : base(testOutputHelper)
+    private static readonly ConcurrentDictionary<string, XUnitContext> Contexts = new();
+    private static readonly TaskCompletionSource AllTestsStarted = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+    protected XUnitParallelTestsUniqueId(ITestOutputHelper testOutputHelper) : base(testOutputHelper)
     {
-        _testOutputHelper = testOutputHelper;
     }
 
     [Fact]
-    public void Test1()
+    public async Task ExecutionIdAndContextRemainIsolatedDuringConcurrentScenarios()
     {
         var id = BDTestContext.CurrentScenarioBDTestExecutionId;
-        _testOutputHelper.WriteLine($"XUnit Test ID is: {id}");
-        Assert.DoesNotContain(id, Ids);
-        Ids.Add(id);
+        var context = Context;
+
+        var scenario = await When(() => WaitForOtherTests(id, context))
+            .Then(() => AssertIsolatedContext(id, context))
+            .BDTestAsync();
+
+        Assert.Equal(id, scenario.FrameworkTestId);
+        Assert.Equal(Status.Passed, scenario.Status);
     }
 
-    [Fact]
-    public void Test2()
+    private static async Task WaitForOtherTests(string id, XUnitContext context)
     {
-        var id = BDTestContext.CurrentScenarioBDTestExecutionId;
-        _testOutputHelper.WriteLine($"XUnit Test ID is: {id}");
-        Assert.DoesNotContain(id, Ids);
-        Ids.Add(id);
+        Assert.False(string.IsNullOrWhiteSpace(id));
+        Assert.True(Contexts.TryAdd(id, context), $"Duplicate execution ID: {id}");
+
+        if (Contexts.Count == ParticipantCount)
+        {
+            AllTestsStarted.TrySetResult();
+        }
+
+        // No scenario can finish until all five collections are executing a step.
+        // Run this group together when filtering: FullyQualifiedName~XUnitParallelTestsUniqueId.
+        await AllTestsStarted.Task.WaitAsync(TimeSpan.FromSeconds(30));
+        await Task.Yield();
     }
 
-    [Fact]
-    public void Test3()
+    private void AssertIsolatedContext(string id, XUnitContext context)
     {
-        var id = BDTestContext.CurrentScenarioBDTestExecutionId;
-        _testOutputHelper.WriteLine($"XUnit Test ID is: {id}");
-        Assert.DoesNotContain(id, Ids);
-        Ids.Add(id);
-    }
-
-    [Fact]
-    public void Test4()
-    {
-        var id = BDTestContext.CurrentScenarioBDTestExecutionId;
-        _testOutputHelper.WriteLine($"XUnit Test ID is: {id}");
-        Assert.DoesNotContain(id, Ids);
-        Ids.Add(id);
-    }
-
-    [Fact]
-    public void Test5()
-    {
-        var id = BDTestContext.CurrentScenarioBDTestExecutionId;
-        _testOutputHelper.WriteLine($"XUnit Test ID is: {id}");
-        Assert.DoesNotContain(id, Ids);
-        Ids.Add(id);
+        Assert.Equal(ParticipantCount, Contexts.Count);
+        Assert.Equal(ParticipantCount, Contexts.Values.Distinct(ReferenceEqualityComparer.Instance).Count());
+        Assert.Equal(id, BDTestContext.CurrentScenarioBDTestExecutionId);
+        Assert.Same(context, Context);
     }
 }
+
+public class XUnitParallelTestsUniqueId1(ITestOutputHelper output) : XUnitParallelTestsUniqueId(output);
+public class XUnitParallelTestsUniqueId2(ITestOutputHelper output) : XUnitParallelTestsUniqueId(output);
+public class XUnitParallelTestsUniqueId3(ITestOutputHelper output) : XUnitParallelTestsUniqueId(output);
+public class XUnitParallelTestsUniqueId4(ITestOutputHelper output) : XUnitParallelTestsUniqueId(output);
+public class XUnitParallelTestsUniqueId5(ITestOutputHelper output) : XUnitParallelTestsUniqueId(output);
