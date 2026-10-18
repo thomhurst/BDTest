@@ -52,7 +52,8 @@ await ScenarioOutline("Users can sign in", new[]
     .Then(() => Users.TheDashboardIsShown()));
 ```
 
-- `row` is a lambda parameter, so the [source generator](step-text.md#which-arguments-are-captured-automatically) cannot read `row.Name` automatically. Add `.WithArgs(...)` for steps that take row values; without it, the step shows its source text instead of the `[StepText]` template.
+`row` is a lambda parameter, so the [source generator](step-text.md#which-arguments-are-captured-automatically) cannot read `row.Name` automatically. Add [`.WithArgs(...)`](step-text.md#withargs) to steps that take row values; without it, the step shows its source text instead of the `[StepText]` template.
+
 - Values are formatted with the invariant culture and captured when the outline is built.
 - Unknown placeholders stay unchanged.
 - `null` values display as `null`.
