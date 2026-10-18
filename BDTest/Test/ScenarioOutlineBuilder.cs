@@ -61,9 +61,9 @@ public sealed class ScenarioOutlineBuilder<TExample> : BuildableTest
     private Task<Scenario> Invoke(bool runOnThreadPool)
     {
         Run.ThrowIfDisposed();
-        TestOutputData.Run = Run;
         if (Interlocked.Exchange(ref _executionStarted, 1) != 0)
             throw new AlreadyExecutedException("This scenario outline has already started execution. Create a new outline to run more examples.");
+        TestOutputData.Run = Run;
         Console.SetOut(TestOutputData.Instance);
         TestOutputData.TestId = Guid;
         TestOutputData.FrameworkExecutionId = TestId;

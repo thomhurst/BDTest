@@ -33,7 +33,6 @@ public abstract class RunnableStepBuilder : StepBuilder
         Scenario outline = null, Dictionary<string, string> exampleValues = null)
     {
         testDetails.Run.ThrowIfDisposed();
-        TestOutputData.Run = testDetails.Run;
         if (Interlocked.Exchange(ref _executionStarted, 1) != 0)
         {
             throw new AlreadyExecutedException("This scenario builder has already started execution. Create a new builder to run another scenario.");
@@ -41,6 +40,7 @@ public abstract class RunnableStepBuilder : StepBuilder
 
         // Select the executing branch, which need not be the last one built.
         // Set these before entering an async method so teardown keeps this ID too.
+        TestOutputData.Run = testDetails.Run;
         TestOutputData.TestId = testDetails.Guid;
         TestOutputData.FrameworkExecutionId = testDetails.TestId;
         // Keep reusable builder definitions separate from report steps, whose

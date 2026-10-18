@@ -1,4 +1,5 @@
 using System.Net;
+using BDTest.Exceptions;
 using BDTest.Helpers;
 using BDTest.Maps;
 using BDTest.Output;
@@ -10,6 +11,38 @@ namespace BDTest.Tests.Fixtures;
 
 public class BDTestRunTests
 {
+    [TestCase(false)]
+    [TestCase(true)]
+    public async Task Rejected_repeat_execution_preserves_the_current_run_and_teardown_output(bool useOutline)
+    {
+        using var first = BDTestRun.Start();
+        using var second = BDTestRun.Start();
+        var fixture = new Capture(first, "same-id");
+        Func<Task<Scenario>> execute;
+        if (useOutline)
+        {
+            var outline = fixture.ScenarioOutline("example <Value>", new[] { new { Value = 1 } },
+                row => fixture.When(() => Keep(row.Value)).Then(() => Complete()));
+            execute = outline.BDTestAsync;
+        }
+        else
+        {
+            var builder = fixture.Build();
+            execute = builder.BDTestAsync;
+        }
+
+        var firstScenario = await execute();
+        var secondScenario = await new Capture(second, "same-id").Build().BDTestAsync();
+        Assert.Throws<AlreadyExecutedException>(() => execute());
+        Assert.That(TestOutputData.Run, Is.SameAs(second));
+        Assert.That(TestOutputData.TestId, Is.EqualTo(secondScenario.Guid));
+        Assert.That(TestOutputData.FrameworkExecutionId, Is.EqualTo("same-id"));
+        Console.WriteLine("second teardown after rejected execution");
+
+        Assert.That(secondScenario.TearDownOutput ?? "", Does.Contain("second teardown after rejected execution"));
+        Assert.That(firstScenario.TearDownOutput ?? "", Does.Not.Contain("second teardown after rejected execution"));
+    }
+
     [Test]
     public void Starting_a_run_creates_a_fresh_report_and_empty_stores()
     {
