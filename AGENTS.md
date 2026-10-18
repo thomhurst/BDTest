@@ -62,5 +62,5 @@ Core uses `InternalsVisibleTo` for `BDTest.NUnit`, `BDTest.xUnit`, `BDTest.TUnit
 
 - `Directory.Build.props` sets `LangVersion=latest` and `ImplicitUsings=enable` for all projects.
 - Nullable analysis and warnings-as-errors currently apply to `BDTest.Pipeline` and `BDTest.Pipeline.Tests`; see `BUILDING.md` for the rollout plan.
-- Packable libraries target `netstandard2.0`. Some use `.nuspec` files (`NuspecProperties version=$(Version)`); `BDTest.TUnit` uses csproj package metadata.
+- Package metadata is generated from csproj properties and `PackageReference`s. Shared metadata, the packed icon, and SourceLink/symbol settings live in `Directory.Build.props`; each package supplies its ID, title, description, and tags. Preserve each project's target framework.
 - Dependency updates arrive via Renovate/Dependabot PRs and are auto-merged by workflow.

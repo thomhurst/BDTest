@@ -5,8 +5,10 @@
         <OutputType>Library</OutputType>
         <ApplicationIcon />
         <StartupObject />
-        <NuspecFile>BDTest.xUnit.nuspec</NuspecFile>
-        <NuspecProperties>version=$(Version)</NuspecProperties>
+        <PackageId>BDTest.xUnit</PackageId>
+        <Title>BDTest - xUnit</Title>
+        <Description>An xUnit Extension for BDTest</Description>
+        <PackageTags>test tdd bdd testing given when then xunit</PackageTags>
         <TargetFramework>netstandard2.0</TargetFramework>
         <SignAssembly>True</SignAssembly>
         <AssemblyOriginatorKeyFile>..\StrongNameKeyPair.snk</AssemblyOriginatorKeyFile>

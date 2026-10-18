@@ -2,6 +2,10 @@
 
   <PropertyGroup>
     <IsPackable>true</IsPackable>
+    <PackageId>BDTest</PackageId>
+    <Title>BDTest - A Behaviour Driven Testing Framework</Title>
+    <Description>A Behaviour Driven Testing Framework</Description>
+    <PackageTags>test tdd bdd testing given when then</PackageTags>
     <TargetFramework>netstandard2.0</TargetFramework>
   </PropertyGroup>
 
@@ -10,8 +14,6 @@
     <RootNamespace>BDTest</RootNamespace>
     <ApplicationIcon />
     <StartupObject />
-    <NuspecFile>BDTest.nuspec</NuspecFile>
-    <NuspecProperties>version=$(Version)</NuspecProperties>
     <SignAssembly>True</SignAssembly>
     <AssemblyOriginatorKeyFile>..\StrongNameKeyPair.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
