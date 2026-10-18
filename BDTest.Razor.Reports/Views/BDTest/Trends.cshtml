@@ -21,9 +21,9 @@
     // Stacked from the bottom: passed, then the outcomes that need a look, with failures on top.
     var segments = new[]
     {
-        (Status.Passed, "p"), (Status.Skipped, "s"), (Status.Pending, "r"), (Status.Inconclusive, "i"), (Status.NotImplemented, "n"), (Status.Failed, "f")
+        (Status.Passed, "p"), (Status.Skipped, "s"), (Status.Pending, "r"), (Status.NotRun, "r"), (Status.Inconclusive, "i"), (Status.NotImplemented, "n"), (Status.Failed, "f")
     };
-    var maxScenarios = Math.Max(1, chartRuns.Select(Stacked).DefaultIfEmpty(0).Max());
+    var maxScenarios = Math.Max(1, chartRuns.Select(run => run.Counts.Total).DefaultIfEmpty(0).Max());
     var axisDates = AxisIndexes(chartRuns.Count).Select(index => chartRuns[index].StartedAtDateTime.ToDay()).ToList();
 
     var seconds = chartRuns.Select(run => Duration(run).TotalSeconds).ToList();
@@ -88,6 +88,7 @@
                     <span><i class="sw bg-f"></i>Failed</span>
                     <span><i class="sw bg-n"></i>Not implemented</span>
                     <span><i class="sw bg-i"></i>Inconclusive</span>
+                    <span><i class="sw bg-r"></i>Pending / Not run</span>
                     <span><i class="sw bg-s"></i>Skipped</span>
                     <span><i class="sw bg-p"></i>Passed</span>
                 </div>
@@ -160,7 +161,7 @@
                     <tbody>
                     @foreach (var run in runs.Reverse().Take(30))
                     {
-                        var other = Stacked(run) - run.Counts.Failed - run.Counts.Passed;
+                        var other = run.Counts.Total - run.Counts.Failed - run.Counts.Passed;
                         <tr>
                             <td style="white-space: nowrap"><a class="lnk" href="@RunUrl(run)">@run.StartedAtDateTime.ToRunDate(includeYear: false)</a></td>
                             <td>@run.RunResult().Pill()</td>
@@ -190,12 +191,11 @@
         Status.Pending => run.Counts.Pending,
         Status.Inconclusive => run.Counts.Inconclusive,
         Status.NotImplemented => run.Counts.NotImplemented,
+        // Counts.NotRun also includes declared tests; Total counts only scenarios.
+        Status.NotRun => Math.Max(0, run.Counts.Total - run.Counts.Passed - run.Counts.Failed - run.Counts.Skipped
+            - run.Counts.Pending - run.Counts.Inconclusive - run.Counts.NotImplemented),
         _ => 0
     };
-
-    // Counts.NotRun also includes declared tests that never ran, so it is not stacked.
-    private static int Stacked(TestRunSummary run) => run.Counts.Passed + run.Counts.Failed + run.Counts.Skipped
-        + run.Counts.Pending + run.Counts.Inconclusive + run.Counts.NotImplemented;
 
     private static string BarLabel(TestRunSummary run) =>
         $"{run.StartedAtDateTime.ToRunDate()}: {run.Counts.Failed} failed, {run.Counts.Passed} passed";

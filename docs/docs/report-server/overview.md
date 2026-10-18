@@ -60,6 +60,8 @@ All routes are under `/bdtest`.
 
 History pages read the filters `tag`, `environment`, `branch`, `machine` and `range` (`7d`, `30d`, `today`, `month` or `all`; the default is `30d`) from the query string, so you can share a filtered view. Links from a run open History with that run's tag, environment and branch. Flaky tests and Timing variance compare the latest 20 matching runs by default; set `compare` to choose between 2 and 50.
 
+Trends includes unfinished scenarios (`NotRun`) in the results chart and the table's **Other** count. Declared tests that never became scenarios are excluded from both; inspect them on the run's **Not run** tab.
+
 ## Next steps
 
 1. [Create the app](setup.md)

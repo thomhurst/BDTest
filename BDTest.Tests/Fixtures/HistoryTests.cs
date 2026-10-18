@@ -100,6 +100,41 @@ public class HistoryTests
         }
     }
 
+    [TestCase(0, 0)]
+    [TestCase(0, 4)]
+    [TestCase(1, 0)]
+    [TestCase(1, 4)]
+    [TestCase(3, 0)]
+    [TestCase(3, 4)]
+    public async Task Trends_include_unfinished_scenarios_but_exclude_declared_tests(int unfinished, int declared)
+    {
+        var run = Run("unfinished", "nightly", Start, failed: 2);
+        run.Counts = new Counts
+        {
+            Passed = 1, Failed = 2, Skipped = 3, Pending = 4, Inconclusive = 5, NotImplemented = 6,
+            Total = 21 + unfinished, NotRun = unfinished + declared
+        };
+
+        var html = await ReportHandlerEncodingTests.RenderAsync("/Views/BDTest/Trends.cshtml",
+            new HistoryViewModel { AllRuns = [run], Runs = [run] });
+
+        var bars = Regex.Match(html, "<div class=\"plot bars cur-last\">(.*?)</div>", RegexOptions.Singleline);
+        var segments = XElement.Parse("<bars>" + bars.Groups[1].Value + "</bars>").Descendants("span").ToList();
+        var heights = segments.Select(segment => double.Parse(
+            Regex.Match((string)segment.Attribute("style"), @"height: ([\d.]+)%").Groups[1].Value,
+            CultureInfo.InvariantCulture)).ToList();
+        Assert.That(heights.Sum(), Is.EqualTo(100).Within(0.05), "All scenario results fill the chart, without declared tests.");
+        Assert.That(heights[0], Is.EqualTo(100.0 / run.Counts.Total).Within(0.01));
+        Assert.That(segments.Count(segment => (string)segment.Attribute("class") == "bg-r"),
+            Is.EqualTo(unfinished > 0 ? 2 : 1), "Pending and unfinished scenarios each have a segment.");
+
+        var table = XElement.Parse(Regex.Match(html, "<tbody>(.*?)</tbody>", RegexOptions.Singleline).Value);
+        var cells = table.Descendants("td").Select(cell => cell.Value).ToList();
+        Assert.That(cells[2], Is.EqualTo("2"));
+        Assert.That(cells[3], Is.EqualTo((18 + unfinished).ToString(CultureInfo.InvariantCulture)));
+        Assert.That(cells[4], Is.EqualTo("1"));
+    }
+
     [Test]
     public async Task Flaky_scenarios_link_to_their_runs_locally()
     {
