@@ -22,4 +22,7 @@
     <Compile Include="..\TestUtilities\ReportJson.cs" Link="Helpers\ReportJson.cs" />
     <Using Include="BDTest.TestUtilities" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\BDTest.Analyzers\BDTest.Analyzers.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+  </ItemGroup>
 </Project>

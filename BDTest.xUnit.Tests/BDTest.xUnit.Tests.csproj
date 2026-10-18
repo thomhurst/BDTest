@@ -31,4 +31,7 @@
     <Compile Include="..\TestUtilities\AdapterConformanceTests.cs" Link="Conformance\AdapterConformanceTests.cs" />
     <Compile Include="..\TestUtilities\MethodIdentityContract.cs" Link="Helpers\MethodIdentityContract.cs" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\BDTest.Analyzers\BDTest.Analyzers.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+  </ItemGroup>
 </Project>

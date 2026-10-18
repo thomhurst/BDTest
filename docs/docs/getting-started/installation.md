@@ -30,6 +30,8 @@ dotnet add package BDTest.SourceGenerator
 
 Mark it `PrivateAssets="all"` in the project file so it does not flow to projects that reference yours.
 
+Add optional compile-time checks and IDE fixes with `dotnet add package BDTest.Analyzers`, also marked `PrivateAssets="all"`. See [Analyzers and code fixes](../advanced/analyzers.md) for rule IDs, installation and suppression.
+
 To use BDTest without a framework adapter, install only the core package (plus the generator):
 
 ```bash
@@ -55,6 +57,7 @@ The core `BDTest` package targets `netstandard2.0`. Adapter and report server re
 | `BDTest.MSTest` | `netstandard2.0` | MSTest 4 |
 | `BDTest.Razor.Reports` | `net10.0` | ASP.NET Core |
 | `BDTest.SourceGenerator` | `netstandard2.0` analyzer | C# 10+ compiler (.NET SDK 8+) |
+| `BDTest.Analyzers` | `netstandard2.0` analyzer | Roslyn 4.8+ (.NET SDK 8+) |
 
 BDTest's step builders take delegates and need a **C# 13 or newer** compiler (.NET SDK 9 or newer). The core package still targets `netstandard2.0`.
 
@@ -76,6 +79,7 @@ A typical TUnit test project:
   <ItemGroup>
     <PackageReference Include="BDTest.TUnit" Version="*" />
     <PackageReference Include="BDTest.SourceGenerator" Version="*" PrivateAssets="all" />
+    <PackageReference Include="BDTest.Analyzers" Version="*" PrivateAssets="all" />
     <PackageReference Include="TUnit" Version="*" />
   </ItemGroup>
 </Project>

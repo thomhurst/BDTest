@@ -6,6 +6,7 @@ using NUnit.Framework;
 namespace BDTest.Tests.Fixtures;
 
 [Parallelizable(ParallelScope.None)]
+[System.Diagnostics.CodeAnalysis.SuppressMessage("BDTest", "BDT001", Justification = "These tests verify reporting of intentionally unexecuted scenarios.")]
 [Story(AsA = "BDTest developer",
     IWant = "to make sure that BDTest flags tests not executed",
     SoThat = "consumers aren't missing any test coverage accidentally")]

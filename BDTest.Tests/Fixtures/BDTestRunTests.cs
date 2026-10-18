@@ -210,6 +210,7 @@ public class BDTestRunTests
     }
 
     [Test]
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("BDTest", "BDT001", Justification = "Invoking the disposed builder must throw before returning a task.")]
     public async Task Disposal_clears_pending_output_and_listeners_and_rejects_a_saved_builder()
     {
         using var run = BDTestRun.Start();

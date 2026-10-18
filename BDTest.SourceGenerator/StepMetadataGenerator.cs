@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
+using BDTest.Compiler;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -16,7 +17,7 @@ public sealed class StepMetadataGenerator : IIncrementalGenerator
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
         var sites = context.SyntaxProvider.CreateSyntaxProvider(
-            static (node, _) => node is InvocationExpressionSyntax invocation && IsStepName(GetName(invocation)),
+            static (node, _) => node is InvocationExpressionSyntax invocation && BDTestSymbols.IsStepName(GetName(invocation)),
             static (syntax, _) => Describe(syntax)).Where(static site => site != null);
         context.RegisterSourceOutput(sites.Collect(), static (output, items) => Emit(output, items));
     }
@@ -28,13 +29,11 @@ public sealed class StepMetadataGenerator : IIncrementalGenerator
         _ => null
     };
 
-    private static bool IsStepName(string? name) => name is "Given" or "When" or "Then" or "And" or "But";
-
     private static Site? Describe(GeneratorSyntaxContext context)
     {
         var invocation = (InvocationExpressionSyntax)context.Node;
         if (context.SemanticModel.GetOperation(invocation) is not IInvocationOperation builder ||
-            !IsBDTestBuilder(builder.TargetMethod)) return null;
+            !BDTestSymbols.IsBuilderMethod(builder.TargetMethod)) return null;
 
         var argument = builder.Arguments.FirstOrDefault(a => a.Parameter?.Ordinal == 0)?.Syntax as ArgumentSyntax;
         if (argument?.Expression is not LambdaExpressionSyntax lambda) return null;
@@ -75,15 +74,6 @@ public sealed class StepMetadataGenerator : IIncrementalGenerator
             "new global::BDTest.Metadata.StepCallSiteMetadata(" + Quote(file) + ", " + line + ", " + Quote(expression) +
             ", " + (method ?? "null") + ", " + (supportsArguments ? "true" : "false") +
             (arguments.Count == 0 ? "" : ", " + string.Join(", ", arguments)) + ")");
-    }
-
-    private static bool IsBDTestBuilder(IMethodSymbol method)
-    {
-        // Match the bound symbol rather than unrelated methods with the same spelling.
-        var type = method.ContainingType;
-        var space = type.ContainingNamespace.ToDisplayString();
-        return (type.Name == "BDTestBase" && space == "BDTest.Test") ||
-               space == "BDTest.Test.Steps" || space.StartsWith("BDTest.Test.Steps.", StringComparison.Ordinal);
     }
 
     private static string? DescribeMethod(IMethodSymbol method)
