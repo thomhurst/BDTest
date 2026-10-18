@@ -71,7 +71,8 @@ public static class BDTestReportServer
             
         try
         {
-            using var response = await httpClient.GetAsync(pingUri, cancellationToken).ConfigureAwait(false);
+            using var request = new HttpRequestMessage(HttpMethod.Get, pingUri);
+            using var response = await SendAndBufferAsync(httpClient, request, cancellationToken).ConfigureAwait(false);
         }
         catch when (!cancellationToken.IsCancellationRequested)
         {
@@ -150,7 +151,7 @@ public static class BDTestReportServer
             try
             {
                 using var httpRequestMessage = createRequest();
-                using var response = await httpClient.SendAsync(httpRequestMessage, cancellationToken).ConfigureAwait(false);
+                using var response = await SendAndBufferAsync(httpClient, httpRequestMessage, cancellationToken).ConfigureAwait(false);
                 retryable = response.IsSuccessStatusCode || IsTransient(response.StatusCode);
                 if (IsTransient(response.StatusCode))
                 {
@@ -164,8 +165,7 @@ public static class BDTestReportServer
 
                 cancellationToken.ThrowIfCancellationRequested();
                 response.EnsureSuccessStatusCode();
-                // SendAsync uses ResponseContentRead, so response buffering is covered by the token
-                // even on netstandard2.0, where ReadAsStringAsync has no token overload.
+                // The response is already buffered by the cancellable send helper.
                 await consumeResponse(response).ConfigureAwait(false);
                 cancellationToken.ThrowIfCancellationRequested();
                 break;
@@ -175,6 +175,45 @@ public static class BDTestReportServer
             {
                 await WaitForRetryAfterAsync(retryDelay, retryAt, cancellationToken).ConfigureAwait(false);
             }
+        }
+    }
+
+    private static async Task<HttpResponseMessage> SendAndBufferAsync(HttpClient client,
+        HttpRequestMessage request, CancellationToken cancellationToken)
+    {
+        // ResponseHeadersRead ends HttpClient's timeout at the headers. Keep the same
+        // per-attempt timeout through buffering, including on .NET Framework.
+        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        if (client.Timeout != Timeout.InfiniteTimeSpan) timeout.CancelAfter(client.Timeout);
+        var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, timeout.Token).ConfigureAwait(false);
+        try
+        {
+            if (response.Content == null)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                return response;
+            }
+            var cancelled = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            using var registration = timeout.Token.Register(() => cancelled.TrySetCanceled());
+            var buffering = response.Content.LoadIntoBufferAsync(client.MaxResponseContentBufferSize);
+            // netstandard2.0 has no cancellable buffering overload. Stop waiting and
+            // dispose the response on cancellation even when custom content ignores it.
+            if (await Task.WhenAny(buffering, cancelled.Task).ConfigureAwait(false) != buffering)
+            {
+                _ = buffering.ContinueWith(task => { _ = task.Exception; }, CancellationToken.None,
+                    TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
+                cancellationToken.ThrowIfCancellationRequested();
+                await cancelled.Task.ConfigureAwait(false);
+            }
+            await buffering.ConfigureAwait(false);
+            cancellationToken.ThrowIfCancellationRequested();
+            if (timeout.IsCancellationRequested) throw new TaskCanceledException("The HTTP response buffering timed out.");
+            return response;
+        }
+        catch
+        {
+            response.Dispose();
+            throw;
         }
     }
 

@@ -114,16 +114,23 @@ public class ReportServerCancellationTests
     [TestCase(true, "ping")]
     [TestCase(false, "data")]
     [TestCase(true, "data")]
+    [TestCase(false, "attachment")]
+    [TestCase(true, "attachment")]
     public async Task Cancellation_interrupts_response_body_buffering(bool explicitRun, string phase)
     {
-        using var run = BDTestRun.Start();
+        using var explicitOwner = BDTestRun.Start();
+        var run = explicitRun ? explicitOwner : BDTestRun.Default;
+        var fixture = new AttachmentFixture(run);
+        await fixture.When(() => fixture.Attachments.Attach("first.txt", new byte[] { 1 }, "text/plain"))
+            .Then(() => { }).BDTestAsync();
         using var cancellation = new CancellationTokenSource();
         using var content = new BlockingContent();
         var requests = 0;
         using var handler = new Handler((request, _) =>
         {
             requests++;
-            return Task.FromResult(Required(request.RequestUri).AbsolutePath.EndsWith("/" + phase)
+            var path = Required(request.RequestUri).AbsolutePath;
+            return Task.FromResult((phase == "attachment" ? path.Contains("/attachments/") : path.EndsWith("/" + phase))
                 ? new HttpResponseMessage(HttpStatusCode.OK) { Content = content }
                 : Success());
         });
@@ -134,13 +141,33 @@ public class ReportServerCancellationTests
             await content.Started.Task.WaitAsync(TimeSpan.FromSeconds(5));
             cancellation.Cancel();
             await Assert.CatchAsync<OperationCanceledException>(async () => await upload.WaitAsync(TimeSpan.FromSeconds(5)));
-            Assert.That(requests, Is.EqualTo(phase == "ping" ? 1 : 2));
+            Assert.That(requests, Is.EqualTo(phase == "ping" ? 1 : phase == "data" ? 2 : 3));
             Assert.That(content.Disposed, Is.True);
         }
         finally
         {
             cancellation.Cancel();
         }
+    }
+
+    [TestCase(false)]
+    [TestCase(true)]
+    public async Task Response_buffering_timeout_retries_without_cancelling_the_caller(bool explicitRun)
+    {
+        using var run = BDTestRun.Start();
+        using var content = new BlockingContent();
+        var attempts = 0;
+        using var handler = new Handler((request, _) => Task.FromResult(
+            request.Method == HttpMethod.Post && ++attempts == 1
+                ? new HttpResponseMessage(HttpStatusCode.OK) { Content = content }
+                : Success()));
+        using var client = new HttpClient(handler) { Timeout = TimeSpan.FromMilliseconds(100) };
+
+        var result = await Upload(run, explicitRun, client, CancellationToken.None).WaitAsync(TimeSpan.FromSeconds(5));
+
+        Assert.That(result.AbsoluteUri, Is.EqualTo("https://reports.example/report/server-id"));
+        Assert.That(attempts, Is.EqualTo(2));
+        Assert.That(content.Disposed, Is.True);
     }
 
     [TestCase(false)]
@@ -254,13 +281,13 @@ public class ReportServerCancellationTests
         public TaskCompletionSource Started { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
         public bool Disposed { get; private set; }
 
-        protected override Task SerializeToStreamAsync(Stream stream, TransportContext? context)
-            => throw new InvalidOperationException("Response buffering must pass its cancellation token.");
+        private readonly TaskCompletionSource completion = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
-        protected override async Task SerializeToStreamAsync(Stream stream, TransportContext? context, CancellationToken cancellationToken)
+        // Model netstandard2.0 content that cannot receive a buffering cancellation token.
+        protected override Task SerializeToStreamAsync(Stream stream, TransportContext? context)
         {
             Started.SetResult();
-            await Task.Delay(Timeout.Infinite, cancellationToken);
+            return completion.Task;
         }
 
         protected override bool TryComputeLength(out long length)
@@ -272,6 +299,7 @@ public class ReportServerCancellationTests
         protected override void Dispose(bool disposing)
         {
             Disposed = true;
+            completion.TrySetResult();
             base.Dispose(disposing);
         }
     }
