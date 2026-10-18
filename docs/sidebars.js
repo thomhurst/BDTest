@@ -21,6 +21,7 @@ const sidebars = {
         'writing-tests/step-classes',
         'writing-tests/step-text',
         'writing-tests/stories-and-scenarios',
+        'attributes/story-text',
         'writing-tests/tags-and-information',
         'writing-tests/async-steps',
         'writing-tests/scenario-outlines',

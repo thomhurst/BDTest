@@ -14,47 +14,42 @@ public class StoryAttribute : Attribute
     {
         ValidateArguments();
             
-        PopulateAsA();
+        var role = GetRoleText();
+        var want = AddPrefix(IWant, "I want");
+        var benefit = AddPrefix(SoThat, "So that");
 
-        if (!IWant.StartsWith("i want", StringComparison.InvariantCultureIgnoreCase))
-        {
-            IWant = $"I want {IWant}";
-        }
-
-        if (!SoThat.StartsWith("so that", StringComparison.InvariantCultureIgnoreCase))
-        {
-            SoThat = $"So that {SoThat}";
-        }
-
-        return $"{AsA}" +
-               $"{Environment.NewLine}{IWant}" +
-               $"{Environment.NewLine}{SoThat}{Environment.NewLine}";
+        return $"{role}{Environment.NewLine}{want}{Environment.NewLine}{benefit}{Environment.NewLine}";
     }
 
-    private void PopulateAsA()
+    private string GetRoleText()
     {
-        if (!string.IsNullOrEmpty(AsAn))
+        var role = string.IsNullOrEmpty(AsAn) ? AsA : AsAn;
+        if (HasWordPrefix(role, "As a") || HasWordPrefix(role, "As an"))
         {
-            AsA = AsAn;
+            return role;
         }
 
-        if (AsA.StartsWith("as a", StringComparison.InvariantCultureIgnoreCase))
+        if (HasWordPrefix(role, "a") || HasWordPrefix(role, "an"))
         {
-            return;
+            return $"As {role}";
         }
 
-        if (!string.IsNullOrEmpty(AsAn))
-        {
-            AsA = $"As an {AsAn}";
-        }
-        else if(AsA.StartsWith("a", StringComparison.InvariantCultureIgnoreCase))
-        {
-            AsA = $"As an {AsA}";
-        } 
-        else 
-        {
-            AsA = $"As a {AsA}";
-        }
+        var startsWithVowel = "aeiouAEIOU".IndexOf(role[0]) >= 0;
+        var useAn = !string.IsNullOrEmpty(AsAn)
+                    || (startsWithVowel && !role.StartsWith("user", StringComparison.InvariantCultureIgnoreCase));
+        return $"As {(useAn ? "an" : "a")} {role}";
+    }
+
+    private static string AddPrefix(string text, string prefix)
+    {
+        return HasWordPrefix(text, prefix) ? text : $"{prefix} {text}";
+    }
+
+    private static bool HasWordPrefix(string text, string prefix)
+    {
+        return text.StartsWith(prefix, StringComparison.InvariantCultureIgnoreCase)
+               && (text.Length == prefix.Length
+                   || (!char.IsLetterOrDigit(text[prefix.Length]) && text[prefix.Length] != '_'));
     }
 
     private void ValidateArguments()

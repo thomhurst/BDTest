@@ -32,9 +32,10 @@ public class StoryTextLookupTests
     [TestCaseSource(nameof(StoryCases))]
     public async Task ScenarioAndReportUseTheSameStoryAsTheTest(BDTestBase test, string role)
     {
+        var article = role is "outer" or "inner" ? "an" : "a";
         var expected = role == null
             ? null
-            : $"As a {role}{Environment.NewLine}I want consistent stories{Environment.NewLine}So that reports match{Environment.NewLine}";
+            : $"As {article} {role}{Environment.NewLine}I want consistent stories{Environment.NewLine}So that reports match{Environment.NewLine}";
 
         var scenario = await test.When(() => Step()).Then(() => Step()).BDTestAsync();
         var reportedStory = JsonHelper.GetTestDynamicJsonObject().SelectToken("$.Scenarios[0].StoryText");
