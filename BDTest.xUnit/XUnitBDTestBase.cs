@@ -12,7 +12,7 @@ public abstract class XUnitBDTestBase<TContext> : AbstractContextBDTestBase<TCon
     where TContext : class
 {
     private readonly string _frameworkTestId;
-    private bool _executionStarted;
+    private readonly XUnitTestExecution _execution;
 
     protected override string BDTestExecutionId => _frameworkTestId;
 
@@ -21,6 +21,12 @@ public abstract class XUnitBDTestBase<TContext> : AbstractContextBDTestBase<TCon
         XUnitExceptionRegistration.EnsureRegistered();
         _frameworkTestId = TestContext.Current.Test?.UniqueID
             ?? throw new InvalidOperationException("An xUnit test must be running to create a BDTest adapter.");
+        _execution = new XUnitTestExecution(this,
+            () =>
+            {
+                BeginTest(_frameworkTestId, (TestContext.Current.TestMethod as IXunitTestMethod)?.Method);
+                BindStartupOutput();
+            }, EndTestAsync, CompleteStartupOutput);
         CaptureStartupOutput(InitializeExecution);
     }
 
@@ -32,18 +38,12 @@ public abstract class XUnitBDTestBase<TContext> : AbstractContextBDTestBase<TCon
         return InitializeAsync();
     }
 
-    private void InitializeExecution()
-    {
-        if (_executionStarted) return;
-        BeginTest(_frameworkTestId, (TestContext.Current.TestMethod as IXunitTestMethod)?.Method);
-        BindStartupOutput();
-        _executionStarted = true;
-    }
+    private void InitializeExecution() => _execution.Begin();
+
+    internal static void BeginPendingExecution() => BeginPendingTestExecution();
 
     /// <summary>Runs async setup after the execution has been bound to the derived fixture's run.</summary>
     public virtual ValueTask InitializeAsync() => default;
-
-    internal static void BeginPendingExecution() => BeginPendingTestExecution();
 
     /// <summary>The reusable outcome declaration. Register it on options for explicit runs.</summary>
     public static FrameworkOutcomeMap OutcomeMap => XUnitExceptionRegistration.OutcomeMap;
@@ -52,7 +52,7 @@ public abstract class XUnitBDTestBase<TContext> : AbstractContextBDTestBase<TCon
 
     /// <summary>Completes the BDTest execution when xUnit disposes the test asynchronously.</summary>
     /// <remarks>Override for asynchronous teardown and await base.DisposeAsync() in a finally block.</remarks>
-    public virtual async ValueTask DisposeAsync()
+    public virtual ValueTask DisposeAsync()
     {
         var completionMethod = GetType().GetMethod(nameof(MarkTestAsComplete),
             BindingFlags.Instance | BindingFlags.NonPublic);
@@ -62,22 +62,24 @@ public abstract class XUnitBDTestBase<TContext> : AbstractContextBDTestBase<TCon
             disposeMethod.DeclaringType != typeof(XUnitBDTestBase<TContext>))
         {
             ((IDisposable)this).Dispose();
-            return;
+            return default;
         }
 
-        InitializeExecution();
-        CompleteStartupOutput();
-        await EndTestAsync();
+        return _execution.CompleteAsync();
     }
 
     public void Dispose()
     {
-        // A derived IAsyncLifetime implementation may bypass our initialization hook.
-        InitializeExecution();
-        CompleteStartupOutput();
+        // Legacy overrides still run while context/output are live. The shared
+        // completion path makes runner notifications and repeated disposal safe.
+        _execution.CompleteAsync(() =>
+        {
 #pragma warning disable CS0618 // Preserve existing overrides of the compatibility hook.
-        MarkTestAsComplete();
+            try { MarkTestAsComplete(); }
+            finally { EndTest(); }
 #pragma warning restore CS0618
+            return default;
+        }).GetAwaiter().GetResult();
     }
 }
 

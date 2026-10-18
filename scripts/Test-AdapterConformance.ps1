@@ -16,6 +16,7 @@ else {
 }
 New-Item -ItemType Directory -Path $resultRoot -Force | Out-Null
 $previousMode = $env:BDTEST_CONFORMANCE_RUNNER
+$previousCleanupFile = $env:BDTEST_CONFORMANCE_CLEANUP_FILE
 try {
     $env:BDTEST_CONFORMANCE_RUNNER = '1'
     foreach ($project in @('BDTest.Tests', 'BDTest.MSTest.Tests', 'BDTest.xUnit.Tests', 'BDTest.TUnit.Tests')) {
@@ -30,7 +31,14 @@ try {
             & dotnet run --project $projectPath -c $Configuration -- --treenode-filter '/*/*/AdapterConformanceTests/*' --report-trx --report-trx-filename conformance.trx --results-directory $resultPath *> $logPath
         }
         else {
-            & dotnet test $projectPath -c $Configuration --filter 'FullyQualifiedName~AdapterConformanceTests' --logger 'trx;LogFileName=conformance.trx' --results-directory $resultPath *> $logPath
+            $filter = 'FullyQualifiedName~AdapterConformanceTests'
+            if ($project -eq 'BDTest.xUnit.Tests') {
+                $filter += '|FullyQualifiedName~NativeCompositionFailureTests|FullyQualifiedName~NativeInheritanceFailureTests'
+                $cleanupFile = Join-Path $resultPath 'native-cleanup.txt'
+                if (Test-Path -LiteralPath $cleanupFile) { Remove-Item -LiteralPath $cleanupFile }
+                $env:BDTEST_CONFORMANCE_CLEANUP_FILE = $cleanupFile
+            }
+            & dotnet test $projectPath -c $Configuration --filter $filter --logger 'trx;LogFileName=conformance.trx' --results-directory $resultPath *> $logPath
         }
         $runnerExit = $LASTEXITCODE
         # VSTest returns 1 for failed tests; Microsoft.Testing.Platform returns 2.
@@ -61,14 +69,16 @@ try {
             ContextRetryDisposesPreviousAttempt = 'Passed'
             ContextDisposalFailureReachesRunner = 'Failed'
         }
+        if ($project -eq 'BDTest.xUnit.Tests') { $expected.ExplicitAdapterRunsIsolateContextOutputAndCompletion = 'Passed' }
         # TUnit 1.75.0 does not translate InconclusiveTestException into a runner skip.
         if ($project -eq 'BDTest.TUnit.Tests') { $expected.FrameworkInconclusive = 'Failed' }
-        $fixtures = if ($project -eq 'BDTest.Tests') {
+        $fixtures = if ($project -in @('BDTest.Tests', 'BDTest.xUnit.Tests')) {
             @('AdapterConformanceTests', 'CompositionAdapterConformanceTests')
         }
         else { @('AdapterConformanceTests') }
         $styles = if ($project -in @('BDTest.TUnit.Tests', 'BDTest.MSTest.Tests')) { 2 } else { 1 }
-        $expectedCount = $expected.Count * $fixtures.Count * $styles
+        $failureProbes = if ($project -eq 'BDTest.xUnit.Tests') { 9 } else { 0 }
+        $expectedCount = $expected.Count * $fixtures.Count * $styles + $failureProbes
         if ($results.Count -ne $expectedCount) {
             throw "$project expected $expectedCount probes, found $($results.Count). See $logPath"
         }
@@ -104,6 +114,28 @@ try {
                         }
                     }
                 }
+            }
+        }
+        if ($project -eq 'BDTest.xUnit.Tests') {
+            foreach ($style in @('NativeCompositionFailureTests', 'NativeInheritanceFailureTests')) {
+                $failures = @('ConstructorFailure', 'SetupFailure', 'BodyFailure', 'TeardownFailure')
+                if ($style -eq 'NativeCompositionFailureTests') { $failures += 'ContextDisposalFailure' }
+                foreach ($name in $failures) {
+                    $matching = @($results | Where-Object { $_.testName.EndsWith("$style.$name") })
+                    if ($matching.Count -ne 1 -or $matching[0].outcome -ne 'Failed') {
+                        throw "$style.$name must fail. See $trxPath"
+                    }
+                    $message = $matching[0].SelectSingleNode(".//*[local-name()='ErrorInfo']/*[local-name()='Message']")
+                    if (-not $message -or $message.InnerText -notmatch [regex]::Escape("native $name")) {
+                        throw "$style.$name failed for an unexpected reason. See $trxPath"
+                    }
+                }
+            }
+            # The assembly fixture writes only after asserting all native
+            # failure contexts were disposed, including failed constructors/setup.
+            if (-not (Test-Path -LiteralPath $cleanupFile) -or
+                (Get-Content -LiteralPath $cleanupFile -Raw).Trim() -ne '10') {
+                throw "xUnit native cleanup evidence is missing or incomplete. See $logPath"
             }
         }
         Write-Host "$project verified $($results.Count) runner outcomes."
@@ -179,6 +211,7 @@ try {
 }
 finally {
     $env:BDTEST_CONFORMANCE_RUNNER = $previousMode
+    $env:BDTEST_CONFORMANCE_CLEANUP_FILE = $previousCleanupFile
 }
 Write-Host "Adapter conformance evidence: $resultRoot"
 # GitHub Actions propagates LASTEXITCODE, including the intentional runner failures.
