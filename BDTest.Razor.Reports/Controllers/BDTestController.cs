@@ -156,8 +156,6 @@ public class BDTestController : Controller
             
         switch (orderByQueryParameter)
         {
-            case null:
-            case "":
             case OrderConstants.Name:
                 scenariosGroupedByScenarioTextEnumerable =
                     scenariosGroupedByScenarioTextEnumerable.OrderBy(scenarios => scenarios.Key);
@@ -181,6 +179,8 @@ public class BDTestController : Controller
                     scenariosGroupedByScenarioTextEnumerable.OrderByDescending(scenarios =>
                         BDTestUtil.GetTestTimer(scenarios.ToList()).TestsStartedAt);
                 break;
+            case null:
+            case "":
             case OrderConstants.Status:
                 // Defaults to status. We don't need to do anything :)
                 break;
@@ -231,9 +231,14 @@ public class BDTestController : Controller
 
         var scenario = data?.Scenarios?.FirstOrDefault(x => x.Guid == scenarioId);
             
-        if (scenario == null)
+        if (data == null)
         {
             return View("NotFoundSingle", reportId);
+        }
+
+        if (scenario == null)
+        {
+            return View("ScenarioNotFound", data);
         }
 
         return View("Scenario", scenario);

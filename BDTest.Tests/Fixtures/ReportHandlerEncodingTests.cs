@@ -1,4 +1,4 @@
-using System.Text.RegularExpressions;
+﻿using System.Text.RegularExpressions;
 using System.Xml.Linq;
 using System.Web;
 using BDTest.Razor.Reports.Extensions;
@@ -136,16 +136,14 @@ public class ReportHandlerEncodingTests
             Steps = Array.Empty<object>(),
             CustomTestInformation = Array.Empty<object>()
         }));
-        var html = await RenderAsync("/Views/Shared/_ScenarioModalPopup.cshtml",
+        var html = await RenderAsync("/Views/Shared/_ScenarioPanel.cshtml",
             new ScenarioModalViewModel { Scenario = scenario }, query: query);
-        var image = ReadElement(html, "<img[^>]*alt=\"Share\"[^>]*/>");
-        Assert.That((string)image.Attribute("src"),
-            Is.EqualTo("/_content/BDTest.Razor.Reports/icons/share-white-18dp.svg"));
-        Assert.That((string)image.Attribute("data-bdtest-action"), Is.EqualTo("copy-url"));
-        Assert.That(image.Attributes().Select(x => x.Name.LocalName),
-            Is.EquivalentTo(new[] { "src", "class", "alt", "data-url", "data-bdtest-action" }));
+        var button = ReadElement(html, "<button[^>]*data-bdtest-action=\"copy-url\"[^>]*>.*?</button>");
+        Assert.That((string)button.Attribute("type"), Is.EqualTo("button"));
+        Assert.That(button.Attributes().Select(x => x.Name.LocalName),
+            Is.EquivalentTo(new[] { "class", "type", "data-bdtest-action", "data-url", "aria-label" }));
 
-        var localUrl = (string)image.Attribute("data-url");
+        var localUrl = (string)button.Attribute("data-url");
         Assert.That(localUrl, Does.StartWith("/bdtest/"));
         var url = new Uri(new Uri("https://reports.example.test"), localUrl);
         Assert.That(url.GetLeftPart(UriPartial.Path),

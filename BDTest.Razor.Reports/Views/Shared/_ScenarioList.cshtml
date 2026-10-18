@@ -1,0 +1,183 @@
+@using BDTest.Razor.Reports.Constants
+@using BDTest.Razor.Reports.Extensions
+@using BDTest.Razor.Reports.Helpers
+@using BDTest.Razor.Reports.Models
+@using BDTest.Razor.Reports.Models.ViewModels
+@using BDTest.Test
+@model ScenarioListViewModel
+@{
+    const string statusParameter = StatusConstants.FilterByStatusQueryParameterName;
+    var scenarios = Model.Scenarios;
+    var statuses = Model.Statuses;
+    var counts = ReportUi.DisplayOrder.ToDictionary(status => status, status => Model.Unfiltered.Count(scenario => scenario.Status == status));
+    var hasFilters = statuses != null
+                     || !string.IsNullOrEmpty(Context.Request.GetQueryParameter(TagConstants.FilterByTagQueryParameterName))
+                     || !string.IsNullOrEmpty(Context.Request.GetQueryParameter(ScenarioSearch.QueryParameterName));
+    var clearUrl = Context.GetLocalUrlWith((statusParameter, null), (TagConstants.FilterByTagQueryParameterName, null),
+        (ScenarioSearch.QueryParameterName, null), ("scenarioId", null), (PagerQueryParameters.Page, null));
+
+    string ToggleStatusUrl(Status status)
+    {
+        var selected = statuses == null ? new HashSet<Status>() : new HashSet<Status>(statuses);
+        if (!selected.Add(status))
+        {
+            selected.Remove(status);
+        }
+
+        var value = selected.Count == 0 ? null : string.Join(",", ReportUi.DisplayOrder.Where(selected.Contains));
+        return Context.GetLocalUrlWith((statusParameter, value), ("scenarioId", null), (PagerQueryParameters.Page, null));
+    }
+
+    string SelectUrl(Scenario scenario) => Context.GetLocalUrlWith(("scenarioId", scenario.Guid ?? string.Empty));
+
+    var selected = Model.Selected;
+    var selectedIndex = selected == null ? -1 : scenarios.ToList().IndexOf(selected);
+}
+
+@await Html.PartialAsync("_ScenarioToolbar", new ScenarioToolbarViewModel { Tags = Model.Tags, GroupBy = Model.GroupBy, GroupFixed = Model.GroupFixed })
+
+<div class="cluster">
+    <a class="chip @(statuses == null ? "on" : "")" href="@Context.GetLocalUrlWith((statusParameter, null), ("scenarioId", null))" aria-current="@(statuses == null ? "true" : null)">All<span class="cnt">@Model.Unfiltered.Count</span></a>
+    @foreach (var status in ReportUi.DisplayOrder.Where(status => counts[status] > 0 || statuses?.Contains(status) == true))
+    {
+        var on = statuses?.Contains(status) == true;
+        <a class="chip @(on ? "on" : "")" href="@ToggleStatusUrl(status)" aria-current="@(on ? "true" : null)">@status.StatusIcon()@status.Label()<span class="cnt">@counts[status]</span></a>
+    }
+    <span class="vsep" aria-hidden="true"></span>
+    <span class="small muted">@scenarios.Count of @Model.Total shown</span>
+    @if (hasFilters)
+    {
+        <a class="btn ghost sm link" href="@clearUrl">Clear filters</a>
+    }
+</div>
+
+@if (scenarios.Count == 0)
+{
+    <section class="card empty">
+        <span class="mark">@ReportUi.Icon("i-search", "xl")</span>
+        <h2>No scenarios match</h2>
+        <p>Nothing in this run matches the current search and filters.</p>
+        @if (hasFilters)
+        {
+            <div class="cluster"><a class="btn pri" href="@clearUrl">Clear filters</a></div>
+        }
+    </section>
+}
+else
+{
+    <div class="split" style="gap: 16px">
+        <section aria-label="Scenario list" class="card clip" style="flex: 999 1 560px; min-width: 0">
+            @if (Model.GroupBy == ScenarioListViewModel.GroupByStory)
+            {
+                foreach (var story in scenarios.GroupBy(scenario => scenario.GetStoryText()))
+                {
+                    var storyAll = Model.Unfiltered.Where(scenario => scenario.GetStoryText() == story.Key).ToList();
+                    var storyStatus = story.GetTotalStatus();
+                    var storyCounts = ReportUi.DisplayOrder
+                        .Select(status => (status, count: storyAll.Count(scenario => scenario.Status == status)))
+                        .Where(pair => pair.count > 0)
+                        .Select(pair => $"{pair.count} {(pair.status == Status.NotImplemented ? "not impl." : pair.status.Label().ToLowerInvariant())}");
+                    <div class="group-head">
+                        @storyStatus.StatusIcon()
+                        <div class="grow">
+                            <h2>@ReportUi.StoryTitle(story.Key)</h2>
+                            @if (ReportUi.StoryLines(story.Key).Count > 1)
+                            {
+                                <p>@ReportUi.StorySentence(story.Key)</p>
+                            }
+                        </div>
+                        <span class="small muted hide-phone" style="white-space: nowrap">@string.Join(" · ", storyCounts)</span>
+                    </div>
+                    Rows(story);
+                }
+            }
+            else
+            {
+                Rows(scenarios);
+            }
+
+            @if (statuses != null && !statuses.Contains(Status.Passed) && counts[Status.Passed] > 0)
+            {
+                <div class="row" style="font-size: 14px; color: var(--muted)">
+                    <span>Showing passed too?</span>
+                    <a class="btn ghost sm link" href="@ToggleStatusUrl(Status.Passed)">Add Passed (@counts[Status.Passed])</a>
+                </div>
+            }
+        </section>
+
+        @if (selected != null)
+        {
+            @await Html.PartialAsync("_ScenarioPanel", new ScenarioModalViewModel
+            {
+                Scenario = selected,
+                LastScenario = scenarios.ElementAtOrDefault(selectedIndex - 1),
+                NextScenario = scenarios.ElementAtOrDefault(selectedIndex + 1),
+                Position = selectedIndex + 1,
+                Count = scenarios.Count,
+                PreviousUrl = selectedIndex > 0 ? SelectUrl(scenarios[selectedIndex - 1]) : null,
+                NextUrl = selectedIndex < scenarios.Count - 1 ? SelectUrl(scenarios[selectedIndex + 1]) : null,
+                CloseUrl = Context.GetLocalUrlWith(("scenarioId", null)),
+                FullPageUrl = Url.Content("~/bdtest/report/" + Uri.EscapeDataString(Model.ReportId ?? string.Empty) + "/scenario/" + Uri.EscapeDataString(selected.Guid ?? string.Empty))
+            })
+        }
+    </div>
+}
+
+@functions
+{
+    private void Rows(IEnumerable<Scenario> scenarios)
+    {
+        foreach (var group in scenarios.GroupBy(scenario => scenario.GetScenarioText()))
+        {
+            var items = group.ToList();
+            if (items.Count == 1 && !(items[0].IsOutline && items[0].Examples?.Count > 0))
+            {
+                Row(items[0], items[0].GetScenarioText(), false);
+                continue;
+            }
+
+            // Several tests share a name, or an outline has examples: expand in place.
+            var outline = items.Count == 1 ? items[0] : null;
+            var children = outline != null ? outline.Examples : items;
+            var status = outline?.Status ?? items.GetTotalStatus();
+            var open = Model.Selected != null && items.Contains(Model.Selected);
+            var time = outline?.TimeTaken ?? TimeSpan.FromTicks(items.Sum(item => item.TimeTaken.Ticks));
+            <details class="expander" open="@open" style="border-top: 1px solid var(--line)">
+                <summary class="row link" style="border-top: 0">
+                    @status.StatusIcon()
+                    <span class="grow row-title">@group.Key</span>
+                    <span class="cnt">@children.Count @(outline != null ? (children.Count == 1 ? "example" : "examples") : "tests")</span>
+                    @ReportUi.Icon("i-chev-r", "chev muted")
+                    <span class="dur">@time.ToShortDuration()</span>
+                </summary>
+                @for (var index = 0; index < children.Count; index++)
+                {
+                    var child = children[index];
+                    var label = child.ExampleValues?.Count > 0
+                        ? string.Join(", ", child.ExampleValues.Select(pair => $"{pair.Key} = {pair.Value}"))
+                        : $"Test {index + 1}";
+                    Row(outline ?? child, label, true, child);
+                }
+            </details>
+        }
+    }
+
+    private void Row(Scenario scenario, string title, bool child, Scenario shown = null)
+    {
+        shown ??= scenario;
+        var isSelected = Model.Selected == scenario;
+        <a class="row @(child ? "child" : "") @(isSelected && !child ? "sel" : "")" href="@Context.GetLocalUrlWith(("scenarioId", scenario.Guid ?? string.Empty))" scenario-id="@scenario.Guid" data-example-id="@(shown == scenario ? null : shown.Guid)" aria-current="@(isSelected && !child ? "true" : null)">
+            @shown.Status.StatusIcon()
+            <span class="grow @(child ? "" : "row-title")">@title</span>
+            @if (shown.RetryCount > 0)
+            {
+                <span class="tag">retries @shown.RetryCount</span>
+            }
+            @foreach (var tag in child ? Enumerable.Empty<string>() : shown.Tags)
+            {
+                <span class="tag hide-phone">@tag</span>
+            }
+            <span class="dur" title="@shown.TimeTaken">@(shown.Status == Status.Skipped ? "—" : shown.TimeTaken.ToShortDuration())</span>
+        </a>
+    }
+}

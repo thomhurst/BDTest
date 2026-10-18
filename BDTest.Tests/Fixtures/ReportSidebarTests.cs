@@ -1,4 +1,4 @@
-using BDTest.Maps;
+﻿using BDTest.Maps;
 using BDTest.Razor.Reports.Controllers;
 using BDTest.Razor.Reports.Extensions;
 using BDTest.Razor.Reports.Interfaces;
@@ -85,18 +85,18 @@ public class ReportSidebarTests
         Assert.That(html, Does.Contain("Retry history"));
         Assert.That(html, Does.Contain("Retries: 1"));
         Assert.That(html, Does.Contain("Failed</span>"));
-        Assert.That(html, Does.Contain("00:00:00.1250000"));
+        Assert.That(html, Does.Contain("title=\"00:00:00.1250000\""));
         if (!retryHookFailed)
         {
             Assert.That(html, Does.Contain("Passed</span>"));
-            Assert.That(html, Does.Contain("00:00:00.2500000"));
+            Assert.That(html, Does.Contain("title=\"00:00:00.2500000\""));
         }
         Assert.That(html, Does.Contain("&lt;retry failure&gt;"));
         Assert.That(html, Does.Contain("at FailingStep()"));
         Assert.That(html, Does.Not.Contain("<retry failure>"));
 
         var list = await _client.GetStringAsync("/bdtest/report/run-632/all-scenarios");
-        Assert.That(list, Does.Contain("Retries: 1"));
+        Assert.That(list, Does.Contain("<span class=\"tag\">retries 1</span>"));
     }
 
     [Test]
@@ -116,9 +116,8 @@ public class ReportSidebarTests
         var html = await _client.GetStringAsync("/bdtest/report/run-632/scenario/scenario-632");
 
         Assert.That(_repository.ReadTokens, Has.Count.EqualTo(1));
-        Assert.That(html, Does.Contain("/bdtest/report/run-632/scenario/next-scenario"));
-        Assert.That(html, Does.Contain("Next Scenario"));
-        Assert.That(html, Does.Not.Contain("Previous Scenario"));
+        Assert.That(html, Does.Contain("href=\"/bdtest/report/run-632/scenario/next-scenario\" rel=\"next\""));
+        Assert.That(html, Does.Not.Contain("rel=\"prev\""));
     }
 
     [TestCase("stories")]
@@ -138,7 +137,7 @@ public class ReportSidebarTests
         Assert.That(html, Does.Contain("scenario-id=\"tagged\""));
         Assert.That(html, Does.Not.Contain("scenario-id=\"other\"").And.Not.Contain("scenario-id=\"legacy\""));
         Assert.That(html, Does.Contain("value=\"regression\""));
-        Assert.That(html, Does.Contain("badge bg-secondary mx-1\">smoke</span>"));
+        Assert.That(html, Does.Contain("<span class=\"tag hide-phone\">smoke</span>"));
         Assert.That(_repository.ReadTokens, Has.Count.EqualTo(1));
     }
 
@@ -158,7 +157,6 @@ public class ReportSidebarTests
         Assert.That(_repository.ReadTokens.Single().CanBeCanceled, Is.True);
         Assert.That(_links.Reports, Has.Count.EqualTo(1));
         Assert.That(_links.Reports.Single(), Is.SameAs(_repository.Report));
-        Assert.That(html, Does.Contain("This Test Report"));
         Assert.That(html, Does.Contain("/bdtest/report/run-632/summary"));
         Assert.That(html, Does.Contain("/bdtest/report/run-632/raw-json-data"));
         Assert.That(html, Does.Contain("sidebar-environment"));
@@ -177,7 +175,7 @@ public class ReportSidebarTests
         var html = await _client.GetStringAsync("/bdtest/report/missing/" + page);
 
         Assert.That(_repository.ReadTokens, Has.Count.EqualTo(1));
-        Assert.That(html, Does.Not.Contain("This Test Report"));
+        Assert.That(html, Does.Not.Contain("/bdtest/report/missing/raw-json-data"));
         Assert.That(_links.Reports, Is.EqualTo(new BDTestOutputModel[] { null }));
     }
 
@@ -189,7 +187,7 @@ public class ReportSidebarTests
         var html = await _client.GetStringAsync("/bdtest/report/" + page);
 
         Assert.That(_repository.ReadTokens, Is.Empty);
-        Assert.That(html, Does.Not.Contain("This Test Report"));
+        Assert.That(html, Does.Not.Contain("raw-json-data"));
         Assert.That(_links.Reports, Is.EqualTo(new BDTestOutputModel[] { null }));
     }
 

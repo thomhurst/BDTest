@@ -1,4 +1,6 @@
-@using BDTest.Razor.Reports.Extensions
+@using System.Text.RegularExpressions
+@using BDTest.Razor.Reports.Helpers
+@using BDTest.Razor.Reports.Models
 @using BDTest.Razor.Reports.Models.ViewModels
 @using BDTest.Test
 @model Scenario
@@ -6,203 +8,380 @@
 @{
     ViewBag.Title = Model.GetScenarioText();
     Layout = "_Layout";
+
+    var run = ViewData[nameof(ReportLayoutViewModel)] as ReportLayoutViewModel;
+    var report = run?.Report;
+    var reportId = report?.Id ?? Model.ReportId ?? string.Empty;
+    var reportUrl = Url.Content("~/bdtest/report/" + Uri.EscapeDataString(reportId));
+    var storyText = Model.GetStoryText();
+
+    var siblings = run?.Scenarios ?? (IReadOnlyList<Scenario>)new List<Scenario>();
+    var index = siblings.ToList().FindIndex(scenario => scenario.Guid == Model.Guid);
+    var previous = index > 0 ? siblings[index - 1] : null;
+    var next = index >= 0 && index < siblings.Count - 1 ? siblings[index + 1] : null;
+
+    var steps = Model.Steps ?? new List<Step>();
+    var exception = Model.Exception;
+    var failingStep = FailureGroup.FailingStep(Model);
+    var failingNumber = FailureGroup.FailingStepNumber(Model);
+    var attempts = Model.Attempts?.Count ?? 0;
+    var isOutline = Model.IsOutline && Model.Examples?.Count > 0;
+
+    // The timeline spans the recorded steps so each bar shows when the step ran within the scenario.
+    var stepStarts = steps.Select(step => step.StartTime).Where(time => time != default).ToList();
+    var stepEnds = steps.Select(step => step.EndTime).Where(time => time != default).ToList();
+    var timelineStart = stepStarts.Count > 0 ? stepStarts.Min() : Model.StartTime;
+    var timelineEnd = stepEnds.Count > 0 ? stepEnds.Max() : Model.EndTime;
+    var timelineTicks = Math.Max(1, (timelineEnd - timelineStart).Ticks);
+    var traceId = "trace-" + Model.Guid;
+    var hasExtras = steps.Any(HasExtra);
+    var file = string.IsNullOrEmpty(Model.FileName) ? null : Model.FileName.Replace('\\', '/');
+    var fileName = file?.Split('/')[^1];
+
+    string ScenarioUrl(Scenario scenario) => reportUrl + "/scenario/" + Uri.EscapeDataString(scenario.Guid ?? string.Empty);
 }
 
-<button class="btn btn-primary ms-2 mt-2" data-bdtest-action="back">Back</button>
-
-@await Html.PartialAsync("_TestPageHeaderHero", new TestPageHeaderHeroViewModel
-{
-    Title = "Scenario",
-    Description = Model.GetScenarioText(),
-    ButtonViewModel = new ButtonViewModel { Status = Model.Status, Text = Model.Status.AsString()}
-})
-
-<script>
-    function expandAllSteps() {
-        let expandables = document.getElementsByClassName("accordion-body");
-        for (let expandable of expandables) {
-            expandable.classList.remove("collapse")
-        }
-    }
-    
-    function collapseAllSteps() {
-            let expandables = document.getElementsByClassName("accordion-body");
-            for (let expandable of expandables) {
-                expandable.classList.add("collapse")
+<section class="page-head padded" aria-label="Scenario">
+    <div class="wrap">
+        <nav class="crumbs" aria-label="Breadcrumb">
+            <a class="lnk" href="~/bdtest/report/test-runs">Runs</a><span aria-hidden="true">/</span>
+            @if (run != null)
+            {
+                var started = run.Timer.TestsStartedAt;
+                <a class="lnk" href="@reportUrl/summary">@run.Title@(started == default ? "" : " · " + started.ToRunDate(includeYear: false))</a><span aria-hidden="true">/</span>
+                <a class="lnk" href="@(reportUrl + "/all-scenarios?q=" + Uri.EscapeDataString(Model.GetScenarioText()))">@ReportUi.StoryTitle(storyText)</a>
+                var total = run.Scenarios.Count;
+                var failed = run.Counts[Status.Failed];
+                <span aria-hidden="true">/</span>
+                @run.Status.Pill(run.Status == Status.Failed ? $"Run failed · {failed} of {total}" : "Run " + run.Status.Label().ToLowerInvariant())
             }
-        }
-</script>
-
-<div class="container-fluid">
-    @await Html.PartialAsync("_ScenarioTags", Model.Tags)
-    @await Html.PartialAsync("_ScenarioExamples", Model)
-    <div class="box" id="all-scenarios-container">
-        @await Html.PartialAsync("_RetryHistory", Model)
-
-        <div class="btn-group" role="group" >
-            <button class="btn btn-light" data-bdtest-action="expand-steps">Expand All</button>
-            <button class="btn btn-light" data-bdtest-action="collapse-steps">Collapse All</button>
-            <button class="btn toggle-hide pointer" toggle-alternative-text="Hide Timings Chart" data-bdtest-action="toggle-element" data-target="step-chart-times">Show Timings Chart</button>
-        </div>
-        
-        <div class="mt-4 mb-6 container invisibleElement container mb-5" id="step-chart-times" style="max-width:66%">
-            @await Html.PartialAsync("_Javascript_Step_Duration_Chart", Model.Steps)
-        </div>
-
-        <div class="scrollable-table-container">
-            <table class="table table-hover">
-                <thead>
-                <tr>
-                    @* Expand Toggle *@
-                    <th scope="col"></th>
-                    <th scope="col">Step</th>
-                    <th scope="col">Status</th>
-                    <th scope="col">Duration</th>
-                    <th scope="col">Start</th>
-                    <th scope="col">End</th>
-                </tr>
-                </thead>
-                <tbody>
-                
-                @if (!string.IsNullOrEmpty(Model.TestStartupInformation))
-                {
-                    <tr step-id="step-startup" data-bs-toggle="collapse" data-bs-target="#step-startup-expanded" class="accordion-toggle pointer opacity-75" data-bdtest-action="toggle-step" data-target="step-startup-toggle-container">
-                        <td class="align-middle">
-                            <div class="d-grid dropend" id="step-startup-toggle-container">
-                                <button class="btn dropdown-toggle"></button>
-                            </div>
-                        </td>
-                        <td class="align-middle">
-                            Test Startup Information
-                        </td>
-                        <td colspan="4"></td>
-                    </tr>
-                    <tr>
-                        <td colspan="6" class="hiddenRow">
-                            <div class="accordion-body collapse" id="step-startup-expanded">
-                                <div class="container" style="overflow-x: auto;">
-                                    <h5>Startup Info:</h5>
-                                    <pre class="py-4">@Model.TestStartupInformation</pre>
-                                </div>
-                            </div>
-                        </td>
-                    </tr>
-                }
-
-
-                @for (var index = 0; index < Model.Steps.Count; index++)
-                {
-                    var step = Model.Steps[index];
-                    <tr step-id="step-@step.Guid" data-bs-toggle="collapse" data-bs-target="#step-@step.Guid-expanded" class="accordion-toggle @(IsExpandable(step) ? "pointer": "")" data-bdtest-action="toggle-step" data-target="step-@step.Guid-toggle-container">
-                        <td class="align-middle">
-                            @if (IsExpandable(step))
-                            {
-                                <div class="d-grid dropend" id="step-@step.Guid-toggle-container">
-                                    <button class="btn dropdown-toggle"></button>
-                                </div>
-                            }
-                        </td>
-                        <td class="align-middle">
-                            @step.StepText
-                        </td>
-                        <td class="align-middle">
-                            <div class="d-grid">
-                                <button type="button" class="btn @step.Status.GetCssColourValueForStatus()">@step.Status.AsString()</button>
-                            </div>
-                        </td>
-                        <td class="align-middle" data-bs-toggle="popover" data-bs-trigger="hover focus" data-bs-placement="top" data-bs-content="@step.TimeTaken.ToPrettyFormat()">
-                            @step.TimeTaken.ToString()
-                        </td>
-                        <td class="align-middle">@step.StartTime.ToStringForReport()</td>
-                        <td class="align-middle">@step.EndTime.ToStringForReport()</td>
-                    </tr>
-                    if (IsExpandable(step))
+            else
+            {
+                <span>@ReportUi.StoryTitle(storyText)</span>
+            }
+        </nav>
+        <div class="title-row" style="align-items: flex-start; gap: 12px 20px">
+            <div style="flex: 1 1 520px; min-width: 0; display: flex; flex-direction: column; gap: 10px">
+                <h1 style="font-size: 30px">@Model.GetScenarioText()</h1>
+                <div class="cluster">
+                    @Model.Status.Pill()
+                    @if (Model.TimedOut)
                     {
-                        <tr>
-                            <td colspan="6" class="hiddenRow">
-                                <div class="accordion-body collapse" id="step-@step.Guid-expanded">
-                                    @Html.Raw(BDTest.Helpers.StepArgumentHtmlHelper.GetHtml(step.Arguments))
-                                    @if (!string.IsNullOrEmpty(step.Output))
-                                    {
-                                        <div class="container" style="overflow-x: auto;">
-                                            <h5>Step Output:</h5>
-                                            <pre class="py-4">@step.Output</pre>
-                                        </div>
-                                    }
-                                    @if (step.Exception != null)
-                                    {
-                                        <div class="container" style="overflow-x: auto;">
-                                            <h5>Step Exception:</h5>
-                                            <pre class="text-danger py-4">@step.Exception.AsString</pre>
-                                        </div>
-                                    }
-                                </div>
-                            </td>
-                        </tr>
+                        <span class="pill q">Timed out</span>
                     }
-                }
-
-                @if (!string.IsNullOrEmpty(Model.TearDownOutput))
+                    @foreach (var tag in Model.Tags)
+                    {
+                        <span class="tag">@tag</span>
+                    }
+                </div>
+            </div>
+            <div class="cluster">
+                @if (index >= 0)
                 {
-                    <tr step-id="step-teardown" data-bs-toggle="collapse" data-bs-target="#step-teardown-expanded" class="accordion-toggle pointer opacity-75" data-bdtest-action="toggle-step" data-target="step-teardown-toggle-container">
-                        <td class="align-middle">
-                            <div class="d-grid dropend" id="step-teardown-toggle-container">
-                                <button class="btn dropdown-toggle"></button>
-                            </div>
-                        </td>
-                        <td class="align-middle">
-                            Test TearDown Information
-                        </td>
-                        <td colspan="4"></td>
-                    </tr>
-                    <tr>
-                        <td colspan="6" class="hiddenRow">
-                            <div class="accordion-body collapse" id="step-teardown-expanded">
-                                <div class="container" style="overflow-x: auto;">
-                                    <h5>TearDown Info:</h5>
-                                    <pre class="py-4">@Model.TearDownOutput</pre>
-                                </div>
-                            </div>
-                        </td>
-                    </tr>
+                    <span class="small muted">@(index + 1) of @siblings.Count in this run</span>
                 }
-                
-                @if (!string.IsNullOrEmpty(Model.CustomHtmlOutputForReport))
+                @if (previous != null)
                 {
-                    <tr step-id="step-custom-output" data-bs-toggle="collapse" data-bs-target="#step-custom-output-expanded" class="accordion-toggle pointer opacity-75" data-bdtest-action="toggle-step" data-target="step-custom-output-toggle-container">
-                        <td class="align-middle">
-                            <div class="d-grid dropend" id="step-custom-output-toggle-container">
-                                <button class="btn dropdown-toggle"></button>
-                            </div>
-                        </td>
-                        <td class="align-middle">
-                            Custom Test Output
-                        </td>
-                        <td colspan="4"></td>
-                    </tr>
-                    <tr>
-                        <td colspan="6" class="hiddenRow">
-                            <div class="accordion-body collapse" id="step-custom-output-expanded">
-                                <div class="container" style="overflow-x: auto;">
-                                    <h5>Custom Output:</h5>
-                                    @await Html.PartialAsync("_CustomHtmlOutput", Model.CustomHtmlOutputForReport)
-                                </div>
-                            </div>
-                        </td>
-                    </tr>
+                    <a class="btn sm" href="@ScenarioUrl(previous)" rel="prev">@ReportUi.Icon("i-chev-l")Previous</a>
                 }
-
-                </tbody>
-            </table>
+                else
+                {
+                    <span class="btn sm" aria-disabled="true">@ReportUi.Icon("i-chev-l")Previous</span>
+                }
+                @if (next != null)
+                {
+                    <a class="btn sm" href="@ScenarioUrl(next)" rel="next">Next@(ReportUi.Icon("i-chev-r"))</a>
+                }
+                else
+                {
+                    <span class="btn sm" aria-disabled="true">Next@(ReportUi.Icon("i-chev-r"))</span>
+                }
+                @await Html.PartialAsync("_CopyLinkButton")
+            </div>
+        </div>
+        <div class="meta">
+            <span>Story <b>@ReportUi.StoryTitle(storyText)</b></span>
+            <span>Duration <b>@Model.TimeTaken.ToShortDuration()@(attempts > 1 ? $" over {attempts} attempts" : "")</b></span>
+            @if (Model.StartTime != default)
+            {
+                <span>Started <b>@Model.StartTime.ToClock()</b></span>
+            }
+            @if (fileName != null)
+            {
+                <span>Test <b class="mono">@fileName</b></span>
+            }
         </div>
     </div>
+</section>
 
-</div>
+<main class="wrap page tight" style="padding-top: 24px">
+    <div class="split">
+        <div class="main-col" style="gap: 20px">
+            @if (exception != null && Model.Status != Status.Passed)
+            {
+                var isFailure = Model.Status == Status.Failed;
+                <section class="card clip" aria-labelledby="failure">
+                    <div class="card-pad" style="gap: 10px; background: @(isFailure ? "var(--fail-bg)" : "var(--sunk)")">
+                        <div style="display: flex; align-items: center; gap: 10px">
+                            @Model.Status.StatusIcon("lg")
+                            <h2 id="failure" style="font-size: 18px; font-weight: 700; overflow-wrap: anywhere">@(string.IsNullOrWhiteSpace(exception.Message) ? exception.TypeName : exception.Message.Trim().Split('\n')[0])</h2>
+                        </div>
+                        @if (failingStep != null)
+                        {
+                            <p class="small muted">At step @failingNumber, “@failingStep.StepText”@(attempts > 1 && Model.Attempts.All(attempt => attempt.Status == Status.Failed) ? ", on every attempt" : "").</p>
+                        }
+                    </div>
+                    <div class="card-pad" style="gap: 10px; padding-top: 16px">
+                        <div class="cluster">
+                            <span class="mono grow" style="font-weight: 500; overflow-wrap: anywhere">@exception.TypeName</span>
+                            <button class="btn sm" type="button" aria-pressed="true" data-bdtest-action="toggle-wrap" data-target="@traceId">Wrap</button>
+                            <button class="btn sm" type="button" data-bdtest-action="copy-text" data-target="@traceId">Copy</button>
+                        </div>
+                        <pre class="code" id="@traceId">@(exception.AsString ?? exception.Message)</pre>
+                    </div>
+                </section>
+            }
 
-@functions 
+            @if (isOutline)
+            {
+                @if (steps.Count > 0)
+                {
+                    <section class="card card-pad" aria-labelledby="outline" style="gap: 4px">
+                        <h2 id="outline" class="k" style="margin-bottom: 4px">Outline</h2>
+                        @foreach (var step in steps)
+                        {
+                            var (keyword, text) = ReportUi.SplitStepText(step.StepText);
+                            <div class="step-text" style="font-size: 14.5px"><b>@keyword</b> @Placeholders(text)</div>
+                        }
+                    </section>
+                }
+                <section class="card clip">
+                    @await Html.PartialAsync("_ScenarioExamples", Model)
+                </section>
+            }
+            else
+            {
+                <section class="card clip" aria-labelledby="steps" id="steps-card">
+                    <div class="card-head">
+                        <h2 id="steps">Steps
+                            <span class="muted" style="font-weight: 400; font-size: 14px">@(attempts > 1 ? $" · attempt {attempts} of {attempts}" : "") · @TimeSpan.FromTicks(steps.Sum(step => step.TimeTaken.Ticks)).ToShortDuration()</span>
+                        </h2>
+                        @if (hasExtras)
+                        {
+                            <button class="btn ghost sm link" type="button" data-bdtest-action="expand-all" data-target="steps-card" aria-expanded="false"
+                                    data-open-text="Expand all output" data-close-text="Collapse all output">Expand all output</button>
+                        }
+                    </div>
+                    @if (steps.Count > 0)
+                    {
+                        <div class="step head" aria-hidden="true"><span></span><span class="k">Step</span><span class="k">Time in scenario</span><span class="k" style="text-align: right">Took</span></div>
+                    }
+                    else
+                    {
+                        <p class="small muted" style="padding: 0 20px 16px">No steps were recorded.</p>
+                    }
+                    @foreach (var step in steps)
+                    {
+                        var (keyword, text) = ReportUi.SplitStepText(step.StepText);
+                        var notRun = step.Status is Status.NotRun or Status.Pending;
+                        var isFailing = step == failingStep;
+                        var rowClass = "step" + (isFailing ? " fail" : "") + (notRun ? " skipped" : "");
+                        var offset = step.StartTime == default ? 0 : Math.Clamp((double)(step.StartTime - timelineStart).Ticks / timelineTicks * 100, 0, 100);
+                        var width = notRun ? 0 : Math.Clamp((double)step.TimeTaken.Ticks / timelineTicks * 100, 0, 100 - offset);
+                        var stepRow = Row(rowClass, step, keyword, text, notRun, isFailing, offset, width);
+                        if (HasExtra(step))
+                        {
+                            <details class="expander step-item" data-expandable open="@isFailing">
+                                <summary class="@rowClass">@stepRow</summary>
+                                <div class="step-extra @(isFailing ? "fail" : "")">
+                                    @if (!string.IsNullOrEmpty(step.Output))
+                                    {
+                                        <div class="k">Step output</div>
+                                        <pre class="code on-surface">@step.Output</pre>
+                                    }
+                                    @if (step.Exception != null && !(isFailing && ReferenceEquals(step.Exception, exception)))
+                                    {
+                                        <div class="k">Exception</div>
+                                        <pre class="code on-surface">@step.Exception.AsString</pre>
+                                    }
+                                    @if (step.Diagnostics?.Count > 0)
+                                    {
+                                        <div class="k">Diagnostics</div>
+                                        <pre class="code on-surface">@string.Join(Environment.NewLine, step.Diagnostics)</pre>
+                                    }
+                                </div>
+                            </details>
+                        }
+                        else
+                        {
+                            <div class="@rowClass">@stepRow</div>
+                        }
+                    }
+                </section>
+            }
+
+            @if (Model.RetryCount > 0 && Model.Attempts?.Count > 0)
+            {
+                <section class="card clip">
+                    @await Html.PartialAsync("_RetryHistory", Model)
+                </section>
+            }
+
+            @{
+                var information = Model.CustomTestInformation ?? Array.Empty<BDTest.Attributes.TestInformationAttribute>();
+                var hasCustom = !string.IsNullOrEmpty(Model.CustomHtmlOutputForReport);
+                var anyOutput = hasCustom || information.Length > 0 || !string.IsNullOrEmpty(Model.TestStartupInformation)
+                                || !string.IsNullOrEmpty(Model.TearDownOutput) || !string.IsNullOrEmpty(Model.Output);
+            }
+            @if (anyOutput)
+            {
+                <section class="card clip" aria-label="More output">
+                    @if (hasCustom)
+                    {
+                        <details class="sec" open data-expandable>
+                            <summary>@ReportUi.Icon("i-chev-r", "chev")Custom output</summary>
+                            <div class="sec-body">@await Html.PartialAsync("_CustomHtmlOutput", Model.CustomHtmlOutputForReport)</div>
+                        </details>
+                    }
+                    @if (information.Length > 0)
+                    {
+                        <details class="sec" open data-expandable>
+                            <summary>@ReportUi.Icon("i-chev-r", "chev")Information<span class="cnt">@information.Length</span></summary>
+                            <ul class="sec-body" style="margin: 0; padding-left: 46px; gap: 4px; font-size: 14px">
+                                @foreach (var item in information)
+                                {
+                                    <li style="overflow-wrap: anywhere">@item.Information</li>
+                                }
+                            </ul>
+                        </details>
+                    }
+                    @OutputSection("Setup output", Model.TestStartupInformation)
+                    @OutputSection("Teardown output", Model.TearDownOutput)
+                    @OutputSection("Console output", Model.Output)
+                </section>
+            }
+        </div>
+
+        <aside class="side-col">
+            @{
+                var storyLines = ReportUi.StoryLines(storyText);
+            }
+            <section class="card card-pad" aria-labelledby="story" style="gap: 10px">
+                <h2 id="story">Story</h2>
+                @if (storyLines.Count == 0)
+                {
+                    <p class="small muted">This scenario has no story.</p>
+                }
+                else
+                {
+                    <p style="font-size: 14.5px">
+                        @foreach (var line in storyLines)
+                        {
+                            var match = Regex.Match(line, "^(As an?|I want|So that)\\b(.*)$", RegexOptions.IgnoreCase);
+                            if (match.Success)
+                            {
+                                <b style="font-weight: 600">@match.Groups[1].Value</b>@match.Groups[2].Value<br>
+                            }
+                            else
+                            {
+                                @line<br>
+                            }
+                        }
+                    </p>
+                }
+                @if (run != null)
+                {
+                    var inStory = run.Scenarios.Count(scenario => scenario.GetStoryText() == storyText);
+                    <a class="lnk" href="@(reportUrl + "/all-scenarios")">@inStory @(inStory == 1 ? "scenario" : "scenarios") in this story</a>
+                }
+            </section>
+
+            <section class="card card-pad" aria-labelledby="details" style="gap: 10px">
+                <h2 id="details">Details</h2>
+                <dl class="dl">
+                    @if (file != null)
+                    {
+                        <dt>File</dt><dd class="mono">@file</dd>
+                    }
+                    <dt>Retries</dt><dd>@(Model.RetryCount == 0 ? "None" : $"{Model.RetryCount} ({Model.RetryCount + 1} attempts)")</dd>
+                    @if (Model.Timeout != null)
+                    {
+                        <dt>Timeout</dt><dd>@Model.Timeout.Value.ToShortDuration()</dd>
+                    }
+                    @if (Model.StartTime != default)
+                    {
+                        <dt>Started</dt><dd>@Model.StartTime.ToClock(milliseconds: true)</dd>
+                    }
+                    @if (Model.EndTime != default)
+                    {
+                        <dt>Ended</dt><dd>@Model.EndTime.ToClock(milliseconds: true)</dd>
+                    }
+                </dl>
+                @if (report != null)
+                {
+                    <div class="k" style="margin-top: 4px">Run</div>
+                    <dl class="dl">
+                        @if (!string.IsNullOrEmpty(report.Tag))
+                        {
+                            <dt>Tag</dt><dd>@report.Tag</dd>
+                        }
+                        @if (!string.IsNullOrEmpty(report.Environment))
+                        {
+                            <dt>Environment</dt><dd>@report.Environment</dd>
+                        }
+                        @if (!string.IsNullOrEmpty(report.BranchName))
+                        {
+                            <dt>Branch</dt><dd>@report.BranchName</dd>
+                        }
+                    </dl>
+                    <div class="cluster"><a class="lnk" href="@reportUrl/summary">Run overview</a><a class="lnk" href="@reportUrl/raw-json-data" download>Run JSON</a></div>
+                }
+            </section>
+        </aside>
+    </div>
+</main>
+
+@functions
 {
-    private bool IsExpandable(Step step)
+    private static bool HasExtra(Step step) =>
+        !string.IsNullOrEmpty(step.Output) || step.Exception != null || step.Diagnostics?.Count > 0;
+
+    private static Microsoft.AspNetCore.Html.IHtmlContent Row(string rowClass, Step step, string keyword, string text,
+        bool notRun, bool isFailing, double offset, double width)
     {
-        return !string.IsNullOrEmpty(step.Output) || step.Exception != null || step.Arguments?.Count > 0;
+        var encoder = System.Text.Encodings.Web.HtmlEncoder.Default;
+        var invariant = System.Globalization.CultureInfo.InvariantCulture;
+        var weight = isFailing ? " style=\"font-weight: 600\"" : string.Empty;
+        var didNotRun = notRun ? " <span style=\"font-size: 13px\">(didn’t run)</span>" : string.Empty;
+        var bar = notRun
+            ? "<span class=\"timeline\"></span>"
+            : $"<span class=\"timeline\"><span class=\"{(isFailing ? "f" : "")}\" style=\"left: {offset.ToString("0.##", invariant)}%; width: {width.ToString("0.##", invariant)}%\"></span></span>";
+        return new Microsoft.AspNetCore.Html.HtmlString(
+            step.Status.StatusIcon().ToString()
+            + $"<span class=\"step-text\"{weight}><b>{encoder.Encode(keyword)}</b> {encoder.Encode(text)}{didNotRun}</span>"
+            + bar
+            + $"<span class=\"dur\" title=\"{encoder.Encode(step.TimeTaken.ToString())}\">{(notRun ? "—" : encoder.Encode(step.TimeTaken.ToShortDuration()))}</span>");
+    }
+
+    private static Microsoft.AspNetCore.Html.IHtmlContent Placeholders(string text)
+    {
+        var encoder = System.Text.Encodings.Web.HtmlEncoder.Default;
+        var html = Regex.Replace(encoder.Encode(text ?? string.Empty), "&lt;([^&\\s]+?)&gt;",
+            "<span class=\"mono\" style=\"color: var(--acc-fg)\">&lt;$1&gt;</span>");
+        return new Microsoft.AspNetCore.Html.HtmlString(html);
+    }
+
+    private Microsoft.AspNetCore.Html.IHtmlContent OutputSection(string title, string content)
+    {
+        if (string.IsNullOrEmpty(content))
+        {
+            return Microsoft.AspNetCore.Html.HtmlString.Empty;
+        }
+
+        var encoder = System.Text.Encodings.Web.HtmlEncoder.Default;
+        var lines = content.Split('\n').Length;
+        return new Microsoft.AspNetCore.Html.HtmlString(
+            $"<details class=\"sec\" data-expandable><summary>{ReportUi.Icon("i-chev-r", "chev")}{encoder.Encode(title)}<span class=\"cnt\">{lines} {(lines == 1 ? "line" : "lines")}</span></summary>"
+            + $"<div class=\"sec-body\"><pre class=\"code\">{encoder.Encode(content)}</pre></div></details>");
     }
 }

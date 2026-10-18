@@ -1,0 +1,71 @@
+@using BDTest.Razor.Reports.Constants
+@using BDTest.Razor.Reports.Helpers
+@using BDTest.Razor.Reports.Models
+@using BDTest.Razor.Reports.Models.ViewModels
+@model ScenarioToolbarViewModel
+@{
+    var request = Context.Request;
+    var search = request.GetQueryParameter(ScenarioSearch.QueryParameterName);
+    var selectedTag = request.GetQueryParameter(TagConstants.FilterByTagQueryParameterName);
+    var order = request.GetQueryParameter(OrderConstants.OrderByQueryParameterName) ?? OrderConstants.Status;
+    var tags = Model.Tags.Append(selectedTag).Where(tag => !string.IsNullOrWhiteSpace(tag))
+        .Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(tag => tag, StringComparer.OrdinalIgnoreCase);
+    // The form's own fields, plus values that would be stale after a new search.
+    var ownFields = new[]
+    {
+        ScenarioSearch.QueryParameterName, TagConstants.FilterByTagQueryParameterName, OrderConstants.OrderByQueryParameterName,
+        "group", PagerQueryParameters.Page, "scenarioId"
+    };
+    var orders = new[]
+    {
+        (OrderConstants.Status, "Failures first"), (OrderConstants.DurationDescending, "Slowest first"),
+        (OrderConstants.DurationAscending, "Fastest first"), (OrderConstants.Name, "Name"),
+        (OrderConstants.DateAscending, "Start time"), (OrderConstants.DateDescending, "Latest start")
+    };
+}
+<form class="toolbar" role="search" method="get" action="@Context.Request.PathBase.Add(Context.Request.Path).ToUriComponent()" data-autosubmit>
+    @foreach (var parameter in request.Query)
+    {
+        if (ownFields.Contains(parameter.Key, StringComparer.OrdinalIgnoreCase))
+        {
+            continue;
+        }
+        foreach (var value in parameter.Value)
+        {
+            <input type="hidden" name="@parameter.Key" value="@value" />
+        }
+    }
+    <label class="search" style="flex: 1 1 280px">
+        <span class="visually-hidden">Search scenarios</span>
+        @ReportUi.Icon("i-search")
+        <input class="inp" type="search" name="@ScenarioSearch.QueryParameterName" value="@search" placeholder="Search titles, steps and exceptions">
+    </label>
+    <label class="inline-field">Tag
+        <select class="inp" name="@TagConstants.FilterByTagQueryParameterName">
+            <option value="">Any tag</option>
+            @foreach (var tag in tags)
+            {
+                <option value="@tag" selected="@(string.Equals(tag, selectedTag, StringComparison.OrdinalIgnoreCase))">@tag</option>
+            }
+        </select>
+    </label>
+    <label class="inline-field">Sort
+        <select class="inp" name="@OrderConstants.OrderByQueryParameterName">
+            @foreach (var (value, text) in orders)
+            {
+                <option value="@value" selected="@(order == value)">@text</option>
+            }
+        </select>
+    </label>
+    <input type="hidden" name="group" value="@Model.GroupBy" />
+    @if (!Model.GroupFixed)
+    {
+        <div class="inline-field">Group
+            <div class="seg" role="group" aria-label="Group by">
+                <a href="@Context.GetLocalUrlWith(("group", ScenarioListViewModel.GroupByNone), ("scenarioId", null))" aria-current="@(Model.GroupBy == ScenarioListViewModel.GroupByNone ? "true" : null)">None</a>
+                <a href="@Context.GetLocalUrlWith(("group", ScenarioListViewModel.GroupByStory), ("scenarioId", null))" aria-current="@(Model.GroupBy == ScenarioListViewModel.GroupByStory ? "true" : null)">Story</a>
+            </div>
+        </div>
+    }
+    <noscript><button class="btn sm" type="submit">Apply</button></noscript>
+</form>

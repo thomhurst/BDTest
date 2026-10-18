@@ -1,4 +1,4 @@
-using BDTest.Attributes;
+﻿using BDTest.Attributes;
 using BDTest.Exceptions;
 using BDTest.Maps;
 using BDTest.Helpers;
@@ -87,7 +87,7 @@ public class ScenarioOutlineTests : AbstractContextBDTestBase<ScenarioOutlineTes
             Assert.That(failedRow.TimeTaken, Is.GreaterThan(TimeSpan.Zero));
             Assert.That(failedRow.TimeTaken, Is.EqualTo(failedRow.Attempts.Last().TimeTaken));
             var razor = await ReportHandlerEncodingTests.RenderAsync("/Views/Shared/_ScenarioExamples.cshtml", result);
-            Assert.That(razor, Does.Contain($"<td>{failedRow.TimeTaken}</td>"));
+            Assert.That(razor, Does.Contain($"title=\"{failedRow.TimeTaken}\""));
         }
         Assert.That(BDTestHtmlHelper.GetTestHtmlReport(),
             Does.Contain($"title=\"{outline.Examples[0].TimeTaken}\">"));
@@ -601,7 +601,7 @@ public class ScenarioOutlineTests : AbstractContextBDTestBase<ScenarioOutlineTes
         {
             "Examples" + exampleTable,
             await ReportHandlerEncodingTests.RenderAsync("/Views/Shared/_ScenarioExamples.cshtml", restored),
-            await ReportHandlerEncodingTests.RenderAsync("/Views/Shared/_ScenarioModalPopup.cshtml", new ScenarioModalViewModel { Scenario = restored }),
+            await ReportHandlerEncodingTests.RenderAsync("/Views/Shared/_ScenarioPanel.cshtml", new ScenarioModalViewModel { Scenario = restored }),
             await ReportHandlerEncodingTests.RenderAsync("/Views/BDTest/Scenario.cshtml", restored)
         })
         {

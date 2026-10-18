@@ -1,4 +1,4 @@
-using System.Collections.Concurrent;
+﻿using System.Collections.Concurrent;
 using System.Net;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -277,7 +277,10 @@ public class ReportUploadTests
             using var response = await server.Client.GetAsync($"bdtest/report/{report.Id}/scenario/{scenario.Guid}");
             Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK), scenario.GetScenarioText());
             Assert.That(response.Content.Headers.ContentType?.MediaType, Is.EqualTo("text/html"));
-            var html = HttpUtility.HtmlDecode(await response.Content.ReadAsStringAsync());
+            // Compare visible text: step keywords are styled separately from the rest of the step.
+            var markup = await response.Content.ReadAsStringAsync();
+            Assert.That(markup, Does.Not.Contain("Retry history"));
+            var html = HttpUtility.HtmlDecode(System.Text.RegularExpressions.Regex.Replace(markup, "<[^>]+>", string.Empty));
             Assert.That(html, Does.Contain(scenario.GetScenarioText()));
             foreach (var step in scenario.Steps)
             {

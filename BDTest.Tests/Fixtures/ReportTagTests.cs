@@ -1,10 +1,11 @@
-using System.Text.RegularExpressions;
+﻿using System.Text.RegularExpressions;
 using System.Web;
 using BDTest.Maps;
 using BDTest.Razor.Reports.Controllers;
 using BDTest.Razor.Reports.Extensions;
 using BDTest.Razor.Reports.Interfaces;
 using BDTest.Razor.Reports.Models;
+using BDTest.Razor.Reports.Models.ViewModels;
 using BDTest.Test;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -51,8 +52,8 @@ public class ReportTagTests
     public async Task Tag_dropdown_encodes_tags_and_preserves_other_filters_without_the_old_page()
     {
         const string tag = "O'Brien & <smoke> 雪";
-        var html = await ReportHandlerEncodingTests.RenderAsync("/Views/Shared/_TagDropdown.cshtml",
-            new[] { tag, "other" }, query: "?filterByTag=" + Uri.EscapeDataString(tag) + "&filterByStatus=Passed&orderBy=Name&page=5",
+        var html = await ReportHandlerEncodingTests.RenderAsync("/Views/Shared/_ScenarioToolbar.cshtml",
+            new ScenarioToolbarViewModel { Tags = new[] { tag, "other" } }, query: "?filterByTag=" + Uri.EscapeDataString(tag) + "&filterByStatus=Passed&orderBy=Name&page=5",
             pathBase: "/reports", host: "attacker.example");
 
         Assert.That(html, Does.Contain("name=\"filterByTag\""));
@@ -69,9 +70,14 @@ public class ReportTagTests
     [Test]
     public async Task Tag_badges_encode_uploaded_text()
     {
-        var html = await ReportHandlerEncodingTests.RenderAsync("/Views/Shared/_ScenarioTags.cshtml", new[] { "<script>alert(1)</script>" });
+        var scenario = ReportJson.DeserializeObject<Scenario>(ReportJson.SerializeObject(new
+        {
+            Guid = "tagged", Tags = new[] { "<script>alert(1)</script>" }, Steps = Array.Empty<object>()
+        }));
+        var html = await ReportHandlerEncodingTests.RenderAsync("/Views/Shared/_ScenarioPanel.cshtml",
+            new ScenarioModalViewModel { Scenario = scenario });
         Assert.That(html, Does.Not.Contain("<script>"));
-        Assert.That(HttpUtility.HtmlDecode(html), Does.Contain("<script>alert(1)</script>"));
+        Assert.That(HttpUtility.HtmlDecode(html), Does.Contain("<span class=\"tag\"><script>alert(1)</script></span>"));
     }
 
     private sealed class Repository : IDataRepository
