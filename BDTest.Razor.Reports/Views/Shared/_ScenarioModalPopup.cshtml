@@ -32,6 +32,7 @@
         </header>
         
         <section class="modal-card-body">
+            @await Html.PartialAsync("_RetryHistory", Model.Scenario)
             <div>
                 @foreach (var testInformationAttribute in Model.Scenario.CustomTestInformation)
                 {

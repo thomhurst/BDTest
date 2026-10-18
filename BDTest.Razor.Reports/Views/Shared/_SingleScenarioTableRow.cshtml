@@ -14,6 +14,10 @@
     <td class="@indexTextClass">
          @Model.Scenario.GetScenarioText() @scenarioCountInsideParentGroup
          @await Html.PartialAsync("_ScenarioTags", Model.Scenario.Tags)
+         @if (Model.Scenario.RetryCount > 0)
+         {
+             <span class="badge bg-warning text-dark">Retries: @Model.Scenario.RetryCount</span>
+         }
     </td>
     <td class="align-middle">
         <div class="d-grid">

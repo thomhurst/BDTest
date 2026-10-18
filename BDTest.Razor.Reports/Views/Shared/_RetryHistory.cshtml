@@ -1,0 +1,39 @@
+@using BDTest.Razor.Reports.Extensions
+@model BDTest.Test.Scenario
+
+@if (Model.Attempts?.Count > 1)
+{
+    <section class="retry-history my-4" aria-label="Retry history">
+        <h4>Retry history</h4>
+        <p>Retries: @Model.RetryCount</p>
+        <table class="table is-fullwidth">
+            <thead>
+            <tr>
+                <th>Attempt</th>
+                <th>Status</th>
+                <th>Duration</th>
+                <th>Exception</th>
+            </tr>
+            </thead>
+            <tbody>
+            @foreach (var attempt in Model.Attempts)
+            {
+                <tr>
+                    <td>@attempt.Number</td>
+                    <td><span class="btn @attempt.Status.GetCssColourValueForStatus()">@attempt.Status.AsString()</span></td>
+                    <td>@attempt.TimeTaken.ToString()</td>
+                    <td>
+                        @if (attempt.Exception != null)
+                        {
+                            <details>
+                                <summary>@attempt.Exception.TypeName: @attempt.Exception.Message</summary>
+                                <pre>@attempt.Exception.AsString</pre>
+                            </details>
+                        }
+                    </td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </section>
+}
