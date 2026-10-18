@@ -35,7 +35,7 @@ public class AdapterConformanceTests : Adapter
 {
     private readonly List<(string Name, int Attempt, object Context, CancellationToken Token, Status Status)> _hooks = new();
     private readonly BDTestRun _run;
-    private readonly AbstractContextBDTestBase<object> _host;
+    private AbstractContextBDTestBase<object> _host;
     private readonly bool _composition = false;
     public override BDTestRun TestRun => _run;
 
@@ -56,6 +56,10 @@ public class AdapterConformanceTests : Adapter
     }
 #endif
 
+#if BDTEST_NUNIT
+    internal void UseHost(AbstractContextBDTestBase<object> host) => _host = host;
+#endif
+
     private BDTestRun CreateRun()
     {
         var options = new BDTestOptions();
@@ -71,7 +75,7 @@ public class AdapterConformanceTests : Adapter
     public override Task OnBeforeScenario(ScenarioHookContext<object> scenario) => Record("instance before", scenario);
     public override Task OnAfterScenario(ScenarioHookContext<object> scenario) => Record("instance after", scenario);
 
-    private Task Record(string name, ScenarioHookContext scenario)
+    internal Task Record(string name, ScenarioHookContext scenario)
     {
         Require(ReferenceEquals(_host.Context, scenario.Context), "scenario hook received another attempt's context");
         _hooks.Add((name, scenario.Attempt, scenario.Context, scenario.CancellationToken, scenario.Scenario.Status));
@@ -572,3 +576,71 @@ public class AdapterConformanceTests : Adapter
     private static void FailStep() => throw new InvalidOperationException("conformance failure");
     private static void NotImplementedStep() => throw new NotImplementedException("conformance not implemented");
 }
+
+#if BDTEST_NUNIT
+// Exercise the same contract through the runner extension on an unrelated fixture base.
+public abstract class CompositionConformanceFixtureBase { }
+
+[global::BDTest.NUnit.BDTestFixture]
+[global::NUnit.Framework.FixtureLifeCycle(global::NUnit.Framework.LifeCycle.InstancePerTestCase)]
+public class CompositionAdapterConformanceTests : CompositionConformanceFixtureBase, BDTest.NUnit.INUnitBDTest
+{
+    internal AdapterConformanceTests Cases { get; } = new();
+    private readonly CompositionHost _host;
+    BDTestBase BDTest.NUnit.INUnitBDTest.BDTestHost => _host;
+
+    public CompositionAdapterConformanceTests()
+    {
+        _host = new CompositionHost(this, Cases.TestRun);
+        Cases.UseHost(_host);
+    }
+
+    private sealed class CompositionHost(CompositionAdapterConformanceTests owner, BDTestRun run)
+        : BDTest.NUnit.NUnitBDTestScenario<object>(owner, run)
+    {
+        public override Task OnBeforeScenario(ScenarioHookContext<object> scenario) =>
+            owner.Cases.Record("instance before", scenario);
+        public override Task OnAfterScenario(ScenarioHookContext<object> scenario) =>
+            owner.Cases.Record("instance after", scenario);
+    }
+
+    [Test] public Task Pass() => Cases.Pass();
+    [Test] public Task Fail() => Cases.Fail();
+    [Test] public Task NotImplemented() => Cases.NotImplemented();
+    [Test] public Task SingleStepSkipped() => Cases.SingleStepSkipped();
+    [Test] public Task AllStepsSkipped() => Cases.AllStepsSkipped();
+    [Test, ScenarioText("Conformance global skip")]
+    public Task GlobalRuleSkips() => Cases.GlobalRuleSkips();
+    [Test, ScenarioText("Conformance global skip")]
+    public Task GlobalRuleSkipsWithDirectAwait() => Cases.GlobalRuleSkipsWithDirectAwait();
+    [Test] public Task FrameworkSkip() => Cases.FrameworkSkip();
+    [Test] public Task FrameworkInconclusive() => Cases.FrameworkInconclusive();
+    [Test] public Task FrameworkSuccess() => Cases.FrameworkSuccess();
+    [Test] public Task RetryThenPass() => Cases.RetryThenPass();
+    [Test] public Task ScenarioTimeoutHooks() => Cases.ScenarioTimeoutHooks();
+    [Test] public Task ScenarioOutlineHooks() => Cases.ScenarioOutlineHooks();
+    [Test] public Task ContextFactoryInitializationAndAsyncDisposal() => Cases.ContextFactoryInitializationAndAsyncDisposal();
+    [Test] public Task ContextRetryDisposesPreviousAttempt() => Cases.ContextRetryDisposesPreviousAttempt();
+    [Test] public Task ContextDisposalFailureReachesRunner() => Cases.ContextDisposalFailureReachesRunner();
+    [Test] public Task ExplicitRunsIsolateContextOutputAndCompletion() => Cases.ExplicitRunsIsolateContextOutputAndCompletion();
+    [Test] public Task ExplicitRunsUseDifferentMappings() => Cases.ExplicitRunsUseDifferentMappings();
+
+    private static readonly System.Collections.Concurrent.ConcurrentBag<BDTestRun> Runs = new();
+    [global::NUnit.Framework.SetUp]
+    public void TrackRun() => Runs.Add(Cases.TestRun);
+
+    [global::NUnit.Framework.OneTimeTearDown]
+    public static void DisposeRuns()
+    {
+        while (Runs.TryTake(out var run))
+        {
+            try
+            {
+                if (run.OutputBuffers.Count != 0)
+                    throw new InvalidOperationException("NUnit composition wrapper did not complete output capture");
+            }
+            finally { run.Dispose(); }
+        }
+    }
+}
+#endif

@@ -11,7 +11,7 @@ public static class BDTestScenario
     /// Call BeginTest synchronously before asynchronous setup, and EndTest in teardown.
     /// </remarks>
     public static BDTestScenario<TContext> For<TContext>(object testInstance, BDTestRun run = null)
-        where TContext : class, new() => new(testInstance, run ?? BDTestRun.Default);
+        where TContext : class => new(testInstance, run ?? BDTestRun.Default);
 }
 
 /// <summary>Provides context, scenario builders and output helpers through composition.</summary>
@@ -20,9 +20,10 @@ public static class BDTestScenario
 /// with distinct framework execution IDs, and complete every execution with EndTest. Framework
 /// integrations must preserve execution flow identity across setup, body and teardown.
 /// </remarks>
-public sealed class BDTestScenario<TContext> : AbstractContextBDTestBase<TContext> where TContext : class, new()
+public class BDTestScenario<TContext> : AbstractContextBDTestBase<TContext> where TContext : class
 {
-    internal BDTestScenario(object testInstance, BDTestRun run)
+    /// <summary>Creates a specialized host for the supplied test instance and run.</summary>
+    protected internal BDTestScenario(object testInstance, BDTestRun run)
     {
         TestInstance = testInstance ?? throw new ArgumentNullException(nameof(testInstance));
         run.ThrowIfDisposed();
@@ -43,4 +44,7 @@ public sealed class BDTestScenario<TContext> : AbstractContextBDTestBase<TContex
 
     /// <summary>Completes this execution and clears its context and output state. Safe to repeat.</summary>
     public new void EndTest() => base.EndTest();
+
+    /// <summary>Awaits owned context disposal and completes this execution. Safe to repeat.</summary>
+    public new ValueTask EndTestAsync() => base.EndTestAsync();
 }

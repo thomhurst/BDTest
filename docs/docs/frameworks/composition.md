@@ -7,6 +7,8 @@ description: Use context, scenarios, and output helpers without inheriting a BDT
 
 `BDTestScenario.For<TContext>(testInstance, run)` creates a host for a test class with any base class. The host provides the same `Context`, `Given`, `When`, scenario outlines, and output helpers as the inheritance API. Read context through the host inside each step so retries use the new context.
 
+Derive from `BDTestScenario<TContext>` and call its protected constructor with the test instance and run to customize scenario hooks or context creation. Contexts need no parameterless constructor when the run supplies a context factory. Without a factory or a `CreateContextAsync` override, the host creates contexts through their public parameterless constructor.
+
 ```csharp
 using BDTest;
 using BDTest.Test;
@@ -42,7 +44,7 @@ public class CheckoutTests : CompanyTestBase
 }
 ```
 
-The example shows manual lifecycle integration. For automatic TUnit setup and completion, implement [`IBDTestTUnitTest`](tunit.md#composition-with-an-existing-base-class). Framework-native composition registration is tracked separately for [NUnit](https://github.com/thomhurst/BDTest/issues/895), [xUnit v3](https://github.com/thomhurst/BDTest/issues/896), and [MSTest](https://github.com/thomhurst/BDTest/issues/898). Existing adapter base classes remain available.
+The example shows manual lifecycle integration. For automatic setup and completion, use [NUnit composition registration](nunit.md#composition-with-an-existing-base-class) or implement TUnit's [`IBDTestTUnitTest`](tunit.md#composition-with-an-existing-base-class). Framework-native composition registration is tracked separately for [xUnit v3](https://github.com/thomhurst/BDTest/issues/896) and [MSTest](https://github.com/thomhurst/BDTest/issues/898). Existing adapter base classes remain available.
 
 ## Lifecycle and parallel execution
 
