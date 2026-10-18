@@ -16,5 +16,5 @@ hook exception, and `ToString()` includes its message and stack trace.
 
 Use `InnerException` to inspect the hook failure. Use `GetBaseException()` to reach
 the innermost cause when the hook exception has its own inner exception. Scenario
-outline reports retain the hook exception's message and stack trace, including its
+and retry attempt reports retain the hook exception's message and stack trace, including its
 nested causes.

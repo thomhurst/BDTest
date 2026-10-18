@@ -95,7 +95,7 @@ internal class ScenarioExecutor : IScenarioExecutor
         catch (ErrorOccurredDuringRetryActionException e) when (preparingRetry)
         {
             // Hook failures end the retry even if the underlying exception has a custom outcome.
-            attemptException = e.GetBaseException();
+            attemptException = e.InnerException ?? e;
             scenario.Status = Status.Failed;
             scenario.ShouldRetry = false;
             scenario.ExecutionException = new ExceptionWrapper(attemptException);

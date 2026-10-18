@@ -333,7 +333,7 @@ and throws `BDTest.Exceptions.ErrorOccurredDuringRetryActionException`, which de
 from `BDTestException`. Its message includes the hook's error message, and
 `InnerException` contains the original hook exception. `ToString()` includes the
 cause and its stack trace. `GetBaseException()` follows the normal inner exception
-chain to the innermost cause. Scenario outline reports retain the hook exception,
+chain to the innermost cause. Scenario and retry attempt reports retain the hook exception,
 including any nested cause. See [retry hook errors](docs/docs/configuration/retry-hook-errors.md).
 
 ### But steps

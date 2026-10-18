@@ -74,6 +74,7 @@ public class ScenarioOutlineTests : AbstractContextBDTestBase<ScenarioOutlineTes
             var failedRow = result.Examples[0];
             Assert.That(failedRow.Attempts, Has.Count.EqualTo(2));
             Assert.That(failedRow.Attempts.Last().Exception.Message, Is.EqualTo("<retry hook failed>"));
+            Assert.That(failedRow.Attempts.Last().Exception.AsString, Is.EqualTo(_retryHookFailure.ToString()));
             Assert.That(failedRow.Exception.Message, Is.EqualTo(_retryHookFailure.Message));
             Assert.That(failedRow.Exception.AsString, Is.EqualTo(_retryHookFailure.ToString()));
             Assert.That(failedRow.EndTime, Is.EqualTo(failedRow.Attempts.Last().EndTime));
