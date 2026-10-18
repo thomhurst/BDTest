@@ -19,6 +19,8 @@ dotnet add package BDTest.SourceGenerator
 
 `TUnit` brings the test framework, assertions and runner; `BDTest.TUnit` only depends on `TUnit.Core`. The source generator is what turns `Account.CreateAnAccount(100m)` into "I have an account with a balance of 100" in the report. See [Installation](installation.md) for a full project file.
 
+Use an executable test project (`<OutputType>Exe</OutputType>`) with implicit usings enabled, as shown in the project file. The examples use types such as `Task` and `File` from those usings.
+
 ## 1. Create a context
 
 A context holds the state for one test. BDTest creates a new instance for each test, so tests never share state.

@@ -9,6 +9,7 @@ BDTest is distributed on [NuGet](https://www.nuget.org/packages/BDTest). Install
 
 ```bash
 # TUnit (recommended)
+dotnet add package TUnit
 dotnet add package BDTest.TUnit
 
 # NUnit
@@ -68,6 +69,7 @@ A typical TUnit test project:
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <OutputType>Exe</OutputType>
+    <ImplicitUsings>enable</ImplicitUsings>
     <IsPackable>false</IsPackable>
   </PropertyGroup>
 
