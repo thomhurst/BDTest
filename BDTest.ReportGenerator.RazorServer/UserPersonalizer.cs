@@ -5,12 +5,12 @@ namespace BDTest.ReportGenerator.RazorServer;
 
 public class UserPersonalizer : IUserPersonalizer
 {
-    public Uri GetProfilePictureUri(HttpContext httpContext)
+    public Uri? GetProfilePictureUri(HttpContext httpContext)
     {
         return null;
     }
 
-    public string GetNameOfUser(HttpContext httpContext)
+    public string? GetNameOfUser(HttpContext httpContext)
     {
         var identity = httpContext.User.Identity;
         return identity?.IsAuthenticated == true ? identity.Name : null;

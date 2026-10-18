@@ -6,7 +6,7 @@ namespace BDTest.ReportGenerator.RazorServer;
 
 public class CustomSidebarLinkProvider : IBDTestCustomSidebarLinksProvider
 {
-    public IEnumerable<CustomLinkData> GetCustomLinks(BDTestOutputModel currentTestReport)
+    public IEnumerable<CustomLinkData> GetCustomLinks(BDTestOutputModel? currentTestReport)
     {
         return new List<CustomLinkData>
         {

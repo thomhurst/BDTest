@@ -36,7 +36,7 @@ public class AzureStorageDataStore : IBDTestDataStore, IReportStore, IRunIndexSt
     }
 
     /// <summary>Attachment blobs share the report container so its lifecycle policy applies to both.</summary>
-    public async Task<Stream> OpenReadAsync(string reportId, string attachmentId, CancellationToken cancellationToken = default)
+    public async Task<Stream?> OpenReadAsync(string reportId, string attachmentId, CancellationToken cancellationToken = default)
     {
         AttachmentStorage.ValidateIds(reportId, attachmentId);
         ArgumentNullException.ThrowIfNull(attachmentId);
@@ -73,7 +73,7 @@ public class AzureStorageDataStore : IBDTestDataStore, IReportStore, IRunIndexSt
             await _testDataContainer.DeleteBlobIfExistsAsync(blob.Name, cancellationToken: cancellationToken);
     }
 
-    public async Task<Stream> OpenReadAsync(string reportId, CancellationToken cancellationToken = default)
+    public async Task<Stream?> OpenReadAsync(string reportId, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
         try
@@ -110,7 +110,7 @@ public class AzureStorageDataStore : IBDTestDataStore, IReportStore, IRunIndexSt
         var entries = new List<RunIndexEntry>();
         await foreach (var page in _testRunSummariesContainer.GetBlobsAsync(cancellationToken: cancellationToken).AsPages())
         {
-            var pageEntries = new RunIndexEntry[page.Values.Count];
+            var pageEntries = new RunIndexEntry?[page.Values.Count];
             await Parallel.ForEachAsync(Enumerable.Range(0, page.Values.Count),
                 new ParallelOptions
                 {
@@ -132,7 +132,7 @@ public class AzureStorageDataStore : IBDTestDataStore, IReportStore, IRunIndexSt
                         // A lifecycle policy can remove an entry between listing and downloading.
                     }
                 });
-            entries.AddRange(pageEntries.Where(entry => entry != null));
+            entries.AddRange(pageEntries.OfType<RunIndexEntry>());
         }
 
         cancellationToken.ThrowIfCancellationRequested();
@@ -156,7 +156,7 @@ public class AzureStorageDataStore : IBDTestDataStore, IReportStore, IRunIndexSt
         return deleted.Value;
     }
         
-    public async Task<BDTestOutputModel> GetTestData(string id, CancellationToken cancellationToken)
+    public async Task<BDTestOutputModel?> GetTestData(string id, CancellationToken cancellationToken)
     {
         try
         {
@@ -189,7 +189,7 @@ public class AzureStorageDataStore : IBDTestDataStore, IReportStore, IRunIndexSt
                 .ToArray();
         }
 
-        var summaries = new TestRunSummary[newestBlobs.Length];
+        var summaries = new TestRunSummary?[newestBlobs.Length];
         await Parallel.ForEachAsync(Enumerable.Range(0, newestBlobs.Length),
             new ParallelOptions { MaxDegreeOfParallelism = MaximumConcurrentDownloads },
             async (index, cancellationToken) =>
@@ -207,7 +207,7 @@ public class AzureStorageDataStore : IBDTestDataStore, IReportStore, IRunIndexSt
                 }
             });
 
-        return summaries.Where(summary => summary != null).ToArray();
+        return summaries.OfType<TestRunSummary>().ToArray();
     }
 
     public Task StoreTestData(string id, BDTestOutputModel data)

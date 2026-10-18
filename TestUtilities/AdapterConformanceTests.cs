@@ -281,7 +281,12 @@ public class AdapterConformanceTests : Adapter
             try { await fixture.When(() => ThrowTogether()).Then(() => Complete()).BDTestAsync(); }
             catch (SharedOutcomeException) { }
         }
-        await Task.WhenAll(Task.Run(() => Execute(first)), Task.Run(() => Execute(second)));
+#if BDTEST_XUNIT
+        var cancellationToken = Xunit.TestContext.Current.CancellationToken;
+#else
+        var cancellationToken = CancellationToken.None;
+#endif
+        await Task.WhenAll(Task.Run(() => Execute(first), cancellationToken), Task.Run(() => Execute(second), cancellationToken));
         Require(first.Scenarios.Single().Status == Status.Skipped, "first run lost frozen skip mapping");
         Require(second.Scenarios.Single().Status == Status.Inconclusive, "second run lost inconclusive mapping");
     }

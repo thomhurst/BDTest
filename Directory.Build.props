@@ -4,8 +4,13 @@
   <ImplicitUsings>enable</ImplicitUsings>
   <ContinuousIntegrationBuild Condition="'$(GITHUB_ACTIONS)' == 'true'">true</ContinuousIntegrationBuild>
  </PropertyGroup>
- <!-- Roll out strict diagnostics in non-shipping pipeline code first. See BUILDING.md. -->
- <PropertyGroup Condition="'$(MSBuildProjectName)' == 'BDTest.Pipeline' Or '$(MSBuildProjectName)' == 'BDTest.Pipeline.Tests'">
+ <!-- Strict diagnostics for non-shipping code and Roslyn packages. See BUILDING.md. -->
+ <!-- The core NUnit and report suites are tracked by #922 and #921 respectively. -->
+ <PropertyGroup Condition="'$(MSBuildProjectName)' != 'BDTest.Tests'
+                          And '$(MSBuildProjectName)' != 'BDTest.ReportGenerator.Tests'
+                          And ($([System.Text.RegularExpressions.Regex]::IsMatch('$(MSBuildProjectName)', '(?i)Tests|Pipeline|Example|ReportGenerator'))
+                               Or '$(MSBuildProjectName)' == 'BDTest.SourceGenerator'
+                               Or '$(MSBuildProjectName)' == 'BDTest.Analyzers')">
   <Nullable>enable</Nullable>
   <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
  </PropertyGroup>

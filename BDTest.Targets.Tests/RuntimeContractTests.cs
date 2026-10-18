@@ -24,7 +24,7 @@ public class RuntimeContractTests
 #else
         const string expected = ".NETCoreApp,Version=v8.0";
 #endif
-        Assert.That(typeof(BDTestRun).Assembly.GetCustomAttribute<TargetFrameworkAttribute>().FrameworkName, Is.EqualTo(expected));
+        Assert.That(typeof(BDTestRun).Assembly.GetCustomAttribute<TargetFrameworkAttribute>()?.FrameworkName, Is.EqualTo(expected));
     }
 
     [TestCase(false)]

@@ -1,56 +1,68 @@
 # Build settings and diagnostic rollout
 
-`Directory.Build.props` owns the shared `LangVersion=latest` and
-`ImplicitUsings=enable` settings. Projects inherit them; retain local overrides
-only when a project needs a different setting. `BDTest.Razor.Reports` uses the
-Razor SDK's default language version, compiled views, and static web asset
-packaging without per-file content overrides.
+`Directory.Build.props` owns shared `LangVersion=latest` and
+`ImplicitUsings=enable` settings. Projects inherit them. Keep existing target
+frameworks. `BDTest.Razor.Reports` uses the Razor SDK's default language version,
+compiled views, and static web asset packaging without per-file content overrides.
 
-## First scope (#689)
+## Completed scopes
 
-`BDTest.Pipeline` and `BDTest.Pipeline.Tests` enable `Nullable=enable` and
-`TreatWarningsAsErrors=true` through an explicit project-name condition in
-`Directory.Build.props`. Pipeline code is not shipped as a NuGet library, so it
-is the first scope without changing consumer-facing nullable contracts.
+`Nullable=enable` and `TreatWarningsAsErrors=true` are set centrally for:
 
-The pipeline already enabled nullable analysis. Its tests now do too. Test
-fixture fields initialized by NUnit's `[SetUp]` use `null!` only at declaration;
-nullable values returned by directory traversal and process creation have
-explicit failure paths. No nullable warnings are disabled.
+- `BDTest.Pipeline` and `BDTest.Pipeline.Tests` (the initial rollout in #689).
+- `BDTest.Example` and `BDTest.ReportGenerator.RazorServer`.
+- `BDTest.xUnit.Tests`, `BDTest.MSTest.Tests`, and `BDTest.TUnit.Tests`.
+- `BDTest.Targets.Tests` and `BDTest.Legacy.Tests` (modern and legacy asset coverage).
+- `BDTest.SourceGenerator`, `BDTest.Analyzers`, and their test projects. These
+  packages already used nullable analysis; they now also treat warnings as errors.
 
-Validate with .NET SDK 10.0.402, matching CI:
+Test fields initialized by framework setup hooks use `null!` only at declaration,
+with their lifecycle documented. Values absent before setup or execution remain
+nullable. Reflection and process helpers fail explicitly when required fixture
+metadata or processes are missing. Source-generator tests retain nullable argument
+values; their dynamically compiled input strings keep independent compilation
+settings so existing consumer compatibility tests remain unchanged.
+
+The sample host models missing Azure configuration, missing report/attachment
+blobs, nullable deserialization results, and unauthenticated users explicitly.
+Its bounded concurrent downloads retain nullable result slots until missing or
+JSON-null summaries are filtered out. No nullable diagnostic categories are disabled.
+
+## Validation
+
+Use .NET SDK 10.0.402, matching CI:
 
 ```powershell
 dotnet build BDTest.sln -c Release
-dotnet test BDTest.Pipeline.Tests/BDTest.Pipeline.Tests.csproj -c Release
 ```
 
-Run every other `*Tests.csproj` with `dotnet test -c Release`, except
+Run every `*Tests.csproj` with `dotnet test <project> -c Release`, except
 `BDTest.TUnit.Tests`, which uses `dotnet run --project BDTest.TUnit.Tests -c Release`.
 Do not run the publishing pipeline in `Production` locally.
 
 ## Remaining rollout
 
-Each later scope should add its projects to the explicit diagnostic condition,
-resolve all resulting warnings, and pass its build and relevant tests before
-merging. Do not enable warnings-as-errors for the whole solution while projects
-still have unresolved warnings. Keep existing target frameworks.
+#855 was split into sibling deliverables under roadmap #860. The initial scope
+is #919. The remaining scopes are:
 
-1. Non-shipping tests and samples: `BDTest.Tests`, `BDTest.xUnit.Tests`,
-   `BDTest.MSTest.Tests`, `BDTest.TUnit.Tests`, `BDTest.ReportGenerator.Tests`, and
-   `BDTest.Example`. Model test setup lifetimes explicitly and resolve nullable
-   warnings without suppressing whole diagnostic categories.
-2. Non-shipping report host: `BDTest.ReportGenerator.RazorServer`. Review
-   configuration and request-bound values, then validate it through
-   `BDTest.ReportGenerator.Tests`.
-3. Shipped packages: `BDTest`, `BDTest.NUnit`, `BDTest.xUnit`, `BDTest.MSTest`,
-   `BDTest.TUnit`, and `BDTest.Razor.Reports`. Assess public parameters, return
-   values, generic constraints, and serialized models before adding nullable
-   annotations. Preserve accepted inputs and runtime behavior; test each adapter
-   and the report middleware. Do not blanket-annotate public APIs or change
-   target frameworks as part of the rollout.
+1. #922: `BDTest.Tests` and shared historical report fixtures. Resolve nullable
+   diagnostics and obsolete API usage while preserving regression coverage.
+2. #920: `BDTest` and the NUnit, xUnit, MSTest, and TUnit adapters. Annotate public
+   inputs, returns, contexts, and serialized models to match runtime behavior.
+   Preserve accepted nulls, historical reports, and target frameworks. Update
+   consumer documentation and migration notes for nullable contract changes.
+3. #921: `BDTest.Razor.Reports` and `BDTest.ReportGenerator.Tests`. Review options,
+   storage, request values, serialized models, and views. Complete the rollout by
+   making both settings unconditional in `Directory.Build.props` and removing
+   redundant per-project settings and remaining per-file nullable directives.
 
 The remaining projects keep their existing diagnostic settings in this change.
+
+Keep the existing `CS1591` suppression for partially documented public APIs;
+completing XML documentation is separate from nullable analysis. Shared test
+files retain nullable directives until every consuming project enables analysis.
+Do not disable diagnostic categories or blanket-annotate public APIs to complete
+these scopes.
 
 ## Package and assembly versions (#856)
 

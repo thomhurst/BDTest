@@ -9,8 +9,9 @@ namespace BDTest.MSTest.Tests;
 public class ExecutionIdTests : MSTestBDTestBase<ExecutionIdTests.TestContextData>
 {
     private static readonly ConcurrentDictionary<string, byte> ExecutionIds = new();
-    private TestContextData _setupContext;
-    private string _setupId;
+    // Assigned by TestInitialize before each test body.
+    private TestContextData _setupContext = null!;
+    private string _setupId = null!;
 
     [TestInitialize]
     public async Task AsyncSetup()
@@ -46,6 +47,7 @@ public class ExecutionIdTests : MSTestBDTestBase<ExecutionIdTests.TestContextDat
         Assert.Contains("async console startup " + _setupId, scenario.TestStartupInformation);
         Assert.Contains("body console startup " + _setupId, scenario.TestStartupInformation);
         Assert.Contains(TestContext.FullyQualifiedTestClassName, _setupId);
+        Assert.IsNotNull(TestContext.TestDisplayName);
         Assert.Contains(TestContext.TestDisplayName, _setupId);
         WriteTearDownOutput("teardown " + _setupId);
         Assert.Contains("teardown " + _setupId, scenario.TearDownOutput);

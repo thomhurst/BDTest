@@ -2,5 +2,5 @@
 
 public class Config
 {
-    public AzureStorageConfig AzureStorage { get; set; }
+    public AzureStorageConfig? AzureStorage { get; set; }
 }

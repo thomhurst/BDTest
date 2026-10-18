@@ -8,7 +8,7 @@ public class XUnitTheoryTestsUniqueId : XUnitBDTestBase<XUnitContext>
 {
     private static readonly ConcurrentDictionary<string, XUnitContext> Contexts = new();
     private static readonly ConcurrentDictionary<XUnitContext, string> ContextIds = new();
-    private static string _testCaseId;
+    private static string? _testCaseId;
 
     public static TheoryData<NonSerializableRow> Rows => new()
     {
