@@ -50,6 +50,8 @@ public class RetryHistoryTests
             }
             Assert.That(scenario.Exception?.Message, Is.EqualTo(failures > 2 ? "<failure 3>" : null));
             Assert.That(scenario.TimeTaken, Is.EqualTo(scenario.Attempts.Last().TimeTaken));
+            if (failures == 0)
+                Assert.That(BDTestHtmlHelper.GetTestHtmlReport(), Does.Not.Contain("Retry history"));
         }
         finally
         {
@@ -99,9 +101,17 @@ public class RetryHistoryTests
         {
             await Assert.ThrowsAsync<ErrorOccurredDuringRetryActionException>(() => fixture.Run());
             var scenario = BDTestUtil.GetScenarios().Single();
+            Assert.That(scenario.RetryCount, Is.EqualTo(1));
             Assert.That(scenario.Attempts, Has.Count.EqualTo(1));
             Assert.That(scenario.Attempts[0].Status, Is.EqualTo(Status.Failed));
             Assert.That(scenario.Attempts[0].Exception.Message, Is.EqualTo("<failure 1>"));
+
+            var html = BDTestHtmlHelper.GetTestHtmlReport();
+            Assert.That(html, Does.Contain("Retry history"));
+            Assert.That(html, Does.Contain("Attempt 1: Failed"));
+            Assert.That(html, Does.Contain("&lt;failure 1&gt;"));
+            Assert.That(html, Does.Not.Contain("Attempt 2:"));
+            Assert.That(html, Does.Not.Contain("<failure 1>"));
         }
         finally
         {

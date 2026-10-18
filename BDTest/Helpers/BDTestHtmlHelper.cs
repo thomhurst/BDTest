@@ -188,7 +188,7 @@ public static class BDTestHtmlHelper
         
         html.AppendLine($"            <div class=\"scenario-details\" id=\"details-{scenario.Guid}\" style=\"display: none;\">");
         
-        if (scenario.Attempts?.Count > 1)
+        if (scenario.RetryCount > 0 && scenario.Attempts?.Count > 0)
         {
             html.AppendLine("                <div class=\"retry-history\"><h4>Retry history</h4>");
             foreach (var attempt in scenario.Attempts)

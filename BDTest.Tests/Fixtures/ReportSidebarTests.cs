@@ -60,8 +60,9 @@ public class ReportSidebarTests
         await _application.DisposeAsync();
     }
 
-    [Test]
-    public async Task Retry_history_renders_attempt_status_duration_and_encoded_exceptions()
+    [TestCase(false)]
+    [TestCase(true)]
+    public async Task Retry_history_renders_attempt_status_duration_and_encoded_exceptions(bool retryHookFailed)
     {
         _repository.Report.Scenarios = [JsonConvert.DeserializeObject<Scenario>("""
             {
@@ -76,14 +77,20 @@ public class ReportSidebarTests
             }
             """)];
 
+        if (retryHookFailed)
+            _repository.Report.Scenarios.Single().Attempts.RemoveAt(1);
+
         var html = await _client.GetStringAsync("/bdtest/report/run-632/scenario/scenario-632");
 
         Assert.That(html, Does.Contain("Retry history"));
         Assert.That(html, Does.Contain("Retries: 1"));
         Assert.That(html, Does.Contain("Failed</span>"));
-        Assert.That(html, Does.Contain("Passed</span>"));
         Assert.That(html, Does.Contain("00:00:00.1250000"));
-        Assert.That(html, Does.Contain("00:00:00.2500000"));
+        if (!retryHookFailed)
+        {
+            Assert.That(html, Does.Contain("Passed</span>"));
+            Assert.That(html, Does.Contain("00:00:00.2500000"));
+        }
         Assert.That(html, Does.Contain("&lt;retry failure&gt;"));
         Assert.That(html, Does.Contain("at FailingStep()"));
         Assert.That(html, Does.Not.Contain("<retry failure>"));
