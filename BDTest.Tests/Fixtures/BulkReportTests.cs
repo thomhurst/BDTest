@@ -4,7 +4,6 @@ using BDTest.Razor.Reports.Extensions;
 using BDTest.Razor.Reports.Interfaces;
 using BDTest.Razor.Reports.Models;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
 using NUnit.Framework;
 
@@ -16,21 +15,19 @@ public class BulkReportTests(bool flakiness)
 {
     private ServiceProvider _services;
     private RecordingDataStore _store;
-    private RecordingCache _cache;
     private BDTestController _controller;
 
     [SetUp]
     public void SetUp()
     {
         _store = new RecordingDataStore();
-        _cache = new RecordingCache();
         var services = new ServiceCollection();
         services.AddLogging();
         services.AddControllersWithViews().AddBdTestReportControllersAndViews();
-        services.AddSingleton<IMemoryCache>(_cache);
         _services = services.BuildServiceProvider();
         var options = _services.GetRequiredService<BDTestReportServerOptions>();
         options.DataStore = _store;
+        options.ReportCacheSizeLimitBytes = 1024;
         _controller = new BDTestController(_services.GetRequiredService<IDataRepository>(), options);
     }
 
@@ -38,7 +35,6 @@ public class BulkReportTests(bool flakiness)
     public void TearDown()
     {
         _services.Dispose();
-        _cache.Dispose();
     }
 
     [TestCase(null)]
@@ -93,7 +89,13 @@ public class BulkReportTests(bool flakiness)
         Assert.That(result.ViewName, Is.EqualTo(flakiness ? "MultipleTestRunsFlakiness" : "MultipleTestRunsTimes"));
         Assert.That(((IEnumerable<BDTestOutputModel>)result.Model).Select(x => x.Id), Is.EqualTo(ids));
         Assert.That(_store.ReadIds, Is.EquivalentTo(ids));
-        Assert.That(_cache.Writes, Is.Zero);
+        var repository = _services.GetRequiredService<IDataRepository>();
+        _store.MissingIds.UnionWith(ids);
+        foreach (var id in ids)
+        {
+            Assert.That(await repository.GetDataForBulkRead(id, default), Is.Null,
+                "Bulk reads must leave every report uncached.");
+        }
     }
 
     [Test]
@@ -115,15 +117,18 @@ public class BulkReportTests(bool flakiness)
     }
 
     [Test]
-    public async Task Bulk_read_reuses_cached_report_without_extending_its_lifetime()
+    public async Task Bulk_read_reuses_cached_report_without_reapplying_cache_policy()
     {
-        var cached = new BDTestOutputModel { Id = "cached" };
-        _cache.Set("cached", cached);
-        var writesBeforeRead = _cache.Writes;
-        var result = (ViewResult)await Read("cached");
-        Assert.That(((IEnumerable<BDTestOutputModel>)result.Model).Single(), Is.SameAs(cached));
-        Assert.That(_store.ReadIds, Is.Empty);
-        Assert.That(_cache.Writes, Is.EqualTo(writesBeforeRead));
+        var repository = _services.GetRequiredService<IDataRepository>();
+        var cached = await repository.GetData("cached", default);
+        // Re-caching this now-oversized model would remove it from the bounded cache.
+        cached.Tag = new string('x', 2000);
+        for (var iteration = 0; iteration < 2; iteration++)
+        {
+            var result = (ViewResult)await Read("cached");
+            Assert.That(((IEnumerable<BDTestOutputModel>)result.Model).Single(), Is.SameAs(cached));
+        }
+        Assert.That(_store.ReadIds, Has.Count.EqualTo(1));
     }
 
     [Test]
@@ -131,8 +136,8 @@ public class BulkReportTests(bool flakiness)
     {
         var repository = _services.GetRequiredService<IDataRepository>();
         var report = await repository.GetData("single", CancellationToken.None);
-        Assert.That(_cache.TryGetValue("single", out var cached), Is.True);
-        Assert.That(cached, Is.SameAs(report));
+        Assert.That(await repository.GetData("single", default), Is.SameAs(report));
+        Assert.That(_store.ReadIds, Has.Count.EqualTo(1));
     }
 
     [Test]
@@ -208,19 +213,5 @@ public class BulkReportTests(bool flakiness)
         public Task DeleteTestData(string id) => throw new NotSupportedException();
         public Task StoreTestRunRecord(TestRunSummary summary) => throw new NotSupportedException();
         public Task DeleteTestRunRecord(string id) => throw new NotSupportedException();
-    }
-
-    private sealed class RecordingCache : IMemoryCache
-    {
-        private readonly MemoryCache _inner = new(new MemoryCacheOptions());
-        public int Writes { get; private set; }
-        public ICacheEntry CreateEntry(object key)
-        {
-            Writes++;
-            return _inner.CreateEntry(key);
-        }
-        public bool TryGetValue(object key, out object value) => _inner.TryGetValue(key, out value);
-        public void Remove(object key) => _inner.Remove(key);
-        public void Dispose() => _inner.Dispose();
     }
 }

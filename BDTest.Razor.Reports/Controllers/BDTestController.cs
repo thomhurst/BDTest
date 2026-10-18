@@ -52,7 +52,14 @@ public class BDTestController : Controller
         var id = Guid.NewGuid().ToString("N");
         bdTestOutputModel.Id = id;
 
-        await _dataRepository.StoreData(bdTestOutputModel, id);
+        try
+        {
+            await _dataRepository.StoreData(bdTestOutputModel, id);
+        }
+        catch (ReportTooLargeForCacheException exception)
+        {
+            return StatusCode(413, exception.Message);
+        }
 
         if (_bdTestReportServerOptions.DataReceiver != null)
         {

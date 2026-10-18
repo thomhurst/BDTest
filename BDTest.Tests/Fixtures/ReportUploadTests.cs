@@ -77,6 +77,22 @@ public class ReportUploadTests
     }
 
     [Test]
+    public async Task Cache_only_oversized_upload_is_rejected_before_receiver_notification()
+    {
+        await using var server = await UploadServer.Start(options =>
+        {
+            options.DataStore = null;
+            options.ReportCacheSizeLimitBytes = 1;
+        });
+
+        using var response = await server.Post("{}");
+
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.RequestEntityTooLarge));
+        Assert.That(server.Store.Received, Is.Empty);
+        Assert.That(server.Store.Summaries, Is.Empty);
+    }
+
+    [Test]
     public async Task InternallyOwnedClientClosesConnectionAfterFailedUpload()
     {
         var connectionClosed = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);

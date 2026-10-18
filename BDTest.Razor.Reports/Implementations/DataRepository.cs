@@ -79,7 +79,7 @@ internal class DataRepository : IDataRepository
 
         if (await _memoryCacheBdTestDataStore.GetTestData(id, default) == null)
         {
-            // Save to in-memory cache for 8 hours for quick fetching
+            // Cache within the configured capacity and retention policy.
             await _memoryCacheBdTestDataStore.StoreTestData(id, bdTestOutputModel);
             await _memoryCacheBdTestDataStore.StoreTestRunRecord(bdTestOutputModel.GetOverview());
 
