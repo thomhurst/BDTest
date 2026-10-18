@@ -68,6 +68,20 @@ public class PackageArtifactsTests
         Assert.That(exception?.Message, Does.Contain(_artifacts.OutputDirectory));
     }
 
+    [Test]
+    public void Uploads_library_symbols_and_analyzer_packages_without_missing_symbol_paths()
+    {
+        var library = Path.Combine(_artifacts.OutputDirectory, "Library.1.0.0.nupkg");
+        var symbols = Path.ChangeExtension(library, ".snupkg");
+        var analyzer = Path.Combine(_artifacts.OutputDirectory, "Generator.1.0.0.nupkg");
+        WriteFile(library);
+        WriteFile(symbols);
+        WriteFile(analyzer);
+
+        Assert.That(PackageArtifacts.GetUploadPaths(new[] { library, analyzer }),
+            Is.EqualTo(new[] { library, symbols, analyzer }));
+    }
+
     private static void WriteFile(string path)
     {
         Directory.CreateDirectory(Path.GetDirectoryName(path)

@@ -33,6 +33,7 @@ public class PackageArtifactVerificationTests
             CreatePackage(id, ".nupkg");
             CreatePackage(id, ".snupkg");
         }
+        CreatePackage("BDTest.SourceGenerator", ".nupkg");
     }
 
     [TearDown]
@@ -43,7 +44,7 @@ public class PackageArtifactVerificationTests
     {
         File.Delete(PackagePath("BDTest", ".nupkg"));
 
-        await AssertRejected("primary packages", "found 5");
+        await AssertRejected("primary packages", "found 6");
     }
 
     [Test]
@@ -179,7 +180,8 @@ public class PackageArtifactVerificationTests
         using var archive = ZipFile.Open(PackagePath(id, extension), ZipArchiveMode.Create);
         var projectPath = Path.Combine(Path.GetDirectoryName(Path.GetDirectoryName(_scriptPath))!, id, $"{id}.csproj");
         var project = XDocument.Load(projectPath);
-        var dependencies = project.Descendants("PackageReference").Select(reference =>
+        var dependencies = project.Descendants("PackageReference")
+            .Where(reference => (string?)reference.Attribute("PrivateAssets") != "all").Select(reference =>
             new XElement("dependency", new XAttribute("id", reference.Attribute("Include")!.Value),
                 new XAttribute("version", reference.Attribute("Version")!.Value)))
             .Concat(project.Descendants("ProjectReference").Select(reference =>

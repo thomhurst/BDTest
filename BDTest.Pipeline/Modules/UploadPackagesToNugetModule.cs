@@ -75,8 +75,7 @@ public class UploadPackagesToNugetModule : Module<CommandResult[]>
         var packagePaths = await context.GetModule<PackagePathsParserModule>();
 
         // Explicit symbol pushes still run when NuGet skips an already published primary package.
-        var uploadPaths = packagePaths.ValueOrDefault!
-            .SelectMany(file => new[] { file.Path, Path.ChangeExtension(file.Path, ".snupkg") });
+        var uploadPaths = PackageArtifacts.GetUploadPaths(packagePaths.ValueOrDefault!.Select(file => file.Path));
 
         return await uploadPaths.SelectAsync(async file => await context.DotNet()
             .Nuget
