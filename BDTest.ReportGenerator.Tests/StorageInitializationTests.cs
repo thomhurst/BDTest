@@ -2,7 +2,6 @@ using Azure;
 using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
 using BDTest.ReportGenerator.RazorServer;
-using NUnit.Framework;
 
 namespace BDTest.ReportGenerator.Tests;
 
@@ -15,20 +14,20 @@ public class StorageInitializationTests
         var summaries = new RecordingContainer();
         var reports = new RecordingContainer();
         var store = new AzureStorageDataStore(summaries, reports);
-        Assert.That(summaries.Calls + reports.Calls, Is.Zero);
+        await Assert.That(summaries.Calls + reports.Calls).IsZero();
 
         var initialization = store.InitializeAsync(cancellation.Token);
-        Assert.That(initialization.IsCompleted, Is.False);
-        Assert.That(summaries.Calls, Is.EqualTo(1));
+        await Assert.That(initialization.IsCompleted).IsFalse();
+        await Assert.That(summaries.Calls).IsEqualTo(1);
         summaries.Completion.SetResult(null);
         await reports.Started.Task.WaitAsync(TimeSpan.FromSeconds(10));
-        Assert.That(initialization.IsCompleted, Is.False);
+        await Assert.That(initialization.IsCompleted).IsFalse();
         reports.Completion.SetResult(null);
         await initialization;
 
-        Assert.That(reports.Calls, Is.EqualTo(1));
-        Assert.That(summaries.Token, Is.EqualTo(cancellation.Token));
-        Assert.That(reports.Token, Is.EqualTo(cancellation.Token));
+        await Assert.That(reports.Calls).IsEqualTo(1);
+        await Assert.That(summaries.Token).IsEqualTo(cancellation.Token);
+        await Assert.That(reports.Token).IsEqualTo(cancellation.Token);
     }
 
     [Test]
@@ -38,10 +37,10 @@ public class StorageInitializationTests
         var reports = new RecordingContainer();
         var failure = new RequestFailedException(403, "Access denied");
         summaries.Completion.SetException(failure);
-        var exception = await Assert.ThrowsAsync<RequestFailedException>(() =>
+        var exception = await Assert.ThrowsExactlyAsync<RequestFailedException>(() =>
             new AzureStorageDataStore(summaries, reports).InitializeAsync());
-        Assert.That(exception, Is.SameAs(failure));
-        Assert.That(reports.Calls, Is.Zero);
+        await Assert.That(exception).IsSameReferenceAs(failure);
+        await Assert.That(reports.Calls).IsZero();
     }
 
     private sealed class RecordingContainer : BlobContainerClient

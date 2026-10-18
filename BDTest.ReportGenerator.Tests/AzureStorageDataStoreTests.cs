@@ -1,3 +1,4 @@
+using TUnit.Assertions.Enums;
 using System.Collections.Concurrent;
 using System.Globalization;
 using System.Net;
@@ -8,7 +9,6 @@ using BDTest.ReportGenerator.RazorServer;
 using BDTest.Razor.Reports.Storage;
 using BDTest.TestUtilities;
 using Newtonsoft.Json;
-using NUnit.Framework;
 
 namespace BDTest.ReportGenerator.Tests;
 
@@ -24,25 +24,26 @@ public class AzureStorageDataStoreTests
         var store = CreateStore(client);
         using var input = new NonSeekableStream("content", () => { });
         await store.WriteAsync(report, attachment, input, 7);
-        Assert.That(input.CanRead, Is.True);
-        Assert.That(storage.Uploads[$"/test-data/{report}/attachments/{attachment}"], Is.EqualTo("content"));
+        await Assert.That(input.CanRead).IsTrue();
+        await Assert.That(storage.Uploads[$"/test-data/{report}/attachments/{attachment}"]).IsEqualTo("content");
         using (var stream = await store.OpenReadAsync(report, attachment))
-        using (var reader = new StreamReader(stream ?? throw new AssertionException("Expected stored content.")))
-            Assert.That(await reader.ReadToEndAsync(), Is.EqualTo("content"));
-        Assert.That(storage.DisposedDownloads, Is.EqualTo(1));
+        using (var reader = new StreamReader(stream ?? throw new InvalidOperationException("Expected stored content.")))
+            await Assert.That(await reader.ReadToEndAsync()).IsEqualTo("content");
+        await Assert.That(storage.DisposedDownloads).IsEqualTo(1);
     }
 
-    [TestCase(1)]
-    [TestCase(3)]
+    [Test]
+    [Arguments(1)]
+    [Arguments(3)]
     public async Task Invalid_attachment_length_never_uploads_partial_blob(int length)
     {
         using var storage = new StorageHandler(0);
         using var client = new HttpClient(storage);
         using var input = new NonSeekableStream("ab", () => { });
-        await Assert.ThrowsAsync<InvalidDataException>(() => CreateStore(client).WriteAsync(
+        await Assert.ThrowsExactlyAsync<InvalidDataException>(() => CreateStore(client).WriteAsync(
             Guid.NewGuid().ToString("N"), Guid.NewGuid().ToString("N"), input, length));
-        Assert.That(storage.Requests, Is.Zero);
-        Assert.That(input.CanRead, Is.True);
+        await Assert.That(storage.Requests).IsZero();
+        await Assert.That(input.CanRead).IsTrue();
     }
 
     [Test]
@@ -52,14 +53,15 @@ public class AzureStorageDataStoreTests
         using var storage = new StorageHandler(27) { AttachmentReport = report };
         using var client = new HttpClient(storage);
         await CreateStore(client).DeleteReportAsync(report);
-        Assert.That(storage.ListRequests, Is.EqualTo(2));
-        Assert.That(storage.DeletedPaths, Has.Count.EqualTo(27));
-        Assert.That(storage.DeletedPaths.All(path => path.StartsWith($"/test-data/{report}/attachments/", StringComparison.Ordinal)), Is.True);
+        await Assert.That(storage.ListRequests).IsEqualTo(2);
+        await Assert.That(storage.DeletedPaths).Count().IsEqualTo(27);
+        await Assert.That(storage.DeletedPaths.All(path => path.StartsWith($"/test-data/{report}/attachments/", StringComparison.Ordinal))).IsTrue();
     }
 
-    [TestCase("read")]
-    [TestCase("write")]
-    [TestCase("delete")]
+    [Test]
+    [Arguments("read")]
+    [Arguments("write")]
+    [Arguments("delete")]
     public async Task Attachment_operations_observe_cancellation_without_storage_requests(string operation)
     {
         using var storage = new StorageHandler(0);
@@ -70,22 +72,23 @@ public class AzureStorageDataStoreTests
         var report = Guid.NewGuid().ToString("N");
         var attachment = Guid.NewGuid().ToString("N");
         var store = CreateStore(client);
-        await Assert.CatchAsync<OperationCanceledException>(async () =>
+        await Assert.ThrowsAsync<OperationCanceledException>(async () =>
         {
             if (operation == "read") using (await store.OpenReadAsync(report, attachment, cancellation.Token)) { }
             if (operation == "write") await store.WriteAsync(report, attachment, input, 1, cancellation.Token);
             if (operation == "delete") await store.DeleteReportAsync(report, cancellation.Token);
         });
-        Assert.That(storage.Requests, Is.Zero);
-        Assert.That(input.CanRead, Is.True);
+        await Assert.That(storage.Requests).IsZero();
+        await Assert.That(input.CanRead).IsTrue();
     }
 
-    [TestCase("read")]
-    [TestCase("write")]
-    [TestCase("delete report")]
-    [TestCase("list")]
-    [TestCase("upsert")]
-    [TestCase("delete index")]
+    [Test]
+    [Arguments("read")]
+    [Arguments("write")]
+    [Arguments("delete report")]
+    [Arguments("list")]
+    [Arguments("upsert")]
+    [Arguments("delete index")]
     public async Task Streaming_operations_observe_cancellation_before_start(string operation)
     {
         using var storage = new StorageHandler(0);
@@ -95,7 +98,7 @@ public class AzureStorageDataStoreTests
         using var input = new MemoryStream("{}"u8.ToArray());
         var store = CreateStore(client);
 
-        await Assert.CatchAsync<OperationCanceledException>(async () =>
+        await Assert.ThrowsAsync<OperationCanceledException>(async () =>
         {
             switch (operation)
             {
@@ -120,8 +123,8 @@ public class AzureStorageDataStoreTests
             }
         });
 
-        Assert.That(storage.Requests, Is.Zero);
-        Assert.That(input.CanRead, Is.True);
+        await Assert.That(storage.Requests).IsZero();
+        await Assert.That(input.CanRead).IsTrue();
     }
 
     [Test]
@@ -132,13 +135,13 @@ public class AzureStorageDataStoreTests
         using var client = new HttpClient(storage);
         var stream = await CreateStore(client).OpenReadAsync("report");
 
-        Assert.That(storage.DisposedDownloads, Is.Zero);
+        await Assert.That(storage.DisposedDownloads).IsZero();
         using (stream)
-        using (var reader = new StreamReader(stream ?? throw new AssertionException("Expected stored content.")))
+        using (var reader = new StreamReader(stream ?? throw new InvalidOperationException("Expected stored content.")))
         {
-            Assert.That(await reader.ReadToEndAsync(), Is.EqualTo(json));
+            await Assert.That(await reader.ReadToEndAsync()).IsEqualTo(json);
         }
-        Assert.That(storage.DisposedDownloads, Is.EqualTo(1));
+        await Assert.That(storage.DisposedDownloads).IsEqualTo(1);
     }
 
     [Test]
@@ -147,7 +150,7 @@ public class AzureStorageDataStoreTests
         using var storage = new StorageHandler(1) { FailedDownloadStatus = HttpStatusCode.NotFound };
         using var client = new HttpClient(storage);
 
-        Assert.That(await CreateStore(client).OpenReadAsync(StorageHandler.Name(0)), Is.Null);
+        await Assert.That(await CreateStore(client).OpenReadAsync(StorageHandler.Name(0))).IsNull();
     }
 
     [Test]
@@ -161,12 +164,13 @@ public class AzureStorageDataStoreTests
 
         await CreateStore(client).WriteAsync("report", input);
 
-        Assert.That(storage.Uploads["/test-data/report"], Is.EqualTo(json));
-        Assert.That(disposed, Is.False);
+        await Assert.That(storage.Uploads["/test-data/report"]).IsEqualTo(json);
+        await Assert.That(disposed).IsFalse();
     }
 
-    [TestCase(true, "/test-data/report")]
-    [TestCase(false, "/test-runs-summaries/report")]
+    [Test]
+    [Arguments(true, "/test-data/report")]
+    [Arguments(false, "/test-runs-summaries/report")]
     public async Task Streaming_delete_targets_only_its_container(bool report, string expectedPath)
     {
         using var storage = new StorageHandler(0);
@@ -177,8 +181,9 @@ public class AzureStorageDataStoreTests
             ? await ((IReportStore)store).DeleteAsync("report", CancellationToken.None)
             : await ((IRunIndexStore)store).DeleteAsync("report", CancellationToken.None);
 
-        Assert.That(deleted, Is.True);
-        Assert.That(storage.DeletedPaths, Is.EqualTo(new[] { expectedPath }));
+        await Assert.That(deleted).IsTrue();
+        await Assert.That(storage.DeletedPaths)
+            .IsEquivalentTo(new[] { expectedPath }, CollectionOrdering.Matching);
     }
 
     [Test]
@@ -210,17 +215,18 @@ public class AzureStorageDataStoreTests
             ContinuationToken = first.ContinuationToken
         });
 
-        Assert.That(first.Entries.Select(entry => entry.RecordId),
-            Is.EqualTo(Enumerable.Range(0, 30).Select(index => StorageHandler.Name(index * 2))));
-        Assert.That(second.Entries.Select(entry => entry.RecordId),
-            Is.EqualTo(Enumerable.Range(30, 8).Select(index => StorageHandler.Name(index * 2))));
-        Assert.That(first.Entries[1].Counts?.Total, Is.EqualTo(2));
-        Assert.That(first.ContinuationToken, Is.Not.Null.And.Not.Empty);
-        Assert.That(second.ContinuationToken, Is.Null);
-        Assert.That(storage.ListRequests, Is.EqualTo(6));
-        Assert.That(storage.Downloads, Has.Count.EqualTo(150));
-        Assert.That(storage.DisposedDownloads, Is.EqualTo(150));
-        Assert.That(storage.Deletes, Is.Zero);
+        await Assert.That(first.Entries.Select(entry => entry.RecordId))
+            .IsEquivalentTo(Enumerable.Range(0, 30).Select(index => StorageHandler.Name(index * 2)).Cast<string?>(), CollectionOrdering.Matching);
+        await Assert.That(second.Entries.Select(entry => entry.RecordId))
+            .IsEquivalentTo(Enumerable.Range(30, 8).Select(index => StorageHandler.Name(index * 2)).Cast<string?>(), CollectionOrdering.Matching);
+        await Assert.That(first.Entries[1].Counts?.Total).IsEqualTo(2);
+
+        await Assert.That(first.ContinuationToken).IsNotNull().And.IsNotEmpty();
+        await Assert.That(second.ContinuationToken).IsNull();
+        await Assert.That(storage.ListRequests).IsEqualTo(6);
+        await Assert.That(storage.Downloads).Count().IsEqualTo(150);
+        await Assert.That(storage.DisposedDownloads).IsEqualTo(150);
+        await Assert.That(storage.Deletes).IsZero();
     }
 
     [Test]
@@ -231,8 +237,8 @@ public class AzureStorageDataStoreTests
 
         var page = await CreateStore(client).ListAsync(new RunIndexQuery { PageSize = 100 });
 
-        Assert.That(page.Entries, Has.Count.EqualTo(75));
-        Assert.That(page.ContinuationToken, Is.Null);
+        await Assert.That(page.Entries).Count().IsEqualTo(75);
+        await Assert.That(page.ContinuationToken).IsNull();
     }
 
     [Test]
@@ -245,15 +251,15 @@ public class AzureStorageDataStoreTests
         try
         {
             await storage.FirstBatchStarted.Task.WaitAsync(TimeSpan.FromSeconds(10));
-            Assert.That(storage.PeakDownloads, Is.EqualTo(8));
+            await Assert.That(storage.PeakDownloads).IsEqualTo(8);
             cancellation.Cancel();
-            await Assert.CatchAsync<OperationCanceledException>(async () => await listing);
+            await Assert.ThrowsAsync<OperationCanceledException>(async () => await listing);
         }
         finally
         {
             storage.ReleaseDownloads.TrySetResult();
         }
-        Assert.That(storage.ListRequests, Is.EqualTo(1));
+        await Assert.That(storage.ListRequests).IsEqualTo(1);
     }
 
     [Test]
@@ -271,13 +277,14 @@ public class AzureStorageDataStoreTests
         var json = System.Text.Json.JsonDocument.Parse(storage.Uploads["/test-runs-summaries/report"]);
         using (json)
         {
-            Assert.That(json.RootElement.GetProperty("RecordId").GetString(), Is.EqualTo("report"));
-            Assert.That(json.RootElement.GetProperty("Counts").GetProperty("Passed").GetInt32(), Is.EqualTo(2));
+            await Assert.That(json.RootElement.GetProperty("RecordId").GetString()).IsEqualTo("report");
+            await Assert.That(json.RootElement.GetProperty("Counts").GetProperty("Passed").GetInt32()).IsEqualTo(2);
         }
     }
 
-    [TestCase(true, "/test-data/report-123")]
-    [TestCase(false, "/test-runs-summaries/report-123")]
+    [Test]
+    [Arguments(true, "/test-data/report-123")]
+    [Arguments(false, "/test-runs-summaries/report-123")]
     public async Task DeleteTargetsOnlyItsOwnContainer(bool deleteTestData, string expectedPath)
     {
         using var storage = new StorageHandler(0);
@@ -293,7 +300,8 @@ public class AzureStorageDataStoreTests
             await store.DeleteTestRunRecord("report-123");
         }
 
-        Assert.That(storage.DeletedPaths, Is.EqualTo(new[] { expectedPath }));
+        await Assert.That(storage.DeletedPaths)
+            .IsEquivalentTo(new[] { expectedPath }, CollectionOrdering.Matching);
     }
 
     [Test]
@@ -304,8 +312,8 @@ public class AzureStorageDataStoreTests
 
         var result = await CreateStore(client).GetTestData("report", CancellationToken.None);
 
-        Assert.That(result?.Id, Is.EqualTo("report"));
-        Assert.That(storage.DisposedDownloads, Is.EqualTo(1));
+        await Assert.That(result?.Id).IsEqualTo("report");
+        await Assert.That(storage.DisposedDownloads).IsEqualTo(1);
     }
 
     [Test]
@@ -314,26 +322,27 @@ public class AzureStorageDataStoreTests
         using var storage = new StorageHandler(1) { DownloadJson = HistoricalReportFixture.ReadJson() };
         using var client = new HttpClient(storage);
         var report = await CreateStore(client).GetTestData("1113e3bf269c489187245c4339dfd946", CancellationToken.None);
-        HistoricalReportFixture.AssertCompatible(report ?? throw new AssertionException("Expected historical report."));
+        HistoricalReportFixture.AssertCompatible(report ?? throw new InvalidOperationException("Expected historical report."));
 
         // StoreTestData uses AsStream; reload its JSON through the production download reader.
         using var stream = report.AsStream();
         using var reader = new StreamReader(stream);
         using var restoredStorage = new StorageHandler(1) { DownloadJson = await reader.ReadToEndAsync() };
         using var restoredClient = new HttpClient(restoredStorage);
-        var restored = await CreateStore(restoredClient).GetTestData(report.Id ?? throw new AssertionException("Expected historical report ID."), CancellationToken.None);
-        HistoricalReportFixture.AssertCompatible(restored ?? throw new AssertionException("Expected restored historical report."));
+        var restored = await CreateStore(restoredClient).GetTestData(report.Id ?? throw new InvalidOperationException("Expected historical report ID."), CancellationToken.None);
+        HistoricalReportFixture.AssertCompatible(restored ?? throw new InvalidOperationException("Expected restored historical report."));
     }
 
-    [TestCase(false)]
-    [TestCase(true)]
+    [Test]
+    [Arguments(false)]
+    [Arguments(true)]
     public async Task InvalidJsonDisposesDownload(bool summary)
     {
         using var storage = new StorageHandler(1) { DownloadJson = "{invalid json" };
         using var client = new HttpClient(storage);
         var store = CreateStore(client);
 
-        await Assert.CatchAsync<System.Text.Json.JsonException>(async () =>
+        await Assert.ThrowsAsync<System.Text.Json.JsonException>(async () =>
         {
             if (summary)
                 await store.GetAllTestRunRecords();
@@ -341,12 +350,12 @@ public class AzureStorageDataStoreTests
                 await store.GetTestData("report", CancellationToken.None);
         });
 
-        Assert.That(storage.DisposedDownloads, Is.EqualTo(1),
-            "Failed deserialization must also close the download.");
+        await Assert.That(storage.DisposedDownloads).IsEqualTo(1).Because("Failed deserialization must also close the download.");
     }
 
-    [TestCase(2)]
-    [TestCase(51)]
+    [Test]
+    [Arguments(2)]
+    [Arguments(51)]
     public async Task GetAllTestRunRecordsDisposesEveryDownload(int availableRecords)
     {
         using var storage = new StorageHandler(availableRecords);
@@ -354,10 +363,9 @@ public class AzureStorageDataStoreTests
 
         var records = (await CreateStore(client).GetAllTestRunRecords()).ToArray();
 
-        Assert.That(records, Has.Length.EqualTo(Math.Min(availableRecords, 50)));
-        Assert.That(storage.Downloads, Has.Count.EqualTo(records.Length));
-        Assert.That(storage.DisposedDownloads, Is.EqualTo(records.Length),
-            "All downloads must be closed before returning, including when the record limit applies.");
+        await Assert.That(records.Length).IsEqualTo(Math.Min(availableRecords, 50));
+        await Assert.That(storage.Downloads).Count().IsEqualTo(records.Length);
+        await Assert.That(storage.DisposedDownloads).IsEqualTo(records.Length).Because("All downloads must be closed before returning, including when the record limit applies.");
     }
 
     [Test]
@@ -372,12 +380,12 @@ public class AzureStorageDataStoreTests
 
         var records = (await store.GetAllTestRunRecords()).ToArray();
 
-        Assert.That(records.Select(record => record.RecordId),
-            Is.EqualTo(Enumerable.Range(25, 50).Reverse().Select(StorageHandler.Name)));
-        Assert.That(storage.Downloads, Has.Count.EqualTo(50));
-        Assert.That(storage.ListRequests, Is.EqualTo(3));
-        Assert.That(storage.Deletes, Is.Zero);
-        Assert.That(storage.DisposedDownloads, Is.EqualTo(50));
+        await Assert.That(records.Select(record => record.RecordId))
+            .IsEquivalentTo(Enumerable.Range(25, 50).Reverse().Select(StorageHandler.Name).Cast<string?>(), CollectionOrdering.Matching);
+        await Assert.That(storage.Downloads).Count().IsEqualTo(50);
+        await Assert.That(storage.ListRequests).IsEqualTo(3);
+        await Assert.That(storage.Deletes).IsZero();
+        await Assert.That(storage.DisposedDownloads).IsEqualTo(50);
     }
 
     [Test]
@@ -389,8 +397,9 @@ public class AzureStorageDataStoreTests
 
         var records = await CreateStore(client).GetAllTestRunRecords();
 
-        Assert.That(records.Select(record => record.RecordId), Is.EqualTo(new[] { StorageHandler.Name(0) }));
-        Assert.That(storage.Deletes, Is.Zero);
+        await Assert.That(records.Select(record => record.RecordId))
+            .IsEquivalentTo(new[] { StorageHandler.Name(0) }.Cast<string?>(), CollectionOrdering.Matching);
+        await Assert.That(storage.Deletes).IsZero();
     }
 
     [Test]
@@ -402,7 +411,7 @@ public class AzureStorageDataStoreTests
         try
         {
             await storage.FirstBatchStarted.Task.WaitAsync(TimeSpan.FromSeconds(10));
-            Assert.That(storage.PeakDownloads, Is.EqualTo(8));
+            await Assert.That(storage.PeakDownloads).IsEqualTo(8);
         }
         finally
         {
@@ -410,9 +419,9 @@ public class AzureStorageDataStoreTests
             await listing;
         }
 
-        Assert.That(storage.PeakDownloads, Is.InRange(2, 8));
-        Assert.That((await listing).Select(record => record.RecordId),
-            Is.EqualTo(Enumerable.Range(10, 50).Reverse().Select(StorageHandler.Name)));
+        await Assert.That(storage.PeakDownloads).IsGreaterThanOrEqualTo(2).And.IsLessThanOrEqualTo(8);
+        await Assert.That((await listing).Select(record => record.RecordId))
+            .IsEquivalentTo(Enumerable.Range(10, 50).Reverse().Select(StorageHandler.Name).Cast<string?>(), CollectionOrdering.Matching);
     }
 
     [Test]
@@ -420,8 +429,8 @@ public class AzureStorageDataStoreTests
     {
         using var storage = new StorageHandler(0);
         using var client = new HttpClient(storage);
-        Assert.That(await CreateStore(client).GetAllTestRunRecords(), Is.Empty);
-        Assert.That(storage.Downloads, Is.Empty);
+        await Assert.That(await CreateStore(client).GetAllTestRunRecords()).IsEmpty();
+        await Assert.That(storage.Downloads).IsEmpty();
     }
 
     [Test]
@@ -433,8 +442,8 @@ public class AzureStorageDataStoreTests
 
         var records = await CreateStore(client).GetAllTestRunRecords();
 
-        Assert.That(records.Select(record => record.RecordId),
-            Is.EqualTo(Enumerable.Range(0, 50).Select(StorageHandler.Name)));
+        await Assert.That(records.Select(record => record.RecordId))
+            .IsEquivalentTo(Enumerable.Range(0, 50).Select(StorageHandler.Name).Cast<string?>(), CollectionOrdering.Matching);
     }
 
     [Test]
@@ -445,9 +454,9 @@ public class AzureStorageDataStoreTests
 
         var records = await CreateStore(client).GetAllTestRunRecords();
 
-        Assert.That(records.Select(record => record.RecordId),
-            Is.EqualTo(new[] { StorageHandler.Name(2), StorageHandler.Name(1) }));
-        Assert.That(storage.Deletes, Is.Zero);
+        await Assert.That(records.Select(record => record.RecordId))
+            .IsEquivalentTo(new[] { StorageHandler.Name(2), StorageHandler.Name(1) }.Cast<string?>(), CollectionOrdering.Matching);
+        await Assert.That(storage.Deletes).IsZero();
     }
 
     [Test]
@@ -456,10 +465,10 @@ public class AzureStorageDataStoreTests
         using var storage = new StorageHandler(1) { FailedDownloadStatus = HttpStatusCode.Forbidden };
         using var client = new HttpClient(storage);
 
-        var exception = await Assert.ThrowsAsync<Azure.RequestFailedException>(async () =>
+        var exception = await Assert.ThrowsExactlyAsync<Azure.RequestFailedException>(async () =>
             await CreateStore(client).GetAllTestRunRecords());
 
-        Assert.That(exception!.Status, Is.EqualTo(403));
+        await Assert.That(exception!.Status).IsEqualTo(403);
     }
 
     private static AzureStorageDataStore CreateStore(HttpClient client)
@@ -512,14 +521,14 @@ public class AzureStorageDataStoreTests
                 return new HttpResponseMessage(HttpStatusCode.Accepted);
             }
 
-            Assert.That(request.Method, Is.EqualTo(HttpMethod.Get));
+            await Assert.That(request.Method).IsEqualTo(HttpMethod.Get);
             if (request.RequestUri!.Query.Contains("comp=list"))
             {
                 Interlocked.Increment(ref ListRequests);
                 var query = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(request.RequestUri.Query);
                 query.TryGetValue("marker", out var marker);
                 if (AttachmentReport != null)
-                    Assert.That(query["prefix"].ToString(), Is.EqualTo($"{AttachmentReport}/attachments/"));
+                    await Assert.That(query["prefix"].ToString()).IsEqualTo($"{AttachmentReport}/attachments/");
                 var start = string.IsNullOrEmpty(marker) ? 0 : int.Parse(marker.ToString(), CultureInfo.InvariantCulture);
                 var end = Math.Min(start + 25, count);
                 var xml = new XElement("EnumerationResults",

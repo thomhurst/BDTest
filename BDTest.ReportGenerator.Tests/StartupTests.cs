@@ -1,3 +1,4 @@
+using TUnit.Assertions.Enums;
 using BDTest.Maps;
 using BDTest.Razor.Reports.Interfaces;
 using BDTest.Razor.Reports.Models;
@@ -9,21 +10,21 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using NUnit.Framework;
 
 namespace BDTest.ReportGenerator.Tests;
 
 public class StartupTests
 {
-    [TestCase(null)]
-    [TestCase("")]
-    [TestCase(" ")]
-    [TestCase("invalid-connection-string")]
+    [Test]
+    [Arguments(null)]
+    [Arguments("")]
+    [Arguments(" ")]
+    [Arguments("invalid-connection-string")]
     public async Task Invalid_storage_configuration_fails_startup_with_the_setting_name(string? connectionString)
     {
         using var host = CreateHost(new RecordingStore(), connectionString);
-        var exception = await Assert.ThrowsAsync<OptionsValidationException>(() => host.StartAsync());
-        Assert.That(exception!.Message, Does.Contain("AzureStorage:ConnectionString"));
+        var exception = await Assert.ThrowsExactlyAsync<OptionsValidationException>(() => host.StartAsync());
+        await Assert.That(exception!.Message).Contains("AzureStorage:ConnectionString");
     }
 
     [Test]
@@ -35,7 +36,7 @@ public class StartupTests
         try
         {
             await store.LoadStarted.Task.WaitAsync(TimeSpan.FromSeconds(10));
-            Assert.That(starting.IsCompleted, Is.False);
+            await Assert.That(starting.IsCompleted).IsFalse();
         }
         finally
         {
@@ -44,8 +45,9 @@ public class StartupTests
         }
 
         var records = await host.Services.GetRequiredService<IDataRepository>().GetAllTestRunRecords();
-        Assert.That(records.Select(record => record.RecordId), Is.EqualTo(new[] { "startup-report" }));
-        Assert.That(store.Loads, Is.EqualTo(1));
+        await Assert.That(records.Select(record => record.RecordId))
+            .IsEquivalentTo(new[] { "startup-report" }.Cast<string?>(), CollectionOrdering.Matching);
+        await Assert.That(store.Loads).IsEqualTo(1);
         await host.StopAsync();
     }
 
@@ -57,9 +59,9 @@ public class StartupTests
         store.ReleaseLoad.SetResult();
         var logger = new RecordingLogger();
         using var host = CreateHost(store, logger: logger);
-        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => host.StartAsync());
-        Assert.That(exception, Is.SameAs(failure));
-        Assert.That(logger.Errors, Does.Contain(failure));
+        var exception = await Assert.ThrowsExactlyAsync<InvalidOperationException>(() => host.StartAsync());
+        await Assert.That(exception).IsSameReferenceAs(failure);
+        await Assert.That(logger.Errors).Contains(failure);
     }
 
     [Test]
@@ -69,10 +71,10 @@ public class StartupTests
         var store = new RecordingStore { InitializationFailure = failure };
         var logger = new RecordingLogger();
         using var host = CreateHost(store, logger: logger);
-        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => host.StartAsync());
-        Assert.That(exception, Is.SameAs(failure));
-        Assert.That(logger.Errors, Does.Contain(failure));
-        Assert.That(store.Loads, Is.Zero);
+        var exception = await Assert.ThrowsExactlyAsync<InvalidOperationException>(() => host.StartAsync());
+        await Assert.That(exception).IsSameReferenceAs(failure);
+        await Assert.That(logger.Errors).Contains(failure);
+        await Assert.That(store.Loads).IsZero();
     }
 
     [Test]
@@ -85,14 +87,14 @@ public class StartupTests
         try
         {
             await store.InitializationStarted.Task.WaitAsync(TimeSpan.FromSeconds(10));
-            Assert.That(starting.IsCompleted, Is.False);
+            await Assert.That(starting.IsCompleted).IsFalse();
         }
         finally
         {
             cancellation.Cancel();
         }
-        await Assert.ThrowsAsync(Is.InstanceOf<OperationCanceledException>(), () => starting);
-        Assert.That(store.Loads, Is.Zero);
+        await Assert.ThrowsAsync<OperationCanceledException>(() => starting);
+        await Assert.That(store.Loads).IsZero();
     }
 
     private static IHost CreateHost(RecordingStore store, string? connectionString = "UseDevelopmentStorage=true", RecordingLogger? logger = null)
@@ -134,7 +136,7 @@ public class StartupTests
 
         public async Task<IEnumerable<TestRunSummary>> GetAllTestRunRecords()
         {
-            Assert.That(_initialized, Is.True, "Storage must be initialized before warm-up");
+            await Assert.That(_initialized).IsTrue().Because("Storage must be initialized before warm-up");
             Interlocked.Increment(ref Loads);
             LoadStarted.TrySetResult();
             await ReleaseLoad.Task;

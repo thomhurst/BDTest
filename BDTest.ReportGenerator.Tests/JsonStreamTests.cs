@@ -1,15 +1,15 @@
+using TUnit.Assertions.Enums;
 using System.Text;
 using BDTest.Maps;
 using BDTest.ReportGenerator.RazorServer;
 using Newtonsoft.Json;
-using NUnit.Framework;
 
 namespace BDTest.ReportGenerator.Tests;
 
 public class JsonStreamTests
 {
     [Test]
-    public void ReportStreamContainsCompleteUtf8JsonWithoutABom()
+    public async Task ReportStreamContainsCompleteUtf8JsonWithoutABom()
     {
         var model = new BDTestOutputModel
         {
@@ -18,30 +18,33 @@ public class JsonStreamTests
         };
         using var stream = model.AsStream();
 
-        Assert.That(stream.CanRead, Is.True);
-        Assert.That(stream.Position, Is.Zero);
+        await Assert.That(stream.CanRead).IsTrue();
+        await Assert.That(stream.Position).IsZero();
         using var copy = new MemoryStream();
         stream.CopyTo(copy);
-        Assert.That(copy.ToArray(), Is.EqualTo(Encoding.UTF8.GetBytes(ReportJson.SerializeObject(model))));
+        await Assert.That(copy.ToArray())
+            .IsEquivalentTo(Encoding.UTF8.GetBytes(ReportJson.SerializeObject(model)), CollectionOrdering.Matching);
     }
 
-    [TestCase(null)]
-    [TestCase("café \"quoted\"\n")]
-    public void GenericStreamSerializesNullAndStringValues(string? value)
+    [Test]
+    [Arguments(null)]
+    [Arguments("café \"quoted\"\n")]
+    public async Task GenericStreamSerializesNullAndStringValues(string? value)
     {
         using var stream = value.AsStream<string?>();
         using var reader = new StreamReader(stream);
-        Assert.That(reader.ReadToEnd(), Is.EqualTo(ReportJson.SerializeObject(value)));
+        await Assert.That(reader.ReadToEnd()).IsEqualTo(ReportJson.SerializeObject(value));
     }
 
-    [TestCase(null)]
-    [TestCase("")]
-    [TestCase("{\"value\":\"café 🧪\"}")]
-    public void StringOverloadPreservesRawText(string? value)
+    [Test]
+    [Arguments(null)]
+    [Arguments("")]
+    [Arguments("{\"value\":\"café 🧪\"}")]
+    public async Task StringOverloadPreservesRawText(string? value)
     {
         using var stream = value.AsStream();
-        Assert.That(stream.Position, Is.Zero);
+        await Assert.That(stream.Position).IsZero();
         using var reader = new StreamReader(stream);
-        Assert.That(reader.ReadToEnd(), Is.EqualTo(value ?? string.Empty));
+        await Assert.That(reader.ReadToEnd()).IsEqualTo(value ?? string.Empty);
     }
 }

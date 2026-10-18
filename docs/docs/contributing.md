@@ -22,13 +22,14 @@ dotnet build BDTest.sln
 dotnet test BDTest.Tests/BDTest.Tests.csproj
 dotnet test BDTest.Tests/BDTest.Tests.csproj --filter "FullyQualifiedName~SomeTestName"
 
-# TUnit adapter and pipeline suites use Microsoft.Testing.Platform
+# TUnit adapter, pipeline and report-generator suites use Microsoft.Testing.Platform
 dotnet run --project BDTest.TUnit.Tests
 dotnet run --project BDTest.Pipeline.Tests
+dotnet run --project BDTest.ReportGenerator.Tests
 dotnet run --project BDTest.TUnit.Tests -- --treenode-filter "/*/*/TUnitScenarioTests/*"
 ```
 
-The core `BDTest.Tests` and report-generator suites still use NUnit. CI evaluates
+The core `BDTest.Tests` suite still uses NUnit. CI evaluates
 Release `PackageReference` items to choose the TUnit runner; filenames and
 `OutputType=Exe` do not decide the runner. xUnit v3 keeps its VSTest invocation.
 Both paths save TRX results under `artifacts/test-results/<project>`.

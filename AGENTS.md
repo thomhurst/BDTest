@@ -20,6 +20,7 @@ dotnet test BDTest.Tests/BDTest.Tests.csproj --filter "FullyQualifiedName~SomeTe
 # TUnit suites use Microsoft.Testing.Platform — use dotnet run, not dotnet test
 dotnet run --project BDTest.TUnit.Tests
 dotnet run --project BDTest.Pipeline.Tests
+dotnet run --project BDTest.ReportGenerator.Tests
 dotnet run --project BDTest.TUnit.Tests -- --treenode-filter "/*/*/TUnitScenarioTests/*"
 
 # Documentation site (Docusaurus, Node 24)
@@ -55,7 +56,7 @@ Core and Razor reports grant `InternalsVisibleTo` only to `BDTest.Tests`, using 
 - `BDTest.ReportGenerator.RazorServer`: deployable report server using that library, with an Azure Blob data store and Azure AD auth. Not packed.
 
 **Tests / samples**
-- `BDTest.Pipeline.Tests` uses TUnit; `BDTest.ReportGenerator.Tests` and the core `BDTest.Tests` suite remain NUnit pending their separate migrations.
+- `BDTest.Pipeline.Tests` and `BDTest.ReportGenerator.Tests` use TUnit; the core `BDTest.Tests` suite remains NUnit pending its separate migration.
 - `BDTest.Example`: sample NUnit tests, also referenced by `BDTest.Tests`.
 - `BDTest.Tests` (NUnit), `BDTest.xUnit.Tests`, `BDTest.TUnit.Tests`: the framework-specific tests focus on unique-ID/context isolation under parallel execution.
 
