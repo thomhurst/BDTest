@@ -38,7 +38,7 @@ public abstract class BDTestBase
 
     private TestExecution CurrentExecution => _execution.Value ?? Volatile.Read(ref _lastExecution);
 
-    internal TestMethodMetadata TestMetadata => CurrentExecution?.Metadata ?? TestMethodMetadata.Get(GetType(), null);
+    internal TestMethodMetadata TestMetadata => CurrentExecution?.Metadata ?? TestMethodMetadata.Get(TestInstance.GetType(), null);
 
     // Retained for existing custom adapters that do not call MarkTestAsStarted.
     private static string StaticBDTestExecutionId =>
@@ -254,7 +254,7 @@ public abstract class BDTestBase
         run.ThrowIfDisposed();
         // Seed the base property with this execution's ID before resolving legacy
         // overrides, including overrides that decorate base.BDTestExecutionId.
-        var execution = new TestExecution(frameworkTestId, run, TestMethodMetadata.Get(GetType(), testMethod));
+        var execution = new TestExecution(frameworkTestId, run, TestMethodMetadata.Get(TestInstance.GetType(), testMethod));
         _execution.Value = execution;
         execution.Id = BDTestExecutionId;
         Volatile.Write(ref _lastExecution, execution);

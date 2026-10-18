@@ -19,8 +19,16 @@ public class StructuredStepArgumentTests : BDTestBase
     private bool _setBeforeStep;
     private StepTable Table => StepTable.From(["Value"], [++_reads]);
 
+    [SetUp]
+    public void BindMetadata() => BeginTest(TestContext.CurrentContext.Test.ID,
+        global::NUnit.Framework.Internal.TestExecutionContext.CurrentContext.CurrentTest.Method.MethodInfo);
+
     [TearDown]
-    public void DisposeRun() => TestRun.Dispose();
+    public void DisposeRun()
+    {
+        EndTest();
+        TestRun.Dispose();
+    }
 
     [Test]
     public void Object_tables_snapshot_public_properties_and_null_cells()

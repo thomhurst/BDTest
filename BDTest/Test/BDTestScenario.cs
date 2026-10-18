@@ -1,3 +1,5 @@
+using System.Reflection;
+
 namespace BDTest.Test;
 
 /// <summary>Creates scenario hosts for test classes that do not inherit a BDTest base class.</summary>
@@ -35,6 +37,9 @@ public sealed class BDTestScenario<TContext> : AbstractContextBDTestBase<TContex
     /// <summary>Starts capture and context ownership for a unique framework test execution.</summary>
     /// <remarks>Call synchronously before asynchronous setup. IDs must distinguish data rows and repeats.</remarks>
     public new void BeginTest(string frameworkTestId) => base.BeginTest(frameworkTestId);
+
+    /// <summary>Starts an execution with the owner's exact test method supplied by the runner.</summary>
+    public new void BeginTest(string frameworkTestId, MethodInfo testMethod) => base.BeginTest(frameworkTestId, testMethod);
 
     /// <summary>Completes this execution and clears its context and output state. Safe to repeat.</summary>
     public new void EndTest() => base.EndTest();
