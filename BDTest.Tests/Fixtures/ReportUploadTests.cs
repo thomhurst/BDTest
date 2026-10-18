@@ -432,6 +432,27 @@ public partial class ReportUploadTests
         Assert.That(server.Options.AdditionalImageSources[0], Is.EqualTo("http://images.example:8080"));
     }
 
+    [TestCase("bdtest/ping", false)]
+    [TestCase("bdtest/assets/css/bdtest-report.css", true)]
+    public async Task ConfiguredImagePolicyPreservesResponseCaching(string path, bool isAsset)
+    {
+        await using var server = await UploadServer.Start(options =>
+            options.AdditionalImageSources = new[] { "http://images.example" });
+        using var response = await server.Client.GetAsync(path);
+
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        Assert.That(response.Headers.GetValues("Content-Security-Policy").Single(),
+            Does.Contain("img-src 'self' data: https: http://images.example;"));
+        var cache = response.Headers.CacheControl;
+        Assert.That(cache, Is.Not.Null);
+        Assert.That(cache.NoStore, Is.EqualTo(!isAsset));
+        if (isAsset)
+        {
+            Assert.That(cache.Public, Is.True);
+            Assert.That(cache.MaxAge, Is.EqualTo(TimeSpan.FromDays(1)));
+        }
+    }
+
     [TestCase(null)]
     [TestCase("")]
     [TestCase(" ")]
