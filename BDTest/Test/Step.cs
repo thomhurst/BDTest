@@ -1,5 +1,4 @@
 using System.Diagnostics;
-using System.Linq.Expressions;
 using System.Runtime.ExceptionServices;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -62,19 +61,22 @@ public class Step
     [JsonInclude]
     public List<string> Diagnostics { get; internal set; } = new();
 
+    [JsonIgnore] private RunOptions Options { get; } = RunOptions.Legacy;
+
     private bool _shouldSkip;
-    private readonly string _stepTextTemplate;
+    private string _stepTextTemplate;
     private string _generatedStepText;
 
-    internal Step(Runnable runnable, StepType stepType, string scenarioId, string reportId)
+    internal Step(Runnable runnable, StepType stepType, string scenarioId, string reportId, BDTestRun run = null)
     {
+        Options = (run ?? BDTestRun.Default).Options;
         Guid = System.Guid.NewGuid().ToString("N");
         ScenarioId = scenarioId;
         Runnable = runnable;
         StepType = stepType;
         ReportId = reportId;
         // Construction and reporting retain placeholders without running user argument expressions.
-        _stepTextTemplate = StepTextHelper.GetStepTextTemplate(Runnable.ExpressionBody, Runnable.AcceptsCancellationToken);
+        _stepTextTemplate = Runnable.Definition.GetText();
         _generatedStepText = _stepTextTemplate;
         SetStepText();
     }
@@ -82,6 +84,7 @@ public class Step
     // Copy only the step definition. Execution results belong to one scenario.
     internal Step(Step source, string scenarioId)
     {
+        Options = source.Options;
         Guid = System.Guid.NewGuid().ToString("N");
         ScenarioId = scenarioId;
         ReportId = source.ReportId;
@@ -92,6 +95,7 @@ public class Step
         StepText = $"{StepPrefix} {_stepTextTemplate}";
         OverriddenStepText = source.OverriddenStepText;
         Timeout = source.Timeout;
+        _explicitArguments = source._explicitArguments;
     }
 
     [JsonConstructor]
@@ -106,6 +110,21 @@ public class Step
     [JsonIgnore]
     internal Func<string> OverriddenStepText { get; set; }
 
+    private IReadOnlyList<Func<object>> _explicitArguments;
+    [JsonIgnore]
+    internal IReadOnlyList<Func<object>> ExplicitArguments
+    {
+        get => _explicitArguments;
+        set
+        {
+            _explicitArguments = value;
+            if (Runnable == null) return;
+            _stepTextTemplate = Runnable.Definition.GetText(explicitArguments: value);
+            _generatedStepText = _stepTextTemplate;
+            StepText = $"{StepPrefix} {_stepTextTemplate}";
+        }
+    }
+
     [JsonIgnore] internal Dictionary<string, string> ExampleValues { get; set; }
 
     private string SubstituteExampleValues(string text) => ExampleValues == null ? text
@@ -118,6 +137,7 @@ public class Step
     {
         Runnable = null;
         OverriddenStepText = null;
+        ExplicitArguments = null;
     }
 
     internal void ResetData()
@@ -149,7 +169,7 @@ public class Step
 
         if (evaluateArguments)
         {
-            _generatedStepText = StepTextHelper.GetStepText(Runnable.ExpressionBody, Runnable.AcceptsCancellationToken, Diagnostics.Add);
+            _generatedStepText = Runnable.Definition.GetText(true, Diagnostics.Add, ExplicitArguments, Options.Converters);
         }
         StepText = SubstituteExampleValues($"{StepPrefix} {_generatedStepText}");
     }
@@ -157,8 +177,7 @@ public class Step
     private void SetShouldSkip()
     {
         _shouldSkip = false;
-        var methodCallExpression = Runnable.ExpressionBody as MethodCallExpression;
-        var methodInfo = methodCallExpression?.Method;
+        var methodInfo = Runnable.Definition.Method;
 
         var skipStepAttributes = (methodInfo?.GetCustomAttributes(
                                       typeof(SkipStepAttribute), true) ??
@@ -171,7 +190,7 @@ public class Step
 
         foreach (var skipStepAttributeOnStep in skipStepAttributes)
         {
-            if (BDTestSettings.GlobalSkipStepRules.Rules.Any(skipStepRuleInSettings =>
+            if (Options.SkipStepRules.Any(skipStepRuleInSettings =>
                     skipStepRuleInSettings.AssociatedSkipAttributeType == skipStepAttributeOnStep.GetType()
                     && skipStepRuleInSettings.Condition(skipStepAttributeOnStep)))
             {
@@ -186,8 +205,8 @@ public class Step
         SetShouldSkip();
 
         // Keep both subscriptions stable for this step, including its after hooks.
-        var beforeHooks = BDTestSettings.BeforeStepHooks;
-        var afterHooks = BDTestSettings.AfterStepHooks;
+        var beforeHooks = Options.BeforeStep;
+        var afterHooks = Options.AfterStep;
         Exception executionException = null;
         var beforeHooksCompleted = false;
         var stopwatch = Stopwatch.StartNew();
@@ -245,7 +264,7 @@ public class Step
             SetExceptionResult(e);
             if (Status == Status.Failed)
             {
-                await Console.Out.WriteLineAsync($"{Environment.NewLine}{e.GetType().Name} on '{StepPrefix}' step executing '{Runnable.GetExpressionString()}'");
+                await Console.Out.WriteLineAsync($"{Environment.NewLine}{e.GetType().Name} on '{StepPrefix}' step executing '{StepText}'");
             }
             ExceptionDispatchInfo.Capture(e).Throw();
         }
@@ -317,15 +336,15 @@ public class Step
         {
             Status = Status.NotImplemented;
         }
-        else if (!TimedOut && BDTestSettings.CustomExceptionSettings.SuccessExceptionTypes.Contains(exception.GetType()))
+        else if (!TimedOut && Options.SuccessExceptionTypes.Contains(exception.GetType()))
         {
             Status = Status.Passed;
         }
-        else if (!TimedOut && BDTestSettings.CustomExceptionSettings.SkipExceptionTypes.Contains(exception.GetType()))
+        else if (!TimedOut && Options.SkipExceptionTypes.Contains(exception.GetType()))
         {
             Status = Status.Skipped;
         }
-        else if (!TimedOut && BDTestSettings.CustomExceptionSettings.InconclusiveExceptionTypes.Contains(exception.GetType()))
+        else if (!TimedOut && Options.InconclusiveExceptionTypes.Contains(exception.GetType()))
         {
             Status = Status.Inconclusive;
         }
@@ -421,7 +440,7 @@ public class Step
 
     private bool ShouldSkip()
     {
-        if ((StepType == StepType.When || StepType == StepType.ButWhen) && BDTestSettings.Debug.ShouldSkipWhenStep)
+        if ((StepType == StepType.When || StepType == StepType.ButWhen) && Options.ShouldSkipWhenStep)
         {
             return true;
         }

@@ -20,6 +20,14 @@ public abstract class StepBuilder : BuildableTest
         return (T) this;
     }
 
+    protected T WithArgs<T>(Func<object>[] arguments) where T : StepBuilder
+    {
+        if (arguments == null) throw new ArgumentNullException(nameof(arguments));
+        if (arguments.Any(argument => argument == null)) throw new ArgumentException("Argument readers cannot be null.", nameof(arguments));
+        ExistingSteps.Last().ExplicitArguments = (Func<object>[])arguments.Clone();
+        return (T)this;
+    }
+
     // First Test Construction - Given or When
     internal StepBuilder(Runnable runnable, string callerMember, string callerFile, string testId, string reportId, StepType stepType, BDTestBase bdTestBase)
     {
@@ -31,12 +39,12 @@ public abstract class StepBuilder : BuildableTest
         CallerFile = callerFile;
         TestId = testId;
         ReportId = reportId;
-        
+
         Guid = System.Guid.NewGuid().ToString();
         TestOutputData.TestId = Guid;
         TestOutputData.FrameworkExecutionId = testId;
-            
-        ExistingSteps = new List<Step> { new(runnable, stepType, Guid, ReportId) };
+
+        ExistingSteps = new List<Step> { new(runnable, stepType, Guid, ReportId, Run) };
             
         Run.Store.RegisterPending(this);
             
@@ -69,13 +77,13 @@ public abstract class StepBuilder : BuildableTest
         // An extension replaces its prefix in the not-run list, but sibling
         // extensions remain independent scenarios with their own step state.
         ExistingSteps = previousSteps.Select(step => new Step(step, Guid)).ToList();
-        ExistingSteps.Add(new Step(runnable, StepType, Guid, ReportId));
+        ExistingSteps.Add(new Step(runnable, StepType, Guid, ReportId, Run));
 
         Run.Store.NotRun.TryRemove(previousPartiallyBuiltTest.Guid, out _);
         Run.Store.RegisterPending(this);
         TestOutputData.TestId = Guid;
     }
-        
+
     private void SetScenarioText()
     {
         var scenarioTextWithParameters = ScenarioTextHelper.GetScenarioTextWithParameters(this.GetTestMethod(), CallerMember);

@@ -1,6 +1,5 @@
 using System.Collections;
 using System.Diagnostics;
-using System.Linq.Expressions;
 using System.Reflection;
 using System.Threading;
 using BDTest.Attributes;
@@ -12,120 +11,95 @@ namespace BDTest.Helpers;
 
 public static class StepTextHelper
 {
-    public static string GetStepText(Expression<Action> action)
+    /// <summary>Renders a selected step method using explicit, lazy argument readers.</summary>
+    public static string GetStepText(MethodInfo method, IReadOnlyList<Func<object>> arguments,
+        bool omitCancellationToken = false, Action<string> diagnostic = null)
     {
-        return GetStepText(action?.Body as MethodCallExpression);
-    }
-        
-    public static string GetStepText(Expression<Func<Task>> action)
-    {
-        return GetStepText(action?.Body as MethodCallExpression);
-    }
-        
-    public static string GetStepText(Expression expression)
-    {
-        return GetStepText(expression as MethodCallExpression);
-    }
-        
-    internal static string GetStepText(Expression expression, bool omitCancellationToken)
-    {
-        return GetStepText(expression as MethodCallExpression, omitCancellationToken);
+        if (method == null) throw new ArgumentNullException(nameof(method));
+        return GetStepText(method, arguments, omitCancellationToken, diagnostic, evaluateArguments: true);
     }
 
-    internal static string GetStepTextTemplate(Expression expression, bool omitCancellationToken)
+    internal static string GetStepText(MethodInfo method, IReadOnlyList<Func<object>> arguments,
+        bool omitCancellationToken, Action<string> diagnostic, bool evaluateArguments,
+        IReadOnlyList<StepTextConverterRegistration> converters = null)
     {
-        return GetStepText(expression as MethodCallExpression, omitCancellationToken, evaluateArguments: false);
-    }
-
-    internal static string GetStepText(Expression expression, bool omitCancellationToken, Action<string> diagnostic)
-    {
-        return GetStepText(expression as MethodCallExpression, omitCancellationToken, diagnostic);
-    }
-
-    private static string GetStepText(MethodCallExpression methodCallExpression, bool omitCancellationToken = false,
-        Action<string> diagnostic = null, bool evaluateArguments = true)
-    {
-        if (methodCallExpression == null)
+        var parameters = method.GetParameters();
+        var visibleParameters = parameters.Where(p => !omitCancellationToken || p.ParameterType != typeof(CancellationToken)).ToArray();
+        if (evaluateArguments && arguments != null && arguments.Count != parameters.Length && arguments.Count != visibleParameters.Length)
         {
-            return string.Empty;
+            throw new ArgumentException($"Expected {visibleParameters.Length} step text argument readers, but received {arguments.Count}.", nameof(arguments));
         }
-            
-        var arguments = GetMethodArguments(methodCallExpression, omitCancellationToken, evaluateArguments, diagnostic);
 
-        var methodInfo = methodCallExpression.Method;
-
-        var stepTextAttribute = (StepTextAttribute) methodInfo.GetCustomAttributes(typeof(StepTextAttribute), true).FirstOrDefault();
-            
-        var customStepText =
-            stepTextAttribute?.Text;
-
-        var methodNameHumanized = $"{LowercaseFirstLetter(methodInfo.Name.Humanize())} {string.Join(" ", arguments)}".Trim();
-
-        if (customStepText != null)
+        var values = visibleParameters.Select((parameter, index) =>
         {
-            try
+            var argumentIndex = arguments?.Count == parameters.Length ? parameter.Position : index;
+            return evaluateArguments && arguments != null
+                ? GetArgumentValue(arguments[argumentIndex], parameter.Name, diagnostic, converters)
+                : $"{{{parameter.Name}}}";
+        }).ToArray();
+
+        var attribute = method.GetCustomAttribute<StepTextAttribute>(inherit: true);
+        if (attribute?.Text == null)
+        {
+            var name = method.Name.Humanize();
+            if (!string.IsNullOrWhiteSpace(name) && char.IsUpper(name[0]))
             {
-                customStepText = UseStepTextParameterOverrides(stepTextAttribute);
-                customStepText = string.Format(customStepText, arguments.Cast<object>().ToArray());
+                name = char.ToLower(name[0]) + name.Substring(1);
             }
-            catch (Exception exception)
-            {
-                throw new ArgumentException(
-                    $"Step Text arguments are wrong.{Environment.NewLine}Template is: {customStepText}{Environment.NewLine}Arguments are {string.Join(",", arguments)}", exception);
-            }
+            return $"{name} {string.Join(" ", values)}".Trim();
         }
 
-        return customStepText ?? methodNameHumanized;
-    }
-
-    private static string LowercaseFirstLetter(string input)
-    {
-        if (!string.IsNullOrWhiteSpace(input) && char.IsUpper(input[0]))
+        var template = attribute.Text;
+        try
         {
-            return  char.ToLower(input[0]) + input.Substring(1);
+            foreach (var parameterOverride in attribute.StepTextParameterOverrides)
+            {
+                var parts = parameterOverride.Split(new[] { ':' }, 2);
+                template = template.Replace($"{{{parts[0]}}}", parts[1]);
+            }
+            return string.Format(template, values.Cast<object>().ToArray());
         }
-
-        return input;
-    }
-        
-    private static List<string> GetMethodArguments(MethodCallExpression methodCallExpression, bool omitCancellationToken,
-        bool evaluateArguments, Action<string> diagnostic)
-    {
-        var parameters = methodCallExpression.Method.GetParameters();
-        return methodCallExpression.Arguments.Select((argument, index) => new { Expression = argument, Name = parameters[index].Name })
-            .Where(argument => !omitCancellationToken || argument.Expression.Type != typeof(CancellationToken))
-            .Select(argument => evaluateArguments
-                ? GetExpressionValue(argument.Expression, argument.Name, diagnostic) ?? "null"
-                : $"{{{argument.Name}}}")
-            .ToList();
+        catch (Exception exception)
+        {
+            throw new ArgumentException(
+                $"Step Text arguments are wrong.{Environment.NewLine}Template is: {template}{Environment.NewLine}Arguments are {string.Join(",", values)}", exception);
+        }
     }
 
-    private static string GetExpressionValue(Expression argument, string name, Action<string> diagnostic)
+    internal static string GetArgumentValue(Func<object> argument, string name, Action<string> diagnostic,
+        IReadOnlyList<StepTextConverterRegistration> converters = null)
     {
         try
         {
-            var argumentValue = argument is ConstantExpression constantExpression
-                ? constantExpression.Value
-                : Expression.Lambda(Expression.Convert(argument, argument.Type)).Compile().DynamicInvoke();
-
+            var argumentValue = argument();
             if (argumentValue == null)
             {
                 return "null";
             }
 
-            foreach (var converter in BDTestSettings.GetCustomStringConvertersSnapshot())
+            if (converters != null)
             {
-                var converterInterface = converter.GetType().GetInterfaces()
-                    .Where(type => type.IsGenericType && type.GetGenericTypeDefinition() == typeof(IStepTextStringConverter<>))
-                    .Where(type => type.GetGenericArguments()[0].IsInstanceOfType(argumentValue))
-                    .OrderByDescending(type => type.GetGenericArguments()[0] == argumentValue.GetType())
-                    .FirstOrDefault();
-
-                if (converterInterface != null)
+                foreach (var converter in converters)
                 {
-                    // Invoke through the interface to support explicit implementations.
-                    var method = converterInterface.GetMethod(nameof(IStepTextStringConverter<object>.ConvertToString));
-                    return method.Invoke(converter, new[] { argumentValue }) as string;
+                    if (converter.Matches(argumentValue)) return converter.Convert(argumentValue) ?? "null";
+                }
+            }
+            else
+            {
+                foreach (var converter in BDTestSettings.GetCustomStringConvertersSnapshot())
+                {
+                    var converterInterface = converter.GetType().GetInterfaces()
+                        .Where(type => type.IsGenericType && type.GetGenericTypeDefinition() == typeof(IStepTextStringConverter<>))
+                        .Where(type => type.GetGenericArguments()[0].IsInstanceOfType(argumentValue))
+                        .OrderByDescending(type => type.GetGenericArguments()[0] == argumentValue.GetType())
+                        .FirstOrDefault();
+
+                    if (converterInterface != null)
+                    {
+                        // Invoke through the interface to support explicit implementations.
+                        var method = converterInterface.GetMethod(nameof(IStepTextStringConverter<object>.ConvertToString));
+                        return method.Invoke(converter, new[] { argumentValue }) as string ?? "null";
+                    }
                 }
             }
 
@@ -142,7 +116,6 @@ public static class StepTextHelper
                 {
                     entries.Add($"{entry.Key}={entry.Value}");
                 }
-
                 return string.Join(",", entries);
             }
 
@@ -151,24 +124,18 @@ public static class StepTextHelper
                 return string.Join(", ", enumerable.Cast<object>());
             }
 
-            return argumentValue.ToString();
+            return argumentValue.ToString() ?? "null";
         }
-        catch (Exception e)
+        catch (Exception exception)
         {
-            // DynamicInvoke and reflection wrap user exceptions; report the useful cause.
-            while (e is TargetInvocationException && e.InnerException != null)
+            while (exception is TargetInvocationException && exception.InnerException != null)
             {
-                e = e.InnerException;
+                exception = exception.InnerException;
             }
-            var message = $"Step text argument '{name}' could not be evaluated: {e.GetType().Name}: {e.Message}";
+            var message = $"Step text argument '{name}' could not be evaluated: {exception.GetType().Name}: {exception.Message}";
             Debug.WriteLine(message);
             diagnostic?.Invoke(message);
-            return $"<error: {e.GetType().Name}>";
+            return $"<error: {exception.GetType().Name}>";
         }
-    }
-
-    private static string UseStepTextParameterOverrides(StepTextAttribute stepTextAttribute)
-    {
-        return stepTextAttribute.StepTextParameterOverrides.Aggregate(stepTextAttribute.Text, (current, parameterOverride) => current.Replace($"{{{parameterOverride.Split(':')[0]}}}", parameterOverride.Split(new [] {':'}, 2)[1]));
     }
 }

@@ -8,6 +8,12 @@ public class ButWhen : When
     {
     }
 
+    /// <summary>Supplies lazy step-text arguments, evaluated once per executed attempt.</summary>
+    public new ButWhen WithArgs(params Func<object>[] arguments)
+    {
+        return WithArgs<ButWhen>(arguments);
+    }
+
     public new ButWhen WithStepText(Func<string> overridingStepText)
     {
         return WithStepText<ButWhen>(overridingStepText);

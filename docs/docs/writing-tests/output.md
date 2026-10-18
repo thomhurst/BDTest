@@ -12,7 +12,7 @@ BDTest captures everything written to `Console` while a step runs and stores it 
 Output is tracked per test, using the framework's test ID, so parallel tests do not mix their output.
 
 :::note xUnit
-The xUnit adapter does not write to `ITestOutputHelper`. BDTest captures output by replacing `Console.Out`, and reports it in BDTest reports. Write to `ITestOutputHelper` yourself if you also want the output in xUnit's results.
+The xUnit adapter does not write to `ITestOutputHelper`. BDTest captures output by replacing `Console.Out`, and reports it in BDTest reports. Inject `Xunit.ITestOutputHelper` and write to it yourself if you also want the output in xUnit's results.
 :::
 
 ## Setup and teardown output
@@ -78,4 +78,4 @@ The policy restricts schemes, not destination hosts.
 
 ### Raw HTML
 
-`Custom(html)` keeps your markup exactly as written. The report server renders custom output in a sandboxed `iframe` that blocks scripts and navigation. The [standalone HTML report](../reports/html-report.md) embeds it directly, so only use HTML you trust.
+`Custom(html)` keeps your markup exactly as written. Both the report server and the [standalone HTML report](../reports/html-report.md) render custom output in a sandboxed `iframe` with scripts disabled. Links open in new tabs that keep the sandbox restrictions.

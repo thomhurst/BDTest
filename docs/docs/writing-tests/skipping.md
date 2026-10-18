@@ -60,7 +60,7 @@ BDTestSettings.GlobalSkipTestRules.Add(scenario =>
 
 ## Skipping from a step
 
-Throw your framework's skip exception from a step, for example `Skip.Test("reason")` in TUnit or `Assert.Ignore()` in NUnit. The adapters register these exceptions as **skip** exceptions; see [Exception classification](../configuration/exceptions.md).
+Throw your framework's skip exception from a step, for example `Skip.Test("reason")` in TUnit, `Assert.Ignore()` in NUnit or `Assert.Skip("reason")` in xUnit. The adapters register these exceptions as **skip** exceptions; see [Exception classification](../configuration/exceptions.md).
 
 A framework skip exception aborts the scenario without retries. It marks that step and the remaining unexecuted steps as `Skipped` and keeps previously passed steps as `Passed`. Genuine inconclusive exceptions still give `Inconclusive`.
 
@@ -84,6 +84,6 @@ When a whole scenario is skipped, the adapters tell the test runner:
 | NUnit | `Assert.Ignore(reason)`: the test is ignored. |
 | TUnit | Throws `SkipTestException`: the test is skipped. |
 | MSTest | `Assert.Inconclusive(reason)`: the runner shows a skipped or not-executed result. BDTest still records `Skipped`. An explicit `Assert.Inconclusive` inside a step stays `Inconclusive` in BDTest. |
-| xUnit v2 | Throws `NotSupportedException`, because xUnit v2 has no runtime skip. Use `[Fact(Skip = "reason")]` or `[Theory(Skip = "reason")]` instead. |
+| xUnit v3 | `Assert.Skip(reason)`: the test is skipped. |
 
 Standalone `BDTestBase` and `BDTestBuilder` callers can inspect the returned skipped `Scenario`. [Custom adapters](../frameworks/custom-adapters.md) can override `OnScenarioSkipped(string reason)` to call their runner's skip mechanism.

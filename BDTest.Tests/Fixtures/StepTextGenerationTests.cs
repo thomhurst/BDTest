@@ -1,5 +1,5 @@
 using System.Collections;
-using System.Linq.Expressions;
+using System.Reflection;
 using BDTest.Attributes;
 using BDTest.Helpers;
 using BDTest.Interfaces;
@@ -14,6 +14,7 @@ namespace BDTest.Tests.Fixtures;
 [FixtureLifeCycle(LifeCycle.InstancePerTestCase)]
 public class StepTextGenerationTests : AbstractContextBDTestBase<StepTextGenerationTests.TextContext>
 {
+    private static readonly MethodInfo DisplayMethod = typeof(StepTextGenerationTests).GetMethod(nameof(Display));
     private readonly string _executionId = Guid.NewGuid().ToString();
     protected override string BDTestExecutionId => _executionId;
 
@@ -36,18 +37,18 @@ public class StepTextGenerationTests : AbstractContextBDTestBase<StepTextGenerat
     [TestCaseSource(nameof(CollectionCases))]
     public void FormatsValuesWithoutLosingCollectionElements(object value, string expected)
     {
-        Assert.That(StepTextHelper.GetStepText(() => Display(value)), Is.EqualTo($"value: {expected}"));
+        Assert.That(StepTextHelper.GetStepText(DisplayMethod, [() => value]), Is.EqualTo($"value: {expected}"));
     }
 
     [Test]
-    public void ConstantExpressionsRetainTheirTypeForConverters()
+    public void ExplicitArgumentReadersRetainTheirTypeForConverters()
     {
         var converter = new NumberConverter();
         BDTestSettings.CustomStringConverters.Add(converter);
         try
         {
-            var call = Expression.Call(typeof(StepTextGenerationTests).GetMethod(nameof(DisplayNumber)), Expression.Constant(42));
-            Assert.That(StepTextHelper.GetStepText(call), Is.EqualTo("number: converted 42"));
+            var method = typeof(StepTextGenerationTests).GetMethod(nameof(DisplayNumber));
+            Assert.That(StepTextHelper.GetStepText(method, [() => 42]), Is.EqualTo("number: converted 42"));
         }
         finally
         {
@@ -64,8 +65,8 @@ public class StepTextGenerationTests : AbstractContextBDTestBase<StepTextGenerat
         {
             var value = new DerivedValue();
             var numbers = new List<int> { 1, 2 };
-            Assert.That(StepTextHelper.GetStepText(() => Display(value)), Is.EqualTo("value: base value"));
-            Assert.That(StepTextHelper.GetStepText(() => Display(numbers)), Is.EqualTo("value: converted collection"));
+            Assert.That(StepTextHelper.GetStepText(DisplayMethod, [() => value]), Is.EqualTo("value: base value"));
+            Assert.That(StepTextHelper.GetStepText(DisplayMethod, [() => numbers]), Is.EqualTo("value: converted collection"));
         }
         finally
         {
@@ -81,9 +82,9 @@ public class StepTextGenerationTests : AbstractContextBDTestBase<StepTextGenerat
         Action action = () => calls++;
         CustomDelegate custom = () => { calls++; return "custom"; };
 
-        Assert.That(StepTextHelper.GetStepText(() => Display(func)), Is.EqualTo($"value: {func}"));
-        Assert.That(StepTextHelper.GetStepText(() => Display(action)), Is.EqualTo($"value: {action}"));
-        Assert.That(StepTextHelper.GetStepText(() => Display(custom)), Is.EqualTo($"value: {custom}"));
+        Assert.That(StepTextHelper.GetStepText(DisplayMethod, [() => func]), Is.EqualTo($"value: {func}"));
+        Assert.That(StepTextHelper.GetStepText(DisplayMethod, [() => action]), Is.EqualTo($"value: {action}"));
+        Assert.That(StepTextHelper.GetStepText(DisplayMethod, [() => custom]), Is.EqualTo($"value: {custom}"));
         Assert.That(calls, Is.Zero);
     }
 
@@ -93,8 +94,8 @@ public class StepTextGenerationTests : AbstractContextBDTestBase<StepTextGenerat
     {
         var source = new ArgumentSource();
         var prefix = asyncStep
-            ? When(() => DisplayAsync(source.GetValue()))
-            : When(() => Display(source.GetValue()));
+            ? When(() => DisplayAsync(source.GetValue())).WithArgs(() => source.GetValue())
+            : When(() => Display(source.GetValue())).WithArgs(() => source.GetValue());
         var first = prefix.Then(() => Display("first"));
         var second = prefix.Then(() => Display("second"));
         Assert.That(source.Calls, Is.Zero);
@@ -111,7 +112,7 @@ public class StepTextGenerationTests : AbstractContextBDTestBase<StepTextGenerat
     public void ReportingAnUnexecutedStepDoesNotEvaluateItsArguments()
     {
         var source = new ArgumentSource();
-        var builder = When(() => Fail()).Then(() => Display(source.GetValue()));
+        var builder = When(() => Fail()).Then(() => Display(source.GetValue())).WithArgs(() => source.GetValue());
 
         Assert.ThrowsAsync<InvalidOperationException>(async () => await builder.BDTestAsync());
 
@@ -124,7 +125,7 @@ public class StepTextGenerationTests : AbstractContextBDTestBase<StepTextGenerat
     public async Task RetryingRendersArgumentsAgain()
     {
         var source = new ArgumentSource();
-        var scenario = await When(() => source.FailOnce(source.GetValue()))
+        var scenario = await When(() => source.FailOnce(source.GetValue())).WithArgs(() => source.GetValue())
             .Then(() => Display("finished"))
             .BDTestAsync();
 
@@ -141,7 +142,7 @@ public class StepTextGenerationTests : AbstractContextBDTestBase<StepTextGenerat
         var text = "initial";
         Action update = () => text = updatedText;
         var scenario = await When(() => SetText(update))
-            .Then(() => Display(source.GetValue())).WithStepText(() => text)
+            .Then(() => Display(source.GetValue())).WithArgs(() => source.GetValue()).WithStepText(() => text)
             .BDTestAsync();
 
         Assert.That(source.Calls, Is.EqualTo(updatedText == "" ? 2 : 1));
@@ -168,7 +169,7 @@ public class StepTextGenerationTests : AbstractContextBDTestBase<StepTextGenerat
         var contexts = new List<TextContext>();
         var source = new ArgumentSource();
         var scenario = await Given(() => InitializeContext(contexts))
-            .When(() => source.FailOnce(Context.Value))
+            .When(() => source.FailOnce(Context.Value)).WithArgs(() => Context.Value)
             .Then(() => Display("finished"))
             .BDTestAsync();
 
@@ -188,7 +189,7 @@ public class StepTextGenerationTests : AbstractContextBDTestBase<StepTextGenerat
         BDTestSettings.Debug.ShouldSkipWhenStep = !skipScenario;
         try
         {
-            var scenario = await When(() => Display(source.GetValue())).Then(() => Display("finished")).BDTestAsync();
+            var scenario = await When(() => Display(source.GetValue())).WithArgs(() => source.GetValue()).Then(() => Display("finished")).BDTestAsync();
             Assert.That(source.Calls, Is.Zero);
             Assert.That(scenario.Steps[0].Status, Is.EqualTo(Status.Skipped));
             Assert.That(scenario.Steps[0].StepText, Does.EndWith("When value: {value}"));
@@ -204,7 +205,7 @@ public class StepTextGenerationTests : AbstractContextBDTestBase<StepTextGenerat
     public async Task ArgumentEvaluationErrorsAreExplicitAndDoNotFailTheStep()
     {
         var source = new TransientArgumentSource();
-        var scenario = await When(() => Display(source.Value)).Then(() => Display("finished")).BDTestAsync();
+        var scenario = await When(() => Display(source.Value)).WithArgs(() => source.Value).Then(() => Display("finished")).BDTestAsync();
 
         var step = scenario.Steps[0];
         Assert.That(step.Status, Is.EqualTo(Status.Passed));
@@ -222,7 +223,7 @@ public class StepTextGenerationTests : AbstractContextBDTestBase<StepTextGenerat
         BDTestSettings.CustomStringConverters.Add(converter);
         try
         {
-            var scenario = await When(() => Display(new UnformattableValue())).Then(() => Display("finished")).BDTestAsync();
+            var scenario = await When(() => Display(new UnformattableValue())).WithArgs(() => new UnformattableValue()).Then(() => Display("finished")).BDTestAsync();
             Assert.That(scenario.Status, Is.EqualTo(Status.Passed));
             Assert.That(scenario.Steps[0].StepText, Is.EqualTo("When value: <error: InvalidOperationException>"));
             Assert.That(scenario.Steps[0].Diagnostics.Single(), Does.Contain("conversion failed"));
@@ -238,7 +239,7 @@ public class StepTextGenerationTests : AbstractContextBDTestBase<StepTextGenerat
     {
         BDTestSettings.GlobalSkipStepRules.Add<SkipTextStepAttribute>(_ => true);
         var source = new ArgumentSource();
-        var scenario = await When(() => SkippedDisplay(source.GetValue())).WithStepText(() => "custom skip")
+        var scenario = await When(() => SkippedDisplay(source.GetValue())).WithArgs(() => source.GetValue()).WithStepText(() => "custom skip")
             .Then(() => Display("finished")).BDTestAsync();
 
         Assert.That(source.Calls, Is.Zero);
@@ -254,7 +255,7 @@ public class StepTextGenerationTests : AbstractContextBDTestBase<StepTextGenerat
         BDTestSettings.BeforeStep += hook;
         try
         {
-            var scenario = await When(() => Display(value)).Then(() => Display(value)).BDTestAsync();
+            var scenario = await When(() => Display(value)).WithArgs(() => value).Then(() => Display(value)).WithArgs(() => value).BDTestAsync();
             Assert.That(scenario.Steps.Select(step => step.StepText), Is.EqualTo(new[] { "When value: 1", "Then value: 2" }));
         }
         finally
@@ -270,7 +271,7 @@ public class StepTextGenerationTests : AbstractContextBDTestBase<StepTextGenerat
         var attempt = 0;
         Func<int> nextAttempt = () => ++attempt;
         var builder = Given(() => FailOnSecondAttempt(nextAttempt))
-            .When(() => Display(source.Value))
+            .When(() => Display(source.Value)).WithArgs(() => source.Value)
             .Then(() => Fail());
 
         Assert.ThrowsAsync<InvalidOperationException>(async () => await builder.BDTestAsync());

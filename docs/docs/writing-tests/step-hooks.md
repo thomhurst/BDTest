@@ -32,6 +32,8 @@ BDTestSettings.AfterStep += async step =>
 
 Global handlers can run concurrently for different tests. Keep their shared state thread-safe. Remove a handler with `-=` when you no longer need it.
 
+Tests that use an [explicit run](../advanced/explicit-runs.md#step-hooks-for-a-run) register `IStepHook` instances on `BDTestOptions.StepHooks` instead.
+
 ## Per-test hooks
 
 Override `OnBeforeStep(Step step)` and `OnAfterStep(Step step)` on your test class or base class. They return `Task` and can use the test's `Context`:

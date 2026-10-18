@@ -16,7 +16,7 @@ await Given(() => Account.CreateAnAccount(100m))
     .BDTestAsync();
 ```
 
-Each step is a lambda that calls one method. BDTest reads the lambda to produce the [step text](step-text.md), then runs it.
+Each step is a delegate, usually a lambda that calls one method. BDTest runs the delegate as written. With the optional [source generator](../advanced/source-generator.md), it also knows which method the lambda calls, so it can build readable [step text](step-text.md) from `[StepText]` or the method name.
 
 ## Two ways to start
 
@@ -87,15 +87,19 @@ A `But` step in the `When` phase is skipped when [`Debug.ShouldSkipWhenStep`](..
 
 ## Step overloads
 
-Every `Given`, `When`, `Then`, `And` and `But` accepts three kinds of lambda:
+Every `Given`, `When`, `Then`, `And` and `But` accepts these delegates:
 
 | Overload | Example |
 | --- | --- |
-| `Expression<Action>` | `Given(() => CreateUser())` |
-| `Expression<Func<Task>>` | `When(() => SubmitAsync())` |
-| `Expression<Func<CancellationToken, Task>>` | `When(token => SubmitAsync(token))` |
+| `Action` | `Given(() => CreateUser())` |
+| `Func<Task>` (including `Task<T>`) | `When(() => SubmitAsync())` |
+| `Func<ValueTask>`, `Func<ValueTask<T>>` | `When(() => SaveValueTaskAsync())` |
+| `Func<CancellationToken, Task>` | `When(token => SubmitAsync(token))` |
+| `Func<CancellationToken, ValueTask>`, `Func<CancellationToken, ValueTask<T>>` | `When(token => SaveAsync(token))` |
 
-The token overload is for [timeouts](timeouts.md). See [Asynchronous steps](async-steps.md) for `ValueTask` and other awaitables.
+Lambdas can have statement bodies and `await`. Method groups work too: `Given(CreateUser)`. The token overloads are for [timeouts](timeouts.md). See [Asynchronous steps](async-steps.md) for the rules.
+
+Delegate builders need a C# 13 or newer compiler (.NET SDK 9 or newer), so overload priority picks `Func<Task>` for ordinary async lambdas.
 
 ## Running the scenario
 

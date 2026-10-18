@@ -29,7 +29,7 @@ public class ScenarioRetentionTests
     [TestCase("success-exception", Status.Passed)]
     [TestCase("skipped", Status.Skipped)]
     [TestCase("retry", Status.Passed)]
-    [TestCase("retry-hook-failed", Status.NotRun)]
+    [TestCase("retry-hook-failed", Status.Failed)]
     public void Completed_report_does_not_keep_fixture_context_or_text_closures_alive(string outcome, Status status)
     {
         var retained = ExecuteAndRelease(outcome);

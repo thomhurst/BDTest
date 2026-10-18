@@ -49,7 +49,7 @@ BDTest structures tests so that they:
 BDTest started as a reaction to SpecFlow. Think of BDTest as a pure code alternative:
 
 - **No Gherkin files.** There is no second language to learn and keep in sync with the code.
-- **No generated code.** All code is your code. There are no extra compilation steps or special runners.
+- **No generated tests.** Your test bodies are your code and run as written, inside your usual runner. The optional source generator only records step metadata for reports.
 - **Easier debugging.** Stack traces point at your step methods, not at generated classes. You can step into every method from any IDE.
 - **Richer arguments.** Pass enums, models, collections and other objects into steps.
 - **Reusable steps.** A method is not tied to `Given`, `When` or `Then`. Use the same method in any position without extra attributes.

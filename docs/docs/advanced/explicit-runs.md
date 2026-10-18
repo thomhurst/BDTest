@@ -38,6 +38,58 @@ Dispose a run only after its tests and output writers finish. Disposal clears it
 
 `BDTestUtil.ClearScenarios(run)` clears storage between executions and keeps the same report ID. Start a new run to get a new ID.
 
-## What is still global
+## Run options
 
-`BDTestSettings` configuration is process-wide and applies to every run.
+Pass `BDTestOptions` to `BDTestRun.Start` to configure an explicit run:
+
+```csharp
+var options = new BDTestOptions();
+options.SuccessExceptionTypes.Add(typeof(MySuccessException));
+options.SkipExceptionTypes.Add(typeof(MySkipException));
+options.RetryTestRules.Add(exception => exception is IOException, retryLimit: 2);
+options.SkipTestRules.Add(scenario => scenario.Tags.Contains("manual"));
+options.SkipStepRules.Add<MySkipAttribute>(attribute => attribute.ShouldSkip);
+options.Debug.ShouldSkipWhenStep = false;
+options.RegisterCustomStringConverter(new MyValueConverter());
+options.StepHooks.Add(new MyStepHook());
+
+using var run = BDTestRun.Start(options);
+```
+
+| Option | Equivalent global setting |
+| --- | --- |
+| `SuccessExceptionTypes`, `SkipExceptionTypes`, `InconclusiveExceptionTypes` | [`CustomExceptionSettings`](../configuration/exceptions.md) |
+| `RetryTestRules` | `GlobalRetryTestRules` |
+| `SkipTestRules` | `GlobalSkipTestRules` |
+| `SkipStepRules` | `GlobalSkipStepRules` |
+| `Debug` | `Debug` |
+| `RegisterCustomStringConverter<T>(...)` | `RegisterCustomStringConverter<T>(...)` |
+| `StepHooks` (`IStepHook`) | `BeforeStep` / `AfterStep` events |
+
+- `Start(options)` copies the registrations into the run. Later changes to the options affect only runs started afterwards.
+- `Start()` uses empty registrations and default debug settings.
+- **Explicit runs do not inherit `BDTestSettings`.** Register any framework exceptions your adapter needs on the options.
+- Configure options before starting a run, without concurrent changes. Callback, converter and hook instances are shared, not cloned, so they must be thread-safe.
+
+### Step hooks for a run
+
+Implement `BDTest.Interfaces.IStepHook`:
+
+```csharp
+public sealed class TimingHook : IStepHook
+{
+    public Task BeforeStepAsync(Step step) => Task.CompletedTask;
+
+    public Task AfterStepAsync(Step step)
+    {
+        Console.WriteLine($"{step.StepText} took {step.TimeTaken}");
+        return Task.CompletedTask;
+    }
+}
+```
+
+Run hooks run sequentially in registration order. Before hooks run before the test instance's `OnBeforeStep`; after hooks run after `OnAfterStep`. They also run for reached skipped steps and on retries. Every after hook runs even if another hook fails, and an original step failure takes precedence over after-hook failures.
+
+## The default run
+
+`BDTestSettings` configures the shared default run used by the framework adapters and the overloads without a run parameter.

@@ -51,20 +51,19 @@ For other frameworks, see [Test frameworks](../frameworks/overview.md).
 
 ## What the report contains
 
-- **Header:** environment, tag, branch, machine and BDTest version.
-- **Summary:** cards with counts by status and timing information.
-- **Scenarios:** a filterable list of scenarios (Passed, Failed, Skipped and so on). Each scenario shows its status, scenario and story text, duration and retry count, and expands to show:
-  - each step with its status (passed, failed, skipped, inconclusive, not implemented, not run or pending),
-  - exception details with stack traces,
-  - console output,
-  - retry history,
+- **Run result:** the verdict, duration, start and end times (UTC), and the environment, tag, branch, machine and BDTest version.
+- **Summary:** a status bar and count tiles. Totals include tests that were built but never run, so a run with unfinished definitions never reports **All passed**. Status tiles filter the scenario list; the **Built but never run** tile links to the unfinished definitions.
+- **Needs attention:** failed scenarios grouped by exception type and message, with links to each scenario. Shown only when something failed.
+- **Scenarios:** a list grouped by story. Search scenarios, steps, stories and tags; filter by status or tag; sort by story, failures first or duration. Large lists show 200 scenarios at a time. Each scenario expands to show:
+  - each step with its keyword, duration and status (passed, failed, skipped, inconclusive, not implemented, not run or pending),
+  - exception details with stack traces you can wrap and copy,
+  - retry history and scenario outline examples,
+  - startup, step and teardown output,
   - [custom HTML](../writing-tests/output.md#custom-html-in-reports).
-- **Not run tests:** chains that were built but never executed.
+- **Tests not run:** chains that were built but never executed.
 
-The layout is responsive and works on mobile.
+The report follows the browser's light or dark colour scheme, prints cleanly and works at phone width. If no scenarios were recorded, it explains when to generate the report.
 
-:::warning Custom HTML is not sandboxed here
-The standalone HTML report embeds `ScenarioHtmlWriter.Custom(...)` output directly. The report server isolates it in a sandboxed iframe. Only add HTML you trust.
-:::
+Custom HTML from `ScenarioHtmlWriter` renders in a sandboxed frame with scripts disabled. Links open in new tabs that keep the sandbox restrictions. Relative screenshot paths work when the report is opened from disk next to the images.
 
 To publish the file from CI, see [CI integration](ci-integration.md).

@@ -11,7 +11,7 @@ BDTest does not replace your test runner. It runs inside it. An adapter package 
 | --- | --- | --- |
 | [TUnit](tunit.md) (recommended) | `TUnitBDTestBase<TContext>` | `BDTest.TUnit` |
 | [NUnit](nunit.md) | `NUnitBDTestBase<TContext>` | `BDTest.NUnit` |
-| [xUnit v2](xunit.md) | `XUnitBDTestBase<TContext>` | `BDTest.xUnit` |
+| [xUnit v3](xunit.md) | `XUnitBDTestBase<TContext>` | `BDTest.xUnit` |
 | [MSTest](mstest.md) | `MSTestBDTestBase<TContext>` | `BDTest.MSTest` |
 | [Standalone](standalone.md) | `BDTestBase`, `BDTestBuilder` | `BDTest` |
 
@@ -28,13 +28,13 @@ Each adapter is a thin class that derives from `AbstractContextBDTestBase<TConte
 
 ## Feature comparison
 
-| | TUnit | NUnit | xUnit v2 | MSTest |
+| | TUnit | NUnit | xUnit v3 | MSTest |
 | --- | --- | --- | --- | --- |
-| Execution ID | `TestContext.Current.Id` | `Test.ID` + repeat count | `TestCase.UniqueID` | GUID per fixture instance |
+| Execution ID | `TestContext.Current.Id` | `Test.ID` + repeat count | `TestContext.Current.Test.UniqueID` | GUID per fixture instance |
 | Success exception | — | `SuccessException` (`Assert.Pass`) | — | — |
-| Skip exception | `SkipTestException` (`Skip.Test`) | `IgnoreException` (`Assert.Ignore`) | — | — |
+| Skip exception | `SkipTestException` (`Skip.Test`) | `IgnoreException` (`Assert.Ignore`) | `SkipException` (`Assert.Skip`) | — |
 | Inconclusive exception | `InconclusiveTestException` | `InconclusiveException` | — | `AssertInconclusiveException` |
-| Whole-scenario skip | `SkipTestException` | `Assert.Ignore` | Not supported | `Assert.Inconclusive` |
+| Whole-scenario skip | `SkipTestException` | `Assert.Ignore` | `Assert.Skip` | `Assert.Inconclusive` |
 | Runs with | `dotnet run` / `dotnet test` (Microsoft.Testing.Platform) | `dotnet test` | `dotnet test` | `dotnet test` |
 
 The examples in this documentation use TUnit. Swap the base class, test attributes and assertions for your framework.

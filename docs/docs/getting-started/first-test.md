@@ -9,6 +9,15 @@ This walkthrough builds a complete scenario with [TUnit](https://tunit.dev). It 
 
 Using another framework? The code is the same apart from the base class, the test attributes and the assertions. See [Test frameworks](../frameworks/overview.md).
 
+## 0. Install the packages
+
+```bash
+dotnet add package BDTest.TUnit
+dotnet add package BDTest.SourceGenerator
+```
+
+The source generator is what turns `Account.CreateAnAccount(100m)` into "I have an account with a balance of 100" in the report. See [Installation](installation.md) for a full project file.
+
 ## 1. Create a context
 
 A context holds the state for one test. BDTest creates a new instance for each test, so tests never share state.

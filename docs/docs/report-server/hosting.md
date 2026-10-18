@@ -34,6 +34,10 @@ To serve the reports under a prefix such as `/reports`:
 
 Include the prefix in your identity provider's redirect URI, for example `https://reports.example.com/reports/signin-oidc`.
 
+:::warning Uploads ignore the path prefix
+`BDTestReportServer.SendDataAndGetReportUriAsync` replaces the path of the server address with `bdtest/ping` and `bdtest/data`. A server address of `https://reports.example.com/reports` therefore uploads to `https://reports.example.com/bdtest/data`, outside the `/reports` mapping. When you host under a prefix, also route `/bdtest/ping` and `/bdtest/data` at the root of the upload host to the report server, or give test jobs a separate unprefixed host name for uploads.
+:::
+
 ### Trust
 
 Only trust forwarded headers from your proxy:

@@ -14,14 +14,22 @@ dotnet add package BDTest.TUnit
 # NUnit
 dotnet add package BDTest.NUnit
 
-# xUnit v2
+# xUnit v3
 dotnet add package BDTest.xUnit
 
 # MSTest
 dotnet add package BDTest.MSTest
 ```
 
-To use BDTest without a framework adapter, install only the core package:
+Then add the source generator to every project that contains steps. It lets BDTest render `[StepText]`, method names and argument values in reports; without it, steps show their source text. See [Step text](../writing-tests/step-text.md#install-the-source-generator).
+
+```bash
+dotnet add package BDTest.SourceGenerator
+```
+
+Mark it `PrivateAssets="all"` in the project file so it does not flow to projects that reference yours.
+
+To use BDTest without a framework adapter, install only the core package (plus the generator):
 
 ```bash
 dotnet add package BDTest
@@ -42,10 +50,12 @@ The core `BDTest` package targets `netstandard2.0`. Adapter and report server re
 | `BDTest` | `netstandard2.0` | None |
 | `BDTest.TUnit` | `netstandard2.0` | TUnit |
 | `BDTest.NUnit` | `net8.0` | NUnit 5 |
-| `BDTest.xUnit` | `netstandard2.0` | xUnit v2 (`xunit` 2.9) |
+| `BDTest.xUnit` | `netstandard2.0` | xUnit v3 |
 | `BDTest.MSTest` | `netstandard2.0` | MSTest 4 |
 | `BDTest.Razor.Reports` | `net10.0` | ASP.NET Core |
 | `BDTest.SourceGenerator` | `netstandard2.0` analyzer | C# 10+ compiler (.NET SDK 8+) |
+
+BDTest's step builders take delegates and need a **C# 13 or newer** compiler (.NET SDK 9 or newer). The core package still targets `netstandard2.0`.
 
 Choose a test project target that both the adapter and its test framework support. A `netstandard2.0` adapter does not guarantee that its test framework or runner supports .NET Framework. The NUnit adapter requires .NET 8 or later.
 
@@ -63,6 +73,7 @@ A typical TUnit test project:
 
   <ItemGroup>
     <PackageReference Include="BDTest.TUnit" Version="*" />
+    <PackageReference Include="BDTest.SourceGenerator" Version="*" PrivateAssets="all" />
     <PackageReference Include="TUnit" Version="*" />
   </ItemGroup>
 </Project>

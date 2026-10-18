@@ -46,7 +46,7 @@ Think of BDTest as a pure code-based alternative to SpecFlow.
 ### What's the benefit over SpecFlow?
 - Passing in more complicated arguments to tests. Enums, models, etc.
 - You get the benefit of separating steps into Given, When, Then. However you can use and re-use existing steps without redefining or attributing them as Given step, or a When step, etc.
-- No auto-generated code. All code is your code! So you shouldn't see any weirdness. This also means no extra weird compilation steps and bringing in specific test compilers/runners.
+- No generated test bodies or Gherkin compilation. The optional `BDTest.SourceGenerator` package records step metadata while your delegates execute directly.
 - Easier to debug. Test has failed and thrown an exception? The stacktrace should take you straight to where it happened. No being taken to strange auto-generated classes that you don't care about!
 - Step into all your code. I used Rider as my IDE, which didn't support SpecFlow, so I couldn't step into my test methods. I had to do a painful Find All! Now as it's all code, I can step straight into my test methods.
 - No learning and maintaining separate Gherkin files!
@@ -59,7 +59,7 @@ Think of BDTest as a pure code-based alternative to SpecFlow.
 - BDTest does that!
 - BDTest produces you a clear, easy to understand report, showing what failed and what passed, with output and exceptions from tests automatically captured
 - Mark your classes and methods with [Story], [ScenarioText], and [StepText] attributes, providing the output you want, and your reports will produce clean text output
-- If you don't mark your methods with attributes, BDTest will automatically convert the method name to text (separating words by capitalisation or underscores)
+- With `BDTest.SourceGenerator`, simple calls use `[StepText]` or a humanized method name. Other bodies and projects without the generator use caller source text; use `.WithStepText(...)` for a custom sentence.
 - If you use the report server, you can just send the relevant party a URL directly to your test report!
 
 ## Where can I use it?
@@ -69,7 +69,7 @@ requirements differ:
 | Package | Target framework | Test framework dependency |
 | --- | --- | --- |
 | `BDTest.NUnit` | `net8.0` | NUnit 5 |
-| `BDTest.xUnit` | `netstandard2.0` | xUnit v2 |
+| `BDTest.xUnit` | `netstandard2.0` | xUnit v3 |
 | `BDTest.MSTest` | `netstandard2.0` | MSTest 4 |
 | `BDTest.TUnit` | `netstandard2.0` | TUnit |
 | `BDTest.Razor.Reports` | `net10.0` | ASP.NET Core report hosting |
@@ -78,6 +78,61 @@ Choose a test target supported by both the adapter and its test framework. A
 `netstandard2.0` adapter target alone does not guarantee that its test framework
 or runner supports .NET Framework. The NUnit example below requires .NET 8 or later;
 the repository's test projects use .NET 10.
+
+## Delegate steps in the next major version
+
+Step builders now accept `Action`, `Func<Task>`, `Func<ValueTask>`, and cancellation-aware async delegates, including `ValueTask<T>` results. Statement bodies, `await`, null-conditionals, and patterns are supported. Consumers need C# 13 or newer (.NET SDK 9 or newer); the core still targets `netstandard2.0`.
+
+Install the optional `BDTest.SourceGenerator` package in each project containing steps to preserve method names, `[StepText]`, skip attributes, and supported automatic argument capture. Use `.WithArgs(...)` for captured locals and unsupported argument expressions, or `.WithStepText(...)` for a custom sentence. See the [migration guide](https://thomhurst.github.io/BDTest/docs/migration/delegate-steps) and [compiler metadata reference](https://thomhurst.github.io/BDTest/docs/advanced/source-generator).
+
+## xUnit v3 migration for the next major version
+
+`BDTest.xUnit` now requires xUnit v3. This is a breaking change in the next major
+BDTest release; existing xUnit v2 projects must migrate before upgrading.
+The adapter remains signed and targets `netstandard2.0`.
+
+Replace the `xunit` 2.x package with `xunit.v3.mtp-off` (currently `4.0.2`) to keep
+using VSTest, and set `<OutputType>Exe</OutputType>` in the test project. Keep
+`Microsoft.NET.Test.Sdk` and `xunit.runner.visualstudio` (4.x). The repository uses
+this setup with `dotnet test`, so no pipeline runner change is required. Projects
+that choose Microsoft.Testing.Platform instead can use `xunit.v3` and follow
+[xUnit's runner configuration](https://xunit.net/docs/getting-started/v3/microsoft-testing-platform).
+The version number `4.0.2` belongs to the xUnit v3 framework package family.
+
+Inherit from `XUnitBDTestBase<TContext>` without a constructor argument:
+
+```csharp
+using BDTest.Test;
+using BDTest.xUnit;
+using Xunit;
+
+public class CheckoutTests : XUnitBDTestBase<CheckoutContext>
+{
+    [Fact]
+    public async Task CompletesCheckout()
+    {
+        await Given(() => Context.AddItem())
+            .When(() => Context.Checkout())
+            .Then(() => Assert.True(Context.IsComplete))
+            .BDTestAsync();
+    }
+}
+```
+
+Remove constructors that only passed `ITestOutputHelper` to `base(...)`. If the
+helper is still needed for output, use `Xunit.ITestOutputHelper` instead of
+`Xunit.Abstractions.ITestOutputHelper` and keep it in your derived class only.
+Execution IDs come from the public `TestContext.Current.Test.UniqueID`, so theory
+rows have separate IDs and contexts even when their data is not serializable.
+Runtime BDTest skip rules now produce skipped xUnit results instead of throwing
+`NotSupportedException`.
+
+The adapter implements `IAsyncDisposable`. For asynchronous teardown, override
+`DisposeAsync()` and call `await base.DisposeAsync()` in a `finally` block, including
+when implementing `IAsyncLifetime`. xUnit v3 calls only asynchronous disposal when
+both disposal interfaces are present; hiding or explicitly reimplementing
+`DisposeAsync()` must also invoke the base cleanup.
+See the [xUnit adapter guide](https://thomhurst.github.io/BDTest/docs/frameworks/xunit) for the teardown pattern.
 
 ## Status migration for the next major version
 
@@ -138,8 +193,8 @@ was found. Both methods reject null converters.
 Converter callbacks run outside the registration lock and can run concurrently.
 Converters must protect their own mutable state. Removal does not cancel a callback
 or exclude a converter from an earlier snapshot; wait for those conversions to finish
-before disposing converter resources. Builder-generated text is cached, so registration
-changes do not regenerate text for steps already built.
+before disposing converter resources. Text is rendered once per executed attempt, so
+registration changes apply to later renders, including retries, but do not rewrite completed report text.
 
 The existing `CustomStringConverters` property remains a `List<object>` for compatibility.
 Direct access is supported during setup before concurrent access begins. For concurrent
@@ -296,13 +351,19 @@ skipped when `BDTestSettings.Debug.ShouldSkipWhenStep` is enabled.
 
 ### Step text and argument values
 
-Automatically generated step text captures argument values when the step is added
-to a builder. BDTest reuses that text during execution, retries, reporting, and
-builder continuations. Argument expressions are evaluated once for this initial
-text and again when the step itself runs, so keep those expressions free of side
-effects. If a value changes during the scenario, use `.WithStepText(() => ...)`
-to generate text when the step executes. An empty override falls back to the
-cached automatic text.
+Generated or explicit argument readers run once immediately before each reached step,
+after before-step hooks and skip checks. They read current state again on retries.
+Construction, reporting, skipped steps, and unreached steps do not evaluate them.
+The step delegate still evaluates its own arguments normally, so keep argument
+expressions free of side effects. Unreached steps retain placeholders or caller text.
+A reader or converter failure becomes `<error: ExceptionType>` and a step diagnostic;
+it does not fail the step. `.WithStepText(() => ...)` remains dynamic, and an empty
+override falls back to automatic rendering for that attempt.
+
+The optional source generator captures constants and member paths automatically.
+Use `.WithArgs(() => value)` for captured locals and unsupported expressions.
+Without method metadata, explicit values append to the caller expression text.
+See [delegate migration](https://thomhurst.github.io/BDTest/docs/migration/delegate-steps) for the full rules.
 
 Delegate arguments are displayed with `ToString()` without invoking the delegate.
 Collections display their elements, and dictionaries implementing `IDictionary`
@@ -351,22 +412,21 @@ or direct `await`.
 
 ### Asynchronous steps
 
-Asynchronous step expressions must return `Task` (including `Task<T>`). Convert
-`ValueTask` and `ValueTask<T>` at the call site so BDTest waits for completion and
-reports asynchronous exceptions:
+Asynchronous step delegates can return `Task`, `Task<T>`, `ValueTask`, or
+`ValueTask<T>`. BDTest awaits each result once before running the next step and
+reports asynchronous exceptions. Return the operation directly:
 
 ```csharp
-await When(() => SaveAsync().AsTask())
+await When(() => SaveAsync()) // SaveAsync can return Task or ValueTask.
     .Then(() => VerifySaved())
     .BDTestAsync();
 ```
 
-A directly returned `ValueTask`, configured awaitable, or custom awaitable with a
-public instance `GetAwaiter()` returning an awaiter that implements `INotifyCompletion`
-and exposes a readable Boolean `IsCompleted` and parameterless `GetResult()` is
-rejected before the step runs, because binding it
-to `Action` would discard its asynchronous work. For other awaitables, write an
-`async Task` helper that awaits the operation and use that helper as the step.
+Cancellation-aware delegates can accept a `CancellationToken` and return `Task`,
+`ValueTask`, or `ValueTask<T>`. Ordinary `async` lambdas select the Task overload.
+For configured or custom awaitables, write an `async Task` helper that awaits the
+operation and use that helper as the step; directly returning these unsupported
+awaitables can bind to `Action` and discard their asynchronous work.
 Avoid hiding asynchronous work inside a synchronous or `async void` helper.
 
 ### Execution and synchronization contexts
@@ -437,9 +497,40 @@ Existing overloads and framework adapters continue to use the legacy default run
 Dispose a run only after its tests and output writers finish. Disposal clears its stores
 and prevents new scenario construction or execution; it does not cancel active tests.
 `BDTestUtil.ClearScenarios(run)` clears storage between executions while retaining the
-same report ID. Start a new run to get a new ID. Configuration through `BDTestSettings`
-is still process-wide; frozen options and assembly-owned adapter lifecycles are separate
-parts of the migration tracked by #797.
+same report ID. Start a new run to get a new ID.
+
+Pass `BDTestOptions` to configure an explicit run:
+
+```csharp
+var options = new BDTestOptions();
+options.SuccessExceptionTypes.Add(typeof(MySuccessException));
+options.RetryTestRules.Add(exception => exception is IOException, retryLimit: 2);
+options.SkipTestRules.Add(scenario => scenario.Tags.Contains("manual"));
+options.SkipStepRules.Add<MySkipAttribute>(attribute => attribute.ShouldSkip);
+options.Debug.ShouldSkipWhenStep = false;
+options.RegisterCustomStringConverter<MyValue>(new MyValueConverter());
+options.StepHooks.Add(new MyStepHook()); // Implements BDTest.Interfaces.IStepHook.
+using var run = BDTestRun.Start(options);
+```
+
+`Start(options)` copies exception types, retry and skip rules, debug settings, typed
+converters and ordered step hooks. Later changes to the options affect only new runs.
+`Start()` uses empty registrations and default debug settings. Explicit runs do not
+inherit `BDTestSettings`; register any framework exceptions your custom adapter needs.
+Configure options before starting a run, without concurrent mutations. Callback,
+converter and hook instances are not cloned and remain responsible for their own
+thread safety.
+
+Converters implement `IStepTextStringConverter<T>`. The first registration whose `T`
+accepts the argument wins, including explicit interface implementations. Hook methods
+`BeforeStepAsync(Step)` and `AfterStepAsync(Step)` return `Task` and run sequentially
+in registration order. Run before hooks precede the test instance's `OnBeforeStep`;
+run after hooks follow `OnAfterStep`. Hooks also run for reached skipped steps and
+retry attempts. Every after hook runs even if another hook fails; an original step
+failure takes precedence over after-hook failures.
+
+`BDTestSettings` still configures the legacy default run used by existing adapters.
+Assembly-owned adapter lifecycles remain a separate part of #797.
 
 ### Report date formatting
 
@@ -745,10 +836,9 @@ uses `Assert.Inconclusive`, which appears as a skipped/not-executed runner resul
 BDTest still records a rule-driven or all-steps skip as `Skipped`. An explicit
 MSTest `Assert.Inconclusive` in a step remains `Inconclusive` in BDTest.
 
-The xUnit adapter targets xUnit v2, which has no built-in runtime skip mechanism.
-It throws `NotSupportedException` for a whole-scenario skip so the runner cannot
-silently report success. Use `[Fact(Skip = "reason")]` or `[Theory(Skip = "reason")]`
-for discovery-time skipping. See [xUnit's runtime skip support](https://api.xunit.net/v3/3.2.2/Xunit.Sdk.SkipException.html).
+The xUnit v3 adapter uses `Assert.Skip(reason)` for whole-scenario skips and
+registers `Xunit.Sdk.SkipException` for skips raised inside steps. Both BDTest and
+the xUnit runner report these scenarios as skipped, without retries.
 
 Standalone `BDTestBase`/`BDTestBuilder` callers can still inspect the returned
 skipped scenario. Custom adapters can override `OnScenarioSkipped(string reason)`
@@ -756,7 +846,7 @@ to invoke their runner's skip mechanism. Register runner skip exception types in
 `BDTestSettings.CustomExceptionSettings.SkipExceptionTypes`, keeping genuine
 inconclusive exceptions in `InconclusiveExceptionTypes`.
 
-Run `pwsh scripts/Test-SkipOutcomes.ps1` to verify actual NUnit, MSTest and TUnit
+Run `pwsh scripts/Test-SkipOutcomes.ps1` to verify actual NUnit, xUnit, MSTest and TUnit
 runner outcomes as well as BDTest's scenario and step statuses.
 
 ### Step and scenario timeouts

@@ -33,17 +33,22 @@ Do not call `.Result`, `.Wait()` or `.GetAwaiter().GetResult()` on a scenario. B
 
 ## `ValueTask` and other awaitables
 
-Asynchronous step expressions must return `Task` or `Task<T>`. Convert a `ValueTask` at the call site so BDTest waits for it and reports its exceptions:
+Step delegates can return `Task`, `Task<T>`, `ValueTask` or `ValueTask<T>`. BDTest awaits each result once before the next step starts, and reports asynchronous exceptions. Return the operation directly; no `.AsTask()` is needed:
 
 ```csharp
-await When(() => Repository.SaveAsync().AsTask())
+await When(() => Repository.SaveAsync())   // Task or ValueTask
     .Then(() => Assertions.TheItemWasSaved())
     .BDTestAsync();
 ```
 
-BDTest rejects a step that directly returns a `ValueTask`, a configured awaitable or another custom awaitable before the step runs. Binding it to `Action` would silently discard its asynchronous work. For other awaitables, write an `async Task` helper that awaits the operation and use the helper as the step.
+- `ValueTask<T>` results are awaited and their values ignored.
+- Cancellation-aware delegates can take a `CancellationToken` and return `Task`, `ValueTask` or `ValueTask<T>`. See [Timeouts](timeouts.md).
+- Ordinary `async` lambdas select the `Func<Task>` overload. This relies on overload priority, so you need C# 13 or newer (.NET SDK 9 or newer).
+- Lambdas can have statement bodies: `Then(async () => { await a; await b; })`. Such steps show their source text in reports; see [Step text](step-text.md).
 
-Avoid hiding asynchronous work in a synchronous or `async void` helper. BDTest cannot wait for it.
+For configured awaitables (`ConfigureAwait(...)`) and custom awaitables, write an `async Task` helper or an `async` lambda that awaits the operation. Returning one of those directly can bind to `Action` and discard its asynchronous work.
+
+Avoid hiding asynchronous work in a synchronous or `async void` helper, and do not cast asynchronous steps to `Action`. BDTest cannot wait for work it cannot see.
 
 ## Execution order and threads
 

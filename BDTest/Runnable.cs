@@ -1,120 +1,46 @@
-﻿using System.Linq.Expressions;
-using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Threading;
+using BDTest.Helpers;
 
 namespace BDTest;
 
-internal class Runnable
+internal sealed class Runnable
 {
-    internal Expression<Func<Task>> Task { get; }
-    internal Expression<Action> Action { get; }
-    private readonly Expression<Func<CancellationToken, Task>> _cancellableTask;
-    // Keep compilation lazy so skipped definitions are never compiled. Lazy also
-    // shares one delegate safely when the same definition executes concurrently.
-    private readonly Lazy<Action> _compiledAction;
-    private readonly Lazy<Func<Task>> _compiledTask;
-    private readonly Lazy<Func<CancellationToken, Task>> _compiledCancellableTask;
-    internal bool AcceptsCancellationToken => _cancellableTask != null;
-    internal Expression ExpressionBody => Action?.Body ?? Task?.Body ?? _cancellableTask?.Body;
+    private readonly Func<CancellationToken, Task> _run;
+    internal Delegate StepDelegate { get; }
+    internal StepTextDefinition Definition { get; }
 
-    internal Runnable(Expression<Func<Task>> step)
+    private Runnable(Delegate step, Func<CancellationToken, Task> run, string argumentExpression,
+        string callerFile, int callerLine, bool acceptsCancellationToken)
     {
-        Task = step ?? throw new ArgumentNullException(nameof(step));
-        _compiledTask = new Lazy<Func<Task>>(step.Compile);
+        StepDelegate = step ?? throw new ArgumentNullException(nameof(step));
+        _run = run;
+        Definition = new StepTextDefinition(step, argumentExpression, callerFile, callerLine, acceptsCancellationToken);
     }
 
-    internal Runnable(Expression<Func<CancellationToken, Task>> step)
-    {
-        _cancellableTask = step ?? throw new ArgumentNullException(nameof(step));
-        _compiledCancellableTask = new Lazy<Func<CancellationToken, Task>>(step.Compile);
-    }
+    [OverloadResolutionPriority(-1)]
+    internal Runnable(Action step, string argumentExpression = null, string callerFile = null, int callerLine = 0)
+        : this(step, _ => { step(); return Task.CompletedTask; }, argumentExpression, callerFile, callerLine, false) { }
 
-    public Runnable(Expression<Action> step)
-    {
-        Action = step ?? throw new ArgumentNullException(nameof(step));
-        _compiledAction = new Lazy<Action>(step.Compile);
-    }
+    [OverloadResolutionPriority(1)]
+    internal Runnable(Func<Task> step, string argumentExpression = null, string callerFile = null, int callerLine = 0)
+        : this(step, _ => step(), argumentExpression, callerFile, callerLine, false) { }
 
-    internal async Task Run(CancellationToken cancellationToken = default)
-    {
-        if (_cancellableTask != null)
-        {
-            await _compiledCancellableTask.Value.Invoke(cancellationToken).ConfigureAwait(false);
-            return;
-        }
+    [OverloadResolutionPriority(1)]
+    internal Runnable(Func<CancellationToken, Task> step, string argumentExpression = null, string callerFile = null, int callerLine = 0)
+        : this(step, token => step(token), argumentExpression, callerFile, callerLine, true) { }
 
-        if (Task != null)
-        {
-            await _compiledTask.Value.Invoke();
-            return;
-        }
+    internal Runnable(Func<ValueTask> step, string argumentExpression = null, string callerFile = null, int callerLine = 0)
+        : this(step, async _ => await step().ConfigureAwait(false), argumentExpression, callerFile, callerLine, false) { }
 
-        // An Action expression can discard a method's result. Inspect the original
-        // body before invoking it: the compiled delegate's return type is always void.
-        var resultType = Action.Body.Type;
-        if (resultType != typeof(void) && resultType.GetMethods(BindingFlags.Public | BindingFlags.Instance)
-                .Any(method => method.Name == "GetAwaiter" && !method.IsGenericMethod
-                    && method.GetParameters().Length == 0 && IsAwaiterType(method.ReturnType)))
-        {
-            throw new InvalidOperationException(
-                $"The step returns awaitable type '{resultType.FullName}', but is bound to Action and would discard its result. " +
-                "Return Task from the step expression instead. For ValueTask or ValueTask<T>, call AsTask(); " +
-                "for other awaitables, use an async Task helper that awaits the operation.");
-        }
+    internal Runnable(Func<CancellationToken, ValueTask> step, string argumentExpression = null, string callerFile = null, int callerLine = 0)
+        : this(step, async token => await step(token).ConfigureAwait(false), argumentExpression, callerFile, callerLine, true) { }
 
-        _compiledAction.Value.Invoke();
-    }
+    internal static Runnable FromResult<T>(Func<ValueTask<T>> step, string argumentExpression, string callerFile, int callerLine)
+        => new(step, async _ => { await step().ConfigureAwait(false); }, argumentExpression, callerFile, callerLine, false);
 
-    private static bool IsAwaiterType(Type type)
-    {
-        if (!typeof(INotifyCompletion).IsAssignableFrom(type))
-        {
-            return false;
-        }
+    internal static Runnable FromResult<T>(Func<CancellationToken, ValueTask<T>> step, string argumentExpression, string callerFile, int callerLine)
+        => new(step, async token => { await step(token).ConfigureAwait(false); }, argumentExpression, callerFile, callerLine, true);
 
-        // Reflection on an interface does not include members from its base interfaces.
-        var memberTypes = type.IsInterface ? new[] { type }.Concat(type.GetInterfaces()) : new[] { type };
-        const BindingFlags flags = BindingFlags.Public | BindingFlags.Instance;
-        var completionMembers = GetCompletionMembers(type).ToArray();
-        return completionMembers.Length == 1 && completionMembers.OfType<PropertyInfo>()
-                   .Any(property => property.Name == "IsCompleted" && property.PropertyType == typeof(bool)
-                       && property.GetIndexParameters().Length == 0 && property.GetGetMethod() != null && !property.GetGetMethod().IsStatic)
-               && memberTypes.SelectMany(memberType => memberType.GetMethods(flags))
-                   .Any(method => method.Name == "GetResult" && !method.IsGenericMethod
-                       && method.GetParameters().Length == 0);
-    }
-
-    private static IEnumerable<MemberInfo> GetCompletionMembers(Type type)
-    {
-        const BindingFlags flags = BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static
-                                   | BindingFlags.DeclaredOnly;
-        if (type.IsInterface)
-        {
-            var declarations = new[] { type }.Concat(type.GetInterfaces())
-                .Select(memberType => new { Type = memberType, Members = memberType.GetMember("IsCompleted", flags) })
-                .Where(declaration => declaration.Members.Length != 0).ToArray();
-            return declarations.Where(declaration => !declarations.Any(other =>
-                    other.Type != declaration.Type && declaration.Type.IsAssignableFrom(other.Type)))
-                .SelectMany(declaration => declaration.Members);
-        }
-
-        // Look up the name before validating its shape: a derived member hides a
-        // base property even when the derived member is not a Boolean property.
-        for (var current = type; current != null; current = current.BaseType)
-        {
-            var members = current.GetMember("IsCompleted", flags);
-            if (members.Length != 0)
-            {
-                return members;
-            }
-        }
-
-        return Array.Empty<MemberInfo>();
-    }
-
-    internal string GetExpressionString()
-    {
-        return ExpressionBody?.ToString();
-    }
+    internal Task Run(CancellationToken cancellationToken = default) => _run(cancellationToken);
 }

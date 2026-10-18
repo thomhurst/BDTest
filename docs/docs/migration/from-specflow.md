@@ -5,7 +5,7 @@ description: Map SpecFlow and Gherkin concepts to BDTest code.
 
 # Coming from SpecFlow
 
-SpecFlow (and Reqnroll) bind Gherkin text to C# methods with regular expressions and generate test classes from `.feature` files. BDTest skips the text layer: the C# chain **is** the scenario, and the report text comes from attributes or method names.
+SpecFlow (and Reqnroll) bind Gherkin text to C# methods with regular expressions and generate test classes from `.feature` files. BDTest skips the text layer: the C# chain **is** the scenario, and the report text comes from attributes or method names, read at compile time by the optional `BDTest.SourceGenerator` package.
 
 ## Concept map
 

@@ -91,6 +91,7 @@ const sidebars = {
       type: 'category',
       label: 'Migration',
       items: [
+        'migration/delegate-steps',
         'migration/async-only',
         'migration/statuses',
         'migration/json-serialization',

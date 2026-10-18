@@ -5,7 +5,7 @@ description: Reference for BDTestSettings, the global configuration for BDTest.
 
 # Settings
 
-`BDTest.Settings.BDTestSettings` is a static class with process-wide configuration. Set it once, before tests run, for example in TUnit's `[Before(HookType.Assembly)]`, NUnit's `[SetUpFixture]` `[OneTimeSetUp]`, MSTest's `[AssemblyInitialize]` or a module initializer.
+`BDTest.Settings.BDTestSettings` is a static class with process-wide configuration for the default run, which the framework adapters use. [Explicit runs](../advanced/explicit-runs.md#run-options) are configured with `BDTestOptions` instead and do not inherit these settings. Set it once, before tests run, for example in TUnit's `[Before(HookType.Assembly)]`, NUnit's `[SetUpFixture]` `[OneTimeSetUp]`, MSTest's `[AssemblyInitialize]` or a module initializer.
 
 ```csharp
 public class BDTestSetup

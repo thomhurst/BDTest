@@ -1,10 +1,10 @@
 using System.Diagnostics;
 using BDTest.Attributes;
+using BDTest.Exceptions;
 using BDTest.Helpers;
 using BDTest.Interfaces.Internal;
 using BDTest.Output;
 using BDTest.Reporters;
-using BDTest.Settings;
 using BDTest.Test;
 
 namespace BDTest.Engine;
@@ -22,12 +22,13 @@ internal class ScenarioExecutor : IScenarioExecutor
     {
         try
         {
+            await _scenarioRetryManager.CheckIfAlreadyExecuted(scenario);
+
             // Completed steps and retry hooks can run inline. Iterate attempts so
             // repeated synchronous failures cannot grow the execution stack.
             // Capture the caller's synchronization context for subsequent steps and retries.
             do
             {
-                await _scenarioRetryManager.CheckIfAlreadyExecuted(scenario);
                 await ExecuteAttemptAsync(scenario);
             } while (scenario.ShouldRetry);
 
@@ -50,9 +51,15 @@ internal class ScenarioExecutor : IScenarioExecutor
     {
         var stopwatch = Stopwatch.StartNew();
         Exception attemptException = null;
+        var preparingRetry = scenario.ShouldRetry;
         try
         {
             scenario.StartTime = DateTime.UtcNow;
+            if (preparingRetry)
+            {
+                await _scenarioRetryManager.CheckIfAlreadyExecuted(scenario);
+                preparingRetry = false;
+            }
             scenario.Status = Status.Pending;
 
             TestOutputData.ClearCurrentTaskData();
@@ -85,19 +92,30 @@ internal class ScenarioExecutor : IScenarioExecutor
                 ? Status.Skipped
                 : Status.Passed;
         }
+        catch (ErrorOccurredDuringRetryActionException e) when (preparingRetry)
+        {
+            // Hook failures end the retry even if the underlying exception has a custom outcome.
+            attemptException = e.GetBaseException();
+            scenario.Status = Status.Failed;
+            scenario.ShouldRetry = false;
+            scenario.ExecutionException = new ExceptionWrapper(attemptException);
+
+            await ConsoleReporter.WriteLine($"{Environment.NewLine}Exception: {attemptException.Message}{Environment.NewLine}{attemptException.StackTrace}{Environment.NewLine}", ConsoleColor.DarkRed);
+            throw;
+        }
         catch (NotImplementedException e)
         {
             attemptException = e;
             scenario.Status = Status.NotImplemented;
             throw;
         }
-        catch (Exception e) when (!scenario.TimedOut && BDTestSettings.CustomExceptionSettings.SuccessExceptionTypes.Contains(e.GetType()))
+        catch (Exception e) when (!scenario.TimedOut && scenario.Run.Options.SuccessExceptionTypes.Contains(e.GetType()))
         {
             attemptException = e;
             scenario.Status = Status.Passed;
             throw;
         }
-        catch (Exception e) when (!scenario.TimedOut && BDTestSettings.CustomExceptionSettings.SkipExceptionTypes.Contains(e.GetType()))
+        catch (Exception e) when (!scenario.TimedOut && scenario.Run.Options.SkipExceptionTypes.Contains(e.GetType()))
         {
             attemptException = e;
             scenario.Status = Status.Skipped;
@@ -108,7 +126,7 @@ internal class ScenarioExecutor : IScenarioExecutor
             }
             throw;
         }
-        catch (Exception e) when (!scenario.TimedOut && BDTestSettings.CustomExceptionSettings.InconclusiveExceptionTypes.Contains(e.GetType()))
+        catch (Exception e) when (!scenario.TimedOut && scenario.Run.Options.InconclusiveExceptionTypes.Contains(e.GetType()))
         {
             attemptException = e;
             scenario.Status = Status.Inconclusive;
@@ -119,7 +137,7 @@ internal class ScenarioExecutor : IScenarioExecutor
             attemptException = e;
             scenario.Status = Status.Failed;
 
-            var validRetryRules = BDTestSettings.GlobalRetryTestRules.Rules.Where(rule => rule.Condition(e)).ToList();
+            var validRetryRules = scenario.Run.Options.RetryRules.Where(rule => rule.Condition(e)).ToList();
             if (validRetryRules.Any() && scenario.RetryCount < validRetryRules.Max(x => x.RetryLimit))
             {
                 scenario.ShouldRetry = true;
@@ -182,7 +200,7 @@ internal class ScenarioExecutor : IScenarioExecutor
 
     private bool ShouldSkip(Scenario scenario)
     {
-        return BDTestSettings.GlobalSkipTestRules.Rules.Any(x => x.Invoke(scenario));
+        return scenario.Run.Options.SkipTestRules.Any(x => x.Invoke(scenario));
     }
 
     private async Task WriteTestInformation(Scenario scenario)

@@ -1,5 +1,4 @@
 using BDTest.Attributes;
-using System.Linq.Expressions;
 using BDTest.Test;
 using Newtonsoft.Json;
 using NUnit.Framework;
@@ -114,7 +113,7 @@ public class TimeoutTests : BDTestBase
     [Test]
     public void Null_token_expressions_fail_at_construction()
     {
-        Expression<Func<CancellationToken, Task>> missing = null;
+        Func<CancellationToken, Task> missing = null;
         Assert.That(Assert.Throws<ArgumentNullException>(() => Given(missing)).ParamName, Is.EqualTo("step"));
         Assert.That(Assert.Throws<ArgumentNullException>(() => When(missing)).ParamName, Is.EqualTo("step"));
         var prefix = Given(token => Complete(token));

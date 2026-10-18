@@ -126,8 +126,8 @@ function Walkthrough() {
     <section className={`${styles.container} ${styles.walkthrough}`} aria-labelledby="walkthrough-heading">
       <Heading as="h2" id="walkthrough-heading" className={styles.sectionTitle}>Steps are methods. Scenarios are tests.</Heading>
       <p className={styles.sectionLead}>
-        Use your test runner, your IDE and your debugger as usual. BDTest reads the attributes and
-        argument values and writes them into the report.
+        Use your test runner, your IDE and your debugger as usual. The optional source generator
+        reads the attributes and argument values at compile time, and BDTest writes them into the report.
       </p>
       <div className={styles.codeGrid}>
         <CodeBlock language="csharp" title="WithdrawalTests.cs">{testCode}</CodeBlock>
@@ -138,7 +138,7 @@ function Walkthrough() {
 }
 
 const reasons = [
-  ['No Gherkin, no generated code', 'Steps are C# methods. Go to definition, refactor and set breakpoints as you would in any other code.'],
+  ['No Gherkin, no generated tests', 'Steps are C# methods. Go to definition, refactor and set breakpoints as you would in any other code.'],
   ['Rich arguments', 'Pass enums, models and collections into steps. Step text formats them, and you can register custom converters.'],
   ['Isolated by default', 'Each test gets its own Context object, so scenarios run in parallel without shared state.'],
   ['Any runner', 'Adapters for TUnit, NUnit, xUnit and MSTest, or run standalone with BDTestBuilder.'],

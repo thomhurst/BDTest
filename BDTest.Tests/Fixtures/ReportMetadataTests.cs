@@ -110,9 +110,9 @@ public class ReportMetadataTests
             var html = useDefaultOverload
                 ? BDTestHtmlHelper.GetTestHtmlReport()
                 : BDTestHtmlHelper.GetTestHtmlReport(descriptor);
-            Assert.That(html, Does.Contain($"<strong>Environment:</strong> {environment ?? "Not Specified"}</span>"));
-            Assert.That(html, Does.Contain($"<strong>Tag:</strong> {tag ?? "Not Specified"}</span>"));
-            Assert.That(html, Does.Contain($"<strong>Branch:</strong> {branchName ?? "Not Specified"}</span>"));
+            Assert.That(html, Does.Match($"<dt>Environment</dt><dd[^>]*>{System.Text.RegularExpressions.Regex.Escape(environment ?? "Not Specified")}</dd>"));
+            Assert.That(html, Does.Match($"<dt>Tag</dt><dd[^>]*>{System.Text.RegularExpressions.Regex.Escape(tag ?? "Not Specified")}</dd>"));
+            Assert.That(html, Does.Match($"<dt>Branch</dt><dd[^>]*>{System.Text.RegularExpressions.Regex.Escape(branchName ?? "Not Specified")}</dd>"));
             return;
         }
 

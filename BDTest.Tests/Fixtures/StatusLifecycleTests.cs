@@ -70,13 +70,16 @@ public class StatusLifecycleTests
 
     [TestCase(Status.NotRun, "Not run")]
     [TestCase(Status.Pending, "Pending")]
-    public void HtmlCountsAndLabelsUnfinishedScenarios(Status status, string label)
+    [TestCase(Status.Inconclusive, "Inconclusive")]
+    public void HtmlCountsAndLabelsScenarioStatuses(Status status, string label)
     {
         var scenario = ReportJson.DeserializeObject<Scenario>($"{{\"Guid\":\"unfinished\",\"FrameworkTestId\":\"unfinished-test\",\"Status\":\"{status}\",\"Steps\":[{{\"Status\":\"{status}\"}}]}}");
         BDTest.Maps.TestHolder.AddScenario(scenario);
         var html = BDTestHtmlHelper.GetTestHtmlReport();
-        Assert.That(html, Does.Contain($"<span class=\"count\">1</span><span class=\"label\">{label}</span>"));
-        Assert.That(html, Does.Contain($"data-status=\"{status.ToString().ToLowerInvariant()}\">{label}</button>"));
+        var key = status.ToString().ToLowerInvariant();
+        Assert.That(html, Does.Contain($"<span class=\"label\">{label}</span></span><span class=\"tile-n\">1</span>"));
+        Assert.That(html, Does.Contain($"data-filter=\"{key}\" aria-pressed=\"false\"><span>{label}</span><span class=\"n\">1</span>"));
+        Assert.That(html, Does.Contain($"class=\"step\" data-status=\"{key}\""));
         Assert.That(html, Does.Contain($"class=\"step-status\">{label}</span>"));
     }
 

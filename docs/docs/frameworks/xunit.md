@@ -1,6 +1,6 @@
 ---
 title: xUnit
-description: Use BDTest with xUnit v2 through XUnitBDTestBase<TContext>.
+description: Use BDTest with xUnit v3 through XUnitBDTestBase<TContext>.
 ---
 
 # xUnit
@@ -9,25 +9,38 @@ description: Use BDTest with xUnit v2 through XUnitBDTestBase<TContext>.
 dotnet add package BDTest.xUnit
 ```
 
-`BDTest.xUnit` targets `netstandard2.0` and supports **xUnit v2** (`xunit` 2.9). Add `Microsoft.NET.Test.Sdk` and `xunit.runner.visualstudio` to the test project.
+`BDTest.xUnit` targets `netstandard2.0` and requires **xUnit v3**. Existing xUnit v2 projects must migrate before upgrading; see [Migrating from xUnit v2](#migrating-from-xunit-v2).
+
+To run with VSTest (`dotnet test`), reference `xunit.v3.mtp-off`, `Microsoft.NET.Test.Sdk` and `xunit.runner.visualstudio` 4.x, and set `<OutputType>Exe</OutputType>`:
+
+```xml title="MyApp.AcceptanceTests.csproj"
+<PropertyGroup>
+  <TargetFramework>net10.0</TargetFramework>
+  <OutputType>Exe</OutputType>
+</PropertyGroup>
+
+<ItemGroup>
+  <PackageReference Include="BDTest.xUnit" Version="*" />
+  <PackageReference Include="xunit.v3.mtp-off" Version="4.0.2" />
+  <PackageReference Include="Microsoft.NET.Test.Sdk" Version="*" />
+  <PackageReference Include="xunit.runner.visualstudio" Version="4.*" PrivateAssets="all" />
+</ItemGroup>
+```
+
+Projects that use Microsoft.Testing.Platform instead can reference `xunit.v3` and follow [xUnit's runner configuration](https://xunit.net/docs/getting-started/v3/microsoft-testing-platform).
 
 ## Writing tests
 
-Inherit from `XUnitBDTestBase<TContext>` and pass xUnit's `ITestOutputHelper` to the base constructor:
+Inherit from `XUnitBDTestBase<TContext>`. The base class has a parameterless constructor:
 
 ```csharp
 using BDTest.Attributes;
 using BDTest.xUnit;
 using Xunit;
-using Xunit.Abstractions;
 
 [Story(AsA = "shopper", IWant = "to add items to my basket", SoThat = "I can buy them")]
 public class BasketTests : XUnitBDTestBase<BasketContext>
 {
-    public BasketTests(ITestOutputHelper outputHelper) : base(outputHelper)
-    {
-    }
-
     private BasketSteps Basket => new(Context);
 
     [Fact]
@@ -44,38 +57,56 @@ public class BasketTests : XUnitBDTestBase<BasketContext>
 
 ## What the adapter does
 
-- **Execution ID:** the base constructor reads the current test case's `UniqueID` from the `ITestOutputHelper` instance.
-- **Output:** BDTest captures console output itself. It does not write to `ITestOutputHelper`.
-- **Teardown:** the class implements `IDisposable`. xUnit disposes the test class after each test, which removes the context and completes the test. If you override disposal, call the base `Dispose()`.
-- **Exceptions:** none are registered. xUnit v2 assertions have no success, skip or inconclusive exceptions.
+- **Execution ID:** `TestContext.Current.Test.UniqueID`. Theory rows get separate IDs and contexts, even when their data is not serializable.
+- **Exceptions:** registers `Xunit.Sdk.SkipException` (from `Assert.Skip(...)`) as a skip exception.
+- **Start:** the constructor marks the test as started.
+- **Teardown:** the class implements `IDisposable` and `IAsyncDisposable`. Disposal completes the BDTest execution, removes the context and clears pending output and listener state.
+- **Skips:** a whole-scenario skip calls `Assert.Skip(reason)`, so BDTest and the xUnit runner both report the test as skipped.
+- **Output:** BDTest captures console output itself. To also write to xUnit's output, inject `Xunit.ITestOutputHelper` into your own constructor.
 
-## Skipping
+## Asynchronous teardown
 
-xUnit v2 has no runtime skip. If a whole scenario is skipped by a [global rule](../writing-tests/skipping.md#skipping-whole-scenarios), the adapter throws `NotSupportedException` so the runner cannot report a false pass. Skip at discovery time instead:
+xUnit v3 calls `DisposeAsync()` instead of `Dispose()` for test classes that implement `IAsyncDisposable` or `IAsyncLifetime`. Override the adapter's virtual `DisposeAsync()` for asynchronous teardown, and always await the base method in a `finally` block so BDTest cleanup still runs when your teardown fails:
 
 ```csharp
-[Fact(Skip = "Waiting for the payments sandbox")]
-public async Task PaysByCard() { ... }
+public override async ValueTask DisposeAsync()
+{
+    try
+    {
+        await Context.CloseAsync();
+    }
+    finally
+    {
+        await base.DisposeAsync();
+    }
+}
 ```
 
-Skip-step rules still work, because the scenario itself keeps running.
+This also applies when you implement `IAsyncLifetime.InitializeAsync()`. If you hide the method or explicitly reimplement `IAsyncDisposable.DisposeAsync()`, you must still call `await base.DisposeAsync()`; xUnit does not also call `Dispose()`. See the [xUnit v3 migration guide](https://xunit.net/docs/getting-started/v3/migration#iasynclifetime-now-inherits-from-iasyncdisposable).
 
 ## Reports after the run
 
-xUnit v2 has no assembly-level teardown. Choose one of these:
-
-- **Collection fixture.** Put the tests in one `[Collection]` whose fixture writes or uploads the report in `Dispose()`. Tests in one collection do not run in parallel with each other.
-- **Process exit.** Write report files from an `AppDomain.CurrentDomain.ProcessExit` handler registered by a module initializer. Keep the work short and synchronous; the runner may stop the process soon after.
+Use an xUnit v3 assembly fixture. xUnit disposes it after every test in the assembly has finished:
 
 ```csharp
-using System.Runtime.CompilerServices;
 using BDTest.Helpers;
+using Xunit;
 
-internal static class BDTestReports
+[assembly: AssemblyFixture(typeof(BDTestReports))]
+
+public sealed class BDTestReports : IAsyncDisposable
 {
-    [ModuleInitializer]
-    internal static void Register() =>
-        AppDomain.CurrentDomain.ProcessExit += (_, _) =>
-            File.WriteAllText("BDTest-Report.html", BDTestHtmlHelper.GetTestHtmlReport());
+    public async ValueTask DisposeAsync()
+    {
+        await File.WriteAllTextAsync("BDTest-Report.html", BDTestHtmlHelper.GetTestHtmlReport());
+        // or: await BDTestReportServer.SendDataAndGetReportUriAsync(...)
+    }
 }
 ```
+
+## Migrating from xUnit v2
+
+1. Replace the `xunit` 2.x package with `xunit.v3.mtp-off` (to keep VSTest) or `xunit.v3`, and set `<OutputType>Exe</OutputType>`. Keep `Microsoft.NET.Test.Sdk` and update `xunit.runner.visualstudio` to 4.x.
+2. Remove constructors that only passed `ITestOutputHelper` to `base(...)`. If you still need the helper, inject `Xunit.ITestOutputHelper` (not `Xunit.Abstractions.ITestOutputHelper`) in your derived class.
+3. Change existing `DisposeAsync()` implementations to overrides that await `base.DisposeAsync()`.
+4. Remove workarounds for runtime skips: BDTest skip rules now produce skipped xUnit results instead of throwing `NotSupportedException`.

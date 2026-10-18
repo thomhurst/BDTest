@@ -44,7 +44,7 @@ The framework adapters register their own types when they first run:
 | TUnit | — | `SkipTestException` | `InconclusiveTestException` |
 | NUnit | `SuccessException` | `IgnoreException` | `InconclusiveException` |
 | MSTest | — | — | `AssertInconclusiveException` |
-| xUnit | — | — | — |
+| xUnit | — | `SkipException` | — |
 
 Standalone use registers nothing.
 
