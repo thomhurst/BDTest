@@ -46,6 +46,10 @@ xUnit v3 calls `DisposeAsync()` instead of `Dispose()` for tests that implement
 and provides a virtual `DisposeAsync()` that completes the BDTest execution,
 removes its context, and clears pending output and listener state.
 
+Both synchronous and asynchronous disposal invoke retained overrides of
+`MarkTestAsComplete()` for compatibility. Existing overrides must call the base
+method to complete BDTest cleanup. Use `DisposeAsync()` for new teardown code.
+
 Override this method for asynchronous teardown. Always await the base method in
 a `finally` block so BDTest cleanup also runs when your teardown fails:
 

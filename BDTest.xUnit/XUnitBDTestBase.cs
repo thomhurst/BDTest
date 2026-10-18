@@ -61,7 +61,9 @@ public abstract class XUnitBDTestBase<TContext> : AbstractContextBDTestBase<TCon
         // A derived IAsyncLifetime implementation may bypass our initialization hook.
         InitializeExecution();
         _constructorOutput.Complete();
-        EndTest();
+#pragma warning disable CS0618 // Preserve existing overrides of the compatibility hook.
+        MarkTestAsComplete();
+#pragma warning restore CS0618
         if (ReferenceEquals(TestOutputData.PendingStartupOutput, _constructorOutput))
             TestOutputData.PendingStartupOutput = null;
     }

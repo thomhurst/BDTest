@@ -33,6 +33,39 @@ public class LifecycleTests : XUnitBDTestBase<XUnitContext>
 
     private static void NoOp() { }
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task DisposalPreservesLegacyCompletionOverride(bool asynchronously)
+    {
+        using var run = BDTestRun.Start();
+        var fixture = new CompletionHookProbe(run);
+        await ((IAsyncLifetime)fixture).InitializeAsync();
+        var originalContext = fixture.Context;
+
+        if (asynchronously)
+            await fixture.DisposeAsync();
+        else
+            fixture.Dispose();
+
+        Assert.Equal(1, fixture.CompletionCalls);
+        Assert.NotSame(originalContext, fixture.Context);
+    }
+
+    private sealed class CompletionHookProbe(BDTestRun run) : XUnitBDTestBase<XUnitContext>
+    {
+        public override BDTestRun TestRun => run;
+        public int CompletionCalls { get; private set; }
+
+#pragma warning disable CS0672, CS0618 // Exercise the retained compatibility hook.
+        protected override void MarkTestAsComplete()
+        {
+            CompletionCalls++;
+            base.MarkTestAsComplete();
+        }
+#pragma warning restore CS0672, CS0618
+    }
+
     [Fact]
     public Task ExplicitRunsKeepCompletionAndOutputIsolated() =>
         LifecycleContract.Verify(run => new Probe(run).Actions);
