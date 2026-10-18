@@ -79,6 +79,10 @@ public class RetryHookTests
         {
             var error = await Assert.ThrowsAsync<ErrorOccurredDuringRetryActionException>(() => fixture.RunScenario());
 
+            Assert.That(error, Is.InstanceOf<BDTestException>());
+            Assert.That(error.InnerException, Is.SameAs(fixture.Failure));
+            Assert.That(error.Message, Does.Contain("retry action").And.Contain(fixture.Failure.Message));
+            Assert.That(error.ToString(), Does.Contain(fixture.Failure.ToString()));
             Assert.That(error.GetBaseException(), Is.SameAs(fixture.Failure));
             Assert.That(error.GetBaseException().StackTrace, Does.Contain(nameof(FailingHooks.ThrowHookFailure)));
             Assert.That(fixture.Attempts, Is.EqualTo(failingRetry), "A failing retry hook must stop the retry");
@@ -117,6 +121,20 @@ public class RetryHookTests
         {
             fixture.Complete();
         }
+    }
+
+    [Test]
+    public void RetryFailureUsesTheStandardInnerExceptionChain()
+    {
+        var cause = new InvalidOperationException("root cause");
+        var hookFailure = new Exception("retry hook failed", cause);
+
+        var error = new ErrorOccurredDuringRetryActionException(hookFailure);
+
+        Assert.That(error.InnerException, Is.SameAs(hookFailure));
+        Assert.That(error.GetBaseException(), Is.SameAs(cause));
+        Assert.That(error.Message, Does.Contain(hookFailure.Message));
+        Assert.That(error.ToString(), Does.Contain(hookFailure.ToString()));
     }
 
     [TestCase(false)]

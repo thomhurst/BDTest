@@ -328,6 +328,14 @@ continues to count retries. JSON reports include the history; older reports load
 with an empty history. Retried scenarios show a **Retry history** section in both
 standalone HTML and Razor reports, so failures remain visible after a passing retry.
 
+If a retry setup, teardown, or `OnBeforeRetry()` hook throws, BDTest stops retrying
+and throws `BDTest.Exceptions.ErrorOccurredDuringRetryActionException`, which derives
+from `BDTestException`. Its message includes the hook's error message, and
+`InnerException` contains the original hook exception. `ToString()` includes the
+cause and its stack trace. `GetBaseException()` follows the normal inner exception
+chain to the innermost cause. Scenario and retry attempt reports retain the hook exception,
+including any nested cause. See [retry hook errors](docs/docs/configuration/retry-hook-errors.md).
+
 ### But steps
 
 Use `.But(...)` after a Given, When, or Then step to express a contrast. It accepts

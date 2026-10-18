@@ -1,16 +1,9 @@
 namespace BDTest.Exceptions;
 
-public class ErrorOccurredDuringRetryActionException : Exception
+public class ErrorOccurredDuringRetryActionException : BDTestException
 {
-    private Exception Exception { get; }
-        
-    public override Exception GetBaseException()
-    {
-        return Exception;
-    }
-
     public ErrorOccurredDuringRetryActionException(Exception exception)
+        : base($"An error occurred while running a retry action: {exception?.Message}", exception)
     {
-        Exception = exception;
     }
 }

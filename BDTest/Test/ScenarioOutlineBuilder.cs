@@ -126,7 +126,7 @@ public sealed class ScenarioOutlineBuilder<TExample> : BuildableTest
                     {
                         if (row.Exception == null && row.Status is Status.Failed or Status.NotImplemented)
                             row.ExecutionException = new ExceptionWrapper(exception is ErrorOccurredDuringRetryActionException
-                                ? exception.GetBaseException() : exception);
+                                ? exception.InnerException ?? exception : exception);
                         failures.Add((row.Status, ExceptionDispatchInfo.Capture(exception)));
                     }
                 }
