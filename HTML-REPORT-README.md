@@ -93,7 +93,7 @@ Each test scenario shows:
 - Scenario and story text
 - Execution duration and retry count
 - Expandable details including:
-  - Step-by-step execution with passed, failed, skipped, inconclusive, or not-implemented status
+  - Step-by-step execution with passed, failed, skipped, inconclusive, not-implemented, not-run, or pending status
   - Exception details with stack traces
   - Console output
   - Custom HTML content

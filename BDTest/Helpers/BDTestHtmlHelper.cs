@@ -15,7 +15,7 @@ public static class BDTestHtmlHelper
 
     // Display order for status tiles, filters and story totals.
     private static readonly Status[] Statuses =
-        { Status.Passed, Status.Failed, Status.Skipped, Status.Inconclusive, Status.NotImplemented };
+        { Status.Passed, Status.Failed, Status.Skipped, Status.Inconclusive, Status.NotImplemented, Status.NotRun, Status.Pending };
 
     public static string GetTestHtmlReport()
     {
@@ -273,7 +273,7 @@ public static class BDTestHtmlHelper
         html.AppendLine("</div>");
 
         var also = new List<string>();
-        foreach (var status in new[] { Status.Inconclusive, Status.NotImplemented, Status.Skipped })
+        foreach (var status in new[] { Status.Inconclusive, Status.NotImplemented, Status.Skipped, Status.NotRun, Status.Pending })
         {
             var count = data.Scenarios.Count(s => s.Status == status);
             if (count > 0)
@@ -513,14 +513,12 @@ public static class BDTestHtmlHelper
         html.AppendLine("<ol class=\"steps\">");
         foreach (var step in steps)
         {
-            // Steps after a failure keep their default status but never started.
-            var status = step.Status == Status.Inconclusive && step.StartTime == default && step.Exception == null
-                ? "notrun" : Key(step.Status);
+            var status = Key(step.Status);
             var (keyword, text) = SplitStepText(step.StepText);
             html.AppendLine($"<li class=\"step\" data-status=\"{status}\">");
-            html.AppendLine($"<div class=\"step-row\"><span class=\"glyph\" data-g=\"{status}\" aria-hidden=\"true\"></span><span class=\"kw\">{EscapeHtml(keyword)}</span><span class=\"step-text\">{EscapeHtml(text)}</span><span class=\"dur\">{(status == "notrun" ? "" : FormatDuration(step.TimeTaken))}</span></div>");
+            html.AppendLine($"<div class=\"step-row\"><span class=\"glyph\" data-g=\"{status}\" aria-hidden=\"true\"></span><span class=\"kw\">{EscapeHtml(keyword)}</span><span class=\"step-text\">{EscapeHtml(text)}</span><span class=\"step-status\">{Label(status)}</span><span class=\"dur\">{(status == "notrun" ? "" : FormatDuration(step.TimeTaken))}</span></div>");
             if (status == "notrun")
-                html.AppendLine("<p class=\"step-note\">Not run: an earlier step did not pass.</p>");
+                html.AppendLine("<p class=\"step-note\">This step has not started.</p>");
             if (step.Exception != null)
                 AppendError(html, step.Exception, step.Status == Status.NotImplemented);
             html.AppendLine("</li>");
@@ -592,6 +590,7 @@ public static class BDTestHtmlHelper
         "inconclusive" => "Inconclusive",
         "notimplemented" => "Not implemented",
         "notrun" => "Not run",
+        "pending" => "Pending",
         _ => key
     };
 
@@ -603,6 +602,8 @@ public static class BDTestHtmlHelper
         Status.Skipped => "This scenario did not run its steps.",
         Status.Inconclusive => "The test could not confirm the outcome either way.",
         Status.NotImplemented => "A step in this scenario has no implementation yet.",
+        Status.NotRun => "This scenario has not started.",
+        Status.Pending => "This scenario has started and has not produced a result yet.",
         _ => null
     };
 
@@ -694,6 +695,7 @@ font-family:var(--sans);color:var(--ink);background:var(--bg);min-height:100vh;f
 [data-status=inconclusive]{--s:var(--inconclusive);--s-bg:var(--inconclusive-bg)}
 [data-status=notimplemented]{--s:var(--notimplemented);--s-bg:var(--notimplemented-bg)}
 [data-status=notrun]{--s:var(--notrun);--s-bg:var(--notrun-bg)}
+[data-status=pending]{--s:var(--notrun);--s-bg:var(--notrun-bg)}
 [data-status=all]{--s:var(--ink);--s-bg:var(--sunken)}
 .glyph{display:inline-block;flex:none;width:9px;height:9px;border-radius:50%;background:var(--g)}
 .glyph[data-g=passed]{--g:var(--passed)}
@@ -702,6 +704,7 @@ font-family:var(--sans);color:var(--ink);background:var(--bg);min-height:100vh;f
 .glyph[data-g=inconclusive]{--g:var(--inconclusive);border:2px solid var(--g);background:linear-gradient(90deg,var(--g) 50%,transparent 50%)}
 .glyph[data-g=notimplemented]{--g:var(--notimplemented);background:none;border:2px solid var(--g);border-radius:2px}
 .glyph[data-g=notrun]{--g:var(--notrun);height:2px;border-radius:1px}
+.glyph[data-g=pending]{--g:var(--notrun);background:none;border:2px dotted var(--g)}
 .pill{display:inline-flex;align-items:center;gap:7px;padding:3px 10px 3px 9px;border-radius:999px;background:var(--s-bg);color:var(--s);font-size:12.5px;font-weight:650;white-space:nowrap;line-height:1.3}
 .top{border-bottom:1px solid var(--rule);background:var(--surface)}
 .top-row{display:flex;justify-content:space-between;align-items:center;gap:12px;min-height:56px;flex-wrap:wrap}
@@ -801,10 +804,11 @@ font-family:var(--sans);color:var(--ink);background:var(--bg);min-height:100vh;f
 .note b{color:var(--s)}
 .steps{list-style:none;margin:0;padding:0}
 .step+.step{border-top:1px solid var(--rule)}
-.step-row{display:grid;grid-template-columns:9px 54px minmax(0,1fr) auto;gap:12px;align-items:start;padding:9px 0}
+.step-row{display:grid;grid-template-columns:9px 54px minmax(0,1fr) auto auto;gap:12px;align-items:start;padding:9px 0}
 .step-row .glyph{margin-top:7px}
 .kw{font-family:var(--mono);font-size:11.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);padding-top:2px}
 .step-text{overflow-wrap:anywhere}
+.step-status{font-size:12px;color:var(--muted)}
 .step[data-status=failed] .step-text{font-weight:640}
 .step[data-status=notrun] .step-text{color:var(--muted)}
 .step .dur{font-size:12.5px;color:var(--muted)}
@@ -872,6 +876,8 @@ font-family:var(--sans);color:var(--ink);background:var(--bg);min-height:100vh;f
 .scn-body{padding:16px 14px}
 .err,.step-note{margin-left:0}
 .step-row{grid-template-columns:9px 46px minmax(0,1fr) auto;gap:10px}
+.step-status{grid-column:3;grid-row:2}
+.step .dur{grid-column:4;grid-row:1}
 .nr-row{grid-template-columns:1fr;gap:2px}
 }
 @media print{
