@@ -4,7 +4,6 @@ using BDTest.Helpers;
 using BDTest.Interfaces.Internal;
 using BDTest.Output;
 using BDTest.Reporters;
-using BDTest.Settings;
 using BDTest.Test;
 
 namespace BDTest.Engine;
@@ -91,13 +90,13 @@ internal class ScenarioExecutor : IScenarioExecutor
             scenario.Status = Status.NotImplemented;
             throw;
         }
-        catch (Exception e) when (!scenario.TimedOut && BDTestSettings.CustomExceptionSettings.SuccessExceptionTypes.Contains(e.GetType()))
+        catch (Exception e) when (!scenario.TimedOut && scenario.Run.Options.SuccessExceptionTypes.Contains(e.GetType()))
         {
             attemptException = e;
             scenario.Status = Status.Passed;
             throw;
         }
-        catch (Exception e) when (!scenario.TimedOut && BDTestSettings.CustomExceptionSettings.SkipExceptionTypes.Contains(e.GetType()))
+        catch (Exception e) when (!scenario.TimedOut && scenario.Run.Options.SkipExceptionTypes.Contains(e.GetType()))
         {
             attemptException = e;
             scenario.Status = Status.Skipped;
@@ -108,7 +107,7 @@ internal class ScenarioExecutor : IScenarioExecutor
             }
             throw;
         }
-        catch (Exception e) when (!scenario.TimedOut && BDTestSettings.CustomExceptionSettings.InconclusiveExceptionTypes.Contains(e.GetType()))
+        catch (Exception e) when (!scenario.TimedOut && scenario.Run.Options.InconclusiveExceptionTypes.Contains(e.GetType()))
         {
             attemptException = e;
             scenario.Status = Status.Inconclusive;
@@ -119,7 +118,7 @@ internal class ScenarioExecutor : IScenarioExecutor
             attemptException = e;
             scenario.Status = Status.Failed;
 
-            var validRetryRules = BDTestSettings.GlobalRetryTestRules.Rules.Where(rule => rule.Condition(e)).ToList();
+            var validRetryRules = scenario.Run.Options.RetryRules.Where(rule => rule.Condition(e)).ToList();
             if (validRetryRules.Any() && scenario.RetryCount < validRetryRules.Max(x => x.RetryLimit))
             {
                 scenario.ShouldRetry = true;
@@ -182,7 +181,7 @@ internal class ScenarioExecutor : IScenarioExecutor
 
     private bool ShouldSkip(Scenario scenario)
     {
-        return BDTestSettings.GlobalSkipTestRules.Rules.Any(x => x.Invoke(scenario));
+        return scenario.Run.Options.SkipTestRules.Any(x => x.Invoke(scenario));
     }
 
     private async Task WriteTestInformation(Scenario scenario)

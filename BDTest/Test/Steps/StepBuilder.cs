@@ -44,7 +44,7 @@ public abstract class StepBuilder : BuildableTest
         TestOutputData.TestId = Guid;
         TestOutputData.FrameworkExecutionId = testId;
 
-        ExistingSteps = new List<Step> { new(runnable, stepType, Guid, ReportId) };
+        ExistingSteps = new List<Step> { new(runnable, stepType, Guid, ReportId, Run) };
             
         Run.Store.RegisterPending(this);
             
@@ -77,7 +77,7 @@ public abstract class StepBuilder : BuildableTest
         // An extension replaces its prefix in the not-run list, but sibling
         // extensions remain independent scenarios with their own step state.
         ExistingSteps = previousSteps.Select(step => new Step(step, Guid)).ToList();
-        ExistingSteps.Add(new Step(runnable, StepType, Guid, ReportId));
+        ExistingSteps.Add(new Step(runnable, StepType, Guid, ReportId, Run));
 
         Run.Store.NotRun.TryRemove(previousPartiallyBuiltTest.Guid, out _);
         Run.Store.RegisterPending(this);

@@ -6,7 +6,6 @@ using BDTest.Exceptions;
 using BDTest.Extensions;
 using BDTest.Helpers;
 using BDTest.Output;
-using BDTest.Settings;
 
 namespace BDTest.Test;
 
@@ -69,10 +68,10 @@ public sealed class ScenarioOutlineBuilder<TExample> : BuildableTest
 
     public TaskAwaiter<Scenario> GetAwaiter() => BDTestAsync().GetAwaiter();
 
-    private static Status ClassifyOutcome(Exception exception)
+    private Status ClassifyOutcome(Exception exception)
     {
         if (exception is NotImplementedException) return Status.NotImplemented;
-        var settings = BDTestSettings.CustomExceptionSettings;
+        var settings = Run.Options;
         var exceptionType = exception.GetType();
         if (settings.SuccessExceptionTypes.Contains(exceptionType)) return Status.Passed;
         if (settings.SkipExceptionTypes.Contains(exceptionType)) return Status.Skipped;

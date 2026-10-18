@@ -447,9 +447,40 @@ Existing overloads and framework adapters continue to use the legacy default run
 Dispose a run only after its tests and output writers finish. Disposal clears its stores
 and prevents new scenario construction or execution; it does not cancel active tests.
 `BDTestUtil.ClearScenarios(run)` clears storage between executions while retaining the
-same report ID. Start a new run to get a new ID. Configuration through `BDTestSettings`
-is still process-wide; frozen options and assembly-owned adapter lifecycles are separate
-parts of the migration tracked by #797.
+same report ID. Start a new run to get a new ID.
+
+Pass `BDTestOptions` to configure an explicit run:
+
+```csharp
+var options = new BDTestOptions();
+options.SuccessExceptionTypes.Add(typeof(MySuccessException));
+options.RetryTestRules.Add(exception => exception is IOException, retryLimit: 2);
+options.SkipTestRules.Add(scenario => scenario.Tags.Contains("manual"));
+options.SkipStepRules.Add<MySkipAttribute>(attribute => attribute.ShouldSkip);
+options.Debug.ShouldSkipWhenStep = false;
+options.RegisterCustomStringConverter<MyValue>(new MyValueConverter());
+options.StepHooks.Add(new MyStepHook()); // Implements BDTest.Interfaces.IStepHook.
+using var run = BDTestRun.Start(options);
+```
+
+`Start(options)` copies exception types, retry and skip rules, debug settings, typed
+converters and ordered step hooks. Later changes to the options affect only new runs.
+`Start()` uses empty registrations and default debug settings. Explicit runs do not
+inherit `BDTestSettings`; register any framework exceptions your custom adapter needs.
+Configure options before starting a run, without concurrent mutations. Callback,
+converter and hook instances are not cloned and remain responsible for their own
+thread safety.
+
+Converters implement `IStepTextStringConverter<T>`. The first registration whose `T`
+accepts the argument wins, including explicit interface implementations. Hook methods
+`BeforeStepAsync(Step)` and `AfterStepAsync(Step)` return `Task` and run sequentially
+in registration order. Run before hooks precede the test instance's `OnBeforeStep`;
+run after hooks follow `OnAfterStep`. Hooks also run for reached skipped steps and
+retry attempts. Every after hook runs even if another hook fails; an original step
+failure takes precedence over after-hook failures.
+
+`BDTestSettings` still configures the legacy default run used by existing adapters.
+Assembly-owned adapter lifecycles remain a separate part of #797.
 
 ### Report date formatting
 
