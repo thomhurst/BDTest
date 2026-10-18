@@ -90,8 +90,9 @@ public class Step
     }
 
     [JsonConstructor]
-    private Step()
+    private Step(StepType stepType)
     {
+        StepType = stepType;
     }
 
     [JsonProperty]
