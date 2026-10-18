@@ -171,6 +171,7 @@ public class Step
         var beforeHooks = BDTestSettings.BeforeStepHooks;
         var afterHooks = BDTestSettings.AfterStepHooks;
         Exception executionException = null;
+        var beforeHooksCompleted = false;
         var stopwatch = Stopwatch.StartNew();
         try
         {
@@ -187,6 +188,8 @@ public class Step
             {
                 await test.OnBeforeStep(this).ConfigureAwait(false);
             }
+
+            beforeHooksCompleted = true;
 
             if (ShouldSkip())
             {
@@ -210,13 +213,18 @@ public class Step
         }
         catch (Exception e)
         {
+            // Preserve failures raised within budget even if after hooks later exceed it.
+            if (!beforeHooksCompleted && remainingScenarioTime.HasValue && stopwatch.Elapsed >= remainingScenarioTime.Value)
+            {
+                e = CreateTimeoutException("Scenario", scenarioTimeout.Value);
+            }
             executionException = e;
             SetExceptionResult(e);
             if (Status == Status.Failed)
             {
                 await Console.Out.WriteLineAsync($"{Environment.NewLine}{e.GetType().Name} on '{StepPrefix}' step executing '{Runnable.GetExpressionString()}'").ConfigureAwait(false);
             }
-            throw;
+            ExceptionDispatchInfo.Capture(e).Throw();
         }
         finally
         {

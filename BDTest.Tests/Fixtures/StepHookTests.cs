@@ -382,6 +382,95 @@ public class StepHookTests
         Assert.That(GetScenario(observed).Status, Is.EqualTo(Status.Failed));
     }
 
+    [TestCase(false, "failure")]
+    [TestCase(true, "failure")]
+    [TestCase(false, "success")]
+    [TestCase(true, "success")]
+    [TestCase(false, "skip")]
+    [TestCase(true, "skip")]
+    [TestCase(false, "inconclusive")]
+    [TestCase(true, "inconclusive")]
+    [TestCase(false, "not implemented")]
+    [TestCase(true, "not implemented")]
+    public async Task Expired_before_hook_failure_is_a_scenario_timeout(bool globalHook, string kind)
+    {
+        BDTestSettings.CustomExceptionSettings.SuccessExceptionTypes.Add(typeof(HookSuccessException));
+        BDTestSettings.CustomExceptionSettings.SkipExceptionTypes.Add(typeof(HookSkipException));
+        BDTestSettings.CustomExceptionSettings.InconclusiveExceptionTypes.Add(typeof(HookInconclusiveException));
+        Exception failure = kind switch
+        {
+            "success" => new HookSuccessException(),
+            "skip" => new HookSkipException(),
+            "inconclusive" => new HookInconclusiveException(),
+            "not implemented" => new NotImplementedException("before hook not implemented"),
+            _ => new InvalidOperationException("before hook failed")
+        };
+        var calls = new List<string>();
+        Step observed = null;
+        Func<Step, Task> before = async _ =>
+        {
+            await Task.Delay(150);
+            throw failure;
+        };
+        var test = new HookTest
+        {
+            Before = globalHook ? _ => Task.CompletedTask : before,
+            After = step => { observed = step; calls.Add("after"); return Task.CompletedTask; }
+        };
+        if (globalHook) { BDTestSettings.BeforeStep += before; }
+        try
+        {
+            var builder = test.When(() => calls.Add("body")).Then(() => calls.Add("later"))
+                .WithScenarioTimeout(TimeSpan.FromMilliseconds(50));
+            var exception = await Assert.ThrowsAsync<TimeoutException>(async () =>
+                await builder.BDTestAsync().WaitAsync(TimeSpan.FromSeconds(10)));
+
+            Assert.That(exception.Message, Does.StartWith("Scenario"));
+            Assert.That(calls, Is.EqualTo(new[] { "after" }));
+            Assert.That(observed.TimedOut, Is.True);
+            Assert.That(observed.Status, Is.EqualTo(Status.Failed));
+            Assert.That(observed.Exception.Message, Is.EqualTo(exception.Message));
+            Assert.That(GetScenario(observed).TimedOut, Is.True);
+            Assert.That(GetScenario(observed).Status, Is.EqualTo(Status.Failed));
+            Assert.That(GetScenario(observed).Steps[1].Status, Is.EqualTo(Status.Inconclusive));
+        }
+        finally
+        {
+            if (globalHook) { BDTestSettings.BeforeStep -= before; }
+        }
+    }
+
+    [TestCase(false)]
+    [TestCase(true)]
+    public async Task Before_hook_failure_within_budget_survives_after_hook_expiry(bool globalHook)
+    {
+        var failure = new InvalidOperationException("before hook failed within budget");
+        Step observed = null;
+        Func<Step, Task> before = _ => throw failure;
+        var test = new HookTest
+        {
+            Before = globalHook ? _ => Task.CompletedTask : before,
+            After = async step => { observed = step; await Task.Delay(1500); }
+        };
+        if (globalHook) { BDTestSettings.BeforeStep += before; }
+        try
+        {
+            var thrown = await Assert.ThrowsAsync<InvalidOperationException>(async () =>
+                await test.When(() => NoOp()).Then(() => NoOp())
+                    .WithScenarioTimeout(TimeSpan.FromSeconds(1)).BDTestAsync().WaitAsync(TimeSpan.FromSeconds(10)));
+
+            Assert.That(thrown, Is.SameAs(failure));
+            Assert.That(observed.TimedOut, Is.False);
+            Assert.That(observed.Exception.Message, Is.EqualTo(failure.Message));
+            Assert.That(GetScenario(observed).TimedOut, Is.False);
+            Assert.That(GetScenario(observed).Status, Is.EqualTo(Status.Failed));
+        }
+        finally
+        {
+            if (globalHook) { BDTestSettings.BeforeStep -= before; }
+        }
+    }
+
     [TestCase(false, "none")]
     [TestCase(true, "none")]
     [TestCase(false, "failure")]
