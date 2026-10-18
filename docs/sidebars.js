@@ -101,6 +101,7 @@ const sidebars = {
       items: [
         'migration/target-frameworks',
         'migration/delegate-steps',
+        'migration/scenario-definitions',
         'migration/async-only',
         'migration/fluent-builders',
         'migration/statuses',

@@ -4,7 +4,7 @@ public sealed class ButGiven : GivenStepBuilder
 {
     protected override StepType StepType { get; } = StepType.ButGiven;
 
-    internal ButGiven(List<Step> previousSteps, Runnable runnable, BuildableTest previousPartiallyBuiltTest) : base(previousSteps, runnable, previousPartiallyBuiltTest)
+    internal ButGiven(Runnable runnable, BuildableTest previousPartiallyBuiltTest) : base(runnable, previousPartiallyBuiltTest)
     {
     }
 

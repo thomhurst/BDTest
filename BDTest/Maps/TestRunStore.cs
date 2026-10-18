@@ -6,7 +6,7 @@ namespace BDTest.Maps;
 
 internal sealed class TestRunStore
 {
-    internal ConcurrentDictionary<string, BuildableTest> NotRun { get; } = new();
+    internal ConcurrentDictionary<string, ScenarioDefinition> NotRun { get; } = new();
     internal ConcurrentDictionary<string, Scenario> ScenariosByInternalId { get; } = new();
     internal ConcurrentDictionary<string, Scenario> ScenariosByTestFrameworkId { get; } = new();
         
@@ -102,12 +102,12 @@ internal sealed class TestRunStore
         if (IsDisposed) throw new ObjectDisposedException(nameof(BDTestRun));
     }
 
-    internal void RegisterPending(BuildableTest builder)
+    internal void RegisterPending(ScenarioDefinition definition)
     {
         lock (Gate)
         {
             ThrowIfDisposed();
-            NotRun[builder.Guid ?? throw new InvalidOperationException("The builder has no ID.")] = builder;
+            NotRun[definition.Guid ?? throw new InvalidOperationException("The definition has no ID.")] = definition;
         }
     }
 

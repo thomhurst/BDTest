@@ -54,7 +54,7 @@ public class StructuredStepArgumentTests : BDTestBase
     {
         var builder = When(() => Accept(Table)).Then(NoOp);
         Assert.That(_reads, Is.Zero);
-        Assert.That(builder.ExistingSteps[0].Arguments, Is.Empty);
+        Assert.That(builder.ExistingSteps[0], Is.TypeOf<StepDefinition>());
         var result = await builder;
         Assert.That(_reads, Is.EqualTo(2), "One report read and the actual delegate invocation.");
         Assert.That(Required(result.Steps)[0].StepText, Does.Contain("(table: 1 rows)"));

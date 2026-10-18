@@ -67,8 +67,12 @@ Both readers return a nullable model: the JSON literal `null` produces `null`. H
 | `MachineName`, `Version` | `string?` | Where the tests ran and the BDTest version. |
 | `TestTimer` | `TestTimer?` | Start, finish and elapsed time of the run. |
 | `Scenarios` | `List<Scenario>?` | Every executed scenario, including outlines with their rows. |
-| `NotRun` | `List<BuildableTest>?` | Tests that were built but not executed. |
+| `NotRun` | `List<ScenarioDefinitionSummary>?` | Tests that were built but not executed. |
 | `CustomProperties` | `Dictionary<string, string>?` | Extra values from the obsolete `BDTestSettings.CustomProperties`. |
+
+### Pending scenarios
+
+`NotRun` contains dedicated `ScenarioDefinitionSummary` values rather than builders. Existing scenario/story text, metadata, caller and parameter fields remain readable, including historical reports without step summaries. New summaries also include the scenario `Timeout` and `Steps` (`StepType`, template `StepText`, `Timeout`). They contain no fixture, delegates, run object, output or execution state. Export does not evaluate lazy argument or text readers.
 
 ### Format details
 

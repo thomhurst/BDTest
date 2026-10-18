@@ -47,7 +47,7 @@ public class ReportSerializationTests
             Id = "report", Environment = "environment", Tag = "tag", BranchName = "branch", MachineName = "machine", Version = "version",
             TestTimer = new TestTimer { TestsStartedAt = started, TestsFinishedAt = started.Add(duration) },
             Scenarios = [scenario], CustomProperties = new() { ["property"] = "value" },
-            NotRun = [new BuildableTest
+            NotRun = [new ScenarioDefinitionSummary
             {
                 StoryText = new StoryText("unrun story"), ScenarioText = new ScenarioText("unrun scenario"),
                 ScenarioId = "unrun", ReportId = "report", ParameterNames = ["parameter"], CustomTestInformation = information,

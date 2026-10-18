@@ -4,7 +4,7 @@ public sealed class When : WhenStepBuilder
 {
     protected override StepType StepType { get; } = StepType.When;
 
-    internal When(List<Step> previousSteps, Runnable runnable, BuildableTest previousPartiallyBuiltTest) : base(previousSteps, runnable, previousPartiallyBuiltTest)
+    internal When(Runnable runnable, BuildableTest previousPartiallyBuiltTest) : base(runnable, previousPartiallyBuiltTest)
     {
     }
 

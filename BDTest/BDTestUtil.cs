@@ -14,11 +14,11 @@ public static class BDTestUtil
         .Where(scenario => scenario.OutlineId == null).ToList();
 
     public static string CurrentReportId => BDTestRun.Default.ReportId;
-    public static List<BuildableTest> GetNotRunScenarios() => GetNotRunScenarios(BDTestRun.Default);
+    public static List<ScenarioDefinitionSummary> GetNotRunScenarios() => GetNotRunScenarios(BDTestRun.Default);
 
     /// <summary>Gets a snapshot of the run's unfinished scenario definitions.</summary>
-    public static List<BuildableTest> GetNotRunScenarios(BDTestRun run) =>
-        (run ?? throw new ArgumentNullException(nameof(run))).Store.NotRun.Values.ToList();
+    public static List<ScenarioDefinitionSummary> GetNotRunScenarios(BDTestRun run) =>
+        (run ?? throw new ArgumentNullException(nameof(run))).Store.NotRun.Values.Select(definition => definition.ToSummary()).ToList();
 
     /// <summary>Clears recorded and not-run scenarios, pending output, and scenario listeners.</summary>
     /// <remarks>Call between test runs. This does not cancel executing tests or change the report ID.</remarks>

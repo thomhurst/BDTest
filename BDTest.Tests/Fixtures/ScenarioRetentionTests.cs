@@ -75,14 +75,14 @@ public class ScenarioRetentionTests
         TestHolder.ListenForScenario(pendingId, _ => listenerCalls++);
 
         // Leave a step output buffer populated too, as can happen during an aborted run.
-        var active = new Scenario(new List<Step>(), fixture.Build(new TextSource()));
+        var active = new Scenario(new List<Step>(), fixture.Build(new TextSource()).Definition);
         active.StartTime = DateTime.Now;
         active.Status = Status.Pending;
         TestOutputData.TestId = active.Guid;
         var writer = new TestOutputData();
         writer.Write("old step output");
         Assert.That(writer.ToString(), Is.EqualTo("old step output"));
-        Assert.That(BDTestUtil.GetNotRunScenarios(), Does.Contain(pending));
+        Assert.That(BDTestUtil.GetNotRunScenarios().Select(item => item.ScenarioId), Does.Contain(pending.Guid));
 
         BDTestUtil.ClearScenarios();
         BDTestUtil.ClearScenarios(); // Reset is idempotent.

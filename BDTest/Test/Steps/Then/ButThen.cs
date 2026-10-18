@@ -4,7 +4,7 @@ public sealed class ButThen : ThenStepBuilder
 {
     protected override StepType StepType { get; } = StepType.ButThen;
 
-    internal ButThen(List<Step> previousSteps, Runnable runnable, BuildableTest previousPartiallyBuiltTest) : base(previousSteps, runnable, previousPartiallyBuiltTest)
+    internal ButThen(Runnable runnable, BuildableTest previousPartiallyBuiltTest) : base(runnable, previousPartiallyBuiltTest)
     {
     }
 

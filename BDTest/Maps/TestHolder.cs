@@ -8,7 +8,7 @@ internal static class TestHolder
 {
     private static TestRunStore Store => BDTestRun.Default.Store;
     internal static string CurrentReportId => BDTestRun.Default.ReportId;
-    internal static ConcurrentDictionary<string, BuildableTest> NotRun => Store.NotRun;
+    internal static ConcurrentDictionary<string, ScenarioDefinition> NotRun => Store.NotRun;
     internal static ConcurrentDictionary<string, Scenario> ScenariosByInternalId => Store.ScenariosByInternalId;
     internal static ConcurrentDictionary<string, Scenario> ScenariosByTestFrameworkId => Store.ScenariosByTestFrameworkId;
     internal static void AppendStartupOutput(string id, char value) => Store.AppendStartupOutput(id, value);

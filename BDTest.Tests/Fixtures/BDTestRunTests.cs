@@ -51,7 +51,7 @@ public class BDTestRunTests
         var builder = fixture.Build();
 
         Assert.That(first.ReportId, Is.Not.EqualTo(second.ReportId));
-        Assert.That(BDTestUtil.GetNotRunScenarios(first), Does.Contain(builder));
+        Assert.That(BDTestUtil.GetNotRunScenarios(first).Select(item => item.ScenarioId), Does.Contain(builder.Guid));
         Assert.That(BDTestUtil.GetNotRunScenarios(second), Is.Empty);
         Assert.That(second.Scenarios, Is.Empty);
     }

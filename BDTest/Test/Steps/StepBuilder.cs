@@ -5,7 +5,7 @@ namespace BDTest.Test.Steps;
 
 public abstract class StepBuilder : BuildableTest
 {
-    internal readonly List<Step> ExistingSteps;
+    internal List<StepDefinition> ExistingSteps => Definition.Steps;
     protected abstract StepType StepType { get; }
 
     static StepBuilder()
@@ -42,44 +42,27 @@ public abstract class StepBuilder : BuildableTest
         TestOutputData.TestId = Guid;
         TestOutputData.FrameworkExecutionId = testId;
 
-        ExistingSteps = new List<Step> { new(runnable, stepType, Guid, ReportId, Run) };
-            
-        Run.Store.RegisterPending(this);
-            
+        ExistingSteps.Add(new StepDefinition(runnable, stepType));
+
         StoryText = StoryTextHelper.GetStoryText(bdTestBase);
         ScenarioText = new ScenarioText(ScenarioTextHelper.GetScenarioText(TestMetadata, CallerMember));
         ParameterNames = TestMetadata.CopyParameters();
         CustomTestInformation = TestMetadata.CopyInformation();
         Tags = TestMetadata.CopyTags();
+        Run.Store.RegisterPending(Definition);
     }
 
-    internal StepBuilder(List<Step> previousSteps, Runnable runnable, BuildableTest previousPartiallyBuiltTest)
+    internal StepBuilder(Runnable runnable, BuildableTest previousPartiallyBuiltTest)
     {
-        Run = previousPartiallyBuiltTest.Run;
+        Definition = previousPartiallyBuiltTest.Definition.Snapshot();
         Run.ThrowIfDisposed();
         TestOutputData.Run = Run;
-        TestOutputData.FrameworkExecutionId = previousPartiallyBuiltTest.TestId;
-        ScenarioTimeout = previousPartiallyBuiltTest.ScenarioTimeout;
-        StoryText = previousPartiallyBuiltTest.StoryText;
-        ScenarioText = previousPartiallyBuiltTest.ScenarioText;
-        BdTestBase = previousPartiallyBuiltTest.BdTestBase;
-        TestMetadata = previousPartiallyBuiltTest.TestMetadata;
-        CallerMember = previousPartiallyBuiltTest.CallerMember;
-        CallerFile = previousPartiallyBuiltTest.CallerFile;
-        TestId = previousPartiallyBuiltTest.TestId;
+        TestOutputData.FrameworkExecutionId = TestId;
         Guid = System.Guid.NewGuid().ToString();
-        ReportId = previousPartiallyBuiltTest.ReportId;
-        ParameterNames = previousPartiallyBuiltTest.ParameterNames;
-        CustomTestInformation = previousPartiallyBuiltTest.CustomTestInformation;
-        Tags = previousPartiallyBuiltTest.Tags;
-
-        // An extension replaces its prefix in the not-run list, but sibling
-        // extensions remain independent scenarios with their own step state.
-        ExistingSteps = previousSteps.Select(step => new Step(step, Guid)).ToList();
-        ExistingSteps.Add(new Step(runnable, StepType, Guid, ReportId, Run));
+        ExistingSteps.Add(new StepDefinition(runnable, StepType));
 
         if (previousPartiallyBuiltTest.Guid != null) Run.Store.NotRun.TryRemove(previousPartiallyBuiltTest.Guid, out _);
-        Run.Store.RegisterPending(this);
+        Run.Store.RegisterPending(Definition);
         TestOutputData.TestId = Guid;
     }
 }

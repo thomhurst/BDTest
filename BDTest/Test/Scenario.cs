@@ -70,7 +70,7 @@ public class Scenario
 
     internal bool AlreadyExecuted;
 
-    internal Scenario(List<Step> steps, BuildableTest testDetails, Scenario? outline = null,
+    internal Scenario(List<Step> steps, ScenarioDefinition testDetails, Scenario? outline = null,
         Dictionary<string, string>? exampleValues = null)
     {
         Run = testDetails.Run;

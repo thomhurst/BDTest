@@ -4,7 +4,7 @@ public sealed class AndGiven : GivenStepBuilder
 {
     protected override StepType StepType { get; } = StepType.AndGiven;
 
-    internal AndGiven(List<Step> previousSteps, Runnable runnable, BuildableTest previousPartiallyBuiltTest) : base(previousSteps, runnable, previousPartiallyBuiltTest)
+    internal AndGiven(Runnable runnable, BuildableTest previousPartiallyBuiltTest) : base(runnable, previousPartiallyBuiltTest)
     {
     }
 

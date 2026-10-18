@@ -9,7 +9,7 @@
     Layout = "_Layout";
 
     var reportId = Model.Id ?? string.Empty;
-    var notRun = (Model.NotRun ?? new List<BDTest.Test.BuildableTest>()).Where(test => test != null)
+    var notRun = (Model.NotRun ?? new List<BDTest.Test.ScenarioDefinitionSummary>()).Where(test => test != null)
         .OrderBy(test => test.GetStoryText()).ThenBy(test => test.GetScenarioText()).ToList();
 
     string FileName(string? path) => string.IsNullOrEmpty(path) ? string.Empty : path.Replace('\\', '/')[(path.Replace('\\', '/').LastIndexOf('/') + 1)..];

@@ -49,7 +49,7 @@ public sealed class ScenarioOutlineBuilder<TExample> : BuildableTest
         ScenarioText = new ScenarioText(text);
         CustomTestInformation = TestMetadata.CopyInformation();
         Tags = TestMetadata.CopyTags();
-        Run.Store.RegisterPending(this);
+        Run.Store.RegisterPending(Definition);
     }
 
     public Task<Scenario> BDTestAsync()
@@ -61,7 +61,7 @@ public sealed class ScenarioOutlineBuilder<TExample> : BuildableTest
         Console.SetOut(TestOutputData.Instance);
         TestOutputData.TestId = Guid;
         TestOutputData.FrameworkExecutionId = TestId;
-        var outline = new Scenario(new List<Step>(), this) { IsOutline = true };
+        var outline = new Scenario(new List<Step>(), Definition.Snapshot()) { IsOutline = true };
         return ExecuteAsync(outline);
     }
 
@@ -116,7 +116,7 @@ public sealed class ScenarioOutlineBuilder<TExample> : BuildableTest
                     // A factory or context error still gets an example row in the report.
                     if (outline.ExecutionExamples.Count == index)
                     {
-                        row = new Scenario(new List<Step>(), this, outline, _values[index])
+                        row = new Scenario(new List<Step>(), Definition.Snapshot(), outline, _values[index])
                         {
                             StartTime = rowStartTime
                         };

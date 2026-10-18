@@ -23,19 +23,19 @@ public class StepBuilderBranchTests : BDTestBase
         var first = prefix.Then(() => calls.Add("first"));
         var second = prefix.Then(() => calls.Add("second"));
 
-        Assert.That(BDTestUtil.GetNotRunScenarios(), Does.Contain(first).And.Contain(second));
-        Assert.That(BDTestUtil.GetNotRunScenarios(), Does.Not.Contain(prefix));
+        Assert.That(BDTestUtil.GetNotRunScenarios().Select(item => item.ScenarioId), Does.Contain(first.Guid).And.Contain(second.Guid));
+        Assert.That(BDTestUtil.GetNotRunScenarios().Select(item => item.ScenarioId), Does.Not.Contain(prefix.Guid));
 
         var firstResult = await first.BDTestAsync();
         Assert.That(calls, Is.EqualTo(new[] { "given", "and given", "when", "first" }));
-        Assert.That(BDTestUtil.GetNotRunScenarios(), Does.Contain(second).And.Not.Contain(first));
+        Assert.That(BDTestUtil.GetNotRunScenarios().Select(item => item.ScenarioId), Does.Contain(second.Guid).And.Not.Contain(first.Guid));
         calls.Clear();
         var secondResult = await second.BDTestAsync();
 
         Assert.That(calls, Is.EqualTo(new[] { "given", "and given", "when", "second" }));
         Assert.That(firstResult.Guid, Is.Not.EqualTo(secondResult.Guid));
         Assert.That(BDTestUtil.GetScenarios(), Does.Contain(firstResult).And.Contain(secondResult));
-        Assert.That(BDTestUtil.GetNotRunScenarios(), Does.Not.Contain(first).And.Not.Contain(second));
+        Assert.That(BDTestUtil.GetNotRunScenarios().Select(item => item.ScenarioId), Does.Not.Contain(first.Guid).And.Not.Contain(second.Guid));
         Assert.That(Required(firstResult.Steps).All(step => step.ScenarioId == firstResult.Guid), Is.True);
         Assert.That(Required(secondResult.Steps).All(step => step.ScenarioId == secondResult.Guid), Is.True);
         Assert.That(firstResult.Steps.Select(step => step.Guid)

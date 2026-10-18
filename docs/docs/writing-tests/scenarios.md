@@ -158,3 +158,7 @@ await When(() => Action())
 ## Tests that are not run
 
 BDTest records every chain it builds. If a chain is built but never executed, it appears in reports as a **not run** test (on the report server's **Not run** tab). This catches tests that forgot to `await` the chain.
+
+Building a chain records its definition: step delegates, lazy arguments, text, tags, metadata and timeouts. Execution copies that definition into fresh scenario and step state. Branches and continuations keep independent configuration, including when a continuation is created after the original chain finishes. A single builder still runs once; retries use the same execution and re-evaluate arguments for each attempt.
+
+Pending reports contain data-only [definition summaries](../advanced/utilities.md#pending-definitions). Reporting never executes pending step, argument or text callbacks. Do not serialize a fluent builder as a report model; use [`BDTestJsonHelper`](../reports/json-data.md).

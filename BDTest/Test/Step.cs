@@ -89,6 +89,11 @@ public class Step
     private string? _generatedStepText;
 
     internal Step(Runnable runnable, StepType stepType, string? scenarioId, string? reportId, BDTestRun? run = null)
+        : this(runnable, stepType, scenarioId, reportId, run, runnable.Definition.GetText())
+    {
+    }
+
+    private Step(Runnable runnable, StepType stepType, string? scenarioId, string? reportId, BDTestRun? run, string textTemplate)
     {
         Options = (run ?? BDTestRun.Default).Options;
         Guid = System.Guid.NewGuid().ToString("N");
@@ -97,27 +102,19 @@ public class Step
         StepType = stepType;
         ReportId = reportId;
         // Construction and reporting retain placeholders without running user argument expressions.
-        _stepTextTemplate = Runnable.Definition.GetText();
+        _stepTextTemplate = textTemplate;
         _generatedStepText = _stepTextTemplate;
         SetStepText();
     }
 
-    // Copy only the step definition. Execution results belong to one scenario.
-    internal Step(Step source, string? scenarioId)
+    internal Step(StepDefinition definition, string? scenarioId, string? reportId, BDTestRun run)
+        : this(definition.Runnable, definition.StepType, scenarioId, reportId, run, definition.TextTemplate)
     {
-        Options = source.Options;
-        Guid = System.Guid.NewGuid().ToString("N");
-        ScenarioId = scenarioId;
-        ReportId = source.ReportId;
-        Runnable = source.Runnable;
-        StepType = source.StepType;
-        _stepTextTemplate = source._stepTextTemplate;
-        _generatedStepText = _stepTextTemplate;
-        StepText = $"{StepPrefix} {_stepTextTemplate}";
-        OverriddenStepText = source.OverriddenStepText;
-        Timeout = source.Timeout;
-        _explicitArguments = source._explicitArguments;
-        AttachedArguments.AddRange(source.AttachedArguments);
+        OverriddenStepText = definition.OverriddenStepText;
+        Timeout = definition.Timeout;
+        // The definition already rendered the template; copying readers must not run user code.
+        _explicitArguments = definition.ExplicitArguments?.ToArray();
+        AttachedArguments.AddRange(definition.AttachedArguments);
     }
 
     [JsonConstructor]

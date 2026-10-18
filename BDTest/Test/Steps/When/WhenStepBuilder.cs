@@ -6,8 +6,8 @@ namespace BDTest.Test.Steps.When;
 /// <summary>Shared continuations for when steps.</summary>
 public abstract class WhenStepBuilder : StepBuilder
 {
-    internal WhenStepBuilder(List<Step> previousSteps, Runnable runnable, BuildableTest previousPartiallyBuiltTest)
-        : base(previousSteps, runnable, previousPartiallyBuiltTest)
+    internal WhenStepBuilder(Runnable runnable, BuildableTest previousPartiallyBuiltTest)
+        : base(runnable, previousPartiallyBuiltTest)
     {
     }
 
@@ -20,146 +20,146 @@ public abstract class WhenStepBuilder : StepBuilder
     public Then.Then Then(Action step, [CallerFilePath] string? callerFile = null,
         [CallerLineNumber] int callerLine = 0, [CallerArgumentExpression(nameof(step))] string? argumentExpression = null)
     {
-        return new Then.Then(ExistingSteps, new Runnable(step, argumentExpression, callerFile, callerLine), this);
+        return new Then.Then(new Runnable(step, argumentExpression, callerFile, callerLine), this);
     }
 
     [OverloadResolutionPriority(1)]
     public Then.Then Then(Func<Task> step, [CallerFilePath] string? callerFile = null,
         [CallerLineNumber] int callerLine = 0, [CallerArgumentExpression(nameof(step))] string? argumentExpression = null)
     {
-        return new Then.Then(ExistingSteps, new Runnable(step, argumentExpression, callerFile, callerLine), this);
+        return new Then.Then(new Runnable(step, argumentExpression, callerFile, callerLine), this);
     }
 
     [OverloadResolutionPriority(1)]
     public Then.Then Then(Func<CancellationToken, Task> step, [CallerFilePath] string? callerFile = null,
         [CallerLineNumber] int callerLine = 0, [CallerArgumentExpression(nameof(step))] string? argumentExpression = null)
     {
-        return new Then.Then(ExistingSteps, new Runnable(step, argumentExpression, callerFile, callerLine), this);
+        return new Then.Then(new Runnable(step, argumentExpression, callerFile, callerLine), this);
     }
 
     [OverloadResolutionPriority(0)]
     public Then.Then Then(Func<ValueTask> step, [CallerFilePath] string? callerFile = null,
         [CallerLineNumber] int callerLine = 0, [CallerArgumentExpression(nameof(step))] string? argumentExpression = null)
     {
-        return new Then.Then(ExistingSteps, new Runnable(step, argumentExpression, callerFile, callerLine), this);
+        return new Then.Then(new Runnable(step, argumentExpression, callerFile, callerLine), this);
     }
 
     [OverloadResolutionPriority(0)]
     public Then.Then Then(Func<CancellationToken, ValueTask> step, [CallerFilePath] string? callerFile = null,
         [CallerLineNumber] int callerLine = 0, [CallerArgumentExpression(nameof(step))] string? argumentExpression = null)
     {
-        return new Then.Then(ExistingSteps, new Runnable(step, argumentExpression, callerFile, callerLine), this);
+        return new Then.Then(new Runnable(step, argumentExpression, callerFile, callerLine), this);
     }
 
     [OverloadResolutionPriority(0)]
     public Then.Then Then<T>(Func<ValueTask<T>> step, [CallerFilePath] string? callerFile = null,
         [CallerLineNumber] int callerLine = 0, [CallerArgumentExpression(nameof(step))] string? argumentExpression = null)
     {
-        return new Then.Then(ExistingSteps, Runnable.FromResult(step, argumentExpression, callerFile, callerLine), this);
+        return new Then.Then(Runnable.FromResult(step, argumentExpression, callerFile, callerLine), this);
     }
 
     [OverloadResolutionPriority(0)]
     public Then.Then Then<T>(Func<CancellationToken, ValueTask<T>> step, [CallerFilePath] string? callerFile = null,
         [CallerLineNumber] int callerLine = 0, [CallerArgumentExpression(nameof(step))] string? argumentExpression = null)
     {
-        return new Then.Then(ExistingSteps, Runnable.FromResult(step, argumentExpression, callerFile, callerLine), this);
+        return new Then.Then(Runnable.FromResult(step, argumentExpression, callerFile, callerLine), this);
     }
 
     [OverloadResolutionPriority(-1)]
     public AndWhen And(Action step, [CallerFilePath] string? callerFile = null,
         [CallerLineNumber] int callerLine = 0, [CallerArgumentExpression(nameof(step))] string? argumentExpression = null)
     {
-        return new AndWhen(ExistingSteps, new Runnable(step, argumentExpression, callerFile, callerLine), this);
+        return new AndWhen(new Runnable(step, argumentExpression, callerFile, callerLine), this);
     }
 
     [OverloadResolutionPriority(1)]
     public AndWhen And(Func<Task> step, [CallerFilePath] string? callerFile = null,
         [CallerLineNumber] int callerLine = 0, [CallerArgumentExpression(nameof(step))] string? argumentExpression = null)
     {
-        return new AndWhen(ExistingSteps, new Runnable(step, argumentExpression, callerFile, callerLine), this);
+        return new AndWhen(new Runnable(step, argumentExpression, callerFile, callerLine), this);
     }
 
     [OverloadResolutionPriority(1)]
     public AndWhen And(Func<CancellationToken, Task> step, [CallerFilePath] string? callerFile = null,
         [CallerLineNumber] int callerLine = 0, [CallerArgumentExpression(nameof(step))] string? argumentExpression = null)
     {
-        return new AndWhen(ExistingSteps, new Runnable(step, argumentExpression, callerFile, callerLine), this);
+        return new AndWhen(new Runnable(step, argumentExpression, callerFile, callerLine), this);
     }
 
     [OverloadResolutionPriority(0)]
     public AndWhen And(Func<ValueTask> step, [CallerFilePath] string? callerFile = null,
         [CallerLineNumber] int callerLine = 0, [CallerArgumentExpression(nameof(step))] string? argumentExpression = null)
     {
-        return new AndWhen(ExistingSteps, new Runnable(step, argumentExpression, callerFile, callerLine), this);
+        return new AndWhen(new Runnable(step, argumentExpression, callerFile, callerLine), this);
     }
 
     [OverloadResolutionPriority(0)]
     public AndWhen And(Func<CancellationToken, ValueTask> step, [CallerFilePath] string? callerFile = null,
         [CallerLineNumber] int callerLine = 0, [CallerArgumentExpression(nameof(step))] string? argumentExpression = null)
     {
-        return new AndWhen(ExistingSteps, new Runnable(step, argumentExpression, callerFile, callerLine), this);
+        return new AndWhen(new Runnable(step, argumentExpression, callerFile, callerLine), this);
     }
 
     [OverloadResolutionPriority(0)]
     public AndWhen And<T>(Func<ValueTask<T>> step, [CallerFilePath] string? callerFile = null,
         [CallerLineNumber] int callerLine = 0, [CallerArgumentExpression(nameof(step))] string? argumentExpression = null)
     {
-        return new AndWhen(ExistingSteps, Runnable.FromResult(step, argumentExpression, callerFile, callerLine), this);
+        return new AndWhen(Runnable.FromResult(step, argumentExpression, callerFile, callerLine), this);
     }
 
     [OverloadResolutionPriority(0)]
     public AndWhen And<T>(Func<CancellationToken, ValueTask<T>> step, [CallerFilePath] string? callerFile = null,
         [CallerLineNumber] int callerLine = 0, [CallerArgumentExpression(nameof(step))] string? argumentExpression = null)
     {
-        return new AndWhen(ExistingSteps, Runnable.FromResult(step, argumentExpression, callerFile, callerLine), this);
+        return new AndWhen(Runnable.FromResult(step, argumentExpression, callerFile, callerLine), this);
     }
 
     [OverloadResolutionPriority(-1)]
     public ButWhen But(Action step, [CallerFilePath] string? callerFile = null,
         [CallerLineNumber] int callerLine = 0, [CallerArgumentExpression(nameof(step))] string? argumentExpression = null)
     {
-        return new ButWhen(ExistingSteps, new Runnable(step, argumentExpression, callerFile, callerLine), this);
+        return new ButWhen(new Runnable(step, argumentExpression, callerFile, callerLine), this);
     }
 
     [OverloadResolutionPriority(1)]
     public ButWhen But(Func<Task> step, [CallerFilePath] string? callerFile = null,
         [CallerLineNumber] int callerLine = 0, [CallerArgumentExpression(nameof(step))] string? argumentExpression = null)
     {
-        return new ButWhen(ExistingSteps, new Runnable(step, argumentExpression, callerFile, callerLine), this);
+        return new ButWhen(new Runnable(step, argumentExpression, callerFile, callerLine), this);
     }
 
     [OverloadResolutionPriority(1)]
     public ButWhen But(Func<CancellationToken, Task> step, [CallerFilePath] string? callerFile = null,
         [CallerLineNumber] int callerLine = 0, [CallerArgumentExpression(nameof(step))] string? argumentExpression = null)
     {
-        return new ButWhen(ExistingSteps, new Runnable(step, argumentExpression, callerFile, callerLine), this);
+        return new ButWhen(new Runnable(step, argumentExpression, callerFile, callerLine), this);
     }
 
     [OverloadResolutionPriority(0)]
     public ButWhen But(Func<ValueTask> step, [CallerFilePath] string? callerFile = null,
         [CallerLineNumber] int callerLine = 0, [CallerArgumentExpression(nameof(step))] string? argumentExpression = null)
     {
-        return new ButWhen(ExistingSteps, new Runnable(step, argumentExpression, callerFile, callerLine), this);
+        return new ButWhen(new Runnable(step, argumentExpression, callerFile, callerLine), this);
     }
 
     [OverloadResolutionPriority(0)]
     public ButWhen But(Func<CancellationToken, ValueTask> step, [CallerFilePath] string? callerFile = null,
         [CallerLineNumber] int callerLine = 0, [CallerArgumentExpression(nameof(step))] string? argumentExpression = null)
     {
-        return new ButWhen(ExistingSteps, new Runnable(step, argumentExpression, callerFile, callerLine), this);
+        return new ButWhen(new Runnable(step, argumentExpression, callerFile, callerLine), this);
     }
 
     [OverloadResolutionPriority(0)]
     public ButWhen But<T>(Func<ValueTask<T>> step, [CallerFilePath] string? callerFile = null,
         [CallerLineNumber] int callerLine = 0, [CallerArgumentExpression(nameof(step))] string? argumentExpression = null)
     {
-        return new ButWhen(ExistingSteps, Runnable.FromResult(step, argumentExpression, callerFile, callerLine), this);
+        return new ButWhen(Runnable.FromResult(step, argumentExpression, callerFile, callerLine), this);
     }
 
     [OverloadResolutionPriority(0)]
     public ButWhen But<T>(Func<CancellationToken, ValueTask<T>> step, [CallerFilePath] string? callerFile = null,
         [CallerLineNumber] int callerLine = 0, [CallerArgumentExpression(nameof(step))] string? argumentExpression = null)
     {
-        return new ButWhen(ExistingSteps, Runnable.FromResult(step, argumentExpression, callerFile, callerLine), this);
+        return new ButWhen(Runnable.FromResult(step, argumentExpression, callerFile, callerLine), this);
     }
 }

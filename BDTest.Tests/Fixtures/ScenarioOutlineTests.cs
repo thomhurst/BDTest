@@ -369,9 +369,9 @@ public class ScenarioOutlineTests : AbstractContextBDTestBase<ScenarioOutlineTes
             var outline = BDTestUtil.GetScenarios().Single(x => x.FrameworkTestId == _executionId);
             Assert.That(Required(outline.Examples).Select(row => row.Status), Is.EqualTo(new[] { Status.Failed, Status.Passed }));
             Assert.That(_visited, Is.EqualTo(new[] { 2 }));
-            var pending = BDTestUtil.GetNotRunScenarios().ToArray();
-            Assert.That(pending, Does.Not.Contain(rejected));
-            Assert.That(pending, Does.Contain(unrelated));
+            var pending = BDTestUtil.GetNotRunScenarios().Select(item => item.ScenarioId).ToArray();
+            Assert.That(pending, Does.Not.Contain(rejected?.Guid));
+            Assert.That(pending, Does.Contain(unrelated.Guid));
         }
         finally
         {
