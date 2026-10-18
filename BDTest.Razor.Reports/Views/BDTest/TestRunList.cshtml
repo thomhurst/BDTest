@@ -2,13 +2,32 @@
 @using BDTest.Razor.Reports.Helpers
 @using BDTest.Razor.Reports.Models
 @using BDTest.Test
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Authorization.Policy
 @model IEnumerable<BDTest.Razor.Reports.Models.TestRunSummary>
 @inject BDTestReportServerOptions BDTestReportServerOptions
+@inject IAuthorizationPolicyProvider PolicyProvider
+@inject IPolicyEvaluator PolicyEvaluator
 
 @{
     ViewBag.Title = "Test runs";
     Layout = "_Layout";
-    var isAdmin = await BDTestReportServerOptions.AdminAuthorizer.IsAdminAsync(Context);
+    var adminPolicy = BDTestReportServerOptions.AdminAuthorizationPolicy;
+    var policy = string.IsNullOrWhiteSpace(adminPolicy) ? null : await PolicyProvider.GetPolicyAsync(adminPolicy);
+    var isAdmin = false;
+    if (policy != null)
+    {
+        var reader = Context.User;
+        try
+        {
+            var authentication = await PolicyEvaluator.AuthenticateAsync(policy, Context);
+            isAdmin = (await PolicyEvaluator.AuthorizeAsync(policy, authentication, Context, Context)).Succeeded;
+        }
+        finally
+        {
+            Context.User = reader;
+        }
+    }
 
     var allRuns = (Model ?? Enumerable.Empty<TestRunSummary>()).Where(run => run != null).ToList();
     var filter = RunFilter.FromQuery(Context.Request.Query);

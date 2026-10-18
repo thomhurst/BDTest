@@ -952,6 +952,7 @@ public partial class ReportUploadTests
             configureApp?.Invoke(app);
             app.UseBDTestReportServer(options =>
             {
+                options.AllowAnonymousReports = true;
                 options.UploadApiKey = Key;
                 options.DataStore = store;
                 options.DataReceiver = store;

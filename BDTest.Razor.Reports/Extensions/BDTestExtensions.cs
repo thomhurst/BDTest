@@ -24,6 +24,7 @@ public static class BDTestExtensions
         var services = mvcBuilder.Services;
             
         services.AddMemoryCache();
+        services.AddAuthorization();
 
         services.AddSingleton<IMemoryCacheBdTestDataStore, MemoryCacheBdTestDataStore>();
         services.AddSingleton<IDataRepository, DataRepository>();

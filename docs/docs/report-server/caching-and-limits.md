@@ -5,6 +5,8 @@ description: The report server's bounded full-report cache, retention, upload si
 
 # Caching and limits
 
+Configure report read authorization as shown in [Security](security.md#requiring-sign-in) before using these option snippets.
+
 ## Full-report cache
 
 The report server keeps recently used full reports in a dedicated bounded cache, separate from the host's `IMemoryCache`. Configure it at startup, before the server handles requests:

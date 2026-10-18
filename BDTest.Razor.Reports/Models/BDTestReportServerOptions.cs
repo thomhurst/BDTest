@@ -43,7 +43,12 @@ public class BDTestReportServerOptions
 #nullable enable
         public IBDTestCustomHeaderLinksProvider CustomHeaderLinksProvider { get; set; }
 #nullable enable
-        public IAdminAuthorizer AdminAuthorizer { get; set; } = new NoOpAdminAuthorizer();
+        /// <summary>Named ASP.NET Core policy required for all report reads. Unset denies access unless endpoint authorization or AllowAnonymousReports is configured.</summary>
+        public string? ReportsAuthorizationPolicy { get; set; }
+        /// <summary>Explicitly permits anonymous report reads when no read policy is configured. Does not bypass host authorization.</summary>
+        public bool AllowAnonymousReports { get; set; }
+        /// <summary>Named ASP.NET Core policy required to delete reports. Unset disables deletion.</summary>
+        public string? AdminAuthorizationPolicy { get; set; }
 #nullable enable
         public IBDTestDataReceiver DataReceiver { get; set; }
 #nullable enable

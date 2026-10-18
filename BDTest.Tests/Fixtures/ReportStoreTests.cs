@@ -194,7 +194,12 @@ public class ReportStoreTests
         builder.WebHost.UseKestrel().UseUrls("http://127.0.0.1:0");
         builder.Services.AddControllersWithViews().AddBdTestReportControllersAndViews();
         await using var app = builder.Build();
-        app.UseBDTestReportServer(options => { options.ReportStore = store; options.RunIndexStore = store; });
+        app.UseBDTestReportServer(options =>
+        {
+            options.AllowAnonymousReports = true;
+            options.ReportStore = store;
+            options.RunIndexStore = store;
+        });
         app.MapControllers();
         await app.StartAsync();
         using var client = new HttpClient { BaseAddress = new Uri(app.Urls.Single()) };

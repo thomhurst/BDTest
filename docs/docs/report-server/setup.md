@@ -30,6 +30,7 @@ var app = builder.Build();
 
 app.UseBDTestReportServer(options =>
 {
+    options.AllowAnonymousReports = true; // Deliberately public local example; use a read policy for private reports.
     options.UploadApiKey = builder.Configuration["BDTest:UploadApiKey"];
 });
 
@@ -42,6 +43,8 @@ app.Run();
 
 - `AddBdTestReportControllersAndViews()` extends an `IMvcBuilder`. It adds the BDTest controllers and views, a memory cache and the report services. It does not change your MVC formatters or JSON options.
 - `UseBDTestReportServer(...)` configures the options and adds security headers to `/bdtest` responses. Call it after `UsePathBase` (if you use it) and before authentication, authorization and endpoints.
+
+The example explicitly permits anonymous report reads. Without this opt-in, a named read policy or explicit endpoint authorization, reports return HTTP 403 and log the missing configuration. For private reports, replace the opt-in with the authentication and policy configuration in [Security](security.md#requiring-sign-in).
 
 ## 3. Set an upload key
 
@@ -82,7 +85,9 @@ Without persistent stores, reports are kept only in a bounded memory cache. A re
 | `ReportCacheSizeLimitBytes` | `long` | 64 MiB | Budget for cached full reports. Must be positive. |
 | `ReportCacheRetention` | `TimeSpan` | 8 hours | How long cached reports are kept after their last use. Must be positive. |
 | `EnableSecurityHeaders` | `bool` | `true` | Add CSP and other security headers to `/bdtest` responses. |
-| `AdminAuthorizer` | `IAdminAuthorizer` | denies everyone | Decides who may delete reports. See [Security](security.md#administrators). |
+| `ReportsAuthorizationPolicy` | `string?` | `null` | Named policy for all report reads. Unset denies reads unless endpoint authorization or anonymous access is enabled. |
+| `AllowAnonymousReports` | `bool` | `false` | Explicitly permit anonymous reads when no read policy is configured. Host authorization still applies. |
+| `AdminAuthorizationPolicy` | `string?` | `null` | Named policy for deleting reports. Unset disables deletion. See [Security](security.md#administrators). |
 | `DataReceiver` | `IBDTestDataReceiver` | `null` | Called after each upload. See [Customization](customization.md#reacting-to-uploads). |
 | `CustomHeaderLinksProvider` | `IBDTestCustomHeaderLinksProvider` | `null` | Extra links in the top bar. |
 | `CustomSidebarLinksProvider` | `IBDTestCustomSidebarLinksProvider` | `null` | Extra links for the current run, in the header **Links** menu. |

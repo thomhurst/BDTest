@@ -144,10 +144,12 @@ public class ReportHandlerEncodingTests
     {
         var builder = WebApplication.CreateBuilder();
         builder.Services.AddControllersWithViews().AddBdTestReportControllersAndViews();
+        builder.Services.AddAuthorization(options => options.AddPolicy("EncodingTests", policy =>
+            policy.RequireAssertion(_ => isAdmin)));
         await using var app = builder.Build();
         await using var scope = app.Services.CreateAsyncScope();
         var services = scope.ServiceProvider;
-        services.GetRequiredService<BDTestReportServerOptions>().AdminAuthorizer = new AdminAuthorizer(isAdmin);
+        services.GetRequiredService<BDTestReportServerOptions>().AdminAuthorizationPolicy = "EncodingTests";
         services.GetRequiredService<BDTestReportServerOptions>().CustomHeaderLinksProvider = customHeaderLinksProvider;
         var httpContext = new DefaultHttpContext { RequestServices = services };
         httpContext.Request.Scheme = "https";
@@ -166,10 +168,5 @@ public class ReportHandlerEncodingTests
             writer, new HtmlHelperOptions());
         await view.View.RenderAsync(viewContext);
         return writer.ToString();
-    }
-
-    private sealed class AdminAuthorizer(bool isAdmin) : IAdminAuthorizer
-    {
-        public Task<bool> IsAdminAsync(HttpContext httpContext) => Task.FromResult(isAdmin);
     }
 }

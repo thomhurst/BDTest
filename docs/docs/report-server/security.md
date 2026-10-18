@@ -5,19 +5,21 @@ description: Protect report pages with authentication, protect uploads with an A
 
 # Securing the report server
 
-`BDTest.Razor.Reports` supplies controllers and views. It does **not** configure authentication or authorization for your host. Report pages, run lists and `/bdtest/report/{id}/raw-json-data` can contain sensitive test output, such as request bodies, URLs and stack traces. Secure the host before you expose it to other users.
+Report pages, run lists, raw JSON, attachments and bulk comparisons can contain sensitive test output. The library denies these reads with HTTP 403 until you configure `ReportsAuthorizationPolicy`, apply explicit endpoint authorization with `RequireAuthorization(...)`, or explicitly set `AllowAnonymousReports = true`. Each configuration denial logs a warning naming the missing option through ASP.NET Core logging. Missing named policies also fail closed and log an error.
+
+The library registers authorization services, but your host supplies authentication schemes and policies. This applies even when the host has no fallback policy or forgets to call `UseBDTestReportServer`.
 
 There are three separate controls:
 
 | Control | Protects | Configured by |
 | --- | --- | --- |
-| Sign-in | Reading reports | Your host's authentication and fallback authorization policy |
+| Sign-in | Reading reports | `ReportsAuthorizationPolicy` and host authentication |
 | Upload key | `POST /bdtest/data` | `UploadApiKey` option |
-| Admin authorizer | Deleting reports | `AdminAuthorizer` option |
+| Admin policy | Deleting reports | `AdminAuthorizationPolicy` option |
 
 ## Requiring sign-in
 
-Register an authentication provider and a fallback policy that requires an authenticated user. For example, with Microsoft Entra ID through `Microsoft.Identity.Web` and `Microsoft.Identity.Web.UI`:
+Register an authentication provider and a named read policy that requires an authenticated user. For example, with Microsoft Entra ID through `Microsoft.Identity.Web` and `Microsoft.Identity.Web.UI`:
 
 ```csharp
 using BDTest.Razor.Reports.Extensions;
@@ -27,7 +29,12 @@ using Microsoft.Identity.Web.UI;
 
 builder.Services.AddAuthentication(OpenIdConnectDefaults.AuthenticationScheme)
     .AddMicrosoftIdentityWebApp(builder.Configuration.GetSection("AzureAd"));
-builder.Services.AddAuthorization(options => options.FallbackPolicy = options.DefaultPolicy);
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("BDTestReports.Read", policy => policy.RequireAuthenticatedUser());
+    options.AddPolicy("BDTestReports.Admin", policy =>
+        policy.RequireAuthenticatedUser().RequireRole("BDTest.Admin"));
+});
 builder.Services.AddControllersWithViews()
     .AddMicrosoftIdentityUI()
     .AddBdTestReportControllersAndViews();
@@ -41,6 +48,8 @@ app.UseBDTestReportServer(options =>
 {
     options.UploadApiKey = builder.Configuration["BDTest:UploadApiKey"];
     options.DataStore = dataStore;
+    options.ReportsAuthorizationPolicy = "BDTestReports.Read";
+    options.AdminAuthorizationPolicy = "BDTestReports.Admin";
 });
 
 app.UseHttpsRedirection();
@@ -53,6 +62,10 @@ app.MapRazorPages();
 ```
 
 Any ASP.NET Core authentication scheme works. See [Microsoft Identity Web setup](https://github.com/AzureAD/microsoft-identity-web/wiki/web-apps) and [ASP.NET Core authorization policies](https://learn.microsoft.com/aspnet/core/security/authorization/policies).
+
+A configured read policy takes precedence over `AllowAnonymousReports`. Anonymous failures challenge using the policy's authentication schemes (or the host defaults); authenticated failures forbid access. The host may redirect challenges to sign-in instead of returning 401. Policies may also use custom requirements and handlers; the authorization resource is the current `HttpContext`.
+
+Host fallback policies and endpoint `RequireAuthorization(...)` still apply. `AllowAnonymousReports` only opts out of the library's read check; it does not bypass host authorization. Explicit endpoint authorization also configures read access when no library read policy is set. A fallback policy alone does not count as explicit report-access configuration.
 
 Every user accepted by your policy can read every report. There are no per-report permissions; restrict who can sign in at the identity provider.
 
@@ -71,6 +84,7 @@ Uploads require a shared secret in the `X-BDTest-Upload-Key` header:
 app.UseBDTestReportServer(options =>
 {
     options.UploadApiKey = builder.Configuration["BDTest:UploadApiKey"];
+    options.ReportsAuthorizationPolicy = "BDTestReports.Read";
     options.UploadsPerMinute = 60; // Shared by all authenticated clients of this instance.
 });
 ```
@@ -85,29 +99,25 @@ Generate a long random value, keep it out of source control and share it only wi
 
 ## Administrators
 
-Deleting a report (`POST`/`DELETE /bdtest/report/delete/{id}`) requires `AdminAuthorizer.IsAdminAsync` to return `true`. The default authorizer denies everyone.
+Deleting a report (`POST`/`DELETE /bdtest/report/delete/{id}`) requires both the read policy (unless anonymous reads are enabled) and the named `AdminAuthorizationPolicy`. Without an admin policy, deletion returns 403, even when anonymous reads are enabled. Both methods also require an antiforgery token. The run list shows delete buttons only when the current user passes the same admin policy, including its authentication schemes. An unregistered admin policy hides delete buttons without breaking report reads; deletion still returns 403. Admin checks preserve the reader identity so antiforgery tokens remain valid when the admin policy uses a separate sign-in scheme.
+
+Register a policy that requires authentication and trusted role claims, as in the example above. Never authorize from the presence or value of a client-controlled cookie, header or query parameter.
+
+## Migration from anonymous reports and admin authorizers
+
+This major-version change removes `IAdminAuthorizer`, `NoOpAdminAuthorizer` and the `AdminAuthorizer` option. Move custom logic into an ASP.NET Core requirement handler, register a named policy, and set `AdminAuthorizationPolicy` to that policy's name.
+
+Existing private hosts must set `ReportsAuthorizationPolicy` or apply explicit endpoint authorization. A global fallback policy alone does not configure report access. For an intentionally public host, explicitly opt in:
 
 ```csharp
-using BDTest.Razor.Reports.Interfaces;
-using Microsoft.AspNetCore.Authorization;
-
-public class AdminAuthorizer : IAdminAuthorizer
+app.UseBDTestReportServer(options =>
 {
-    public async Task<bool> IsAdminAsync(HttpContext httpContext)
-    {
-        var authorization = httpContext.RequestServices.GetRequiredService<IAuthorizationService>();
-        var result = await authorization.AuthorizeAsync(httpContext.User, httpContext, "BDTest.Administrator");
-        return result.Succeeded;
-    }
-}
-
-builder.Services.AddAuthorization(options =>
-    options.AddPolicy("BDTest.Administrator", policy => policy.RequireRole("BDTest.Admin")));
-
-app.UseBDTestReportServer(options => options.AdminAuthorizer = new AdminAuthorizer());
+    options.AllowAnonymousReports = true;
+    options.UploadApiKey = builder.Configuration["BDTest:UploadApiKey"];
+});
 ```
 
-An authorizer must require authentication and check trusted identity claims against a role or policy. Never authorize from the presence or value of a cookie, header or query parameter that the client controls.
+This permits report reads only. It grants no upload or delete permission. Alternatively, register an explicit allow-anonymous policy with `RequireAssertion(_ => true)` and use it as `ReportsAuthorizationPolicy`.
 
 ## Security headers
 

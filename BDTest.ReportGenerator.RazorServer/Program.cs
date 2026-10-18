@@ -54,8 +54,9 @@ public class Program
         services.AddAuthorization(options =>
         {
             options.FallbackPolicy = options.DefaultPolicy;
-            options.AddPolicy(AdminAuthorizer.PolicyName, policy =>
-                policy.RequireAuthenticatedUser().RequireRole(AdminAuthorizer.RoleName));
+            options.AddPolicy("BDTestReports.Read", policy => policy.RequireAuthenticatedUser());
+            options.AddPolicy("BDTestReports.Admin", policy =>
+                policy.RequireAuthenticatedUser().RequireRole("BDTest.Admin"));
         });
 
         services
@@ -65,7 +66,6 @@ public class Program
 
         services.AddSingleton<IBDTestDataStore, AzureStorageDataStore>();
         services.AddSingleton<CustomSidebarLinkProvider>();
-        services.AddSingleton<AdminAuthorizer>();
         services.AddSingleton<UserPersonalizer>();
 
         AddConfig(services, builder.Configuration);
@@ -110,7 +110,8 @@ public class Program
             options.DataStore = app.Services.GetRequiredService<IBDTestDataStore>();
             options.AttachmentStore = options.DataStore as IBDTestAttachmentStore;
             options.CustomSidebarLinksProvider = app.Services.GetRequiredService<CustomSidebarLinkProvider>();
-            options.AdminAuthorizer = app.Services.GetRequiredService<AdminAuthorizer>();
+            options.ReportsAuthorizationPolicy = "BDTestReports.Read";
+            options.AdminAuthorizationPolicy = "BDTestReports.Admin";
             options.UserPersonalizer = app.Services.GetRequiredService<UserPersonalizer>();
         });
 

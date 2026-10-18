@@ -47,6 +47,8 @@ Keep secrets out of committed configuration.
 
 Users sign in at `/MicrosoftIdentity/Account/SignIn` and sign out at `/MicrosoftIdentity/Account/SignOut`. After a role assignment changes, sign in again so the session gets the new claims. Setting a cookie named `admin` grants nothing.
 
+The sample sets `ReportsAuthorizationPolicy = "BDTestReports.Read"` and `AdminAuthorizationPolicy = "BDTestReports.Admin"`. Read access requires sign-in; deletion also requires the `BDTest.Admin` role. Upload API keys remain independent.
+
 ## Storage
 
 On startup, the server creates the `test-runs-summaries` and `test-data` containers and warms the cache before serving requests. Storage failures are logged and fail startup, so check connectivity and permissions before restarting.

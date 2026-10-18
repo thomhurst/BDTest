@@ -16,6 +16,7 @@ using BDTest.Helpers;
 namespace BDTest.Razor.Reports.Controllers;
 
 [Route("bdtest")]
+[TypeFilter(typeof(ReportAuthorizationFilter), Arguments = new object[] { false })]
 public class BDTestController : Controller
 {
     private readonly IDataRepository _dataRepository;
@@ -92,15 +93,11 @@ public class BDTestController : Controller
 
     [HttpPost]
     [HttpDelete]
+    [TypeFilter(typeof(ReportAuthorizationFilter), Arguments = new object[] { true })]
     [ValidateAntiForgeryToken]
     [Route("report/delete/{id}")]
     public async Task<IActionResult> DeleteReport([FromRoute] string id)
     {
-        if (await _bdTestReportServerOptions.AdminAuthorizer.IsAdminAsync(HttpContext) != true)
-        {
-            return Unauthorized();
-        }
-            
         await _dataRepository.DeleteReport(id, HttpContext.RequestAborted);
             
         return RedirectToAction(nameof(TestRuns));
