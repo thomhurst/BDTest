@@ -1,17 +1,27 @@
+using System.IO.Compression;
 using System.Text;
 using System.Text.Json;
 using BDTest.Helpers;
+using BDTest.Razor.Reports.Models;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.Net.Http.Headers;
 
 namespace BDTest.Razor.Reports.Implementations;
 
 // Only the BDTest upload endpoint uses this reader. Host formatters and JSON options stay independent.
-internal sealed class ReportModelBinder : IModelBinder
+internal sealed class ReportModelBinder(BDTestReportServerOptions options) : IModelBinder
 {
     public async Task BindModelAsync(ModelBindingContext bindingContext)
     {
         var request = bindingContext.HttpContext.Request;
+        var contentEncoding = request.Headers.ContentEncoding;
+        var gzip = contentEncoding.Count == 1 && string.Equals(contentEncoding[0]?.Trim(), "gzip", StringComparison.OrdinalIgnoreCase);
+        if (contentEncoding.Count != 0 && !gzip)
+        {
+            bindingContext.ModelState.AddModelError(bindingContext.ModelName,
+                new UnsupportedContentTypeException("Expected no Content-Encoding or a single gzip encoding."), bindingContext.ModelMetadata);
+            return;
+        }
         if (!MediaTypeHeaderValue.TryParse(request.ContentType, out var contentType)
             || !(contentType.MediaType.Equals("application/json", StringComparison.OrdinalIgnoreCase)
                  || contentType.MediaType.Equals("text/json", StringComparison.OrdinalIgnoreCase)
@@ -33,18 +43,31 @@ internal sealed class ReportModelBinder : IModelBinder
             return;
         }
 
+        using var wireBody = new UploadLimitStream(request.Body, options.MaxCompressedUploadBytes, nameof(options.MaxCompressedUploadBytes));
+        using var gzipBody = gzip ? new GZipStream(wireBody, CompressionMode.Decompress, leaveOpen: true) : null;
+        using var expandedBody = new UploadLimitStream(gzipBody ?? (Stream)wireBody, options.MaxUploadBytes, nameof(options.MaxUploadBytes));
         using var utf8Body = string.Equals(charset, "utf-16", StringComparison.OrdinalIgnoreCase)
-            ? Encoding.CreateTranscodingStream(request.Body, Encoding.Unicode, Encoding.UTF8, leaveOpen: true)
+            ? Encoding.CreateTranscodingStream(expandedBody, Encoding.Unicode, Encoding.UTF8, leaveOpen: true)
             : null;
+        using var transcodedBody = utf8Body is null
+            ? null
+            : new UploadLimitStream(utf8Body, options.MaxUploadBytes, nameof(options.MaxUploadBytes));
         try
         {
-            var report = await BDTestJsonHelper.DeserializeAsync(utf8Body ?? request.Body, bindingContext.HttpContext.RequestAborted,
-                maximumExpandedSize: 10 * 1024 * 1024);
+            var cancellationToken = bindingContext.HttpContext.RequestAborted;
+            var report = await BDTestJsonHelper.DeserializeAsync(transcodedBody ?? expandedBody, cancellationToken,
+                maximumExpandedSize: options.MaxUploadBytes);
+            // A gzip reader can finish before consuming trailing wire bytes. Enforce the entire request budget.
+            await wireBody.CopyToAsync(Stream.Null, cancellationToken);
             bindingContext.Result = ModelBindingResult.Success(report);
         }
         catch (JsonException)
         {
             bindingContext.ModelState.AddModelError(bindingContext.ModelName, "Invalid report JSON.");
+        }
+        catch (InvalidDataException)
+        {
+            bindingContext.ModelState.AddModelError(bindingContext.ModelName, "Invalid gzip report body.");
         }
     }
 }

@@ -72,7 +72,8 @@ The server ignores any client-supplied report ID. Each accepted upload, includin
 
 ## Server-side limits
 
-- Requests are limited to 10 MiB, including chunked requests.
+- `MaxCompressedUploadBytes` limits request body bytes before decompression; `MaxUploadBytes` limits decompressed JSON and its UTF-8 representation. Both default to 10 MiB, including chunked requests. Exceeding either byte limit returns HTTP 413.
+- `POST /bdtest/data` accepts plain JSON or a single `Content-Encoding: gzip`. The existing uploader sends plain JSON; a custom uploader can gzip its body while keeping a JSON content type. Unsupported encodings return 415; malformed gzip or JSON returns 400.
 - Content type must be `application/json`, `text/json` or `application/*+json`, in UTF-8 or UTF-16.
 - The rate limit is `UploadsPerMinute` (default 60) authenticated uploads per minute per server instance. Excess requests get HTTP 429 with `Retry-After`.
 - Invalid JSON returns HTTP 400.

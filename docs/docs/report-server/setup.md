@@ -77,6 +77,8 @@ Without persistent stores, reports are kept only in a bounded memory cache. A re
 | `DataStore` | `IBDTestDataStore` | `null` | Legacy storage bridge. See [Persistence](persistence.md). |
 | `UploadApiKey` | `string?` | `null` | Shared secret required in the `X-BDTest-Upload-Key` header. Uploads are disabled when unset. |
 | `UploadsPerMinute` | `int` | `60` | Upload rate limit per server instance. |
+| `MaxCompressedUploadBytes` | `long` | 10 MiB | Positive request body byte limit before decompression, also for plain requests. |
+| `MaxUploadBytes` | `long` | 10 MiB | Positive decompressed JSON and UTF-8 byte limit; also bounds historical reference expansion. |
 | `ReportCacheSizeLimitBytes` | `long` | 64 MiB | Budget for cached full reports. Must be positive. |
 | `ReportCacheRetention` | `TimeSpan` | 8 hours | How long cached reports are kept after their last use. Must be positive. |
 | `EnableSecurityHeaders` | `bool` | `true` | Add CSP and other security headers to `/bdtest` responses. |

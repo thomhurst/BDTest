@@ -47,11 +47,30 @@ When using `MemoryCacheBdTestDataStore` through `IReportStore`, `WriteAsync` rej
 
 | Limit | Value |
 | --- | --- |
-| Request size | 10 MiB, including chunked requests (ASP.NET Core `RequestSizeLimit` on Kestrel and IIS) |
+| Request body bytes | `MaxCompressedUploadBytes`, default 10 MiB, before decompression; also applies to plain requests |
+| Expanded JSON bytes | `MaxUploadBytes`, default 10 MiB, after decompression and after UTF-8 transcoding |
 | Rate | `UploadsPerMinute` per instance (default 60); excess returns 429 with `Retry-After` |
 | Content type | `application/json`, `text/json` or `application/*+json`, UTF-8 or UTF-16 |
+| Content encoding | No encoding (plain JSON), or a single `gzip` encoding, only on `POST /bdtest/data` |
 
-Configure the same or stricter limits in any reverse proxy or alternative host.
+Authentication and rate limiting happen before parsing or decompression. Both byte limits must be positive and apply while streaming, including chunked requests. The expanded limit bounds both the decompressed body and its UTF-8 representation for UTF-16 uploads. It also bounds historical JSON reference expansion.
+
+Exceeding a request or decompressed JSON byte limit returns HTTP 413. Unsupported content types, charsets or content encodings (including stacked encodings) return 415. Malformed gzip or invalid report JSON returns 400. Rejected uploads do not reach storage or the data receiver.
+
+Raise the limits at startup when accepting larger reports:
+
+```csharp
+app.UseBDTestReportServer(options =>
+{
+    options.UploadApiKey = configuration["BDTest:UploadApiKey"];
+    options.MaxCompressedUploadBytes = 20L * 1024 * 1024;
+    options.MaxUploadBytes = 100L * 1024 * 1024;
+});
+```
+
+The endpoint replaces the mutable ASP.NET Core request-body size limit with its own streaming counter, which excludes HTTP chunk framing. A reverse proxy or IIS request filtering can reject the request before BDTest runs: raise those limits too when increasing `MaxCompressedUploadBytes`, and keep a finite limit at the gateway. If host middleware has already started reading the body, its existing size limit can also apply. BDTest does not decompress requests to other endpoints.
+
+Upload limits do not change cache capacity. With persistent stores, an accepted report larger than the cache budget can still be stored; cache-only hosts must also have a sufficient `ReportCacheSizeLimitBytes` budget.
 
 ## Bulk report comparisons
 

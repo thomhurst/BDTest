@@ -1,4 +1,5 @@
 ﻿using System.Collections.Concurrent;
+using System.IO.Compression;
 using System.Net;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -26,6 +27,292 @@ namespace BDTest.Tests.Fixtures;
 public class ReportUploadTests
 {
     private const string Key = "test-upload-secret";
+
+    [TestCase(0)]
+    [TestCase(-1)]
+    public async Task UploadLimitsMustBePositive(long value)
+    {
+        await using var server = await UploadServer.Start();
+        Assert.That(server.Options.MaxCompressedUploadBytes, Is.EqualTo(10 * 1024 * 1024));
+        Assert.That(server.Options.MaxUploadBytes, Is.EqualTo(10 * 1024 * 1024));
+        Assert.Throws<ArgumentOutOfRangeException>(() => server.Options.MaxCompressedUploadBytes = value);
+        Assert.Throws<ArgumentOutOfRangeException>(() => server.Options.MaxUploadBytes = value);
+    }
+
+    [TestCase(false)]
+    [TestCase(true)]
+    public async Task CompressedWireLimitRejectsKnownAndChunkedBodies(bool chunked)
+    {
+        await using var server = await UploadServer.Start(options =>
+        {
+            options.MaxCompressedUploadBytes = 1024;
+            options.MaxUploadBytes = 100_000;
+        });
+        var random = new byte[16_384];
+        new Random(882).NextBytes(random);
+        using var request = GzipRequest(ReportJson.SerializeObject(new { Tag = Convert.ToBase64String(random) }), chunked);
+        Assert.That(request.Content.Headers.ContentLength, Is.GreaterThan(server.Options.MaxCompressedUploadBytes));
+        using var response = await server.Client.SendAsync(request);
+
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.RequestEntityTooLarge));
+        Assert.That(await response.Content.ReadAsStringAsync(), Is.Not.Empty);
+        Assert.That(server.Store.Data, Is.Empty);
+        Assert.That(server.Store.Summaries, Is.Empty);
+        Assert.That(server.Store.Received, Is.Empty);
+    }
+
+    [TestCase(false, false)]
+    [TestCase(false, true)]
+    [TestCase(true, false)]
+    [TestCase(true, true)]
+    public async Task ExpandedLimitRejectsJsonBeforeStorage(bool chunked, bool utf16)
+    {
+        await using var server = await UploadServer.Start(options =>
+        {
+            options.MaxCompressedUploadBytes = 10_000;
+            options.MaxUploadBytes = 256;
+        });
+        using var request = GzipRequest(ReportJson.SerializeObject(new { Tag = new string('x', 16_384) }), chunked, utf16);
+        Assert.That(request.Content.Headers.ContentLength, Is.LessThan(server.Options.MaxCompressedUploadBytes));
+        using var response = await server.Client.SendAsync(request);
+
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.RequestEntityTooLarge));
+        Assert.That(await response.Content.ReadAsStringAsync(), Does.Contain("MaxUploadBytes"));
+        Assert.That(server.Store.Data, Is.Empty);
+        Assert.That(server.Store.Summaries, Is.Empty);
+        Assert.That(server.Store.Received, Is.Empty);
+    }
+
+    [Test]
+    public async Task Utf16UploadsHonorTranscodedUtf8Limit(
+        [Values(false, true)] bool gzip,
+        [Values(false, true)] bool chunked,
+        [Values(0, 1)] int bytesOverLimit)
+    {
+        var tag = new string('漢', 128);
+        // Keep literal CJK characters: escaping them would make UTF-16 larger than UTF-8.
+        var json = "{\"Tag\":\"" + tag + "\"}";
+        var limit = Encoding.UTF8.GetByteCount(json) - bytesOverLimit;
+        Assert.That(Encoding.Unicode.GetByteCount(json), Is.LessThan(limit));
+        await using var server = await UploadServer.Start(options => options.MaxUploadBytes = limit);
+        using var request = gzip ? GzipRequest(json, chunked, utf16: true) : new HttpRequestMessage(HttpMethod.Post, "bdtest/data")
+        {
+            Content = new StringContent(json, Encoding.Unicode, "application/json")
+        };
+        if (!gzip) request.Headers.Add("X-BDTest-Upload-Key", Key);
+        request.Headers.TransferEncodingChunked = chunked;
+        using var response = await server.Client.SendAsync(request);
+
+        if (bytesOverLimit == 0)
+        {
+            Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+            Assert.That(server.Store.Received.Single().Tag, Is.EqualTo(tag));
+            Assert.That(server.Store.Data, Has.Count.EqualTo(1));
+            Assert.That(server.Store.Summaries, Has.Count.EqualTo(1));
+        }
+        else
+        {
+            Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.RequestEntityTooLarge));
+            Assert.That(await response.Content.ReadAsStringAsync(), Does.Contain("MaxUploadBytes"));
+            Assert.That(server.Store.Data, Is.Empty);
+            Assert.That(server.Store.Summaries, Is.Empty);
+            Assert.That(server.Store.Received, Is.Empty);
+        }
+    }
+
+    [TestCase(false)]
+    [TestCase(true)]
+    public async Task PlainJsonAlsoHonorsExpandedLimit(bool chunked)
+    {
+        await using var server = await UploadServer.Start(options =>
+        {
+            options.MaxCompressedUploadBytes = 10_000;
+            options.MaxUploadBytes = 128;
+        });
+        using var request = new HttpRequestMessage(HttpMethod.Post, "bdtest/data")
+        {
+            Content = Json(ReportJson.SerializeObject(new { Tag = new string('x', 256) }))
+        };
+        request.Headers.Add("X-BDTest-Upload-Key", Key);
+        request.Headers.TransferEncodingChunked = chunked;
+        using var response = await server.Client.SendAsync(request);
+
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.RequestEntityTooLarge));
+        Assert.That(server.Store.Received, Is.Empty);
+    }
+
+    [Test]
+    public async Task CompressedWireLimitIncludesTrailingBytesInChunkedRequests()
+    {
+        await using var server = await UploadServer.Start(options => options.MaxCompressedUploadBytes = 1024);
+        using var request = GzipRequest("{}", chunked: true);
+        var gzipBytes = await request.Content.ReadAsByteArrayAsync();
+        request.Content.Dispose();
+        var padded = new byte[16_384];
+        gzipBytes.CopyTo(padded, 0);
+        request.Content = new ByteArrayContent(padded);
+        request.Content.Headers.ContentType = new("application/json");
+        request.Content.Headers.ContentEncoding.Add("gzip");
+        using var response = await server.Client.SendAsync(request);
+
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.RequestEntityTooLarge));
+        Assert.That(server.Store.Received, Is.Empty);
+    }
+
+    [TestCase(false)]
+    [TestCase(true)]
+    public async Task HostsCanRaiseUploadLimitsAboveThePreviousFixedLimit(bool gzip)
+    {
+        await using var server = await UploadServer.Start(options =>
+        {
+            options.MaxCompressedUploadBytes = 12 * 1024 * 1024;
+            options.MaxUploadBytes = 12 * 1024 * 1024;
+        });
+        var tag = new string('x', 11 * 1024 * 1024);
+        var json = ReportJson.SerializeObject(new { Tag = tag });
+        using var request = gzip ? GzipRequest(json) : new HttpRequestMessage(HttpMethod.Post, "bdtest/data") { Content = Json(json) };
+        if (!gzip) request.Headers.Add("X-BDTest-Upload-Key", Key);
+        using var response = await server.Client.SendAsync(request);
+
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        Assert.That(server.Store.Received.Single().Tag, Is.EqualTo(tag));
+    }
+
+    [TestCase(false, false)]
+    [TestCase(false, true)]
+    [TestCase(true, false)]
+    [TestCase(true, true)]
+    public async Task ExactUploadLimitsAreInclusive(bool gzip, bool chunked)
+    {
+        await using var server = await UploadServer.Start();
+        const string json = "{\"Tag\":\"café 漢字\"}";
+        using var request = gzip ? GzipRequest(json, chunked) : new HttpRequestMessage(HttpMethod.Post, "bdtest/data") { Content = Json(json) };
+        if (!gzip) request.Headers.Add("X-BDTest-Upload-Key", Key);
+        request.Headers.TransferEncodingChunked = chunked;
+        server.Options.MaxCompressedUploadBytes = request.Content.Headers.ContentLength.Value;
+        server.Options.MaxUploadBytes = Encoding.UTF8.GetByteCount(json);
+        using var response = await server.Client.SendAsync(request);
+
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        Assert.That(server.Store.Received.Single().Tag, Is.EqualTo("café 漢字"));
+    }
+
+    [TestCase("br")]
+    [TestCase("identity")]
+    [TestCase("gzip, br")]
+    [TestCase("gzip, gzip")]
+    public async Task UnsupportedContentEncodingsReturn415(string encoding)
+    {
+        await using var server = await UploadServer.Start();
+        using var request = GzipRequest("{}");
+        request.Content.Headers.ContentEncoding.Clear();
+        request.Content.Headers.TryAddWithoutValidation("Content-Encoding", encoding);
+        using var response = await server.Client.SendAsync(request);
+
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.UnsupportedMediaType));
+        Assert.That(server.Store.Data, Is.Empty);
+    }
+
+    [TestCase("not gzip", false)]
+    [TestCase("not JSON", true)]
+    public async Task MalformedGzipAndJsonReturn400(string body, bool compress)
+    {
+        await using var server = await UploadServer.Start();
+        using var request = GzipRequest(body);
+        if (!compress)
+        {
+            request.Content.Dispose();
+            request.Content = Json(body);
+            request.Content.Headers.ContentEncoding.Add("gzip");
+        }
+        using var response = await server.Client.SendAsync(request);
+
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
+        Assert.That(await response.Content.ReadAsStringAsync(), Does.Contain(compress ? "Invalid report JSON" : "Invalid gzip"));
+        Assert.That(server.Store.Data, Is.Empty);
+    }
+
+    [TestCase(null)]
+    [TestCase("wrong-key")]
+    public async Task GzipAuthenticationRunsBeforeLimitsAndDecompression(string key)
+    {
+        await using var server = await UploadServer.Start(options => options.MaxCompressedUploadBytes = 1);
+        using var request = GzipRequest("{}");
+        request.Headers.Remove("X-BDTest-Upload-Key");
+        if (key != null) request.Headers.Add("X-BDTest-Upload-Key", key);
+        using var response = await server.Client.SendAsync(request);
+
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.Unauthorized));
+        Assert.That(server.Store.Data, Is.Empty);
+    }
+
+    [Test]
+    public async Task GzipRateLimitRunsBeforeDecompression()
+    {
+        await using var server = await UploadServer.Start(options => options.UploadsPerMinute = 1);
+        using var first = await server.Post("{}");
+        Assert.That(first.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        using var request = GzipRequest("not JSON");
+        using var response = await server.Client.SendAsync(request);
+
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.TooManyRequests));
+        Assert.That(response.Headers.RetryAfter?.Delta, Is.GreaterThan(TimeSpan.Zero));
+        Assert.That(server.Store.Received.Count, Is.EqualTo(1));
+    }
+
+    [Test]
+    public async Task UploadLimitsAndDecompressionLeaveHostEndpointsAlone()
+    {
+        await using var server = await UploadServer.Start(options =>
+        {
+            options.MaxCompressedUploadBytes = 1;
+            options.MaxUploadBytes = 1;
+        }, configureApp: app => app.MapPost("/host", async context =>
+        {
+            using var reader = new StreamReader(context.Request.Body);
+            await context.Response.WriteAsync(context.Request.Headers.ContentEncoding + ":" + await reader.ReadToEndAsync());
+        }));
+        using var request = new HttpRequestMessage(HttpMethod.Post, "host") { Content = Json("untouched") };
+        request.Content.Headers.ContentEncoding.Add("gzip");
+        using var response = await server.Client.SendAsync(request);
+
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        Assert.That(await response.Content.ReadAsStringAsync(), Is.EqualTo("gzip:untouched"));
+    }
+
+    [TestCase(false, false)]
+    [TestCase(false, true)]
+    [TestCase(true, false)]
+    [TestCase(true, true)]
+    public async Task GzipUploadsPreserveJsonAndUtf16Support(bool chunked, bool utf16)
+    {
+        await using var server = await UploadServer.Start();
+        using var request = GzipRequest("{\"Tag\":\"café 漢字\"}", chunked, utf16);
+        using var response = await server.Client.SendAsync(request);
+
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        Assert.That(server.Store.Received.Single().Tag, Is.EqualTo("café 漢字"));
+    }
+
+    private static HttpRequestMessage GzipRequest(string json, bool chunked = false, bool utf16 = false)
+    {
+        using var compressed = new MemoryStream();
+        using (var gzip = new GZipStream(compressed, CompressionLevel.Fastest, leaveOpen: true))
+        {
+            gzip.Write((utf16 ? Encoding.Unicode : Encoding.UTF8).GetBytes(json));
+        }
+
+        var request = new HttpRequestMessage(HttpMethod.Post, "bdtest/data")
+        {
+            Content = new ByteArrayContent(compressed.ToArray())
+        };
+        request.Content.Headers.ContentType = new("application/json") { CharSet = utf16 ? "utf-16" : "utf-8" };
+        request.Content.Headers.ContentEncoding.Add("gzip");
+        request.Headers.Add("X-BDTest-Upload-Key", Key);
+        request.Headers.TransferEncodingChunked = chunked;
+        request.Headers.ExpectContinue = true;
+        return request;
+    }
 
     [TestCase(false)]
     [TestCase(true)]
@@ -638,6 +925,7 @@ public class ReportUploadTests
     {
         public HttpClient Client { get; } = client;
         public RecordingStore Store { get; } = store;
+        public BDTestReportServerOptions Options => app.Services.GetRequiredService<BDTestReportServerOptions>();
 
         public static async Task<UploadServer> Start(Action<BDTestReportServerOptions> configure = null, Action<WebApplication> configureApp = null,
             Action connectionClosed = null, Action<System.Text.Json.JsonSerializerOptions> configureJson = null)
