@@ -17,6 +17,7 @@ public class PackProjectsModule : Module<List<CommandResult>>
     protected override async Task<List<CommandResult>?> ExecuteAsync(IModuleContext context, CancellationToken cancellationToken)
     {
         var results = new List<CommandResult>();
+        var artifacts = new PackageArtifacts(context.Git().RootDirectory!.Path);
         var packageVersion = await context.GetModule<NugetVersionGeneratorModule>();
         var projectFiles = context.Git().RootDirectory!.GetFiles(f => GetProjectsPredicate(f, context));
         foreach (var projectFile in projectFiles)
@@ -25,6 +26,7 @@ public class PackProjectsModule : Module<List<CommandResult>>
             {
                 ProjectSolution = projectFile.Path,
                 Configuration = "Release",
+                Output = artifacts.OutputDirectory,
                 Properties = new KeyValue[]
                 {
                     ("PackageVersion", packageVersion.ValueOrDefault)!,
