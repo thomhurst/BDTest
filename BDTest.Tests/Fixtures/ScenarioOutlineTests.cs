@@ -163,7 +163,7 @@ public class ScenarioOutlineTests : AbstractContextBDTestBase<ScenarioOutlineTes
         if (expected == Status.Passed) Assert.That(thrown, Is.Null);
         else Assert.That(thrown, Is.Not.Null);
         var row = outline.Examples[0];
-        if (rowStatus == Status.Passed)
+        if (rowStatus is Status.Passed or Status.Skipped or Status.Inconclusive)
         {
             Assert.That(row.Exception, Is.Null);
             Assert.That(outline.Exception, Is.Null);
@@ -184,6 +184,7 @@ public class ScenarioOutlineTests : AbstractContextBDTestBase<ScenarioOutlineTes
         {
             var value = ++contextCount;
             Console.WriteLine($"context output {value}");
+            ScenarioHtmlWriter.Text($"context markup {value}");
             if (duringContext && fail && value == 2) throw new InvalidOperationException("context failed");
         };
         Exception thrown = null;
@@ -192,7 +193,9 @@ public class ScenarioOutlineTests : AbstractContextBDTestBase<ScenarioOutlineTes
             await ScenarioOutline("Construction output", new[] { new { Value = 1 }, new { Value = 2 }, new { Value = 3 } }, row =>
             {
                 Console.WriteLine($"factory output {row.Value}");
-                var builder = Given(() => Record(row.Value)).When(() => NoOp()).Then(() => NoOp());
+                ScenarioHtmlWriter.Text($"factory markup {row.Value}");
+                var builder = Given(() => Record(row.Value)).When(() => ScenarioHtmlWriter.Text($"step markup {row.Value}")).Then(() => NoOp());
+                ScenarioHtmlWriter.Text($"built markup {row.Value}");
                 Console.WriteLine($"built output {row.Value}");
                 if (!duringContext && fail && row.Value == 2) throw new InvalidOperationException("factory failed");
                 return builder;
@@ -211,18 +214,24 @@ public class ScenarioOutlineTests : AbstractContextBDTestBase<ScenarioOutlineTes
                 var row = result.Examples[index];
                 var value = index + 1;
                 Assert.That(row.Output, Does.Contain($"context output {value}"));
+                Assert.That(row.CustomHtmlOutputForReport, Does.StartWith($"<span>context markup {value}</span><br>"));
                 if (!(duringContext && fail && value == 2))
                 {
                     Assert.That(row.Output, Does.Contain($"factory output {value}"));
                     Assert.That(row.Output, Does.Contain($"built output {value}"));
+                    Assert.That(row.CustomHtmlOutputForReport, Does.Contain($"<span>factory markup {value}</span><br><span>built markup {value}</span><br>"));
                 }
                 foreach (var other in Enumerable.Range(1, 3).Where(other => other != value))
                 {
                     Assert.That(row.Output, Does.Not.Contain($"output {other}"));
+                    Assert.That(row.CustomHtmlOutputForReport, Does.Not.Contain($"markup {other}"));
                 }
+                if (!fail || value != 2)
+                    Assert.That(row.CustomHtmlOutputForReport, Does.EndWith($"<span>step markup {value}</span><br>"));
                 Assert.That(row.TestStartupInformation, Is.Null.Or.Empty);
                 Assert.That(row.TearDownOutput, Is.Null.Or.Empty);
             }
+            Assert.That(result.CustomHtmlOutputForReport, Is.Null.Or.Empty);
             Assert.That(result.Output, Does.Contain("context output 1").And.Contain("context output 2").And.Contain("context output 3"));
         }
         var razor = await ReportHandlerEncodingTests.RenderAsync("/Views/Shared/_ScenarioExamples.cshtml", restored);

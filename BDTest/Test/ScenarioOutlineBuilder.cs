@@ -89,7 +89,7 @@ public sealed class ScenarioOutlineBuilder<TExample> : BuildableTest
         {
             for (var index = 0; index < _examples.Length; index++)
             {
-                var constructionOutput = new BufferedOutput();
+                var constructionOutput = new ScenarioConstructionOutput(TestId);
                 try
                 {
                     RunnableStepBuilder builder;
@@ -119,15 +119,13 @@ public sealed class ScenarioOutlineBuilder<TExample> : BuildableTest
                             StartTime = DateTime.UtcNow, EndTime = DateTime.UtcNow,
                             Status = ClassifyOutcome(exception)
                         };
-                        if (row.Status != Status.Passed)
-                            row.ExecutionException = new ExceptionWrapper(exception);
                         row.ReleaseRuntimeReferences();
                     }
                     else row = outline.Examples[index];
                     // Framework success exceptions must not fail the outline.
                     if (row.Status != Status.Passed)
                     {
-                        if (row.Exception == null && row.Status != Status.Skipped)
+                        if (row.Exception == null && row.Status is Status.Failed or Status.NotImplemented)
                             row.ExecutionException = new ExceptionWrapper(exception);
                         failures.Add((row.Status, ExceptionDispatchInfo.Capture(exception)));
                     }
@@ -135,8 +133,11 @@ public sealed class ScenarioOutlineBuilder<TExample> : BuildableTest
                 finally
                 {
                     var row = outline.Examples[index];
+                    var constructionHtml = constructionOutput.Html.Value;
+                    if (!string.IsNullOrEmpty(constructionHtml))
+                        row.CustomHtmlOutputForReport = constructionHtml + row.CustomHtmlOutputForReport;
                     row.Output = string.Join(Environment.NewLine,
-                        new[] { constructionOutput.Value, row.Output }.Where(output => !string.IsNullOrEmpty(output)));
+                        new[] { constructionOutput.Text.Value, row.Output }.Where(output => !string.IsNullOrEmpty(output)));
                 }
             }
 

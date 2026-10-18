@@ -23,8 +23,8 @@ internal class TestOutputData : TextWriter
         set => AsyncLocalFrameworkExecutionId.Value = value;
     }
 
-    private static readonly AsyncLocal<BufferedOutput> AsyncLocalConstructionOutput = new();
-    internal static BufferedOutput ConstructionOutput
+    private static readonly AsyncLocal<ScenarioConstructionOutput> AsyncLocalConstructionOutput = new();
+    internal static ScenarioConstructionOutput ConstructionOutput
     {
         get => AsyncLocalConstructionOutput.Value;
         set => AsyncLocalConstructionOutput.Value = value;
@@ -65,8 +65,8 @@ internal class TestOutputData : TextWriter
             // in the example's buffer until its final scenario exists.
             if (ConstructionOutput != null)
             {
-                if (character.HasValue) ConstructionOutput.Append(character.Value);
-                else ConstructionOutput.Append(value);
+                if (character.HasValue) ConstructionOutput.Text.Append(character.Value);
+                else ConstructionOutput.Text.Append(value);
                 return;
             }
 
@@ -212,6 +212,13 @@ internal class TestOutputData : TextWriter
 
     internal static void WriteCustomHtmlForReport(string testId, string htmlValue)
     {
+        var constructionOutput = ConstructionOutput;
+        if (constructionOutput != null && constructionOutput.FrameworkExecutionId == testId)
+        {
+            constructionOutput.Html.Append(htmlValue);
+            return;
+        }
+
         TestHolder.ListenForScenario(testId, scenario => scenario.CustomHtmlOutputForReport += htmlValue);
     }
 }
