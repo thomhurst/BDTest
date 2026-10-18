@@ -31,6 +31,7 @@ public class ReportSidebarTests
         builder.Services.AddControllersWithViews().AddBdTestReportControllersAndViews();
         builder.Services.AddSingleton<IDataRepository>(_repository);
         _application = builder.Build();
+        _application.UseBDTestReportServer(options => options.AllowAnonymousReports = true);
         _application.Services.GetRequiredService<BDTestReportServerOptions>().CustomSidebarLinksProvider = _links;
         _application.MapControllers();
         await _application.StartAsync();

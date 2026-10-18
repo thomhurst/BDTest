@@ -5,6 +5,7 @@ using BDTest.Maps;
 using BDTest.Razor.Reports.Extensions;
 using BDTest.Razor.Reports.Interfaces;
 using BDTest.Razor.Reports.Models;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
@@ -20,7 +21,6 @@ public class ReportDeletionTests
     private const string ListPath = "/reports/bdtest/report/test-runs";
     private const string DeletePath = "/reports/bdtest/report/delete/run-618";
     private readonly RecordingRepository _repository = new();
-    private readonly AdminAuthorizer _authorizer = new();
     private WebApplication _application;
     private HttpClient _client;
 
@@ -31,8 +31,16 @@ public class ReportDeletionTests
         builder.WebHost.UseUrls("http://127.0.0.1:0");
         builder.Services.AddControllersWithViews().AddBdTestReportControllersAndViews();
         builder.Services.AddSingleton<IDataRepository>(_repository);
+        builder.Services.AddAuthentication("ReportTests")
+            .AddScheme<AuthenticationSchemeOptions, ReportTestAuthenticationHandler>("ReportTests", _ => { });
+        builder.Services.AddAuthorization(options => options.AddPolicy("DeleteTests", policy =>
+            policy.RequireAuthenticatedUser().RequireRole("BDTest.Admin")));
         _application = builder.Build();
-        _application.Services.GetRequiredService<BDTestReportServerOptions>().AdminAuthorizer = _authorizer;
+        _application.UseBDTestReportServer(options =>
+        {
+            options.AllowAnonymousReports = true;
+            options.AdminAuthorizationPolicy = "DeleteTests";
+        });
         _application.UsePathBase("/reports");
         _application.UseRouting();
         _application.MapControllers();
@@ -43,11 +51,11 @@ public class ReportDeletionTests
     public void Reset()
     {
         _repository.DeletedIds.Clear();
-        _authorizer.IsAdmin = true;
         _client = new HttpClient(new HttpClientHandler { AllowAutoRedirect = false })
         {
             BaseAddress = new Uri(_application.Urls.Single())
         };
+        _client.DefaultRequestHeaders.Add("X-Test-Role", "BDTest.Admin");
     }
 
     [TearDown]
@@ -85,9 +93,10 @@ public class ReportDeletionTests
     public async Task Valid_token_does_not_bypass_admin_authorization(string method)
     {
         var (action, token) = await ReadDeleteForm();
-        _authorizer.IsAdmin = false;
+        _client.DefaultRequestHeaders.Remove("X-Test-Role");
+        _client.DefaultRequestHeaders.Add("X-Test-Role", "Reader");
         using var response = await DeleteAsync(method, action, token);
-        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.Unauthorized));
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.Forbidden));
         Assert.That(_repository.DeletedIds, Is.Empty);
     }
 
@@ -99,6 +108,7 @@ public class ReportDeletionTests
         {
             BaseAddress = _client.BaseAddress
         };
+        clientWithoutCookie.DefaultRequestHeaders.Add("X-Test-Role", "BDTest.Admin");
         using var response = await clientWithoutCookie.PostAsync(action,
             new FormUrlEncodedContent(new Dictionary<string, string> { ["__RequestVerificationToken"] = token }));
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
@@ -147,12 +157,6 @@ public class ReportDeletionTests
             Content = new FormUrlEncodedContent(fields)
         };
         return await _client.SendAsync(request);
-    }
-
-    private sealed class AdminAuthorizer : IAdminAuthorizer
-    {
-        public bool IsAdmin { get; set; }
-        public Task<bool> IsAdminAsync(HttpContext httpContext) => Task.FromResult(IsAdmin);
     }
 
     private sealed class RecordingRepository : IDataRepository

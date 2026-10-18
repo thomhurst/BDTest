@@ -1,20 +1,17 @@
 using System.Security.Claims;
-using BDTest.Razor.Reports.Controllers;
-using BDTest.Razor.Reports.Models;
 using BDTest.ReportGenerator.RazorServer;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using NUnit.Framework;
 
 namespace BDTest.Tests.Fixtures;
 
-public class SampleAdminAuthorizerTests
+public class SampleAdminPolicyTests
 {
     [TestCase(null, null, null, false)]
     [TestCase(null, null, "admin=true", false)]
@@ -43,25 +40,8 @@ public class SampleAdminAuthorizerTests
             context.Request.Headers.Cookie = cookie;
         }
 
-        var authorizer = scope.ServiceProvider.GetRequiredService<AdminAuthorizer>();
-        Assert.That(await authorizer.IsAdminAsync(context), Is.EqualTo(expected));
-    }
-
-    [Test]
-    public async Task Forged_admin_cookie_cannot_reach_report_deletion()
-    {
-        await using var app = CreateApp();
-        await using var scope = app.Services.CreateAsyncScope();
-        var context = new DefaultHttpContext { RequestServices = scope.ServiceProvider };
-        context.Request.Headers.Cookie = "admin=true";
-        var options = scope.ServiceProvider.GetRequiredService<BDTestReportServerOptions>();
-        options.AdminAuthorizer = scope.ServiceProvider.GetRequiredService<AdminAuthorizer>();
-        var controller = new BDTestController(null, options)
-        {
-            ControllerContext = new ControllerContext { HttpContext = context }
-        };
-
-        Assert.That(await controller.DeleteReport("protected-report"), Is.TypeOf<UnauthorizedResult>());
+        var authorization = scope.ServiceProvider.GetRequiredService<IAuthorizationService>();
+        Assert.That((await authorization.AuthorizeAsync(context.User, context, "BDTestReports.Admin")).Succeeded, Is.EqualTo(expected));
     }
 
     [TestCase(false)]
@@ -91,7 +71,7 @@ public class SampleAdminAuthorizerTests
         request.Request.Host = signInContext.Request.Host;
         request.Request.Path = "/bdtest/report/test-runs";
         request.Request.Headers.Cookie = cookie + "; admin=true";
-        // Exercise authentication and the admin authorizer even for an invalid session.
+        // Exercise authentication and the admin policy even for an invalid session.
         // The host fallback policy is covered by its HTTP integration tests.
         request.SetEndpoint(new Endpoint(_ => Task.CompletedTask,
             new EndpointMetadataCollection(new AllowAnonymousAttribute()), null));
@@ -100,8 +80,8 @@ public class SampleAdminAuthorizerTests
         pipeline.UseAuthorization();
         pipeline.Run(async context =>
         {
-            var authorizer = context.RequestServices.GetRequiredService<AdminAuthorizer>();
-            Assert.That(await authorizer.IsAdminAsync(context), Is.EqualTo(!tampered));
+            var authorization = context.RequestServices.GetRequiredService<IAuthorizationService>();
+            Assert.That((await authorization.AuthorizeAsync(context.User, context, "BDTestReports.Admin")).Succeeded, Is.EqualTo(!tampered));
         });
 
         await pipeline.Build()(request);

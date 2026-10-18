@@ -38,12 +38,18 @@ and [Entra app role setup](https://learn.microsoft.com/en-us/entra/identity-plat
 
 ## Hosts using the reporting library
 
-`IAdminAuthorizer` is the authorization boundary for privileged report operations.
-Custom implementations must require authentication and check trusted identity claims
-against an administrator role or policy. Never authorize solely from the presence or
-value of a client-controlled cookie, header, or query parameter. Register authentication
-and authorization services and run `UseAuthentication()` and `UseAuthorization()` after
-routing and before report endpoints. The library's default authorizer denies admin access.
+Report reads fail closed until `ReportsAuthorizationPolicy` names a registered ASP.NET
+Core policy, the host applies explicit endpoint authorization, or
+`AllowAnonymousReports = true` explicitly enables public reads. The
+sample uses `BDTestReports.Read` for authenticated readers and `BDTestReports.Admin`
+for authenticated users with the `BDTest.Admin` role. Set `AdminAuthorizationPolicy`
+to the admin policy; an unset value disables deletion. Both policies use standard
+ASP.NET Core requirements and handlers. This replaces `IAdminAuthorizer` and the
+`AdminAuthorizer` option in the next major version.
+
+Register authentication services and run `UseAuthentication()` and `UseAuthorization()`
+after routing and before report endpoints. Never authorize solely from the presence
+or value of a client-controlled cookie, header, or query parameter.
 
 ## Storage startup
 

@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace BDTest.Razor.Reports.Controllers;
 
 [Route("bdtest")]
+[TypeFilter(typeof(ReportAuthorizationFilter), Arguments = new object[] { false })]
 public sealed class AttachmentsController(IDataRepository repository, BDTestReportServerOptions options) : Controller
 {
     [AllowAnonymous]

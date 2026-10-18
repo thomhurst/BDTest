@@ -7,6 +7,8 @@ description: Add team and run links, personalise the page for the signed-in user
 
 UI extension points are interfaces in `BDTest.Razor.Reports.Interfaces`. Storage interfaces live in `BDTest.Razor.Reports.Storage`; see [Persistence](persistence.md) and [Storage migration](../migration/report-storage.md). Set them as options in `UseBDTestReportServer`. Links use `CustomLinkData(string text, Uri url)`; pass `null` as the URL for plain text.
 
+Configure report read authorization as shown in [Security](security.md#requiring-sign-in) before using these option snippets.
+
 ## Header links
 
 Implement `IBDTestCustomHeaderLinksProvider` to add links or text to the **Links** menu in the page header, under **Team links**:

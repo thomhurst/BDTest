@@ -17,6 +17,8 @@ app.UseBDTestReportServer(options =>
 
 The repository owns deserialization, normalization, caching and conversion to `TestRunSummary` view models. Stores move UTF-8 JSON bytes and `RunIndexEntry` metadata. Storage contracts do not reference Razor view models.
 
+Configure report read authorization as shown in [Security](security.md#requiring-sign-in) before using these option snippets.
+
 ## Report bytes
 
 ```csharp

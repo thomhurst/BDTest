@@ -587,7 +587,7 @@ localization, the host's current culture determines the date format.
 
 ### Report server uploads
 
-Report uploads require an API key. Configure a strong secret on both the server and the uploader before upgrading; an unset or blank key disables uploads (`401`). Existing reports and the ping endpoint remain available.
+Report uploads require an API key. Configure a strong secret on both the server and the uploader before upgrading; an unset or blank key disables uploads (`401`). Report reads require their own policy or explicit anonymous opt-in; ping remains public.
 
 For an embedded report server:
 
@@ -595,6 +595,7 @@ For an embedded report server:
 app.UseBDTestReportServer(options =>
 {
     options.UploadApiKey = configuration["BDTest:UploadApiKey"];
+    options.ReportsAuthorizationPolicy = "BDTestReports.Read"; // Register this policy as shown below.
     options.UploadsPerMinute = 60; // Positive limit shared by authenticated clients of this instance.
     options.MaxCompressedUploadBytes = 10L * 1024 * 1024; // Request body bytes before decompression.
     options.MaxUploadBytes = 10L * 1024 * 1024;           // Expanded JSON bytes.
@@ -719,7 +720,9 @@ See [ASP.NET Core proxy configuration](https://learn.microsoft.com/en-us/aspnet/
 
 ### Securing a report server
 
-`BDTest.Razor.Reports` supplies controllers and views, but does not configure authentication or authorization for your host. Report pages, lists, and `/bdtest/report/{id}/raw-json-data` can contain sensitive test output. Configure your host before exposing it to other users.
+`BDTest.Razor.Reports` denies report reads with HTTP 403 until you set `ReportsAuthorizationPolicy` to a registered ASP.NET Core policy, apply explicit endpoint authorization with `RequireAuthorization(...)`, or explicitly opt in with `AllowAnonymousReports = true`. It logs why access is denied. This covers report pages, lists, raw JSON, attachment downloads and bulk comparisons. Your host supplies authentication schemes and policies; uploads retain their separate API key.
+
+Deletion requires a named `AdminAuthorizationPolicy` in addition to read access and an antiforgery token. An unset admin policy disables deletion, including for public reports. The run list uses the same policy for delete buttons. This major-version change removes `IAdminAuthorizer`, `NoOpAdminAuthorizer` and the `AdminAuthorizer` option: move custom checks into an ASP.NET Core authorization requirement handler.
 
 The sample `BDTest.ReportGenerator.RazorServer` uses Microsoft Entra ID with `Microsoft.Identity.Web` and requires a signed-in user by default. Register a single-tenant web application, register `https://<your-report-host>/signin-oidc` as its redirect URI, and set these values through environment variables or a secret store:
 
@@ -747,12 +750,17 @@ var reportUri = await BDTestReportServer.SendDataAndGetReportUriAsync(
     client);
 ```
 
-For your own ASP.NET Core host, register an authentication provider and a fallback authorization policy. For example, with the `Microsoft.Identity.Web` and `Microsoft.Identity.Web.UI` packages:
+For your own ASP.NET Core host, register an authentication provider and named read and admin policies. For example, with the `Microsoft.Identity.Web` and `Microsoft.Identity.Web.UI` packages:
 
 ```csharp
 services.AddAuthentication(OpenIdConnectDefaults.AuthenticationScheme)
     .AddMicrosoftIdentityWebApp(Configuration.GetSection("AzureAd"));
-services.AddAuthorization(options => options.FallbackPolicy = options.DefaultPolicy);
+services.AddAuthorization(options =>
+{
+    options.AddPolicy("BDTestReports.Read", policy => policy.RequireAuthenticatedUser());
+    options.AddPolicy("BDTestReports.Admin", policy =>
+        policy.RequireAuthenticatedUser().RequireRole("BDTest.Admin"));
+});
 services.AddControllersWithViews()
     .AddMicrosoftIdentityUI()
     .AddBdTestReportControllersAndViews();
@@ -762,6 +770,12 @@ services.AddRazorPages();
 Use the `Microsoft.AspNetCore.Authentication.OpenIdConnect`, `Microsoft.Identity.Web`, `Microsoft.Identity.Web.UI`, and `BDTest.Razor.Reports.Extensions` namespaces. Configure `UseBDTestReportServer` with your data store and `UploadApiKey` as shown above. The request pipeline must select the endpoint before checking its authorization:
 
 ```csharp
+app.UseBDTestReportServer(options =>
+{
+    options.ReportsAuthorizationPolicy = "BDTestReports.Read";
+    options.AdminAuthorizationPolicy = "BDTestReports.Admin";
+    options.UploadApiKey = Configuration["BDTest:UploadApiKey"];
+});
 app.UseHttpsRedirection();
 app.UseStaticFiles(); // Only public assets belong in the web root.
 app.UseRouting();
@@ -775,6 +789,8 @@ app.UseEndpoints(endpoints =>
 ```
 
 The library marks uploads `[AllowAnonymous]` to bypass interactive sign-in, and its upload authorization filter requires `X-BDTest-Upload-Key` independently. Configure `UploadApiKey` for every host; no separate upload authentication middleware is needed. Use HTTPS for both browser sessions and uploads.
+
+For intentionally public reports, set `AllowAnonymousReports = true` instead of a read policy. A configured read policy takes precedence over this flag. The flag does not bypass host fallback policies or endpoint `RequireAuthorization(...)`, and grants no delete or upload permission. Explicit host endpoint authorization can also configure read access when no library read policy is set; a global fallback policy alone cannot. The sample sets both named policies above.
 
 See [Microsoft Identity Web setup](https://github.com/AzureAD/microsoft-identity-web/wiki/web-apps) and [ASP.NET Core authorization policies](https://learn.microsoft.com/aspnet/core/security/authorization/policies) for provider configuration and policy customization.
 
