@@ -24,9 +24,19 @@ public class VerifyPackageArtifactsModule : Module<CommandResult>
             arguments.Add("-RequireNormalizedPaths");
         }
 
-        return await context.Shell.Command.ExecuteCommandLineTool(new GenericCommandLineToolOptions("pwsh")
+        await context.Shell.Command.ExecuteCommandLineTool(new GenericCommandLineToolOptions("pwsh")
         {
             Arguments = arguments
+        }, new CommandExecutionOptions
+        {
+            WorkingDirectory = repositoryRoot,
+            ThrowOnNonZeroExitCode = true
+        }, cancellationToken);
+
+        // Packing rebuilds assemblies. Validate their final identities before either upload path runs.
+        return await context.Shell.Command.ExecuteCommandLineTool(new GenericCommandLineToolOptions("pwsh")
+        {
+            Arguments = ["-NoProfile", "-File", Path.Combine(repositoryRoot, "scripts", "Test-AssemblySigning.ps1")]
         }, new CommandExecutionOptions
         {
             WorkingDirectory = repositoryRoot,

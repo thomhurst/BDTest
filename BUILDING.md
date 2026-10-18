@@ -120,5 +120,6 @@ pwsh scripts/Test-AssemblySigning.ps1
 ```
 
 This verifies assembly names, public keys, signing flags and matching identities
-across targets, including the unsigned compiler extensions and tooling. CI runs
-it after the pipeline builds and packs the solution.
+across targets, including the unsigned compiler extensions and tooling. The
+pipeline runs it in `VerifyPackageArtifactsModule` after packing and before
+either the NuGet or local-feed upload module. A failed check prevents publication.

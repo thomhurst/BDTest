@@ -58,9 +58,6 @@ jobs:
           DOTNET_ENVIRONMENT: ${{ github.ref == 'refs/heads/main' && 'Production' || 'Development' }}
           NuGet__ApiKey: ${{ secrets.NUGET__APIKEY }}
           PUBLISH_PACKAGES: ${{ github.event.inputs.publish-packages }}
-      - name: Verify assembly signing and identities
-        shell: pwsh
-        run: ./scripts/Test-AssemblySigning.ps1
       - name: Upload test results
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v7.0.2
