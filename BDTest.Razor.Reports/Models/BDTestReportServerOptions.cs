@@ -13,6 +13,30 @@ public class BDTestReportServerOptions
         /// <summary>Legacy model-based storage. Prefer ReportStore and RunIndexStore for new hosts.</summary>
         public IBDTestDataStore? DataStore { get; set; }
         public BDTest.Razor.Reports.Storage.IReportStore? ReportStore { get; set; }
+        /// <summary>Optional attachment storage. Configure before serving requests; no attachment bytes are stored in report JSON.</summary>
+        public IBDTestAttachmentStore? AttachmentStore { get; set; }
+        /// <summary>Maximum attachment bytes in one report manifest (default 100 MiB).</summary>
+        public long MaximumReportAttachmentBytes
+        {
+            get => _maximumReportAttachmentBytes;
+            set => _maximumReportAttachmentBytes = value >= 0 ? value : throw new ArgumentOutOfRangeException(nameof(value));
+        }
+        private long _maximumReportAttachmentBytes = 100 * 1024 * 1024;
+        /// <summary>Maximum bytes per attachment (default 10 MiB).</summary>
+        public long MaximumAttachmentBytes
+        {
+            get => _maximumAttachmentBytes;
+            set => _maximumAttachmentBytes = value >= 0 ? value : throw new ArgumentOutOfRangeException(nameof(value));
+        }
+        private long _maximumAttachmentBytes = 10 * 1024 * 1024;
+        /// <summary>Maximum attachment count per report (default 1000).</summary>
+        public int MaximumAttachmentsPerReport
+        {
+            get => _maximumAttachmentsPerReport;
+            set => _maximumAttachmentsPerReport = value >= 0 ? value : throw new ArgumentOutOfRangeException(nameof(value));
+        }
+        private int _maximumAttachmentsPerReport = 1000;
+        internal SemaphoreSlim AttachmentGate { get; } = new(1, 1);
         public BDTest.Razor.Reports.Storage.IRunIndexStore? RunIndexStore { get; set; }
 #nullable enable
         public IBDTestCustomSidebarLinksProvider CustomSidebarLinksProvider { get; set; }

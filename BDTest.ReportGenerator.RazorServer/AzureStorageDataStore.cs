@@ -12,7 +12,7 @@ using BDTest.Razor.Reports.Storage;
 
 namespace BDTest.ReportGenerator.RazorServer;
 
-public class AzureStorageDataStore : IBDTestDataStore, IReportStore, IRunIndexStore, IAsyncDataStoreInitializer
+public class AzureStorageDataStore : IBDTestDataStore, IReportStore, IRunIndexStore, IBDTestAttachmentStore, IAsyncDataStoreInitializer
 {
     private readonly BlobContainerClient _testRunSummariesContainer;
     private readonly BlobContainerClient _testDataContainer;
@@ -33,6 +33,44 @@ public class AzureStorageDataStore : IBDTestDataStore, IReportStore, IRunIndexSt
         _testRunSummariesContainer = blobClient.GetBlobContainerClient("test-runs-summaries");
             
         _testDataContainer = blobClient.GetBlobContainerClient("test-data");
+    }
+
+    /// <summary>Attachment blobs share the report container so its lifecycle policy applies to both.</summary>
+    public async Task<Stream> OpenReadAsync(string reportId, string attachmentId, CancellationToken cancellationToken = default)
+    {
+        AttachmentStorage.ValidateIds(reportId, attachmentId);
+        ArgumentNullException.ThrowIfNull(attachmentId);
+        cancellationToken.ThrowIfCancellationRequested();
+        try
+        {
+            var download = await _testDataContainer.GetBlockBlobClient($"{reportId}/attachments/{attachmentId}")
+                .DownloadStreamingAsync(cancellationToken: cancellationToken);
+            return download.Value.Content;
+        }
+        catch (RequestFailedException exception) when (exception.Status == 404) { return null; }
+    }
+
+    public async Task WriteAsync(string reportId, string attachmentId, Stream content, long length, CancellationToken cancellationToken = default)
+    {
+        AttachmentStorage.ValidateIds(reportId, attachmentId);
+        ArgumentNullException.ThrowIfNull(attachmentId);
+        cancellationToken.ThrowIfCancellationRequested();
+        // Validate first: a failed or overlong source must never replace a previously committed blob.
+        await using var staging = new FileStream(Path.Combine(Path.GetTempPath(), "bdtest-azure-" + Guid.NewGuid().ToString("N")),
+            FileMode.CreateNew, FileAccess.ReadWrite, FileShare.None, 81920,
+            FileOptions.Asynchronous | FileOptions.SequentialScan | FileOptions.DeleteOnClose);
+        await AttachmentStorage.CopyExactlyAsync(content, staging, length, cancellationToken);
+        staging.Position = 0;
+        await _testDataContainer.GetBlockBlobClient($"{reportId}/attachments/{attachmentId}")
+            .UploadAsync(staging, cancellationToken: cancellationToken);
+    }
+
+    public async Task DeleteReportAsync(string reportId, CancellationToken cancellationToken = default)
+    {
+        AttachmentStorage.ValidateIds(reportId);
+        cancellationToken.ThrowIfCancellationRequested();
+        await foreach (var blob in _testDataContainer.GetBlobsAsync(BlobTraits.None, BlobStates.None, $"{reportId}/attachments/", cancellationToken))
+            await _testDataContainer.DeleteBlobIfExistsAsync(blob.Name, cancellationToken: cancellationToken);
     }
 
     public async Task<Stream> OpenReadAsync(string reportId, CancellationToken cancellationToken = default)

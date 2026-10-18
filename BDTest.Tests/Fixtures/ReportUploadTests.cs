@@ -23,7 +23,7 @@ using NUnit.Framework;
 
 namespace BDTest.Tests.Fixtures;
 
-public class ReportUploadTests
+public partial class ReportUploadTests
 {
     private const string Key = "test-upload-secret";
 
@@ -636,6 +636,7 @@ public class ReportUploadTests
 
     private sealed class UploadServer(WebApplication app, HttpClient client, RecordingStore store) : IAsyncDisposable
     {
+        public IDataRepository Repository => app.Services.GetRequiredService<IDataRepository>();
         public HttpClient Client { get; } = client;
         public RecordingStore Store { get; } = store;
 

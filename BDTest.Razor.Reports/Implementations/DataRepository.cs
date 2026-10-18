@@ -16,9 +16,11 @@ internal class DataRepository : IDataRepository
     private readonly IRunIndexStore _runIndexStore;
     private readonly SemaphoreSlim _historyLock = new(1, 1);
     private bool _historyLoaded;
+    private readonly BDTestReportServerOptions _options;
 
     public DataRepository(IMemoryCacheBdTestDataStore memoryCacheBdTestDataStore, BDTestReportServerOptions options)
     {
+        _options = options;
         _memoryCacheBdTestDataStore = memoryCacheBdTestDataStore;
         if ((options.ReportStore == null) != (options.RunIndexStore == null))
             throw new ArgumentException("Configure both ReportStore and RunIndexStore.", nameof(options));
@@ -134,9 +136,21 @@ internal class DataRepository : IDataRepository
 
     public async Task DeleteReport(string reportId, CancellationToken cancellationToken = default)
     {
+        await _options.AttachmentGate.WaitAsync(cancellationToken);
+        try
+        {
+            await DeleteReportAndAttachments(reportId, cancellationToken);
+        }
+        finally { _options.AttachmentGate.Release(); }
+    }
+
+    private async Task DeleteReportAndAttachments(string reportId, CancellationToken cancellationToken)
+    {
         await _historyLock.WaitAsync(cancellationToken);
         try
         {
+            if (_options.AttachmentStore != null && AttachmentStorage.IsValidId(reportId))
+                await _options.AttachmentStore.DeleteReportAsync(reportId, cancellationToken);
             if (_reportStore != null)
             {
                 await _reportStore.DeleteAsync(reportId, cancellationToken);

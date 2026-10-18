@@ -80,9 +80,52 @@ public static class BDTestReportServer
 
         AddCustomProperties(dataOutputModel);
 
+        var attachments = BDTestAttachmentHelper.GetAttachments(dataOutputModel).ToArray();
+        // Check ownership before posting JSON. File content is opened again for each upload attempt.
+        foreach (var attachment in attachments)
+        {
+            using var content = run.OpenAttachment(attachment.Id);
+            if (content.Length != attachment.Length) throw new InvalidDataException("Captured attachment length changed.");
+        }
         var stringContent = BDTestJsonHelper.Serialize(dataOutputModel);
+        string responseContent = null;
+        string reportId = null;
+        string attachmentToken = null;
+        await SendWithRetryAsync(httpClient, () => new HttpRequestMessage(HttpMethod.Post, uploadUri)
+        {
+            Content = new StringContent(stringContent, Encoding.UTF8, "application/json")
+        }, async response =>
+        {
+            responseContent = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+            if (response.Headers.TryGetValues("X-BDTest-Report-Id", out var ids)) reportId = ids.Single();
+            if (response.Headers.TryGetValues("X-BDTest-Attachment-Token", out var tokens)) attachmentToken = tokens.Single();
+        }).ConfigureAwait(false);
 
-        string responseContent;
+        if (attachments.Length > 0)
+        {
+            if (reportId?.Length != 32 || reportId.Any(character => !Uri.IsHexDigit(character)) || string.IsNullOrEmpty(attachmentToken))
+                throw new InvalidOperationException("The report server did not authorize attachment uploads. Upgrade the server and configure AttachmentStore.");
+            foreach (var attachment in attachments)
+            {
+                var attachmentUri = new Uri(uploadUri.AbsoluteUri.TrimEnd('/') + "/" + reportId + "/attachments/" + Uri.EscapeDataString(attachment.Id));
+                var mime = System.Net.Http.Headers.MediaTypeHeaderValue.Parse(attachment.MimeType);
+                await SendWithRetryAsync(httpClient, () =>
+                {
+                    var content = new StreamContent(run.OpenAttachment(attachment.Id), 81920);
+                    content.Headers.ContentType = mime;
+                    content.Headers.ContentLength = attachment.Length;
+                    var request = new HttpRequestMessage(HttpMethod.Post, attachmentUri) { Content = content };
+                    request.Headers.Add("X-BDTest-Attachment-Token", attachmentToken);
+                    return request;
+                }, _ => Task.CompletedTask).ConfigureAwait(false);
+            }
+        }
+        return new Uri(responseContent);
+    }
+
+    private static async Task SendWithRetryAsync(HttpClient httpClient, Func<HttpRequestMessage> createRequest,
+        Func<HttpResponseMessage, Task> consumeResponse)
+    {
         for (var attempt = 1; ; attempt++)
         {
             // Three attempts, with 250ms then 500ms backoff unless the server asks for longer.
@@ -92,13 +135,7 @@ public static class BDTestReportServer
                 
             try
             {
-                using var httpRequestMessage = new HttpRequestMessage
-                {
-                    RequestUri = uploadUri,
-                    Method = HttpMethod.Post,
-                    Content = new StringContent(stringContent, Encoding.UTF8, "application/json")
-                };
-
+                using var httpRequestMessage = createRequest();
                 using var response = await httpClient.SendAsync(httpRequestMessage).ConfigureAwait(false);
                 retryable = response.IsSuccessStatusCode || IsTransient(response.StatusCode);
                 if (IsTransient(response.StatusCode))
@@ -111,7 +148,8 @@ public static class BDTestReportServer
                     retryAt = retryAfter?.Date;
                 }
 
-                responseContent = await response.EnsureSuccessStatusCode().Content.ReadAsStringAsync().ConfigureAwait(false);
+                response.EnsureSuccessStatusCode();
+                await consumeResponse(response).ConfigureAwait(false);
                 break;
             }
             catch (Exception exception) when (attempt < 3 && retryable
@@ -120,8 +158,6 @@ public static class BDTestReportServer
                 await WaitForRetryAfterAsync(retryDelay, retryAt).ConfigureAwait(false);
             }
         }
-            
-        return new Uri(responseContent);
     }
 
     private static bool IsTransient(HttpStatusCode statusCode) => statusCode is

@@ -7,6 +7,7 @@ using BDTest.Razor.Reports.Extensions;
 using BDTest.Razor.Reports.Interfaces;
 using BDTest.Razor.Reports.Models;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Logging;
 
 namespace BDTest.Razor.Reports.Implementations;
 
@@ -126,7 +127,31 @@ public class MemoryCacheBdTestDataStore : IMemoryCacheBdTestDataStore, IDisposab
         {
             Size = report.Size,
             AbsoluteExpirationRelativeToNow = _options.ReportCacheRetention
-        });
+        }.RegisterPostEvictionCallback((key, value, reason, state) =>
+        {
+            if (reason is EvictionReason.Expired or EvictionReason.Capacity
+                && _options.DataStore == null && _options.ReportStore == null && _options.AttachmentStore != null
+                && AttachmentStorage.IsValidId((string)key))
+                _ = DeleteExpiredAttachments((string)key);
+        }));
+    }
+
+    private async Task DeleteExpiredAttachments(string reportId)
+    {
+        await _options.AttachmentGate.WaitAsync();
+        try
+        {
+            lock (_reportCacheLock)
+            {
+                if (_testRecordCache.Value.TryGetValue(reportId, out _)) return;
+            }
+            await _options.AttachmentStore.DeleteReportAsync(reportId);
+        }
+        catch (Exception exception)
+        {
+            _options.Logger?.LogError(exception, "Failed to remove attachments for expired report {ReportId}", reportId);
+        }
+        finally { _options.AttachmentGate.Release(); }
     }
 
     private sealed record CachedReport(object Value, long Size);

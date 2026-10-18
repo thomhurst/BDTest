@@ -66,7 +66,8 @@ All return `Task<Uri>`, the summary page of the new report.
 1. A best-effort `GET /bdtest/ping` warms up the server. Any path in the server address is replaced, so both requests go to the host root; see [path prefixes](hosting.md#path-prefixes).
 2. The report is posted as JSON to `POST /bdtest/data`.
 3. On HTTP 408, 429, 500, 502, 503 or 504, a network error or a timeout, the client retries, up to three attempts in total. It honours a `Retry-After` header given in seconds or as an HTTP date.
-4. The server creates a new ID for the report and returns its URL.
+4. The server creates a new ID for the report and returns its URL. `X-BDTest-Report-Id` identifies it.
+5. For reports with attachments, the response also contains `X-BDTest-Attachment-Token`. The client sends that receipt and the upload key to `POST /bdtest/data/{reportId}/attachments/{attachmentId}`, once for each referenced attachment. Files stream from the selected run; each transient retry opens a fresh stream. The method returns only after every attachment succeeds.
 
 The server ignores any client-supplied report ID. Each accepted upload, including a retry after a lost response, creates a separate report.
 
@@ -79,3 +80,11 @@ The server ignores any client-supplied report ID. Each accepted upload, includin
 - In cache-only hosting, a report larger than the cache budget returns HTTP 413. See [Caching and limits](caching-and-limits.md).
 
 After the upload, open the report server. The newest run is at the top of the test run list.
+
+## Attachment protocol and limits
+
+Configure an [attachment store](persistence.md#attachments) before uploading captures. Report JSON records the complete manifest before any attachment bytes are accepted. Each ID must be unique, each attempt number positive, and names must contain 1–255 characters without control characters or path separators. MIME types must be concrete, valid types of at most 256 characters, without control characters. Uploaded attachment `Uri` values must be null. The server validates per-file bytes, total report bytes and attachment count against `MaximumAttachmentBytes` (10 MiB), `MaximumReportAttachmentBytes` (100 MiB) and `MaximumAttachmentsPerReport` (1000). These limits accept zero and reject negative configuration values. The JSON request retains its separate 10 MiB limit.
+
+Attachment requests require the same upload key and share the upload rate limit. Their body must match the manifest length exactly, including chunked requests. The server stages content on disk with bounded memory before passing it to storage. Size and metadata failures do not publish partial content. Attachment bodies do not need JSON encoding, multipart wrapping, base64 or local paths; metadata comes only from the stored report.
+
+Treat the receipt token as a secret and never log it. The server overwrites any supplied `AttachmentUploadTokenHash` with a SHA-256 hash of a new random token; only that hash is persisted in report JSON. Reading a report does not grant write access. A receipt remains valid after a server restart when the report is persisted. A missing or incorrect token returns 401; an unknown report, attachment or missing content returns 404. A receipt cannot write another report, even when attachment IDs match. Report and attachment uploads are separate operations: failure can leave an incomplete report, and retrying the entire upload creates another report. See [attachment lifetime and cleanup](../writing-tests/attachments.md#uploading).
