@@ -885,6 +885,14 @@ paging and bulk reads; `StoreData` now takes the report ID first.
 See [Persistence](docs/docs/report-server/persistence.md) for contracts and a blob-store example,
 and [Storage migration](docs/docs/migration/report-storage.md) for migration details.
 
+### Deleting reports
+
+Use `DELETE /bdtest/reports/{id}` (including the host's path base). The endpoint accepts only DELETE and returns 204 No Content when the report was deleted or already absent. The old POST/DELETE `/bdtest/report/delete/{id}` route and its 302 redirect are removed. Invalid IDs return 400; IDs contain 1–128 ASCII letters, digits, dots, hyphens or underscores, excluding `.` and `..`.
+
+Deletion requires the named `AdminAuthorizationPolicy` plus an antiforgery request token and matching cookie. The built-in run list uses JavaScript `fetch`, the configured antiforgery header, and same-origin credentials, then refreshes after 204. Custom controls can generate the URL with `Url.Action("DeleteReport", "BDTest", new { id })`. See [Security](docs/docs/report-server/security.md#administrators).
+
+The repository deletes the persistent index before attachment content and report JSON. Index failures leave report data intact; later failures may leave unlisted data for retry. Both cache invalidations are attempted even after failure or cancellation, and the original error propagates as 500. Custom stores must make deletion idempotent. Missing reports are logged at Debug level through `options.Logger`. See [Storage migration](docs/docs/migration/report-storage.md#report-deletion).
+
 ### Bulk report comparisons
 
 The Razor report server accepts up to 50 comma-separated IDs for `GET /bdtest/report/test-run-times`
