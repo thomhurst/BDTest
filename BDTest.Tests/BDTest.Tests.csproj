@@ -30,5 +30,7 @@
 
     <ItemGroup>
         <Compile Include="..\TestUtilities\ExceptionRegistrationProbe.cs" Link="Helpers\ExceptionRegistrationProbe.cs" />
+        <Compile Include="..\TestUtilities\HistoricalReportFixture.cs" Link="Helpers\HistoricalReportFixture.cs" />
+        <None Update="Data\JsonData-v2.0.60.json" CopyToOutputDirectory="PreserveNewest" />
     </ItemGroup>
 </Project>

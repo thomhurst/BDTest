@@ -5,6 +5,8 @@
   </PropertyGroup>
   <ItemGroup>
     <Content Include="..\BDTest.ReportGenerator.RazorServer\appsettings.json" Link="sample-appsettings.json" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="..\BDTest.Tests\Data\JsonData-v2.0.60.json" Link="Data\JsonData-v2.0.60.json" CopyToOutputDirectory="PreserveNewest" />
+    <Compile Include="..\TestUtilities\HistoricalReportFixture.cs" Link="HistoricalReportFixture.cs" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.TestHost" Version="10.0.13" />

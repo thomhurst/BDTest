@@ -9,6 +9,7 @@ using BDTest.Razor.Reports.Extensions;
 using BDTest.Razor.Reports.Interfaces;
 using BDTest.Razor.Reports.Models;
 using BDTest.Test;
+using BDTest.TestUtilities;
 using BDTest.Settings;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Connections;
@@ -235,6 +236,38 @@ public class ReportUploadTests
         var data = JsonConvert.DeserializeObject<BDTestOutputModel>(await response.Content.ReadAsStringAsync());
         Assert.That(data.Id, Is.EqualTo(report.Id));
         Assert.That(data.Tag, Is.EqualTo("uploaded"));
+    }
+
+    [Test]
+    public async Task HistoricalReportRendersWithoutModernOptionalFields()
+    {
+        await using var server = await UploadServer.Start();
+        using var upload = await server.Post(HistoricalReportFixture.ReadJson());
+        Assert.That(upload.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        var report = server.Store.Received.Single();
+        Assert.That(server.Store.Summaries[report.Id].Counts.Total, Is.EqualTo(13));
+
+        await AssertReportPagesRender(server, report.Id);
+        // Render every historical scenario, including failures and unexecuted steps with null output.
+        foreach (var scenario in report.Scenarios)
+        {
+            using var response = await server.Client.GetAsync($"bdtest/report/{report.Id}/scenario/{scenario.Guid}");
+            Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK), scenario.GetScenarioText());
+            Assert.That(response.Content.Headers.ContentType?.MediaType, Is.EqualTo("text/html"));
+            var html = HttpUtility.HtmlDecode(await response.Content.ReadAsStringAsync());
+            Assert.That(html, Does.Contain(scenario.GetScenarioText()));
+            foreach (var step in scenario.Steps)
+            {
+                Assert.That(html, Does.Contain(step.StepText));
+                if (step.Exception != null)
+                    Assert.That(html, Does.Contain(step.Exception.TypeName));
+            }
+            if (!string.IsNullOrEmpty(scenario.TestStartupInformation))
+                Assert.That(html, Does.Contain(scenario.TestStartupInformation.TrimEnd()));
+            if (!string.IsNullOrEmpty(scenario.TearDownOutput))
+                Assert.That(html, Does.Contain(scenario.TearDownOutput.TrimEnd()));
+            Assert.That(html, Does.Not.Contain("Retry history"));
+        }
     }
 
     [Test]
