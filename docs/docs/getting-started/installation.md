@@ -44,6 +44,16 @@ For a report server, add `BDTest.Razor.Reports` to an ASP.NET Core project. See 
 Use the same version for every BDTest package in a solution. The adapters, the report server and the core package share data models.
 :::
 
+## Assembly versions
+
+Starting with version 3.0.0, including prereleases, strong-named assemblies use
+`Major.0.0.0` as their assembly version. Minor and patch releases within that
+major keep the same assembly identity. Package versions and file versions still
+identify each release; informational versions and report version fields include
+the full release version and source revision. The 2.x series keeps its existing
+assembly version policy. Keep package versions aligned as described above, and
+review migration notes when upgrading to a new major version.
+
 ## Supported targets
 
 The core `BDTest` package targets `netstandard2.0`. Adapter and report server requirements differ:

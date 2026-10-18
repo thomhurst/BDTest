@@ -51,3 +51,27 @@ still have unresolved warnings. Keep existing target frameworks.
    target frameworks as part of the rollout.
 
 The remaining projects keep their existing diagnostic settings in this change.
+
+## Package and assembly versions (#856)
+
+`PackProjectsModule.CreatePackOptions` passes explicit version properties to
+`dotnet pack` for every package, including project references:
+
+- `PackageVersion` and `Version` contain the full generated SemVer version.
+- Starting with **3.0.0** (including prereleases), `AssemblyVersion` is
+  `Major.0.0.0`. It changes only on major releases, so minor and patch updates
+  keep the same strong-name identity. The 2.x series retains its existing
+  full numeric assembly version to avoid changing identity within that series.
+- `FileVersion` contains the numeric release version, with a zero revision for
+  three-part versions (for example, `3.2.1-beta.4` becomes `3.2.1.0`).
+- `InformationalVersion` contains the full SemVer version. The SDK appends the
+  source revision for SourceLink. Reports use this informational version, so
+  their version still identifies the release rather than the stable assembly.
+
+For example, `3.1.2` and `3.2.0` both produce `AssemblyVersion=3.0.0.0`, while
+`4.0.0` produces `AssemblyVersion=4.0.0.0`. Keep all BDTest package versions
+aligned; a stable assembly identity does not make different package versions
+interchangeable or guarantee compatibility across major releases.
+
+`BDTest.Pipeline.Tests/PackageVersionTests.cs` checks the properties passed to
+packing for stable, prerelease, metadata, minor, patch and major versions.
