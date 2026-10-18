@@ -6,7 +6,7 @@ using ModularPipelines.DotNet.Options;
 using ModularPipelines.Git.Extensions;
 using ModularPipelines.Models;
 using ModularPipelines.Modules;
-using File = ModularPipelines.FileSystem.File;
+using ModularPipelines.Options;
 
 namespace BDTest.Pipeline.Modules;
 
@@ -23,9 +23,22 @@ public class PackProjectsModule : Module<List<CommandResult>>
         var packageVersion = await context.GetModule<NugetVersionGeneratorModule>();
         var version = packageVersion.ValueOrDefault
             ?? throw new InvalidOperationException("The package version was not generated.");
-        var projectFiles = context.Git().RootDirectory!.GetFiles(f => GetProjectsPredicate(f, context));
+        var projectFiles = context.Git().RootDirectory!.GetFiles(
+            file => file.Path.EndsWith(".csproj", StringComparison.OrdinalIgnoreCase));
         foreach (var projectFile in projectFiles)
         {
+            var evaluation = await context.Shell.Command.ExecuteCommandLineTool(
+                CreatePackabilityQuery(projectFile.Path), new CommandExecutionOptions
+                {
+                    WorkingDirectory = context.Git().RootDirectory!.Path,
+                    ThrowOnNonZeroExitCode = true
+                }, cancellationToken);
+            if (!bool.Parse(evaluation.StandardOutput.Trim()))
+            {
+                continue;
+            }
+
+            context.Logger.LogInformation("Packing project: {Project}", projectFile.Path);
             results.Add(await context.DotNet().Pack(CreatePackOptions(
                 projectFile.Path, artifacts.OutputDirectory, version),
                 cancellationToken: cancellationToken));
@@ -58,27 +71,8 @@ public class PackProjectsModule : Module<List<CommandResult>>
         };
     }
 
-    private bool GetProjectsPredicate(File file, IModuleContext context)
+    public static GenericCommandLineToolOptions CreatePackabilityQuery(string projectPath) => new("dotnet")
     {
-        var path = file.Path;
-        if (!path.EndsWith(".csproj", StringComparison.OrdinalIgnoreCase))
-        {
-            return false;
-        }
-
-        if (path.Contains("Tests", StringComparison.OrdinalIgnoreCase))
-        {
-            return false;
-        }
-
-        if (path.Contains("Pipeline", StringComparison.InvariantCultureIgnoreCase)
-            || path.Contains("Example", StringComparison.InvariantCultureIgnoreCase)
-            || path.Contains("ReportGenerator", StringComparison.InvariantCultureIgnoreCase))
-        {
-            return false;
-        }
-
-        context.Logger.LogInformation("Found File: {File}", path);
-        return true;
-    }
+        Arguments = ["msbuild", projectPath, "-nologo", "-property:Configuration=Release", "-getProperty:IsPackable"]
+    };
 }

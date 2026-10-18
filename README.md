@@ -7,6 +7,21 @@
 ![Nuget](https://img.shields.io/nuget/dt/BDTest)
 [![Docs](https://img.shields.io/badge/docs-thomhurst.github.io%2FBDTest-1f8a52)](https://thomhurst.github.io/BDTest/)
 
+### Packages
+
+Package IDs remain stable for the next major version: `BDTest`, `BDTest.NUnit`,
+`BDTest.xUnit` (xUnit v3), `BDTest.MSTest`, `BDTest.TUnit`,
+`BDTest.SourceGenerator`, `BDTest.Analyzers`, and `BDTest.Razor.Reports`.
+The report package is displayed as **BDTest - ASP.NET Core Reports**; its namespaces
+and static asset paths stay unchanged. `BDTest.ReportGenerator.RazorServer` remains
+an unpacked sample host. Future storage packages use `BDTest.Reports.Storage.*`,
+with `AzureBlob` and `FileSystem` planned; these are not currently published packages.
+No package rename or deprecation is part of this policy.
+
+Projects ship only when they explicitly set `IsPackable=true`. See
+[BUILDING.md](BUILDING.md#package-selection-and-naming-858) for packing rules and
+[installation](docs/docs/getting-started/installation.md) for package targets.
+
 ### Support
 
 If you like using BDTest, consider buying me a coffee.

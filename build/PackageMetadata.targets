@@ -1,0 +1,27 @@
+<Project>
+ <!-- Imported after project properties so metadata follows evaluated package opt-ins. -->
+ <PropertyGroup Condition="'$(IsPackable)' == 'true'">
+  <Authors>Tom Longhurst</Authors>
+  <Copyright>Copyright © Tom Longhurst</Copyright>
+  <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+  <PackageIcon>nuget_icon.png</PackageIcon>
+  <PackageProjectUrl>https://github.com/thomhurst/BDTest</PackageProjectUrl>
+  <RepositoryUrl>https://github.com/thomhurst/BDTest</RepositoryUrl>
+  <!-- Source Link is supplied by the .NET SDK (8 and later). -->
+  <PublishRepositoryUrl>true</PublishRepositoryUrl>
+  <EmbedUntrackedSources>true</EmbedUntrackedSources>
+  <Deterministic>true</Deterministic>
+  <DebugType>portable</DebugType>
+  <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  <!-- Existing APIs are only partially documented; still ship the available documentation. -->
+  <NoWarn>$(NoWarn);CS1591</NoWarn>
+  <!-- Validate runtime API compatibility across package assets during every pipeline pack.
+       Compiler extensions have analyzer assets rather than runtime reference assemblies. -->
+  <EnablePackageValidation Condition="'$(IsRoslynComponent)' != 'true'">true</EnablePackageValidation>
+  <IncludeSymbols Condition="'$(IncludeSymbols)' == ''">true</IncludeSymbols>
+  <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+ </PropertyGroup>
+ <ItemGroup Condition="'$(IsPackable)' == 'true'">
+  <None Include="$(MSBuildThisFileDirectory)../nuget_icon.png" Pack="true" PackagePath="" />
+ </ItemGroup>
+</Project>

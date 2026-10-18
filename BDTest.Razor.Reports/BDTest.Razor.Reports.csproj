@@ -1,11 +1,12 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Razor">
 
     <PropertyGroup>
+        <IsPackable>true</IsPackable>
         <TargetFramework>net10.0</TargetFramework>
         <AddRazorSupportForMvc>true</AddRazorSupportForMvc>
 
         <PackageId>BDTest.Razor.Reports</PackageId>
-        <Title>BDTest - Razor Reports</Title>
+        <Title>BDTest - ASP.NET Core Reports</Title>
         <Description>ASP.NET Core MVC controllers, Razor views and static assets for hosting BDTest reports.</Description>
         <PackageTags>test tdd bdd testing given when then reporting razor aspnetcore</PackageTags>
     </PropertyGroup>

@@ -44,6 +44,20 @@ For a report server, add `BDTest.Razor.Reports` to an ASP.NET Core project. See 
 Use the same version for every BDTest package in a solution. The adapters, the report server and the core package share data models.
 :::
 
+## Package naming policy
+
+The package IDs in the table below stay unchanged for the next major version.
+`BDTest.xUnit` retains its existing casing and supports xUnit v3.
+`BDTest.Razor.Reports` uses the display title **BDTest - ASP.NET Core Reports**;
+its package ID, namespaces and static asset paths remain unchanged. No package
+rename, replacement reference or NuGet deprecation is required.
+
+`BDTest.ReportGenerator.RazorServer` remains an unpacked sample application.
+Future storage packages use the `BDTest.Reports.Storage.*` prefix, with
+`BDTest.Reports.Storage.AzureBlob` and `BDTest.Reports.Storage.FileSystem`
+planned. These planned packages are not currently available; use the
+[existing storage contracts](../report-server/persistence.md) until they ship.
+
 ## Assembly versions
 
 Starting with version 3.0.0, including prereleases, strong-named assemblies use
