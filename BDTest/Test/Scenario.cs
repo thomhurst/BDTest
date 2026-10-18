@@ -1,6 +1,5 @@
 using BDTest.Attributes;
 using BDTest.Constants;
-using BDTest.Maps;
 using BDTest.Output;
 using Newtonsoft.Json;
 
@@ -8,6 +7,9 @@ namespace BDTest.Test;
 
 public class Scenario
 {
+    /// <summary>Gets the owning run, or null for a deserialized report.</summary>
+    [JsonIgnore] public BDTestRun Run { get; private set; }
+
     [JsonProperty] public string Guid { get; private set; }
     [JsonProperty] public string ReportId { get; private set; }
     [JsonProperty] public DateTime StartTime { get; internal set; }
@@ -58,6 +60,9 @@ public class Scenario
     internal Scenario(List<Step> steps, BuildableTest testDetails, Scenario outline = null,
         Dictionary<string, string> exampleValues = null)
     {
+        Run = testDetails.Run;
+        Run.ThrowIfDisposed();
+        ReportId = Run.ReportId;
         Timeout = testDetails.ScenarioTimeout;
         Guid = testDetails.Guid == outline?.Guid ? System.Guid.NewGuid().ToString("N") : testDetails.Guid;
         FrameworkTestId = testDetails.TestId;
@@ -71,7 +76,7 @@ public class Scenario
             BdTestBase = testDetails.BdTestBase
         };
             
-        TestHolder.NotRun.TryRemove(testDetails.Guid, out _);
+        Run.Store.NotRun.TryRemove(testDetails.Guid, out _);
 
         StoryText = testDetails.StoryText;
         ScenarioText = outline?.ScenarioText ?? testDetails.ScenarioText;
@@ -82,7 +87,7 @@ public class Scenario
             
         Steps = steps;
         outline?.Examples.Add(this);
-        TestHolder.AddScenario(this);
+        Run.Store.AddScenario(this);
     }
 
     [JsonProperty]

@@ -7,10 +7,12 @@ internal sealed class ScenarioConstructionOutput
     internal BufferedOutput Html { get; } = new();
     internal BufferedOutput Startup { get; } = new();
     internal BufferedOutput Teardown { get; } = new();
+    internal BDTestRun Run { get; }
     internal string FrameworkExecutionId { get; }
 
-    internal ScenarioConstructionOutput(string frameworkExecutionId)
+    internal ScenarioConstructionOutput(string frameworkExecutionId, BDTestRun run)
     {
+        Run = run;
         FrameworkExecutionId = frameworkExecutionId;
     }
 }

@@ -80,14 +80,15 @@ public abstract class TUnitHookCollisionTests : TUnitBDTestBase<TUnitContext>
             .GetField("_contexts", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(this)!;
         await Assert.That(contexts.Count).IsEqualTo(0);
 
-        var holder = typeof(BDTestBase).Assembly.GetType("BDTest.Maps.TestHolder")!;
-        var gate = GetStaticField(holder, "ScenarioLock");
+        var store = typeof(BDTestRun).GetProperty("Store", BindingFlags.Instance | BindingFlags.NonPublic)!
+            .GetValue(TestRun)!;
+        var gate = store.GetType().GetProperty("Gate", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(store)!;
         bool hasPendingOutput;
         bool hasPendingListener;
         lock (gate)
         {
-            hasPendingOutput = ((IDictionary)GetStaticField(holder, "PendingStartupOutput")).Contains(_testId);
-            hasPendingListener = ((IDictionary)GetStaticField(holder, "ScenarioListeners")).Contains(_testId);
+            hasPendingOutput = ((IDictionary)GetField(store, "PendingStartupOutput")).Contains(_testId);
+            hasPendingListener = ((IDictionary)GetField(store, "ScenarioListeners")).Contains(_testId);
         }
 
         await Assert.That(hasPendingOutput).IsFalse();
@@ -102,8 +103,8 @@ public abstract class TUnitHookCollisionTests : TUnitBDTestBase<TUnitContext>
 
     private static void NoOp() { }
 
-    private static object GetStaticField(Type type, string name) =>
-        type.GetField(name, BindingFlags.Static | BindingFlags.NonPublic)!.GetValue(null)!;
+    private static object GetField(object instance, string name) =>
+        instance.GetType().GetField(name, BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(instance)!;
 }
 
 public static class TUnitHookCollisionCleanup

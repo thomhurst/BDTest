@@ -1,4 +1,4 @@
-﻿using BDTest.Maps;
+using BDTest.Maps;
 using BDTest.Output;
 using BDTest.Settings;
 using BDTest.Test;
@@ -13,22 +13,27 @@ public static class BDTestJsonHelper
         return GetTestJsonData(new BDTestRunDescriptor());
     }
 
-    public static string GetTestJsonData(BDTestRunDescriptor bdTestRunDescriptor)
+    public static string GetTestJsonData(BDTestRunDescriptor bdTestRunDescriptor) => GetTestJsonData(bdTestRunDescriptor, BDTestRun.Default);
+
+    /// <summary>Creates a report containing only the supplied run's scenarios and pending definitions.</summary>
+    public static string GetTestJsonData(BDTestRunDescriptor bdTestRunDescriptor, BDTestRun run)
     {
-        var scenarios = BDTestUtil.GetScenarios();
+        if (run == null) throw new ArgumentNullException(nameof(run));
+        run.ThrowIfDisposed();
+        var scenarios = BDTestUtil.GetScenarios(run);
             
-        var testTimer = GetTestTimer(scenarios);
+        var testTimer = GetTestTimer(scenarios, run);
             
         var dataToOutput = new BDTestOutputModel
         {
-            Id = BDTestUtil.GetCurrentReportId,
+            Id = run.ReportId,
             Environment = bdTestRunDescriptor?.Environment ?? BDTestSettings.LegacyEnvironment,
             Tag = bdTestRunDescriptor?.Tag ?? BDTestSettings.LegacyTag,
             BranchName = bdTestRunDescriptor?.BranchName ?? BDTestSettings.LegacyBranchName,
             MachineName = Environment.MachineName,
             Scenarios = scenarios,
             TestTimer = testTimer,
-            NotRun = BDTestUtil.GetNotRunScenarios(),
+            NotRun = BDTestUtil.GetNotRunScenarios(run),
             Version = BDTestVersionHelper.CurrentVersion
         };
             
@@ -45,13 +50,13 @@ public static class BDTestJsonHelper
         return JsonConvert.SerializeObject(model, formatting, settings);
     }
         
-    private static TestTimer GetTestTimer(IEnumerable<Scenario> scenarios)
+    private static TestTimer GetTestTimer(IEnumerable<Scenario> scenarios, BDTestRun run)
     {
         var enumerable = scenarios.ToList();
 
         if (enumerable.Count == 0)
         {
-            return new TestTimer();
+            return new TestTimer { TestsStartedAt = run.StartedAt };
         }
 
         var testTimer = new TestTimer

@@ -388,6 +388,40 @@ The scheduling regression tests cover inline completion, ordered asynchronous st
 ambient-value isolation, and synchronous execution from a single-thread context. No
 throughput or thread-pool-starvation improvement is claimed from these checks.
 
+### Explicit run ownership
+
+Custom adapters and long-lived hosts can own a `BDTestRun` to isolate report storage:
+
+```csharp
+using var run = BDTestRun.Start();
+var tests = new MyTests(run);
+await tests.When(() => tests.Act()).Then(() => tests.Check()).BDTestAsync();
+var scenarios = BDTestUtil.GetScenarios(run);
+var json = BDTestJsonHelper.GetTestJsonData(new BDTestRunDescriptor(), run);
+
+public class MyTests(BDTestRun run) : BDTestBase
+{
+    public override BDTestRun TestRun => run;
+    public void Act() { }
+    public void Check() { }
+}
+```
+
+Keep `TestRun` stable for the test instance. Builders and scenarios capture their run,
+including builders executed later and scenario outline examples. Each run has a new
+`ReportId` and separate scenario, unfinished-definition, listener, and output stores.
+An explicit run also has its own executor. JSON/HTML report helpers and report uploads
+accept a run; for example,
+`BDTestReportServer.SendDataAndGetReportUriAsync(run, serverAddress, descriptor)`.
+Existing overloads and framework adapters continue to use the legacy default run.
+
+Dispose a run only after its tests and output writers finish. Disposal clears its stores
+and prevents new scenario construction or execution; it does not cancel active tests.
+`BDTestUtil.ClearScenarios(run)` clears storage between executions while retaining the
+same report ID. Start a new run to get a new ID. Configuration through `BDTestSettings`
+is still process-wide; frozen options and assembly-owned adapter lifecycles are separate
+parts of the migration tracked by #797.
+
 ### Report date formatting
 
 Razor report tables and chart labels use the current request culture's short date

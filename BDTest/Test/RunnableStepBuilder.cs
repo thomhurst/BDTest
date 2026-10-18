@@ -32,6 +32,8 @@ public abstract class RunnableStepBuilder : StepBuilder
     internal Task<Scenario> Invoke(BuildableTest testDetails, bool runOnThreadPool = false,
         Scenario outline = null, Dictionary<string, string> exampleValues = null)
     {
+        testDetails.Run.ThrowIfDisposed();
+        TestOutputData.Run = testDetails.Run;
         if (Interlocked.Exchange(ref _executionStarted, 1) != 0)
         {
             throw new AlreadyExecutedException("This scenario builder has already started execution. Create a new builder to run another scenario.");
@@ -56,7 +58,7 @@ public abstract class RunnableStepBuilder : StepBuilder
 
     private static async Task<Scenario> ExecuteAsync(Scenario scenario)
     {
-        await BDTestServiceProvider.ScenarioExecutor.ExecuteAsync(scenario).ConfigureAwait(false);
+        await scenario.Run.ScenarioExecutor.ExecuteAsync(scenario).ConfigureAwait(false);
         return scenario;
     }
 
