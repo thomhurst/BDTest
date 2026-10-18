@@ -445,16 +445,20 @@ public class AdapterConformanceTests : Adapter
                 Task.Run(() => Execute(two.Host, "second step"), runnerToken));
             var firstScenario = first.Scenarios.Single();
             var secondScenario = second.Scenarios.Single();
+            var firstStartup = firstScenario.TestStartupInformation ?? throw new InvalidOperationException("Expected first run startup output.");
+            var secondStartup = secondScenario.TestStartupInformation ?? throw new InvalidOperationException("Expected second run startup output.");
+            var firstOutput = firstScenario.Steps?[0].Output ?? throw new InvalidOperationException("Expected first run step output.");
+            var secondOutput = secondScenario.Steps?[0].Output ?? throw new InvalidOperationException("Expected second run step output.");
             Require(firstScenario.FrameworkTestId == secondScenario.FrameworkTestId, "runner identity changed between explicit runs");
             Require(!ReferenceEquals(firstContext, secondContext), "runs reused a context");
-            Require(firstScenario.TestStartupInformation.Contains("first run only") &&
-                !firstScenario.TestStartupInformation.Contains("second run only"), "first run startup leaked");
-            Require(secondScenario.TestStartupInformation.Contains("second run only") &&
-                !secondScenario.TestStartupInformation.Contains("first run only"), "second run startup leaked");
-            Require(firstScenario.Steps[0].Output.Contains("first step") &&
-                !firstScenario.Steps[0].Output.Contains("second step"), "first run step output leaked");
-            Require(secondScenario.Steps[0].Output.Contains("second step") &&
-                !secondScenario.Steps[0].Output.Contains("first step"), "second run step output leaked");
+            Require(firstStartup.Contains("first run only") &&
+                !firstStartup.Contains("second run only"), "first run startup leaked");
+            Require(secondStartup.Contains("second run only") &&
+                !secondStartup.Contains("first run only"), "second run startup leaked");
+            Require(firstOutput.Contains("first step") &&
+                !firstOutput.Contains("second step"), "first run step output leaked");
+            Require(secondOutput.Contains("second step") &&
+                !secondOutput.Contains("first step"), "second run step output leaked");
         }
         finally
         {

@@ -23,9 +23,10 @@ public sealed class XUnitBDTestLifecycle : INotifyTestLifecycle, INotifyTestLife
     /// <inheritdoc />
     public async ValueTask OnTestFinishedAsync(IXunitTest test)
     {
-        if (!TestContext.Current.KeyValueStorage.TryRemove(KeyPrefix + test.UniqueID, out var value)) return;
+        if (!TestContext.Current.KeyValueStorage.TryRemove(KeyPrefix + test.UniqueID, out var value)
+            || value is not Execution execution) return;
         var errors = new List<Exception>();
-        foreach (var host in ((Execution)value).Hosts)
+        foreach (var host in execution.Hosts)
         {
             try { await host.CompleteAsync(); }
             catch (Exception error) { errors.Add(error); }
@@ -34,13 +35,13 @@ public sealed class XUnitBDTestLifecycle : INotifyTestLifecycle, INotifyTestLife
         if (errors.Count > 1) throw new AggregateException(errors);
     }
 
-    internal static bool Register(XUnitTestExecution host, object owner, BDTestRun compositionRun)
+    internal static bool Register(XUnitTestExecution host, object owner, BDTestRun? compositionRun)
     {
         var context = TestContext.Current;
         if (context.TestClassInstance != null && !ReferenceEquals(context.TestClassInstance, owner)) return false;
-        if (context.Test == null || !context.KeyValueStorage.TryGetValue(KeyPrefix + context.Test.UniqueID, out var value))
+        if (context.Test == null || !context.KeyValueStorage.TryGetValue(KeyPrefix + context.Test.UniqueID, out var value)
+            || value is not Execution execution)
             return false;
-        var execution = (Execution)value;
         lock (execution.Hosts)
         {
             // Reserve for the whole native test, even after manual completion:

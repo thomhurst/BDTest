@@ -18,11 +18,15 @@ public static class XUnitBDTestScenario
     /// Only one composition host may be created per native test and run, even after completion.
     /// </remarks>
     public static BDTestScenario<TContext> For<TContext>(object testInstance, BDTestRun run)
-        where TContext : class, new()
+        where TContext : class
     {
         if (run == null) throw new ArgumentNullException(nameof(run));
+        if (testInstance == null) throw new ArgumentNullException(nameof(testInstance));
         var test = TestContext.Current.Test as IXunitTest
             ?? throw new InvalidOperationException("An xUnit test must be running to create a BDTest host.");
+        var currentInstance = TestContext.Current.TestClassInstance;
+        if (currentInstance != null && !ReferenceEquals(currentInstance, testInstance))
+            throw new ArgumentException("Pass the running xUnit test instance.", nameof(testInstance));
         var host = BDTestScenario.For<TContext>(testInstance, run);
         var execution = new XUnitTestExecution(testInstance,
             () => host.BeginTest(test.UniqueID, test.TestMethod.Method),

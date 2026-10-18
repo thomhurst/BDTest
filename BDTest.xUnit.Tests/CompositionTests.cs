@@ -92,7 +92,58 @@ public class CompositionTests : CompanyTestBase, IAsyncLifetime
         Assert.Contains("composition metadata", scenario.GetStoryText());
         Assert.Contains("composition constructor:" + _id, scenario.TestStartupInformation);
         Assert.Contains("composition setup:" + _id, scenario.TestStartupInformation);
+        Assert.NotNull(scenario.Steps);
         Assert.Contains("composition step:" + _id, scenario.Steps.First().Output);
+    }
+
+    [Fact]
+    public async Task FactoryCreatesContextWithoutParameterlessConstructor()
+    {
+        var factory = new CompositionContextFactory();
+        using var run = BDTestRun.Start(new BDTestOptions { ContextFactory = factory });
+        var host = XUnitBDTestScenario.For<FactoryContext>(this, run);
+        var scenario = await host.When(() => Assert.Equal("factory value", host.Context.Value))
+            .Then(() => Assert.Same(factory.Context, host.Context)).BDTestAsync();
+        var context = host.Context;
+        await host.EndTestAsync();
+
+        Assert.True(context.Disposed);
+        Assert.Equal(_id, scenario.FrameworkTestId);
+        Assert.Same(scenario, Assert.Single(run.Scenarios));
+    }
+
+    [Fact]
+    public async Task IncorrectOwnerIsRejectedWithoutReservingRun()
+    {
+        using var run = StartRun();
+        var error = Assert.Throws<ArgumentException>(() => XUnitBDTestScenario.For<object>(new object(), run));
+        Assert.Equal("testInstance", error.ParamName);
+        Assert.Contains("running xUnit test instance", error.Message);
+        Assert.Throws<ArgumentNullException>(() => XUnitBDTestScenario.For<object>(null!, run));
+
+        var host = XUnitBDTestScenario.For<object>(this, run);
+        var scenario = await host.When(() => GC.KeepAlive(this)).Then(() => GC.KeepAlive(this)).BDTestAsync();
+        await host.EndTestAsync();
+        Assert.Equal(_id, scenario.FrameworkTestId);
+        Assert.Same(scenario, Assert.Single(run.Scenarios));
+    }
+
+    private sealed class FactoryContext(string value) : IDisposable
+    {
+        public string Value { get; } = value;
+        public bool Disposed { get; private set; }
+        public void Dispose() => Disposed = true;
+    }
+
+    private sealed class CompositionContextFactory : IBDTestContextFactory
+    {
+        public FactoryContext? Context { get; private set; }
+        public ValueTask<object> CreateContextAsync(Type contextType, ContextCreation creation)
+        {
+            Assert.Equal(typeof(FactoryContext), contextType);
+            Context = new FactoryContext("factory value");
+            return new ValueTask<object>(Context);
+        }
     }
 
     [Fact]
@@ -110,8 +161,10 @@ public class CompositionTests : CompanyTestBase, IAsyncLifetime
             .Then(() => GC.KeepAlive(this)).BDTestAsync();
         _host.WriteTearDownOutput("original host teardown");
         attachments.Attach("original.txt", new byte[] { 1 }, "text/plain");
+        Assert.NotNull(scenario.Steps);
         Assert.Contains("original host step", scenario.Steps[0].Output);
         Assert.Contains("original host teardown", scenario.TearDownOutput);
+        Assert.NotNull(scenario.Attachments);
         Assert.Single(scenario.Attachments);
         Assert.Equal(_id, scenario.FrameworkTestId);
     }

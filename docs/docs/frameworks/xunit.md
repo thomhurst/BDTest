@@ -114,6 +114,10 @@ context type. A second call for the same test and run throws before changing
 capture or attachment state, including after the first host completes. Reuse the
 host for that test. Hosts in different runs remain independent.
 
+Contexts created by `BDTestOptions.ContextFactory` do not need a public parameterless
+constructor. Passing a different object from inside a running test throws an
+`ArgumentException` for `testInstance`; pass the actual test instance (`this`).
+
 Configure the outcome map before `BDTestRun.Start` for framework exceptions and
 whole-scenario skips. Missing lifecycle registration throws when creating the host.
 Hosts use the [core composition API](composition.md), including scenario outlines

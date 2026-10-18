@@ -8,12 +8,12 @@ internal sealed class XUnitTestExecution
 {
     private readonly Action _begin;
     private readonly Func<ValueTask> _end;
-    private readonly Action _completeOutput;
+    private readonly Action? _completeOutput;
     private bool _started;
     private int _completed;
 
     internal XUnitTestExecution(object owner, Action begin, Func<ValueTask> end,
-        Action completeOutput = null, BDTestRun compositionRun = null)
+        Action? completeOutput = null, BDTestRun? compositionRun = null)
     {
         _begin = begin;
         _end = end;
