@@ -182,7 +182,7 @@ public class NUnitCompositionTests
         using var run = BDTestRun.Start();
         var owner = inheritance ? (INUnitBDTest)new SynchronizationInheritedProbe(run) : new SynchronizationProbe(run);
         var host = (AbstractContextBDTestBase<NUnitNativeContext>)owner.BDTestHost;
-        NUnitNativeContext resource = null;
+        NUnitNativeContext? resource = null;
         var synchronization = new QueuedSynchronizationContext();
         var execution = Task.Run(() =>
         {
@@ -211,7 +211,7 @@ public class NUnitCompositionTests
         Assert.That(status, Is.EqualTo(TestStatus.Passed));
         Assert.That(capture, Is.Null);
         Assert.That(restored, Is.True);
-        Assert.That(resource.Disposed, Is.True);
+        Assert.That(Required(resource).Disposed, Is.True);
     }
 
     private sealed class SynchronizationProbe : INUnitBDTest
@@ -230,7 +230,7 @@ public class NUnitCompositionTests
     private sealed class QueuedSynchronizationContext : SynchronizationContext
     {
         private readonly ConcurrentQueue<Action> _continuations = new();
-        public override void Post(SendOrPostCallback callback, object state) => _continuations.Enqueue(() => callback(state));
+        public override void Post(SendOrPostCallback callback, object? state) => _continuations.Enqueue(() => callback(state));
         internal void Drain() { while (_continuations.TryDequeue(out var continuation)) continuation(); }
     }
 
@@ -315,7 +315,7 @@ internal static class NUnitCompositionEvidence
 
 public sealed class NUnitNativeContext : IBDTestContextLifetime, IAsyncDisposable
 {
-    public string Label { get; set; }
+    public string Label { get; set; } = string.Empty;
     public int Attempt { get; set; }
     public bool Initialized { get; private set; }
     public bool FailDisposal { get; set; }
