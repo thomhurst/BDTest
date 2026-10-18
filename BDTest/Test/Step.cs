@@ -1,7 +1,6 @@
 using System.Runtime.ExceptionServices;
 using System.Text.RegularExpressions;
 using System.Threading;
-using BDTest.Attributes;
 using BDTest.Engine;
 using BDTest.Helpers;
 using BDTest.Output;
@@ -49,6 +48,11 @@ public class Step
     [JsonInclude]
     public ExceptionWrapper? Exception { get; internal set; }
 
+    /// <summary>The matched skip rule or debug setting, or null when no condition skipped this step.</summary>
+    [JsonInclude]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public StepSkipReason? SkipReason { get; internal set; }
+
     /// <summary>The timeout for this step, or null for no step-specific limit.</summary>
     [JsonInclude]
     public TimeSpan? Timeout { get; internal set; }
@@ -84,7 +88,6 @@ public class Step
     private List<string> ExecutionDiagnostics => Diagnostics ?? throw new InvalidOperationException("The step has no diagnostics collection.");
     private Runnable ExecutionRunnable => Runnable ?? throw new InvalidOperationException("A report step cannot be executed.");
 
-    private bool _shouldSkip;
     private string? _stepTextTemplate;
     private string? _generatedStepText;
 
@@ -167,6 +170,7 @@ public class Step
         ExecutionDiagnostics.Clear();
         Arguments = Array.Empty<StepArgument>();
         TimedOut = false;
+        SkipReason = null;
         Exception = null;
         Output = null;
         StartTime = DateTime.MinValue;
@@ -203,37 +207,33 @@ public class Step
         StepText = SubstituteExampleValues($"{StepPrefix} {_generatedStepText}");
     }
 
-    private void SetShouldSkip()
+    private StepSkipReason? EvaluateSkipReason()
     {
-        _shouldSkip = false;
-        var methodInfo = ExecutionRunnable.Definition.Method;
-
-        var skipStepAttributes = (methodInfo?.GetCustomAttributes(
-                                      typeof(SkipStepAttribute), true) ??
-                                  new string[] { }) as SkipStepAttribute[];
-
-        if (skipStepAttributes == null || !skipStepAttributes.Any())
+        // One registration snapshot per attempt, including on the live legacy path.
+        var rules = Options.SkipStepRules;
+        foreach (var attribute in ExecutionRunnable.Definition.SkipAttributes)
         {
-            return;
-        }
-
-        foreach (var skipStepAttributeOnStep in skipStepAttributes)
-        {
-            if (Options.SkipStepRules.Any(skipStepRuleInSettings =>
-                    skipStepRuleInSettings.AssociatedSkipAttributeType == skipStepAttributeOnStep.GetType()
-                    && skipStepRuleInSettings.Condition(skipStepAttributeOnStep)))
+            for (var index = 0; index < rules.Count; index++)
             {
-                _shouldSkip = true;
-                break;   
+                var rule = rules[index];
+                if (rule.AssociatedSkipAttributeType == attribute.GetType() && rule.Condition(attribute))
+                {
+                    return new StepSkipReason("Rule", attribute.GetType().FullName, index);
+                }
             }
         }
+
+        return (StepType == StepType.When || StepType == StepType.ButWhen || StepType == StepType.AndWhen)
+            && Options.ShouldSkipWhenStep
+            ? new StepSkipReason("DebugSetting", setting: "Debug.ShouldSkipWhenStep")
+            : null;
     }
 
     internal async Task Execute(BDTestBase? test, TimeSpan? scenarioTimeout = null, TimeSpan? remainingScenarioTime = null,
         Scenario? scenario = null)
     {
         using var attachmentScope = scenario == null ? null : new AttachmentScope(scenario, this);
-        SetShouldSkip();
+        SkipReason = null;
 
         // Keep both subscriptions stable for this step, including its after hooks.
         var beforeHooks = Options.BeforeStep;
@@ -260,7 +260,8 @@ public class Step
 
             beforeHooksCompleted = true;
 
-            if (ShouldSkip())
+            SkipReason = EvaluateSkipReason();
+            if (SkipReason != null)
             {
                 SetStepText();
                 StepText = $"[Skipped] {StepText}";
@@ -484,15 +485,5 @@ public class Step
             await observation.ConfigureAwait(false);
             cancellation.Dispose();
         }
-    }
-
-    private bool ShouldSkip()
-    {
-        if ((StepType == StepType.When || StepType == StepType.ButWhen || StepType == StepType.AndWhen) && Options.ShouldSkipWhenStep)
-        {
-            return true;
-        }
-
-        return _shouldSkip;
     }
 }

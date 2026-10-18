@@ -40,3 +40,17 @@ When(() => Submit(order)).WithArgs(() => order)
 Without generated metadata, a lambda's `CallerArgumentExpression` text is the fallback name. Explicit argument values are appended to that text. When method metadata exists but capture is unsupported, adding `WithArgs` restores the method's template and argument formatting. For a custom sentence, use `WithStepText(() => "the expected result is present")`.
 
 Statement bodies, null-conditionals, patterns, local functions, and async/await bodies retain caller text because they do not describe one simple method call. Attributes on methods called inside such bodies are not inferred. Failure output includes the rendered step name, including caller text for fallback delegates.
+
+## Step skip evaluation
+
+Skip predicates now run after all before-step hooks, inside the step's normal
+exception and finalization handling. Move setup required by a predicate into a
+before-step hook. Do not depend on predicates running during chain construction
+or text refresh; `WithStepText` does not change evaluation. Throwing predicates
+receive normal exception classification, timing, output capture and after hooks.
+
+Attribute instances are cached per definition; predicates should read their values
+without mutating them. Retry conditions are re-evaluated and skip reasons reset.
+Legacy global registrations remain live, while explicit runs keep their startup
+snapshot. See [Skipping steps and scenarios](../writing-tests/skipping.md) for
+registration timing and the optional structured report reason.

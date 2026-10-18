@@ -130,3 +130,16 @@ Capture has a ten-node depth limit and a cycle guard. `TruncationReason` records
 `BDTestJsonContext` provides source-generated metadata for the report types. Use its `JsonTypeInfo` properties when calling `System.Text.Json` yourself. Historical reports with references must go through the BDTest readers above. The serializer does not use global Newtonsoft settings or your host's MVC JSON options.
 
 Upgrading from a version that used Newtonsoft.Json? See [JSON serialization changes](../migration/json-serialization.md).
+
+### Step skip reasons
+
+`Step.SkipReason` is optional. It records an intentional step condition skip as
+`{ "Source": "Rule", "AttributeType": "MyTests.SkipIfAttribute", "RuleIndex": 0 }`
+or `{ "Source": "DebugSetting", "Setting": "Debug.ShouldSkipWhenStep" }`.
+Unused fields can be null. `RuleIndex` is zero-based within the registration
+snapshot used by that attempt; attributes and predicate delegates are never
+serialized. Static HTML and hosted reports display the reason as encoded text.
+
+Older reports without `SkipReason` deserialize with a null reason. Absence does
+not imply that a step ran: historical, scenario-level and exception-based skips
+can have no condition reason. See [skip behavior](../writing-tests/skipping.md).

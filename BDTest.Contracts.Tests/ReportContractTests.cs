@@ -10,6 +10,25 @@ namespace BDTest.Contracts.Tests;
 public class ReportContractTests
 {
     [Test]
+    public void Optional_skip_reason_round_trips_without_changing_historical_steps()
+    {
+        var reason = new StepSkipReason("Rule", "Tests.SkipIfAttribute", 1);
+        var step = new StepResult(StepType.When, "When skipped", Status.Skipped, skipReason: reason);
+        var report = new BDTestReport(1, "report", "3.0.0", scenarios: new[]
+        {
+            new ScenarioResult("scenario", "report", "story", "scenario", Status.Skipped, steps: new[] { step })
+        });
+        var json = BDTestReportJson.Serialize(report);
+        var restored = BDTestReportJson.Deserialize(json).Scenarios.Single().Steps.Single();
+        Assert.That(restored.SkipReason!.AttributeType, Is.EqualTo(reason.AttributeType));
+        Assert.That(restored.SkipReason.RuleIndex, Is.EqualTo(1));
+        Assert.That(restored.SkipReason.Source, Is.EqualTo("Rule"));
+        var node = JsonNode.Parse(json)!;
+        node["scenarios"]![0]!["steps"]![0]!.AsObject().Remove("skipReason");
+        Assert.That(BDTestReportJson.Deserialize(node.ToJsonString()).Scenarios.Single().Steps.Single().SkipReason, Is.Null);
+    }
+
+    [Test]
     public void Public_data_types_have_no_setters_fields_or_mutable_collection_properties()
     {
         var types = typeof(BDTestReport).Assembly.GetExportedTypes()

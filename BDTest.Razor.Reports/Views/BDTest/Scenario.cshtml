@@ -195,6 +195,11 @@
                             <details class="expander step-item" data-expandable open="@isFailing">
                                 <summary class="@rowClass">@stepRow</summary>
                                 <div class="step-extra @(isFailing ? "fail" : "")">
+                                    @if (step.SkipReason != null)
+                                    {
+                                        <div class="k">Skip reason</div>
+                                        <p>@step.SkipReason</p>
+                                    }
                                     @Html.Raw(BDTest.Helpers.StepArgumentHtmlHelper.GetHtml(step.Arguments))
                                     @if (!string.IsNullOrEmpty(step.Output))
                                     {
@@ -346,7 +351,7 @@
 @functions
 {
     private static bool HasExtra(Step step) =>
-        !string.IsNullOrEmpty(step.Output) || step.Exception != null || step.Diagnostics?.Count > 0 || step.Arguments?.Count > 0;
+        !string.IsNullOrEmpty(step.Output) || step.SkipReason != null || step.Exception != null || step.Diagnostics?.Count > 0 || step.Arguments?.Count > 0;
 
     private static Microsoft.AspNetCore.Html.IHtmlContent Row(string rowClass, Step step, string keyword, string text,
         bool notRun, bool isFailing, double offset, double width)
