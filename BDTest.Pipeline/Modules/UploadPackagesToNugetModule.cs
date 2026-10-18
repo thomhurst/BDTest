@@ -15,6 +15,7 @@ namespace BDTest.Pipeline.Modules;
 
 [DependsOn<RunUnitTestsModule>]
 [DependsOn<PackagePathsParserModule>]
+[DependsOn<VerifyPackageArtifactsModule>]
 public class UploadPackagesToNugetModule : Module<CommandResult[]>
 {
     private readonly IOptions<NuGetSettings> _options;
@@ -73,13 +74,20 @@ public class UploadPackagesToNugetModule : Module<CommandResult[]>
 
         var packagePaths = await context.GetModule<PackagePathsParserModule>();
 
-        return await packagePaths.ValueOrDefault!.SelectAsync(async file => await context.DotNet()
+        // Explicit symbol pushes still run when NuGet skips an already published primary package.
+        var uploadPaths = packagePaths.ValueOrDefault!
+            .SelectMany(file => new[] { file.Path, Path.ChangeExtension(file.Path, ".snupkg") });
+
+        return await uploadPaths.SelectAsync(async file => await context.DotNet()
             .Nuget
             .Push(new DotNetNugetPushOptions
             {
                 Path = file,
                 Source = "https://api.nuget.org/v3/index.json",
-                ApiKey = _options.Value.ApiKey!
+                NoSymbols = file.EndsWith(".nupkg", StringComparison.OrdinalIgnoreCase),
+                SkipDuplicate = true,
+                ApiKey = _options.Value.ApiKey!,
+                SymbolApiKey = _options.Value.ApiKey!
             }, cancellationToken: cancellationToken), cancellationToken: cancellationToken).ProcessOneAtATime();
     }
 }

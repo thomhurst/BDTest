@@ -11,6 +11,7 @@ namespace BDTest.Pipeline.Modules.LocalMachine;
 
 [DependsOn<AddLocalNugetSourceModule>]
 [DependsOn<PackagePathsParserModule>]
+[DependsOn<VerifyPackageArtifactsModule>]
 [DependsOn<CreateLocalNugetFolderModule>]
 public class UploadPackagesToLocalNuGetModule : Module<CommandResult[]>
 {
@@ -34,6 +35,9 @@ public class UploadPackagesToLocalNuGetModule : Module<CommandResult[]>
             .Push(new DotNetNugetPushOptions
             {
                 Path = file,
+                // Folder feeds do not provide a symbol server. Keep symbols in the build output.
+                NoSymbols = true,
                 Source = localRepoLocation.ValueOrDefault!
-            }, cancellationToken: cancellationToken), cancellationToken: cancellationToken).ProcessOneAtATime();    }
+            }, cancellationToken: cancellationToken), cancellationToken: cancellationToken).ProcessOneAtATime();
+    }
 }
