@@ -53,14 +53,15 @@ internal sealed class StepTextDefinition
     internal MethodInfo Method { get; }
 
     internal string GetText(bool evaluateArguments = false, Action<string> diagnostic = null,
-        IReadOnlyList<Func<object>> explicitArguments = null)
+        IReadOnlyList<Func<object>> explicitArguments = null,
+        IReadOnlyList<StepTextConverterRegistration> converters = null)
     {
         // A known method can still have unsupported captures. Preserve caller text
         // until explicit readers supply those values, while keeping Method for skip rules.
         if (Method != null && (explicitArguments != null || _arguments != null))
         {
             return StepTextHelper.GetStepText(Method, explicitArguments ?? _arguments,
-                _omitCancellationToken, diagnostic, evaluateArguments);
+                _omitCancellationToken, diagnostic, evaluateArguments, converters);
         }
 
         if (!evaluateArguments || explicitArguments == null || explicitArguments.Count == 0)
@@ -69,7 +70,7 @@ internal sealed class StepTextDefinition
         }
 
         var values = explicitArguments.Select((argument, index) =>
-            StepTextHelper.GetArgumentValue(argument, index.ToString(), diagnostic));
+            StepTextHelper.GetArgumentValue(argument, index.ToString(), diagnostic, converters));
         return $"{_argumentExpression} {string.Join(" ", values)}".Trim();
     }
 }

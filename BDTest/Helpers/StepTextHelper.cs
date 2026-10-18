@@ -20,7 +20,8 @@ public static class StepTextHelper
     }
 
     internal static string GetStepText(MethodInfo method, IReadOnlyList<Func<object>> arguments,
-        bool omitCancellationToken, Action<string> diagnostic, bool evaluateArguments)
+        bool omitCancellationToken, Action<string> diagnostic, bool evaluateArguments,
+        IReadOnlyList<StepTextConverterRegistration> converters = null)
     {
         var parameters = method.GetParameters();
         var visibleParameters = parameters.Where(p => !omitCancellationToken || p.ParameterType != typeof(CancellationToken)).ToArray();
@@ -33,7 +34,7 @@ public static class StepTextHelper
         {
             var argumentIndex = arguments?.Count == parameters.Length ? parameter.Position : index;
             return evaluateArguments && arguments != null
-                ? GetArgumentValue(arguments[argumentIndex], parameter.Name, diagnostic)
+                ? GetArgumentValue(arguments[argumentIndex], parameter.Name, diagnostic, converters)
                 : $"{{{parameter.Name}}}";
         }).ToArray();
 
@@ -65,7 +66,8 @@ public static class StepTextHelper
         }
     }
 
-    internal static string GetArgumentValue(Func<object> argument, string name, Action<string> diagnostic)
+    internal static string GetArgumentValue(Func<object> argument, string name, Action<string> diagnostic,
+        IReadOnlyList<StepTextConverterRegistration> converters = null)
     {
         try
         {
@@ -75,19 +77,29 @@ public static class StepTextHelper
                 return "null";
             }
 
-            foreach (var converter in BDTestSettings.GetCustomStringConvertersSnapshot())
+            if (converters != null)
             {
-                var converterInterface = converter.GetType().GetInterfaces()
-                    .Where(type => type.IsGenericType && type.GetGenericTypeDefinition() == typeof(IStepTextStringConverter<>))
-                    .Where(type => type.GetGenericArguments()[0].IsInstanceOfType(argumentValue))
-                    .OrderByDescending(type => type.GetGenericArguments()[0] == argumentValue.GetType())
-                    .FirstOrDefault();
-
-                if (converterInterface != null)
+                foreach (var converter in converters)
                 {
-                    // Invoke through the interface to support explicit implementations.
-                    var method = converterInterface.GetMethod(nameof(IStepTextStringConverter<object>.ConvertToString));
-                    return method.Invoke(converter, new[] { argumentValue }) as string ?? "null";
+                    if (converter.Matches(argumentValue)) return converter.Convert(argumentValue) ?? "null";
+                }
+            }
+            else
+            {
+                foreach (var converter in BDTestSettings.GetCustomStringConvertersSnapshot())
+                {
+                    var converterInterface = converter.GetType().GetInterfaces()
+                        .Where(type => type.IsGenericType && type.GetGenericTypeDefinition() == typeof(IStepTextStringConverter<>))
+                        .Where(type => type.GetGenericArguments()[0].IsInstanceOfType(argumentValue))
+                        .OrderByDescending(type => type.GetGenericArguments()[0] == argumentValue.GetType())
+                        .FirstOrDefault();
+
+                    if (converterInterface != null)
+                    {
+                        // Invoke through the interface to support explicit implementations.
+                        var method = converterInterface.GetMethod(nameof(IStepTextStringConverter<object>.ConvertToString));
+                        return method.Invoke(converter, new[] { argumentValue }) as string ?? "null";
+                    }
                 }
             }
 
