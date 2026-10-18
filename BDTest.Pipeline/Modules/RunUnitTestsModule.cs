@@ -22,8 +22,9 @@ public class RunUnitTestsModule : Module<List<CommandResult>>
             var resultsDirectory = Path.Combine(context.Git().RootDirectory!.Path, "artifacts", "test-results",
                 Path.GetFileNameWithoutExtension(unitTestProjectFile.Path));
 
-            // TUnit runs on Microsoft.Testing.Platform, which no longer supports the VSTest-based dotnet test on the .NET 10 SDK
-            if (Path.GetFileName(unitTestProjectFile.Path).Contains("TUnit", StringComparison.OrdinalIgnoreCase))
+            // This repository runs BDTest.TUnit.Tests via Microsoft.Testing.Platform with dotnet run;
+            // the other test projects use the VSTest-based dotnet test path.
+            if (UsesTUnitRunner(unitTestProjectFile.Path))
             {
                 results.Add(await context.DotNet().Run(new DotNetRunOptions
                 {
@@ -60,4 +61,7 @@ public class RunUnitTestsModule : Module<List<CommandResult>>
 
         return results;
     }
+
+    public static bool UsesTUnitRunner(string projectPath) =>
+        Path.GetFileName(projectPath).Equals("BDTest.TUnit.Tests.csproj", StringComparison.OrdinalIgnoreCase);
 }
