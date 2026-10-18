@@ -96,16 +96,17 @@ public class BDTestController : Controller
         return RedirectToAction("Summary", "BDTest", new { id });
     }
 
-    [HttpPost]
     [HttpDelete]
     [TypeFilter(typeof(ReportAuthorizationFilter), Arguments = new object[] { true })]
     [ValidateAntiForgeryToken]
-    [Route("report/delete/{id}")]
+    [Route("reports/{id}")]
     public async Task<IActionResult> DeleteReport([FromRoute] string id)
     {
+        if (!IsValidReportId(id)) return BadRequest("Invalid report ID.");
+
         await _dataRepository.DeleteReport(id, HttpContext.RequestAborted);
-            
-        return RedirectToAction(nameof(TestRuns));
+
+        return NoContent();
     }
 
     [HttpGet]

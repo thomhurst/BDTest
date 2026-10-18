@@ -8,6 +8,7 @@
 @inject Microsoft.Extensions.Options.IOptions<BDTestReportOptions> ReportOptions
 @inject IAuthorizationPolicyProvider PolicyProvider
 @inject IPolicyEvaluator PolicyEvaluator
+@inject Microsoft.Extensions.Options.IOptions<Microsoft.AspNetCore.Antiforgery.AntiforgeryOptions> AntiforgeryOptions
 
 @{
     ViewBag.Title = "Test runs";
@@ -238,7 +239,8 @@
                                             {
                                                 <li class="menu-sep" role="separator"></li>
                                                 <li>
-                                                    <form method="post" action="@Url.ReportAction("DeleteReport", new { id = record.RecordId ?? "" })">
+                                                    <form method="post" action="@Url.ReportAction("DeleteReport", new { id = record.RecordId })"
+                                                          data-bdtest-delete="true" data-antiforgery-header="@AntiforgeryOptions.Value.HeaderName">
                                                         @Html.AntiForgeryToken()
                                                         <button type="submit" class="menu-item danger"
                                                                 data-bdtest-action="delete"

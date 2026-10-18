@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using BDTest.Interfaces;
 using BDTest.Settings;
 using BDTest.Test;
@@ -256,16 +257,26 @@ public class ScenarioHookTests
     public async Task Scenario_hook_time_is_included_in_attempt_time_but_excluded_from_step_budget()
     {
         using var run = BDTestRun.Start();
+        var hookTimes = new List<TimeSpan>();
         var test = new Fixture(run)
         {
-            Before = async _ => await Task.Delay(150),
-            After = async _ => await Task.Delay(150)
+            Before = _ => MeasureHookTime(),
+            After = _ => MeasureHookTime()
         };
         var scenario = await test.When(() => Complete()).Then(() => Complete())
             .WithScenarioTimeout(TimeSpan.FromMilliseconds(100)).BDTestAsync();
-        Assert.That(scenario.TimeTaken, Is.GreaterThanOrEqualTo(TimeSpan.FromMilliseconds(300)));
+        Assert.That(hookTimes, Is.All.GreaterThan(scenario.Timeout.Value));
+        Assert.That(scenario.TimeTaken, Is.GreaterThanOrEqualTo(hookTimes[0] + hookTimes[1]));
         Assert.That(scenario.Attempts.Single().TimeTaken, Is.EqualTo(scenario.TimeTaken));
         Assert.That(scenario.Status, Is.EqualTo(Status.Passed));
+
+        async Task MeasureHookTime()
+        {
+            var stopwatch = Stopwatch.StartNew();
+            await Task.Delay(150);
+            stopwatch.Stop();
+            hookTimes.Add(stopwatch.Elapsed);
+        }
     }
 
     [TestCase("before")]

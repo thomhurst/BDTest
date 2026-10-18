@@ -54,7 +54,7 @@ All routes are under `/bdtest`.
 | `GET /bdtest/report/history/timing` | History **Timing variance**: per-scenario fastest, average and slowest passing times across the latest matching runs. |
 | `GET /bdtest/report/test-run-times?reportIds=a,b` | Timing variance for chosen runs. |
 | `POST /bdtest/report/test-run-flakiness` | Flaky tests for chosen runs (form field `reportIds`). |
-| `POST`/`DELETE /bdtest/report/delete/{id}` | Delete a report. Requires an [admin](security.md#administrators). |
+| `DELETE /bdtest/reports/{id}` | Delete a report. Returns 204, including when absent. Requires an [admin and antiforgery token](security.md#administrators). |
 | `POST /bdtest/data` | Upload endpoint used by test runs. See [Sending results](sending-results.md). |
 | `GET /bdtest/ping` | Anonymous health and warm-up check. |
 

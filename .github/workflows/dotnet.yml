@@ -39,8 +39,10 @@ jobs:
       - name: Verify dependency merge safeguards
         shell: pwsh
         run: ./scripts/Test-DependencyAutomerge.ps1
-      - name: Verify standalone HTML report controls
-        run: node scripts/Test-HtmlReportControls.cjs
+      - name: Verify report controls
+        run: |
+          node scripts/Test-HtmlReportControls.cjs
+          node --test scripts/Test-ReportDeletion.cjs
       - name: Verify skip outcomes from test runners
         shell: pwsh
         run: ./scripts/Test-SkipOutcomes.ps1 -ResultsDirectory artifacts/test-results/skip-outcomes

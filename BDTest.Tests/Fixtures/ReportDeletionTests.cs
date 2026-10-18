@@ -20,10 +20,12 @@ using NUnit.Framework;
 namespace BDTest.Tests.Fixtures;
 
 [NonParallelizable]
-public class ReportDeletionTests
+[TestFixture("/bdtest")]
+[TestFixture("/team/reports")]
+public class ReportDeletionTests(string prefix)
 {
-    private const string ListPath = "/reports/bdtest/report/test-runs";
-    private const string DeletePath = "/reports/bdtest/report/delete/run-618";
+    private string ListPath => "/reports" + prefix + "/report/test-runs";
+    private string DeletePath => "/reports" + prefix + "/reports/run-618";
     private readonly RecordingRepository _repository = new();
     private WebApplication _application;
     private HttpClient _client;
@@ -61,7 +63,7 @@ public class ReportDeletionTests
             });
             await next();
         });
-        _application.MapBDTestReports();
+        _application.MapBDTestReports(prefix);
         await _application.StartAsync();
     }
 
@@ -70,6 +72,7 @@ public class ReportDeletionTests
     {
         _repository.DeletedIds.Clear();
         _application.Services.GetRequiredService<IOptions<BDTestReportOptions>>().Value.AdminAuthorizationPolicy = "DeleteTests";
+        _repository.Failure = null;
         _client = new HttpClient(new HttpClientHandler { AllowAutoRedirect = false })
         {
             BaseAddress = new Uri(_application.Urls.Single())
@@ -85,7 +88,11 @@ public class ReportDeletionTests
 
     [TestCase("GET")]
     [TestCase("HEAD")]
-    public async Task Safe_methods_cannot_delete_reports(string method)
+    [TestCase("POST")]
+    [TestCase("PUT")]
+    [TestCase("PATCH")]
+    [TestCase("OPTIONS")]
+    public async Task Other_methods_cannot_delete_reports(string method)
     {
         using var request = new HttpRequestMessage(new HttpMethod(method), DeletePath);
         using var response = await _client.SendAsync(request);
@@ -93,8 +100,6 @@ public class ReportDeletionTests
         Assert.That(_repository.DeletedIds, Is.Empty);
     }
 
-    [TestCase("POST", null)]
-    [TestCase("POST", "invalid")]
     [TestCase("DELETE", null)]
     [TestCase("DELETE", "invalid")]
     public async Task Missing_or_invalid_antiforgery_tokens_cannot_delete_reports(string method, string token)
@@ -107,20 +112,19 @@ public class ReportDeletionTests
         Assert.That(_repository.DeletedIds, Is.Empty);
     }
 
-    [TestCase("POST")]
-    [TestCase("DELETE")]
-    public async Task Valid_token_does_not_bypass_admin_authorization(string method)
+    [Test]
+    public async Task Valid_token_does_not_bypass_admin_authorization()
     {
         var (action, token) = await ReadDeleteForm();
         _client.DefaultRequestHeaders.Remove("X-Test-Role");
         _client.DefaultRequestHeaders.Add("X-Test-Role", "Reader");
-        using var response = await DeleteAsync(method, action, token);
+        using var response = await DeleteAsync("DELETE", action, token);
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.Forbidden));
         Assert.That(_repository.DeletedIds, Is.Empty);
     }
 
     [Test]
-    public async Task Form_token_without_its_cookie_cannot_delete_reports()
+    public async Task Header_token_without_its_cookie_cannot_delete_reports()
     {
         var (action, token) = await ReadDeleteForm();
         using var clientWithoutCookie = new HttpClient(new HttpClientHandler { AllowAutoRedirect = false })
@@ -128,26 +132,57 @@ public class ReportDeletionTests
             BaseAddress = _client.BaseAddress
         };
         clientWithoutCookie.DefaultRequestHeaders.Add("X-Test-Role", "BDTest.Admin");
-        using var response = await clientWithoutCookie.PostAsync(action,
-            new FormUrlEncodedContent(new Dictionary<string, string> { ["__RequestVerificationToken"] = token }));
+        using var request = new HttpRequestMessage(HttpMethod.Delete, action);
+        request.Headers.Add("RequestVerificationToken", token);
+        using var response = await clientWithoutCookie.SendAsync(request);
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
         Assert.That(_repository.DeletedIds, Is.Empty);
     }
 
-    [TestCase("POST")]
-    [TestCase("DELETE")]
-    public async Task Admin_with_valid_token_deletes_once_and_redirects_to_list(string method)
+    [Test]
+    public async Task Admin_with_valid_header_token_gets_204_on_repeated_deletes()
     {
         var (action, token) = await ReadDeleteForm();
-        using var response = await DeleteAsync(method, action, token);
-        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.Redirect));
-        Assert.That(response.Headers.Location?.OriginalString, Is.EqualTo(ListPath));
-        Assert.That(_repository.DeletedIds, Is.EqualTo(new[] { "run-618" }));
+        for (var attempt = 0; attempt < 2; attempt++)
+        {
+            using var response = await DeleteAsync("DELETE", action, token);
+            Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.NoContent));
+            Assert.That(response.Headers.Location, Is.Null);
+            Assert.That(await response.Content.ReadAsStringAsync(), Is.Empty);
+        }
+        Assert.That(_repository.DeletedIds, Is.EqualTo(new[] { "run-618", "run-618" }));
+    }
 
-        using var redirectedPage = await _client.GetAsync(response.Headers.Location);
-        redirectedPage.EnsureSuccessStatusCode();
-        Assert.That(_repository.DeletedIds, Is.EqualTo(new[] { "run-618" }),
-            "Following the redirect must not repeat the deletion.");
+    [TestCase("POST")]
+    [TestCase("DELETE")]
+    public async Task Legacy_delete_route_is_removed(string method)
+    {
+        var (_, token) = await ReadDeleteForm();
+        using var response = await DeleteAsync(method, "/reports" + prefix + "/report/delete/run-618", token);
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.NotFound));
+        Assert.That(_repository.DeletedIds, Is.Empty);
+    }
+
+    [TestCase("bad id")]
+    [TestCase("bad\\id")]
+    [TestCase("café")]
+    [TestCase("bad<id>")]
+    public async Task Invalid_id_returns_400_without_touching_storage(string id)
+    {
+        var (_, token) = await ReadDeleteForm();
+        using var response = await DeleteAsync("DELETE", "/reports" + prefix + "/reports/" + Uri.EscapeDataString(id), token);
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
+        Assert.That(_repository.DeletedIds, Is.Empty);
+    }
+
+    [Test]
+    public async Task Storage_failure_returns_500_without_redirecting()
+    {
+        var (action, token) = await ReadDeleteForm();
+        _repository.Failure = new IOException("storage unavailable");
+        using var response = await DeleteAsync("DELETE", action, token);
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.InternalServerError));
+        Assert.That(response.Headers.Location, Is.Null);
     }
 
     [Test]
@@ -162,9 +197,8 @@ public class ReportDeletionTests
         Assert.That(_repository.DeletedIds, Is.Empty);
     }
 
-    [TestCase("POST")]
-    [TestCase("DELETE")]
-    public async Task Separate_admin_scheme_shows_working_delete_form_and_preserves_reader(string method)
+    [Test]
+    public async Task Separate_admin_scheme_shows_working_delete_form_and_preserves_reader()
     {
         _application.Services.GetRequiredService<IOptions<BDTestReportOptions>>().Value.AdminAuthorizationPolicy = "SeparateAdmin";
         _client.DefaultRequestHeaders.Remove("X-Test-Role");
@@ -173,8 +207,8 @@ public class ReportDeletionTests
         using var page = await _client.GetAsync(ListPath);
         Assert.That(page.Headers.GetValues("X-Rendered-User"), Is.EqualTo(new[] { "test-user" }));
         var (action, token) = await ReadDeleteForm();
-        using var response = await DeleteAsync(method, action, token);
-        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.Redirect));
+        using var response = await DeleteAsync("DELETE", action, token);
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.NoContent));
         Assert.That(_repository.DeletedIds, Is.EqualTo(new[] { "run-618" }));
     }
 
@@ -193,8 +227,8 @@ public class ReportDeletionTests
     private async Task<(string Action, string Token)> ReadDeleteForm()
     {
         var html = await _client.GetStringAsync(ListPath);
-        var match = Regex.Match(html, @"<form\b[^>]*/report/delete/[^>]*>.*?Delete</button>\s*</form>", RegexOptions.Singleline);
-        Assert.That(match.Success, Is.True, "The admin delete button must submit an antiforgery-protected form.");
+        var match = Regex.Match(html, @"<form\b[^>]*data-bdtest-delete[^>]*>.*?Delete</button>\s*</form>", RegexOptions.Singleline);
+        Assert.That(match.Success, Is.True, "The admin delete button must expose an antiforgery-protected DELETE action.");
         var form = XElement.Parse(match.Value);
         Assert.That((string)form.Attribute("method"), Is.EqualTo("post"));
         Assert.That((string)form.Attribute("action"), Is.EqualTo(DeletePath));
@@ -205,24 +239,18 @@ public class ReportDeletionTests
 
     private async Task<HttpResponseMessage> DeleteAsync(string method, string action, string token)
     {
-        var fields = new Dictionary<string, string>();
-        if (token != null)
-        {
-            fields.Add("__RequestVerificationToken", token);
-        }
-
-        using var request = new HttpRequestMessage(new HttpMethod(method), action)
-        {
-            Content = new FormUrlEncodedContent(fields)
-        };
+        using var request = new HttpRequestMessage(new HttpMethod(method), action);
+        if (token != null) request.Headers.Add("RequestVerificationToken", token);
         return await _client.SendAsync(request);
     }
 
     private sealed class RecordingRepository : IDataRepository
     {
         public List<string> DeletedIds { get; } = [];
+        public Exception Failure { get; set; }
         public Task DeleteReport(string id, CancellationToken cancellationToken = default)
         {
+            if (Failure != null) throw Failure;
             DeletedIds.Add(id);
             return Task.CompletedTask;
         }

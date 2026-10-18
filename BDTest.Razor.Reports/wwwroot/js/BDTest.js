@@ -72,6 +72,31 @@ function confirmDelete(element) {
     return window.confirm(message);
 }
 
+async function deleteReport(form, button) {
+    if (button.disabled || !confirmDelete(button)) {
+        return;
+    }
+    button.disabled = true;
+    try {
+        const token = form.querySelector('input[type="hidden"]');
+        const options = { method: 'DELETE', credentials: 'same-origin', redirect: 'error' };
+        if (form.dataset.antiforgeryHeader) {
+            options.headers = { [form.dataset.antiforgeryHeader]: token.value };
+        } else {
+            // Hosts can disable antiforgery headers and require the form field instead.
+            options.body = new FormData(form);
+        }
+        const response = await fetch(form.action, options);
+        if (response.status !== 204) {
+            throw new Error('Delete failed');
+        }
+        window.location.reload();
+    } catch (error) {
+        showSnackbar('Couldn’t delete this test run. Refresh the list and try again.');
+        button.disabled = false;
+    }
+}
+
 function setDetails(container, open) {
     for (const details of container.querySelectorAll('details[data-expandable]')) {
         details.open = open;
@@ -87,6 +112,14 @@ function closeMenus(except) {
 }
 
 onDomLoaded(function () {
+    document.addEventListener('submit', function (event) {
+        const form = event.target;
+        if (form.matches('form[data-bdtest-delete]')) {
+            event.preventDefault();
+            deleteReport(form, event.submitter || form.querySelector('[data-bdtest-action="delete"]'));
+        }
+    });
+
     document.addEventListener('click', function (event) {
         const openMenu = event.target.closest('details.menu');
         closeMenus(openMenu);
@@ -127,11 +160,6 @@ onDomLoaded(function () {
                 }
                 break;
             }
-            case 'delete':
-                if (!confirmDelete(element)) {
-                    event.preventDefault();
-                }
-                break;
             case 'back':
                 event.preventDefault();
                 window.history.back();

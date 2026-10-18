@@ -1,3 +1,4 @@
+using System.Runtime.ExceptionServices;
 using System.Text.Json;
 using BDTest.Helpers;
 using BDTest.Maps;
@@ -6,6 +7,7 @@ using BDTest.Razor.Reports.Extensions;
 using BDTest.Razor.Reports.Interfaces;
 using BDTest.Razor.Reports.Models;
 using BDTest.Razor.Reports.Storage;
+using Microsoft.Extensions.Logging;
 
 namespace BDTest.Razor.Reports.Implementations;
 
@@ -18,12 +20,14 @@ internal class DataRepository : IDataRepository
     private bool _historyLoaded;
     private readonly IBDTestAttachmentStore _attachmentStore;
     private readonly ReportAttachmentGate _attachmentGate;
+    private readonly ILogger<DataRepository> _logger;
 
     public DataRepository(IMemoryCacheBdTestDataStore memoryCacheBdTestDataStore, ReportAttachmentGate attachmentGate,
         IBDTestDataStore dataStore = null, IReportStore reportStore = null, IRunIndexStore runIndexStore = null,
-        IBDTestAttachmentStore attachmentStore = null)
+        IBDTestAttachmentStore attachmentStore = null, ILogger<DataRepository> logger = null)
     {
         _attachmentGate = attachmentGate;
+        _logger = logger;
         _attachmentStore = attachmentStore;
         _memoryCacheBdTestDataStore = memoryCacheBdTestDataStore;
         if ((reportStore == null) != (runIndexStore == null))
@@ -33,8 +37,12 @@ internal class DataRepository : IDataRepository
         _runIndexStore = runIndexStore ?? dataStore as IRunIndexStore ?? legacy;
     }
 
-    public Task<BDTestOutputModel> GetData(string reportId, CancellationToken cancellationToken)
-        => GetData(reportId, cancellationToken, cacheResult: true);
+    public async Task<BDTestOutputModel> GetData(string reportId, CancellationToken cancellationToken)
+    {
+        // A read that fills the cache must finish before deletion invalidates it.
+        using var lease = await _attachmentGate.EnterAsync(reportId, cancellationToken);
+        return await GetData(reportId, cancellationToken, cacheResult: true);
+    }
 
     public Task<BDTestOutputModel> GetDataForBulkRead(string reportId, CancellationToken cancellationToken)
         => GetData(reportId, cancellationToken, cacheResult: false);
@@ -149,15 +157,36 @@ internal class DataRepository : IDataRepository
         await _historyLock.WaitAsync(cancellationToken);
         try
         {
-            if (_attachmentStore != null && AttachmentStorage.IsValidId(reportId))
-                await _attachmentStore.DeleteReportAsync(reportId, cancellationToken);
-            if (_reportStore != null)
+            Exception failure = null;
+            var deleted = false;
+            try
             {
-                await _reportStore.DeleteAsync(reportId, cancellationToken);
-                await _runIndexStore.DeleteAsync(reportId, cancellationToken);
+                // An index failure must leave report data intact. Orphan data can be retried safely.
+                if (_runIndexStore != null)
+                    deleted |= await _runIndexStore.DeleteAsync(reportId, cancellationToken);
+                if (_attachmentStore != null && AttachmentStorage.IsValidId(reportId))
+                    await _attachmentStore.DeleteReportAsync(reportId, cancellationToken);
+                if (_reportStore != null)
+                    deleted |= await _reportStore.DeleteAsync(reportId, cancellationToken);
             }
-            await ((IReportStore)_memoryCacheBdTestDataStore).DeleteAsync(reportId, cancellationToken);
-            await ((IRunIndexStore)_memoryCacheBdTestDataStore).DeleteAsync(reportId, cancellationToken);
+            catch (Exception exception) { failure = exception; }
+
+            // Always attempt both invalidations, even after cancellation. Keep the first failure.
+            try
+            {
+                deleted |= await ((IRunIndexStore)_memoryCacheBdTestDataStore).DeleteAsync(reportId, CancellationToken.None);
+            }
+            catch (Exception exception) { failure ??= exception; }
+            try
+            {
+                deleted |= await ((IReportStore)_memoryCacheBdTestDataStore).DeleteAsync(reportId, CancellationToken.None);
+            }
+            catch (Exception exception) { failure ??= exception; }
+
+            if (failure != null) ExceptionDispatchInfo.Capture(failure).Throw();
+            if (!deleted)
+                _logger?.LogDebug("Report {ReportId} did not exist during deletion.",
+                    reportId.Replace("\r", "\\r").Replace("\n", "\\n"));
         }
         finally { _historyLock.Release(); }
     }

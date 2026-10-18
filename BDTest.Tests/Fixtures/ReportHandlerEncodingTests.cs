@@ -8,8 +8,8 @@ using BDTest.Razor.Reports.Models;
 using BDTest.Razor.Reports.Models.ViewModels;
 using BDTest.Test;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Abstractions;
@@ -58,9 +58,10 @@ public class ReportHandlerEncodingTests
             Assert.That(html, Does.Not.Contain("data-bdtest-action=\"delete\""));
             return;
         }
-        var form = ReadElement(html, "<form[^>]*/report/delete/[^>]*>.*?</form>");
-        Assert.That(Uri.UnescapeDataString((string)form.Attribute("action")),
-            Is.EqualTo("/bdtest/report/delete/" + record.RecordId));
+        var form = ReadElement(html, "<form[^>]*data-bdtest-delete[^>]*>.*?</form>");
+        var action = (string)form.Attribute("action");
+        Assert.That(action, Does.StartWith("/bdtest/reports/"));
+        Assert.That(Uri.UnescapeDataString(action["/bdtest/reports/".Length..]), Is.EqualTo(record.RecordId));
         Assert.That((string)form.Attribute("method"), Is.EqualTo("post"));
         var button = ReadElement(html, "<button[^>]*>Delete</button>");
         Assert.That((string)button.Attribute("type"), Is.EqualTo("submit"));
@@ -151,11 +152,11 @@ public class ReportHandlerEncodingTests
     internal static async Task<string> RenderAsync<T>(string path, T model, bool isAdmin = false, string query = "", string pathBase = "", string host = "reports.example.test", string requestPath = "/bdtest/report/O'Brien/test-runs", IBDTestCustomHeaderLinksProvider customHeaderLinksProvider = null, Action<ViewDataDictionary> configureViewData = null)
     {
         var builder = WebApplication.CreateBuilder();
+        builder.WebHost.UseUrls("http://127.0.0.1:0");
         builder.Services.AddBDTestReports(options => options.AdminAuthorizationPolicy = "EncodingTests");
         if (customHeaderLinksProvider != null) builder.Services.AddSingleton(customHeaderLinksProvider);
         builder.Services.AddAuthorization(options => options.AddPolicy("EncodingTests", policy =>
             policy.RequireAssertion(_ => isAdmin)));
-        builder.WebHost.UseUrls("http://127.0.0.1:0");
         builder.Logging.ClearProviders();
         await using var app = builder.Build();
         app.MapBDTestReports();
@@ -163,6 +164,7 @@ public class ReportHandlerEncodingTests
         await using var scope = app.Services.CreateAsyncScope();
         var services = scope.ServiceProvider;
         var httpContext = new DefaultHttpContext { RequestServices = services };
+        httpContext.SetEndpoint(new Endpoint(_ => Task.CompletedTask, new EndpointMetadataCollection(), "Render report view"));
         httpContext.Request.Scheme = "https";
         httpContext.Request.Host = new HostString(host);
         httpContext.Request.PathBase = pathBase;
