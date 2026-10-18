@@ -132,7 +132,6 @@ public sealed class ScenarioOutlineBuilder<TExample> : BuildableTest
                         row.EndTime = DateTime.UtcNow;
                         row.TimeTaken = row.EndTime - row.StartTime;
                     }
-                    // Retry hooks can throw after resetting the row to NotRun.
                     row.Status = row.TimedOut ? Status.Failed : ClassifyOutcome(exception);
                     // Framework success exceptions must not fail the outline.
                     if (row.Status != Status.Passed)

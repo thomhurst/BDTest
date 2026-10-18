@@ -68,9 +68,11 @@ public class ScenarioOutlineTests : AbstractContextBDTestBase<ScenarioOutlineTes
         foreach (var result in new[] { outline, ReportJson.DeserializeObject<Scenario>(ReportJson.SerializeObject(outline)) })
         {
             var failedRow = result.Examples[0];
-            Assert.That(failedRow.EndTime, Is.GreaterThanOrEqualTo(failedRow.Attempts.Single().EndTime));
+            Assert.That(failedRow.Attempts, Has.Count.EqualTo(2));
+            Assert.That(failedRow.Attempts.Last().Exception.Message, Is.EqualTo("<retry hook failed>"));
+            Assert.That(failedRow.EndTime, Is.EqualTo(failedRow.Attempts.Last().EndTime));
             Assert.That(failedRow.TimeTaken, Is.GreaterThan(TimeSpan.Zero));
-            Assert.That(failedRow.TimeTaken, Is.EqualTo(failedRow.EndTime - failedRow.StartTime));
+            Assert.That(failedRow.TimeTaken, Is.EqualTo(failedRow.Attempts.Last().TimeTaken));
             var razor = await ReportHandlerEncodingTests.RenderAsync("/Views/Shared/_ScenarioExamples.cshtml", result);
             Assert.That(razor, Does.Contain($"<td>{failedRow.TimeTaken}</td>"));
         }
