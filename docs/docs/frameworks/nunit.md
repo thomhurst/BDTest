@@ -45,7 +45,7 @@ public class BasketTests : NUnitBDTestBase<BasketContext>
 - **Exceptions:** registers `SuccessException` (from `Assert.Pass`) as success, `IgnoreException` (from `Assert.Ignore`) as skip and `InconclusiveException` as inconclusive. Registration happens once, in a `[OneTimeSetUp]`.
 - **Setup:** a `[SetUp]` method calls `BeginTest` with the test ID and repeat count, which ties context and console output to the current test.
 - **Teardown:** a `[TearDown]` method calls `EndTest()`, which removes the test's context and completes the test.
-- **Retries:** each attempt runs its steps and step hooks through NUnit's public exception constraint API. A failed attempt does not change the NUnit result when a later attempt passes. Failures outside the scenario remain failures, and scenario warnings remain visible. The adapter never overwrites the NUnit result during teardown.
+- **Retries:** each attempt runs its steps and step hooks through NUnit's public exception constraint API. A failed attempt does not change the NUnit result when a later attempt passes. Failures outside the scenario remain failures, and scenario warnings remain visible. When the final attempt throws after recording other assertion failures, NUnit reports the exception together with those assertion diagnostics. Retry rules still receive the original exception. The adapter never overwrites the NUnit result during teardown.
 - **Skips:** a whole-scenario skip calls `Assert.Ignore(reason)`.
 
 You can add your own `[SetUp]` and `[TearDown]` methods. They run alongside the adapter's.

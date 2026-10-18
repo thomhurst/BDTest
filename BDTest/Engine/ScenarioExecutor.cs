@@ -51,6 +51,7 @@ internal class ScenarioExecutor : IScenarioExecutor
     {
         var stopwatch = Stopwatch.StartNew();
         Exception attemptException = null;
+        Action reportTerminalFailure = null;
         var preparingRetry = scenario.ShouldRetry;
         try
         {
@@ -84,7 +85,7 @@ internal class ScenarioExecutor : IScenarioExecutor
 
             if (scenario.BdTestBaseClass is { } test)
             {
-                await test.ExecuteScenarioStepsAsync(ExecuteStepsAsync);
+                await test.ExecuteScenarioStepsAsync(ExecuteStepsAsync, report => reportTerminalFailure = report);
             }
             else
             {
@@ -145,6 +146,9 @@ internal class ScenarioExecutor : IScenarioExecutor
 
             await ConsoleReporter.WriteLine($"{Environment.NewLine}Exception: {e.Message}{Environment.NewLine}{e.StackTrace}{Environment.NewLine}");
 
+            // Keep the original exception for retry predicates. Only terminal failures
+            // publish additional diagnostics captured by a framework adapter.
+            reportTerminalFailure?.Invoke();
             throw;
         }
         finally

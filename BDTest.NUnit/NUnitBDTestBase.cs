@@ -31,7 +31,8 @@ public abstract class NUnitBDTestBase<TContext> : AbstractContextBDTestBase<TCon
     // Kept callable for existing consumers; NUnit teardown uses MarkTestAsComplete.
     public void PruneContext() => EndTest();
 
-    internal override async Task ExecuteScenarioStepsAsync(Func<Task> executeSteps)
+    internal override async Task ExecuteScenarioStepsAsync(Func<Task> executeSteps,
+        Action<Action> registerTerminalFailure)
     {
         AssertionResult[] assertions = Array.Empty<AssertionResult>();
         // NUnit's public exception constraint isolates assertion state while preserving
@@ -55,14 +56,22 @@ public abstract class NUnitBDTestBase<TContext> : AbstractContextBDTestBase<TCon
             Assert.Warn(warning.Message);
         }
 
+        var failures = assertions.Where(assertion => assertion.Status == AssertionStatus.Failed ||
+                                                     assertion.Status == AssertionStatus.Error).ToArray();
         if (result.ActualValue is Exception exception)
         {
+            // A normal assertion exception already carries its own diagnostic.
+            if (failures.Length > 1 || failures.Length == 1 && failures[0].Message != exception.Message)
+            {
+                registerTerminalFailure(() => throw new AggregateException(
+                    "Scenario failed with NUnit assertion failures.",
+                    new[] { exception }.Concat(failures.Select(failure =>
+                        new AssertionException(failure.Message + Environment.NewLine + failure.StackTrace)))));
+            }
             ExceptionDispatchInfo.Capture(exception).Throw();
         }
 
         // Also preserve failures the user caught, or deferred in an outer multiple scope.
-        var failures = assertions.Where(assertion => assertion.Status == AssertionStatus.Failed ||
-                                                     assertion.Status == AssertionStatus.Error).ToArray();
         if (failures.Length > 0)
         {
             throw new AssertionException(string.Join(Environment.NewLine, failures.Select(failure => failure.Message)));

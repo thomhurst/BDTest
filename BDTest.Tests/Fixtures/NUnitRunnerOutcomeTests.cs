@@ -25,6 +25,10 @@ public class NUnitRunnerOutcomeTests
     [TestCase("caught-assert-retry", TestStatus.Passed, Status.Passed, 1)]
     [TestCase("caught-assert-failure", TestStatus.Failed, Status.Failed, 1)]
     [TestCase("outer-multiple-retry", TestStatus.Passed, Status.Passed, 1)]
+    [TestCase("caught-then-exception-retry", TestStatus.Passed, Status.Passed, 1)]
+    [TestCase("caught-then-exception-failure", TestStatus.Failed, Status.Failed, 1)]
+    [TestCase("step-and-hook-retry", TestStatus.Passed, Status.Passed, 1)]
+    [TestCase("step-and-hook-failure", TestStatus.Failed, Status.Failed, 1)]
     public void RunnerAndScenarioKeepTheirOwnOutcomes(string mode, TestStatus runnerStatus,
         Status scenarioStatus, int retryCount)
     {
@@ -45,6 +49,21 @@ public class NUnitRunnerOutcomeTests
             Assert.That(testResult.ResultState.Status, Is.EqualTo(runnerStatus), testResult.Message);
             Assert.That(scenario.Status, Is.EqualTo(scenarioStatus));
             Assert.That(scenario.RetryCount, Is.EqualTo(retryCount));
+            if (mode.StartsWith("caught-then-exception-"))
+                Assert.That(NUnitOutcomeProbe.RetryExceptions[mode],
+                    Has.All.TypeOf<InvalidOperationException>(), "Retry rules must receive the original exception.");
+            if (mode == "caught-then-exception-failure")
+            {
+                Assert.That(testResult.Message, Does.Contain("caught assertion diagnostic"));
+                Assert.That(testResult.Message, Does.Contain("escaping exception diagnostic"));
+            }
+            if (mode == "step-and-hook-failure")
+            {
+                Assert.That(testResult.Message, Does.Contain("step assertion diagnostic"));
+                Assert.That(testResult.Message, Does.Contain("hook assertion diagnostic"));
+            }
+            if (mode == "caught-then-exception-retry" || mode == "step-and-hook-retry")
+                Assert.That(testResult.AssertionResults, Is.Empty, "Retried assertions must not leak to NUnit.");
             if (mode.StartsWith("outside-"))
                 Assert.That(testResult.Message, Does.Contain("outside scenario"));
             if (mode.StartsWith("warning"))
@@ -61,8 +80,24 @@ public class NUnitRunnerOutcomeTests
 public class NUnitOutcomeProbe : NUnitBDTestBase<MyTestContext>
 {
     internal static readonly ConcurrentDictionary<string, Scenario> Scenarios = new();
-    private readonly BDTestRun _run = BDTestRun.Start();
+    internal static readonly ConcurrentDictionary<string, Exception[]> RetryExceptions = new();
+    private readonly List<Exception> _retryExceptions = new();
+    private readonly BDTestRun _run;
+
+    public NUnitOutcomeProbe()
+    {
+        var options = new BDTestOptions();
+        options.RetryTestRules.Add(exception =>
+        {
+            _retryExceptions.Add(exception);
+            return false; // Let the fixture's retry attribute select the retry count.
+        }, retryLimit: 1);
+        _run = BDTestRun.Start(options);
+    }
+
     public override BDTestRun TestRun => _run;
+    private Func<Task> _afterStep = () => Task.CompletedTask;
+    public override Task OnAfterStep(Step step) => _afterStep();
 
     [TestCase("plain-retry")]
     [TestCase("assert-retry")]
@@ -77,10 +112,20 @@ public class NUnitOutcomeProbe : NUnitBDTestBase<MyTestContext>
     [TestCase("caught-assert-retry")]
     [TestCase("caught-assert-failure")]
     [TestCase("outer-multiple-retry")]
+    [TestCase("caught-then-exception-retry")]
+    [TestCase("caught-then-exception-failure")]
+    [TestCase("step-and-hook-retry")]
+    [TestCase("step-and-hook-failure")]
     public async Task Run(string mode)
     {
         using var outerScope = mode == "outer-multiple-retry" ? Assert.EnterMultipleScope() : null;
         var attempts = 0;
+        if (mode.StartsWith("step-and-hook-"))
+            _afterStep = () =>
+            {
+                Assert.That(attempts > 1 && !mode.EndsWith("-failure"), Is.True, "hook assertion diagnostic");
+                return Task.CompletedTask;
+            };
         if (mode == "outside-before")
         {
             try { Assert.Fail("outside scenario before"); }
@@ -99,6 +144,19 @@ public class NUnitOutcomeProbe : NUnitBDTestBase<MyTestContext>
                         case "plain-retry":
                         case "plain-failure":
                             if (fails) throw new InvalidOperationException("plain attempt failure");
+                            break;
+                        case "caught-then-exception-retry":
+                        case "caught-then-exception-failure":
+                            if (fails)
+                            {
+                                try { Assert.Fail("caught assertion diagnostic"); }
+                                catch (AssertionException) { }
+                                throw new InvalidOperationException("escaping exception diagnostic");
+                            }
+                            break;
+                        case "step-and-hook-retry":
+                        case "step-and-hook-failure":
+                            Assert.That(fails, Is.False, "step assertion diagnostic");
                             break;
                         case "caught-assert-retry":
                         case "caught-assert-failure":
@@ -137,6 +195,7 @@ public class NUnitOutcomeProbe : NUnitBDTestBase<MyTestContext>
         finally
         {
             Scenarios[mode] = _run.Scenarios.Single();
+            RetryExceptions[mode] = _retryExceptions.ToArray();
         }
     }
 

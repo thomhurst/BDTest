@@ -201,7 +201,8 @@ public abstract class BDTestBase
 
     // Framework adapters can isolate each attempt's assertions without replacing
     // the runner's result or changing the retry/exception classification logic.
-    internal virtual Task ExecuteScenarioStepsAsync(Func<Task> executeSteps) => executeSteps();
+    internal virtual Task ExecuteScenarioStepsAsync(Func<Task> executeSteps,
+        Action<Action> registerTerminalFailure) => executeSteps();
 
     internal void NotifyScenarioSkipped(string reason)
     {
@@ -209,7 +210,6 @@ public abstract class BDTestBase
         if (map != null) map.ReportSkip(reason);
         else OnScenarioSkipped(reason);
     }
-
 
     /// <summary>Runs before each reached step, after the global before hooks.</summary>
     public virtual Task OnBeforeStep(Step step) => Task.CompletedTask;
