@@ -127,7 +127,11 @@ internal sealed class LifecycleProbe(AbstractContextBDTestBase<LifecycleContext>
             throw new InvalidOperationException("native setup failure");
     }
 
-    internal void RecordContext() => _contexts.Add(host.Context);
+    internal void RecordContext()
+    {
+        host.Context.DisposalMessage = _label + " context disposal " + Guid.NewGuid().ToString("N");
+        _contexts.Add(host.Context);
+    }
 
     internal async Task ExecuteAsync(bool retry = false)
     {
@@ -190,10 +194,12 @@ internal sealed class LifecycleProbe(AbstractContextBDTestBase<LifecycleContext>
                 Assert.Contains(_label + " setup", scenario.TestStartupInformation);
                 Assert.Contains(_label + " step", scenario.Output);
                 Assert.Contains(_label + " teardown", scenario.TearDownOutput);
+                Assert.Contains(_contexts.Last().DisposalMessage, scenario.TearDownOutput);
                 var other = _label == "first" ? "second" : "first";
                 Assert.DoesNotContain(other, scenario.TestStartupInformation + scenario.Output + scenario.TearDownOutput);
                 var report = BDTestJsonHelper.Deserialize(BDTestJsonHelper.GetTestJsonData(null, run));
                 Assert.AreEqual(run.ReportId, report.Scenarios.Single().ReportId);
+                Assert.Contains(_contexts.Last().DisposalMessage, report.Scenarios.Single().TearDownOutput);
             }
             await host.EndTestAsync();
             Assert.IsTrue(_contexts.All(value => value.DisposalCalls == 1), "Repeated completion disposed twice.");
@@ -207,12 +213,14 @@ public sealed class LifecycleContext : IBDTestContextLifetime, IAsyncDisposable
     public int InitializationCalls { get; private set; }
     public int DisposalCalls { get; private set; }
     public bool FailDisposal { get; set; }
+    public string DisposalMessage { get; set; } = "";
 
     public async ValueTask InitializeAsync() { await Task.Yield(); InitializationCalls++; }
     public async ValueTask DisposeAsync()
     {
         await Task.Yield();
         DisposalCalls++;
+        Console.WriteLine(DisposalMessage);
         if (FailDisposal) throw new InvalidOperationException("native context disposal failure");
     }
 }

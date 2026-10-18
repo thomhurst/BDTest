@@ -157,6 +157,8 @@ public class BasketReports
 }
 ```
 
+Context disposal runs in the owning BDTest run and execution, including when MSTest completes in a different execution context. Console messages written during asynchronous disposal appear in the scenario teardown output and exported report, even when disposal fails.
+
 ## Migrating method metadata
 
 Replace `[TestClass]` with `[BDTestClass]` on each concrete class that uses BDTest. MSTest does not inherit class attributes from the adapter base. `BDTestClassAttribute` preserves the original `TestMethodAttribute.ExecuteAsync` and supplies `ITestMethod.MethodInfo` before initialization, including data rows and overloads. A plain `[TestClass]` on a BDTest fixture produces a migration error during context injection.

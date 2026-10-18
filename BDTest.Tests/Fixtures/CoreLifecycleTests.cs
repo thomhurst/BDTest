@@ -83,6 +83,64 @@ public class CoreLifecycleTests
         fixture.Finish();
     }
 
+    [TestCase(false)]
+    [TestCase(true)]
+    public async Task CrossFlowDisposalCapturesOnlyItsRunAndPreservesCallerOutput(bool failDisposal)
+    {
+        using var first = BDTestRun.Start();
+        using var second = BDTestRun.Start();
+        var fixture = new DisposalProbe(first);
+        var firstScenario = await Task.Run(async () =>
+        {
+            fixture.Start("same-id");
+            fixture.Context.FailDisposal = failDisposal;
+            return await fixture.When(() => NoOp()).Then(() => NoOp()).BDTestAsync();
+        });
+        var caller = new Probe(second);
+        caller.Start("same-id");
+        var secondScenario = await caller.When(() => NoOp()).Then(() => NoOp()).BDTestAsync();
+        TestOutputData.TestId = secondScenario.Guid;
+        try
+        {
+            if (failDisposal)
+            {
+                var error = await Assert.ThrowsAsync<InvalidOperationException>(async () => await fixture.EndTestAsync());
+                Assert.That(error!.Message, Is.EqualTo("disposal failure"));
+            }
+            else
+            {
+                await fixture.EndTestAsync();
+            }
+            Assert.That(TestOutputData.Run, Is.SameAs(second));
+            Assert.That(TestOutputData.FrameworkExecutionId, Is.EqualTo("same-id"));
+            Assert.That(TestOutputData.TestId, Is.EqualTo(secondScenario.Guid));
+            Console.WriteLine("caller output");
+            Assert.That(firstScenario.TearDownOutput, Does.Contain("disposal output").And.Not.Contain("caller output"));
+            Assert.That(secondScenario.TearDownOutput, Does.Contain("caller output").And.Not.Contain("disposal output"));
+            Assert.That(first.OutputBuffers, Is.Empty);
+            await fixture.EndTestAsync();
+            Assert.That(firstScenario.TearDownOutput.Split("disposal output"), Has.Length.EqualTo(2));
+        }
+        finally { await caller.EndTestAsync(); }
+    }
+
+    private sealed class DisposalProbe(BDTestRun run) : AbstractContextBDTestBase<DisposalContext>
+    {
+        public override BDTestRun TestRun => run;
+        public void Start(string id) => BeginTest(id);
+    }
+
+    public sealed class DisposalContext : IAsyncDisposable
+    {
+        public bool FailDisposal { get; set; }
+        public async ValueTask DisposeAsync()
+        {
+            await Task.Yield();
+            Console.WriteLine("disposal output");
+            if (FailDisposal) throw new InvalidOperationException("disposal failure");
+        }
+    }
+
     private static void NoOp() { }
 
     [Test]
