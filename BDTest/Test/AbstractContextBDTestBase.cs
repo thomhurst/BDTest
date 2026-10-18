@@ -10,10 +10,10 @@ public abstract class AbstractContextBDTestBase<TContext> : BDTestBase where TCo
     private readonly ConditionalWeakTable<string, ContextEntry> _defaultContexts = new();
     private readonly AsyncLocal<ContextEntry> _configuring = new();
 
-    private sealed class ContextEntry(int attempt)
+    private sealed class ContextEntry
     {
         internal readonly SemaphoreSlim Gate = new(1, 1);
-        internal readonly int Attempt = attempt;
+        internal int Attempt;
         internal BDTestContext<TContext> Context;
         internal bool Owned = true;
         internal bool Initialized;
@@ -77,14 +77,14 @@ public abstract class AbstractContextBDTestBase<TContext> : BDTestBase where TCo
     /// <summary>Configures a newly constructed context before asynchronous initialization.</summary>
     protected virtual void ConfigureContext(BDTestContext<TContext> context) { }
 
-    private ContextEntry GetEntry(string executionId, int attempt = 0)
+    private ContextEntry GetEntry(string executionId)
     {
         lock (_contextLock)
         {
             if (IsDefaultExecutionId(executionId))
-                return _defaultContexts.GetValue(executionId, _ => new ContextEntry(attempt));
+                return _defaultContexts.GetValue(executionId, _ => new ContextEntry());
             if (!_contexts.TryGetValue(executionId, out var entry))
-                _contexts.Add(executionId, entry = new ContextEntry(attempt));
+                _contexts.Add(executionId, entry = new ContextEntry());
             return entry;
         }
     }
@@ -95,11 +95,22 @@ public abstract class AbstractContextBDTestBase<TContext> : BDTestBase where TCo
         try
         {
             if (entry.Retired) throw new InvalidOperationException("This context execution has completed.");
+            return await PrepareContextUnderGateAsync(executionId, entry, initialize).ConfigureAwait(false);
+        }
+        finally { entry.Gate.Release(); }
+    }
+
+    // The execution keeps one gate across disposal, retry replacement and concurrent access.
+    private async ValueTask<BDTestContext<TContext>> PrepareContextUnderGateAsync(string executionId, ContextEntry entry, bool initialize)
+    {
+        try
+        {
             if (entry.Context == null)
             {
                 var context = await CreateContextAsync(new ContextCreation(executionId, entry.Attempt, TestRun.Options.Services)).ConfigureAwait(false);
                 if (context == null) throw new InvalidOperationException("The context factory returned null.");
                 entry.Context = new BDTestContext<TContext>(this, context, executionId);
+                entry.Owned = true;
                 var previous = _configuring.Value;
                 try
                 {
@@ -119,13 +130,10 @@ public abstract class AbstractContextBDTestBase<TContext> : BDTestBase where TCo
         }
         catch (Exception error)
         {
-            ForgetEntry(executionId, entry);
-            entry.Retired = true;
             try { await DisposeContextAsync(entry).ConfigureAwait(false); }
             catch (Exception cleanupError) { throw new AggregateException(error, cleanupError); }
             throw;
         }
-        finally { entry.Gate.Release(); }
     }
 
     /// <summary>Replaces the current context. The caller retains ownership unless explicitly transferred.</summary>
@@ -146,6 +154,8 @@ public abstract class AbstractContextBDTestBase<TContext> : BDTestBase where TCo
     {
         if (testContext == null) throw new ArgumentNullException(nameof(testContext));
         var entry = GetEntry(executionId);
+        if (ReferenceEquals(_configuring.Value, entry))
+            throw new InvalidOperationException("Cannot replace a context from ConfigureContext. Configure the supplied context or override CreateContextAsync instead.");
         await entry.Gate.WaitAsync().ConfigureAwait(false);
         try
         {
@@ -158,12 +168,6 @@ public abstract class AbstractContextBDTestBase<TContext> : BDTestBase where TCo
             }
             entry.Owned = takeOwnership;
             entry.Configured = true;
-        }
-        catch
-        {
-            ForgetEntry(executionId, entry);
-            entry.Retired = true;
-            throw;
         }
         finally { entry.Gate.Release(); }
     }
@@ -183,7 +187,6 @@ public abstract class AbstractContextBDTestBase<TContext> : BDTestBase where TCo
             if (IsDefaultExecutionId(executionId)) _defaultContexts.TryGetValue(executionId, out entry);
             else _contexts.TryGetValue(executionId, out entry);
             if (entry == null) return;
-            ForgetEntry(executionId, entry);
         }
         await entry.Gate.WaitAsync().ConfigureAwait(false);
         try
@@ -191,7 +194,11 @@ public abstract class AbstractContextBDTestBase<TContext> : BDTestBase where TCo
             entry.Retired = true;
             await DisposeContextAsync(entry).ConfigureAwait(false);
         }
-        finally { entry.Gate.Release(); }
+        finally
+        {
+            ForgetEntry(executionId, entry);
+            entry.Gate.Release();
+        }
     }
 
     private void ForgetEntry(string executionId, ContextEntry entry)
@@ -209,6 +216,7 @@ public abstract class AbstractContextBDTestBase<TContext> : BDTestBase where TCo
     {
         var context = entry.Context?.TestContext;
         entry.Configured = false;
+        entry.Initialized = false;
         entry.Context = null;
         if (!entry.Owned) return;
         // Async disposal takes precedence when both interfaces are implemented.
@@ -221,7 +229,15 @@ public abstract class AbstractContextBDTestBase<TContext> : BDTestBase where TCo
     internal override async ValueTask RecreateContextOnRetryAsync(int attempt)
     {
         var executionId = BDTestExecutionId;
-        await RemoveExecutionContextAsync(executionId).ConfigureAwait(false);
-        await PrepareContextAsync(executionId, GetEntry(executionId, attempt), initialize: true).ConfigureAwait(false);
+        var entry = GetEntry(executionId);
+        await entry.Gate.WaitAsync().ConfigureAwait(false);
+        try
+        {
+            if (entry.Retired) throw new InvalidOperationException("This context execution has completed.");
+            await DisposeContextAsync(entry).ConfigureAwait(false);
+            entry.Attempt = attempt;
+            await PrepareContextUnderGateAsync(executionId, entry, initialize: true).ConfigureAwait(false);
+        }
+        finally { entry.Gate.Release(); }
     }
 }

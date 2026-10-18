@@ -285,6 +285,76 @@ public class ContextFactoryLifetimeTests
         await fixture.Finish();
     }
 
+    [TestCase(false)]
+    [TestCase(true)]
+    public async Task ReplacementFromConfigurationFailsWithoutDeadlock(bool asynchronous)
+    {
+        using var run = BDTestRun.Start(new BDTestOptions { ContextFactory = new Factory(_ =>
+            new ValueTask<object>(new ResourceContext(new List<string>(), new Dependency()))) });
+        var fixture = new Fixture(run);
+        fixture.Start();
+        var replacement = new ResourceContext(new List<string>(), new Dependency());
+        fixture.Configure = _ =>
+        {
+            if (asynchronous) fixture.OverwriteContextAsync(replacement).GetAwaiter().GetResult();
+            else fixture.OverwriteContext(replacement);
+        };
+        var preparation = Task.Run(async () => await fixture.InitializeContextAsync());
+        try
+        {
+            var error = await Assert.ThrowsAsync<InvalidOperationException>(async () =>
+                await preparation.WaitAsync(TimeSpan.FromSeconds(5)));
+            Assert.That(error.Message, Does.Contain("ConfigureContext"));
+        }
+        finally
+        {
+            if (preparation.IsCompleted) await fixture.Finish();
+            await replacement.DisposeAsync();
+        }
+    }
+
+    [Test]
+    public async Task ConcurrentInitializationWaitsForRetryDisposalAndUsesRetryAttempt()
+    {
+        var attempts = new List<int>();
+        var contexts = new List<ResourceContext>();
+        var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var started = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var options = new BDTestOptions { ContextFactory = new Factory(creation =>
+        {
+            attempts.Add(creation.Attempt);
+            var context = new ResourceContext(new List<string>(), new Dependency());
+            if (creation.Attempt == 0)
+            {
+                context.DisposalStarted = started;
+                context.ReleaseDisposal = release;
+            }
+            contexts.Add(context);
+            return new ValueTask<object>(context);
+        }) };
+        options.RetryTestRules.Add(e => e is TransientException, 1);
+        using var run = BDTestRun.Start(options);
+        var fixture = new Fixture(run) { FailOnce = true };
+        fixture.Start();
+        var execution = fixture.Run();
+        await started.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        var initialization = fixture.InitializeContextAsync().AsTask();
+        try
+        {
+            Assert.That(initialization.IsCompleted, Is.False);
+            Assert.That(attempts, Is.EqualTo(new[] { 0 }), "No factory may run while the old context is disposing");
+        }
+        finally { release.TrySetResult(); }
+        try
+        {
+            await Task.WhenAll(execution, initialization).WaitAsync(TimeSpan.FromSeconds(5));
+            Assert.That(attempts, Is.EqualTo(new[] { 0, 1 }));
+            Assert.That(contexts[0].Disposals, Is.EqualTo(1));
+            Assert.That(fixture.Context, Is.SameAs(contexts[1]));
+        }
+        finally { await fixture.Finish(); }
+    }
+
     private sealed class Fixture(BDTestRun run) : AbstractContextBDTestBase<ResourceContext>
     {
         public override BDTestRun TestRun => run;
@@ -355,6 +425,8 @@ public class ContextFactoryLifetimeTests
         public int Disposals { get; private set; }
         public Exception InitializationError { get; set; }
         public Exception DisposalError { get; set; }
+        public TaskCompletionSource DisposalStarted { get; set; }
+        public TaskCompletionSource ReleaseDisposal { get; set; }
         public async ValueTask InitializeAsync()
         {
             await Task.Yield();
@@ -365,6 +437,8 @@ public class ContextFactoryLifetimeTests
         public async ValueTask DisposeAsync()
         {
             await Task.Yield();
+            DisposalStarted?.TrySetResult();
+            if (ReleaseDisposal != null) await ReleaseDisposal.Task;
             Disposals++;
             Events.Add("disposed");
             if (DisposalError != null) throw DisposalError;

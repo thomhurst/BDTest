@@ -61,7 +61,7 @@ protected override void ConfigureContext(BDTestContext<AccountContext> context)
 }
 ```
 
-The wrapper exposes `TestContext`, story text, scenario text and the current scenario. The hook may read `Context` or `BDTestContext` without creating another context. During outline construction, `CurrentScenario` is null because the row does not yet exist. If construction or configuration fails, BDTest removes the entry and disposes any owned context that was created. A later access can create a fresh context.
+The wrapper exposes `TestContext`, story text, scenario text and the current scenario. The hook may read `Context` or `BDTestContext` without creating another context. During outline construction, `CurrentScenario` is null because the row does not yet exist. Do not call `OverwriteContext` or `OverwriteContextAsync` from this hook; BDTest rejects replacement with an `InvalidOperationException`. Configure the supplied object, or override `CreateContextAsync` to select another object. If construction or configuration fails, BDTest detaches and disposes any owned context that was created. A later access can create a fresh context.
 
 ## Asynchronous initialization
 
@@ -98,7 +98,7 @@ BDTest disposes each framework-owned context exactly once:
 
 `IAsyncDisposable` takes precedence over `IDisposable` when both are implemented. Normal adapter teardown awaits async disposal. Synchronous compatibility entry points bridge async disposal; custom adapters should await `EndTestAsync()` in teardown. A disposal exception propagates to the runner, but the context is detached and execution bookkeeping is still completed. A failure disposing a retry context stops that retry before another context is created.
 
-`OverwriteContext(context)` and `await OverwriteContextAsync(context)` install a **caller-owned** context. BDTest still initializes it before steps but does not dispose it. Pass `takeOwnership: true` to transfer ownership. Replacement first disposes the previous framework-owned context. The replacement is not installed if that cleanup fails. Reinstalling the same object does not dispose it; ownership follows the flag supplied on the latest call. Configuration hooks run for factory-created contexts, not supplied replacements.
+`OverwriteContext(context)` and `await OverwriteContextAsync(context)` install a **caller-owned** context. BDTest still initializes it before steps but does not dispose it. Pass `takeOwnership: true` to transfer ownership. Replacement first disposes the previous framework-owned context. During retry disposal, concurrent initialization waits for the replacement and uses the retry attempt number. The replacement is not installed if that cleanup fails. Reinstalling the same object does not dispose it; ownership follows the flag supplied on the latest call. Configuration hooks run for factory-created contexts, not supplied replacements.
 
 ## Migration
 
