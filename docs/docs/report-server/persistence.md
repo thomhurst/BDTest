@@ -150,7 +150,35 @@ The built-in repository loads persisted history once through every page, under a
 
 ## Azure and memory implementations
 
-The sample server's [`AzureStorageDataStore.cs`](https://github.com/thomhurst/BDTest/blob/main/BDTest.ReportGenerator.RazorServer/AzureStorageDataStore.cs) implements both interfaces. It streams report blobs directly, honors cancellation and downloads index entries with at most eight concurrent requests. Its sample index scans all summary blobs for each query before sorting and filtering by stored run start time. Large installations should use an indexed service for `IRunIndexStore`. Existing summary JSON remains readable.
+Install `BDTest.Reports.Storage.AzureBlob` alongside `BDTest.Razor.Reports` (both target .NET 10), then register the persistent store:
+
+```csharp title="Illustrative fragment"
+using BDTest.Razor.Reports.Extensions;
+using BDTest.Reports.Storage.AzureBlob;
+
+builder.Services.AddBDTestReports();
+builder.Services.AddAzureBlobReportStore().BindConfiguration("AzureStorage");
+```
+
+Set `AzureStorage:ConnectionString` in user secrets or `AzureStorage__ConnectionString` in the environment. `AzureStorageConfig` also supports `ReportsContainerName` (default `test-data`) and `SummariesContainerName` (default `test-runs-summaries`). Names must be distinct and follow Azure's 3–63 character lowercase container naming rules. Changing names selects different containers without migrating data.
+
+For token authentication, install `Azure.Identity` and supply a credential in code:
+
+```csharp title="Illustrative fragment"
+builder.Services.AddAzureBlobReportStore(options =>
+{
+    options.ServiceUri = new Uri("https://myaccount.blob.core.windows.net");
+    options.Credential = new Azure.Identity.DefaultAzureCredential();
+}).BindConfiguration("AzureStorage");
+```
+
+Omit `ConnectionString` when using `ServiceUri` plus `Credential`. The service URI must use HTTPS without credentials, query or fragment. Credentials cannot be bound from configuration. Grant the identity data permissions for container creation, listing, reading, writing and deletion, such as Storage Blob Data Contributor.
+
+Registration validates options on startup and exposes one `AzureStorageDataStore` singleton through both modern interfaces, the legacy interface and `IBDTestAttachmentStore`. Its hosted service awaits container creation and index cache warm-up before serving requests; storage failures fail startup. Manual construction requires awaiting `InitializeAsync` before use.
+
+The packaged [`AzureStorageDataStore.cs`](https://github.com/thomhurst/BDTest/blob/main/BDTest.Reports.Storage.AzureBlob/AzureStorageDataStore.cs) streams report blobs directly, honors cancellation and downloads index entries with at most eight concurrent requests. Its index scans all summary blobs for each query before sorting and filtering by stored run start time. Large installations should use an indexed service for `IRunIndexStore`. Existing summary JSON remains readable through source-generated serializers. Report writes and index updates are separate operations, not a transaction.
+
+Hosts that copied the sample implementation can remove their copies, import `BDTest.Reports.Storage.AzureBlob`, and use `AddAzureBlobReportStore`. Default container names and `AzureStorage:ConnectionString` remain unchanged. Retention still requires an Azure lifecycle policy; the package does not install one. Adjust the sample policy's prefixes when using custom container names.
 
 `MemoryCacheBdTestDataStore` also implements both interfaces, with bounded report storage and an in-memory index. Byte writes preserve original JSON. The repository can still cache parsed models for ordinary report pages. Without persistent storage, eviction, expiry and restart lose report details.
 

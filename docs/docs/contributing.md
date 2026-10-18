@@ -54,6 +54,7 @@ Use `Development` locally. `Production` can publish packages to NuGet.
 | `BDTest` | Core library (`netstandard2.0;net8.0`, strong-named). |
 | `BDTest.NUnit`, `BDTest.xUnit`, `BDTest.MSTest`, `BDTest.TUnit` | Framework adapters. |
 | `BDTest.Razor.Reports` | Report server controllers and views. |
+| `BDTest.Reports.Storage.AzureBlob` | Packaged Azure report, run-index and attachment store. |
 | `BDTest.ReportGenerator.RazorServer` | Sample report host (not packed). |
 | `BDTest.SourceGenerator` | Optional compile-time step metadata. |
 | `BDTest.Example` | Sample NUnit tests. |

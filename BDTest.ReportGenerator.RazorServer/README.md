@@ -59,30 +59,23 @@ Set `AzureStorage:ConnectionString` using user secrets or the
 `AzureStorage__ConnectionString` environment variable. Missing, blank, or malformed
 values fail startup with an options validation error naming that setting.
 
-The sample host awaits storage initialization and one cache warm-up before serving
-requests. It creates the Blob containers asynchronously, then loads report summaries.
-Storage failures are logged and fail startup, so check storage connectivity and
-permissions before restarting. Initialization receives the host cancellation token;
-the existing report-listing interface has no cancellation token, so an in-flight
-cache load is awaited until the store completes or fails.
+The sample uses the `BDTest.Reports.Storage.AzureBlob` package through
+`AddAzureBlobReportStore().BindConfiguration("AzureStorage")`. The package awaits
+container creation and index cache warm-up before serving requests. Storage
+failures are logged and fail startup; cancellation reaches initialization and
+modern index queries. The constructor performs no network requests.
 
-The Blob store constructor only creates client/container references. When using
-this sample store outside this host, await `InitializeAsync` before issuing reads
-or writes. Hosts using only the reporting library load summaries on demand;
-constructing the repository no longer starts background storage work.
+See the [package README](../BDTest.Reports.Storage.AzureBlob/README.md) for token
+credentials, custom container names, standalone registration, and migration from
+a copied sample implementation. Manual construction requires awaiting
+`InitializeAsync` before reading or writing.
 
 ## Azure report listing and retention
 
-The Azure store returns up to 50 summaries, newest blob creation time first (last
-modified time is the fallback when creation time is absent). Names break timestamp
-ties in ordinal order. This is upload order, not the test run's start time. Existing
-GUID blob names remain readable; no rename or migration is required.
-
-Listing scans all metadata pages but keeps only 50 candidates between pages. It
-then downloads those summaries with at most eight concurrent requests per listing,
-returning them in the selected order. A summary deleted between listing and download
-is omitted. Other storage errors still fail the request. Listing cost grows with
-the number of stored blobs, so configure retention for long-running installations.
+The modern index scans summary blobs and pages results by stored run start time,
+with at most eight concurrent downloads. The host loads all pages during warm-up.
+The legacy `GetAllTestRunRecords` API still returns up to 50 summaries in blob
+creation order. Existing report and summary JSON remain readable.
 
 Reads and server initialization no longer delete reports or hide them by age.
 Configure retention separately on the storage account before upgrading if you

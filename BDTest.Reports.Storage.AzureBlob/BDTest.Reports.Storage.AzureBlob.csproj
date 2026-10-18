@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <IsPackable>true</IsPackable>
+    <TargetFramework>net10.0</TargetFramework>
+    <PackageId>BDTest.Reports.Storage.AzureBlob</PackageId>
+    <Title>BDTest - Azure Blob Report Storage</Title>
+    <Description>Persistent Azure Blob storage for BDTest reports, run indexes and attachments.</Description>
+    <PackageTags>test bdd reporting storage azure blob aspnetcore</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+  </PropertyGroup>
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <PackageReference Include="Azure.Storage.Blobs" Version="12.30.1" />
+    <ProjectReference Include="..\BDTest.Razor.Reports\BDTest.Razor.Reports.csproj" />
+    <None Include="README.md" Pack="true" PackagePath="" />
+  </ItemGroup>
+</Project>

@@ -1,4 +1,4 @@
-namespace BDTest.ReportGenerator.RazorServer;
+namespace BDTest.Reports.Storage.AzureBlob;
 
 public interface IAsyncDataStoreInitializer
 {
