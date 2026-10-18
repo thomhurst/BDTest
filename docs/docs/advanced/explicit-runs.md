@@ -101,3 +101,16 @@ Register `BDTest.Interfaces.IScenarioHook` instances on `ScenarioHooks`. Hooks r
 ## The default run
 
 `BDTestSettings` configures the shared default run used by the framework adapters and the overloads without a run parameter.
+
+## Execution clock (.NET 8+)
+
+The modern core build accepts a thread-safe `TimeProvider` on run options:
+
+```csharp
+var options = new BDTestOptions { TimeProvider = TimeProvider.System };
+using var run = BDTestRun.Start(options);
+```
+
+The provider supplies UTC execution timestamps, monotonic elapsed durations, and step/scenario timeout timers. Pass a fake provider to test timing without real delays. Advance it after the timed step has started and its timer is registered. Application delays still use their own clocks unless you explicitly pass the same provider to them.
+
+BDTest copies the provider reference when the run starts. Keep it alive until the run and any timed-out work finish. Changing `options.TimeProvider` later does not affect an existing run. Null is rejected. The shared default run uses `TimeProvider.System`. The .NET Standard asset retains system UTC timestamps and monotonic `Stopwatch` timing; it does not expose the provider option.

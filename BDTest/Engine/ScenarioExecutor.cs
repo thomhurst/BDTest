@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using BDTest.Attributes;
 using BDTest.Exceptions;
 using BDTest.Helpers;
@@ -49,14 +48,15 @@ internal class ScenarioExecutor : IScenarioExecutor
 
     private async Task ExecuteAttemptAsync(Scenario scenario)
     {
-        var stopwatch = Stopwatch.StartNew();
+        var clock = scenario.Run.Options.Clock;
+        var timer = clock.StartTimer();
         Exception attemptException = null;
         Action reportTerminalFailure = null;
         var scopeFailed = false;
         var preparingRetry = scenario.ShouldRetry;
         try
         {
-            scenario.StartTime = DateTime.UtcNow;
+            scenario.StartTime = clock.UtcNow;
             if (preparingRetry)
             {
                 await _scenarioRetryManager.CheckIfAlreadyExecuted(scenario);
@@ -108,7 +108,7 @@ internal class ScenarioExecutor : IScenarioExecutor
                     return;
                 }
 
-                var stepBudget = scenario.Timeout.HasValue ? Stopwatch.StartNew() : null;
+                var stepBudget = scenario.Timeout.HasValue ? clock.StartTimer() : (ExecutionTimer?)null;
                 foreach (var step in scenario.Steps)
                 {
                     await step.Execute(scenario.BdTestBaseClass, scenario.Timeout, scenario.Timeout - stepBudget?.Elapsed, scenario);
@@ -199,15 +199,15 @@ internal class ScenarioExecutor : IScenarioExecutor
                 TestOutputData.ClearCurrentTaskData();
             }
 
-            var endTime = DateTime.UtcNow;
-            stopwatch.Stop();
+            var endTime = clock.UtcNow;
+            var elapsed = timer.Elapsed;
             scenario.Attempts.Add(new ScenarioAttempt(scenario.Attempts.Count + 1, scenario.Status,
-                attemptException, scenario.StartTime, endTime, stopwatch.Elapsed));
+                attemptException, scenario.StartTime, endTime, elapsed));
 
             if (!scenario.ShouldRetry)
             {
                 scenario.EndTime = endTime;
-                scenario.TimeTaken = stopwatch.Elapsed;
+                scenario.TimeTaken = elapsed;
             }
         }
     }

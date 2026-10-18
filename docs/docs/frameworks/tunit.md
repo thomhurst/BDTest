@@ -11,7 +11,7 @@ TUnit is the recommended framework for BDTest, and the one used in the examples 
 dotnet add package BDTest.TUnit
 ```
 
-`BDTest.TUnit` targets `netstandard2.0` and depends on `TUnit.Core`. Reference the `TUnit` package in the test project.
+`BDTest.TUnit` targets `netstandard2.0;net8.0` and depends on `TUnit.Core`. Reference the `TUnit` package in the test project.
 
 ## Writing tests
 

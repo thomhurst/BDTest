@@ -63,16 +63,24 @@ Think of BDTest as a pure code-based alternative to SpecFlow.
 - If you use the report server, you can just send the relevant party a URL directly to your test report!
 
 ## Where can I use it?
-The core `BDTest` package targets `netstandard2.0`. Adapter and report-server
+The core `BDTest` package targets `netstandard2.0;net8.0`. Adapter and report-server
 requirements differ:
 
 | Package | Target framework | Test framework dependency |
 | --- | --- | --- |
+| `BDTest` | `netstandard2.0;net8.0` | None |
 | `BDTest.NUnit` | `net8.0` | NUnit 5 |
-| `BDTest.xUnit` | `netstandard2.0` | xUnit v3 |
-| `BDTest.MSTest` | `netstandard2.0` | MSTest 4 |
-| `BDTest.TUnit` | `netstandard2.0` | TUnit |
+| `BDTest.xUnit` | `netstandard2.0;net8.0` | xUnit v3 |
+| `BDTest.MSTest` | `netstandard2.0;net8.0` | MSTest 4 |
+| `BDTest.TUnit` | `netstandard2.0;net8.0` | TUnit |
 | `BDTest.Razor.Reports` | `net10.0` | ASP.NET Core report hosting |
+| `BDTest.SourceGenerator` | `netstandard2.0` analyzer | Roslyn 4.8+ |
+| `BDTest.Analyzers` | `netstandard2.0` analyzer | Roslyn 4.8+ |
+
+.NET 8+ consumers select the modern runtime assets automatically. Older consumers
+keep the .NET Standard assets. Compiler extensions retain their compiler-host target
+and analyzer packaging. See the [target migration guide](https://thomhurst.github.io/BDTest/docs/migration/target-frameworks)
+for clock configuration, compiler polyfills, and package validation.
 
 Choose a test target supported by both the adapter and its test framework. A
 `netstandard2.0` adapter target alone does not guarantee that its test framework
@@ -81,7 +89,7 @@ the repository's test projects use .NET 10.
 
 ## Delegate steps in the next major version
 
-Step builders now accept `Action`, `Func<Task>`, `Func<ValueTask>`, and cancellation-aware async delegates, including `ValueTask<T>` results. Statement bodies, `await`, null-conditionals, and patterns are supported. Consumers need C# 13 or newer (.NET SDK 9 or newer); the core still targets `netstandard2.0`.
+Step builders now accept `Action`, `Func<Task>`, `Func<ValueTask>`, and cancellation-aware async delegates, including `ValueTask<T>` results. Statement bodies, `await`, null-conditionals, and patterns are supported. Consumers need C# 13 or newer (.NET SDK 9 or newer); the core targets `netstandard2.0;net8.0`.
 
 Install the optional `BDTest.SourceGenerator` package in each project containing steps to preserve method names, `[StepText]`, skip attributes, and supported automatic argument capture. Use `.WithArgs(...)` for captured locals and unsupported argument expressions, or `.WithStepText(...)` for a custom sentence. See the [migration guide](https://thomhurst.github.io/BDTest/docs/migration/delegate-steps) and [compiler metadata reference](https://thomhurst.github.io/BDTest/docs/advanced/source-generator).
 
@@ -89,7 +97,7 @@ Install the optional `BDTest.SourceGenerator` package in each project containing
 
 `BDTest.xUnit` now requires xUnit v3. This is a breaking change in the next major
 BDTest release; existing xUnit v2 projects must migrate before upgrading.
-The adapter remains signed and targets `netstandard2.0`.
+The adapter remains signed and targets `netstandard2.0;net8.0`.
 
 Replace the `xunit` 2.x package with `xunit.v3.mtp-off` (currently `4.0.2`) to keep
 using VSTest, and set `<OutputType>Exe</OutputType>` in the test project. Keep

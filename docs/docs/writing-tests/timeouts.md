@@ -54,3 +54,7 @@ Pass the token to every cancellable operation. Avoid retries when unfinished wor
 - If after-step hooks use up the scenario budget, the active step fails once those hooks finish, including on the final step.
 - [Scenario hooks](scenario-hooks.md) do not consume the step budget. Their attempt token is cancelled when a step times out, before scenario cleanup runs. Cleanup is awaited without a timeout.
 - Retry hooks, before-scenario hooks and initial report formatting run before the scenario budget starts.
+
+## Runtime implementation
+
+The .NET 8 asset uses `Task.WaitAsync` with the run's [execution clock](../advanced/explicit-runs.md#execution-clock-net-8). The .NET Standard asset retains the cancellable delay implementation. Both preserve the timeout, cancellation, retry, and late-completion behavior described above.

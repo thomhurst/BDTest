@@ -70,31 +70,56 @@ foreach ($packageFile in $packages) {
             throw "Missing repository metadata: $packageId"
         }
 
-        # Shipping projects use literal versions and share the release version for project references.
+        # Evaluate references per asset: conditional references and project targets can differ.
         $project = $projects | Where-Object BaseName -EQ $packageId
         $projectXml = [xml] (Get-Content $project.FullName -Raw)
-        $expectedDependencies = @{}
-        foreach ($reference in $projectXml.SelectNodes('//PackageReference[not(@PrivateAssets="all")]')) {
-            $expectedDependencies[$reference.Include] = $reference.Version
+        $isAnalyzer = $projectXml.SelectSingleNode('//IsRoslynComponent')?.InnerText -eq 'true'
+        $allDependencies = @($manifest.SelectNodes('//*[local-name()="dependencies"]//*[local-name()="dependency"]'))
+        if ($isAnalyzer) {
+            if ($allDependencies.Count -ne 0) { throw "Unexpected package dependencies: $packageId" }
         }
-        foreach ($reference in $projectXml.SelectNodes('//ProjectReference')) {
-            $expectedDependencies[[System.IO.Path]::GetFileNameWithoutExtension($reference.Include.Replace('\', '/'))] = [string] $metadata.version
-        }
-        $dependencies = @($manifest.SelectNodes('//*[local-name()="dependencies"]//*[local-name()="dependency"]'))
-        foreach ($expected in $expectedDependencies.GetEnumerator()) {
-            $dependency = @($dependencies | Where-Object id -EQ $expected.Key)
-            if ($dependency.Count -ne 1 -or $dependency[0].version -ne $expected.Value) {
-                throw "Package dependency mismatch for $($expected.Key): expected $($expected.Value) in $packageId"
+        else {
+            $targets = @($projectXml.SelectNodes('//TargetFramework | //TargetFrameworks') |
+                ForEach-Object { $_.InnerText.Split(';', [System.StringSplitOptions]::RemoveEmptyEntries) })
+            $groups = @($manifest.SelectNodes('//*[local-name()="dependencies"]/*[local-name()="group"]'))
+            if ($groups.Count -ne $targets.Count -or
+                @($manifest.SelectNodes('//*[local-name()="dependencies"]/*[local-name()="dependency"]')).Count -ne 0) {
+                throw "Unexpected package dependencies: $packageId (expected one group per target)"
             }
-        }
-        if ($dependencies.Count -ne $expectedDependencies.Count) {
-            throw "Unexpected package dependencies: $packageId"
+            foreach ($target in $targets) {
+                # NuGet uses the long form for .NET Standard dependency group names.
+                $groupName = if ($target.StartsWith('netstandard')) { $target.Replace('netstandard', '.NETStandard') } else { $target }
+                $group = @($groups | Where-Object targetFramework -EQ $groupName)
+                if ($group.Count -ne 1) { throw "Missing or duplicate dependency group for ${target}: $packageId" }
+                $evaluation = & dotnet msbuild $project.FullName -nologo -p:Configuration=Release "-p:TargetFramework=$target" -getItem:PackageReference,ProjectReference
+                if ($LASTEXITCODE -ne 0) { throw "Cannot evaluate references for $packageId ($target): $evaluation" }
+                $items = ($evaluation | Out-String | ConvertFrom-Json).Items
+                $expectedDependencies = @{}
+                foreach ($reference in $items.PackageReference) {
+                    if ($reference.PrivateAssets -ne 'all' -and $reference.IsImplicitlyDefined -ne 'true') {
+                        $expectedDependencies[$reference.Identity] = $reference.Version
+                    }
+                }
+                foreach ($reference in $items.ProjectReference) {
+                    $expectedDependencies[[System.IO.Path]::GetFileNameWithoutExtension($reference.Identity.Replace('\', '/'))] = [string] $metadata.version
+                }
+                $dependencies = @($group[0].SelectNodes('*[local-name()="dependency"]'))
+                foreach ($expected in $expectedDependencies.GetEnumerator()) {
+                    $dependency = @($dependencies | Where-Object id -EQ $expected.Key)
+                    if ($dependency.Count -ne 1 -or $dependency[0].version -ne $expected.Value) {
+                        throw "Package dependency mismatch for $($expected.Key): expected $($expected.Value) in $packageId ($target)"
+                    }
+                }
+                if ($dependencies.Count -ne $expectedDependencies.Count) {
+                    throw "Unexpected package dependencies: $packageId ($target)"
+                }
+            }
         }
         if (@($package.Entries | Where-Object { $_.FullName -match '^build/.*\.dll$' }).Count -ne 0) {
             throw "Redundant build-folder assembly: $packageId"
         }
 
-        if ($projectXml.SelectSingleNode('//IsRoslynComponent')?.InnerText -eq 'true') {
+        if ($isAnalyzer) {
             $analyzerPath = "analyzers/dotnet/cs/$packageId.dll"
             $analyzers = @($package.Entries | Where-Object { $_.FullName.EndsWith('.dll') })
             if ($analyzers.Count -ne 1 -or $analyzers[0].FullName -ne $analyzerPath) {

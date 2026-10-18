@@ -98,6 +98,7 @@ const sidebars = {
       type: 'category',
       label: 'Migration',
       items: [
+        'migration/target-frameworks',
         'migration/delegate-steps',
         'migration/async-only',
         'migration/statuses',

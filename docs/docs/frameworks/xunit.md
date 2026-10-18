@@ -9,7 +9,7 @@ description: Use BDTest with xUnit v3 through XUnitBDTestBase<TContext>.
 dotnet add package BDTest.xUnit
 ```
 
-`BDTest.xUnit` targets `netstandard2.0` and requires **xUnit v3**. Existing xUnit v2 projects must migrate before upgrading; see [Migrating from xUnit v2](#migrating-from-xunit-v2).
+`BDTest.xUnit` targets `netstandard2.0;net8.0` and requires **xUnit v3**. Existing xUnit v2 projects must migrate before upgrading; see [Migrating from xUnit v2](#migrating-from-xunit-v2).
 
 To run with VSTest (`dotnet test`), reference `xunit.v3.mtp-off`, `Microsoft.NET.Test.Sdk` and `xunit.runner.visualstudio` 4.x, and set `<OutputType>Exe</OutputType>`:
 

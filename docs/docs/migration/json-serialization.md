@@ -5,7 +5,7 @@ description: BDTest moved from Newtonsoft.Json to source-generated System.Text.J
 
 # JSON serialization changes
 
-`BDTest` and `BDTest.Razor.Reports` use source-generated `System.Text.Json` and no longer depend on Newtonsoft.Json. The core package still targets `netstandard2.0` and references the `System.Text.Json` package.
+`BDTest` and `BDTest.Razor.Reports` use source-generated `System.Text.Json` and no longer depend on Newtonsoft.Json. The core package targets `netstandard2.0;net8.0` and references the `System.Text.Json` package on both targets to preserve the same source-generated report format and APIs.
 
 ## Reading and writing reports
 

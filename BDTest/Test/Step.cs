@@ -1,8 +1,8 @@
-using System.Diagnostics;
 using System.Runtime.ExceptionServices;
 using System.Text.RegularExpressions;
 using System.Threading;
 using BDTest.Attributes;
+using BDTest.Engine;
 using BDTest.Helpers;
 using BDTest.Output;
 using BDTest.Settings;
@@ -238,10 +238,10 @@ public class Step
         var afterHooks = Options.AfterStep;
         Exception executionException = null;
         var beforeHooksCompleted = false;
-        var stopwatch = Stopwatch.StartNew();
+        var timer = Options.Clock.StartTimer();
         try
         {
-            StartTime = DateTime.UtcNow;
+            StartTime = Options.Clock.UtcNow;
             Status = Status.Pending;
 
             if (beforeHooks != null)
@@ -269,7 +269,7 @@ public class Step
             // Render once per attempt, after hooks and skip checks, immediately before invocation.
             SetStepText(evaluateArguments: true);
 
-            var remaining = remainingScenarioTime - stopwatch.Elapsed;
+            var remaining = remainingScenarioTime - timer.Elapsed;
             var scenarioLimit = remaining.HasValue && (!Timeout.HasValue || remaining.Value <= Timeout.Value);
             var limit = scenarioLimit ? remaining : Timeout;
             if (limit.HasValue)
@@ -285,7 +285,7 @@ public class Step
         catch (Exception e)
         {
             // Preserve failures raised within budget even if after hooks later exceed it.
-            if (!beforeHooksCompleted && remainingScenarioTime.HasValue && stopwatch.Elapsed >= remainingScenarioTime.Value)
+            if (!beforeHooksCompleted && remainingScenarioTime.HasValue && timer.Elapsed >= remainingScenarioTime.Value)
             {
                 e = CreateTimeoutException("Scenario", scenarioTimeout.Value);
             }
@@ -299,15 +299,15 @@ public class Step
         }
         finally
         {
-            EndTime = DateTime.UtcNow;
-            TimeTaken = stopwatch.Elapsed;
+            EndTime = Options.Clock.UtcNow;
+            TimeTaken = timer.Elapsed;
             Output = TestOutputData.Instance.ToString().Trim();
             try
             {
                 var hookException = await RunAfterHooks(test, afterHooks);
                 // Hooks are not interrupted, but their elapsed time still consumes
                 // the scenario budget, including the final step's after hooks.
-                if (executionException == null && remainingScenarioTime.HasValue && stopwatch.Elapsed >= remainingScenarioTime.Value)
+                if (executionException == null && remainingScenarioTime.HasValue && timer.Elapsed >= remainingScenarioTime.Value)
                 {
                     var timeout = CreateTimeoutException("Scenario", scenarioTimeout.Value);
                     SetExceptionResult(timeout);
@@ -321,7 +321,6 @@ public class Step
             }
             finally
             {
-                stopwatch.Stop();
                 // Include hook output without charging after-hook work to the step duration.
                 Output = TestOutputData.Instance.ToString().Trim();
                 TestOutputData.ClearCurrentTaskData();
@@ -378,31 +377,68 @@ public class Step
 
         var runnable = Runnable;
         var cancellation = new CancellationTokenSource();
+#if !NET8_0_OR_GREATER
         using var delayCancellation = new CancellationTokenSource();
+#endif
         // A scheduling boundary also bounds synchronous steps and the synchronous
         // portion of an async method. Never let late completion mutate step results.
         var token = cancellation.Token;
         var execution = Task.Run(() => runnable.Run(token));
         try
         {
+#if NET8_0_OR_GREATER
+            // Carry user exceptions as values so a user's TimeoutException cannot
+            // be mistaken for the timeout raised by WaitAsync.
+            Exception failure;
+            try
+            {
+                failure = await CaptureFailure(execution).WaitAsync(remaining, Options.Clock.Provider).ConfigureAwait(false);
+            }
+            catch (TimeoutException)
+            {
+                TimedOut = true;
+                _ = CancelAndObserve(execution, cancellation);
+                cancellation = null;
+                throw CreateTimeoutException(scope, configuredTimeout);
+            }
+            if (failure != null) ExceptionDispatchInfo.Capture(failure).Throw();
+            return;
+#else
             var delay = Task.Delay(remaining, delayCancellation.Token);
             if (await Task.WhenAny(execution, delay).ConfigureAwait(false) == execution)
             {
                 await execution.ConfigureAwait(false);
                 return;
             }
-
             TimedOut = true;
             _ = CancelAndObserve(execution, cancellation);
             cancellation = null;
             throw CreateTimeoutException(scope, configuredTimeout);
+#endif
         }
         finally
         {
+#if !NET8_0_OR_GREATER
             delayCancellation.Cancel();
+#endif
             cancellation?.Dispose();
         }
     }
+
+#if NET8_0_OR_GREATER
+    private static async Task<Exception> CaptureFailure(Task execution)
+    {
+        try
+        {
+            await execution.ConfigureAwait(false);
+            return null;
+        }
+        catch (Exception exception)
+        {
+            return exception;
+        }
+    }
+#endif
 
     private TimeoutException CreateTimeoutException(string scope, TimeSpan configuredTimeout)
     {

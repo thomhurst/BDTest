@@ -21,18 +21,20 @@ public sealed class BDTestRun : IDisposable
     internal Dictionary<string, StringBuilder> OutputBuffers { get; } = new();
     internal IScenarioExecutor ScenarioExecutor { get; } = new ScenarioExecutor(new ScenarioRetryManager());
     internal RunOptions Options { get; }
-    internal DateTime StartedAt { get; } = DateTime.UtcNow;
+    internal DateTime StartedAt { get; }
     internal AttachmentFiles AttachmentFiles { get; }
 
     private BDTestRun()
     {
         Options = RunOptions.Legacy;
+        StartedAt = Options.Clock.UtcNow;
         AttachmentFiles = new AttachmentFiles(new AttachmentOptions());
     }
 
     private BDTestRun(BDTestOptions options)
     {
         Options = new RunOptions(options);
+        StartedAt = Options.Clock.UtcNow;
         AttachmentFiles = new AttachmentFiles(options.Attachments);
     }
 

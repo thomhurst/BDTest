@@ -102,14 +102,30 @@ public class PackageArtifactVerificationTests
         await AssertRejected("Missing or duplicate package icon");
     }
 
-    [Test]
-    public async Task Rejects_a_stale_dependency_version()
+    [TestCase("net8.0")]
+    [TestCase(".NETStandard2.0")]
+    public async Task Rejects_a_stale_dependency_version(string target)
     {
-        UpdateManifest(metadata => metadata.Descendants("dependency")
-            .Single(dependency => (string?)dependency.Attribute("id") == "System.Text.Json")
+        UpdateManifest(metadata => metadata.Descendants("group").Single(group => (string?)group.Attribute("targetFramework") == target)
+            .Elements("dependency").Single(dependency => (string?)dependency.Attribute("id") == "System.Text.Json")
             .SetAttributeValue("version", "9.0.0"));
 
         await AssertRejected("Package dependency mismatch for System.Text.Json");
+    }
+
+    [Test]
+    public async Task Rejects_legacy_only_dependencies_in_modern_group()
+    {
+        UpdateManifest(metadata => metadata.Descendants("group").Single(group => (string?)group.Attribute("targetFramework") == "net8.0")
+            .Add(new XElement("dependency", new XAttribute("id", "Microsoft.Bcl.AsyncInterfaces"), new XAttribute("version", "10.0.13"))));
+        await AssertRejected("Unexpected package dependencies", "net8.0");
+    }
+
+    [Test]
+    public async Task Rejects_a_missing_modern_dependency_group()
+    {
+        UpdateManifest(metadata => metadata.Descendants("group").Single(group => (string?)group.Attribute("targetFramework") == "net8.0").Remove());
+        await AssertRejected("expected one group per target");
     }
 
     [TestCase("Microsoft.NET.Test.Sdk", "18.11.0")]
@@ -182,13 +198,19 @@ public class PackageArtifactVerificationTests
         using var archive = ZipFile.Open(PackagePath(id, extension), ZipArchiveMode.Create);
         var projectPath = Path.Combine(Path.GetDirectoryName(Path.GetDirectoryName(_scriptPath))!, id, $"{id}.csproj");
         var project = XDocument.Load(projectPath);
-        var dependencies = project.Descendants("PackageReference")
-            .Where(reference => (string?)reference.Attribute("PrivateAssets") != "all").Select(reference =>
-            new XElement("dependency", new XAttribute("id", reference.Attribute("Include")!.Value),
-                new XAttribute("version", reference.Attribute("Version")!.Value)))
-            .Concat(project.Descendants("ProjectReference").Select(reference =>
-                new XElement("dependency", new XAttribute("id", Path.GetFileNameWithoutExtension(reference.Attribute("Include")!.Value.Replace('\\', '/'))),
-                    new XAttribute("version", version))));
+        var targets = project.Descendants().Where(element => element.Name.LocalName is "TargetFramework" or "TargetFrameworks")
+            .SelectMany(element => element.Value.Split(';'));
+        var dependencies = targets.Select(target => new XElement("group",
+            new XAttribute("targetFramework", target.Replace("netstandard", ".NETStandard")),
+            project.Descendants("PackageReference")
+                .Where(reference => (string?)reference.Attribute("PrivateAssets") != "all"
+                    && (reference.Attribute("Condition") is not { } condition || condition.Value == $"'$(TargetFramework)' == '{target}'"))
+                .Select(reference => new XElement("dependency",
+                    new XAttribute("id", reference.Attribute("Include")!.Value),
+                    new XAttribute("version", reference.Attribute("Version")!.Value)))
+                .Concat(project.Descendants("ProjectReference").Select(reference =>
+                    new XElement("dependency", new XAttribute("id", Path.GetFileNameWithoutExtension(reference.Attribute("Include")!.Value.Replace('\\', '/'))),
+                        new XAttribute("version", version))))));
         var manifest = new XDocument(new XElement("package", new XElement("metadata",
             new XElement("id", id), new XElement("version", version), new XElement("title", id),
             new XElement("authors", "Tom Longhurst"), new XElement("description", "Package verification fixture"),

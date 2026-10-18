@@ -25,6 +25,9 @@
   <GenerateDocumentationFile>true</GenerateDocumentationFile>
   <!-- Existing APIs are only partially documented; still ship the available documentation. -->
   <NoWarn>$(NoWarn);CS1591</NoWarn>
+  <!-- Validate runtime API compatibility across package assets during every pipeline pack.
+       Compiler extensions have analyzer assets rather than runtime reference assemblies. -->
+  <EnablePackageValidation Condition="'$(MSBuildProjectName)' != 'BDTest.SourceGenerator' And '$(MSBuildProjectName)' != 'BDTest.Analyzers'">true</EnablePackageValidation>
   <IncludeSymbols>true</IncludeSymbols>
   <SymbolPackageFormat>snupkg</SymbolPackageFormat>
  </PropertyGroup>

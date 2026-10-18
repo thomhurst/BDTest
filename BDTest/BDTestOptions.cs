@@ -20,6 +20,12 @@ public sealed class BDTestOptions
     /// <summary>Caller-owned services available to context factories. BDTest does not dispose the provider.</summary>
     public IServiceProvider Services { get; set; }
 
+#if NET8_0_OR_GREATER
+    /// <summary>Clock for execution timestamps, elapsed durations and timeout timers. Defaults to the system clock.</summary>
+    /// <remarks>Copied by reference at Start. The provider must be thread-safe and must outlive the run.</remarks>
+    public TimeProvider TimeProvider { get; set; } = TimeProvider.System;
+#endif
+
     public IList<Type> SuccessExceptionTypes { get; } = new List<Type>();
     public IList<Type> SkipExceptionTypes { get; } = new List<Type>();
     public IList<Type> InconclusiveExceptionTypes { get; } = new List<Type>();
