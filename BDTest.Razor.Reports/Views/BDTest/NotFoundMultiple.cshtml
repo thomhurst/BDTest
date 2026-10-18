@@ -1,8 +1,17 @@
+@using BDTest.Razor.Reports.Helpers
 @{
-    ViewBag.Title = "Reports Not Found";
+    ViewBag.Title = "Runs not found";
     Layout = "_Layout";
 }
 
-<div id="wow-such-empty" class="d-grid justify-content-center">
-    <h1 class="display-6 fw-bold">Those reports couldn't be found!</h1>
-</div>
+<main class="wrap page">
+    <section class="card empty">
+        <span class="mark">@ReportUi.Icon("i-clock", "xl")</span>
+        <h1 class="h2" style="font-size: 18px">None of these runs are stored</h1>
+        <p>The runs you chose aren’t on this server any more. Old runs are removed after a while, so saved comparison links stop working.</p>
+        <div class="cluster">
+            <a class="btn pri" href="~/bdtest/report/history">History</a>
+            <a class="btn" href="~/bdtest/report/test-runs">All runs</a>
+        </div>
+    </section>
+</main>

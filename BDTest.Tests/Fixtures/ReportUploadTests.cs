@@ -325,7 +325,7 @@ public class ReportUploadTests
         using var response = await server.Client.GetAsync("bdtest/report/missing/summary");
 
         Assert.That(response.Content.Headers.ContentType?.MediaType, Is.EqualTo("text/html"));
-        Assert.That(await response.Content.ReadAsStringAsync(), Does.Contain("doesn't seem to exist!"));
+        Assert.That(await response.Content.ReadAsStringAsync(), Does.Contain("This run is no longer stored"));
     }
 
     [TestCase(null)]

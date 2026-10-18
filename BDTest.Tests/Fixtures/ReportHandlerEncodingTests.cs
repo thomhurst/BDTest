@@ -75,7 +75,7 @@ public class ReportHandlerEncodingTests
         record.FinishedAtDateTime = record.StartedAtDateTime.AddSeconds(1);
 
         var html = await RenderAsync("/Views/BDTest/TestRunList.cshtml", new[] { record }, isAdmin: true);
-        var form = ReadElement(html, "<form[^>]*>.*?</form>");
+        var form = ReadElement(html, "<form[^>]*/report/delete/[^>]*>.*?</form>");
         Assert.That((string)form.Attribute("action"),
             Is.EqualTo("/bdtest/report/delete/" + Uri.EscapeDataString(record.RecordId ?? "")));
         Assert.That((string)form.Attribute("method"), Is.EqualTo("post"));
@@ -114,16 +114,16 @@ public class ReportHandlerEncodingTests
     ];
 
     [Test]
-    public async Task Sidebar_copy_url_is_data_and_never_executable_handler_source(
+    public async Task Copy_link_url_is_data_and_never_executable_handler_source(
         [ValueSource(nameof(UrlQueries))] string query)
     {
-        var html = await RenderAsync<object>("/Views/Shared/_SideMenu.cshtml", null, query: query);
-        var link = ReadElement(html, "<a[^>]*>Copy URL to Clipboard</a>");
-        Assert.That((string)link.Attribute("data-bdtest-action"), Is.EqualTo("copy-url"));
-        Assert.That((string)link.Attribute("data-url"),
+        var html = await RenderAsync<object>("/Views/Shared/_CopyLinkButton.cshtml", null, query: query);
+        var button = ReadElement(html, "<button[^>]*>.*?Copy link</button>");
+        Assert.That((string)button.Attribute("data-bdtest-action"), Is.EqualTo("copy-url"));
+        Assert.That((string)button.Attribute("data-url"),
             Is.EqualTo("/bdtest/report/O'Brien/test-runs" + query));
-        Assert.That(link.Attributes().Select(x => x.Name.LocalName),
-            Is.EquivalentTo(new[] { "href", "data-url", "data-bdtest-action", "class" }));
+        Assert.That(button.Attributes().Select(x => x.Name.LocalName),
+            Is.EquivalentTo(new[] { "type", "class", "data-bdtest-action", "data-url" }));
     }
 
     [Test]
@@ -165,7 +165,7 @@ public class ReportHandlerEncodingTests
         return XElement.Parse(match.Value, LoadOptions.PreserveWhitespace);
     }
 
-    internal static async Task<string> RenderAsync<T>(string path, T model, bool isAdmin = false, string query = "", string pathBase = "", string host = "reports.example.test", string requestPath = "/bdtest/report/O'Brien/test-runs", IBDTestCustomHeaderLinksProvider customHeaderLinksProvider = null)
+    internal static async Task<string> RenderAsync<T>(string path, T model, bool isAdmin = false, string query = "", string pathBase = "", string host = "reports.example.test", string requestPath = "/bdtest/report/O'Brien/test-runs", IBDTestCustomHeaderLinksProvider customHeaderLinksProvider = null, Action<ViewDataDictionary> configureViewData = null)
     {
         var builder = WebApplication.CreateBuilder();
         builder.Services.AddControllersWithViews().AddBdTestReportControllersAndViews();
@@ -184,8 +184,9 @@ public class ReportHandlerEncodingTests
         var view = services.GetRequiredService<ICompositeViewEngine>().GetView(null, path, isMainPage: false);
         Assert.That(view.Success, Is.True, $"Razor view not found: {path}");
         using var writer = new StringWriter();
-        var viewContext = new ViewContext(actionContext, view.View,
-            new ViewDataDictionary<T>(new EmptyModelMetadataProvider(), new ModelStateDictionary()) { Model = model },
+        var viewData = new ViewDataDictionary<T>(new EmptyModelMetadataProvider(), new ModelStateDictionary()) { Model = model };
+        configureViewData?.Invoke(viewData);
+        var viewContext = new ViewContext(actionContext, view.View, viewData,
             new TempDataDictionary(httpContext, services.GetRequiredService<ITempDataProvider>()),
             writer, new HtmlHelperOptions());
         await view.View.RenderAsync(viewContext);

@@ -6,7 +6,7 @@ using BDTest.Razor.Reports.Models;
 using BDTest.Razor.Reports.Models.ViewModels;
 using BDTest.Maps;
 using BDTest.Output;
-using BDTest.Razor.Reports.Views.BDTest;
+using BDTest.Test;
 using Microsoft.AspNetCore.Http;
 using NUnit.Framework;
 
@@ -46,25 +46,12 @@ public class ReportUrlTests
         var html = await ReportHandlerEncodingTests.RenderAsync("/Views/Shared/_PaginationButtons.cshtml",
             new PaginationInformation { CurrentPage = 2, StartPage = 1, EndPage = 3, TotalPages = 3 },
             query: "?filter=Passed&page=2", pathBase: pathBase, host: "attacker.example:8080");
-        var links = Regex.Matches(html, "href=\"([^\"]+)\"").Select(m => HttpUtility.HtmlDecode(m.Groups[1].Value)).ToArray();
+        var links = Regex.Matches(html, @"<a\b[^>]*href=""([^""]+)""").Select(m => HttpUtility.HtmlDecode(m.Groups[1].Value)).ToArray();
         Assert.That(links, Is.Not.Empty);
         var prefix = new PathString(pathBase).ToUriComponent();
         Assert.That(links, Has.All.StartsWith(prefix + "/bdtest/"));
         Assert.That(links, Has.All.Contains("filter=Passed"));
         Assert.That(links, Has.Some.EndsWith("page=all"));
-        Assert.That(html, Does.Not.Contain("attacker.example"));
-    }
-
-    [Test]
-    public async Task Redirect_serializes_a_local_url_and_keeps_query_values_unchanged()
-    {
-        var html = await ReportHandlerEncodingTests.RenderAsync("/Views/Shared/_RedirectViaJavascript.cshtml",
-            new RedirectViaJavascriptViewModel("/test-runs", "/summary"),
-            query: "?filter=/test-runs&value=');alert(1);//", pathBase: "/reports", host: "attacker.example");
-        var match = Regex.Match(html, @"window.location.href = (.*);");
-        Assert.That(match.Success, Is.True);
-        Assert.That(JsonSerializer.Deserialize<string>(match.Groups[1].Value),
-            Is.EqualTo("/reports/bdtest/report/O'Brien/summary?filter=/test-runs&value=');alert(1);//"));
         Assert.That(html, Does.Not.Contain("attacker.example"));
     }
 
@@ -81,37 +68,32 @@ public class ReportUrlTests
     }
 
     [Test]
-    public async Task Summary_buttons_use_local_urls_and_preserve_filters()
+    public async Task Summary_status_chips_use_local_urls_with_an_escaped_report_id()
     {
-        var html = await ReportHandlerEncodingTests.RenderAsync("/Views/Shared/_SummaryGraphics.cshtml",
-            new SummaryViewModel { Scenarios = [], TotalReportData = new BDTestOutputModel { TestTimer = new TestTimer() } },
-            query: "?tag=O%27Brien", pathBase: "/reports", host: "attacker.example",
-            requestPath: "/bdtest/report/run/summary");
-        var urls = Regex.Matches(html, "data-url=\"([^\"]+)\"")
-            .Select(m => HttpUtility.HtmlDecode(m.Groups[1].Value)).ToArray();
-        Assert.That(urls, Has.Length.EqualTo(11));
-        Assert.That(html, Does.Not.Contain("onclick="));
-        Assert.That(urls, Has.All.StartsWith("/reports/bdtest/report/run/all-scenarios?"));
-        Assert.That(urls, Has.All.Contains("tag=O%27Brien"));
-        Assert.That(urls, Has.Some.Contains("filterByStatus=Passed"));
-        Assert.That(urls, Has.Some.Contains("filterByStatus=NotRun"));
-        Assert.That(urls, Has.Some.Contains("filterByStatus=Pending"));
-        Assert.That(html, Does.Not.Contain("attacker.example"));
-    }
-
-    [Test]
-    public async Task Pie_chart_uses_a_local_url_with_an_escaped_report_id()
-    {
-        var html = await ReportHandlerEncodingTests.RenderAsync("/Views/Shared/_TestTimesPieChart.cshtml",
-            new TestTimesPieChartViewModel { Scenarios = [], ReportId = "O'Brien" },
-            pathBase: "/reports", host: "attacker.example");
-        var matches = Regex.Matches(html, @"window.location.href = (.*) \+ clickedOnScenarioId");
-        Assert.That(matches, Has.Count.EqualTo(2));
-        foreach (Match match in matches)
+        var report = new BDTestOutputModel
         {
-            Assert.That(JsonSerializer.Deserialize<string>(match.Groups[1].Value),
-                Is.EqualTo("/reports/bdtest/report/O%27Brien/scenario/"));
-        }
+            Id = "O'Brien",
+            TestTimer = new TestTimer(),
+            Scenarios = ReportJson.DeserializeObject<List<Scenario>>("""
+                [
+                  { "Guid": "one", "Status": "Passed", "Steps": [], "CustomTestInformation": [] },
+                  { "Guid": "two", "Status": "Failed", "Steps": [], "CustomTestInformation": [] },
+                  { "Guid": "three", "Status": "Pending", "Steps": [], "CustomTestInformation": [] }
+                ]
+                """)
+        };
+        var html = await ReportHandlerEncodingTests.RenderAsync("/Views/BDTest/Summary.cshtml", report,
+            pathBase: "/reports", host: "attacker.example", requestPath: "/bdtest/report/O'Brien/summary",
+            configureViewData: viewData => viewData[nameof(ReportLayoutViewModel)] = new ReportLayoutViewModel { Report = report });
+        var urls = Regex.Matches(html, "<a class=\"chip\" href=\"([^\"]+)\"")
+            .Select(m => HttpUtility.HtmlDecode(m.Groups[1].Value)).ToArray();
+        Assert.That(urls, Is.EquivalentTo(new[]
+        {
+            "/reports/bdtest/report/O%27Brien/all-scenarios?filterByStatus=Failed",
+            "/reports/bdtest/report/O%27Brien/all-scenarios?filterByStatus=Pending",
+            "/reports/bdtest/report/O%27Brien/all-scenarios?filterByStatus=Passed"
+        }));
+        Assert.That(html, Does.Not.Contain("onclick="));
         Assert.That(html, Does.Not.Contain("attacker.example"));
     }
 }

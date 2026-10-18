@@ -465,3 +465,12 @@ details.expander > summary.row { border-top: 0; }
     .ex { padding-left: 16px; }
     .ex-body { padding-left: 16px; padding-right: 16px; }
 }
+/* Runs and run pages */
+details.trace > summary { padding: 0 20px 18px; display: block; }
+details.trace[open] > summary { display: none; }
+.t td .menu { display: inline-block; }
+/* Fixed positioning at the static position lets row menus escape the scrolling table. */
+.t td .menu-list { text-align: left; position: fixed; top: auto; right: auto; margin-top: 6px; transform: translateX(calc(-100% + 32px)); }
+.empty .code { text-align: left; }
+.t th.num { text-align: right; }
+.table-scroll { position: relative; }

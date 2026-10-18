@@ -1,82 +1,71 @@
 @using BDTest.Razor.Reports.Constants
-@using BDTest.Razor.Reports.Extensions
 @using BDTest.Razor.Reports.Helpers
 @model BDTest.Razor.Reports.Models.PaginationInformation
 
-@if (Model.TotalPages <= 1)
+@if (Model.TotalPages <= 1 && Model.TotalItems == 0)
 {
     return;
 }
 
-<nav role="navigation" aria-label="pagination">
-    <ul class="pagination justify-content-center">
+@{
+    var showingAll = string.Equals(Context.GetCurrentPageNumber(), PagerQueryParameters.All, StringComparison.OrdinalIgnoreCase);
+    var hasPrevious = !showingAll && Model.CurrentPage > Model.StartPage;
+    var hasNext = !showingAll && Model.CurrentPage < Model.EndPage;
+}
 
-        @if (Model.CurrentPage != Model.StartPage)
-        {
-            <li class="page-item"><a class="page-link" href="@Context.GetUrlForPageNumber(Model.CurrentPage - 1)">Previous</a></li>
-        }
-        
-        @if (Model.TotalPages <= 6)
-        {
-            for (var i = 1; i <= Model.TotalPages; i++)
+<nav class="pager" aria-label="Pagination">
+    @if (Model.TotalItems > 0)
+    {
+        <span>@($"{Model.StartIndex + 1}–{Model.EndIndex + 1} of {Model.TotalItems} {Model.ItemName}")</span>
+    }
+    <span class="grow"></span>
+    @if (Model.PageSizeOptions.Length > 0)
+    {
+        <form method="get" action="@Context.Request.PathBase.Add(Context.Request.Path).ToUriComponent()" data-autosubmit>
+            @foreach (var parameter in Context.Request.Query)
             {
-                @await Html.PartialAsync("_PageButton", (i, Model.CurrentPage))
+                if (string.Equals(parameter.Key, PagerQueryParameters.Page, StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(parameter.Key, "perPage", StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+                foreach (var value in parameter.Value)
+                {
+                    <input type="hidden" name="@parameter.Key" value="@value" />
+                }
             }
-        }
-        else if(Model.CurrentPage > 2 && Model.CurrentPage < Model.EndPage - 2)
+            <label class="inline-field">Per page
+                <select class="inp" name="perPage" style="min-height: 32px">
+                    @foreach (var size in Model.PageSizeOptions)
+                    {
+                        <option value="@size" selected="@(size == Model.PageSize)">@size</option>
+                    }
+                </select>
+            </label>
+            <noscript><button class="btn sm" type="submit">Apply</button></noscript>
+        </form>
+    }
+    @if (Model.TotalPages > 1)
+    {
+        @if (hasPrevious)
         {
-            @await Html.PartialAsync("_PageButton", (1, Model.CurrentPage))
-
-            <li class="page-item">
-                <span class="page-link">&hellip;</span>
-            </li>
-              
-            @await Html.PartialAsync("_PageButton", (Model.CurrentPage-1, Model.CurrentPage))
-              
-            @await Html.PartialAsync("_PageButton", (Model.CurrentPage, Model.CurrentPage))
-            
-            @await Html.PartialAsync("_PageButton", (Model.CurrentPage+1, Model.CurrentPage))
-            
-            <li class="page-item">
-                <span class="page-link">&hellip;</span>
-            </li>
-
-            @await Html.PartialAsync("_PageButton", (Model.EndPage, Model.CurrentPage))
+            <a class="btn sm" href="@Context.GetUrlForPageNumber(Model.CurrentPage - 1)">@ReportUi.Icon("i-chev-l")@Model.PreviousText</a>
         }
-        else if (Model.CurrentPage <= 2)
+        else
         {
-            @await Html.PartialAsync("_PageButton", (1, Model.CurrentPage))
-            
-            @await Html.PartialAsync("_PageButton", (2, Model.CurrentPage))
-            
-            @await Html.PartialAsync("_PageButton", (3, Model.CurrentPage))
-            
-            <li class="page-item">
-                <span class="page-link">&hellip;</span>
-            </li>
-
-            @await Html.PartialAsync("_PageButton", (Model.EndPage, Model.CurrentPage))
+            <span class="btn sm" aria-disabled="true">@ReportUi.Icon("i-chev-l")@Model.PreviousText</span>
         }
-        else if (Model.CurrentPage >= Model.EndPage - 2)
+        @if (hasNext)
         {
-            @await Html.PartialAsync("_PageButton", (1, Model.CurrentPage))
-            
-            <li class="page-item">
-                <span class="page-link">&hellip;</span>
-            </li>
-
-            @await Html.PartialAsync("_PageButton", (Model.EndPage-2, Model.CurrentPage))
-
-            @await Html.PartialAsync("_PageButton", (Model.EndPage - 1, Model.CurrentPage))
-
-            @await Html.PartialAsync("_PageButton", (Model.EndPage, Model.CurrentPage))
+            <a class="btn sm" href="@Context.GetUrlForPageNumber(Model.CurrentPage + 1)">@Model.NextText@(ReportUi.Icon("i-chev-r"))</a>
         }
-
-        @if (Model.CurrentPage != Model.EndPage)
+        else
         {
-            <li class="page-item"><a class="page-link" href="@Context.GetUrlForPageNumber(Model.CurrentPage + 1)">Next</a></li>
+            <span class="btn sm" aria-disabled="true">@Model.NextText@(ReportUi.Icon("i-chev-r"))</span>
         }
-        
-        <li class="page-item"><a class="page-link" href="@Context.GetLocalUrlWithQueryParameter(PagerQueryParameters.Page, PagerQueryParameters.All)">Show All</a></li>
-    </ul>
+        @if (!showingAll)
+        {
+            <a class="btn ghost sm link" href="@Context.GetLocalUrlWithQueryParameter(PagerQueryParameters.Page, PagerQueryParameters.All)">Show all</a>
+        }
+    }
 </nav>

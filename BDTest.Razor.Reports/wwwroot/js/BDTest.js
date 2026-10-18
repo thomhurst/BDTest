@@ -145,6 +145,11 @@ onDomLoaded(function () {
         }
     });
 
+    // Row menus are fixed in place, so close them rather than leave them behind when the page scrolls.
+    window.addEventListener('scroll', function () {
+        closeMenus(null);
+    }, { passive: true });
+
     // Filter forms apply as soon as a select changes; text inputs apply on Enter.
     document.addEventListener('change', function (event) {
         const form = event.target.closest('form[data-autosubmit]');

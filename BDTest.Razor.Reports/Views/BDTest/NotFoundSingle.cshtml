@@ -1,10 +1,54 @@
+@using BDTest.Razor.Reports.Helpers
+@using BDTest.Razor.Reports.Interfaces
+@using BDTest.Razor.Reports.Models.ViewModels
 @model string
-
+@inject IDataRepository DataRepository
 @{
-    ViewBag.Title = $"Report '{Model}' Not Found";
+    var run = ViewData[nameof(ReportLayoutViewModel)] as ReportLayoutViewModel;
+    var scenarioMissing = run?.Report != null;
+    ViewBag.Title = scenarioMissing ? "Scenario not found" : "Run not found";
     Layout = "_Layout";
+
+    var reportUrl = Url.Content("~/bdtest/report/" + Uri.EscapeDataString(Model ?? string.Empty));
+    var latest = scenarioMissing
+        ? null
+        : (await DataRepository.GetAllTestRunRecords() ?? Enumerable.Empty<BDTest.Razor.Reports.Models.TestRunSummary>())
+            .Where(record => record != null && !string.IsNullOrEmpty(record.RecordId))
+            .OrderByDescending(record => record.StartedAtDateTime)
+            .FirstOrDefault();
 }
 
-<div id="wow-such-empty" class="d-grid justify-content-center">
-    <h1 class="display-6 fw-bold">The report '@Model' doesn't seem to exist!</h1>
-</div>
+<main class="wrap page">
+    @if (scenarioMissing)
+    {
+        <section class="card empty">
+            <span class="mark">@ReportUi.Icon("i-doc", "xl")</span>
+            <h1 class="h2" style="font-size: 18px">Scenario not found in this run</h1>
+            <p>
+                @{
+                    var started = run.Timer.TestsStartedAt.ToRunDate();
+                }
+                @(string.IsNullOrEmpty(started) ? "The run is here" : $"The run from {started} is here"), but it has no scenario with this ID. It may have been renamed.
+            </p>
+            <div class="cluster">
+                <a class="btn pri" href="@reportUrl/all-scenarios">Search this run</a>
+                <a class="btn" href="@reportUrl/summary">Run overview</a>
+            </div>
+        </section>
+    }
+    else
+    {
+        <section class="card empty">
+            <span class="mark">@ReportUi.Icon("i-clock", "xl")</span>
+            <h1 class="h2" style="font-size: 18px">This run is no longer stored</h1>
+            <p>Run <span class="mono">@Model</span> isn’t on this server. Old runs are removed after a while, so links in older tickets stop working.</p>
+            <div class="cluster">
+                @if (latest != null)
+                {
+                    <a class="btn pri" href="@Url.Content("~/bdtest/report/" + Uri.EscapeDataString(latest.RecordId) + "/summary")">@($"Latest {(string.IsNullOrEmpty(latest.Tag) ? "" : latest.Tag + " ")}run")</a>
+                }
+                <a class="btn @(latest == null ? "pri" : "")" href="~/bdtest/report/test-runs">All runs</a>
+            </div>
+        </section>
+    }
+</main>
