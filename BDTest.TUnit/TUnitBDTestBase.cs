@@ -1,4 +1,3 @@
-using BDTest.Output;
 using BDTest.Settings;
 using BDTest.Test;
 using TUnit.Core;
@@ -31,7 +30,9 @@ public abstract class TUnitBDTestBase<TContext> : AbstractContextBDTestBase<TCon
     [Before(HookType.Test)]
     public void Setup()
     {
-        TestOutputData.FrameworkExecutionId = BDTestExecutionId;
+        MarkTestAsStarted();
+        // TUnit isolates hook execution contexts unless their AsyncLocal values are exported.
+        TUnitTestContext.Current!.AddAsyncLocalValues();
     }
 
     [After(HookType.Test)]
