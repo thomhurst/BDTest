@@ -56,7 +56,10 @@
     <files>
         <file src="..\nuget_icon.png" target="" />
         <file src="bin\Release\**\BDTest.dll" target="build" />
+        <file src="bin\Release\**\BDTest.xml" target="build" />
         <file src="bin\Release\**\BDTest.dll" target="lib" />
+        <file src="bin\Release\**\BDTest.xml" target="lib" />
+        <file src="bin\Release\**\BDTest.pdb" target="lib" />
     </files>
 
 </package>

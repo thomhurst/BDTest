@@ -2,5 +2,19 @@
  <PropertyGroup>
   <LangVersion>latest</LangVersion>
   <ImplicitUsings>true</ImplicitUsings>
+  <ContinuousIntegrationBuild Condition="'$(GITHUB_ACTIONS)' == 'true'">true</ContinuousIntegrationBuild>
+ </PropertyGroup>
+ <!-- Match the library projects selected by PackProjectsModule. -->
+ <PropertyGroup Condition="!$([System.Text.RegularExpressions.Regex]::IsMatch('$(MSBuildProjectName)', '(?i)Tests|Pipeline|Example|ReportGenerator'))">
+  <!-- Source Link is supplied by the .NET SDK (8 and later). -->
+  <PublishRepositoryUrl>true</PublishRepositoryUrl>
+  <EmbedUntrackedSources>true</EmbedUntrackedSources>
+  <Deterministic>true</Deterministic>
+  <DebugType>portable</DebugType>
+  <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  <!-- Existing APIs are only partially documented; still ship the available documentation. -->
+  <NoWarn>$(NoWarn);CS1591</NoWarn>
+  <IncludeSymbols>true</IncludeSymbols>
+  <SymbolPackageFormat>snupkg</SymbolPackageFormat>
  </PropertyGroup>
 </Project>

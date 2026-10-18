@@ -79,7 +79,9 @@ public class UploadPackagesToNugetModule : Module<CommandResult[]>
             {
                 Path = file,
                 Source = "https://api.nuget.org/v3/index.json",
-                ApiKey = _options.Value.ApiKey!
+                // NuGet pushes the adjacent .snupkg after the primary package.
+                ApiKey = _options.Value.ApiKey!,
+                SymbolApiKey = _options.Value.ApiKey!
             }, cancellationToken: cancellationToken), cancellationToken: cancellationToken).ProcessOneAtATime();
     }
 }
