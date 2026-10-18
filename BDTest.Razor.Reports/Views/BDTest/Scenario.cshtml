@@ -35,6 +35,7 @@
 
 <div class="container-fluid">
     @await Html.PartialAsync("_ScenarioTags", Model.Tags)
+    @await Html.PartialAsync("_ScenarioExamples", Model)
     <div class="box" id="all-scenarios-container">
         @await Html.PartialAsync("_RetryHistory", Model)
 

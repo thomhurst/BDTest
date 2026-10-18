@@ -27,6 +27,17 @@ public abstract class BDTestBase
 
     protected virtual string BDTestExecutionId => StaticBDTestExecutionId;
 
+    /// <summary>Runs one scenario definition for each example and reports the rows as one outline.</summary>
+    /// <remarks>Examples expose named public properties (for example, anonymous objects).
+    /// Each row receives a fresh Context. Fixture setup and teardown run once for the whole outline.</remarks>
+    public ScenarioOutlineBuilder<TExample> ScenarioOutline<TExample>(string scenarioText,
+        IEnumerable<TExample> examples, Func<TExample, RunnableStepBuilder> scenario,
+        [CallerMemberName] string callerMember = null, [CallerFilePath] string callerFile = null)
+    {
+        return new ScenarioOutlineBuilder<TExample>(scenarioText, examples, scenario, this,
+            BDTestExecutionId, callerMember, callerFile);
+    }
+
     internal static bool IsDefaultExecutionId(string executionId) =>
         ReferenceEquals(AsyncLocalBDTestExecutionId.Value, executionId);
 

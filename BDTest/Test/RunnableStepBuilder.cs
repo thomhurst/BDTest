@@ -29,7 +29,8 @@ public abstract class RunnableStepBuilder : StepBuilder
         return this;
     }
 
-    internal Task<Scenario> Invoke(BuildableTest testDetails, bool runOnThreadPool = false)
+    internal Task<Scenario> Invoke(BuildableTest testDetails, bool runOnThreadPool = false,
+        Scenario outline = null, Dictionary<string, string> exampleValues = null)
     {
         if (Interlocked.Exchange(ref _executionStarted, 1) != 0)
         {
@@ -43,7 +44,11 @@ public abstract class RunnableStepBuilder : StepBuilder
         // Keep reusable builder definitions separate from report steps, whose
         // runtime references are released after the final execution attempt.
         var steps = ExistingSteps.Select(step => new Step(step, testDetails.Guid)).ToList();
-        var scenario = new Scenario(steps, testDetails);
+        var scenario = new Scenario(steps, testDetails, outline, exampleValues);
+        foreach (var step in steps)
+        {
+            step.ExampleValues = exampleValues;
+        }
         // Only the blocking entry point needs a scheduling boundary. Keep IDs in
         // the caller's flow so output written after BDTest() still reaches teardown.
         return runOnThreadPool ? Task.Run(() => ExecuteAsync(scenario)) : ExecuteAsync(scenario);

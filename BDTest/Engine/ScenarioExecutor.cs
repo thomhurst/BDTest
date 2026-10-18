@@ -32,7 +32,7 @@ internal class ScenarioExecutor : IScenarioExecutor
 
             // Notify after finalizing the scenario, outside retry/exception classification.
             // For example, MSTest uses an inconclusive exception to signal a runtime skip.
-            if (scenario.Status == Status.Skipped)
+            if (scenario.Status == Status.Skipped && scenario.OutlineId == null)
             {
                 scenario.BdTestBaseClass?.NotifyScenarioSkipped("BDTest scenario was skipped.");
             }
@@ -63,7 +63,11 @@ internal class ScenarioExecutor : IScenarioExecutor
             if (ShouldSkip(scenario))
             {
                 scenario.Status = Status.Skipped;
-                scenario.Steps.ForEach(step => step.Status = Status.Skipped);
+                scenario.Steps.ForEach(step =>
+                {
+                    if (scenario.OutlineId != null) step.SetStepText();
+                    step.Status = Status.Skipped;
+                });
                 return;
             }
 
