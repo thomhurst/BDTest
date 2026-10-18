@@ -7,15 +7,19 @@ namespace BDTest.Helpers;
 /// <summary>Shared, HTML-encoded exception trees for hosted and standalone reports.</summary>
 public static class ExceptionHtmlHelper
 {
-    public static string GetHtml(ExceptionWrapper exception)
+    public static string GetHtml(ExceptionWrapper exception) => GetHtml(exception,
+        (html, text) => html.Append($"<pre>{Encode(text)}</pre>"));
+
+    internal static string GetHtml(ExceptionWrapper exception, Action<StringBuilder, string> appendOriginalText)
     {
         if (exception == null) return string.Empty;
         var html = new StringBuilder();
-        AppendException(html, exception, 0);
+        AppendException(html, exception, 0, appendOriginalText);
         return html.ToString();
     }
 
-    private static void AppendException(StringBuilder html, ExceptionWrapper exception, int depth)
+    private static void AppendException(StringBuilder html, ExceptionWrapper exception, int depth,
+        Action<StringBuilder, string> appendOriginalText)
     {
         html.Append(depth == 0 ? "<details class=\"exception-tree\" open>" : "<details class=\"exception-tree\">");
         html.Append($"<summary><strong>{Encode(exception.TypeName)}</strong>: {Encode(exception.Message)}");
@@ -39,11 +43,15 @@ public static class ExceptionHtmlHelper
             else
             {
                 foreach (var child in exception.InnerExceptions)
-                    if (child != null) AppendException(html, child, depth + 1);
+                    if (child != null) AppendException(html, child, depth + 1, appendOriginalText);
             }
         }
         if (!string.IsNullOrEmpty(exception.AsString))
-            html.Append($"<details><summary>Original exception text</summary><pre>{Encode(exception.AsString)}</pre></details>");
+        {
+            html.Append("<details><summary>Original exception text</summary>");
+            appendOriginalText(html, exception.AsString);
+            html.Append("</details>");
+        }
         html.Append("</div></details>");
     }
 

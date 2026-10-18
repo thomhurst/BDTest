@@ -58,7 +58,7 @@ public class ExceptionWrapper
         StackTrace = exception.StackTrace;
         Source = exception.Source;
         HResult = exception.HResult;
-        Data = CaptureData(exception.Data);
+        Data = CaptureData(exception);
         var children = GetChildren(exception);
         IsWrapper = exception is TargetInvocationException || exception is AggregateException && children.Count == 1;
 
@@ -119,16 +119,22 @@ public class ExceptionWrapper
         return causes;
     }
 
-    private static IReadOnlyDictionary<string, string> CaptureData(IDictionary data)
+    private static IReadOnlyDictionary<string, string> CaptureData(Exception exception)
     {
         var result = new Dictionary<string, string>();
-        foreach (DictionaryEntry entry in data)
+        try
         {
-            var key = DisplayValue(entry.Key);
-            var uniqueKey = key;
-            for (var suffix = 2; result.ContainsKey(uniqueKey); suffix++) uniqueKey = key + " (" + suffix + ")";
-            result.Add(uniqueKey, DisplayValue(entry.Value));
+            var data = exception.Data;
+            if (data == null) return result;
+            foreach (DictionaryEntry entry in data)
+            {
+                var key = DisplayValue(entry.Key);
+                var uniqueKey = key;
+                for (var suffix = 2; result.ContainsKey(uniqueKey); suffix++) uniqueKey = key + " (" + suffix + ")";
+                result.Add(uniqueKey, DisplayValue(entry.Value));
+            }
         }
+        catch { /* Optional diagnostics must not replace the original failure. Keep any entries already captured. */ }
         return result;
     }
 

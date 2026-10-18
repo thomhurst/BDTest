@@ -252,6 +252,9 @@ public class HtmlReportTests : BDTestBase
         Assert.That(html, Does.Contain("<span class=\"err-type\">System.InvalidOperationException</span>"));
         Assert.That(html, Does.Contain("<span class=\"err-type\">System.ArgumentException</span>"));
         Assert.That(html, Does.Contain("<details class=\"exception-tree\" open>"));
+        var originalText = Regex.Match(html, "<summary>Original exception text</summary>(.*?)</details>", RegexOptions.Singleline).Groups[1].Value;
+        Assert.That(originalText, Does.Contain("data-wrap aria-pressed=\"false\">Wrap</button>"));
+        Assert.That(originalText, Does.Contain("data-copy>Copy</button>"));
         Assert.That(html, Does.Contain("&lt;first cause&gt;").And.Contain("&lt;second cause&gt;"));
         Assert.That(html, Does.Not.Contain("<first cause>").And.Not.Contain("<second cause>"));
     }

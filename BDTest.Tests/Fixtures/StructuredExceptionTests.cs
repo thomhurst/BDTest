@@ -1,7 +1,9 @@
+using System.Collections;
 using System.Reflection;
 using BDTest.Helpers;
 using BDTest.Maps;
 using BDTest.Razor.Reports.Models;
+using BDTest.Settings;
 using BDTest.Test;
 using NUnit.Framework;
 
@@ -92,6 +94,59 @@ public class StructuredExceptionTests
         Assert.That(wrapper.Data.Values, Is.EquivalentTo(new[] { "first", "second", "[Value could not be formatted]" }));
     }
 
+    [TestCase("getter")]
+    [TestCase("null")]
+    [TestCase("enumerator")]
+    [TestCase("move")]
+    [TestCase("entry")]
+    public void Unreadable_data_does_not_replace_the_original_failure(string failure)
+    {
+        var exception = new UnreadableDataException(failure);
+
+        var wrapper = new ExceptionWrapper(exception);
+
+        Assert.That(wrapper.TypeName, Is.EqualTo(exception.GetType().FullName));
+        Assert.That(wrapper.Message, Is.EqualTo("original failure"));
+        Assert.That(wrapper.InnerExceptions.Single().Message, Is.EqualTo("original cause"));
+        Assert.That(wrapper.Data, Is.Empty);
+        Assert.That(wrapper.AsString, Does.Contain("original failure"));
+        Assert.DoesNotThrow(() => ReportJson.SerializeObject(wrapper));
+    }
+
+    [TestCase("getter")]
+    [TestCase("null")]
+    [TestCase("enumerator")]
+    [TestCase("move")]
+    [TestCase("entry")]
+    public async Task Unreadable_data_preserves_step_failure_and_retry_behavior(string failure)
+    {
+        var options = new BDTestOptions();
+        options.RetryTestRules.Add(exception => exception is UnreadableDataException, 1);
+        using var run = BDTestRun.Start(options);
+        var host = BDTestScenario.For<object>(new object(), run);
+        host.BeginTest("unreadable-data-" + failure);
+        var exception = new UnreadableDataException(failure);
+        var executions = 0;
+        try
+        {
+            var thrown = await Assert.ThrowsAsync<UnreadableDataException>(async () =>
+                await host.When(() => Fail()).Then(() => { }).BDTestAsync());
+
+            Assert.That(thrown, Is.SameAs(exception));
+            Assert.That(executions, Is.EqualTo(2));
+            var scenario = run.Scenarios.Single();
+            Assert.That(scenario.Status, Is.EqualTo(Status.Failed));
+            Assert.That(scenario.RetryCount, Is.EqualTo(1));
+            Assert.That(scenario.Attempts.Select(attempt => attempt.Exception.TypeName),
+                Is.All.EqualTo(exception.GetType().FullName));
+            Assert.That(scenario.Steps.Single(step => step.Status == Status.Failed).Exception.Message,
+                Is.EqualTo("original failure"));
+        }
+        finally { host.EndTest(); }
+
+        void Fail() { executions++; throw exception; }
+    }
+
     [Test]
     public void Html_uses_structured_nodes_and_encodes_every_diagnostic_field()
     {
@@ -172,4 +227,31 @@ public class StructuredExceptionTests
     private static class First { public class Failure(string message) : Exception(message); }
     private static class Second { public class Failure(string message) : Exception(message); }
     private sealed class BadValue { public override string ToString() => throw new InvalidOperationException("formatter failure"); }
+
+    private sealed class UnreadableDataException(string failure) : Exception("original failure", new Exception("original cause"))
+    {
+        public override IDictionary Data => failure switch
+        {
+            "getter" => throw new InvalidOperationException("data getter failed"),
+            "null" => null,
+            _ => new UnreadableDictionary(failure)
+        };
+    }
+
+    private sealed class UnreadableDictionary(string failure) : Hashtable
+    {
+        public override IDictionaryEnumerator GetEnumerator() => failure == "enumerator"
+            ? throw new InvalidOperationException("enumerator failed")
+            : new UnreadableEnumerator(failure);
+    }
+
+    private sealed class UnreadableEnumerator(string failure) : IDictionaryEnumerator
+    {
+        public bool MoveNext() => failure == "move" ? throw new InvalidOperationException("move failed") : true;
+        public DictionaryEntry Entry => throw new InvalidOperationException("entry failed");
+        public object Current => Entry;
+        public object Key => Entry.Key;
+        public object Value => Entry.Value;
+        public void Reset() => throw new NotSupportedException();
+    }
 }

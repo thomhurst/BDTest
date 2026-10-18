@@ -478,7 +478,7 @@ public static class BDTestHtmlHelper
                     continue;
                 }
                 html.AppendLine($"<details class=\"attempt-d\"><summary class=\"attempt\" data-final=\"{(final ? "true" : "false")}\">{label}</summary>");
-                html.AppendLine(ExceptionHtmlHelper.GetHtml(attempt.Exception));
+                AppendError(html, attempt.Exception);
                 html.AppendLine("</details>");
             }
             html.AppendLine("</div></div>");
@@ -567,7 +567,8 @@ public static class BDTestHtmlHelper
     private static void AppendError(StringBuilder html, ExceptionWrapper exception)
     {
         html.AppendLine("<div class=\"err\">");
-        html.AppendLine(ExceptionHtmlHelper.GetHtml(exception));
+        html.AppendLine(ExceptionHtmlHelper.GetHtml(exception,
+            (builder, text) => AppendCode(builder, "Original exception text", text, true)));
         html.AppendLine("</div>");
     }
 

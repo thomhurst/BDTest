@@ -213,7 +213,7 @@ public class ReportSidebarTests
 
         var defects = await _client.GetStringAsync("/bdtest/report/run-632/top-defects");
         using var response = await _client.PostAsync("/bdtest/report/test-run-flakiness", new FormUrlEncodedContent(
-            new[] { new KeyValuePair<string, string>("reportIds", "run-632"), new KeyValuePair<string, string>("reportIds", "passing") }));
+            new[] { new KeyValuePair<string, string>("reportIds", "run-632,passing") }));
         response.EnsureSuccessStatusCode();
         var flakiness = await response.Content.ReadAsStringAsync();
 

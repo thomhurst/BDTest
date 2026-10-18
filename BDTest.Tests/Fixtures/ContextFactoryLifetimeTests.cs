@@ -204,7 +204,8 @@ public class ContextFactoryLifetimeTests
             Assert.That(await Assert.ThrowsAsync<InvalidOperationException>(async () => await fixture.Run()), Is.SameAs(expected));
             Assert.That(run.Scenarios.Single().Status, Is.EqualTo(Status.Failed));
             Assert.That(run.Scenarios.Single().Exception?.Message, Is.EqualTo(failure));
-            Assert.That(run.Scenarios.Single().ExecutionException?.TypeName, Is.EqualTo(nameof(InvalidOperationException)));
+            Assert.That(run.Scenarios.Single().ExecutionException?.TypeName, Is.EqualTo(typeof(InvalidOperationException).FullName));
+            Assert.That(run.Scenarios.Single().ExecutionException?.ShortTypeName, Is.EqualTo(nameof(InvalidOperationException)));
             Assert.That(events, Does.Not.Contain("step"));
             if (contexts.Count > 0) Assert.That(contexts[0].Disposals, Is.EqualTo(1));
             await fixture.InitializeContextAsync();

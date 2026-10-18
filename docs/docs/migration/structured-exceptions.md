@@ -21,6 +21,8 @@ Step, scenario and retry-attempt exceptions share the same structure. `InnerExce
 
 `Data` contains string representations of the exception's data keys and values. Null values become empty strings. Keys that produce the same string receive suffixes such as ` (2)`. A throwing formatter produces `[Value could not be formatted]`. Exception objects stored in `Data` use their full type name to avoid recursively formatting a cyclic graph. Custom assertion properties outside `Exception.Data` are not inspected.
 
+Data is optional diagnostics. A null or throwing `Data` getter, or a dictionary that fails during enumeration, does not replace the original failure. Capture keeps any entries read before the failure.
+
 Capture stops after ten nodes on each branch. A node with omitted children has `TruncationReason` set to `DepthLimit`. A repeated exception on the current branch becomes a terminal node marked `Cycle`. The same exception in separate aggregate branches remains present in each branch.
 
 `AsString` remains available and normally contains the original `Exception.ToString()` output. For truncated graphs or a throwing formatter, it contains bounded diagnostics instead. Aggregate messages recursively format their children too, so a truncated aggregate uses an explanatory message instead of calling that formatter.
@@ -31,7 +33,7 @@ Hosted Razor reports and standalone HTML reports show an encoded, collapsible tr
 
 Invocation wrappers and single-child aggregates retain their diagnostic nodes and have `IsWrapper` set to `true`. Reports show a wrapper marker. They are traversed when finding root causes rather than discarded, so messages, stack traces and aggregate branches remain available.
 
-`GetRootCauses()` returns every terminal cause. It returns the exception itself when there are no children. Top defects and flakiness group by each root cause's full `TypeName`, counting a scenario once per type. Aggregates with different cause types contribute to each corresponding group.
+`GetRootCauses()` returns every terminal cause. It returns the exception itself when there are no children. Top defects uses terminal causes for its message/location and exception-type grouping modes; failing-step grouping still counts each scenario once. Exception-type grouping and flakiness count a scenario once per root cause type. Aggregates with different cause types contribute to each corresponding group. Standalone reports retain Copy and Wrap controls for original exception text.
 
 ## Historical reports
 
