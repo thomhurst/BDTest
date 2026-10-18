@@ -98,12 +98,12 @@ public class HtmlReportTests : BDTestBase
     {
         Assert.Catch(() => When(() => Fail()).Then(() => DoNothing()).BDTest());
         var scenario = BDTestUtil.GetScenarios().Single();
-        Assert.That(scenario.Steps.Select(step => step.Status), Is.EqualTo(new[] { Status.Failed, Status.Inconclusive }));
+        Assert.That(scenario.Steps.Select(step => step.Status), Is.EqualTo(new[] { Status.Failed, Status.NotRun }));
         var html = BDTestHtmlHelper.GetTestHtmlReport();
         var stepStatuses = Regex.Matches(html, "class=\"step ([^\"]+)\"")
             .Select(match => match.Groups[1].Value).ToArray();
 
-        Assert.That(stepStatuses, Is.EqualTo(new[] { "failed", "inconclusive" }));
+        Assert.That(stepStatuses, Is.EqualTo(new[] { "failed", "notrun" }));
         Assert.That(html, Does.Contain("&lt;failure&gt;"));
         Assert.That(html, Does.Not.Contain("<failure>"));
     }

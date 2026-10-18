@@ -46,7 +46,7 @@ public class AwaitableStepTests : BDTestBase
             Assert.That(scenario.Status, Is.EqualTo(Status.Failed));
             Assert.That(scenario.Steps[0].Status, Is.EqualTo(Status.Failed));
             Assert.That(scenario.Steps[0].Exception.Message, Is.EqualTo(exception.Message));
-            Assert.That(scenario.Steps.Skip(1).All(stepResult => stepResult.Status == Status.Inconclusive), Is.True);
+            Assert.That(scenario.Steps.Skip(1).All(stepResult => stepResult.Status == Status.NotRun), Is.True);
         }
         finally
         {

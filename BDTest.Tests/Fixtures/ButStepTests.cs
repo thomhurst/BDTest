@@ -124,7 +124,7 @@ public class ButStepTests : BDTestBase
         Assert.That(result.Status, Is.EqualTo(Status.Failed));
         Assert.That(result.Steps[2].Status, Is.EqualTo(Status.Failed));
         Assert.That(result.Steps[2].StepText, Is.EqualTo(asyncStep ? "But fail async" : "But fail"));
-        Assert.That(result.Steps[3].Status, Is.EqualTo(Status.Inconclusive));
+        Assert.That(result.Steps[3].Status, Is.EqualTo(Status.NotRun));
         Assert.That(calls, Is.Empty);
     }
 

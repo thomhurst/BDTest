@@ -36,6 +36,12 @@ public class TestRunSummary
         {
             switch (scenario.Status)
             {
+                case Status.NotRun:
+                    Counts.NotRun++;
+                    break;
+                case Status.Pending:
+                    Counts.Pending++;
+                    break;
                 case Status.Passed:
                     Counts.Passed++;
                     break;
@@ -95,4 +101,6 @@ public class Counts
     public int Skipped { get; set; }
     [JsonProperty]
     public int NotRun { get; set; }
+    [JsonProperty]
+    public int Pending { get; set; }
 }

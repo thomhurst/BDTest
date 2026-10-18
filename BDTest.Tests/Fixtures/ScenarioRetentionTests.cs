@@ -29,7 +29,7 @@ public class ScenarioRetentionTests
     [TestCase("success-exception", Status.Passed)]
     [TestCase("skipped", Status.Skipped)]
     [TestCase("retry", Status.Passed)]
-    [TestCase("retry-hook-failed", Status.Inconclusive)]
+    [TestCase("retry-hook-failed", Status.NotRun)]
     public void Completed_report_does_not_keep_fixture_context_or_text_closures_alive(string outcome, Status status)
     {
         var retained = ExecuteAndRelease(outcome);
@@ -77,6 +77,7 @@ public class ScenarioRetentionTests
         // Leave a step output buffer populated too, as can happen during an aborted run.
         var active = new Scenario(new List<Step>(), fixture.Build(new TextSource()));
         active.StartTime = DateTime.Now;
+        active.Status = Status.Pending;
         TestOutputData.TestId = active.Guid;
         var writer = new TestOutputData();
         writer.Write("old step output");

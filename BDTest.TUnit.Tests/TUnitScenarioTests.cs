@@ -61,7 +61,7 @@ public class TUnitScenarioTests : TUnitBDTestBase<TUnitContext>
             await Assert.That(scenario.Status).IsEqualTo(Status.Inconclusive);
             await Assert.That(scenario.Steps[0].Status).IsEqualTo(Status.Passed);
             await Assert.That(scenario.Steps[1].Status).IsEqualTo(Status.Inconclusive);
-            await Assert.That(scenario.Steps[2].Status).IsEqualTo(Status.Inconclusive);
+            await Assert.That(scenario.Steps[2].Status).IsEqualTo(Status.NotRun);
         }
     }
 
@@ -90,7 +90,7 @@ public class TUnitScenarioTests : TUnitBDTestBase<TUnitContext>
             await Assert.That(scenario.Steps[1].Status).IsEqualTo(Status.Failed);
             await Assert.That(scenario.Steps[1].Exception.Message).IsEqualTo(failure.Message);
             await Assert.That(scenario.Steps[1].Exception.TypeName).IsEqualTo(nameof(InvalidOperationException));
-            await Assert.That(scenario.Steps[2].Status).IsEqualTo(Status.Inconclusive);
+            await Assert.That(scenario.Steps[2].Status).IsEqualTo(Status.NotRun);
             await Assert.That(scenario.Steps[2].StartTime).IsEqualTo(default(DateTime));
         }
     }

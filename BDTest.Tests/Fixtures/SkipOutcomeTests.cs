@@ -54,7 +54,7 @@ public class SkipOutcomeTests : BDTest.NUnit.NUnitBDTestBase<object>
     [Test]
     public Task GenuineInconclusive() => CheckScenario(() => Given(() => ExecutedStep()).When(() => Assert.Inconclusive("probe"))
         .Then(() => MustNotRun()).BDTestAsync(), Status.Inconclusive,
-        Status.Passed, Status.Inconclusive, Status.Inconclusive);
+        Status.Passed, Status.Inconclusive, Status.NotRun);
 
     private async Task CheckScenario(Func<Task<Scenario>> run, Status status, params Status[] stepStatuses)
     {

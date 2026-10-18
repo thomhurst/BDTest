@@ -95,7 +95,7 @@ public class StepHookTests
             Assert.That(observed.Exception.Message, Is.EqualTo(original.Message));
             Assert.That(calls, Is.EqualTo(new[] { "test after failed", "global after failed", "last after" }));
             Assert.That(GetScenario(observed).Status, Is.EqualTo(Status.Failed));
-            Assert.That(GetScenario(observed).Steps[1].Status, Is.EqualTo(Status.Inconclusive));
+            Assert.That(GetScenario(observed).Steps[1].Status, Is.EqualTo(Status.NotRun));
         }
         finally
         {
@@ -247,7 +247,7 @@ public class StepHookTests
         Assert.That(scenario.RetryCount, Is.EqualTo(1));
         Assert.That(beforeResults, Is.EqualTo(new[]
         {
-            (Status.Inconclusive, false), (Status.Inconclusive, true), (Status.Inconclusive, true)
+            (Status.Pending, false), (Status.Pending, true), (Status.Pending, true)
         }));
         Assert.That(afterResults, Is.EqualTo(new[]
         {
@@ -357,7 +357,7 @@ public class StepHookTests
 
         Assert.That(observed.Exception.Message, Is.EqualTo(exception.Message));
         Assert.That(GetScenario(observed).Status, Is.EqualTo(Status.Failed));
-        Assert.That(GetScenario(observed).Steps[1].Status, Is.EqualTo(Status.Inconclusive));
+        Assert.That(GetScenario(observed).Steps[1].Status, Is.EqualTo(Status.NotRun));
     }
 
     [Test]
@@ -432,7 +432,7 @@ public class StepHookTests
             Assert.That(observed.Exception.Message, Is.EqualTo(exception.Message));
             Assert.That(GetScenario(observed).TimedOut, Is.True);
             Assert.That(GetScenario(observed).Status, Is.EqualTo(Status.Failed));
-            Assert.That(GetScenario(observed).Steps[1].Status, Is.EqualTo(Status.Inconclusive));
+            Assert.That(GetScenario(observed).Steps[1].Status, Is.EqualTo(Status.NotRun));
         }
         finally
         {
@@ -520,7 +520,7 @@ public class StepHookTests
         Assert.That(GetScenario(observed).Status, Is.EqualTo(Status.Failed));
         if (!finalStep)
         {
-            Assert.That(GetScenario(observed).Steps[2].Status, Is.EqualTo(Status.Inconclusive));
+            Assert.That(GetScenario(observed).Steps[2].Status, Is.EqualTo(Status.NotRun));
         }
     }
 

@@ -51,6 +51,36 @@ let chartData = {
             ]    
         },
         {
+            label: "Not run",
+            axis: 'y',
+            fill: true,
+            backgroundColor: "@ColourConstants.WarningHex",
+            borderColor: "rgba(0,0,0,0)",
+            pointBorderColor: "@ColourConstants.WarningHex",
+            pointBackgroundColor: "@ColourConstants.WarningHex",
+            pointHitRadius: 15,
+            pointRadius: 0,
+            borderWidth: 0,
+            data: [
+                @string.Join(",", Model.Scenarios.Select(summary => summary.Status == Status.NotRun ? 1 : 0))
+            ]
+        },
+        {
+            label: "Pending",
+            axis: 'y',
+            fill: true,
+            backgroundColor: "@ColourConstants.WarningHex",
+            borderColor: "rgba(0,0,0,0)",
+            pointBorderColor: "@ColourConstants.WarningHex",
+            pointBackgroundColor: "@ColourConstants.WarningHex",
+            pointHitRadius: 15,
+            pointRadius: 0,
+            borderWidth: 0,
+            data: [
+                @string.Join(",", Model.Scenarios.Select(summary => summary.Status == Status.Pending ? 1 : 0))
+            ]
+        },
+        {
             label: "Inconclusive",
             axis: 'y',
             fill: true,

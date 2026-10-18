@@ -1,6 +1,5 @@
 using BDTest.Output;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
 
 namespace BDTest.Test;
 
@@ -11,7 +10,6 @@ public class ScenarioAttempt
     [JsonProperty] public int Number { get; private set; }
 
     [JsonProperty]
-    [JsonConverter(typeof(StringEnumConverter))]
     public Status Status { get; private set; }
 
     [JsonProperty] public ExceptionWrapper Exception { get; private set; }

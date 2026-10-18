@@ -9,7 +9,6 @@ using BDTest.Output;
 using BDTest.Settings;
 using BDTest.Test.Steps;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
 
 namespace BDTest.Test;
 
@@ -44,9 +43,8 @@ public class Step
     [JsonProperty]
     public TimeSpan TimeTaken { get; private set; }
 
-    [JsonConverter(typeof(StringEnumConverter))]
     [JsonProperty]
-    public Status Status { get; internal set; } = Status.Inconclusive;
+    public Status Status { get; internal set; } = Status.NotRun;
 
     [JsonProperty]
     public ExceptionWrapper Exception { get; private set; }
@@ -132,7 +130,7 @@ public class Step
         StartTime = DateTime.MinValue;
         EndTime = DateTime.MinValue;
         TimeTaken = TimeSpan.Zero;
-        Status = Status.Inconclusive;
+        Status = Status.NotRun;
         IsRetry = true;
     }
 
@@ -195,6 +193,7 @@ public class Step
         try
         {
             StartTime = DateTime.UtcNow;
+            Status = Status.Pending;
 
             if (beforeHooks != null)
             {

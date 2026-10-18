@@ -434,7 +434,7 @@ public class ReportUploadTests
         var summary = server.Store.Summaries[report.Id];
         Assert.That(summary.Counts.Total, Is.Zero);
         Assert.That(summary.Counts.NotRun, Is.Zero);
-        Assert.That(summary.Status, Is.EqualTo(Status.Inconclusive));
+        Assert.That(summary.Status, Is.EqualTo(Status.NotRun));
         Assert.That(summary.StartedAtDateTime, Is.EqualTo(default(DateTime)));
         Assert.That(summary.FinishedAtDateTime, Is.EqualTo(default(DateTime)));
         await AssertReportPagesRender(server, report.Id);
@@ -518,6 +518,38 @@ public class ReportUploadTests
         Assert.That(metrics.AnySkipped, Is.False);
         Assert.That(metrics.AnyInconclusive, Is.False);
         Assert.That(metrics.AnyNotImplemented, Is.False);
+    }
+
+    [Test]
+    public async Task UnfinishedResultsAreCountedFilteredAndRenderedSeparatelyFromInconclusive()
+    {
+        await using var server = await UploadServer.Start();
+        using var response = await server.Post("""
+            {"Scenarios":[
+              {"Guid":"not-run","Status":"NotRun","Steps":[{"Status":"NotRun"}]},
+              {"Guid":"running","Status":"Pending","Steps":[{"Status":"Pending"}]},
+              {"Guid":"inconclusive","Status":"Inconclusive","Steps":[{"Status":"Inconclusive"}]}],
+             "NotRun":[{}]}
+            """);
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        var report = server.Store.Received.Single();
+        var summary = server.Store.Summaries[report.Id];
+        Assert.That(summary.Counts.NotRun, Is.EqualTo(2));
+        Assert.That(summary.Counts.Pending, Is.EqualTo(1));
+        Assert.That(summary.Counts.Inconclusive, Is.EqualTo(1));
+        Assert.That(summary.Status, Is.EqualTo(Status.Inconclusive));
+        var metrics = new OutputMetrics(report);
+        Assert.That(metrics.AnyNotRun, Is.True);
+        Assert.That(metrics.AnyPending, Is.True);
+        Assert.That(metrics.AllPassed, Is.False);
+        await AssertReportPagesRender(server, report.Id);
+        foreach (var status in new[] { Status.NotRun, Status.Pending })
+        {
+            var html = await server.Client.GetStringAsync($"bdtest/report/{report.Id}/all-scenarios?filterByStatus={status}");
+            Assert.That(html, Does.Contain(status == Status.NotRun ? "Not run" : "Pending"));
+            Assert.That(html, Does.Contain($"scenario-id=\"{(status == Status.NotRun ? "not-run" : "running")}\""));
+            Assert.That(html, Does.Not.Contain("scenario-id=\"inconclusive\""));
+        }
     }
 
     private static async Task AssertReportPagesRender(UploadServer server, string id)

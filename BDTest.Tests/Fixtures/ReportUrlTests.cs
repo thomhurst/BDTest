@@ -89,11 +89,13 @@ public class ReportUrlTests
             requestPath: "/bdtest/report/run/summary");
         var urls = Regex.Matches(html, "data-url=\"([^\"]+)\"")
             .Select(m => HttpUtility.HtmlDecode(m.Groups[1].Value)).ToArray();
-        Assert.That(urls, Has.Length.EqualTo(9));
+        Assert.That(urls, Has.Length.EqualTo(11));
         Assert.That(html, Does.Not.Contain("onclick="));
         Assert.That(urls, Has.All.StartsWith("/reports/bdtest/report/run/all-scenarios?"));
         Assert.That(urls, Has.All.Contains("tag=O%27Brien"));
         Assert.That(urls, Has.Some.Contains("filterByStatus=Passed"));
+        Assert.That(urls, Has.Some.Contains("filterByStatus=NotRun"));
+        Assert.That(urls, Has.Some.Contains("filterByStatus=Pending"));
         Assert.That(html, Does.Not.Contain("attacker.example"));
     }
 

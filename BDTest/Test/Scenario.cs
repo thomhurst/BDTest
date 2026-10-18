@@ -3,7 +3,6 @@ using BDTest.Constants;
 using BDTest.Maps;
 using BDTest.Output;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
 
 namespace BDTest.Test;
 
@@ -99,9 +98,8 @@ public class Scenario
 
     [JsonProperty] public string Output { get; internal set; }
 
-    [JsonConverter(typeof(StringEnumConverter))]
     [JsonProperty]
-    public Status Status { get; internal set; } = Status.Inconclusive;
+    public Status Status { get; internal set; } = Status.NotRun;
 
     [JsonProperty] internal StoryText StoryText { get; private set; }
 

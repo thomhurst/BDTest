@@ -31,7 +31,7 @@ public class TimeoutTests : BDTestBase
         Assert.That(scenario.Steps[0].Status, Is.EqualTo(Status.Failed));
         Assert.That(scenario.Steps[0].Exception.Message, Is.EqualTo(exception.Message));
         Assert.That(scenario.Steps[0].EndTime, Is.GreaterThan(scenario.Steps[0].StartTime));
-        Assert.That(scenario.Steps[1].Status, Is.EqualTo(Status.Inconclusive));
+        Assert.That(scenario.Steps[1].Status, Is.EqualTo(Status.NotRun));
         Assert.That(_laterSteps, Is.Zero);
         var restored = JsonConvert.DeserializeObject<Scenario>(JsonConvert.SerializeObject(scenario));
         Assert.That(restored.TimedOut, Is.True);

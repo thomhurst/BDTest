@@ -12,14 +12,9 @@ public static class ScenarioExtensions
             return Status.Skipped;
         }
 
-        var firstScenario = scenariosList.FirstOrDefault(scenario => scenario.Status == Status.Failed)
-                            ?? scenariosList.FirstOrDefault(scenario => scenario.Status == Status.NotImplemented)
-                            ?? scenariosList.FirstOrDefault(scenario => scenario.Status == Status.Inconclusive)
-                            ?? scenariosList.FirstOrDefault(scenario => scenario.Status == Status.Passed);
-
-        var status = firstScenario?.Status ?? Status.Inconclusive;
-            
-        return status;
+        // Skips do not override completed passes, but unfinished results do.
+        return scenariosList.Where(scenario => scenario.Status != Status.Skipped)
+            .OrderBy(scenario => scenario.Status.GetOrder()).FirstOrDefault()?.Status ?? Status.NotRun;
     }
 
     public static string GetCssColourValueForStatus(this Status status)
@@ -30,6 +25,9 @@ public static class ScenarioExtensions
                 return "btn-success";
             case Status.Failed:
                 return "btn-danger";
+            case Status.NotRun:
+            case Status.Pending:
+                return "btn-secondary";
             case Status.Inconclusive:
             case Status.NotImplemented:
             case Status.Skipped:
@@ -43,6 +41,9 @@ public static class ScenarioExtensions
     {
         switch (status)
         {
+            case Status.NotRun:
+                return "Not run";
+            case Status.Pending:
             case Status.Passed:
             case Status.Failed:
             case Status.Inconclusive:
