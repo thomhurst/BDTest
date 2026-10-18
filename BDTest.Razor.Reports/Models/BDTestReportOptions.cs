@@ -63,7 +63,7 @@ public class BDTestReportOptions
             {
                 var source = value[i];
                 // Check the original path too: Uri normalizes dot segments such as /.. to /.
-                if (string.IsNullOrWhiteSpace(source) || source.Any(char.IsWhiteSpace) || source.Contains(';') ||
+                if (string.IsNullOrWhiteSpace(source) || source.Any(char.IsWhiteSpace) || source.Contains(';') || source.Contains('*') ||
                     !Uri.TryCreate(source, UriKind.Absolute, out var uri) || !uri.IsWellFormedOriginalString() ||
                     (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps) ||
                     uri.UserInfo.Length != 0 || uri.AbsolutePath != "/" || uri.Query.Length != 0 || uri.Fragment.Length != 0 ||

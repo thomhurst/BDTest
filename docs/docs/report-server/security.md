@@ -148,7 +148,7 @@ Inline styles stay allowed for Bootstrap, charts and custom output. Google Fonts
 If `IUserPersonalizer.GetProfilePictureUri` or a custom view uses a plain-HTTP image URL, switch it to HTTPS or explicitly allow its origin:
 
 ```csharp
-app.UseBDTestReportServer(options =>
+builder.Services.AddBDTestReports(options =>
 {
     options.AdditionalImageSources = new[] { "http://images.internal.example:8080" };
 });

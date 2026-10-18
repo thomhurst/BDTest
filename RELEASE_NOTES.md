@@ -8,7 +8,7 @@ The report server's default Content Security Policy now uses
 `img-src 'self' data: https:` instead of allowing every `http:` origin.
 Hosts whose `IUserPersonalizer` or custom views use plain-HTTP third-party images
 must switch those URLs to HTTPS or assign specific origins to
-`BDTestReportServerOptions.AdditionalImageSources` before serving requests:
+`BDTestReportOptions.AdditionalImageSources` before serving requests:
 
 ```csharp
 options.AdditionalImageSources = new[] { "http://images.internal.example:8080" };
