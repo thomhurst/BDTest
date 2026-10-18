@@ -15,6 +15,13 @@ public class RunnableStepBuilderTests : BDTestBase
     private int _retryHooks;
 
     [Test]
+    public void BuildersExposeOnlyAsyncExecution()
+    {
+        Assert.That(typeof(RunnableStepBuilder).GetMethod("BDTest"), Is.Null);
+        Assert.That(typeof(ScenarioOutlineBuilder<>).GetMethod("BDTest"), Is.Null);
+    }
+
+    [Test]
     public async Task RepeatedAndMixedEntryPointsRejectReuse(
         [Values] EntryPoint first, [Values] EntryPoint second)
     {
@@ -64,7 +71,7 @@ public class RunnableStepBuilderTests : BDTestBase
             await start.Task;
             try
             {
-                return await Execute(index % 2 == 0 ? builder : continuation, (EntryPoint)(index % 3));
+                return await Execute(index % 2 == 0 ? builder : continuation, (EntryPoint)((index / 2) % 2));
             }
             catch (AlreadyExecutedException)
             {
@@ -144,7 +151,7 @@ public class RunnableStepBuilderTests : BDTestBase
 
         var scenario = await builder;
         await Assert.ThrowsAsync<AlreadyExecutedException>(async () => await builder.BDTestAsync());
-        Assert.Throws<AlreadyExecutedException>(() => builder.BDTest());
+        await Assert.ThrowsAsync<AlreadyExecutedException>(async () => await builder);
 
         Assert.That(_executions, Is.EqualTo(2));
         Assert.That(_retryHooks, Is.EqualTo(1));
@@ -163,7 +170,6 @@ public class RunnableStepBuilderTests : BDTestBase
     {
         return entryPoint switch
         {
-            EntryPoint.Synchronous => builder.BDTest(),
             EntryPoint.Asynchronous => await builder.BDTestAsync(),
             EntryPoint.DirectAwait => await builder,
             _ => throw new ArgumentOutOfRangeException(nameof(entryPoint))
@@ -206,7 +212,6 @@ public class RunnableStepBuilderTests : BDTestBase
 
     public enum EntryPoint
     {
-        Synchronous,
         Asynchronous,
         DirectAwait
     }

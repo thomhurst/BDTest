@@ -57,12 +57,12 @@ public class HtmlReportTests : BDTestBase
     }
 
     [Test]
-    public void DescriptorAndScenarioTextAreHtmlEncoded()
+    public async Task DescriptorAndScenarioTextAreHtmlEncoded()
     {
         const string unsafeText = "<script>alert(\"x\" & 'y')</script>";
         const string encodedText = "&lt;script&gt;alert(&quot;x&quot; &amp; &#39;y&#39;)&lt;/script&gt;";
-        var scenario = When(() => DoNothing()).Then(() => DoNothing())
-            .WithScenarioText(unsafeText).BDTest();
+        var scenario = await When(() => DoNothing()).Then(() => DoNothing())
+            .WithScenarioText(unsafeText).BDTestAsync();
 
         var html = BDTestHtmlHelper.GetTestHtmlReport(new BDTestRunDescriptor
         {
@@ -80,9 +80,9 @@ public class HtmlReportTests : BDTestBase
     }
 
     [Test]
-    public void NotImplementedScenarioMatchesItsFilter()
+    public async Task NotImplementedScenarioMatchesItsFilter()
     {
-        Assert.Catch(() => When(() => NotImplemented()).Then(() => DoNothing()).BDTest());
+        await Assert.CatchAsync(async () => await When(() => NotImplemented()).Then(() => DoNothing()).BDTestAsync());
         Assert.That(BDTestUtil.GetScenarios().Single().Status, Is.EqualTo(Status.NotImplemented));
         var html = BDTestHtmlHelper.GetTestHtmlReport();
         var scenarioStatus = Regex.Match(html, "class=\"scenario-item [^\"]+\" data-status=\"([^\"]+)\"").Groups[1].Value;
@@ -94,9 +94,9 @@ public class HtmlReportTests : BDTestBase
     }
 
     [Test]
-    public void StepsAfterFailureAreNotReportedAsPassed()
+    public async Task StepsAfterFailureAreNotReportedAsPassed()
     {
-        Assert.Catch(() => When(() => Fail()).Then(() => DoNothing()).BDTest());
+        await Assert.CatchAsync(async () => await When(() => Fail()).Then(() => DoNothing()).BDTestAsync());
         var scenario = BDTestUtil.GetScenarios().Single();
         Assert.That(scenario.Steps.Select(step => step.Status), Is.EqualTo(new[] { Status.Failed, Status.NotRun }));
         var html = BDTestHtmlHelper.GetTestHtmlReport();

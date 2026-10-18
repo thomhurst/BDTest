@@ -17,39 +17,39 @@ public class SkipCertainTestsTests : BDTestBase
     }
 
     [Test]
-    public void Skip1()
+    public async Task Skip1()
     {
-        var test = Given(() => Console.WriteLine("A test"))
+        var test = await Given(() => Console.WriteLine("A test"))
             .When(() => Console.WriteLine())
             .Then(() => Console.WriteLine("The test passes because the exception step was skipped"))
             .And(() => ThrowException1())
-            .BDTest();
+            .BDTestAsync();
             
         Assert.That(test.Status, Is.EqualTo(Status.Skipped));
     }
         
     [Test]
-    public void Skip2()
+    public async Task Skip2()
     {
-        var test = Given(() => Console.WriteLine("A test"))
+        var test = await Given(() => Console.WriteLine("A test"))
             .When(() => Console.WriteLine())
             .Then(() => Console.WriteLine("The test passes because the exception step was skipped"))
             .And(() => ThrowException1())
             .And(() => ThrowException1())
             .And(() => ThrowException1())
-            .BDTest();
+            .BDTestAsync();
             
         Assert.That(test.Status, Is.EqualTo(Status.Skipped));
     }
 
     [Test]
-    public void Skip3()
+    public async Task Skip3()
     {
-        var test = Given(() => Console.WriteLine("A test"))
+        var test = await Given(() => Console.WriteLine("A test"))
             .When(() => Console.WriteLine())
             .Then(() => Console.WriteLine("The test passes because the exception step was skipped"))
             .And(() => ThrowException1())
-            .BDTest();
+            .BDTestAsync();
             
         Assert.That(test.Status, Is.EqualTo(Status.Skipped));
     }

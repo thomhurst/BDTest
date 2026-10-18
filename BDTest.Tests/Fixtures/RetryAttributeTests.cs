@@ -18,16 +18,16 @@ public class RetryAttributeTests
 
         private int _testRetryCount = 0;
         [Test, ScenarioText("RetryOnScenarioTests"), BDTestRetry(3)]
-        public void Test()
+        public async Task Test()
         {
-            Given(() => Console.WriteLine("I run a test with a retry attribute"))
+            await Given(() => Console.WriteLine("I run a test with a retry attribute"))
                 .And(() => IncrementCount(ref _testRetryCount))
                 .When(() => ThrowIfLessThan(_testRetryCount))
                 .Then(() => Assert.That(_counter, Is.EqualTo(_testRetryCount)))
                 .And(() => Assert.That(_counter, Is.Positive))
                 .And(() => Assert.That(_testRetryCount, Is.Positive))
                 .And(() => Console.WriteLine($"Counter: {_counter} | TestRetryCount: {_testRetryCount}"))
-                .BDTest();
+                .BDTestAsync();
         }
 
         private void ThrowIfLessThan(int i)
@@ -65,16 +65,16 @@ public class RetryAttributeTests
 
         private int _testRetryCount = 0;
         [Test, ScenarioText("RetryOnStoryTests")]
-        public void Test()
+        public async Task Test()
         {
-            Given(() => Console.WriteLine("I run a test with a retry attribute"))
+            await Given(() => Console.WriteLine("I run a test with a retry attribute"))
                 .And(() => IncrementCount(ref _testRetryCount))
                 .When(() => ThrowIfLessThan(_testRetryCount))
                 .Then(() => Assert.That(_counter, Is.EqualTo(_testRetryCount)))
                 .And(() => Assert.That(_counter, Is.Positive))
                 .And(() => Assert.That(_testRetryCount, Is.Positive))
                 .And(() => Console.WriteLine($"Counter: {_counter} | TestRetryCount: {_testRetryCount}"))
-                .BDTest();
+                .BDTestAsync();
         }
 
         private void ThrowIfLessThan(int i)

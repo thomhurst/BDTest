@@ -199,7 +199,7 @@ public abstract class BDTestBase
 
             if (result is Task invokedMethodTask)
             {
-                await invokedMethodTask.ConfigureAwait(false);
+                await invokedMethodTask;
             }
         }
     }

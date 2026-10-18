@@ -13,7 +13,7 @@ public class ExceptionTests : BDTestBase
 {
     [TestCase(typeof(Exception), Status.Failed)]
     [TestCase(typeof(NotImplementedException), Status.NotImplemented)]
-    public void ThrowsExceptionOnGiven(Type exceptionType, Status status)
+    public async Task ThrowsExceptionOnGiven(Type exceptionType, Status status)
     {
         var builder = Given(() => ThrowException(exceptionType))
             .When(() => Console.WriteLine("my test has an exception"))
@@ -24,7 +24,7 @@ public class ExceptionTests : BDTestBase
 
         try
         {
-            builder.BDTest();
+            await builder.BDTestAsync();
 
             Assert.Fail("An exception should be thrown to stop us getting here!");
         }
@@ -75,7 +75,7 @@ public class ExceptionTests : BDTestBase
 
     [TestCase(typeof(Exception), Status.Failed)]
     [TestCase(typeof(NotImplementedException), Status.NotImplemented)]
-    public void ThrowsExceptionOnThen(Type exceptionType, Status status)
+    public async Task ThrowsExceptionOnThen(Type exceptionType, Status status)
     {
         var builder = When(() => Console.WriteLine("my test has an exception"))
             .Then(() => Console.WriteLine("the exception should be serialized to the json output"))
@@ -86,7 +86,7 @@ public class ExceptionTests : BDTestBase
 
         try
         {
-            builder.BDTest();
+            await builder.BDTestAsync();
 
             Assert.Fail("An exception should be thrown to stop us getting here!");
         }
@@ -136,14 +136,14 @@ public class ExceptionTests : BDTestBase
     }
 
     [Test]
-    public void ThrowsCorrectExceptionOnSync()
+    public async Task ThrowsCorrectExceptionOnSync()
     {
         try
         {
-            When(() => Console.WriteLine("my test has an exception"))
+            await When(() => Console.WriteLine("my test has an exception"))
                 .Then(() => ThrowException(typeof(MyCustomTestException)))
                 .And(() => Console.WriteLine("the correct exception type should be surfaced to the user"))
-                .BDTest();
+                .BDTestAsync();
 
             Assert.Fail("An exception should be thrown to stop us getting here!");
         }
@@ -154,14 +154,14 @@ public class ExceptionTests : BDTestBase
     }
         
     [Test]
-    public void ThrowsCorrectExceptionOnAsync()
+    public async Task ThrowsCorrectExceptionOnAsync()
     {
         try
         {
-            When(() => Console.WriteLine("my test has an exception"))
+            await When(() => Console.WriteLine("my test has an exception"))
                 .Then(() => Task.Run(() => ThrowException(typeof(MyCustomTestException))))
                 .And(() => Console.WriteLine("the correct exception type should be surfaced to the user"))
-                .BDTest();
+                .BDTestAsync();
 
             Assert.Fail("An exception should be thrown to stop us getting here!");
         }

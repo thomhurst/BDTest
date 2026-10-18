@@ -67,15 +67,14 @@ public class InterceptConsoleOutputTests : BDTestBase
         Assert.That(scenario.Steps[2].Output, Is.EqualTo("blah output and then"));
     }
         
-    // Sync - .BDTest()
+    // Direct await
     [Test]
     [Repeat(10)]
-    public void InterceptConsoleOutput_Synchronous_Steps_Called_Synchronously()
+    public async Task InterceptConsoleOutput_Synchronous_Steps_Called_With_Direct_Await()
     {
-        var scenario = When(() => Console.WriteLine("blah output when"))
+        var scenario = await When(() => Console.WriteLine("blah output when"))
             .Then(() => Console.WriteLine("blah output then"))
-            .And(() => Console.WriteLine("blah output and then"))
-            .BDTest();
+            .And(() => Console.WriteLine("blah output and then"));
 
         Assert.That(scenario.Steps[0].Output, Is.EqualTo("blah output when"));
         Assert.That(scenario.Steps[1].Output, Is.EqualTo("blah output then"));
@@ -84,12 +83,11 @@ public class InterceptConsoleOutputTests : BDTestBase
         
     [Test]
     [Repeat(10)]
-    public void InterceptConsoleOutput_Asynchronous_Steps_Called_Synchronously()
+    public async Task InterceptConsoleOutput_Asynchronous_Steps_Called_With_Direct_Await()
     {
-        var scenario = When(() => Console.Out.WriteLineAsync("blah output when"))
+        var scenario = await When(() => Console.Out.WriteLineAsync("blah output when"))
             .Then(() => Console.Out.WriteLineAsync("blah output then"))
-            .And(() => Console.Out.WriteLineAsync("blah output and then"))
-            .BDTest();
+            .And(() => Console.Out.WriteLineAsync("blah output and then"));
             
         Assert.That(scenario.Steps[0].Output, Is.EqualTo("blah output when"));
         Assert.That(scenario.Steps[1].Output, Is.EqualTo("blah output then"));
@@ -98,12 +96,11 @@ public class InterceptConsoleOutputTests : BDTestBase
         
     [Test]
     [Repeat(10)]
-    public void InterceptConsoleOutput_Synchronous_And_Asynchronous_Steps_Mix1_Called_Synchronously()
+    public async Task InterceptConsoleOutput_Synchronous_And_Asynchronous_Steps_Mix1_Called_With_Direct_Await()
     {
-        var scenario = When(() => Console.Out.WriteLineAsync("blah output when"))
+        var scenario = await When(() => Console.Out.WriteLineAsync("blah output when"))
             .Then(() => Console.WriteLine("blah output then"))
-            .And(() => Console.Out.WriteLineAsync("blah output and then"))
-            .BDTest();
+            .And(() => Console.Out.WriteLineAsync("blah output and then"));
 
         Assert.That(scenario.Steps[0].Output, Is.EqualTo("blah output when"));
         Assert.That(scenario.Steps[1].Output, Is.EqualTo("blah output then"));
@@ -112,12 +109,11 @@ public class InterceptConsoleOutputTests : BDTestBase
         
     [Test]
     [Repeat(10)]
-    public void InterceptConsoleOutput_Synchronous_And_Asynchronous_Steps_Mix2_Called_Synchronously()
+    public async Task InterceptConsoleOutput_Synchronous_And_Asynchronous_Steps_Mix2_Called_With_Direct_Await()
     {
-        var scenario = When(() => Console.WriteLine("blah output when"))
+        var scenario = await When(() => Console.WriteLine("blah output when"))
             .Then(() => Console.Out.WriteLineAsync("blah output then"))
-            .And(() => Console.WriteLine("blah output and then"))
-            .BDTest();
+            .And(() => Console.WriteLine("blah output and then"));
 
         Assert.That(scenario.Steps[0].Output, Is.EqualTo("blah output when"));
         Assert.That(scenario.Steps[1].Output, Is.EqualTo("blah output then"));

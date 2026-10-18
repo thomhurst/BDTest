@@ -8,13 +8,13 @@ public class NUnitRetryTests : NUnitBDTestBase<MyTestContext>
 {
     private int _testRetryCount = 0;
     [Test, ScenarioText("NUnitRetryOnScenarioTests"), BDTestRetry(3)]
-    public void Test()
+    public async Task Test()
     {
-        Given(() => Console.WriteLine("I run a test with a retry attribute"))
+        await Given(() => Console.WriteLine("I run a test with a retry attribute"))
             .And(() => IncrementCount(ref _testRetryCount))
             .When(() => ThrowIfLessThan(_testRetryCount))
             .Then(() => Console.WriteLine($"TestRetryCount: {_testRetryCount}"))
-            .BDTest();
+            .BDTestAsync();
     }
         
     private void IncrementCount(ref int i)

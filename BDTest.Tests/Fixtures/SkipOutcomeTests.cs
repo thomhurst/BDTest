@@ -29,10 +29,10 @@ public class SkipOutcomeTests : BDTest.NUnit.NUnitBDTestBase<object>
 
     [Test]
     [ScenarioText("Global skip probe")]
-    public Task GlobalRuleSkipsSynchronously()
+    public Task GlobalRuleSkipsWithDirectAwait()
     {
-        return CheckScenario(() => Task.FromResult(Given(() => MustNotRun()).When(() => MustNotRun())
-            .Then(() => MustNotRun()).BDTest()), Status.Skipped,
+        return CheckScenario(async () => await Given(() => MustNotRun()).When(() => MustNotRun())
+            .Then(() => MustNotRun()), Status.Skipped,
             Status.Skipped, Status.Skipped, Status.Skipped);
     }
 

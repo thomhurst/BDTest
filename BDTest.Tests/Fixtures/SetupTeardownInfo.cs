@@ -27,11 +27,11 @@ public class SetupTeardownInfo : NUnitBDTestBase<MyTestContext>
     }
         
     [Test]
-    public void Test()
+    public async Task Test()
     {
-        _scenario = When(() => Console.WriteLine("run a test"))
+        _scenario = await When(() => Console.WriteLine("run a test"))
             .Then(() => Console.WriteLine("the results should have set up and tear down information added"))
-            .BDTest();
+            .BDTestAsync();
             
         Assert.That(_scenario.TestStartupInformation.Trim(), Is.EqualTo("Some startup info!"));
         Assert.That(_scenario.Steps[0].Output, Is.EqualTo("run a test"));
@@ -41,11 +41,11 @@ public class SetupTeardownInfo : NUnitBDTestBase<MyTestContext>
     }
     
     [Test]
-    public void Test2()
+    public async Task Test2()
     {
-        _scenario = When(() => Console.WriteLine("run a test2"))
+        _scenario = await When(() => Console.WriteLine("run a test2"))
             .Then(() => Console.WriteLine("the results should have set up and tear down information added2"))
-            .BDTest();
+            .BDTestAsync();
             
         Assert.That(_scenario.TestStartupInformation.Trim(), Is.EqualTo("Some startup info!"));
         Assert.That(_scenario.Steps[0].Output, Is.EqualTo("run a test2"));

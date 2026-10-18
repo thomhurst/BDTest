@@ -6,7 +6,7 @@ using BDTest.Output;
 
 namespace BDTest.Test;
 
-/// <summary>A scenario builder that supports one execution through BDTest(), BDTestAsync(), or direct await.</summary>
+/// <summary>A scenario builder that supports one execution through BDTestAsync() or direct await.</summary>
 /// <remarks>Repeated or concurrent execution attempts throw <see cref="AlreadyExecutedException"/>, even after failure.
 /// Each continuation is an independent builder. Internal retries remain part of the original execution.</remarks>
 public abstract class RunnableStepBuilder : StepBuilder
@@ -29,7 +29,7 @@ public abstract class RunnableStepBuilder : StepBuilder
         return this;
     }
 
-    internal Task<Scenario> Invoke(BuildableTest testDetails, bool runOnThreadPool = false,
+    internal Task<Scenario> Invoke(BuildableTest testDetails,
         Scenario outline = null, Dictionary<string, string> exampleValues = null)
     {
         testDetails.Run.ThrowIfDisposed();
@@ -51,22 +51,13 @@ public abstract class RunnableStepBuilder : StepBuilder
         {
             step.ExampleValues = exampleValues;
         }
-        // Only the blocking entry point needs a scheduling boundary. Keep IDs in
-        // the caller's flow so output written after BDTest() still reaches teardown.
-        return runOnThreadPool ? Task.Run(() => ExecuteAsync(scenario)) : ExecuteAsync(scenario);
+        return ExecuteAsync(scenario);
     }
 
     private static async Task<Scenario> ExecuteAsync(Scenario scenario)
     {
-        await scenario.Run.ScenarioExecutor.ExecuteAsync(scenario).ConfigureAwait(false);
+        await scenario.Run.ScenarioExecutor.ExecuteAsync(scenario);
         return scenario;
-    }
-
-    /// <exception cref="AlreadyExecutedException">Execution has already started on this builder.</exception>
-    /// <remarks>Runs the scenario on the thread pool and blocks until completion. Prefer BDTestAsync() for async callers.</remarks>
-    public Scenario BDTest()
-    {
-        return Invoke(this, runOnThreadPool: true).GetAwaiter().GetResult();
     }
 
     /// <exception cref="AlreadyExecutedException">Execution has already started on this builder.</exception>

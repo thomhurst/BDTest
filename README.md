@@ -255,8 +255,8 @@ unreached after a failure or for a whole scenario skipped before execution.
 
 ### Running a scenario once
 
-A runnable Given/When/Then builder supports one execution through `BDTest()`,
-`BDTestAsync()`, or direct `await`. Calling any of these again on the same builder,
+A runnable Given/When/Then builder supports one execution through `BDTestAsync()`
+or direct `await`. Calling either entry point again on the same builder,
 including while it is running or after it fails, throws
 `BDTest.Exceptions.AlreadyExecutedException` before another scenario is created or
 any steps run again. Each continuation (such as `Then.And(...)`) creates an independent
@@ -345,8 +345,8 @@ all-skipped rows skip. Failure, not-implemented, and inconclusive rows take prio
 JSON, standalone HTML, and Razor reports contain one outline with an example table
 and per-row results. `BDTestUtil.GetScenarios()` returns the outline; its `Examples`
 collection contains the row scenarios and their `ExampleValues`. An outline needs
-at least one example and, like a regular chain, runs once through `BDTest()`,
-`BDTestAsync()`, or direct `await`.
+at least one example and, like a regular chain, runs once through `BDTestAsync()`
+or direct `await`.
 
 ### Asynchronous steps
 
@@ -375,24 +375,36 @@ thread-pool task for each scenario or step. Execution begins inline; when report
 and all steps complete synchronously, the whole scenario can complete on the calling
 thread. Each asynchronous step must finish before the next step starts.
 
-BDTest does not guarantee a synchronization context, thread, or STA apartment across
-steps or retries. A step can initially see the caller's synchronization context, but
-framework continuations may run without it after an incomplete await. Await the async
-entry points instead of blocking on their returned tasks. Code requiring a UI thread
-or a particular apartment should explicitly dispatch to that thread.
+BDTest preserves the caller's synchronization context across steps, hooks, retries,
+and outline rows. An asynchronous step resumes on that context unless its own code
+opts out, for example with `ConfigureAwait(false)`. Later steps still start on the
+caller's context. Configured timeouts explicitly run step bodies on the thread pool
+so they can bound synchronous work; see [Step and scenario timeouts](#step-and-scenario-timeouts).
+Await the async entry points and keep UI/STA synchronization contexts processing messages.
 
-The synchronous `BDTest()` API remains supported and blocks until completion. It runs
-the scenario through one thread-pool boundary so that asynchronous steps do not capture
-the blocked caller's synchronization context. It flows the caller's execution context
-(including existing `AsyncLocal` values), and preserves original exceptions and output
-attribution. A step that explicitly dispatches back to the blocked caller can still
-deadlock; prefer `BDTestAsync()` for asynchronous work.
+The next major release removes the synchronous `BDTest()` entry points. Change test
+methods from `void` to `async Task` and replace `.BDTest()` with an awaited
+`.BDTestAsync()` call, or directly await the chain:
+
+```csharp
+[Test]
+public async Task Login()
+{
+    await Given(() => User()).When(() => LogIn()).Then(() => LoggedIn());
+}
+```
+
+The same migration applies to scenario outlines. Do not replace `.BDTest()` with
+`.Result`, `.Wait()`, or `.GetAwaiter().GetResult()`: blocking a single-threaded
+context can deadlock. Tests that require thread-pool execution must schedule that
+work explicitly. See [release notes](RELEASE_NOTES.md) and the
+[wiki migration guide](https://github.com/thomhurst/BDTest/wiki/Migrating-to-async-only-execution).
 
 Changes to an `AsyncLocal` value inside a step are not a mechanism for passing data to
 later steps or back to the caller. Use the test's `Context` object for shared step data.
 The scheduling regression tests cover inline completion, ordered asynchronous steps,
-ambient-value isolation, and synchronous execution from a single-thread context. No
-throughput or thread-pool-starvation improvement is claimed from these checks.
+ambient-value isolation, and context preservation across steps, hooks, retries, and
+outline rows. No throughput or thread-pool-starvation improvement is claimed from these checks.
 
 ### Explicit run ownership
 

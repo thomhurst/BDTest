@@ -12,7 +12,7 @@ internal class ScenarioRetryManager : IScenarioRetryManager
     {
         if (scenario.ShouldRetry)
         {
-            await ResetData(scenario).ConfigureAwait(false);
+            await ResetData(scenario);
             return;
         }
             
@@ -32,7 +32,7 @@ internal class ScenarioRetryManager : IScenarioRetryManager
 
         scenario.Status = Status.NotRun;
 
-        await RunRetryTestHooks(scenario).ConfigureAwait(false);
+        await RunRetryTestHooks(scenario);
 
         await ConsoleReporter.WriteLine($"{Environment.NewLine}Retrying test...{Environment.NewLine}");
     }

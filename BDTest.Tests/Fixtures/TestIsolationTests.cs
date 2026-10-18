@@ -11,25 +11,25 @@ namespace BDTest.Tests.Fixtures;
 public class TestIsolationTests
 {
     [Test, Repeat(3)]
-    public void ExceptionAssertionsIgnoreRetainedScenariosAndRestoreRegistrations()
+    public async Task ExceptionAssertionsIgnoreRetainedScenariosAndRestoreRegistrations()
     {
         NUnitBDTestBase<MyTestContext>.SetupNUnitExceptions();
         var successTypes = BDTestSettings.CustomExceptionSettings.SuccessExceptionTypes.ToArray();
         var inconclusiveTypes = BDTestSettings.CustomExceptionSettings.InconclusiveExceptionTypes.ToArray();
-        var retained = new RetainedScenario().Run();
+        var retained = await new RetainedScenario().Run();
 
-        new CustomPassExceptionsTests().NUNitSuccessException();
-        new CustomPassExceptionsTests().CustomException();
-        new IgnoreTests().NUNitIgnoreException();
-        new IgnoreTests().CustomIgnoreException();
+        await new CustomPassExceptionsTests().NUNitSuccessException();
+        await new CustomPassExceptionsTests().CustomException();
+        await new IgnoreTests().NUNitIgnoreException();
+        await new IgnoreTests().CustomIgnoreException();
         foreach (var (exception, status) in new[]
                  {
                      (typeof(Exception), Status.Failed),
                      (typeof(NotImplementedException), Status.NotImplemented)
                  })
         {
-            new ExceptionTests().ThrowsExceptionOnGiven(exception, status);
-            new ExceptionTests().ThrowsExceptionOnThen(exception, status);
+            await new ExceptionTests().ThrowsExceptionOnGiven(exception, status);
+            await new ExceptionTests().ThrowsExceptionOnThen(exception, status);
         }
 
         Assert.That(BDTestUtil.GetScenarios(), Does.Contain(retained));
@@ -137,7 +137,7 @@ public class TestIsolationTests
         private readonly string _executionId = Guid.NewGuid().ToString();
         protected override string BDTestExecutionId => _executionId;
 
-        public Scenario Run() => When(() => Console.WriteLine("retained scenario"))
-            .Then(() => Console.WriteLine("unrelated to current assertions")).BDTest();
+        public async Task<Scenario> Run() => await When(() => Console.WriteLine("retained scenario"))
+            .Then(() => Console.WriteLine("unrelated to current assertions")).BDTestAsync();
     }
 }

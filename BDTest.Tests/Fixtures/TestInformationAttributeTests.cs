@@ -18,11 +18,11 @@ public class TestInformationAttributeTests : BDTestBase
     }
         
     [Test]
-    public void NoTestInformationAttribute()
+    public async Task NoTestInformationAttribute()
     {
-        var scenario = When(() => Console.WriteLine("my test has no test information attribute"))
+        var scenario = await When(() => Console.WriteLine("my test has no test information attribute"))
             .Then(() => Console.WriteLine("the information array should be empty"))
-            .BDTest();
+            .BDTestAsync();
             
         Assert.That(scenario.CustomTestInformation, Is.Empty);
         Assert.That(JsonHelper.GetTestDynamicJsonObject().SelectToken("$.Scenarios[0].CustomTestInformation").ToString(), Is.EqualTo("[]"));
@@ -30,11 +30,11 @@ public class TestInformationAttributeTests : BDTestBase
 
     [Test]
     [TestInformation("Testing 1 Information Attribute")]
-    public void TestInformationAttribute1()
+    public async Task TestInformationAttribute1()
     {
-        var scenario = When(() => Console.WriteLine("my test has an attribute"))
+        var scenario = await When(() => Console.WriteLine("my test has an attribute"))
             .Then(() => Console.WriteLine("the attribute should be serialized to the json output"))
-            .BDTest();
+            .BDTestAsync();
             
         Assert.That(scenario.CustomTestInformation.First().Print(), Is.EqualTo($"{nameof(TestInformationAttribute)} - Testing 1 Information Attribute"));
         Assert.That(JsonHelper.GetTestDynamicJsonObject().SelectToken("$.Scenarios[0].CustomTestInformation[0]").ToString(), Is.EqualTo("Testing 1 Information Attribute"));
@@ -43,11 +43,11 @@ public class TestInformationAttributeTests : BDTestBase
     [Test]
     [TestInformation("Testing 1 Information Attribute")]
     [CustomInformation("Testing 2 Information Attributes")]
-    public void TestInformationAttribute2()
+    public async Task TestInformationAttribute2()
     {
-        var scenario = When(() => Console.WriteLine("my test has multiple attributes"))
+        var scenario = await When(() => Console.WriteLine("my test has multiple attributes"))
             .Then(() => Console.WriteLine("the attributes should be serialized to the json output"))
-            .BDTest();
+            .BDTestAsync();
             
         Assert.That(scenario.CustomTestInformation.First().Print(), Is.EqualTo($"{nameof(TestInformationAttribute)} - Testing 1 Information Attribute"));
         Assert.That(JsonHelper.GetTestDynamicJsonObject().SelectToken("$.Scenarios[0].CustomTestInformation[0]").ToString(), Is.EqualTo("Testing 1 Information Attribute"));

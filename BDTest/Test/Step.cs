@@ -200,12 +200,12 @@ public class Step
             {
                 foreach (Func<Step, Task> hook in beforeHooks.GetInvocationList())
                 {
-                    await hook(this).ConfigureAwait(false);
+                    await hook(this);
                 }
             }
             if (test != null)
             {
-                await test.OnBeforeStep(this).ConfigureAwait(false);
+                await test.OnBeforeStep(this);
             }
 
             beforeHooksCompleted = true;
@@ -226,11 +226,11 @@ public class Step
             var limit = scenarioLimit ? remaining : Timeout;
             if (limit.HasValue)
             {
-                await RunWithTimeout(limit.Value, scenarioLimit ? "Scenario" : "Step", scenarioLimit ? scenarioTimeout.Value : Timeout.Value).ConfigureAwait(false);
+                await RunWithTimeout(limit.Value, scenarioLimit ? "Scenario" : "Step", scenarioLimit ? scenarioTimeout.Value : Timeout.Value);
             }
             else
             {
-                await Runnable.Run().ConfigureAwait(false);
+                await Runnable.Run();
             }
             Status = Status.Passed;
         }
@@ -245,7 +245,7 @@ public class Step
             SetExceptionResult(e);
             if (Status == Status.Failed)
             {
-                await Console.Out.WriteLineAsync($"{Environment.NewLine}{e.GetType().Name} on '{StepPrefix}' step executing '{Runnable.GetExpressionString()}'").ConfigureAwait(false);
+                await Console.Out.WriteLineAsync($"{Environment.NewLine}{e.GetType().Name} on '{StepPrefix}' step executing '{Runnable.GetExpressionString()}'");
             }
             ExceptionDispatchInfo.Capture(e).Throw();
         }
@@ -256,7 +256,7 @@ public class Step
             Output = TestOutputData.Instance.ToString().Trim();
             try
             {
-                var hookException = await RunAfterHooks(test, afterHooks).ConfigureAwait(false);
+                var hookException = await RunAfterHooks(test, afterHooks);
                 // Hooks are not interrupted, but their elapsed time still consumes
                 // the scenario budget, including the final step's after hooks.
                 if (executionException == null && remainingScenarioTime.HasValue && stopwatch.Elapsed >= remainingScenarioTime.Value)
@@ -286,13 +286,13 @@ public class Step
         Exception firstException = null;
         if (test != null)
         {
-            await Invoke(test.OnAfterStep).ConfigureAwait(false);
+            await Invoke(test.OnAfterStep);
         }
         if (globalHooks != null)
         {
             foreach (Func<Step, Task> hook in globalHooks.GetInvocationList())
             {
-                await Invoke(hook).ConfigureAwait(false);
+                await Invoke(hook);
             }
         }
         return firstException;
@@ -301,12 +301,12 @@ public class Step
         {
             try
             {
-                await hook(this).ConfigureAwait(false);
+                await hook(this);
             }
             catch (Exception e)
             {
                 firstException ??= e;
-                await Console.Out.WriteLineAsync($"After-step hook failed: {e}").ConfigureAwait(false);
+                await Console.Out.WriteLineAsync($"After-step hook failed: {e}");
             }
         }
     }

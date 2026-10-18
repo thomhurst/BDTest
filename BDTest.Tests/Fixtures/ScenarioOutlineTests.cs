@@ -519,7 +519,7 @@ public class ScenarioOutlineTests : AbstractContextBDTestBase<ScenarioOutlineTes
         try
         {
             await entered.Task.WaitAsync(TimeSpan.FromSeconds(20));
-            Assert.Throws<AlreadyExecutedException>(() => builder.BDTest());
+            await Assert.ThrowsAsync<AlreadyExecutedException>(async () => await builder.BDTestAsync());
             await Assert.ThrowsAsync<AlreadyExecutedException>(async () => await builder);
         }
         finally { finish.TrySetResult(); }
@@ -528,12 +528,12 @@ public class ScenarioOutlineTests : AbstractContextBDTestBase<ScenarioOutlineTes
 
     [TestCase(false)]
     [TestCase(true)]
-    public async Task All_entry_points_share_a_single_execution_guard(bool synchronous)
+    public async Task All_entry_points_share_a_single_execution_guard(bool directAwait)
     {
         var builder = ScenarioOutline("Once", new[] { new { Value = 1 } },
             row => Given(() => Record(row.Value)).When(() => NoOp()).Then(() => NoOp()));
-        var outline = synchronous ? builder.BDTest() : await builder.BDTestAsync();
-        Assert.Throws<AlreadyExecutedException>(() => builder.BDTest());
+        var outline = directAwait ? await builder : await builder.BDTestAsync();
+        await Assert.ThrowsAsync<AlreadyExecutedException>(async () => await builder.BDTestAsync());
         await Assert.ThrowsAsync<AlreadyExecutedException>(async () => await builder);
         Assert.That(outline.Examples, Has.Count.EqualTo(1));
         WriteTearDownOutput("outline teardown");
