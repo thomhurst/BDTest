@@ -6,7 +6,6 @@ using BDTest.Attributes;
 using BDTest.Interfaces;
 using BDTest.Settings;
 using BDTest.Test;
-using Humanizer;
 
 namespace BDTest.Helpers;
 
@@ -42,10 +41,10 @@ public static class StepTextHelper
         var attribute = method.GetCustomAttribute<StepTextAttribute>(inherit: true);
         if (attribute?.Text == null)
         {
-            var name = method.Name.Humanize();
+            var name = NameHumanizer.Humanize(method.Name);
             if (!string.IsNullOrWhiteSpace(name) && char.IsUpper(name[0]))
             {
-                name = char.ToLower(name[0]) + name.Substring(1);
+                name = char.ToLowerInvariant(name[0]) + name.Substring(1);
             }
             return $"{name} {string.Join(" ", values)}".Trim();
         }

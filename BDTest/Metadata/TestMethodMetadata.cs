@@ -2,7 +2,7 @@ using System.Collections.Concurrent;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using BDTest.Attributes;
-using Humanizer;
+using BDTest.Helpers;
 
 namespace BDTest.Metadata;
 
@@ -21,7 +21,7 @@ internal sealed class TestMethodMetadata
 
     private TestMethodMetadata(Type fixtureType, MethodInfo method)
     {
-        ScenarioText = method?.GetCustomAttribute<ScenarioTextAttribute>(true)?.Text ?? method?.Name.Humanize();
+        ScenarioText = method?.GetCustomAttribute<ScenarioTextAttribute>(true)?.Text ?? NameHumanizer.Humanize(method?.Name);
         _parameters = method?.GetParameters().Select(parameter => parameter.Name).ToArray() ?? Array.Empty<string>();
         _method = method;
         _tags = fixtureType.GetCustomAttributes<BDTestTagAttribute>(true)

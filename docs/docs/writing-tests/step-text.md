@@ -37,7 +37,17 @@ Given(() => CreateAnAccount(100m))      // "Given create an account 100"
     .And(() => the_user_is_logged_in()) // "And the user is logged in"
 ```
 
-Both PascalCase and underscore-separated names work.
+Both PascalCase and underscore-separated names work. BDTest uses these rules:
+
+- If the name contains `_`, split only on underscores and keep each part's casing. Ignore empty parts from repeated, leading or trailing underscores.
+- Otherwise, split between lowercase and uppercase letters, between letters and digits in either direction, and before the last capital of an acronym followed by lowercase letters (`MFAToken` becomes `MFA token`).
+- Lowercase each word except acronyms of two or more uppercase letters. Underscore-separated parts keep their original casing instead.
+- Capitalize the first letter for scenario text. For step text, lowercase that first letter, including when it starts an acronym: `MFAToken` becomes `mFA token`.
+- Use invariant casing. Names containing characters other than letters, digits and underscores, such as `<RunAsync>d__12`, stay unchanged before the step's first-letter conversion. Names containing only underscores also stay unchanged. `MoveNext` becomes `Move next`.
+
+For example, `UserLogsInWithMFA` produces scenario text `User logs in with MFA` and step text `user logs in with MFA`. `Order2IsShipped` becomes `Order 2 is shipped` / `order 2 is shipped`. `When_HTTPRequest_arrives` becomes `When HTTPRequest arrives` / `when HTTPRequest arrives`.
+
+The next major version removes the Humanizer dependency. See [generated name text changes](../migration/generated-name-text.md) for release notes and migration examples.
 
 ## `[StepText]`
 

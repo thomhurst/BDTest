@@ -59,6 +59,8 @@ With a framework adapter, the runner supplies the exact test method even after a
 
 Without the attribute, BDTest humanises the test method name: `ResetLinkIsEmailed` becomes "Reset link is emailed".
 
+Scenario text uses the same [name splitting rules as step text](step-text.md#default-text-from-method-names), with the first letter capitalized. For example, `user_logs_in` becomes "User logs in", `MFAToken` becomes "MFA token", and `Order2IsShipped` becomes "Order 2 is shipped". Underscore-separated parts retain their casing; PascalCase and camelCase words are lowercased except acronyms. See the [migration notes](../migration/generated-name-text.md) for differences from earlier versions.
+
 You can also set the text on the chain with `.WithScenarioText("...")` after the `Then` steps. For scenario outlines, the scenario text is the first argument of `ScenarioOutline(...)`.
 
 ## Reading story and scenario text
