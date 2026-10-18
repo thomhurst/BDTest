@@ -32,8 +32,10 @@ So that I can sign in again if I forget it
 BDTest adds the "As a", "I want" and "So that" prefixes unless your text already starts with them.
 
 - Use `AsAn` when "As an" reads better: `AsAn = "authenticated customer"`.
-- When `AsA` starts with the letter "a", BDTest writes "As an" automatically.
+- For roles without an explicit article, `AsA` uses "an" before a vowel letter and "a" otherwise. Roles starting with "user" use "a". Explicit articles and complete prefixes are preserved.
 - `AsA`/`AsAn`, `IWant` and `SoThat` are required. A missing value throws `MissingStoryTextArgumentException`. Setting both `AsA` and `AsAn` throws `DuplicateStoryTextArgumentException`.
+
+Formatting does not change the attribute values. Prefix checks match whole words, ignoring case. See [story text formatting](../attributes/story-text.md) for the complete article and prefix rules.
 
 Classes without `[Story]` are grouped without story text.
 
