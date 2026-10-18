@@ -1,28 +1,27 @@
+@addTagHelper "*, Microsoft.AspNetCore.Mvc.TagHelpers"
 @using BDTest.Razor.Reports.Models.ViewModels
 @{
     var layoutModel = ViewData[nameof(ReportLayoutViewModel)] as ReportLayoutViewModel ?? new ReportLayoutViewModel();
-    var title = ViewBag.Title ?? "BDTest Report";   
-} 
-
+    var title = ViewBag.Title as string;
+    title = string.IsNullOrEmpty(title) ? "BDTest" : title + " · BDTest";
+}
 <!doctype html>
 <html lang="en">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="light dark">
     <title>@title</title>
-    @await Html.PartialAsync("_Css")
-    @await Html.PartialAsync("_Javascript")
+    <link rel="icon" href="~/_content/BDTest.Razor.Reports/favicon.ico">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+    <link rel="stylesheet" href="~/_content/BDTest.Razor.Reports/css/bdtest-report.css" asp-append-version="true"/>
+    <script src="~/_content/BDTest.Razor.Reports/js/BDTest.js" asp-append-version="true" defer></script>
 </head>
-<body style="overflow-y: clip">
+<body>
 @await Html.PartialAsync("_SvgIcons")
-<main>
-    @await Html.PartialAsync("_NavBarHeader", layoutModel)
-    @await Html.PartialAsync("_SideMenu", layoutModel)
-    @* @await Html.PartialAsync("_Tabs") *@
-    <div id="main-body" class="main-body container-fluid" style="overflow-y: auto; margin-top: 87px">
-        @RenderBody()
-    </div>
-</main>
-<div id="snackbar" class="btn btn-primary no-pointer">Toast!</div>
+@await Html.PartialAsync("_NavBarHeader", layoutModel)
+@RenderBody()
+<div id="snackbar" role="status" aria-live="polite"></div>
 </body>
 </html>

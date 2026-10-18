@@ -1,4 +1,4 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
 using BDTest.Maps;
 using BDTest.Razor.Reports.Constants;
 using BDTest.Razor.Reports.Extensions;
@@ -110,18 +110,18 @@ public class BDTestController : Controller
             return View("NotFoundSingle", id);
         }
             
-        var filterByQueryParameter = Request.GetQueryParameter(StatusConstants.FilterByStatusQueryParameterName);
+        var statuses = GetStatusFilter();
 
-        var scenariosGroupedByStories = FilterByTag(data.Scenarios)
+        var scenariosGroupedByStories = FilterBySearch(FilterByTag(data.Scenarios))
             .GroupBy(scenario => scenario.GetStoryText())
             .OrderBy(group => group.GetTotalStatus().GetOrder())
             .ThenBy(group => group.Key)
             .ToArray();
 
-        if (!string.IsNullOrEmpty(filterByQueryParameter) && filterByQueryParameter != StatusConstants.All)
+        if (statuses != null)
         {
             scenariosGroupedByStories = scenariosGroupedByStories
-                .Where(group => string.Equals(filterByQueryParameter, group.GetTotalStatus().ToString(), StringComparison.OrdinalIgnoreCase))
+                .Where(group => statuses.Contains(group.GetTotalStatus()))
                 .ToArray();
         }
 
@@ -139,16 +139,15 @@ public class BDTestController : Controller
             return View("NotFoundSingle", id);
         }
             
-        var filterByQueryParameter = Request.GetQueryParameter(StatusConstants.FilterByStatusQueryParameterName);
+        var statuses = GetStatusFilter();
 
-        var scenarios = FilterByTag(data.Scenarios);
-            
-        if (!string.IsNullOrEmpty(filterByQueryParameter) && filterByQueryParameter != StatusConstants.All)
+        var scenarios = FilterBySearch(FilterByTag(data.Scenarios));
+
+        if (statuses != null)
         {
-            scenarios = scenarios
-                .Where(scenario => string.Equals(filterByQueryParameter, scenario.Status.ToString(), StringComparison.OrdinalIgnoreCase));
+            scenarios = scenarios.Where(scenario => statuses.Contains(scenario.Status));
         }
-            
+
         var orderByQueryParameter = Request.GetQueryParameter(OrderConstants.OrderByQueryParameterName);
             
         var scenariosGroupedByScenarioTextEnumerable = scenarios.GroupBy(scenario => scenario.GetScenarioText())
@@ -157,6 +156,8 @@ public class BDTestController : Controller
             
         switch (orderByQueryParameter)
         {
+            case null:
+            case "":
             case OrderConstants.Name:
                 scenariosGroupedByScenarioTextEnumerable =
                     scenariosGroupedByScenarioTextEnumerable.OrderBy(scenarios => scenarios.Key);
@@ -197,6 +198,29 @@ public class BDTestController : Controller
         return scenarios.Where(scenario => scenario != null && (string.IsNullOrEmpty(tag)
             || scenario.Tags.Contains(tag, StringComparer.OrdinalIgnoreCase)));
     }
+
+    private IEnumerable<Scenario> FilterBySearch(IEnumerable<Scenario> scenarios)
+    {
+        var search = Request.GetQueryParameter(ScenarioSearch.QueryParameterName)?.Trim();
+        return string.IsNullOrEmpty(search) ? scenarios : scenarios.Where(scenario => ScenarioSearch.Matches(scenario, search));
+    }
+
+    // filterByStatus accepts one status or a comma-separated list. Null means every status.
+    private HashSet<Status> GetStatusFilter()
+    {
+        var value = Request.GetQueryParameter(StatusConstants.FilterByStatusQueryParameterName);
+        if (string.IsNullOrEmpty(value) || string.Equals(value, StatusConstants.All, StringComparison.OrdinalIgnoreCase))
+        {
+            return null;
+        }
+
+        // An unknown value matches nothing, as it did before lists were supported.
+        return value.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Select(part => Enum.TryParse<Status>(part, true, out var status) && Enum.IsDefined(status) ? (Status?)status : null)
+            .Where(status => status != null)
+            .Select(status => status.Value)
+            .ToHashSet();
+    }
         
     [HttpGet]
     [Route("report/{reportId}/scenario/{scenarioId}")]
@@ -224,6 +248,7 @@ public class BDTestController : Controller
         
     [HttpGet]
     [Route("report/{id}/top-defects")]
+    [Route("report/{id}/failures")]
     public Task<IActionResult> TopDefects([FromRoute] string id, CancellationToken cancellationToken)
     {
         return GetView(id, model => View("TopDefects", model), cancellationToken);
@@ -231,6 +256,7 @@ public class BDTestController : Controller
         
     [HttpGet]
     [Route("report/{id}/warnings")]
+    [Route("report/{id}/not-run")]
     public Task<IActionResult> Warnings([FromRoute] string id, CancellationToken cancellationToken)
     {
         return GetView(id, model => View("Warnings", model), cancellationToken);
@@ -253,46 +279,112 @@ public class BDTestController : Controller
     }
         
     [HttpGet]
+    [Route("report/history")]
     [Route("report/trends")]
     public async Task<IActionResult> Trends()
     {
-        var records = await _dataRepository.GetAllTestRunRecords(HttpContext.RequestAborted);
+        return View("Trends", await GetHistory(HistoryViewModel.Trends));
+    }
 
-        return View("Trends", records);
+    [HttpGet]
+    [Route("report/history/timing")]
+    public async Task<IActionResult> TimingVariance(CancellationToken cancellationToken)
+    {
+        return await GetLatestReportsView(HistoryViewModel.Timing, "MultipleTestRunsTimes", cancellationToken);
     }
 
     [HttpGet]
     [Route("report/test-run-times")]
     public async Task<IActionResult> TestRunTimes([FromQuery] string reportIds, CancellationToken cancellationToken)
     {
-        return await GetBulkReportsView(reportIds, "MultipleTestRunsTimes", cancellationToken);
+        if (string.IsNullOrEmpty(reportIds))
+        {
+            return RedirectToAction(nameof(TimingVariance));
+        }
+
+        return await GetBulkReportsView(reportIds, "MultipleTestRunsTimes", HistoryViewModel.Timing, cancellationToken);
     }
 
     [HttpGet]
+    [Route("report/history/flaky")]
     [Route("report/test-run-flakiness")]
-    public async Task<IActionResult> TestRunFlakiness()
+    public async Task<IActionResult> TestRunFlakiness(CancellationToken cancellationToken)
     {
-        var records = await _dataRepository.GetAllTestRunRecords(HttpContext.RequestAborted);
-
-        return View("FlakinessTestSelector", records);
+        return await GetLatestReportsView(HistoryViewModel.Flaky, "MultipleTestRunsFlakiness", cancellationToken);
     }
-        
+
     [HttpPost]
     [Route("report/test-run-flakiness")]
     public async Task<IActionResult> TestRunFlakiness([FromForm] string reportIds, CancellationToken cancellationToken)
     {
-        return await GetBulkReportsView(reportIds, "MultipleTestRunsFlakiness", cancellationToken);
-    }
-
-    private async Task<IActionResult> GetBulkReportsView(string reportIds, string viewName, CancellationToken cancellationToken)
-    {
-        const int maximumReports = 50;
-        const int maximumIdLength = 128;
-
         if (string.IsNullOrEmpty(reportIds))
         {
-            return RedirectToAction("TestRuns", "BDTest");
+            return RedirectToAction(nameof(TestRunFlakiness));
         }
+
+        return await GetBulkReportsView(reportIds, "MultipleTestRunsFlakiness", HistoryViewModel.Flaky, cancellationToken);
+    }
+
+    private const int MaximumBulkReports = 50;
+    private const int MaximumReportIdLength = 128;
+
+    private async Task<HistoryViewModel> GetHistory(string tab)
+    {
+        var allRuns = (await _dataRepository.GetAllTestRunRecords() ?? Enumerable.Empty<TestRunSummary>())
+            .Where(run => run != null)
+            .ToList();
+        var query = HttpContext?.Request.Query;
+        var filter = query == null ? new RunFilter() : RunFilter.FromQuery(query, RunFilter.Last30Days);
+        var history = new HistoryViewModel
+        {
+            Tab = tab,
+            Filter = filter,
+            AllRuns = allRuns,
+            Runs = filter.Apply(allRuns).OrderBy(run => run.StartedAtDateTime).ToList()
+        };
+
+        if (query != null && int.TryParse(query["compare"], out var compare))
+        {
+            history.Compare = Math.Clamp(compare, 2, MaximumBulkReports);
+        }
+
+        ViewData[nameof(HistoryViewModel)] = history;
+        return history;
+    }
+
+    // Compares the latest runs that match the History filters.
+    private async Task<IActionResult> GetLatestReportsView(string tab, string viewName, CancellationToken cancellationToken)
+    {
+        var history = await GetHistory(tab);
+        var ids = history.Runs.TakeLast(history.Compare)
+            .Select(run => run.RecordId)
+            .Where(IsValidReportId);
+
+        history.Reports = await ReadReports(ids, cancellationToken);
+        return View(viewName, history.Reports.ToList());
+    }
+
+    private static bool IsValidReportId(string id) => !string.IsNullOrEmpty(id) && id.Length <= MaximumReportIdLength
+        && id is not "." and not ".." && id.All(character => char.IsAsciiLetterOrDigit(character)
+            || character == '-' || character == '_' || character == '.');
+
+    private async Task<List<BDTestOutputModel>> ReadReports(IEnumerable<string> ids, CancellationToken cancellationToken)
+    {
+        var foundReports = new List<BDTestOutputModel>();
+        foreach (var batch in ids.Distinct(StringComparer.Ordinal).Chunk(5))
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            var reports = await Task.WhenAll(batch.Select(id => _dataRepository.GetDataForBulkRead(id, cancellationToken)));
+            foundReports.AddRange(reports.Where(report => report != null));
+        }
+
+        return foundReports;
+    }
+
+    private async Task<IActionResult> GetBulkReportsView(string reportIds, string viewName, string tab, CancellationToken cancellationToken)
+    {
+        const int maximumReports = MaximumBulkReports;
+        const int maximumIdLength = MaximumReportIdLength;
 
         // Bound allocation before splitting, and validate the entire request before any storage reads.
         if (reportIds.Length > maximumReports * (maximumIdLength + 1) - 1)
@@ -308,15 +400,16 @@ public class BDTestController : Controller
             return BadRequest("Select at most 50 reports. IDs must contain 1-128 letters, digits, dots, hyphens or underscores, and cannot be '.' or '..'.");
         }
 
-        var foundReports = new List<BDTestOutputModel>();
-        foreach (var batch in ids.Distinct(StringComparer.Ordinal).Chunk(5))
+        var foundReports = await ReadReports(ids, cancellationToken);
+        if (foundReports.Count == 0)
         {
-            cancellationToken.ThrowIfCancellationRequested();
-            var reports = await Task.WhenAll(batch.Select(id => _dataRepository.GetDataForBulkRead(id, cancellationToken)));
-            foundReports.AddRange(reports.Where(report => report != null));
+            return View("NotFoundMultiple");
         }
 
-        return foundReports.Count == 0 ? View("NotFoundMultiple") : View(viewName, foundReports);
+        var history = await GetHistory(tab);
+        history.ChosenRuns = true;
+        history.Reports = foundReports;
+        return View(viewName, foundReports);
     }
 
     [HttpGet]
