@@ -59,8 +59,13 @@ public class Step
     [JsonProperty]
     public bool TimedOut { get; private set; }
 
+    /// <summary>Non-fatal errors encountered while rendering this attempt's step text.</summary>
+    [JsonProperty]
+    public List<string> Diagnostics { get; private set; } = new();
+
     private bool _shouldSkip;
-    private readonly string _generatedStepText;
+    private readonly string _stepTextTemplate;
+    private string _generatedStepText;
 
     internal Step(Runnable runnable, StepType stepType, string scenarioId, string reportId)
     {
@@ -69,8 +74,9 @@ public class Step
         Runnable = runnable;
         StepType = stepType;
         ReportId = reportId;
-        // Capture automatic text once; execution and reporting must not re-evaluate arguments.
-        _generatedStepText = StepTextHelper.GetStepText(Runnable.ExpressionBody, Runnable.AcceptsCancellationToken);
+        // Construction and reporting retain placeholders without running user argument expressions.
+        _stepTextTemplate = StepTextHelper.GetStepTextTemplate(Runnable.ExpressionBody, Runnable.AcceptsCancellationToken);
+        _generatedStepText = _stepTextTemplate;
         SetStepText();
     }
 
@@ -82,10 +88,10 @@ public class Step
         ReportId = source.ReportId;
         Runnable = source.Runnable;
         StepType = source.StepType;
-        _generatedStepText = source._generatedStepText;
-        StepText = source.StepText;
+        _stepTextTemplate = source._stepTextTemplate;
+        _generatedStepText = _stepTextTemplate;
+        StepText = $"{StepPrefix} {_stepTextTemplate}";
         OverriddenStepText = source.OverriddenStepText;
-        _shouldSkip = source._shouldSkip;
         Timeout = source.Timeout;
     }
 
@@ -117,6 +123,9 @@ public class Step
 
     internal void ResetData()
     {
+        _generatedStepText = _stepTextTemplate;
+        StepText = SubstituteExampleValues($"{StepPrefix} {_stepTextTemplate}");
+        Diagnostics.Clear();
         TimedOut = false;
         Exception = null;
         Output = null;
@@ -127,7 +136,7 @@ public class Step
         IsRetry = true;
     }
 
-    internal void SetStepText()
+    internal void SetStepText(bool evaluateArguments = false)
     {
         if (OverriddenStepText != null)
         {
@@ -139,13 +148,16 @@ public class Step
             }
         }
 
-        SetShouldSkip();
-            
+        if (evaluateArguments)
+        {
+            _generatedStepText = StepTextHelper.GetStepText(Runnable.ExpressionBody, Runnable.AcceptsCancellationToken, Diagnostics.Add);
+        }
         StepText = SubstituteExampleValues($"{StepPrefix} {_generatedStepText}");
     }
 
     private void SetShouldSkip()
     {
+        _shouldSkip = false;
         var methodCallExpression = Runnable.ExpressionBody as MethodCallExpression;
         var methodInfo = methodCallExpression?.Method;
 
@@ -172,7 +184,7 @@ public class Step
 
     internal async Task Execute(BDTestBase test, TimeSpan? scenarioTimeout = null, TimeSpan? remainingScenarioTime = null)
     {
-        SetStepText();
+        SetShouldSkip();
 
         // Keep both subscriptions stable for this step, including its after hooks.
         var beforeHooks = BDTestSettings.BeforeStepHooks;
@@ -200,10 +212,14 @@ public class Step
 
             if (ShouldSkip())
             {
+                SetStepText();
                 StepText = $"[Skipped] {StepText}";
                 Status = Status.Skipped;
                 return;
             }
+
+            // Render once per attempt, after hooks and skip checks, immediately before invocation.
+            SetStepText(evaluateArguments: true);
 
             var remaining = remainingScenarioTime - stopwatch.Elapsed;
             var scenarioLimit = remaining.HasValue && (!Timeout.HasValue || remaining.Value <= Timeout.Value);

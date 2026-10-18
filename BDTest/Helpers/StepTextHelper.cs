@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Diagnostics;
 using System.Linq.Expressions;
+using System.Reflection;
 using System.Threading;
 using BDTest.Attributes;
 using BDTest.Interfaces;
@@ -31,14 +32,25 @@ public static class StepTextHelper
         return GetStepText(expression as MethodCallExpression, omitCancellationToken);
     }
 
-    private static string GetStepText(MethodCallExpression methodCallExpression, bool omitCancellationToken = false)
+    internal static string GetStepTextTemplate(Expression expression, bool omitCancellationToken)
+    {
+        return GetStepText(expression as MethodCallExpression, omitCancellationToken, evaluateArguments: false);
+    }
+
+    internal static string GetStepText(Expression expression, bool omitCancellationToken, Action<string> diagnostic)
+    {
+        return GetStepText(expression as MethodCallExpression, omitCancellationToken, diagnostic);
+    }
+
+    private static string GetStepText(MethodCallExpression methodCallExpression, bool omitCancellationToken = false,
+        Action<string> diagnostic = null, bool evaluateArguments = true)
     {
         if (methodCallExpression == null)
         {
             return string.Empty;
         }
             
-        var arguments = GetMethodArguments(methodCallExpression, omitCancellationToken);
+        var arguments = GetMethodArguments(methodCallExpression, omitCancellationToken, evaluateArguments, diagnostic);
 
         var methodInfo = methodCallExpression.Method;
 
@@ -76,16 +88,19 @@ public static class StepTextHelper
         return input;
     }
         
-    private static List<string> GetMethodArguments(MethodCallExpression methodCallExpression, bool omitCancellationToken)
+    private static List<string> GetMethodArguments(MethodCallExpression methodCallExpression, bool omitCancellationToken,
+        bool evaluateArguments, Action<string> diagnostic)
     {
-        return methodCallExpression?.Arguments != null 
-            ? methodCallExpression.Arguments
-                .Where(argument => !omitCancellationToken || argument.Type != typeof(CancellationToken))
-                .Select(GetExpressionValue).Select(value => value ?? "null").ToList()
-            : new List<string>();
+        var parameters = methodCallExpression.Method.GetParameters();
+        return methodCallExpression.Arguments.Select((argument, index) => new { Expression = argument, Name = parameters[index].Name })
+            .Where(argument => !omitCancellationToken || argument.Expression.Type != typeof(CancellationToken))
+            .Select(argument => evaluateArguments
+                ? GetExpressionValue(argument.Expression, argument.Name, diagnostic) ?? "null"
+                : $"{{{argument.Name}}}")
+            .ToList();
     }
-        
-    private static string GetExpressionValue(Expression argument)
+
+    private static string GetExpressionValue(Expression argument, string name, Action<string> diagnostic)
     {
         try
         {
@@ -140,8 +155,15 @@ public static class StepTextHelper
         }
         catch (Exception e)
         {
-            Debug.WriteLine($"BDTest Exception:{Environment.NewLine}Class: {nameof(StepTextHelper)}{Environment.NewLine}Method: {nameof(GetExpressionValue)}{Environment.NewLine}Exception: {e.Message}{Environment.NewLine}{e.StackTrace}");
-            return "null";
+            // DynamicInvoke and reflection wrap user exceptions; report the useful cause.
+            while (e is TargetInvocationException && e.InnerException != null)
+            {
+                e = e.InnerException;
+            }
+            var message = $"Step text argument '{name}' could not be evaluated: {e.GetType().Name}: {e.Message}";
+            Debug.WriteLine(message);
+            diagnostic?.Invoke(message);
+            return $"<error: {e.GetType().Name}>";
         }
     }
 
