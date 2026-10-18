@@ -146,8 +146,8 @@ public class NUnitCompositionTests
                 Assert.That(scenario.Tags, Is.EquivalentTo(new[] { "native-row", "native-class" }));
                 Assert.That(scenario.RetryCount, Is.EqualTo(1));
             }
-            var report = BDTestJsonHelper.Deserialize(BDTestJsonHelper.GetTestJsonData(null, run));
-            Assert.That(report.Scenarios.Select(s => s.ReportId), Is.All.EqualTo(run.ReportId));
+            var report = Required(BDTestJsonHelper.Deserialize(BDTestJsonHelper.GetTestJsonData(null, run)));
+            Assert.That(Required(report.Scenarios).Select(s => s.ReportId), Is.All.EqualTo(run.ReportId));
         }
         var contexts = NUnitCompositionEvidence.Contexts.ToArray();
         Assert.That(contexts, Has.Length.EqualTo(16));

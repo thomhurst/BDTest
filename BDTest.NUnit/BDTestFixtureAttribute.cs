@@ -17,7 +17,7 @@ public sealed class BDTestFixtureAttribute : NUnitAttribute, IWrapSetUpTearDown
     {
         public override TestResult Execute(TestExecutionContext context)
         {
-            NUnitTestLifecycle lifecycle = null;
+            NUnitTestLifecycle? lifecycle = null;
             try
             {
                 var host = (context.TestObject as INUnitBDTest)?.BDTestHost;
@@ -57,7 +57,7 @@ internal interface INUnitBDTestLifecycle
     NUnitTestLifecycle Lifecycle { get; }
 }
 
-internal sealed class NUnitTestLifecycle(Action<string, MethodInfo> begin, Action complete)
+internal sealed class NUnitTestLifecycle(Action<string, MethodInfo?> begin, Action complete)
 {
     internal static void CompleteOnRunner(Func<ValueTask> complete)
     {
@@ -75,9 +75,9 @@ internal sealed class NUnitTestLifecycle(Action<string, MethodInfo> begin, Actio
     private readonly AsyncLocal<bool> _wrapped = new();
     internal bool IsWrapped => _wrapped.Value;
 
-    internal void Begin(string id, int repeat, MethodInfo method) => begin($"{id}_{repeat}", method);
+    internal void Begin(string id, int repeat, MethodInfo? method) => begin($"{id}_{repeat}", method);
 
-    internal void BeginWrapped(string id, int repeat, MethodInfo method)
+    internal void BeginWrapped(string id, int repeat, MethodInfo? method)
     {
         _wrapped.Value = true;
         Begin(id, repeat, method);
