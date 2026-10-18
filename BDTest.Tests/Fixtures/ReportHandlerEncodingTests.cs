@@ -165,7 +165,7 @@ public class ReportHandlerEncodingTests
         return XElement.Parse(match.Value, LoadOptions.PreserveWhitespace);
     }
 
-    internal static async Task<string> RenderAsync<T>(string path, T model, bool isAdmin = false, string query = "", string pathBase = "", string host = "reports.example.test", string requestPath = "/bdtest/report/O'Brien/test-runs")
+    internal static async Task<string> RenderAsync<T>(string path, T model, bool isAdmin = false, string query = "", string pathBase = "", string host = "reports.example.test", string requestPath = "/bdtest/report/O'Brien/test-runs", IBDTestCustomHeaderLinksProvider customHeaderLinksProvider = null)
     {
         var builder = WebApplication.CreateBuilder();
         builder.Services.AddControllersWithViews().AddBdTestReportControllersAndViews();
@@ -173,6 +173,7 @@ public class ReportHandlerEncodingTests
         await using var scope = app.Services.CreateAsyncScope();
         var services = scope.ServiceProvider;
         services.GetRequiredService<BDTestReportServerOptions>().AdminAuthorizer = new AdminAuthorizer(isAdmin);
+        services.GetRequiredService<BDTestReportServerOptions>().CustomHeaderLinksProvider = customHeaderLinksProvider;
         var httpContext = new DefaultHttpContext { RequestServices = services };
         httpContext.Request.Scheme = "https";
         httpContext.Request.Host = new HostString(host);
