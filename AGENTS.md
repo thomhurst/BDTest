@@ -47,7 +47,7 @@ cd BDTest.Pipeline && dotnet run -c Release
 2. Registers framework-specific skip/ignore/success exceptions into `BDTestSettings.CustomExceptionSettings`.
 3. Sets `TestOutputData.FrameworkExecutionId` before each test, and calls `RemoveContext()` / `MarkTestAsComplete()` after.
 
-Core uses `InternalsVisibleTo` for `BDTest.NUnit`, `BDTest.xUnit`, `BDTest.TUnit` and the Razor middleware, with the public key from `StrongNameKeyPair.snk`. A new adapter that needs internals must be added to `BDTest/BDTest.csproj` and must also be signed.
+Core uses `InternalsVisibleTo` for `BDTest.NUnit`, `BDTest.xUnit`, `BDTest.TUnit`, and `BDTest.Tests`, with the public key from `StrongNameKeyPair.snk`. A new adapter that needs internals must be added to `BDTest/BDTest.csproj` and must also be signed.
 
 **Reporting**
 - `BDTest.Razor.Reports`: ASP.NET Core MVC controllers/views. Hosts add it with `AddBdTestReportControllersAndViews()` + `UseBDTestReportServer(...)`. Storage is pluggable through interfaces in `Interfaces/`.

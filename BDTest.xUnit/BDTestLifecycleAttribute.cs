@@ -1,0 +1,14 @@
+using System.Reflection;
+using BDTest.Output;
+using Xunit.v3;
+
+namespace BDTest.xUnit;
+
+// Existing fixtures may reimplement IAsyncLifetime and bypass the base hook.
+// Bind their buffered constructor/setup output before invoking the test body.
+[AttributeUsage(AttributeTargets.Class, Inherited = true)]
+internal sealed class BDTestLifecycleAttribute : BeforeAfterTestAttribute
+{
+    public override void Before(MethodInfo methodUnderTest, IXunitTest test) =>
+        TestOutputData.PendingStartupOutput?.BeginExecution();
+}

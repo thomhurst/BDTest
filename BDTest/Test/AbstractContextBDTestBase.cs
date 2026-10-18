@@ -87,17 +87,12 @@ public abstract class AbstractContextBDTestBase<TContext> : BDTestBase where TCo
         }
     }
 
-    protected override void MarkTestAsComplete()
-    {
-        RemoveContext();
-        base.MarkTestAsComplete();
-    }
+    protected void RemoveContext() => RemoveExecutionContext(BDTestExecutionId);
 
-    protected void RemoveContext()
+    internal override void RemoveExecutionContext(string executionId)
     {
         lock (_contextLock)
         {
-            var executionId = BDTestExecutionId;
             _defaultContexts.Remove(executionId);
             _contexts.Remove(executionId);
         }

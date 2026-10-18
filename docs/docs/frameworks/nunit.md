@@ -43,8 +43,8 @@ public class BasketTests : NUnitBDTestBase<BasketContext>
 
 - **Execution ID:** `TestContext.CurrentContext.Test.ID` plus the current repeat count, so `[Repeat]` runs stay separate.
 - **Exceptions:** registers `SuccessException` (from `Assert.Pass`) as success, `IgnoreException` (from `Assert.Ignore`) as skip and `InconclusiveException` as inconclusive. Registration happens once, in a `[OneTimeSetUp]`.
-- **Setup:** a `[SetUp]` method ties console output to the current test.
-- **Teardown:** a `[TearDown]` method removes the test's context and completes the test. If a [retried](../writing-tests/retries.md) scenario finally passed, it also sets the NUnit result to success.
+- **Setup:** a `[SetUp]` method calls `BeginTest` with the test ID and repeat count, which ties context and console output to the current test.
+- **Teardown:** a `[TearDown]` method calls `EndTest()`, which removes the test's context and completes the test. If a [retried](../writing-tests/retries.md) scenario finally passed, it also sets the NUnit result to success.
 - **Skips:** a whole-scenario skip calls `Assert.Ignore(reason)`.
 
 You can add your own `[SetUp]` and `[TearDown]` methods. They run alongside the adapter's.

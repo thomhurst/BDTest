@@ -1,6 +1,6 @@
 ---
 title: Custom adapters
-description: Connect BDTest to another test runner by supplying execution identity, lifecycle calls and exception registrations.
+description: Connect BDTest to another test runner with BeginTest and EndTest, exception registrations and skip handling.
 ---
 
 # Custom adapters
@@ -16,54 +16,58 @@ using BDTest.Test;
 public abstract class MyRunnerBDTestBase<TContext> : AbstractContextBDTestBase<TContext>
     where TContext : class, new()
 {
-    // 1. A stable, unique ID for the running test.
-    protected override string BDTestExecutionId => MyRunner.CurrentTest.Id;
-
     static MyRunnerBDTestBase()
     {
-        // 2. Register the runner's special exceptions once.
+        // Register the runner's special exceptions once.
         if (!BDTestSettings.CustomExceptionSettings.SkipExceptionTypes.Contains(typeof(MyRunnerSkipException)))
         {
             BDTestSettings.CustomExceptionSettings.SkipExceptionTypes.Add(typeof(MyRunnerSkipException));
         }
     }
 
-    // 3. Map a whole-scenario skip onto the runner.
-    protected override void OnScenarioSkipped(string reason) => throw new MyRunnerSkipException(reason);
+    // Called by the runner before each test, before any async setup starts.
+    [MyRunnerBeforeTest]
+    public void BDTestSetUp() => BeginTest(MyRunner.CurrentTest.Id);
 
-    // 4. Called by the runner after each test.
+    // Called by the runner after each test.
     [MyRunnerAfterTest]
-    public void BDTestTearDown()
-    {
-        RemoveContext();
-        MarkTestAsComplete();
-    }
+    public void BDTestTearDown() => EndTest();
+
+    // Map a whole-scenario skip onto the runner.
+    protected override void OnScenarioSkipped(string reason) => throw new MyRunnerSkipException(reason);
 }
 ```
 
 | Member | Purpose |
 | --- | --- |
-| `BDTestExecutionId` | Keys the context, output and scenario for one test. Must be unique per test execution and stable for its duration. |
-| `MarkTestAsStarted()` | Starts a new execution when you rely on the default execution ID instead of overriding it. |
-| `MarkTestAsComplete()` | Completes the test. Call it in teardown. |
-| `RemoveContext()` | Removes the test's context. Call it in teardown. |
+| `BeginTest(string frameworkTestId)` | Starts one test execution. Records the execution ID and the owning `TestRun`, installs console capture and clears stale capture state. |
+| `EndTest()` | Ends the execution. Removes its context and pending output from the owning run, then clears matching flow state. Calling it again is safe and never completes another active execution. |
 | `OnScenarioSkipped(string reason)` | Called when a whole scenario is skipped. Throw the runner's skip exception or call its skip API. |
-| `TestRun` | The [`BDTestRun`](../advanced/explicit-runs.md) that stores this test's scenarios. Defaults to the shared run. |
+| `TestRun` | The [`BDTestRun`](../advanced/explicit-runs.md) that stores this test's scenarios. Override it with a stable run to isolate scenarios, output and completion from other runs. Defaults to the shared run. |
+
+Adapters no longer need to set `TestOutputData.FrameworkExecutionId` or call `RemoveContext()` themselves.
 
 If your adapter needs BDTest internals, it must be added to `InternalsVisibleTo` in `BDTest/BDTest.csproj` and be strong-name signed with the repository key. Adapters that only use the public API need neither.
 
 ## Execution identity
 
-Every test needs an execution ID so that BDTest can keep its context and output separate from other tests.
+Every test execution needs its own ID so BDTest can keep its context and output separate. Pass one stable ID to `BeginTest` for each execution, including every data row, repeat and parallel test.
 
-**Preferred:** override `BDTestExecutionId` with the runner's stable per-test ID, as the NUnit, xUnit and TUnit adapters do.
+The built-in adapters use:
 
-**Otherwise:** call the protected `MarkTestAsStarted()` **synchronously** in the flow that runs setup and the test, before any async work starts, and call `MarkTestAsComplete()` in teardown. Keep both calls inside the same async entry method so its identity does not leak into the caller:
+| Adapter | ID |
+| --- | --- |
+| TUnit | `TestContext.Current.Id` |
+| NUnit | `Test.ID` plus the repeat count |
+| xUnit v3 | `TestContext.Current.Test.UniqueID` |
+| MSTest | class name and data-row display name, plus an execution suffix |
+
+Call `BeginTest` **synchronously** in the flow that runs setup and the test body, before any async work starts, and call `EndTest()` in teardown. Keep both calls in the same async entry method:
 
 ```csharp
-public async Task RunTestAsync()
+public async Task RunTestAsync(string frameworkTestId)
 {
-    MarkTestAsStarted();
+    BeginTest(frameworkTestId);
     try
     {
         await SetupAsync();
@@ -71,14 +75,16 @@ public async Task RunTestAsync()
     }
     finally
     {
-        MarkTestAsComplete();
+        EndTest();
     }
 }
 ```
 
-Calling the start method inside a separate async setup method, or inside `Task.Run`, does not flow its `AsyncLocal` value back to the caller. For compatibility, the default implementation still creates an ID on first access. Custom adapters with async setup should use the explicit lifecycle or a stable framework ID instead.
+`BeginTest` stores its state in `AsyncLocal` values. Calling it inside a separate async setup method or `Task.Run` does not flow those values back to the caller. Runners that isolate hook execution contexts need to export them; the TUnit adapter calls `TestContext.Current.AddAsyncLocalValues()` for this reason.
 
-The MSTest adapter shows a third option: assign a GUID per fixture instance when the runner creates one instance per test.
+### Migrating older adapters
+
+`MarkTestAsStarted()` and `MarkTestAsComplete()` are obsolete compatibility shims. Replace them with `BeginTest(id)` and `EndTest()`. Existing `BDTestExecutionId` overrides still work, but new adapters should pass the ID to `BeginTest` instead.
 
 ## Testing your adapter
 

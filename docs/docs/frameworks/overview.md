@@ -30,7 +30,7 @@ Each adapter is a thin class that derives from `AbstractContextBDTestBase<TConte
 
 | | TUnit | NUnit | xUnit v3 | MSTest |
 | --- | --- | --- | --- | --- |
-| Execution ID | `TestContext.Current.Id` | `Test.ID` + repeat count | `TestContext.Current.Test.UniqueID` | GUID per fixture instance |
+| Execution ID | `TestContext.Current.Id` | `Test.ID` + repeat count | `TestContext.Current.Test.UniqueID` | class and data-row display name + execution suffix |
 | Success exception | — | `SuccessException` (`Assert.Pass`) | — | — |
 | Skip exception | `SkipTestException` (`Skip.Test`) | `IgnoreException` (`Assert.Ignore`) | `SkipException` (`Assert.Skip`) | — |
 | Inconclusive exception | `InconclusiveTestException` | `InconclusiveException` | — | `AssertInconclusiveException` |

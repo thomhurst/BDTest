@@ -26,6 +26,7 @@ const sidebars = {
         'writing-tests/scenario-outlines',
         'writing-tests/timeouts',
         'writing-tests/retries',
+        'configuration/retry-hook-errors',
         'writing-tests/skipping',
         'writing-tests/step-hooks',
         'writing-tests/output',
@@ -59,6 +60,7 @@ const sidebars = {
       items: [
         'reports/overview',
         'reports/html-report',
+        'reports/html-report-security',
         'reports/json-data',
         'reports/ci-integration',
       ],

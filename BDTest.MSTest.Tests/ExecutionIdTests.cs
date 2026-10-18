@@ -33,6 +33,7 @@ public class ExecutionIdTests : MSTestBDTestBase<ExecutionIdTests.TestContextDat
     [DataRow(4)]
     public async Task SetupAndBodyShareContextAndOutput(int row)
     {
+        Console.WriteLine("body console startup " + _setupId);
         Assert.AreSame(_setupContext, Context);
         Assert.AreEqual(_setupId, BDTestContext.CurrentScenarioBDTestExecutionId);
         Assert.IsTrue(ExecutionIds.TryAdd(_setupId, 0), $"Row {row} reused another test's ID");
@@ -43,6 +44,9 @@ public class ExecutionIdTests : MSTestBDTestBase<ExecutionIdTests.TestContextDat
         Assert.Contains("startup " + _setupId, scenario.TestStartupInformation);
         Assert.Contains("sync console startup " + _setupId, scenario.TestStartupInformation);
         Assert.Contains("async console startup " + _setupId, scenario.TestStartupInformation);
+        Assert.Contains("body console startup " + _setupId, scenario.TestStartupInformation);
+        Assert.Contains(TestContext.FullyQualifiedTestClassName, _setupId);
+        Assert.Contains(TestContext.TestDisplayName, _setupId);
         WriteTearDownOutput("teardown " + _setupId);
         Assert.Contains("teardown " + _setupId, scenario.TearDownOutput);
     }

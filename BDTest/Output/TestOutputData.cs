@@ -25,7 +25,7 @@ internal class TestOutputData : TextWriter
     private static readonly AsyncLocal<string> AsyncLocalFrameworkExecutionId = new();
     public static string FrameworkExecutionId {
         get => AsyncLocalFrameworkExecutionId.Value;
-        set => AsyncLocalFrameworkExecutionId.Value = value;
+        internal set => AsyncLocalFrameworkExecutionId.Value = value;
     }
 
     private static readonly AsyncLocal<ScenarioConstructionOutput> AsyncLocalConstructionOutput = new();
@@ -33,6 +33,15 @@ internal class TestOutputData : TextWriter
     {
         get => AsyncLocalConstructionOutput.Value;
         set => AsyncLocalConstructionOutput.Value = value;
+    }
+
+    // xUnit constructs derived fixtures before their owned run is available.
+    // Buffer console output without touching any run until initialization.
+    private static readonly AsyncLocal<StartupOutputBuffer> AsyncLocalPendingStartupOutput = new();
+    internal static StartupOutputBuffer PendingStartupOutput
+    {
+        get => AsyncLocalPendingStartupOutput.Value;
+        set => AsyncLocalPendingStartupOutput.Value = value;
     }
 
     public override void Write(string value)
@@ -64,6 +73,12 @@ internal class TestOutputData : TextWriter
 
     private static void WriteCore(string value, char? character = null)
     {
+        var pending = PendingStartupOutput;
+        if (pending != null)
+        {
+            pending.Write(value, character);
+            return;
+        }
         lock (Lock)
         {
             if (Run.Store.IsDisposed) return;

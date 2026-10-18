@@ -53,8 +53,8 @@ dotnet run --project MyApp.AcceptanceTests -- --treenode-filter "/*/*/BasketTest
 
 - **Execution ID:** `TestContext.Current.Id`.
 - **Exceptions:** registers `SkipTestException` (from `Skip.Test(...)`) as skip and `InconclusiveTestException` as inconclusive, in a class-level `[Before]` hook.
-- **Setup:** a `[Before(HookType.Test)]` hook marks the test as started and exports BDTest's `AsyncLocal` values so the test body sees them.
-- **Teardown:** an `[After(HookType.Test)]` hook removes the context and completes the test.
+- **Setup:** a `[Before(HookType.Test)]` hook calls `BeginTest` and exports BDTest's `AsyncLocal` values so the test body sees them.
+- **Teardown:** an `[After(HookType.Test)]` hook calls `EndTest()`, which removes the context and completes the test.
 - **Skips:** a whole-scenario skip throws `SkipTestException`, so TUnit reports the test as skipped.
 
 ## Reports after the run

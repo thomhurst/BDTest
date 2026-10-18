@@ -8,20 +8,23 @@ namespace BDTest.Helpers;
 
 internal static class ScenarioTextHelper
 {
-    internal static ScenarioTextWithParameters GetScenarioTextWithParameters(MethodInfo testMethod, string callerMember)
-    {
-        var stackFrames = new StackTrace().GetFrames() ?? Array.Empty<StackFrame>();
+    internal static ScenarioTextWithParameters GetScenarioTextWithParameters(MethodInfo testMethod, string callerMember) =>
+        GetScenarioTextWithParameters(testMethod, callerMember, StackFramesHelper.GetStackFrames());
 
-        var stepAttributeFrame = stackFrames.FirstOrDefault(it => GetScenarioTextAttribute(it) != null);
-        if (stepAttributeFrame != null)
+    internal static ScenarioTextWithParameters GetScenarioTextWithParameters(MethodInfo testMethod, string callerMember,
+        IEnumerable<StackFrame> stackFrames)
+    {
+        var methods = StackFramesHelper.GetMethods(stackFrames).ToArray();
+        var attributeMethod = methods.FirstOrDefault(it => GetScenarioTextAttribute(it) != null);
+        if (attributeMethod != null)
         {
-            return new ScenarioTextWithParameters(new ScenarioText(GetScenarioTextAttribute(stepAttributeFrame)), GetParameters(stepAttributeFrame));
+            return new ScenarioTextWithParameters(new ScenarioText(GetScenarioTextAttribute(attributeMethod)), GetParameters(attributeMethod));
         }
 
-        var callingFrame = stackFrames.FirstOrDefault(it => it.GetMethod().Name == callerMember);
-        if (callingFrame != null)
+        var callingMethod = methods.FirstOrDefault(it => it.Name == callerMember);
+        if (callingMethod != null)
         {
-            return new ScenarioTextWithParameters(new ScenarioText(callingFrame.GetMethod().Name.Humanize()), GetParameters(callingFrame));
+            return new ScenarioTextWithParameters(new ScenarioText(callingMethod.Name.Humanize()), GetParameters(callingMethod));
         }
             
         var scenarioTextAttribute = testMethod?.GetCustomAttribute<ScenarioTextAttribute>();
@@ -39,19 +42,14 @@ internal static class ScenarioTextHelper
         return new ScenarioTextWithParameters(new ScenarioText("No Scenario Text found (Use attribute [ScenarioText(\"...\")] on your tests"), Array.Empty<string>());
     }
         
-    private static string GetScenarioTextAttribute(StackFrame it)
-    {
-        return GetScenarioTextAttribute(it.GetMethod());
-    }
-        
     private static string GetScenarioTextAttribute(ICustomAttributeProvider it)
     {
         return (it.GetCustomAttributes(typeof(ScenarioTextAttribute), true).FirstOrDefault() as ScenarioTextAttribute)?.Text;
     }
         
-    private static IEnumerable<string> GetParameters(StackFrame callingFrame)
+    private static IEnumerable<string> GetParameters(MethodBase method)
     {
-        return callingFrame?.GetMethod()?.GetParameters().Select(it => it.Name);
+        return method.GetParameters().Select(it => it.Name);
     }
 }
 

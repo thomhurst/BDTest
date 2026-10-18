@@ -40,9 +40,9 @@ public class BasketTests : MSTestBDTestBase<BasketContext>
 
 ## What the adapter does
 
-- **Execution ID:** a new GUID per fixture instance. MSTest creates an instance per test, including each data-driven case, so async setup, context access and cleanup stay together.
-- **Initialisation:** a `[TestInitialize]` method registers `AssertInconclusiveException` as inconclusive and marks the test as started.
-- **Cleanup:** a `[TestCleanup]` method removes the context and completes the test.
+- **Execution ID:** the fully qualified class name and the test's display name (which includes the data row), plus a unique suffix so repeated executions stay separate.
+- **Initialisation:** a `[TestInitialize]` method registers `AssertInconclusiveException` as inconclusive and calls `BeginTest`.
+- **Cleanup:** a `[TestCleanup]` method calls `EndTest()`, which removes the context and completes the test.
 - **Skips:** a whole-scenario skip calls `Assert.Inconclusive(reason)`. The runner shows it as skipped or not executed; BDTest records `Skipped`. An explicit `Assert.Inconclusive()` inside a step stays `Inconclusive` in BDTest.
 
 ## Reports after the run

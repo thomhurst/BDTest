@@ -21,6 +21,7 @@ To run with VSTest (`dotnet test`), reference `xunit.v3.mtp-off`, `Microsoft.NET
 
 <ItemGroup>
   <PackageReference Include="BDTest.xUnit" Version="*" />
+  <PackageReference Include="BDTest.SourceGenerator" Version="*" PrivateAssets="all" />
   <PackageReference Include="xunit.v3.mtp-off" Version="4.0.2" />
   <PackageReference Include="Microsoft.NET.Test.Sdk" Version="*" />
   <PackageReference Include="xunit.runner.visualstudio" Version="4.*" PrivateAssets="all" />
@@ -59,10 +60,25 @@ public class BasketTests : XUnitBDTestBase<BasketContext>
 
 - **Execution ID:** `TestContext.Current.Test.UniqueID`. Theory rows get separate IDs and contexts, even when their data is not serializable.
 - **Exceptions:** registers `Xunit.Sdk.SkipException` (from `Assert.Skip(...)`) as a skip exception.
-- **Start:** the constructor marks the test as started.
-- **Teardown:** the class implements `IDisposable` and `IAsyncDisposable`. Disposal completes the BDTest execution, removes the context and clears pending output and listener state.
+- **Start:** the class implements `IAsyncLifetime`. Its initialization hook calls `BeginTest` after your constructor finishes, then calls the virtual `InitializeAsync()`.
+- **Teardown:** disposal completes the BDTest execution, removes the context and clears pending output and listener state.
 - **Skips:** a whole-scenario skip calls `Assert.Skip(reason)`, so BDTest and the xUnit runner both report the test as skipped.
 - **Output:** BDTest captures console output itself. To also write to xUnit's output, inject `Xunit.ITestOutputHelper` into your own constructor.
+
+## Initialization and constructor output
+
+Console output from constructors is buffered until the initialization hook runs. A [`TestRun`](../advanced/explicit-runs.md) assigned in your constructor therefore owns that output.
+
+For async setup, override `InitializeAsync()`. You do not need to call the base method; capture is already active when your override starts. Prefer this override to reimplementing `IAsyncLifetime`.
+
+```csharp
+public override async ValueTask InitializeAsync()
+{
+    await Context.OpenAsync();
+}
+```
+
+Fixtures that reimplement `IAsyncLifetime.InitializeAsync()` still work: their constructor and setup output stays buffered until an inherited before-test hook binds the execution. Disposal also binds the execution when setup fails before that hook runs, then removes its context and pending output. Tasks started in constructors share the buffer: writes after binding go to the owning run, and writes after disposal are ignored by BDTest capture.
 
 ## Asynchronous teardown
 
@@ -82,7 +98,9 @@ public override async ValueTask DisposeAsync()
 }
 ```
 
-This also applies when you implement `IAsyncLifetime.InitializeAsync()`. If you hide the method or explicitly reimplement `IAsyncDisposable.DisposeAsync()`, you must still call `await base.DisposeAsync()`; xUnit does not also call `Dispose()`. See the [xUnit v3 migration guide](https://xunit.net/docs/getting-started/v3/migration#iasynclifetime-now-inherits-from-iasyncdisposable).
+If you hide the method or explicitly reimplement `IAsyncDisposable.DisposeAsync()`, you must still call `await base.DisposeAsync()`; xUnit does not also call `Dispose()`. See the [xUnit v3 migration guide](https://xunit.net/docs/getting-started/v3/migration#iasynclifetime-now-inherits-from-iasyncdisposable).
+
+Both disposal paths still call overrides of the obsolete `MarkTestAsComplete()` for compatibility. Such overrides must call the base method to complete BDTest cleanup. Use `DisposeAsync()` for new teardown code.
 
 ## Reports after the run
 
@@ -108,5 +126,5 @@ public sealed class BDTestReports : IAsyncDisposable
 
 1. Replace the `xunit` 2.x package with `xunit.v3.mtp-off` (to keep VSTest) or `xunit.v3`, and set `<OutputType>Exe</OutputType>`. Keep `Microsoft.NET.Test.Sdk` and update `xunit.runner.visualstudio` to 4.x.
 2. Remove constructors that only passed `ITestOutputHelper` to `base(...)`. If you still need the helper, inject `Xunit.ITestOutputHelper` (not `Xunit.Abstractions.ITestOutputHelper`) in your derived class.
-3. Change existing `DisposeAsync()` implementations to overrides that await `base.DisposeAsync()`.
+3. Change existing `DisposeAsync()` and `InitializeAsync()` implementations to overrides; await `base.DisposeAsync()` in teardown.
 4. Remove workarounds for runtime skips: BDTest skip rules now produce skipped xUnit results instead of throwing `NotSupportedException`.

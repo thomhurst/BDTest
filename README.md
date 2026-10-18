@@ -127,9 +127,11 @@ rows have separate IDs and contexts even when their data is not serializable.
 Runtime BDTest skip rules now produce skipped xUnit results instead of throwing
 `NotSupportedException`.
 
-The adapter implements `IAsyncDisposable`. For asynchronous teardown, override
+The adapter implements `IAsyncLifetime`. For asynchronous teardown, override
 `DisposeAsync()` and call `await base.DisposeAsync()` in a `finally` block, including
-when implementing `IAsyncLifetime`. xUnit v3 calls only asynchronous disposal when
+when overriding `InitializeAsync`. Prefer the virtual override to reimplementing
+`IAsyncLifetime`. Existing interface implementations bind buffered startup output
+through an inherited before-test hook. xUnit v3 calls only asynchronous disposal when
 both disposal interfaces are present; hiding or explicitly reimplementing
 `DisposeAsync()` must also invoke the base cleanup.
 See the [xUnit adapter guide](https://thomhurst.github.io/BDTest/docs/frameworks/xunit) for the teardown pattern.
@@ -235,20 +237,20 @@ scenario tags.
 
 Use a new `BDTestBuilder` for each standalone test. Its execution ID is assigned
 when it is constructed, so startup output written from async setup or `Task.Run`
-uses the same ID as the scenario. `MSTestBDTestBase<TContext>` also assigns an ID
-per fixture instance, keeping async setup, context access, and teardown together.
+uses the same ID as the scenario. Framework adapters record an execution ID once
+at test start, keeping async setup, context access, and teardown together.
 
 For a custom adapter inheriting `BDTestBase` or `AbstractContextBDTestBase<TContext>`,
-override `BDTestExecutionId` with the runner's stable per-test ID, or call the
-protected `MarkTestAsStarted()` synchronously in the flow that runs setup and the
-test. Call it before starting any async work, and call `MarkTestAsComplete()` in
-teardown. Keep both lifecycle calls inside the same async entry method so its
+call the protected `BeginTest(frameworkTestId)` synchronously before starting any
+async setup, and call `EndTest()` in teardown. The framework ID must be unique per
+execution, including each data row, repeat and parallel test. Keep both lifecycle
+calls inside the same async entry method so its
 execution identity does not leak into the caller:
 
 ```csharp
-public async Task RunTestAsync()
+public async Task RunTestAsync(string frameworkTestId)
 {
-    MarkTestAsStarted();
+    BeginTest(frameworkTestId);
     try
     {
         await SetupAsync();
@@ -256,15 +258,34 @@ public async Task RunTestAsync()
     }
     finally
     {
-        MarkTestAsComplete();
+        EndTest();
     }
 }
 ```
 
+`BeginTest` binds `TestRun`, installs console capture before the first step, and
+clears stale capture state. `EndTest` removes the context and pending output from
+the owning run, then clears capture state. Calling `EndTest` again is safe, even
+when another run is active. TUnit hooks export the new flow state through
+`TestContext.Current.AddAsyncLocalValues()`.
+
+NUnit uses its test ID plus repeat count. TUnit uses `TestContext.Id`. MSTest uses
+the class name and data-row display name plus an execution suffix. The current
+xUnit v3 adapter uses the framework test ID, including its data-row identity.
+Constructor console output is buffered until xUnit calls `IAsyncLifetime.InitializeAsync`, after the
+constructor has assigned any owned `TestRun`. The explicit interface hook binds
+capture before invoking virtual `InitializeAsync`, so async setup overrides keep
+the same output flow as the test body. Override `DisposeAsync` for async
+cleanup and call `base.DisposeAsync()` in `finally`.
+
 Calling the start hook inside a separate async setup method or `Task.Run` does
-not propagate its `AsyncLocal` value back to the caller. The legacy default still
-creates an ID on first access for compatibility; custom adapters using async
-setup should use the explicit lifecycle or a stable framework ID instead.
+not propagate its `AsyncLocal` values back to the caller. Per-test fixture
+instances retain their execution identity across runner setup/body boundaries.
+The legacy standalone default still creates an ID on first access. Existing
+`BDTestExecutionId` overrides remain supported for compatibility, but custom
+adapters should migrate to `BeginTest(id)`. `MarkTestAsStarted()` and
+`MarkTestAsComplete()` remain as obsolete compatibility shims. See the
+[custom adapter lifecycle guide](https://thomhurst.github.io/BDTest/docs/frameworks/custom-adapters#execution-identity).
 
 ### Before and after step hooks
 
@@ -328,6 +349,14 @@ Durations measure each attempt; retry hooks run between attempts. `Scenario.Stat
 continues to count retries. JSON reports include the history; older reports load
 with an empty history. Retried scenarios show a **Retry history** section in both
 standalone HTML and Razor reports, so failures remain visible after a passing retry.
+
+If a retry setup, teardown, or `OnBeforeRetry()` hook throws, BDTest stops retrying
+and throws `BDTest.Exceptions.ErrorOccurredDuringRetryActionException`, which derives
+from `BDTestException`. Its message includes the hook's error message, and
+`InnerException` contains the original hook exception. `ToString()` includes the
+cause and its stack trace. `GetBaseException()` follows the normal inner exception
+chain to the innermost cause. Scenario and retry attempt reports retain the hook exception,
+including any nested cause. See [retry hook errors](https://thomhurst.github.io/BDTest/docs/configuration/retry-hook-errors).
 
 ### But steps
 

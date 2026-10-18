@@ -70,7 +70,7 @@ public class OrderTests : TUnitBDTestBase<OrderContext>
 }
 ```
 
-An exception in any retry hook fails the scenario and ends retrying, even if the original exception would otherwise have a custom outcome. The failure is recorded as a failed attempt in the retry history. [Step hooks](step-hooks.md) run again on every attempt. Each attempt also gets a fresh [scenario timeout](timeouts.md) budget.
+An exception in any retry hook fails the scenario and ends retrying, even if the original exception would otherwise have a custom outcome. BDTest throws `ErrorOccurredDuringRetryActionException` with the hook's exception as `InnerException`, and records a failed attempt in the retry history. See [Retry hook errors](../configuration/retry-hook-errors.md). [Step hooks](step-hooks.md) run again on every attempt. Each attempt also gets a fresh [scenario timeout](timeouts.md) budget.
 
 ## Retry history
 

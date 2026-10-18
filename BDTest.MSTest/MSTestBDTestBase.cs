@@ -8,9 +8,7 @@ namespace BDTest.MSTest;
 public abstract class MSTestBDTestBase<TContext> : AbstractContextBDTestBase<TContext>
     where TContext : class, new()
 {
-    // MSTest creates a fixture instance per test, including each data-driven case.
-    // An instance ID survives the separate execution flows used by async setup/body.
-    protected override string BDTestExecutionId { get; } = Guid.NewGuid().ToString("N");
+    public TestContext TestContext { get; set; }
 
     protected override void OnScenarioSkipped(string reason) => Assert.Inconclusive(reason);
 
@@ -18,14 +16,15 @@ public abstract class MSTestBDTestBase<TContext> : AbstractContextBDTestBase<TCo
     public void InitializeBDTest()
     {
         MSTestExceptionRegistration.EnsureRegistered();
-        MarkTestAsStarted();
+        // TestDisplayName includes the runner's data-row display name. The suffix also
+        // distinguishes repeated executions with identical data and display names.
+        BeginTest($"{TestContext?.FullyQualifiedTestClassName}.{TestContext?.TestDisplayName ?? TestContext?.TestName}_{Guid.NewGuid():N}");
     }
 
     [TestCleanup]
     public void TearDown()
     {
-        RemoveContext();
-        base.MarkTestAsComplete();
+        EndTest();
     }
 }
 
