@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Net;
 using System.Text;
+using System.Threading;
 using BDTest.Helpers;
 
 namespace BDTest;
@@ -16,30 +17,52 @@ public static class BDTestReportServer
         return SendDataAndGetReportUriAsync(serverAddress, new BDTestRunDescriptor());
     }
         
-    public static async Task<Uri> SendDataAndGetReportUriAsync(Uri serverAddress, BDTestRunDescriptor? bdTestRunDescriptor)
+    public static Task<Uri> SendDataAndGetReportUriAsync(Uri serverAddress, BDTestRunDescriptor? bdTestRunDescriptor)
+        => SendDataAndGetReportUriAsync(serverAddress, bdTestRunDescriptor, CancellationToken.None);
+
+    /// <summary>Uploads the default run, allowing cancellation of warm-up, requests and retry waits.</summary>
+    public static async Task<Uri> SendDataAndGetReportUriAsync(Uri serverAddress, BDTestRunDescriptor? bdTestRunDescriptor,
+        CancellationToken cancellationToken)
     {
         using var httpClient = new HttpClient
         {
             Timeout = TimeSpan.FromMinutes(2)
         };
 
-        return await SendDataAndGetReportUriAsync(serverAddress, bdTestRunDescriptor, httpClient).ConfigureAwait(false);
+        return await SendDataAndGetReportUriAsync(serverAddress, bdTestRunDescriptor, httpClient, cancellationToken).ConfigureAwait(false);
     }
         
     public static Task<Uri> SendDataAndGetReportUriAsync(Uri serverAddress, BDTestRunDescriptor? bdTestRunDescriptor,
-        HttpClient httpClient) => SendDataAndGetReportUriAsync(serverAddress, bdTestRunDescriptor, httpClient, BDTestRun.Default);
+        HttpClient httpClient) => SendDataAndGetReportUriAsync(serverAddress, bdTestRunDescriptor, httpClient, CancellationToken.None);
+
+    /// <summary>Uploads the default run using a caller-owned HTTP client and cancellation token.</summary>
+    public static Task<Uri> SendDataAndGetReportUriAsync(Uri serverAddress, BDTestRunDescriptor? bdTestRunDescriptor,
+        HttpClient httpClient, CancellationToken cancellationToken)
+        => SendDataAndGetReportUriAsync(serverAddress, bdTestRunDescriptor, httpClient, BDTestRun.Default, cancellationToken);
 
     /// <summary>Uploads only the scenarios and pending definitions owned by the supplied run.</summary>
-    public static async Task<Uri> SendDataAndGetReportUriAsync(BDTestRun run, Uri serverAddress, BDTestRunDescriptor? bdTestRunDescriptor)
+    public static Task<Uri> SendDataAndGetReportUriAsync(BDTestRun run, Uri serverAddress, BDTestRunDescriptor? bdTestRunDescriptor)
+        => SendDataAndGetReportUriAsync(run, serverAddress, bdTestRunDescriptor, CancellationToken.None);
+
+    /// <summary>Uploads only the supplied run, allowing cancellation of warm-up, requests and retry waits.</summary>
+    public static async Task<Uri> SendDataAndGetReportUriAsync(BDTestRun run, Uri serverAddress, BDTestRunDescriptor? bdTestRunDescriptor,
+        CancellationToken cancellationToken)
     {
         using var httpClient = new HttpClient { Timeout = TimeSpan.FromMinutes(2) };
-        return await SendDataAndGetReportUriAsync(serverAddress, bdTestRunDescriptor, httpClient, run).ConfigureAwait(false);
+        return await SendDataAndGetReportUriAsync(serverAddress, bdTestRunDescriptor, httpClient, run, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>Uploads the supplied run using a caller-owned HTTP client.</summary>
-    public static async Task<Uri> SendDataAndGetReportUriAsync(Uri serverAddress, BDTestRunDescriptor? bdTestRunDescriptor,
+    public static Task<Uri> SendDataAndGetReportUriAsync(Uri serverAddress, BDTestRunDescriptor? bdTestRunDescriptor,
         HttpClient httpClient, BDTestRun run)
+        => SendDataAndGetReportUriAsync(serverAddress, bdTestRunDescriptor, httpClient, run, CancellationToken.None);
+
+    /// <summary>Uploads the supplied run using a caller-owned HTTP client and cancellation token.</summary>
+    /// <remarks>Cancellation does not dispose the client or remove captures, and may leave a partial report on the server.</remarks>
+    public static async Task<Uri> SendDataAndGetReportUriAsync(Uri serverAddress, BDTestRunDescriptor? bdTestRunDescriptor,
+        HttpClient httpClient, BDTestRun run, CancellationToken cancellationToken)
     {
+        cancellationToken.ThrowIfCancellationRequested();
         var dataOutputModel = BDTestOutputModelBuilder.Build(run, bdTestRunDescriptor);
         var pingUri = new UriBuilder(serverAddress)
         {
@@ -48,13 +71,14 @@ public static class BDTestReportServer
             
         try
         {
-            using var response = await httpClient.GetAsync(pingUri).ConfigureAwait(false);
+            using var response = await httpClient.GetAsync(pingUri, cancellationToken).ConfigureAwait(false);
         }
-        catch
+        catch when (!cancellationToken.IsCancellationRequested)
         {
             // Result ignored - This is just to make sure the server is warmed up. If not, it'll warm it up!
         }
             
+        cancellationToken.ThrowIfCancellationRequested();
         var uploadUri = new UriBuilder(serverAddress)
         {
             Path = GetReportBasePath(serverAddress) + "data"
@@ -64,9 +88,11 @@ public static class BDTestReportServer
         // Check ownership before posting JSON. File content is opened again for each upload attempt.
         foreach (var attachment in attachments)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             using var content = run.OpenAttachment(attachment.Id ?? throw new InvalidOperationException("The attachment has no ID."));
             if (content.Length != attachment.Length) throw new InvalidDataException("Captured attachment length changed.");
         }
+        cancellationToken.ThrowIfCancellationRequested();
         var stringContent = BDTestJsonHelper.Serialize(dataOutputModel);
         string? responseContent = null;
         string? reportId = null;
@@ -79,7 +105,7 @@ public static class BDTestReportServer
             responseContent = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
             if (response.Headers.TryGetValues("X-BDTest-Report-Id", out var ids)) reportId = ids.Single();
             if (response.Headers.TryGetValues("X-BDTest-Attachment-Token", out var tokens)) attachmentToken = tokens.Single();
-        }).ConfigureAwait(false);
+        }, cancellationToken).ConfigureAwait(false);
 
         if (attachments.Length > 0)
         {
@@ -87,6 +113,7 @@ public static class BDTestReportServer
                 throw new InvalidOperationException("The report server did not authorize attachment uploads. Upgrade the server and configure AttachmentStore.");
             foreach (var attachment in attachments)
             {
+                cancellationToken.ThrowIfCancellationRequested();
                 var attachmentId = attachment.Id ?? throw new InvalidOperationException("The attachment has no ID.");
                 var attachmentUri = new Uri(uploadUri.AbsoluteUri.TrimEnd('/') + "/" + reportId + "/attachments/" + Uri.EscapeDataString(attachmentId));
                 var mime = System.Net.Http.Headers.MediaTypeHeaderValue.Parse(attachment.MimeType ?? throw new InvalidOperationException("The attachment has no MIME type."));
@@ -98,9 +125,10 @@ public static class BDTestReportServer
                     var request = new HttpRequestMessage(HttpMethod.Post, attachmentUri) { Content = content };
                     request.Headers.Add("X-BDTest-Attachment-Token", attachmentToken);
                     return request;
-                }, _ => Task.CompletedTask).ConfigureAwait(false);
+                }, _ => Task.CompletedTask, cancellationToken).ConfigureAwait(false);
             }
         }
+        cancellationToken.ThrowIfCancellationRequested();
         return new Uri(responseContent ?? throw new InvalidOperationException("The report server returned no report URI."));
     }
 
@@ -109,10 +137,11 @@ public static class BDTestReportServer
         ? "/bdtest/" : serverAddress.AbsolutePath.TrimEnd('/') + "/";
 
     private static async Task SendWithRetryAsync(HttpClient httpClient, Func<HttpRequestMessage> createRequest,
-        Func<HttpResponseMessage, Task> consumeResponse)
+        Func<HttpResponseMessage, Task> consumeResponse, CancellationToken cancellationToken)
     {
         for (var attempt = 1; ; attempt++)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             // Three attempts, with 250ms then 500ms backoff unless the server asks for longer.
             var retryDelay = TimeSpan.FromMilliseconds(250 * attempt);
             DateTimeOffset? retryAt = null;
@@ -121,7 +150,7 @@ public static class BDTestReportServer
             try
             {
                 using var httpRequestMessage = createRequest();
-                using var response = await httpClient.SendAsync(httpRequestMessage).ConfigureAwait(false);
+                using var response = await httpClient.SendAsync(httpRequestMessage, cancellationToken).ConfigureAwait(false);
                 retryable = response.IsSuccessStatusCode || IsTransient(response.StatusCode);
                 if (IsTransient(response.StatusCode))
                 {
@@ -133,14 +162,18 @@ public static class BDTestReportServer
                     retryAt = retryAfter?.Date;
                 }
 
+                cancellationToken.ThrowIfCancellationRequested();
                 response.EnsureSuccessStatusCode();
+                // SendAsync uses ResponseContentRead, so response buffering is covered by the token
+                // even on netstandard2.0, where ReadAsStringAsync has no token overload.
                 await consumeResponse(response).ConfigureAwait(false);
+                cancellationToken.ThrowIfCancellationRequested();
                 break;
             }
-            catch (Exception exception) when (attempt < 3 && retryable
+            catch (Exception exception) when (!cancellationToken.IsCancellationRequested && attempt < 3 && retryable
                 && (exception is HttpRequestException || exception is TaskCanceledException))
             {
-                await WaitForRetryAfterAsync(retryDelay, retryAt).ConfigureAwait(false);
+                await WaitForRetryAfterAsync(retryDelay, retryAt, cancellationToken).ConfigureAwait(false);
             }
         }
     }
@@ -149,7 +182,7 @@ public static class BDTestReportServer
         HttpStatusCode.RequestTimeout or (HttpStatusCode)429 or HttpStatusCode.InternalServerError
         or HttpStatusCode.BadGateway or HttpStatusCode.ServiceUnavailable or HttpStatusCode.GatewayTimeout;
 
-    private static async Task WaitForRetryAfterAsync(TimeSpan delay, DateTimeOffset? retryAt)
+    private static async Task WaitForRetryAfterAsync(TimeSpan delay, DateTimeOffset? retryAt, CancellationToken cancellationToken)
     {
         var elapsed = Stopwatch.StartNew();
         while (true)
@@ -167,7 +200,7 @@ public static class BDTestReportServer
             // Timers have millisecond resolution and can wake before the deadline.
             // Round up, then recheck; cap each wait to Task.Delay's supported range.
             var milliseconds = (int)Math.Min(Math.Ceiling(remaining.TotalMilliseconds), int.MaxValue - 1);
-            await Task.Delay(milliseconds).ConfigureAwait(false);
+            await Task.Delay(milliseconds, cancellationToken).ConfigureAwait(false);
         }
     }
 }

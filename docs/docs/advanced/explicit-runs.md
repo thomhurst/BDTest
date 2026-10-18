@@ -30,7 +30,8 @@ public class MyTests(BDTestRun run) : BDTestBase
 - Override `TestRun` and keep it stable for the test instance. Builders and scenarios capture their run, including builders executed later and scenario outline rows.
 - Each run has a new `ReportId` and its own stores for scenarios, unfinished definitions, listeners and output. An explicit run also has its own executor.
 - The JSON and HTML helpers and the report upload accept a run, for example `BDTestReportServer.SendDataAndGetReportUriAsync(run, serverAddress, descriptor)`.
-- Existing overloads and the framework adapters use the shared default run.
+- Overloads without a run and the framework adapters use the shared default run.
+- Upload overloads accept a final `CancellationToken`, for example `BDTestReportServer.SendDataAndGetReportUriAsync(serverAddress, descriptor, httpClient, run, cancellationToken)`. Cancellation stops warm-up, requests and retry waits while preserving run isolation and caller-owned client lifetime; see [upload cancellation](../report-server/sending-results.md#cancellation). Await completion or cancellation before disposing the run.
 
 ## Lifetime
 

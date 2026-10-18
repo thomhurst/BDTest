@@ -5,7 +5,7 @@ description: Upload test results to a BDTest report server at the end of a test 
 
 # Sending results
 
-At the end of the test run, call `BDTestReportServer.SendDataAndGetReportUriAsync`. It uploads every scenario collected in the process and returns the URL of the new report.
+At the end of the test run, call `BDTestReportServer.SendDataAndGetReportUriAsync`. By default it uploads scenarios from the shared default run; overloads accepting a `BDTestRun` upload only that run. It returns the URL of the new report.
 
 Only scenarios run through BDTest (`Given(...).When(...).Then(...)`) are sent.
 
@@ -59,13 +59,31 @@ The report server requires the `X-BDTest-Upload-Key` header on every upload. `Se
 | `(Uri serverAddress, BDTestRunDescriptor descriptor, HttpClient httpClient, BDTestRun run)` | Explicit run with your own client. |
 | `(Uri serverAddress)` | Obsolete. |
 
-All return `Task<Uri>`, the summary page of the new report.
+All return `Task<Uri>`, the summary page of the new report. Each non-obsolete overload also has a version with a final `CancellationToken cancellationToken` parameter. Existing signatures remain available and forward with `CancellationToken.None`.
+
+## Cancellation
+
+Pass a token to stop warm-up, HTTP requests (including response buffering and attachments), and retry waits:
+
+```csharp
+using var cancellation = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+var reportUri = await BDTestReportServer.SendDataAndGetReportUriAsync(
+    serverAddress, descriptor, httpClient, cancellation.Token);
+
+// To upload an explicit run instead:
+var runReportUri = await BDTestReportServer.SendDataAndGetReportUriAsync(
+    serverAddress, descriptor, httpClient, run, cancellation.Token);
+```
+
+Caller cancellation propagates as `OperationCanceledException`; it is neither swallowed by the best-effort ping nor retried as a transport timeout. A pre-cancelled token sends no requests. An `HttpClient` timeout without caller cancellation retains the existing transient retry behavior. Use the caller token to bound the whole upload, including retry delays; `HttpClient.Timeout` applies to individual requests. Report snapshot creation and JSON serialization are synchronous: cancellation is checked around this work, but cannot interrupt it mid-operation.
+
+Await the upload before disposing the run. Cancellation releases active upload requests and attachment streams, keeps your supplied `HttpClient` usable, and retains the run's captured files. It may leave a report with incomplete attachments on the server. Retrying the whole method creates a new report; cancellation does not roll back an accepted request.
 
 ## What happens during an upload
 
 1. A best-effort `GET /bdtest/ping` warms up the server. A bare origin uses `/bdtest`; a supplied path is the full report prefix and is preserved for every request; see [path prefixes](hosting.md#path-prefixes).
 2. The report is posted as JSON to `<report-base>/data` (`POST /bdtest/data` by default).
-3. On HTTP 408, 429, 500, 502, 503 or 504, a network error or a timeout, the client retries, up to three attempts in total. It honours a `Retry-After` header given in seconds or as an HTTP date.
+3. On HTTP 408, 429, 500, 502, 503 or 504, a network error or an HTTP client timeout (without caller cancellation), the client retries, up to three attempts in total. It honours a `Retry-After` header given in seconds or as an HTTP date.
 4. The server creates a new ID for the report and returns its URL. `X-BDTest-Report-Id` identifies it.
 5. For reports with attachments, the response also contains `X-BDTest-Attachment-Token`. The client sends that receipt and the upload key to `POST /bdtest/data/{reportId}/attachments/{attachmentId}`, once for each referenced attachment. Files stream from the selected run; each transient retry opens a fresh stream. The method returns only after every attachment succeeds.
 
