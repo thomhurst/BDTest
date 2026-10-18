@@ -84,3 +84,6 @@ finally {
     $env:BDTEST_CONFORMANCE_RUNNER = $previousMode
 }
 Write-Host "Adapter conformance evidence: $resultRoot"
+# GitHub Actions propagates LASTEXITCODE, including the intentional runner failures.
+# Report success only after every exit code and TRX outcome has been verified.
+exit 0
