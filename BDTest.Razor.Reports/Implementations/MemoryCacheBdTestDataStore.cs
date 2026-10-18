@@ -1,36 +1,60 @@
 using System.Collections.Concurrent;
+using System.Text;
 using BDTest.Maps;
 using BDTest.Razor.Reports.Interfaces;
 using BDTest.Razor.Reports.Models;
 using Microsoft.Extensions.Caching.Memory;
+using Newtonsoft.Json;
 
 namespace BDTest.Razor.Reports.Implementations;
 
-public class MemoryCacheBdTestDataStore : IMemoryCacheBdTestDataStore
+public class MemoryCacheBdTestDataStore : IMemoryCacheBdTestDataStore, IDisposable
 {
-    private readonly IMemoryCache _testRecordCache;
+    private readonly Lazy<MemoryCache> _testRecordCache;
+    private readonly BDTestReportServerOptions _options;
+    private readonly object _reportCacheLock = new();
+    private long _reportCacheCapacity;
     private readonly ConcurrentDictionary<string, TestRunSummary> _testRunSummariesDictionary = new();
     private List<TestRunSummary> _testRunSummaries = new();
     private readonly object _testRunSummariesLock = new();
 
+    /// <summary>Creates a dedicated bounded report cache with the default policy.</summary>
+    /// <param name="testRecordCache">Retained for compatibility; the host cache is no longer used for full reports.</param>
     public MemoryCacheBdTestDataStore(IMemoryCache testRecordCache)
+        : this(testRecordCache, new BDTestReportServerOptions())
     {
-        _testRecordCache = testRecordCache;
+    }
+
+    /// <summary>Creates a dedicated bounded report cache using the report server policy.</summary>
+    public MemoryCacheBdTestDataStore(IMemoryCache testRecordCache, BDTestReportServerOptions options)
+    {
+        _options = options;
+        // UseBDTestReportServer configures the policy after DI registration, before the first request.
+        _testRecordCache = new Lazy<MemoryCache>(() =>
+        {
+            _reportCacheCapacity = options.ReportCacheSizeLimitBytes;
+            return new MemoryCache(new MemoryCacheOptions
+            {
+                SizeLimit = _reportCacheCapacity,
+                TrackStatistics = true
+            });
+        });
     }
 
     public Task<BDTestOutputModel> GetTestData(string id, CancellationToken cancellationToken)
     {
-        if (_testRecordCache.TryGetValue<BDTestOutputModel>(id, out var model))
+        lock (_reportCacheLock)
         {
-            return Task.FromResult(model);
+            return Task.FromResult(_testRecordCache.Value.Get<BDTestOutputModel>(id));
         }
-
-        return Task.FromResult<BDTestOutputModel>(null);
     }
 
     public Task DeleteTestData(string id)
     {
-        _testRecordCache.Remove(id);
+        lock (_reportCacheLock)
+        {
+            _testRecordCache.Value.Remove(id);
+        }
         return Task.CompletedTask;
     }
 
@@ -41,8 +65,81 @@ public class MemoryCacheBdTestDataStore : IMemoryCacheBdTestDataStore
 
     public Task StoreTestData(string id, BDTestOutputModel data)
     {
-        _testRecordCache.Set(id, data, TimeSpan.FromHours(8));
+        long size;
+        using (var counter = new ByteCountingStream())
+        {
+            using (var textWriter = new StreamWriter(counter, new UTF8Encoding(false), 1024, leaveOpen: true))
+            using (var jsonWriter = new JsonTextWriter(textWriter))
+            {
+                var serializer = JsonSerializer.Create(new JsonSerializerSettings
+                {
+                    Formatting = Formatting.None,
+                    PreserveReferencesHandling = PreserveReferencesHandling.Objects
+                });
+                serializer.Serialize(jsonWriter, data);
+            }
+            size = counter.Length;
+        }
+        lock (_reportCacheLock)
+        {
+            var cache = _testRecordCache.Value;
+            if (size > _reportCacheCapacity)
+            {
+                if (_options.DataStore == null)
+                {
+                    throw new ReportTooLargeForCacheException();
+                }
+
+                // Persistent storage remains authoritative for reports that do not fit in memory.
+                cache.Remove(id);
+                return Task.CompletedTask;
+            }
+
+            cache.Remove(id);
+            while (cache.GetCurrentStatistics().CurrentEstimatedSize > _reportCacheCapacity - size)
+            {
+                // Free least-recently-used entries in batches; always remove at least one entry.
+                cache.Compact(Math.Min(1, Math.Max(0.25, 2.0 / cache.Count)));
+            }
+
+            cache.Set(id, data, new MemoryCacheEntryOptions
+            {
+                Size = size,
+                AbsoluteExpirationRelativeToNow = _options.ReportCacheRetention
+            });
+        }
+
         return Task.CompletedTask;
+    }
+
+    // StreamWriter encodes incrementally; retain only the byte count, never the JSON payload.
+    private sealed class ByteCountingStream : Stream
+    {
+        public override bool CanRead => false;
+        public override bool CanSeek => false;
+        public override bool CanWrite => true;
+        public override long Length => _length;
+        private long _length;
+        public override long Position
+        {
+            get => _length;
+            set => throw new NotSupportedException();
+        }
+
+        public override void Write(byte[] buffer, int offset, int count) => _length += count;
+        public override void Write(ReadOnlySpan<byte> buffer) => _length += buffer.Length;
+        public override void Flush() { }
+        public override int Read(byte[] buffer, int offset, int count) => throw new NotSupportedException();
+        public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
+        public override void SetLength(long value) => throw new NotSupportedException();
+    }
+
+    public void Dispose()
+    {
+        if (_testRecordCache.IsValueCreated)
+        {
+            _testRecordCache.Value.Dispose();
+        }
     }
 
     public Task StoreTestRunRecord(TestRunSummary testRunSummary)

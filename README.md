@@ -520,6 +520,50 @@ See [Microsoft Identity Web setup](https://github.com/AzureAD/microsoft-identity
 ### Report Server Example Image
 ![Report Server Example Image](https://github.com/thomhurst/BDTest/blob/master/Images/Test%20Runs%20List.png?raw=true)
 
+### Full-report cache capacity and retention
+
+The Razor report server uses a dedicated bounded cache, separate from the host's
+`IMemoryCache`. Configure its policy at startup, before resolving the repository
+or serving requests:
+
+```csharp
+app.UseBDTestReportServer(options =>
+{
+    options.ReportCacheSizeLimitBytes = 64L * 1024 * 1024; // Default: 64 MiB
+    options.ReportCacheRetention = TimeSpan.FromHours(8); // Default: eight hours
+    options.DataStore = persistentStore; // Optional; omit for cache-only hosting
+});
+```
+
+Both settings must be positive. Each full report is charged its serialized UTF-8
+JSON size when cached, preserving shared object references as in report uploads.
+Accounting uses compact JSON with fixed settings, independent of the host's
+`JsonConvert.DefaultSettings`.
+Size measurement streams the JSON without retaining a complete serialized copy.
+The sum of those sizes cannot exceed the configured budget.
+This is an estimate of retained report size, not a hard limit on process memory:
+object overhead, temporary serialization allocations, in-flight responses, and
+report summaries are outside this budget. Treat uploaded/cached models as immutable;
+changes to a retained model are accounted for when it is next cached.
+
+Uploads and ordinary single-report reads cache reports and restart their retention.
+When space is needed, expired and least-recently-used reports are evicted in batches
+before the incoming report is admitted. Bulk comparisons can reuse cached reports
+but neither populate the cache nor restart retention. The host's unrelated cache
+entries need no size metadata and do not compete with full reports.
+
+With a persistent `DataStore`, evicted or expired reports are loaded again on demand.
+A report larger than the entire budget bypasses the cache; uploads still persist it
+and reads still return it. In cache-only hosting, uploads larger than the budget
+return HTTP 413 without adding a summary or notifying the data receiver. Increase
+the budget or configure persistent storage to accept them.
+
+Cache-only hosting remains supported, but retention is best effort: eviction,
+expiration, or a server restart permanently removes report details. An ordinary
+read can extend retention but cannot prevent capacity eviction. Summaries may remain
+listed after their details expire or are evicted; those links show a missing report.
+Use a persistent store when reports must survive these events.
+
 ### Bulk report comparisons
 
 The Razor report server accepts up to 50 comma-separated IDs for `GET /bdtest/report/test-run-times`

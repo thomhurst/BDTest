@@ -24,6 +24,37 @@ public class BDTestReportServerOptions
 #nullable enable
         public ILogger? Logger { get; set; }
 
+        private long _reportCacheSizeLimitBytes = 64 * 1024 * 1024;
+        private TimeSpan _reportCacheRetention = TimeSpan.FromHours(8);
+
+        /// <summary>
+        /// Positive full-report cache budget, measured in serialized UTF-8 bytes (default 64 MiB).
+        /// This is a size estimate, not a limit on process memory. Configure before serving requests.
+        /// </summary>
+        public long ReportCacheSizeLimitBytes
+        {
+            get => _reportCacheSizeLimitBytes;
+            set
+            {
+                if (value <= 0) throw new ArgumentOutOfRangeException(nameof(value));
+                _reportCacheSizeLimitBytes = value;
+            }
+        }
+
+        /// <summary>
+        /// Positive full-report retention after upload or an ordinary read (default eight hours).
+        /// Bulk reads do not extend retention. Capacity eviction may remove reports sooner.
+        /// </summary>
+        public TimeSpan ReportCacheRetention
+        {
+            get => _reportCacheRetention;
+            set
+            {
+                if (value <= TimeSpan.Zero) throw new ArgumentOutOfRangeException(nameof(value));
+                _reportCacheRetention = value;
+            }
+        }
+
         /// <summary>
         /// Enables security headers on /bdtest responses. Disable only when the host supplies its own
         /// compatible policy. Register UseBDTestReportServer before endpoint/authentication middleware.
