@@ -1,3 +1,4 @@
+using System.Reflection;
 using BDTest.Attributes;
 using BDTest.Interfaces;
 using BDTest.Test;
@@ -8,10 +9,9 @@ namespace BDTest.Tests.Fixtures;
 
 public class BDTestOptionsTests
 {
-    [TestCase(Status.Passed)]
-    [TestCase(Status.Skipped)]
-    [TestCase(Status.Inconclusive)]
-    public async Task Concurrent_runs_classify_step_and_outline_factory_exceptions_independently(Status status)
+    [Test]
+    public async Task Concurrent_runs_classify_step_and_outline_factory_exceptions_independently(
+        [Values(Status.Passed, Status.Skipped, Status.Inconclusive)] Status status, [Values] bool wrapped)
     {
         var options = new BDTestOptions();
         var types = status == Status.Passed ? options.SuccessExceptionTypes
@@ -20,24 +20,27 @@ public class BDTestOptionsTests
         using var configured = BDTestRun.Start(options);
         using var plain = BDTestRun.Start();
         types.Clear();
+        Exception CreateException() => wrapped
+            ? new TargetInvocationException(new AggregateException(new DerivedRegisteredException()))
+            : new RegisteredException();
         var entered = 0;
         var ready = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         Func<Task> failTogether = async () =>
         {
             if (Interlocked.Increment(ref entered) == 2) ready.SetResult();
             await ready.Task.WaitAsync(TimeSpan.FromSeconds(10));
-            throw new RegisteredException();
+            throw CreateException();
         };
         async Task Execute(BDTestRun run)
         {
             var fixture = new Capture(run);
             try { await fixture.When(() => failTogether()).Then(() => Complete()).BDTestAsync(); }
-            catch (RegisteredException) { }
+            catch (Exception exception) when (exception is RegisteredException or TargetInvocationException) { }
             try
             {
-                await fixture.ScenarioOutline("factory", new[] { 1 }, _ => throw new RegisteredException()).BDTestAsync();
+                await fixture.ScenarioOutline("factory", new[] { 1 }, _ => throw CreateException()).BDTestAsync();
             }
-            catch (RegisteredException) { }
+            catch (Exception exception) when (exception is RegisteredException or TargetInvocationException) { }
         }
         await Task.WhenAll(Task.Run(() => Execute(configured)), Task.Run(() => Execute(plain)));
         Assert.That(configured.Scenarios.All(scenario => scenario.Status == status), Is.True);
@@ -207,7 +210,8 @@ public class BDTestOptionsTests
     private static void Fail() => throw new RegisteredException();
     [Skipped] private static void Skipped() { }
     private sealed class SkippedAttribute : SkipStepAttribute { }
-    private sealed class RegisteredException : Exception { }
+    private class RegisteredException : Exception { }
+    private sealed class DerivedRegisteredException : RegisteredException { }
     private sealed class Value { }
     private sealed class Converter(string text, bool fail = false) : IStepTextStringConverter<Value>
     {

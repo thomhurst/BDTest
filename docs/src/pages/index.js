@@ -127,7 +127,8 @@ function Walkthrough() {
       <Heading as="h2" id="walkthrough-heading" className={styles.sectionTitle}>Steps are methods. Scenarios are tests.</Heading>
       <p className={styles.sectionLead}>
         Use your test runner, your IDE and your debugger as usual. The optional source generator
-        reads the attributes and argument values at compile time, and BDTest writes them into the report.
+        records which method each step calls. BDTest then reads the attributes and current argument
+        values just before each step runs, and writes them into the report.
       </p>
       <div className={styles.codeGrid}>
         <CodeBlock language="csharp" title="WithdrawalTests.cs">{testCode}</CodeBlock>

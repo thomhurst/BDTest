@@ -103,39 +103,19 @@ internal class ScenarioExecutor : IScenarioExecutor
             await ConsoleReporter.WriteLine($"{Environment.NewLine}Exception: {attemptException.Message}{Environment.NewLine}{attemptException.StackTrace}{Environment.NewLine}", ConsoleColor.DarkRed);
             throw;
         }
-        catch (NotImplementedException e)
-        {
-            attemptException = e;
-            scenario.Status = Status.NotImplemented;
-            throw;
-        }
-        catch (Exception e) when (!scenario.TimedOut && scenario.Run.Options.SuccessExceptionTypes.Contains(e.GetType()))
-        {
-            attemptException = e;
-            scenario.Status = Status.Passed;
-            throw;
-        }
-        catch (Exception e) when (!scenario.TimedOut && scenario.Run.Options.SkipExceptionTypes.Contains(e.GetType()))
-        {
-            attemptException = e;
-            scenario.Status = Status.Skipped;
-            foreach (var step in scenario.Steps.Where(step => step.Status == Status.NotRun))
-            {
-                step.SetStepText();
-                step.Status = Status.Skipped;
-            }
-            throw;
-        }
-        catch (Exception e) when (!scenario.TimedOut && scenario.Run.Options.InconclusiveExceptionTypes.Contains(e.GetType()))
-        {
-            attemptException = e;
-            scenario.Status = Status.Inconclusive;
-            throw;
-        }
         catch (Exception e)
         {
             attemptException = e;
-            scenario.Status = Status.Failed;
+            scenario.Status = ExceptionOutcomeClassifier.Classify(e, scenario.Run.Options, scenario.TimedOut);
+            if (scenario.Status == Status.Skipped)
+            {
+                foreach (var step in scenario.Steps.Where(step => step.Status == Status.NotRun))
+                {
+                    step.SetStepText();
+                    step.Status = Status.Skipped;
+                }
+            }
+            if (scenario.Status != Status.Failed) throw;
 
             var validRetryRules = scenario.Run.Options.RetryRules.Where(rule => rule.Condition(e)).ToList();
             if (validRetryRules.Any() && scenario.RetryCount < validRetryRules.Max(x => x.RetryLimit))
