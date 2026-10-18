@@ -4,8 +4,7 @@
         <IsPackable>true</IsPackable>
         <OutputType>Library</OutputType>
         <TargetFrameworks>netstandard2.0;net8.0</TargetFrameworks>
-        <SignAssembly>True</SignAssembly>
-        <AssemblyOriginatorKeyFile>..\StrongNameKeyPair.snk</AssemblyOriginatorKeyFile>
+
         <PackageId>BDTest.TUnit</PackageId>
         <Title>BDTest - TUnit</Title>
         <Description>A TUnit Extension for BDTest</Description>

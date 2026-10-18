@@ -87,3 +87,38 @@ interchangeable or guarantee compatibility across major releases.
 
 `BDTest.Pipeline.Tests/PackageVersionTests.cs` checks the properties passed to
 packing for stable, prerelease, metadata, minor, patch and major versions.
+
+## Strong-name signing and adapter boundaries (#857)
+
+`Directory.Build.props` defines `BDTestPublicKey` once and resolves
+`StrongNameKeyPair.snk` relative to the repository, independent of the working
+directory. The signed runtime packages are `BDTest`, `BDTest.NUnit`,
+`BDTest.xUnit`, `BDTest.MSTest`, `BDTest.TUnit` and `BDTest.Razor.Reports`.
+Their assembly names, key and version policy remain unchanged for every target.
+Keep this explicit list current when adding a runtime package.
+
+`BDTest.SourceGenerator` and `BDTest.Analyzers` remain unsigned compiler
+extensions, packed under `analyzers/dotnet/cs`, with their existing identities.
+The pipeline, samples, report host and tests are unsigned except `BDTest.Tests`.
+That test assembly needs signing because core and Razor reports grant it friend
+access through SDK `InternalsVisibleTo` items using `$(BDTestPublicKey)`.
+No official adapter receives friend access. Custom adapters need neither a
+friend grant nor the repository signing key.
+
+The protected API on `BDTestBase` owns constructor capture through
+`CaptureStartupOutput`, `BindStartupOutput`, `CompleteStartupOutput` and
+`BeginPendingTestExecution`. NUnit overrides `ExecuteScenarioStepsAsync` to
+isolate assertion state without modifying the runner's overall result. See
+[custom adapters](docs/docs/frameworks/custom-adapters.md) for the contract.
+Coordinate further public API cleanup with #827; preserve the retry runner
+regressions introduced by #820.
+
+After a Release solution build, run:
+
+```powershell
+pwsh scripts/Test-AssemblySigning.ps1
+```
+
+This verifies assembly names, public keys, signing flags and matching identities
+across targets, including the unsigned compiler extensions and tooling. CI runs
+it after the pipeline builds and packs the solution.

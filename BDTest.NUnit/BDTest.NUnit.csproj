@@ -9,8 +9,6 @@
     <Description>An NUnit Extension for BDTest</Description>
     <PackageTags>test tdd bdd testing given when then nunit</PackageTags>
     <TargetFramework>net8.0</TargetFramework>
-    <SignAssembly>True</SignAssembly>
-    <AssemblyOriginatorKeyFile>..\StrongNameKeyPair.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
 
   <ItemGroup>

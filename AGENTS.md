@@ -47,7 +47,7 @@ cd BDTest.Pipeline && dotnet run -c Release
 2. Registers framework-specific skip/ignore/success exceptions into `BDTestSettings.CustomExceptionSettings`.
 3. Calls `BeginTest(frameworkTestId)` before async setup and `EndTest()` after the test. xUnit buffers constructor output and binds the execution during initialization. Existing lifecycle overrides remain supported as compatibility shims.
 
-Core uses `InternalsVisibleTo` for `BDTest.NUnit`, `BDTest.xUnit`, `BDTest.TUnit`, and `BDTest.Tests`, with the public key from `StrongNameKeyPair.snk`. A new adapter that needs internals must be added to `BDTest/BDTest.csproj` and must also be signed.
+Core and Razor reports grant `InternalsVisibleTo` only to `BDTest.Tests`, using SDK items and the single `BDTestPublicKey` in `Directory.Build.props`. Official and third-party adapters use the documented protected lifecycle, constructor-output and assertion-scope API; do not add adapter friend grants. Signing is centralized in `Directory.Build.props`: shipped runtime packages and the friend test assembly use the existing `StrongNameKeyPair.snk`; compiler extensions (`BDTest.SourceGenerator`, `BDTest.Analyzers`), pipeline, samples, report host and other tests stay unsigned. See `BUILDING.md` for verification.
 
 **Reporting**
 - `BDTest.Razor.Reports`: ASP.NET Core MVC controllers/views. Hosts add it with `AddBDTestReports(...)` + `UseBDTestReportServer()`. Storage is pluggable through interfaces in `Interfaces/`.

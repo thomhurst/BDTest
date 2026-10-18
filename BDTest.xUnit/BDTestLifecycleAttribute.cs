@@ -1,5 +1,4 @@
 using System.Reflection;
-using BDTest.Output;
 using Xunit.v3;
 
 namespace BDTest.xUnit;
@@ -10,5 +9,5 @@ namespace BDTest.xUnit;
 internal sealed class BDTestLifecycleAttribute : BeforeAfterTestAttribute
 {
     public override void Before(MethodInfo methodUnderTest, IXunitTest test) =>
-        TestOutputData.PendingStartupOutput?.BeginExecution();
+        XUnitBDTestBase<object>.BeginPendingExecution();
 }

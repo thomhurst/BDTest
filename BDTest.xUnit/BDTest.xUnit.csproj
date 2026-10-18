@@ -10,8 +10,6 @@
         <Description>An xUnit Extension for BDTest</Description>
         <PackageTags>test tdd bdd testing given when then xunit</PackageTags>
         <TargetFrameworks>netstandard2.0;net8.0</TargetFrameworks>
-        <SignAssembly>True</SignAssembly>
-        <AssemblyOriginatorKeyFile>..\StrongNameKeyPair.snk</AssemblyOriginatorKeyFile>
     </PropertyGroup>
 
     <ItemGroup>

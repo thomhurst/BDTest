@@ -51,7 +51,37 @@ public abstract class MyRunnerBDTestBase<TContext> : AbstractContextBDTestBase<T
 
 Adapters no longer need to set `TestOutputData.FrameworkExecutionId` or call `RemoveContext()` themselves.
 
-If your adapter needs BDTest internals, it must be added to `InternalsVisibleTo` in `BDTest/BDTest.csproj` and be strong-name signed with the repository key. Adapters that only use the public API need neither.
+Official adapters use only the public and protected API. Core internals are
+reserved for repository tests. Third-party adapters need neither a friend grant
+nor the repository signing key.
+
+### Constructor output and assertion scopes
+
+When the runner constructs a fixture before its owned `TestRun` is available,
+call `CaptureStartupOutput(Action beginExecution)` synchronously in the adapter
+constructor. This buffers console writes without reading `TestRun`. The callback
+must call `BeginTest(id, methodInfo)` and then `BindStartupOutput()` after the
+derived constructor finishes. Binding moves buffered text to that run and keeps
+constructor-started tasks attached to the same execution.
+
+A runner hook that can run even when the fixture reimplements async setup should
+call the protected static `BeginPendingTestExecution()` in the test body flow.
+It invokes the pending buffer's callback. Keep that callback idempotent. Call
+`CompleteStartupOutput()` before completing teardown, including failed setup and
+legacy teardown paths. Completion stops late constructor-task writes and clears
+only the current fixture's pending buffer. Then call `EndTestAsync()` (or the
+synchronous compatibility hook). Do not resolve an owned run in a base
+constructor or use display names as execution IDs.
+
+An adapter with runner assertion state can override the protected
+`ExecuteScenarioStepsAsync(Func<Task> executeSteps, Action<Action> registerTerminalFailure)`.
+The core calls it for attempt preparation, steps and hooks. Await `executeSteps`
+once inside the runner's assertion scope and preserve the original exception so
+retry rules see it. Optional diagnostics registered through
+`registerTerminalFailure` must throw when invoked; the core invokes them only for
+a terminal failed attempt. Preserve warnings and failures outside the scenario.
+Do not overwrite the runner's overall result. NUnit uses this hook with NUnit's
+public exception constraints, including multiple-assert retry handling.
 
 ## Execution identity
 
