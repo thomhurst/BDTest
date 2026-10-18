@@ -14,24 +14,44 @@ dotnet add package BDTest.xUnit
 
 `BDTest.xUnit` targets `netstandard2.0;net8.0` and requires **xUnit v3**. Existing xUnit v2 projects must migrate before upgrading; see [Migrating from xUnit v2](#migrating-from-xunit-v2).
 
-To run with VSTest (`dotnet test`), reference `xunit.v3.mtp-off`, `Microsoft.NET.Test.Sdk` and `xunit.runner.visualstudio` 4.x, and set `<OutputType>Exe</OutputType>`:
+Use **Microsoft.Testing.Platform (MTP)** for xUnit v3. Reference `xunit.v3`, make the project executable, and enable its MTP command-line runner:
 
 ```xml title="MyApp.AcceptanceTests.csproj"
 <PropertyGroup>
   <TargetFramework>net10.0</TargetFramework>
   <OutputType>Exe</OutputType>
+  <UseMicrosoftTestingPlatformRunner>true</UseMicrosoftTestingPlatformRunner>
 </PropertyGroup>
 
 <ItemGroup>
   <PackageReference Include="BDTest.xUnit" Version="*" />
   <PackageReference Include="BDTest.SourceGenerator" Version="*" PrivateAssets="all" />
-  <PackageReference Include="xunit.v3.mtp-off" Version="4.0.2" />
-  <PackageReference Include="Microsoft.NET.Test.Sdk" Version="*" />
-  <PackageReference Include="xunit.runner.visualstudio" Version="4.*" PrivateAssets="all" />
+  <PackageReference Include="xunit.v3" Version="4.0.2" />
+  <PackageReference Include="Microsoft.Testing.Extensions.TrxReport" Version="2.5.1" />
 </ItemGroup>
 ```
 
-Projects that use Microsoft.Testing.Platform instead can reference `xunit.v3` and follow [xUnit's runner configuration](https://xunit.net/docs/getting-started/v3/microsoft-testing-platform).
+Run the project directly, with optional TRX reporting or a class filter:
+
+```bash
+dotnet run --project MyApp.AcceptanceTests -c Release
+dotnet run --project MyApp.AcceptanceTests -c Release -- --report-trx --results-directory artifacts/test-results
+dotnet run --project MyApp.AcceptanceTests -c Release -- --filter-class '*MyTests'
+```
+
+`Microsoft.Testing.Extensions.TrxReport` supplies `--report-trx`; omit it if you do not need TRX reports. MTP projects do not need `Microsoft.NET.Test.Sdk`, `xunit.runner.visualstudio` or `coverlet.collector`. For coverage, use an MTP extension such as `Microsoft.Testing.Extensions.CodeCoverage`. See [xUnit's runner configuration](https://xunit.net/docs/getting-started/v3/microsoft-testing-platform).
+
+### VSTest fallback
+
+If your tooling requires VSTest, keep `<OutputType>Exe</OutputType>`, remove `UseMicrosoftTestingPlatformRunner` and the MTP reporting extension, and replace `xunit.v3` with these references:
+
+```xml
+<PackageReference Include="xunit.v3.mtp-off" Version="4.0.2" />
+<PackageReference Include="Microsoft.NET.Test.Sdk" Version="*" />
+<PackageReference Include="xunit.runner.visualstudio" Version="4.*" PrivateAssets="all" />
+```
+
+Run that configuration with `dotnet test MyApp.AcceptanceTests.csproj`. The BDTest adapter works with either runner.
 
 ## Composition with an unrelated base class
 
@@ -240,7 +260,7 @@ public sealed class BDTestReports : IAsyncDisposable
 
 ## Migrating from xUnit v2
 
-1. Replace the `xunit` 2.x package with `xunit.v3.mtp-off` (to keep VSTest) or `xunit.v3`, and set `<OutputType>Exe</OutputType>`. Keep `Microsoft.NET.Test.Sdk` and update `xunit.runner.visualstudio` to 4.x.
+1. Replace the `xunit` 2.x package with `xunit.v3`, set `<OutputType>Exe</OutputType>` and `<UseMicrosoftTestingPlatformRunner>true</UseMicrosoftTestingPlatformRunner>`, and remove `Microsoft.NET.Test.Sdk`, `xunit.runner.visualstudio` and `coverlet.collector`. Run with `dotnet run --project <project>`. Add the MTP TRX extension above if you need reports. If your tooling still requires VSTest, use the [VSTest fallback](#vstest-fallback) instead.
 2. Remove constructors that only passed `ITestOutputHelper` to `base(...)`. If you still need the helper, inject `Xunit.ITestOutputHelper` (not `Xunit.Abstractions.ITestOutputHelper`) in your derived class.
 3. Change existing `DisposeAsync()` and `InitializeAsync()` implementations to overrides; await `base.DisposeAsync()` in teardown.
 4. Remove workarounds for runtime skips: BDTest skip rules now produce skipped xUnit results instead of throwing `NotSupportedException`.

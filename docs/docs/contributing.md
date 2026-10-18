@@ -18,16 +18,18 @@ dotnet build BDTest.sln
 ## Running tests
 
 ```bash
-# NUnit, xUnit and MSTest projects use VSTest
+# NUnit and MSTest projects use VSTest
 dotnet test BDTest.NUnit.Tests/BDTest.NUnit.Tests.csproj
 dotnet test BDTest.NUnit.Tests/BDTest.NUnit.Tests.csproj --filter "FullyQualifiedName~SomeTestName"
 
-# Core, TUnit adapter, pipeline and report-generator suites use Microsoft.Testing.Platform
+# Core, xUnit, TUnit adapter, pipeline and report-generator suites use Microsoft.Testing.Platform
 dotnet run --project BDTest.Tests
 dotnet run --project BDTest.Tests -- --treenode-filter "/*/*/RetryTests/*"
+dotnet run --project BDTest.xUnit.Tests
 dotnet run --project BDTest.TUnit.Tests
 dotnet run --project BDTest.Pipeline.Tests
 dotnet run --project BDTest.ReportGenerator.Tests
+dotnet run --project BDTest.xUnit.Tests -- --filter-class "*LifecycleTests"
 dotnet run --project BDTest.TUnit.Tests -- --treenode-filter "/*/*/TUnitScenarioTests/*"
 ```
 
@@ -37,8 +39,9 @@ references remain active; it is the sole signed test friend assembly.
 `BDTest.NUnit.Tests` owns NUnit adapter lifecycle, execution IDs, runner outcomes,
 shared conformance and sample integration; `BDTest.Example` remains an NUnit sample.
 `BDTest.NUnit.Tests` is unsigned and has no friend access to core or Razor reports. CI evaluates
-Release `PackageReference` items to choose the TUnit runner; filenames and
-`OutputType=Exe` do not decide the runner. xUnit v3 keeps its VSTest invocation.
+Release `PackageReference` items and `UseMicrosoftTestingPlatformRunner` to choose
+MTP for TUnit and opted-in xUnit v3 projects; filenames and `OutputType=Exe` do not
+decide the runner. Other projects keep their VSTest invocation.
 Both paths save TRX results under `artifacts/test-results/<project>`.
 
 The full CI pipeline (tests, versioning, packing) is a [ModularPipelines](https://github.com/thomhurst/ModularPipelines) app:
