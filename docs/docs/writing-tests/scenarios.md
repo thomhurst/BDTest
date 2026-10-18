@@ -137,4 +137,4 @@ await When(() => Action())
 
 ## Tests that are not run
 
-BDTest records every chain it builds. If a chain is built but never executed, it appears in reports as a **not run** test (on the report server's *Warnings* page). This catches tests that forgot to `await` the chain.
+BDTest records every chain it builds. If a chain is built but never executed, it appears in reports as a **not run** test (on the report server's **Not run** tab). This catches tests that forgot to `await` the chain.

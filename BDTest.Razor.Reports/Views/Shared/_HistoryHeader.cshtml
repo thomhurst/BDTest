@@ -5,7 +5,6 @@
 
 @{
     var filter = Model.Filter;
-    var query = RunFilter.ToQueryString(filter.ToQuery(false));
     var action = Model.Tab switch
     {
         HistoryViewModel.Flaky => "~/bdtest/report/history/flaky",

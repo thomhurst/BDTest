@@ -32,7 +32,7 @@ public class CheckoutTests : TUnitBDTestBase<CheckoutContext>
 
 Tags are available on `BuildableTest.Tags` and `Scenario.Tags` and are written to JSON output, including for tests that did not run.
 
-In the report server's **Scenarios** and **Stories** pages, pick a tag and press **Apply** to filter scenarios before grouping and paging. Tag matching ignores case and combines with the status filter. Choose **All tags** to clear the filter.
+On the report server's **Scenarios** page, pick a tag to filter scenarios before grouping and paging. Tag matching ignores case and combines with the status filter. Choose **All tags** to clear the filter.
 
 Scenario tags are separate from the run-level `BDTestRunDescriptor.Tag`, which labels a whole test run. See [Sending results](../report-server/sending-results.md).
 

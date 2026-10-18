@@ -39,30 +39,6 @@ public class ReportHandlerEncodingTests
     ];
 
     [Test]
-    public async Task Trend_values_are_data_and_never_executable_handler_source(
-        [Values("Tag", "Environment", "MachineName", "BranchName")] string queryParameterName,
-        [ValueSource(nameof(Values))] string value)
-    {
-        var html = await RenderAsync("/Views/Shared/_TrendsPageGenericDropdown.cshtml",
-            new TrendsPageGenericDropdownViewModel
-            {
-                QueryParameterName = queryParameterName,
-                ButtonId = "filter-button",
-                ButtonText = "Filter",
-                DropdownValues = [value]
-            });
-
-        // Parse the rendered element so attribute entities are decoded, just as in a browser.
-        var link = ReadElement(html, "<a class=\"dropdown-item\"[^>]*>.*?</a>");
-        Assert.That((string)link.Attribute("data-bdtest-action"), Is.EqualTo("filter"));
-        Assert.That((string)link.Attribute("data-parameter"), Is.EqualTo(queryParameterName));
-        Assert.That((string)link.Attribute("data-value"), Is.EqualTo(value ?? ""));
-        Assert.That(link.Value, Is.EqualTo(value ?? ""));
-        Assert.That(link.Attributes().Select(x => x.Name.LocalName),
-            Is.EquivalentTo(new[] { "class", "href", "data-value", "data-bdtest-action", "data-parameter" }));
-    }
-
-    [Test]
     public async Task Delete_values_are_data_and_never_executable_handler_source(
         [ValueSource(nameof(Values))] string value)
     {

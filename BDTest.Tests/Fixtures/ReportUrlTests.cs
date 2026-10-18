@@ -1,4 +1,4 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Web;
 using BDTest.Razor.Reports.Helpers;
@@ -52,18 +52,6 @@ public class ReportUrlTests
         Assert.That(links, Has.All.StartsWith(prefix + "/bdtest/"));
         Assert.That(links, Has.All.Contains("filter=Passed"));
         Assert.That(links, Has.Some.EndsWith("page=all"));
-        Assert.That(html, Does.Not.Contain("attacker.example"));
-    }
-
-    [TestCase("_Javascript_Flakey_Duration_Chart")]
-    [TestCase("_Javascript_Flakey_Status_Chart")]
-    public async Task Chart_navigation_uses_a_local_serialized_prefix(string view)
-    {
-        var html = await ReportHandlerEncodingTests.RenderAsync($"/Views/Shared/{view}.cshtml",
-            new ChartViewModel { Scenarios = [], Reports = [] }, pathBase: "/team's reports", host: "attacker.example");
-        var match = Regex.Match(html, @"window.location.href = (.*) \+ clickedOnReportId");
-        Assert.That(match.Success, Is.True);
-        Assert.That(JsonSerializer.Deserialize<string>(match.Groups[1].Value), Is.EqualTo("/team's reports/bdtest/report/"));
         Assert.That(html, Does.Not.Contain("attacker.example"));
     }
 

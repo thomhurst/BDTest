@@ -1,90 +1,153 @@
-@using BDTest.Razor.Reports.Extensions
+@using System.Globalization
+@using BDTest.Maps
+@using BDTest.Razor.Reports.Helpers
 @using BDTest.Razor.Reports.Models
-@model List<BDTest.Maps.BDTestOutputModel>
+@using BDTest.Razor.Reports.Models.ViewModels
+@using BDTest.Test
+@model List<BDTestOutputModel>
 
 @{
-    ViewBag.Title = "Test Times";
+    ViewBag.Title = "Timing variance";
     Layout = "_Layout";
 
-    var allScenarios = Model.SelectMany(model => model.Scenarios).Where(scenario => scenario != null);
-    var groupedScenarios = allScenarios.GroupBy(scenario => new ScenarioGroupKey
+    var history = ViewData[nameof(HistoryViewModel)] as HistoryViewModel ?? new HistoryViewModel { Tab = HistoryViewModel.Timing, ChosenRuns = true };
+    history.Tab = HistoryViewModel.Timing;
+    var reports = Model.Where(report => report != null).ToList();
+    var sort = Context.Request.Query["sort"].ToString() is "average" or "name" ? Context.Request.Query["sort"].ToString() : "spread";
+
+    // Remember the latest passing result of each scenario so its name can link to it.
+    var latestPassing = new Dictionary<ScenarioGroupKey, (BDTestOutputModel Report, Scenario Scenario)>();
+    var entries = reports
+        .SelectMany(report => (report.Scenarios ?? new List<Scenario>())
+            .Where(scenario => scenario != null)
+            .Select(scenario => (Report: report, Scenario: scenario)))
+        .ToList();
+    foreach (var entry in entries.Where(entry => entry.Scenario.Status == Status.Passed).OrderBy(entry => entry.Scenario.StartTime))
+    {
+        latestPassing[Key(entry.Scenario)] = entry;
+    }
+
+    var rows = entries
+        .GroupBy(entry => Key(entry.Scenario), entry => entry.Scenario)
+        .Select(group => (Key: group.Key, Timing: new MultipleTestRunsTimingDifferenceModel(group)))
+        .Where(row => !string.IsNullOrEmpty(row.Timing.ScenarioName))
+        .ToList();
+    rows = sort switch
+    {
+        "average" => rows.OrderByDescending(row => row.Timing.Average).ToList(),
+        "name" => rows.OrderBy(row => row.Timing.ScenarioName, StringComparer.CurrentCultureIgnoreCase).ToList(),
+        _ => rows.OrderByDescending(row => row.Timing.Difference).ToList()
+    };
+    var scale = rows.Select(row => row.Timing.Slowest).DefaultIfEmpty(TimeSpan.Zero).Max();
+
+    string F(double value) => value.ToString("0.##", CultureInfo.InvariantCulture);
+    string Position(TimeSpan value) => scale <= TimeSpan.Zero ? "0" : F(value.Ticks * 100.0 / scale.Ticks);
+}
+
+@await Html.PartialAsync("_HistoryHeader", history)
+
+<main class="wrap page" style="gap: 18px">
+    <div class="spread" style="align-items: center; gap: 12px 20px">
+        <div style="flex: 1 1 480px; min-width: 0">
+            <h2 class="h2">Scenarios whose timing varies most</h2>
+            <p class="muted" style="margin-top: 4px">
+                Passed results only, across @(history.ChosenRuns ? $"{reports.Count} chosen" : $"the latest {reports.Count}") run@(reports.Count == 1 ? "" : "s").
+                @(sort switch { "average" => "Slowest average first.", "name" => "Sorted by name.", _ => "Sorted by slowest minus fastest." })
+            </p>
+        </div>
+        <form class="inline-field" method="get" action="@Url.Content(history.ChosenRuns ? "~/bdtest/report/test-run-times" : "~/bdtest/report/history/timing")" data-autosubmit>
+            @if (history.ChosenRuns)
+            {
+                <input type="hidden" name="reportIds" value="@Context.Request.Query["reportIds"]">
+            }
+            else
+            {
+                foreach (var pair in history.Filter.ToQuery(false))
+                {
+                    <input type="hidden" name="@pair.Key" value="@pair.Value">
+                }
+                <input type="hidden" name="compare" value="@history.Compare">
+            }
+            <label class="inline-field" for="sort">Sort</label>
+            <select class="inp" id="sort" name="sort">
+                <option value="spread" selected="@(sort == "spread")">Biggest spread</option>
+                <option value="average" selected="@(sort == "average")">Slowest average</option>
+                <option value="name" selected="@(sort == "name")">Name</option>
+            </select>
+            <noscript><button class="btn sm" type="submit">Apply</button></noscript>
+        </form>
+    </div>
+
+    @if (rows.Count == 0)
+    {
+        <section class="card empty">
+            <span class="mark">@ReportUi.Icon("i-clock", "xl")</span>
+            <h2>@(reports.Count == 0 ? "No runs in this range" : "No passed scenarios to compare")</h2>
+            <p>@(reports.Count == 0 ? "Change the filters above to choose runs to compare." : "Timings are compared only for scenarios that passed.")</p>
+            @if (reports.Count == 0)
+            {
+                <div class="cluster"><a class="btn" href="@Url.Content("~/bdtest/report/history/timing")">Reset filters</a></div>
+            }
+        </section>
+    }
+    else
+    {
+        <section class="card clip" aria-label="Timing variance">
+            <div class="table-scroll">
+                <table class="t wide">
+                    <thead>
+                    <tr>
+                        <th scope="col">Scenario</th>
+                        <th scope="col" class="num">Fastest</th>
+                        <th scope="col" class="num">Average</th>
+                        <th scope="col" class="num">Slowest</th>
+                        <th scope="col" class="num">Spread</th>
+                        <th scope="col" style="width: 30%">Range <span style="text-transform: none; letter-spacing: 0; font-weight: 400">(0–@scale.ToShortDuration(), tick = average)</span></th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    @foreach (var (key, timing) in rows)
+                    {
+                        var hasLink = latestPassing.TryGetValue(key, out var latest);
+                        <tr>
+                            <td>
+                                @if (hasLink)
+                                {
+                                    <a href="@Url.Content("~/bdtest/report/" + Uri.EscapeDataString(latest.Report.Id ?? string.Empty) + "/scenario/" + Uri.EscapeDataString(latest.Scenario.Guid ?? string.Empty))" style="text-decoration: none; color: var(--ink)">
+                                        <span class="row-title" style="display: block">@timing.ScenarioName</span>
+                                    </a>
+                                }
+                                else
+                                {
+                                    <span class="row-title" style="display: block">@timing.ScenarioName</span>
+                                }
+                                <span class="row-sub" style="font-size: 13px">@ReportUi.StoryTitle(key.StoryText) · @timing.ScenarioCount passed run@(timing.ScenarioCount == 1 ? "" : "s")</span>
+                            </td>
+                            <td class="num">@timing.Fastest.ToShortDuration()</td>
+                            <td class="num">@timing.Average.ToShortDuration()</td>
+                            <td class="num">@timing.Slowest.ToShortDuration()</td>
+                            <td class="num" style="font-weight: 500">+@timing.Difference.ToShortDuration()</td>
+                            <td>
+                                <div class="rng" role="img" aria-label="@($"From {timing.Fastest.ToShortDuration()} to {timing.Slowest.ToShortDuration()}, average {timing.Average.ToShortDuration()}")">
+                                    <span class="base"></span>
+                                    <span class="span" style="left: @Position(timing.Fastest)%; width: @Position(timing.Difference)%"></span>
+                                    <span class="avg" style="left: @Position(timing.Average)%"></span>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    }
+</main>
+
+@functions
+{
+    private static ScenarioGroupKey Key(Scenario scenario) => new()
     {
         StoryText = scenario.GetStoryText(),
         ScenarioText = scenario.GetScenarioText()
-    });
+    };
 }
-
-<section class="hero is-info">
-    <div class="hero-body">
-        <div class="container">
-            <h1 class="title">
-                Test Times
-            </h1>
-            <h2 class="subtitle">
-                Here are how your test times compare across multiple runs:
-            </h2>
-            <h3 class="subtitle is-7">
-                * Test times are only compared if the test passed.
-            </h3>
-        </div>
-    </div>
-</section>
-
-<section class="section">
-    
-    <div class="container">
-        <div class="box">
-                        
-            <table class="table is-fullwidth">
-                <thead>
-                <tr>
-                    <th class="has-text-centered">Scenario</th>
-                    <th class="has-text-centered">Fastest</th>
-                    <th class="has-text-centered">Average</th>
-                    <th class="has-text-centered">Slowest</th>
-                    <th class="has-text-centered">Slowest - Fastest Difference</th>
-                </tr>
-                </thead>
-                <tbody>
-    
-                @foreach (var scenarioTimingModel in groupedScenarios
-                    .Select(x => new MultipleTestRunsTimingDifferenceModel(x))
-                    .Where(model => !string.IsNullOrEmpty(model.ScenarioName))
-                    .OrderByDescending(model => model.Difference))
-                {
-                    <tr>
-                        <td class="has-text-centered align-middle">
-                            <button class="btn btn-primary no-pointer">@scenarioTimingModel.ScenarioName (@scenarioTimingModel.ScenarioCount)</button>
-                        </td>
-                        <td class="has-text-centered align-middle">
-                            <div class="tooltip">
-                                @scenarioTimingModel.Fastest.ToString()
-                                <span class="tooltiptext">@scenarioTimingModel.Fastest.ToPrettyFormat()</span>
-                            </div>
-                        </td>
-                        <td class="has-text-centered align-middle">
-                            <div class="tooltip">
-                                @scenarioTimingModel.Average.ToString()
-                                <span class="tooltiptext">@scenarioTimingModel.Average.ToPrettyFormat()</span>
-                            </div>
-                        </td>
-                        <td class="has-text-centered align-middle">
-                            <div class="tooltip">
-                                @scenarioTimingModel.Slowest.ToString()
-                                <span class="tooltiptext">@scenarioTimingModel.Slowest.ToPrettyFormat()</span>
-                            </div>
-                        </td>
-                        <td class="has-text-centered align-middle">
-                            <div class="tooltip">
-                                @scenarioTimingModel.Difference.ToPrettyFormat()
-                                <span class="tooltiptext">@scenarioTimingModel.Difference.ToString()</span>
-                            </div>
-                        </td>
-                    </tr>
-                }
-                </tbody>
-            </table>
-                        
-        </div>
-    </div>
-</section>

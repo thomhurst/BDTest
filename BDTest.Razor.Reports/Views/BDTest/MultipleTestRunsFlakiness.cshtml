@@ -1,137 +1,247 @@
+@using System.Globalization
 @using BDTest.Maps
-@using BDTest.Razor.Reports.Extensions
+@using BDTest.Razor.Reports.Helpers
 @using BDTest.Razor.Reports.Models
 @using BDTest.Razor.Reports.Models.ViewModels
 @using BDTest.Test
-@model List<BDTest.Maps.BDTestOutputModel>
+@model List<BDTestOutputModel>
 
 @{
-    ViewBag.Title = "Flakiness";
+    ViewBag.Title = "Flaky tests";
     Layout = "_Layout";
 
-    var allScenarios = Model.SelectMany(model => model.Scenarios)
-        .Where(scenario => scenario != null);
-    var groupedScenarios = allScenarios.GroupBy(scenario => new ScenarioGroupKey
+    var history = ViewData[nameof(HistoryViewModel)] as HistoryViewModel ?? new HistoryViewModel { Tab = HistoryViewModel.Flaky, ChosenRuns = true };
+    history.Tab = HistoryViewModel.Flaky;
+    var reports = Model.Where(report => report != null).OrderBy(StartedAt).ToList();
+
+    // One entry per scenario title and story, with its result in each compared run (null when absent).
+    var flaky = reports
+        .SelectMany((report, index) => (report.Scenarios ?? new List<Scenario>())
+            .Where(scenario => scenario != null)
+            .Select(scenario => (Index: index, Report: report, Scenario: scenario)))
+        .GroupBy(entry => (Story: entry.Scenario.GetStoryText(), Name: entry.Scenario.GetScenarioText()))
+        .Select(group =>
+        {
+            var results = new (BDTestOutputModel Report, Scenario Scenario)?[reports.Count];
+            foreach (var entry in group)
+            {
+                var current = results[entry.Index];
+                if (current == null || entry.Scenario.Status.GetOrder() < current.Value.Scenario.Status.GetOrder())
+                {
+                    results[entry.Index] = (entry.Report, entry.Scenario);
+                }
+            }
+
+            var present = results.Where(result => result != null).Select(result => result.Value).ToList();
+            return new
+            {
+                group.Key.Story,
+                group.Key.Name,
+                Results = results,
+                Present = present,
+                Failed = present.Where(result => result.Scenario.Status == Status.Failed).ToList(),
+                Passed = present.Count(result => result.Scenario.Status == Status.Passed)
+            };
+        })
+        .Where(item => item.Failed.Count > 0 && item.Passed > 0)
+        .Select(item => new { Item = item, Rate = (double)item.Passed / item.Present.Count * 100 })
+        .OrderBy(entry => entry.Rate)
+        .ThenByDescending(entry => entry.Item.Failed.Count)
+        .ThenBy(entry => entry.Item.Name, StringComparer.Ordinal)
+        .ToList();
+
+    string ScenarioUrl(BDTestOutputModel report, Scenario scenario) =>
+        Url.Content("~/bdtest/report/" + Uri.EscapeDataString(report.Id ?? string.Empty) + "/scenario/" + Uri.EscapeDataString(scenario.Guid ?? string.Empty));
+    string F(double value) => value.ToString("0.##", CultureInfo.InvariantCulture);
+    string Range(IEnumerable<TimeSpan> times)
     {
-        StoryText = scenario.GetStoryText(),
-        ScenarioText = scenario.GetScenarioText()
-    })
-        .Where(group => group.Any(scenario => scenario.Status == Status.Failed))
-        .OrderBy(group => GetPassRate(group.ToList()));
+        var list = times.OrderBy(time => time).ToList();
+        if (list.Count == 0) return null;
+        return list[0] == list[^1] ? list[0].ToShortDuration() : $"{list[0].ToShortDuration()}–{list[^1].ToShortDuration()}";
+    }
 }
 
-@await Html.PartialAsync("_TestPageHeaderHero", new TestPageHeaderHeroViewModel
-{
-    Title = "Flakey Tests",
-    Description = "Here are how flakey your tests are across multiple runs"
-})
+@await Html.PartialAsync("_HistoryHeader", history)
 
-<div class="container-fluid">
-
-    @if (groupedScenarios.All(x => x.GetTotalStatus() == Status.Passed))
-    {
-        <div class="has-text-centered">
-            <h2 class="title is-4">No Flakey Tests!</h2>
+<main class="wrap page" style="gap: 18px">
+    <div class="spread" style="align-items: center; gap: 12px 20px">
+        <div style="flex: 1 1 480px; min-width: 0">
+            <h2 class="h2">@flaky.Count scenario@(flaky.Count == 1 ? "" : "s") both passed and failed</h2>
+            <p class="muted" style="margin-top: 4px">
+                @if (history.ChosenRuns)
+                {
+                    @:Compared across @reports.Count chosen run@(reports.Count == 1 ? "" : "s"). Lowest pass rate first.
+                }
+                else
+                {
+                    @:Compared across the latest @reports.Count of @history.Runs.Count matching run@(history.Runs.Count == 1 ? "" : "s"). Lowest pass rate first.
+                }
+            </p>
         </div>
+        @if (!history.ChosenRuns)
+        {
+            <form class="inline-field" method="get" action="@Url.Content("~/bdtest/report/history/flaky")" data-autosubmit>
+                @foreach (var pair in history.Filter.ToQuery(false))
+                {
+                    <input type="hidden" name="@pair.Key" value="@pair.Value">
+                }
+                <label class="inline-field" for="compare">Compare</label>
+                <select class="inp" id="compare" name="compare">
+                    @foreach (var count in new[] { 10, 20, 30, 50 }.Union(new[] { history.Compare }).OrderBy(count => count))
+                    {
+                        <option value="@count" selected="@(count == history.Compare)">Latest @count runs</option>
+                    }
+                </select>
+                <noscript><button class="btn sm" type="submit">Apply</button></noscript>
+            </form>
+        }
+    </div>
+
+    @if (reports.Count == 0)
+    {
+        <section class="card empty">
+            <span class="mark">@ReportUi.Icon("i-search", "xl")</span>
+            <h2>No runs in this range</h2>
+            <p>Change the filters above to choose runs to compare.</p>
+            <div class="cluster"><a class="btn" href="@Url.Content("~/bdtest/report/history/flaky")">Reset filters</a></div>
+        </section>
+    }
+    else if (flaky.Count == 0)
+    {
+        <section class="card empty">
+            <span class="mark p">@ReportUi.Icon("i-pass", "xl")</span>
+            <h2>No flaky scenarios</h2>
+            <p>No scenario both passed and failed across these @reports.Count run@(reports.Count == 1 ? "" : "s").</p>
+        </section>
     }
     else
     {
-        var index = 0;
-        @foreach (var scenarioGroup in groupedScenarios)
-        {
-            index++;
-            var scenarios = scenarioGroup.OrderBy(x => x.StartTime).ToList();
-
-            var scenarioText = scenarioGroup.Key.ScenarioText;
-
-            var failed = scenarios.Count(scenario => scenario.Status == Status.Failed);
-            var passed = scenarios.Count(scenario => scenario.Status == Status.Passed);
-            var passRate = Math.Round(GetPassRate(scenarios), 2);
-
-            <div class="container-fluid border border-2 rounded border-primary my-3">
-                <div id="flakey-scenario-header-@index" class="pointer" data-bdtest-action="toggle-element" data-target="flakey-scenario-body-@index">
-                    <div class="d-flex justify-content-center mt-4">
-                        <h4>@scenarioText</h4>
-                    </div>
-                    <div class="d-flex justify-content-center my-3">
-                        <div class="btn-group">
-                            <button class="btn btn-success">Passed: @passed</button>
-                            <button class="btn btn-primary">Pass Rate: @passRate%</button>
-                            <button class="btn btn-danger">Failed: @failed</button>
-                        </div>
-                    </div>
+        <section class="card clip" aria-label="Flaky scenarios">
+            <div class="table-scroll">
+                <div class="fr head" aria-hidden="true">
+                    <span></span><span class="k">Scenario</span><span class="k">Pass rate</span>
+                    <span class="k">Last @reports.Count runs, oldest → newest</span><span class="k">Most common failure</span><span class="k">Last failed</span>
                 </div>
-                
-                <div id="flakey-scenario-body-@index" class="container-fluid mb-5 invisibleElement">
-                    <div class="row" id="flakey-scenario-charts-@index">
-                        <div class="col">
-                            <h5>Statuses</h5>
-                            <div>
-                                <canvas id="success-trend-chart-@index" class="max-width-100"></canvas>
-                            </div>
-                        </div>
-                        <div class="col">
-                            <h5>Durations</h5>
-                            <div>
-                                <canvas id="duration-trend-chart-@index" class="max-width-100"></canvas>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="row mt-5" id="flakey-scenario-exception-types-@index">
-                        @{
-                            var exceptionWrappers = scenarios.Select(x => x.Exception).Where(x => x != null).ToList();
-                            var exceptionsGroupedByType = exceptionWrappers.GroupBy(x => x.TypeName);
-                        }
-                        <table class="table table-hover">
-                            <thead>
-                            <tr>
-                                <th scope="col">Exception Type</th>
-                                <th scope="col">Messages</th>
-                                <th scope="col">Count</th>
-                            </tr>
-                            </thead>
-                            <tbody>
+                @for (var index = 0; index < flaky.Count; index++)
+                {
+                    var item = flaky[index].Item;
+                    var rate = flaky[index].Rate;
+                    var latest = item.Present[^1];
+                    var lastFailure = item.Failed[^1];
+                    var commonFailure = item.Failed
+                        .GroupBy(result => result.Scenario.Exception?.TypeName ?? "No exception")
+                        .OrderByDescending(group => group.Count()).ThenBy(group => group.Key, StringComparer.Ordinal).First();
+                    var shortType = commonFailure.Key[(commonFailure.Key.LastIndexOf('.') + 1)..];
+                    var maxTime = item.Present.Max(result => result.Scenario.TimeTaken);
+                    var failingRange = Range(item.Failed.Select(result => result.Scenario.TimeTaken));
+                    var passingRange = Range(item.Present.Where(result => result.Scenario.Status == Status.Passed).Select(result => result.Scenario.TimeTaken));
+                    var exceptions = item.Failed
+                        .Where(result => result.Scenario.Exception != null)
+                        .GroupBy(result => (result.Scenario.Exception.TypeName, Message: result.Scenario.Exception.Message?.Trim()))
+                        .OrderByDescending(group => group.Count())
+                        .ToList();
 
-                            @foreach(var exceptionGroup in exceptionsGroupedByType)
-                            {
-                                <tr>
-                                    <td class="align-middle">
-                                        @exceptionGroup.First().TypeName
-                                    </td>
-                                    <td class="align-middle">
-                                        @foreach (var exceptionMessage in exceptionGroup.Select(x => x.Message))
+                    <details class="expander flaky-item" open="@(index == 0)">
+                        <summary class="fr">
+                            <span class="btn ghost sm icon" aria-hidden="true">@ReportUi.Icon("i-chev-r", "chev")</span>
+                            <span style="min-width: 0">
+                                <a href="@ScenarioUrl(latest.Report, latest.Scenario)" style="text-decoration: none; color: var(--ink)"><span class="row-title" style="display: block">@item.Name</span></a>
+                                <span class="row-sub" style="font-size: 13px">@ReportUi.StoryTitle(item.Story)</span>
+                            </span>
+                            <span style="display: flex; flex-direction: column; gap: 4px">
+                                <span class="mono" style="font-weight: 500">@rate.ToString("0", CultureInfo.CurrentCulture)%</span>
+                                <span class="meter rate"><span style="width: @F(rate)%"></span></span>
+                            </span>
+                            <span class="strip thin" role="img" aria-label="@($"{item.Failed.Count} failed and {item.Passed} passed in the last {reports.Count} runs")">
+                                @foreach (var result in item.Results)
+                                {
+                                    if (result == null)
+                                    {
+                                        <span style="background: var(--sunk)" title="Not in this run"></span>
+                                    }
+                                    else
+                                    {
+                                        <span class="bg-@result.Value.Scenario.Status.Key()" title="@StartedAt(result.Value.Report).ToRunDate() · @result.Value.Scenario.Status.Label()"></span>
+                                    }
+                                }
+                            </span>
+                            <span class="mono" style="min-width: 0; overflow-wrap: anywhere">@shortType <span class="muted">×@commonFailure.Count()</span></span>
+                            <span style="font-size: 14px">@StartedAt(lastFailure.Report).ToRunDate(includeYear: false)</span>
+                        </summary>
+                        <div class="flaky-body">
+                            <div class="stack" style="flex: 1 1 380px; min-width: 0; gap: 8px">
+                                <div class="k">Duration per run</div>
+                                <div class="dur-bars">
+                                    <span class="ylab mono">@maxTime.ToShortDuration()</span>
+                                    <div class="bars">
+                                        @foreach (var result in item.Results)
                                         {
-                                            <div class="my-2"><span>@exceptionMessage</span></div>   
+                                            if (result == null)
+                                            {
+                                                <a aria-hidden="true" tabindex="-1"></a>
+                                                continue;
+                                            }
+
+                                            var scenario = result.Value.Scenario;
+                                            var height = maxTime <= TimeSpan.Zero ? 0 : scenario.TimeTaken.Ticks * 100.0 / maxTime.Ticks;
+                                            var label = $"{StartedAt(result.Value.Report).ToRunDate()}: {scenario.Status.Label().ToLowerInvariant()}, {scenario.TimeTaken.ToShortDuration()}";
+                                            <a href="@ScenarioUrl(result.Value.Report, scenario)" aria-label="@label" title="@label"><span class="@(scenario.Status == Status.Failed ? "bg-f" : "bg-acc")" style="height: @F(Math.Max(height, 2))%"></span></a>
                                         }
-                                    </td>
-                                    <td class="align-middle">
-                                        @exceptionGroup.Count()
-                                    </td>
-                                </tr>
-                            }
-
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                @await Html.PartialAsync("_Javascript_Flakey_Duration_Chart", new ChartViewModel { Index = index, Scenarios = scenarios, Reports = Model })
-                @await Html.PartialAsync("_Javascript_Flakey_Status_Chart", new ChartViewModel { Index = index, Scenarios = scenarios, Reports = Model })
+                                    </div>
+                                </div>
+                                <p class="small muted">
+                                    @if (failingRange != null)
+                                    {
+                                        @:Failing runs (red) took @failingRange.
+                                    }
+                                    @if (passingRange != null)
+                                    {
+                                        @:Passing runs took @passingRange.
+                                    }
+                                </p>
+                            </div>
+                            <div class="stack" style="flex: 1 1 380px; min-width: 0; gap: 8px">
+                                <div class="k">Failures</div>
+                                @if (exceptions.Count > 0)
+                                {
+                                    <table class="t compact plain">
+                                        <thead><tr><th scope="col">Exception</th><th scope="col">Message</th><th scope="col" class="num">Runs</th></tr></thead>
+                                        <tbody>
+                                        @foreach (var exception in exceptions)
+                                        {
+                                            var typeName = exception.Key.TypeName ?? string.Empty;
+                                            <tr>
+                                                <td class="mono" style="overflow-wrap: anywhere">@(typeName[(typeName.LastIndexOf('.') + 1)..])</td>
+                                                <td style="overflow-wrap: anywhere">@exception.Key.Message</td>
+                                                <td class="num">@exception.Count()</td>
+                                            </tr>
+                                        }
+                                        </tbody>
+                                    </table>
+                                }
+                                else
+                                {
+                                    <p class="small muted">The failures recorded no exception.</p>
+                                }
+                                <div class="cluster" style="gap: 14px">
+                                    <a class="lnk" href="@ScenarioUrl(lastFailure.Report, lastFailure.Scenario)">Open latest failure</a>
+                                    <a class="lnk" href="@Url.Content("~/bdtest/report/" + Uri.EscapeDataString(lastFailure.Report.Id ?? string.Empty) + "/top-defects")">Failures in that run</a>
+                                </div>
+                            </div>
+                        </div>
+                    </details>
+                }
             </div>
-        }
+        </section>
     }
-</div>
+</main>
 
-@functions 
+@functions
 {
-    private BDTestOutputModel GetOutputModel(Scenario scenario)
+    private static DateTime StartedAt(BDTestOutputModel report)
     {
-        return Model.FirstOrDefault(bdTestOutputModel => bdTestOutputModel.Scenarios.Any(s => s.Guid == scenario.Guid));
-    }
-
-    private static double GetPassRate(IReadOnlyCollection<Scenario> scenarios)
-    {
-        var failed = scenarios.Count(x => x.Status == Status.Failed);
-        return 100 - (((double)failed / scenarios.Count) * 100);
+        var scenarios = report.Scenarios?.Where(scenario => scenario != null).ToList() ?? new List<Scenario>();
+        var start = scenarios.Select(scenario => scenario.StartTime).Where(time => time != default).DefaultIfEmpty().Min();
+        return start != default ? start : report.TestTimer?.TestsStartedAt ?? default;
     }
 }

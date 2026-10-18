@@ -292,7 +292,7 @@ details.expander[open] > summary .chev { transform: rotate(90deg); }
 .t tbody tr:hover { background: var(--sunk); }
 .t.top td { vertical-align: top; }
 .t.plain tbody tr:hover { background: transparent; }
-.t .num, .t .n { font-family: var(--mono); font-size: 13px; text-align: right; white-space: nowrap; }
+.t td.num, .t td.n { font-family: var(--mono); font-size: 13px; text-align: right; white-space: nowrap; }
 .t .actions { text-align: right; width: 1%; }
 .t.wide { min-width: 980px; }
 .t.compact th { padding: 8px 12px; background: transparent; }
@@ -430,6 +430,8 @@ body.busy, body.busy * { cursor: progress !important; }
     .verdict h2 { font-size: 28px; line-height: 1.12; }
     .verdict p { font-size: 14px; }
     .verdict .cluster { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .verdict .chip { min-width: 0; padding: 0 10px; }
+    .verdict .chip .lbl { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
     .verdict .chip .cnt { margin-left: auto; }
     .row { padding: 12px 16px; min-height: 44px; }
     .row.child { padding-left: 40px; }
@@ -465,6 +467,7 @@ details.expander > summary.row { border-top: 0; }
     .ex { padding-left: 16px; }
     .ex-body { padding-left: 16px; padding-right: 16px; }
 }
+
 /* Runs and run pages */
 details.trace > summary { padding: 0 20px 18px; display: block; }
 details.trace[open] > summary { display: none; }
@@ -474,3 +477,13 @@ details.trace[open] > summary { display: none; }
 .empty .code { text-align: left; }
 .t th.num { text-align: right; }
 .table-scroll { position: relative; }
+
+/* History */
+.bg-acc { background: var(--acc-fg); }
+.fr { display: grid; grid-template-columns: 28px minmax(220px, 2fr) 130px minmax(200px, 1.4fr) minmax(200px, 1.4fr) 90px; gap: 16px; align-items: center; padding: 14px 20px; min-width: 1000px; }
+.fr.head { background: var(--sunk); padding-top: 9px; padding-bottom: 9px; }
+details.flaky-item { border-top: 1px solid var(--line); min-width: 1000px; }
+details.flaky-item > summary.fr:hover { background: var(--sunk); }
+.flaky-body { padding: 4px 20px 20px 64px; display: flex; flex-wrap: wrap; gap: 20px; }
+.chart svg.plot polyline { vector-effect: non-scaling-stroke; }
+.chart a.dot:hover { transform: translate(-50%, -50%) scale(1.3); }

@@ -1,6 +1,6 @@
 ---
 title: Customizing the report server
-description: Add header and sidebar links, personalise the page for the signed-in user, and react to uploaded reports.
+description: Add team and run links, personalise the page for the signed-in user, and react to uploaded reports.
 ---
 
 # Customizing the report server
@@ -9,7 +9,7 @@ UI extension points are interfaces in `BDTest.Razor.Reports.Interfaces`. Storage
 
 ## Header links
 
-Implement `IBDTestCustomHeaderLinksProvider` to add links or text to the top navigation bar:
+Implement `IBDTestCustomHeaderLinksProvider` to add links or text to the **Links** menu in the page header, under **Team links**:
 
 ```csharp
 public class CustomHeaderLinksProvider : IBDTestCustomHeaderLinksProvider
@@ -27,9 +27,9 @@ app.UseBDTestReportServer(options =>
 });
 ```
 
-## Sidebar links
+## Run links
 
-Implement `IBDTestCustomSidebarLinksProvider` to add a **Custom Links** section to the sidebar. Links open in a new tab.
+Implement `IBDTestCustomSidebarLinksProvider` to add links for the current page to the **Links** menu in the page header. On a run's pages they appear under **This run**. Links open in a new tab.
 
 ```csharp
 public class CustomSidebarLinksProvider : IBDTestCustomSidebarLinksProvider

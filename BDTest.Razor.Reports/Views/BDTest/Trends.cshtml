@@ -1,470 +1,216 @@
-@using System.Web
-@using BDTest.Constants
-@using BDTest.Razor.Reports.Constants
-@using BDTest.Razor.Reports.Extensions
+@using System.Globalization
 @using BDTest.Razor.Reports.Helpers
 @using BDTest.Razor.Reports.Models
 @using BDTest.Razor.Reports.Models.ViewModels
-@using BDTest.Razor.Reports.Views.BDTest
-@model IEnumerable<TestRunSummary>
-
-@functions {
-
-    private List<string> GetGeneric(Func<TestRunSummary, string> func, string defaultValue)
-    {
-        var values = Model.Select(func).Where(x => !string.IsNullOrEmpty(x)).Distinct().ToList();
-        values.Insert(0, defaultValue);
-        return values;
-    }
-
-    private List<string> GetEnvironments()
-    {
-        return GetGeneric(x => x.Environment, DefaultValues.ReportServer.AllEnvironments);
-    }
-
-    private List<string> GetTags()
-    {
-        return GetGeneric(x => x.Tag, DefaultValues.ReportServer.AllTags);
-    }
-    
-    private List<string> GetMachineNames()
-    {
-        return GetGeneric(x => x.MachineName, DefaultValues.ReportServer.AllMachines);
-    }
-    
-    private List<string> GetBranches()
-    {
-        return GetGeneric(x => x.BranchName, DefaultValues.ReportServer.AllBranches);
-    }
-
-    private bool TagNeedsSelecting(string tagQueryParameter)
-    {
-        var tagValues = GetTags();
-        
-        if(tagValues == null || !tagValues.Any())
-        {
-            return false;
-        }
-        
-        return string.IsNullOrEmpty(tagQueryParameter) || tagQueryParameter == DefaultValues.ReportServer.AllTags;
-    }
-}
+@using BDTest.Test
+@model HistoryViewModel
 
 @{
-    ViewBag.Title = "Trends";
+    ViewBag.Title = "History";
     Layout = "_Layout";
 
-    var testRunSummariesEnumerable = Model.AsEnumerable() ?? Enumerable.Empty<TestRunSummary>();
+    var filter = Model.Filter;
+    var runs = Model.Runs;
+    var chartRuns = runs.TakeLast(60).ToList();
+    var filterQuery = RunFilter.ToQueryString(filter.ToQuery(false));
 
-    var queryString = HttpUtility.ParseQueryString(Context.Request.QueryString.Value ?? string.Empty);
-    
-    var environmentQueryParameter = queryString.Get("environment");
-    var tagQueryParameter = queryString.Get("tag");
-    var machineQueryParameter = queryString.Get("machine");
-    var branchQueryParameter = queryString.Get("branch");
-    var dateTimeangeQueryParameter = queryString.Get("datetimerange");
+    var passedRuns = runs.Count(run => run.Counts.Failed == 0);
+    var rates = runs.Where(run => run.Counts.Total > 0).Select(run => (double)run.Counts.Passed / run.Counts.Total * 100).ToList();
+    var durations = runs.Select(Duration).Where(duration => duration > TimeSpan.Zero).OrderBy(duration => duration).ToList();
 
-    var tagValues = GetTags();
-    var environmentValues = GetEnvironments();
-    var machineValues = GetMachineNames();
-    var branchValues = GetBranches();
-    
-    if (!string.IsNullOrEmpty(environmentQueryParameter) && environmentQueryParameter != DefaultValues.ReportServer.AllEnvironments)
+    // Stacked from the bottom: passed, then the outcomes that need a look, with failures on top.
+    var segments = new[]
     {
-        testRunSummariesEnumerable = testRunSummariesEnumerable.Where(summary => summary.Environment == environmentQueryParameter);
-        <script>
-            onDomLoaded(function() {
-              document.getElementById("filter-by-environment-text").textContent = '@environmentQueryParameter';
-            })
-        </script>
-    }
+        (Status.Passed, "p"), (Status.Skipped, "s"), (Status.Pending, "r"), (Status.Inconclusive, "i"), (Status.NotImplemented, "n"), (Status.Failed, "f")
+    };
+    var maxScenarios = Math.Max(1, chartRuns.Select(Stacked).DefaultIfEmpty(0).Max());
+    var axisDates = AxisIndexes(chartRuns.Count).Select(index => chartRuns[index].StartedAtDateTime.ToDay()).ToList();
 
-    if (!string.IsNullOrEmpty(tagQueryParameter) && tagQueryParameter != DefaultValues.ReportServer.AllTags)
-    {
-        testRunSummariesEnumerable = testRunSummariesEnumerable.Where(summary => summary.Tag == tagQueryParameter);
-        <script>
-            onDomLoaded(function() {
-              document.getElementById("filter-by-tag-text").textContent = '@tagQueryParameter';
-            })
-        </script>
-    }
-    
-    if (!string.IsNullOrEmpty(machineQueryParameter) && machineQueryParameter != DefaultValues.ReportServer.AllMachines)
-    {
-        testRunSummariesEnumerable = testRunSummariesEnumerable.Where(summary => summary.MachineName == machineQueryParameter);
-        <script>
-            onDomLoaded(function() {
-              document.getElementById("filter-by-machine-text").textContent = '@machineQueryParameter';
-            })
-        </script>
-    }
-    
-    if (!string.IsNullOrEmpty(branchQueryParameter) && branchQueryParameter != DefaultValues.ReportServer.AllBranches)
-    {
-        testRunSummariesEnumerable = testRunSummariesEnumerable.Where(summary => summary.BranchName == branchQueryParameter);
-        <script>
-            onDomLoaded(function() {
-              document.getElementById("filter-by-branch-text").textContent = '@branchQueryParameter';
-            })
-        </script>
-    }
-    
-    if (!string.IsNullOrEmpty(dateTimeangeQueryParameter) && dateTimeangeQueryParameter != DefaultValues.ReportServer.AllDateTimes && dateTimeangeQueryParameter.Contains(".."))
-    {
-        var dateTimeStringArray = dateTimeangeQueryParameter.Split("..");
-        if (!DateTime.TryParse(dateTimeStringArray.ElementAtOrDefault(0), out var startDate)
-        || !DateTime.TryParse(dateTimeStringArray.ElementAtOrDefault(1), out var endDate))
-        {
-            return;
-        }
-        testRunSummariesEnumerable = testRunSummariesEnumerable.Where(summary => IsInDateRange(summary.StartedAtDateTime) || IsInDateRange(summary.FinishedAtDateTime));
-        var buttonText = $"{startDate.ToShortDateString()} to {endDate.ToShortDateString()}";
-        <script>
-            onDomLoaded(function() {
-              document.getElementById("date-time-input-button").textContent = '@buttonText';
-            })
-        </script>
-        
-        bool IsInDateRange(DateTime dateTime)
-        {
-            return dateTime >= startDate && dateTime <= endDate;
-        }
-    }
+    var seconds = chartRuns.Select(run => Duration(run).TotalSeconds).ToList();
+    var minSeconds = seconds.DefaultIfEmpty(0).Min();
+    var maxSeconds = seconds.DefaultIfEmpty(0).Max();
+    var padding = Math.Max((maxSeconds - minSeconds) * 0.15, Math.Max(maxSeconds * 0.05, 1));
+    var lowSeconds = Math.Max(0, minSeconds - padding);
+    var highSeconds = maxSeconds + padding;
 
-    var testRunSummaries = testRunSummariesEnumerable.OrderBy(x => x.StartedAtDateTime).ToList();
+    double X(int index) => chartRuns.Count == 1 ? 50 : index * 100.0 / (chartRuns.Count - 1);
+    double Y(double value) => (highSeconds - value) / (highSeconds - lowSeconds) * 100;
+    string F(double value) => value.ToString("0.##", CultureInfo.InvariantCulture);
+    string RunUrl(TestRunSummary run) => Url.Content("~/bdtest/report/" + Uri.EscapeDataString(run.RecordId ?? string.Empty) + "/summary");
 }
 
-<div id="startdatetimepickercontainer"></div>
-<div id="enddatetimepickercontainer"></div>
+@await Html.PartialAsync("_HistoryHeader", Model)
 
-@await Html.PartialAsync("_TestPageHeaderHero", new TestPageHeaderHeroViewModel
-{
-    Title = "Trends",
-    Description = "Here are some trends from your tests"
-})
-
-<section class="section">
-    <div class="container-fluid">
-        
-        <nav class="nav mb-5">
-            <div class="container-fluid d-flex justify-content-center">
-                @if (tagValues != null && tagValues.Any())
+<main class="wrap page">
+    @if (runs.Count == 0)
+    {
+        var anyTime = new RunFilter { Tag = filter.Tag, Environment = filter.Environment, Branch = filter.Branch, Machine = filter.Machine };
+        var latest = anyTime.Apply(Model.AllRuns).OrderByDescending(run => run.StartedAtDateTime).FirstOrDefault();
+        <section class="card empty">
+            <span class="mark">@ReportUi.Icon("i-search", "xl")</span>
+            <h2>No runs in this range</h2>
+            <p>
+                @if (Model.AllRuns.Count == 0)
                 {
-                    @await Html.PartialAsync("_TrendsPageGenericDropdown", new TrendsPageGenericDropdownViewModel
-                    {
-                        ButtonId = "filter-by-tag-text",
-                        ButtonText = "Filter by Tag",
-                        QueryParameterName = "tag",
-                        DropdownValues = tagValues
-                    })
+                    @:No test runs have been uploaded to this server yet.
                 }
-
-                @if (environmentValues != null && environmentValues.Any())
+                else
                 {
-                    @await Html.PartialAsync("_TrendsPageGenericDropdown", new TrendsPageGenericDropdownViewModel
+                    @:Nothing matches these filters in @(filter.CustomRange == null ? RunFilter.RangeLabel(filter.Range).ToLowerInvariant() : "the chosen dates").
+                    @if (latest != null)
                     {
-                        ButtonId = "filter-by-environment-text",
-                        ButtonText = "Filter by Environment",
-                        QueryParameterName = "environment",
-                        DropdownValues = environmentValues
-                    })
+                        @:The latest matching run was on @latest.StartedAtDateTime.ToDay().
+                    }
                 }
-
-                @if (machineValues != null && machineValues.Any())
+            </p>
+            <div class="cluster">
+                @if (latest != null)
                 {
-                    @await Html.PartialAsync("_TrendsPageGenericDropdown", new TrendsPageGenericDropdownViewModel
-                    {
-                        ButtonId = "filter-by-machine-text",
-                        ButtonText = "Filter by Machine",
-                        QueryParameterName = "machine",
-                        DropdownValues = machineValues
-                    })
+                    <a class="btn pri" href="@(Url.Content("~/bdtest/report/history") + RunFilter.ToQueryString(anyTime.ToQuery(false)))">Show any time</a>
                 }
-
-                @if (branchValues != null && branchValues.Any())
-                {
-                    @await Html.PartialAsync("_TrendsPageGenericDropdown", new TrendsPageGenericDropdownViewModel
-                    {
-                        ButtonId = "filter-by-branch-text",
-                        ButtonText = "Filter by Branch",
-                        QueryParameterName = "branch",
-                        DropdownValues = branchValues
-                    })
-                }
-
-                <li class="nav-item">
-                    <input id="date-time-input-end" type="hidden"/>
-                    <a class="bg-primary text-white nav-link" href="#" aria-haspopup="true" id="date-time-input-button">
-                        Filter by Date + Time
-                    </a>
-                    <script>
-                        let datePicker = getDatePicker();
-                        document.getElementById("date-time-input-button").addEventListener("click", function () {
-                            datePicker.show();
-                        });
-                    </script>
-                </li>
+                <a class="btn" href="@Url.Content("~/bdtest/report/history")">Reset filters</a>
             </div>
-        </nav>
+        </section>
+    }
+    else
+    {
+        <section class="card stats" aria-label="Summary for the range">
+            <div class="stat"><span class="k">Runs without failures</span><b>@passedRuns of @runs.Count</b></div>
+            <div class="stat"><span class="k">Average pass rate</span><b>@(rates.Count == 0 ? "—" : rates.Average().ToString("0.#", CultureInfo.CurrentCulture) + "%")</b></div>
+            <div class="stat"><span class="k">Median duration</span><b>@(durations.Count == 0 ? "—" : durations[durations.Count / 2].ToShortDuration())</b></div>
+            <div class="stat"><span class="k">Flaky scenarios</span><b><a class="lnk" href="@(Url.Content("~/bdtest/report/history/flaky") + filterQuery)">Find them</a></b></div>
+        </section>
 
-        @if (!TagNeedsSelecting(tagQueryParameter))
-        {
-            <div class="container-fluid">
-                <div class="row">
-                    <div class="col">
-                        <h5 class="subtitle is-5">Durations</h5>
-                        <canvas id="duration-trend-chart" class="max-width-100"></canvas>
-                    </div>
-                    <div class="col">
-                        <h5 class="subtitle is-5">Statuses</h5>
-                        <canvas id="success-trend-chart" class="max-width-100"></canvas>
-                    </div>
+        <section class="card card-pad" aria-labelledby="results" style="gap: 14px">
+            <div class="spread">
+                <h2 id="results" style="font-size: 18px">Scenario results per run</h2>
+                <div class="legend">
+                    <span><i class="sw bg-f"></i>Failed</span>
+                    <span><i class="sw bg-n"></i>Not implemented</span>
+                    <span><i class="sw bg-i"></i>Inconclusive</span>
+                    <span><i class="sw bg-s"></i>Skipped</span>
+                    <span><i class="sw bg-p"></i>Passed</span>
                 </div>
             </div>
-        }
-        else
-        {
-            <div class="d-flex justify-content-center">
-                <span>Please select a tag to continue.</span>
-            </div>
-        }
-    </div>
-</section>
-
-@if (!TagNeedsSelecting(tagQueryParameter))
-{
-@* Report IDs available for Javascript *@
-    <script>
-
-let reportIdsArray = [];
-
-@foreach (var report in testRunSummaries)
-{
-    @:reportIdsArray.push("@report.RecordId");
-}
-</script>
-
-@* Duration Trend Chart *@
-    <script>
-
-let durationChartData = {
-    datasets: [{
-        backgroundColor: "#3298dc",
-        borderColor: "#3298dc",
-        label: "Seconds",
-        data: [
-            @foreach (var timespan in testRunSummaries.Select(model => model.FinishedAtDateTime - model.StartedAtDateTime))
-            {
-                @((long)timespan.TotalSeconds)@:,
-            }
-            ]
-    }],
-
-    labels: [
-        @foreach (var testRunSummary in testRunSummaries)
-        {
-            @:@Json.Serialize(testRunSummary.StartedAtDateTime.ToStringForReport(false)),
-        }
-    ]
-}
-
-let durationChartConfig = {
-    type: 'line',
-    data: durationChartData,
-    options: {
-        legend: {
-                    display: false
-                },
-        scales: {
-            y:{
-              scaleLabel: {
-                labelString: 'Seconds'
-              },
-              ticks: {
-                  beginAtZero:true,
-                  // Include a dollar sign in the ticks
-                  callback: function(value, index, values) {
-                      return value + "s";
-                  }
-                  }
-            }
-          },
-        tooltips: {
-            callbacks: {
-                label: function(tooltipItem, data) {
-                  return data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index] + " seconds";
+            <div class="chart" style="height: 240px">
+                @foreach (var fraction in new[] { 1.0, 0.75, 0.5, 0.25, 0.0 })
+                {
+                    var top = F((1 - fraction) * 100);
+                    <span class="grid-line @(fraction == 0 ? "base" : "")" style="top: @top%"></span>
+                    <span class="ylab" style="top: @top%">@Math.Round(maxScenarios * fraction)</span>
                 }
-            }
-        },
-        onClick: (e) => {
-            let canvasPosition = Chart.helpers.getRelativePosition(e, e.chart);
-            let clickedElementindex = e.chart.scales.x.getValueForPixel(canvasPosition.x);
-            
-            let clickedOnReportId = reportIdsArray[clickedElementindex];
-    
-            window.location.href = @Json.Serialize(Url.Content("~/bdtest/report/")) + clickedOnReportId + '/summary';
-            
-            spinnerCursor();
-        }
+                <div class="plot bars cur-last">
+                    @foreach (var run in chartRuns)
+                    {
+                        <a href="@RunUrl(run)" title="@BarLabel(run)" aria-label="@BarLabel(run)">
+                            @foreach (var (status, key) in segments)
+                            {
+                                var count = Count(run, status);
+                                if (count > 0)
+                                {
+                                    <span class="bg-@key" style="height: @F(count * 100.0 / maxScenarios)%"></span>
+                                }
+                            }
+                        </a>
+                    }
+                </div>
+            </div>
+            <div class="xaxis">@foreach (var date in axisDates) { <span>@date</span> }</div>
+        </section>
+
+        <section class="card card-pad" aria-labelledby="durations" style="gap: 14px">
+            <div class="spread">
+                <h2 id="durations" style="font-size: 18px">Run duration</h2>
+                <span class="small muted">Runs with failures are drawn as red squares</span>
+            </div>
+            <div class="chart" style="height: 200px">
+                @foreach (var fraction in new[] { 1.0, 2.0 / 3, 1.0 / 3, 0.0 })
+                {
+                    var top = F((1 - fraction) * 100);
+                    <span class="grid-line @(fraction == 0 ? "base" : "")" style="top: @top%"></span>
+                    <span class="ylab" style="top: @top%">@TimeSpan.FromSeconds(lowSeconds + (highSeconds - lowSeconds) * fraction).ToShortDuration()</span>
+                }
+                <svg class="plot" viewBox="0 0 1000 200" preserveAspectRatio="none" role="img" style="width: calc(100% - 52px); height: 200px; overflow: visible"
+                     aria-label="@($"Run duration over {chartRuns.Count} runs, from {TimeSpan.FromSeconds(minSeconds).ToShortDuration()} to {TimeSpan.FromSeconds(maxSeconds).ToShortDuration()}, latest {Duration(chartRuns[^1]).ToShortDuration()}")">
+                    <polyline points="@string.Join(" ", seconds.Select((value, index) => F(X(index) * 10) + "," + F(Y(value) * 2)))" fill="none" stroke="var(--acc-fg)" stroke-width="2.25" vector-effect="non-scaling-stroke" stroke-linejoin="round"></polyline>
+                </svg>
+                <div class="plot" aria-hidden="true">
+                    @for (var index = 0; index < chartRuns.Count; index++)
+                    {
+                        <a class="dot @(chartRuns[index].Counts.Failed > 0 ? "f" : "")" href="@RunUrl(chartRuns[index])" tabindex="-1" title="@chartRuns[index].StartedAtDateTime.ToRunDate() · @Duration(chartRuns[index]).ToShortDuration()" style="left: @F(X(index))%; top: @F(Y(seconds[index]))%"></a>
+                    }
+                </div>
+            </div>
+            <div class="xaxis">@foreach (var date in axisDates) { <span>@date</span> }</div>
+        </section>
+
+        <section class="card clip" aria-labelledby="table">
+            <div class="card-head">
+                <h2 id="table">Same data as a table</h2>
+                <a class="lnk" href="@(Url.Content("~/bdtest/report/test-runs") + filterQuery)">All @runs.Count run@(runs.Count == 1 ? "" : "s")</a>
+            </div>
+            <div class="table-scroll">
+                <table class="t">
+                    <thead>
+                    <tr>
+                        <th scope="col">Run</th><th scope="col">Result</th><th scope="col" class="num">Failed</th>
+                        <th scope="col" class="num">Other</th><th scope="col" class="num">Passed</th><th scope="col" class="num">Duration</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    @foreach (var run in runs.Reverse().Take(30))
+                    {
+                        var other = Stacked(run) - run.Counts.Failed - run.Counts.Passed;
+                        <tr>
+                            <td style="white-space: nowrap"><a class="lnk" href="@RunUrl(run)">@run.StartedAtDateTime.ToRunDate(includeYear: false)</a></td>
+                            <td>@(run.Counts.Failed > 0 ? Status.Failed.Pill() : Status.Passed.Pill())</td>
+                            <td class="num">@run.Counts.Failed</td>
+                            <td class="num">@other</td>
+                            <td class="num">@run.Counts.Passed</td>
+                            <td class="num">@Duration(run).ToShortDuration()</td>
+                        </tr>
+                    }
+                    </tbody>
+                </table>
+            </div>
+        </section>
     }
-};
+</main>
 
-let durationChart = new Chart(document.getElementById('duration-trend-chart'), durationChartConfig);
-</script>
+@functions
+{
+    private static TimeSpan Duration(TestRunSummary run) =>
+        run.FinishedAtDateTime > run.StartedAtDateTime ? run.FinishedAtDateTime - run.StartedAtDateTime : TimeSpan.Zero;
 
+    private static int Count(TestRunSummary run, Status status) => status switch
+    {
+        Status.Passed => run.Counts.Passed,
+        Status.Failed => run.Counts.Failed,
+        Status.Skipped => run.Counts.Skipped,
+        Status.Pending => run.Counts.Pending,
+        Status.Inconclusive => run.Counts.Inconclusive,
+        Status.NotImplemented => run.Counts.NotImplemented,
+        _ => 0
+    };
 
-@* Success Trend Chart *@
-    <script>
-              
-let successChartData = {
-    datasets: [ 
+    // Counts.NotRun also includes declared tests that never ran, so it is not stacked.
+    private static int Stacked(TestRunSummary run) => run.Counts.Passed + run.Counts.Failed + run.Counts.Skipped
+        + run.Counts.Pending + run.Counts.Inconclusive + run.Counts.NotImplemented;
+
+    private static string BarLabel(TestRunSummary run) =>
+        $"{run.StartedAtDateTime.ToRunDate()}: {run.Counts.Failed} failed, {run.Counts.Passed} passed";
+
+    // Up to five evenly spaced positions for date labels, always including the first and last run.
+    private static IEnumerable<int> AxisIndexes(int count)
+    {
+        if (count == 0)
         {
-            label: "Not Run",
-            axis: 'y',
-            fill: true,
-            borderColor: "rgba(0,0,0,0)",
-            pointRadius: 0,
-            pointHitRadius: 15,
-            borderWidth: 0,
-            data: [
-                @string.Join(",", testRunSummaries.Select(summary => summary.Counts.NotRun))
-            ]    
-        },
-        {
-            label: "Failed",
-            axis: 'y',
-            fill: true,
-            backgroundColor: "@ColourConstants.DangerHex",
-            borderColor: "rgba(0,0,0,0)",
-            pointBorderColor: "@ColourConstants.DangerHex",
-            pointBackgroundColor: "@ColourConstants.DangerHex",
-            pointHitRadius: 15,
-            pointRadius: 0,
-            borderWidth: 0,
-            data: [
-                @string.Join(",", testRunSummaries.Select(summary => summary.Counts.Failed))
-            ]
-        },
-        {
-            label: "Pending",
-            axis: 'y',
-            fill: true,
-            backgroundColor: "@ColourConstants.WarningHex",
-            borderColor: "rgba(0,0,0,0)",
-            pointBorderColor: "@ColourConstants.WarningHex",
-            pointBackgroundColor: "@ColourConstants.WarningHex",
-            pointHitRadius: 15,
-            pointRadius: 0,
-            borderWidth: 0,
-            data: [
-                @string.Join(",", testRunSummaries.Select(summary => summary.Counts.Pending))
-            ]
-        },
-        {
-            label: "Inconclusive",
-            axis: 'y',
-            fill: true,
-            backgroundColor: "@ColourConstants.WarningHex",
-            borderColor: "rgba(0,0,0,0)",
-            pointBorderColor: "@ColourConstants.WarningHex",
-            pointBackgroundColor: "@ColourConstants.WarningHex",
-            pointHitRadius: 15,
-            pointRadius: 0,
-            borderWidth: 0,
-            data: [
-                @string.Join(",", testRunSummaries.Select(summary => summary.Counts.Inconclusive))
-            ]    
-        },
-        {
-            label: "Not Implemented",
-            axis: 'y',
-            fill: true,
-            backgroundColor: "@ColourConstants.WarningHex",
-            borderColor: "rgba(0,0,0,0)",
-            pointBorderColor: "@ColourConstants.WarningHex",
-            pointBackgroundColor: "@ColourConstants.WarningHex",
-            pointHitRadius: 15,
-            pointRadius: 0,
-            borderWidth: 0,
-            data: [
-                @string.Join(",", testRunSummaries.Select(summary => summary.Counts.NotImplemented))
-            ]    
-        },
-        {
-            label: "Skipped",
-            axis: 'y',
-            fill: true,
-            backgroundColor: "@ColourConstants.WarningHex",
-            borderColor: "rgba(0,0,0,0)",
-            pointBorderColor: "@ColourConstants.WarningHex",
-            pointBackgroundColor: "@ColourConstants.WarningHex",
-            pointHitRadius: 15,
-            pointRadius: 0,
-            borderWidth: 0,
-            data: [
-                @string.Join(",", testRunSummaries.Select(summary => summary.Counts.Skipped))
-            ]    
-        },
-        {
-            label: "Passed",
-            axis: 'y',
-            fill: true,
-            backgroundColor: "@ColourConstants.SuccessHex",
-            borderColor: "rgba(0,0,0,0)",
-            pointBorderColor: "@ColourConstants.SuccessHex",
-            pointBackgroundColor: "@ColourConstants.SuccessHex",
-            pointHitRadius: 15,
-            pointRadius: 0,
-            borderWidth: 0,
-            data: [
-                @string.Join(",", testRunSummaries.Select(summary => summary.Counts.Passed))
-            ]    
+            return Enumerable.Empty<int>();
         }
-        ],
 
-    labels: [
-        @foreach (var testRunSummary in testRunSummaries)
-        {
-            @:@Json.Serialize(testRunSummary.StartedAtDateTime.ToStringForReport(false)),
-        }
-    ]
-}
-
-let successChartConfig = {
-    type: 'line',
-    data: successChartData,
-    options: {
-        legend: {
-                    display: false
-                },
-        scales: {
-            y: {
-              scaleLabel: {
-                labelString: 'Seconds'
-              },
-              stacked: true,
-              ticks: {
-                  beginAtZero:true,
-                  // Include a dollar sign in the ticks
-                  callback: function(value, index, values) {
-                      return "";
-                  }
-                  }
-            }
-          },
-          onClick: (e) => {
-              let canvasPosition = Chart.helpers.getRelativePosition(e, e.chart);
-              let clickedElementindex = e.chart.scales.x.getValueForPixel(canvasPosition.x);
-              
-              let clickedOnReportId = reportIdsArray[clickedElementindex];
-      
-              window.location.href = @Json.Serialize(Url.Content("~/bdtest/report/")) + clickedOnReportId + '/summary';
-              
-              spinnerCursor();
-          }
+        var labels = Math.Min(5, count);
+        return Enumerable.Range(0, labels)
+            .Select(index => labels == 1 ? 0 : (int)Math.Round(index * (count - 1) / (double)(labels - 1)))
+            .Distinct();
     }
-};
-
-let successChart = new Chart(document.getElementById('success-trend-chart'), successChartConfig);
-</script>
 }
