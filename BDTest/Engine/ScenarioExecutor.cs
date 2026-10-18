@@ -52,6 +52,7 @@ internal class ScenarioExecutor : IScenarioExecutor
         var stopwatch = Stopwatch.StartNew();
         Exception attemptException = null;
         Action reportTerminalFailure = null;
+        var scopeFailed = false;
         var preparingRetry = scenario.ShouldRetry;
         try
         {
@@ -62,6 +63,7 @@ internal class ScenarioExecutor : IScenarioExecutor
                 preparingRetry = false;
             }
             scenario.Status = Status.Pending;
+            scenario.ExecutionException = null;
 
             TestOutputData.ClearCurrentTaskData();
 
@@ -70,40 +72,52 @@ internal class ScenarioExecutor : IScenarioExecutor
                 await WriteTestInformation(scenario);
             }
 
-            if (ShouldSkip(scenario))
-            {
-                scenario.Status = Status.Skipped;
-                scenario.Steps.ForEach(step =>
-                {
-                    if (scenario.OutlineId != null) step.SetStepText();
-                    step.Status = Status.Skipped;
-                });
-                return;
-            }
-
             ConsoleReporter.WriteLineToConsoleOnly($"--------------------------------------------------{Environment.NewLine}");
 
-            if (scenario.BdTestBaseClass is { } test)
+            await ScenarioHookExecutor.ExecuteAsync(scenario, ExecuteScenarioAsync, ExecuteInScopeAsync);
+
+            async Task ExecuteInScopeAsync(Func<Task> execute)
             {
-                await test.ExecuteScenarioStepsAsync(ExecuteStepsAsync, report => reportTerminalFailure = report);
-            }
-            else
-            {
-                await ExecuteStepsAsync();
+                Action diagnostics = null;
+                try
+                {
+                    if (scenario.BdTestBaseClass is { } test)
+                        await test.ExecuteScenarioStepsAsync(execute, report => diagnostics = report);
+                    else
+                        await execute();
+                }
+                catch
+                {
+                    // Cleanup diagnostics must not replace the original scope's failure.
+                    if (!scopeFailed) reportTerminalFailure = diagnostics;
+                    scopeFailed = true;
+                    throw;
+                }
             }
 
-            async Task ExecuteStepsAsync()
+            async Task ExecuteScenarioAsync()
             {
+                if (ShouldSkip(scenario))
+                {
+                    scenario.Status = Status.Skipped;
+                    scenario.Steps.ForEach(step =>
+                    {
+                        if (scenario.OutlineId != null) step.SetStepText();
+                        step.Status = Status.Skipped;
+                    });
+                    return;
+                }
+
                 var stepBudget = scenario.Timeout.HasValue ? Stopwatch.StartNew() : null;
                 foreach (var step in scenario.Steps)
                 {
                     await step.Execute(scenario.BdTestBaseClass, scenario.Timeout, scenario.Timeout - stepBudget?.Elapsed, scenario);
                 }
-            }
 
-            scenario.Status = scenario.Steps.Count > 0 && scenario.Steps.All(step => step.Status == Status.Skipped)
-                ? Status.Skipped
-                : Status.Passed;
+                scenario.Status = scenario.Steps.Count > 0 && scenario.Steps.All(step => step.Status == Status.Skipped)
+                    ? Status.Skipped
+                    : Status.Passed;
+            }
         }
         catch (ErrorOccurredDuringRetryActionException e) when (preparingRetry)
         {
@@ -120,6 +134,8 @@ internal class ScenarioExecutor : IScenarioExecutor
         {
             attemptException = e;
             scenario.Status = ExceptionOutcomeClassifier.Classify(e, scenario.Run.Options, scenario.TimedOut);
+            if (scenario.Status is Status.Failed or Status.NotImplemented)
+                scenario.ExecutionException ??= new ExceptionWrapper(e);
             if (scenario.Status == Status.Skipped)
             {
                 foreach (var step in scenario.Steps.Where(step => step.Status == Status.NotRun))

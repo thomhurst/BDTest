@@ -248,6 +248,16 @@ public abstract class BDTestBase
     /// </remarks>
     public virtual Task OnAfterStep(Step step) => Task.CompletedTask;
 
+    /// <summary>Runs once per scenario attempt, after the run's before hooks and before skip checks.</summary>
+    public virtual Task OnBeforeScenario(ScenarioHookContext scenario) => Task.CompletedTask;
+
+    /// <summary>Runs after each attempt, before the run's after hooks, including skips and failures.</summary>
+    /// <remarks>The scenario contains the attempt's status and exception. Existing exceptions win over cleanup failures.</remarks>
+    public virtual Task OnAfterScenario(ScenarioHookContext scenario) => Task.CompletedTask;
+
+    internal virtual ScenarioHookContext CreateScenarioHookContext(Scenario scenario, CancellationToken token) =>
+        new(scenario, null, token);
+
     public virtual Task OnBeforeRetry()
     {
         return Task.CompletedTask;

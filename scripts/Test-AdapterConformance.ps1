@@ -54,6 +54,8 @@ try {
             FrameworkSuccess = 'Passed'
             RetryThenPass = 'Passed'
             ExplicitRunsUseDifferentMappings = 'Passed'
+            ScenarioTimeoutHooks = 'Passed'
+            ScenarioOutlineHooks = 'Passed'
         }
         # TUnit 1.75.0 does not translate InconclusiveTestException into a runner skip.
         if ($project -eq 'BDTest.TUnit.Tests') { $expected.FrameworkInconclusive = 'Failed' }

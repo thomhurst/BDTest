@@ -106,4 +106,14 @@ public static class BDTestSettings
 
     internal static Func<Step, Task> BeforeStepHooks => BeforeStep;
     internal static Func<Step, Task> AfterStepHooks => AfterStep;
+
+    /// <summary>Runs before the instance scenario hook on each attempt in the legacy default run.</summary>
+    public static event Func<ScenarioHookContext, Task> BeforeScenario;
+
+    /// <summary>Runs after the instance scenario hook on each attempt in the legacy default run.</summary>
+    /// <remarks>All after handlers are awaited, even when an earlier hook fails.</remarks>
+    public static event Func<ScenarioHookContext, Task> AfterScenario;
+
+    internal static Func<ScenarioHookContext, Task> BeforeScenarioHooks => BeforeScenario;
+    internal static Func<ScenarioHookContext, Task> AfterScenarioHooks => AfterScenario;
 }

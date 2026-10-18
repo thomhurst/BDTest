@@ -30,6 +30,7 @@ const sidebars = {
         'configuration/retry-hook-errors',
         'writing-tests/skipping',
         'writing-tests/step-hooks',
+        'writing-tests/scenario-hooks',
         'writing-tests/output',
         'writing-tests/attachments',
       ],

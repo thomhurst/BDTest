@@ -37,6 +37,9 @@ public sealed class BDTestOptions
     /// <summary>Hooks run sequentially in registration order, around the test instance hooks.</summary>
     public IList<IStepHook> StepHooks { get; } = new List<IStepHook>();
 
+    /// <summary>Hooks around each scenario attempt, copied when the run starts.</summary>
+    public IList<IScenarioHook> ScenarioHooks { get; } = new List<IScenarioHook>();
+
     private readonly List<StepTextConverterRegistration> _converters = new();
     internal IReadOnlyList<StepTextConverterRegistration> Converters => _converters;
 

@@ -52,6 +52,7 @@ options.SkipStepRules.Add<MySkipAttribute>(attribute => attribute.ShouldSkip);
 options.Debug.ShouldSkipWhenStep = false;
 options.RegisterCustomStringConverter(new MyValueConverter());
 options.StepHooks.Add(new MyStepHook());
+options.ScenarioHooks.Add(new MyScenarioHook());
 
 using var run = BDTestRun.Start(options);
 ```
@@ -66,6 +67,7 @@ using var run = BDTestRun.Start(options);
 | `RegisterCustomStringConverter<T>(...)` | `RegisterCustomStringConverter<T>(...)` |
 | `StepHooks` (`IStepHook`) | `BeforeStep` / `AfterStep` events |
 | `Attachments` ([byte limits](../writing-tests/attachments.md#limits)) | Fixed defaults on the shared default run |
+| `ScenarioHooks` (`IScenarioHook`) | `BeforeScenario` / `AfterScenario` events |
 
 - `Start(options)` copies the registrations into the run. Later changes to the options affect only runs started afterwards.
 - `Start()` uses empty registrations and default debug settings.
@@ -90,6 +92,10 @@ public sealed class TimingHook : IStepHook
 ```
 
 Run hooks run sequentially in registration order. Before hooks run before the test instance's `OnBeforeStep`; after hooks run after `OnAfterStep`. They also run for reached skipped steps and on retries. Every after hook runs even if another hook fails, and an original step failure takes precedence over after-hook failures.
+
+### Scenario hooks for a run
+
+Register `BDTest.Interfaces.IScenarioHook` instances on `ScenarioHooks`. Hooks receive the scenario, its context, a zero-based attempt number and an attempt cancellation token. Run hooks surround the instance's scenario hooks on every attempt, including skips, retries and outline rows. See [Scenario hooks](../writing-tests/scenario-hooks.md) for ordering, exception rules and timing.
 
 ## The default run
 

@@ -1,4 +1,5 @@
 using System.Runtime.CompilerServices;
+using System.Threading;
 
 namespace BDTest.Test;
 
@@ -12,6 +13,21 @@ public abstract class AbstractContextBDTestBase<TContext> : BDTestBase where TCo
     private readonly ConditionalWeakTable<string, BDTestContext<TContext>> _defaultContexts = new();
 
     public TContext Context => BDTestContext.TestContext;
+
+    /// <summary>Runs before each scenario attempt with that attempt's typed context.</summary>
+    public virtual Task OnBeforeScenario(ScenarioHookContext<TContext> scenario) => Task.CompletedTask;
+
+    /// <summary>Runs after each scenario attempt with its final status and typed context.</summary>
+    public virtual Task OnAfterScenario(ScenarioHookContext<TContext> scenario) => Task.CompletedTask;
+
+    public override Task OnBeforeScenario(ScenarioHookContext scenario) =>
+        scenario is ScenarioHookContext<TContext> typed ? OnBeforeScenario(typed) : base.OnBeforeScenario(scenario);
+
+    public override Task OnAfterScenario(ScenarioHookContext scenario) =>
+        scenario is ScenarioHookContext<TContext> typed ? OnAfterScenario(typed) : base.OnAfterScenario(scenario);
+
+    internal override ScenarioHookContext CreateScenarioHookContext(Scenario scenario, CancellationToken token) =>
+        new ScenarioHookContext<TContext>(scenario, Context, token);
 
     public BDTestContext<TContext> BDTestContext
     {

@@ -1,4 +1,5 @@
 using BDTest.Attributes;
+using BDTest.Interfaces;
 using BDTest.Settings;
 using BDTest.Test;
 #if BDTEST_NUNIT
@@ -26,6 +27,7 @@ namespace BDTest.Adapters.Conformance;
 #endif
 public class AdapterConformanceTests : Adapter
 {
+    private readonly List<(string Name, int Attempt, object Context, CancellationToken Token, Status Status)> _hooks = new();
     private readonly BDTestRun _run = CreateRun();
     public override BDTestRun TestRun => _run;
 
@@ -37,7 +39,28 @@ public class AdapterConformanceTests : Adapter
         options.SkipStepRules.Add<SkippedAttribute>(_ => true);
         options.SkipTestRules.Add(s => s.GetScenarioText() == "Conformance global skip");
         options.RetryTestRules.Add(e => e is TransientException, 1);
+        options.ScenarioHooks.Add(new ScenarioHook());
         return BDTestRun.Start(options);
+    }
+
+    public override Task OnBeforeScenario(ScenarioHookContext<object> scenario) => Record("instance before", scenario);
+    public override Task OnAfterScenario(ScenarioHookContext<object> scenario) => Record("instance after", scenario);
+
+    private Task Record(string name, ScenarioHookContext scenario)
+    {
+        Require(ReferenceEquals(Context, scenario.Context), "scenario hook received another attempt's context");
+        _hooks.Add((name, scenario.Attempt, scenario.Context, scenario.CancellationToken, scenario.Scenario.Status));
+        if (name.EndsWith("after") && scenario.Scenario.Status is Status.Failed or Status.NotImplemented)
+            Require(scenario.Scenario.Exception != null, "after hook did not receive the attempt exception");
+        return Task.CompletedTask;
+    }
+
+    private sealed class ScenarioHook : IScenarioHook
+    {
+        public Task BeforeScenarioAsync(ScenarioHookContext scenario) =>
+            ((AdapterConformanceTests)scenario.Scenario.BdTestBaseClass).Record("run before", scenario);
+        public Task AfterScenarioAsync(ScenarioHookContext scenario) =>
+            ((AdapterConformanceTests)scenario.Scenario.BdTestBaseClass).Record("run after", scenario);
     }
 
     [Test]
@@ -105,6 +128,43 @@ public class AdapterConformanceTests : Adapter
     }
 
     [Test]
+    public async Task ScenarioTimeoutHooks()
+    {
+        try
+        {
+            await Check(() => When(async token => await Task.Delay(Timeout.InfiniteTimeSpan, token))
+                .Then(() => MustNotRun()).WithScenarioTimeout(TimeSpan.FromMilliseconds(100)).BDTestAsync(),
+                Status.Failed, 0, Status.Failed, Status.NotRun);
+        }
+        catch (TimeoutException)
+        {
+            Require(_hooks.Where(h => h.Name.EndsWith("after")).All(h => h.Token.IsCancellationRequested),
+                "timeout did not cancel the scenario hook token");
+            return;
+        }
+        throw new InvalidOperationException("Expected timeout");
+    }
+
+    [Test]
+    public async Task ScenarioOutlineHooks()
+    {
+        var outline = await ScenarioOutline("example <Value>", new[] { new { Value = 1 }, new { Value = 2 } }, row =>
+        {
+            var calls = 0;
+            void FailOnce() { if (++calls == 1) throw new TransientException(); }
+            return When(() => FailOnce()).Then(() => Complete());
+        }).BDTestAsync();
+        Require(outline.Examples.All(s => s.Status == Status.Passed && s.RetryCount == 1), "outline retry mismatch");
+        Require(_hooks.Count == 16, "hooks must run for each row attempt, not the outline container");
+        Require(_hooks.Where(h => h.Name == "run before").Select(h => h.Context).Distinct().Count() == 4,
+            "outline attempts reused contexts");
+        Require(_hooks.Where(h => h.Name == "run before").Select(h => h.Token).Distinct().Count() == 4,
+            "outline attempts reused cancellation tokens");
+        Require(_hooks.Where(h => h.Name == "instance after").Select(h => h.Status)
+            .SequenceEqual(new[] { Status.Failed, Status.Passed, Status.Failed, Status.Passed }), "outline hook outcomes mismatch");
+    }
+
+    [Test]
     public async Task ExplicitRunsUseDifferentMappings()
     {
         var skipMap = new FrameworkOutcomeMap(_ => { }).Skip<SharedOutcomeException>();
@@ -145,6 +205,19 @@ public class AdapterConformanceTests : Adapter
             Require(scenario.Status == expected && scenario.RetryCount == retries
                 && scenario.Steps.Select(s => s.Status).SequenceEqual(steps),
                 $"BDTest mismatch: {scenario.Status}, retries {scenario.RetryCount}, steps {string.Join(", ", scenario.Steps.Select(s => s.Status))}");
+            Require(_hooks.Count == 4 * (retries + 1), "scenario hooks did not run once per attempt");
+            for (var attempt = 0; attempt <= retries; attempt++)
+            {
+                var hooks = _hooks.Skip(attempt * 4).Take(4).ToArray();
+                Require(hooks.Select(h => h.Name).SequenceEqual(new[] { "run before", "instance before", "instance after", "run after" }),
+                    "scenario hook order mismatch");
+                Require(hooks.All(h => h.Attempt == attempt), "scenario hook attempt mismatch");
+                Require(hooks.Take(2).All(h => h.Status == Status.Pending), "before hooks must see Pending");
+                Require(hooks.Skip(2).All(h => h.Status == (attempt < retries ? Status.Failed : expected)),
+                    "after hooks must see the attempt's final status");
+            }
+            Require(_hooks.Where(h => h.Name == "run before").Select(h => h.Context).Distinct().Count() == retries + 1,
+                "retry attempts reused contexts");
         }
     }
 

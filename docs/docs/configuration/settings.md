@@ -34,6 +34,8 @@ public class BDTestSetup
 | `GlobalRetryTestRules` | `RetryTestRules` | `Add(Func<Exception, bool>, int retryLimit)`. See [Retries](../writing-tests/retries.md). |
 | `BeforeStep` | `event Func<Step, Task>` | Global hook before each step. See [Step hooks](../writing-tests/step-hooks.md). |
 | `AfterStep` | `event Func<Step, Task>` | Global hook after each step. |
+| `BeforeScenario` | `event Func<ScenarioHookContext, Task>` | Global hook before each scenario attempt. See [Scenario hooks](../writing-tests/scenario-hooks.md). |
+| `AfterScenario` | `event Func<ScenarioHookContext, Task>` | Global hook after each scenario attempt, including skips and failures. |
 
 ### Obsolete members
 
