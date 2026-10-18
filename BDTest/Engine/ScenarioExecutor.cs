@@ -70,7 +70,7 @@ internal class ScenarioExecutor : IScenarioExecutor
 
             foreach (var step in scenario.Steps)
             {
-                await step.Execute().ConfigureAwait(false);
+                await step.Execute(scenario.BdTestBaseClass).ConfigureAwait(false);
             }
 
             scenario.Status = scenario.Steps.Count > 0 && scenario.Steps.All(step => step.Status == Status.Skipped)

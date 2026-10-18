@@ -86,6 +86,18 @@ public abstract class BDTestBase
 
     internal void NotifyScenarioSkipped(string reason) => OnScenarioSkipped(reason);
 
+    /// <summary>Runs before each reached step, after the global before hooks.</summary>
+    public virtual Task OnBeforeStep(Step step) => Task.CompletedTask;
+
+    /// <summary>Runs after each reached step, before the global after hooks.</summary>
+    /// <remarks>
+    /// The step contains its status, exception, output and timing. This hook runs even when the
+    /// step or a before hook throws, and for individually skipped steps, but not for unreached steps
+    /// or a skipped scenario. Hooks run again on each retry. An existing exception takes precedence
+    /// over an after-hook exception; otherwise a hook exception determines the step result.
+    /// </remarks>
+    public virtual Task OnAfterStep(Step step) => Task.CompletedTask;
+
     public virtual Task OnBeforeRetry()
     {
         return Task.CompletedTask;

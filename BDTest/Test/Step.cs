@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics;
 using System.Linq.Expressions;
+using System.Runtime.ExceptionServices;
 using BDTest.Attributes;
 using BDTest.Helpers;
 using BDTest.Output;
@@ -153,14 +154,30 @@ public class Step
         }
     }
 
-    internal async Task Execute()
+    internal async Task Execute(BDTestBase test)
     {
         SetStepText();
 
+        // Keep both subscriptions stable for this step, including its after hooks.
+        var beforeHooks = BDTestSettings.BeforeStepHooks;
+        var afterHooks = BDTestSettings.AfterStepHooks;
+        Exception executionException = null;
         var stopwatch = Stopwatch.StartNew();
         try
         {
             StartTime = DateTime.UtcNow;
+
+            if (beforeHooks != null)
+            {
+                foreach (Func<Step, Task> hook in beforeHooks.GetInvocationList())
+                {
+                    await hook(this).ConfigureAwait(false);
+                }
+            }
+            if (test != null)
+            {
+                await test.OnBeforeStep(this).ConfigureAwait(false);
+            }
 
             if (ShouldSkip())
             {
@@ -172,32 +189,14 @@ public class Step
             await Runnable.Run().ConfigureAwait(false);
             Status = Status.Passed;
         }
-        catch (NotImplementedException e)
-        {
-            Status = Status.NotImplemented;
-            Exception = new ExceptionWrapper(e);
-            throw;
-        }
-        catch (Exception e) when (BDTestSettings.CustomExceptionSettings.SuccessExceptionTypes.Contains(e.GetType()))
-        {
-            Status = Status.Passed;
-            throw;
-        }
-        catch (Exception e) when (BDTestSettings.CustomExceptionSettings.SkipExceptionTypes.Contains(e.GetType()))
-        {
-            Status = Status.Skipped;
-            throw;
-        }
-        catch (Exception e) when (BDTestSettings.CustomExceptionSettings.InconclusiveExceptionTypes.Contains(e.GetType()))
-        {
-            Status = Status.Inconclusive;
-            throw;
-        }
         catch (Exception e)
         {
-            Status = Status.Failed;
-            Exception = new ExceptionWrapper(e);
-            await Console.Out.WriteLineAsync($"{Environment.NewLine}{e.GetType().Name} on '{StepPrefix}' step executing '{Runnable.GetExpressionString()}'").ConfigureAwait(false);
+            executionException = e;
+            SetExceptionResult(e);
+            if (Status == Status.Failed)
+            {
+                await Console.Out.WriteLineAsync($"{Environment.NewLine}{e.GetType().Name} on '{StepPrefix}' step executing '{Runnable.GetExpressionString()}'").ConfigureAwait(false);
+            }
             throw;
         }
         finally
@@ -206,7 +205,80 @@ public class Step
             stopwatch.Stop();
             TimeTaken = stopwatch.Elapsed;
             Output = TestOutputData.Instance.ToString().Trim();
-            TestOutputData.ClearCurrentTaskData();
+            try
+            {
+                var hookException = await RunAfterHooks(test, afterHooks).ConfigureAwait(false);
+                if (executionException == null && hookException != null)
+                {
+                    SetExceptionResult(hookException);
+                    ExceptionDispatchInfo.Capture(hookException).Throw();
+                }
+            }
+            finally
+            {
+                // Include hook output without charging after-hook work to the step duration.
+                Output = TestOutputData.Instance.ToString().Trim();
+                TestOutputData.ClearCurrentTaskData();
+            }
+        }
+    }
+
+    private async Task<Exception> RunAfterHooks(BDTestBase test, Func<Step, Task> globalHooks)
+    {
+        Exception firstException = null;
+        if (test != null)
+        {
+            await Invoke(test.OnAfterStep).ConfigureAwait(false);
+        }
+        if (globalHooks != null)
+        {
+            foreach (Func<Step, Task> hook in globalHooks.GetInvocationList())
+            {
+                await Invoke(hook).ConfigureAwait(false);
+            }
+        }
+        return firstException;
+
+        async Task Invoke(Func<Step, Task> hook)
+        {
+            try
+            {
+                await hook(this).ConfigureAwait(false);
+            }
+            catch (Exception e)
+            {
+                firstException ??= e;
+                await Console.Out.WriteLineAsync($"After-step hook failed: {e}").ConfigureAwait(false);
+            }
+        }
+    }
+
+    private void SetExceptionResult(Exception exception)
+    {
+        if (exception is NotImplementedException)
+        {
+            Status = Status.NotImplemented;
+        }
+        else if (BDTestSettings.CustomExceptionSettings.SuccessExceptionTypes.Contains(exception.GetType()))
+        {
+            Status = Status.Passed;
+        }
+        else if (BDTestSettings.CustomExceptionSettings.SkipExceptionTypes.Contains(exception.GetType()))
+        {
+            Status = Status.Skipped;
+        }
+        else if (BDTestSettings.CustomExceptionSettings.InconclusiveExceptionTypes.Contains(exception.GetType()))
+        {
+            Status = Status.Inconclusive;
+        }
+        else
+        {
+            Status = Status.Failed;
+        }
+
+        if (Status == Status.Failed || Status == Status.NotImplemented)
+        {
+            Exception = new ExceptionWrapper(exception);
         }
     }
 
