@@ -47,8 +47,11 @@ await ScenarioOutline("Users can sign in", new[]
     new Login("Alice", "Admin"),
     new Login("Bob", "Reader"),
 }, row => When(() => Users.LogIn(row.Name, row.Role))
+    .WithArgs(() => row.Name, () => row.Role)
     .Then(() => Users.TheDashboardIsShown()));
 ```
+
+The row parameter is captured by the step lambda, so `.WithArgs(...)` supplies the argument readers needed to use the `[StepText]` template. See [step text](step-text.md#withargs).
 
 - Values are formatted with the invariant culture and captured when the outline is built.
 - Unknown placeholders stay unchanged.

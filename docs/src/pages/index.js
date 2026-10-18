@@ -112,7 +112,11 @@ function Hero() {
           </p>
           <div className={styles.heroActions}>
             <Link className={styles.primaryButton} to="/docs/getting-started/installation">Get started</Link>
-            <code className={styles.installChip}>dotnet add package BDTest.TUnit</code>
+            <code className={styles.installChip}>
+              dotnet add package TUnit<br />
+              dotnet add package BDTest.TUnit<br />
+              dotnet add package BDTest.SourceGenerator
+            </code>
           </div>
         </div>
         <ReportCard />
