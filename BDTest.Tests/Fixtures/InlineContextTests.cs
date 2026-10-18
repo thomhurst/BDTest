@@ -7,33 +7,29 @@ namespace BDTest.Tests.Fixtures;
 [Story(AsA = "BDTest developer",
     IWant = "to make sure that test contexts are different for each test",
     SoThat = "tests don't share state")]
-public class WithContextTests : BDTestBase
+public class InlineContextTests : BDTestBase
 {
     private MyTestContext? _context1;
     private MyTestContext? _context2;
 
     [Test]
-    public async Task TestWithContext1()
+    public async Task TestWithInlineContext1()
     {
-        await WithContext<MyTestContext>(async context =>
-        {
-            _context1 = context;
-            return await When(() => Console.WriteLine())
-                .Then(() => Console.WriteLine())
-                .BDTestAsync();
-        });
+        var context = new MyTestContext();
+        _context1 = context;
+        await When(() => Console.WriteLine())
+            .Then(() => Console.WriteLine())
+            .BDTestAsync();
     }
         
     [Test]
-    public async Task TestWithContext2()
+    public async Task TestWithInlineContext2()
     {
-        await WithContext<MyTestContext>(async context =>
-        {
-            _context2 = context;
-            return await When(() => Console.WriteLine())
-                .Then(() => Console.WriteLine())
-                .BDTestAsync();
-        });
+        var context = new MyTestContext();
+        _context2 = context;
+        await When(() => Console.WriteLine())
+            .Then(() => Console.WriteLine())
+            .BDTestAsync();
     }
         
     [OneTimeTearDown]

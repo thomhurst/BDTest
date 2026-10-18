@@ -13,18 +13,16 @@ public abstract class StepBuilder : BuildableTest
         Console.SetOut(TestOutputData.Instance);
     }
 
-    protected T WithStepText<T>(Func<string?>? overridingStepText) where T : StepBuilder
+    protected void SetStepText(Func<string?>? overridingStepText)
     {
         ExistingSteps.Last().OverriddenStepText = overridingStepText;
-        return (T) this;
     }
 
-    protected T WithArgs<T>(Func<object?>[] arguments) where T : StepBuilder
+    protected void SetArguments(Func<object?>[] arguments)
     {
         if (arguments == null) throw new ArgumentNullException(nameof(arguments));
         if (arguments.Any(argument => argument == null)) throw new ArgumentException("Argument readers cannot be null.", nameof(arguments));
         ExistingSteps.Last().ExplicitArguments = (Func<object?>[])arguments.Clone();
-        return (T)this;
     }
 
     // First Test Construction - Given or When
@@ -50,7 +48,7 @@ public abstract class StepBuilder : BuildableTest
             
         StoryText = StoryTextHelper.GetStoryText(bdTestBase);
         ScenarioText = new ScenarioText(ScenarioTextHelper.GetScenarioText(TestMetadata, CallerMember));
-        Parameters = TestMetadata.CopyParameters();
+        ParameterNames = TestMetadata.CopyParameters();
         CustomTestInformation = TestMetadata.CopyInformation();
         Tags = TestMetadata.CopyTags();
     }
@@ -71,7 +69,7 @@ public abstract class StepBuilder : BuildableTest
         TestId = previousPartiallyBuiltTest.TestId;
         Guid = System.Guid.NewGuid().ToString();
         ReportId = previousPartiallyBuiltTest.ReportId;
-        Parameters = previousPartiallyBuiltTest.Parameters;
+        ParameterNames = previousPartiallyBuiltTest.ParameterNames;
         CustomTestInformation = previousPartiallyBuiltTest.CustomTestInformation;
         Tags = previousPartiallyBuiltTest.Tags;
 

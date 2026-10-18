@@ -1,6 +1,6 @@
 namespace BDTest.Test.Steps.Then;
 
-public class AndThen : Then
+public sealed class AndThen : ThenStepBuilder
 {
     protected override StepType StepType { get; } = StepType.AndThen;
 
@@ -10,13 +10,21 @@ public class AndThen : Then
     }
 
     /// <summary>Supplies lazy step-text arguments, evaluated once per executed attempt.</summary>
-    public new AndThen WithArgs(params Func<object?>[] arguments)
+    public AndThen WithArgs(params Func<object?>[] arguments)
     {
-        return WithArgs<AndThen>(arguments);
+        SetArguments(arguments);
+        return this;
     }
 
-    public new AndThen WithStepText(Func<string?>? overridingStepText)
+    public AndThen WithStepText(Func<string?>? overridingStepText)
     {
-        return WithStepText<AndThen>(overridingStepText);
+        SetStepText(overridingStepText);
+        return this;
+    }
+
+    public AndThen WithScenarioText(string scenarioText)
+    {
+        SetScenarioText(scenarioText);
+        return this;
     }
 }

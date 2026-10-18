@@ -176,16 +176,6 @@ public abstract class BDTestBase
         return new When(Runnable.FromResult(step, argumentExpression, callerFile, callerLine), callerMember, callerFile, BDTestExecutionId, TestRun.ReportId, this);
     }
 
-    public void WithContext<TContext>(Func<TContext, Scenario> test) where TContext : new()
-    {
-        test.Invoke(Activator.CreateInstance<TContext>());
-    }
-
-    public Task<Scenario> WithContext<TContext>(Func<TContext, Task<Scenario>> test) where TContext : new()
-    {
-        return test.Invoke(Activator.CreateInstance<TContext>());
-    }
-
     public void WriteStartupOutput(string text)
     {
         TestOutputData.CollectStartupOutput(BDTestExecutionId, text, true, run: TestRun);

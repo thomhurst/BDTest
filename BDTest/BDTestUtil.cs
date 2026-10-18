@@ -13,7 +13,7 @@ public static class BDTestUtil
         (run ?? throw new ArgumentNullException(nameof(run))).Store.ScenariosByInternalId.Values
         .Where(scenario => scenario.OutlineId == null).ToList();
 
-    public static string GetCurrentReportId => TestHolder.CurrentReportId;
+    public static string CurrentReportId => BDTestRun.Default.ReportId;
     public static List<BuildableTest> GetNotRunScenarios() => GetNotRunScenarios(BDTestRun.Default);
 
     /// <summary>Gets a snapshot of the run's unfinished scenario definitions.</summary>

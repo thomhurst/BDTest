@@ -63,5 +63,5 @@ public class BDTestContext
         }
     }
 
-    public string CurrentTestRunnerId => TestBase.TestRun.ReportId;
+    public string ReportId => TestBase.TestRun.ReportId;
 }

@@ -20,13 +20,9 @@ public abstract class RunnableStepBuilder : StepBuilder
     {
     }
 
-    public RunnableStepBuilder WithScenarioText(string scenarioText)
+    protected void SetScenarioText(string scenarioText)
     {
-        var text = new ScenarioText(scenarioText);
-            
-        ScenarioText = text;
-
-        return this;
+        ScenarioText = new ScenarioText(scenarioText);
     }
 
     internal Task<Scenario> Invoke(BuildableTest testDetails,

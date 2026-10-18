@@ -1,6 +1,6 @@
 ---
 title: Standalone
-description: Use BDTest without a framework adapter through BDTestBase, BDTestBuilder and WithContext.
+description: Use BDTest without a framework adapter through BDTestBase and BDTestBuilder.
 ---
 
 # Standalone
@@ -27,7 +27,7 @@ public class SmokeTests : BDTestBase
 }
 ```
 
-Combine it with [`WithContext<T>`](../writing-tests/test-context.md#inline-contexts) for per-test state.
+Create a [local context](../writing-tests/test-context.md#inline-contexts) for per-test state.
 
 For a typed context without inheriting a BDTest base class, use the [composition host](composition.md). It also associates metadata and retry hooks with your test instance and accepts an explicit run.
 

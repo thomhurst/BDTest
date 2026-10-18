@@ -1,6 +1,6 @@
 namespace BDTest.Test.Steps.When;
 
-public class ButWhen : When
+public sealed class ButWhen : WhenStepBuilder
 {
     protected override StepType StepType { get; } = StepType.ButWhen;
 
@@ -9,13 +9,15 @@ public class ButWhen : When
     }
 
     /// <summary>Supplies lazy step-text arguments, evaluated once per executed attempt.</summary>
-    public new ButWhen WithArgs(params Func<object?>[] arguments)
+    public ButWhen WithArgs(params Func<object?>[] arguments)
     {
-        return WithArgs<ButWhen>(arguments);
+        SetArguments(arguments);
+        return this;
     }
 
-    public new ButWhen WithStepText(Func<string?>? overridingStepText)
+    public ButWhen WithStepText(Func<string?>? overridingStepText)
     {
-        return WithStepText<ButWhen>(overridingStepText);
+        SetStepText(overridingStepText);
+        return this;
     }
 }

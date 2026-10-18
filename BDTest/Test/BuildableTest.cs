@@ -31,8 +31,10 @@ public class BuildableTest
     [JsonInclude]
     public string? ReportId { get; internal set; }
 
+    /// <summary>Names of the parameters on the test method, not their argument values.</summary>
     [JsonInclude]
-    public IEnumerable<string?>? Parameters { get; protected internal set; } = Enumerable.Empty<string>();
+    [JsonPropertyName("Parameters")]
+    public IEnumerable<string?>? ParameterNames { get; protected internal set; } = Enumerable.Empty<string>();
 
     [JsonInclude]
     public TestInformationAttribute[]? CustomTestInformation { get; protected internal set; } = Array.Empty<TestInformationAttribute>();

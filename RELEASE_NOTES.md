@@ -2,6 +2,21 @@
 
 ## Next major release (unreleased)
 
+### Breaking: public names and fluent builder types
+
+Rename `BDTestUtil.GetCurrentReportId` to `CurrentReportId`,
+`BDTestContext.CurrentTestRunnerId` to `ReportId`, and `BuildableTest.Parameters`
+to `ParameterNames`. The serialized field remains `Parameters`.
+
+All nine step kinds are sealed siblings. Use their concrete types (or `var`) for
+fluent customization. `WithArgs`, `WithStepText` and runnable `WithScenarioText`
+retain the concrete type, allowing `.Then(...).WithScenarioText("name").And(...)`.
+Both `WithContext<T>(...)` overloads are removed; construct inline contexts yourself
+or use a context base class for framework-managed lifetime.
+
+See the [migration guide](https://thomhurst.github.io/BDTest/docs/migration/fluent-builders).
+Tracked by [#828](https://github.com/thomhurst/BDTest/issues/828).
+
 ### Breaking: report server image sources
 
 The report server's default Content Security Policy now uses
@@ -40,8 +55,8 @@ override. Replace `Inject<T>()` with explicit construction or service resolution
 Synchronous setup access still constructs/configures the context; await
 `InitializeContextAsync()` when setup needs initialized resources. Custom adapters
 should await `EndTestAsync()` during teardown. Legacy synchronous completion hooks
-remain supported through a compatibility bridge. Inline `WithContext` delegates
-retain their caller-managed lifetime.
+remain supported through a compatibility bridge. Explicitly constructed inline
+contexts retain their caller-managed lifetime.
 
 See [test context](https://thomhurst.github.io/BDTest/docs/writing-tests/test-context)
 for ownership and migration details. Tracked by [#824](https://github.com/thomhurst/BDTest/issues/824).
@@ -66,8 +81,7 @@ public void Login() => Given(() => User()).When(() => LogIn()).Then(() => Logged
 public async Task Login() => await Given(() => User()).When(() => LogIn()).Then(() => LoggedIn());
 ```
 
-Use the same pattern for scenario outlines and await asynchronous test helpers and
-`WithContext<TContext>(...)` calls. NUnit, xUnit, MSTest, and TUnit support `Task`
+Use the same pattern for scenario outlines and await asynchronous test helpers. NUnit, xUnit, MSTest, and TUnit support `Task`
 test methods. Step methods may still be synchronous.
 
 Scenario execution starts inline and no longer has a blocking thread-pool mode.

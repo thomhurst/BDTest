@@ -1,6 +1,6 @@
 namespace BDTest.Test.Steps.Given;
 
-public class ButGiven : AndGiven
+public sealed class ButGiven : GivenStepBuilder
 {
     protected override StepType StepType { get; } = StepType.ButGiven;
 
@@ -9,13 +9,15 @@ public class ButGiven : AndGiven
     }
 
     /// <summary>Supplies lazy step-text arguments, evaluated once per executed attempt.</summary>
-    public new ButGiven WithArgs(params Func<object?>[] arguments)
+    public ButGiven WithArgs(params Func<object?>[] arguments)
     {
-        return WithArgs<ButGiven>(arguments);
+        SetArguments(arguments);
+        return this;
     }
 
-    public new ButGiven WithStepText(Func<string?>? overridingStepText)
+    public ButGiven WithStepText(Func<string?>? overridingStepText)
     {
-        return WithStepText<ButGiven>(overridingStepText);
+        SetStepText(overridingStepText);
+        return this;
     }
 }

@@ -50,7 +50,7 @@ public class ReportSerializationTests
             NotRun = [new BuildableTest
             {
                 StoryText = new StoryText("unrun story"), ScenarioText = new ScenarioText("unrun scenario"),
-                ScenarioId = "unrun", ReportId = "report", Parameters = ["parameter"], CustomTestInformation = information,
+                ScenarioId = "unrun", ReportId = "report", ParameterNames = ["parameter"], CustomTestInformation = information,
                 Tags = ["unrun tag"], CallerMember = "member", CallerFile = "unrun.cs", TestId = "test"
             }]
         };
@@ -60,6 +60,7 @@ public class ReportSerializationTests
 
         Assert.That(json, Does.Not.Contain("\"$id\"").And.Not.Contain("\"$ref\""));
         Assert.That(json, Does.Contain("\"Status\":\"Failed\"").And.Contain("0.00:00:01:2345678"));
+        Assert.That(json, Does.Contain("\"Parameters\":[\"parameter\"]").And.Not.Contain("\"ParameterNames\""));
         Assert.That(BDTestJsonHelper.Serialize(restored), Is.EqualTo(json));
         var actual = Required(restored.Scenarios).Single();
         Assert.That(actual.GetStoryText(), Is.EqualTo("story"));
@@ -72,7 +73,7 @@ public class ReportSerializationTests
         Assert.That(Required(actual.Examples).Single().OutlineId, Is.EqualTo(actual.Guid));
         Assert.That(Required(actual.Examples.Single().CustomTestInformation).Single().Information, Is.EqualTo("information"));
         Assert.That(Required(restored.NotRun).Single().GetStoryText(), Is.EqualTo("unrun story"));
-        Assert.That(restored.NotRun.Single().Parameters, Is.EqualTo(new[] { "parameter" }));
+        Assert.That(restored.NotRun.Single().ParameterNames, Is.EqualTo(new[] { "parameter" }));
         Assert.That(Required(restored.CustomProperties)["property"], Is.EqualTo("value"));
 
         var summary = JsonSerializer.Deserialize("""
