@@ -1,6 +1,6 @@
 [CmdletBinding()]
 param(
-    [string] $Configuration = 'Release',
+    [string] $PackageDirectory = (Join-Path (Split-Path $PSScriptRoot -Parent) 'artifacts/packages'),
     [switch] $RequireNormalizedPaths
 )
 
@@ -33,13 +33,16 @@ $projects = @(Get-ChildItem $repoRoot -Recurse -Filter '*.csproj' |
     Where-Object { $_.FullName -notmatch 'Tests|Pipeline|Example|ReportGenerator' })
 if ($projects.Count -eq 0) { throw 'No package projects found.' }
 
-foreach ($project in $projects) {
-    $output = Join-Path $project.DirectoryName "bin/$Configuration"
-    $packages = @(Get-ChildItem $output -Filter '*.nupkg' -File |
-        Where-Object { $_.Name -notlike '*.symbols.nupkg' })
-    if ($packages.Count -ne 1) { throw "$project must have exactly one primary package; found $($packages.Count)." }
+$expectedIds = @($projects | ForEach-Object { $_.BaseName })
+$verifiedIds = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
+$packages = @(Get-ChildItem $PackageDirectory -Filter '*.nupkg' -File |
+    Where-Object { $_.Name -notlike '*.symbols.nupkg' } | Sort-Object Name)
+if ($packages.Count -ne $projects.Count) {
+    throw "Expected $($projects.Count) primary packages in $PackageDirectory; found $($packages.Count)."
+}
 
-    $packagePath = $packages[0].FullName
+foreach ($packageFile in $packages) {
+    $packagePath = $packageFile.FullName
     $symbolsPath = [System.IO.Path]::ChangeExtension($packagePath, '.snupkg')
     $package = [System.IO.Compression.ZipFile]::OpenRead($packagePath)
     $symbols = $null
@@ -48,6 +51,10 @@ foreach ($project in $projects) {
         $manifestName = @($package.Entries | Where-Object { $_.FullName.EndsWith('.nuspec') })[0].FullName
         $manifest = Read-PackageXml $package $manifestName
         $symbolManifest = Read-PackageXml $symbols $manifestName
+        $packageId = [string] $manifest.package.metadata.id
+        if ($packageId -notin $expectedIds -or -not $verifiedIds.Add($packageId)) {
+            throw "Unexpected or duplicate package ID: $packageId"
+        }
         if ($manifest.package.metadata.id -ne $symbolManifest.package.metadata.id -or
             $manifest.package.metadata.version -ne $symbolManifest.package.metadata.version) {
             throw "Package/symbol identity mismatch: $packagePath"

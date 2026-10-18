@@ -45,6 +45,3 @@ jobs:
           NuGet__ApiKey: ${{ secrets.NUGET__APIKEY }}
           PULL_REQUEST_BRANCH: ${{ github.event.pull_request.head.ref }}
           PUBLISH_PACKAGES: ${{ github.event.inputs.publish-packages }}
-      - name: Verify package artifacts
-        shell: pwsh
-        run: ./scripts/Test-PackageArtifacts.ps1 -RequireNormalizedPaths

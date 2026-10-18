@@ -11,6 +11,7 @@ namespace BDTest.Pipeline.Modules.LocalMachine;
 
 [DependsOn<AddLocalNugetSourceModule>]
 [DependsOn<PackagePathsParserModule>]
+[DependsOn<VerifyPackageArtifactsModule>]
 [DependsOn<CreateLocalNugetFolderModule>]
 public class UploadPackagesToLocalNuGetModule : Module<CommandResult[]>
 {

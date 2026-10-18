@@ -33,6 +33,7 @@ builder.Services
     .AddModule<NugetVersionGeneratorModule>()
     .AddModule<PackProjectsModule>()
     .AddModule<PackageFilesRemovalModule>()
-    .AddModule<PackagePathsParserModule>();
+    .AddModule<PackagePathsParserModule>()
+    .AddModule<VerifyPackageArtifactsModule>();
 
 await builder.Build().RunAsync();

@@ -15,6 +15,7 @@ namespace BDTest.Pipeline.Modules;
 
 [DependsOn<RunUnitTestsModule>]
 [DependsOn<PackagePathsParserModule>]
+[DependsOn<VerifyPackageArtifactsModule>]
 public class UploadPackagesToNugetModule : Module<CommandResult[]>
 {
     private readonly IOptions<NuGetSettings> _options;
