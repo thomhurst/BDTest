@@ -1,5 +1,4 @@
 using Xunit;
-using Xunit.Abstractions;
 
 namespace BDTest.xUnit.Tests;
 
@@ -12,7 +11,7 @@ public class XUnitNonParallelTestsUniqueId : XUnitBDTestBase<XUnitContext>
     private readonly ITestOutputHelper _testOutputHelper;
     private static readonly List<string> Ids = new();
 
-    public XUnitNonParallelTestsUniqueId(ITestOutputHelper testOutputHelper) : base(testOutputHelper)
+    public XUnitNonParallelTestsUniqueId(ITestOutputHelper testOutputHelper)
     {
         _testOutputHelper = testOutputHelper;
     }

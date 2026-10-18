@@ -1,10 +1,10 @@
 using System.Collections.Concurrent;
 using BDTest.Test;
 using Xunit;
-using Xunit.Abstractions;
+using Xunit.v3;
 
 // Each concrete class has its own default collection. Allow all participants to start even on single-core runners.
-[assembly: CollectionBehavior(MaxParallelThreads = BDTest.xUnit.Tests.XUnitParallelTestsUniqueId.ParticipantCount)]
+[assembly: Parallelization(MaxThreads = BDTest.xUnit.Tests.XUnitParallelTestsUniqueId.ParticipantCount)]
 
 namespace BDTest.xUnit.Tests;
 
@@ -14,10 +14,6 @@ public abstract class XUnitParallelTestsUniqueId : XUnitBDTestBase<XUnitContext>
 
     private static readonly ConcurrentDictionary<string, XUnitContext> Contexts = new();
     private static readonly TaskCompletionSource AllTestsStarted = new(TaskCreationOptions.RunContinuationsAsynchronously);
-
-    protected XUnitParallelTestsUniqueId(ITestOutputHelper testOutputHelper) : base(testOutputHelper)
-    {
-    }
 
     [Fact]
     public async Task ExecutionIdAndContextRemainIsolatedDuringConcurrentScenarios()
@@ -58,8 +54,8 @@ public abstract class XUnitParallelTestsUniqueId : XUnitBDTestBase<XUnitContext>
     }
 }
 
-public class XUnitParallelTestsUniqueId1(ITestOutputHelper output) : XUnitParallelTestsUniqueId(output);
-public class XUnitParallelTestsUniqueId2(ITestOutputHelper output) : XUnitParallelTestsUniqueId(output);
-public class XUnitParallelTestsUniqueId3(ITestOutputHelper output) : XUnitParallelTestsUniqueId(output);
-public class XUnitParallelTestsUniqueId4(ITestOutputHelper output) : XUnitParallelTestsUniqueId(output);
-public class XUnitParallelTestsUniqueId5(ITestOutputHelper output) : XUnitParallelTestsUniqueId(output);
+public class XUnitParallelTestsUniqueId1 : XUnitParallelTestsUniqueId;
+public class XUnitParallelTestsUniqueId2 : XUnitParallelTestsUniqueId;
+public class XUnitParallelTestsUniqueId3 : XUnitParallelTestsUniqueId;
+public class XUnitParallelTestsUniqueId4 : XUnitParallelTestsUniqueId;
+public class XUnitParallelTestsUniqueId5 : XUnitParallelTestsUniqueId;
