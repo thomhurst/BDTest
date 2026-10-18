@@ -46,7 +46,13 @@ function verify(grouped, protocol) {
       }[name];
     },
     querySelector: () => ({ textContent: 'Scenario ' + i }),
-    querySelectorAll: () => []
+    querySelectorAll(selector) {
+      const keyword = 'Given';
+      const text = 'user is logged in ' + i;
+      if (selector === '.step-text') return [{ textContent: text }];
+      if (selector === '.step-row') return [{ querySelector: name => ({ textContent: name === '.kw' ? keyword : text }) }];
+      return [];
+    }
   }));
   const root = {
     querySelector: selector => controls[selector],
@@ -104,6 +110,13 @@ function verify(grouped, protocol) {
   tagButton.getAttribute = () => JSON.stringify(unusualTag);
   events['root-click']({ target: { closest: () => tagButton } });
   assert.equal(controls['#tag'].value, unusualTag.toLowerCase(), 'Tag button selects matching dropdown option');
+
+  controls['#q'].value = 'Given user is logged in 648';
+  controls['#q'].input();
+  assert.deepEqual(shown(), [elements[648]], 'Search includes the keyword and step text as displayed');
+  controls['#q'].value = 'user is logged in 648';
+  controls['#q'].input();
+  assert.deepEqual(shown(), [elements[648]], 'Step text remains searchable without the keyword');
 
   controls['#q'].value = 'Scenario 648';
   controls['#q'].input();

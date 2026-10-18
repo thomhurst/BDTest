@@ -155,6 +155,24 @@ public class HtmlReportTests : BDTestBase
         Assert.That(html, Does.Contain("<span class=\"v-word\">2 failed</span>"));
     }
 
+    [TestCase(false)]
+    [TestCase(true)]
+    public async Task OutlineFailureCausesCountDistinctScenariosAndRetainExampleLinks(bool includeOrdinaryScenario)
+    {
+        await Assert.CatchAsync(async () => await ScenarioOutline("Failing outline", new[] { 1, 2 },
+            row => When(() => Fail()).Then(() => DoNothing())));
+        var outline = BDTestUtil.GetScenarios().Single();
+        if (includeOrdinaryScenario)
+            await Assert.CatchAsync(async () => await When(() => Fail()).Then(() => DoNothing()).BDTestAsync());
+
+        var html = BDTestHtmlHelper.GetTestHtmlReport();
+        var count = includeOrdinaryScenario ? 2 : 1;
+        Assert.That(html, Does.Contain($"<span class=\"cause-n\">{count} {(count == 1 ? "scenario" : "scenarios")}</span>"));
+        Assert.That(html, Does.Contain($"<span class=\"v-word\">{count} failed</span>"));
+        Assert.That(html, Does.Contain($"data-go=\"{outline.Guid}\">Failing outline · example 1</button>"));
+        Assert.That(html, Does.Contain($"data-go=\"{outline.Guid}\">Failing outline · example 2</button>"));
+    }
+
     [Test]
     [BDTestTag("api\tintegration\nline\rreturn\0null\bback\fform\\slash\"quote<>&'")]
     public async Task TagMetadataRoundTripsControlCharactersAndHtml()

@@ -262,11 +262,16 @@ public static class BDTestHtmlHelper
         html.AppendLine($"<p class=\"sec-note\">{failedCount} failed {(failedCount == 1 ? "scenario traces" : "scenarios trace")} back to {causes.Count} {(causes.Count == 1 ? "cause" : "causes")}.</p>");
         html.AppendLine("</div>");
         html.AppendLine("<div class=\"att-grid\">");
-        foreach (var cause in causes.OrderByDescending(c => c.Scenarios.Count))
+        foreach (var cause in causes.Select(c => new
+        {
+            c.Exception,
+            c.Scenarios,
+            ScenarioCount = c.Scenarios.Select(s => s.Scenario.Guid).Distinct().Count()
+        }).OrderByDescending(c => c.ScenarioCount))
         {
             var where = GetFirstFrame(cause.Exception.StackTrace);
             html.AppendLine("<article class=\"cause\">");
-            html.AppendLine($"<div class=\"cause-top\"><span class=\"err-type\">{EscapeHtml(cause.Exception.TypeName)}</span><span class=\"cause-n\">{cause.Scenarios.Count} {(cause.Scenarios.Count == 1 ? "scenario" : "scenarios")}</span></div>");
+            html.AppendLine($"<div class=\"cause-top\"><span class=\"err-type\">{EscapeHtml(cause.Exception.TypeName)}</span><span class=\"cause-n\">{cause.ScenarioCount} {(cause.ScenarioCount == 1 ? "scenario" : "scenarios")}</span></div>");
             html.AppendLine($"<p class=\"cause-msg\">{EscapeHtml(cause.Exception.Message)}</p>");
             if (where != null)
             {
@@ -930,7 +935,9 @@ font-family:var(--sans);color:var(--ink);background:var(--bg);min-height:100vh;f
 
   var items = $$('.scn').map(function (el) {
     var tags = JSON.parse(el.getAttribute('data-tags') || '[]');
-    var steps = Array.prototype.map.call(el.querySelectorAll('.step-text'), function (x) { return x.textContent; });
+    var steps = Array.prototype.map.call(el.querySelectorAll('.step-row'), function (row) {
+      return (row.querySelector('.kw').textContent + ' ' + row.querySelector('.step-text').textContent).trim();
+    });
     return {
       el: el, home: el.parentNode, status: el.getAttribute('data-status'), story: +el.getAttribute('data-story'),
       i: +el.getAttribute('data-i'), ms: +el.getAttribute('data-ms'), sev: +el.getAttribute('data-sev'),
