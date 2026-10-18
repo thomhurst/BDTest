@@ -61,19 +61,19 @@
             <div class="cluster">
                 @if (previous != null)
                 {
-                    <a class="btn sm" href="@RunUrl(previous.RecordId, activeTab)">@ReportUi.Icon("i-chev-l")Previous run</a>
+                    <a class="btn sm hide-phone" href="@RunUrl(previous.RecordId, activeTab)">@ReportUi.Icon("i-chev-l")Previous run</a>
                 }
                 else
                 {
-                    <span class="btn sm" aria-disabled="true">@ReportUi.Icon("i-chev-l")Previous run</span>
+                    <span class="btn sm hide-phone" aria-disabled="true">@ReportUi.Icon("i-chev-l")Previous run</span>
                 }
                 @if (next != null)
                 {
-                    <a class="btn sm" href="@RunUrl(next.RecordId, activeTab)">Next run@(ReportUi.Icon("i-chev-r"))</a>
+                    <a class="btn sm hide-phone" href="@RunUrl(next.RecordId, activeTab)">Next run@(ReportUi.Icon("i-chev-r"))</a>
                 }
                 else
                 {
-                    <span class="btn sm" aria-disabled="true">Next run@(ReportUi.Icon("i-chev-r"))</span>
+                    <span class="btn sm hide-phone" aria-disabled="true">Next run@(ReportUi.Icon("i-chev-r"))</span>
                 }
                 @await Html.PartialAsync("_CopyLinkButton")
                 <a class="btn sm" href="@Url.Content(reportPath + "/raw-json-data")" download>@ReportUi.Icon("i-down")JSON</a>

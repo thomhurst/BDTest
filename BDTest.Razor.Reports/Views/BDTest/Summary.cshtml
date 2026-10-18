@@ -121,7 +121,7 @@
                     <div class="cluster">
                         @foreach (var status in ReportUi.DisplayOrder.Where(status => counts[status] > 0))
                         {
-                            <a class="chip" href="@StatusUrl(status)">@status.StatusIcon()@status.Label()<span class="cnt">@counts[status]</span></a>
+                            <a class="chip" href="@StatusUrl(status)">@status.StatusIcon()<span class="lbl">@status.Label()</span><span class="cnt">@counts[status]</span></a>
                         }
                     </div>
                 </section>
