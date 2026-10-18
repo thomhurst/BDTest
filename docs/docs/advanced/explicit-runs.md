@@ -72,7 +72,7 @@ using var run = BDTestRun.Start(options);
 
 - `Start(options)` copies the registrations into the run. Later changes to the options affect only runs started afterwards.
 - `Start()` uses empty registrations and default debug settings.
-- **Explicit runs do not inherit `BDTestSettings`.** Register any framework exceptions your adapter needs on the options.
+- **Explicit runs do not inherit execution settings from `BDTestSettings`.** Register any framework exceptions your adapter needs on the options. Report exports still use the [legacy metadata fallbacks and custom properties](../reports/overview.md#run-descriptors) at export time.
 - Configure options before starting a run, without concurrent changes. Callback, converter and hook instances are shared, not cloned, so they must be thread-safe.
 
 ### Step hooks for a run

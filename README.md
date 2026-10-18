@@ -523,6 +523,13 @@ accept a run; for example,
 `BDTestReportServer.SendDataAndGetReportUriAsync(run, serverAddress, descriptor)`.
 Existing overloads and framework adapters continue to use the legacy default run.
 
+JSON, HTML and uploads use the same report model. All three copy the obsolete
+`BDTestSettings.CustomProperties` at export time, including for explicit runs;
+HTML displays these values under **Run properties**. Configure this process-wide
+dictionary before exporting, without concurrent changes. Descriptor metadata takes
+precedence over the legacy settings. Missing metadata stays `null` in JSON and
+uploads; HTML displays "Not Specified". See [report output guidance](https://thomhurst.github.io/BDTest/docs/reports/overview).
+
 Dispose a run only after its tests and output writers finish. Disposal clears its stores
 and prevents new scenario construction or execution; it does not cancel active tests.
 `BDTestUtil.ClearScenarios(run)` clears storage between executions while retaining the
@@ -545,7 +552,8 @@ using var run = BDTestRun.Start(options);
 `Start(options)` copies exception types, retry and skip rules, debug settings, typed
 converters and ordered step hooks. Later changes to the options affect only new runs.
 `Start()` uses empty registrations and default debug settings. Explicit runs do not
-inherit `BDTestSettings`; register any framework exceptions your custom adapter needs.
+inherit execution settings from `BDTestSettings`; register any framework exceptions
+your custom adapter needs.
 Configure options before starting a run, without concurrent mutations. Callback,
 converter and hook instances are not cloned and remain responsible for their own
 thread safety.

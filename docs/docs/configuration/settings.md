@@ -5,7 +5,7 @@ description: Reference for BDTestSettings, the global configuration for BDTest.
 
 # Settings
 
-`BDTest.Settings.BDTestSettings` is a static class with process-wide configuration for the default run, which the framework adapters use. [Explicit runs](../advanced/explicit-runs.md#run-options) are configured with `BDTestOptions` instead and do not inherit these settings. Set it once, before tests run, for example in TUnit's `[Before(HookType.Assembly)]`, NUnit's `[SetUpFixture]` `[OneTimeSetUp]`, MSTest's `[AssemblyInitialize]` or a module initializer.
+`BDTest.Settings.BDTestSettings` is a static class with process-wide configuration for the default run, which the framework adapters use. [Explicit runs](../advanced/explicit-runs.md#run-options) use `BDTestOptions` for execution configuration. Legacy report metadata and custom properties still apply to all report exports. Set it once, before tests run, for example in TUnit's `[Before(HookType.Assembly)]`, NUnit's `[SetUpFixture]` `[OneTimeSetUp]`, MSTest's `[AssemblyInitialize]` or a module initializer.
 
 ```csharp
 public class BDTestSetup
@@ -42,7 +42,7 @@ public class BDTestSetup
 | Member | Replacement |
 | --- | --- |
 | `Environment`, `Tag`, `BranchName` | Set these on a `BDTestRunDescriptor` passed to the report helpers. The settings are still used as fallbacks when a descriptor value is missing. |
-| `CustomProperties` | Still added to uploaded reports, but obsolete. |
+| `CustomProperties` | Copied into JSON, HTML and uploaded reports at export time, including explicit runs; still obsolete. |
 
 Settings in older wiki pages, such as `PersistentResultsDirectory`, `ReportFolderName` and the report file name settings, no longer exist. Reports are now produced by the [HTML and JSON helpers](../reports/overview.md) or the [report server](../report-server/overview.md).
 

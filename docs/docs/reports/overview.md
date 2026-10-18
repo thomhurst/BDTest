@@ -35,7 +35,11 @@ var descriptor = new BDTestRunDescriptor
 | `Tag` | A label for this kind of run, for example the suite name. Not the same as [scenario tags](../writing-tests/tags-and-information.md). |
 | `BranchName` | The source branch under test. |
 
-Reports also record the machine name and BDTest version. Missing values show as "Not Specified".
+Reports also record the machine name and BDTest version. Descriptor values take precedence over the obsolete `BDTestSettings.Environment`, `Tag` and `BranchName` fallbacks. Missing metadata stays `null` in JSON and uploads; HTML displays "Not Specified". An explicitly empty descriptor value stays empty.
+
+JSON, HTML and uploads use the same report model for the selected run, including its report ID, scenarios, unfinished definitions and timer. Existing overloads select the default run; see [explicit runs](../advanced/explicit-runs.md) for isolated reports. Nonempty reports use the earliest scenario start and latest scenario end. Empty reports use the selected run's start time and the export time as their end time.
+
+While the obsolete `BDTestSettings.CustomProperties` setting exists, every output copies its values at export time, including reports for explicit runs. JSON and uploads include `CustomProperties`; HTML shows them under **Run properties**. Configure the dictionary before exporting, without concurrent changes. These legacy report settings remain process-wide even when execution uses explicit run options.
 
 ## Console output
 
