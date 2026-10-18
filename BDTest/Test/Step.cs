@@ -1,6 +1,7 @@
 ﻿using System.Diagnostics;
 using System.Linq.Expressions;
 using System.Runtime.ExceptionServices;
+using System.Threading;
 using BDTest.Attributes;
 using BDTest.Helpers;
 using BDTest.Output;
@@ -49,6 +50,14 @@ public class Step
     [JsonProperty]
     public ExceptionWrapper Exception { get; private set; }
 
+    /// <summary>The timeout for this step, or null for no step-specific limit.</summary>
+    [JsonProperty]
+    public TimeSpan? Timeout { get; internal set; }
+
+    /// <summary>True when a step or scenario timeout failed this step.</summary>
+    [JsonProperty]
+    public bool TimedOut { get; private set; }
+
     private bool _shouldSkip;
     private readonly string _generatedStepText;
 
@@ -60,9 +69,7 @@ public class Step
         StepType = stepType;
         ReportId = reportId;
         // Capture automatic text once; execution and reporting must not re-evaluate arguments.
-        _generatedStepText = Runnable.Action != null
-            ? StepTextHelper.GetStepText(Runnable.Action)
-            : StepTextHelper.GetStepText(Runnable.Task);
+        _generatedStepText = StepTextHelper.GetStepText(Runnable.ExpressionBody, Runnable.AcceptsCancellationToken);
         SetStepText();
     }
 
@@ -78,6 +85,7 @@ public class Step
         StepText = source.StepText;
         OverriddenStepText = source.OverriddenStepText;
         _shouldSkip = source._shouldSkip;
+        Timeout = source.Timeout;
     }
 
     [JsonConstructor]
@@ -102,6 +110,7 @@ public class Step
 
     internal void ResetData()
     {
+        TimedOut = false;
         Exception = null;
         Output = null;
         StartTime = DateTime.MinValue;
@@ -130,7 +139,7 @@ public class Step
 
     private void SetShouldSkip()
     {
-        var methodCallExpression = (Runnable.Action?.Body ?? Runnable.Task.Body) as MethodCallExpression;
+        var methodCallExpression = Runnable.ExpressionBody as MethodCallExpression;
         var methodInfo = methodCallExpression?.Method;
 
         var skipStepAttributes = (methodInfo?.GetCustomAttributes(
@@ -154,7 +163,7 @@ public class Step
         }
     }
 
-    internal async Task Execute(BDTestBase test)
+    internal async Task Execute(BDTestBase test, TimeSpan? scenarioTimeout = null, TimeSpan? remainingScenarioTime = null)
     {
         SetStepText();
 
@@ -186,7 +195,17 @@ public class Step
                 return;
             }
 
-            await Runnable.Run().ConfigureAwait(false);
+            remainingScenarioTime -= stopwatch.Elapsed;
+            var scenarioLimit = remainingScenarioTime.HasValue && (!Timeout.HasValue || remainingScenarioTime.Value <= Timeout.Value);
+            var limit = scenarioLimit ? remainingScenarioTime : Timeout;
+            if (limit.HasValue)
+            {
+                await RunWithTimeout(limit.Value, scenarioLimit ? "Scenario" : "Step", scenarioLimit ? scenarioTimeout.Value : Timeout.Value).ConfigureAwait(false);
+            }
+            else
+            {
+                await Runnable.Run().ConfigureAwait(false);
+            }
             Status = Status.Passed;
         }
         catch (Exception e)
@@ -259,15 +278,15 @@ public class Step
         {
             Status = Status.NotImplemented;
         }
-        else if (BDTestSettings.CustomExceptionSettings.SuccessExceptionTypes.Contains(exception.GetType()))
+        else if (!TimedOut && BDTestSettings.CustomExceptionSettings.SuccessExceptionTypes.Contains(exception.GetType()))
         {
             Status = Status.Passed;
         }
-        else if (BDTestSettings.CustomExceptionSettings.SkipExceptionTypes.Contains(exception.GetType()))
+        else if (!TimedOut && BDTestSettings.CustomExceptionSettings.SkipExceptionTypes.Contains(exception.GetType()))
         {
             Status = Status.Skipped;
         }
-        else if (BDTestSettings.CustomExceptionSettings.InconclusiveExceptionTypes.Contains(exception.GetType()))
+        else if (!TimedOut && BDTestSettings.CustomExceptionSettings.InconclusiveExceptionTypes.Contains(exception.GetType()))
         {
             Status = Status.Inconclusive;
         }
@@ -279,6 +298,68 @@ public class Step
         if (Status == Status.Failed || Status == Status.NotImplemented)
         {
             Exception = new ExceptionWrapper(exception);
+        }
+    }
+
+    private async Task RunWithTimeout(TimeSpan remaining, string scope, TimeSpan configuredTimeout)
+    {
+        if (remaining <= TimeSpan.Zero)
+        {
+            TimedOut = true;
+            throw new TimeoutException($"{scope} timed out after {configuredTimeout} while executing '{StepText}'.");
+        }
+
+        var runnable = Runnable;
+        var cancellation = new CancellationTokenSource();
+        using var delayCancellation = new CancellationTokenSource();
+        // A scheduling boundary also bounds synchronous steps and the synchronous
+        // portion of an async method. Never let late completion mutate step results.
+        var token = cancellation.Token;
+        var execution = Task.Run(() => runnable.Run(token));
+        try
+        {
+            var delay = Task.Delay(remaining, delayCancellation.Token);
+            if (await Task.WhenAny(execution, delay).ConfigureAwait(false) == execution)
+            {
+                await execution.ConfigureAwait(false);
+                return;
+            }
+
+            TimedOut = true;
+            _ = CancelAndObserve(execution, cancellation);
+            cancellation = null;
+            throw new TimeoutException($"{scope} timed out after {configuredTimeout} while executing '{StepText}'.");
+        }
+        finally
+        {
+            delayCancellation.Cancel();
+            cancellation?.Dispose();
+        }
+    }
+
+    private static async Task CancelAndObserve(Task execution, CancellationTokenSource cancellation)
+    {
+        try
+        {
+            // User cancellation callbacks can block or throw. Neither may prevent
+            // reporting the timeout; observe any eventual failure from abandoned work.
+            await Task.Run(() => cancellation.Cancel()).ConfigureAwait(false);
+        }
+        catch (Exception)
+        {
+            // The timeout remains the primary failure.
+        }
+        try
+        {
+            await execution.ConfigureAwait(false);
+        }
+        catch (Exception)
+        {
+            // The caller already received the timeout.
+        }
+        finally
+        {
+            cancellation.Dispose();
         }
     }
 

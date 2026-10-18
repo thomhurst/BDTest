@@ -7,6 +7,9 @@ namespace BDTest.Test;
 public class BuildableTest
 {
     [JsonIgnore]
+    internal TimeSpan? ScenarioTimeout { get; set; }
+
+    [JsonIgnore]
     internal string Guid { get; set; }
 
     [JsonProperty] 

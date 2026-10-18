@@ -2,6 +2,7 @@
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.ExceptionServices;
+using System.Threading;
 using BDTest.Attributes;
 using BDTest.Helpers;
 using BDTest.Maps;
@@ -41,6 +42,12 @@ public abstract class BDTestBase
         return new Given(new Runnable(step), callerMember, callerFile, BDTestExecutionId, TestHolder.CurrentReportId, this);
     }
 
+    public Given Given(Expression<Func<CancellationToken, Task>> step, [CallerMemberName] string callerMember = null,
+        [CallerFilePath] string callerFile = null)
+    {
+        return new Given(new Runnable(step), callerMember, callerFile, BDTestExecutionId, TestHolder.CurrentReportId, this);
+    }
+
     public When When(Expression<Action> step, [CallerMemberName] string callerMember = null,
         [CallerFilePath] string callerFile = null)
     {
@@ -48,6 +55,12 @@ public abstract class BDTestBase
     }
 
     public When When(Expression<Func<Task>> step, [CallerMemberName] string callerMember = null,
+        [CallerFilePath] string callerFile = null)
+    {
+        return new When(new Runnable(step), callerMember, callerFile, BDTestExecutionId, TestHolder.CurrentReportId, this);
+    }
+
+    public When When(Expression<Func<CancellationToken, Task>> step, [CallerMemberName] string callerMember = null,
         [CallerFilePath] string callerFile = null)
     {
         return new When(new Runnable(step), callerMember, callerFile, BDTestExecutionId, TestHolder.CurrentReportId, this);

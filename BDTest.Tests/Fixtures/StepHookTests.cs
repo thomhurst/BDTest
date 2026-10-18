@@ -335,6 +335,53 @@ public class StepHookTests
         Assert.That(scenario.Output, Does.Contain("body output").And.Contain("after output"));
     }
 
+    [Test]
+    public async Task Timeout_remains_primary_when_after_hook_throws()
+    {
+        Step observed = null;
+        var test = new HookTest
+        {
+            After = step =>
+            {
+                observed = step;
+                Assert.That(step.TimedOut, Is.True);
+                Assert.That(step.Status, Is.EqualTo(Status.Failed));
+                throw new InvalidOperationException("after hook failed");
+            }
+        };
+        var builder = test.When(token => Task.Delay(Timeout.Infinite, token))
+            .WithStepTimeout(TimeSpan.FromMilliseconds(150)).Then(() => NoOp());
+
+        var exception = await Assert.ThrowsAsync<TimeoutException>(async () =>
+            await builder.BDTestAsync().WaitAsync(TimeSpan.FromSeconds(10)));
+
+        Assert.That(observed.Exception.Message, Is.EqualTo(exception.Message));
+        Assert.That(GetScenario(observed).Status, Is.EqualTo(Status.Failed));
+        Assert.That(GetScenario(observed).Steps[1].Status, Is.EqualTo(Status.Inconclusive));
+    }
+
+    [Test]
+    public async Task Before_hook_time_reduces_remaining_scenario_budget()
+    {
+        var calls = new List<string>();
+        Step observed = null;
+        var test = new HookTest
+        {
+            Before = async _ => await Task.Delay(150),
+            After = step => { observed = step; calls.Add("after"); return Task.CompletedTask; }
+        };
+        var builder = test.When(() => calls.Add("body")).Then(() => calls.Add("later"))
+            .WithScenarioTimeout(TimeSpan.FromMilliseconds(50));
+
+        var exception = await Assert.ThrowsAsync<TimeoutException>(async () =>
+            await builder.BDTestAsync().WaitAsync(TimeSpan.FromSeconds(10)));
+
+        Assert.That(exception.Message, Does.StartWith("Scenario"));
+        Assert.That(calls, Is.EqualTo(new[] { "after" }));
+        Assert.That(observed.TimedOut, Is.True);
+        Assert.That(GetScenario(observed).Status, Is.EqualTo(Status.Failed));
+    }
+
     private static Scenario GetScenario(Step step) => BDTestUtil.GetScenarios().Single(scenario => scenario.Guid == step.ScenarioId);
     private static void Throw(Exception exception) => throw exception;
     private static void NoOp() { }

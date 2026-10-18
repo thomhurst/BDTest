@@ -1,4 +1,5 @@
-﻿using System.Linq.Expressions;
+using System.Linq.Expressions;
+using System.Threading;
 
 namespace BDTest.Test.Steps.When;
 
@@ -38,6 +39,16 @@ public class When : StepBuilder
     }
 
     public ButWhen But(Expression<Func<Task>> step)
+    {
+        return new ButWhen(ExistingSteps, new Runnable(step), this);
+    }
+
+    public Then.Then Then(Expression<Func<CancellationToken, Task>> step)
+    {
+        return new Then.Then(ExistingSteps, new Runnable(step), this);
+    }
+
+    public ButWhen But(Expression<Func<CancellationToken, Task>> step)
     {
         return new ButWhen(ExistingSteps, new Runnable(step), this);
     }

@@ -542,3 +542,43 @@ inconclusive exceptions in `InconclusiveExceptionTypes`.
 
 Run `pwsh scripts/Test-SkipOutcomes.ps1` to verify actual NUnit, MSTest and TUnit
 runner outcomes as well as BDTest's scenario and step statuses.
+
+### Step and scenario timeouts
+
+Import `BDTest.Test` to use the timeout extensions. Async steps can accept a
+`CancellationToken` at every `Given`, `When`, `Then`, `And`, and `But` position:
+
+```csharp
+var scenario = await Given(token => PrepareAsync(token))
+    .WithStepTimeout(TimeSpan.FromSeconds(5))
+    .When(token => SendRequestAsync(token))
+    .WithStepTimeout(TimeSpan.FromSeconds(10))
+    .Then(() => VerifyResponse())
+    .WithScenarioTimeout(TimeSpan.FromSeconds(20))
+    .BDTestAsync();
+```
+
+`WithStepTimeout` applies to the most recently added step. `WithScenarioTimeout`
+sets a shared budget for all steps in each execution attempt. The earlier of the
+step and remaining scenario limits wins. Timeouts are optional and must be
+positive, up to `Int32.MaxValue` milliseconds. Without either limit, execution is
+unchanged and token-aware steps receive `CancellationToken.None`. In token-aware overloads, cancellation
+arguments are omitted from generated step text and `[StepText]` placeholders.
+
+When a limit expires, BDTest requests cancellation and throws `TimeoutException`
+with the limit, its scope, and the active step text. The step and scenario retain
+`Status.Failed` for existing reports, with `TimedOut = true`; the step exception
+and console summary identify the timeout. Later steps do not run. User exceptions
+and cancellation raised before the limit keep their existing classification.
+Configured retries start a fresh scenario budget and use new step tokens.
+
+Timed steps run on the thread pool so the limit also bounds synchronous work and
+the synchronous portion of async methods. Cancellation is cooperative: synchronous
+work or async work that ignores the token may continue after the timeout, including
+during a retry. BDTest observes eventual task failures, and late completion cannot
+change the recorded step status. Pass the token to cancellable operations and
+avoid retries when unfinished work could affect another attempt. The scenario
+budget covers elapsed time across steps, including step hooks. Hooks are awaited
+outside the execution limits; before-hook time reduces the remaining scenario
+budget when the step body starts. Retry hooks and initial report formatting run
+before the scenario budget starts.

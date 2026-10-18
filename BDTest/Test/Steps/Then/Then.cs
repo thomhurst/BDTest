@@ -1,4 +1,5 @@
-﻿using System.Linq.Expressions;
+using System.Linq.Expressions;
+using System.Threading;
 
 namespace BDTest.Test.Steps.Then;
 
@@ -32,6 +33,16 @@ public class Then : RunnableStepBuilder
     }
 
     public ButThen But(Expression<Func<Task>> step)
+    {
+        return new ButThen(ExistingSteps, new Runnable(step), this);
+    }
+
+    public AndThen And(Expression<Func<CancellationToken, Task>> step)
+    {
+        return new AndThen(ExistingSteps, new Runnable(step), this);
+    }
+
+    public ButThen But(Expression<Func<CancellationToken, Task>> step)
     {
         return new ButThen(ExistingSteps, new Runnable(step), this);
     }

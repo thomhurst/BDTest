@@ -49,6 +49,7 @@ public class Scenario
 
     internal Scenario(List<Step> steps, BuildableTest testDetails)
     {
+        Timeout = testDetails.ScenarioTimeout;
         Guid = testDetails.Guid;
         FrameworkTestId = testDetails.TestId;
 
@@ -74,6 +75,12 @@ public class Scenario
 
     [JsonProperty]
     public string FrameworkTestId { get; private set; }
+
+    /// <summary>The timeout budget for the steps in each execution attempt, or null for no limit.</summary>
+    [JsonProperty] public TimeSpan? Timeout { get; private set; }
+
+    /// <summary>Whether a BDTest timeout failed a step in the current attempt.</summary>
+    [JsonProperty] public bool TimedOut => Steps?.Any(step => step.TimedOut) == true;
 
     [JsonProperty] public List<Step> Steps { get; private set; }
 
