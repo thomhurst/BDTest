@@ -13,23 +13,20 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
 using NUnit.Framework;
+using Microsoft.Extensions.Options;
 
 namespace BDTest.Tests.Fixtures;
 
 public class ReportStoreTests
 {
-    [TestCase("none")]
-    [TestCase("legacy")]
-    [TestCase("report")]
-    public async Task Oversized_memory_store_writes_fail_without_removing_existing_reports(string configuration)
+    [TestCase(false)]
+    [TestCase(true)]
+    public async Task Oversized_memory_store_writes_fail_without_removing_existing_reports(bool hasPersistentStorage)
     {
         using var hostCache = new MemoryCache(new MemoryCacheOptions());
-        using var services = Services(null);
-        var options = services.GetRequiredService<BDTestReportServerOptions>();
-        options.ReportCacheSizeLimitBytes = 8;
-        using var store = new MemoryCacheBdTestDataStore(hostCache, options);
-        if (configuration == "legacy") options.DataStore = store;
-        if (configuration == "report") options.ReportStore = store;
+        var options = new BDTestReportOptions { ReportCacheSizeLimitBytes = 8 };
+        using var store = new MemoryCacheBdTestDataStore(hostCache, Options.Create(options),
+            hasPersistentStorage: hasPersistentStorage);
         using var original = Bytes("original");
         await store.WriteAsync("run", original, default);
 
@@ -52,10 +49,8 @@ public class ReportStoreTests
     public async Task Raw_memory_reads_extend_retention_for_models_and_bytes(bool bytes)
     {
         using var hostCache = new MemoryCache(new MemoryCacheOptions());
-        using var services = Services(null);
-        var options = services.GetRequiredService<BDTestReportServerOptions>();
-        options.ReportCacheRetention = TimeSpan.FromMilliseconds(500);
-        using var store = new MemoryCacheBdTestDataStore(hostCache, options);
+        var options = new BDTestReportOptions { ReportCacheRetention = TimeSpan.FromSeconds(2) };
+        using var store = new MemoryCacheBdTestDataStore(hostCache, Options.Create(options));
         foreach (var id in new[] { "active", "idle" })
         {
             var model = new BDTestOutputModel { Id = id };
@@ -67,10 +62,10 @@ public class ReportStoreTests
             else await store.StoreTestData(id, model);
         }
 
-        options.ReportCacheRetention = TimeSpan.FromHours(1);
+        await Task.Delay(1200);
         await using (var download = await store.OpenReadAsync("active", default))
             Assert.That(download, Is.Not.Null);
-        await Task.Delay(1000);
+        await Task.Delay(1200);
 
         Assert.That(await store.GetTestData("active", default), Is.Not.Null);
         Assert.That(await store.GetTestData("idle", default), Is.Null);
@@ -192,14 +187,11 @@ public class ReportStoreTests
         store.Reports["run"] = Encoding.UTF8.GetBytes(json);
         var builder = WebApplication.CreateBuilder();
         builder.WebHost.UseKestrel().UseUrls("http://127.0.0.1:0");
-        builder.Services.AddControllersWithViews().AddBdTestReportControllersAndViews();
+        builder.Services.AddBDTestReports(options => options.AllowAnonymousReports = true);
+        builder.Services.AddSingleton<IReportStore>(store);
+        builder.Services.AddSingleton<IRunIndexStore>(store);
         await using var app = builder.Build();
-        app.UseBDTestReportServer(options =>
-        {
-            options.AllowAnonymousReports = true;
-            options.ReportStore = store;
-            options.RunIndexStore = store;
-        });
+        app.UseBDTestReportServer();
         app.MapControllers();
         await app.StartAsync();
         using var client = new HttpClient { BaseAddress = new Uri(app.Urls.Single()) };
@@ -273,12 +265,13 @@ public class ReportStoreTests
     {
         var services = new ServiceCollection();
         services.AddLogging();
-        services.AddControllersWithViews().AddBdTestReportControllersAndViews();
-        var provider = services.BuildServiceProvider();
-        var options = provider.GetRequiredService<BDTestReportServerOptions>();
-        options.ReportStore = store;
-        options.RunIndexStore = store;
-        return provider;
+        services.AddBDTestReports();
+        if (store != null)
+        {
+            services.AddSingleton<IReportStore>(store);
+            services.AddSingleton<IRunIndexStore>(store);
+        }
+        return services.BuildServiceProvider();
     }
 
     private sealed class TrackingStream(byte[] bytes) : MemoryStream(bytes, writable: false)

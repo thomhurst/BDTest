@@ -1,7 +1,8 @@
 namespace BDTest.Razor.Reports.Implementations;
 
+/// <summary>Coordinates attachment uploads and report cleanup within one report server.</summary>
 // Only active holders and waiters retain an entry; report history cannot grow this map.
-internal sealed class ReportAttachmentGate
+public sealed class ReportAttachmentGate
 {
     private readonly Dictionary<string, Entry> _entries = new(StringComparer.Ordinal);
 

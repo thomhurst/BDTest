@@ -34,7 +34,7 @@ MVC JSON options.
 
 ## Hosting the report server
 
-`AddBdTestReportControllersAndViews()` registers BDTest's controllers and services
+`AddBDTestReports()` registers BDTest's controllers and services
 without replacing MVC input or output formatters or changing host JSON options.
 The upload endpoint uses its own report reader, and raw report downloads use the
 same generated metadata as the test client and persistent storage. Existing

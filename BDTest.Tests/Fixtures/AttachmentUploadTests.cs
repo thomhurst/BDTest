@@ -2,10 +2,13 @@ using System.Net;
 using System.Text;
 using BDTest.Helpers;
 using BDTest.Razor.Reports.Interfaces;
+using BDTest.Razor.Reports.Implementations;
 using BDTest.Razor.Reports.Storage;
 using BDTest.Test;
 using Microsoft.AspNetCore.Builder;
 using NUnit.Framework;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace BDTest.Tests.Fixtures;
 
@@ -16,12 +19,11 @@ public partial class ReportUploadTests
     {
         using var files = new AttachmentDirectory();
         using var body = new BlockingAttachmentBody();
-        await using var server = await UploadServer.Start(options => options.AttachmentStore = files.Store,
-            configureApp: app => app.Use(async (context, next) =>
+        await using var server = await UploadServer.Start(configureApp: app => app.Use(async (context, next) =>
             {
                 if (context.Request.Headers.ContainsKey("X-Test-Stall")) context.Request.Body = body;
                 await next(context);
-            }));
+            }), configureServices: services => services.AddSingleton<IBDTestAttachmentStore>(files.Store));
         var attachmentId = Guid.NewGuid().ToString("N");
         using var first = await server.Post(AttachmentReport(attachmentId));
         using var second = await server.Post(AttachmentReport(attachmentId));
@@ -53,7 +55,7 @@ public partial class ReportUploadTests
     {
         using var files = new AttachmentDirectory();
         var blocking = new BlockingAttachmentStore(files.Store);
-        await using var server = await UploadServer.Start(options => options.AttachmentStore = blocking);
+        await using var server = await UploadServer.Start(configureServices: services => services.AddSingleton<IBDTestAttachmentStore>(blocking));
         var attachmentId = Guid.NewGuid().ToString("N");
         using var first = await server.Post(AttachmentReport(attachmentId));
         using var second = await server.Post(AttachmentReport(attachmentId));
@@ -83,7 +85,7 @@ public partial class ReportUploadTests
     public async Task Lower_upload_limits_preserve_existing_downloads(string limit)
     {
         using var files = new AttachmentDirectory();
-        await using var first = await UploadServer.Start(options => options.AttachmentStore = files.Store);
+        await using var first = await UploadServer.Start(configureServices: services => services.AddSingleton<IBDTestAttachmentStore>(files.Store));
         var attachmentId = Guid.NewGuid().ToString("N");
         using var receipt = await first.Post(AttachmentReport(attachmentId));
         var reportId = receipt.Headers.GetValues("X-BDTest-Report-Id").Single();
@@ -92,11 +94,13 @@ public partial class ReportUploadTests
         Assert.That(upload.StatusCode, Is.EqualTo(HttpStatusCode.NoContent));
         await using var second = await UploadServer.Start(options =>
         {
-            options.DataStore = first.Store;
-            options.AttachmentStore = files.Store;
             if (limit == "file") options.MaximumAttachmentBytes = 0;
             if (limit == "report") options.MaximumReportAttachmentBytes = 0;
             if (limit == "count") options.MaximumAttachmentsPerReport = 0;
+        }, configureServices: services =>
+        {
+            services.AddSingleton<IBDTestDataStore>(first.Store);
+            services.AddSingleton<IBDTestAttachmentStore>(files.Store);
         });
         using var download = await second.Client.GetAsync($"bdtest/report/{reportId}/attachments/{attachmentId}");
         Assert.That(download.StatusCode, Is.EqualTo(HttpStatusCode.OK));
@@ -110,7 +114,7 @@ public partial class ReportUploadTests
     public async Task Attachment_upload_rejects_missing_or_wrong_api_key_even_with_valid_receipt(string key)
     {
         using var files = new AttachmentDirectory();
-        await using var server = await UploadServer.Start(options => options.AttachmentStore = files.Store);
+        await using var server = await UploadServer.Start(configureServices: services => services.AddSingleton<IBDTestAttachmentStore>(files.Store));
         var attachmentId = Guid.NewGuid().ToString("N");
         using var receipt = await server.Post(AttachmentReport(attachmentId));
         var reportId = receipt.Headers.GetValues("X-BDTest-Report-Id").Single();
@@ -127,7 +131,7 @@ public partial class ReportUploadTests
     public async Task Uploader_includes_outline_retry_files_and_empty_scenario_files()
     {
         using var files = new AttachmentDirectory();
-        await using var server = await UploadServer.Start(options => options.AttachmentStore = files.Store);
+        await using var server = await UploadServer.Start(configureServices: services => services.AddSingleton<IBDTestAttachmentStore>(files.Store));
         server.Client.DefaultRequestHeaders.Add("X-BDTest-Upload-Key", Key);
         var options = new BDTestOptions();
         options.RetryTestRules.Add(_ => true, retryLimit: 1);
@@ -161,7 +165,7 @@ public partial class ReportUploadTests
     {
         using var files = new AttachmentDirectory();
         var blocking = new BlockingAttachmentStore(files.Store);
-        await using var server = await UploadServer.Start(options => options.AttachmentStore = blocking);
+        await using var server = await UploadServer.Start(configureServices: services => services.AddSingleton<IBDTestAttachmentStore>(blocking));
         var attachmentId = Guid.NewGuid().ToString("N");
         using var receipt = await server.Post(AttachmentReport(attachmentId));
         var reportId = receipt.Headers.GetValues("X-BDTest-Report-Id").Single();
@@ -190,9 +194,11 @@ public partial class ReportUploadTests
         using var files = new AttachmentDirectory();
         await using var server = await UploadServer.Start(options =>
         {
-            options.AttachmentStore = reason == "no store" ? null : files.Store;
             if (reason == "count") options.MaximumAttachmentsPerReport = 0;
             if (reason == "total") options.MaximumReportAttachmentBytes = 1;
+        }, configureServices: services =>
+        {
+            if (reason != "no store") services.AddSingleton<IBDTestAttachmentStore>(files.Store);
         });
         var id = Guid.NewGuid().ToString("N");
         var json = AttachmentReport(id);
@@ -266,6 +272,58 @@ public partial class ReportUploadTests
             await BDTestReportServer.SendDataAndGetReportUriAsync(new Uri("https://reports.test"), null, client, run));
     }
 
+    [TestCase(false, false)]
+    [TestCase(false, true)]
+    [TestCase(true, false)]
+    [TestCase(true, true)]
+    public async Task Memory_storage_reads_keep_attachments_until_report_expiry(bool shared, bool legacy)
+    {
+        using var files = new AttachmentDirectory();
+        var observing = new ObservingAttachmentStore(files.Store);
+        MemoryCacheBdTestDataStore backing = null;
+        await using var server = await UploadServer.Start(options =>
+        {
+            options.ReportCacheRetention = TimeSpan.FromSeconds(2);
+        }, configureServices: services =>
+        {
+            services.RemoveAll<IBDTestDataStore>();
+            services.AddSingleton<IBDTestAttachmentStore>(observing);
+            MemoryCacheBdTestDataStore Create(IServiceProvider provider) =>
+                backing = ActivatorUtilities.CreateInstance<MemoryCacheBdTestDataStore>(provider);
+            if (shared) services.AddSingleton<MemoryCacheBdTestDataStore>(Create);
+            if (legacy)
+                services.AddSingleton<IBDTestDataStore>(provider => shared
+                    ? provider.GetRequiredService<MemoryCacheBdTestDataStore>() : Create(provider));
+            else
+            {
+                services.AddSingleton<IReportStore>(provider => shared
+                    ? provider.GetRequiredService<MemoryCacheBdTestDataStore>() : Create(provider));
+                services.AddSingleton<IRunIndexStore>(provider => (IRunIndexStore)provider.GetRequiredService<IReportStore>());
+            }
+        });
+        var attachmentId = Guid.NewGuid().ToString("N");
+        using var receipt = await server.Post(AttachmentReport(attachmentId));
+        var reportId = receipt.Headers.GetValues("X-BDTest-Report-Id").Single();
+        using var upload = await PostAttachment(server, reportId, attachmentId,
+            receipt.Headers.GetValues("X-BDTest-Attachment-Token").Single(), new byte[] { 1, 2 });
+        Assert.That(upload.StatusCode, Is.EqualTo(HttpStatusCode.NoContent));
+
+        await Task.Delay(1200);
+        Assert.That(await server.Repository.GetData(reportId, default), Is.Not.Null);
+        await Task.Delay(1200);
+        // A repository read must refresh the authoritative memory entry, not a separate front cache.
+        Assert.That(await backing.GetTestData(reportId, default), Is.Not.Null);
+        using var download = await server.Client.GetAsync($"bdtest/report/{reportId}/attachments/{attachmentId}");
+        Assert.That(download.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        Assert.That(await download.Content.ReadAsByteArrayAsync(), Is.EqualTo(new byte[] { 1, 2 }));
+        Assert.That(observing.Deleted.Task.IsCompleted, Is.False);
+
+        await Task.Delay(2200);
+        Assert.That(await server.Repository.GetDataForBulkRead(reportId, default), Is.Null);
+        Assert.That(await observing.Deleted.Task.WaitAsync(TimeSpan.FromSeconds(10)), Is.EqualTo(reportId));
+        Assert.That(Directory.GetFiles(files.Path, "*", SearchOption.AllDirectories), Is.Empty);
+    }
+
     [Test]
     public async Task Cache_only_expiry_removes_owned_files()
     {
@@ -273,9 +331,11 @@ public partial class ReportUploadTests
         var observing = new ObservingAttachmentStore(files.Store);
         await using var server = await UploadServer.Start(options =>
         {
-            options.DataStore = null;
-            options.AttachmentStore = observing;
             options.ReportCacheRetention = TimeSpan.FromMilliseconds(500);
+        }, configureServices: services =>
+        {
+            services.RemoveAll<IBDTestDataStore>();
+            services.AddSingleton<IBDTestAttachmentStore>(observing);
         });
         var attachmentId = Guid.NewGuid().ToString("N");
         using var receipt = await server.Post(AttachmentReport(attachmentId));
@@ -293,17 +353,17 @@ public partial class ReportUploadTests
     public async Task Receipt_authorizes_after_persistent_report_reload_and_hash_cannot_authorize()
     {
         using var files = new AttachmentDirectory();
-        await using var firstServer = await UploadServer.Start(options => options.AttachmentStore = files.Store);
+        await using var firstServer = await UploadServer.Start(configureServices: services => services.AddSingleton<IBDTestAttachmentStore>(files.Store));
         var attachmentId = Guid.NewGuid().ToString("N");
         using var receipt = await firstServer.Post(AttachmentReport(attachmentId));
         var reportId = receipt.Headers.GetValues("X-BDTest-Report-Id").Single();
         var token = receipt.Headers.GetValues("X-BDTest-Attachment-Token").Single();
         var restored = BDTestJsonHelper.Deserialize(BDTestJsonHelper.Serialize(firstServer.Store.Received.Single()));
         Assert.That(BDTestJsonHelper.Serialize(restored), Does.Not.Contain(token));
-        await using var secondServer = await UploadServer.Start(options =>
+        await using var secondServer = await UploadServer.Start(configureServices: services =>
         {
-            options.DataStore = firstServer.Store;
-            options.AttachmentStore = files.Store;
+            services.AddSingleton<IBDTestDataStore>(firstServer.Store);
+            services.AddSingleton<IBDTestAttachmentStore>(files.Store);
         });
         using var rejected = await PostAttachment(secondServer, reportId, attachmentId, restored.AttachmentUploadTokenHash, new byte[] { 1, 2 });
         Assert.That(rejected.StatusCode, Is.EqualTo(HttpStatusCode.Unauthorized));
@@ -315,7 +375,7 @@ public partial class ReportUploadTests
     public async Task Chunked_overlong_input_never_reaches_store()
     {
         using var files = new AttachmentDirectory();
-        await using var server = await UploadServer.Start(options => options.AttachmentStore = files.Store);
+        await using var server = await UploadServer.Start(configureServices: services => services.AddSingleton<IBDTestAttachmentStore>(files.Store));
         var attachmentId = Guid.NewGuid().ToString("N");
         using var receipt = await server.Post(AttachmentReport(attachmentId));
         var reportId = receipt.Headers.GetValues("X-BDTest-Report-Id").Single();
@@ -333,7 +393,7 @@ public partial class ReportUploadTests
     public async Task Uploader_sends_only_selected_run_files_after_report_and_keeps_capture_alive()
     {
         using var files = new AttachmentDirectory();
-        await using var server = await UploadServer.Start(options => options.AttachmentStore = files.Store);
+        await using var server = await UploadServer.Start(configureServices: services => services.AddSingleton<IBDTestAttachmentStore>(files.Store));
         server.Client.DefaultRequestHeaders.Add("X-BDTest-Upload-Key", Key);
         using var run = BDTestRun.Start();
         using var other = BDTestRun.Start();
@@ -362,7 +422,7 @@ public partial class ReportUploadTests
     public async Task Attachment_upload_requires_report_token_manifest_and_exact_length()
     {
         using var files = new AttachmentDirectory();
-        await using var server = await UploadServer.Start(options => options.AttachmentStore = files.Store);
+        await using var server = await UploadServer.Start(configureServices: services => services.AddSingleton<IBDTestAttachmentStore>(files.Store));
         var attachmentId = Guid.NewGuid().ToString("N");
         using var first = await server.Post(AttachmentReport(attachmentId));
         using var second = await server.Post(AttachmentReport(attachmentId));
@@ -394,7 +454,7 @@ public partial class ReportUploadTests
     public async Task Invalid_attachment_manifest_is_rejected_before_storing_report(string id, string mime, long length)
     {
         using var files = new AttachmentDirectory();
-        await using var server = await UploadServer.Start(options => options.AttachmentStore = files.Store);
+        await using var server = await UploadServer.Start(configureServices: services => services.AddSingleton<IBDTestAttachmentStore>(files.Store));
         using var response = await server.Post(AttachmentReport(id, mime, length));
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
         Assert.That(server.Store.Received, Is.Empty);
@@ -404,7 +464,7 @@ public partial class ReportUploadTests
     public async Task Deletion_removes_only_its_report_files_and_blocks_late_upload()
     {
         using var files = new AttachmentDirectory();
-        await using var server = await UploadServer.Start(options => options.AttachmentStore = files.Store);
+        await using var server = await UploadServer.Start(configureServices: services => services.AddSingleton<IBDTestAttachmentStore>(files.Store));
         var attachmentId = Guid.NewGuid().ToString("N");
         using var first = await server.Post(AttachmentReport(attachmentId));
         using var second = await server.Post(AttachmentReport(attachmentId));

@@ -1,7 +1,10 @@
 @model BDTest.Razor.Reports.Models.ViewModels.ReportLayoutViewModel
 @using BDTest.Razor.Reports.Helpers
 @using BDTest.Razor.Reports.Models
-@inject BDTestReportServerOptions BdTestReportServerOptions
+@using BDTest.Razor.Reports.Interfaces
+@inject IEnumerable<IBDTestCustomHeaderLinksProvider> HeaderLinksProviders
+@inject IEnumerable<IBDTestCustomSidebarLinksProvider> SidebarLinksProviders
+@inject IEnumerable<IUserPersonalizer> Personalizers
 
 @{
     var path = Context.Request.Path.Value?.ToLowerInvariant() ?? string.Empty;
@@ -9,10 +12,10 @@
                     || path.Contains("/report/test-run-flakiness") || path.Contains("/report/test-run-times");
     var isRuns = !isHistory;
 
-    var headerLinks = BdTestReportServerOptions.CustomHeaderLinksProvider?.GetCustomLinks()?.ToList() ?? new List<CustomLinkData>();
-    var reportLinks = BdTestReportServerOptions.CustomSidebarLinksProvider?.GetCustomLinks(Model?.Report)?.ToList() ?? new List<CustomLinkData>();
+    var headerLinks = HeaderLinksProviders.LastOrDefault()?.GetCustomLinks()?.ToList() ?? new List<CustomLinkData>();
+    var reportLinks = SidebarLinksProviders.LastOrDefault()?.GetCustomLinks(Model?.Report)?.ToList() ?? new List<CustomLinkData>();
 
-    var personalizer = BdTestReportServerOptions.UserPersonalizer;
+    var personalizer = Personalizers.LastOrDefault();
     var pictureUri = personalizer?.GetProfilePictureUri(Context);
     var userName = personalizer?.GetNameOfUser(Context);
     var userLinks = personalizer?.GetLinksForUser(Context) ?? new List<CustomLinkData>();

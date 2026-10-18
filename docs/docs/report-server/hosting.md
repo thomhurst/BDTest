@@ -55,5 +55,5 @@ See [ASP.NET Core proxy configuration](https://learn.microsoft.com/en-us/aspnet/
 
 Each instance has its own memory cache and its own upload rate limit. With several instances:
 
-- use a shared persistent `DataStore`,
+- register shared persistent `IReportStore` and `IRunIndexStore` services,
 - enforce a shared upload rate limit at the gateway as well.

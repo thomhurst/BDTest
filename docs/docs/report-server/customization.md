@@ -5,7 +5,7 @@ description: Add team and run links, personalise the page for the signed-in user
 
 # Customizing the report server
 
-UI extension points are interfaces in `BDTest.Razor.Reports.Interfaces`. Storage interfaces live in `BDTest.Razor.Reports.Storage`; see [Persistence](persistence.md) and [Storage migration](../migration/report-storage.md). Set them as options in `UseBDTestReportServer`. Links use `CustomLinkData(string text, Uri url)`; pass `null` as the URL for plain text.
+UI extension points are interfaces in `BDTest.Razor.Reports.Interfaces`. Storage interfaces live in `BDTest.Razor.Reports.Storage`; see [Persistence](persistence.md) and [Storage migration](../migration/report-storage.md). Register them with DI before building the host. Implementations can receive their dependencies through constructors. The examples use singletons; ensure singleton implementations are thread-safe and do not capture scoped dependencies. Links use `CustomLinkData(string text, Uri url)`; pass `null` as the URL for plain text.
 
 Configure report read authorization as shown in [Security](security.md#requiring-sign-in) before using these option snippets.
 
@@ -23,10 +23,7 @@ public class CustomHeaderLinksProvider : IBDTestCustomHeaderLinksProvider
     };
 }
 
-app.UseBDTestReportServer(options =>
-{
-    options.CustomHeaderLinksProvider = new CustomHeaderLinksProvider();
-});
+builder.Services.AddSingleton<IBDTestCustomHeaderLinksProvider, CustomHeaderLinksProvider>();
 ```
 
 ## Run links
@@ -48,10 +45,7 @@ public class CustomSidebarLinksProvider : IBDTestCustomSidebarLinksProvider
     }
 }
 
-app.UseBDTestReportServer(options =>
-{
-    options.CustomSidebarLinksProvider = new CustomSidebarLinksProvider();
-});
+builder.Services.AddSingleton<IBDTestCustomSidebarLinksProvider, CustomSidebarLinksProvider>();
 ```
 
 Use the current report to build links relevant to it, for example to the build, the branch or a dashboard.
@@ -74,10 +68,7 @@ public class UserPersonalizer : IUserPersonalizer
     };
 }
 
-app.UseBDTestReportServer(options =>
-{
-    options.UserPersonalizer = new UserPersonalizer();
-});
+builder.Services.AddSingleton<IUserPersonalizer, UserPersonalizer>();
 ```
 
 ## Reacting to uploads
@@ -100,10 +91,7 @@ public class FailureNotifier : IBDTestDataReceiver
     }
 }
 
-app.UseBDTestReportServer(options =>
-{
-    options.DataReceiver = new FailureNotifier();
-});
+builder.Services.AddSingleton<IBDTestDataReceiver, FailureNotifier>();
 ```
 
 The receiver is called after the report is stored, with the server-generated report ID in `report.Id`. It is not called for rejected uploads.

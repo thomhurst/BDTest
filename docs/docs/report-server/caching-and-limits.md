@@ -12,16 +12,14 @@ Configure report read authorization as shown in [Security](security.md#requiring
 The report server keeps recently used full reports in a dedicated bounded cache, separate from the host's `IMemoryCache`. Configure it at startup, before the server handles requests:
 
 ```csharp
-app.UseBDTestReportServer(options =>
+builder.Services.AddBDTestReports(options =>
 {
     options.ReportCacheSizeLimitBytes = 64L * 1024 * 1024; // Default: 64 MiB
     options.ReportCacheRetention = TimeSpan.FromHours(8);   // Default: eight hours
-    options.ReportStore = reportStore;
-    options.RunIndexStore = runIndexStore;                    // Optional; omit for cache-only hosting
 });
 ```
 
-Both values must be positive; otherwise the setter throws `ArgumentOutOfRangeException`.
+Both values must be positive; invalid options fail host startup with `OptionsValidationException`. Register `IReportStore` and `IRunIndexStore` separately for [persistent storage](persistence.md).
 
 ### How size is counted
 
@@ -62,7 +60,7 @@ Exceeding a request or decompressed JSON byte limit returns HTTP 413. Unsupporte
 Raise the limits at startup when accepting larger reports:
 
 ```csharp
-app.UseBDTestReportServer(options =>
+builder.Services.AddBDTestReports(options =>
 {
     options.UploadApiKey = configuration["BDTest:UploadApiKey"];
     options.MaxCompressedUploadBytes = 20L * 1024 * 1024;

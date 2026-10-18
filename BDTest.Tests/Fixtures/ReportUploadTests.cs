@@ -1,4 +1,4 @@
-﻿using System.Collections.Concurrent;
+using System.Collections.Concurrent;
 using System.IO.Compression;
 using System.Net;
 using System.Text;
@@ -21,6 +21,8 @@ using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using NUnit.Framework;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Options;
 
 namespace BDTest.Tests.Fixtures;
 
@@ -35,8 +37,15 @@ public partial class ReportUploadTests
         await using var server = await UploadServer.Start();
         Assert.That(server.Options.MaxCompressedUploadBytes, Is.EqualTo(10 * 1024 * 1024));
         Assert.That(server.Options.MaxUploadBytes, Is.EqualTo(10 * 1024 * 1024));
-        Assert.Throws<ArgumentOutOfRangeException>(() => server.Options.MaxCompressedUploadBytes = value);
-        Assert.Throws<ArgumentOutOfRangeException>(() => server.Options.MaxUploadBytes = value);
+        var services = new ServiceCollection();
+        services.AddBDTestReports(options =>
+        {
+            options.MaxCompressedUploadBytes = value;
+            options.MaxUploadBytes = value;
+        });
+        using var provider = services.BuildServiceProvider();
+        Assert.Throws<OptionsValidationException>(() =>
+            _ = provider.GetRequiredService<IOptions<BDTestReportOptions>>().Value);
     }
 
     [TestCase(false)]
@@ -184,13 +193,15 @@ public partial class ReportUploadTests
     [TestCase(true, true)]
     public async Task ExactUploadLimitsAreInclusive(bool gzip, bool chunked)
     {
-        await using var server = await UploadServer.Start();
         const string json = "{\"Tag\":\"café 漢字\"}";
         using var request = gzip ? GzipRequest(json, chunked) : new HttpRequestMessage(HttpMethod.Post, "bdtest/data") { Content = Json(json) };
         if (!gzip) request.Headers.Add("X-BDTest-Upload-Key", Key);
         request.Headers.TransferEncodingChunked = chunked;
-        server.Options.MaxCompressedUploadBytes = request.Content.Headers.ContentLength.Value;
-        server.Options.MaxUploadBytes = Encoding.UTF8.GetByteCount(json);
+        await using var server = await UploadServer.Start(options =>
+        {
+            options.MaxCompressedUploadBytes = request.Content.Headers.ContentLength.Value;
+            options.MaxUploadBytes = Encoding.UTF8.GetByteCount(json);
+        });
         using var response = await server.Client.SendAsync(request);
 
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
@@ -367,11 +378,8 @@ public partial class ReportUploadTests
     [Test]
     public async Task Cache_only_oversized_upload_is_rejected_before_receiver_notification()
     {
-        await using var server = await UploadServer.Start(options =>
-        {
-            options.DataStore = null;
-            options.ReportCacheSizeLimitBytes = 1;
-        });
+        await using var server = await UploadServer.Start(options => options.ReportCacheSizeLimitBytes = 1,
+            configureServices: services => services.RemoveAll<IBDTestDataStore>());
 
         using var response = await server.Post("{}");
 
@@ -926,10 +934,11 @@ public partial class ReportUploadTests
         public IDataRepository Repository => app.Services.GetRequiredService<IDataRepository>();
         public HttpClient Client { get; } = client;
         public RecordingStore Store { get; } = store;
-        public BDTestReportServerOptions Options => app.Services.GetRequiredService<BDTestReportServerOptions>();
+        public BDTestReportOptions Options => app.Services.GetRequiredService<IOptions<BDTestReportOptions>>().Value;
 
-        public static async Task<UploadServer> Start(Action<BDTestReportServerOptions> configure = null, Action<WebApplication> configureApp = null,
-            Action connectionClosed = null, Action<System.Text.Json.JsonSerializerOptions> configureJson = null)
+        public static async Task<UploadServer> Start(Action<BDTestReportOptions> configure = null, Action<WebApplication> configureApp = null,
+            Action connectionClosed = null, Action<System.Text.Json.JsonSerializerOptions> configureJson = null,
+            Action<IServiceCollection> configureServices = null)
         {
             var builder = WebApplication.CreateBuilder();
             builder.Logging.ClearProviders();
@@ -945,19 +954,21 @@ public partial class ReportUploadTests
                         connectionClosed?.Invoke();
                     }
                 })));
-            builder.Services.AddControllersWithViews().AddBdTestReportControllersAndViews()
+            builder.Services.AddControllersWithViews()
                 .AddJsonOptions(options => configureJson?.Invoke(options.JsonSerializerOptions));
-            var app = builder.Build();
             var store = new RecordingStore();
-            configureApp?.Invoke(app);
-            app.UseBDTestReportServer(options =>
+            builder.Services.AddSingleton<IBDTestDataStore>(store);
+            builder.Services.AddSingleton<IBDTestDataReceiver>(store);
+            builder.Services.AddBDTestReports(options =>
             {
                 options.AllowAnonymousReports = true;
                 options.UploadApiKey = Key;
-                options.DataStore = store;
-                options.DataReceiver = store;
                 configure?.Invoke(options);
             });
+            configureServices?.Invoke(builder.Services);
+            var app = builder.Build();
+            configureApp?.Invoke(app);
+            app.UseBDTestReportServer();
             app.MapControllers();
             await app.StartAsync();
             return new UploadServer(app, new HttpClient(new HttpClientHandler { AllowAutoRedirect = false }) { BaseAddress = new Uri(app.Urls.Single()) }, store);

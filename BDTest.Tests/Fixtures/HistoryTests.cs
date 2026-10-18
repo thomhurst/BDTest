@@ -166,12 +166,10 @@ public class HistoryTests
             .ToList();
         var repository = new Repository(runs);
         var services = new ServiceCollection();
-        services.AddControllersWithViews().AddBdTestReportControllersAndViews();
+        services.AddBDTestReports();
         await using var provider = services.BuildServiceProvider();
-        var controller = new BDTestController(repository, provider.GetRequiredService<BDTestReportServerOptions>())
-        {
-            ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() }
-        };
+        var controller = ActivatorUtilities.CreateInstance<BDTestController>(provider, repository);
+        controller.ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() };
         controller.Request.QueryString = new QueryString("?tag=nightly&range=all&compare=2");
 
         var result = (ViewResult)await controller.TestRunFlakiness(CancellationToken.None);

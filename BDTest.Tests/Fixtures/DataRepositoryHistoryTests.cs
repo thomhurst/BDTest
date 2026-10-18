@@ -235,9 +235,9 @@ public class DataRepositoryHistoryTests
     {
         var services = new ServiceCollection();
         services.AddLogging();
-        services.AddControllersWithViews().AddBdTestReportControllersAndViews();
+        services.AddBDTestReports();
+        if (store != null) services.AddSingleton<IBDTestDataStore>(store);
         var provider = services.BuildServiceProvider();
-        provider.GetRequiredService<BDTestReportServerOptions>().DataStore = store;
         return provider;
     }
 

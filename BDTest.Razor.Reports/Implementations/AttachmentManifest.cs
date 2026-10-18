@@ -8,13 +8,13 @@ namespace BDTest.Razor.Reports.Implementations;
 
 internal static class AttachmentManifest
 {
-    internal static bool IsValid(BDTestOutputModel report, BDTestReportServerOptions options, bool enforceUploadLimits = true)
+    internal static bool IsValid(BDTestOutputModel report, BDTestReportOptions options, bool hasAttachmentStore, bool enforceUploadLimits = true)
     {
         var ids = new HashSet<string>(StringComparer.Ordinal);
         long total = 0;
         foreach (var file in BDTestAttachmentHelper.GetAttachments(report))
         {
-            if (options.AttachmentStore == null || file == null || !AttachmentStorage.IsValidId(file.Id)
+            if (!hasAttachmentStore || file == null || !AttachmentStorage.IsValidId(file.Id)
                 || !ids.Add(file.Id) || file.Length < 0 || file.AttemptNumber < 1
                 || enforceUploadLimits && (ids.Count > options.MaximumAttachmentsPerReport
                     || file.Length > options.MaximumAttachmentBytes

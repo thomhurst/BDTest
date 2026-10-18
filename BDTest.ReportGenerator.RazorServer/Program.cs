@@ -61,12 +61,18 @@ public class Program
 
         services
             .AddControllersWithViews()
-            .AddMicrosoftIdentityUI()
-            .AddBdTestReportControllersAndViews();
+            .AddMicrosoftIdentityUI();
+        services.AddBDTestReports(options =>
+        {
+            options.ReportsAuthorizationPolicy = "BDTestReports.Read";
+            options.AdminAuthorizationPolicy = "BDTestReports.Admin";
+        }).BindConfiguration("BDTest");
 
-        services.AddSingleton<IBDTestDataStore, AzureStorageDataStore>();
-        services.AddSingleton<CustomSidebarLinkProvider>();
-        services.AddSingleton<UserPersonalizer>();
+        services.AddSingleton<AzureStorageDataStore>();
+        services.AddSingleton<IBDTestDataStore>(provider => provider.GetRequiredService<AzureStorageDataStore>());
+        services.AddSingleton<IBDTestAttachmentStore>(provider => provider.GetRequiredService<AzureStorageDataStore>());
+        services.AddSingleton<IBDTestCustomSidebarLinksProvider, CustomSidebarLinkProvider>();
+        services.AddSingleton<IUserPersonalizer, UserPersonalizer>();
 
         AddConfig(services, builder.Configuration);
         services.AddHostedService<ReportStorageStartupService>();
@@ -104,16 +110,7 @@ public class Program
             }
         });
 
-        app.UseBDTestReportServer(options =>
-        {
-            options.UploadApiKey = builder.Configuration["BDTest:UploadApiKey"];
-            options.DataStore = app.Services.GetRequiredService<IBDTestDataStore>();
-            options.AttachmentStore = options.DataStore as IBDTestAttachmentStore;
-            options.CustomSidebarLinksProvider = app.Services.GetRequiredService<CustomSidebarLinkProvider>();
-            options.ReportsAuthorizationPolicy = "BDTestReports.Read";
-            options.AdminAuthorizationPolicy = "BDTestReports.Admin";
-            options.UserPersonalizer = app.Services.GetRequiredService<UserPersonalizer>();
-        });
+        app.UseBDTestReportServer();
 
         app.UseRouting();
         app.UseAuthentication();

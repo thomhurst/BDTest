@@ -5,12 +5,14 @@ using BDTest.Helpers;
 using BDTest.Razor.Reports.Models;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.Net.Http.Headers;
+using Microsoft.Extensions.Options;
 
 namespace BDTest.Razor.Reports.Implementations;
 
 // Only the BDTest upload endpoint uses this reader. Host formatters and JSON options stay independent.
-internal sealed class ReportModelBinder(BDTestReportServerOptions options) : IModelBinder
+internal sealed class ReportModelBinder(IOptions<BDTestReportOptions> configuredOptions) : IModelBinder
 {
+    private readonly BDTestReportOptions options = configuredOptions.Value;
     public async Task BindModelAsync(ModelBindingContext bindingContext)
     {
         var request = bindingContext.HttpContext.Request;

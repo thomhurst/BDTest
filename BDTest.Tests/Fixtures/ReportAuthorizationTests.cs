@@ -179,9 +179,9 @@ public class ReportAuthorizationTests
     {
         public HttpClient Client { get; } = client;
         public RecordingLogger Logs { get; } = logs;
-        public BDTestReportServerOptions Options => app.Services.GetRequiredService<BDTestReportServerOptions>();
+        public BDTestReportOptions Options => app.Services.GetRequiredService<IOptions<BDTestReportOptions>>().Value;
 
-        public static async Task<ReportHost> Start(Action<BDTestReportServerOptions> configure = null, bool requireEndpointPolicy = false, bool useOptionsMiddleware = true, bool addAuthentication = true)
+        public static async Task<ReportHost> Start(Action<BDTestReportOptions> configure = null, bool requireEndpointPolicy = false, bool useOptionsMiddleware = true, bool addAuthentication = true)
         {
             var builder = WebApplication.CreateBuilder();
             builder.WebHost.UseUrls("http://127.0.0.1:0");
@@ -197,9 +197,9 @@ public class ReportAuthorizationTests
                 options.AddPolicy("Readers", policy => policy.RequireAuthenticatedUser().RequireRole("Reader"));
                 options.AddPolicy("SchemeReaders", policy => policy.AddAuthenticationSchemes("ReportTests").RequireRole("Reader"));
             });
-            builder.Services.AddControllersWithViews().AddBdTestReportControllersAndViews();
+            builder.Services.AddBDTestReports(options => configure?.Invoke(options));
             var app = builder.Build();
-            if (useOptionsMiddleware) app.UseBDTestReportServer(options => configure?.Invoke(options));
+            if (useOptionsMiddleware) app.UseBDTestReportServer();
             app.UseRouting();
             if (addAuthentication) app.UseAuthentication();
             app.UseAuthorization();

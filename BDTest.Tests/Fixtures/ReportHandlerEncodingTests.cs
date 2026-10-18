@@ -1,4 +1,5 @@
-﻿using System.Text.RegularExpressions;
+using Microsoft.Extensions.Options;
+using System.Text.RegularExpressions;
 using System.Xml.Linq;
 using System.Web;
 using BDTest.Razor.Reports.Extensions;
@@ -143,14 +144,13 @@ public class ReportHandlerEncodingTests
     internal static async Task<string> RenderAsync<T>(string path, T model, bool isAdmin = false, string query = "", string pathBase = "", string host = "reports.example.test", string requestPath = "/bdtest/report/O'Brien/test-runs", IBDTestCustomHeaderLinksProvider customHeaderLinksProvider = null, Action<ViewDataDictionary> configureViewData = null)
     {
         var builder = WebApplication.CreateBuilder();
-        builder.Services.AddControllersWithViews().AddBdTestReportControllersAndViews();
+        builder.Services.AddBDTestReports(options => options.AdminAuthorizationPolicy = "EncodingTests");
+        if (customHeaderLinksProvider != null) builder.Services.AddSingleton(customHeaderLinksProvider);
         builder.Services.AddAuthorization(options => options.AddPolicy("EncodingTests", policy =>
             policy.RequireAssertion(_ => isAdmin)));
         await using var app = builder.Build();
         await using var scope = app.Services.CreateAsyncScope();
         var services = scope.ServiceProvider;
-        services.GetRequiredService<BDTestReportServerOptions>().AdminAuthorizationPolicy = "EncodingTests";
-        services.GetRequiredService<BDTestReportServerOptions>().CustomHeaderLinksProvider = customHeaderLinksProvider;
         var httpContext = new DefaultHttpContext { RequestServices = services };
         httpContext.Request.Scheme = "https";
         httpContext.Request.Host = new HostString(host);

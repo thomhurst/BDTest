@@ -7,13 +7,17 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 
 namespace BDTest.Razor.Reports.Controllers;
 
 [Route("bdtest")]
 [TypeFilter(typeof(ReportAuthorizationFilter), Arguments = new object[] { false })]
-public sealed class AttachmentsController(IDataRepository repository, BDTestReportServerOptions options) : Controller
+public sealed class AttachmentsController(IDataRepository repository, IOptions<BDTestReportOptions> configuredOptions,
+    ReportAttachmentGate attachmentGate, IBDTestAttachmentStore attachmentStore = null) : Controller
 {
+    private readonly BDTestReportOptions options = configuredOptions.Value;
+
     [AllowAnonymous]
     [HttpPost("data/{reportId}/attachments/{attachmentId}")]
     [ServiceFilter(typeof(ReportUploadFilter))]
@@ -22,10 +26,10 @@ public sealed class AttachmentsController(IDataRepository repository, BDTestRepo
         if (!AttachmentStorage.IsValidId(reportId) || !AttachmentStorage.IsValidId(attachmentId)) return BadRequest();
         var tokens = Request.Headers["X-BDTest-Attachment-Token"];
         if (tokens.Count != 1 || tokens[0]?.Length != 64) return Unauthorized();
-        if (options.AttachmentStore == null) return NotFound();
+        if (attachmentStore == null) return NotFound();
 
         var report = await repository.GetDataForBulkRead(reportId, cancellationToken);
-        if (report == null || !AttachmentManifest.IsValid(report, options)) return NotFound();
+        if (report == null || !AttachmentManifest.IsValid(report, options, attachmentStore != null)) return NotFound();
         if (!AttachmentUploadAuthorization.IsValid(report.AttachmentUploadTokenHash, tokens[0])) return Unauthorized();
         var file = BDTestAttachmentHelper.GetAttachments(report).SingleOrDefault(file => file.Id == attachmentId);
         if (file == null) return NotFound();
@@ -46,26 +50,26 @@ public sealed class AttachmentsController(IDataRepository repository, BDTestRepo
         staging.Position = 0;
 
         // Revalidate after staging so deletion or expiry cannot resurrect attachment content.
-        using var lease = await options.AttachmentGate.EnterAsync(reportId, cancellationToken);
+        using var lease = await attachmentGate.EnterAsync(reportId, cancellationToken);
         report = await repository.GetDataForBulkRead(reportId, cancellationToken);
-        if (report == null || !AttachmentManifest.IsValid(report, options)) return NotFound();
+        if (report == null || !AttachmentManifest.IsValid(report, options, attachmentStore != null)) return NotFound();
         if (!AttachmentUploadAuthorization.IsValid(report.AttachmentUploadTokenHash, tokens[0])) return Unauthorized();
         var currentFile = BDTestAttachmentHelper.GetAttachments(report).SingleOrDefault(current => current.Id == attachmentId);
         if (currentFile == null || currentFile.Length != file.Length) return NotFound();
-        await options.AttachmentStore.WriteAsync(reportId, attachmentId, staging, file.Length, cancellationToken);
+        await attachmentStore.WriteAsync(reportId, attachmentId, staging, file.Length, cancellationToken);
         return NoContent();
     }
 
     [HttpGet("report/{reportId}/attachments/{attachmentId}")]
     public async Task<IActionResult> Download(string reportId, string attachmentId, CancellationToken cancellationToken)
     {
-        if (!AttachmentStorage.IsValidId(reportId) || !AttachmentStorage.IsValidId(attachmentId) || options.AttachmentStore == null)
+        if (!AttachmentStorage.IsValidId(reportId) || !AttachmentStorage.IsValidId(attachmentId) || attachmentStore == null)
             return NotFound();
         var report = await repository.GetDataForBulkRead(reportId, cancellationToken);
-        if (report == null || !AttachmentManifest.IsValid(report, options, enforceUploadLimits: false)) return NotFound();
+        if (report == null || !AttachmentManifest.IsValid(report, options, attachmentStore != null, enforceUploadLimits: false)) return NotFound();
         var file = BDTestAttachmentHelper.GetAttachments(report).SingleOrDefault(file => file.Id == attachmentId);
         if (file == null) return NotFound();
-        var stream = await options.AttachmentStore.OpenReadAsync(reportId, attachmentId, cancellationToken);
+        var stream = await attachmentStore.OpenReadAsync(reportId, attachmentId, cancellationToken);
         if (stream == null) return NotFound();
         Response.Headers["X-Content-Type-Options"] = "nosniff";
         Response.Headers.ContentSecurityPolicy = "default-src 'none'; sandbox";
