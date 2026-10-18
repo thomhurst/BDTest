@@ -99,7 +99,8 @@ public class ReportOptionsTests
             ["BDTest:ReportCacheSizeLimitBytes"] = "131072",
             ["BDTest:ReportCacheRetention"] = "00:15:00",
             ["BDTest:UploadsPerMinute"] = "7",
-            ["BDTest:MaximumAttachmentsPerReport"] = "0"
+            ["BDTest:MaximumAttachmentsPerReport"] = "0",
+            ["BDTest:AdditionalImageSources:0"] = "http://images.example:8080/"
         });
         builder.Services.AddBDTestReports().BindConfiguration("BDTest");
         builder.Services.AddSingleton(new Marker("constructor injected"));
@@ -125,6 +126,8 @@ public class ReportOptionsTests
         using var response = await client.SendAsync(request);
 
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        Assert.That(response.Headers.GetValues("Content-Security-Policy").Single(),
+            Does.Contain("img-src 'self' data: https: http://images.example:8080;"));
         var id = response.Headers.GetValues("X-BDTest-Report-Id").Single();
         var html = await client.GetStringAsync($"{prefix}/report/{id}/summary");
         Assert.That(html, Does.Contain("constructor injected header"));
@@ -140,6 +143,7 @@ public class ReportOptionsTests
         Assert.That(options.ReportCacheRetention, Is.EqualTo(TimeSpan.FromMinutes(15)));
         Assert.That(options.UploadsPerMinute, Is.EqualTo(7));
         Assert.That(options.MaximumAttachmentsPerReport, Is.Zero);
+        Assert.That(options.AdditionalImageSources, Is.EqualTo(new[] { "http://images.example:8080" }));
     }
 
     private sealed record Marker(string Text);

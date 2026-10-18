@@ -414,6 +414,85 @@ public partial class ReportUploadTests
     }
 
     [Test]
+    public async Task HostsCanExtendImageSourcesWithoutChangingOtherDirectives()
+    {
+        var sources = new[]
+        {
+            "http://images.example:8080/", "https://pictures.example", "http://[::1]:8081", "http://b\u00fccher.example"
+        };
+        await using var server = await UploadServer.Start(options => options.AdditionalImageSources = sources);
+        sources[0] = "http:; script-src 'unsafe-inline'";
+        using var response = await server.Client.GetAsync("bdtest/ping");
+        var policy = response.Headers.GetValues("Content-Security-Policy").Single();
+        var images = Regex.Match(policy, @"(?:^|; )img-src ([^;]+)").Groups[1].Value;
+        Assert.That(images, Is.EqualTo("'self' data: https: http://images.example:8080 https://pictures.example http://[::1]:8081 http://xn--bcher-kva.example"));
+        Assert.That(policy, Does.Contain("connect-src 'self';"));
+        Assert.That(policy, Does.Contain("script-src 'nonce-"));
+        Assert.That(policy, Does.Not.Contain("script-src 'unsafe-inline'"));
+        Assert.That(server.Options.AdditionalImageSources[0], Is.EqualTo("http://images.example:8080"));
+    }
+
+    [TestCase("bdtest/ping", false)]
+    [TestCase("bdtest/assets/css/bdtest-report.css", true)]
+    public async Task ConfiguredImagePolicyPreservesResponseCaching(string path, bool isAsset)
+    {
+        await using var server = await UploadServer.Start(options =>
+            options.AdditionalImageSources = new[] { "http://images.example" });
+        using var response = await server.Client.GetAsync(path);
+
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        Assert.That(response.Headers.GetValues("Content-Security-Policy").Single(),
+            Does.Contain("img-src 'self' data: https: http://images.example;"));
+        var cache = response.Headers.CacheControl;
+        Assert.That(cache, Is.Not.Null);
+        Assert.That(cache.NoStore, Is.EqualTo(!isAsset));
+        if (isAsset)
+        {
+            Assert.That(cache.Public, Is.True);
+            Assert.That(cache.MaxAge, Is.EqualTo(TimeSpan.FromDays(1)));
+        }
+    }
+
+    [TestCase(null)]
+    [TestCase("")]
+    [TestCase(" ")]
+    [TestCase("http:")]
+    [TestCase("*")]
+    [TestCase("http://*.example.com")]
+    [TestCase("https://*.example.com")]
+    [TestCase("http://*")]
+    [TestCase("http://images.example:*")]
+    [TestCase("'unsafe-inline'")]
+    [TestCase("ftp://images.example")]
+    [TestCase("http://user:password@images.example")]
+    [TestCase("http://images.example/path")]
+    [TestCase("http://images.example/..")]
+    [TestCase("http://images.example/path/../")]
+    [TestCase("http://images.example?query=value")]
+    [TestCase("http://images.example#fragment")]
+    [TestCase("http://images.example;script-src")]
+    [TestCase("http://images.example; script-src 'unsafe-inline'")]
+    [TestCase("http://images.example https://other.example")]
+    [TestCase("http://images.example\r\nX-Injected: value")]
+    [TestCase(" http://images.example")]
+    public async Task InvalidImageOriginsAreRejectedWithoutChangingThePolicy(string source)
+    {
+        await using var server = await UploadServer.Start();
+        Assert.Throws<ArgumentException>(() => server.Options.AdditionalImageSources = new[] { "http://valid.example", source });
+        Assert.That(server.Options.AdditionalImageSources, Is.Empty);
+        using var response = await server.Client.GetAsync("bdtest/ping");
+        AssertSecurityHeaders(response);
+    }
+
+    [Test]
+    public async Task NullImageSourcesAreRejected()
+    {
+        await using var server = await UploadServer.Start();
+        Assert.Throws<ArgumentNullException>(() => server.Options.AdditionalImageSources = null);
+        Assert.That(server.Options.AdditionalImageSources, Is.Empty);
+    }
+
+    [Test]
     public async Task ReportScriptsUseTheResponseNonceAndRequestsDoNotReuseIt()
     {
         await using var server = await UploadServer.Start();
@@ -453,6 +532,8 @@ public partial class ReportUploadTests
         Assert.That(policy, Does.Contain("object-src 'none'"));
         Assert.That(policy, Does.Contain("form-action 'self'"));
         Assert.That(policy, Does.Contain("script-src-attr 'none'"));
+        var images = Regex.Match(policy, @"(?:^|; )img-src ([^;]+)").Groups[1].Value;
+        Assert.That(images, Is.EqualTo("'self' data: https:"));
         var scripts = Regex.Match(policy, @"(?:^|; )script-src ([^;]+)").Groups[1].Value;
         Assert.That(scripts, Does.Not.Contain("'unsafe-inline'").And.Not.Contain("'unsafe-eval'"));
         var nonce = Regex.Match(scripts, "'nonce-([^']+)'").Groups[1].Value;

@@ -2,6 +2,24 @@
 
 ## Next major release (unreleased)
 
+### Breaking: report server image sources
+
+The report server's default Content Security Policy now uses
+`img-src 'self' data: https:` instead of allowing every `http:` origin.
+Hosts whose `IUserPersonalizer` or custom views use plain-HTTP third-party images
+must switch those URLs to HTTPS or assign specific origins to
+`BDTestReportOptions.AdditionalImageSources` before serving requests:
+
+```csharp
+options.AdditionalImageSources = new[] { "http://images.internal.example:8080" };
+```
+
+The option accepts HTTP(S) origins only, validates and copies the list, and extends
+only the image directive. Browser mixed-content restrictions and host CSPs still
+apply. Standalone HTML reports and sandboxed custom HTML retain their own policies.
+See [report server security](https://thomhurst.github.io/BDTest/docs/report-server/security#allowing-additional-image-origins).
+Tracked by [#853](https://github.com/thomhurst/BDTest/issues/853).
+
 ### Breaking: managed context lifetime and factories
 
 Context bases and all four adapters now support constructor dependencies through

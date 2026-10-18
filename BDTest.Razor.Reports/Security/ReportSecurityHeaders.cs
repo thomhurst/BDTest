@@ -1,4 +1,5 @@
 using System.Security.Cryptography;
+using BDTest.Razor.Reports.Models;
 using Microsoft.AspNetCore.Http;
 
 namespace BDTest.Razor.Reports.Security;
@@ -19,14 +20,21 @@ internal static class ReportSecurityHeaders
         return nonce;
     }
 
-    internal static void Apply(HttpContext context, bool preventCaching = true)
+    internal static void Apply(HttpContext context, BDTestReportOptions options, bool preventCaching = true)
     {
         var nonce = GetNonce(context);
+        var imageSources = "'self' data: https:";
+        if (options.AdditionalImageSources.Count > 0)
+        {
+            imageSources += " " + string.Join(" ", options.AdditionalImageSources);
+        }
+
         // Append so any policy supplied by the host remains enforced as well.
         context.Response.Headers.Append("Content-Security-Policy",
             "default-src 'none'; " +
             $"script-src 'nonce-{nonce}'; script-src-attr 'none'; " +
-            "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https: http:; " +
+            "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
+            $"img-src {imageSources}; " +
             "font-src 'self' data: https://fonts.gstatic.com; connect-src 'self'; frame-src 'self'; " +
             "object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'");
         context.Response.Headers["X-Content-Type-Options"] = "nosniff";
