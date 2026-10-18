@@ -25,7 +25,7 @@ dotnet run --project BDTest.TUnit.Tests -- --treenode-filter "/*/*/TUnitScenario
 cd BDTest.Pipeline && dotnet run -c Release
 ```
 
-`clean.cmd` deletes all `bin`/`obj` dirs. `build.bat` is a legacy manual pack script (references a project that no longer exists); prefer the pipeline.
+`clean.cmd` deletes all `bin`/`obj` dirs. Use the pipeline above to build and pack all package projects. Set `DOTNET_ENVIRONMENT=Development` for local runs; `Production` can publish packages to NuGet.
 
 ## Architecture
 
