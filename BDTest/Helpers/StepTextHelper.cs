@@ -50,10 +50,10 @@ public static class StepTextHelper
                 customStepText = UseStepTextParameterOverrides(stepTextAttribute);
                 customStepText = string.Format(customStepText, arguments.Cast<object>().ToArray());
             }
-            catch (Exception)
+            catch (Exception exception)
             {
                 throw new ArgumentException(
-                    $"Step Text arguments are wrong.{Environment.NewLine}Template is: {customStepText}{Environment.NewLine}Arguments are {string.Join(",", arguments)}");
+                    $"Step Text arguments are wrong.{Environment.NewLine}Template is: {customStepText}{Environment.NewLine}Arguments are {string.Join(",", arguments)}", exception);
             }
         }
 
