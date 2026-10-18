@@ -22,7 +22,7 @@ internal static class BDTestOutputModelBuilder
             NotRun = BDTestUtil.GetNotRunScenarios(run),
             Version = BDTestVersionHelper.CurrentVersion,
             TestTimer = scenarios.Count == 0
-                ? new TestTimer { TestsStartedAt = run.StartedAt }
+                ? new TestTimer { TestsStartedAt = run.StartedAt, TestsFinishedAt = run.Options.Clock.UtcNow }
                 : BDTestUtil.GetTestTimer(scenarios)
         };
 

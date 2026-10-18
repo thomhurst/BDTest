@@ -1,5 +1,6 @@
 #if !LEGACY_CORE
 using BDTest.Test;
+using BDTest.Helpers;
 using Microsoft.Extensions.Time.Testing;
 using NUnit.Framework;
 
@@ -81,6 +82,69 @@ public class TimeProviderTests
         Assert.That(scenario.TimeTaken, Is.EqualTo(TimeSpan.FromSeconds(2)));
         Assert.That(scenario.Attempts.Select(attempt => attempt.TimeTaken),
             Is.EqualTo(new[] { TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(2) }));
+    }
+
+    [Test]
+    public async Task Outline_records_run_clock_timestamps_and_monotonic_duration()
+    {
+        var clock = new TimerClock();
+        var start = clock.GetUtcNow();
+        using var run = BDTestRun.Start(new BDTestOptions { TimeProvider = clock });
+        var host = new TestHost(run);
+        var outline = await host.ScenarioOutline("Clock outline", new[] { 1, 2 },
+            _ => host.When(() =>
+            {
+                clock.WallOffset = -TimeSpan.FromDays(1);
+                clock.Fake.Advance(TimeSpan.FromSeconds(3));
+            }).Then(() => { })).BDTestAsync();
+
+        Assert.That(outline.StartTime, Is.EqualTo(start.UtcDateTime));
+        Assert.That(outline.EndTime, Is.EqualTo(start.AddDays(-1).AddSeconds(6).UtcDateTime));
+        Assert.That(outline.TimeTaken, Is.EqualTo(TimeSpan.FromSeconds(6)));
+        Assert.That(outline.Examples.Select(row => row.TimeTaken),
+            Is.EqualTo(new[] { TimeSpan.FromSeconds(3), TimeSpan.FromSeconds(3) }));
+        var report = BDTestJsonHelper.Deserialize(BDTestJsonHelper.GetTestJsonData(null, run));
+        Assert.That(report.TestTimer.TestsStartedAt, Is.EqualTo(outline.StartTime));
+        Assert.That(report.TestTimer.TestsFinishedAt, Is.EqualTo(outline.EndTime));
+    }
+
+    [Test]
+    public async Task Outline_factory_failure_records_run_clock_and_construction_duration()
+    {
+        var clock = new TimerClock();
+        var start = clock.GetUtcNow();
+        using var run = BDTestRun.Start(new BDTestOptions { TimeProvider = clock });
+        var outlineBuilder = new TestHost(run).ScenarioOutline<int>("Factory failure", new[] { 1 }, _ =>
+        {
+            clock.WallOffset = -TimeSpan.FromDays(1);
+            clock.Fake.Advance(TimeSpan.FromSeconds(4));
+            throw new InvalidOperationException("factory failed");
+        });
+        await Assert.ThrowsAsync<InvalidOperationException>(async () => await outlineBuilder.BDTestAsync());
+
+        var outline = run.Scenarios.Single();
+        var row = outline.Examples.Single();
+        Assert.That(row.StartTime, Is.EqualTo(start.UtcDateTime));
+        Assert.That(row.EndTime, Is.EqualTo(start.AddDays(-1).AddSeconds(4).UtcDateTime));
+        Assert.That(row.TimeTaken, Is.EqualTo(TimeSpan.FromSeconds(4)));
+        Assert.That(outline.StartTime, Is.EqualTo(row.StartTime));
+        Assert.That(outline.EndTime, Is.EqualTo(row.EndTime));
+        Assert.That(outline.TimeTaken, Is.EqualTo(row.TimeTaken));
+        Assert.That(row.Status, Is.EqualTo(Status.Failed));
+    }
+
+    [Test]
+    public void Empty_report_uses_run_clock_for_both_timestamps()
+    {
+        var clock = new TimerClock();
+        var start = clock.GetUtcNow();
+        using var run = BDTestRun.Start(new BDTestOptions { TimeProvider = clock });
+        clock.Fake.Advance(TimeSpan.FromSeconds(5));
+
+        var report = BDTestJsonHelper.Deserialize(BDTestJsonHelper.GetTestJsonData(null, run));
+        Assert.That(report.TestTimer.TestsStartedAt, Is.EqualTo(start.UtcDateTime));
+        Assert.That(report.TestTimer.TestsFinishedAt, Is.EqualTo(start.AddSeconds(5).UtcDateTime));
+        Assert.That(report.TestTimer.ElapsedTime, Is.EqualTo(TimeSpan.FromSeconds(5)));
     }
 
     [Test]

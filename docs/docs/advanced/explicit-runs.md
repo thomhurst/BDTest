@@ -111,6 +111,6 @@ var options = new BDTestOptions { TimeProvider = TimeProvider.System };
 using var run = BDTestRun.Start(options);
 ```
 
-The provider supplies UTC execution timestamps, monotonic elapsed durations, and step/scenario timeout timers. Pass a fake provider to test timing without real delays. Advance it after the timed step has started and its timer is registered. Application delays still use their own clocks unless you explicitly pass the same provider to them.
+The provider supplies UTC execution timestamps, monotonic elapsed durations, and step/scenario timeout timers. Scenario outlines use the same clock for parent timing and factory-error rows. Empty reports use the run clock for their finish timestamp. Pass a fake provider to test timing without real delays. Advance it after the timed step has started and its timer is registered. Application delays still use their own clocks unless you explicitly pass the same provider to them.
 
 BDTest copies the provider reference when the run starts. Keep it alive until the run and any timed-out work finish. Changing `options.TimeProvider` later does not affect an existing run. Null is rejected. The shared default run uses `TimeProvider.System`. The .NET Standard asset retains system UTC timestamps and monotonic `Stopwatch` timing; it does not expose the provider option.

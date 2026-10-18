@@ -69,7 +69,9 @@ public sealed class ScenarioOutlineBuilder<TExample> : BuildableTest
 
     private async Task<Scenario> ExecuteAsync(Scenario outline)
     {
-        outline.StartTime = DateTime.UtcNow;
+        var clock = Run.Options.Clock;
+        var timer = clock.StartTimer();
+        outline.StartTime = clock.UtcNow;
         outline.Status = Status.Pending;
         var failures = new List<(Status Status, ExceptionDispatchInfo Exception)>();
         var previousNotRun = new HashSet<string>(Run.Store.NotRun
@@ -78,6 +80,8 @@ public sealed class ScenarioOutlineBuilder<TExample> : BuildableTest
         {
             for (var index = 0; index < _examples.Length; index++)
             {
+                var rowStartTime = clock.UtcNow;
+                var rowTimer = clock.StartTimer();
                 var constructionOutput = new ScenarioConstructionOutput(TestId, Run);
                 try
                 {
@@ -110,15 +114,15 @@ public sealed class ScenarioOutlineBuilder<TExample> : BuildableTest
                     {
                         row = new Scenario(new List<Step>(), this, outline, _values[index])
                         {
-                            StartTime = DateTime.UtcNow, EndTime = DateTime.UtcNow
+                            StartTime = rowStartTime
                         };
                         row.ReleaseRuntimeReferences();
                     }
                     else row = outline.Examples[index];
                     if (row.EndTime == default)
                     {
-                        row.EndTime = DateTime.UtcNow;
-                        row.TimeTaken = row.EndTime - row.StartTime;
+                        row.EndTime = clock.UtcNow;
+                        row.TimeTaken = rowTimer.Elapsed;
                     }
                     row.Status = ExceptionOutcomeClassifier.Classify(exception, Run.Options, row.TimedOut);
                     // Framework success exceptions must not fail the outline.
@@ -156,8 +160,8 @@ public sealed class ScenarioOutlineBuilder<TExample> : BuildableTest
         }
         finally
         {
-            outline.EndTime = DateTime.UtcNow;
-            outline.TimeTaken = outline.EndTime - outline.StartTime;
+            outline.EndTime = clock.UtcNow;
+            outline.TimeTaken = timer.Elapsed;
             outline.Output = string.Join(Environment.NewLine, outline.Examples.Select(row => row.Output));
             Run.Store.AddScenario(outline);
             TestOutputData.TestId = outline.Guid;
