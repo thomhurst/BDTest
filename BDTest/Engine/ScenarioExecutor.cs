@@ -193,7 +193,10 @@ internal class ScenarioExecutor : IScenarioExecutor
                 ConsoleReporter.WriteLineToConsoleOnly($"Test Result: {scenario.Status}");
 
                 scenario.Output = string.Join(Environment.NewLine,
-                    scenario.Steps.Where(step => !string.IsNullOrWhiteSpace(step.Output)).Select(step => step.Output));
+                    scenario.Steps.Select(step => step.Output)
+                        .Concat(new[] { TestOutputData.Instance.ToString().Trim() })
+                        .Where(output => !string.IsNullOrWhiteSpace(output)));
+                TestOutputData.ClearCurrentTaskData();
             }
 
             var endTime = DateTime.UtcNow;

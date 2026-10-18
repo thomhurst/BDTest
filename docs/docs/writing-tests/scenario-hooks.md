@@ -92,7 +92,7 @@ For every attempt, BDTest awaits:
 
 Before hooks stop at the first exception. Steps remain `NotRun` after an ordinary before-hook failure. Every after hook runs once the attempt's hook context has been created, even if a before hook or another after hook fails. A context-construction or retry-setup failure happens before scenario hooks begin.
 
-An execution exception takes precedence over after-hook exceptions. Otherwise, the first after-hook exception determines the result. Hook exceptions follow the usual [exception classification](../configuration/exceptions.md) and [retry rules](retries.md). Later after hooks see a result updated by an earlier after-hook failure. Secondary failures are logged.
+An execution exception takes precedence over after-hook exceptions. Otherwise, the first after-hook exception determines the result. Hook exceptions follow the usual [exception classification](../configuration/exceptions.md) and [retry rules](retries.md). Later after hooks see a result updated by an earlier after-hook failure. Secondary failures are logged. Reports include console output from scenario hooks, including when a skip or before-hook failure prevents steps from running.
 
 Whole-scenario skip rules still run scenario hooks, while no step hooks run for that skip. Framework skips that prevent the test method from running cannot invoke BDTest hooks. Each retry gets a fresh context and token after retry setup. Each [scenario outline](scenario-outlines.md) row runs hooks independently on each attempt; the outline container does not run hooks. Definition/factory failures before a row can execute do not run hooks.
 
@@ -100,6 +100,6 @@ Whole-scenario skip rules still run scenario hooks, while no step hooks run for 
 
 Scenario and attempt timing include before and after scenario hooks. Step durations exclude scenario hooks. After hooks receive the attempt outcome before its timing record is finalized.
 
-Scenario hooks are awaited without a timeout and do not consume the [scenario step budget](timeouts.md#hooks-and-the-scenario-budget). The hook token signals a step timeout; it does not impose a limit on hook execution. Cleanup can use its own timeout or ignore an already-cancelled token when necessary to save diagnostics.
+Scenario hooks are awaited without a timeout and do not consume the [scenario step budget](timeouts.md#hooks-and-the-scenario-budget). The hook token signals a step timeout; it does not impose a limit on hook execution. Cleanup can use its own timeout or ignore an already-cancelled token when necessary to save diagnostics. Cancellation is observable before after hooks run, but registered cancellation callbacks run in the background so they cannot block cleanup. Callback exceptions do not replace the timeout failure.
 
 Story-level hooks are not provided. Use the test framework's class fixtures for shared story setup.

@@ -106,6 +106,109 @@ public class ScenarioHookTests
         Assert.That(outline.Examples.All(s => s.Exception == null), Is.True);
     }
 
+    [TestCase(false)]
+    [TestCase(true)]
+    public async Task Timeout_callbacks_do_not_block_cleanup_and_token_is_cancelled_before_cleanup(bool callbackThrows)
+    {
+        using var run = BDTestRun.Start();
+        using var releaseCallback = new ManualResetEventSlim();
+        var callbackFinished = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var cleanupRan = false;
+        var cancelledInCleanup = false;
+        var test = new Fixture(run)
+        {
+            Before = s =>
+            {
+                s.CancellationToken.Register(() =>
+                {
+                    try
+                    {
+                        if (callbackThrows) throw new ApplicationException("callback failure");
+                        releaseCallback.Wait();
+                    }
+                    finally { callbackFinished.TrySetResult(true); }
+                });
+                return Task.CompletedTask;
+            },
+            After = s =>
+            {
+                cleanupRan = true;
+                cancelledInCleanup = s.CancellationToken.IsCancellationRequested
+                    && s.CancellationToken.WaitHandle.WaitOne(0);
+                releaseCallback.Set();
+                return Task.CompletedTask;
+            }
+        };
+        var execution = Task.Run(async () =>
+        {
+            try
+            {
+                await test.When(async token => await Task.Delay(Timeout.InfiniteTimeSpan, token))
+                    .Then(() => Complete()).WithScenarioTimeout(TimeSpan.FromMilliseconds(100)).BDTestAsync();
+                return (Exception)null;
+            }
+            catch (Exception exception) { return exception; }
+        });
+        try
+        {
+            var completed = await Task.WhenAny(execution, Task.Delay(TimeSpan.FromSeconds(10)));
+            Assert.That(completed, Is.SameAs(execution), "Cancellation callbacks must not block cleanup.");
+            Assert.That(await execution, Is.TypeOf<TimeoutException>());
+            Assert.That(cleanupRan, Is.True);
+            Assert.That(cancelledInCleanup, Is.True);
+        }
+        finally
+        {
+            releaseCallback.Set();
+            await execution;
+            await callbackFinished.Task.WaitAsync(TimeSpan.FromSeconds(10));
+        }
+    }
+
+    [TestCase("passed")]
+    [TestCase("skipped")]
+    [TestCase("before failure")]
+    [TestCase("step failure")]
+    [TestCase("after failure")]
+    public async Task Reports_preserve_hook_output_when_steps_run_or_are_bypassed(string outcome)
+    {
+        var options = new BDTestOptions();
+        if (outcome == "skipped") options.SkipTestRules.Add(_ => true);
+        options.ScenarioHooks.Add(new Hook(_ => Log("run before"), _ => Log("run after")));
+        using var run = BDTestRun.Start(options);
+        var fixture = new Fixture(run)
+        {
+            Before = async _ =>
+            {
+                await Log("instance before");
+                if (outcome == "before failure") throw new InvalidOperationException("before failure");
+            },
+            After = async _ =>
+            {
+                await Log("instance after");
+                if (outcome == "after failure") throw new InvalidOperationException("cleanup failure");
+            }
+        };
+        try
+        {
+            await fixture.When(() =>
+            {
+                Console.WriteLine("step output");
+                if (outcome == "step failure") throw new InvalidOperationException("step failure");
+            }).Then(() => Complete()).BDTestAsync();
+        }
+        catch (InvalidOperationException) when (outcome.EndsWith("failure")) { }
+        var output = run.Scenarios.Single().Output;
+        foreach (var text in new[] { "run before", "instance before", "instance after", "run after" })
+            Assert.That(output.Split(text).Length - 1, Is.EqualTo(1), $"Expected one occurrence of {text}.");
+        if (outcome is "passed" or "step failure" or "after failure")
+            Assert.That(output, Does.Contain("step output"));
+        if (outcome == "after failure")
+            Assert.That(output, Does.Contain("After-scenario hook failed:").And.Contain("cleanup failure"));
+
+        static Task Log(string text) => Console.Out.WriteLineAsync(text);
+    }
+
     [Test]
     public async Task Explicit_runs_freeze_and_isolate_registrations_from_global_events()
     {
