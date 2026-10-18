@@ -1,8 +1,11 @@
+using System.Net;
 using System.Text.RegularExpressions;
+using BDTest.Attributes;
 using BDTest.Helpers;
 using BDTest.Settings;
 using BDTest.Test;
 using BDTest.Tests.Helpers;
+using Newtonsoft.Json;
 using NUnit.Framework;
 
 namespace BDTest.Tests.Fixtures;
@@ -136,6 +139,20 @@ public class HtmlReportTests : BDTestBase
         Assert.That(Regex.Matches(html, "<article class=\"cause\">").Count, Is.EqualTo(1));
         Assert.That(html, Does.Contain("<span class=\"cause-n\">2 scenarios</span>"));
         Assert.That(html, Does.Contain("<span class=\"v-word\">2 failed</span>"));
+    }
+
+    [Test]
+    [BDTestTag("api\tintegration\nline\rreturn\0null\bback\fform\\slash\"quote<>&'")]
+    public void TagMetadataRoundTripsControlCharactersAndHtml()
+    {
+        var scenario = When(() => DoNothing()).Then(() => DoNothing()).BDTest();
+        var html = BDTestHtmlHelper.GetTestHtmlReport();
+        var attribute = Regex.Match(html, "data-tags=\"([^\"]*)\"").Groups[1].Value;
+
+        Assert.That(attribute, Is.Not.Empty);
+        var json = WebUtility.HtmlDecode(attribute);
+        Assert.That(json.Any(char.IsControl), Is.False, "JSON must escape literal control characters.");
+        Assert.That(JsonConvert.DeserializeObject<string[]>(json), Is.EqualTo(scenario.Tags));
     }
 
     [Test]

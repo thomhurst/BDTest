@@ -5,6 +5,7 @@ using BDTest.Settings;
 using BDTest.Test;
 using System.Globalization;
 using System.Text;
+using Newtonsoft.Json;
 
 namespace BDTest.Helpers;
 
@@ -362,7 +363,7 @@ public static class BDTestHtmlHelper
         var status = Key(scenario.Status);
         var guid = EscapeHtml(scenario.Guid);
         var tags = scenario.Tags ?? Array.Empty<string>();
-        var tagsJson = "[" + string.Join(",", tags.Select(t => "\"" + t.Replace("\\", "\\\\").Replace("\"", "\\\"") + "\"")) + "]";
+        var tagsJson = JsonConvert.SerializeObject(tags);
 
         html.AppendLine($"<div class=\"scn\" id=\"scenario-{guid}\" data-status=\"{status}\" data-story=\"{storyIndex}\" data-i=\"{index}\" data-ms=\"{(long)scenario.TimeTaken.TotalMilliseconds}\" data-sev=\"{scenario.Status.GetOrder()}\" data-tags=\"{EscapeHtml(tagsJson)}\">");
         html.AppendLine($"<button class=\"scn-head\" type=\"button\" aria-expanded=\"false\" aria-controls=\"details-{guid}\">");
@@ -887,6 +888,7 @@ font-family:var(--sans);color:var(--ink);background:var(--bg);min-height:100vh;f
 (function () {
   var root = document.querySelector('.rpt');
   var PAGE = 200;
+  var printing = false;
   var state = { filter: 'all', query: '', tag: '', sort: 'story', group: true, limit: PAGE };
   var $ = function (sel) { return root.querySelector(sel); };
   var $$ = function (sel) { return Array.prototype.slice.call(root.querySelectorAll(sel)); };
@@ -918,12 +920,13 @@ font-family:var(--sans);color:var(--ink);background:var(--bg);min-height:100vh;f
     var q = state.query.trim().toLowerCase();
     var base = items.filter(function (it) { return (!q || it.hay.indexOf(q) >= 0) && (!state.tag || it.tags.indexOf(state.tag) >= 0); });
     var visible = base.filter(function (it) { return state.filter === 'all' || it.status === state.filter; });
+    var matches = new Set(visible);
     var ordered = items.slice().sort(compare);
     var shown = 0;
     ordered.forEach(function (it) {
       (state.group ? it.home : flat).appendChild(it.el);
-      var match = visible.indexOf(it) >= 0;
-      it.el.hidden = !match || shown >= state.limit;
+      var match = matches.has(it);
+      it.el.hidden = !match || (!printing && shown >= state.limit);
       if (match) shown++;
     });
     stories.forEach(function (s) { s.hidden = !state.group || !s.querySelector('.scn:not([hidden])'); });
@@ -1017,6 +1020,8 @@ font-family:var(--sans);color:var(--ink);background:var(--bg);min-height:100vh;f
   if (tagSelect) tagSelect.addEventListener('change', function () { set({ tag: tagSelect.value }); });
   if (sortSelect) sortSelect.addEventListener('change', function () { set({ sort: sortSelect.value }); });
   if (groupBox) groupBox.addEventListener('change', function () { set({ group: groupBox.checked }); });
+  window.addEventListener('beforeprint', function () { printing = true; if (items.length) apply(); });
+  window.addEventListener('afterprint', function () { printing = false; if (items.length) apply(); });
   if (items.length) apply();
 })();
 </script>
