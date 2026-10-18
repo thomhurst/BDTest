@@ -12,14 +12,14 @@ internal static class ScenarioHookExecutor
     {
         var test = scenario.BdTestBaseClass;
         // Keep the legacy event subscriptions stable throughout this attempt.
-        var beforeHooks = scenario.Run.Options.BeforeScenario;
-        var afterHooks = scenario.Run.Options.AfterScenario;
+        var beforeHooks = scenario.ExecutionRun.Options.BeforeScenario;
+        var afterHooks = scenario.ExecutionRun.Options.AfterScenario;
         var cancellation = new CancellationTokenSource();
-        TaskCompletionSource<bool> cleanupFinished = null;
+        TaskCompletionSource<bool>? cleanupFinished = null;
         try
         {
-            ScenarioHookContext context = null;
-            Exception executionException = null;
+            ScenarioHookContext? context = null;
+            Exception? executionException = null;
             try
             {
                 // Complete the adapter's assertion scope before exposing the result to cleanup.
@@ -81,12 +81,12 @@ internal static class ScenarioHookExecutor
 
             void SetResult(Exception exception)
             {
-                scenario.Status = ExceptionOutcomeClassifier.Classify(exception, scenario.Run.Options, scenario.TimedOut);
+                scenario.Status = ExceptionOutcomeClassifier.Classify(exception, scenario.ExecutionRun.Options, scenario.TimedOut);
                 if (scenario.Status is Status.Failed or Status.NotImplemented)
                     scenario.ExecutionException = new ExceptionWrapper(exception);
                 if (scenario.Status == Status.Skipped)
                 {
-                    foreach (var step in scenario.Steps.Where(step => step.Status == Status.NotRun))
+                    foreach (var step in scenario.ExecutionSteps.Where(step => step.Status == Status.NotRun))
                     {
                         step.SetStepText();
                         step.Status = Status.Skipped;

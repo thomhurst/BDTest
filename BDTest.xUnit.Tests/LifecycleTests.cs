@@ -128,10 +128,11 @@ public class LifecycleTests : XUnitBDTestBase<XUnitContext>
         fixture.Writer.Attach("constructor", new byte[] { 1 }, "text/plain");
         await ((IAsyncLifetime)fixture).InitializeAsync();
         var scenario = await fixture.When(() => NoOp()).Then(() => NoOp()).BDTestAsync();
-        Assert.Equal("constructor", Assert.Single(scenario.Attachments).Name);
+        var attachments = scenario.Attachments ?? throw new InvalidOperationException("Expected constructor attachments.");
+        Assert.Equal("constructor", Assert.Single(attachments).Name);
         await fixture.DisposeAsync();
         Assert.Throws<InvalidOperationException>(() => fixture.Writer.Attach("late", new byte[] { 2 }, "text/plain"));
-        Assert.Single(scenario.Attachments);
+        Assert.Single(attachments);
     }
 
     private sealed class ConstructorAttachmentProbe : XUnitBDTestBase<XUnitContext>
@@ -243,7 +244,8 @@ public class AsyncLifecycleTests : XUnitBDTestBase<XUnitContext>
         Assert.Contains("owned async setup", scenario.TestStartupInformation);
         Assert.Contains("!constructor task output", scenario.TestStartupInformation);
         Assert.Contains("owned body startup", scenario.TestStartupInformation);
-        Assert.Contains("owned step", scenario.Steps.First().Output);
+        var steps = scenario.Steps ?? throw new InvalidOperationException("Expected recorded scenario steps.");
+        Assert.Contains("owned step", steps.First().Output);
         Assert.Single(_run.Scenarios);
     }
 

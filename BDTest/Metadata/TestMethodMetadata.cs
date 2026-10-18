@@ -12,14 +12,14 @@ internal sealed class TestMethodMetadata
 {
     private static readonly ConditionalWeakTable<Type, ConcurrentDictionary<MethodInfo, Lazy<TestMethodMetadata>>> Methods = new();
     private static readonly ConditionalWeakTable<Type, TestMethodMetadata> Classes = new();
-    private readonly string[] _parameters;
-    private readonly MethodInfo _method;
+    private readonly string?[] _parameters;
+    private readonly MethodInfo? _method;
     private readonly string[] _tags;
 
-    internal string ScenarioText { get; }
+    internal string? ScenarioText { get; }
     internal int? RetryCount { get; }
 
-    private TestMethodMetadata(Type fixtureType, MethodInfo method)
+    private TestMethodMetadata(Type fixtureType, MethodInfo? method)
     {
         ScenarioText = method?.GetCustomAttribute<ScenarioTextAttribute>(true)?.Text ?? NameHumanizer.Humanize(method?.Name);
         _parameters = method?.GetParameters().Select(parameter => parameter.Name).ToArray() ?? Array.Empty<string>();
@@ -32,12 +32,12 @@ internal sealed class TestMethodMetadata
             ?? fixtureType.Assembly.GetCustomAttribute<BDTestRetryAttribute>())?.Count;
     }
 
-    internal static TestMethodMetadata Get(Type fixtureType, MethodInfo method) => method == null
+    internal static TestMethodMetadata Get(Type fixtureType, MethodInfo? method) => method == null
         ? Classes.GetValue(fixtureType, type => new TestMethodMetadata(type, null))
         : Methods.GetValue(fixtureType, _ => new ConcurrentDictionary<MethodInfo, Lazy<TestMethodMetadata>>())
             .GetOrAdd(method, key => new Lazy<TestMethodMetadata>(() => new TestMethodMetadata(fixtureType, key))).Value;
 
-    internal string[] CopyParameters() => (string[])_parameters.Clone();
+    internal string?[] CopyParameters() => (string?[])_parameters.Clone();
     internal string[] CopyTags() => (string[])_tags.Clone();
     // Attribute subclasses can own arbitrary mutable state. Reconstruct them so scenarios never share it.
     internal TestInformationAttribute[] CopyInformation() =>

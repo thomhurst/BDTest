@@ -48,7 +48,7 @@ public class AsyncScenarioMetadataTests : BDTestBase
 
         var scenario = await Given(() => NoOp()).When(() => NoOp()).Then(() => NoOp()).BDTestAsync();
 
-        Assert.That(scenario.CustomTestInformation.Select(attribute => attribute.Print()), Is.EquivalentTo(new[]
+        Assert.That(Required(scenario.CustomTestInformation).Select(attribute => attribute.Print()), Is.EquivalentTo(new[]
         {
             "TestInformationAttribute - First piece of information",
             "CustomInformationAttribute - Custom information"
@@ -77,7 +77,7 @@ public class AsyncScenarioMetadataTests : BDTestBase
         var scenario = await When(() => NoOp()).Then(() => NoOp()).BDTestAsync();
 
         Assert.That(scenario.GetScenarioText(), Is.EqualTo("Integer overload"));
-        Assert.That(scenario.CustomTestInformation.Select(attribute => attribute.Print()),
+        Assert.That(Required(scenario.CustomTestInformation).Select(attribute => attribute.Print()),
             Is.EqualTo(new[] { "TestInformationAttribute - Integer information" }));
     }
 
@@ -91,7 +91,7 @@ public class AsyncScenarioMetadataTests : BDTestBase
         var scenario = await When(() => NoOp()).Then(() => NoOp()).BDTestAsync();
 
         Assert.That(scenario.GetScenarioText(), Is.EqualTo("String overload"));
-        Assert.That(scenario.CustomTestInformation.Select(attribute => attribute.Print()),
+        Assert.That(Required(scenario.CustomTestInformation).Select(attribute => attribute.Print()),
             Is.EqualTo(new[] { "TestInformationAttribute - String information" }));
     }
 

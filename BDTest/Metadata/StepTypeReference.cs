@@ -21,7 +21,7 @@ public sealed class StepTypeReference
     {
         var assembly = callerAssembly.GetName().Name == AssemblyName
             ? callerAssembly : Assembly.Load(new AssemblyName(AssemblyName));
-        var type = assembly.GetType(MetadataName, throwOnError: true);
+        var type = assembly.GetType(MetadataName, throwOnError: true) ?? throw new TypeLoadException(MetadataName);
         return _arguments.Length == 0 ? type : type.MakeGenericType(_arguments.Select(a => a.Resolve(callerAssembly)).ToArray());
     }
 }

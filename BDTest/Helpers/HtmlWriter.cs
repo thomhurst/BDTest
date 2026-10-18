@@ -8,28 +8,28 @@ public class HtmlWriter
     private readonly BDTestRun _run;
     private string TestId { get; }
 
-    internal HtmlWriter(string testId, BDTestRun run = null)
+    internal HtmlWriter(string testId, BDTestRun? run = null)
     {
         TestId = testId;
         _run = run ?? BDTestRun.Default;
     }
 
     /// <summary>Writes raw HTML without encoding. Use only for intentional markup.</summary>
-    public void Custom(string html)
+    public void Custom(string? html)
     {
         TestOutputData.WriteCustomHtmlForReport(TestId, html, _run);
     }
 
     /// <summary>Writes encoded text linked to an HTTP(S), mailto, or relative URL.</summary>
     /// <exception cref="ArgumentException">The URL violates the allowed URL policy.</exception>
-    public void Link(string text, string url)
+    public void Link(string? text, string url)
     {
         Custom($"<a href=\"{EncodeUrl(url, allowMailto: true)}\" target=\"_blank\">{WebUtility.HtmlEncode(text)}</a><br>");
     }
 
     /// <summary>Evaluates the delegate once and writes its result as encoded link text.</summary>
     /// <exception cref="ArgumentException">The URL violates the allowed URL policy.</exception>
-    public void Link(Func<string> body, string url)
+    public void Link(Func<string?> body, string url)
     {
         Custom($"<a href=\"{EncodeUrl(url, allowMailto: true)}\" target=\"_blank\">{WebUtility.HtmlEncode(body())}</a><br>");
     }
@@ -41,7 +41,7 @@ public class HtmlWriter
         Custom($"<img src=\"{EncodeUrl(url, allowMailto: false)}\" loading=\"lazy\"/><br>");
     }
 
-    public void Text(string value)
+    public void Text(string? value)
     {
         Custom($"<span>{WebUtility.HtmlEncode(value)}</span><br>");
     }

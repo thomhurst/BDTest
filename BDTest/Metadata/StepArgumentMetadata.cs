@@ -18,22 +18,22 @@ public sealed class StepMemberReference
     public bool IsProperty { get; }
     public bool IsStatic { get; }
 
-    internal MemberInfo Resolve(Assembly assembly)
+    internal MemberInfo? Resolve(Assembly assembly)
     {
         const BindingFlags flags = BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public |
                                    BindingFlags.NonPublic | BindingFlags.DeclaredOnly;
         var type = DeclaringType.Resolve(assembly);
-        return IsProperty ? (MemberInfo)type.GetProperty(Name, flags) : type.GetField(Name, flags);
+        return IsProperty ? (MemberInfo?)type.GetProperty(Name, flags) : type.GetField(Name, flags);
     }
 }
 
 /// <summary>An unevaluated argument: either a compiler constant or a path of selected members.</summary>
 public sealed class StepArgumentMetadata
 {
-    private readonly object _constant;
+    private readonly object? _constant;
     private readonly StepMemberReference[] _members;
 
-    public StepArgumentMetadata(string parameterName, object constant)
+    public StepArgumentMetadata(string parameterName, object? constant)
     {
         ParameterName = parameterName;
         _constant = constant;
@@ -48,7 +48,7 @@ public sealed class StepArgumentMetadata
 
     public string ParameterName { get; }
 
-    internal bool TryBind(Assembly assembly, Delegate step, out Func<object> accessor)
+    internal bool TryBind(Assembly assembly, Delegate step, [System.Diagnostics.CodeAnalysis.NotNullWhen(true)] out Func<object?>? accessor)
     {
         if (_members.Length == 0)
         {
@@ -59,9 +59,9 @@ public sealed class StepArgumentMetadata
         var members = _members.Select(m => m.Resolve(assembly)).ToArray();
         // Nullable values lose their wrapper when boxed between member reads.
         if (members.Any(m => m == null) ||
-            members.Skip(1).Any(m => Nullable.GetUnderlyingType(m.DeclaringType) != null) ||
+            members.Skip(1).Any(m => m?.DeclaringType != null && Nullable.GetUnderlyingType(m.DeclaringType) != null) ||
             (!_members[0].IsStatic &&
-            !members[0].DeclaringType.IsInstanceOfType(step.Target)))
+            members[0]?.DeclaringType?.IsInstanceOfType(step.Target) != true))
         {
             accessor = null;
             return false;
@@ -69,10 +69,10 @@ public sealed class StepArgumentMetadata
 
         accessor = () =>
         {
-            object value = _members[0].IsStatic ? null : step.Target;
+            object? value = _members[0].IsStatic ? null : step.Target;
             foreach (var member in members)
             {
-                value = member is FieldInfo field ? field.GetValue(value) : ((PropertyInfo)member).GetValue(value);
+                value = member is FieldInfo field ? field.GetValue(value) : ((PropertyInfo?)member)?.GetValue(value);
             }
             return value;
         };

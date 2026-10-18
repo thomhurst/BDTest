@@ -111,7 +111,7 @@ public class HtmlWriterTests : BDTestBase
     [Test]
     public void NullUrlsAreRejected([Values("link", "delegate", "image")] string kind)
     {
-        Assert.That(Assert.Throws<ArgumentNullException>(() => WriteUrl(ScenarioHtmlWriter, kind, null))!.ParamName,
+        Assert.That(Assert.Throws<ArgumentNullException>(() => WriteUrl(ScenarioHtmlWriter, kind, null!))!.ParamName,
             Is.EqualTo("url"));
     }
 
@@ -133,14 +133,14 @@ public class HtmlWriterTests : BDTestBase
     {
         // Exercise writes buffered before scenario registration, as well as writes to an existing scenario above.
         write(ScenarioHtmlWriter);
-        return (await EmptyScenario()).CustomHtmlOutputForReport;
+        return Required((await EmptyScenario()).CustomHtmlOutputForReport);
     }
 
     private Task<Scenario> EmptyScenario() => When(() => NoOp()).Then(() => NoOp()).BDTestAsync();
     private static void NoOp() { }
     private static XElement ParseElement(string html) => XElement.Parse(html[..^4]);
 
-    private static void WriteUrl(HtmlWriter writer, string kind, string? url)
+    private static void WriteUrl(HtmlWriter writer, string kind, string url)
     {
         switch (kind)
         {

@@ -8,18 +8,18 @@ namespace BDTest.Test;
 public class ExceptionWrapper
 {
     private const int MaximumDepth = 10;
-    private string _shortTypeName;
+    private string? _shortTypeName;
     private bool _hasTruncation;
 
     [JsonInclude]
-    public string Message { get; set; }
+    public string? Message { get; set; }
     [JsonInclude]
-    public string StackTrace { get; set; }
+    public string? StackTrace { get; set; }
     [JsonInclude]
-    public string TypeName { get; set; }
+    public string? TypeName { get; set; }
 
     /// <summary>The display name, derived from TypeName when reading historical reports.</summary>
-    public string ShortTypeName
+    public string? ShortTypeName
     {
         get
         {
@@ -31,19 +31,19 @@ public class ExceptionWrapper
         set => _shortTypeName = value;
     }
 
-    public IReadOnlyDictionary<string, string> Data { get; set; } = new Dictionary<string, string>();
+    public IReadOnlyDictionary<string, string>? Data { get; set; } = new Dictionary<string, string>();
     public int? HResult { get; set; }
-    public string Source { get; set; }
-    public IReadOnlyList<ExceptionWrapper> InnerExceptions { get; set; } = Array.Empty<ExceptionWrapper>();
+    public string? Source { get; set; }
+    public IReadOnlyList<ExceptionWrapper>? InnerExceptions { get; set; } = Array.Empty<ExceptionWrapper>();
 
     /// <summary>True for invocation wrappers and aggregates containing one child. Diagnostics are retained.</summary>
     public bool IsWrapper { get; set; }
 
     /// <summary>Cycle or DepthLimit when further traversal would be unsafe; otherwise null.</summary>
-    public string TruncationReason { get; set; }
+    public string? TruncationReason { get; set; }
 
     [JsonInclude]
-    public string AsString { get; set; }
+    public string? AsString { get; set; }
 
     [JsonConstructor]
     internal ExceptionWrapper() { }
@@ -139,7 +139,7 @@ public class ExceptionWrapper
         return result;
     }
 
-    private static string DisplayValue(object value)
+    private static string DisplayValue(object? value)
     {
         // A Data value can refer back to a cyclic exception; do not call its recursive formatter.
         if (value is Exception exception) return exception.GetType().FullName ?? exception.GetType().Name;
@@ -150,7 +150,7 @@ public class ExceptionWrapper
     private sealed class ReferenceComparer<T> : IEqualityComparer<T> where T : class
     {
         internal static readonly ReferenceComparer<T> Instance = new();
-        public bool Equals(T x, T y) => ReferenceEquals(x, y);
+        public bool Equals(T? x, T? y) => ReferenceEquals(x, y);
         public int GetHashCode(T value) => RuntimeHelpers.GetHashCode(value);
     }
 }

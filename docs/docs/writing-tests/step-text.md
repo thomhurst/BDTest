@@ -130,7 +130,7 @@ await When(() => UpdateSteps.UpdateTheField(request => request.EmailAddress, new
     .BDTestAsync();
 ```
 
-The delegate runs when the step executes, and again on each retry, so it can show values changed by earlier steps. It also runs when BDTest formats a step that was skipped or not reached. It is never called while the chain is built. Keep it free of side effects. If it returns an empty string, BDTest uses the automatic text for that attempt.
+The delegate runs when the step executes, and again on each retry, so it can show values changed by earlier steps. It also runs when BDTest formats a step that was skipped or not reached. It is never called while the chain is built. Keep it free of side effects. A `null` callback, or a callback returning `null`, empty or whitespace text, uses the automatic text for that attempt. `WithArgs` readers can return `null`; it is rendered as `null`.
 
 ## How arguments are formatted
 

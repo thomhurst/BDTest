@@ -85,7 +85,7 @@ public class BDTestRunTests
             var other = index == 0 ? "second" : "first";
             Assert.That(run.Scenarios, Is.EqualTo(new[] { scenario }));
             Assert.That(scenario.ReportId, Is.EqualTo(run.ReportId));
-            Assert.That(scenario.Steps.All(step => step.ReportId == run.ReportId), Is.True);
+            Assert.That(Required(scenario.Steps).All(step => step.ReportId == run.ReportId), Is.True);
             Assert.That(scenario.TestStartupInformation, Does.Contain(text + " setup").And.Not.Contain(other));
             Assert.That(scenario.Output, Does.Contain(text + " before").And.Contain(text + " after").And.Not.Contain(other));
             Assert.That(scenario.TearDownOutput, Does.Contain(text + " teardown").And.Not.Contain(other));
@@ -107,7 +107,7 @@ public class BDTestRunTests
 
         Assert.That(first.Scenarios, Is.EquivalentTo(new[] { scenario, outline }));
         Assert.That(second.Scenarios, Is.EqualTo(new[] { other }));
-        Assert.That(outline.Examples.All(row => row.ReportId == first.ReportId), Is.True);
+        Assert.That(Required(outline.Examples).All(row => row.ReportId == first.ReportId), Is.True);
         Assert.That(BDTestUtil.GetNotRunScenarios(first), Is.Empty);
     }
 
@@ -180,14 +180,14 @@ public class BDTestRunTests
 
         foreach (var payload in new[] { json, handler.Payload })
         {
-            var report = BDTestJsonHelper.Deserialize(payload);
+            var report = Required(BDTestJsonHelper.Deserialize(payload));
             Assert.That(report.Id, Is.EqualTo(first.ReportId));
             Assert.That(report.Tag, Is.EqualTo(descriptor.Tag));
-            Assert.That(report.Scenarios.Select(item => item.Guid), Is.EqualTo(new[] { scenario.Guid }));
-            Assert.That(report.NotRun.Select(item => item.GetScenarioText()), Is.EqualTo(new[] { "first pending" }));
+            Assert.That(Required(report.Scenarios).Select(item => item.Guid), Is.EqualTo(new[] { scenario.Guid }));
+            Assert.That(Required(report.NotRun).Select(item => item.GetScenarioText()), Is.EqualTo(new[] { "first pending" }));
             Assert.That(report.Scenarios[0].Run, Is.Null, "Run ownership must not be serialized");
-            Assert.That(report.TestTimer.TestsStartedAt, Is.EqualTo(scenario.StartTime));
-            Assert.That(report.TestTimer.TestsFinishedAt, Is.EqualTo(scenario.EndTime));
+            Assert.That(Required(report.TestTimer).TestsStartedAt, Is.EqualTo(scenario.StartTime));
+            Assert.That(Required(report.TestTimer).TestsFinishedAt, Is.EqualTo(scenario.EndTime));
             using var document = JsonDocument.Parse(payload);
             Assert.That(document.RootElement.GetProperty("Scenarios")[0].TryGetProperty("Run", out _), Is.False);
             Assert.That(document.RootElement.GetProperty("NotRun")[0].TryGetProperty("Run", out _), Is.False);
@@ -201,12 +201,12 @@ public class BDTestRunTests
         using var run = BDTestRun.Start();
         var beforeReport = DateTime.UtcNow;
 
-        var report = BDTestJsonHelper.Deserialize(BDTestJsonHelper.GetTestJsonData(null, run));
+        var report = Required(BDTestJsonHelper.Deserialize(BDTestJsonHelper.GetTestJsonData(null, run)));
 
         Assert.That(report.Id, Is.EqualTo(run.ReportId));
         Assert.That(report.Scenarios, Is.Empty);
-        Assert.That(report.TestTimer.TestsStartedAt, Is.EqualTo(run.StartedAt));
-        Assert.That(report.TestTimer.TestsFinishedAt, Is.InRange(beforeReport, DateTime.UtcNow));
+        Assert.That(Required(report.TestTimer).TestsStartedAt, Is.EqualTo(run.StartedAt));
+        Assert.That(Required(report.TestTimer).TestsFinishedAt, Is.InRange(beforeReport, DateTime.UtcNow));
     }
 
     [Test]

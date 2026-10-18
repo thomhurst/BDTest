@@ -10,10 +10,10 @@ public sealed class FrameworkOutcomeMap
     private readonly Action<string> _reportSkip;
     private readonly Action<string> _reportInconclusive;
 
-    public FrameworkOutcomeMap(Action<string> reportSkip, Action<string> reportInconclusive = null)
+    public FrameworkOutcomeMap(Action<string> reportSkip, Action<string>? reportInconclusive = null)
         : this(reportSkip, reportInconclusive, Array.Empty<Type>(), Array.Empty<Type>(), Array.Empty<Type>()) { }
 
-    private FrameworkOutcomeMap(Action<string> reportSkip, Action<string> reportInconclusive,
+    private FrameworkOutcomeMap(Action<string> reportSkip, Action<string>? reportInconclusive,
         Type[] success, Type[] skip, Type[] inconclusive)
     {
         _reportSkip = reportSkip ?? throw new ArgumentNullException(nameof(reportSkip));

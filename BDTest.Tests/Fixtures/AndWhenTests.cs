@@ -51,7 +51,7 @@ public class AndWhenTests : BDTestBase
             "action", "task", "token task", "value task", "token value task", "result", "token result",
             "async lambda", "async token lambda", "then"
         }));
-        Assert.That(scenario.Steps.All(step => step.Status == Status.Passed), Is.True);
+        Assert.That(Required(scenario.Steps).All(step => step.Status == Status.Passed), Is.True);
         Assert.That(scenario.Steps.Count(step => step.StepType == StepType.AndWhen), Is.EqualTo(9));
     }
 
@@ -70,7 +70,7 @@ public class AndWhenTests : BDTestBase
         var scenario = await overridden.Then(() => NoOp()).BDTestAsync();
 
         Assert.That(reads, Is.EqualTo(1));
-        Assert.That(scenario.Steps.Select(step => step.StepText), Is.EqualTo(new[]
+        Assert.That(Required(scenario.Steps).Select(step => step.StepText), Is.EqualTo(new[]
         {
             "When no op", "And named generated", "And named executed", "And custom action", "Then no op"
         }));
@@ -90,8 +90,8 @@ public class AndWhenTests : BDTestBase
         Assert.That(firstScenario.Guid, Is.Not.EqualTo(secondScenario.Guid));
         Assert.That(firstScenario.Steps, Has.Count.EqualTo(3));
         Assert.That(secondScenario.Steps, Has.Count.EqualTo(3));
-        Assert.That(firstScenario.Steps[1].StepText, Is.EqualTo("And first action"));
-        Assert.That(secondScenario.Steps[1].StepText, Is.EqualTo("And second action"));
+        Assert.That(Required(firstScenario.Steps)[1].StepText, Is.EqualTo("And first action"));
+        Assert.That(Required(secondScenario.Steps)[1].StepText, Is.EqualTo("And second action"));
     }
 
     [Test]
@@ -105,7 +105,7 @@ public class AndWhenTests : BDTestBase
             var scenario = await When(() => calls.Add("when")).And(() => calls.Add("and"))
                 .Then(() => calls.Add("then")).BDTestAsync();
             Assert.That(calls, Is.EqualTo(new[] { "then" }));
-            Assert.That(scenario.Steps[1].Status, Is.EqualTo(Status.Skipped));
+            Assert.That(Required(scenario.Steps)[1].Status, Is.EqualTo(Status.Skipped));
             Assert.That(scenario.Steps[1].StepText, Does.StartWith("[Skipped] And "));
         }
         finally
@@ -129,8 +129,8 @@ public class AndWhenTests : BDTestBase
             .Then(() => NoOp()).BDTestAsync();
 
         Assert.That(calls, Is.EqualTo(new[] { "plain" }));
-        Assert.That(first.Steps[1].Status, Is.EqualTo(Status.Skipped));
-        Assert.That(second.Steps[1].Status, Is.EqualTo(Status.Passed));
+        Assert.That(Required(first.Steps)[1].Status, Is.EqualTo(Status.Skipped));
+        Assert.That(Required(second.Steps)[1].Status, Is.EqualTo(Status.Passed));
     }
 
     [Test]
@@ -139,8 +139,8 @@ public class AndWhenTests : BDTestBase
         using var run = BDTestRun.Start();
         var scenario = await new Capture(run).When(() => NoOp()).And(() => NamedStep("report"))
             .Then(() => NoOp()).BDTestAsync();
-        var restored = BDTestJsonHelper.Deserialize(BDTestJsonHelper.GetTestJsonData(null, run)).Scenarios.Single();
-        Assert.That(restored.Steps[1].StepType, Is.EqualTo(StepType.AndWhen));
+        var restored = Required(Required(BDTestJsonHelper.Deserialize(BDTestJsonHelper.GetTestJsonData(null, run))).Scenarios).Single();
+        Assert.That(Required(restored.Steps)[1].StepType, Is.EqualTo(StepType.AndWhen));
         Assert.That(restored.Steps[1].StepText, Is.EqualTo("And named report"));
         Assert.That(BDTestHtmlHelper.GetTestHtmlReport(null, run), Does.Contain("<span class=\"kw\">And</span><span class=\"step-text\">named report</span>"));
         Assert.That(await ReportHandlerEncodingTests.RenderAsync("/Views/BDTest/Scenario.cshtml", restored),

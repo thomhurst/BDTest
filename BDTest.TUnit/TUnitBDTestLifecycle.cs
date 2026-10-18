@@ -32,7 +32,7 @@ public static class TUnitBDTestLifecycle
         finally { context.AddAsyncLocalValues(); }
     }
 
-    internal static void Begin(BDTestBase host, TestContext context)
+    internal static void Begin(BDTestBase host, TestContext? context)
     {
         TUnitExceptionRegistration.EnsureRegistered();
         host.BeginTest(context?.Id ?? Guid.NewGuid().ToString("N"),

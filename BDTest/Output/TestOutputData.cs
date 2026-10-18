@@ -5,7 +5,8 @@ namespace BDTest.Output;
 
 internal class TestOutputData : TextWriter
 {
-    private static readonly AsyncLocal<BDTestRun> AsyncLocalRun = new();
+    private static readonly AsyncLocal<BDTestRun?> AsyncLocalRun = new();
+    [System.Diagnostics.CodeAnalysis.AllowNull]
     internal static BDTestRun Run
     {
         get => AsyncLocalRun.Value ?? BDTestRun.Default;
@@ -16,20 +17,20 @@ internal class TestOutputData : TextWriter
     public static readonly ConsoleOutputInterceptor Instance = new();
     private static TextWriter Console => Instance.One;
 
-    private static readonly AsyncLocal<string> AsyncLocalTestId = new();
-    internal static string TestId {
+    private static readonly AsyncLocal<string?> AsyncLocalTestId = new();
+    internal static string? TestId {
         get => AsyncLocalTestId.Value;
         set => AsyncLocalTestId.Value = value;
     }
 
-    private static readonly AsyncLocal<string> AsyncLocalFrameworkExecutionId = new();
-    public static string FrameworkExecutionId {
+    private static readonly AsyncLocal<string?> AsyncLocalFrameworkExecutionId = new();
+    public static string? FrameworkExecutionId {
         get => AsyncLocalFrameworkExecutionId.Value;
         internal set => AsyncLocalFrameworkExecutionId.Value = value;
     }
 
-    private static readonly AsyncLocal<ScenarioConstructionOutput> AsyncLocalConstructionOutput = new();
-    internal static ScenarioConstructionOutput ConstructionOutput
+    private static readonly AsyncLocal<ScenarioConstructionOutput?> AsyncLocalConstructionOutput = new();
+    internal static ScenarioConstructionOutput? ConstructionOutput
     {
         get => AsyncLocalConstructionOutput.Value;
         set => AsyncLocalConstructionOutput.Value = value;
@@ -37,14 +38,14 @@ internal class TestOutputData : TextWriter
 
     // xUnit constructs derived fixtures before their owned run is available.
     // Buffer console output without touching any run until initialization.
-    private static readonly AsyncLocal<StartupOutputBuffer> AsyncLocalPendingStartupOutput = new();
-    internal static StartupOutputBuffer PendingStartupOutput
+    private static readonly AsyncLocal<StartupOutputBuffer?> AsyncLocalPendingStartupOutput = new();
+    internal static StartupOutputBuffer? PendingStartupOutput
     {
         get => AsyncLocalPendingStartupOutput.Value;
         set => AsyncLocalPendingStartupOutput.Value = value;
     }
 
-    public override void Write(string value)
+    public override void Write(string? value)
     {
         if (string.IsNullOrEmpty(value))
         {
@@ -61,17 +62,17 @@ internal class TestOutputData : TextWriter
 
     public override void WriteLine() => Write(NewLine);
 
-    public override void WriteLine(string value) => Write(value + NewLine);
+    public override void WriteLine(string? value) => Write(value + NewLine);
 
     public override void WriteLine(char value) => Write(value + NewLine);
 
-    public override void WriteLine(char[] buffer) => WriteLine(buffer == null ? null : new string(buffer));
+    public override void WriteLine(char[]? buffer) => WriteLine(buffer == null ? null : new string(buffer));
 
     public override void WriteLine(char[] buffer, int index, int count) => WriteLine(new string(buffer, index, count));
 
     public override void Write(char value) => WriteCore(null, value);
 
-    private static void WriteCore(string value, char? character = null)
+    private static void WriteCore(string? value, char? character = null)
     {
         var pending = PendingStartupOutput;
         if (pending != null)
@@ -105,7 +106,7 @@ internal class TestOutputData : TextWriter
                 TestId = completedScenario.Guid;
             }
 
-            if (string.IsNullOrEmpty(TestId) 
+            if (TestId == null || string.IsNullOrEmpty(TestId)
                 || !Run.Store.ScenariosByInternalId.TryGetValue(TestId, out var scenario)
                 || scenario.Status == Status.NotRun)
             {
@@ -163,7 +164,7 @@ internal class TestOutputData : TextWriter
                 return string.Empty;
             }
 
-            if (TestId == null && Run.Store.ScenariosByTestFrameworkId.TryGetValue(FrameworkExecutionId, out var scenario))
+            if (TestId == null && FrameworkExecutionId != null && Run.Store.ScenariosByTestFrameworkId.TryGetValue(FrameworkExecutionId, out var scenario))
             {
                 TestId = scenario.Guid;
             }
@@ -185,7 +186,7 @@ internal class TestOutputData : TextWriter
     {
         lock (Lock)
         {
-            if (string.IsNullOrEmpty(TestId))
+            if (TestId == null || string.IsNullOrEmpty(TestId))
             {
                 return;
             }
@@ -196,7 +197,7 @@ internal class TestOutputData : TextWriter
 
     public override Encoding Encoding { get; } = Encoding.UTF8;
 
-    internal static void CollectStartupOutput(string frameworkExecutionId, string text, bool shouldWriteToConsole, bool appendNewLine = true, BDTestRun run = null)
+    internal static void CollectStartupOutput(string frameworkExecutionId, string text, bool shouldWriteToConsole, bool appendNewLine = true, BDTestRun? run = null)
     {
         if (frameworkExecutionId == null)
         {
@@ -219,7 +220,7 @@ internal class TestOutputData : TextWriter
         }
     }
 
-    internal static void CollectTearDownOutput(string frameworkExecutionId, string text, bool shouldWriteToConsole, BDTestRun run = null)
+    internal static void CollectTearDownOutput(string frameworkExecutionId, string text, bool shouldWriteToConsole, BDTestRun? run = null)
     {
         if (frameworkExecutionId == null)
         {
@@ -245,7 +246,7 @@ internal class TestOutputData : TextWriter
         }
     }
 
-    internal static void WriteCustomHtmlForReport(string testId, string htmlValue, BDTestRun run = null)
+    internal static void WriteCustomHtmlForReport(string testId, string? htmlValue, BDTestRun? run = null)
     {
         run ??= Run;
         run.ThrowIfDisposed();

@@ -51,7 +51,7 @@ public class OutputLifecycleTests
             await Task.WhenAll(writers);
             var scenario = await registration;
 
-            var lines = scenario.TestStartupInformation.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
+            var lines = Required(scenario.TestStartupInformation).Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
             Assert.That(lines, Has.Length.EqualTo(200));
             for (var writer = 0; writer < 4; writer++)
             {
@@ -183,7 +183,7 @@ public class OutputLifecycleTests
         })));
         fixture.Complete();
 
-        var lines = scenario.TearDownOutput.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
+        var lines = Required(scenario.TearDownOutput).Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
         Assert.That(lines, Has.Length.EqualTo(400));
         for (var writer = 0; writer < 4; writer++)
         {
@@ -258,7 +258,7 @@ public class OutputLifecycleTests
         {
             Complete();
             TestHolder.ScenariosByTestFrameworkId.TryRemove(Id, out _);
-            foreach (var scenario in _scenarios) TestHolder.ScenariosByInternalId.TryRemove(scenario.Guid, out _);
+            foreach (var scenario in _scenarios) TestHolder.ScenariosByInternalId.TryRemove(Required(scenario.Guid), out _);
         }
         private static void NoOp() { }
     }

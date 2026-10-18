@@ -14,16 +14,16 @@ namespace BDTest.Test;
 public class Step
 {
     [JsonIgnore]
-    internal Runnable Runnable { get; private set; }
+    internal Runnable? Runnable { get; private set; }
         
     [JsonInclude]
-    public string Guid { get; internal set; }
+    public string? Guid { get; internal set; }
         
     [JsonInclude]
-    public string ReportId { get; internal set; }
+    public string? ReportId { get; internal set; }
         
     [JsonInclude]
-    public string ScenarioId { get; internal set; }
+    public string? ScenarioId { get; internal set; }
 
     [JsonInclude]
     public DateTime StartTime { get; internal set; }
@@ -37,7 +37,7 @@ public class Step
     private string StepPrefix => StepType.GetValue();
 
     [JsonInclude]
-    public string Output { get; internal set; }
+    public string? Output { get; internal set; }
 
     [JsonConverter(typeof(TimespanConverter))]
     [JsonInclude]
@@ -47,7 +47,7 @@ public class Step
     public Status Status { get; internal set; } = Status.NotRun;
 
     [JsonInclude]
-    public ExceptionWrapper Exception { get; internal set; }
+    public ExceptionWrapper? Exception { get; internal set; }
 
     /// <summary>The timeout for this step, or null for no step-specific limit.</summary>
     [JsonInclude]
@@ -59,10 +59,11 @@ public class Step
 
     /// <summary>Non-fatal errors encountered while rendering this attempt's step text.</summary>
     [JsonInclude]
-    public List<string> Diagnostics { get; internal set; } = new();
+    public List<string>? Diagnostics { get; internal set; } = new();
 
     /// <summary>Structured values captured for this execution attempt. Historical reports default to an empty list.</summary>
     [JsonInclude]
+    [System.Diagnostics.CodeAnalysis.AllowNull]
     public IReadOnlyList<StepArgument> Arguments
     {
         get => _arguments;
@@ -75,15 +76,19 @@ public class Step
     internal List<Func<StepArgument>> AttachedArguments { get; } = new();
 
     /// <summary>Captured files from all attempts, distinguished by Attachment.AttemptNumber.</summary>
-    [JsonInclude] public List<Attachment> Attachments { get; internal set; } = new();
+    [JsonInclude] public List<Attachment>? Attachments { get; internal set; } = new();
 
     [JsonIgnore] private RunOptions Options { get; } = RunOptions.Legacy;
 
-    private bool _shouldSkip;
-    private string _stepTextTemplate;
-    private string _generatedStepText;
+    internal List<Attachment> ExecutionAttachments => Attachments ?? throw new InvalidOperationException("The step has no attachment collection.");
+    private List<string> ExecutionDiagnostics => Diagnostics ?? throw new InvalidOperationException("The step has no diagnostics collection.");
+    private Runnable ExecutionRunnable => Runnable ?? throw new InvalidOperationException("A report step cannot be executed.");
 
-    internal Step(Runnable runnable, StepType stepType, string scenarioId, string reportId, BDTestRun run = null)
+    private bool _shouldSkip;
+    private string? _stepTextTemplate;
+    private string? _generatedStepText;
+
+    internal Step(Runnable runnable, StepType stepType, string? scenarioId, string? reportId, BDTestRun? run = null)
     {
         Options = (run ?? BDTestRun.Default).Options;
         Guid = System.Guid.NewGuid().ToString("N");
@@ -98,7 +103,7 @@ public class Step
     }
 
     // Copy only the step definition. Execution results belong to one scenario.
-    internal Step(Step source, string scenarioId)
+    internal Step(Step source, string? scenarioId)
     {
         Options = source.Options;
         Guid = System.Guid.NewGuid().ToString("N");
@@ -122,14 +127,14 @@ public class Step
     }
 
     [JsonInclude]
-    public string StepText { get; internal set; }
+    public string? StepText { get; internal set; }
 
     [JsonIgnore]
-    internal Func<string> OverriddenStepText { get; set; }
+    internal Func<string?>? OverriddenStepText { get; set; }
 
-    private IReadOnlyList<Func<object>> _explicitArguments;
+    private IReadOnlyList<Func<object?>>? _explicitArguments;
     [JsonIgnore]
-    internal IReadOnlyList<Func<object>> ExplicitArguments
+    internal IReadOnlyList<Func<object?>>? ExplicitArguments
     {
         get => _explicitArguments;
         set
@@ -142,7 +147,7 @@ public class Step
         }
     }
 
-    [JsonIgnore] internal Dictionary<string, string> ExampleValues { get; set; }
+    [JsonIgnore] internal Dictionary<string, string>? ExampleValues { get; set; }
 
     private string SubstituteExampleValues(string text) => ExampleValues == null ? text
         : Regex.Replace(text, "<([^<>]+)>", match => ExampleValues.TryGetValue(match.Groups[1].Value, out var value) ? value : match.Value);
@@ -162,7 +167,7 @@ public class Step
     {
         _generatedStepText = _stepTextTemplate;
         StepText = SubstituteExampleValues($"{StepPrefix} {_stepTextTemplate}");
-        Diagnostics.Clear();
+        ExecutionDiagnostics.Clear();
         Arguments = Array.Empty<StepArgument>();
         TimedOut = false;
         Exception = null;
@@ -183,11 +188,11 @@ public class Step
             // A nonempty text override retains its existing behavior: inline readers are bypassed.
             if (string.IsNullOrWhiteSpace(invokedStepText))
             {
-                _generatedStepText = Runnable.Definition.GetText(true, Diagnostics.Add, ExplicitArguments, Options.Converters, arguments.Add);
+                _generatedStepText = ExecutionRunnable.Definition.GetText(true, ExecutionDiagnostics.Add, ExplicitArguments, Options.Converters, arguments.Add);
             }
             foreach (var reader in AttachedArguments)
             {
-                StepTextHelper.GetArgumentValue(reader, "attachment", Diagnostics.Add, Options.Converters, arguments.Add);
+                StepTextHelper.GetArgumentValue(reader, "attachment", ExecutionDiagnostics.Add, Options.Converters, arguments.Add);
             }
             Arguments = arguments;
         }
@@ -204,7 +209,7 @@ public class Step
     private void SetShouldSkip()
     {
         _shouldSkip = false;
-        var methodInfo = Runnable.Definition.Method;
+        var methodInfo = ExecutionRunnable.Definition.Method;
 
         var skipStepAttributes = (methodInfo?.GetCustomAttributes(
                                       typeof(SkipStepAttribute), true) ??
@@ -227,8 +232,8 @@ public class Step
         }
     }
 
-    internal async Task Execute(BDTestBase test, TimeSpan? scenarioTimeout = null, TimeSpan? remainingScenarioTime = null,
-        Scenario scenario = null)
+    internal async Task Execute(BDTestBase? test, TimeSpan? scenarioTimeout = null, TimeSpan? remainingScenarioTime = null,
+        Scenario? scenario = null)
     {
         using var attachmentScope = scenario == null ? null : new AttachmentScope(scenario, this);
         SetShouldSkip();
@@ -236,7 +241,7 @@ public class Step
         // Keep both subscriptions stable for this step, including its after hooks.
         var beforeHooks = Options.BeforeStep;
         var afterHooks = Options.AfterStep;
-        Exception executionException = null;
+        Exception? executionException = null;
         var beforeHooksCompleted = false;
         var timer = Options.Clock.StartTimer();
         try
@@ -274,11 +279,11 @@ public class Step
             var limit = scenarioLimit ? remaining : Timeout;
             if (limit.HasValue)
             {
-                await RunWithTimeout(limit.Value, scenarioLimit ? "Scenario" : "Step", scenarioLimit ? scenarioTimeout.Value : Timeout.Value);
+                await RunWithTimeout(limit.Value, scenarioLimit ? "Scenario" : "Step", (scenarioLimit ? scenarioTimeout : Timeout) ?? throw new InvalidOperationException("The configured timeout is missing."));
             }
             else
             {
-                await Runnable.Run();
+                await ExecutionRunnable.Run();
             }
             Status = Status.Passed;
         }
@@ -287,7 +292,7 @@ public class Step
             // Preserve failures raised within budget even if after hooks later exceed it.
             if (!beforeHooksCompleted && remainingScenarioTime.HasValue && timer.Elapsed >= remainingScenarioTime.Value)
             {
-                e = CreateTimeoutException("Scenario", scenarioTimeout.Value);
+                e = CreateTimeoutException("Scenario", scenarioTimeout ?? throw new InvalidOperationException("The scenario timeout is missing."));
             }
             executionException = e;
             SetExceptionResult(e);
@@ -309,7 +314,7 @@ public class Step
                 // the scenario budget, including the final step's after hooks.
                 if (executionException == null && remainingScenarioTime.HasValue && timer.Elapsed >= remainingScenarioTime.Value)
                 {
-                    var timeout = CreateTimeoutException("Scenario", scenarioTimeout.Value);
+                    var timeout = CreateTimeoutException("Scenario", scenarioTimeout ?? throw new InvalidOperationException("The scenario timeout is missing."));
                     SetExceptionResult(timeout);
                     throw timeout;
                 }
@@ -328,9 +333,9 @@ public class Step
         }
     }
 
-    private async Task<Exception> RunAfterHooks(BDTestBase test, Func<Step, Task> globalHooks)
+    private async Task<Exception?> RunAfterHooks(BDTestBase? test, Func<Step, Task>? globalHooks)
     {
-        Exception firstException = null;
+        Exception? firstException = null;
         if (test != null)
         {
             await Invoke(test.OnAfterStep);
@@ -375,8 +380,8 @@ public class Step
             throw CreateTimeoutException(scope, configuredTimeout);
         }
 
-        var runnable = Runnable;
-        var cancellation = new CancellationTokenSource();
+        var runnable = ExecutionRunnable;
+        CancellationTokenSource? cancellation = new();
 #if !NET8_0_OR_GREATER
         using var delayCancellation = new CancellationTokenSource();
 #endif
@@ -389,7 +394,7 @@ public class Step
 #if NET8_0_OR_GREATER
             // Carry user exceptions as values so a user's TimeoutException cannot
             // be mistaken for the timeout raised by WaitAsync.
-            Exception failure;
+            Exception? failure;
             try
             {
                 failure = await CaptureFailure(execution).WaitAsync(remaining, Options.Clock.Provider).ConfigureAwait(false);
@@ -426,7 +431,7 @@ public class Step
     }
 
 #if NET8_0_OR_GREATER
-    private static async Task<Exception> CaptureFailure(Task execution)
+    private static async Task<Exception?> CaptureFailure(Task execution)
     {
         try
         {

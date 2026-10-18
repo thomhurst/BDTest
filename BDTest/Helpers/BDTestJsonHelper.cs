@@ -13,10 +13,10 @@ public static class BDTestJsonHelper
         return GetTestJsonData(new BDTestRunDescriptor());
     }
 
-    public static string GetTestJsonData(BDTestRunDescriptor bdTestRunDescriptor) => GetTestJsonData(bdTestRunDescriptor, BDTestRun.Default);
+    public static string GetTestJsonData(BDTestRunDescriptor? bdTestRunDescriptor) => GetTestJsonData(bdTestRunDescriptor, BDTestRun.Default);
 
     /// <summary>Creates a report containing only the supplied run's scenarios and pending definitions.</summary>
-    public static string GetTestJsonData(BDTestRunDescriptor bdTestRunDescriptor, BDTestRun run)
+    public static string GetTestJsonData(BDTestRunDescriptor? bdTestRunDescriptor, BDTestRun run)
     {
         var dataToOutput = BDTestOutputModelBuilder.Build(run, bdTestRunDescriptor);
         return Serialize(dataToOutput, writeIndented: true);
@@ -28,13 +28,13 @@ public static class BDTestJsonHelper
     });
 
     /// <summary>Writes plain report JSON using generated metadata, without reference preservation.</summary>
-    public static string Serialize(BDTestOutputModel model, bool writeIndented = false)
+    public static string Serialize(BDTestOutputModel? model, bool writeIndented = false)
     {
         return JsonSerializer.Serialize(model, (writeIndented ? IndentedContext : BDTestJsonContext.Default).BDTestOutputModel);
     }
 
     /// <summary>Reads current reports and historical Newtonsoft reports with reference metadata.</summary>
-    public static BDTestOutputModel Deserialize(string json, long maximumExpandedSize = DefaultMaximumExpandedSize)
+    public static BDTestOutputModel? Deserialize(string json, long maximumExpandedSize = DefaultMaximumExpandedSize)
     {
         if (maximumExpandedSize < 0)
         {
@@ -48,7 +48,7 @@ public static class BDTestJsonHelper
     /// <param name="stream">The report input.</param>
     /// <param name="cancellationToken">Cancels reading the input.</param>
     /// <param name="maximumExpandedSize">Maximum UTF-8 bytes after expanding legacy references. Current JSON is not expanded.</param>
-    public static async Task<BDTestOutputModel> DeserializeAsync(Stream stream, CancellationToken cancellationToken = default,
+    public static async Task<BDTestOutputModel?> DeserializeAsync(Stream stream, CancellationToken cancellationToken = default,
         long maximumExpandedSize = DefaultMaximumExpandedSize)
     {
         if (maximumExpandedSize < 0)

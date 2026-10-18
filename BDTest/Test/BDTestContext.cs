@@ -28,8 +28,8 @@ public class BDTestContext
 
     public string CurrentScenarioBDTestExecutionId { get; }
 
-    private string _storyText;
-    public string GetStoryText()
+    private string? _storyText;
+    public string? GetStoryText()
     {
         if (!string.IsNullOrEmpty(_storyText))
         {
@@ -39,10 +39,10 @@ public class BDTestContext
         return _storyText = TestBase.GetStoryText();
     }
 
-    private string _scenarioText;
-    public string GetScenarioText([CallerMemberName] string callerMember = null)
+    private string? _scenarioText;
+    public string GetScenarioText([CallerMemberName] string? callerMember = null)
     {
-        if (!string.IsNullOrEmpty(_scenarioText))
+        if (_scenarioText != null && !string.IsNullOrEmpty(_scenarioText))
         {
             return _scenarioText;
         }
@@ -51,7 +51,7 @@ public class BDTestContext
     }
 
     /// <summary>The executing scenario, or null while an outline example is being constructed.</summary>
-    public Scenario CurrentScenario
+    public Scenario? CurrentScenario
     {
         get
         {

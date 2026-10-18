@@ -145,7 +145,7 @@ public class RunnableStepBuilderTests : BDTestBase
         Assert.That(_executions, Is.EqualTo(2));
         Assert.That(original.Steps, Has.Count.EqualTo(3));
         Assert.That(extended.Steps, Has.Count.EqualTo(4));
-        Assert.That(original.Steps.Intersect(extended.Steps), Is.Empty);
+        Assert.That(Required(original.Steps).Intersect(Required(extended.Steps)), Is.Empty);
         Assert.That(BDTestUtil.GetScenarios().Where(x => x.FrameworkTestId == parent.TestId),
             Is.EquivalentTo(new[] { original, extended }));
     }

@@ -20,7 +20,7 @@ public class InterceptConsoleOutputTests : BDTestBase
             .And(() => Console.WriteLine("blah output and then"))
             .BDTestAsync();
 
-        Assert.That(scenario.Steps[0].Output, Is.EqualTo("blah output when"));
+        Assert.That(Required(scenario.Steps)[0].Output, Is.EqualTo("blah output when"));
         Assert.That(scenario.Steps[1].Output, Is.EqualTo("blah output then"));
         Assert.That(scenario.Steps[2].Output, Is.EqualTo("blah output and then"));
     }
@@ -34,7 +34,7 @@ public class InterceptConsoleOutputTests : BDTestBase
             .And(() => Console.Out.WriteLineAsync("blah output and then"))
             .BDTestAsync();
             
-        Assert.That(scenario.Steps[0].Output, Is.EqualTo("blah output when"));
+        Assert.That(Required(scenario.Steps)[0].Output, Is.EqualTo("blah output when"));
         Assert.That(scenario.Steps[1].Output, Is.EqualTo("blah output then"));
         Assert.That(scenario.Steps[2].Output, Is.EqualTo("blah output and then"));
     }
@@ -48,7 +48,7 @@ public class InterceptConsoleOutputTests : BDTestBase
             .And(() => Console.Out.WriteLineAsync("blah output and then"))
             .BDTestAsync();
 
-        Assert.That(scenario.Steps[0].Output, Is.EqualTo("blah output when"));
+        Assert.That(Required(scenario.Steps)[0].Output, Is.EqualTo("blah output when"));
         Assert.That(scenario.Steps[1].Output, Is.EqualTo("blah output then"));
         Assert.That(scenario.Steps[2].Output, Is.EqualTo("blah output and then"));
     }
@@ -62,7 +62,7 @@ public class InterceptConsoleOutputTests : BDTestBase
             .And(() => Console.WriteLine("blah output and then"))
             .BDTestAsync();
 
-        Assert.That(scenario.Steps[0].Output, Is.EqualTo("blah output when"));
+        Assert.That(Required(scenario.Steps)[0].Output, Is.EqualTo("blah output when"));
         Assert.That(scenario.Steps[1].Output, Is.EqualTo("blah output then"));
         Assert.That(scenario.Steps[2].Output, Is.EqualTo("blah output and then"));
     }
@@ -76,7 +76,7 @@ public class InterceptConsoleOutputTests : BDTestBase
             .Then(() => Console.WriteLine("blah output then"))
             .And(() => Console.WriteLine("blah output and then"));
 
-        Assert.That(scenario.Steps[0].Output, Is.EqualTo("blah output when"));
+        Assert.That(Required(scenario.Steps)[0].Output, Is.EqualTo("blah output when"));
         Assert.That(scenario.Steps[1].Output, Is.EqualTo("blah output then"));
         Assert.That(scenario.Steps[2].Output, Is.EqualTo("blah output and then"));
     }
@@ -89,7 +89,7 @@ public class InterceptConsoleOutputTests : BDTestBase
             .Then(() => Console.Out.WriteLineAsync("blah output then"))
             .And(() => Console.Out.WriteLineAsync("blah output and then"));
             
-        Assert.That(scenario.Steps[0].Output, Is.EqualTo("blah output when"));
+        Assert.That(Required(scenario.Steps)[0].Output, Is.EqualTo("blah output when"));
         Assert.That(scenario.Steps[1].Output, Is.EqualTo("blah output then"));
         Assert.That(scenario.Steps[2].Output, Is.EqualTo("blah output and then"));
     }
@@ -102,7 +102,7 @@ public class InterceptConsoleOutputTests : BDTestBase
             .Then(() => Console.WriteLine("blah output then"))
             .And(() => Console.Out.WriteLineAsync("blah output and then"));
 
-        Assert.That(scenario.Steps[0].Output, Is.EqualTo("blah output when"));
+        Assert.That(Required(scenario.Steps)[0].Output, Is.EqualTo("blah output when"));
         Assert.That(scenario.Steps[1].Output, Is.EqualTo("blah output then"));
         Assert.That(scenario.Steps[2].Output, Is.EqualTo("blah output and then"));
     }
@@ -115,7 +115,7 @@ public class InterceptConsoleOutputTests : BDTestBase
             .Then(() => Console.Out.WriteLineAsync("blah output then"))
             .And(() => Console.WriteLine("blah output and then"));
 
-        Assert.That(scenario.Steps[0].Output, Is.EqualTo("blah output when"));
+        Assert.That(Required(scenario.Steps)[0].Output, Is.EqualTo("blah output when"));
         Assert.That(scenario.Steps[1].Output, Is.EqualTo("blah output then"));
         Assert.That(scenario.Steps[2].Output, Is.EqualTo("blah output and then"));
     }

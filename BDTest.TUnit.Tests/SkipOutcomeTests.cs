@@ -60,11 +60,12 @@ public class SkipOutcomeTests : TUnitBDTestBase<object>
         finally
         {
             var scenario = BDTestUtil.GetScenarios().Single(s => s.FrameworkTestId == id);
-            if (scenario.Status != status || !scenario.Steps.Select(s => s.Status).SequenceEqual(stepStatuses)
+            var steps = scenario.Steps ?? throw new InvalidOperationException("Expected recorded scenario steps.");
+            if (scenario.Status != status || !steps.Select(s => s.Status).SequenceEqual(stepStatuses)
                 || scenario.RetryCount != 0 || scenario.EndTime < scenario.StartTime || scenario.Exception != null)
             {
                 throw new InvalidOperationException($"Unexpected BDTest result: {scenario.Status}, " +
-                    $"steps: {string.Join(", ", scenario.Steps.Select(s => s.Status))}, retries: {scenario.RetryCount}");
+                    $"steps: {string.Join(", ", steps.Select(s => s.Status))}, retries: {scenario.RetryCount}");
             }
         }
     }

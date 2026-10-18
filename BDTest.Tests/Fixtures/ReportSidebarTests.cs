@@ -81,7 +81,7 @@ public class ReportSidebarTests
             """)];
 
         if (retryHookFailed)
-            Required(_repository.Report).Scenarios.Single().Attempts.RemoveAt(1);
+            Required(Required(Required(_repository.Report).Scenarios).Single().Attempts).RemoveAt(1);
 
         var html = await _client.GetStringAsync("/bdtest/report/run-632/scenario/scenario-632");
 
@@ -188,10 +188,10 @@ public class ReportSidebarTests
              "Steps":[{"StepText":"When failing","Status":"Failed"}],
              "Attempts":[{"Number":1,"Status":"Failed"}]}
             """)];
-        var scenario = Required(_repository.Report).Scenarios.Single();
+        var scenario = Required(Required(_repository.Report).Scenarios).Single();
         scenario.ExecutionException = ReportJson.DeserializeObject<ExceptionWrapper>(ReportJson.SerializeObject(exception));
-        scenario.Steps.Single().Exception = exception;
-        scenario.Attempts.Single().Exception = exception;
+        Required(scenario.Steps).Single().Exception = exception;
+        Required(scenario.Attempts).Single().Exception = exception;
 
         var html = await _client.GetStringAsync("/bdtest/report/run-632/scenario/scenario-632");
 
@@ -210,7 +210,7 @@ public class ReportSidebarTests
             {"Guid":"scenario-632","Status":"Failed","CustomTestInformation":[],"Steps":[],
              "StoryText":"story","ScenarioText":"scenario"}
             """)];
-        Required(_repository.Report).Scenarios.Single().ExecutionException = new ExceptionWrapper(new System.Reflection.TargetInvocationException(
+        Required(Required(_repository.Report).Scenarios).Single().ExecutionException = new ExceptionWrapper(new System.Reflection.TargetInvocationException(
             new AggregateException(new InvalidOperationException("<first cause>"), new ArgumentException("<second cause>"))));
 
         var defects = await _client.GetStringAsync("/bdtest/report/run-632/top-defects");
@@ -234,7 +234,7 @@ public class ReportSidebarTests
             {"Guid":"scenario-632","Status":"Failed","CustomTestInformation":[],"Steps":[],
              "StoryText":"story","ScenarioText":"scenario"}
             """)];
-        Required(_repository.Report).Scenarios.Single().ExecutionException = new ExceptionWrapper(new AggregateException(
+        Required(Required(_repository.Report).Scenarios).Single().ExecutionException = new ExceptionWrapper(new AggregateException(
             new InvalidOperationException("<first cause>"), new InvalidOperationException("<second cause>"),
             new InvalidOperationException(" <first cause> ")));
 
@@ -260,7 +260,7 @@ public class ReportSidebarTests
     [Test]
     public async Task Scenario_navigation_uses_the_loaded_report()
     {
-        Required(_repository.Report).Scenarios.Add(ReportJson.DeserializeObject<Scenario>("""
+        Required(Required(_repository.Report).Scenarios).Add(ReportJson.DeserializeObject<Scenario>("""
             { "Guid": "next-scenario", "Steps": [], "CustomTestInformation": [] }
             """));
 
@@ -378,9 +378,9 @@ public class ReportSidebarTests
             cancellationToken.ThrowIfCancellationRequested();
             if (id == "passing")
             {
-                var passed = BDTest.Helpers.BDTestJsonHelper.Deserialize(BDTest.Helpers.BDTestJsonHelper.Serialize(Report));
+                var passed = Required(BDTest.Helpers.BDTestJsonHelper.Deserialize(BDTest.Helpers.BDTestJsonHelper.Serialize(Required(Report))));
                 passed.Id = id;
-                passed.Scenarios.Single().Status = Status.Passed;
+                Required(passed.Scenarios).Single().Status = Status.Passed;
                 return Task.FromResult<BDTestOutputModel?>(passed);
             }
             return Task.FromResult(Report);

@@ -10,7 +10,7 @@ public static class BDTestScenario
     /// An omitted run uses the legacy default run. The caller owns an explicit run's lifetime.
     /// Call BeginTest synchronously before asynchronous setup, and EndTest in teardown.
     /// </remarks>
-    public static BDTestScenario<TContext> For<TContext>(object testInstance, BDTestRun run = null)
+    public static BDTestScenario<TContext> For<TContext>(object testInstance, BDTestRun? run = null)
         where TContext : class => new(testInstance, run ?? BDTestRun.Default);
 }
 
@@ -40,7 +40,7 @@ public class BDTestScenario<TContext> : AbstractContextBDTestBase<TContext> wher
     public new void BeginTest(string frameworkTestId) => base.BeginTest(frameworkTestId);
 
     /// <summary>Starts an execution with the owner's exact test method supplied by the runner.</summary>
-    public new void BeginTest(string frameworkTestId, MethodInfo testMethod) => base.BeginTest(frameworkTestId, testMethod);
+    public new void BeginTest(string frameworkTestId, MethodInfo? testMethod) => base.BeginTest(frameworkTestId, testMethod);
 
     /// <summary>Completes this execution and clears its context and output state. Safe to repeat.</summary>
     public new void EndTest() => base.EndTest();

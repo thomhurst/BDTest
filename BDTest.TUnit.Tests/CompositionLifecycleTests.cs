@@ -123,8 +123,10 @@ public class CompositionLifecycleTests : CompanyTestBase, IBDTestTUnitTest
                     await Assert.That(scenario.Output).Contains(_label + " step");
                 await Assert.That(scenario.TearDownOutput).Contains(_label + " teardown");
                 await Assert.That(scenario.TestStartupInformation + scenario.Output + scenario.TearDownOutput).DoesNotContain(other);
-                var report = BDTestJsonHelper.Deserialize(BDTestJsonHelper.GetTestJsonData(null, _run));
-                await Assert.That(report.Scenarios.Single().ReportId).IsEqualTo(_run.ReportId);
+                var report = BDTestJsonHelper.Deserialize(BDTestJsonHelper.GetTestJsonData(null, _run))
+                    ?? throw new InvalidOperationException("Expected the composition run's report.");
+                var scenarios = report.Scenarios ?? throw new InvalidOperationException("Expected composition report scenarios.");
+                await Assert.That(scenarios.Single().ReportId).IsEqualTo(_run.ReportId);
             }
         }
         finally { _run.Dispose(); }

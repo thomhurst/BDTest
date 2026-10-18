@@ -42,9 +42,9 @@ public class DelegateStepTests : BDTestBase
         var given = await Given<int>(() => SkippedValueTask()).When(() => Accept(42)).Then(() => Accept(42)).BDTestAsync();
         var when = await When<int>(() => SkippedValueTask()).Then(() => Accept(42)).BDTestAsync();
         var then = await When(() => Accept(42)).Then<int>(() => SkippedValueTask()).BDTestAsync();
-        Assert.That(given.Steps[0].StepText, Is.EqualTo("[Skipped] Given explicit generic step"));
-        Assert.That(when.Steps[0].StepText, Is.EqualTo("[Skipped] When explicit generic step"));
-        Assert.That(then.Steps[1].StepText, Is.EqualTo("[Skipped] Then explicit generic step"));
+        Assert.That(Required(given.Steps)[0].StepText, Is.EqualTo("[Skipped] Given explicit generic step"));
+        Assert.That(Required(when.Steps)[0].StepText, Is.EqualTo("[Skipped] When explicit generic step"));
+        Assert.That(Required(then.Steps)[1].StepText, Is.EqualTo("[Skipped] Then explicit generic step"));
         Assert.That(new[] { given.Steps[0], when.Steps[0], then.Steps[1] }.All(step => step.Status == Status.Skipped), Is.True);
     }
 
@@ -68,7 +68,7 @@ public class DelegateStepTests : BDTestBase
         var scenario = await Given(() => { values = new List<int>(); })
             .When(() => values?.Add(42))
             .Then(() => { Assert.That(values is { Count: > 0 }, Is.True); }).BDTestAsync();
-        Assert.That(scenario.Steps[0].StepText, Does.Contain("values = new List<int>()"));
+        Assert.That(Required(scenario.Steps)[0].StepText, Does.Contain("values = new List<int>()"));
         Assert.That(scenario.Steps[1].StepText, Does.Contain("values?.Add(42)"));
         Assert.That(scenario.Steps[2].StepText, Does.Contain("Count: > 0"));
     }
@@ -84,7 +84,7 @@ public class DelegateStepTests : BDTestBase
         Assert.That(reads, Is.Zero);
         var scenario = await builder.BDTestAsync();
         Assert.That(reads, Is.EqualTo(1));
-        Assert.That(scenario.Steps[1].StepText, Is.EqualTo("Then () => Accept(value) 42"));
+        Assert.That(Required(scenario.Steps)[1].StepText, Is.EqualTo("Then () => Accept(value) 42"));
     }
 
     [Test]
@@ -118,7 +118,7 @@ public class DelegateStepTests : BDTestBase
     public async Task Cancellation_aware_generated_metadata_omits_token_and_renders_other_arguments()
     {
         var scenario = await When(token => AcceptToken(42, token)).Then(() => Accept(42)).BDTestAsync();
-        Assert.That(scenario.Steps[0].StepText, Is.EqualTo("When received 42"));
+        Assert.That(Required(scenario.Steps)[0].StepText, Is.EqualTo("When received 42"));
     }
 
     [Test]
@@ -126,7 +126,7 @@ public class DelegateStepTests : BDTestBase
     {
         var builder = When(() => { throw new InvalidOperationException("delegate failure"); }).Then(() => Accept(42));
         Assert.ThrowsAsync<InvalidOperationException>(async () => await builder.BDTestAsync());
-        var step = BDTestUtil.GetScenarios().Single().Steps[0];
+        var step = Required(BDTestUtil.GetScenarios().Single().Steps)[0];
         Assert.That(step.Output, Does.Contain("delegate failure").And.Contain("executing").And.Contain("When"));
     }
 

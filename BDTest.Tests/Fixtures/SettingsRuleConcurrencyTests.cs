@@ -118,7 +118,7 @@ public class SettingsRuleConcurrencyTests
             case "skip-test":
                 var testRules = new SkipTestRules();
                 return (condition => testRules.Add(_ => condition()),
-                    () => testRules.Rules.Select(rule => new Func<bool>(() => rule(null))));
+                    () => testRules.Rules.Select(rule => new Func<bool>(() => rule(null!))));
             default:
                 throw new ArgumentOutOfRangeException(nameof(kind));
         }

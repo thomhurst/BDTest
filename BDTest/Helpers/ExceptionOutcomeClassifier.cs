@@ -14,8 +14,8 @@ internal static class ExceptionOutcomeClassifier
         // empty) aggregates are classified as aggregates, never by one chosen cause.
         while (true)
         {
-            if (exception is TargetInvocationException { InnerException: not null } invocation)
-                exception = invocation.InnerException;
+            if (exception is TargetInvocationException { InnerException: { } innerException })
+                exception = innerException;
             else if (exception is AggregateException aggregate && aggregate.InnerExceptions.Count == 1)
                 exception = aggregate.InnerExceptions[0];
             else

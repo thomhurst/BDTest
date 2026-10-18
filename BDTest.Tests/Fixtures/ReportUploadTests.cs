@@ -340,24 +340,24 @@ public partial class ReportUploadTests
         var scenario = ReportJson.DeserializeObject<Scenario>("""
             {"Guid":"upload-round-trip","Status":"Passed","Steps":[{"StepText":"A shared step"}]}
             """);
-        scenario.Steps.Add(scenario.Steps[0]);
-        TestHolder.ScenariosByInternalId.TryAdd(scenario.Guid, scenario);
+        Required(scenario.Steps).Add(scenario.Steps[0]);
+        TestHolder.ScenariosByInternalId.TryAdd(Required(scenario.Guid), scenario);
         var descriptor = new BDTestRunDescriptor { Tag = "round-trip", BranchName = "test-branch", Environment = "test-env" };
         try
         {
             var helperJson = BDTestJsonHelper.GetTestJsonData(descriptor);
             Assert.That(helperJson, Does.Not.Contain("\"$id\"").And.Not.Contain("\"$ref\""));
             var helperReport = ReportJson.DeserializeObject<BDTestOutputModel>(helperJson);
-            var helperScenario = helperReport.Scenarios.Single(item => item.Guid == scenario.Guid);
-            Assert.That(helperScenario.Steps[1], Is.Not.SameAs(helperScenario.Steps[0]));
+            var helperScenario = Required(helperReport.Scenarios).Single(item => item.Guid == scenario.Guid);
+            Assert.That(Required(helperScenario.Steps)[1], Is.Not.SameAs(helperScenario.Steps[0]));
 
             var uri = injectedClient
-                ? await BDTestReportServer.SendDataAndGetReportUriAsync(server.Client.BaseAddress, descriptor, server.Client)
-                : await BDTestReportServer.SendDataAndGetReportUriAsync(server.Client.BaseAddress, descriptor);
+                ? await BDTestReportServer.SendDataAndGetReportUriAsync(Required(server.Client.BaseAddress), descriptor, server.Client)
+                : await BDTestReportServer.SendDataAndGetReportUriAsync(Required(server.Client.BaseAddress), descriptor);
 
             var received = server.Store.Received.Single();
-            var receivedScenario = received.Scenarios.Single(item => item.Guid == scenario.Guid);
-            Assert.That(receivedScenario.Steps[1].StepText, Is.EqualTo(receivedScenario.Steps[0].StepText));
+            var receivedScenario = Required(received.Scenarios).Single(item => item.Guid == scenario.Guid);
+            Assert.That(Required(receivedScenario.Steps)[1].StepText, Is.EqualTo(receivedScenario.Steps[0].StepText));
             Assert.That(receivedScenario.Steps[0].StepText, Is.EqualTo("A shared step"));
             Assert.That(received.Tag, Is.EqualTo(helperReport.Tag));
             Assert.That(received.BranchName, Is.EqualTo(helperReport.BranchName));
@@ -396,7 +396,7 @@ public partial class ReportUploadTests
 
         // The convenience overload has no upload key, so the server rejects its request.
         await Assert.ThrowsAsync<HttpRequestException>(async () =>
-            await BDTestReportServer.SendDataAndGetReportUriAsync(server.Client.BaseAddress, new BDTestRunDescriptor()));
+            await BDTestReportServer.SendDataAndGetReportUriAsync(Required(server.Client.BaseAddress), new BDTestRunDescriptor()));
 
         await connectionClosed.Task.WaitAsync(TimeSpan.FromSeconds(10));
     }
@@ -644,11 +644,11 @@ public partial class ReportUploadTests
         using var upload = await server.Post(json.ToString());
         Assert.That(upload.StatusCode, Is.EqualTo(HttpStatusCode.OK));
         var report = server.Store.Received.Single();
-        Assert.That(server.Store.Summaries[report.Id].Counts.Total, Is.EqualTo(13));
+        Assert.That(server.Store.Summaries[Required(report.Id)].Counts.Total, Is.EqualTo(13));
 
         await AssertReportPagesRender(server, report.Id);
         // Render every historical scenario, including failures and unexecuted steps with null output.
-        foreach (var scenario in report.Scenarios)
+        foreach (var scenario in Required(report.Scenarios))
         {
             using var response = await server.Client.GetAsync($"bdtest/report/{report.Id}/scenario/{scenario.Guid}");
             Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK), scenario.GetScenarioText());
@@ -658,16 +658,16 @@ public partial class ReportUploadTests
             Assert.That(markup, Does.Not.Contain("Retry history"));
             var html = HttpUtility.HtmlDecode(System.Text.RegularExpressions.Regex.Replace(markup, "<[^>]+>", string.Empty));
             Assert.That(html, Does.Contain(scenario.GetScenarioText()));
-            foreach (var step in scenario.Steps)
+            foreach (var step in Required(scenario.Steps))
             {
                 Assert.That(html, Does.Contain(step.StepText));
                 if (step.Exception != null)
-                    Assert.That(html, Does.Contain(step.Exception.TypeName));
+                    Assert.That(html, Does.Contain(Required(step.Exception).TypeName));
             }
             if (!string.IsNullOrEmpty(scenario.TestStartupInformation))
-                Assert.That(html, Does.Contain(scenario.TestStartupInformation.TrimEnd()));
+                Assert.That(html, Does.Contain(Required(scenario.TestStartupInformation).TrimEnd()));
             if (!string.IsNullOrEmpty(scenario.TearDownOutput))
-                Assert.That(html, Does.Contain(scenario.TearDownOutput.TrimEnd()));
+                Assert.That(html, Does.Contain(Required(scenario.TearDownOutput).TrimEnd()));
             Assert.That(html, Does.Not.Contain("Retry history"));
         }
     }
@@ -686,12 +686,12 @@ public partial class ReportUploadTests
         Assert.That(upload.StatusCode, Is.EqualTo(HttpStatusCode.OK));
         var report = server.Store.Received.Single();
         Assert.That(report.BranchName, Is.EqualTo("branch"));
-        Assert.That(report.Scenarios.Single().GetStoryText(), Is.EqualTo("story"));
+        Assert.That(Required(report.Scenarios).Single().GetStoryText(), Is.EqualTo("story"));
         using var raw = await server.Client.GetAsync($"bdtest/report/{report.Id}/raw-json-data");
         Assert.That(raw.StatusCode, Is.EqualTo(HttpStatusCode.OK));
-        var downloaded = BDTestJsonHelper.Deserialize(await raw.Content.ReadAsStringAsync());
+        var downloaded = Required(BDTestJsonHelper.Deserialize(await raw.Content.ReadAsStringAsync()));
         Assert.That(downloaded.BranchName, Is.EqualTo("branch"));
-        Assert.That(downloaded.Scenarios.Single().FrameworkTestId, Is.EqualTo("test"));
+        Assert.That(Required(downloaded.Scenarios).Single().FrameworkTestId, Is.EqualTo("test"));
     }
 
     [Test]
@@ -763,12 +763,12 @@ public partial class ReportUploadTests
         {
             Assert.That(Guid.TryParseExact(report.Id, "N", out _), Is.True);
             Assert.That(report.Id, Is.Not.EqualTo(suppliedId));
-            Assert.That(BDTest.Helpers.BDTestJsonHelper.Serialize(server.Store.Data[report.Id]),
+            Assert.That(BDTest.Helpers.BDTestJsonHelper.Serialize(server.Store.Data[Required(report.Id)]),
                 Is.EqualTo(BDTest.Helpers.BDTestJsonHelper.Serialize(report)));
             Assert.That(server.Store.Summaries.ContainsKey(report.Id), Is.True);
         }
         Assert.That(server.Store.Received.Count, Is.EqualTo(2));
-        Assert.That(server.Store.Received.Any(report => firstUrl.AbsolutePath.Contains(report.Id)), Is.True);
+        Assert.That(server.Store.Received.Any(report => firstUrl.AbsolutePath.Contains(Required(report.Id))), Is.True);
     }
 
     [TestCase("null")]
@@ -857,6 +857,7 @@ public partial class ReportUploadTests
     [TestCase("{}")]
     [TestCase("{\"Scenarios\":null}")]
     [TestCase("{\"NotRun\":null}")]
+    [TestCase("{\"CustomProperties\":null}")]
     [TestCase("{\"TestTimer\":null}")]
     [TestCase("{\"Scenarios\":null,\"NotRun\":null,\"TestTimer\":null}")]
     public async Task IncompleteUploadsAreStoredAndRenderedAsEmptyReports(string json)
@@ -867,15 +868,33 @@ public partial class ReportUploadTests
         var report = server.Store.Received.Single();
         Assert.That(report.Scenarios, Is.Empty);
         Assert.That(report.NotRun, Is.Empty);
-        Assert.That(report.TestTimer.TestsStartedAt, Is.EqualTo(default(DateTime)));
-        Assert.That(report.TestTimer.TestsFinishedAt, Is.EqualTo(default(DateTime)));
-        var summary = server.Store.Summaries[report.Id];
+        Assert.That(Required(report.TestTimer).TestsStartedAt, Is.EqualTo(default(DateTime)));
+        Assert.That(Required(report.TestTimer).TestsFinishedAt, Is.EqualTo(default(DateTime)));
+        var summary = server.Store.Summaries[Required(report.Id)];
         Assert.That(summary.Counts.Total, Is.Zero);
         Assert.That(summary.Counts.NotRun, Is.Zero);
         Assert.That(summary.Status, Is.EqualTo(Status.NotRun));
         Assert.That(summary.StartedAtDateTime, Is.EqualTo(default(DateTime)));
         Assert.That(summary.FinishedAtDateTime, Is.EqualTo(default(DateTime)));
         await AssertReportPagesRender(server, report.Id);
+    }
+
+    [Test]
+    public async Task Uploads_preserve_explicit_null_nested_collections()
+    {
+        await using var server = await UploadServer.Start();
+        using var response = await server.Post("""
+            {"Scenarios":[{"Steps":null,"Examples":null,"ExampleValues":null,
+              "Attachments":null,"Attempts":null}]}
+            """);
+
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        var scenario = Required(server.Store.Received.Single().Scenarios).Single();
+        Assert.That(scenario.Steps, Is.Null);
+        Assert.That(scenario.Examples, Is.Null);
+        Assert.That(scenario.ExampleValues, Is.Null);
+        Assert.That(scenario.Attachments, Is.Null);
+        Assert.That(scenario.Attempts, Is.Null);
     }
 
     [TestCase("TestsStartedAt")]
@@ -887,12 +906,12 @@ public partial class ReportUploadTests
             "{\"TestTimer\":{\"" + member + "\":\"2026-01-01T12:00:00Z\"}}");
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
         var report = server.Store.Received.Single();
-        var summary = server.Store.Summaries[report.Id];
+        var summary = server.Store.Summaries[Required(report.Id)];
         var supplied = new DateTime(2026, 1, 1, 12, 0, 0, DateTimeKind.Utc);
         var expectedStart = member == "TestsStartedAt" ? supplied : default;
         var expectedFinish = member == "TestsFinishedAt" ? supplied : default;
-        Assert.That(report.TestTimer.TestsStartedAt, Is.EqualTo(expectedStart));
-        Assert.That(report.TestTimer.TestsFinishedAt, Is.EqualTo(expectedFinish));
+        Assert.That(Required(report.TestTimer).TestsStartedAt, Is.EqualTo(expectedStart));
+        Assert.That(Required(report.TestTimer).TestsFinishedAt, Is.EqualTo(expectedFinish));
         Assert.That(summary.StartedAtDateTime, Is.EqualTo(expectedStart));
         Assert.That(summary.FinishedAtDateTime, Is.EqualTo(expectedFinish));
         await AssertReportPagesRender(server, report.Id);
@@ -927,7 +946,7 @@ public partial class ReportUploadTests
             """);
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
         var report = server.Store.Received.Single();
-        var summary = server.Store.Summaries[report.Id];
+        var summary = server.Store.Summaries[Required(report.Id)];
         Assert.That(summary.Counts.Total, Is.EqualTo(2));
         Assert.That(summary.Counts.Passed, Is.EqualTo(1));
         Assert.That(summary.Counts.Failed, Is.EqualTo(1));
@@ -935,8 +954,8 @@ public partial class ReportUploadTests
         Assert.That(summary.Status, Is.EqualTo(Status.Failed));
         Assert.That(summary.StartedAtDateTime, Is.EqualTo(new DateTime(2026, 1, 1, 12, 0, 0, DateTimeKind.Utc)));
         Assert.That(summary.FinishedAtDateTime, Is.EqualTo(new DateTime(2026, 1, 1, 12, 1, 0, DateTimeKind.Utc)));
-        Assert.That(report.TestTimer.TestsStartedAt, Is.EqualTo(summary.StartedAtDateTime));
-        Assert.That(report.TestTimer.TestsFinishedAt, Is.EqualTo(summary.FinishedAtDateTime));
+        Assert.That(Required(report.TestTimer).TestsStartedAt, Is.EqualTo(summary.StartedAtDateTime));
+        Assert.That(Required(report.TestTimer).TestsFinishedAt, Is.EqualTo(summary.FinishedAtDateTime));
         Assert.That(report.Scenarios, Has.Count.EqualTo(2));
         Assert.That(report.NotRun, Has.Count.EqualTo(1));
     }
@@ -971,7 +990,7 @@ public partial class ReportUploadTests
             """);
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
         var report = server.Store.Received.Single();
-        var summary = server.Store.Summaries[report.Id];
+        var summary = server.Store.Summaries[Required(report.Id)];
         Assert.That(summary.Counts.NotRun, Is.EqualTo(2));
         Assert.That(summary.Counts.Pending, Is.EqualTo(1));
         Assert.That(summary.Counts.Inconclusive, Is.EqualTo(1));

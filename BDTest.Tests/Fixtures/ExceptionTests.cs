@@ -34,14 +34,14 @@ public class ExceptionTests : BDTestBase
             var json = Required(JsonHelper.GetTestDynamicJsonObject()["Scenarios"])
                 .Single(item => (string?)item["Guid"] == builder.Guid);
 
-            Assert.That(scenario.Steps[0].Exception.Message.Contains("BDTest Exception!"));
+            Assert.That(Required(Required(Required(scenario.Steps)[0].Exception).Message).Contains("BDTest Exception!"));
 
-            Assert.That(scenario.Steps[0].Status, Is.EqualTo(status));
-            Assert.That(scenario.Steps[1].Status, Is.EqualTo(Status.NotRun));
-            Assert.That(scenario.Steps[2].Status, Is.EqualTo(Status.NotRun));
-            Assert.That(scenario.Steps[3].Status, Is.EqualTo(Status.NotRun));
-            Assert.That(scenario.Steps[4].Status, Is.EqualTo(Status.NotRun));
-            Assert.That(scenario.Steps[5].Status, Is.EqualTo(Status.NotRun));
+            Assert.That(Required(scenario.Steps)[0].Status, Is.EqualTo(status));
+            Assert.That(Required(scenario.Steps)[1].Status, Is.EqualTo(Status.NotRun));
+            Assert.That(Required(scenario.Steps)[2].Status, Is.EqualTo(Status.NotRun));
+            Assert.That(Required(scenario.Steps)[3].Status, Is.EqualTo(Status.NotRun));
+            Assert.That(Required(scenario.Steps)[4].Status, Is.EqualTo(Status.NotRun));
+            Assert.That(Required(scenario.Steps)[5].Status, Is.EqualTo(Status.NotRun));
 
             Assert.That(scenario.Status, Is.EqualTo(status));
 
@@ -96,14 +96,14 @@ public class ExceptionTests : BDTestBase
             var json = Required(JsonHelper.GetTestDynamicJsonObject()["Scenarios"])
                 .Single(item => (string?)item["Guid"] == builder.Guid);
 
-            Assert.That(scenario.Steps[3].Exception.Message.Contains("BDTest Exception!"));
+            Assert.That(Required(Required(Required(scenario.Steps)[3].Exception).Message).Contains("BDTest Exception!"));
 
-            Assert.That(scenario.Steps[0].Status, Is.EqualTo(Status.Passed));
-            Assert.That(scenario.Steps[1].Status, Is.EqualTo(Status.Passed));
-            Assert.That(scenario.Steps[2].Status, Is.EqualTo(Status.Passed));
-            Assert.That(scenario.Steps[3].Status, Is.EqualTo(status));
-            Assert.That(scenario.Steps[4].Status, Is.EqualTo(Status.NotRun));
-            Assert.That(scenario.Steps[5].Status, Is.EqualTo(Status.NotRun));
+            Assert.That(Required(scenario.Steps)[0].Status, Is.EqualTo(Status.Passed));
+            Assert.That(Required(scenario.Steps)[1].Status, Is.EqualTo(Status.Passed));
+            Assert.That(Required(scenario.Steps)[2].Status, Is.EqualTo(Status.Passed));
+            Assert.That(Required(scenario.Steps)[3].Status, Is.EqualTo(status));
+            Assert.That(Required(scenario.Steps)[4].Status, Is.EqualTo(Status.NotRun));
+            Assert.That(Required(scenario.Steps)[5].Status, Is.EqualTo(Status.NotRun));
 
             Assert.That(scenario.Status, Is.EqualTo(status));
 

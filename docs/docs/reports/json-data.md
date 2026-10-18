@@ -32,21 +32,25 @@ Use the serializer methods to work with `BDTestOutputModel` directly:
 using BDTest.Helpers;
 using BDTest.Maps;
 
-BDTestOutputModel report = BDTestJsonHelper.Deserialize(File.ReadAllText("BDTest-Report.json"));
+BDTestOutputModel report = BDTestJsonHelper.Deserialize(File.ReadAllText("BDTest-Report.json"))
+    ?? throw new InvalidDataException("Expected report data.");
 
 await using var stream = File.OpenRead("BDTest-Report.json");
-BDTestOutputModel fromStream = await BDTestJsonHelper.DeserializeAsync(stream, cancellationToken);
+BDTestOutputModel fromStream = await BDTestJsonHelper.DeserializeAsync(stream, cancellationToken)
+    ?? throw new InvalidDataException("Expected report data.");
 
 string json = BDTestJsonHelper.Serialize(report, writeIndented: true);
 ```
 
 | Method | Notes |
 | --- | --- |
-| `Serialize(BDTestOutputModel model, bool writeIndented = false)` | Writes plain JSON with BDTest's fixed contract. |
+| `Serialize(BDTestOutputModel? model, bool writeIndented = false)` | Writes plain JSON with BDTest's fixed contract; a null model writes `null`. |
 | `Deserialize(string json, long maximumExpandedSize = 100 MiB)` | Reads current and historical reports. |
 | `DeserializeAsync(Stream stream, CancellationToken cancellationToken = default, long maximumExpandedSize = 100 MiB)` | Reads UTF-8 JSON from a stream and leaves the stream open. |
 
 Both readers accept reports written by older BDTest versions with Newtonsoft.Json, including `$id`/`$ref` references and `$values` wrappers. They reject missing, duplicate or cyclic references. `maximumExpandedSize` limits how large legacy references may expand; a negative value throws `ArgumentOutOfRangeException`.
+
+Both readers return a nullable model: the JSON literal `null` produces `null`. Handle that result before accessing report members.
 
 ## The model
 
@@ -54,13 +58,13 @@ Both readers accept reports written by older BDTest versions with Newtonsoft.Jso
 
 | Property | Type | Description |
 | --- | --- | --- |
-| `Id` | `string` | Report ID. Written as lowercase `id`. |
-| `Environment`, `Tag`, `BranchName` | `string` | From the [run descriptor](overview.md#run-descriptors). |
-| `MachineName`, `Version` | `string` | Where the tests ran and the BDTest version. |
-| `TestTimer` | `TestTimer` | Start, finish and elapsed time of the run. |
-| `Scenarios` | `List<Scenario>` | Every executed scenario, including outlines with their rows. |
-| `NotRun` | `List<BuildableTest>` | Tests that were built but not executed. |
-| `CustomProperties` | `Dictionary<string, string>` | Extra values from the obsolete `BDTestSettings.CustomProperties`. |
+| `Id` | `string?` | Report ID. Written as lowercase `id`. |
+| `Environment`, `Tag`, `BranchName` | `string?` | From the [run descriptor](overview.md#run-descriptors). |
+| `MachineName`, `Version` | `string?` | Where the tests ran and the BDTest version. |
+| `TestTimer` | `TestTimer?` | Start, finish and elapsed time of the run. |
+| `Scenarios` | `List<Scenario>?` | Every executed scenario, including outlines with their rows. |
+| `NotRun` | `List<BuildableTest>?` | Tests that were built but not executed. |
+| `CustomProperties` | `Dictionary<string, string>?` | Extra values from the obsolete `BDTestSettings.CustomProperties`. |
 
 ### Format details
 
@@ -69,6 +73,26 @@ Both readers accept reports written by older BDTest versions with Newtonsoft.Jso
 - Step, scenario and attempt `TimeTaken` values use the `d.hh:mm:ss:fffffff` format. Nullable timeouts and the timer's `ElapsedTime` use the standard invariant `TimeSpan` format.
 - Shared steps, metadata and example values are written as independent values. Do not depend on object identity after deserializing. Outline rows identify their parent through `OutlineId`.
 - `Step.Attachments` and `Scenario.Attachments` contain [attachment metadata](../writing-tests/attachments.md) with a one-based `AttemptNumber`. Content and local temporary paths are excluded. Historical reports without these properties read as empty collections; capture starts with a null `Uri`.
+
+### Nullable report fields
+
+Nullable reference annotations describe fields that can already be absent during execution or when reading historical JSON. They do not add JSON properties, change property names or require older reports to supply missing values.
+
+`Scenario.Exception` and `Step.Exception` are nullable when no exception was captured. Scenario and step identifiers, output, source filenames and `Step.StepText` can also be null in incomplete or historical records. `Scenario.OutlineId` is null for a top-level scenario. Optional scenario HTML and test information remain nullable.
+
+Report collections use empty defaults, but historical or custom JSON can explicitly set them to `null`. Their nullable annotations preserve that accepted input. Check collections before enumerating them, including root `Scenarios` and `NotRun`, scenario steps, examples and attempts, and exception data and children. For example, enumerate `report.Scenarios ?? Enumerable.Empty<Scenario>()` when an absent collection should count as empty.
+
+`ExceptionWrapper.Message`, `StackTrace`, `TypeName`, `ShortTypeName`, `Source`, `AsString` and `TruncationReason` are nullable. For example, an exception that has not been thrown has no stack trace, and an older report may not include structured exception fields. Custom report code must check optional values before using string members:
+
+```csharp
+var title = step.StepText ?? "Unnamed step";
+if (step.Exception?.StackTrace is { } stackTrace)
+{
+    Console.WriteLine(stackTrace);
+}
+```
+
+Runtime references are separate from report data: `Scenario.Run` is null after deserialization, and `Scenario.BdTestBaseClass` is null when no live fixture is available. Both are excluded from JSON.
 
 ### Structured step arguments
 

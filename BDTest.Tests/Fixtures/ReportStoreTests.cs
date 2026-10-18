@@ -149,7 +149,7 @@ public class ReportStoreTests
         await adapter.WriteAsync("run", input, default);
         Assert.That(input.CanRead, Is.True);
         await using var output = await adapter.OpenReadAsync("run", default);
-        Assert.That((await BDTestJsonHelper.DeserializeAsync(output)).Tag, Is.EqualTo("legacy"));
+        Assert.That(Required(await BDTestJsonHelper.DeserializeAsync(Required(output))).Tag, Is.EqualTo("legacy"));
         foreach (var id in new[] { "d", "c", "b", "a" }) await adapter.UpsertAsync(Entry(id), default);
         var first = await adapter.ListAsync(Query(), default);
         var second = await adapter.ListAsync(Query(first.ContinuationToken), default);

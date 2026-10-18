@@ -62,7 +62,7 @@ public class ExceptionClassificationTests : BDTestBase
         Assert.That(thrown, status == Status.Passed ? Is.Null : Is.SameAs(exception));
         var outline = TestRun.Scenarios.Single();
         Assert.That(outline.Status, Is.EqualTo(status));
-        var row = outline.Examples.Single();
+        var row = Required(outline.Examples).Single();
         if (duringConstruction) Assert.That(row.Status, Is.EqualTo(status));
         else AssertScenario(row, status);
     }
@@ -80,7 +80,7 @@ public class ExceptionClassificationTests : BDTestBase
         Assert.That(await Capture(builder.BDTestAsync), Is.SameAs(exception));
         var scenario = TestRun.Scenarios.Single();
         Assert.That(scenario.Status, Is.EqualTo(Status.Failed));
-        Assert.That(scenario.Steps[0].Status, Is.EqualTo(Status.Failed));
+        Assert.That(Required(scenario.Steps)[0].Status, Is.EqualTo(Status.Failed));
     }
 
     [Test]
@@ -95,7 +95,7 @@ public class ExceptionClassificationTests : BDTestBase
         Assert.That(await Capture(builder.BDTestAsync), Is.SameAs(exception));
         var scenario = TestRun.Scenarios.Single();
         Assert.That(scenario.Status, Is.EqualTo(Status.Skipped));
-        Assert.That(scenario.Steps.All(step => step.Status == Status.Skipped), Is.True);
+        Assert.That(Required(scenario.Steps).All(step => step.Status == Status.Skipped), Is.True);
     }
 
     [TestCase(Status.NotImplemented)]
@@ -156,7 +156,7 @@ public class ExceptionClassificationTests : BDTestBase
         var scenario = TestRun.Scenarios.Single();
         Assert.That(scenario.TimedOut, Is.True);
         Assert.That(scenario.Status, Is.EqualTo(Status.Failed));
-        Assert.That(scenario.Steps[0].Status, Is.EqualTo(Status.Failed));
+        Assert.That(Required(scenario.Steps)[0].Status, Is.EqualTo(Status.Failed));
     }
 
     [TestCase(Status.Passed)]
@@ -182,7 +182,7 @@ public class ExceptionClassificationTests : BDTestBase
             Assert.That(TestRun.Scenarios.Single().Status, Is.EqualTo(Status.Failed));
             var legacy = BDTestUtil.GetScenarios().Single(scenario => scenario.Guid == legacyBuilder.Guid);
             Assert.That(legacy.Status, Is.EqualTo(status));
-            Assert.That(legacy.Steps[0].Status, Is.EqualTo(status));
+            Assert.That(Required(legacy.Steps)[0].Status, Is.EqualTo(status));
         }
         finally
         {
@@ -195,8 +195,8 @@ public class ExceptionClassificationTests : BDTestBase
     private static void AssertScenario(Scenario scenario, Status status)
     {
         Assert.That(scenario.Status, Is.EqualTo(status));
-        Assert.That(scenario.Attempts.Single().Status, Is.EqualTo(status));
-        Assert.That(scenario.Steps[0].Status, Is.EqualTo(Status.Passed));
+        Assert.That(Required(scenario.Attempts).Single().Status, Is.EqualTo(status));
+        Assert.That(Required(scenario.Steps)[0].Status, Is.EqualTo(Status.Passed));
         Assert.That(scenario.Steps[1].Status, Is.EqualTo(status));
         Assert.That(scenario.Steps[1].Exception, status is Status.Failed or Status.NotImplemented ? Is.Not.Null : Is.Null);
         Assert.That(scenario.Steps[2].Status, Is.EqualTo(status == Status.Skipped ? Status.Skipped : Status.NotRun));

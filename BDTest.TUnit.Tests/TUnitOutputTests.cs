@@ -24,9 +24,10 @@ public class TUnitOutputTests : TUnitBDTestBase<TUnitContext>
         await Assert.That(scenario.FrameworkTestId).IsEqualTo(id);
         await Assert.That(scenario.TestStartupInformation)
             .IsEqualTo($"hook:{id}{Environment.NewLine}before:{id}{Environment.NewLine}");
-        await Assert.That(scenario.Steps[0].Output).IsEqualTo($"given:{id}");
-        await Assert.That(scenario.Steps[1].Output).IsEqualTo($"when:{id}");
-        await Assert.That(scenario.Steps[2].Output).IsEqualTo($"then:{id}");
+        var steps = scenario.Steps ?? throw new InvalidOperationException("Expected recorded scenario steps.");
+        await Assert.That(steps[0].Output).IsEqualTo($"given:{id}");
+        await Assert.That(steps[1].Output).IsEqualTo($"when:{id}");
+        await Assert.That(steps[2].Output).IsEqualTo($"then:{id}");
     }
 
     [Test]
@@ -44,7 +45,8 @@ public class TUnitOutputTests : TUnitBDTestBase<TUnitContext>
         await Assert.That(scenario.FrameworkTestId).IsEqualTo(id);
         await Assert.That(scenario.TestStartupInformation)
             .IsEqualTo($"hook:{id}{Environment.NewLine}explicit:{id}{Environment.NewLine}");
-        await Assert.That(scenario.Steps[0].Output).IsEqualTo("step output");
+        var steps = scenario.Steps ?? throw new InvalidOperationException("Expected recorded scenario steps.");
+        await Assert.That(steps[0].Output).IsEqualTo("step output");
     }
 
     private static async Task WriteAfterYield(string id)

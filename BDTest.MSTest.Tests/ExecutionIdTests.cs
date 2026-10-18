@@ -42,15 +42,21 @@ public class ExecutionIdTests : MSTestBDTestBase<ExecutionIdTests.TestContextDat
         var scenario = await When(() => NoOp()).Then(() => NoOp()).BDTestAsync();
 
         Assert.AreEqual(_setupId, scenario.FrameworkTestId);
-        Assert.Contains("startup " + _setupId, scenario.TestStartupInformation);
-        Assert.Contains("sync console startup " + _setupId, scenario.TestStartupInformation);
-        Assert.Contains("async console startup " + _setupId, scenario.TestStartupInformation);
-        Assert.Contains("body console startup " + _setupId, scenario.TestStartupInformation);
-        Assert.Contains(TestContext.FullyQualifiedTestClassName, _setupId);
-        Assert.IsNotNull(TestContext.TestDisplayName);
-        Assert.Contains(TestContext.TestDisplayName, _setupId);
+        var startupOutput = scenario.TestStartupInformation;
+        Assert.IsNotNull(startupOutput);
+        Assert.Contains("startup " + _setupId, startupOutput);
+        Assert.Contains("sync console startup " + _setupId, startupOutput);
+        Assert.Contains("async console startup " + _setupId, startupOutput);
+        Assert.Contains("body console startup " + _setupId, startupOutput);
+        var testContext = TestContext;
+        Assert.IsNotNull(testContext);
+        Assert.Contains(testContext.FullyQualifiedTestClassName, _setupId);
+        Assert.IsNotNull(testContext.TestDisplayName);
+        Assert.Contains(testContext.TestDisplayName, _setupId);
         WriteTearDownOutput("teardown " + _setupId);
-        Assert.Contains("teardown " + _setupId, scenario.TearDownOutput);
+        var teardownOutput = scenario.TearDownOutput;
+        Assert.IsNotNull(teardownOutput);
+        Assert.Contains("teardown " + _setupId, teardownOutput);
     }
 
     private static void NoOp() { }

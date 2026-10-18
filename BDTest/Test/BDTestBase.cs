@@ -1,4 +1,4 @@
-﻿using System.Reflection;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.ExceptionServices;
 using System.Threading;
@@ -20,24 +20,24 @@ public abstract class BDTestBase
     /// <remarks>Custom adapters should override this property with a stable, explicitly owned run.</remarks>
     public virtual BDTestRun TestRun => BDTestRun.Default;
 
-    private static readonly AsyncLocal<string> AsyncLocalBDTestExecutionId = new();
-    private readonly AsyncLocal<TestExecution> _execution = new();
+    private static readonly AsyncLocal<string?> AsyncLocalBDTestExecutionId = new();
+    private readonly AsyncLocal<TestExecution?> _execution = new();
     // Some runners invoke setup and the body in separate execution contexts.
     // Their per-test fixture instance retains the identity across that boundary.
-    private TestExecution _lastExecution;
-    private StartupOutputBuffer _startupOutput;
+    private TestExecution? _lastExecution;
+    private StartupOutputBuffer? _startupOutput;
     private static readonly TestExecution EndedExecution = new(null, null) { Completed = 1 };
 
-    private sealed class TestExecution(string id, BDTestRun run, TestMethodMetadata metadata = null)
+    private sealed class TestExecution(string? id, BDTestRun? run, TestMethodMetadata? metadata = null)
     {
-        internal string Id { get; set; } = id;
-        internal string FrameworkId { get; } = id;
-        internal BDTestRun Run { get; } = run;
-        internal TestMethodMetadata Metadata { get; } = metadata;
+        internal string? Id { get; set; } = id;
+        internal string? FrameworkId { get; } = id;
+        internal BDTestRun? Run { get; } = run;
+        internal TestMethodMetadata? Metadata { get; } = metadata;
         internal int Completed;
     }
 
-    private TestExecution CurrentExecution => _execution.Value ?? Volatile.Read(ref _lastExecution);
+    private TestExecution? CurrentExecution => _execution.Value ?? Volatile.Read(ref _lastExecution);
 
     internal TestMethodMetadata TestMetadata => CurrentExecution?.Metadata ?? TestMethodMetadata.Get(TestInstance.GetType(), null);
 
@@ -55,7 +55,7 @@ public abstract class BDTestBase
     /// Each row receives a fresh Context. Fixture setup and teardown run once for the whole outline.</remarks>
     public ScenarioOutlineBuilder<TExample> ScenarioOutline<TExample>(string scenarioText,
         IEnumerable<TExample> examples, Func<TExample, RunnableStepBuilder> scenario,
-        [CallerMemberName] string callerMember = null, [CallerFilePath] string callerFile = null)
+        [CallerMemberName] string? callerMember = null, [CallerFilePath] string? callerFile = null)
     {
         return new ScenarioOutlineBuilder<TExample>(scenarioText, examples, scenario, this,
             BDTestExecutionId, callerMember, callerFile);
@@ -65,113 +65,113 @@ public abstract class BDTestBase
         ReferenceEquals(AsyncLocalBDTestExecutionId.Value, executionId);
 
     [OverloadResolutionPriority(-1)]
-    public Given Given(Action step, [CallerMemberName] string callerMember = null,
-        [CallerFilePath] string callerFile = null,
-        [CallerLineNumber] int callerLine = 0, [CallerArgumentExpression(nameof(step))] string argumentExpression = null)
+    public Given Given(Action step, [CallerMemberName] string? callerMember = null,
+        [CallerFilePath] string? callerFile = null,
+        [CallerLineNumber] int callerLine = 0, [CallerArgumentExpression(nameof(step))] string? argumentExpression = null)
     {
         return new Given(new Runnable(step, argumentExpression, callerFile, callerLine), callerMember, callerFile, BDTestExecutionId, TestRun.ReportId, this);
     }
 
     [OverloadResolutionPriority(1)]
-    public Given Given(Func<Task> step, [CallerMemberName] string callerMember = null,
-        [CallerFilePath] string callerFile = null,
-        [CallerLineNumber] int callerLine = 0, [CallerArgumentExpression(nameof(step))] string argumentExpression = null)
+    public Given Given(Func<Task> step, [CallerMemberName] string? callerMember = null,
+        [CallerFilePath] string? callerFile = null,
+        [CallerLineNumber] int callerLine = 0, [CallerArgumentExpression(nameof(step))] string? argumentExpression = null)
     {
         return new Given(new Runnable(step, argumentExpression, callerFile, callerLine), callerMember, callerFile, BDTestExecutionId, TestRun.ReportId, this);
     }
 
     [OverloadResolutionPriority(1)]
-    public Given Given(Func<CancellationToken, Task> step, [CallerMemberName] string callerMember = null,
-        [CallerFilePath] string callerFile = null,
-        [CallerLineNumber] int callerLine = 0, [CallerArgumentExpression(nameof(step))] string argumentExpression = null)
+    public Given Given(Func<CancellationToken, Task> step, [CallerMemberName] string? callerMember = null,
+        [CallerFilePath] string? callerFile = null,
+        [CallerLineNumber] int callerLine = 0, [CallerArgumentExpression(nameof(step))] string? argumentExpression = null)
     {
         return new Given(new Runnable(step, argumentExpression, callerFile, callerLine), callerMember, callerFile, BDTestExecutionId, TestRun.ReportId, this);
     }
 
     [OverloadResolutionPriority(0)]
-    public Given Given(Func<ValueTask> step, [CallerMemberName] string callerMember = null,
-        [CallerFilePath] string callerFile = null,
-        [CallerLineNumber] int callerLine = 0, [CallerArgumentExpression(nameof(step))] string argumentExpression = null)
+    public Given Given(Func<ValueTask> step, [CallerMemberName] string? callerMember = null,
+        [CallerFilePath] string? callerFile = null,
+        [CallerLineNumber] int callerLine = 0, [CallerArgumentExpression(nameof(step))] string? argumentExpression = null)
     {
         return new Given(new Runnable(step, argumentExpression, callerFile, callerLine), callerMember, callerFile, BDTestExecutionId, TestRun.ReportId, this);
     }
 
     [OverloadResolutionPriority(0)]
-    public Given Given(Func<CancellationToken, ValueTask> step, [CallerMemberName] string callerMember = null,
-        [CallerFilePath] string callerFile = null,
-        [CallerLineNumber] int callerLine = 0, [CallerArgumentExpression(nameof(step))] string argumentExpression = null)
+    public Given Given(Func<CancellationToken, ValueTask> step, [CallerMemberName] string? callerMember = null,
+        [CallerFilePath] string? callerFile = null,
+        [CallerLineNumber] int callerLine = 0, [CallerArgumentExpression(nameof(step))] string? argumentExpression = null)
     {
         return new Given(new Runnable(step, argumentExpression, callerFile, callerLine), callerMember, callerFile, BDTestExecutionId, TestRun.ReportId, this);
     }
 
     [OverloadResolutionPriority(0)]
-    public Given Given<T>(Func<ValueTask<T>> step, [CallerMemberName] string callerMember = null,
-        [CallerFilePath] string callerFile = null,
-        [CallerLineNumber] int callerLine = 0, [CallerArgumentExpression(nameof(step))] string argumentExpression = null)
+    public Given Given<T>(Func<ValueTask<T>> step, [CallerMemberName] string? callerMember = null,
+        [CallerFilePath] string? callerFile = null,
+        [CallerLineNumber] int callerLine = 0, [CallerArgumentExpression(nameof(step))] string? argumentExpression = null)
     {
         return new Given(Runnable.FromResult(step, argumentExpression, callerFile, callerLine), callerMember, callerFile, BDTestExecutionId, TestRun.ReportId, this);
     }
 
     [OverloadResolutionPriority(0)]
-    public Given Given<T>(Func<CancellationToken, ValueTask<T>> step, [CallerMemberName] string callerMember = null,
-        [CallerFilePath] string callerFile = null,
-        [CallerLineNumber] int callerLine = 0, [CallerArgumentExpression(nameof(step))] string argumentExpression = null)
+    public Given Given<T>(Func<CancellationToken, ValueTask<T>> step, [CallerMemberName] string? callerMember = null,
+        [CallerFilePath] string? callerFile = null,
+        [CallerLineNumber] int callerLine = 0, [CallerArgumentExpression(nameof(step))] string? argumentExpression = null)
     {
         return new Given(Runnable.FromResult(step, argumentExpression, callerFile, callerLine), callerMember, callerFile, BDTestExecutionId, TestRun.ReportId, this);
     }
 
     [OverloadResolutionPriority(-1)]
-    public When When(Action step, [CallerMemberName] string callerMember = null,
-        [CallerFilePath] string callerFile = null,
-        [CallerLineNumber] int callerLine = 0, [CallerArgumentExpression(nameof(step))] string argumentExpression = null)
+    public When When(Action step, [CallerMemberName] string? callerMember = null,
+        [CallerFilePath] string? callerFile = null,
+        [CallerLineNumber] int callerLine = 0, [CallerArgumentExpression(nameof(step))] string? argumentExpression = null)
     {
         return new When(new Runnable(step, argumentExpression, callerFile, callerLine), callerMember, callerFile, BDTestExecutionId, TestRun.ReportId, this);
     }
 
     [OverloadResolutionPriority(1)]
-    public When When(Func<Task> step, [CallerMemberName] string callerMember = null,
-        [CallerFilePath] string callerFile = null,
-        [CallerLineNumber] int callerLine = 0, [CallerArgumentExpression(nameof(step))] string argumentExpression = null)
+    public When When(Func<Task> step, [CallerMemberName] string? callerMember = null,
+        [CallerFilePath] string? callerFile = null,
+        [CallerLineNumber] int callerLine = 0, [CallerArgumentExpression(nameof(step))] string? argumentExpression = null)
     {
         return new When(new Runnable(step, argumentExpression, callerFile, callerLine), callerMember, callerFile, BDTestExecutionId, TestRun.ReportId, this);
     }
 
     [OverloadResolutionPriority(1)]
-    public When When(Func<CancellationToken, Task> step, [CallerMemberName] string callerMember = null,
-        [CallerFilePath] string callerFile = null,
-        [CallerLineNumber] int callerLine = 0, [CallerArgumentExpression(nameof(step))] string argumentExpression = null)
+    public When When(Func<CancellationToken, Task> step, [CallerMemberName] string? callerMember = null,
+        [CallerFilePath] string? callerFile = null,
+        [CallerLineNumber] int callerLine = 0, [CallerArgumentExpression(nameof(step))] string? argumentExpression = null)
     {
         return new When(new Runnable(step, argumentExpression, callerFile, callerLine), callerMember, callerFile, BDTestExecutionId, TestRun.ReportId, this);
     }
 
     [OverloadResolutionPriority(0)]
-    public When When(Func<ValueTask> step, [CallerMemberName] string callerMember = null,
-        [CallerFilePath] string callerFile = null,
-        [CallerLineNumber] int callerLine = 0, [CallerArgumentExpression(nameof(step))] string argumentExpression = null)
+    public When When(Func<ValueTask> step, [CallerMemberName] string? callerMember = null,
+        [CallerFilePath] string? callerFile = null,
+        [CallerLineNumber] int callerLine = 0, [CallerArgumentExpression(nameof(step))] string? argumentExpression = null)
     {
         return new When(new Runnable(step, argumentExpression, callerFile, callerLine), callerMember, callerFile, BDTestExecutionId, TestRun.ReportId, this);
     }
 
     [OverloadResolutionPriority(0)]
-    public When When(Func<CancellationToken, ValueTask> step, [CallerMemberName] string callerMember = null,
-        [CallerFilePath] string callerFile = null,
-        [CallerLineNumber] int callerLine = 0, [CallerArgumentExpression(nameof(step))] string argumentExpression = null)
+    public When When(Func<CancellationToken, ValueTask> step, [CallerMemberName] string? callerMember = null,
+        [CallerFilePath] string? callerFile = null,
+        [CallerLineNumber] int callerLine = 0, [CallerArgumentExpression(nameof(step))] string? argumentExpression = null)
     {
         return new When(new Runnable(step, argumentExpression, callerFile, callerLine), callerMember, callerFile, BDTestExecutionId, TestRun.ReportId, this);
     }
 
     [OverloadResolutionPriority(0)]
-    public When When<T>(Func<ValueTask<T>> step, [CallerMemberName] string callerMember = null,
-        [CallerFilePath] string callerFile = null,
-        [CallerLineNumber] int callerLine = 0, [CallerArgumentExpression(nameof(step))] string argumentExpression = null)
+    public When When<T>(Func<ValueTask<T>> step, [CallerMemberName] string? callerMember = null,
+        [CallerFilePath] string? callerFile = null,
+        [CallerLineNumber] int callerLine = 0, [CallerArgumentExpression(nameof(step))] string? argumentExpression = null)
     {
         return new When(Runnable.FromResult(step, argumentExpression, callerFile, callerLine), callerMember, callerFile, BDTestExecutionId, TestRun.ReportId, this);
     }
 
     [OverloadResolutionPriority(0)]
-    public When When<T>(Func<CancellationToken, ValueTask<T>> step, [CallerMemberName] string callerMember = null,
-        [CallerFilePath] string callerFile = null,
-        [CallerLineNumber] int callerLine = 0, [CallerArgumentExpression(nameof(step))] string argumentExpression = null)
+    public When When<T>(Func<CancellationToken, ValueTask<T>> step, [CallerMemberName] string? callerMember = null,
+        [CallerFilePath] string? callerFile = null,
+        [CallerLineNumber] int callerLine = 0, [CallerArgumentExpression(nameof(step))] string? argumentExpression = null)
     {
         return new When(Runnable.FromResult(step, argumentExpression, callerFile, callerLine), callerMember, callerFile, BDTestExecutionId, TestRun.ReportId, this);
     }
@@ -305,7 +305,7 @@ public abstract class BDTestBase
 
     /// <summary>Starts an execution with the runner's exact test method, including overload and data-row identity.</summary>
     /// <remarks>Method metadata is cached. Without a method, builders use compiler-supplied caller text.</remarks>
-    public void BeginTest(string frameworkTestId, MethodInfo testMethod)
+    public void BeginTest(string frameworkTestId, MethodInfo? testMethod)
     {
         if (string.IsNullOrWhiteSpace(frameworkTestId))
             throw new ArgumentException("A test execution ID is required.", nameof(frameworkTestId));
@@ -356,19 +356,21 @@ public abstract class BDTestBase
 
     private async ValueTask CompleteExecutionAsync(TestExecution execution)
     {
-        try { await RemoveExecutionContextAsync(execution.Id).ConfigureAwait(false); }
+        var executionId = execution.Id ?? throw new InvalidOperationException("The execution has no ID.");
+        var run = execution.Run ?? throw new InvalidOperationException("The execution has no run.");
+        try { await RemoveExecutionContextAsync(executionId).ConfigureAwait(false); }
         finally
         {
-            execution.Run.Store.CompleteTest(execution.Id);
-            lock (execution.Run.Store.Gate)
+            run.Store.CompleteTest(executionId);
+            lock (run.Store.Gate)
             {
-                if (execution.Run.Store.ScenariosByTestFrameworkId.TryGetValue(execution.Id, out var scenario))
-                    execution.Run.OutputBuffers.Remove(scenario.Guid);
+                if (run.Store.ScenariosByTestFrameworkId.TryGetValue(executionId, out var scenario))
+                    if (scenario.Guid != null) run.OutputBuffers.Remove(scenario.Guid);
             }
         }
     }
 
-    private void ClearCompletedExecution(TestExecution execution)
+    private void ClearCompletedExecution(TestExecution? execution)
     {
         if (execution == null || execution == EndedExecution) return;
         // A tombstone prevents repeated teardown from completing a parallel execution
@@ -423,7 +425,7 @@ public abstract class BDTestBase
         }
     }
 
-    public string GetStoryText()
+    public string? GetStoryText()
     {
         var classType = TestInstance.GetType();
         var storyAttribute = classType.GetCustomAttribute(typeof(StoryAttribute)) as StoryAttribute;
@@ -440,7 +442,7 @@ public abstract class BDTestBase
         return storyAttribute?.GetStoryText();
     }
 
-    public string GetScenarioText([CallerMemberName] string callerMember = null)
+    public string GetScenarioText([CallerMemberName] string? callerMember = null)
     {
         return ScenarioTextHelper.GetScenarioText(TestMetadata, callerMember);
     }
@@ -449,7 +451,7 @@ public abstract class BDTestBase
     {
         foreach (var method in GetMethodsWithAttribute<TAttribute>())
         {
-            object result;
+            object? result;
             try
             {
                 result = method.Invoke(TestInstance, Array.Empty<object>());

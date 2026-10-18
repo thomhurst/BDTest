@@ -1,29 +1,30 @@
-﻿using BDTest.Exceptions;
+using BDTest.Exceptions;
 
 namespace BDTest.Attributes;
 
 [AttributeUsage(AttributeTargets.Class)]
 public class StoryAttribute : Attribute
 {
-    public string AsA { get; set; }
-    public string AsAn { get; set; }
-    public string IWant { get; set; }
-    public string SoThat { get; set; }
+    public string? AsA { get; set; }
+    public string? AsAn { get; set; }
+    public string? IWant { get; set; }
+    public string? SoThat { get; set; }
 
     public string GetStoryText()
     {
         ValidateArguments();
             
         var role = GetRoleText();
-        var want = AddPrefix(IWant, "I want");
-        var benefit = AddPrefix(SoThat, "So that");
+        var want = AddPrefix(IWant ?? throw new MissingStoryTextArgumentException(nameof(IWant)), "I want");
+        var benefit = AddPrefix(SoThat ?? throw new MissingStoryTextArgumentException(nameof(SoThat)), "So that");
 
         return $"{role}{Environment.NewLine}{want}{Environment.NewLine}{benefit}{Environment.NewLine}";
     }
 
     private string GetRoleText()
     {
-        var role = string.IsNullOrEmpty(AsAn) ? AsA : AsAn;
+        var role = (string.IsNullOrEmpty(AsAn) ? AsA : AsAn)
+            ?? throw new MissingStoryTextArgumentException(nameof(AsA));
         if (HasWordPrefix(role, "As a") || HasWordPrefix(role, "As an"))
         {
             return role;

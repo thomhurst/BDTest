@@ -27,8 +27,8 @@ public class DelegateStepMetadataTests : BDTestBase
     public void GeneratedMemberReadersRemainLazyAndReadCurrentState()
     {
         var builder = When(() => Display(Value));
-        var definition = builder.ExistingSteps[0].Runnable.Definition;
-        Assert.That(definition.Method.Name, Is.EqualTo(nameof(Display)));
+        var definition = Required(builder.ExistingSteps[0].Runnable).Definition;
+        Assert.That(Required(definition.Method).Name, Is.EqualTo(nameof(Display)));
         Assert.That(definition.GetText(), Is.EqualTo("value: {value}"));
         Assert.That(_reads, Is.Zero);
 
@@ -42,8 +42,8 @@ public class DelegateStepMetadataTests : BDTestBase
     {
         var value = 42;
         var builder = When(() => Display(value));
-        var definition = builder.ExistingSteps[0].Runnable.Definition;
-        Assert.That(definition.Method.Name, Is.EqualTo(nameof(Display)));
+        var definition = Required(builder.ExistingSteps[0].Runnable).Definition;
+        Assert.That(Required(definition.Method).Name, Is.EqualTo(nameof(Display)));
         Assert.That(definition.GetText(), Is.EqualTo("() => Display(value)"));
         Assert.That(definition.GetText(true), Is.EqualTo("() => Display(value)"));
         Assert.That(definition.GetText(explicitArguments: [() => value]), Is.EqualTo("value: {value}"));
@@ -55,7 +55,7 @@ public class DelegateStepMetadataTests : BDTestBase
     {
         var calls = 0;
         var builder = When(() => { calls++; Display(calls); });
-        var definition = builder.ExistingSteps[0].Runnable.Definition;
+        var definition = Required(builder.ExistingSteps[0].Runnable).Definition;
         Assert.That(definition.Method, Is.Null);
         Assert.That(definition.GetText(), Does.Contain("calls++").And.Contain("Display(calls)"));
         Assert.That(definition.GetText(true), Does.Contain("calls++"));
@@ -67,7 +67,7 @@ public class DelegateStepMetadataTests : BDTestBase
     public void MethodGroupRetainsMethodTextWithoutGeneratedMetadata()
     {
         var definition = new StepTextDefinition((Action)SimpleMethodGroup, nameof(SimpleMethodGroup), "missing.cs", 1);
-        Assert.That(definition.Method.Name, Is.EqualTo(nameof(SimpleMethodGroup)));
+        Assert.That(Required(definition.Method).Name, Is.EqualTo(nameof(SimpleMethodGroup)));
         Assert.That(definition.GetText(), Is.EqualTo("simple method group"));
         Assert.That(definition.GetText(true), Is.EqualTo("simple method group"));
     }
@@ -75,7 +75,7 @@ public class DelegateStepMetadataTests : BDTestBase
     [Test]
     public void CancellationTokenReadersAreOmittedWithEitherExplicitArgumentShape()
     {
-        var method = typeof(DelegateStepMetadataTests).GetMethod(nameof(Cancellable), BindingFlags.Static | BindingFlags.NonPublic);
+        var method = Required(typeof(DelegateStepMetadataTests).GetMethod(nameof(Cancellable), BindingFlags.Static | BindingFlags.NonPublic));
         Assert.That(StepTextHelper.GetStepText(method, [() => 42], omitCancellationToken: true), Is.EqualTo("value: 42"));
         Assert.That(StepTextHelper.GetStepText(method, [() => 42, () => throw new Exception("Token must not be rendered")],
             omitCancellationToken: true), Is.EqualTo("value: 42"));
@@ -84,7 +84,7 @@ public class DelegateStepMetadataTests : BDTestBase
     [Test]
     public void ExplicitArgumentCountMismatchIsReported()
     {
-        var method = typeof(DelegateStepMetadataTests).GetMethod(nameof(Display), BindingFlags.Static | BindingFlags.NonPublic);
+        var method = Required(typeof(DelegateStepMetadataTests).GetMethod(nameof(Display), BindingFlags.Static | BindingFlags.NonPublic));
         var exception = Assert.Throws<ArgumentException>(() => StepTextHelper.GetStepText(method, []));
         Assert.That(Required(exception).ParamName, Is.EqualTo("arguments"));
         Assert.That(Required(exception).Message, Does.Contain("Expected 1 step text argument readers, but received 0"));

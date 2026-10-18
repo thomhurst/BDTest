@@ -47,6 +47,8 @@ Contexts may have constructor dependencies: override `CreateContextAsync(Context
 - **Cleanup:** an asynchronous `[TestCleanup]` method awaits context disposal and completes the test.
 - **Skips:** a whole-scenario skip calls `Assert.Inconclusive(reason)`. The runner shows it as skipped or not executed; BDTest records `Skipped`. An explicit `Assert.Inconclusive()` inside a step stays `Inconclusive` in BDTest.
 
+The adapter exposes the runner-injected `TestContext` as `TestContext?`. It is absent before injection and can remain absent when a custom harness calls `InitializeBDTest()` directly. Check for `null` before accessing runner metadata. The adapter continues to support initialization without a runner context.
+
 ## Reports after the run
 
 Use `[AssemblyCleanup]` on a static method in a `[TestClass]`:

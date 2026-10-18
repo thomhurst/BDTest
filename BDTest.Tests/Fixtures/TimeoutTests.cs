@@ -32,15 +32,15 @@ public class TimeoutTests : BDTestBase
         Assert.That(Required(exception).Message, Does.Contain("Step").And.Contain("timed out"));
         Assert.That(scenario.Status, Is.EqualTo(Status.Failed));
         Assert.That(scenario.TimedOut, Is.True);
-        Assert.That(scenario.Steps[0].TimedOut, Is.True);
+        Assert.That(Required(scenario.Steps)[0].TimedOut, Is.True);
         Assert.That(scenario.Steps[0].Status, Is.EqualTo(Status.Failed));
-        Assert.That(scenario.Steps[0].Exception.Message, Is.EqualTo(Required(exception).Message));
+        Assert.That(Required(scenario.Steps[0].Exception).Message, Is.EqualTo(Required(exception).Message));
         Assert.That(scenario.Steps[0].EndTime, Is.GreaterThan(scenario.Steps[0].StartTime));
         Assert.That(scenario.Steps[1].Status, Is.EqualTo(Status.NotRun));
         Assert.That(_laterSteps, Is.Zero);
         var restored = ReportJson.DeserializeObject<Scenario>(ReportJson.SerializeObject(scenario));
         Assert.That(restored.TimedOut, Is.True);
-        Assert.That(restored.Steps[0].TimedOut, Is.True);
+        Assert.That(Required(restored.Steps)[0].TimedOut, Is.True);
     }
 
     [TestCase("synchronous")]
@@ -75,8 +75,8 @@ public class TimeoutTests : BDTestBase
         await Assert.ThrowsAsync<TimeoutException>(async () => await builder.BDTestAsync().WaitAsync(TimeSpan.FromSeconds(10)));
         await _cancelled.Task.WaitAsync(TimeSpan.FromSeconds(10));
         var scenario = Report(builder);
-        Assert.That(scenario.Steps[0].Status, Is.EqualTo(Status.Passed));
-        Assert.That(scenario.Steps[1].Exception.Message, Does.StartWith("Scenario").And.Contain("00:00:01"));
+        Assert.That(Required(scenario.Steps)[0].Status, Is.EqualTo(Status.Passed));
+        Assert.That(Required(scenario.Steps[1].Exception).Message, Does.StartWith("Scenario").And.Contain("00:00:01"));
         Assert.That(scenario.Steps[1].TimeTaken, Is.LessThan(TimeSpan.FromSeconds(1)));
         Assert.That(_laterSteps, Is.Zero);
     }
@@ -90,7 +90,7 @@ public class TimeoutTests : BDTestBase
         Assert.That(scenario.TimedOut, Is.False);
         Assert.That(_tokens, Has.Count.EqualTo(5));
         Assert.That(_tokens.All(token => !token.CanBeCanceled), Is.True);
-        Assert.That(scenario.Steps.Select(step => step.StepText), Is.EqualTo(new[] { "Given complete", "And complete", "When complete", "Then complete", "And complete" }));
+        Assert.That(Required(scenario.Steps).Select(step => step.StepText), Is.EqualTo(new[] { "Given complete", "And complete", "When complete", "Then complete", "And complete" }));
         var second = await Given(token => Complete(token)).When(token => Complete(token)).Then(() => Later()).BDTestAsync();
         Assert.That(second.Status, Is.EqualTo(Status.Passed));
     }
@@ -108,7 +108,7 @@ public class TimeoutTests : BDTestBase
         Assert.That(scenario.Status, Is.EqualTo(Status.Passed));
         Assert.That(_tokens, Has.Count.EqualTo(10));
         Assert.That(_tokens.All(token => token.CanBeCanceled), Is.True);
-        Assert.That(scenario.Steps.Select(step => step.StepText), Is.EqualTo(new[]
+        Assert.That(Required(scenario.Steps).Select(step => step.StepText), Is.EqualTo(new[]
         {
             "Given complete", "But complete", "And complete", "But complete", "When complete",
             "But complete", "Then complete", "But complete", "And complete", "But complete"
@@ -149,7 +149,7 @@ public class TimeoutTests : BDTestBase
         Assert.That(scenario.RetryCount, Is.EqualTo(1));
         Assert.That(scenario.Status, Is.EqualTo(Status.Passed));
         Assert.That(scenario.TimedOut, Is.False);
-        Assert.That(scenario.Steps[0].Exception, Is.Null);
+        Assert.That(Required(scenario.Steps)[0].Exception, Is.Null);
         Assert.That(_tokens, Has.Count.EqualTo(2));
         Assert.That(_tokens[0], Is.Not.EqualTo(_tokens[1]));
         Assert.That(_tokens[1].IsCancellationRequested, Is.False);
@@ -164,7 +164,7 @@ public class TimeoutTests : BDTestBase
         var success = await fast.BDTestAsync();
         await Assert.ThrowsAsync<TimeoutException>(async () => await slow.BDTestAsync().WaitAsync(TimeSpan.FromSeconds(10)));
         Assert.That(success.Timeout, Is.EqualTo(TimeSpan.FromSeconds(10)));
-        Assert.That(success.Steps[0].Timeout, Is.EqualTo(TimeSpan.FromSeconds(10)));
+        Assert.That(Required(success.Steps)[0].Timeout, Is.EqualTo(TimeSpan.FromSeconds(10)));
         Assert.That(Report(slow).Timeout, Is.EqualTo(TimeSpan.FromSeconds(20)));
         Assert.That(success.TimedOut, Is.False);
     }
@@ -234,8 +234,8 @@ public class TimeoutTests : BDTestBase
         }
         var scenario = Report(builder);
         Assert.That(scenario.Status, Is.EqualTo(Status.Failed));
-        Assert.That(scenario.Steps[0].Status, Is.EqualTo(Status.Failed));
-        Assert.That(scenario.Steps[0].Exception.Message, Does.Contain("timed out"));
+        Assert.That(Required(scenario.Steps)[0].Status, Is.EqualTo(Status.Failed));
+        Assert.That(Required(scenario.Steps[0].Exception).Message, Does.Contain("timed out"));
         Assert.That(_laterSteps, Is.Zero);
     }
 
@@ -244,7 +244,7 @@ public class TimeoutTests : BDTestBase
     {
         var scenario = await When(token => WriteOutput("value", token)).WithStepTimeout(TimeSpan.FromSeconds(10))
             .Then(() => Later()).BDTestAsync();
-        Assert.That(scenario.Steps[0].StepText, Is.EqualTo("When writes value"));
+        Assert.That(Required(scenario.Steps)[0].StepText, Is.EqualTo("When writes value"));
         Assert.That(scenario.Steps[0].Output, Does.Contain("step output"));
     }
 
@@ -252,7 +252,7 @@ public class TimeoutTests : BDTestBase
     public async Task Existing_parameterless_expressions_keep_cancellation_arguments_in_step_text()
     {
         var scenario = await When(() => ExplicitTokenText(CancellationToken.None)).Then(() => Later()).BDTestAsync();
-        Assert.That(scenario.Steps[0].StepText, Is.EqualTo("When token System.Threading.CancellationToken"));
+        Assert.That(Required(scenario.Steps)[0].StepText, Is.EqualTo("When token System.Threading.CancellationToken"));
     }
 
     [TestCase(0)]

@@ -10,13 +10,13 @@ internal sealed class StepTextDefinition
 {
     private readonly string _argumentExpression;
     private readonly bool _omitCancellationToken;
-    private readonly IReadOnlyList<Func<object>> _arguments;
+    private readonly IReadOnlyList<Func<object?>>? _arguments;
 
-    internal StepTextDefinition(Delegate step, string argumentExpression, string callerFile, int callerLine,
-        bool omitCancellationToken = false, Assembly fixtureAssembly = null)
+    internal StepTextDefinition(Delegate step, string? argumentExpression, string? callerFile, int callerLine,
+        bool omitCancellationToken = false, Assembly? fixtureAssembly = null)
     {
         if (step == null) throw new ArgumentNullException(nameof(step));
-        _argumentExpression = string.IsNullOrWhiteSpace(argumentExpression) ? "step" : argumentExpression;
+        _argumentExpression = argumentExpression == null || string.IsNullOrWhiteSpace(argumentExpression) ? "step" : argumentExpression;
         _omitCancellationToken = omitCancellationToken;
 
         var callerAssembly = step.Method.Module.Assembly;
@@ -31,7 +31,7 @@ internal sealed class StepTextDefinition
             metadata = StepMetadataCatalog.Find(callerFile, callerLine, argumentExpression, out callerAssembly);
         }
 
-        if (metadata?.Method != null)
+        if (metadata?.Method != null && callerAssembly != null)
         {
             Method = metadata.Method.Resolve(callerAssembly);
             if (metadata.TryBindArguments(callerAssembly, step, out var arguments))
@@ -46,16 +46,16 @@ internal sealed class StepTextDefinition
             if (Method.GetParameters().All(parameter => omitCancellationToken &&
                     parameter.ParameterType == typeof(CancellationToken)))
             {
-                _arguments = Array.Empty<Func<object>>();
+                _arguments = Array.Empty<Func<object?>>();
             }
         }
     }
 
-    internal MethodInfo Method { get; }
+    internal MethodInfo? Method { get; }
 
-    internal string GetText(bool evaluateArguments = false, Action<string> diagnostic = null,
-        IReadOnlyList<Func<object>> explicitArguments = null,
-        IReadOnlyList<StepTextConverterRegistration> converters = null, Action<StepArgument> structuredArgument = null)
+    internal string GetText(bool evaluateArguments = false, Action<string>? diagnostic = null,
+        IReadOnlyList<Func<object?>>? explicitArguments = null,
+        IReadOnlyList<StepTextConverterRegistration>? converters = null, Action<StepArgument>? structuredArgument = null)
     {
         // A known method can still have unsupported captures. Preserve caller text
         // until explicit readers supply those values, while keeping Method for skip rules.

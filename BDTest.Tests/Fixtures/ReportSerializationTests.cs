@@ -61,19 +61,19 @@ public class ReportSerializationTests
         Assert.That(json, Does.Not.Contain("\"$id\"").And.Not.Contain("\"$ref\""));
         Assert.That(json, Does.Contain("\"Status\":\"Failed\"").And.Contain("0.00:00:01:2345678"));
         Assert.That(BDTestJsonHelper.Serialize(restored), Is.EqualTo(json));
-        var actual = restored.Scenarios.Single();
+        var actual = Required(restored.Scenarios).Single();
         Assert.That(actual.GetStoryText(), Is.EqualTo("story"));
         Assert.That(actual.GetScenarioText(), Is.EqualTo("scenario"));
-        Assert.That(actual.ExecutionException.Message, Is.EqualTo("execution failure"));
-        Assert.That(actual.Steps.Select(step => step.StepType), Is.EqualTo(Enum.GetValues<StepType>()));
+        Assert.That(Required(actual.ExecutionException).Message, Is.EqualTo("execution failure"));
+        Assert.That(Required(actual.Steps).Select(step => step.StepType), Is.EqualTo(Enum.GetValues<StepType>()));
         Assert.That(actual.Steps.All(step => step.TimeTaken == duration && step.TimedOut), Is.True);
-        Assert.That(actual.Steps.All(step => step.Diagnostics.SequenceEqual(new[] { "render warning" })), Is.True);
-        Assert.That(actual.Attempts.Single().Exception.Message, Is.EqualTo("attempt failure"));
-        Assert.That(actual.Examples.Single().OutlineId, Is.EqualTo(actual.Guid));
-        Assert.That(actual.Examples.Single().CustomTestInformation.Single().Information, Is.EqualTo("information"));
-        Assert.That(restored.NotRun.Single().GetStoryText(), Is.EqualTo("unrun story"));
+        Assert.That(actual.Steps.All(step => Required(step.Diagnostics).SequenceEqual(new[] { "render warning" })), Is.True);
+        Assert.That(Required(Required(actual.Attempts).Single().Exception).Message, Is.EqualTo("attempt failure"));
+        Assert.That(Required(actual.Examples).Single().OutlineId, Is.EqualTo(actual.Guid));
+        Assert.That(Required(actual.Examples.Single().CustomTestInformation).Single().Information, Is.EqualTo("information"));
+        Assert.That(Required(restored.NotRun).Single().GetStoryText(), Is.EqualTo("unrun story"));
         Assert.That(restored.NotRun.Single().Parameters, Is.EqualTo(new[] { "parameter" }));
-        Assert.That(restored.CustomProperties["property"], Is.EqualTo("value"));
+        Assert.That(Required(restored.CustomProperties)["property"], Is.EqualTo("value"));
 
         var summary = JsonSerializer.Deserialize("""
             {"RecordId":"report","Counts":{"Total":1,"Failed":1},"Status":1,"Tag":"tag"}
@@ -88,18 +88,18 @@ public class ReportSerializationTests
     [Test]
     public void Legacy_references_and_collection_wrappers_become_plain_values()
     {
-        var report = BDTestJsonHelper.Deserialize("""
+        var report = Required(BDTestJsonHelper.Deserialize("""
             {"$id":"report","id":"legacy","Scenarios":{"$id":"scenarios","$values":[
               {"$id":"scenario","Guid":"scenario","StoryText":"story","ScenarioText":"scenario",
                "Steps":[{"$id":"step","StepType":6,"StepText":"But action","Timeout":"00:00:03","Status":"Passed","TimeTaken":"0.00:00:01:2345678"},{"$ref":"step"}]},
               {"$ref":"scenario"}]},"NotRun":[]}
-            """);
+            """));
 
         Assert.That(report.Scenarios, Has.Count.EqualTo(2));
-        Assert.That(report.Scenarios[1].GetStoryText(), Is.EqualTo("story"));
-        Assert.That(report.Scenarios[1].Steps[1].StepType, Is.EqualTo(StepType.ButWhen));
-        Assert.That(report.Scenarios[1].Steps[1].Timeout, Is.EqualTo(TimeSpan.FromSeconds(3)));
-        Assert.That(report.Scenarios[1].Steps[1].TimeTaken.Ticks, Is.EqualTo(12345678));
+        Assert.That(Required(report.Scenarios)[1].GetStoryText(), Is.EqualTo("story"));
+        Assert.That(Required(report.Scenarios[1].Steps)[1].StepType, Is.EqualTo(StepType.ButWhen));
+        Assert.That(Required(report.Scenarios[1].Steps)[1].Timeout, Is.EqualTo(TimeSpan.FromSeconds(3)));
+        Assert.That(Required(report.Scenarios[1].Steps)[1].TimeTaken.Ticks, Is.EqualTo(12345678));
         Assert.That(BDTestJsonHelper.Serialize(report), Does.Not.Contain("\"$id\"").And.Not.Contain("\"$ref\""));
     }
 
@@ -108,14 +108,14 @@ public class ReportSerializationTests
     [TestCase("\"$values\":\"custom value\",\"$ref\":\"custom reference\",\"ordinary\":\"retained\"")]
     public void Legacy_metadata_named_dictionary_keys_are_preserved(string properties)
     {
-        var report = BDTestJsonHelper.Deserialize($$$"""
+        var report = Required(BDTestJsonHelper.Deserialize($$$"""
             {"$id":"report","CustomProperties":{"$id":"properties",{{{properties}}}},
              "Scenarios":[{"ExampleValues":{"$id":"examples",{{{properties}}}}}]}
-            """);
+            """));
 
         var expected = JsonSerializer.Deserialize<Dictionary<string, string>>("{" + properties + "}");
         Assert.That(report.CustomProperties, Is.EquivalentTo(Required(expected)));
-        Assert.That(report.Scenarios.Single().ExampleValues, Is.EquivalentTo(Required(expected)));
+        Assert.That(Required(report.Scenarios).Single().ExampleValues, Is.EquivalentTo(Required(expected)));
     }
 
     [TestCase(0, Status.Passed)]
@@ -125,14 +125,14 @@ public class ReportSerializationTests
     [TestCase(4, Status.Skipped)]
     public void Legacy_numeric_statuses_keep_their_meaning_in_scenarios_steps_and_attempts(int value, Status expected)
     {
-        var report = BDTestJsonHelper.Deserialize($$"""
+        var report = Required(BDTestJsonHelper.Deserialize($$"""
             {"$id":"report","Scenarios":[{"Status":{{value}},"Steps":[{"Status":{{value}}}],"Attempts":[{"Status":{{value}}}]}]}
-            """);
+            """));
 
-        var scenario = report.Scenarios.Single();
+        var scenario = Required(report.Scenarios).Single();
         Assert.That(scenario.Status, Is.EqualTo(expected));
-        Assert.That(scenario.Steps.Single().Status, Is.EqualTo(expected));
-        Assert.That(scenario.Attempts.Single().Status, Is.EqualTo(expected));
+        Assert.That(Required(scenario.Steps).Single().Status, Is.EqualTo(expected));
+        Assert.That(Required(scenario.Attempts).Single().Status, Is.EqualTo(expected));
         Assert.That(BDTestJsonHelper.Serialize(report), Does.Contain($"\"Status\":\"{expected}\""));
     }
 

@@ -50,7 +50,7 @@ public class ScenarioHookTests
         {
             calls.Add("global");
             Assert.That(s.Scenario.Status, Is.EqualTo(Status.Failed));
-            Assert.That(s.Scenario.Exception.Message, Is.EqualTo("original"));
+            Assert.That(Required(s.Scenario.Exception).Message, Is.EqualTo("original"));
             throw cleanup;
         }));
         using var run = BDTestRun.Start(options);
@@ -61,7 +61,7 @@ public class ScenarioHookTests
             {
                 calls.Add("instance");
                 if (failureAt != "after")
-                    Assert.That(s.Scenario.Exception.Message, Is.EqualTo("original"));
+                    Assert.That(Required(s.Scenario.Exception).Message, Is.EqualTo("original"));
                 throw failureAt == "after" ? failure : cleanup;
             }
         };
@@ -70,8 +70,8 @@ public class ScenarioHookTests
         Assert.That(thrown, Is.SameAs(failure));
         Assert.That(calls, Does.Contain("instance").And.Contain("global"));
         if (failureAt != "after") Assert.That(calls, Does.Not.Contain("then"));
-        Assert.That(run.Scenarios.Single().Attempts.Single().Exception.Message, Is.EqualTo("original"));
-        if (failureAt == "before") Assert.That(run.Scenarios.Single().Steps.All(s => s.Status == Status.NotRun), Is.True);
+        Assert.That(Required(Required(run.Scenarios.Single().Attempts).Single().Exception).Message, Is.EqualTo("original"));
+        if (failureAt == "before") Assert.That(Required(run.Scenarios.Single().Steps).All(s => s.Status == Status.NotRun), Is.True);
 
         void RunStep()
         {
@@ -103,8 +103,8 @@ public class ScenarioHookTests
         Assert.That(before.Select(s => s.Attempt), Is.EqualTo(new[] { 0, 1, 0, 1 }));
         Assert.That(after, Is.EqualTo(new[] { (0, Status.Failed, true), (1, Status.Passed, false),
             (0, Status.Failed, true), (1, Status.Passed, false) }));
-        Assert.That(before.All(s => s.Scenario.ExampleValues.ContainsKey("Value")), Is.True);
-        Assert.That(outline.Examples.All(s => s.Exception == null), Is.True);
+        Assert.That(before.All(s => Required(s.Scenario.ExampleValues).ContainsKey("Value")), Is.True);
+        Assert.That(Required(outline.Examples).All(s => s.Exception == null), Is.True);
     }
 
     [TestCase(false)]
@@ -199,7 +199,7 @@ public class ScenarioHookTests
             }).Then(() => Complete()).BDTestAsync();
         }
         catch (InvalidOperationException) when (outcome.EndsWith("failure")) { }
-        var output = run.Scenarios.Single().Output;
+        var output = Required(run.Scenarios.Single().Output);
         foreach (var text in new[] { "run before", "instance before", "instance after", "run after" })
             Assert.That(output.Split(text).Length - 1, Is.EqualTo(1), $"Expected one occurrence of {text}.");
         if (outcome is "passed" or "step failure" or "after failure")
@@ -250,7 +250,7 @@ public class ScenarioHookTests
         var scenario = await new Fixture(run).When(() => throw new Exception("must not run"))
             .Then(() => Complete()).BDTestAsync();
         Assert.That(calls, Is.EqualTo(new[] { Status.Pending, Status.Skipped }));
-        Assert.That(scenario.Steps.All(s => s.Status == Status.Skipped), Is.True);
+        Assert.That(Required(scenario.Steps).All(s => s.Status == Status.Skipped), Is.True);
     }
 
     [Test]
@@ -267,7 +267,7 @@ public class ScenarioHookTests
             .WithScenarioTimeout(TimeSpan.FromMilliseconds(100)).BDTestAsync();
         Assert.That(hookTimes, Is.All.GreaterThan((scenario.Timeout ?? throw new AssertionException("Expected a scenario timeout."))));
         Assert.That(scenario.TimeTaken, Is.GreaterThanOrEqualTo(hookTimes[0] + hookTimes[1]));
-        Assert.That(scenario.Attempts.Single().TimeTaken, Is.EqualTo(scenario.TimeTaken));
+        Assert.That(Required(scenario.Attempts).Single().TimeTaken, Is.EqualTo(scenario.TimeTaken));
         Assert.That(scenario.Status, Is.EqualTo(Status.Passed));
 
         async Task MeasureHookTime()
@@ -367,7 +367,7 @@ public class ScenarioHookTests
         await Assert.ThrowsAsync<InvalidOperationException>(async () => await fixture.When(() => Complete())
             .Then(() => Complete()).BDTestAsync());
         Assert.That(calls, Is.EqualTo(new[] { "instance after", "first after", "second after" }));
-        Assert.That(run.Scenarios.Single().Steps.All(s => s.Status == Status.NotRun), Is.True);
+        Assert.That(Required(run.Scenarios.Single().Steps).All(s => s.Status == Status.NotRun), Is.True);
     }
 
     [TestCase(Status.Skipped)]
@@ -396,7 +396,7 @@ public class ScenarioHookTests
     public void Null_scenario_hook_registration_is_rejected() => Assert.Throws<ArgumentException>(() =>
     {
         var options = new BDTestOptions();
-        options.ScenarioHooks.Add(null);
+        options.ScenarioHooks.Add(null!);
         using var run = BDTestRun.Start(options);
     });
 

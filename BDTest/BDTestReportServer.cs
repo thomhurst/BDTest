@@ -16,7 +16,7 @@ public static class BDTestReportServer
         return SendDataAndGetReportUriAsync(serverAddress, new BDTestRunDescriptor());
     }
         
-    public static async Task<Uri> SendDataAndGetReportUriAsync(Uri serverAddress, BDTestRunDescriptor bdTestRunDescriptor)
+    public static async Task<Uri> SendDataAndGetReportUriAsync(Uri serverAddress, BDTestRunDescriptor? bdTestRunDescriptor)
     {
         using var httpClient = new HttpClient
         {
@@ -26,18 +26,18 @@ public static class BDTestReportServer
         return await SendDataAndGetReportUriAsync(serverAddress, bdTestRunDescriptor, httpClient).ConfigureAwait(false);
     }
         
-    public static Task<Uri> SendDataAndGetReportUriAsync(Uri serverAddress, BDTestRunDescriptor bdTestRunDescriptor,
+    public static Task<Uri> SendDataAndGetReportUriAsync(Uri serverAddress, BDTestRunDescriptor? bdTestRunDescriptor,
         HttpClient httpClient) => SendDataAndGetReportUriAsync(serverAddress, bdTestRunDescriptor, httpClient, BDTestRun.Default);
 
     /// <summary>Uploads only the scenarios and pending definitions owned by the supplied run.</summary>
-    public static async Task<Uri> SendDataAndGetReportUriAsync(BDTestRun run, Uri serverAddress, BDTestRunDescriptor bdTestRunDescriptor)
+    public static async Task<Uri> SendDataAndGetReportUriAsync(BDTestRun run, Uri serverAddress, BDTestRunDescriptor? bdTestRunDescriptor)
     {
         using var httpClient = new HttpClient { Timeout = TimeSpan.FromMinutes(2) };
         return await SendDataAndGetReportUriAsync(serverAddress, bdTestRunDescriptor, httpClient, run).ConfigureAwait(false);
     }
 
     /// <summary>Uploads the supplied run using a caller-owned HTTP client.</summary>
-    public static async Task<Uri> SendDataAndGetReportUriAsync(Uri serverAddress, BDTestRunDescriptor bdTestRunDescriptor,
+    public static async Task<Uri> SendDataAndGetReportUriAsync(Uri serverAddress, BDTestRunDescriptor? bdTestRunDescriptor,
         HttpClient httpClient, BDTestRun run)
     {
         var dataOutputModel = BDTestOutputModelBuilder.Build(run, bdTestRunDescriptor);
@@ -64,13 +64,13 @@ public static class BDTestReportServer
         // Check ownership before posting JSON. File content is opened again for each upload attempt.
         foreach (var attachment in attachments)
         {
-            using var content = run.OpenAttachment(attachment.Id);
+            using var content = run.OpenAttachment(attachment.Id ?? throw new InvalidOperationException("The attachment has no ID."));
             if (content.Length != attachment.Length) throw new InvalidDataException("Captured attachment length changed.");
         }
         var stringContent = BDTestJsonHelper.Serialize(dataOutputModel);
-        string responseContent = null;
-        string reportId = null;
-        string attachmentToken = null;
+        string? responseContent = null;
+        string? reportId = null;
+        string? attachmentToken = null;
         await SendWithRetryAsync(httpClient, () => new HttpRequestMessage(HttpMethod.Post, uploadUri)
         {
             Content = new StringContent(stringContent, Encoding.UTF8, "application/json")
@@ -87,11 +87,12 @@ public static class BDTestReportServer
                 throw new InvalidOperationException("The report server did not authorize attachment uploads. Upgrade the server and configure AttachmentStore.");
             foreach (var attachment in attachments)
             {
-                var attachmentUri = new Uri(uploadUri.AbsoluteUri.TrimEnd('/') + "/" + reportId + "/attachments/" + Uri.EscapeDataString(attachment.Id));
-                var mime = System.Net.Http.Headers.MediaTypeHeaderValue.Parse(attachment.MimeType);
+                var attachmentId = attachment.Id ?? throw new InvalidOperationException("The attachment has no ID.");
+                var attachmentUri = new Uri(uploadUri.AbsoluteUri.TrimEnd('/') + "/" + reportId + "/attachments/" + Uri.EscapeDataString(attachmentId));
+                var mime = System.Net.Http.Headers.MediaTypeHeaderValue.Parse(attachment.MimeType ?? throw new InvalidOperationException("The attachment has no MIME type."));
                 await SendWithRetryAsync(httpClient, () =>
                 {
-                    var content = new StreamContent(run.OpenAttachment(attachment.Id), 81920);
+                    var content = new StreamContent(run.OpenAttachment(attachmentId), 81920);
                     content.Headers.ContentType = mime;
                     content.Headers.ContentLength = attachment.Length;
                     var request = new HttpRequestMessage(HttpMethod.Post, attachmentUri) { Content = content };
@@ -100,7 +101,7 @@ public static class BDTestReportServer
                 }, _ => Task.CompletedTask).ConfigureAwait(false);
             }
         }
-        return new Uri(responseContent);
+        return new Uri(responseContent ?? throw new InvalidOperationException("The report server returned no report URI."));
     }
 
     // A bare origin keeps the default mapping; a supplied path is the full report prefix.

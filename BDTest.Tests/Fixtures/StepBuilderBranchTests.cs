@@ -36,8 +36,8 @@ public class StepBuilderBranchTests : BDTestBase
         Assert.That(firstResult.Guid, Is.Not.EqualTo(secondResult.Guid));
         Assert.That(BDTestUtil.GetScenarios(), Does.Contain(firstResult).And.Contain(secondResult));
         Assert.That(BDTestUtil.GetNotRunScenarios(), Does.Not.Contain(first).And.Not.Contain(second));
-        Assert.That(firstResult.Steps.All(step => step.ScenarioId == firstResult.Guid), Is.True);
-        Assert.That(secondResult.Steps.All(step => step.ScenarioId == secondResult.Guid), Is.True);
+        Assert.That(Required(firstResult.Steps).All(step => step.ScenarioId == firstResult.Guid), Is.True);
+        Assert.That(Required(secondResult.Steps).All(step => step.ScenarioId == secondResult.Guid), Is.True);
         Assert.That(firstResult.Steps.Select(step => step.Guid)
             .Intersect(secondResult.Steps.Select(step => step.Guid)), Is.Empty);
         Assert.That(first.ReportId, Is.EqualTo(prefix.ReportId));
@@ -58,11 +58,11 @@ public class StepBuilderBranchTests : BDTestBase
         var firstResult = await first.BDTestAsync();
         var secondResult = await second.BDTestAsync();
         var extendedResult = await extended.BDTestAsync();
-        Assert.That(firstResult.Steps.Select(step => step.StepText),
+        Assert.That(Required(firstResult.Steps).Select(step => step.StepText),
             Is.EqualTo(new[] { "When original prefix", "Then changed first" }));
-        Assert.That(secondResult.Steps.Select(step => step.StepText),
+        Assert.That(Required(secondResult.Steps).Select(step => step.StepText),
             Is.EqualTo(new[] { "When original prefix", "Then second" }));
-        Assert.That(extendedResult.Steps.Select(step => step.StepText),
+        Assert.That(Required(extendedResult.Steps).Select(step => step.StepText),
             Is.EqualTo(new[] { "When original prefix", "Then original first", "And extension" }));
     }
 
@@ -75,7 +75,7 @@ public class StepBuilderBranchTests : BDTestBase
         var second = prefix.Then(() => NoOp()).WithScenarioText("failed branch");
 
         var firstResult = await first.BDTestAsync();
-        var firstStep = firstResult.Steps[0];
+        var firstStep = Required(firstResult.Steps)[0];
         var startTime = firstStep.StartTime;
         var endTime = firstStep.EndTime;
         var timeTaken = firstStep.TimeTaken;
@@ -91,7 +91,7 @@ public class StepBuilderBranchTests : BDTestBase
         Assert.That(firstStep.EndTime, Is.EqualTo(endTime));
         Assert.That(firstStep.TimeTaken, Is.EqualTo(timeTaken));
         Assert.That(firstStep.IsRetry, Is.False);
-        Assert.That(secondResult.Steps[0], Is.Not.SameAs(firstStep));
+        Assert.That(Required(secondResult.Steps)[0], Is.Not.SameAs(firstStep));
         Assert.That(secondResult.Status, Is.EqualTo(Status.Failed));
         Assert.That(secondResult.Steps[0].Exception, Is.Not.Null);
         Assert.That(secondResult.Steps[0].Output, Does.Contain("invocation 2").And.Not.Contain("invocation 1"));
@@ -109,7 +109,7 @@ public class StepBuilderBranchTests : BDTestBase
         var result = await extended.BDTestAsync();
 
         Assert.That(result.Status, Is.EqualTo(Status.Passed));
-        Assert.That(result.Steps.All(step => step.Exception == null && !step.IsRetry), Is.True);
+        Assert.That(Required(result.Steps).All(step => step.Exception == null && !step.IsRetry), Is.True);
         Assert.That(result.Steps[0].Output, Is.EqualTo("invocation 3"));
     }
 
@@ -126,11 +126,11 @@ public class StepBuilderBranchTests : BDTestBase
         var secondResult = await second.BDTestAsync();
 
         Assert.That(firstResult.RetryCount, Is.Zero);
-        Assert.That(firstResult.Steps.All(step => !step.IsRetry), Is.True);
+        Assert.That(Required(firstResult.Steps).All(step => !step.IsRetry), Is.True);
         Assert.That(firstResult.Steps[0].Output, Is.EqualTo("invocation 1"));
         Assert.That(secondResult.RetryCount, Is.EqualTo(1));
         Assert.That(secondResult.Status, Is.EqualTo(Status.Passed));
-        Assert.That(secondResult.Steps.All(step => step.IsRetry), Is.True);
+        Assert.That(Required(secondResult.Steps).All(step => step.IsRetry), Is.True);
         Assert.That(secondResult.Steps[0].Output, Is.EqualTo("invocation 3"));
     }
 
@@ -144,9 +144,9 @@ public class StepBuilderBranchTests : BDTestBase
 
         var results = await Task.WhenAll(first.BDTestAsync(), second.BDTestAsync());
 
-        Assert.That(results[0].Steps[1].Output,
+        Assert.That(Required(results[0].Steps)[1].Output,
             Is.EqualTo($"first start{Environment.NewLine}first end"));
-        Assert.That(results[1].Steps[1].Output,
+        Assert.That(Required(results[1].Steps)[1].Output,
             Is.EqualTo($"second start{Environment.NewLine}second end"));
         Assert.That(results.All(result => result.Status == Status.Passed), Is.True);
     }
@@ -174,9 +174,9 @@ public class StepBuilderBranchTests : BDTestBase
         }
         Console.WriteLine("teardown");
 
-        Assert.That(firstResult.Steps[1].Output, Is.EqualTo("first"));
-        Assert.That(secondResult.Steps[1].Output, Is.EqualTo("second"));
-        Assert.That(firstResult.TearDownOutput.Trim(), Is.EqualTo("teardown"));
+        Assert.That(Required(firstResult.Steps)[1].Output, Is.EqualTo("first"));
+        Assert.That(Required(secondResult.Steps)[1].Output, Is.EqualTo("second"));
+        Assert.That(Required(firstResult.TearDownOutput).Trim(), Is.EqualTo("teardown"));
         Assert.That(secondResult.TearDownOutput, Is.Null.Or.Empty);
     }
 

@@ -6,10 +6,10 @@ namespace BDTest.Output;
 internal sealed class BufferedOutput
 {
     private readonly object _lock = new();
-    private StringBuilder _builder;
-    private string _value;
+    private StringBuilder? _builder;
+    private string? _value;
 
-    internal string Value
+    internal string? Value
     {
         get
         {
@@ -36,7 +36,7 @@ internal sealed class BufferedOutput
         }
     }
 
-    internal void Append(string value, bool appendNewLine = false)
+    internal void Append(string? value, bool appendNewLine = false)
     {
         lock (_lock)
         {

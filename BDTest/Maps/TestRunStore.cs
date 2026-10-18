@@ -12,7 +12,7 @@ internal sealed class TestRunStore
         
     // Registration, pending writes, listeners and completion must use the same gate.
     internal object Gate { get; } = new();
-    private readonly Dictionary<string, List<(Action<Scenario> Publish, Action Discard)>> ScenarioListeners = new();
+    private readonly Dictionary<string, List<(Action<Scenario> Publish, Action? Discard)>> ScenarioListeners = new();
     private readonly Dictionary<string, BufferedOutput> PendingStartupOutput = new();
     private readonly Dictionary<string, AttachmentExecution> AttachmentExecutions = new();
 
@@ -54,7 +54,7 @@ internal sealed class TestRunStore
         }
     }
 
-    internal void AppendStartupOutput(string frameworkExecutionId, string text, bool appendNewLine)
+    internal void AppendStartupOutput(string frameworkExecutionId, string? text, bool appendNewLine)
     {
         lock (Gate)
         {
@@ -77,7 +77,7 @@ internal sealed class TestRunStore
         return output;
     }
 
-    internal void ListenForScenario(string frameworkExecutionId, Action<Scenario> @delegate, Action onDiscard = null)
+    internal void ListenForScenario(string frameworkExecutionId, Action<Scenario> @delegate, Action? onDiscard = null)
     {
         lock (Gate)
         {
@@ -89,7 +89,7 @@ internal sealed class TestRunStore
 
             if (!ScenarioListeners.TryGetValue(frameworkExecutionId, out var list))
             {
-                ScenarioListeners.Add(frameworkExecutionId, list = new List<(Action<Scenario> Publish, Action Discard)>());
+                ScenarioListeners.Add(frameworkExecutionId, list = new List<(Action<Scenario> Publish, Action? Discard)>());
             }
             list.Add((@delegate, onDiscard));
         }
@@ -107,7 +107,7 @@ internal sealed class TestRunStore
         lock (Gate)
         {
             ThrowIfDisposed();
-            NotRun[builder.Guid] = builder;
+            NotRun[builder.Guid ?? throw new InvalidOperationException("The builder has no ID.")] = builder;
         }
     }
 
@@ -116,18 +116,20 @@ internal sealed class TestRunStore
         lock (Gate)
         {
             ThrowIfDisposed();
-            if (PendingStartupOutput.TryGetValue(scenario.FrameworkTestId, out var output))
+            var frameworkId = scenario.FrameworkTestId ?? throw new InvalidOperationException("The scenario has no execution ID.");
+            var scenarioId = scenario.Guid ?? throw new InvalidOperationException("The scenario has no ID.");
+            if (PendingStartupOutput.TryGetValue(frameworkId, out var output))
             {
                 scenario.StartupOutput = output;
-                PendingStartupOutput.Remove(scenario.FrameworkTestId);
+                PendingStartupOutput.Remove(frameworkId);
             }
 
-            ScenariosByInternalId[scenario.Guid] = scenario;
-            ScenariosByTestFrameworkId[scenario.FrameworkTestId] = scenario;
+            ScenariosByInternalId[scenarioId] = scenario;
+            ScenariosByTestFrameworkId[frameworkId] = scenario;
 
-            if (ScenarioListeners.TryGetValue(scenario.FrameworkTestId, out var delegateList))
+            if (ScenarioListeners.TryGetValue(frameworkId, out var delegateList))
             {
-                ScenarioListeners.Remove(scenario.FrameworkTestId);
+                ScenarioListeners.Remove(frameworkId);
                 foreach (var listener in delegateList)
                 {
                     listener.Publish(scenario);

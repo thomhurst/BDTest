@@ -17,10 +17,10 @@ internal sealed class RunOptions
     private readonly Func<Scenario, bool>[] _skipTestRules = Array.Empty<Func<Scenario, bool>>();
     private readonly SkipStepRule<object>[] _skipStepRules = Array.Empty<SkipStepRule<object>>();
     private readonly bool _skipWhen;
-    private readonly Func<Step, Task> _beforeStep;
-    private readonly Func<Step, Task> _afterStep;
-    private readonly Func<ScenarioHookContext, Task> _beforeScenario;
-    private readonly Func<ScenarioHookContext, Task> _afterScenario;
+    private readonly Func<Step, Task>? _beforeStep;
+    private readonly Func<Step, Task>? _afterStep;
+    private readonly Func<ScenarioHookContext, Task>? _beforeScenario;
+    private readonly Func<ScenarioHookContext, Task>? _afterScenario;
 
     private RunOptions() => _legacy = true;
 
@@ -56,9 +56,9 @@ internal sealed class RunOptions
 
     internal ExecutionClock Clock { get; } = ExecutionClock.System;
 
-    internal FrameworkOutcomeMap FrameworkOutcomes { get; }
-    internal IBDTestContextFactory ContextFactory { get; }
-    internal IServiceProvider Services { get; }
+    internal FrameworkOutcomeMap? FrameworkOutcomes { get; }
+    internal IBDTestContextFactory? ContextFactory { get; }
+    internal IServiceProvider? Services { get; }
 
     internal IEnumerable<Type> SuccessExceptionTypes => _legacy ? BDTestSettings.CustomExceptionSettings.SuccessExceptionTypes : _success;
     internal IEnumerable<Type> SkipExceptionTypes => _legacy ? BDTestSettings.CustomExceptionSettings.SkipExceptionTypes : _skip;
@@ -67,10 +67,10 @@ internal sealed class RunOptions
     internal IReadOnlyList<Func<Scenario, bool>> SkipTestRules => _legacy ? BDTestSettings.GlobalSkipTestRules.Rules : _skipTestRules;
     internal IReadOnlyList<SkipStepRule<object>> SkipStepRules => _legacy ? BDTestSettings.GlobalSkipStepRules.Rules : _skipStepRules;
     internal bool ShouldSkipWhenStep => _legacy ? BDTestSettings.Debug.ShouldSkipWhenStep : _skipWhen;
-    internal Func<Step, Task> BeforeStep => _legacy ? BDTestSettings.BeforeStepHooks : _beforeStep;
-    internal Func<Step, Task> AfterStep => _legacy ? BDTestSettings.AfterStepHooks : _afterStep;
-    internal Func<ScenarioHookContext, Task> BeforeScenario => _legacy ? BDTestSettings.BeforeScenarioHooks : _beforeScenario;
-    internal Func<ScenarioHookContext, Task> AfterScenario => _legacy ? BDTestSettings.AfterScenarioHooks : _afterScenario;
+    internal Func<Step, Task>? BeforeStep => _legacy ? BDTestSettings.BeforeStepHooks : _beforeStep;
+    internal Func<Step, Task>? AfterStep => _legacy ? BDTestSettings.AfterStepHooks : _afterStep;
+    internal Func<ScenarioHookContext, Task>? BeforeScenario => _legacy ? BDTestSettings.BeforeScenarioHooks : _beforeScenario;
+    internal Func<ScenarioHookContext, Task>? AfterScenario => _legacy ? BDTestSettings.AfterScenarioHooks : _afterScenario;
     // Null selects legacy converters in the standalone StepTextHelper API.
-    internal IReadOnlyList<StepTextConverterRegistration> Converters { get; }
+    internal IReadOnlyList<StepTextConverterRegistration>? Converters { get; }
 }

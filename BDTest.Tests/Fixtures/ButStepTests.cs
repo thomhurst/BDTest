@@ -53,8 +53,8 @@ public class ButStepTests : BDTestBase
             "when", "but when", "second but when", "then", "but then", "second but then",
             "and then", "but after and then"
         }));
-        Assert.That(result.Steps.All(step => step.Status == Status.Passed), Is.True);
-        Assert.That(result.Steps.Select(step => step.StepText.Split(' ')[0]), Is.EqualTo(new[]
+        Assert.That(Required(result.Steps).All(step => step.Status == Status.Passed), Is.True);
+        Assert.That(result.Steps.Select(step => Required(step.StepText).Split(' ')[0]), Is.EqualTo(new[]
         {
             "Given", "But", "But", "And", "But", "When", "But", "But", "Then", "But", "But", "And", "But"
         }));
@@ -75,8 +75,8 @@ public class ButStepTests : BDTestBase
             .BDTestAsync();
 
         var report = ReportJson.DeserializeObject<BDTestOutputModel>(BDTestJsonHelper.GetTestJsonData());
-        var restored = report.Scenarios.Single(scenario => scenario.Guid == result.Guid);
-        Assert.That(restored.Steps.Select(step => step.StepText), Is.EqualTo(new[]
+        var restored = Required(report.Scenarios).Single(scenario => scenario.Guid == result.Guid);
+        Assert.That(Required(restored.Steps).Select(step => step.StepText), Is.EqualTo(new[]
         {
             "Given no op", "But no op", "When no op", "But named action", "Then no op", "But custom assertion"
         }));
@@ -99,7 +99,7 @@ public class ButStepTests : BDTestBase
                 .BDTestAsync();
 
             Assert.That(calls, Is.EqualTo(new[] { "then", "but then" }));
-            Assert.That(result.Steps.Take(2).All(step => step.Status == Status.Skipped), Is.True);
+            Assert.That(Required(result.Steps).Take(2).All(step => step.Status == Status.Skipped), Is.True);
             Assert.That(result.Steps[1].StepText, Does.StartWith("[Skipped] But "));
         }
         finally
@@ -122,9 +122,9 @@ public class ButStepTests : BDTestBase
 
         var result = BDTestUtil.GetScenarios().Single(scenario => scenario.Guid == builder.Guid);
         Assert.That(result.Status, Is.EqualTo(Status.Failed));
-        Assert.That(result.Steps[2].Status, Is.EqualTo(Status.Failed));
-        Assert.That(result.Steps[2].StepText, Is.EqualTo(asyncStep ? "But fail async" : "But fail"));
-        Assert.That(result.Steps[3].Status, Is.EqualTo(Status.NotRun));
+        Assert.That(Required(result.Steps)[2].Status, Is.EqualTo(Status.Failed));
+        Assert.That(Required(result.Steps)[2].StepText, Is.EqualTo(asyncStep ? "But fail async" : "But fail"));
+        Assert.That(Required(result.Steps)[3].Status, Is.EqualTo(Status.NotRun));
         Assert.That(calls, Is.Empty);
     }
 

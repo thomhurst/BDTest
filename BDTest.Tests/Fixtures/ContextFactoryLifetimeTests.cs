@@ -382,8 +382,8 @@ public class ContextFactoryLifetimeTests
             Assert.That(scenario.Status, Is.EqualTo(Status.NotImplemented));
             Assert.That(scenario.Exception?.Message, Is.EqualTo(expected.Message));
             Assert.That(scenario.ExecutionException, Is.Not.Null);
-            Assert.That(scenario.Attempts.Single().Exception?.Message, Is.EqualTo(expected.Message));
-            Assert.That(scenario.Steps.All(step => step.Status == Status.NotRun), Is.True);
+            Assert.That(Required(scenario.Attempts).Single().Exception?.Message, Is.EqualTo(expected.Message));
+            Assert.That(Required(scenario.Steps).All(step => step.Status == Status.NotRun), Is.True);
         }
         finally { await fixture.Finish(); }
     }
@@ -445,7 +445,7 @@ public class ContextFactoryLifetimeTests
         private Task Record(string name, ScenarioHookContext scenario)
         {
             Calls.Add(name);
-            Contexts.Add(scenario.Context);
+            Contexts.Add(Required(scenario.Context));
             Assert.That(((ResourceContext)scenario.Context).Initializations, Is.EqualTo(1));
             return Task.CompletedTask;
         }
@@ -477,7 +477,7 @@ public class ContextFactoryLifetimeTests
             Assert.That(scenario.RetryCount, Is.EqualTo(1));
             Assert.That(scenario.Exception, Is.Null);
             Assert.That(scenario.ExecutionException, Is.Null);
-            Assert.That(scenario.Attempts[0].Exception, Is.Not.Null);
+            Assert.That(Required(scenario.Attempts)[0].Exception, Is.Not.Null);
         }
         finally { await fixture.Finish(); }
     }

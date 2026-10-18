@@ -34,10 +34,10 @@ public sealed class StepMethodMetadata
     }
 
     // This grammar is shared with the generator. Method type parameters use !!n, type parameters !n.
-    private static string Signature(Type type)
+    private static string? Signature(Type type)
     {
-        if (type.IsByRef) return Signature(type.GetElementType()) + "&";
-        if (type.IsArray) return Signature(type.GetElementType()) + "[" + new string(',', type.GetArrayRank() - 1) + "]";
+        if (type.IsByRef) return Signature(type.GetElementType() ?? throw new InvalidOperationException("The type has no element type.")) + "&";
+        if (type.IsArray) return Signature(type.GetElementType() ?? throw new InvalidOperationException("The type has no element type.")) + "[" + new string(',', type.GetArrayRank() - 1) + "]";
         if (type.IsGenericParameter)
             return (type.DeclaringMethod == null ? "!" : "!!") + type.GenericParameterPosition;
         if (!type.IsGenericType) return type.FullName;

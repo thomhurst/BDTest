@@ -83,7 +83,7 @@ public class DataRepositoryHistoryTests
         var records = (await repository.GetAllTestRunRecords()).ToArray();
 
         Assert.That(records.Select(record => record.RecordId), Is.EqualTo(new[] { "new", "middle", "old" }));
-        Assert.That(records[0].StartedAtDateTime, Is.EqualTo(Report("new", 3).TestTimer.TestsStartedAt));
+        Assert.That(records[0].StartedAtDateTime, Is.EqualTo(Required(Report("new", 3).TestTimer).TestsStartedAt));
     }
 
     [TestCase(false)]
@@ -255,7 +255,7 @@ public class DataRepositoryHistoryTests
         ReportJson.DeserializeObject<TestRunSummary>(ReportJson.SerializeObject(new
         {
             RecordId = id,
-            StartedAtDateTime = Report(id, day).TestTimer.TestsStartedAt
+            StartedAtDateTime = Required(Report(id, day).TestTimer).TestsStartedAt
         }));
 
     private sealed class PersistentStore : IBDTestDataStore, IReportStore, IRunIndexStore
@@ -267,7 +267,7 @@ public class DataRepositoryHistoryTests
                 ? new MemoryStream(System.Text.Encoding.UTF8.GetBytes(BDTestJsonHelper.Serialize(report))) : null);
         }
         public async Task WriteAsync(string reportId, Stream utf8Json, CancellationToken cancellationToken)
-            => Reports[reportId] = await BDTestJsonHelper.DeserializeAsync(utf8Json, cancellationToken);
+            => Reports[reportId] = Required(await BDTestJsonHelper.DeserializeAsync(utf8Json, cancellationToken));
         public async Task<RunIndexPage> ListAsync(RunIndexQuery query, CancellationToken cancellationToken)
         {
             cancellationToken.ThrowIfCancellationRequested();

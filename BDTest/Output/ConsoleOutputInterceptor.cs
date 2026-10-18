@@ -1,4 +1,4 @@
-﻿using System.Text;
+using System.Text;
 
 namespace BDTest.Output;
 
@@ -31,7 +31,7 @@ internal class ConsoleOutputInterceptor : TextWriter
         Two.Write(value);
     }
 
-    public override void Write(string value)
+    public override void Write(string? value)
     {
         if (string.IsNullOrEmpty(value))
         {
@@ -50,11 +50,11 @@ internal class ConsoleOutputInterceptor : TextWriter
 
     public override void WriteLine() => Write(NewLine);
 
-    public override void WriteLine(string value) => Write(value + NewLine);
+    public override void WriteLine(string? value) => Write(value + NewLine);
 
     public override void WriteLine(char value) => Write(value + NewLine);
 
-    public override void WriteLine(char[] buffer) => WriteLine(buffer == null ? null : new string(buffer));
+    public override void WriteLine(char[]? buffer) => WriteLine(buffer == null ? null : new string(buffer));
 
     public override void WriteLine(char[] buffer, int index, int count) => WriteLine(new string(buffer, index, count));
 

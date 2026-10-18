@@ -27,13 +27,13 @@ public class ReportCacheCapacityTests
 
         foreach (var report in reports)
         {
-            await repository.StoreData(report.Id, report);
+            await repository.StoreData(Required(report.Id), report);
             await AssertWithinCapacity(repository, reports, capacity, store);
         }
 
         foreach (var report in reports)
         {
-            Assert.That(await repository.GetData(report.Id, default), Is.Not.Null);
+            Assert.That(await repository.GetData(Required(report.Id), default), Is.Not.Null);
             await AssertWithinCapacity(repository, reports, capacity, store);
         }
     }
@@ -50,11 +50,11 @@ public class ReportCacheCapacityTests
         report.Scenarios = Enumerable.Repeat(scenario, 100).ToList();
         // Reproduce the object graph restored by the MVC binder from a supported upload.
         report = ReportJson.DeserializeObject<BDTestOutputModel>(BDTestJsonHelper.Serialize(report));
-        Assert.That(report.Scenarios[1], Is.Not.SameAs(report.Scenarios[0]));
+        Assert.That(Required(report.Scenarios)[1], Is.Not.SameAs(report.Scenarios[0]));
         using var services = Services(Size(report));
         var repository = services.GetRequiredService<IDataRepository>();
 
-        await repository.StoreData(report.Id, report);
+        await repository.StoreData(Required(report.Id), report);
 
         Assert.That(await repository.GetDataForBulkRead(report.Id, default), Is.SameAs(report));
     }
@@ -66,7 +66,7 @@ public class ReportCacheCapacityTests
         report.Tag = new string('x', 1023) + "😀漢字é";
         using var exactServices = Services(Size(report));
         var repository = exactServices.GetRequiredService<IDataRepository>();
-        await repository.StoreData(report.Id, report);
+        await repository.StoreData(Required(report.Id), report);
         Assert.That(await repository.GetDataForBulkRead(report.Id, default), Is.SameAs(report));
 
         using var smallerServices = Services(Size(report) - 1);
@@ -100,7 +100,7 @@ public class ReportCacheCapacityTests
                 };
             };
 
-            await repository.StoreData(report.Id, report);
+            await repository.StoreData(Required(report.Id), report);
 
             Assert.That(await repository.GetDataForBulkRead(report.Id, default), Is.SameAs(report));
             await Assert.CatchAsync<InvalidOperationException>(async () =>
@@ -121,7 +121,7 @@ public class ReportCacheCapacityTests
         using var services = Services(500, store);
         var repository = services.GetRequiredService<IDataRepository>();
 
-        await repository.StoreData(report.Id, report);
+        await repository.StoreData(Required(report.Id), report);
         Assert.That(store.Reports, Contains.Key(report.Id));
         await repository.GetData(report.Id, default);
         await repository.GetData(report.Id, default);
@@ -134,7 +134,7 @@ public class ReportCacheCapacityTests
         using var services = Services(500);
         var repository = services.GetRequiredService<IDataRepository>();
         var small = Report("small");
-        await repository.StoreData(small.Id, small);
+        await repository.StoreData(Required(small.Id), small);
 
         await Assert.CatchAsync<InvalidOperationException>(async () =>
             await repository.StoreData("large", Report("large", 1000)));
@@ -164,11 +164,11 @@ public class ReportCacheCapacityTests
         var repository = services.GetRequiredService<IDataRepository>();
 
         await Parallel.ForEachAsync(reports, async (report, _) =>
-            await repository.StoreData(report.Id, report));
+            await repository.StoreData(Required(report.Id), report));
 
         await AssertWithinCapacity(repository, reports, capacity);
         var newest = Report("newest");
-        await repository.StoreData(newest.Id, newest);
+        await repository.StoreData(Required(newest.Id), newest);
         Assert.That(await repository.GetDataForBulkRead(newest.Id, default), Is.SameAs(newest));
     }
 
@@ -178,7 +178,7 @@ public class ReportCacheCapacityTests
         var report = Report("same");
         using var services = Services(Size(report));
         var repository = services.GetRequiredService<IDataRepository>();
-        await repository.StoreData(report.Id, report);
+        await repository.StoreData(Required(report.Id), report);
 
         await Parallel.ForEachAsync(Enumerable.Range(0, 2000), new ParallelOptions { MaxDegreeOfParallelism = 8 },
             async (_, _) => Assert.That(await repository.GetData(report.Id, default), Is.SameAs(report)));
@@ -192,7 +192,7 @@ public class ReportCacheCapacityTests
         var store = persistent ? new PersistentStore() : null;
         using var services = Services(Size(report), store);
         var repository = services.GetRequiredService<IDataRepository>();
-        await repository.StoreData(report.Id, report);
+        await repository.StoreData(Required(report.Id), report);
 
         // A deliberate mutation detects size measurement without relying on serializer internals.
         // Callers must otherwise treat cached reports as immutable.
@@ -234,7 +234,7 @@ public class ReportCacheCapacityTests
         }).ToList();
         using var services = Services(Size(report) * 2);
         var repository = services.GetRequiredService<IDataRepository>();
-        await repository.StoreData(report.Id, report);
+        await repository.StoreData(Required(report.Id), report);
         using var hostCache = new MemoryCache(new MemoryCacheOptions());
         using var baselineCache = new MemoryCacheBdTestDataStore(hostCache,
             services.GetRequiredService<IOptions<BDTestReportOptions>>());
@@ -316,7 +316,7 @@ public class ReportCacheCapacityTests
             var retained = new List<BDTestOutputModel>();
             foreach (var report in reports)
             {
-                var cached = await repository.GetDataForBulkRead(report.Id, default);
+                var cached = await repository.GetDataForBulkRead(Required(report.Id), default);
                 if (cached != null) retained.Add(cached);
             }
             Assert.That(retained.Sum(Size), Is.LessThanOrEqualTo(capacity));

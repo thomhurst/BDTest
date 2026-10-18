@@ -7,10 +7,10 @@ namespace BDTest.Helpers;
 /// <summary>Shared, HTML-encoded exception trees for hosted and standalone reports.</summary>
 public static class ExceptionHtmlHelper
 {
-    public static string GetHtml(ExceptionWrapper exception) => GetHtml(exception,
+    public static string GetHtml(ExceptionWrapper? exception) => GetHtml(exception,
         (html, text) => html.Append($"<pre>{Encode(text)}</pre>"));
 
-    internal static string GetHtml(ExceptionWrapper exception, Action<StringBuilder, string> appendOriginalText)
+    internal static string GetHtml(ExceptionWrapper? exception, Action<StringBuilder, string?> appendOriginalText)
     {
         if (exception == null) return string.Empty;
         var html = new StringBuilder();
@@ -19,7 +19,7 @@ public static class ExceptionHtmlHelper
     }
 
     private static void AppendException(StringBuilder html, ExceptionWrapper exception, int depth,
-        Action<StringBuilder, string> appendOriginalText)
+        Action<StringBuilder, string?> appendOriginalText)
     {
         html.Append(depth == 0 ? "<details class=\"exception-tree\" open>" : "<details class=\"exception-tree\">");
         html.Append($"<summary><strong>{Encode(exception.TypeName)}</strong>: {Encode(exception.Message)}");
@@ -46,7 +46,7 @@ public static class ExceptionHtmlHelper
                     if (child != null) AppendException(html, child, depth + 1, appendOriginalText);
             }
         }
-        if (!string.IsNullOrEmpty(exception.AsString))
+        if (exception.AsString != null && !string.IsNullOrEmpty(exception.AsString))
         {
             html.Append("<details><summary>Original exception text</summary>");
             appendOriginalText(html, exception.AsString);
@@ -55,5 +55,5 @@ public static class ExceptionHtmlHelper
         html.Append("</div></details>");
     }
 
-    private static string Encode(string value) => WebUtility.HtmlEncode(value ?? "");
+    private static string Encode(string? value) => WebUtility.HtmlEncode(value ?? "");
 }

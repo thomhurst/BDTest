@@ -38,5 +38,5 @@ public sealed class BDTestClassAttribute : TestClassAttribute
 
 internal static class MSTestMethodIdentity
 {
-    internal static readonly AsyncLocal<MethodInfo> Current = new();
+    internal static readonly AsyncLocal<MethodInfo?> Current = new();
 }

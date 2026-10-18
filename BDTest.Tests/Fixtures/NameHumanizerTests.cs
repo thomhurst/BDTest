@@ -101,7 +101,7 @@ public class NameHumanizerTests
     [TestCase(nameof(ExplicitText), "Exact ScenarioText", "Exact StepText")]
     public void Metadata_and_steps_use_the_same_rules_and_preserve_explicit_text(string name, string scenarioText, string stepText)
     {
-        var method = typeof(NameHumanizerTests).GetMethod(name, BindingFlags.NonPublic | BindingFlags.Static);
+        var method = Required(typeof(NameHumanizerTests).GetMethod(name, BindingFlags.NonPublic | BindingFlags.Static));
         var metadata = TestMethodMetadata.Get(typeof(NameHumanizerTests), method);
         Assert.That(ScenarioTextHelper.GetScenarioText(metadata, "IgnoredCaller"), Is.EqualTo(scenarioText));
         Assert.That(StepTextHelper.GetStepText(method, Array.Empty<Func<object>>()), Is.EqualTo(stepText));
@@ -112,7 +112,7 @@ public class NameHumanizerTests
     {
         Assert.That(ScenarioTextHelper.GetScenarioText(null, "itemIsValid"), Is.EqualTo("Item is valid"));
         Assert.That(ScenarioTextHelper.GetScenarioText(null, "ItemIsValid"), Is.EqualTo("Item is valid"));
-        var method = typeof(NameHumanizerTests).GetMethod(nameof(ItemIsValid), BindingFlags.NonPublic | BindingFlags.Static);
+        var method = Required(typeof(NameHumanizerTests).GetMethod(nameof(ItemIsValid), BindingFlags.NonPublic | BindingFlags.Static));
         Assert.That(StepTextHelper.GetStepText(method, Array.Empty<Func<object>>()), Is.EqualTo("item is valid"));
     }
 

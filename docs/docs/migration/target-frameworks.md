@@ -1,6 +1,6 @@
 ---
 title: Target frameworks
-description: Native .NET 8 runtime assets, retained .NET Standard support, and private compiler polyfills.
+description: Native .NET 8 runtime assets, retained .NET Standard support, nullable contracts, and private compiler polyfills.
 ---
 
 # Target framework migration
@@ -20,6 +20,21 @@ The modern build also uses the runtime's `CallerArgumentExpressionAttribute`; le
 The modern build uses `Task.WaitAsync` for timeouts and `TimeProvider.System` for UTC timestamps, monotonic elapsed timing, and timeout timers. Explicit runs can configure a [TimeProvider](../advanced/explicit-runs.md#execution-clock-net-8). The .NET Standard asset keeps the existing system-clock implementation. User exceptions, cancellation, retries, and late completion retain their behavior on both assets.
 
 Both assets retain the source-generated `System.Text.Json` serialization paths and the same JSON package version. Historical report support is unchanged.
+
+## Nullable reference contracts
+
+The core library and the NUnit, xUnit, MSTest and TUnit adapters now publish nullable reference annotations on every supported target. These annotations describe existing optional values and do not change runtime signatures, target frameworks or report JSON. Consumers with nullable analysis enabled may see new warnings where a value can already be absent.
+
+- `BDTestOptions.ContextFactory` and `Services`, and `ContextCreation.Services`, are optional. Check the service provider before using it in a custom factory. Factory methods must return a non-null context.
+- Caller member, file and argument-expression parameters accept `null` when compiler metadata is unavailable. Custom builder wrappers should preserve those nullable parameters and forward their values unchanged.
+- `BDTestContext.CurrentScenario` can be `null` before a scenario exists, including while an outline row is being constructed. `Scenario.Run` is `null` in deserialized reports. `Scenario.BdTestBaseClass` can also be `null` after its fixture is collected.
+- Scenario, step and exception report fields that can be absent now use nullable types. Check optional text, identifiers and exceptions before dereferencing them; see [JSON data](../reports/json-data.md#nullable-report-fields).
+- The MSTest adapter's injected `TestContext` is nullable before runner initialization and in manual harnesses. Check it before reading runner metadata.
+- `BDTestJsonHelper.Deserialize` and `DeserializeAsync` return `null` for a JSON `null` root. Check the result before reading report fields.
+
+On the .NET 8 asset, the protected `BDTestException` constructor for formatter-based serialization is now marked obsolete, matching the runtime's obsolete serialization API. Custom exceptions should use the ordinary message and inner-exception constructors.
+
+Handle absence explicitly with a pattern check or a fallback value. Avoid replacing these checks with null-forgiving operators; a report loaded from historical JSON may legitimately omit the value.
 
 ## Package validation and trimming
 

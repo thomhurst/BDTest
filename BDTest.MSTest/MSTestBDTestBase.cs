@@ -8,7 +8,7 @@ namespace BDTest.MSTest;
 public abstract class MSTestBDTestBase<TContext> : AbstractContextBDTestBase<TContext>
     where TContext : class
 {
-    public TestContext TestContext { get; set; }
+    public TestContext? TestContext { get; set; }
 
     /// <summary>The reusable outcome declaration. Register it on options for explicit runs.</summary>
     public static FrameworkOutcomeMap OutcomeMap => MSTestExceptionRegistration.OutcomeMap;

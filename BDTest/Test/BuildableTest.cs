@@ -7,7 +7,7 @@ namespace BDTest.Test;
 
 public class BuildableTest
 {
-    [JsonIgnore] internal TestMethodMetadata TestMetadata { get; set; }
+    [JsonIgnore] internal TestMethodMetadata? TestMetadata { get; set; }
 
     /// <summary>Gets the run captured when this scenario definition was built.</summary>
     [JsonIgnore]
@@ -17,46 +17,48 @@ public class BuildableTest
     internal TimeSpan? ScenarioTimeout { get; set; }
 
     [JsonIgnore]
-    internal string Guid { get; set; }
+    internal string? Guid { get; set; }
 
     [JsonInclude]
-    internal StoryText StoryText { get; set; }
+    internal StoryText? StoryText { get; set; }
 
     [JsonInclude]
-    internal ScenarioText ScenarioText { get; set; }
+    internal ScenarioText? ScenarioText { get; set; }
         
     [JsonInclude]
-    public string ScenarioId { get; internal set; }
+    public string? ScenarioId { get; internal set; }
         
     [JsonInclude]
-    public string ReportId { get; internal set; }
+    public string? ReportId { get; internal set; }
 
     [JsonInclude]
-    public IEnumerable<string> Parameters { get; protected internal set; } = Enumerable.Empty<string>();
+    public IEnumerable<string?>? Parameters { get; protected internal set; } = Enumerable.Empty<string>();
 
     [JsonInclude]
-    public TestInformationAttribute[] CustomTestInformation { get; protected internal set; } = Array.Empty<TestInformationAttribute>();
+    public TestInformationAttribute[]? CustomTestInformation { get; protected internal set; } = Array.Empty<TestInformationAttribute>();
 
     /// <summary>Combined story and scenario tags, distinct ignoring case.</summary>
     [JsonInclude]
-    public string[] Tags { get; protected internal set; } = Array.Empty<string>();
+    public string[]? Tags { get; protected internal set; } = Array.Empty<string>();
         
     [JsonInclude]
-    public string CallerMember { get; protected internal set; }
+    public string? CallerMember { get; protected internal set; }
     [JsonInclude]
-    public string CallerFile { get; protected internal set; }
+    public string? CallerFile { get; protected internal set; }
     [JsonInclude]
-    public string TestId { get; protected internal set; }
+    public string? TestId { get; protected internal set; }
     [JsonIgnore]
-    public BDTestBase BdTestBase { get; protected set; }
+    public BDTestBase? BdTestBase { get; protected set; }
 
     public string GetScenarioText()
     {
-        return string.IsNullOrWhiteSpace(ScenarioText?.Scenario) ? DefaultValues.ScenarioTextNotDefined : ScenarioText.Scenario;
+        var text = ScenarioText?.Scenario;
+        return text == null || string.IsNullOrWhiteSpace(text) ? DefaultValues.ScenarioTextNotDefined : text;
     }
 
     public string GetStoryText()
     {
-        return string.IsNullOrWhiteSpace(StoryText?.Story) ? DefaultValues.StoryTextNotDefined : StoryText.Story;
+        var text = StoryText?.Story;
+        return text == null || string.IsNullOrWhiteSpace(text) ? DefaultValues.StoryTextNotDefined : text;
     }
 }
