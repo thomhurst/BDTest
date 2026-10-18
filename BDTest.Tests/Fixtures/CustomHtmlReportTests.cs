@@ -1,4 +1,4 @@
-using System.Text.RegularExpressions;
+﻿using System.Text.RegularExpressions;
 using System.Xml.Linq;
 using BDTest.Razor.Reports.Extensions;
 using BDTest.Razor.Reports.Models.ViewModels;
@@ -50,12 +50,11 @@ public class CustomHtmlReportTests
 
     [Test]
     public async Task CustomHtmlIsIsolatedFromTheReport(
-        [Values(false, true)] bool modal,
         [ValueSource(nameof(Payloads))] string payload)
     {
-        var html = await RenderScenario(modal, payload);
+        var html = await RenderScenario(false, payload);
         var match = Regex.Match(html, @"<iframe\b[^>]*>");
-        Assert.That(match.Success, Is.True, "Custom output must be in an iframe in both report views.");
+        Assert.That(match.Success, Is.True, "Custom output must be in an iframe on the scenario page.");
 
         var frame = XElement.Parse(match.Value + "</iframe>");
         Assert.That(frame.Attribute("sandbox")?.Value, Is.EqualTo(string.Empty),
@@ -76,6 +75,16 @@ public class CustomHtmlReportTests
         Assert.That(policy.Groups[1].Value, Does.Contain("img-src data: https: http:"));
         Assert.That(html.Remove(match.Index, match.Length), Does.Not.Contain(payload),
             "Uploaded HTML must never be emitted into the parent report document.");
+    }
+
+    [Test]
+    public async Task SidePanelNeverEmbedsCustomHtml(
+        [ValueSource(nameof(Payloads))] string payload)
+    {
+        // The Scenarios side panel links to the full page instead of rendering uploaded HTML.
+        var html = await RenderScenario(true, payload);
+        Assert.That(html, Does.Not.Contain("<iframe"));
+        Assert.That(html, Does.Not.Contain(payload));
     }
 
     [Test]
@@ -104,7 +113,7 @@ public class CustomHtmlReportTests
         var actionContext = new ActionContext(httpContext, new RouteData(), new ActionDescriptor());
         var engine = scope.ServiceProvider.GetRequiredService<IRazorViewEngine>();
         var view = engine.GetView(null, modal
-            ? "/Views/Shared/_ScenarioModalPopup.cshtml"
+            ? "/Views/Shared/_ScenarioPanel.cshtml"
             : "/Views/BDTest/Scenario.cshtml", false);
         Assert.That(view.Success, Is.True);
         using var writer = new StringWriter();

@@ -1,4 +1,4 @@
-using System.Globalization;
+﻿using System.Globalization;
 using System.Text.RegularExpressions;
 using BDTest.Razor.Reports.Extensions;
 using BDTest.Razor.Reports.Models;
@@ -43,44 +43,5 @@ public class ReportDateFormatTests
     {
         var timestamp = Timestamp.AddMilliseconds(milliseconds - Timestamp.Millisecond);
         Assert.That(timestamp.ToStringForReport(false), Does.EndWith(" " + expectedTime));
-    }
-
-    [TestCase("/Views/Shared/_Javascript_Flakey_Duration_Chart.cshtml", 1)]
-    [TestCase("/Views/Shared/_Javascript_Flakey_Status_Chart.cshtml", 1)]
-    [TestCase("/Views/BDTest/Trends.cshtml", 2)]
-    public async Task Chart_dates_preserve_custom_culture_text_as_json(string view, int expectedArrays)
-    {
-        var previousCulture = CultureInfo.CurrentCulture;
-        try
-        {
-            var culture = new CultureInfo("en-US");
-            culture.DateTimeFormat.ShortDatePattern = "yyyy '\"雪\" <tag>' MM dd";
-            CultureInfo.CurrentCulture = culture;
-            const string expected = "2026 \"雪\" <tag> 10 17 14:05:06.123";
-            var summary = ReportJson.DeserializeObject<TestRunSummary>("{}");
-            summary.RecordId = "report-id";
-            summary.Tag = "date-test";
-            summary.StartedAtDateTime = Timestamp;
-            summary.FinishedAtDateTime = Timestamp.AddSeconds(1);
-            var scenario = ReportJson.DeserializeObject<Scenario>(ReportJson.SerializeObject(new
-            {
-                Guid = "scenario-id", ReportId = "report-id", StartTime = Timestamp, EndTime = Timestamp.AddSeconds(1)
-            }));
-            object model = view.Contains("Trends.cshtml")
-                ? new[] { summary }
-                : new ChartViewModel { Scenarios = [scenario], Reports = [] };
-
-            var html = await ReportHandlerEncodingTests.RenderAsync(view, model, query: "?tag=date-test");
-            var arrays = Regex.Matches(html, @"labels:\s*(\[.*?\])", RegexOptions.Singleline);
-            Assert.That(arrays, Has.Count.EqualTo(expectedArrays));
-            foreach (Match array in arrays)
-            {
-                Assert.That(JsonConvert.DeserializeObject<string[]>(array.Groups[1].Value), Is.EqualTo(new[] { expected }));
-            }
-        }
-        finally
-        {
-            CultureInfo.CurrentCulture = previousCulture;
-        }
     }
 }

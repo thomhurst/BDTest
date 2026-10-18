@@ -1,0 +1,113 @@
+@using BDTest.Razor.Reports.Helpers
+@using BDTest.Razor.Reports.Models
+@using BDTest.Test
+@model BDTest.Razor.Reports.Models.ViewModels.ScenarioModalViewModel
+@{
+    var scenario = Model.Scenario;
+    var exception = scenario.Exception;
+    var failingStep = FailureGroup.FailingStep(scenario);
+    var shareUrl = Context.GetLocalUrlWithQueryParameter("scenarioId", scenario.Guid);
+    var traceId = "panel-trace-" + scenario.Guid;
+    var file = string.IsNullOrEmpty(scenario.FileName) ? null : scenario.FileName.Replace('\\', '/').Split('/')[^1];
+}
+
+<aside aria-label="Selected scenario" class="card clip" style="flex: 1 1 460px; min-width: 0">
+    <div class="card-pad" style="padding-top: 16px; padding-bottom: 16px; gap: 10px; border-bottom: 1px solid var(--line)">
+        <div class="cluster" style="flex-wrap: nowrap">
+            @scenario.Status.Pill()
+            @if (Model.Position > 0)
+            {
+                <span class="small muted" style="white-space: nowrap">@Model.Position of @Model.Count in this list</span>
+            }
+            <span class="grow"></span>
+            @if (Model.PreviousUrl != null)
+            {
+                <a class="btn ghost sm icon" href="@Model.PreviousUrl" aria-label="Previous in list">@ReportUi.Icon("i-chev-l")</a>
+            }
+            @if (Model.NextUrl != null)
+            {
+                <a class="btn ghost sm icon" href="@Model.NextUrl" aria-label="Next in list">@ReportUi.Icon("i-chev-r")</a>
+            }
+            <button class="btn ghost sm icon" type="button" data-bdtest-action="copy-url" data-url="@shareUrl" aria-label="Copy link to this scenario">@ReportUi.Icon("i-link")</button>
+            @if (Model.FullPageUrl != null)
+            {
+                <a class="btn ghost sm icon" href="@Model.FullPageUrl" aria-label="Open full page">@ReportUi.Icon("i-expand")</a>
+            }
+            @if (Model.CloseUrl != null)
+            {
+                <a class="btn ghost sm icon" href="@Model.CloseUrl" aria-label="Close panel">@ReportUi.Icon("i-x")</a>
+            }
+        </div>
+        <h2 style="font-size: 21px; font-weight: 700; overflow-wrap: anywhere">@scenario.GetScenarioText()</h2>
+        <div class="meta" style="font-size: 13.5px; gap: 4px 18px">
+            <span>@ReportUi.StoryTitle(scenario.GetStoryText()) story</span>
+            <span>@scenario.TimeTaken.ToShortDuration()</span>
+            @if (scenario.RetryCount > 0)
+            {
+                <span>@scenario.RetryCount @(scenario.RetryCount == 1 ? "retry" : "retries")</span>
+            }
+            @if (file != null)
+            {
+                <span class="mono" style="font-size: 12.5px">@file</span>
+            }
+        </div>
+        @if (scenario.Tags.Length > 0)
+        {
+            <div class="cluster" style="gap: 6px">
+                @foreach (var tag in scenario.Tags)
+                {
+                    <span class="tag">@tag</span>
+                }
+            </div>
+        }
+    </div>
+
+    @if (exception != null)
+    {
+        <div class="card-pad" style="gap: 10px">
+            <div class="k">@(scenario.Status == Status.Failed ? "Failure" : scenario.Status.Label())</div>
+            <p class="strong" style="overflow-wrap: anywhere">@exception.Message</p>
+            <pre class="code" id="@traceId">@(exception.AsString ?? exception.Message)</pre>
+            <div class="cluster">
+                <button class="btn sm" type="button" data-bdtest-action="copy-text" data-target="@traceId">Copy</button>
+                @if (Model.FullPageUrl != null)
+                {
+                    <a class="btn sm" href="@Model.FullPageUrl">Full page</a>
+                }
+            </div>
+        </div>
+    }
+
+    @if (scenario.IsOutline && scenario.Examples?.Count > 0)
+    {
+        <div style="border-top: 1px solid var(--line)">
+            @await Html.PartialAsync("_ScenarioExamples", scenario)
+        </div>
+    }
+    else if (scenario.Steps?.Count > 0)
+    {
+        <div style="border-top: 1px solid var(--line)">
+            <div class="k" style="padding: 14px 20px 6px">Steps</div>
+            <ol class="steps-compact">
+                @foreach (var step in scenario.Steps)
+                {
+                    var (keyword, text) = ReportUi.SplitStepText(step.StepText);
+                    var notRun = step.Status is Status.NotRun or Status.Pending;
+                    <li class="@(step == failingStep ? "fail" : notRun ? "skipped" : "")">
+                        @step.Status.StatusIcon()
+                        <span class="grow step-text" style="@(step == failingStep ? "font-weight: 600" : "")"><b>@keyword</b> @text</span>
+                        <span class="dur">@(notRun ? "—" : step.TimeTaken.ToShortDuration())</span>
+                    </li>
+                }
+            </ol>
+        </div>
+    }
+
+    @if (Model.FullPageUrl != null)
+    {
+        <div class="spread" style="border-top: 1px solid var(--line); padding: 14px 20px">
+            <span class="small muted">@(scenario.Attempts?.Count > 1 ? $"{scenario.Attempts.Count} attempts" : "")</span>
+            <a class="lnk" href="@Model.FullPageUrl">Output, setup and attempts</a>
+        </div>
+    }
+</aside>

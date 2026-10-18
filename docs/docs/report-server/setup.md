@@ -83,7 +83,7 @@ Without persistent stores, reports are kept only in a bounded memory cache. A re
 | `AdminAuthorizer` | `IAdminAuthorizer` | denies everyone | Decides who may delete reports. See [Security](security.md#administrators). |
 | `DataReceiver` | `IBDTestDataReceiver` | `null` | Called after each upload. See [Customization](customization.md#reacting-to-uploads). |
 | `CustomHeaderLinksProvider` | `IBDTestCustomHeaderLinksProvider` | `null` | Extra links in the top bar. |
-| `CustomSidebarLinksProvider` | `IBDTestCustomSidebarLinksProvider` | `null` | Extra links in the sidebar. |
+| `CustomSidebarLinksProvider` | `IBDTestCustomSidebarLinksProvider` | `null` | Extra links for the current run, in the header **Links** menu. |
 | `UserPersonalizer` | `IUserPersonalizer` | `null` | User name, picture and links. |
 | `Logger` | `ILogger?` | `null` | Logger for report server diagnostics. |
 

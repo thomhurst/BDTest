@@ -124,7 +124,7 @@ public class ReportDeletionTests
     private async Task<(string Action, string Token)> ReadDeleteForm()
     {
         var html = await _client.GetStringAsync(ListPath);
-        var match = Regex.Match(html, @"<form\b[^>]*>.*?Delete</button>\s*</form>", RegexOptions.Singleline);
+        var match = Regex.Match(html, @"<form\b[^>]*/report/delete/[^>]*>.*?Delete</button>\s*</form>", RegexOptions.Singleline);
         Assert.That(match.Success, Is.True, "The admin delete button must submit an antiforgery-protected form.");
         var form = XElement.Parse(match.Value);
         Assert.That((string)form.Attribute("method"), Is.EqualTo("post"));

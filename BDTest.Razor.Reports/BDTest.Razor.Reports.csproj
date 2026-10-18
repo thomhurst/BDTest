@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk.Razor">
+﻿<Project Sdk="Microsoft.NET.Sdk.Razor">
 
     <PropertyGroup>
         <TargetFramework>net10.0</TargetFramework>
@@ -16,28 +16,6 @@
         <FrameworkReference Include="Microsoft.AspNetCore.App" />
         <PackageReference Include="TomLonghurst.EnumerableAsyncProcessor" Version="1.1.0" />
     </ItemGroup>
-
-
-    <ItemGroup>
-        <_ContentIncludedByDefault Remove="wwwroot\background.png" />
-        <_ContentIncludedByDefault Remove="wwwroot\exampleJsInterop.js" />
-        <_ContentIncludedByDefault Remove="wwwroot\styles.css" />
-        
-        <_ContentIncludedByDefault Remove="wwwroot\js\bootstrap\bootstrap.bundle.js" />
-        <_ContentIncludedByDefault Remove="wwwroot\js\bootstrap\bootstrap.bundle.js.map" />
-        <_ContentIncludedByDefault Remove="wwwroot\js\bootstrap\bootstrap.bundle.min.js" />
-        <_ContentIncludedByDefault Remove="wwwroot\js\bootstrap\bootstrap.bundle.min.js.map" />
-        <_ContentIncludedByDefault Remove="wwwroot\js\bootstrap\bootstrap.esm.js" />
-        <_ContentIncludedByDefault Remove="wwwroot\js\bootstrap\bootstrap.esm.js.map" />
-        <_ContentIncludedByDefault Remove="wwwroot\js\bootstrap\bootstrap.esm.min.js" />
-        <_ContentIncludedByDefault Remove="wwwroot\js\bootstrap\bootstrap.esm.min.js.map" />
-        <_ContentIncludedByDefault Remove="wwwroot\js\bootstrap\bootstrap.js" />
-        <_ContentIncludedByDefault Remove="wwwroot\js\bootstrap\bootstrap.js.map" />
-        <_ContentIncludedByDefault Remove="wwwroot\js\bootstrap\bootstrap.min.js" />
-        <_ContentIncludedByDefault Remove="wwwroot\js\bootstrap\bootstrap.min.js.mmap" />
-
-        <_ContentIncludedByDefault Remove="wwwroot\css\bootstrap\*" />
-    </ItemGroup>
     
     <ItemGroup>
       <ProjectReference Include="..\BDTest\BDTest.csproj" />
@@ -52,19 +30,7 @@
         <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
         <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
       </Content>
-      <Content Update="Views\Shared\_SetupTeardownOutputRow.cshtml">
-        <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
-        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-      </Content>
-      <Content Update="wwwroot\css\BDTest.css">
-        <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
-        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-      </Content>
       <Content Update="Views\BDTest\TopDefects.cshtml">
-        <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
-        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-      </Content>
-      <Content Update="Views\Shared\_WowSuchEmpty.cshtml">
         <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
         <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
       </Content>
@@ -76,31 +42,11 @@
         <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
         <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
       </Content>
-      <Content Update="Views\Shared\_SideMenu.cshtml">
-        <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
-        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-      </Content>
       <Content Update="Views\BDTest\Warnings.cshtml">
         <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
         <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
       </Content>
-      <Content Update="Views\Shared\_RedirectViaJavascript.cshtml">
-        <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
-        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-      </Content>
-      <Content Update="Views\Shared\_OrderByDropdown.cshtml">
-        <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
-        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-      </Content>
       <Content Update="Views\BDTest\Trends.cshtml">
-        <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
-        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-      </Content>
-      <Content Update="Views\Shared\_TrendsPageGenericDropdown.cshtml">
-        <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
-        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-      </Content>
-      <Content Update="Views\Shared\_TestRunListVisibleColumnsDropdown.cshtml">
         <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
         <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
       </Content>

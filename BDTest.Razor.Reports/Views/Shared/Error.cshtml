@@ -1,25 +1,25 @@
-﻿@model BDTest.Razor.Reports.Models.ViewModels.ErrorViewModel
+﻿@using BDTest.Razor.Reports.Helpers
+@model BDTest.Razor.Reports.Models.ViewModels.ErrorViewModel
 @{
-    ViewData["Title"] = "Error";
+    ViewBag.Title = "Error";
+    Layout = "_Layout";
+    // After UseExceptionHandler re-executes, the request path is the error route, so retry the original path.
+    var failedPath = Context.Features.Get<Microsoft.AspNetCore.Diagnostics.IExceptionHandlerPathFeature>()?.Path;
+    var retryUrl = failedPath == null ? Context.GetLocalUrl() : Context.GetLocalUrl(failedPath);
 }
 
-<h1 class="text-danger">Error.</h1>
-<h2 class="text-danger">An error occurred while processing your request.</h2>
-
-@if (Model.ShowRequestId)
-{
-    <p>
-        <strong>Request ID:</strong> <code>@Model.RequestId</code>
-    </p>
-}
-
-<h3>Development Mode</h3>
-<p>
-    Swapping to <strong>Development</strong> environment will display more detailed information about the error that occurred.
-</p>
-<p>
-    <strong>The Development environment shouldn't be enabled for deployed applications.</strong>
-    It can result in displaying sensitive information from exceptions to end users.
-    For local debugging, enable the <strong>Development</strong> environment by setting the <strong>ASPNETCORE_ENVIRONMENT</strong> environment variable to <strong>Development</strong>
-    and restarting the app.
-</p>
+<main class="wrap page">
+    <section class="card empty">
+        <span class="mark f">@ReportUi.Icon("i-warn", "xl")</span>
+        <h1 class="h2" style="font-size: 18px">Something went wrong on the server</h1>
+        <p>This page couldn’t load. Try again, or send the reference below to whoever runs this server.</p>
+        @if (Model?.ShowRequestId == true)
+        {
+            <span class="mono muted">Reference @Model.RequestId</span>
+        }
+        <div class="cluster">
+            <a class="btn pri" href="@retryUrl">Try again</a>
+            <a class="btn" href="~/bdtest/report/test-runs">All runs</a>
+        </div>
+    </section>
+</main>

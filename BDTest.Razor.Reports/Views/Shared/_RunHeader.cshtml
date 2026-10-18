@@ -1,0 +1,135 @@
+@using BDTest.Razor.Reports.Helpers
+@using BDTest.Razor.Reports.Interfaces
+@using BDTest.Razor.Reports.Models.ViewModels
+@using BDTest.Test
+@model ReportLayoutViewModel
+@inject IDataRepository DataRepository
+
+@{
+    var report = Model.Report;
+    var activeTab = ViewData["RunTab"] as string ?? "overview";
+    var reportPath = "~/bdtest/report/" + Uri.EscapeDataString(report.Id ?? string.Empty);
+    var total = Model.Scenarios.Count;
+    var failed = Model.Counts[Status.Failed];
+    var status = Model.Status;
+    var statusText = total == 0
+        ? "No scenarios"
+        : status == Status.Failed
+            ? $"Failed · {failed} of {total}"
+            : status == Status.Passed ? $"Passed · {total}" : status.Label();
+
+    // Previous and next runs share the tag so the arrows step through one series of runs.
+    var series = (await DataRepository.GetAllTestRunRecords(Context.RequestAborted) ?? Enumerable.Empty<BDTest.Razor.Reports.Models.TestRunSummary>())
+        .Where(record => record != null && string.Equals(record.Tag, report.Tag, StringComparison.Ordinal))
+        .OrderBy(record => record.StartedAtDateTime)
+        .ToList();
+    var index = series.FindIndex(record => record.RecordId == report.Id);
+    var previous = index > 0 ? series[index - 1] : null;
+    var next = index >= 0 && index < series.Count - 1 ? series[index + 1] : null;
+
+    var historyQuery = new Dictionary<string, string>
+    {
+        ["tag"] = report.Tag, ["environment"] = report.Environment, ["branch"] = report.BranchName
+    }.Where(pair => !string.IsNullOrEmpty(pair.Value))
+        .Select(pair => pair.Key + "=" + Uri.EscapeDataString(pair.Value));
+    var historyUrl = Url.Content("~/bdtest/report/history") + (historyQuery.Any() ? "?" + string.Join("&", historyQuery) : string.Empty);
+    var started = Model.Timer.TestsStartedAt;
+    var hasTimes = total > 0 || report.TestTimer != null;
+}
+
+<section class="page-head" aria-label="Run">
+    <div class="wrap">
+        <nav class="crumbs" aria-label="Breadcrumb">
+            <a class="lnk" href="~/bdtest/report/test-runs">Runs</a><span aria-hidden="true">/</span>
+            <a class="lnk" href="@historyUrl">@Model.Title</a>
+            @if (hasTimes && started != default)
+            {
+                <span aria-hidden="true">/</span><span>@started.ToRunDate()</span>
+            }
+        </nav>
+        <div class="title-row">
+            <h1>@Model.Title</h1>
+            @if (total == 0)
+            {
+                <span class="pill q">@statusText</span>
+            }
+            else
+            {
+                @status.Pill(statusText)
+            }
+            <div class="grow"></div>
+            <div class="cluster">
+                @if (previous != null)
+                {
+                    <a class="btn sm hide-phone" href="@RunUrl(previous.RecordId, activeTab)">@ReportUi.Icon("i-chev-l")Previous run</a>
+                }
+                else
+                {
+                    <span class="btn sm hide-phone" aria-disabled="true">@ReportUi.Icon("i-chev-l")Previous run</span>
+                }
+                @if (next != null)
+                {
+                    <a class="btn sm hide-phone" href="@RunUrl(next.RecordId, activeTab)">Next run@(ReportUi.Icon("i-chev-r"))</a>
+                }
+                else
+                {
+                    <span class="btn sm hide-phone" aria-disabled="true">Next run@(ReportUi.Icon("i-chev-r"))</span>
+                }
+                @await Html.PartialAsync("_CopyLinkButton")
+                <a class="btn sm" href="@Url.Content(reportPath + "/raw-json-data")" download>@ReportUi.Icon("i-down")JSON</a>
+            </div>
+        </div>
+        <div class="meta">
+            @if (!string.IsNullOrEmpty(report.Environment))
+            {
+                <span>Environment <b>@report.Environment</b></span>
+            }
+            @if (!string.IsNullOrEmpty(report.BranchName))
+            {
+                <span>Branch <b>@report.BranchName</b></span>
+            }
+            @foreach (var property in (report.CustomProperties ?? new Dictionary<string, string>()).Take(3))
+            {
+                <span>@property.Key <b>@property.Value</b></span>
+            }
+            @if (hasTimes && started != default)
+            {
+                <span>Started <b>@started.ToClock()</b></span>
+                <span>Duration <b>@Model.Timer.ElapsedTime.ToShortDuration()</b></span>
+            }
+        </div>
+        <nav class="tabs" aria-label="Run sections">
+            @Tab("overview", "Overview", reportPath + "/summary", null, false)
+            @Tab("scenarios", "Scenarios", reportPath + "/all-scenarios", total.ToString(), false)
+            @Tab("failures", "Failures", reportPath + "/top-defects",
+                Model.FailureCauses == 0 ? null : Model.FailureCauses + (Model.FailureCauses == 1 ? " cause" : " causes"), true)
+            @Tab("timings", "Timings", reportPath + "/timings", null, false)
+            @Tab("notrun", "Not run", reportPath + "/warnings", Model.NotRunCount == 0 ? null : Model.NotRunCount.ToString(), false)
+        </nav>
+    </div>
+</section>
+
+@functions
+{
+    private string RunUrl(string id, string tab)
+    {
+        var page = tab switch
+        {
+            "scenarios" => "all-scenarios",
+            "failures" => "top-defects",
+            "timings" => "timings",
+            "notrun" => "warnings",
+            _ => "summary"
+        };
+        return Url.Content($"~/bdtest/report/{Uri.EscapeDataString(id ?? string.Empty)}/{page}");
+    }
+
+    private Microsoft.AspNetCore.Html.IHtmlContent Tab(string key, string text, string href, string count, bool failure)
+    {
+        var active = string.Equals(ViewData["RunTab"] as string ?? "overview", key, StringComparison.Ordinal);
+        var encoder = System.Text.Encodings.Web.HtmlEncoder.Default;
+        var badge = count == null ? string.Empty : $" <span class=\"cnt{(failure ? " f" : "")}\">{encoder.Encode(count)}</span>";
+        return new Microsoft.AspNetCore.Html.HtmlString(
+            $"<a class=\"tab{(active ? " on" : "")}\" href=\"{encoder.Encode(Url.Content(href))}\"{(active ? " aria-current=\"page\"" : "")}>{encoder.Encode(text)}{badge}</a>");
+    }
+}

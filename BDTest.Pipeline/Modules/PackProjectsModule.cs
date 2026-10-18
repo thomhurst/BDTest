@@ -10,6 +10,8 @@ using File = ModularPipelines.FileSystem.File;
 
 namespace BDTest.Pipeline.Modules;
 
+// Tests rebuild the same bin/obj outputs; packing must not read them concurrently.
+[DependsOn<RunUnitTestsModule>]
 [DependsOn<PackageFilesRemovalModule>]
 [DependsOn<NugetVersionGeneratorModule>]
 public class PackProjectsModule : Module<List<CommandResult>>

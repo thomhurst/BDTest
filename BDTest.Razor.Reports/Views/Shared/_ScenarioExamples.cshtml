@@ -1,81 +1,85 @@
-@using BDTest.Razor.Reports.Extensions
+@using BDTest.Razor.Reports.Helpers
+@using BDTest.Test
 @model BDTest.Test.Scenario
 
 @if (Model.IsOutline)
 {
-    var columns = Model.Examples.SelectMany(row => row.ExampleValues.Keys).Distinct().ToArray();
-    <h4>Examples</h4>
-    <div class="scrollable-table-container">
-        <table class="table is-fullwidth">
-            <thead>
-            <tr>
-                <th>Example</th>
-                @foreach (var column in columns)
-                {
-                    <th>@column</th>
-                }
-                <th>Status</th>
-                <th>Duration</th>
-                <th>Details</th>
-            </tr>
-            </thead>
-            <tbody>
-            @for (var index = 0; index < Model.Examples.Count; index++)
-            {
-                var row = Model.Examples[index];
-                <tr class="example-row">
-                    <td>@(index + 1)</td>
-                    @foreach (var column in columns)
+    var passed = Model.Examples.Count(row => row.Status == Status.Passed);
+    <section aria-labelledby="examples-@Model.Guid">
+        <div class="card-head">
+            <h2 id="examples-@Model.Guid">Examples</h2>
+            <span class="small muted">@passed of @Model.Examples.Count passed</span>
+        </div>
+        @for (var index = 0; index < Model.Examples.Count; index++)
+        {
+            var row = Model.Examples[index];
+            var stepExceptions = row.Steps.Where(step => step.Exception != null).Select(step => step.Exception).ToList();
+            <details class="example-row" id="example-@row.Guid" data-expandable open="@(row.Status == Status.Failed)">
+                <summary class="ex">
+                    @row.Status.StatusIcon()
+                    <span class="grow" style="overflow-wrap: anywhere">
+                        @if (row.ExampleValues.Count == 0)
+                        {
+                            @($"Example {index + 1}")
+                        }
+                        @foreach (var (pair, position) in row.ExampleValues.Select((pair, position) => (pair, position)))
+                        {
+                            if (position > 0)
+                            {
+                                <span class="muted"> · </span>
+                            }
+                            <span class="mono">@pair.Key</span> @(" = ")<span>@pair.Value</span>
+                        }
+                    </span>
+                    <span class="dur" title="@row.TimeTaken">@row.TimeTaken.ToShortDuration()</span>
+                    @ReportUi.Icon("i-chev-r", "chev muted")
+                </summary>
+                <div class="ex-body">
+                    @if (!string.IsNullOrEmpty(row.TestStartupInformation))
                     {
-                        <td>@(row.ExampleValues.TryGetValue(column, out var value) ? value : "")</td>
+                        <div class="k" style="padding-top: 8px">Setup output</div>
+                        <pre class="code">@row.TestStartupInformation</pre>
                     }
-                    <td><span class="@row.Status.GetCssColourValueForStatus() tag">@row.Status.AsString()</span></td>
-                    <td>@row.TimeTaken</td>
-                    <td>
-                        <details>
-                            <summary>Steps and output</summary>
-                            @if (!string.IsNullOrEmpty(row.TestStartupInformation))
-                            {
-                                <h5>Startup output</h5>
-                                <pre>@row.TestStartupInformation</pre>
-                            }
-                            @foreach (var step in row.Steps)
-                            {
-                                <div class="my-2">
-                                    <span>@step.StepText</span>
-                                    <span class="@step.Status.GetCssColourValueForStatus() tag">@step.Status.AsString()</span>
-                                    @if (step.Exception != null)
-                                    {
-                                        <pre class="text-danger">@step.Exception.AsString</pre>
-                                    }
-                                </div>
-                            }
-                            @if (!string.IsNullOrEmpty(row.Output))
-                            {
-                                <pre>@row.Output</pre>
-                            }
-                            @if (row.Exception != null && !row.Steps.Any(step => ReferenceEquals(step.Exception, row.Exception)))
-                            {
-                                <pre class="text-danger">@row.Exception.AsString</pre>
-                            }
-                            @if (row.RetryCount > 0)
-                            {
-                                @await Html.PartialAsync("_RetryHistory", row)
-                            }
-                            @if (!string.IsNullOrEmpty(row.TearDownOutput))
-                            {
-                                <h5>Teardown output</h5>
-                                <pre>@row.TearDownOutput</pre>
-                            }
-                            @if (!string.IsNullOrEmpty(row.CustomHtmlOutputForReport))
-                            {
-                                @await Html.PartialAsync("_CustomHtmlOutput", row.CustomHtmlOutputForReport)
-                            }
-                        </details>
-                    </td>
-                </tr>
-            }
-            </tbody>
-        </table>
-    </div>
+                    @foreach (var step in row.Steps)
+                    {
+                        var (keyword, text) = ReportUi.SplitStepText(step.StepText);
+                        <div class="ex-step">
+                            @step.Status.StatusIcon()
+                            <span class="step-text"><b>@keyword</b> @text</span>
+                            <span class="dur">@(step.Status is Status.NotRun or Status.Pending ? "—" : step.TimeTaken.ToShortDuration())</span>
+                        </div>
+                        @Html.Raw(BDTest.Helpers.StepArgumentHtmlHelper.GetHtml(step.Arguments))
+                        @if (step.Exception != null)
+                        {
+                            <pre class="code" style="color: var(--fail)">@step.Exception.AsString</pre>
+                        }
+                    }
+                    @if (!string.IsNullOrEmpty(row.Output))
+                    {
+                        <div class="k" style="padding-top: 8px">Output</div>
+                        <pre class="code">@row.Output</pre>
+                    }
+                    @if (row.Exception != null && !stepExceptions.Any(exception => ReferenceEquals(exception, row.Exception)))
+                    {
+                        <div class="k" style="padding-top: 8px">Exception</div>
+                        <pre class="code" style="color: var(--fail)">@row.Exception.AsString</pre>
+                    }
+                    @if (row.RetryCount > 0)
+                    {
+                        @await Html.PartialAsync("_RetryHistory", row)
+                    }
+                    @if (!string.IsNullOrEmpty(row.TearDownOutput))
+                    {
+                        <div class="k" style="padding-top: 8px">Teardown output</div>
+                        <pre class="code">@row.TearDownOutput</pre>
+                    }
+                    @if (!string.IsNullOrEmpty(row.CustomHtmlOutputForReport))
+                    {
+                        <div class="k" style="padding-top: 8px">Custom output</div>
+                        @await Html.PartialAsync("_CustomHtmlOutput", row.CustomHtmlOutputForReport)
+                    }
+                </div>
+            </details>
+        }
+    </section>
 }

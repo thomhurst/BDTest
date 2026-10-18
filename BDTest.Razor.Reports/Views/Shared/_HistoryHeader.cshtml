@@ -1,0 +1,110 @@
+﻿@using BDTest.Razor.Reports.Helpers
+@using BDTest.Razor.Reports.Models
+@using BDTest.Razor.Reports.Models.ViewModels
+@model HistoryViewModel
+
+@{
+    var filter = Model.Filter;
+    var action = Model.Tab switch
+    {
+        HistoryViewModel.Flaky => "~/bdtest/report/history/flaky",
+        HistoryViewModel.Timing => "~/bdtest/report/history/timing",
+        _ => "~/bdtest/report/history"
+    };
+
+    var scope = new List<string>();
+    if (filter.Branch != null) scope.Add(filter.Branch);
+    if (filter.Environment != null) scope.Add(filter.Environment);
+    if (filter.Machine != null) scope.Add(filter.Machine);
+    var runs = Model.Runs;
+    var summary = $"{runs.Count} {(filter.Tag == null ? "" : filter.Tag + " ")}run{(runs.Count == 1 ? "" : "s")}"
+                  + (scope.Count > 0 ? " on " + string.Join(", ", scope) : string.Empty)
+                  + (runs.Count > 0 ? $" · {runs[0].StartedAtDateTime.ToDay()} – {runs[^1].StartedAtDateTime.ToDay()}" : string.Empty);
+}
+
+<section class="page-head" aria-label="History filters">
+    <div class="wrap" style="padding-top: 22px; gap: 16px">
+        <div class="spread" style="justify-content: flex-start; gap: 8px 16px">
+            <h1 class="page-title">History</h1>
+            <span class="muted">@summary</span>
+            <span class="grow"></span>
+            @await Html.PartialAsync("_CopyLinkButton")
+        </div>
+        <form class="filters" method="get" action="@Url.Content(action)" data-autosubmit>
+            @Select("Tag", "tag", "All tags", Model.AllRuns.Select(run => run.Tag), filter.Tag)
+            @Select("Environment", "environment", "All", Model.AllRuns.Select(run => run.Environment), filter.Environment)
+            @Select("Branch", "branch", "All", Model.AllRuns.Select(run => run.BranchName), filter.Branch)
+            @Select("Machine", "machine", "All", Model.AllRuns.Select(run => run.MachineName), filter.Machine)
+            <label class="field" style="flex: 1 1 200px">Date range
+                <select class="inp" name="range">
+                    @if (filter.CustomRange is { } custom)
+                    {
+                        <option value="@RunFilter.Custom" selected>@custom.Start.ToDay() – @custom.End.ToDay()</option>
+                    }
+                    @foreach (var range in RunFilter.AllRanges)
+                    {
+                        <option value="@range" selected="@(filter.CustomRange == null && filter.Range == range)">@RunFilter.RangeLabel(range)</option>
+                    }
+                </select>
+            </label>
+            @if (filter.CustomRange != null)
+            {
+                @* Ignored once another range is chosen, so the custom dates survive changes to other filters only. *@
+                <input type="hidden" name="datetimerange" value="@filter.CustomRangeValue">
+            }
+            @if (Model.Tab != HistoryViewModel.Trends && !Model.ChosenRuns)
+            {
+                <input type="hidden" name="compare" value="@Model.Compare">
+            }
+            <noscript><button class="btn sm" type="submit">Apply</button></noscript>
+            <a class="btn ghost sm link" href="@Url.Content(action)" style="min-height: 36px">Reset filters</a>
+        </form>
+        <nav class="tabs" aria-label="History views">
+            @Tab(HistoryViewModel.Trends, "Trends", "~/bdtest/report/history")
+            @Tab(HistoryViewModel.Flaky, "Flaky tests", "~/bdtest/report/history/flaky")
+            @Tab(HistoryViewModel.Timing, "Timing variance", "~/bdtest/report/history/timing")
+        </nav>
+    </div>
+</section>
+
+@functions
+{
+    private Microsoft.AspNetCore.Html.IHtmlContent Select(string label, string name, string anyText, IEnumerable<string> values, string selected)
+    {
+        var encoder = System.Text.Encodings.Web.HtmlEncoder.Default;
+        var options = values.Where(value => !string.IsNullOrEmpty(value)).Distinct(StringComparer.Ordinal)
+            .OrderBy(value => value, StringComparer.OrdinalIgnoreCase).ToList();
+        if (selected != null && !options.Contains(selected, StringComparer.Ordinal))
+        {
+            options.Insert(0, selected);
+        }
+
+        var html = new System.Text.StringBuilder();
+        html.Append($"<label class=\"field\" style=\"flex: 1 1 160px\">{encoder.Encode(label)}<select class=\"inp\" name=\"{name}\">");
+        html.Append($"<option value=\"\">{encoder.Encode(anyText)}</option>");
+        foreach (var option in options)
+        {
+            var isSelected = string.Equals(option, selected, StringComparison.Ordinal) ? " selected" : string.Empty;
+            html.Append($"<option value=\"{encoder.Encode(option)}\"{isSelected}>{encoder.Encode(option)}</option>");
+        }
+
+        html.Append("</select></label>");
+        return new Microsoft.AspNetCore.Html.HtmlString(html.ToString());
+    }
+
+    private Microsoft.AspNetCore.Html.IHtmlContent Tab(string key, string text, string path)
+    {
+        var encoder = System.Text.Encodings.Web.HtmlEncoder.Default;
+        var active = Model.Tab == key;
+        // Flaky tests and Timing variance compare the same runs, so the comparison size carries across tabs.
+        var query = Model.Filter.ToQuery(false).ToList();
+        if (key != HistoryViewModel.Trends && !Model.ChosenRuns && Model.Compare != new HistoryViewModel().Compare)
+        {
+            query.Add(new KeyValuePair<string, string>("compare", Model.Compare.ToString()));
+        }
+
+        var href = Url.Content(path) + RunFilter.ToQueryString(query);
+        return new Microsoft.AspNetCore.Html.HtmlString(
+            $"<a class=\"tab{(active ? " on" : "")}\" href=\"{encoder.Encode(href)}\"{(active ? " aria-current=\"page\"" : "")}>{encoder.Encode(text)}</a>");
+    }
+}

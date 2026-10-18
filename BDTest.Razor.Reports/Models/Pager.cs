@@ -116,6 +116,9 @@ public class Pager<T>
         EndPage = EndPage,
         PageSize = PageSize,
         StartPage = StartPage,
-        TotalPages = TotalPages
+        TotalPages = TotalPages,
+        TotalItems = TotalItems,
+        StartIndex = StartIndex,
+        EndIndex = EndIndex
     };
 }

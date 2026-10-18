@@ -1,302 +1,272 @@
-@using BDTest.Razor.Reports.Constants
-@using BDTest.Razor.Reports.Extensions
+﻿@using BDTest.Razor.Reports.Constants
 @using BDTest.Razor.Reports.Helpers
 @using BDTest.Razor.Reports.Models
-@using BDTest.Razor.Reports.Models.ViewModels
 @using BDTest.Test
 @model IEnumerable<BDTest.Razor.Reports.Models.TestRunSummary>
-@inject BDTestReportServerOptions BDTestReportServerOptions;
+@inject BDTestReportServerOptions BDTestReportServerOptions
 
 @{
-    ViewBag.Title = "Test Runs";
+    ViewBag.Title = "Test runs";
     Layout = "_Layout";
     var isAdmin = await BDTestReportServerOptions.AdminAuthorizer.IsAdminAsync(Context);
-    var pager = new Pager<TestRunSummary>(Model.ToArray(), Context.GetCurrentPageNumber());
+
+    var allRuns = (Model ?? Enumerable.Empty<TestRunSummary>()).Where(run => run != null).ToList();
+    var filter = RunFilter.FromQuery(Context.Request.Query);
+    var runs = filter.Apply(allRuns).OrderByDescending(run => run.StartedAtDateTime).ToArray();
+
+    var pageSizes = new[] { 25, 50, 100 };
+    var pageSize = int.TryParse(Context.Request.GetQueryParameter("perPage"), out var perPage) && pageSizes.Contains(perPage) ? perPage : 25;
+    var pager = new Pager<TestRunSummary>(runs, Context.GetCurrentPageNumber(), pageSize);
+    var pagination = pager.GetPaginationInformation();
+    pagination.ItemName = filter.Tag == null ? "runs" : filter.Tag + " runs";
+    pagination.PreviousText = "Newer";
+    pagination.NextText = "Older";
+    pagination.PageSizeOptions = pageSizes;
+    pagination.PageSize = pageSize;
+
+    var path = Url.Content("~/bdtest/report/test-runs");
+    var today = DateTime.UtcNow.Date;
+
+    string Query(RunFilter value)
+    {
+        var pairs = value.ToQuery().Where(pair => pair.Key != "range" || pair.Value != RunFilter.AnyTime).ToList();
+        if (pageSize != 25)
+        {
+            pairs.Add(new KeyValuePair<string, string>("perPage", pageSize.ToString()));
+        }
+
+        return path + RunFilter.ToQueryString(pairs);
+    }
+
+    RunFilter With(Action<RunFilter> change)
+    {
+        var copy = new RunFilter
+        {
+            Search = filter.Search, Tag = filter.Tag, Environment = filter.Environment, Branch = filter.Branch,
+            Machine = filter.Machine, Status = filter.Status, Range = filter.Range, CustomRange = filter.CustomRange
+        };
+        change(copy);
+        return copy;
+    }
+
+    var active = new List<(string Label, string Url)>();
+    if (filter.Search != null) active.Add(($"Search: {filter.Search}", Query(With(f => f.Search = null))));
+    if (filter.Tag != null) active.Add(($"Tag: {filter.Tag}", Query(With(f => f.Tag = null))));
+    if (filter.Environment != null) active.Add(($"Environment: {filter.Environment}", Query(With(f => f.Environment = null))));
+    if (filter.Branch != null) active.Add(($"Branch: {filter.Branch}", Query(With(f => f.Branch = null))));
+    if (filter.Machine != null) active.Add(($"Machine: {filter.Machine}", Query(With(f => f.Machine = null))));
+    if (filter.Status != null) active.Add(($"Status: {filter.Status}", Query(With(f => f.Status = null))));
+    if (filter.CustomRange != null || filter.Range != RunFilter.AnyTime)
+    {
+        var rangeLabel = filter.CustomRange is { } custom ? $"{custom.Start.ToDay()} – {custom.End.ToDay()}" : RunFilter.RangeLabel(filter.Range);
+        active.Add(($"Date: {rangeLabel}", Query(With(f => { f.Range = RunFilter.AnyTime; f.CustomRange = null; }))));
+    }
 }
 
-<script>
-    function confirmDelete(testId, tag, environment, branch, date) {
-        let message = 'Are you sure you want to delete this test run?\n';
-        message += '\nTest ID: ' + testId;
-        if (tag) {
-            message += '\nTag: ' + tag;
-        }
-        if (environment) {
-            message += '\nEnvironment: ' + environment;
-        }
-        if (branch) {
-            message += '\nBranch: ' + branch;
-        }
-        message += '\nDate: ' + date;
-        
-        return confirm(message);
-    }
-
-    function filterByStatus(status) {
-        
-        let mainDropdownButton = document.getElementById("dropdown-main-button");
-        
-        switch (status) {
-          case '@StatusConstants.All':
-            mainDropdownButton.innerHTML = 'Show All';
-            mainDropdownButton.className = "btn dropdown-toggle btn-primary";
-            break;
-          case '@Status.Passed':
-            mainDropdownButton.innerHTML = 'Show Success';
-            mainDropdownButton.className = "btn dropdown-toggle btn-success";
-            break;
-          case '@Status.Failed':
-            mainDropdownButton.innerHTML = 'Show Failures';
-            mainDropdownButton.className = "btn dropdown-toggle btn-danger";
-            break;
-          case '@Status.Skipped':
-            mainDropdownButton.innerHTML = 'Show Skipped';
-            mainDropdownButton.className = "btn dropdown-toggle btn-warning";
-            break;
-          case '@Status.NotRun':
-            mainDropdownButton.innerHTML = 'Show Not run';
-            mainDropdownButton.className = "btn dropdown-toggle btn-secondary";
-            break;
-          case '@Status.Pending':
-            mainDropdownButton.innerHTML = 'Show Pending';
-            mainDropdownButton.className = "btn dropdown-toggle btn-secondary";
-            break;
-          case '@Status.Inconclusive':
-            mainDropdownButton.innerHTML = 'Show Inconclusive';
-            mainDropdownButton.className = "btn dropdown-toggle btn-warning";
-            break;
-          case '@Status.NotImplemented':
-            mainDropdownButton.innerHTML = 'Show Not Implemented';
-            mainDropdownButton.className = "btn dropdown-toggle btn-warning";
-            break;
-        }
-        
-       window.selectedStatus = status;
-       performFilter();
-    }
-</script>
-
-@await Html.PartialAsync("_TestPageHeaderHero", new TestPageHeaderHeroViewModel
-{
-    Title = "Test Runs",
-    Description = "View a report from the list below"
-})
-
-<section class="section">
-    <div class="container">
-        <nav class="level">
-            <div class="level-item">
-                @await Html.PartialAsync("_PaginationButtons", pager.GetPaginationInformation())
-            </div>
-        </nav>
-        <div class="container-fluid d-flex">
-            <div class="level-left mb-5 me-auto">
-                @await Html.PartialAsync("_TestRunListVisibleColumnsDropdown")
-            </div>
-            @if (Context.GetCurrentPageNumber() == PagerQueryParameters.All)
-            {
-                <div class="level-right mb-5">
-                    @await Html.PartialAsync("_StatusDropdown", new StatusDropdownViewModel { IncludeScript = false })
-                </div>
-            }
-        </div>
-
-        @if (Context.GetCurrentPageNumber() == PagerQueryParameters.All)
-        {
-            <div class="row g-2">
-                <div class="col-md">
-                    <div class="form-floating">
-                        <select class="form-select" id="filter-tag" aria-label="Floating label select example">
-                            <option value="all">All</option>
-                            @foreach (var tag in Model.Select(x => x.Tag).Distinct())
-                            {
-                                <option value="@tag">@tag</option>
-                            }
-                        </select>
-                        <label for="filter-tag">Filter by Tag</label>
-                    </div>
-                </div>
-                <div class="col-md">
-                    <div class="form-floating">
-                        <select class="form-select" id="filter-environment" aria-label="Floating label select example">
-                            <option value="all">All</option>
-                            @foreach (var environment in Model.Select(x => x.Environment).Distinct())
-                            {
-                                <option value="@environment">@environment</option>
-                            }
-                        </select>
-                        <label for="filter-environment">Filter by Environment</label>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="row g-2">
-                <div class="col-md">
-                    <div class="form-floating">
-                        <select class="form-select" id="filter-machine-name" aria-label="Floating label select example">
-                            <option value="all">All</option>
-                            @foreach (var machineName in Model.Select(x => x.MachineName).Distinct())
-                            {
-                                <option value="@machineName">@machineName</option>
-                            }
-                        </select>
-                        <label for="filter-machine-name">Filter by Machine</label>
-                    </div>
-                </div>
-                <div class="col-md">
-                    <div class="form-floating">
-                        <select class="form-select" id="filter-branch" aria-label="Floating label select example">
-                            <option value="all">All</option>
-                            @foreach (var branch in Model.Select(x => x.BranchName).Distinct())
-                            {
-                                <option value="@branch">@branch</option>
-                            }
-                        </select>
-                        <label for="filter-branch">Filter by Branch</label>
-                    </div>
-                </div>
-            </div>
-        }
-
-        <script>
-            let filterObjectsArray = [];
-             
-             function performFilter() {
-                 
-                 // Make all visible
-                 for (let tableRow of document.getElementsByTagName("tr")) {
-                     showElement(tableRow);   
-                 }
-                 
-                 for (const filterObject of filterObjectsArray) {
-                     let filterValue = filterObject.filterInput.value;
-                     
-                     if(!filterValue || filterValue === "all") {
-                         continue;
-                     }
-                     
-                     let tags = document.getElementsByName(filterObject.tableCellNamesToCheck);
-                     for (const tag of tags) {                        
-                        if(tag.textContent !== filterValue) {
-                            hideElement(tag.parentElement);
-                        }
-                     }
-                 }
-                 
-                 if(window.selectedStatus && window.selectedStatus !== "@StatusConstants.All") {
-                     let rowsNotMatchingStatus = document.querySelectorAll(".test-run-row:not(." + selectedStatus + ")");
-                     for (let rowNotMatchingStatus of rowsNotMatchingStatus) {
-                         hideElement(rowNotMatchingStatus);
-                     }
-                  }
-             }
-        
-            function filterRows(inputElementId, tableCellNamesToCheck) {
-              let filterInput = document.getElementById(inputElementId);
-              
-              filterObjectsArray.push({filterInput: filterInput, tableCellNamesToCheck: tableCellNamesToCheck});
-              
-              filterInput.addEventListener('change', function() {
-                  performFilter();
-              });
-            }
-        </script>
-
-        @if (Context.GetCurrentPageNumber() == PagerQueryParameters.All)
-        {
-            <script>
-            onDomLoaded(function() {
-                filterRows("filter-tag", "tag-field");
-                filterRows("filter-environment", "environment-field");
-                filterRows("filter-machine-name", "machine-name-field");
-                filterRows("filter-branch", "branch-field");
-            })
-            </script>
-        }
-
-        <table class="table table-hover">
-
-            <thead>
-            <tr class="off-white-bg-color">
-                <th class="has-text-centered tag-column">Tag</th>
-                <th class="has-text-centered environment-column">Environment</th>
-                <th class="has-text-centered machine-column">Machine Name</th>
-                <th class="has-text-centered branch-column">Branch</th>
-                <th class="has-text-centered date-column">Date and Time</th>
-                <th class="has-text-centered duration-column">Duration</th>
-                <th class="has-text-centered">Tests Run</th>
-                <th class="has-text-centered">Status</th>
-                @* View report column *@
-                <th></th>
-                @if (isAdmin)
-                {
-                    // Delete Test Run column
-                    <th></th>
-                }
-            </tr>
-            </thead>
-            <tbody>
-
-            @foreach (var record in pager.ItemsForCurrentPage)
-            {
-                var status = record.Status.AsString();
-                if (record.Status == Status.Failed)
-                {
-                    status += $" ({record.Counts.Failed})";
-                }
-                var timeTaken = record.FinishedAtDateTime - record.StartedAtDateTime;
-
-
-                <tr class="off-white-bg-color test-run-row @record.Status">
-                    <td name="tag-field" class="has-text-centered align-middle tag-column">@record.Tag</td>
-                    <td name="environment-field" class="has-text-centered align-middle environment-column">@record.Environment</td>
-                    <td name="machine-name-field" class="has-text-centered align-middle machine-column">@record.MachineName</td>
-                    <td name="branch-field" class="has-text-centered align-middle branch-column">@record.BranchName</td>
-                    <td class="has-text-centered align-middle date-column">@record.StartedAtDateTime.ToStringForReport()</td>
-                    <td class="align-middle duration-column" data-bs-toggle="popover" data-bs-trigger="hover focus" data-bs-placement="top" data-bs-content="@timeTaken.ToPrettyFormat()">
-                        @timeTaken.ToString()
-                    </td>
-                    <td class="has-text-centered align-middle">
-                        <span class="title is-4">@record.Counts.Total</span>
-                    </td>
-                    <td class="has-text-centered align-middle">
-                        <div class="d-grid">
-                            <button class="btn @record.Status.GetCssColourValueForStatus() tag px-5 is-medium">
-                                @status
-                            </button>
-                        </div>
-                    </td>
-                    <td class="align-middle">
-                        <a href="~/bdtest/report/@record.RecordId/summary">
-                            <button class="btn btn-dark pointer" data-bdtest-action="spin">View Report</button>
-                        </a>
-                    </td>
-                    @if (isAdmin)
-                    {
-                        <td class="align-middle">
-                            <form method="post" action="@Url.Content("~/bdtest/report/delete/" + Uri.EscapeDataString(record.RecordId ?? ""))">
-                                @Html.AntiForgeryToken()
-                                <button type="submit" class="btn btn-danger btn-sm"
-                                        data-test-id="@record.RecordId"
-                                        data-tag="@record.Tag"
-                                        data-environment="@record.Environment"
-                                        data-branch="@record.BranchName"
-                                        data-date="@record.StartedAtDateTime"
-                                        data-bdtest-action="delete">Delete</button>
-                            </form>
-                        </td>
-                    }
-                </tr>
-            }
-
-            </tbody>
-        </table>
-        
-        <nav class="level">
-            <div class="level-item">
-                @await Html.PartialAsync("_PaginationButtons", pager.GetPaginationInformation())
-            </div>
-        </nav>
-
+<main class="wrap page" style="padding-top: 32px; gap: 18px">
+    <div class="spread" style="justify-content: flex-start; gap: 8px 16px">
+        <h1 class="page-title">Test runs</h1>
+        <span class="muted">@($"{allRuns.Count} stored · newest first")</span>
     </div>
-</section>
+
+    @if (allRuns.Count == 0)
+    {
+        <section class="card empty">
+            <span class="mark">@ReportUi.Icon("i-upload", "xl")</span>
+            <h2>No test runs yet</h2>
+            <p>Runs appear here as soon as a test run uploads its results to this server. Send them with <span class="mono">BDTestReportServer.SendDataAndGetReportUriAsync</span> to this endpoint:</p>
+            <pre class="code" style="width: 100%; max-width: 520px; text-align: left">POST @(Context.Request.PathBase.Add("/bdtest/data").ToUriComponent())</pre>
+            <a class="lnk" href="https://thomhurst.github.io/BDTest/docs/report-server/sending-results" target="_blank" rel="noopener">How to send results</a>
+        </section>
+    }
+    else
+    {
+        <form role="search" class="card filters" method="get" action="@path" style="padding: 16px" data-autosubmit>
+            <label class="field" style="flex: 2 1 260px">Search
+                <span class="search">@ReportUi.Icon("i-search")<input class="inp" type="search" name="q" value="@filter.Search" placeholder="Tag, environment, branch or machine"></span>
+            </label>
+            @Select("Tag", "tag", allRuns.Select(run => run.Tag), filter.Tag)
+            @Select("Environment", "environment", allRuns.Select(run => run.Environment), filter.Environment)
+            @Select("Branch", "branch", allRuns.Select(run => run.BranchName), filter.Branch)
+            @Select("Machine", "machine", allRuns.Select(run => run.MachineName), filter.Machine)
+            @if (filter.Status != null)
+            {
+                <input type="hidden" name="status" value="@filter.Status">
+            }
+            @if (pageSize != 25)
+            {
+                <input type="hidden" name="perPage" value="@pageSize">
+            }
+            @if (filter.CustomRange != null)
+            {
+                <input type="hidden" name="range" value="@RunFilter.Custom">
+                <input type="hidden" name="datetimerange" value="@filter.CustomRangeValue">
+            }
+            else if (filter.Range != RunFilter.AnyTime)
+            {
+                <input type="hidden" name="range" value="@filter.Range">
+            }
+            <div class="cluster" style="flex: 1 1 260px; min-height: 36px">
+                <a class="chip @(filter.Status == null ? "on" : "")" href="@Query(With(f => f.Status = null))" aria-current="@(filter.Status == null ? "true" : null)">Any status</a>
+                <a class="chip @(filter.Status == nameof(Status.Failed) ? "on" : "")" href="@Query(With(f => f.Status = nameof(Status.Failed)))" aria-current="@(filter.Status == nameof(Status.Failed) ? "true" : null)">@Status.Failed.StatusIcon()Failed</a>
+                <a class="chip @(filter.Status == nameof(Status.Passed) ? "on" : "")" href="@Query(With(f => f.Status = nameof(Status.Passed)))" aria-current="@(filter.Status == nameof(Status.Passed) ? "true" : null)">@Status.Passed.StatusIcon()Passed</a>
+            </div>
+            <noscript><button class="btn sm" type="submit">Apply</button></noscript>
+        </form>
+
+        @if (active.Count > 0)
+        {
+            <div class="cluster">
+                <span class="small muted">Filtered by</span>
+                @foreach (var (label, url) in active)
+                {
+                    <a class="chip on" href="@url" aria-label="@($"Remove filter {label}")">@label@(ReportUi.Icon("i-x"))</a>
+                }
+                <a class="btn ghost sm link" href="@path">Clear filters</a>
+            </div>
+        }
+
+        @if (runs.Length == 0)
+        {
+            <section class="card empty">
+                <span class="mark">@ReportUi.Icon("i-search", "xl")</span>
+                <h2>No runs match</h2>
+                <p>None of the @allRuns.Count stored runs match these filters.</p>
+                <div class="cluster"><a class="btn pri" href="@path">Clear filters</a></div>
+            </section>
+        }
+        else
+        {
+            <section class="card clip" aria-label="Runs">
+                <div class="table-scroll">
+                    <table class="t wide">
+                        <thead>
+                        <tr>
+                            <th scope="col">Run</th>
+                            <th scope="col">Result</th>
+                            <th scope="col">Scenarios</th>
+                            <th scope="col">Environment</th>
+                            <th scope="col">Branch</th>
+                            <th scope="col">Machine</th>
+                            <th scope="col" class="num">Duration</th>
+                            <th scope="col"><span class="visually-hidden">Actions</span></th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        @foreach (var record in pager.ItemsForCurrentPage)
+                        {
+                            var reportUrl = Url.Content("~/bdtest/report/" + Uri.EscapeDataString(record.RecordId ?? string.Empty) + "/summary");
+                            var counts = record.Counts ?? new Counts();
+                            var total = Math.Max(counts.Total, 0);
+                            var other = Math.Max(total - counts.Passed - counts.Failed, 0);
+                            var duration = record.FinishedAtDateTime - record.StartedAtDateTime;
+                            // Runs read as failed, inconclusive or passed; not implemented and skipped scenarios don't fail a run.
+                            var resultStatus = record.RunResult();
+                            var resultText = resultStatus switch
+                            {
+                                Status.Failed => $"{counts.Failed} failed",
+                                _ when total == 0 => "No scenarios",
+                                _ => resultStatus.Label()
+                            };
+                            var when = record.StartedAtDateTime.ToRunDate(record.StartedAtDateTime.Year != today.Year)
+                                       + (record.StartedAtDateTime.Date == today ? " · today" : string.Empty);
+                            <tr>
+                                <td>
+                                    <a href="@reportUrl" style="text-decoration: none; color: var(--ink); display: flex; flex-direction: column">
+                                        <span class="strong">@(string.IsNullOrEmpty(record.Tag) ? "Test run" : record.Tag)</span>
+                                        <span class="small muted">@(string.IsNullOrEmpty(when) ? "Unknown date" : when)</span>
+                                    </a>
+                                </td>
+                                <td>
+                                    @if (total == 0)
+                                    {
+                                        <span class="pill q">@resultText</span>
+                                    }
+                                    else
+                                    {
+                                        @resultStatus.Pill(resultText)
+                                    }
+                                </td>
+                                <td>
+                                    <div class="cluster" style="gap: 10px; flex-wrap: nowrap">
+                                        <span class="mini" aria-hidden="true">
+                                            @if (total > 0)
+                                            {
+                                                <span style="width: @ReportUi.Percent(counts.Passed, total)%; background: var(--pass)"></span>
+                                                <span style="width: @ReportUi.Percent(other, total)%; background: var(--inc)"></span>
+                                                <span style="width: @ReportUi.Percent(counts.Failed, total)%; background: var(--fail)"></span>
+                                            }
+                                        </span>
+                                        <span class="mono muted">@($"{counts.Passed}/{total} passed")</span>
+                                    </div>
+                                </td>
+                                <td>@record.Environment</td>
+                                <td>
+                                    @if (!string.IsNullOrEmpty(record.BranchName))
+                                    {
+                                        <span class="tag">@record.BranchName</span>
+                                    }
+                                </td>
+                                <td>@record.MachineName</td>
+                                <td class="num">@(duration > TimeSpan.Zero ? duration.ToShortDuration() : "—")</td>
+                                <td class="actions">
+                                    <details class="menu">
+                                        <summary class="btn ghost sm icon" aria-label="@(isAdmin ? "More actions for this run, including Delete" : "More actions for this run")">@ReportUi.Icon("i-more")</summary>
+                                        <ul class="menu-list">
+                                            <li><a class="menu-item" href="@reportUrl">View report</a></li>
+                                            <li><button class="menu-item" type="button" data-bdtest-action="copy-url" data-url="@reportUrl">Copy link</button></li>
+                                            @if (isAdmin)
+                                            {
+                                                <li class="menu-sep" role="separator"></li>
+                                                <li>
+                                                    <form method="post" action="@Url.Content("~/bdtest/report/delete/" + Uri.EscapeDataString(record.RecordId ?? ""))">
+                                                        @Html.AntiForgeryToken()
+                                                        <button type="submit" class="menu-item danger"
+                                                                data-bdtest-action="delete"
+                                                                data-test-id="@record.RecordId"
+                                                                data-tag="@record.Tag"
+                                                                data-environment="@record.Environment"
+                                                                data-branch="@record.BranchName"
+                                                                data-date="@record.StartedAtDateTime">Delete</button>
+                                                    </form>
+                                                </li>
+                                            }
+                                        </ul>
+                                    </details>
+                                </td>
+                            </tr>
+                        }
+                        </tbody>
+                    </table>
+                </div>
+                @await Html.PartialAsync("_PaginationButtons", pagination)
+            </section>
+        }
+    }
+</main>
+
+@functions
+{
+    private Microsoft.AspNetCore.Html.IHtmlContent Select(string label, string name, IEnumerable<string> values, string selected)
+    {
+        var encoder = System.Text.Encodings.Web.HtmlEncoder.Default;
+        var options = values.Where(value => !string.IsNullOrEmpty(value)).Distinct(StringComparer.Ordinal)
+            .OrderBy(value => value, StringComparer.OrdinalIgnoreCase).ToList();
+        if (selected != null && !options.Contains(selected, StringComparer.Ordinal))
+        {
+            options.Insert(0, selected);
+        }
+
+        var html = new System.Text.StringBuilder();
+        html.Append($"<label class=\"field\" style=\"flex: 1 1 150px\">{encoder.Encode(label)}<select class=\"inp\" name=\"{name}\">");
+        html.Append("<option value=\"\">Any</option>");
+        foreach (var option in options)
+        {
+            var isSelected = string.Equals(option, selected, StringComparison.Ordinal) ? " selected" : string.Empty;
+            html.Append($"<option value=\"{encoder.Encode(option)}\"{isSelected}>{encoder.Encode(option)}</option>");
+        }
+
+        html.Append("</select></label>");
+        return new Microsoft.AspNetCore.Html.HtmlString(html.ToString());
+    }
+}

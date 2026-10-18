@@ -1,4 +1,5 @@
-using BDTest.Maps;
+using System.Text.RegularExpressions;
+﻿using BDTest.Maps;
 using BDTest.Razor.Reports.Controllers;
 using BDTest.Razor.Reports.Extensions;
 using BDTest.Razor.Reports.Interfaces;
@@ -85,18 +86,92 @@ public class ReportSidebarTests
         Assert.That(html, Does.Contain("Retry history"));
         Assert.That(html, Does.Contain("Retries: 1"));
         Assert.That(html, Does.Contain("Failed</span>"));
-        Assert.That(html, Does.Contain("00:00:00.1250000"));
+        Assert.That(html, Does.Contain("title=\"00:00:00.1250000\""));
         if (!retryHookFailed)
         {
             Assert.That(html, Does.Contain("Passed</span>"));
-            Assert.That(html, Does.Contain("00:00:00.2500000"));
+            Assert.That(html, Does.Contain("title=\"00:00:00.2500000\""));
         }
         Assert.That(html, Does.Contain("&lt;retry failure&gt;"));
         Assert.That(html, Does.Contain("at FailingStep()"));
         Assert.That(html, Does.Not.Contain("<retry failure>"));
 
         var list = await _client.GetStringAsync("/bdtest/report/run-632/all-scenarios");
-        Assert.That(list, Does.Contain("Retries: 1"));
+        Assert.That(list, Does.Contain("<span class=\"tag\">retries 1</span>"));
+    }
+
+    [Test]
+    public async Task Story_links_filter_to_the_exact_story_and_preserve_it_when_searching()
+    {
+        const string story = "Story & <one> / 雪";
+        _repository.Report.Scenarios = Enumerable.Range(0, 3).Select(index =>
+            ReportJson.DeserializeObject<Scenario>(ReportJson.SerializeObject(new
+            {
+                Guid = "s" + index, ScenarioText = "Scenario " + index,
+                StoryText = index < 2 ? story : story + " other", Status = "Passed",
+                Steps = Array.Empty<object>(), CustomTestInformation = Array.Empty<object>()
+            }))).ToList();
+
+        var detail = await _client.GetStringAsync("/bdtest/report/run-632/scenario/s0");
+        var link = Regex.Match(detail, "href=\"([^\"]+)\">2 scenarios in this story</a>");
+        Assert.That(link.Success, Is.True);
+        var url = System.Net.WebUtility.HtmlDecode(link.Groups[1].Value);
+        var list = await _client.GetStringAsync(url);
+        Assert.That(list, Does.Contain("scenario-id=\"s0\"").And.Contain("scenario-id=\"s1\"")
+            .And.Not.Contain("scenario-id=\"s2\""));
+        Assert.That(System.Net.WebUtility.HtmlDecode(list),
+            Does.Contain("name=\"story\" value=\"" + story + "\""));
+
+        var searched = await _client.GetStringAsync(url + "&q=Scenario%201");
+        Assert.That(searched, Does.Contain("scenario-id=\"s1\"").And.Not.Contain("scenario-id=\"s0\""));
+        var clear = Regex.Match(list, "href=\"([^\"]+)\">Clear filters</a>");
+        Assert.That(clear.Success, Is.True);
+        var unfiltered = await _client.GetStringAsync(System.Net.WebUtility.HtmlDecode(clear.Groups[1].Value));
+        Assert.That(unfiltered, Does.Contain("scenario-id=\"s2\""));
+    }
+
+    [TestCase("status", new[] { "b", "a", "c" })]
+    [TestCase("name", new[] { "a", "b", "c" })]
+    [TestCase("durationDescending", new[] { "c", "b", "a" })]
+    [TestCase("durationAscending", new[] { "a", "b", "c" })]
+    [TestCase("dateAscending", new[] { "a", "b", "c" })]
+    [TestCase("dateDescending", new[] { "c", "b", "a" })]
+    public async Task Stories_sort_scenarios_within_each_story(string order, string[] expected)
+    {
+        _repository.Report.Scenarios = new[] { 2, 0, 1 }.Select(index =>
+            ReportJson.DeserializeObject<Scenario>(ReportJson.SerializeObject(new
+            {
+                Guid = ((char)('a' + index)).ToString(), ScenarioText = ((char)('A' + index)).ToString(),
+                StoryText = "Shared story", Status = index == 1 ? "Failed" : "Passed",
+                StartTime = new DateTime(2026, 10, 18, 12, index, 0, DateTimeKind.Utc),
+                EndTime = new DateTime(2026, 10, 18, 12, index, index + 1, DateTimeKind.Utc),
+                TimeTaken = TimeSpan.FromSeconds(index + 1).ToString(@"d\.hh\:mm\:ss\:fffffff"),
+                Steps = Array.Empty<object>(), CustomTestInformation = Array.Empty<object>()
+            }))).ToList();
+
+        var html = await _client.GetStringAsync("/bdtest/report/run-632/stories?order=" + order);
+        var ids = Regex.Matches(html, "scenario-id=\"([^\"]+)\"")
+            .Select(match => match.Groups[1].Value);
+        Assert.That(ids, Is.EqualTo(expected));
+    }
+
+    [Test]
+    public async Task Large_scenario_lists_are_paged_and_open_on_the_selected_scenarios_page()
+    {
+        _repository.Report.Scenarios = Enumerable.Range(0, 150).Select(index => ReportJson.DeserializeObject<Scenario>(
+            ReportJson.SerializeObject(new
+            {
+                Guid = $"s{index:000}", ScenarioText = $"Scenario {index:000}", Status = "Passed",
+                Steps = Array.Empty<object>(), CustomTestInformation = Array.Empty<object>()
+            }))).ToList();
+
+        var first = await _client.GetStringAsync("/bdtest/report/run-632/all-scenarios?group=none&order=name");
+        Assert.That(Regex.Matches(first, "scenario-id=\"s\\d{3}\""), Has.Count.EqualTo(100));
+        Assert.That(first, Does.Contain("scenario-id=\"s099\"").And.Not.Contain("scenario-id=\"s100\""));
+        Assert.That(System.Net.WebUtility.HtmlDecode(first), Does.Contain("1–100 of 150 scenarios"));
+
+        var selected = await _client.GetStringAsync("/bdtest/report/run-632/all-scenarios?group=none&order=name&scenarioId=s130");
+        Assert.That(selected, Does.Contain("scenario-id=\"s130\"").And.Not.Contain("scenario-id=\"s099\""));
     }
 
     [Test]
@@ -116,9 +191,8 @@ public class ReportSidebarTests
         var html = await _client.GetStringAsync("/bdtest/report/run-632/scenario/scenario-632");
 
         Assert.That(_repository.ReadTokens, Has.Count.EqualTo(1));
-        Assert.That(html, Does.Contain("/bdtest/report/run-632/scenario/next-scenario"));
-        Assert.That(html, Does.Contain("Next Scenario"));
-        Assert.That(html, Does.Not.Contain("Previous Scenario"));
+        Assert.That(html, Does.Contain("href=\"/bdtest/report/run-632/scenario/next-scenario\" rel=\"next\""));
+        Assert.That(html, Does.Not.Contain("rel=\"prev\""));
     }
 
     [TestCase("stories")]
@@ -138,7 +212,7 @@ public class ReportSidebarTests
         Assert.That(html, Does.Contain("scenario-id=\"tagged\""));
         Assert.That(html, Does.Not.Contain("scenario-id=\"other\"").And.Not.Contain("scenario-id=\"legacy\""));
         Assert.That(html, Does.Contain("value=\"regression\""));
-        Assert.That(html, Does.Contain("badge bg-secondary mx-1\">smoke</span>"));
+        Assert.That(html, Does.Contain("<span class=\"tag hide-phone\">smoke</span>"));
         Assert.That(_repository.ReadTokens, Has.Count.EqualTo(1));
     }
 
@@ -158,7 +232,6 @@ public class ReportSidebarTests
         Assert.That(_repository.ReadTokens.Single().CanBeCanceled, Is.True);
         Assert.That(_links.Reports, Has.Count.EqualTo(1));
         Assert.That(_links.Reports.Single(), Is.SameAs(_repository.Report));
-        Assert.That(html, Does.Contain("This Test Report"));
         Assert.That(html, Does.Contain("/bdtest/report/run-632/summary"));
         Assert.That(html, Does.Contain("/bdtest/report/run-632/raw-json-data"));
         Assert.That(html, Does.Contain("sidebar-environment"));
@@ -177,7 +250,7 @@ public class ReportSidebarTests
         var html = await _client.GetStringAsync("/bdtest/report/missing/" + page);
 
         Assert.That(_repository.ReadTokens, Has.Count.EqualTo(1));
-        Assert.That(html, Does.Not.Contain("This Test Report"));
+        Assert.That(html, Does.Not.Contain("/bdtest/report/missing/raw-json-data"));
         Assert.That(_links.Reports, Is.EqualTo(new BDTestOutputModel[] { null }));
     }
 
@@ -189,7 +262,7 @@ public class ReportSidebarTests
         var html = await _client.GetStringAsync("/bdtest/report/" + page);
 
         Assert.That(_repository.ReadTokens, Is.Empty);
-        Assert.That(html, Does.Not.Contain("This Test Report"));
+        Assert.That(html, Does.Not.Contain("raw-json-data"));
         Assert.That(_links.Reports, Is.EqualTo(new BDTestOutputModel[] { null }));
     }
 

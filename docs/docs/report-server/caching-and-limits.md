@@ -55,11 +55,11 @@ Configure the same or stricter limits in any reverse proxy or alternative host.
 
 ## Bulk report comparisons
 
-`GET /bdtest/report/test-run-times` and `POST /bdtest/report/test-run-flakiness` (form field `reportIds`) accept a comma-separated list of report IDs.
+The History **Flaky tests** and **Timing variance** tabs read the latest matching runs, 20 by default and at most 50 (`compare`). `GET /bdtest/report/test-run-times` and `POST /bdtest/report/test-run-flakiness` (form field `reportIds`) accept a comma-separated list of report IDs instead.
 
 - Up to 50 IDs. Duplicates count toward the limit but are fetched once.
 - Each ID must be 1 to 128 ASCII letters, digits, dots, hyphens or underscores. `.` and `..` are invalid. Generated report GUIDs are valid.
-- An invalid list returns HTTP 400 before any report is read. An empty selection redirects to the test run list.
+- An invalid list returns HTTP 400 before any report is read. An empty selection redirects to the matching History tab.
 - At most five reports are read concurrently.
 
 The built-in repository reuses cached reports for these reads without adding or refreshing cache entries. Custom `IDataRepository` implementations must implement `GetDataForBulkRead` and should apply the same policy.

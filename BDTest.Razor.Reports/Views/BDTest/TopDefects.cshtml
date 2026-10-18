@@ -1,61 +1,140 @@
+@using BDTest.Razor.Reports.Helpers
 @using BDTest.Razor.Reports.Models
 @using BDTest.Razor.Reports.Models.ViewModels
-@using BDTest.Razor.Reports.Views.BDTest
+@using BDTest.Test
 @model BDTest.Maps.BDTestOutputModel
-
 @{
-    ViewBag.Title = "Test Times";
+    var run = (ReportLayoutViewModel)ViewData[nameof(ReportLayoutViewModel)];
+    ViewBag.Title = run.Title + " failures";
+    ViewData["RunTab"] = "failures";
     Layout = "_Layout";
-    
-    var exceptionsGrouped = new GroupedExceptions(Model.Scenarios)
-        .GroupedScenarioExceptions
-        .Take(10)
-        .ToList();
+
+    var reportUrl = Url.Content("~/bdtest/report/" + Uri.EscapeDataString(Model.Id ?? string.Empty));
+    var groupBy = FailureGroup.Normalize(Context.Request.Query["groupBy"].ToString());
+    var groups = FailureGroup.Build(run.Scenarios, groupBy);
+    var failed = run.Counts[Status.Failed];
+    var index = 0;
+
+    string GroupUrl(string value) => reportUrl + "/top-defects" + (value == FailureGroup.ByExceptionAndLocation ? string.Empty : "?groupBy=" + value);
+    string Plural(int count, string noun) => $"{count} {noun}{(count == 1 ? "" : "s")}";
 }
 
-@if (!exceptionsGrouped.Any())
-{
-    @(await Html.PartialAsync("_RedirectViaJavascript", new RedirectViaJavascriptViewModel("/top-defects", "/summary")))
-}
+@await Html.PartialAsync("_RunHeader", run)
 
-@await Html.PartialAsync("_TestPageHeaderHero", new TestPageHeaderHeroViewModel
-{
-    Title = "Top Defects",
-    Description = "Here are the top defects from your tests"
-})
+<main class="wrap page">
+    @if (groups.Count == 0)
+    {
+        <section class="card empty">
+            <span class="mark p">@ReportUi.Icon("i-pass", "xl")</span>
+            <h2>Nothing failed in this run</h2>
+            <p>
+                @if (run.Scenarios.Count == 0)
+                {
+                    @("This run recorded no scenarios.")
+                }
+                else
+                {
+                    @($"All {run.Scenarios.Count} scenarios passed or ended without a failure. The tab stays in place so links to it keep working.")
+                }
+            </p>
+            <a class="lnk" href="@reportUrl/all-scenarios">See all scenarios</a>
+        </section>
+    }
+    else
+    {
+        <div class="spread" style="align-items: center; gap: 12px 20px">
+            <h2 class="h2" style="flex: 1 1 360px">@($"{Plural(failed, "failed scenario")}, {Plural(groups.Count, groupBy == FailureGroup.ByFailingStep ? "failing step" : groupBy == FailureGroup.ByExceptionType ? "exception type" : "cause")}")</h2>
+            <div class="inline-field">
+                Group by
+                <div class="seg" role="group" aria-label="Group failures by">
+                    <a href="@GroupUrl(FailureGroup.ByExceptionAndLocation)" aria-current="@(groupBy == FailureGroup.ByExceptionAndLocation ? "true" : null)">Exception and location</a>
+                    <a href="@GroupUrl(FailureGroup.ByExceptionType)" aria-current="@(groupBy == FailureGroup.ByExceptionType ? "true" : null)">Exception type</a>
+                    <a href="@GroupUrl(FailureGroup.ByFailingStep)" aria-current="@(groupBy == FailureGroup.ByFailingStep ? "true" : null)">Failing step</a>
+                </div>
+            </div>
+        </div>
 
-<section class="section">
-    <div class="container">
-        <table class="table is-fullwidth">
-            <thead>
-            <tr class="off-white-bg-color">
-                <th class="has-text-centered">Count</th>
-                <th class="has-text-centered">Exception</th>
-                <th></th>
-            </tr>
-            </thead>
-            <tbody>
-            
-            @foreach (var scenarioExceptions in exceptionsGrouped)
-            {
-                <tr class="off-white-bg-color">
-                    <td class="align-middle has-text-centered">
-                        <span class="title">@scenarioExceptions.Count()</span>
-                    </td>
-                    <td class="align-middle has-text-centered">
-                        <div class="off-white-bg-color like-pre" style="max-width: 50vw;">
-                            <pre class="my-2">@scenarioExceptions.First().ExceptionMessage.TypeName: @scenarioExceptions.First().ExceptionMessage.Message.Trim()</pre>
+        @foreach (var group in groups)
+        {
+            index++;
+            var traceId = "trace-" + index;
+            var first = group.Scenarios[0];
+            var firstStep = FailureGroup.FailingStep(first);
+            var sameStep = group.Scenarios.Count > 1 && group.Scenarios.All(scenario => FailureGroup.FailingStep(scenario)?.StepText == firstStep?.StepText);
+            var trace = group.Exception?.AsString ?? group.Exception?.StackTrace;
+            <article class="card clip">
+                <div class="cause">
+                    <div class="cause-main">
+                        <div class="cluster" style="gap: 8px 10px">
+                            @Status.Failed.Pill(Plural(group.Scenarios.Count, "scenario"))
+                            @if (groupBy != FailureGroup.ByExceptionType && !string.IsNullOrEmpty(group.TypeName))
+                            {
+                                <span class="mono" style="font-weight: 500; overflow-wrap: anywhere">@group.TypeName</span>
+                            }
                         </div>
-                    </td>
-                    <td class="align-middle">
-                        <a href="~/bdtest/report/@Model.Id/scenario/@scenarioExceptions.First().TestGuid">
-                            <button class="btn btn-danger pointer">View in a Report</button>
-                        </a>
-                    </td>
-                </tr>
-            }
+                        <h3>@group.Title</h3>
+                        @if (group.Location != null)
+                        {
+                            <p class="mono muted" style="overflow-wrap: anywhere">@group.Location</p>
+                        }
+                    </div>
+                    <div class="cause-side">
+                        @if (firstStep != null)
+                        {
+                            <span>@($"Failed at step {FailureGroup.FailingStepNumber(first)}")</span>
+                        }
+                        @if (sameStep)
+                        {
+                            <span>Same failing step in every scenario</span>
+                        }
+                        @if (group.Scenarios.Any(scenario => scenario.RetryCount > 0))
+                        {
+                            <span>Retried before failing</span>
+                        }
+                    </div>
+                </div>
+                @if (!string.IsNullOrWhiteSpace(trace))
+                {
+                    <details class="expander trace" data-expandable @(index == 1 ? "open" : "")>
+                        <summary>
+                            <span class="btn sm">@ReportUi.Icon("i-chev-r", "chev")Stack trace</span>
+                        </summary>
+                        <div style="padding: 0 20px 18px; display: flex; flex-direction: column; gap: 8px">
+                            <div class="cluster">
+                                <span class="k grow">Stack trace, first occurrence</span>
+                                <button class="btn sm" type="button" aria-pressed="true" data-bdtest-action="toggle-wrap" data-target="@traceId">Wrap</button>
+                                <button class="btn sm" type="button" data-bdtest-action="copy-text" data-target="@traceId">Copy</button>
+                            </div>
+                            <pre class="code" id="@traceId">@trace.Trim()</pre>
+                        </div>
+                    </details>
+                }
+                <div class="k band">Affected scenarios</div>
+                @foreach (var scenario in group.Scenarios)
+                {
+                    var step = FailureGroup.FailingStep(scenario);
+                    var detail = ReportUi.StoryTitle(scenario.GetStoryText());
+                    if (step != null)
+                    {
+                        detail += $" · step {FailureGroup.FailingStepNumber(scenario)}, “{step.StepText}”";
+                    }
+                    if (scenario.RetryCount > 0)
+                    {
+                        detail += $" · all {scenario.RetryCount + 1} attempts";
+                    }
+                    <a class="row" href="@reportUrl/scenario/@Uri.EscapeDataString(scenario.Guid ?? string.Empty)">
+                        @scenario.Status.StatusIcon()
+                        <div class="grow">
+                            <div class="row-title">@scenario.GetScenarioText()</div>
+                            <div class="row-sub">@detail</div>
+                        </div>
+                        <span class="dur">@scenario.TimeTaken.ToShortDuration()</span>
+                        @ReportUi.Icon("i-chev-r", "muted")
+                    </a>
+                }
+            </article>
+        }
 
-            </tbody>
-        </table>
-    </div>
-</section>
+        <p class="notice">Not implemented, inconclusive and skipped scenarios aren’t failures, so they’re listed on the <a class="lnk" href="@reportUrl/summary">Overview</a> instead.</p>
+    }
+</main>

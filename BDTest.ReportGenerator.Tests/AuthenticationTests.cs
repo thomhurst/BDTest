@@ -204,7 +204,7 @@ public class AuthenticationTests
         var body = await response.Content.ReadAsStringAsync();
 
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK), body);
-        Assert.That(body, Does.Contain($"<strong>{name}</strong>"));
+        Assert.That(body, Does.Contain($"<li class=\"menu-head\">{name}</li>"));
         Assert.That(body, Does.Not.Contain("fbcdn.net"));
         Assert.That(body, Does.Not.Contain("Tom Longhurst"));
         Assert.That(body, Does.Not.Contain("Hi, Tom!"));
@@ -300,8 +300,8 @@ public class AuthenticationTests
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.InternalServerError), body);
         Assert.That(response.Headers.Location, Is.Null);
         Assert.That(response.Content.Headers.ContentType?.MediaType, Is.EqualTo("text/html"));
-        Assert.That(body, Does.Contain("An error occurred while processing your request."));
-        Assert.That(body, Does.Match(@"Request ID:</strong> <code>[^<]+</code>"));
+        Assert.That(body, Does.Contain("Something went wrong on the server"));
+        Assert.That(body, Does.Match(@"Reference [^<\s]+</span>"));
         Assert.That(body, Does.Not.Contain("Test storage failure"));
         Assert.That(response.Headers.CacheControl?.NoStore, Is.True);
     }
@@ -313,7 +313,7 @@ public class AuthenticationTests
 
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
         Assert.That(await response.Content.ReadAsStringAsync(),
-            Does.Contain("An error occurred while processing your request."));
+            Does.Contain("Something went wrong on the server"));
     }
 
     [Test]
@@ -329,7 +329,7 @@ public class AuthenticationTests
     [Test]
     public async Task Report_static_assets_are_anonymous_and_cached()
     {
-        using var response = await _client.GetAsync("/_content/BDTest.Razor.Reports/css/BDTest.css");
+        using var response = await _client.GetAsync("/_content/BDTest.Razor.Reports/css/bdtest-report.css");
 
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
         Assert.That(response.Content.Headers.ContentType?.MediaType, Is.EqualTo("text/css"));
