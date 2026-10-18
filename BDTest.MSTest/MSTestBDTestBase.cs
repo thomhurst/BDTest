@@ -10,7 +10,10 @@ public abstract class MSTestBDTestBase<TContext> : AbstractContextBDTestBase<TCo
 {
     public TestContext TestContext { get; set; }
 
-    protected override void OnScenarioSkipped(string reason) => Assert.Inconclusive(reason);
+    /// <summary>The reusable outcome declaration. Register it on options for explicit runs.</summary>
+    public static FrameworkOutcomeMap OutcomeMap => MSTestExceptionRegistration.OutcomeMap;
+
+    protected override void OnScenarioSkipped(string reason) => OutcomeMap.ReportSkip(reason);
 
     [TestInitialize]
     public void InitializeBDTest()
@@ -28,16 +31,12 @@ public abstract class MSTestBDTestBase<TContext> : AbstractContextBDTestBase<TCo
     }
 }
 
-// Non-generic so all context types share the same CLR-protected initialization.
+// Shared by every generic context type; all registration is owned by the core.
 internal static class MSTestExceptionRegistration
 {
-    static MSTestExceptionRegistration()
-    {
-        if (!BDTestSettings.CustomExceptionSettings.InconclusiveExceptionTypes.Contains(typeof(AssertInconclusiveException)))
-        {
-            BDTestSettings.CustomExceptionSettings.InconclusiveExceptionTypes.Add(typeof(AssertInconclusiveException));
-        }
-    }
+    internal static FrameworkOutcomeMap OutcomeMap { get; } = new FrameworkOutcomeMap(reason => Assert.Inconclusive(reason))
+        .Inconclusive<AssertInconclusiveException>();
 
-    internal static void EnsureRegistered() { }
+    internal static void EnsureRegistered() =>
+        BDTestSettings.CustomExceptionSettings.RegisterFrameworkOutcomes(OutcomeMap);
 }

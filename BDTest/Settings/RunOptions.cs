@@ -23,6 +23,7 @@ internal sealed class RunOptions
 
     internal RunOptions(BDTestOptions options)
     {
+        FrameworkOutcomes = options.FrameworkOutcomes;
         _success = options.SuccessExceptionTypes.ToArray();
         _skip = options.SkipExceptionTypes.ToArray();
         _inconclusive = options.InconclusiveExceptionTypes.ToArray();
@@ -38,6 +39,8 @@ internal sealed class RunOptions
             _afterStep += hook.AfterStepAsync;
         }
     }
+
+    internal FrameworkOutcomeMap FrameworkOutcomes { get; }
 
     internal IEnumerable<Type> SuccessExceptionTypes => _legacy ? BDTestSettings.CustomExceptionSettings.SuccessExceptionTypes : _success;
     internal IEnumerable<Type> SkipExceptionTypes => _legacy ? BDTestSettings.CustomExceptionSettings.SkipExceptionTypes : _skip;

@@ -4,6 +4,20 @@ namespace BDTest.Settings;
 
 public class CustomExceptionSettings
 {
+    private readonly object _registrationGate = new();
+
+    /// <summary>Idempotently registers a framework declaration for the legacy default run.</summary>
+    /// <remarks>Explicit runs use BDTestOptions.RegisterFrameworkOutcomes instead.</remarks>
+    public void RegisterFrameworkOutcomes(FrameworkOutcomeMap map)
+    {
+        if (map == null) throw new ArgumentNullException(nameof(map));
+        lock (_registrationGate)
+        {
+            map.Register(SuccessExceptionTypes.Add, SuccessExceptionTypes, SkipExceptionTypes.Add, SkipExceptionTypes,
+                InconclusiveExceptionTypes.Add, InconclusiveExceptionTypes);
+        }
+    }
+
     internal CustomExceptionSettings()
     {
     }

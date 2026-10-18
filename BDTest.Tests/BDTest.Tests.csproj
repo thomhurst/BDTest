@@ -2,6 +2,7 @@
 
     <PropertyGroup>
         <TargetFramework>net10.0</TargetFramework>
+        <DefineConstants>$(DefineConstants);BDTEST_NUNIT</DefineConstants>
         
         <IsPackable>false</IsPackable>
         
@@ -41,5 +42,8 @@
     <Compile Include="..\TestUtilities\ReportJson.cs" Link="Helpers\ReportJson.cs" />
     <Using Include="BDTest.TestUtilities" />
     <ProjectReference Include="..\BDTest.SourceGenerator\BDTest.SourceGenerator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="..\TestUtilities\AdapterConformanceTests.cs" Link="Conformance\AdapterConformanceTests.cs" />
   </ItemGroup>
 </Project>
