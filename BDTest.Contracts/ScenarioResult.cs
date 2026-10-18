@@ -68,7 +68,8 @@ public sealed class ScenarioResult
         ReportId = reportId ?? throw new ArgumentNullException(nameof(reportId));
         StoryText = storyText ?? throw new ArgumentNullException(nameof(storyText));
         ScenarioText = scenarioText ?? throw new ArgumentNullException(nameof(scenarioText));
-        Status = status;
+        Status = Enum.IsDefined(typeof(Status), status)
+            ? status : throw new ArgumentOutOfRangeException(nameof(status), status, "Expected a defined status.");
         Steps = ContractCollections.List(steps);
         Attempts = ContractCollections.List(attempts);
         ExampleValues = ContractCollections.Dictionary(exampleValues);

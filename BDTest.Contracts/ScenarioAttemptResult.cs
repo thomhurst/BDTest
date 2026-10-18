@@ -24,7 +24,8 @@ public sealed class ScenarioAttemptResult
         IReadOnlyList<StepResult>? steps = null)
     {
         Number = number;
-        Status = status;
+        Status = Enum.IsDefined(typeof(Status), status)
+            ? status : throw new ArgumentOutOfRangeException(nameof(status), status, "Expected a defined status.");
         Exception = exception;
         StartTime = startTime;
         EndTime = endTime;

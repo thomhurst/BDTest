@@ -45,6 +45,8 @@ reader rejects missing, non-integer and unsupported schema versions with
 [existing legacy reader](json-data.md#reading-and-writing-reports).
 
 The schema uses camelCase property names and named status and step type values.
+JSON readers reject numeric enum values, including numeric strings, and unknown
+names. Constructors reject undefined `Status` and `StepType` values.
 Timestamps use `DateTimeOffset`, preserving offsets. Durations use the standard
 invariant System.Text.Json `TimeSpan` format, including fractional seconds;
 they do not use the legacy `d.hh:mm:ss:fffffff` duration format.
@@ -59,7 +61,8 @@ Every data type has get-only properties. Constructors copy every collection
 input into read-only storage, including dictionaries and nested table rows.
 Changing a source list after construction cannot change a report. Collection
 properties accept null during construction/deserialization and become empty
-collections. Collection entries must be non-null, except table headers and cells,
+collections, except `StepTable.Headers` and `StepTable.Rows`, which require
+non-null inputs. Collection entries must be non-null, except table headers and cells,
 where null becomes an empty string. Null or incorrectly sized table rows are
 rejected. Missing required strings are rejected; optional diagnostic and host
 metadata strings remain nullable.

@@ -43,9 +43,11 @@ public sealed class StepResult
         IReadOnlyList<StepArgument>? arguments = null,
         IReadOnlyList<AttachmentInfo>? attachments = null)
     {
-        StepType = stepType;
+        StepType = Enum.IsDefined(typeof(StepType), stepType)
+            ? stepType : throw new ArgumentOutOfRangeException(nameof(stepType), stepType, "Expected a defined step type.");
         StepText = stepText ?? throw new ArgumentNullException(nameof(stepText));
-        Status = status;
+        Status = Enum.IsDefined(typeof(Status), status)
+            ? status : throw new ArgumentOutOfRangeException(nameof(status), status, "Expected a defined status.");
         Guid = guid;
         ReportId = reportId;
         ScenarioId = scenarioId;

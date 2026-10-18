@@ -120,6 +120,52 @@ public class ReportContractTests
         }
     }
 
+    [TestCase("999")]
+    [TestCase("0")]
+    [TestCase("-1")]
+    [TestCase("\"0\"")]
+    [TestCase("\"999\"")]
+    [TestCase("\"Unknown\"")]
+    public void Current_schema_rejects_invalid_or_numeric_enum_values(string value)
+    {
+        var fixture = File.ReadAllText(Path.Combine(TestContext.CurrentContext.TestDirectory, "Data", "report-schema-v1.json"));
+        foreach (var path in new[] { "scenario", "attempt", "stepStatus", "stepType" })
+        {
+            var report = JsonNode.Parse(fixture)!;
+            var scenario = report["scenarios"]![0]!;
+            var target = path switch
+            {
+                "attempt" => scenario["attempts"]![0]!,
+                "stepStatus" or "stepType" => scenario["steps"]![0]!,
+                _ => scenario
+            };
+            target[path == "stepType" ? "stepType" : "status"] = JsonNode.Parse(value);
+            Assert.Throws<JsonException>(() => BDTestReportJson.Deserialize(report.ToJsonString()), path);
+            Assert.Throws<JsonException>(() => JsonSerializer.Deserialize(report.ToJsonString(),
+                BDTestReportJsonContext.Default.BDTestReport), path);
+        }
+    }
+
+    [TestCase(-1)]
+    [TestCase(999)]
+    public void Constructors_reject_undefined_enum_values(int value)
+    {
+        Assert.Throws<ArgumentOutOfRangeException>(() =>
+            new ScenarioResult("scenario", "report", "story", "scenario", (Status)value));
+        Assert.Throws<ArgumentOutOfRangeException>(() => new ScenarioAttemptResult(1, (Status)value));
+        Assert.Throws<ArgumentOutOfRangeException>(() => new StepResult(StepType.Given, "step", (Status)value));
+        Assert.Throws<ArgumentOutOfRangeException>(() => new StepResult((StepType)value, "step", Status.Passed));
+    }
+
+    [Test]
+    public void Generated_metadata_rejects_serializing_undefined_enum_values()
+    {
+        Assert.Throws<JsonException>(() => JsonSerializer.Serialize((Status)999,
+            BDTestReportJsonContext.Default.Status));
+        Assert.Throws<JsonException>(() => JsonSerializer.Serialize((StepType)999,
+            BDTestReportJsonContext.Default.StepType));
+    }
+
     [Test]
     public void Populated_report_round_trip_preserves_all_fields()
     {
