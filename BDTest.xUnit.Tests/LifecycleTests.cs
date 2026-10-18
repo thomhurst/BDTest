@@ -52,6 +52,26 @@ public class LifecycleTests : XUnitBDTestBase<XUnitContext>
         Assert.NotSame(originalContext, fixture.Context);
     }
 
+    [Fact]
+    public async Task ThrowingLegacyCompletionStillDisposesContext()
+    {
+        using var run = BDTestRun.Start();
+        var fixture = new ThrowingCompletionProbe(run);
+        await ((IAsyncLifetime)fixture).InitializeAsync();
+        var context = fixture.Context;
+        Assert.Throws<InvalidOperationException>(fixture.Dispose);
+        Assert.True(context.Disposed);
+        await fixture.DisposeAsync();
+    }
+
+    private sealed class ThrowingCompletionProbe(BDTestRun run) : XUnitBDTestBase<CompositionContext>
+    {
+        public override BDTestRun TestRun => run;
+#pragma warning disable CS0672, CS0618 // Exercise a compatibility override that fails before base cleanup.
+        protected override void MarkTestAsComplete() => throw new InvalidOperationException("legacy completion failed");
+#pragma warning restore CS0672, CS0618
+    }
+
     private sealed class CompletionHookProbe(BDTestRun run) : XUnitBDTestBase<XUnitContext>
     {
         public override BDTestRun TestRun => run;

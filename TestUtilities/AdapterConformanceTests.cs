@@ -37,36 +37,49 @@ public class AdapterConformanceTests : Adapter
 {
     private readonly List<(string Name, int Attempt, object Context, CancellationToken Token, Status Status)> _hooks = new();
     private readonly BDTestRun _run;
-    private AbstractContextBDTestBase<object> _host;
-    private readonly bool _composition = false;
-    public override BDTestRun TestRun => _run;
+#if BDTEST_NUNIT
+    private AbstractContextBDTestBase<object>? _nunitHost;
+#endif
 
 #if BDTEST_TUNIT
+    private readonly BDTestScenario<object>? _tunitHost;
+    protected virtual AbstractContextBDTestBase<object> ScenarioHost => _tunitHost ?? (AbstractContextBDTestBase<object>)this;
+    BDTestBase global::BDTest.TUnit.IBDTestTUnitTest.BDTestHost => ScenarioHost;
+
     public AdapterConformanceTests(bool composition)
     {
-        _composition = composition;
         _run = CreateRun();
-        _host = composition ? BDTestScenario.For<object>(this, _run) : this;
+        if (composition) _tunitHost = BDTestScenario.For<object>(this, _run);
     }
-
-    BDTestBase global::BDTest.TUnit.IBDTestTUnitTest.BDTestHost => _host;
 #else
+#if BDTEST_NUNIT
+    protected virtual AbstractContextBDTestBase<object> ScenarioHost => _nunitHost ?? this;
+#elif BDTEST_MSTEST
+    private readonly BDTestScenario<object>? _mstestHost;
+    protected virtual AbstractContextBDTestBase<object> ScenarioHost => _mstestHost ?? (AbstractContextBDTestBase<object>)this;
+    BDTestBase global::BDTest.MSTest.IBDTestMSTestTest.BDTestHost => ScenarioHost;
+#else
+    protected virtual AbstractContextBDTestBase<object> ScenarioHost => this;
+#endif
     public AdapterConformanceTests()
     {
         _run = CreateRun();
 #if BDTEST_MSTEST
-        _composition = this is MSTestCompositionAdapterConformanceTests;
-        _host = _composition ? BDTestScenario.For<object>(this, _run) : this;
-#else
-        _host = this;
+        if (this is MSTestCompositionAdapterConformanceTests)
+            _mstestHost = BDTestScenario.For<object>(this, _run);
 #endif
     }
 #endif
+    public override BDTestRun TestRun => _run;
 
 #if BDTEST_NUNIT
-    internal void UseHost(AbstractContextBDTestBase<object> host) => _host = host;
-#elif BDTEST_MSTEST
-    BDTestBase global::BDTest.MSTest.IBDTestMSTestTest.BDTestHost => _host;
+    internal void UseHost(AbstractContextBDTestBase<object> host) => _nunitHost = host;
+#endif
+
+#if BDTEST_NUNIT
+    private bool IncludesInstanceHooks => true;
+#else
+    private bool IncludesInstanceHooks => ReferenceEquals(ScenarioHost, this);
 #endif
 
     private BDTestRun CreateRun()
@@ -86,7 +99,7 @@ public class AdapterConformanceTests : Adapter
 
     internal Task Record(string name, ScenarioHookContext scenario)
     {
-        Require(ReferenceEquals(_host.Context, scenario.Context), "scenario hook received another attempt's context");
+        Require(ReferenceEquals(ScenarioHost.Context, scenario.Context), "scenario hook received another attempt's context");
         _hooks.Add((name, scenario.Attempt, scenario.Context ?? throw new InvalidOperationException("Expected the scenario hook context."), scenario.CancellationToken, scenario.Scenario.Status));
         if (name.EndsWith("after") && scenario.Scenario.Status is Status.Failed or Status.NotImplemented)
             Require(scenario.Scenario.Exception != null, "after hook did not receive the attempt exception");
@@ -95,49 +108,51 @@ public class AdapterConformanceTests : Adapter
 
     private sealed class ScenarioHook(AdapterConformanceTests owner) : IScenarioHook
     {
-        public Task BeforeScenarioAsync(ScenarioHookContext scenario) => owner.Record("run before", scenario);
-        public Task AfterScenarioAsync(ScenarioHookContext scenario) => owner.Record("run after", scenario);
+        public Task BeforeScenarioAsync(ScenarioHookContext scenario) =>
+            owner.Record("run before", scenario);
+        public Task AfterScenarioAsync(ScenarioHookContext scenario) =>
+            owner.Record("run after", scenario);
     }
 
     [Test]
-    public Task Pass() => Check(() => _host.Given(() => Complete()).When(() => Complete())
+    public Task Pass() => Check(() => ScenarioHost.Given(() => Complete()).When(() => Complete())
         .Then(() => Complete()).BDTestAsync(), Status.Passed, 0, Status.Passed, Status.Passed, Status.Passed);
 
     [Test]
-    public Task Fail() => CheckFailure(() => Check(() => _host.Given(() => Complete()).When(() => FailStep())
+    public Task Fail() => CheckFailure(() => Check(() => ScenarioHost.Given(() => Complete()).When(() => FailStep())
         .Then(() => MustNotRun()).BDTestAsync(), Status.Failed, 0, Status.Passed, Status.Failed, Status.NotRun),
         "conformance failure");
 
     [Test]
-    public Task NotImplemented() => CheckFailure(() => Check(() => _host.Given(() => Complete()).When(() => NotImplementedStep())
+    public Task NotImplemented() => CheckFailure(() => Check(() => ScenarioHost.Given(() => Complete()).When(() => NotImplementedStep())
         .Then(() => MustNotRun()).BDTestAsync(), Status.NotImplemented, 0,
         Status.Passed, Status.NotImplemented, Status.NotRun), "conformance not implemented");
 
     [Test]
-    public Task SingleStepSkipped() => Check(() => _host.Given(() => Complete()).When(() => SkippedStep())
+    public Task SingleStepSkipped() => Check(() => ScenarioHost.Given(() => Complete()).When(() => SkippedStep())
         .Then(() => Complete()).BDTestAsync(), Status.Passed, 0, Status.Passed, Status.Skipped, Status.Passed);
 
     [Test]
-    public Task AllStepsSkipped() => Check(() => _host.Given(() => SkippedStep()).When(() => SkippedStep())
+    public Task AllStepsSkipped() => Check(() => ScenarioHost.Given(() => SkippedStep()).When(() => SkippedStep())
         .Then(() => SkippedStep()).BDTestAsync(), Status.Skipped, 0, Status.Skipped, Status.Skipped, Status.Skipped);
 
     [Test, ScenarioText("Conformance global skip")]
-    public Task GlobalRuleSkips() => Check(() => _host.Given(() => MustNotRun()).When(() => MustNotRun())
+    public Task GlobalRuleSkips() => Check(() => ScenarioHost.Given(() => MustNotRun()).When(() => MustNotRun())
         .Then(() => MustNotRun()).BDTestAsync(), Status.Skipped, 0, Status.Skipped, Status.Skipped, Status.Skipped);
 
     [Test, ScenarioText("Conformance global skip")]
-    public Task GlobalRuleSkipsWithDirectAwait() => Check(async () => await _host.Given(() => MustNotRun()).When(() => MustNotRun())
+    public Task GlobalRuleSkipsWithDirectAwait() => Check(async () => await ScenarioHost.Given(() => MustNotRun()).When(() => MustNotRun())
         .Then(() => MustNotRun()), Status.Skipped, 0, Status.Skipped, Status.Skipped, Status.Skipped);
 
     [Test]
-    public Task FrameworkSkip() => Check(() => _host.Given(() => Complete()).When(() => OutcomeMap.ReportSkip("conformance skip"))
+    public Task FrameworkSkip() => Check(() => ScenarioHost.Given(() => Complete()).When(() => OutcomeMap.ReportSkip("conformance skip"))
         .Then(() => MustNotRun()).BDTestAsync(), FrameworkSkipStatus, 0,
         Status.Passed, FrameworkSkipStatus, FrameworkSkipStatus == Status.Skipped ? Status.Skipped : Status.NotRun);
 
     [Test]
     public Task FrameworkInconclusive()
     {
-        Task Execute() => Check(() => _host.Given(() => Complete())
+        Task Execute() => Check(() => ScenarioHost.Given(() => Complete())
             .When(() => OutcomeMap.ReportInconclusive("conformance inconclusive"))
             .Then(() => MustNotRun()).BDTestAsync(), FrameworkInconclusiveStatus, 0,
             Status.Passed, FrameworkInconclusiveStatus, FrameworkInconclusiveStatus == Status.Skipped ? Status.Skipped : Status.NotRun);
@@ -150,7 +165,7 @@ public class AdapterConformanceTests : Adapter
     }
 
     [Test]
-    public Task FrameworkSuccess() => Check(() => _host.Given(() => Complete()).When(() => ReportSuccess())
+    public Task FrameworkSuccess() => Check(() => ScenarioHost.Given(() => Complete()).When(() => ReportSuccess())
         .Then(() => Complete()).BDTestAsync(), Status.Passed, 0,
         Status.Passed, Status.Passed, HasSuccessException ? Status.NotRun : Status.Passed);
 
@@ -159,7 +174,7 @@ public class AdapterConformanceTests : Adapter
     {
         var attempts = 0;
         void FailOnce() { if (++attempts == 1) throw new TransientException(); }
-        return Check(() => _host.Given(() => Complete()).When(() => FailOnce()).Then(() => Complete()).BDTestAsync(),
+        return Check(() => ScenarioHost.Given(() => Complete()).When(() => FailOnce()).Then(() => Complete()).BDTestAsync(),
             Status.Passed, 1, Status.Passed, Status.Passed, Status.Passed);
     }
 
@@ -168,7 +183,7 @@ public class AdapterConformanceTests : Adapter
     {
         try
         {
-            await Check(() => _host.When(async token => await Task.Delay(Timeout.InfiniteTimeSpan, token))
+            await Check(() => ScenarioHost.When(async token => await Task.Delay(Timeout.InfiniteTimeSpan, token))
                 .Then(() => MustNotRun()).WithScenarioTimeout(TimeSpan.FromMilliseconds(100)).BDTestAsync(),
                 Status.Failed, 0, Status.Failed, Status.NotRun);
         }
@@ -184,15 +199,15 @@ public class AdapterConformanceTests : Adapter
     [Test]
     public async Task ScenarioOutlineHooks()
     {
-        var outline = await _host.ScenarioOutline("example <Value>", new[] { new { Value = 1 }, new { Value = 2 } }, row =>
+        var outline = await ScenarioHost.ScenarioOutline("example <Value>", new[] { new { Value = 1 }, new { Value = 2 } }, row =>
         {
             var calls = 0;
             void FailOnce() { if (++calls == 1) throw new TransientException(); }
-            return _host.When(() => FailOnce()).Then(() => Complete());
+            return ScenarioHost.When(() => FailOnce()).Then(() => Complete());
         }).BDTestAsync();
         var examples = outline.Examples ?? throw new InvalidOperationException("Expected outline examples.");
         Require(examples.All(s => s.Status == Status.Passed && s.RetryCount == 1), "outline retry mismatch");
-        Require(_hooks.Count == (_composition ? 8 : 16), "hooks must run for each row attempt, not the outline container");
+        Require(_hooks.Count == (IncludesInstanceHooks ? 16 : 8), "hooks must run for each row attempt, not the outline container");
         Require(_hooks.Where(h => h.Name == "run before").Select(h => h.Context).Distinct().Count() == 4,
             "outline attempts reused contexts");
         Require(_hooks.Where(h => h.Name == "run before").Select(h => h.Token).Distinct().Count() == 4,
@@ -204,11 +219,9 @@ public class AdapterConformanceTests : Adapter
     [Test]
     public async Task ContextFactoryInitializationAndAsyncDisposal()
     {
-        var factory = new LifetimeFactory();
-        using var run = BDTestRun.Start(new BDTestOptions { ContextFactory = factory });
-        var fixture = new ContextLifetimeProbe(run, factory, _composition);
+        using var fixture = CreateLifetimeProbe();
         await fixture.StartAsync();
-        await fixture.InitializeContextAsync();
+        await fixture.Host.InitializeContextAsync();
         var context = fixture.Context;
         Require(context.Attempt == 0, "factory did not receive the zero-based initial attempt");
         Require(context.InitializationCalls == 1, "explicit context initialization was not awaited");
@@ -241,11 +254,7 @@ public class AdapterConformanceTests : Adapter
     [Test]
     public async Task ContextRetryDisposesPreviousAttempt()
     {
-        var factory = new LifetimeFactory(gateDisposal: false);
-        var options = new BDTestOptions { ContextFactory = factory };
-        options.RetryTestRules.Add(exception => exception is TransientException, 1);
-        using var run = BDTestRun.Start(options);
-        var fixture = new ContextLifetimeProbe(run, factory, _composition);
+        using var fixture = CreateLifetimeProbe(gateDisposal: false, retry: true);
         await fixture.StartAsync();
         void RetryOnce()
         {
@@ -276,9 +285,7 @@ public class AdapterConformanceTests : Adapter
     [Test]
     public async Task ContextDisposalFailureReachesRunner()
     {
-        var factory = new LifetimeFactory(gateDisposal: false, failDisposal: true);
-        using var run = BDTestRun.Start(new BDTestOptions { ContextFactory = factory });
-        var fixture = new ContextLifetimeProbe(run, factory, _composition);
+        using var fixture = CreateLifetimeProbe(gateDisposal: false, failDisposal: true);
         await fixture.StartAsync();
         await fixture.Host.When(() => Complete()).Then(() => Complete()).BDTestAsync();
         var context = fixture.Context;
@@ -342,7 +349,7 @@ public class AdapterConformanceTests : Adapter
         {
             AbstractContextBDTestBase<object> host;
             Action end;
-            if (_composition)
+            if (!ReferenceEquals(ScenarioHost, this))
             {
                 var composed = BDTestScenario.For<object>(new object(), run);
                 composed.BeginTest("same-id");
@@ -351,7 +358,7 @@ public class AdapterConformanceTests : Adapter
             }
             else
             {
-                var inherited = new IsolationProbe(run);
+                var inherited = new CoreIsolationProbe(run);
                 inherited.Start();
                 host = inherited;
                 end = inherited.Finish;
@@ -397,13 +404,84 @@ public class AdapterConformanceTests : Adapter
         }
     }
 
-    private sealed class IsolationProbe(BDTestRun run) : Adapter
+    private sealed class CoreIsolationProbe(BDTestRun run) : Adapter
     {
         public override BDTestRun TestRun => run;
         protected override string BDTestExecutionId => "same-id";
         public void Start() => BeginTest("same-id");
         public void Finish() => EndTest();
     }
+
+#if BDTEST_XUNIT
+    [Test]
+    public async Task ExplicitAdapterRunsIsolateContextOutputAndCompletion()
+    {
+        using var first = BDTestRun.Start();
+        using var second = BDTestRun.Start();
+        (AbstractContextBDTestBase<IsolationContext> Host, Func<ValueTask> End) Start(BDTestRun run)
+        {
+            if (!ReferenceEquals(ScenarioHost, this))
+            {
+                var host = global::BDTest.xUnit.XUnitBDTestScenario.For<IsolationContext>(this, run);
+                return (host, host.EndTestAsync);
+            }
+            var fixture = new IsolationProbe(run);
+            ((Xunit.IAsyncLifetime)fixture).InitializeAsync().GetAwaiter().GetResult();
+            return (fixture, fixture.DisposeAsync);
+        }
+        var one = Start(first);
+        var firstContext = one.Host.Context;
+        one.Host.WriteStartupOutput("first run only");
+        var two = Start(second);
+        var secondContext = two.Host.Context;
+        two.Host.WriteStartupOutput("second run only");
+        try
+        {
+            async Task Execute(AbstractContextBDTestBase<IsolationContext> host, string output) =>
+                await host.When(async () => { await Task.Yield(); Console.WriteLine(output); })
+                    .Then(() => Complete()).BDTestAsync();
+            var runnerToken = Xunit.TestContext.Current.CancellationToken;
+            await Task.WhenAll(Task.Run(() => Execute(one.Host, "first step"), runnerToken),
+                Task.Run(() => Execute(two.Host, "second step"), runnerToken));
+            var firstScenario = first.Scenarios.Single();
+            var secondScenario = second.Scenarios.Single();
+            Require(firstScenario.FrameworkTestId == secondScenario.FrameworkTestId, "runner identity changed between explicit runs");
+            Require(!ReferenceEquals(firstContext, secondContext), "runs reused a context");
+            Require(firstScenario.TestStartupInformation.Contains("first run only") &&
+                !firstScenario.TestStartupInformation.Contains("second run only"), "first run startup leaked");
+            Require(secondScenario.TestStartupInformation.Contains("second run only") &&
+                !secondScenario.TestStartupInformation.Contains("first run only"), "second run startup leaked");
+            Require(firstScenario.Steps[0].Output.Contains("first step") &&
+                !firstScenario.Steps[0].Output.Contains("second step"), "first run step output leaked");
+            Require(secondScenario.Steps[0].Output.Contains("second step") &&
+                !secondScenario.Steps[0].Output.Contains("first step"), "second run step output leaked");
+        }
+        finally
+        {
+            await one.End();
+            await two.End();
+        }
+        Require(firstContext.Disposed && secondContext.Disposed, "adapter did not complete both runs");
+        await one.End();
+        await two.End();
+    }
+
+    private sealed class IsolationProbe(BDTestRun run) : global::BDTest.xUnit.XUnitBDTestBase<IsolationContext>
+    {
+        public override BDTestRun TestRun => run;
+    }
+
+    public sealed class IsolationContext : IAsyncDisposable
+    {
+        public bool Disposed { get; private set; }
+        public async ValueTask DisposeAsync()
+        {
+            await Task.Yield();
+            Require(!Disposed, "adapter disposed context twice");
+            Disposed = true;
+        }
+    }
+#endif
 
     private async Task Check(Func<Task<Scenario>> execute, Status expected, int retries, params Status[] steps)
     {
@@ -415,18 +493,17 @@ public class AdapterConformanceTests : Adapter
             Require(scenario.Status == expected && scenario.RetryCount == retries
                 && scenarioSteps.Select(s => s.Status).SequenceEqual(steps),
                 $"BDTest mismatch: {scenario.Status}, retries {scenario.RetryCount}, steps {string.Join(", ", scenarioSteps.Select(s => s.Status))}");
-            var hookNames = _composition
-                ? new[] { "run before", "run after" }
-                : new[] { "run before", "instance before", "instance after", "run after" };
-            Require(_hooks.Count == hookNames.Length * (retries + 1), "scenario hooks did not run once per attempt");
+            var names = IncludesInstanceHooks
+                ? new[] { "run before", "instance before", "instance after", "run after" }
+                : new[] { "run before", "run after" };
+            Require(_hooks.Count == names.Length * (retries + 1), "scenario hooks did not run once per attempt");
             for (var attempt = 0; attempt <= retries; attempt++)
             {
-                var hooks = _hooks.Skip(attempt * hookNames.Length).Take(hookNames.Length).ToArray();
-                Require(hooks.Select(h => h.Name).SequenceEqual(hookNames),
-                    "scenario hook order mismatch");
+                var hooks = _hooks.Skip(attempt * names.Length).Take(names.Length).ToArray();
+                Require(hooks.Select(h => h.Name).SequenceEqual(names), "scenario hook order mismatch");
                 Require(hooks.All(h => h.Attempt == attempt), "scenario hook attempt mismatch");
-                Require(hooks.Take(hookNames.Length / 2).All(h => h.Status == Status.Pending), "before hooks must see Pending");
-                Require(hooks.Skip(hookNames.Length / 2).All(h => h.Status == (attempt < retries ? Status.Failed : expected)),
+                Require(hooks.Where(h => h.Name.EndsWith("before")).All(h => h.Status == Status.Pending), "before hooks must see Pending");
+                Require(hooks.Where(h => h.Name.EndsWith("after")).All(h => h.Status == (attempt < retries ? Status.Failed : expected)),
                     "after hooks must see the attempt's final status");
             }
             Require(_hooks.Where(h => h.Name == "run before").Select(h => h.Context).Distinct().Count() == retries + 1,
@@ -487,7 +564,7 @@ public class AdapterConformanceTests : Adapter
 #if BDTEST_TUNIT
         try { await global::BDTest.TUnit.TUnitBDTestLifecycle.AfterTest(global::TUnit.Core.TestContext.Current!); }
 #elif BDTEST_MSTEST
-        try { await _host.EndTestAsync(); }
+        try { await ScenarioHost.EndTestAsync(); }
 #else
         try { await EndTestAsync(); }
 #endif
@@ -495,31 +572,70 @@ public class AdapterConformanceTests : Adapter
     }
 #endif
 
+    private LifetimeProbe CreateLifetimeProbe(bool gateDisposal = true, bool failDisposal = false, bool retry = false)
+    {
+        var factory = new LifetimeFactory(gateDisposal, failDisposal);
+        var options = new BDTestOptions { ContextFactory = factory };
+        if (retry) options.RetryTestRules.Add(exception => exception is TransientException, 1);
+        var run = BDTestRun.Start(options);
+#if BDTEST_XUNIT
+        if (!ReferenceEquals(ScenarioHost, this))
+        {
+            var host = global::BDTest.xUnit.XUnitBDTestScenario.For<LifetimeContext>(this, run);
+            return new LifetimeProbe(run, host, factory.Contexts,
+                () => Task.CompletedTask, () => host.EndTestAsync().AsTask());
+        }
+#endif
+#if BDTEST_TUNIT
+        if (!ReferenceEquals(ScenarioHost, this))
+        {
+            var host = BDTestScenario.For<LifetimeContext>(this, run);
+            return new LifetimeProbe(run, host, factory.Contexts,
+                () => { host.BeginTest(Guid.NewGuid().ToString("N")); return Task.CompletedTask; },
+                () => host.EndTestAsync().AsTask());
+        }
+#endif
+        var fixture = new ContextLifetimeProbe(run);
+        return new LifetimeProbe(run, fixture, factory.Contexts, fixture.StartAsync, fixture.FinishAsync);
+    }
+
+    private sealed class LifetimeFactory(bool gateDisposal, bool failDisposal) : IBDTestContextFactory
+    {
+        public List<LifetimeContext> Contexts { get; } = new();
+        public async ValueTask<object> CreateContextAsync(Type contextType, ContextCreation creation)
+        {
+            await Task.Yield();
+            Require(contextType == typeof(LifetimeContext), "factory received an incorrect context type");
+            var context = new LifetimeContext(creation.Attempt, gateDisposal, failDisposal);
+            Contexts.Add(context);
+            return context;
+        }
+    }
+
+    private sealed class LifetimeProbe(BDTestRun run, AbstractContextBDTestBase<LifetimeContext> host,
+        List<LifetimeContext> contexts, Func<Task> start, Func<Task> finish) : IDisposable
+    {
+        public AbstractContextBDTestBase<LifetimeContext> Host => host;
+        public LifetimeContext Context => host.Context;
+        public List<LifetimeContext> Contexts => contexts;
+        public Task StartAsync() => start();
+        public Task FinishAsync() => finish();
+        public void Dispose() => run.Dispose();
+    }
+
 #if BDTEST_NUNIT
-    private sealed class ContextLifetimeProbe(BDTestRun run, LifetimeFactory factory, bool composition) : BDTest.NUnit.NUnitBDTestBase<LifetimeContext>
+    private sealed class ContextLifetimeProbe(BDTestRun run) : BDTest.NUnit.NUnitBDTestBase<LifetimeContext>
 #elif BDTEST_MSTEST
-    private sealed class ContextLifetimeProbe(BDTestRun run, LifetimeFactory factory, bool composition) : BDTest.MSTest.MSTestBDTestBase<LifetimeContext>
+    private sealed class ContextLifetimeProbe(BDTestRun run) : BDTest.MSTest.MSTestBDTestBase<LifetimeContext>
 #elif BDTEST_TUNIT
-    private sealed class ContextLifetimeProbe(BDTestRun run, LifetimeFactory factory, bool composition) : BDTest.TUnit.TUnitBDTestBase<LifetimeContext>
+    private sealed class ContextLifetimeProbe(BDTestRun run) : BDTest.TUnit.TUnitBDTestBase<LifetimeContext>
 #elif BDTEST_XUNIT
-    private sealed class ContextLifetimeProbe(BDTestRun run, LifetimeFactory factory, bool composition) : BDTest.xUnit.XUnitBDTestBase<LifetimeContext>
+    private sealed class ContextLifetimeProbe(BDTestRun run) : BDTest.xUnit.XUnitBDTestBase<LifetimeContext>
 #endif
     {
         public override BDTestRun TestRun => run;
-        private BDTestScenario<LifetimeContext>? _composed;
-        public AbstractContextBDTestBase<LifetimeContext> Host => composition
-            ? _composed ??= BDTestScenario.For<LifetimeContext>(this, run) : this;
-        public List<LifetimeContext> Contexts => factory.Contexts;
-        public new LifetimeContext Context => Host.Context;
-        public new ValueTask InitializeContextAsync() => Host.InitializeContextAsync();
-
         public async Task StartAsync()
         {
-            if (composition)
-            {
-                Host.BeginTest(Guid.NewGuid().ToString("N"), null);
-                return;
-            }
 #if BDTEST_XUNIT
             await ((Xunit.IAsyncLifetime)this).InitializeAsync();
 #else
@@ -530,7 +646,6 @@ public class AdapterConformanceTests : Adapter
 
         public Task FinishAsync()
         {
-            if (composition) return Host.EndTestAsync().AsTask();
 #if BDTEST_NUNIT
             return BDTestNUnitTearDown();
 #elif BDTEST_MSTEST
@@ -540,19 +655,6 @@ public class AdapterConformanceTests : Adapter
 #elif BDTEST_XUNIT
             return DisposeAsync().AsTask();
 #endif
-        }
-    }
-
-    private sealed class LifetimeFactory(bool gateDisposal = true, bool failDisposal = false) : IBDTestContextFactory
-    {
-        public List<LifetimeContext> Contexts { get; } = new();
-
-        public async ValueTask<object> CreateContextAsync(Type contextType, ContextCreation creation)
-        {
-            await Task.Yield();
-            var context = new LifetimeContext(creation.Attempt, gateDisposal, failDisposal);
-            Contexts.Add(context);
-            return context;
         }
     }
 
@@ -669,4 +771,24 @@ public class CompositionAdapterConformanceTests : CompositionConformanceFixtureB
 // Inherited test methods run the identical contract against a composed host.
 [global::BDTest.MSTest.BDTestClass]
 public class MSTestCompositionAdapterConformanceTests : AdapterConformanceTests;
+#endif
+
+#if BDTEST_XUNIT
+// Inherit the shared runner probes, but execute every scenario through composition.
+// CompositionTests separately proves a fixture with an unrelated base class.
+public class CompositionAdapterConformanceTests : AdapterConformanceTests
+{
+    private readonly BDTestScenario<object> _host;
+    protected override AbstractContextBDTestBase<object> ScenarioHost => _host;
+
+    public CompositionAdapterConformanceTests() =>
+        _host = global::BDTest.xUnit.XUnitBDTestScenario.For<object>(this, TestRun);
+
+    public override async ValueTask DisposeAsync()
+    {
+        try { await ScenarioHost.EndTestAsync(); }
+        finally { await base.DisposeAsync(); }
+    }
+}
+
 #endif

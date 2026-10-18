@@ -1,6 +1,6 @@
 ---
 title: xUnit
-description: Use BDTest with xUnit v3 through XUnitBDTestBase<TContext>.
+description: Use BDTest with xUnit v3 through composition or an optional base class.
 ---
 
 # xUnit
@@ -30,7 +30,103 @@ To run with VSTest (`dotnet test`), reference `xunit.v3.mtp-off`, `Microsoft.NET
 
 Projects that use Microsoft.Testing.Platform instead can reference `xunit.v3` and follow [xUnit's runner configuration](https://xunit.net/docs/getting-started/v3/microsoft-testing-platform).
 
-## Writing tests
+## Composition with an unrelated base class
+
+Register the native lifecycle fixture once per assembly, then create a host in your
+constructor. Supply the actual test instance and an explicit, caller-owned run:
+
+```csharp
+using BDTest;
+using BDTest.Helpers;
+using BDTest.Test;
+using BDTest.xUnit;
+using Xunit;
+
+[assembly: AssemblyFixture(typeof(XUnitBDTestLifecycle))]
+[assembly: AssemblyFixture(typeof(CheckoutRun))]
+
+public sealed class CheckoutRun : IAsyncDisposable
+{
+    public BDTestRun Run { get; }
+
+    public CheckoutRun()
+    {
+        var options = new BDTestOptions();
+        options.RegisterFrameworkOutcomes(XUnitBDTestScenario.OutcomeMap);
+        // Configure retries, context factories and hooks before freezing options.
+        Run = BDTestRun.Start(options);
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        try
+        {
+            await File.WriteAllTextAsync("checkout.html",
+                BDTestHtmlHelper.GetTestHtmlReport(new BDTestRunDescriptor(), Run));
+        }
+        finally { Run.Dispose(); }
+    }
+}
+
+public class CheckoutTests : CompanyTestBase, IAsyncLifetime
+{
+    private readonly BDTestScenario<CheckoutContext> _bdt;
+
+    public CheckoutTests(CheckoutRun owner)
+    {
+        _bdt = XUnitBDTestScenario.For<CheckoutContext>(this, owner.Run);
+        Console.WriteLine("Preparing checkout");
+    }
+
+    public async ValueTask InitializeAsync() => await _bdt.InitializeContextAsync();
+
+    [Fact]
+    public async Task Pays()
+    {
+        await _bdt.When(() => _bdt.Context.Pay())
+            .Then(() => _bdt.Context.VerifyReceipt()).BDTestAsync();
+    }
+
+    public ValueTask DisposeAsync()
+    {
+        Console.WriteLine("Checkout teardown");
+        return default;
+    }
+}
+```
+
+`XUnitBDTestScenario.For` binds synchronously before asynchronous setup. It supplies
+xUnit's exact test method and unique execution ID, including runtime-enumerated
+theory rows. Story, tags, scenario text, and attributed retry hooks belong to your
+test instance. Read `Context` from the host inside steps so retries see the new context.
+
+The registered fixture uses xUnit's `INotifyTestLifecycle` and
+`INotifyTestLifecycleAsync` extension points. It awaits host completion after user
+teardown, including constructor, setup, body, and teardown failures. You do not call
+`BeginTest`, `EndTest`, or inherit a BDTest class. Registering the fixture does not
+create or configure a run. It can complete hosts from several explicit runs in one
+assembly; each run retains its own contexts, output, options, and reports. Runs must
+outlive all test cleanup. An assembly fixture is a convenient owner; automatic
+assembly run configuration is separate from this registration.
+
+Create only one composition host per native test and explicit run, regardless of
+context type. A second call for the same test and run throws before changing
+capture or attachment state, including after the first host completes. Reuse the
+host for that test. Hosts in different runs remain independent.
+
+Configure the outcome map before `BDTestRun.Start` for framework exceptions and
+whole-scenario skips. Missing lifecycle registration throws when creating the host.
+Hosts use the [core composition API](composition.md), including scenario outlines
+and output helpers. `EndTestAsync()` is available for custom/manual integrations
+that must await context disposal; native xUnit integration calls it for you.
+
+To migrate an existing fixture, keep its unrelated base class, replace inherited
+builders and `Context` reads with host members, and move run settings into options
+before starting the run. Replace adapter lifecycle overrides with ordinary xUnit
+`IAsyncLifetime` methods. Remove manual BDTest start/completion calls. The adapter's
+target frameworks and xUnit v3 runner requirements remain unchanged.
+
+## Writing tests with the optional base class
 
 Inherit from `XUnitBDTestBase<TContext>`. The base class has a parameterless constructor:
 
@@ -55,6 +151,11 @@ public class BasketTests : XUnitBDTestBase<BasketContext>
     }
 }
 ```
+
+The base class uses the same binding, capture and completion path as composition.
+Register `XUnitBDTestLifecycle` for fallback cleanup even when a constructor, setup,
+or teardown override throws before calling base. Existing fixtures without the
+registration retain their explicit base-class lifecycle behavior.
 
 Contexts may have constructor dependencies: override `CreateContextAsync(ContextCreation)` to construct them. BDTest awaits `IBDTestContextLifetime.InitializeAsync()` before scenario steps and disposes owned contexts at teardown, preferring `IAsyncDisposable` over `IDisposable`. Call `await InitializeContextAsync()` when async fixture setup needs an initialized context before any scenario. See [Test context](../writing-tests/test-context.md) for factories, retries and ownership.
 
@@ -102,7 +203,7 @@ public override async ValueTask DisposeAsync()
 }
 ```
 
-If you hide the method or explicitly reimplement `IAsyncDisposable.DisposeAsync()`, you must still call `await base.DisposeAsync()`; xUnit does not also call `Dispose()`. See the [xUnit v3 migration guide](https://xunit.net/docs/getting-started/v3/migration#iasynclifetime-now-inherits-from-iasyncdisposable).
+If you hide the method or explicitly reimplement `IAsyncDisposable.DisposeAsync()`, without native lifecycle registration you must still call `await base.DisposeAsync()`; xUnit does not also call `Dispose()`. See the [xUnit v3 migration guide](https://xunit.net/docs/getting-started/v3/migration#iasynclifetime-now-inherits-from-iasyncdisposable).
 
 Existing overrides of the obsolete `MarkTestAsComplete()` and reimplementations of `IDisposable` retain their synchronous teardown path for compatibility. Such overrides must call the base method to complete BDTest cleanup. Use `DisposeAsync()` for new teardown code.
 

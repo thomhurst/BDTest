@@ -44,7 +44,7 @@ public class CheckoutTests : CompanyTestBase
 }
 ```
 
-The example shows manual lifecycle integration. For automatic setup and completion, use [NUnit composition registration](nunit.md#composition-with-an-existing-base-class), TUnit's [`IBDTestTUnitTest`](tunit.md#composition-with-an-existing-base-class), or MSTest's [`IBDTestMSTestTest`, `[BDTestClass]`, and context injection](mstest.md#composition-with-an-unrelated-base-class). Framework-native composition registration is tracked separately for [xUnit v3](https://github.com/thomhurst/BDTest/issues/896). Existing adapter base classes remain available.
+The example shows manual lifecycle integration. For automatic setup and completion, use [NUnit composition registration](nunit.md#composition-with-an-existing-base-class), [native xUnit v3 registration](xunit.md#composition-with-an-unrelated-base-class), TUnit's [`IBDTestTUnitTest`](tunit.md#composition-with-an-existing-base-class), or MSTest's [`IBDTestMSTestTest`, `[BDTestClass]`, and context injection](mstest.md#composition-with-an-unrelated-base-class). Existing adapter base classes remain available.
 
 ## Lifecycle and parallel execution
 
