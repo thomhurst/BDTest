@@ -1,7 +1,7 @@
 using System.Reflection;
 using BDTest.Attributes;
 using BDTest.NUnit;
-using BDTest.Output;
+using BDTest.TestUtilities;
 using BDTest.Test;
 using NUnit.Framework;
 using NUnit.Framework.Interfaces;
@@ -72,13 +72,13 @@ public class NUnitTeardownTests : NUnitBDTestBase<MyTestContext>
     {
         _completionCalls++;
         _events.Add(ReferenceEquals(Context, _scenarioContext) ? "context present" : "context already removed");
-        _events.Add(TestOutputData.FrameworkExecutionId == BDTestExecutionId ? "output active" : "output already cleared");
+        _events.Add(OutputCaptureInspection.FrameworkExecutionId == BDTestExecutionId ? "output active" : "output already cleared");
         WriteTearDownOutput("completion override output");
         _completing = true;
         base.MarkTestAsComplete();
         Assert.That(TestContext.CurrentContext.Result.Outcome, Is.EqualTo(ResultState.Success));
         _events.Add("result preserved");
-        _events.Add(TestOutputData.FrameworkExecutionId == null && TestOutputData.TestId == null
+        _events.Add(OutputCaptureInspection.FrameworkExecutionId == null && OutputCaptureInspection.TestId == null
             ? "test completed" : "test not completed");
         _ = Context;
         _completing = false;

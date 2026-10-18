@@ -2,7 +2,6 @@
 
     <PropertyGroup>
         <TargetFramework>net10.0</TargetFramework>
-        <DefineConstants>$(DefineConstants);BDTEST_NUNIT</DefineConstants>
         
         <IsPackable>false</IsPackable>
     </PropertyGroup>
@@ -18,7 +17,6 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\BDTest.Example\BDTest.Example.csproj" />
       <ProjectReference Include="..\BDTest.NUnit\BDTest.NUnit.csproj" />
       <ProjectReference Include="..\BDTest.Razor.Reports\BDTest.Razor.Reports.csproj" />
       <ProjectReference Include="..\BDTest.ReportGenerator.RazorServer\BDTest.ReportGenerator.RazorServer.csproj" />
@@ -29,7 +27,9 @@
     </ItemGroup>
 
     <ItemGroup>
-        <Compile Include="..\TestUtilities\LifecycleContract.cs" Link="Helpers\LifecycleContract.cs" />
+        <Compile Include="..\TestUtilities\MyTestContext.cs" Link="MyTestContext.cs" />
+        <Compile Include="..\TestUtilities\NUnitTestValue.cs" Link="Helpers\TestValue.cs" />
+        <Compile Include="..\TestUtilities\NUnitFileHelpers.cs" Link="Helpers\FileHelpers.cs" />
         <Compile Include="..\TestUtilities\HistoricalReportFixture.cs" Link="Helpers\HistoricalReportFixture.cs" />
         <None Update="Data\JsonData-v2.0.60.json" CopyToOutputDirectory="PreserveNewest" />
     </ItemGroup>
@@ -37,11 +37,6 @@
     <Compile Include="..\TestUtilities\ReportJson.cs" Link="Helpers\ReportJson.cs" />
     <Using Include="BDTest.TestUtilities" />
     <ProjectReference Include="..\BDTest.SourceGenerator\BDTest.SourceGenerator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
-  </ItemGroup>
-  <ItemGroup>
-    <Compile Include="..\TestUtilities\AssemblyRunContract.cs" Link="Conformance\AssemblyRunContract.cs" />
-    <Compile Include="..\TestUtilities\AdapterConformanceTests.cs" Link="Conformance\AdapterConformanceTests.cs" />
-    <Compile Include="..\TestUtilities\MethodIdentityContract.cs" Link="Helpers\MethodIdentityContract.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\BDTest.Analyzers\BDTest.Analyzers.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />

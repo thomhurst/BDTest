@@ -1,3 +1,4 @@
+using BDTest.TestUtilities;
 using System.Collections.Concurrent;
 using BDTest.Attributes;
 using BDTest.Helpers;
@@ -31,7 +32,7 @@ public class NUnitCompositionTests
         var result = command.Execute(context);
         Assert.That(result.ResultState.Status, Is.EqualTo(TestStatus.Passed), result.Message);
         Assert.That(resource.DisposalThread, Is.EqualTo(resource.OwnerThread));
-        Assert.That(BDTest.Output.TestOutputData.FrameworkExecutionId, Is.Null);
+        Assert.That(OutputCaptureInspection.FrameworkExecutionId, Is.Null);
     }
 
     [TestCase(false)]
@@ -52,7 +53,7 @@ public class NUnitCompositionTests
         Assert.That(result.ResultState.Status, Is.EqualTo(TestStatus.Failed));
         Assert.That(result.Message, Does.Contain("owned by the current fixture"));
         Assert.That(executed, Is.False);
-        Assert.That(run.OutputBuffers, Is.Empty);
+        Assert.That(OutputCaptureInspection.Buffers(run), Is.Empty);
     }
 
     private sealed class BorrowedHostProbe(BDTestBase host) : INUnitBDTest
@@ -136,7 +137,7 @@ public class NUnitCompositionTests
             Assert.That(run.Scenarios, Has.Count.EqualTo(4));
             Assert.That(run.Scenarios.Select(s => s.FrameworkTestId).Distinct().Count(), Is.EqualTo(4));
             Assert.That(run.Scenarios.Select(s => s.ReportId), Is.All.EqualTo(run.ReportId));
-            Assert.That(run.OutputBuffers, Is.Empty);
+            Assert.That(OutputCaptureInspection.Buffers(run), Is.Empty);
             foreach (var scenario in run.Scenarios)
             {
                 Assert.That(scenario.TestStartupInformation, Does.Contain(label + " setup").And.Not.Contain(other));
@@ -170,7 +171,7 @@ public class NUnitCompositionTests
             foreach (var diagnostic in mode.Split('-'))
                 Assert.That(result.Message, Does.Contain("native " + diagnostic));
         }
-        Assert.That(run.OutputBuffers, Is.Empty);
+        Assert.That(OutputCaptureInspection.Buffers(run), Is.Empty);
         Assert.That(NUnitCompositionEvidence.Contexts, Has.Count.EqualTo(5));
         Assert.That(NUnitCompositionEvidence.Contexts.All(context => context.Disposals == 1 && context.Disposed), Is.True);
     }
@@ -197,7 +198,7 @@ public class NUnitCompositionTests
                 };
                 var command = new BDTestFixtureAttribute().Wrap(new ActionCommand(test, () => resource = host.Context));
                 var result = command.Execute(context);
-                return (result.ResultState.Status, BDTest.Output.TestOutputData.FrameworkExecutionId,
+                return (result.ResultState.Status, OutputCaptureInspection.FrameworkExecutionId,
                     Restored: ReferenceEquals(SynchronizationContext.Current, synchronization));
             }
             finally { SynchronizationContext.SetSynchronizationContext(previous); }

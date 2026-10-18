@@ -49,12 +49,18 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BDTest.Contracts", "BDTest.
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BDTest.Contracts.Tests", "BDTest.Contracts.Tests\BDTest.Contracts.Tests.csproj", "{2E5C6374-E6F3-413B-BE43-90A4205479A5}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BDTest.NUnit.Tests", "BDTest.NUnit.Tests\BDTest.NUnit.Tests.csproj", "{568C8505-C312-4B2F-9F1D-8D7EE1EBA031}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{568C8505-C312-4B2F-9F1D-8D7EE1EBA031}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{568C8505-C312-4B2F-9F1D-8D7EE1EBA031}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{568C8505-C312-4B2F-9F1D-8D7EE1EBA031}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{568C8505-C312-4B2F-9F1D-8D7EE1EBA031}.Release|Any CPU.Build.0 = Release|Any CPU
 		{343E74C1-C242-4310-9C37-53CC0CABE4CD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{343E74C1-C242-4310-9C37-53CC0CABE4CD}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{343E74C1-C242-4310-9C37-53CC0CABE4CD}.Release|Any CPU.ActiveCfg = Release|Any CPU

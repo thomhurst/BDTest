@@ -762,7 +762,7 @@ public class CompositionAdapterConformanceTests : CompositionConformanceFixtureB
         {
             try
             {
-                if (run.OutputBuffers.Count != 0)
+                if (global::BDTest.TestUtilities.OutputCaptureInspection.Buffers(run).Count != 0)
                     throw new InvalidOperationException("NUnit composition wrapper did not complete output capture");
             }
             finally { run.Dispose(); }
