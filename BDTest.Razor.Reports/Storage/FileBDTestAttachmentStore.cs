@@ -1,4 +1,6 @@
 using BDTest.Razor.Reports.Interfaces;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace BDTest.Razor.Reports.Storage;
 
@@ -53,14 +55,44 @@ public sealed class FileBDTestAttachmentStore : IBDTestAttachmentStore
         cancellationToken.ThrowIfCancellationRequested();
         AttachmentStorage.ValidateIds(reportId);
         var directory = Path.Combine(_root, reportId);
-        var deleting = Path.Combine(_root, reportId + "-" + Guid.NewGuid().ToString("N") + ".deleting");
-        // Claim the directory atomically so concurrent callers never delete the same files.
-        try { Directory.Move(directory, deleting); }
-        catch (DirectoryNotFoundException) { return Task.CompletedTask; }
-        catch (IOException) when (!Directory.Exists(directory)) { return Task.CompletedTask; }
-        try { Directory.Delete(deleting, recursive: true); }
-        catch (DirectoryNotFoundException) { }
-        catch (IOException) when (!Directory.Exists(deleting)) { }
+        var lockKey = OperatingSystem.IsWindows() ? directory.ToUpperInvariant() : directory;
+        var lockName = "BDTest-attachment-delete-" + Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(lockKey)));
+        // Serialize cleanup across store instances/processes, including recovery of earlier failed claims.
+        using var mutex = new Mutex(false, lockName);
+        try
+        {
+            // WaitOne also supports named mutexes on Unix; check cancellation while waiting.
+            while (!mutex.WaitOne(100))
+                cancellationToken.ThrowIfCancellationRequested();
+        }
+        catch (AbandonedMutexException) { } // Ownership passes to us when a previous process exits.
+        try
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            DeleteReportContent(reportId, directory, cancellationToken);
+        }
+        finally { mutex.ReleaseMutex(); }
         return Task.CompletedTask;
+    }
+
+    private void DeleteReportContent(string reportId, string directory, CancellationToken cancellationToken)
+    {
+        var deleting = Path.Combine(_root, reportId + "-" + Guid.NewGuid().ToString("N") + ".deleting");
+        // Hide the report directory atomically before removing its content.
+        try { Directory.Move(directory, deleting); }
+        catch (DirectoryNotFoundException) { }
+        catch (IOException) when (!Directory.Exists(directory)) { }
+
+        // Discover failed claims from earlier calls, including calls in another server instance.
+        string[] pending;
+        try { pending = Directory.GetDirectories(_root, reportId + "-*.deleting"); }
+        catch (DirectoryNotFoundException) { return; }
+        foreach (var claimed in pending)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            try { Directory.Delete(claimed, recursive: true); }
+            catch (DirectoryNotFoundException) { }
+            catch (IOException) when (!Directory.Exists(claimed)) { }
+        }
     }
 }

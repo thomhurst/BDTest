@@ -5,6 +5,73 @@ namespace BDTest.Tests.Fixtures;
 
 public class FileAttachmentStoreTests
 {
+    [TestCase(false)]
+    [TestCase(true)]
+    public async Task Deletion_recovers_all_pending_directories_for_only_the_selected_report(bool currentContentExists)
+    {
+        var directory = Path.Combine(Path.GetTempPath(), "BDTest-file-tests", Guid.NewGuid().ToString("N"));
+        var report = Guid.NewGuid().ToString("N");
+        var otherReport = Guid.NewGuid().ToString("N");
+        try
+        {
+            var store = new FileBDTestAttachmentStore(directory);
+            foreach (var id in new[] { report, report, otherReport })
+            {
+                var pending = Path.Combine(directory, id + "-" + Guid.NewGuid().ToString("N") + ".deleting");
+                Directory.CreateDirectory(pending);
+                await File.WriteAllTextAsync(Path.Combine(pending, Guid.NewGuid().ToString("N")), "remaining");
+            }
+            if (currentContentExists)
+            {
+                using var input = new MemoryStream(new byte[] { 1 });
+                await store.WriteAsync(report, Guid.NewGuid().ToString("N"), input, 1);
+            }
+
+            await store.DeleteReportAsync(report);
+            var remaining = Directory.GetDirectories(directory);
+            Assert.That(remaining, Has.Length.EqualTo(1));
+            Assert.That(Path.GetFileName(remaining.Single()), Does.StartWith(otherReport + "-"));
+            Assert.That(Directory.GetFiles(remaining.Single()), Has.Length.EqualTo(1));
+        }
+        finally { Directory.Delete(directory, true); }
+    }
+
+    [Test]
+    [Platform("Win")]
+    public async Task Failed_deletion_is_retried_by_a_new_store_instance()
+    {
+        var directory = Path.Combine(Path.GetTempPath(), "BDTest-file-tests", Guid.NewGuid().ToString("N"));
+        var report = Guid.NewGuid().ToString("N");
+        var attachment = Guid.NewGuid().ToString("N");
+        try
+        {
+            var store = new FileBDTestAttachmentStore(directory);
+            using var input = new MemoryStream(new byte[] { 1 });
+            await store.WriteAsync(report, attachment, input, 1);
+            File.SetAttributes(Path.Combine(directory, report, attachment), FileAttributes.ReadOnly);
+
+            await Assert.CatchAsync<UnauthorizedAccessException>(() => store.DeleteReportAsync(report));
+            Assert.That(Directory.Exists(Path.Combine(directory, report)), Is.False);
+            var remaining = Directory.GetFiles(directory, "*", SearchOption.AllDirectories);
+            Assert.That(remaining, Has.Length.EqualTo(1));
+            await Assert.CatchAsync<UnauthorizedAccessException>(() =>
+                new FileBDTestAttachmentStore(directory).DeleteReportAsync(report));
+            File.SetAttributes(remaining.Single(), FileAttributes.Normal);
+
+            await new FileBDTestAttachmentStore(directory).DeleteReportAsync(report);
+            Assert.That(Directory.GetFileSystemEntries(directory), Is.Empty);
+        }
+        finally
+        {
+            if (Directory.Exists(directory))
+            {
+                foreach (var file in Directory.GetFiles(directory, "*", SearchOption.AllDirectories))
+                    File.SetAttributes(file, FileAttributes.Normal);
+                Directory.Delete(directory, true);
+            }
+        }
+    }
+
     [Test]
     public async Task Concurrent_deletion_and_missing_content_are_successful_no_ops()
     {

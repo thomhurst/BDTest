@@ -123,7 +123,7 @@ app.UseBDTestReportServer(options =>
 });
 ```
 
-The file store creates its root if needed. Give only the host filesystem access, keep this directory outside static-file roots, and manage its lifetime and backups with the report store. Untrusted filesystem writers must not be able to create symlinks or replace directories. Only lowercase 32-character hexadecimal report/attachment IDs form storage keys; names and MIME types never form paths. Each write stages content in a random temporary file and publishes it atomically after validating the exact length. Failed or cancelled writes remove partial files and preserve previously completed content.
+The file store creates its root if needed. Give only the host filesystem access, keep this directory outside static-file roots, and manage its lifetime and backups with the report store. Untrusted filesystem writers must not be able to create symlinks or replace directories. Only lowercase 32-character hexadecimal report/attachment IDs form storage keys; names and MIME types never form paths. Each write stages content in a random temporary file and publishes it atomically after validating the exact length. Failed or cancelled writes remove partial files and preserve previously completed content. Deletion first renames a report directory to a report-scoped `.deleting` directory. If removal fails, a later `DeleteReportAsync` call discovers and removes the remaining content, including after a server restart; failures continue to propagate until cleanup succeeds.
 
 ```csharp
 public interface IBDTestAttachmentStore
