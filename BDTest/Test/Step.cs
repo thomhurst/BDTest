@@ -195,9 +195,9 @@ public class Step
                 return;
             }
 
-            remainingScenarioTime -= stopwatch.Elapsed;
-            var scenarioLimit = remainingScenarioTime.HasValue && (!Timeout.HasValue || remainingScenarioTime.Value <= Timeout.Value);
-            var limit = scenarioLimit ? remainingScenarioTime : Timeout;
+            var remaining = remainingScenarioTime - stopwatch.Elapsed;
+            var scenarioLimit = remaining.HasValue && (!Timeout.HasValue || remaining.Value <= Timeout.Value);
+            var limit = scenarioLimit ? remaining : Timeout;
             if (limit.HasValue)
             {
                 await RunWithTimeout(limit.Value, scenarioLimit ? "Scenario" : "Step", scenarioLimit ? scenarioTimeout.Value : Timeout.Value).ConfigureAwait(false);
@@ -221,7 +221,6 @@ public class Step
         finally
         {
             EndTime = DateTime.UtcNow;
-            stopwatch.Stop();
             TimeTaken = stopwatch.Elapsed;
             Output = TestOutputData.Instance.ToString().Trim();
             try
@@ -232,9 +231,18 @@ public class Step
                     SetExceptionResult(hookException);
                     ExceptionDispatchInfo.Capture(hookException).Throw();
                 }
+                // Hooks are not interrupted, but their elapsed time still consumes
+                // the scenario budget, including the final step's after hooks.
+                if (executionException == null && remainingScenarioTime.HasValue && stopwatch.Elapsed >= remainingScenarioTime.Value)
+                {
+                    var timeout = CreateTimeoutException("Scenario", scenarioTimeout.Value);
+                    SetExceptionResult(timeout);
+                    throw timeout;
+                }
             }
             finally
             {
+                stopwatch.Stop();
                 // Include hook output without charging after-hook work to the step duration.
                 Output = TestOutputData.Instance.ToString().Trim();
                 TestOutputData.ClearCurrentTaskData();
@@ -305,8 +313,7 @@ public class Step
     {
         if (remaining <= TimeSpan.Zero)
         {
-            TimedOut = true;
-            throw new TimeoutException($"{scope} timed out after {configuredTimeout} while executing '{StepText}'.");
+            throw CreateTimeoutException(scope, configuredTimeout);
         }
 
         var runnable = Runnable;
@@ -328,7 +335,7 @@ public class Step
             TimedOut = true;
             _ = CancelAndObserve(execution, cancellation);
             cancellation = null;
-            throw new TimeoutException($"{scope} timed out after {configuredTimeout} while executing '{StepText}'.");
+            throw CreateTimeoutException(scope, configuredTimeout);
         }
         finally
         {
@@ -337,18 +344,22 @@ public class Step
         }
     }
 
-    private static async Task CancelAndObserve(Task execution, CancellationTokenSource cancellation)
+    private TimeoutException CreateTimeoutException(string scope, TimeSpan configuredTimeout)
     {
-        try
-        {
-            // User cancellation callbacks can block or throw. Neither may prevent
-            // reporting the timeout; observe any eventual failure from abandoned work.
-            await Task.Run(() => cancellation.Cancel()).ConfigureAwait(false);
-        }
-        catch (Exception)
-        {
-            // The timeout remains the primary failure.
-        }
+        TimedOut = true;
+        return new TimeoutException($"{scope} timed out after {configuredTimeout} while executing '{StepText}'.");
+    }
+
+    internal static Task CancelAndObserve(Task execution, CancellationTokenSource cancellation)
+    {
+        // Observe abandoned work independently: cancellation callbacks may never return.
+        var observation = ObserveExecution(execution);
+        _ = CancelAndDispose(cancellation, observation);
+        return observation;
+    }
+
+    private static async Task ObserveExecution(Task execution)
+    {
         try
         {
             await execution.ConfigureAwait(false);
@@ -357,8 +368,22 @@ public class Step
         {
             // The caller already received the timeout.
         }
+    }
+
+    private static async Task CancelAndDispose(CancellationTokenSource cancellation, Task observation)
+    {
+        try
+        {
+            await Task.Run(() => cancellation.Cancel()).ConfigureAwait(false);
+        }
+        catch (Exception)
+        {
+            // The timeout remains the primary failure.
+        }
         finally
         {
+            // Both the step and its callbacks can still use the source until they finish.
+            await observation.ConfigureAwait(false);
             cancellation.Dispose();
         }
     }

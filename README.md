@@ -580,5 +580,6 @@ change the recorded step status. Pass the token to cancellable operations and
 avoid retries when unfinished work could affect another attempt. The scenario
 budget covers elapsed time across steps, including step hooks. Hooks are awaited
 outside the execution limits; before-hook time reduces the remaining scenario
-budget when the step body starts. Retry hooks and initial report formatting run
-before the scenario budget starts.
+budget when the step body starts. If after hooks exhaust the scenario budget,
+the active step fails once those hooks finish, including on the final step. Retry
+hooks and initial report formatting run before the scenario budget starts.

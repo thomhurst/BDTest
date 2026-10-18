@@ -382,6 +382,42 @@ public class StepHookTests
         Assert.That(GetScenario(observed).Status, Is.EqualTo(Status.Failed));
     }
 
+    [TestCase(false)]
+    [TestCase(true)]
+    public async Task After_hook_expiry_fails_the_active_step_even_when_it_is_last(bool finalStep)
+    {
+        var calls = new List<string>();
+        Step observed = null;
+        var test = new HookTest
+        {
+            After = async step =>
+            {
+                if (calls.Count == 0) { return; }
+                observed = step;
+                await Task.Delay(1500);
+                calls.Add("after");
+            }
+        };
+        var first = test.When(() => NoOp()).Then(() => calls.Add("body"));
+        RunnableStepBuilder builder = finalStep ? first : first.And(() => calls.Add("later"));
+        _ = builder.WithScenarioTimeout(TimeSpan.FromSeconds(1));
+
+        var exception = await Assert.ThrowsAsync<TimeoutException>(async () =>
+            await builder.BDTestAsync().WaitAsync(TimeSpan.FromSeconds(10)));
+
+        Assert.That(exception.Message, Does.StartWith("Scenario"));
+        Assert.That(calls, Is.EqualTo(new[] { "body", "after" }));
+        Assert.That(observed.TimedOut, Is.True);
+        Assert.That(observed.Status, Is.EqualTo(Status.Failed));
+        Assert.That(observed.Exception.Message, Is.EqualTo(exception.Message));
+        Assert.That(GetScenario(observed).TimedOut, Is.True);
+        Assert.That(GetScenario(observed).Status, Is.EqualTo(Status.Failed));
+        if (!finalStep)
+        {
+            Assert.That(GetScenario(observed).Steps[2].Status, Is.EqualTo(Status.Inconclusive));
+        }
+    }
+
     private static Scenario GetScenario(Step step) => BDTestUtil.GetScenarios().Single(scenario => scenario.Guid == step.ScenarioId);
     private static void Throw(Exception exception) => throw exception;
     private static void NoOp() { }

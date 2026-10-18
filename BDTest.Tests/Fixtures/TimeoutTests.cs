@@ -181,6 +181,37 @@ public class TimeoutTests : BDTestBase
 
     [TestCase(false)]
     [TestCase(true)]
+    public async Task Abandoned_execution_is_observed_while_cancellation_callback_is_blocked(bool callbackThrows)
+    {
+        var cancellation = new CancellationTokenSource();
+        var entered = NewSignal();
+        var released = NewSignal();
+        var execution = NewSignal();
+        using var registration = cancellation.Token.Register(() =>
+        {
+            entered.TrySetResult(true);
+            _finish.Task.GetAwaiter().GetResult();
+            released.TrySetResult(true);
+            if (callbackThrows) { throw new InvalidOperationException("callback failure"); }
+        });
+        var observation = Step.CancelAndObserve(execution.Task, cancellation);
+        try
+        {
+            await entered.Task.WaitAsync(TimeSpan.FromSeconds(10));
+            execution.SetException(new InvalidOperationException("late execution failure"));
+            await observation.WaitAsync(TimeSpan.FromSeconds(2));
+            Assert.That(released.Task.IsCompleted, Is.False);
+        }
+        finally
+        {
+            _finish.TrySetResult(true);
+            await released.Task.WaitAsync(TimeSpan.FromSeconds(10));
+            await observation.WaitAsync(TimeSpan.FromSeconds(10));
+        }
+    }
+
+    [TestCase(false)]
+    [TestCase(true)]
     public async Task Late_completion_does_not_change_timeout_results(bool throws)
     {
         var completed = NewSignal();
