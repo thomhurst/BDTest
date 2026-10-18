@@ -10,7 +10,10 @@ public class BDTestReportServerOptions
         {
         }
 #nullable enable
-        public IBDTestDataStore DataStore { get; set; }
+        /// <summary>Legacy model-based storage. Prefer ReportStore and RunIndexStore for new hosts.</summary>
+        public IBDTestDataStore? DataStore { get; set; }
+        public BDTest.Razor.Reports.Storage.IReportStore? ReportStore { get; set; }
+        public BDTest.Razor.Reports.Storage.IRunIndexStore? RunIndexStore { get; set; }
 #nullable enable
         public IBDTestCustomSidebarLinksProvider CustomSidebarLinksProvider { get; set; }
 #nullable enable

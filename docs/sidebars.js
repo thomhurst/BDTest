@@ -98,6 +98,7 @@ const sidebars = {
         'migration/async-only',
         'migration/statuses',
         'migration/json-serialization',
+        'migration/report-storage',
         'migration/from-specflow',
       ],
     },

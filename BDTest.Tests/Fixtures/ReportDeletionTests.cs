@@ -158,13 +158,21 @@ public class ReportDeletionTests
     private sealed class RecordingRepository : IDataRepository
     {
         public List<string> DeletedIds { get; } = [];
-        public Task DeleteReport(string id)
+        public Task DeleteReport(string id, CancellationToken cancellationToken = default)
         {
             DeletedIds.Add(id);
             return Task.CompletedTask;
         }
 
-        public Task<IEnumerable<TestRunSummary>> GetAllTestRunRecords()
+        public Task<BDTestOutputModel> GetDataForBulkRead(string id, CancellationToken cancellationToken) => GetData(id, cancellationToken);
+        public async Task<Stream> OpenReadAsync(string id, CancellationToken cancellationToken)
+        {
+            var model = await GetData(id, cancellationToken);
+            return model == null ? null : new MemoryStream(System.Text.Encoding.UTF8.GetBytes(BDTest.Helpers.BDTestJsonHelper.Serialize(model)));
+        }
+        public Task<BDTest.Razor.Reports.Storage.RunIndexPage> ListAsync(BDTest.Razor.Reports.Storage.RunIndexQuery query, CancellationToken cancellationToken) => throw new NotSupportedException();
+
+        public Task<IEnumerable<TestRunSummary>> GetAllTestRunRecords(CancellationToken cancellationToken = default)
         {
             var record = ReportJson.DeserializeObject<TestRunSummary>("{}");
             record.RecordId = "run-618";
@@ -172,6 +180,6 @@ public class ReportDeletionTests
         }
 
         public Task<BDTestOutputModel> GetData(string id, CancellationToken cancellationToken) => throw new NotSupportedException();
-        public Task StoreData(BDTestOutputModel model, string id) => throw new NotSupportedException();
+        public Task StoreData(string id, BDTestOutputModel model, CancellationToken cancellationToken = default) => throw new NotSupportedException();
     }
 }

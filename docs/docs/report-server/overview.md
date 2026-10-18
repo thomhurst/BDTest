@@ -27,7 +27,7 @@ It gives you:
  your ASP.NET Core app
    ├─ BDTest.Razor.Reports       controllers + views
    ├─ bounded in-memory cache    recent full reports
-   └─ IBDTestDataStore           optional persistent storage (Blob, SQL, files…)
+   └─ IReportStore + IRunIndexStore  optional persistent storage (Blob, SQL, files…)
 ```
 
 - **`BDTest.Razor.Reports`** is a NuGet package with the controllers and Razor views. You add it to your own ASP.NET Core app. See [Setup](setup.md).

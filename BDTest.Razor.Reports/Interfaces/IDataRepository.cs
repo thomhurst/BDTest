@@ -1,21 +1,19 @@
+#nullable enable
 using BDTest.Maps;
 using BDTest.Razor.Reports.Models;
+using BDTest.Razor.Reports.Storage;
 
 namespace BDTest.Razor.Reports.Interfaces;
 
 public interface IDataRepository
 {
-    Task<BDTestOutputModel> GetData(string id, CancellationToken cancellationToken);
-
-    /// <summary>
-    /// Reads a report for a bulk comparison. The built-in repository does not populate or refresh its cache.
-    /// Custom repositories can override this method to bypass their own cache writes; the default preserves
-    /// compatibility with existing implementations by delegating to <see cref="GetData"/>.
-    /// </summary>
-    Task<BDTestOutputModel> GetDataForBulkRead(string id, CancellationToken cancellationToken)
-        => GetData(id, cancellationToken);
-
-    Task<IEnumerable<TestRunSummary>> GetAllTestRunRecords();
-    Task StoreData(BDTestOutputModel bdTestOutputModel, string id);
-    Task DeleteReport(string id);
+    Task<BDTestOutputModel?> GetData(string reportId, CancellationToken cancellationToken);
+    /// <summary>Reads without adding or refreshing full reports in the cache.</summary>
+    Task<BDTestOutputModel?> GetDataForBulkRead(string reportId, CancellationToken cancellationToken);
+    /// <summary>The caller owns the returned stream, or receives null for a missing report.</summary>
+    Task<Stream?> OpenReadAsync(string reportId, CancellationToken cancellationToken);
+    Task<RunIndexPage> ListAsync(RunIndexQuery query, CancellationToken cancellationToken);
+    Task<IEnumerable<TestRunSummary>> GetAllTestRunRecords(CancellationToken cancellationToken = default);
+    Task StoreData(string reportId, BDTestOutputModel model, CancellationToken cancellationToken = default);
+    Task DeleteReport(string reportId, CancellationToken cancellationToken = default);
 }

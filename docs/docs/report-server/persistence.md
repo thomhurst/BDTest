@@ -1,143 +1,107 @@
 ---
 title: Persistent storage
-description: Keep reports across restarts by implementing IBDTestDataStore, with an Azure Blob Storage example.
+description: Implement cancellable report byte storage and a paged run index.
 ---
 
 # Persistent storage
 
-Without a data store, the report server keeps reports only in a bounded memory cache. To keep them, implement `IBDTestDataStore` and set it as the `DataStore` option.
-
-## The interface
+Configure `IReportStore` and `IRunIndexStore` from `BDTest.Razor.Reports.Storage` to keep reports across restarts. One class or separate services can implement them. Configure both before resolving `IDataRepository` or serving requests:
 
 ```csharp
-namespace BDTest.Razor.Reports.Interfaces;
-
-public interface IBDTestDataStore
-{
-    Task<BDTestOutputModel> GetTestData(string id, CancellationToken cancellationToken);
-    Task StoreTestData(string id, BDTestOutputModel data);
-    Task DeleteTestData(string id);
-
-    Task<IEnumerable<TestRunSummary>> GetAllTestRunRecords();
-    Task StoreTestRunRecord(TestRunSummary testRunSummary);
-    Task DeleteTestRunRecord(string id);
-}
-```
-
-| Method | Purpose |
-| --- | --- |
-| `StoreTestData` | Store a full report under the given ID. Use that ID to retrieve it later. |
-| `GetTestData` | Return the full report with that ID, or `null` if it does not exist. |
-| `DeleteTestData` | Delete a full report. |
-| `StoreTestRunRecord` | Store a small run summary (counts, times, environment, tag, branch) under `testRunSummary.RecordId`. |
-| `GetAllTestRunRecords` | Return the summaries to list on the test run page. Apply your own limit or retention here, for example "the latest 50" or "the last 30 days". |
-| `DeleteTestRunRecord` | Delete a summary. |
-
-Store reports and summaries as JSON. Use `BDTestJsonHelper` for `BDTestOutputModel` and `ReportJsonContext.Default.TestRunSummary` (namespace `BDTest.Razor.Reports.Helpers`) for `TestRunSummary`.
-
-## Registering the store
-
-```csharp
-var dataStore = new AzureStorageDataStore(connectionString);
-await dataStore.InitializeAsync();
-
 app.UseBDTestReportServer(options =>
 {
-    options.DataStore = dataStore;
-    options.UploadApiKey = builder.Configuration["BDTest:UploadApiKey"];
+    options.ReportStore = reportStore;
+    options.RunIndexStore = runIndexStore;
 });
 ```
 
-The full report cache sits in front of the store. Uploads write to both; reads try the cache first and load from the store on a miss. See [Caching and limits](caching-and-limits.md).
+The repository owns deserialization, normalization, caching and conversion to `TestRunSummary` view models. Stores move UTF-8 JSON bytes and `RunIndexEntry` metadata. Storage contracts do not reference Razor view models.
 
-## Example: Azure Blob Storage
-
-This is a simplified version of the store in the [sample server](sample-server.md). It uses the `Azure.Storage.Blobs` package.
+## Report bytes
 
 ```csharp
-using System.Text.Json;
-using Azure;
-using Azure.Storage.Blobs;
-using Azure.Storage.Blobs.Models;
-using Azure.Storage.Blobs.Specialized;
-using BDTest.Helpers;
-using BDTest.Maps;
-using BDTest.Razor.Reports.Helpers;
-using BDTest.Razor.Reports.Interfaces;
-using BDTest.Razor.Reports.Models;
-
-public class AzureStorageDataStore : IBDTestDataStore
+public interface IReportStore
 {
-    private readonly BlobContainerClient _summaries;
-    private readonly BlobContainerClient _reports;
+    Task<Stream?> OpenReadAsync(string reportId, CancellationToken cancellationToken);
+    Task WriteAsync(string reportId, Stream utf8Json, CancellationToken cancellationToken);
+    Task<bool> DeleteAsync(string reportId, CancellationToken cancellationToken);
+}
+```
 
-    public AzureStorageDataStore(string connectionString)
-    {
-        var blobService = new BlobServiceClient(connectionString);
-        _summaries = blobService.GetBlobContainerClient("test-runs-summaries");
-        _reports = blobService.GetBlobContainerClient("test-data");
-    }
+`OpenReadAsync` returns `null` when missing. The caller owns the returned stream and must dispose it. The stream need not support seeking. `WriteAsync` replaces any existing report, reads from the input's current position, and leaves the caller's stream open. Delete returns whether an item existed. Propagate cancellation to every storage operation.
 
-    // Call once at startup, before serving requests.
-    public async Task InitializeAsync()
-    {
-        await _summaries.CreateIfNotExistsAsync();
-        await _reports.CreateIfNotExistsAsync();
-    }
+For example, a blob implementation moves bytes without knowing the report schema:
 
-    public async Task<BDTestOutputModel> GetTestData(string id, CancellationToken cancellationToken)
+```csharp
+public sealed class BlobReportStore(BlobContainerClient container) : IReportStore
+{
+    public async Task<Stream?> OpenReadAsync(string reportId, CancellationToken cancellationToken)
     {
+        cancellationToken.ThrowIfCancellationRequested();
         try
         {
-            var download = await _reports.GetBlockBlobClient(id).DownloadAsync(cancellationToken);
-            using var content = download.Value.Content;
-            return await BDTestJsonHelper.DeserializeAsync(content, cancellationToken);
+            var download = await container.GetBlockBlobClient(reportId)
+                .DownloadStreamingAsync(cancellationToken: cancellationToken);
+            return download.Value.Content;
         }
-        catch (RequestFailedException e) when (e.Status == 404)
+        catch (RequestFailedException exception) when (exception.Status == 404)
         {
             return null;
         }
     }
 
-    public Task StoreTestData(string id, BDTestOutputModel data) =>
-        _reports.GetBlobClient(id).UploadAsync(BinaryData.FromString(BDTestJsonHelper.Serialize(data)), overwrite: true);
-
-    public Task DeleteTestData(string id) => _reports.DeleteBlobIfExistsAsync(id);
-
-    public async Task<IEnumerable<TestRunSummary>> GetAllTestRunRecords()
+    public async Task WriteAsync(string reportId, Stream utf8Json, CancellationToken cancellationToken)
     {
-        var blobs = new List<BlobItem>();
-        await foreach (var blob in _summaries.GetBlobsAsync())
-        {
-            blobs.Add(blob);
-        }
-
-        var summaries = new List<TestRunSummary>();
-        foreach (var blob in blobs.OrderByDescending(b => b.Properties.CreatedOn).Take(50))
-        {
-            var download = await _summaries.GetBlockBlobClient(blob.Name).DownloadAsync();
-            using var content = download.Value.Content;
-            summaries.Add(await JsonSerializer.DeserializeAsync(content, ReportJsonContext.Default.TestRunSummary));
-        }
-
-        return summaries;
+        cancellationToken.ThrowIfCancellationRequested();
+        await container.GetBlockBlobClient(reportId)
+            .UploadAsync(utf8Json, cancellationToken: cancellationToken);
     }
 
-    public Task StoreTestRunRecord(TestRunSummary summary) =>
-        _summaries.GetBlobClient(summary.RecordId).UploadAsync(
-            BinaryData.FromString(JsonSerializer.Serialize(summary, ReportJsonContext.Default.TestRunSummary)),
-            overwrite: true);
-
-    public Task DeleteTestRunRecord(string id) => _summaries.DeleteBlobIfExistsAsync(id);
+    public async Task<bool> DeleteAsync(string reportId, CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        var deleted = await container.DeleteBlobIfExistsAsync(reportId,
+            cancellationToken: cancellationToken);
+        return deleted.Value;
+    }
 }
 ```
 
-The sample server's real store also orders summaries by blob creation time, downloads them in parallel and tolerates blobs deleted mid-listing. See [`AzureStorageDataStore.cs`](https://github.com/thomhurst/BDTest/blob/main/BDTest.ReportGenerator.RazorServer/AzureStorageDataStore.cs).
+This example uses `Azure`, `Azure.Storage.Blobs` and `Azure.Storage.Blobs.Specialized` from `Azure.Storage.Blobs`. Initialize containers before accepting requests.
 
-## Retention
+## Run index
 
-The report server never deletes reports by age. Configure retention in your storage, for example with a lifecycle policy. The sample includes [`azure-storage-lifecycle.json`](https://github.com/thomhurst/BDTest/blob/main/BDTest.ReportGenerator.RazorServer/azure-storage-lifecycle.json), a 30-day rule for both containers. Summary and report deletion is not atomic, so a summary can briefly link to a missing report.
+```csharp
+public interface IRunIndexStore
+{
+    Task<RunIndexPage> ListAsync(RunIndexQuery query, CancellationToken cancellationToken);
+    Task UpsertAsync(RunIndexEntry entry, CancellationToken cancellationToken);
+    Task<bool> DeleteAsync(string reportId, CancellationToken cancellationToken);
+}
+```
 
-## Bulk reads
+Persist `RunIndexEntry` separately from report bytes. It contains `RecordId`, start/finish times, `Status`, `RunIndexCounts`, tag, environment, branch, machine and version. Upsert replaces metadata for the same `RecordId`. Report writes and index updates are separate operations, not a transaction.
 
-Comparison pages read many reports at once. If you implement `IDataRepository` yourself, override `GetDataForBulkRead` to control caching for those reads; by default it calls `GetData`. See [Caching and limits](caching-and-limits.md#bulk-report-comparisons).
+`RunIndexQuery` specifies `PageSize` (1–500, default 50), an opaque `ContinuationToken`, and optional `BranchName`, `Environment` and `Tag` filters. Filters use exact, case-sensitive ordinal equality. Order by `StartedAtDateTime` descending, then `RecordId` ascending with ordinal comparison. Return entries in `RunIndexPage.Entries`, plus a token for the next page, or `null` at the end. Continue until the token is null, including when a page is empty. Reuse the same filters for subsequent pages. Tokens are navigation cursors, not authorization credentials.
+
+`RunIndexPaging.Apply(entries, query)` implements this contract for a collection. Its keyset tokens remain valid if the cursor record is deleted and reject a different filter set. For a database, translate filters and ordering into an indexed query and return your own opaque cursor. Index listing must not load full reports.
+
+The built-in repository loads persisted history once through every page, under a cancellable semaphore. Uploads during loading are preserved, and deletes coordinate with that snapshot so deleted records are not reintroduced. `IDataRepository.ListAsync` pages combined cached history. Existing report-list and chart pages still consume the full metadata list; storage paging does not change their URLs.
+
+## Azure and memory implementations
+
+The sample server's [`AzureStorageDataStore.cs`](https://github.com/thomhurst/BDTest/blob/main/BDTest.ReportGenerator.RazorServer/AzureStorageDataStore.cs) implements both interfaces. It streams report blobs directly, honors cancellation and downloads index entries with at most eight concurrent requests. Its sample index scans all summary blobs for each query before sorting and filtering by stored run start time. Large installations should use an indexed service for `IRunIndexStore`. Existing summary JSON remains readable.
+
+`MemoryCacheBdTestDataStore` also implements both interfaces, with bounded report storage and an in-memory index. Byte writes preserve original JSON. The repository can still cache parsed models for ordinary report pages. Without persistent storage, eviction, expiry and restart lose report details.
+
+## Raw downloads and legacy stores
+
+`GET /bdtest/report/{id}/raw-json-data` copies the persistent stream directly to the response, preserving stored bytes without deserializing and serializing the report. MVC disposes the stream after the response, including failed copies. Ordinary pages continue to support historical Newtonsoft JSON through the repository's existing reader.
+
+`IBDTestDataStore` and `options.DataStore` remain as a one-release migration bridge. The repository automatically wraps old implementations with `LegacyDataStoreAdapter`; a store implementing the new interfaces is used directly. You can assign an explicit adapter to both new options. Adapter upserts remove the old summary before storing its replacement; that pair is not atomic. Legacy stores still load whole models and all summaries; the adapter cannot interrupt their uncancellable in-flight operations and raw downloads must serialize their models. See [Storage migration](../migration/report-storage.md).
+
+## Retention and custom repositories
+
+The report server never deletes reports by age. Configure retention in storage, for example with the sample's [`azure-storage-lifecycle.json`](https://github.com/thomhurst/BDTest/blob/main/BDTest.ReportGenerator.RazorServer/azure-storage-lifecycle.json). Summary and report deletion is not atomic, so a summary can briefly link to a missing report.
+
+Custom `IDataRepository` implementations must implement every method, including `GetDataForBulkRead`, `OpenReadAsync` and `ListAsync`. Every operation accepts cancellation; `StoreData` takes the report ID first. Bulk reads should avoid adding or refreshing full reports in cache. See [Caching and limits](caching-and-limits.md#bulk-report-comparisons).

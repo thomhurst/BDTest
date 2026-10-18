@@ -2,6 +2,8 @@ using System.Collections.Concurrent;
 using System.Text.Json;
 using BDTest.Helpers;
 using BDTest.Maps;
+using BDTest.Razor.Reports.Storage;
+using BDTest.Razor.Reports.Extensions;
 using BDTest.Razor.Reports.Interfaces;
 using BDTest.Razor.Reports.Models;
 using Microsoft.Extensions.Caching.Memory;
@@ -48,20 +50,20 @@ public class MemoryCacheBdTestDataStore : IMemoryCacheBdTestDataStore, IDisposab
         CancellationToken cancellationToken)
         => GetTestData(id, cancellationToken, refreshRetention: true);
 
-    private Task<BDTestOutputModel> GetTestData(string id, CancellationToken cancellationToken, bool refreshRetention)
+    private async Task<BDTestOutputModel> GetTestData(string id, CancellationToken cancellationToken, bool refreshRetention)
     {
         cancellationToken.ThrowIfCancellationRequested();
+        CachedReport report;
         lock (_reportCacheLock)
         {
             var cache = _testRecordCache.Value;
-            var report = cache.Get<CachedReport>(id);
-            if (refreshRetention && report != null)
-            {
-                // Refresh only expiry metadata, reusing the model and its measured size.
-                SetCacheEntry(cache, id, report);
-            }
-            return Task.FromResult(report?.Model);
+            report = cache.Get<CachedReport>(id);
+            if (refreshRetention && report != null) SetCacheEntry(cache, id, report);
         }
+        var value = report?.Value;
+        if (value is not byte[] bytes) return value as BDTestOutputModel;
+        using var stream = new MemoryStream(bytes, writable: false);
+        return await BDTestJsonHelper.DeserializeAsync(stream, cancellationToken);
     }
 
     public Task DeleteTestData(string id)
@@ -86,19 +88,25 @@ public class MemoryCacheBdTestDataStore : IMemoryCacheBdTestDataStore, IDisposab
             JsonSerializer.Serialize(counter, data, BDTestJsonContext.Default.BDTestOutputModel);
             size = counter.Length;
         }
+        CacheReport(id, data, size);
+        return Task.CompletedTask;
+    }
+
+    private void CacheReport(string id, object data, long size, bool allowOversizedBypass = true)
+    {
         lock (_reportCacheLock)
         {
             var cache = _testRecordCache.Value;
             if (size > _reportCacheCapacity)
             {
-                if (_options.DataStore == null)
+                if (!allowOversizedBypass || (_options.DataStore == null && _options.ReportStore == null))
                 {
                     throw new ReportTooLargeForCacheException();
                 }
 
                 // Persistent storage remains authoritative for reports that do not fit in memory.
                 cache.Remove(id);
-                return Task.CompletedTask;
+                return;
             }
 
             cache.Remove(id);
@@ -110,8 +118,6 @@ public class MemoryCacheBdTestDataStore : IMemoryCacheBdTestDataStore, IDisposab
 
             SetCacheEntry(cache, id, new CachedReport(data, size));
         }
-
-        return Task.CompletedTask;
     }
 
     private void SetCacheEntry(MemoryCache cache, string id, CachedReport report)
@@ -123,7 +129,7 @@ public class MemoryCacheBdTestDataStore : IMemoryCacheBdTestDataStore, IDisposab
         });
     }
 
-    private sealed record CachedReport(BDTestOutputModel Model, long Size);
+    private sealed record CachedReport(object Value, long Size);
 
     // Serialize UTF-8 incrementally; retain only the byte count, never the JSON payload.
     private sealed class ByteCountingStream : Stream
@@ -186,5 +192,89 @@ public class MemoryCacheBdTestDataStore : IMemoryCacheBdTestDataStore, IDisposab
         }
 
         return Task.CompletedTask;
+    }
+
+    public async Task<Stream> OpenReadAsync(string reportId, CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        object value;
+        lock (_reportCacheLock)
+        {
+            var cache = _testRecordCache.Value;
+            var report = cache.Get<CachedReport>(reportId);
+            if (report != null) SetCacheEntry(cache, reportId, report);
+            value = report?.Value;
+        }
+        if (value is byte[] bytes) return new MemoryStream(bytes, writable: false);
+        if (value is not BDTestOutputModel model) return null;
+        var stream = new MemoryStream();
+        try
+        {
+            await JsonSerializer.SerializeAsync(stream, model, BDTestJsonContext.Default.BDTestOutputModel, cancellationToken);
+            stream.Position = 0;
+            return stream;
+        }
+        catch { await stream.DisposeAsync(); throw; }
+    }
+
+    public async Task WriteAsync(string reportId, Stream utf8Json, CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        using var buffer = new MemoryStream();
+        var chunk = new byte[81920];
+        int count;
+        while ((count = await utf8Json.ReadAsync(chunk, cancellationToken)) != 0)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            if (buffer.Length + count > _options.ReportCacheSizeLimitBytes)
+            {
+                throw new ReportTooLargeForCacheException();
+            }
+            await buffer.WriteAsync(chunk.AsMemory(0, count), cancellationToken);
+        }
+        cancellationToken.ThrowIfCancellationRequested();
+        CacheReport(reportId, buffer.ToArray(), buffer.Length, allowOversizedBypass: false);
+    }
+
+    Task<bool> IReportStore.DeleteAsync(string reportId, CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        lock (_reportCacheLock)
+        {
+            var exists = _testRecordCache.Value.TryGetValue(reportId, out _);
+            _testRecordCache.Value.Remove(reportId);
+            return Task.FromResult(exists);
+        }
+    }
+
+    public Task<RunIndexPage> ListAsync(RunIndexQuery query, CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        return Task.FromResult(RunIndexPaging.Apply(Volatile.Read(ref _testRunSummaries)
+            .Select(entry => entry.ToRunIndexEntry()), query));
+    }
+
+    public Task UpsertAsync(RunIndexEntry entry, CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        lock (_testRunSummariesLock)
+        {
+            _testRunSummariesDictionary[entry.RecordId] = entry.ToTestRunSummary();
+            Interlocked.Exchange(ref _testRunSummaries, _testRunSummariesDictionary.Values
+                .OrderByDescending(record => record.StartedAtDateTime)
+                .ThenBy(record => record.RecordId, StringComparer.Ordinal).ToList());
+        }
+        return Task.CompletedTask;
+    }
+
+    Task<bool> IRunIndexStore.DeleteAsync(string reportId, CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        lock (_testRunSummariesLock)
+        {
+            var removed = _testRunSummariesDictionary.TryRemove(reportId, out _);
+            Interlocked.Exchange(ref _testRunSummaries, _testRunSummaries.Where(record => record.RecordId != reportId).ToList());
+            return Task.FromResult(removed);
+        }
     }
 }

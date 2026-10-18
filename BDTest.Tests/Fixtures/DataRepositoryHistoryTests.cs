@@ -1,6 +1,8 @@
 using System.Collections.Concurrent;
 using BDTest.Maps;
 using BDTest.Output;
+using BDTest.Helpers;
+using BDTest.Razor.Reports.Storage;
 using BDTest.Razor.Reports.Extensions;
 using BDTest.Razor.Reports.Interfaces;
 using BDTest.Razor.Reports.Models;
@@ -19,7 +21,7 @@ public class DataRepositoryHistoryTests
         using var services = Services(store);
         var repository = services.GetRequiredService<IDataRepository>();
 
-        await repository.StoreData(Report("new", 2), "new");
+        await repository.StoreData("new", Report("new", 2));
 
         for (var read = 0; read < 2; read++)
         {
@@ -51,7 +53,7 @@ public class DataRepositoryHistoryTests
             await started.Task.WaitAsync(TimeSpan.FromSeconds(10));
             Assert.That(store.Loads, Is.EqualTo(1));
             Assert.That(reads.All(read => !read.IsCompleted), Is.True);
-            await repository.StoreData(Report("new", 2), "new");
+            await repository.StoreData("new", Report("new", 2));
         }
         finally
         {
@@ -75,7 +77,7 @@ public class DataRepositoryHistoryTests
         store.Records.Add(Summary("old", 1));
         using var services = Services(store);
         var repository = services.GetRequiredService<IDataRepository>();
-        await repository.StoreData(Report("new", 3), "new");
+        await repository.StoreData("new", Report("new", 3));
         store.Records.Add(Summary("new", 0));
 
         var records = (await repository.GetAllTestRunRecords()).ToArray();
@@ -95,7 +97,7 @@ public class DataRepositoryHistoryTests
 
         Assert.That(await repository.GetAllTestRunRecords(), Is.Empty);
         Assert.That(await repository.GetAllTestRunRecords(), Is.Empty);
-        await repository.StoreData(Report("new", 1), "new");
+        await repository.StoreData("new", Report("new", 1));
         Assert.That((await repository.GetAllTestRunRecords()).Single().RecordId, Is.EqualTo("new"));
         Assert.That(store.Loads, Is.EqualTo(1));
     }
@@ -108,7 +110,7 @@ public class DataRepositoryHistoryTests
         store.Records.Add(Summary("old", 1));
         using var services = Services(store);
         var repository = services.GetRequiredService<IDataRepository>();
-        await repository.StoreData(Report("new", 2), "new");
+        await repository.StoreData("new", Report("new", 2));
 
         var thrown = await Assert.ThrowsAsync<InvalidOperationException>(() => repository.GetAllTestRunRecords());
         Assert.That(thrown, Is.SameAs(failure));
@@ -128,7 +130,7 @@ public class DataRepositoryHistoryTests
         store.Records.Add(Summary("old", 1));
         using var services = Services(store);
         var repository = services.GetRequiredService<IDataRepository>();
-        await repository.StoreData(Report("new", 2), "new");
+        await repository.StoreData("new", Report("new", 2));
         if (loadFirst) await repository.GetAllTestRunRecords();
 
         await repository.DeleteReport("old");
@@ -181,8 +183,8 @@ public class DataRepositoryHistoryTests
         using var services = Services();
         var repository = services.GetRequiredService<IDataRepository>();
         Assert.That(await repository.GetAllTestRunRecords(), Is.Empty);
-        await repository.StoreData(Report("old", 1), "old");
-        await repository.StoreData(Report("new", 2), "new");
+        await repository.StoreData("old", Report("old", 1));
+        await repository.StoreData("new", Report("new", 2));
         Assert.That((await repository.GetAllTestRunRecords()).Select(record => record.RecordId),
             Is.EqualTo(new[] { "new", "old" }));
 
@@ -190,6 +192,43 @@ public class DataRepositoryHistoryTests
 
         Assert.That((await repository.GetAllTestRunRecords()).Single().RecordId, Is.EqualTo("old"));
         Assert.That(await repository.GetData("new", default), Is.Null);
+    }
+
+    [Test]
+    public async Task History_load_follows_all_continuations_once()
+    {
+        var store = new PersistentStore();
+        for (var i = 0; i < 1201; i++) store.Records.Add(Summary(i.ToString("D4"), i));
+        using var services = Services(store);
+        var repository = services.GetRequiredService<IDataRepository>();
+        var records = (await repository.GetAllTestRunRecords()).ToArray();
+        Assert.That(records.Length, Is.EqualTo(1201));
+        Assert.That(records[0].RecordId, Is.EqualTo("1200"));
+        await repository.GetAllTestRunRecords();
+        Assert.That(store.Loads, Is.EqualTo(3));
+    }
+
+    [Test]
+    public async Task Cancelled_history_load_releases_semaphore_and_can_retry()
+    {
+        var started = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var release = new TaskCompletionSource<IEnumerable<TestRunSummary>>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var store = new PersistentStore { Read = () => { started.TrySetResult(); return release.Task; } };
+        using var services = Services(store);
+        var repository = services.GetRequiredService<IDataRepository>();
+        using var cancellation = new CancellationTokenSource();
+        var loading = repository.GetAllTestRunRecords(cancellation.Token);
+        await started.Task.WaitAsync(TimeSpan.FromSeconds(10));
+        using var waitingCancellation = new CancellationTokenSource();
+        var deletion = repository.DeleteReport("old", waitingCancellation.Token);
+        waitingCancellation.Cancel();
+        await Assert.CatchAsync<OperationCanceledException>(async () => await deletion);
+        cancellation.Cancel();
+        await Assert.CatchAsync<OperationCanceledException>(async () => await loading);
+        release.TrySetResult([]);
+        store.Read = null;
+        Assert.That(await repository.GetAllTestRunRecords(), Is.Empty);
+        await repository.DeleteReport("old");
     }
 
     private static ServiceProvider Services(IBDTestDataStore store = null)
@@ -219,8 +258,40 @@ public class DataRepositoryHistoryTests
             StartedAtDateTime = Report(id, day).TestTimer.TestsStartedAt
         }));
 
-    private sealed class PersistentStore : IBDTestDataStore
+    private sealed class PersistentStore : IBDTestDataStore, IReportStore, IRunIndexStore
     {
+        public Task<Stream> OpenReadAsync(string reportId, CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            return Task.FromResult<Stream>(Reports.TryGetValue(reportId, out var report)
+                ? new MemoryStream(System.Text.Encoding.UTF8.GetBytes(BDTestJsonHelper.Serialize(report))) : null);
+        }
+        public async Task WriteAsync(string reportId, Stream utf8Json, CancellationToken cancellationToken)
+            => Reports[reportId] = await BDTestJsonHelper.DeserializeAsync(utf8Json, cancellationToken);
+        public async Task<RunIndexPage> ListAsync(RunIndexQuery query, CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            var records = await GetAllTestRunRecords().WaitAsync(cancellationToken);
+            return RunIndexPaging.Apply((records ?? []).Select(record => record.ToRunIndexEntry()), query);
+        }
+        public Task UpsertAsync(RunIndexEntry entry, CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            Records.RemoveAll(record => record.RecordId == entry.RecordId);
+            Records.Add(entry.ToTestRunSummary());
+            return Task.CompletedTask;
+        }
+        Task<bool> IReportStore.DeleteAsync(string reportId, CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            return Task.FromResult(Reports.TryRemove(reportId, out _));
+        }
+        Task<bool> IRunIndexStore.DeleteAsync(string reportId, CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            return Task.FromResult(Records.RemoveAll(record => record.RecordId == reportId) != 0);
+        }
+
         public List<TestRunSummary> Records { get; } = [];
         public ConcurrentDictionary<string, BDTestOutputModel> Reports { get; } = new();
         public Func<Task<IEnumerable<TestRunSummary>>> Read { get; set; }
