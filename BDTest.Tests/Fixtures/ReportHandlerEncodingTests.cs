@@ -139,6 +139,8 @@ public class ReportHandlerEncodingTests
         var html = await RenderAsync("/Views/Shared/_ScenarioModalPopup.cshtml",
             new ScenarioModalViewModel { Scenario = scenario }, query: query);
         var image = ReadElement(html, "<img[^>]*alt=\"Share\"[^>]*/>");
+        Assert.That((string)image.Attribute("src"),
+            Is.EqualTo("/_content/BDTest.Razor.Reports/icons/share-white-18dp.svg"));
         Assert.That((string)image.Attribute("data-bdtest-action"), Is.EqualTo("copy-url"));
         Assert.That(image.Attributes().Select(x => x.Name.LocalName),
             Is.EquivalentTo(new[] { "src", "class", "alt", "data-url", "data-bdtest-action" }));
