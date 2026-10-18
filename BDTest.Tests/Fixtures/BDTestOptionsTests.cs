@@ -9,10 +9,9 @@ namespace BDTest.Tests.Fixtures;
 
 public class BDTestOptionsTests
 {
-    [TestCase(Status.Passed)]
-    [TestCase(Status.Skipped)]
-    [TestCase(Status.Inconclusive)]
-    public async Task Concurrent_runs_classify_step_and_outline_factory_exceptions_independently(Status status, [Values] bool wrapped)
+    [Test]
+    public async Task Concurrent_runs_classify_step_and_outline_factory_exceptions_independently(
+        [Values(Status.Passed, Status.Skipped, Status.Inconclusive)] Status status, [Values] bool wrapped)
     {
         var options = new BDTestOptions();
         var types = status == Status.Passed ? options.SuccessExceptionTypes

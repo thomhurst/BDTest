@@ -1,5 +1,7 @@
 using System.Reflection;
 using BDTest.Attributes;
+using BDTest.Settings;
+using BDTest.Tests.Helpers;
 using BDTest.Test;
 using NUnit.Framework;
 
@@ -154,6 +156,39 @@ public class ExceptionClassificationTests : BDTestBase
         Assert.That(scenario.Status, Is.EqualTo(Status.Failed));
         Assert.That(scenario.Steps[0].Status, Is.EqualTo(Status.Failed));
     }
+
+    [TestCase(Status.Passed)]
+    [TestCase(Status.Skipped)]
+    [TestCase(Status.Inconclusive)]
+    public async Task Legacy_registrations_remain_live_and_do_not_leak_into_explicit_runs(Status status)
+    {
+        var exception = Wrap(new DerivedFailureSignal(), Wrapper.Nested);
+        var explicitBuilder = When(() => Throw(exception)).Then(() => NoOp());
+        var legacyBuilder = new LegacyFixture().When(() => Throw(exception)).Then(() => NoOp());
+        var settings = BDTestSettings.CustomExceptionSettings;
+        var types = status switch
+        {
+            Status.Passed => settings.SuccessExceptionTypes,
+            Status.Skipped => settings.SkipExceptionTypes,
+            _ => settings.InconclusiveExceptionTypes
+        };
+        using var registration = new ExceptionRegistration(types, typeof(FailureSignal));
+        try
+        {
+            Assert.That(await Capture(explicitBuilder.BDTestAsync), Is.SameAs(exception));
+            Assert.That(await Capture(legacyBuilder.BDTestAsync), Is.SameAs(exception));
+            Assert.That(TestRun.Scenarios.Single().Status, Is.EqualTo(Status.Failed));
+            var legacy = BDTestUtil.GetScenarios().Single(scenario => scenario.Guid == legacyBuilder.Guid);
+            Assert.That(legacy.Status, Is.EqualTo(status));
+            Assert.That(legacy.Steps[0].Status, Is.EqualTo(status));
+        }
+        finally
+        {
+            BDTestUtil.ClearScenarios();
+        }
+    }
+
+    private sealed class LegacyFixture : BDTestBase { }
 
     private static void AssertScenario(Scenario scenario, Status status)
     {
