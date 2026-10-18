@@ -87,6 +87,12 @@ The source-generated `BDTestJsonContext` registers `StepArgument`, `StepTable` a
 
 Table cells are strings, with null cells normalized to empty strings when creating a table. `ContentType` is optional. HTML encoding occurs during rendering; JSON preserves the complete values, including rows hidden by the HTML preview. The same contract is used for report uploads.
 
+### Structured exceptions
+
+`Step.Exception`, `Scenario.ExecutionException` and retry-attempt `Exception` values contain an `ExceptionWrapper`. `TypeName` is the full type name; `ShortTypeName` is for display. Each node includes `Message`, `StackTrace`, `Source`, nullable `HResult`, a string dictionary `Data`, and an `InnerExceptions` list. Aggregates retain every child. `IsWrapper` marks invocation wrappers and single-child aggregates without removing their diagnostics.
+
+Capture has a ten-node depth limit and a cycle guard. `TruncationReason` records `DepthLimit` or `Cycle` when traversal stops. `AsString` retains original diagnostic text for ordinary graphs and bounded text for truncated graphs. Historical JSON without these fields still loads. See [structured exception migration](../migration/structured-exceptions.md) for grouping, data formatting and compatibility details.
+
 ## Using System.Text.Json directly
 
 `BDTestJsonContext` provides source-generated metadata for the report types. Use its `JsonTypeInfo` properties when calling `System.Text.Json` yourself. Historical reports with references must go through the BDTest readers above. The serializer does not use global Newtonsoft settings or your host's MVC JSON options.

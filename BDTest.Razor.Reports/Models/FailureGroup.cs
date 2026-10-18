@@ -32,12 +32,15 @@ public class FailureGroup
     {
         return scenarios
             .Where(scenario => scenario is { Status: Status.Failed })
-            .GroupBy(scenario => GetKey(scenario, groupBy))
+            .SelectMany(scenario => (scenario.Exception?.GetRootCauses() ?? new ExceptionWrapper[] { null })
+                .GroupBy(exception => GetKey(scenario, exception, groupBy))
+                .Select(group => (Scenario: scenario, Exception: group.First(), Key: group.Key)))
+            .GroupBy(entry => entry.Key)
             .Select(group =>
             {
                 var first = group.First();
                 var exception = first.Exception;
-                var step = FailingStep(first);
+                var step = FailingStep(first.Scenario);
                 return new FailureGroup
                 {
                     Key = group.Key,
@@ -50,7 +53,7 @@ public class FailureGroup
                     },
                     Location = groupBy == ByExceptionType ? null : GetLocation(exception),
                     Exception = exception,
-                    Scenarios = group.ToList()
+                    Scenarios = group.Select(entry => entry.Scenario).ToList()
                 };
             })
             .OrderByDescending(group => group.Scenarios.Count)
@@ -141,9 +144,8 @@ public class FailureGroup
         return fallback;
     }
 
-    private static string GetKey(Scenario scenario, string groupBy)
+    private static string GetKey(Scenario scenario, ExceptionWrapper exception, string groupBy)
     {
-        var exception = scenario.Exception;
         return groupBy switch
         {
             ByExceptionType => exception?.TypeName ?? string.Empty,

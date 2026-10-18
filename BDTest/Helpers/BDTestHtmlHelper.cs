@@ -243,13 +243,16 @@ public static class BDTestHtmlHelper
         var causes = new List<(ExceptionWrapper Exception, List<(Scenario Scenario, string Suffix)> Scenarios)>();
         void AddCause(ExceptionWrapper exception, Scenario scenario, string suffix)
         {
-            var cause = causes.FirstOrDefault(c => c.Exception.TypeName == exception.TypeName && c.Exception.Message == exception.Message);
-            if (cause.Exception == null)
+            foreach (var rootCause in exception.GetRootCauses().GroupBy(root => new { root.TypeName, root.Message }).Select(group => group.First()))
             {
-                cause = (exception, new List<(Scenario, string)>());
-                causes.Add(cause);
+                var cause = causes.FirstOrDefault(c => c.Exception.TypeName == rootCause.TypeName && c.Exception.Message == rootCause.Message);
+                if (cause.Exception == null)
+                {
+                    cause = (rootCause, new List<(Scenario, string)>());
+                    causes.Add(cause);
+                }
+                cause.Scenarios.Add((scenario, suffix));
             }
-            cause.Scenarios.Add((scenario, suffix));
         }
 
         foreach (var scenario in data.Scenarios.Where(s => s.Status == Status.Failed).OrderBy(s => s.GetScenarioText(), StringComparer.Ordinal))
@@ -475,7 +478,7 @@ public static class BDTestHtmlHelper
                     continue;
                 }
                 html.AppendLine($"<details class=\"attempt-d\"><summary class=\"attempt\" data-final=\"{(final ? "true" : "false")}\">{label}</summary>");
-                AppendCode(html, "Exception", attempt.Exception.AsString, true);
+                AppendError(html, attempt.Exception);
                 html.AppendLine("</details>");
             }
             html.AppendLine("</div></div>");
@@ -486,7 +489,7 @@ public static class BDTestHtmlHelper
         if (exception != null && scenario.Steps?.Any(step => ReferenceEquals(step.Exception, exception)) != true)
         {
             html.AppendLine("<div><h3 class=\"h3\">Error</h3>");
-            AppendError(html, exception, false);
+            AppendError(html, exception);
             html.AppendLine("</div>");
         }
 
@@ -554,26 +557,18 @@ public static class BDTestHtmlHelper
             if (status == "notrun")
                 html.AppendLine("<p class=\"step-note\">This step has not started.</p>");
             if (step.Exception != null)
-                AppendError(html, step.Exception, step.Status == Status.NotImplemented);
+                AppendError(html, step.Exception);
             html.AppendLine(StepArgumentHtmlHelper.GetHtml(step.Arguments));
             html.AppendLine("</li>");
         }
         html.AppendLine("</ol>");
     }
 
-    private static void AppendError(StringBuilder html, ExceptionWrapper exception, bool notImplemented)
+    private static void AppendError(StringBuilder html, ExceptionWrapper exception)
     {
-        if (notImplemented)
-        {
-            html.AppendLine($"<p class=\"step-note\">{EscapeHtml(exception.TypeName)}: {EscapeHtml(exception.Message)}</p>");
-            return;
-        }
         html.AppendLine("<div class=\"err\">");
-        html.AppendLine($"<span class=\"err-type\">{EscapeHtml(exception.TypeName)}</span>");
-        html.AppendLine($"<p class=\"err-msg\">{EscapeHtml(exception.Message)}</p>");
-        var details = exception.AsString ?? exception.StackTrace;
-        if (!string.IsNullOrEmpty(details))
-            AppendCode(html, "Exception", details, true);
+        html.AppendLine(ExceptionHtmlHelper.GetHtml(exception,
+            (builder, text) => AppendCode(builder, "Original exception text", text, true)));
         html.AppendLine("</div>");
     }
 

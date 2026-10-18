@@ -175,6 +175,80 @@ public class ReportSidebarTests
     }
 
     [Test]
+    public async Task Structured_exceptions_render_all_branches_in_steps_scenarios_and_retries()
+    {
+        var exception = new ExceptionWrapper(new System.Reflection.TargetInvocationException(
+            new AggregateException(new InvalidOperationException("<first cause>"), new ArgumentException("<second cause>"))));
+        exception.Data = new Dictionary<string, string> { ["<key>"] = "<value>" };
+        exception.AsString = null; // The tree must not depend on the flattened diagnostic text.
+        _repository.Report.Scenarios = [ReportJson.DeserializeObject<Scenario>("""
+            {"Guid":"scenario-632","Status":"Failed","RetryCount":1,"CustomTestInformation":[],
+             "Steps":[{"StepText":"When failing","Status":"Failed"}],
+             "Attempts":[{"Number":1,"Status":"Failed"}]}
+            """)];
+        var scenario = _repository.Report.Scenarios.Single();
+        scenario.ExecutionException = ReportJson.DeserializeObject<ExceptionWrapper>(ReportJson.SerializeObject(exception));
+        scenario.Steps.Single().Exception = exception;
+        scenario.Attempts.Single().Exception = exception;
+
+        var html = await _client.GetStringAsync("/bdtest/report/run-632/scenario/scenario-632");
+
+        Assert.That(html, Does.Contain("System.InvalidOperationException").And.Contain("System.ArgumentException"));
+        Assert.That(html, Does.Contain("&lt;first cause&gt;").And.Contain("&lt;second cause&gt;"));
+        Assert.That(html, Does.Contain("&lt;key&gt;").And.Contain("&lt;value&gt;"));
+        Assert.That(html, Does.Not.Contain("<first cause>").And.Not.Contain("<key>"));
+        Assert.That(html, Does.Contain("exception-wrapper"));
+        Assert.That(html.Split("<details class=\"exception-tree\" open>").Length - 1, Is.EqualTo(3));
+    }
+
+    [Test]
+    public async Task Top_defects_and_flakiness_group_all_aggregate_root_types()
+    {
+        _repository.Report.Scenarios = [ReportJson.DeserializeObject<Scenario>("""
+            {"Guid":"scenario-632","Status":"Failed","CustomTestInformation":[],"Steps":[],
+             "StoryText":"story","ScenarioText":"scenario"}
+            """)];
+        _repository.Report.Scenarios.Single().ExecutionException = new ExceptionWrapper(new System.Reflection.TargetInvocationException(
+            new AggregateException(new InvalidOperationException("<first cause>"), new ArgumentException("<second cause>"))));
+
+        var defects = await _client.GetStringAsync("/bdtest/report/run-632/top-defects");
+        using var response = await _client.PostAsync("/bdtest/report/test-run-flakiness", new FormUrlEncodedContent(
+            new[] { new KeyValuePair<string, string>("reportIds", "run-632,passing") }));
+        response.EnsureSuccessStatusCode();
+        var flakiness = await response.Content.ReadAsStringAsync();
+
+        foreach (var html in new[] { defects, flakiness })
+        {
+            Assert.That(html, Does.Contain("System.InvalidOperationException").And.Contain("System.ArgumentException"));
+            Assert.That(html, Does.Not.Contain("System.Reflection.TargetInvocationException").And.Not.Contain("System.AggregateException"));
+            Assert.That(html, Does.Contain("&lt;first cause&gt;").And.Contain("&lt;second cause&gt;"));
+        }
+    }
+
+    [Test]
+    public async Task Flakiness_preserves_distinct_messages_and_counts_each_failed_run_once()
+    {
+        _repository.Report.Scenarios = [ReportJson.DeserializeObject<Scenario>("""
+            {"Guid":"scenario-632","Status":"Failed","CustomTestInformation":[],"Steps":[],
+             "StoryText":"story","ScenarioText":"scenario"}
+            """)];
+        _repository.Report.Scenarios.Single().ExecutionException = new ExceptionWrapper(new AggregateException(
+            new InvalidOperationException("<first cause>"), new InvalidOperationException("<second cause>"),
+            new InvalidOperationException(" <first cause> ")));
+
+        using var response = await _client.PostAsync("/bdtest/report/test-run-flakiness", new FormUrlEncodedContent(
+            new[] { new KeyValuePair<string, string>("reportIds", "run-632,failed-again,passing") }));
+        response.EnsureSuccessStatusCode();
+        var html = await response.Content.ReadAsStringAsync();
+
+        Assert.That(html, Does.Contain("InvalidOperationException <span class=\"muted\">×2</span>"));
+        var rows = Regex.Matches(html, @"<tr>\s*<td[^>]*>InvalidOperationException</td>\s*<td[^>]*>(.*?)</td>\s*<td class=""num"">(\d+)</td>\s*</tr>");
+        Assert.That(rows.Select(row => row.Groups[1].Value),
+            Is.EquivalentTo(new[] { "&lt;first cause&gt;", "&lt;second cause&gt;" }));
+        Assert.That(rows.Select(row => row.Groups[2].Value), Is.All.EqualTo("2"));
+    }
+
+    [Test]
     public async Task Old_reports_do_not_render_retry_history()
     {
         var html = await _client.GetStringAsync("/bdtest/report/run-632/scenario/scenario-632");
@@ -303,6 +377,13 @@ public class ReportSidebarTests
         {
             ReadTokens.Add(cancellationToken);
             cancellationToken.ThrowIfCancellationRequested();
+            if (id == "passing")
+            {
+                var passed = BDTest.Helpers.BDTestJsonHelper.Deserialize(BDTest.Helpers.BDTestJsonHelper.Serialize(Report));
+                passed.Id = id;
+                passed.Scenarios.Single().Status = Status.Passed;
+                return Task.FromResult(passed);
+            }
             return Task.FromResult(Report);
         }
         public Task<BDTestOutputModel> GetDataForBulkRead(string id, CancellationToken cancellationToken) => GetData(id, cancellationToken);
