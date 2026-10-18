@@ -332,26 +332,7 @@ public class Step
 
     private void SetExceptionResult(Exception exception)
     {
-        if (exception is NotImplementedException)
-        {
-            Status = Status.NotImplemented;
-        }
-        else if (!TimedOut && Options.SuccessExceptionTypes.Contains(exception.GetType()))
-        {
-            Status = Status.Passed;
-        }
-        else if (!TimedOut && Options.SkipExceptionTypes.Contains(exception.GetType()))
-        {
-            Status = Status.Skipped;
-        }
-        else if (!TimedOut && Options.InconclusiveExceptionTypes.Contains(exception.GetType()))
-        {
-            Status = Status.Inconclusive;
-        }
-        else
-        {
-            Status = Status.Failed;
-        }
+        Status = ExceptionOutcomeClassifier.Classify(exception, Options, TimedOut);
 
         if (Status == Status.Failed || Status == Status.NotImplemented)
         {
