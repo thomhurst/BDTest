@@ -73,6 +73,7 @@ public class Step
 
     [JsonIgnore]
     internal List<Func<StepArgument>> AttachedArguments { get; } = new();
+
     /// <summary>Captured files from all attempts, distinguished by Attachment.AttemptNumber.</summary>
     [JsonInclude] public List<Attachment> Attachments { get; internal set; } = new();
 

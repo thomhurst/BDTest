@@ -432,6 +432,85 @@ public class AttachmentTests
             Assert.That(row.Attachments.Any(file => file.Name == "factory-" + row.ExampleValues["Value"]), Is.True);
     }
 
+    [TestCase(false, false)]
+    [TestCase(false, true)]
+    [TestCase(true, false)]
+    [TestCase(true, true)]
+    public async Task Setup_capture_finishing_after_teardown_releases_files_and_quota(bool useContext, bool createScenario)
+    {
+        var options = new BDTestOptions();
+        options.Attachments.MaximumRunBytes = 3;
+        using var run = BDTestRun.Start(options);
+        var fixture = new Capture(run, "setup");
+        fixture.Start();
+        var writer = useContext ? fixture.BDTestContext.Attachments : fixture.Attachments;
+        using var source = new PausedStream();
+        var capture = Task.Run(() =>
+        {
+            try { writer.Attach("late", source, "text/plain"); return null; }
+            catch (Exception exception) { return exception; }
+        });
+        try
+        {
+            await source.Started.Task.WaitAsync(TimeSpan.FromSeconds(10));
+            if (createScenario)
+                await fixture.When(() => Done()).Then(() => Done()).BDTestAsync();
+            fixture.Finish();
+        }
+        finally { source.Resume.Set(); }
+
+        Assert.That(await capture.WaitAsync(TimeSpan.FromSeconds(10)), Is.TypeOf<InvalidOperationException>());
+        Assert.That(Directory.GetFiles(run.AttachmentFiles.DirectoryPath), Is.Empty);
+        Assert.That(run.Scenarios.SelectMany(scenario => scenario.Attachments), Is.Empty);
+        var next = new Capture(run, "next");
+        next.Attach("abc");
+        var nextScenario = await next.When(() => Done()).Then(() => Done()).BDTestAsync();
+        Assert.That(nextScenario.Attachments.Single().Length, Is.EqualTo(3));
+    }
+
+    [TestCase(false)]
+    [TestCase(true)]
+    public async Task Background_setup_cannot_start_capture_after_teardown(bool useContext)
+    {
+        using var run = BDTestRun.Start();
+        var fixture = new Capture(run, "setup");
+        fixture.Start();
+        var context = fixture.BDTestContext;
+        var finish = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var capture = Task.Run(async () =>
+        {
+            await finish.Task;
+            var writer = useContext ? context.Attachments : fixture.Attachments;
+            try { writer.Attach("late", new byte[] { 1 }, "text/plain"); return null; }
+            catch (Exception exception) { return exception; }
+        });
+        fixture.Finish();
+        finish.SetResult();
+        Assert.That(await capture.WaitAsync(TimeSpan.FromSeconds(10)), Is.TypeOf<InvalidOperationException>());
+        Assert.That(Directory.Exists(run.AttachmentFiles.DirectoryPath), Is.False);
+    }
+
+    private sealed class PausedStream : MemoryStream
+    {
+        internal TaskCompletionSource Started { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        internal ManualResetEventSlim Resume { get; } = new();
+
+        public override int Read(byte[] buffer, int offset, int count)
+        {
+            Started.TrySetResult();
+            if (!Resume.Wait(TimeSpan.FromSeconds(10))) throw new TimeoutException("Capture was not resumed.");
+            return base.Read(buffer, offset, count);
+        }
+
+        internal PausedStream() : base(new byte[] { 1, 2, 3 }) { }
+
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing) Resume.Dispose();
+            base.Dispose(disposing);
+        }
+    }
+
     private sealed class BrokenStream : MemoryStream
     {
         private bool _read;

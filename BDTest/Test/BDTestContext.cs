@@ -18,11 +18,12 @@ public class BDTestContext
     {
         TestBase = testBase;
         CurrentScenarioBDTestExecutionId = bdTestExecutionId;
+        Attachments = testBase.CreateAttachmentWriter(bdTestExecutionId);
     }
 
     public BDTestBase TestBase { get; }
 
-    public Interfaces.IBDTestAttachments Attachments => new AttachmentWriter(TestBase.TestRun, CurrentScenarioBDTestExecutionId);
+    public Interfaces.IBDTestAttachments Attachments { get; }
 
     public string CurrentScenarioBDTestExecutionId { get; }
 

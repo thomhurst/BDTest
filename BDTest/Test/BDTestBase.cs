@@ -194,7 +194,18 @@ public abstract class BDTestBase
     public HtmlWriter ScenarioHtmlWriter => new(BDTestExecutionId, TestRun);
 
     /// <summary>Captures files for the current step, or for this test's scenario outside a step.</summary>
-    public Interfaces.IBDTestAttachments Attachments => new AttachmentWriter(TestRun, BDTestExecutionId);
+    public Interfaces.IBDTestAttachments Attachments => CreateAttachmentWriter(BDTestExecutionId);
+
+    internal Interfaces.IBDTestAttachments CreateAttachmentWriter(string executionId)
+    {
+        // Freeze the execution, so a saved writer cannot adopt a later test's lifetime.
+        var execution = CurrentExecution;
+        return new AttachmentWriter(TestRun, executionId, () =>
+        {
+            if (execution != null && Volatile.Read(ref execution.Completed) != 0)
+                throw new InvalidOperationException("The attachment's test execution has already completed.");
+        });
+    }
 
     /// <summary>Reports a completed whole-scenario skip to the test runner.</summary>
     /// <remarks>

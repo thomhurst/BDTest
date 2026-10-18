@@ -4,7 +4,7 @@ using BDTest.Test;
 
 namespace BDTest.Output;
 
-internal sealed class AttachmentWriter(BDTestRun run, string frameworkExecutionId) : IBDTestAttachments
+internal sealed class AttachmentWriter(BDTestRun run, string frameworkExecutionId, Action ensureExecutionActive) : IBDTestAttachments
 {
     public void Attach(string name, byte[] content, string mimeType)
     {
@@ -27,6 +27,7 @@ internal sealed class AttachmentWriter(BDTestRun run, string frameworkExecutionI
         lock (run.Store.Gate)
         {
             run.ThrowIfDisposed();
+            ensureExecutionActive();
             publish = GetPublisher();
             generation = run.AttachmentFiles.Generation;
         }
@@ -36,6 +37,7 @@ internal sealed class AttachmentWriter(BDTestRun run, string frameworkExecutionI
             lock (run.Store.Gate)
             {
                 run.ThrowIfDisposed();
+                ensureExecutionActive();
                 run.AttachmentFiles.EnsureAvailable(attachment.Id);
                 publish(attachment);
             }

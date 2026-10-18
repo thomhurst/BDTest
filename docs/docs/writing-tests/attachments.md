@@ -33,7 +33,7 @@ public override async Task OnAfterStep(Step step)
 }
 ```
 
-Outside a step, capture adds to `Scenario.Attachments`. Setup capture waits for the scenario to be created. If the test ends without creating a scenario, adapter teardown deletes its pending attachments and releases their byte quota. Capture during an outline's example factory belongs to that example, including when the factory throws. Setup and teardown for the whole outline belong to the outline.
+Outside a step, capture adds to `Scenario.Attachments`. Setup capture waits for the scenario to be created. If the test ends without creating a scenario, adapter teardown deletes its pending attachments and releases their byte quota. Captures that start or finish after `EndTest` throw `InvalidOperationException`; an in-progress copy rolls back its file and byte quota. Saved writers and context attachment writers retain the lifetime of their original execution. Capture during an outline's example factory belongs to that example, including when the factory throws. Setup and teardown for the whole outline belong to the outline.
 
 Each attachment has `Id`, `Name`, `MimeType`, `Length`, `AttemptNumber`, and nullable `Uri` metadata in namespace `BDTest.Test`. Collections retain files from every retry; `AttemptNumber` is one-based and corresponds to `Scenario.Attempts.Number`. Files are not copied between attempts or example rows. Content from abandoned step tasks is rejected after the step and its after hooks finish.
 
