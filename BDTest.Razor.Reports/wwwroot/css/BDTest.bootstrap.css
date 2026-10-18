@@ -108,3 +108,8 @@
 .menu.active svg path:nth-child(3) {
     --offset: 58px;
 }
+
+.step-argument-table th,
+.step-argument-table td {
+    white-space: pre-wrap;
+}
