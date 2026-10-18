@@ -47,11 +47,11 @@ public class StoryTextLookupTests
             Assert.That(reportedStory, Is.Not.Null);
             if (expected == null)
             {
-                Assert.That(reportedStory.Type, Is.EqualTo(JTokenType.Null));
+                Assert.That(Required(reportedStory).Type, Is.EqualTo(JTokenType.Null));
             }
             else
             {
-                Assert.That(reportedStory.ToString(), Is.EqualTo(expected));
+                Assert.That(Required(reportedStory).ToString(), Is.EqualTo(expected));
             }
         });
     }

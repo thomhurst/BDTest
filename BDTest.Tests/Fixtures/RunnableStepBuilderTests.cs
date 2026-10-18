@@ -9,7 +9,7 @@ namespace BDTest.Tests.Fixtures;
 public class RunnableStepBuilderTests : BDTestBase
 {
     [SetUp]
-    public void BindMetadata() => BeginTest(TestContext.CurrentContext.Test.ID, global::NUnit.Framework.Internal.TestExecutionContext.CurrentContext.CurrentTest.Method.MethodInfo);
+    public void BindMetadata() => BeginTest(TestContext.CurrentContext.Test.ID, Required(global::NUnit.Framework.Internal.TestExecutionContext.CurrentContext.CurrentTest.Method).MethodInfo);
 
     [TearDown]
     public void FinishExecution() => EndTest();
@@ -36,7 +36,7 @@ public class RunnableStepBuilderTests : BDTestBase
 
         var exception = await Assert.ThrowsAsync<AlreadyExecutedException>(async () => await Execute(builder, second));
 
-        Assert.That(exception.Message, Does.Contain("builder"));
+        Assert.That(Required(exception).Message, Does.Contain("builder"));
         Assert.That(_executions, Is.EqualTo(1));
         AssertReportedOnce(scenario);
     }
@@ -104,7 +104,7 @@ public class RunnableStepBuilderTests : BDTestBase
         }
 
         var scenarios = await Task.WhenAll(callers);
-        var completed = scenarios.Where(x => x != null).ToArray();
+        var completed = scenarios.OfType<Scenario>().ToArray();
         Assert.That(rejectionCount, Is.EqualTo(callerCount - expectedExecutions));
         Assert.That(_executions, Is.EqualTo(expectedExecutions));
         Assert.That(completed, Has.Length.EqualTo(expectedExecutions));

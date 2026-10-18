@@ -22,7 +22,7 @@ namespace BDTest.Tests.Fixtures;
 
 public class CustomHtmlReportTests
 {
-    private WebApplication _application;
+    private WebApplication _application = null!; // Assigned by NUnit OneTimeSetUp.
 
     [OneTimeSetUp]
     public async Task CreateApplication()
@@ -68,7 +68,7 @@ public class CustomHtmlReportTests
         Assert.That(frame.Attribute("title")?.Value, Is.Not.Empty);
         Assert.That(frame.Attribute("referrerpolicy")?.Value, Is.EqualTo("no-referrer"));
 
-        var document = frame.Attribute("srcdoc")?.Value;
+        var document = Required(frame.Attribute("srcdoc")).Value;
         Assert.That(document, Does.EndWith(payload + "</body></html>"),
             "Razor must attribute-encode the complete document without losing user formatting.");
         var policy = Regex.Match(document, "<meta http-equiv=\"Content-Security-Policy\" content=\"([^\"]*)\">");
@@ -96,12 +96,12 @@ public class CustomHtmlReportTests
     [Test]
     public async Task EmptyCustomOutputDoesNotCreateAFrame(
         [Values(false, true)] bool modal,
-        [Values(null, "")] string payload)
+        [Values(null, "")] string? payload)
     {
         Assert.That(await RenderScenario(modal, payload), Does.Not.Contain("<iframe"));
     }
 
-    private async Task<string> RenderScenario(bool modal, string payload)
+    private async Task<string> RenderScenario(bool modal, string? payload)
     {
         // Use the same JSON deserialization boundary as uploaded report data.
         var scenario = ReportJson.DeserializeObject<Scenario>(ReportJson.SerializeObject(new
@@ -129,7 +129,8 @@ public class CustomHtmlReportTests
             Model = modal ? new ScenarioModalViewModel { Scenario = scenario } : scenario
         };
         var tempData = new TempDataDictionary(httpContext, scope.ServiceProvider.GetRequiredService<ITempDataProvider>());
-        await view.View.RenderAsync(new ViewContext(actionContext, view.View, viewData, tempData, writer, new HtmlHelperOptions()));
+        var razorView = Required(view.View);
+        await razorView.RenderAsync(new ViewContext(actionContext, razorView, viewData, tempData, writer, new HtmlHelperOptions()));
         return writer.ToString();
     }
 }

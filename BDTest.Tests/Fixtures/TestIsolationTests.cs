@@ -81,26 +81,26 @@ public class TestIsolationTests
 
     [TestCase(null, null)]
     [TestCase("original environment", "original tag")]
-    public void FixtureRestoresPreviousSettings(string environment, string tag)
+    public void FixtureRestoresPreviousSettings(string? environment, string? tag)
     {
-        var originalEnvironment = BDTestSettings.Environment;
-        var originalTag = BDTestSettings.Tag;
+        var originalEnvironment = LegacySettings.Get<string>("Environment");
+        var originalTag = LegacySettings.Get<string>("Tag");
         try
         {
-            BDTestSettings.Environment = environment;
-            BDTestSettings.Tag = tag;
+            LegacySettings.Set("Environment", environment);
+            LegacySettings.Set("Tag", tag);
             var fixture = new SetupTeardownFixture();
             fixture.Settings();
-            Assert.That(BDTestSettings.Environment, Is.EqualTo("Local"));
-            Assert.That(BDTestSettings.Tag, Is.EqualTo("AcceptanceTests"));
+            Assert.That(LegacySettings.Get<string>("Environment"), Is.EqualTo("Local"));
+            Assert.That(LegacySettings.Get<string>("Tag"), Is.EqualTo("AcceptanceTests"));
             fixture.RestoreSettings();
-            Assert.That(BDTestSettings.Environment, Is.EqualTo(environment));
-            Assert.That(BDTestSettings.Tag, Is.EqualTo(tag));
+            Assert.That(LegacySettings.Get<string>("Environment"), Is.EqualTo(environment));
+            Assert.That(LegacySettings.Get<string>("Tag"), Is.EqualTo(tag));
         }
         finally
         {
-            BDTestSettings.Environment = originalEnvironment;
-            BDTestSettings.Tag = originalTag;
+            LegacySettings.Set("Environment", originalEnvironment);
+            LegacySettings.Set("Tag", originalTag);
         }
     }
 

@@ -31,8 +31,8 @@ public class ExceptionTests : BDTestBase
         catch
         {
             var scenario = BDTestUtil.GetScenarios().Single(scenario => scenario.Guid == builder.Guid);
-            var json = JsonHelper.GetTestDynamicJsonObject()["Scenarios"]
-                .Single(item => (string)item["Guid"] == builder.Guid);
+            var json = Required(JsonHelper.GetTestDynamicJsonObject()["Scenarios"])
+                .Single(item => (string?)item["Guid"] == builder.Guid);
 
             Assert.That(scenario.Steps[0].Exception.Message.Contains("BDTest Exception!"));
 
@@ -46,29 +46,29 @@ public class ExceptionTests : BDTestBase
             Assert.That(scenario.Status, Is.EqualTo(status));
 
             Assert.That(
-                json.SelectToken("$.Steps[0].Exception")
+                Required(json.SelectToken("$.Steps[0].Exception"))
                     .ToString().Contains("BDTest Exception!"));
 
             Assert.That(
-                json.SelectToken("$.Steps[0].Status").ToString(),
+                Required(json.SelectToken("$.Steps[0].Status")).ToString(),
                 Is.EqualTo(status.ToString()));
             Assert.That(
-                json.SelectToken("$.Steps[1].Status").ToString(),
+                Required(json.SelectToken("$.Steps[1].Status")).ToString(),
                 Is.EqualTo("NotRun"));
             Assert.That(
-                json.SelectToken("$.Steps[2].Status").ToString(),
+                Required(json.SelectToken("$.Steps[2].Status")).ToString(),
                 Is.EqualTo("NotRun"));
             Assert.That(
-                json.SelectToken("$.Steps[3].Status").ToString(),
+                Required(json.SelectToken("$.Steps[3].Status")).ToString(),
                 Is.EqualTo("NotRun"));
             Assert.That(
-                json.SelectToken("$.Steps[4].Status").ToString(),
+                Required(json.SelectToken("$.Steps[4].Status")).ToString(),
                 Is.EqualTo("NotRun"));
             Assert.That(
-                json.SelectToken("$.Steps[5].Status").ToString(),
+                Required(json.SelectToken("$.Steps[5].Status")).ToString(),
                 Is.EqualTo("NotRun"));
 
-            Assert.That(json.SelectToken("$.Status").ToString(),
+            Assert.That(Required(json.SelectToken("$.Status")).ToString(),
                 Is.EqualTo(status.ToString()));
         }
     }
@@ -93,8 +93,8 @@ public class ExceptionTests : BDTestBase
         catch
         {
             var scenario = BDTestUtil.GetScenarios().Single(scenario => scenario.Guid == builder.Guid);
-            var json = JsonHelper.GetTestDynamicJsonObject()["Scenarios"]
-                .Single(item => (string)item["Guid"] == builder.Guid);
+            var json = Required(JsonHelper.GetTestDynamicJsonObject()["Scenarios"])
+                .Single(item => (string?)item["Guid"] == builder.Guid);
 
             Assert.That(scenario.Steps[3].Exception.Message.Contains("BDTest Exception!"));
 
@@ -108,29 +108,29 @@ public class ExceptionTests : BDTestBase
             Assert.That(scenario.Status, Is.EqualTo(status));
 
             Assert.That(
-                json.SelectToken("$.Steps[3].Exception")
+                Required(json.SelectToken("$.Steps[3].Exception"))
                     .ToString().Contains("BDTest Exception!"));
 
             Assert.That(
-                json.SelectToken("$.Steps[0].Status").ToString(),
+                Required(json.SelectToken("$.Steps[0].Status")).ToString(),
                 Is.EqualTo("Passed"));
             Assert.That(
-                json.SelectToken("$.Steps[1].Status").ToString(),
+                Required(json.SelectToken("$.Steps[1].Status")).ToString(),
                 Is.EqualTo("Passed"));
             Assert.That(
-                json.SelectToken("$.Steps[2].Status").ToString(),
+                Required(json.SelectToken("$.Steps[2].Status")).ToString(),
                 Is.EqualTo("Passed"));
             Assert.That(
-                json.SelectToken("$.Steps[3].Status").ToString(),
+                Required(json.SelectToken("$.Steps[3].Status")).ToString(),
                 Is.EqualTo(status.ToString()));
             Assert.That(
-                json.SelectToken("$.Steps[4].Status").ToString(),
+                Required(json.SelectToken("$.Steps[4].Status")).ToString(),
                 Is.EqualTo("NotRun"));
             Assert.That(
-                json.SelectToken("$.Steps[5].Status").ToString(),
+                Required(json.SelectToken("$.Steps[5].Status")).ToString(),
                 Is.EqualTo("NotRun"));
 
-            Assert.That(json.SelectToken("$.Status").ToString(),
+            Assert.That(Required(json.SelectToken("$.Status")).ToString(),
                 Is.EqualTo(status.ToString()));
         }
     }
@@ -173,7 +173,7 @@ public class ExceptionTests : BDTestBase
 
     private static void ThrowException(Type exceptionType)
     {
-        throw (Exception) Activator.CreateInstance(exceptionType, "BDTest Exception!");
+        throw (Exception)Required(Activator.CreateInstance(exceptionType, "BDTest Exception!"));
     }
 }
 

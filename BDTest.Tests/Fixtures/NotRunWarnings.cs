@@ -18,7 +18,7 @@ public class NotRunWarnings : BDTestBase
         TestResetHelper.ResetData();
     }
 
-    [Test, Order(4)]
+    [Test]
     public async Task Test()
     {
         await SuccessTest();

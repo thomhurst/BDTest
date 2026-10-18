@@ -9,7 +9,7 @@ namespace BDTest.Tests.Fixtures;
 [FixtureLifeCycle(LifeCycle.InstancePerTestCase)]
 public class NUnitContextLifetimeTests : NUnitBDTestBase<MyTestContext>
 {
-    private Action<BDTestContext<MyTestContext>> Configure { get; set; }
+    private Action<BDTestContext<MyTestContext>>? Configure { get; set; }
     protected override void ConfigureContext(BDTestContext<MyTestContext> context) => Configure?.Invoke(context);
 
     [Test]

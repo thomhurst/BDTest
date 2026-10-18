@@ -29,7 +29,7 @@ public class JsonRoundTripTests
         var step = new Step(new Runnable(() => NoOp()), stepType, "scenario", "report");
         var restored = ReportJson.DeserializeObject<Step>(ReportJson.SerializeObject(step));
 
-        Assert.That((string)JObject.Parse(ReportJson.SerializeObject(restored))["StepType"], Is.EqualTo(stepType.ToString()));
+        Assert.That((string?)JObject.Parse(ReportJson.SerializeObject(restored))["StepType"], Is.EqualTo(stepType.ToString()));
         Assert.That(restored.StepText, Is.EqualTo(step.StepText));
 
         // Regenerate text so that the stored StepText cannot hide a lost StepType.
@@ -61,7 +61,7 @@ public class JsonRoundTripTests
 
         var step = ReportJson.DeserializeObject<Step>($"{{\"TimeTaken\":{json}}}");
         Assert.That(step.TimeTaken, Is.EqualTo(duration));
-        Assert.That((string)JObject.Parse(ReportJson.SerializeObject(step))["TimeTaken"], Is.EqualTo(wireValue));
+        Assert.That((string?)JObject.Parse(ReportJson.SerializeObject(step))["TimeTaken"], Is.EqualTo(wireValue));
     }
 
     [TestCase("\"not a duration\"")]

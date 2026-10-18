@@ -42,7 +42,7 @@ public class RunnableDelegateTests
         using var probe = new Probe { FailuresRemaining = 1 };
         var runnable = probe.CreateRunnable(kind);
         var error = await Assert.ThrowsAsync<InvalidOperationException>(() => runnable.Run());
-        Assert.That(error.Message, Is.EqualTo("step failure"));
+        Assert.That(Required(error).Message, Is.EqualTo("step failure"));
 
         await runnable.Run();
 
@@ -156,7 +156,7 @@ public class RunnableDelegateTests
         public void Dispose()
         {
             RemoveContext();
-            MarkTestAsComplete();
+            BDTest.Tests.Helpers.LegacyLifecycle.Complete(this);
         }
     }
 }

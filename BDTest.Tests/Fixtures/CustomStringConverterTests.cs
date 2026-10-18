@@ -10,8 +10,8 @@ namespace BDTest.Tests.Fixtures;
 [NonParallelizable]
 public class CustomStringConverterTests
 {
-    private static readonly MethodInfo DisplayMethod = typeof(CustomStringConverterTests)
-        .GetMethod(nameof(Display), BindingFlags.Static | BindingFlags.NonPublic);
+    private static readonly MethodInfo DisplayMethod = Required(typeof(CustomStringConverterTests)
+        .GetMethod(nameof(Display), BindingFlags.Static | BindingFlags.NonPublic));
 
     [TestCase(false)]
     [TestCase(true)]

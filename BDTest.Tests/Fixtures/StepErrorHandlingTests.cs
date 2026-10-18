@@ -18,8 +18,9 @@ public class StepErrorHandlingTests : BDTestBase
     [Test]
     public void NullStepNamesThePublicParameter([Values] EntryPoint entryPoint, [Values] bool asyncStep)
     {
-        Action action = null;
-        Func<Task> task = null;
+        // Deliberately invalid delegates exercise the runtime null guards.
+        Action action = null!;
+        Func<Task> task = null!;
 
         var exception = Assert.Throws<ArgumentNullException>(() =>
         {
@@ -38,7 +39,7 @@ public class StepErrorHandlingTests : BDTestBase
             };
         });
 
-        Assert.That(exception.ParamName, Is.EqualTo("step"));
+        Assert.That(Required(exception).ParamName, Is.EqualTo("step"));
     }
 
     [TestCase(false)]
@@ -57,10 +58,10 @@ public class StepErrorHandlingTests : BDTestBase
             }
         });
 
-        Assert.That(exception.Message, Does.Contain("Template is: invalid {1}"));
-        Assert.That(exception.Message, Does.Contain("Arguments are argument"));
-        Assert.That(exception.InnerException, Is.TypeOf<FormatException>());
-        Assert.That(exception.InnerException.StackTrace, Does.Contain(nameof(StepTextHelper)));
+        Assert.That(Required(exception).Message, Does.Contain("Template is: invalid {1}"));
+        Assert.That(Required(exception).Message, Does.Contain("Arguments are argument"));
+        Assert.That(Required(exception).InnerException, Is.TypeOf<FormatException>());
+        Assert.That(Required(Required(exception).InnerException).StackTrace, Does.Contain(nameof(StepTextHelper)));
     }
 
 #pragma warning disable BDT002 // These methods exercise runtime handling of invalid templates.

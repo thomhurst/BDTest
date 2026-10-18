@@ -198,8 +198,8 @@ public class ReportStoreTests
         using var response = await client.GetAsync("bdtest/report/run/raw-json-data");
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
         Assert.That(await response.Content.ReadAsStringAsync(), Is.EqualTo(json));
-        Assert.That(response.Content.Headers.ContentType.MediaType, Is.EqualTo("application/json"));
-        await store.LastRead.Disposed.Task.WaitAsync(TimeSpan.FromSeconds(10));
+        Assert.That(Required(response.Content.Headers.ContentType).MediaType, Is.EqualTo("application/json"));
+        await Required(store.LastRead).Disposed.Task.WaitAsync(TimeSpan.FromSeconds(10));
         using var missing = await client.GetAsync("bdtest/report/missing/raw-json-data");
         Assert.That(missing.StatusCode, Is.EqualTo(HttpStatusCode.NotFound));
         Assert.That(store.Lists, Is.Zero);
@@ -214,8 +214,8 @@ public class ReportStoreTests
         using var services = Services(store);
         var repository = services.GetRequiredService<IDataRepository>();
         if (fails) await Assert.CatchAsync<System.Text.Json.JsonException>(async () => await repository.GetData("run", default));
-        else Assert.That((await repository.GetData("run", default)).Tag, Is.EqualTo("old"));
-        Assert.That(store.LastRead.Disposed.Task.IsCompleted, Is.True);
+        else Assert.That(Required(await repository.GetData("run", default)).Tag, Is.EqualTo("old"));
+        Assert.That(Required(store.LastRead).Disposed.Task.IsCompleted, Is.True);
     }
 
     [Test]
@@ -227,7 +227,7 @@ public class ReportStoreTests
         using var services = Services(store);
         var repository = services.GetRequiredService<IDataRepository>();
         await Assert.CatchAsync<OperationCanceledException>(async () => await repository.GetData("run", cancellation.Token));
-        Assert.That(store.LastRead.Disposed.Task.IsCompleted, Is.True);
+        Assert.That(Required(store.LastRead).Disposed.Task.IsCompleted, Is.True);
     }
 
     [Test]
@@ -257,7 +257,7 @@ public class ReportStoreTests
     {
         RecordId = id, StartedAtDateTime = new DateTime(2026, 1, 1), BranchName = "main", Environment = "ci", Tag = "smoke"
     };
-    private static RunIndexQuery Query(string continuation = null) => new()
+    private static RunIndexQuery Query(string? continuation = null) => new()
     {
         PageSize = 2, BranchName = "main", Environment = "ci", Tag = "smoke", ContinuationToken = continuation
     };
@@ -285,14 +285,14 @@ public class ReportStoreTests
         public ConcurrentDictionary<string, byte[]> Reports { get; } = new();
         public ConcurrentDictionary<string, RunIndexEntry> Entries { get; } = new();
         public List<CancellationToken> Tokens { get; } = [];
-        public TrackingStream LastRead { get; private set; }
+        public TrackingStream? LastRead { get; private set; }
         public int Lists;
-        public Action AfterOpen;
-        public Task<Stream> OpenReadAsync(string reportId, CancellationToken cancellationToken)
+        public Action? AfterOpen;
+        public Task<Stream?> OpenReadAsync(string reportId, CancellationToken cancellationToken)
         {
             cancellationToken.ThrowIfCancellationRequested();
             Tokens.Add(cancellationToken);
-            Stream stream = Reports.TryGetValue(reportId, out var bytes) ? LastRead = new TrackingStream(bytes) : null;
+            Stream? stream = Reports.TryGetValue(reportId, out var bytes) ? LastRead = new TrackingStream(bytes) : null;
             AfterOpen?.Invoke();
             return Task.FromResult(stream);
         }
@@ -335,8 +335,8 @@ public class ReportStoreTests
         private readonly Dictionary<string, TestRunSummary> _summaries = new();
         public int Calls;
         public int Deletes;
-        public Action OnRead;
-        public Task<BDTestOutputModel> GetTestData(string id, CancellationToken cancellationToken)
+        public Action? OnRead;
+        public Task<BDTestOutputModel?> GetTestData(string id, CancellationToken cancellationToken)
         { Calls++; OnRead?.Invoke(); return Task.FromResult(_reports.GetValueOrDefault(id)); }
         public Task StoreTestData(string id, BDTestOutputModel data) { Calls++; _reports[id] = data; return Task.CompletedTask; }
         public Task DeleteTestData(string id) { Deletes++; _reports.Remove(id); return Task.CompletedTask; }

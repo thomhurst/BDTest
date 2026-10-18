@@ -49,14 +49,14 @@ public class BulkConsoleOutputTests
     {
         using var capture = new Capture();
         capture.Writer.Write('a');
-        capture.Writer.Write((string)null);
-        capture.Writer.Write((char[])null);
+        capture.Writer.Write((string?)null);
+        capture.Writer.Write((char[]?)null);
         capture.Writer.Write("");
         capture.Writer.Write(Array.Empty<char>(), 0, 0);
         capture.Writer.Write("bc");
         capture.Writer.Write(new[] { 'x', 'd', 'e', 'x' }, 1, 2);
-        capture.Writer.WriteLine((string)null);
-        capture.Writer.WriteLine((char[])null);
+        capture.Writer.WriteLine((string?)null);
+        capture.Writer.WriteLine((char[]?)null);
         capture.Writer.WriteLine("f");
         var expected = "abcde<nl><nl>f<nl>";
         Assert.That(capture.Writer.ToString(), Is.EqualTo(expected));
@@ -154,7 +154,8 @@ public class BulkConsoleOutputTests
         private readonly TestDetails _details = new();
         public CountingWriter Original { get; } = new();
         public ConsoleOutputInterceptor Writer { get; }
-        public Scenario Scenario { get; private set; }
+        private Scenario? _scenario;
+        public Scenario Scenario => Required(_scenario);
 
         public Capture(bool registerScenario = true)
         {
@@ -166,7 +167,7 @@ public class BulkConsoleOutputTests
 
         public void RegisterScenario()
         {
-            Scenario = new Scenario(new List<Step>(), _details) { StartTime = DateTime.UtcNow, Status = Status.Pending };
+            _scenario = new Scenario(new List<Step>(), _details) { StartTime = DateTime.UtcNow, Status = Status.Pending };
         }
 
         public void Dispose()
@@ -195,7 +196,7 @@ public class BulkConsoleOutputTests
         public int CharacterWrites { get; private set; }
         public int BulkWrites { get; private set; }
         public override void Write(char value) { CharacterWrites++; base.Write(value); }
-        public override void Write(string value) { BulkWrites++; base.Write(value); }
+        public override void Write(string? value) { BulkWrites++; base.Write(value); }
         public override void Write(char[] buffer, int index, int count) { BulkWrites++; base.Write(buffer, index, count); }
     }
 }

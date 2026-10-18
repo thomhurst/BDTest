@@ -18,7 +18,7 @@ public class ReportServerRetryTests
         var requests = new List<string>();
         using var handler = new UploadHandler(async (request, attempt) =>
         {
-            requests.Add(await request.Content.ReadAsStringAsync());
+            requests.Add(await Required(request.Content).ReadAsStringAsync());
             Assert.That(request.Headers.GetValues("X-BDTest-Upload-Key"), Is.EqualTo(new[] { "secret" }));
             if (attempt == 1)
             {
@@ -194,7 +194,7 @@ public class ReportServerRetryTests
         Assert.That(handler.Contents.All(content => content.Disposed), Is.True);
         foreach (var request in handler.UploadRequests)
         {
-            await Assert.ThrowsAsync<ObjectDisposedException>(async () => await request.Content.ReadAsStringAsync());
+            await Assert.ThrowsAsync<ObjectDisposedException>(async () => await Required(request.Content).ReadAsStringAsync());
             Assert.Throws<ObjectDisposedException>(() => request.Method = HttpMethod.Post);
         }
         using var ping = await client.GetAsync("https://reports.example/bdtest/ping");

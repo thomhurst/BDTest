@@ -12,7 +12,7 @@ namespace BDTest.Tests.Fixtures;
 public class ScenarioTextTests : BDTestBase
 {
     [SetUp]
-    public void BindMetadata() => BeginTest(TestContext.CurrentContext.Test.ID, global::NUnit.Framework.Internal.TestExecutionContext.CurrentContext.CurrentTest.Method.MethodInfo);
+    public void BindMetadata() => BeginTest(TestContext.CurrentContext.Test.ID, Required(global::NUnit.Framework.Internal.TestExecutionContext.CurrentContext.CurrentTest.Method).MethodInfo);
 
     [TearDown]
     public void FinishExecution() => EndTest();
@@ -32,7 +32,7 @@ public class ScenarioTextTests : BDTestBase
             .BDTestAsync();
 
         Assert.That(scenario.GetScenarioText(), Is.EqualTo("My test that does stuff"));
-        Assert.That(JsonHelper.GetTestDynamicJsonObject().SelectToken("$.Scenarios[0].ScenarioText").ToString(), Is.EqualTo("My test that does stuff"));
+        Assert.That(Required(JsonHelper.GetTestDynamicJsonObject().SelectToken("$.Scenarios[0].ScenarioText")).ToString(), Is.EqualTo("My test that does stuff"));
     }
         
     [Test]
@@ -43,7 +43,7 @@ public class ScenarioTextTests : BDTestBase
             .BDTestAsync();
             
         Assert.That(scenario.GetScenarioText(), Is.EqualTo("No scenario text"));
-        Assert.That(JsonHelper.GetTestDynamicJsonObject().SelectToken("$.Scenarios[0].ScenarioText").ToString(), Is.EqualTo("No scenario text"));
+        Assert.That(Required(JsonHelper.GetTestDynamicJsonObject().SelectToken("$.Scenarios[0].ScenarioText")).ToString(), Is.EqualTo("No scenario text"));
     }
         
     [Test]
@@ -54,7 +54,7 @@ public class ScenarioTextTests : BDTestBase
             .BDTestAsync();
             
         Assert.That(scenario.GetScenarioText(), Is.EqualTo("No Scenario Text with Hyphens"));
-        Assert.That(JsonHelper.GetTestDynamicJsonObject().SelectToken("$.Scenarios[0].ScenarioText").ToString(), Is.EqualTo("No Scenario Text with Hyphens"));
+        Assert.That(Required(JsonHelper.GetTestDynamicJsonObject().SelectToken("$.Scenarios[0].ScenarioText")).ToString(), Is.EqualTo("No Scenario Text with Hyphens"));
     }
 
     [Test]

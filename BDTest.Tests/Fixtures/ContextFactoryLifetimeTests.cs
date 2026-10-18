@@ -23,7 +23,7 @@ public class ContextFactoryLifetimeTests
         }
         else fixture.Start();
         await fixture.Run();
-        Exception error = null;
+        Exception? error = null;
         try
         {
             if (mode == "async") await fixture.Finish();
@@ -78,7 +78,7 @@ public class ContextFactoryLifetimeTests
         {
             await Task.Yield();
             creations.Add(creation);
-            return new ResourceContext(events, (Dependency)creation.Services.GetService(typeof(Dependency)));
+            return new ResourceContext(events, (Dependency)Required(Required(creation.Services).GetService(typeof(Dependency))));
         });
         using var run = BDTestRun.Start(options);
         options.Services = new Provider(new Dependency());
@@ -227,7 +227,7 @@ public class ContextFactoryLifetimeTests
         fixture.Start();
         if (failedStep) await Assert.ThrowsAsync<TransientException>(async () => await fixture.Run());
         else await fixture.Run();
-        Assert.That((await Assert.ThrowsAsync<InvalidOperationException>(async () => await fixture.Finish())).Message, Is.EqualTo("dispose"));
+        Assert.That(Required(await Assert.ThrowsAsync<InvalidOperationException>(async () => await fixture.Finish())).Message, Is.EqualTo("dispose"));
         await fixture.Finish();
         Assert.That(context.Disposals, Is.EqualTo(1));
         Assert.That(run.OutputBuffers, Is.Empty);
@@ -245,7 +245,7 @@ public class ContextFactoryLifetimeTests
         var fixture = new Fixture(run) { AlwaysFail = true };
         fixture.Start();
         var error = await Assert.ThrowsAsync<BDTest.Exceptions.ErrorOccurredDuringRetryActionException>(async () => await fixture.Run());
-        Assert.That(error.InnerException, Is.SameAs(context.DisposalError));
+        Assert.That(Required(error).InnerException, Is.SameAs(context.DisposalError));
         await fixture.Finish();
         Assert.That(context.Disposals, Is.EqualTo(1));
         Assert.That(calls, Is.EqualTo(1));
@@ -307,7 +307,7 @@ public class ContextFactoryLifetimeTests
         {
             var error = await Assert.ThrowsAsync<InvalidOperationException>(async () =>
                 await preparation.WaitAsync(TimeSpan.FromSeconds(5)));
-            Assert.That(error.Message, Does.Contain("ConfigureContext"));
+            Assert.That(Required(error).Message, Does.Contain("ConfigureContext"));
         }
         finally
         {
@@ -493,7 +493,7 @@ public class ContextFactoryLifetimeTests
     public async Task CleanupReentryFailsWithoutDeadlock(string operation, bool asynchronous)
     {
         using var run = BDTestRun.Start();
-        var errors = new List<Exception>();
+        var errors = new List<Exception?>();
         var fixture = new CleanupFixture(run, asynchronous);
         fixture.Cleanup = () =>
         {
@@ -539,10 +539,10 @@ public class ContextFactoryLifetimeTests
     private sealed class CleanupFixture(BDTestRun run, bool asynchronous) : AbstractContextBDTestBase<CleanupContext>
     {
         public override BDTestRun TestRun => run;
-        public Action Cleanup { get; set; }
+        public Action? Cleanup { get; set; }
         public bool FailPreparation { get; set; }
         protected override ValueTask<CleanupContext> CreateContextAsync(ContextCreation creation) =>
-            new(asynchronous ? new AsyncCleanupContext(() => Cleanup()) : new CleanupContext(() => Cleanup()));
+            new(asynchronous ? new AsyncCleanupContext(() => Required(Cleanup)()) : new CleanupContext(() => Required(Cleanup)()));
         protected override void ConfigureContext(BDTestContext<CleanupContext> context)
         {
             if (FailPreparation) throw new InvalidOperationException("preparation");
@@ -570,7 +570,7 @@ public class ContextFactoryLifetimeTests
     {
         public override BDTestRun TestRun => run;
         public string ExecutionId { get; } = Guid.NewGuid().ToString("N");
-        public Action<BDTestContext<ResourceContext>> Configure { get; set; }
+        public Action<BDTestContext<ResourceContext>>? Configure { get; set; }
         public bool FailOnce { get; set; }
         public bool AlwaysFail { get; set; }
         private int _steps;
@@ -583,9 +583,8 @@ public class ContextFactoryLifetimeTests
         public void Start() => BeginTest(ExecutionId);
         public ValueTask Finish() => EndTestAsync();
         public void FinishSync() => EndTest();
-#pragma warning disable CS0618 // Standalone legacy callers still receive cleanup.
-        public void CompleteLegacy() => MarkTestAsComplete();
-#pragma warning restore CS0618
+        // A delegate preserves the original cleanup exception without a reflection wrapper.
+        public void CompleteLegacy() => BDTest.Tests.Helpers.LegacyLifecycle.Complete(this);
         public Task<Scenario> Run() => When(() => VerifyInitialized()).Then(() => Complete()).BDTestAsync();
         public void VerifyInitialized()
         {
@@ -615,7 +614,7 @@ public class ContextFactoryLifetimeTests
     }
     private sealed class Provider(Dependency dependency) : IServiceProvider
     {
-        public object GetService(Type type) => type == typeof(Dependency) ? dependency : null;
+        public object? GetService(Type type) => type == typeof(Dependency) ? dependency : null;
     }
     private sealed class Factory(Func<ContextCreation, ValueTask<object>> create) : IBDTestContextFactory
     {
@@ -634,10 +633,10 @@ public class ContextFactoryLifetimeTests
         public Dependency Dependency { get; }
         public int Initializations { get; private set; }
         public int Disposals { get; private set; }
-        public Exception InitializationError { get; set; }
-        public Exception DisposalError { get; set; }
-        public TaskCompletionSource DisposalStarted { get; set; }
-        public TaskCompletionSource ReleaseDisposal { get; set; }
+        public Exception? InitializationError { get; set; }
+        public Exception? DisposalError { get; set; }
+        public TaskCompletionSource? DisposalStarted { get; set; }
+        public TaskCompletionSource? ReleaseDisposal { get; set; }
         public async ValueTask InitializeAsync()
         {
             await Task.Yield();

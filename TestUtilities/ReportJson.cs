@@ -19,5 +19,6 @@ internal static class ReportJson
 
     public static T DeserializeObject<T>(string json) => typeof(T) == typeof(BDTestOutputModel)
         ? (T)(object)BDTestJsonHelper.Deserialize(json)
-        : JsonSerializer.Deserialize<T>(json, Options);
+        : JsonSerializer.Deserialize<T>(json, Options)
+          ?? throw new JsonException($"Expected a non-null {typeof(T).Name} report value.");
 }

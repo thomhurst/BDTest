@@ -91,7 +91,7 @@ public class DataRepositoryHistoryTests
     public async Task Empty_or_null_history_is_loaded_only_once(bool returnsNull)
     {
         var store = new PersistentStore();
-        if (returnsNull) store.Read = () => Task.FromResult<IEnumerable<TestRunSummary>>(null);
+        if (returnsNull) store.Read = () => Task.FromResult<IEnumerable<TestRunSummary>>(null!);
         using var services = Services(store);
         var repository = services.GetRequiredService<IDataRepository>();
 
@@ -231,7 +231,7 @@ public class DataRepositoryHistoryTests
         await repository.DeleteReport("old");
     }
 
-    private static ServiceProvider Services(IBDTestDataStore store = null)
+    private static ServiceProvider Services(IBDTestDataStore? store = null)
     {
         var services = new ServiceCollection();
         services.AddLogging();
@@ -260,10 +260,10 @@ public class DataRepositoryHistoryTests
 
     private sealed class PersistentStore : IBDTestDataStore, IReportStore, IRunIndexStore
     {
-        public Task<Stream> OpenReadAsync(string reportId, CancellationToken cancellationToken)
+        public Task<Stream?> OpenReadAsync(string reportId, CancellationToken cancellationToken)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            return Task.FromResult<Stream>(Reports.TryGetValue(reportId, out var report)
+            return Task.FromResult<Stream?>(Reports.TryGetValue(reportId, out var report)
                 ? new MemoryStream(System.Text.Encoding.UTF8.GetBytes(BDTestJsonHelper.Serialize(report))) : null);
         }
         public async Task WriteAsync(string reportId, Stream utf8Json, CancellationToken cancellationToken)
@@ -294,7 +294,7 @@ public class DataRepositoryHistoryTests
 
         public List<TestRunSummary> Records { get; } = [];
         public ConcurrentDictionary<string, BDTestOutputModel> Reports { get; } = new();
-        public Func<Task<IEnumerable<TestRunSummary>>> Read { get; set; }
+        public Func<Task<IEnumerable<TestRunSummary>>>? Read { get; set; }
         public int Loads;
 
         public Task<IEnumerable<TestRunSummary>> GetAllTestRunRecords()
@@ -303,7 +303,7 @@ public class DataRepositoryHistoryTests
             return Read?.Invoke() ?? Task.FromResult<IEnumerable<TestRunSummary>>(Records.ToArray());
         }
 
-        public Task<BDTestOutputModel> GetTestData(string id, CancellationToken cancellationToken) =>
+        public Task<BDTestOutputModel?> GetTestData(string id, CancellationToken cancellationToken) =>
             Task.FromResult(Reports.GetValueOrDefault(id));
 
         public Task StoreTestData(string id, BDTestOutputModel data) { Reports[id] = data; return Task.CompletedTask; }

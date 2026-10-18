@@ -16,9 +16,8 @@
   <AssemblyOriginatorKeyFile Condition="'$(SignAssembly)' == 'true'">$(MSBuildThisFileDirectory)StrongNameKeyPair.snk</AssemblyOriginatorKeyFile>
  </PropertyGroup>
  <!-- Strict diagnostics for non-shipping code and Roslyn packages. See BUILDING.md. -->
- <!-- The core NUnit and report suites are tracked by #922 and #921 respectively. -->
- <PropertyGroup Condition="'$(MSBuildProjectName)' != 'BDTest.Tests'
-                          And '$(MSBuildProjectName)' != 'BDTest.ReportGenerator.Tests'
+ <!-- The report suite is tracked by #921. -->
+ <PropertyGroup Condition="'$(MSBuildProjectName)' != 'BDTest.ReportGenerator.Tests'
                           And ($([System.Text.RegularExpressions.Regex]::IsMatch('$(MSBuildProjectName)', '(?i)Tests|Pipeline|Example|ReportGenerator'))
                                Or '$(MSBuildProjectName)' == 'BDTest.SourceGenerator'
                                Or '$(MSBuildProjectName)' == 'BDTest.Analyzers')">

@@ -35,7 +35,8 @@ public class ReportAuthorizationTests
             var methods = action.GetCustomAttributes<HttpMethodAttribute>().SelectMany(attribute => attribute.HttpMethods).ToArray();
             foreach (var route in action.GetCustomAttributes().OfType<IRouteTemplateProvider>().Where(route => route.Template != null))
             {
-                var path = route.Template.StartsWith('/') ? route.Template : "/bdtest/" + route.Template;
+                var template = Required(route.Template);
+                var path = template.StartsWith('/') ? template : "/bdtest/" + template;
                 path = System.Text.RegularExpressions.Regex.Replace(path, "\\{[^}]+\\}", "missing");
                 foreach (var prefix in new[] { "/bdtest", "/team/reports" })
                 foreach (var method in methods)
@@ -197,7 +198,7 @@ public class ReportAuthorizationTests
         public RecordingLogger Logs { get; } = logs;
         public BDTestReportOptions Options => app.Services.GetRequiredService<IOptions<BDTestReportOptions>>().Value;
 
-        public static async Task<ReportHost> Start(Action<BDTestReportOptions> configure = null, bool requireEndpointPolicy = false, bool useOptionsMiddleware = true, bool addAuthentication = true, string prefix = "/bdtest", bool allowAnonymousEndpoints = false)
+        public static async Task<ReportHost> Start(Action<BDTestReportOptions>? configure = null, bool requireEndpointPolicy = false, bool useOptionsMiddleware = true, bool addAuthentication = true, string prefix = "/bdtest", bool allowAnonymousEndpoints = false)
         {
             var builder = WebApplication.CreateBuilder();
             builder.WebHost.UseUrls("http://127.0.0.1:0");
@@ -251,8 +252,8 @@ public class ReportAuthorizationTests
         public System.Collections.Concurrent.ConcurrentBag<string> Messages { get; } = [];
         public ILogger CreateLogger(string categoryName) => this;
         public bool IsEnabled(LogLevel logLevel) => logLevel >= LogLevel.Warning;
-        public IDisposable BeginScope<TState>(TState state) where TState : notnull => null;
-        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception exception, Func<TState, Exception, string> formatter)
+        public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
+        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
         {
             if (IsEnabled(logLevel)) Messages.Add(formatter(state, exception));
         }

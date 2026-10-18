@@ -239,7 +239,7 @@ public class AttachmentTests
         using var run = BDTestRun.Start();
         var fixture = new Capture(run, "test");
         var finish = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        var result = new TaskCompletionSource<Exception>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var result = new TaskCompletionSource<Exception?>(TaskCreationOptions.RunContinuationsAsynchronously);
         async Task LateStep()
         {
             await finish.Task;
@@ -267,7 +267,7 @@ public class AttachmentTests
         var writer = new Capture(run, "test").Attachments;
         Assert.Throws<ArgumentException>(() => writer.Attach("name", Array.Empty<byte>(), mimeType));
         Assert.Throws<ArgumentException>(() => writer.Attach(" ", Array.Empty<byte>(), "text/plain"));
-        Assert.Throws<ArgumentNullException>(() => writer.Attach("name", (byte[])null, "text/plain"));
+        Assert.Throws<ArgumentNullException>(() => writer.Attach("name", (byte[])null!, "text/plain"));
         Assert.That(Directory.Exists(run.AttachmentFiles.DirectoryPath), Is.False);
     }
 
@@ -364,7 +364,7 @@ public class AttachmentTests
         using var run = BDTestRun.Start();
         var fixture = new Capture(run, "test");
         var finish = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        Task<Exception> late = null;
+        Task<Exception?>? late = null;
         var outline = await fixture.ScenarioOutline("row <Value>", new[] { new { Value = 1 } }, _ =>
         {
             late = Task.Run(async () =>
@@ -376,7 +376,7 @@ public class AttachmentTests
             return fixture.When(() => Done()).Then(() => Done());
         }).BDTestAsync();
         finish.SetResult();
-        Assert.That(await late.WaitAsync(TimeSpan.FromSeconds(10)), Is.TypeOf<InvalidOperationException>());
+        Assert.That(await Required(late).WaitAsync(TimeSpan.FromSeconds(10)), Is.TypeOf<InvalidOperationException>());
         Assert.That(outline.Examples.Single().Attachments, Is.Empty);
         Assert.That(Directory.Exists(run.AttachmentFiles.DirectoryPath), Is.False);
     }

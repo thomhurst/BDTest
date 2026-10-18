@@ -86,7 +86,7 @@ public class StoryAttributeTests
 
         var exception = Assert.Throws<MissingStoryTextArgumentException>(() => attribute.GetStoryText());
 
-        Assert.That(exception.Message, Is.EqualTo(new MissingStoryTextArgumentException(missingArgument).Message));
+        Assert.That(Required(exception).Message, Is.EqualTo(new MissingStoryTextArgumentException(missingArgument).Message));
     }
 
     [Test]

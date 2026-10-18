@@ -27,7 +27,7 @@ public class StoryTextTests : BDTestBase
             .BDTestAsync();
             
         Assert.That(scenario.GetStoryText(), Is.EqualTo($"As a BDTest developer{Environment.NewLine}I want to make sure that BDTest works{Environment.NewLine}So that other developers can use it confidently{Environment.NewLine}"));
-        Assert.That(JsonHelper.GetTestDynamicJsonObject().SelectToken("$.Scenarios[0].StoryText").ToString(), Is.EqualTo($"As a BDTest developer{Environment.NewLine}I want to make sure that BDTest works{Environment.NewLine}So that other developers can use it confidently{Environment.NewLine}"));
+        Assert.That(Required(JsonHelper.GetTestDynamicJsonObject().SelectToken("$.Scenarios[0].StoryText")).ToString(), Is.EqualTo($"As a BDTest developer{Environment.NewLine}I want to make sure that BDTest works{Environment.NewLine}So that other developers can use it confidently{Environment.NewLine}"));
     }
 
     [Test]
@@ -54,6 +54,6 @@ public class NoStoryTextTests : BDTestBase
             .BDTestAsync();
             
         Assert.That(scenario.GetStoryText(), Is.EqualTo(DefaultValues.StoryTextNotDefined));
-        Assert.That(JsonHelper.GetTestDynamicJsonObject().SelectToken("$.Scenarios[0].StoryText").Type, Is.EqualTo(JTokenType.Null));
+        Assert.That(Required(JsonHelper.GetTestDynamicJsonObject().SelectToken("$.Scenarios[0].StoryText")).Type, Is.EqualTo(JTokenType.Null));
     }
 }

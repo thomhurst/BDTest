@@ -1,3 +1,5 @@
+#nullable enable
+
 using System.Globalization;
 using BDTest.Maps;
 using BDTest.Output;
@@ -19,8 +21,8 @@ internal static class HistoricalReportFixture
         Assert.That(report.Id, Is.EqualTo("1113e3bf269c489187245c4339dfd946"));
         Assert.That(report.Version, Is.EqualTo("1.0.0.0"));
         Assert.That(report.MachineName, Is.EqualTo("ASAZ-5CG1039PV2"));
-        Assert.That(report.TestTimer.TestsStartedAt, Is.EqualTo(expected["TestTimer"].Value<DateTime>("TestsStartedAt")));
-        Assert.That(report.TestTimer.TestsFinishedAt, Is.EqualTo(expected["TestTimer"].Value<DateTime>("TestsFinishedAt")));
+        Assert.That(report.TestTimer.TestsStartedAt, Is.EqualTo(RequiredProperty(expected, "TestTimer").Value<DateTime>("TestsStartedAt")));
+        Assert.That(report.TestTimer.TestsFinishedAt, Is.EqualTo(RequiredProperty(expected, "TestTimer").Value<DateTime>("TestsFinishedAt")));
         Assert.That(report.Scenarios, Has.Count.EqualTo(13));
         Assert.That(report.Scenarios.Count(scenario => scenario.Status == Status.Passed), Is.EqualTo(3));
         Assert.That(report.Scenarios.Count(scenario => scenario.Status == Status.Failed), Is.EqualTo(6));
@@ -29,7 +31,7 @@ internal static class HistoricalReportFixture
         Assert.That(report.CustomProperties, Is.Empty);
 
         // Compare the historical contract, excluding reference metadata and runtime-only members.
-        foreach (var json in expected["Scenarios"])
+        foreach (var json in RequiredProperty(expected, "Scenarios"))
         {
             var scenario = report.Scenarios.Single(item => item.Guid == json.Value<string>("Guid"));
             Assert.That(scenario.GetScenarioText(), Is.EqualTo(json.Value<string>("ScenarioText")));
@@ -45,14 +47,15 @@ internal static class HistoricalReportFixture
             Assert.That(scenario.TearDownOutput, Is.EqualTo(json.Value<string>("TearDownOutput")));
             Assert.That(scenario.CustomHtmlOutputForReport, Is.EqualTo(json.Value<string>("CustomHtmlOutputForReport")));
             Assert.That(scenario.CustomTestInformation.Select(info => info.Information),
-                Is.EqualTo(json["CustomTestInformation"].Values<string>()));
+                Is.EqualTo(RequiredProperty(json, "CustomTestInformation").Values<string>()));
             Assert.That(scenario.RetryCount, Is.EqualTo(json.Value<int>("RetryCount")));
-            Assert.That(scenario.Steps, Has.Count.EqualTo(json["Steps"].Count()));
+            Assert.That(scenario.Steps, Has.Count.EqualTo(RequiredProperty(json, "Steps").Count()));
 
             for (var index = 0; index < scenario.Steps.Count; index++)
             {
                 var step = scenario.Steps[index];
-                var stepJson = json["Steps"][index];
+                var stepJson = RequiredProperty(json, "Steps")[index]
+                    ?? throw new AssertionException($"Missing historical step {index}.");
                 Assert.That(step.Guid, Is.EqualTo(stepJson.Value<string>("Guid")));
                 Assert.That(step.StepText, Is.EqualTo(stepJson.Value<string>("StepText")));
                 Assert.That(step.Status.ToString(), Is.EqualTo(stepJson.Value<string>("Status")));
@@ -60,9 +63,9 @@ internal static class HistoricalReportFixture
                 Assert.That(step.EndTime, Is.EqualTo(stepJson.Value<DateTime>("EndTime")));
                 Assert.That(step.TimeTaken, Is.EqualTo(Duration(stepJson["TimeTaken"])));
                 Assert.That(step.Output, Is.EqualTo(stepJson.Value<string>("Output")));
-                Assert.That(step.Exception?.TypeName, Is.EqualTo((string)stepJson.SelectToken("Exception.TypeName")));
-                Assert.That(step.Exception?.Message, Is.EqualTo((string)stepJson.SelectToken("Exception.Message")));
-                Assert.That(step.Exception?.AsString, Is.EqualTo((string)stepJson.SelectToken("Exception.AsString")));
+                Assert.That(step.Exception?.TypeName, Is.EqualTo((string?)stepJson.SelectToken("Exception.TypeName")));
+                Assert.That(step.Exception?.Message, Is.EqualTo((string?)stepJson.SelectToken("Exception.Message")));
+                Assert.That(step.Exception?.AsString, Is.EqualTo((string?)stepJson.SelectToken("Exception.AsString")));
                 Assert.That(step.Timeout, Is.Null);
                 Assert.That(step.TimedOut, Is.False);
             }
@@ -77,6 +80,9 @@ internal static class HistoricalReportFixture
         }
     }
 
-    private static TimeSpan Duration(JToken value) =>
-        TimeSpan.ParseExact((string)value, TimespanConverter.TimeSpanFormatString, CultureInfo.InvariantCulture);
+    private static JToken RequiredProperty(JToken value, string name) =>
+        value[name] ?? throw new AssertionException($"Missing historical property {name}.");
+
+    private static TimeSpan Duration(JToken? value) =>
+        TimeSpan.ParseExact((string?)value ?? throw new AssertionException("Missing historical duration."), TimespanConverter.TimeSpanFormatString, CultureInfo.InvariantCulture);
 }

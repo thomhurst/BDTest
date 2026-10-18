@@ -15,24 +15,26 @@ public class UniqueContextTests
     [Parallelizable(ParallelScope.Fixtures)]
     public class NUnitContextTests : NUnitBDTestBase<MyTestContext>
     {
-        private MyTestContext _context1;
-        private MyTestContext _context2;
+        private MyTestContext? _context1;
+        private MyTestContext? _context2;
 
-        [Test, Order(1)]
+        [Test]
         public void TestWithContext1()
         {
             _context1 = Context;
         }
 
-        [Test, Order(2)]
+        [Test]
         public void TestWithContext2()
         {
             _context2 = Context;
         }
 
-        [Test, Order(3)]
+        [OneTimeTearDown]
         public void EnsureContextsAreUnique()
         {
+            // Filtered runs may omit either context capture test.
+            if (_context1 is null || _context2 is null) return;
             Assert.That(_context1.Id, Is.Not.EqualTo(_context2.Id));
         }
 
@@ -61,24 +63,26 @@ public class UniqueContextTests
     [Parallelizable(ParallelScope.Fixtures)]
     public class AsyncNUnitContextTests : NUnitBDTestBase<MyTestContext>
     {
-        private MyTestContext _context1;
-        private MyTestContext _context2;
+        private MyTestContext? _context1;
+        private MyTestContext? _context2;
 
-        [Test, Order(1)]
+        [Test]
         public async Task TestWithContext1()
         {
             await Task.Run(() => _context1 = Context);
         }
 
-        [Test, Order(2)]
+        [Test]
         public async Task TestWithContext2()
         {
             await Task.Run(() => _context2 = Context);
         }
 
-        [Test, Order(3)]
+        [OneTimeTearDown]
         public void EnsureContextsAreUnique()
         {
+            // Filtered runs may omit either context capture test.
+            if (_context1 is null || _context2 is null) return;
             Assert.That(_context1.Id, Is.Not.EqualTo(_context2.Id));
         }
     }
@@ -86,62 +90,66 @@ public class UniqueContextTests
     [Parallelizable(ParallelScope.Fixtures)]
     public class AsyncNonNUnitContextTests : AbstractContextBDTestBase<MyTestContext>
     {
-        private MyTestContext _context1;
-        private MyTestContext _context2;
+        private MyTestContext? _context1;
+        private MyTestContext? _context2;
 
-        [Test, Order(1)]
+        [Test]
         public async Task TestWithContext1()
         {
             await Task.Run(() => _context1 = Context);
         }
 
-        [Test, Order(2)]
+        [Test]
         public async Task TestWithContext2()
         {
             await Task.Run(() => _context2 = Context);
         }
 
-        [Test, Order(3)]
+        [OneTimeTearDown]
         public void EnsureContextsAreUnique()
         {
+            // Filtered runs may omit either context capture test.
+            if (_context1 is null || _context2 is null) return;
             Assert.That(_context1.Id, Is.Not.EqualTo(_context2.Id));
         }
 
         [TearDown]
-        protected override void MarkTestAsComplete()
+        public void CompleteExecution()
         {
-            base.MarkTestAsComplete();
+            BDTest.Tests.Helpers.LegacyLifecycle.Complete(this);
         }
     }
 
     [Parallelizable(ParallelScope.Fixtures)]
     public class NonNUnitContextTests : AbstractContextBDTestBase<MyTestContext>
     {
-        private MyTestContext _context1;
-        private MyTestContext _context2;
+        private MyTestContext? _context1;
+        private MyTestContext? _context2;
 
-        [Test, Order(1)]
+        [Test]
         public void TestWithContext1()
         {
             _context1 = Context;
         }
 
-        [Test, Order(2)]
+        [Test]
         public void TestWithContext2()
         {
             _context2 = Context;
         }
 
-        [Test, Order(3)]
+        [OneTimeTearDown]
         public void EnsureContextsAreUnique()
         {
+            // Filtered runs may omit either context capture test.
+            if (_context1 is null || _context2 is null) return;
             Assert.That(_context1.Id, Is.Not.EqualTo(_context2.Id));
         }
 
         [TearDown]
-        protected override void MarkTestAsComplete()
+        public void CompleteExecution()
         {
-            base.MarkTestAsComplete();
+            BDTest.Tests.Helpers.LegacyLifecycle.Complete(this);
         }
     }
 
@@ -222,9 +230,9 @@ public class UniqueContextTests
         }
 
         [TearDown]
-        protected override void MarkTestAsComplete()
+        public void CompleteExecution()
         {
-            base.MarkTestAsComplete();
+            BDTest.Tests.Helpers.LegacyLifecycle.Complete(this);
         }
     }
 }

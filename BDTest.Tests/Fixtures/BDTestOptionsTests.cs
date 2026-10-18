@@ -213,9 +213,9 @@ public class BDTestOptionsTests
     private class RegisteredException : Exception { }
     private sealed class DerivedRegisteredException : RegisteredException { }
     private sealed class Value { }
-    private sealed class Converter(string text, bool fail = false) : IStepTextStringConverter<Value>
+    private sealed class Converter(string? text, bool fail = false) : IStepTextStringConverter<Value>
     {
-        string IStepTextStringConverter<Value>.ConvertToString(Value value)
+        string? IStepTextStringConverter<Value>.ConvertToString(Value value)
             => fail ? throw new InvalidOperationException("converter failure") : text;
     }
     private sealed class RetrySteps

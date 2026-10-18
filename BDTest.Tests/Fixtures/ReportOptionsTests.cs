@@ -54,11 +54,11 @@ public class ReportOptionsTests
 
         await repository.StoreData(report.Id, report);
 
-        Assert.That((await repository.GetData(report.Id, default)).Id, Is.EqualTo(report.Id));
+        Assert.That(Required(await repository.GetData(report.Id, default)).Id, Is.EqualTo(report.Id));
         Assert.That((await repository.ListAsync(new RunIndexQuery(), default)).Entries.Select(entry => entry.RecordId),
             Does.Contain(report.Id));
         await using var raw = await repository.OpenReadAsync(report.Id, default);
-        using var reader = new StreamReader(raw);
+        using var reader = new StreamReader(Required(raw));
         Assert.That(await reader.ReadToEndAsync(), Does.Contain(report.Id));
     }
 
@@ -77,13 +77,13 @@ public class ReportOptionsTests
     {
         var builder = WebApplication.CreateBuilder(new WebApplicationOptions { EnvironmentName = Environments.Development });
         builder.WebHost.UseUrls("http://127.0.0.1:0");
-        builder.Configuration.AddInMemoryCollection(new Dictionary<string, string> { [$"BDTest:{property}"] = value });
+        builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?> { [$"BDTest:{property}"] = value });
         builder.Services.AddBDTestReports().BindConfiguration("BDTest");
         await using var host = builder.Build();
 
         var exception = await Assert.ThrowsAsync<OptionsValidationException>(async () => await host.StartAsync());
 
-        Assert.That(exception.Message, Does.Contain(property.StartsWith("Maximum") ? "Attachment limits" : property));
+        Assert.That(Required(exception).Message, Does.Contain(property.StartsWith("Maximum") ? "Attachment limits" : property));
     }
 
     [TestCase("/bdtest")]
@@ -92,7 +92,7 @@ public class ReportOptionsTests
     {
         var builder = WebApplication.CreateBuilder();
         builder.WebHost.UseUrls("http://127.0.0.1:0");
-        builder.Configuration.AddInMemoryCollection(new Dictionary<string, string>
+        builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?>
         {
             ["BDTest:UploadApiKey"] = "injected-key",
             ["BDTest:AllowAnonymousReports"] = "true",
@@ -159,8 +159,8 @@ public class ReportOptionsTests
     {
         public int Received { get; private set; }
         public IEnumerable<CustomLinkData> GetCustomLinks() => [new(marker.Text + " header", null)];
-        public IEnumerable<CustomLinkData> GetCustomLinks(BDTestOutputModel report) => [new(marker.Text + " sidebar", null)];
-        public Uri GetProfilePictureUri(HttpContext httpContext) => null;
+        public IEnumerable<CustomLinkData> GetCustomLinks(BDTestOutputModel? report) => [new(marker.Text + " sidebar", null)];
+        public Uri? GetProfilePictureUri(HttpContext httpContext) => null;
         public string GetNameOfUser(HttpContext httpContext) => marker.Text + " user";
         public List<CustomLinkData> GetLinksForUser(HttpContext httpContext) => [];
         public Task OnReceiveTestDataAsync(BDTestOutputModel report) { Received++; return Task.CompletedTask; }

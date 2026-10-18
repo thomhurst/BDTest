@@ -64,7 +64,7 @@ public class DelegateStepTests : BDTestBase
     [Test]
     public async Task Statement_bodies_null_conditionals_and_patterns_keep_meaningful_caller_text()
     {
-        List<int> values = null;
+        List<int>? values = null;
         var scenario = await Given(() => { values = new List<int>(); })
             .When(() => values?.Add(42))
             .Then(() => { Assert.That(values is { Count: > 0 }, Is.True); }).BDTestAsync();
@@ -152,7 +152,7 @@ public class DelegateStepTests : BDTestBase
             return _source.GetResult(token);
         }
         public ValueTaskSourceStatus GetStatus(short token) => _source.GetStatus(token);
-        public void OnCompleted(Action<object> continuation, object state, short token, ValueTaskSourceOnCompletedFlags flags)
+        public void OnCompleted(Action<object?> continuation, object? state, short token, ValueTaskSourceOnCompletedFlags flags)
             => _source.OnCompleted(continuation, state, token, flags);
     }
 }

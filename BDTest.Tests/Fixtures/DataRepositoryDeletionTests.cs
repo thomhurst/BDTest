@@ -14,10 +14,10 @@ namespace BDTest.Tests.Fixtures;
 public class DataRepositoryDeletionTests
 {
     private const string Id = "00112233445566778899aabbccddeeff";
-    private ServiceProvider _services;
-    private FaultingStore _persistent;
-    private FaultingStore _cache;
-    private IDataRepository _repository;
+    private ServiceProvider _services = null!; // Assigned by NUnit SetUp.
+    private FaultingStore _persistent = null!; // Assigned by NUnit SetUp.
+    private FaultingStore _cache = null!; // Assigned by NUnit SetUp.
+    private IDataRepository _repository = null!; // Assigned by NUnit SetUp.
     private readonly List<string> _steps = [];
 
     [SetUp]
@@ -35,7 +35,7 @@ public class DataRepositoryDeletionTests
         await _repository.GetAllTestRunRecords();
     }
 
-    private DataRepository CreateRepository(IBDTestAttachmentStore attachments = null, ILogger<DataRepository> logger = null) =>
+    private DataRepository CreateRepository(IBDTestAttachmentStore? attachments = null, ILogger<DataRepository>? logger = null) =>
         new(_cache, _services.GetRequiredService<ReportAttachmentGate>(),
             reportStore: _persistent, runIndexStore: _persistent, attachmentStore: attachments, logger: logger);
 
@@ -174,16 +174,16 @@ public class DataRepositoryDeletionTests
 
     private sealed class RecordingLogger : ILogger<DataRepository>
     {
-        public string Message { get; private set; }
+        public string? Message { get; private set; }
         public bool IsEnabled(LogLevel logLevel) => true;
-        public IDisposable BeginScope<TState>(TState state) where TState : notnull => null;
-        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception exception, Func<TState, Exception, string> formatter)
+        public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
+        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
             => Message = formatter(state, exception);
     }
 
     private sealed class FailingAttachments : IBDTestAttachmentStore
     {
-        public Exception Failure { get; set; }
+        public Exception? Failure { get; set; }
         public int Attempts { get; private set; }
         public Task DeleteReportAsync(string reportId, CancellationToken cancellationToken = default)
         {
@@ -191,7 +191,7 @@ public class DataRepositoryDeletionTests
             if (Failure != null) throw Failure;
             return Task.CompletedTask;
         }
-        public Task<Stream> OpenReadAsync(string reportId, string attachmentId, CancellationToken cancellationToken = default) =>
+        public Task<Stream?> OpenReadAsync(string reportId, string attachmentId, CancellationToken cancellationToken = default) =>
             throw new NotSupportedException();
         public Task WriteAsync(string reportId, string attachmentId, Stream content, long length, CancellationToken cancellationToken = default) =>
             throw new NotSupportedException();
@@ -201,9 +201,9 @@ public class DataRepositoryDeletionTests
     {
         private readonly MemoryCacheBdTestDataStore _inner = new(new MemoryCache(new MemoryCacheOptions()));
         public Dictionary<string, Exception> Failures { get; } = [];
-        public Action BeforeDelete { get; set; }
-        public Func<Task> AfterOpen { get; set; }
-        public async Task<Stream> OpenReadAsync(string id, CancellationToken token)
+        public Action? BeforeDelete { get; set; }
+        public Func<Task>? AfterOpen { get; set; }
+        public async Task<Stream?> OpenReadAsync(string id, CancellationToken token)
         {
             var stream = await _inner.OpenReadAsync(id, token);
             if (AfterOpen != null) await AfterOpen();
@@ -230,8 +230,8 @@ public class DataRepositoryDeletionTests
             token.ThrowIfCancellationRequested();
             if (Failures.TryGetValue(step, out var failure)) throw failure;
         }
-        public Task<BDTestOutputModel> GetTestData(string id, CancellationToken token) => _inner.GetTestData(id, token);
-        public Task<BDTestOutputModel> GetTestDataAndRefreshRetention(string id, CancellationToken token) =>
+        public Task<BDTestOutputModel?> GetTestData(string id, CancellationToken token) => _inner.GetTestData(id, token);
+        public Task<BDTestOutputModel?> GetTestDataAndRefreshRetention(string id, CancellationToken token) =>
             ((IMemoryCacheBdTestDataStore)_inner).GetTestDataAndRefreshRetention(id, token);
         public Task StoreTestData(string id, BDTestOutputModel model) => _inner.StoreTestData(id, model);
         public Task DeleteTestData(string id) => _inner.DeleteTestData(id);

@@ -80,11 +80,11 @@ public class RetryHookTests
             var error = await Assert.ThrowsAsync<ErrorOccurredDuringRetryActionException>(() => fixture.RunScenario());
 
             Assert.That(error, Is.InstanceOf<BDTestException>());
-            Assert.That(error.InnerException, Is.SameAs(fixture.Failure));
-            Assert.That(error.Message, Does.Contain("retry action").And.Contain(fixture.Failure.Message));
-            Assert.That(error.ToString(), Does.Contain(fixture.Failure.ToString()));
-            Assert.That(error.GetBaseException(), Is.SameAs(fixture.Failure));
-            Assert.That(error.GetBaseException().StackTrace, Does.Contain(nameof(FailingHooks.ThrowHookFailure)));
+            Assert.That(Required(error).InnerException, Is.SameAs(fixture.Failure));
+            Assert.That(Required(error).Message, Does.Contain("retry action").And.Contain(fixture.Failure.Message));
+            Assert.That(Required(error).ToString(), Does.Contain(fixture.Failure.ToString()));
+            Assert.That(Required(error).GetBaseException(), Is.SameAs(fixture.Failure));
+            Assert.That(Required(error).GetBaseException().StackTrace, Does.Contain(nameof(FailingHooks.ThrowHookFailure)));
             Assert.That(fixture.Attempts, Is.EqualTo(failingRetry), "A failing retry hook must stop the retry");
 
             var scenario = run.Scenarios.Single();
@@ -93,7 +93,7 @@ public class RetryHookTests
             Assert.That(otherRun.Scenarios, Is.Empty);
             Assert.That(scenario.Status, Is.EqualTo(Status.Failed));
             Assert.That(scenario.Exception?.Message, Is.EqualTo(fixture.Failure.Message));
-            Assert.That(scenario.Exception.StackTrace, Does.Contain(nameof(FailingHooks.ThrowHookFailure)));
+            Assert.That(Required(scenario.Exception).StackTrace, Does.Contain(nameof(FailingHooks.ThrowHookFailure)));
             Assert.That(scenario.Output, Is.Not.Null);
             Assert.That(scenario.RetryCount, Is.EqualTo(failingRetry));
             Assert.That(scenario.Attempts, Has.Count.EqualTo(failingRetry + 1));
@@ -131,10 +131,10 @@ public class RetryHookTests
 
         var error = new ErrorOccurredDuringRetryActionException(hookFailure);
 
-        Assert.That(error.InnerException, Is.SameAs(hookFailure));
-        Assert.That(error.GetBaseException(), Is.SameAs(cause));
-        Assert.That(error.Message, Does.Contain(hookFailure.Message));
-        Assert.That(error.ToString(), Does.Contain(hookFailure.ToString()));
+        Assert.That(Required(error).InnerException, Is.SameAs(hookFailure));
+        Assert.That(Required(error).GetBaseException(), Is.SameAs(cause));
+        Assert.That(Required(error).Message, Does.Contain(hookFailure.Message));
+        Assert.That(Required(error).ToString(), Does.Contain(hookFailure.ToString()));
     }
 
     [TestCase(false)]
@@ -142,7 +142,7 @@ public class RetryHookTests
     public async Task PreservesPublicStaticHooks(bool tearDown)
     {
         var error = await Assert.ThrowsAsync<InvalidOperationException>(() => RunHooks(new StaticHooks(), tearDown));
-        Assert.That(error.Message, Is.EqualTo("static hook ran"));
+        Assert.That(Required(error).Message, Is.EqualTo("static hook ran"));
     }
 
     private sealed class StaticHooks : BDTestBase
@@ -269,6 +269,6 @@ public class RetryHookTests
             throw Failure;
         }
 
-        public void Complete() => MarkTestAsComplete();
+        public void Complete() => BDTest.Tests.Helpers.LegacyLifecycle.Complete(this);
     }
 }

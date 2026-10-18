@@ -16,15 +16,15 @@ public class ExampleApiContextTests
         {
             Content = new StringContent($$"""{"{{propertyName}}":"123"}""")
         };
-        typeof(MyApiContext).GetProperty(nameof(MyApiContext.ResponseMessage))!.SetValue(context, response);
+        Required(typeof(MyApiContext).GetProperty(nameof(MyApiContext.ResponseMessage))).SetValue(context, response);
 
         var result = await context.DeserializeResponse<ApiResponse>();
 
-        Assert.That(result.Id, Is.EqualTo("123"));
+        Assert.That(Required(result).Id, Is.EqualTo("123"));
     }
 
     public sealed class ApiResponse
     {
-        public string Id { get; set; }
+        public string? Id { get; set; }
     }
 }

@@ -140,7 +140,7 @@ public class CompositionHostTests
     [Test]
     public async Task Outcome_mapping_and_outline_metadata_work_without_inheritance()
     {
-        string skipReason = null;
+        string? skipReason = null;
         var options = new BDTestOptions();
         options.RegisterFrameworkOutcomes(new FrameworkOutcomeMap(reason => skipReason = reason).Skip<SkipException>());
         options.SkipTestRules.Add(scenario => scenario.GetScenarioText() == "rule skip");
@@ -149,7 +149,7 @@ public class CompositionHostTests
         owner.Host.BeginTest("skip");
         try
         {
-            Assert.ThrowsAsync<SkipException>(async () => await owner.Host.When(() => ThrowSkip()).Then(() => Complete()).BDTestAsync());
+            await Assert.ThrowsAsync<SkipException>(async () => await owner.Host.When(() => ThrowSkip()).Then(() => Complete()).BDTestAsync());
             Assert.That(run.Scenarios.Single().Status, Is.EqualTo(Status.Skipped));
         }
         finally { owner.Host.EndTest(); }
@@ -209,7 +209,7 @@ public class CompositionHostTests
     private static void ThrowSkip() => throw new SkipException();
     private sealed class SkipException : Exception { }
     private sealed class TransientException : Exception { }
-    public sealed class State { public string Value { get; set; } }
+    public sealed class State { public string? Value { get; set; } }
 
     public class CompanyBase
     {
@@ -247,7 +247,7 @@ public class CompositionHostTests
 
     public class RetryOwner
     {
-        public BDTestScenario<State> Host { get; set; }
+        public BDTestScenario<State> Host { get; set; } = null!; // Assigned before Run by each test.
         public TaskCompletionSource Ready { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
         public int Failures { get; set; }
         public int Executions { get; private set; }

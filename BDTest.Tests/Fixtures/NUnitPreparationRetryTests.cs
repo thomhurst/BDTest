@@ -8,7 +8,7 @@ namespace BDTest.Tests.Fixtures;
 [FixtureLifeCycle(LifeCycle.InstancePerTestCase)]
 public class NUnitPreparationRetryTests : NUnitBDTestBase<NUnitPreparationRetryTests.Resource>
 {
-    private string _phase;
+    private string? _phase;
     private int _configurations;
     private int _initializations;
 

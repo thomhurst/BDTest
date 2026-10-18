@@ -37,7 +37,7 @@ public class AwaitableStepTests : BDTestBase
                 work.Finish.TrySetException(new InvalidOperationException("delayed failure"));
                 var exception = await Assert.ThrowsAsync<InvalidOperationException>(async () =>
                     await execution.WaitAsync(TimeSpan.FromSeconds(10)));
-                Assert.That(exception.Message, Is.EqualTo("delayed failure"));
+                Assert.That(Required(exception).Message, Is.EqualTo("delayed failure"));
                 Assert.That(laterSteps, Is.Empty);
             }
             else

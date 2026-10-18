@@ -86,8 +86,8 @@ public class DelegateStepMetadataTests : BDTestBase
     {
         var method = typeof(DelegateStepMetadataTests).GetMethod(nameof(Display), BindingFlags.Static | BindingFlags.NonPublic);
         var exception = Assert.Throws<ArgumentException>(() => StepTextHelper.GetStepText(method, []));
-        Assert.That(exception.ParamName, Is.EqualTo("arguments"));
-        Assert.That(exception.Message, Does.Contain("Expected 1 step text argument readers, but received 0"));
+        Assert.That(Required(exception).ParamName, Is.EqualTo("arguments"));
+        Assert.That(Required(exception).Message, Does.Contain("Expected 1 step text argument readers, but received 0"));
     }
 
     [StepText("value: {0}")]

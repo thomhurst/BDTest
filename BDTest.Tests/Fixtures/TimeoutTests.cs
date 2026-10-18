@@ -9,7 +9,7 @@ namespace BDTest.Tests.Fixtures;
 public class TimeoutTests : BDTestBase
 {
     [SetUp]
-    public void BindMetadata() => BeginTest(TestContext.CurrentContext.Test.ID, global::NUnit.Framework.Internal.TestExecutionContext.CurrentContext.CurrentTest.Method.MethodInfo);
+    public void BindMetadata() => BeginTest(TestContext.CurrentContext.Test.ID, Required(global::NUnit.Framework.Internal.TestExecutionContext.CurrentContext.CurrentTest.Method).MethodInfo);
 
     [TearDown]
     public void FinishExecution() => EndTest();
@@ -29,12 +29,12 @@ public class TimeoutTests : BDTestBase
         var exception = await Assert.ThrowsAsync<TimeoutException>(async () => await builder.BDTestAsync().WaitAsync(TimeSpan.FromSeconds(10)));
         await _cancelled.Task.WaitAsync(TimeSpan.FromSeconds(10));
         var scenario = Report(builder);
-        Assert.That(exception.Message, Does.Contain("Step").And.Contain("timed out"));
+        Assert.That(Required(exception).Message, Does.Contain("Step").And.Contain("timed out"));
         Assert.That(scenario.Status, Is.EqualTo(Status.Failed));
         Assert.That(scenario.TimedOut, Is.True);
         Assert.That(scenario.Steps[0].TimedOut, Is.True);
         Assert.That(scenario.Steps[0].Status, Is.EqualTo(Status.Failed));
-        Assert.That(scenario.Steps[0].Exception.Message, Is.EqualTo(exception.Message));
+        Assert.That(scenario.Steps[0].Exception.Message, Is.EqualTo(Required(exception).Message));
         Assert.That(scenario.Steps[0].EndTime, Is.GreaterThan(scenario.Steps[0].StartTime));
         Assert.That(scenario.Steps[1].Status, Is.EqualTo(Status.NotRun));
         Assert.That(_laterSteps, Is.Zero);
@@ -120,11 +120,12 @@ public class TimeoutTests : BDTestBase
     [System.Diagnostics.CodeAnalysis.SuppressMessage("BDTest", "BDT001", Justification = "Null steps must throw during construction.")]
     public void Null_token_expressions_fail_at_construction()
     {
-        Func<CancellationToken, Task> missing = null;
-        Assert.That(Assert.Throws<ArgumentNullException>(() => Given(missing)).ParamName, Is.EqualTo("step"));
-        Assert.That(Assert.Throws<ArgumentNullException>(() => When(missing)).ParamName, Is.EqualTo("step"));
+        // Deliberately invalid delegate exercises every timeout-aware builder guard.
+        Func<CancellationToken, Task> missing = null!;
+        Assert.That(Required(Assert.Throws<ArgumentNullException>(() => Given(missing))).ParamName, Is.EqualTo("step"));
+        Assert.That(Required(Assert.Throws<ArgumentNullException>(() => When(missing))).ParamName, Is.EqualTo("step"));
         var prefix = Given(token => Complete(token));
-        Assert.That(Assert.Throws<ArgumentNullException>(() => prefix.But(missing)).ParamName, Is.EqualTo("step"));
+        Assert.That(Required(Assert.Throws<ArgumentNullException>(() => prefix.But(missing))).ParamName, Is.EqualTo("step"));
     }
 
     [Test]

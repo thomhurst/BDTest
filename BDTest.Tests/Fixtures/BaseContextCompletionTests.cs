@@ -39,9 +39,10 @@ public class BaseContextCompletionTests
 
     private sealed class TestFixture : AbstractContextBDTestBase<MyTestContext>
     {
-        public string SelectedExecutionId { get; set; }
+        public string? SelectedExecutionId { get; set; }
         public string ExecutionId => BDTestExecutionId;
         protected override string BDTestExecutionId => SelectedExecutionId ?? base.BDTestExecutionId;
-        public void Complete() => MarkTestAsComplete();
+        // Exercise completion of standalone contexts that never called BeginTest.
+        public void Complete() => BDTest.Tests.Helpers.LegacyLifecycle.Complete(this);
     }
 }

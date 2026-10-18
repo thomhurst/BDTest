@@ -9,10 +9,10 @@ namespace BDTest.Tests.Fixtures;
     SoThat = "tests don't share state")]
 public class WithContextTests : BDTestBase
 {
-    private MyTestContext _context1;
-    private MyTestContext _context2;
+    private MyTestContext? _context1;
+    private MyTestContext? _context2;
 
-    [Test, Order(1)]
+    [Test]
     public async Task TestWithContext1()
     {
         await WithContext<MyTestContext>(async context =>
@@ -24,7 +24,7 @@ public class WithContextTests : BDTestBase
         });
     }
         
-    [Test, Order(2)]
+    [Test]
     public async Task TestWithContext2()
     {
         await WithContext<MyTestContext>(async context =>
@@ -36,9 +36,11 @@ public class WithContextTests : BDTestBase
         });
     }
         
-    [Test, Order(3)]
+    [OneTimeTearDown]
     public void EnsureContextsAreUnique()
     {
+        // Filtered runs may omit either context capture test.
+        if (_context1 is null || _context2 is null) return;
         Assert.That(_context1.Id, Is.Not.EqualTo(_context2.Id));
     }
 }
