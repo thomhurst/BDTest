@@ -81,6 +81,9 @@ internal sealed class AttachmentWriter(BDTestRun run, string frameworkExecutionI
         }
         return attachment => run.Store.ListenForScenario(frameworkExecutionId, scenario =>
         {
+            // Example rows share the framework ID, but setup/teardown owns the outline.
+            if (scenario.OutlineId != null)
+                scenario = run.Store.ScenariosByInternalId[scenario.OutlineId];
             attachment.AttemptNumber = scenario.RetryCount + 1;
             scenario.Attachments.Add(attachment);
         }, () => run.AttachmentFiles.Remove(attachment.Id));

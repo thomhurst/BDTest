@@ -200,8 +200,12 @@ public abstract class BDTestBase
     {
         // Freeze the execution, so a saved writer cannot adopt a later test's lifetime.
         var execution = CurrentExecution;
-        return new AttachmentWriter(TestRun, executionId, () =>
+        var run = TestRun;
+        // Standalone flow IDs must remain weak so child-flow contexts can be collected.
+        var ensureAttachmentsActive = IsDefaultExecutionId(executionId) ? null : run.Store.GetAttachmentExecutionGuard(executionId);
+        return new AttachmentWriter(run, executionId, () =>
         {
+            ensureAttachmentsActive?.Invoke();
             if (execution != null && Volatile.Read(ref execution.Completed) != 0)
                 throw new InvalidOperationException("The attachment's test execution has already completed.");
         });
@@ -262,6 +266,7 @@ public abstract class BDTestBase
         var execution = new TestExecution(frameworkTestId, run);
         _execution.Value = execution;
         execution.Id = BDTestExecutionId;
+        run.Store.BeginAttachmentExecution(execution.Id);
         Volatile.Write(ref _lastExecution, execution);
         AsyncLocalBDTestExecutionId.Value = null;
         TestOutputData.Run = run;

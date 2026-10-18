@@ -425,6 +425,8 @@ public class AttachmentTests
         }).BDTestAsync();
         await background.WaitAsync(TimeSpan.FromSeconds(10));
 
+        Assert.That(outline.Attachments, Has.Count.EqualTo(1000));
+        Assert.That(outline.Examples.All(row => row.Attachments.Count == 1), Is.True);
         var files = outline.Attachments.Concat(outline.Examples.SelectMany(row => row.Attachments)).ToArray();
         Assert.That(files, Has.Length.EqualTo(1100));
         Assert.That(files.Select(file => file.Name).Distinct().Count(), Is.EqualTo(1100));
@@ -484,6 +486,84 @@ public class AttachmentTests
             try { writer.Attach("late", new byte[] { 1 }, "text/plain"); return null; }
             catch (Exception exception) { return exception; }
         });
+        fixture.Finish();
+        finish.SetResult();
+        Assert.That(await capture.WaitAsync(TimeSpan.FromSeconds(10)), Is.TypeOf<InvalidOperationException>());
+        Assert.That(Directory.Exists(run.AttachmentFiles.DirectoryPath), Is.False);
+    }
+
+    [Test]
+    public async Task Setup_copy_finishing_during_an_outline_row_belongs_to_the_outline()
+    {
+        using var run = BDTestRun.Start();
+        var fixture = new Capture(run, "outline");
+        fixture.Start();
+        using var source = new PausedStream();
+        var capture = Task.Run(() => fixture.Attachments.Attach("setup", source, "text/plain"));
+        await source.Started.Task.WaitAsync(TimeSpan.FromSeconds(10));
+        Scenario outline;
+        try
+        {
+            outline = await fixture.ScenarioOutline("row <Value>", new[] { new { Value = 1 }, new { Value = 2 } }, row =>
+                fixture.When(async () =>
+                {
+                    source.Resume.Set();
+                    await capture.WaitAsync(TimeSpan.FromSeconds(10));
+                    fixture.Attach("step-" + row.Value);
+                }).Then(() => Done())).BDTestAsync();
+        }
+        finally { source.Resume.Set(); }
+
+        Assert.That(outline.Attachments.Single().Name, Is.EqualTo("setup"));
+        Assert.That(outline.Attachments.Single().AttemptNumber, Is.EqualTo(1));
+        Assert.That(outline.Examples.SelectMany(row => row.Attachments), Is.Empty);
+        Assert.That(outline.Examples.Select(row => row.Steps[0].Attachments.Single().Name),
+            Is.EqualTo(new[] { "step-1", "step-2" }));
+    }
+
+    [TestCase(false)]
+    [TestCase(true)]
+    public async Task Writer_created_before_begin_rejects_copy_finishing_after_teardown(bool useContext)
+    {
+        using var run = BDTestRun.Start();
+        var fixture = new Capture(run, "constructor");
+        var writer = useContext ? fixture.BDTestContext.Attachments : fixture.Attachments;
+        using var source = new PausedStream();
+        var capture = Task.Run(() =>
+        {
+            try { writer.Attach("late", source, "text/plain"); return null; }
+            catch (Exception exception) { return exception; }
+        });
+        try
+        {
+            await source.Started.Task.WaitAsync(TimeSpan.FromSeconds(10));
+            fixture.Start();
+            fixture.Finish();
+        }
+        finally { source.Resume.Set(); }
+
+        Assert.That(await capture.WaitAsync(TimeSpan.FromSeconds(10)), Is.TypeOf<InvalidOperationException>());
+        Assert.That(Directory.GetFiles(run.AttachmentFiles.DirectoryPath), Is.Empty);
+        fixture.Start();
+        Assert.Throws<InvalidOperationException>(() => writer.Attach("old", new byte[] { 1 }, "text/plain"));
+        fixture.Attach("new");
+        var scenario = await fixture.When(() => Done()).Then(() => Done()).BDTestAsync();
+        Assert.That(scenario.Attachments.Single().Name, Is.EqualTo("new"));
+        fixture.Finish();
+    }
+    [Test]
+    public async Task Constructor_background_flow_cannot_get_a_new_writer_after_teardown()
+    {
+        using var run = BDTestRun.Start();
+        var fixture = new Capture(run, "constructor");
+        var finish = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var capture = Task.Run(async () =>
+        {
+            await finish.Task;
+            try { fixture.Attach("late"); return null; }
+            catch (Exception exception) { return exception; }
+        });
+        fixture.Start();
         fixture.Finish();
         finish.SetResult();
         Assert.That(await capture.WaitAsync(TimeSpan.FromSeconds(10)), Is.TypeOf<InvalidOperationException>());
