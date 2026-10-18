@@ -83,6 +83,43 @@ public class ReportUploadTests
         Assert.That(server.Store.Received, Is.Empty);
     }
 
+    [Test]
+    public async Task Utf16UploadsHonorTranscodedUtf8Limit(
+        [Values(false, true)] bool gzip,
+        [Values(false, true)] bool chunked,
+        [Values(0, 1)] int bytesOverLimit)
+    {
+        var tag = new string('漢', 128);
+        // Keep literal CJK characters: escaping them would make UTF-16 larger than UTF-8.
+        var json = "{\"Tag\":\"" + tag + "\"}";
+        var limit = Encoding.UTF8.GetByteCount(json) - bytesOverLimit;
+        Assert.That(Encoding.Unicode.GetByteCount(json), Is.LessThan(limit));
+        await using var server = await UploadServer.Start(options => options.MaxUploadBytes = limit);
+        using var request = gzip ? GzipRequest(json, chunked, utf16: true) : new HttpRequestMessage(HttpMethod.Post, "bdtest/data")
+        {
+            Content = new StringContent(json, Encoding.Unicode, "application/json")
+        };
+        if (!gzip) request.Headers.Add("X-BDTest-Upload-Key", Key);
+        request.Headers.TransferEncodingChunked = chunked;
+        using var response = await server.Client.SendAsync(request);
+
+        if (bytesOverLimit == 0)
+        {
+            Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+            Assert.That(server.Store.Received.Single().Tag, Is.EqualTo(tag));
+            Assert.That(server.Store.Data, Has.Count.EqualTo(1));
+            Assert.That(server.Store.Summaries, Has.Count.EqualTo(1));
+        }
+        else
+        {
+            Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.RequestEntityTooLarge));
+            Assert.That(await response.Content.ReadAsStringAsync(), Does.Contain("MaxUploadBytes"));
+            Assert.That(server.Store.Data, Is.Empty);
+            Assert.That(server.Store.Summaries, Is.Empty);
+            Assert.That(server.Store.Received, Is.Empty);
+        }
+    }
+
     [TestCase(false)]
     [TestCase(true)]
     public async Task PlainJsonAlsoHonorsExpandedLimit(bool chunked)
