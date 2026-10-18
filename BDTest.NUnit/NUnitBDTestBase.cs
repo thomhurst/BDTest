@@ -1,4 +1,4 @@
-ï»¿using BDTest.Settings;
+﻿using BDTest.Settings;
 using BDTest.Test;
 using NUnit.Framework;
 using NUnitTestContext = NUnit.Framework.TestContext;
@@ -14,6 +14,7 @@ public abstract class NUnitBDTestBase<TContext> : AbstractContextBDTestBase<TCon
     protected NUnitBDTestBase() => _lifecycle = new NUnitTestLifecycle(BeginTest, Complete);
 
     BDTestBase INUnitBDTest.BDTestHost => this;
+    object INUnitBDTestLifecycle.TestInstance => this;
     NUnitTestLifecycle INUnitBDTestLifecycle.Lifecycle => _lifecycle;
 
     [OneTimeSetUp]

@@ -36,6 +36,33 @@ public class NUnitCompositionTests
 
     [TestCase(false)]
     [TestCase(true)]
+    public void Native_lifecycle_rejects_host_owned_by_another_fixture(bool inheritance)
+    {
+        using var run = BDTestRun.Start();
+        var owner = inheritance ? (INUnitBDTest)new ThreadBoundInheritedProbe(run) : new ThreadBoundCompositionProbe(run);
+        var borrower = new BorrowedHostProbe(owner.BDTestHost);
+        var test = new TestMethod(new MethodWrapper(typeof(BorrowedHostProbe), nameof(BorrowedHostProbe.Body)));
+        var context = new TestExecutionContext
+        {
+            TestObject = borrower, CurrentTest = test, CurrentResult = test.MakeTestResult()
+        };
+        var executed = false;
+        var command = new BDTestFixtureAttribute().Wrap(new ActionCommand(test, () => executed = true));
+        var result = command.Execute(context);
+        Assert.That(result.ResultState.Status, Is.EqualTo(TestStatus.Failed));
+        Assert.That(result.Message, Does.Contain("owned by the current fixture"));
+        Assert.That(executed, Is.False);
+        Assert.That(run.OutputBuffers, Is.Empty);
+    }
+
+    private sealed class BorrowedHostProbe(BDTestBase host) : INUnitBDTest
+    {
+        public BDTestBase BDTestHost => host;
+        public void Body() { }
+    }
+
+    [TestCase(false)]
+    [TestCase(true)]
     public async Task Composition_uses_factory_for_context_without_default_constructor(bool nunit)
     {
         var resource = new ConstructorContext("factory");

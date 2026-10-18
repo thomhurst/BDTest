@@ -63,26 +63,45 @@ try {
         }
         # TUnit 1.75.0 does not translate InconclusiveTestException into a runner skip.
         if ($project -eq 'BDTest.TUnit.Tests') { $expected.FrameworkInconclusive = 'Failed' }
-        $styles = if ($project -in @('BDTest.Tests', 'BDTest.TUnit.Tests')) { 2 } else { 1 }
-        if ($results.Count -ne $expected.Count * $styles) {
-            throw "$project expected $($expected.Count * $styles) probes, found $($results.Count). See $logPath"
+        $fixtures = if ($project -eq 'BDTest.Tests') {
+            @('AdapterConformanceTests', 'CompositionAdapterConformanceTests')
         }
-        foreach ($name in $expected.Keys) {
-            $matching = @($results | Where-Object { ($_.testName -split '\.')[-1] -eq $name })
-            if ($matching.Count -ne $styles -or @($matching | Where-Object outcome -ne $expected[$name]).Count -ne 0) {
-                throw "$project $name must be $($expected[$name]). See $trxPath"
+        else { @('AdapterConformanceTests') }
+        $styles = if ($project -eq 'BDTest.TUnit.Tests') { 2 } else { 1 }
+        $expectedCount = $expected.Count * $fixtures.Count * $styles
+        if ($results.Count -ne $expectedCount) {
+            throw "$project expected $expectedCount probes, found $($results.Count). See $logPath"
+        }
+        $definitions = @{}
+        foreach ($definition in $trx.SelectNodes("//*[local-name()='UnitTest']")) {
+            $definitions[$definition.id] = $definition.SelectSingleNode("./*[local-name()='TestMethod']").className
+        }
+        foreach ($fixture in $fixtures) {
+            $fixtureResults = if ($fixtures.Count -gt 1) {
+                @($results | Where-Object { ($definitions[$_.testId] -split ',')[0] -eq "BDTest.Adapters.Conformance.$fixture" })
             }
-            if ($expected[$name] -eq 'Failed') {
-                $message = switch ($name) {
-                    'Fail' { 'conformance failure' }
-                    'NotImplemented' { 'conformance not implemented' }
-                    'FrameworkInconclusive' { 'conformance inconclusive' }
-                    'ContextDisposalFailureReachesRunner' { 'conformance context disposal' }
+            else { $results }
+            $expectedFixtureCount = $expected.Count * $styles
+            if ($fixtureResults.Count -ne $expectedFixtureCount) {
+                throw "$project $fixture expected $expectedFixtureCount probes, found $($fixtureResults.Count). See $trxPath"
+            }
+            foreach ($name in $expected.Keys) {
+                $matching = @($fixtureResults | Where-Object { ($_.testName -split '\.')[-1] -eq $name })
+                if ($matching.Count -ne $styles -or @($matching | Where-Object outcome -ne $expected[$name]).Count -ne 0) {
+                    throw "$project $fixture.$name must be $($expected[$name]). See $trxPath"
                 }
-                foreach ($result in $matching) {
-                    $errorMessage = $result.SelectSingleNode(".//*[local-name()='ErrorInfo']/*[local-name()='Message']")
-                    if (-not $errorMessage -or $errorMessage.InnerText -notmatch [regex]::Escape($message)) {
-                        throw "$project $name failed for an unexpected reason. See $trxPath"
+                if ($expected[$name] -eq 'Failed') {
+                    $message = switch ($name) {
+                        'Fail' { 'conformance failure' }
+                        'NotImplemented' { 'conformance not implemented' }
+                        'FrameworkInconclusive' { 'conformance inconclusive' }
+                        'ContextDisposalFailureReachesRunner' { 'conformance context disposal' }
+                    }
+                    foreach ($result in $matching) {
+                        $errorMessage = $result.SelectSingleNode(".//*[local-name()='ErrorInfo']/*[local-name()='Message']")
+                        if (-not $errorMessage -or $errorMessage.InnerText -notmatch [regex]::Escape($message)) {
+                            throw "$project $fixture.$name failed for an unexpected reason. See $trxPath"
+                        }
                     }
                 }
             }

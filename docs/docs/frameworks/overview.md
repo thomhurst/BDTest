@@ -17,11 +17,11 @@ BDTest does not replace your test runner. It runs inside it. An adapter package 
 
 All adapter base classes take a [context](../writing-tests/test-context.md) type with the constraint `where TContext : class`. The default factory needs a public parameterless constructor; custom factories support constructor dependencies. There are no non-generic adapter base classes. Use an empty context class if you do not need state.
 
-If your test class already has another base class, use [NUnit composition registration](nunit.md#composition-with-an-existing-base-class), or the core [composition host](composition.md) with manual lifecycle integration for other runners.
+If your test class already has another base class, use [NUnit composition registration](nunit.md#composition-with-an-existing-base-class) or [TUnit composition registration](tunit.md#composition-with-an-existing-base-class), or the core [composition host](composition.md) with manual lifecycle integration for other runners.
 
 ## What an adapter does
 
-Adapter base classes derive from `AbstractContextBDTestBase<TContext>`. NUnit also provides composition through the same lifecycle wrapper. Each adapter:
+Adapter base classes derive from `AbstractContextBDTestBase<TContext>`. NUnit and TUnit also provide framework-native composition. Each adapter:
 
 1. supplies a unique execution ID for each test from the framework's test context, so context and output stay isolated in parallel runs,
 2. declares the framework's success, skip and inconclusive exceptions in one [`FrameworkOutcomeMap`](../configuration/exceptions.md#framework-outcome-maps), registered idempotently for the default run,

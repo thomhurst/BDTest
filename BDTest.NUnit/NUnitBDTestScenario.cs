@@ -28,9 +28,12 @@ public class NUnitBDTestScenario<TContext> : BDTestScenario<TContext>, INUnitBDT
 {
     protected internal NUnitBDTestScenario(object testInstance, BDTestRun run) : base(testInstance, run)
     {
+        _testInstance = testInstance;
         Lifecycle = new NUnitTestLifecycle(BeginTest, () => NUnitTestLifecycle.CompleteOnRunner(EndTestAsync));
     }
 
+    private readonly object _testInstance;
+    object INUnitBDTestLifecycle.TestInstance => _testInstance;
     internal NUnitTestLifecycle Lifecycle { get; }
     NUnitTestLifecycle INUnitBDTestLifecycle.Lifecycle => Lifecycle;
 

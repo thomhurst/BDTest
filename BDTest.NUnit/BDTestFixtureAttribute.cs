@@ -21,7 +21,7 @@ public sealed class BDTestFixtureAttribute : NUnitAttribute, IWrapSetUpTearDown
             try
             {
                 var host = (context.TestObject as INUnitBDTest)?.BDTestHost;
-                if (host is not INUnitBDTestLifecycle adapter || !ReferenceEquals(host.TestInstance, context.TestObject))
+                if (host is not INUnitBDTestLifecycle adapter || !ReferenceEquals(adapter.TestInstance, context.TestObject))
                     throw new InvalidOperationException("BDTestFixture requires INUnitBDTest.BDTestHost to return an NUnit host owned by the current fixture.");
 
                 lifecycle = adapter.Lifecycle;
@@ -53,6 +53,7 @@ public sealed class BDTestFixtureAttribute : NUnitAttribute, IWrapSetUpTearDown
 
 internal interface INUnitBDTestLifecycle
 {
+    object TestInstance { get; }
     NUnitTestLifecycle Lifecycle { get; }
 }
 

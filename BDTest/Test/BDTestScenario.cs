@@ -22,7 +22,8 @@ public static class BDTestScenario
 /// </remarks>
 public class BDTestScenario<TContext> : AbstractContextBDTestBase<TContext> where TContext : class
 {
-    internal BDTestScenario(object testInstance, BDTestRun run)
+    /// <summary>Creates a specialized host for the supplied test instance and run.</summary>
+    protected internal BDTestScenario(object testInstance, BDTestRun run)
     {
         TestInstance = testInstance ?? throw new ArgumentNullException(nameof(testInstance));
         run.ThrowIfDisposed();
