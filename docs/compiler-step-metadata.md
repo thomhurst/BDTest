@@ -1,6 +1,6 @@
 # Compiler step metadata
 
-`BDTest.SourceGenerator` is an optional incremental source generator. It records method identity and lazy argument descriptions for `Given`, `When`, `Then`, `And`, and `But` calls bound to BDTest builders. It targets `netstandard2.0`, uses Roslyn 4.8 APIs, and requires a C# 10 or newer compiler (Roslyn 4.8 or newer; .NET SDK 8 or newer). It does not require preview features, interceptors, partial test classes, or changes to existing expression APIs.
+`BDTest.SourceGenerator` is an optional incremental source generator. It records method identity and lazy argument descriptions for `Given`, `When`, `Then`, `And`, and `But` calls bound to BDTest builders. It targets `netstandard2.0`, uses Roslyn 4.8 APIs, and requires a C# 10 or newer compiler (Roslyn 4.8 or newer; .NET SDK 8 or newer). It does not require preview features, interceptors, or partial test classes. Delegate builders require a C# 13 or newer compiler (.NET SDK 9 or newer) so overload priority selects Task for ordinary async lambdas. The generator itself uses Roslyn 4.8 APIs.
 
 ## Installation
 
@@ -14,7 +14,7 @@ Install matching versions of the core and generator packages directly in each pr
 
 The generator DLL ships under `analyzers/dotnet/cs`. It has no runtime Roslyn dependency. It is intentionally a separate package; adapters do not install it transitively. The metadata contract lives in the `netstandard2.0` core, in `BDTest.Metadata`.
 
-**This deliverable does not change the public builders.** Existing expression-based steps continue to work as before. The delegate builder migration in #805 will consume this contract. Installing the generator alone does not change when existing builders evaluate arguments or render text.
+Builders consume this metadata while retaining plain delegates for execution. Method identity supplies humanized names, `[StepText]` and skip attributes. Supported arguments are read immediately before a reached step runs, after hooks and skip checks. Retries read current state again. Unreached steps retain placeholders or caller text and never evaluate readers. Rendering errors appear as `<error: ExceptionType>` plus a step diagnostic; they do not change the step outcome. See [delegate migration](delegate-step-migration.md) for explicit argument and fallback behavior.
 
 ## Runtime contract for builders
 
@@ -28,7 +28,7 @@ Call `TryBindArguments(callerAssembly, originalStepDelegate, out accessors)` whi
 
 When the builder does not already know the caller assembly, use `StepMetadataCatalog.Find(file, line, expression, out callerAssembly)`. It searches loaded catalogs for a unique full identity and returns the matching assembly for subsequent resolution and binding. Multiple matches return null, so copied source in different assemblies cannot silently select another method. Catalog providers (including absent providers) are cached with weak assembly keys. A weak assembly snapshot is refreshed after assembly-load notifications, rather than enumerating the AppDomain on each step. Newly loaded assemblies are included on the next lookup. Builders that know the assembly can use the explicit overload to avoid searching other catalogs. This discovery uses reflection and requires the generated catalog and reflected step members to be preserved in trimmed/AOT applications; automatic trimming support is outside this package's contract.
 
-Rendering timing, retries, skipped/unreached steps, exception diagnostics, string conversion, and cancellation-token omission belong to #796 and the builder integration. This package only supplies unevaluated metadata. Accessors may throw when invoked (for example, a property getter or null receiver); the renderer must handle that explicitly. Do not evaluate them merely to find out whether capture is supported.
+The generator supplies unevaluated metadata; core builders own rendering, retries, diagnostics, string conversion, and cancellation-token omission. Accessors may throw when invoked (for example, a property getter or null receiver); the renderer must handle that explicitly. Do not evaluate them merely to find out whether capture is supported.
 
 ## Supported automatic arguments
 
@@ -40,9 +40,9 @@ When(() => Check(42, "ready"));       // constants
 Then(() => Check(Current.Order.Id));  // a static Current property is read later
 ```
 
-Fields and properties may be private. Narrow integral constants retain their runtime types. Base-qualified member reads and paths through nullable values (such as `Optional.Value`) use fallback because reflection cannot preserve their access semantics. A nullable value at the end of a path remains supported. Getters are not executed while generating, looking up, or binding metadata. Named arguments are reordered into parameter order. Identity/reference conversions are supported; other nonconstant conversions require explicit arguments.
+Fields and properties may be private. Narrow integral constants retain their runtime types. Base-qualified member reads and paths through nullable values (such as `Optional.Value`) use fallback because reflection cannot preserve their access semantics. A nullable value at the end of a path remains supported. Getters are not executed while generating, looking up, or binding metadata. Named arguments are reordered into parameter order. Identity/reference conversions and implicit boxing are supported; other nonconstant conversions require explicit arguments. A cancellation parameter forwarded directly from the step lambda is represented without reading it and omitted from step text.
 
-Automatic capture deliberately does **not** inspect compiler-generated closure fields. Captured locals and parameters, method calls inside arguments, indexers, operators, allocations, enum constants, expanded `params`, omitted optional arguments, `ref`/`out`/`in` arguments, and user-defined conversions use explicit argument fallback. A compiler may place `this` into a shared display class when another lambda captures locals; binding then fails safely, even if the individual argument path is otherwise supported. Use explicit `.WithArgs(...)` accessors after the delegate migration for these cases.
+Automatic capture deliberately does **not** inspect compiler-generated closure fields. Captured locals and parameters, method calls inside arguments, indexers, operators, allocations, enum constants, expanded `params`, omitted optional arguments, `ref`/`out`/`in` arguments, and user-defined conversions use explicit argument fallback. A compiler may place `this` into a shared display class when another lambda captures locals; binding then fails safely, even if the individual argument path is otherwise supported. Use explicit `.WithArgs(...)` accessors for these cases.
 
 Open generic declarations whose selected declaring type or method type arguments still contain type parameters do not have a closed runtime identity and use caller-text fallback. Closed generic arguments currently must be named types, not array/pointer/function-pointer type arguments. Extension methods and local functions also use caller-text fallback. Statement bodies, async/await bodies, null-conditionals, and patterns keep caller text rather than pretending to describe a single called method.
 

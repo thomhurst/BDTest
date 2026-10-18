@@ -24,7 +24,7 @@ public sealed class StepMetadataGenerator : IIncrementalGenerator
     private static string? GetName(InvocationExpressionSyntax invocation) => invocation.Expression switch
     {
         MemberAccessExpressionSyntax member => member.Name.Identifier.ValueText,
-        IdentifierNameSyntax name => name.Identifier.ValueText,
+        SimpleNameSyntax name => name.Identifier.ValueText,
         _ => null
     };
 
@@ -59,7 +59,7 @@ public sealed class StepMetadataGenerator : IIncrementalGenerator
                     // Optional/default and expanded params arguments need a separate binding contract.
                     if (value.IsImplicit || value.ArgumentKind != ArgumentKind.Explicit ||
                         value.Parameter?.RefKind != RefKind.None ||
-                        DescribeArgument(value.Value, value.Parameter.Name) is not string description)
+                        DescribeStepArgument(value.Value, value.Parameter, lambda) is not string description)
                     {
                         supportsArguments = false;
                         arguments.Clear();
@@ -97,8 +97,25 @@ public sealed class StepMetadataGenerator : IIncrementalGenerator
                (genericArguments.Length == 0 ? "" : ", " + string.Join(", ", genericArguments)) + ")";
     }
 
+    private static string? DescribeStepArgument(IOperation operation, IParameterSymbol parameter,
+        LambdaExpressionSyntax lambda)
+    {
+        // The runner supplies this token at invocation time. Its value is omitted from text,
+        // so represent it without capturing a parameter that does not exist at build time.
+        if (operation is IParameterReferenceOperation reference &&
+            parameter.Type.ToDisplayString() == "System.Threading.CancellationToken" &&
+            reference.Parameter.Type.ToDisplayString() == "System.Threading.CancellationToken" &&
+            reference.Parameter.DeclaringSyntaxReferences.Any(syntax => lambda.Span.Contains(syntax.Span)))
+        {
+            return "new global::BDTest.Metadata.StepArgumentMetadata(" + Quote(parameter.Name) + ", (object)null)";
+        }
+        return DescribeArgument(operation, parameter.Name);
+    }
+
     private static string? DescribeArgument(IOperation operation, string parameterName)
     {
+        if (operation is IConversionOperation conversion && PreservesValue(conversion))
+            return DescribeArgument(conversion.Operand, parameterName);
         if (operation.ConstantValue.HasValue)
         {
             var value = operation.ConstantValue.Value;
@@ -117,11 +134,15 @@ public sealed class StepMetadataGenerator : IIncrementalGenerator
         return "new global::BDTest.Metadata.StepArgumentMetadata(" + Quote(parameterName) + ", " + string.Join(", ", members) + ")";
     }
 
+    // Boxing preserves the same runtime value returned by reflection; numeric and user conversions do not.
+    private static bool PreservesValue(IConversionOperation conversion) =>
+        conversion.Conversion.IsIdentity || conversion.Conversion.IsReference ||
+        (conversion.IsImplicit && !conversion.Conversion.IsUserDefined &&
+         conversion.Operand.Type?.IsValueType == true && conversion.Type?.IsReferenceType == true);
+
     private static bool DescribeMemberPath(IOperation operation, List<string> members)
     {
-        // Only identity/reference conversions preserve the captured value without invoking user code.
-        if (operation is IConversionOperation conversion &&
-            (conversion.Conversion.IsIdentity || conversion.Conversion.IsReference))
+        if (operation is IConversionOperation conversion && PreservesValue(conversion))
             return DescribeMemberPath(conversion.Operand, members);
         if (operation is IInstanceReferenceOperation instance)
             // Reflection dispatches virtual getters, so it cannot preserve a base-qualified read.

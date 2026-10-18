@@ -8,6 +8,12 @@ public class ButGiven : AndGiven
     {
     }
 
+    /// <summary>Supplies lazy step-text arguments, evaluated once per executed attempt.</summary>
+    public new ButGiven WithArgs(params Func<object>[] arguments)
+    {
+        return WithArgs<ButGiven>(arguments);
+    }
+
     public new ButGiven WithStepText(Func<string> overridingStepText)
     {
         return WithStepText<ButGiven>(overridingStepText);

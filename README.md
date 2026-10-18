@@ -45,7 +45,7 @@ Think of BDTest as a pure code-based alternative to SpecFlow.
 ### What's the benefit over SpecFlow?
 - Passing in more complicated arguments to tests. Enums, models, etc.
 - You get the benefit of separating steps into Given, When, Then. However you can use and re-use existing steps without redefining or attributing them as Given step, or a When step, etc.
-- No auto-generated code. All code is your code! So you shouldn't see any weirdness. This also means no extra weird compilation steps and bringing in specific test compilers/runners.
+- No generated test bodies or Gherkin compilation. The optional `BDTest.SourceGenerator` package records step metadata while your delegates execute directly.
 - Easier to debug. Test has failed and thrown an exception? The stacktrace should take you straight to where it happened. No being taken to strange auto-generated classes that you don't care about!
 - Step into all your code. I used Rider as my IDE, which didn't support SpecFlow, so I couldn't step into my test methods. I had to do a painful Find All! Now as it's all code, I can step straight into my test methods.
 - No learning and maintaining separate Gherkin files!
@@ -58,7 +58,7 @@ Think of BDTest as a pure code-based alternative to SpecFlow.
 - BDTest does that!
 - BDTest produces you a clear, easy to understand report, showing what failed and what passed, with output and exceptions from tests automatically captured
 - Mark your classes and methods with [Story], [ScenarioText], and [StepText] attributes, providing the output you want, and your reports will produce clean text output
-- If you don't mark your methods with attributes, BDTest will automatically convert the method name to text (separating words by capitalisation or underscores)
+- With `BDTest.SourceGenerator`, simple calls use `[StepText]` or a humanized method name. Other bodies and projects without the generator use caller source text; use `.WithStepText(...)` for a custom sentence.
 - If you use the report server, you can just send the relevant party a URL directly to your test report!
 
 ## Where can I use it?
@@ -77,6 +77,12 @@ Choose a test target supported by both the adapter and its test framework. A
 `netstandard2.0` adapter target alone does not guarantee that its test framework
 or runner supports .NET Framework. The NUnit example below requires .NET 8 or later;
 the repository's test projects use .NET 10.
+
+## Delegate steps in the next major version
+
+Step builders now accept `Action`, `Func<Task>`, `Func<ValueTask>`, and cancellation-aware async delegates, including `ValueTask<T>` results. Statement bodies, `await`, null-conditionals, and patterns are supported. Consumers need C# 13 or newer (.NET SDK 9 or newer); the core still targets `netstandard2.0`.
+
+Install the optional `BDTest.SourceGenerator` package in each project containing steps to preserve method names, `[StepText]`, skip attributes, and supported automatic argument capture. Use `.WithArgs(...)` for captured locals and unsupported argument expressions, or `.WithStepText(...)` for a custom sentence. See the [migration guide](docs/delegate-step-migration.md) and [compiler metadata reference](docs/compiler-step-metadata.md).
 
 ## Status migration for the next major version
 
@@ -137,8 +143,8 @@ was found. Both methods reject null converters.
 Converter callbacks run outside the registration lock and can run concurrently.
 Converters must protect their own mutable state. Removal does not cancel a callback
 or exclude a converter from an earlier snapshot; wait for those conversions to finish
-before disposing converter resources. Builder-generated text is cached, so registration
-changes do not regenerate text for steps already built.
+before disposing converter resources. Text is rendered once per executed attempt, so
+registration changes apply to later renders, including retries, but do not rewrite completed report text.
 
 The existing `CustomStringConverters` property remains a `List<object>` for compatibility.
 Direct access is supported during setup before concurrent access begins. For concurrent
@@ -295,13 +301,19 @@ skipped when `BDTestSettings.Debug.ShouldSkipWhenStep` is enabled.
 
 ### Step text and argument values
 
-Automatically generated step text captures argument values when the step is added
-to a builder. BDTest reuses that text during execution, retries, reporting, and
-builder continuations. Argument expressions are evaluated once for this initial
-text and again when the step itself runs, so keep those expressions free of side
-effects. If a value changes during the scenario, use `.WithStepText(() => ...)`
-to generate text when the step executes. An empty override falls back to the
-cached automatic text.
+Generated or explicit argument readers run once immediately before each reached step,
+after before-step hooks and skip checks. They read current state again on retries.
+Construction, reporting, skipped steps, and unreached steps do not evaluate them.
+The step delegate still evaluates its own arguments normally, so keep argument
+expressions free of side effects. Unreached steps retain placeholders or caller text.
+A reader or converter failure becomes `<error: ExceptionType>` and a step diagnostic;
+it does not fail the step. `.WithStepText(() => ...)` remains dynamic, and an empty
+override falls back to automatic rendering for that attempt.
+
+The optional source generator captures constants and member paths automatically.
+Use `.WithArgs(() => value)` for captured locals and unsupported expressions.
+Without method metadata, explicit values append to the caller expression text.
+See [delegate migration](docs/delegate-step-migration.md) for the full rules.
 
 Delegate arguments are displayed with `ToString()` without invoking the delegate.
 Collections display their elements, and dictionaries implementing `IDictionary`

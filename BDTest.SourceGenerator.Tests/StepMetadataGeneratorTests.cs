@@ -64,6 +64,50 @@ public class StepMetadataGeneratorTests
     }
 
     [Test]
+    public void Boxing_member_values_and_constants_retains_runtime_values()
+    {
+        var consumer = Compile("""
+            public sealed class Consumer : BDTest.Test.Steps.Probe
+            {
+                private int Value = 19;
+                private void Step(object value) { }
+                public static object[] Run() { var test = new Consumer(); return test.Build(); }
+                private object[] Build()
+                {
+                    Given(() => Step(Value)).When(() => Step("ready")).Then(() => Step((byte)7));
+                    return Captures.ToArray();
+                }
+            }
+            """);
+        var sites = Run(consumer);
+        Assert.That(Read(sites[0], consumer), Is.EqualTo(new object[] { 19 }));
+        Assert.That(Read(sites[1], consumer), Is.EqualTo(new object[] { "ready" }));
+        Assert.That(Read(sites[2], consumer).Single(), Is.TypeOf<byte>().And.EqualTo((byte)7));
+    }
+
+    [Test]
+    public void Forwarded_runner_token_does_not_disable_other_automatic_arguments()
+    {
+        var consumer = Compile("""
+            public sealed class Consumer : BDTest.Test.Steps.Probe
+            {
+                private int Value = 19;
+                private System.Threading.Tasks.Task Step(int value, System.Threading.CancellationToken token)
+                    => System.Threading.Tasks.Task.CompletedTask;
+                public static object[] Run() { var test = new Consumer(); return test.Build(); }
+                private object[] Build()
+                {
+                    Given(token => Step(Value, token));
+                    return Captures.ToArray();
+                }
+            }
+            """);
+        var site = Run(consumer).Single();
+        Assert.That(site.Metadata.SupportsArgumentCapture, Is.True);
+        Assert.That(Read(site, consumer), Is.EqualTo(new object[] { 19, null }));
+    }
+
+    [Test]
     public void Binding_does_not_evaluate_getters_and_accessors_read_current_state()
     {
         var consumer = Compile("""
@@ -414,7 +458,7 @@ public class StepMetadataGeneratorTests
             public class Probe
             {
                 public System.Collections.Generic.List<object> Captures = new System.Collections.Generic.List<object>();
-                private Probe Capture(System.Action step, string expression, string file, int line)
+                private Probe Capture(System.Delegate step, string expression, string file, int line)
                 {
                     var metadata = BDTest.Metadata.StepMetadataCatalog.Find(GetType().Assembly, file, line, expression);
                     if (metadata == null) throw new System.Exception("Missing call site: " + file + ":" + line + " " + expression);
@@ -422,6 +466,10 @@ public class StepMetadataGeneratorTests
                     return this;
                 }
                 public Probe Given(System.Action step, [System.Runtime.CompilerServices.CallerArgumentExpression("step")] string expression = null,
+                    [System.Runtime.CompilerServices.CallerFilePath] string file = null, [System.Runtime.CompilerServices.CallerLineNumber] int line = 0)
+                    { return Capture(step, expression, file, line); }
+                public Probe Given(System.Func<System.Threading.CancellationToken, System.Threading.Tasks.Task> step,
+                    [System.Runtime.CompilerServices.CallerArgumentExpression("step")] string expression = null,
                     [System.Runtime.CompilerServices.CallerFilePath] string file = null, [System.Runtime.CompilerServices.CallerLineNumber] int line = 0)
                     { return Capture(step, expression, file, line); }
                 public Probe When(System.Action step, [System.Runtime.CompilerServices.CallerArgumentExpression("step")] string expression = null,

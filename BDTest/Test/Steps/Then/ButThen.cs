@@ -8,6 +8,12 @@ public class ButThen : Then
     {
     }
 
+    /// <summary>Supplies lazy step-text arguments, evaluated once per executed attempt.</summary>
+    public new ButThen WithArgs(params Func<object>[] arguments)
+    {
+        return WithArgs<ButThen>(arguments);
+    }
+
     public new ButThen WithStepText(Func<string> overridingStepText)
     {
         return WithStepText<ButThen>(overridingStepText);

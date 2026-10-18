@@ -1,5 +1,4 @@
 using System.Diagnostics;
-using System.Linq.Expressions;
 using System.Runtime.ExceptionServices;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -63,7 +62,7 @@ public class Step
     public List<string> Diagnostics { get; internal set; } = new();
 
     private bool _shouldSkip;
-    private readonly string _stepTextTemplate;
+    private string _stepTextTemplate;
     private string _generatedStepText;
 
     internal Step(Runnable runnable, StepType stepType, string scenarioId, string reportId)
@@ -74,7 +73,7 @@ public class Step
         StepType = stepType;
         ReportId = reportId;
         // Construction and reporting retain placeholders without running user argument expressions.
-        _stepTextTemplate = StepTextHelper.GetStepTextTemplate(Runnable.ExpressionBody, Runnable.AcceptsCancellationToken);
+        _stepTextTemplate = Runnable.Definition.GetText();
         _generatedStepText = _stepTextTemplate;
         SetStepText();
     }
@@ -92,6 +91,7 @@ public class Step
         StepText = $"{StepPrefix} {_stepTextTemplate}";
         OverriddenStepText = source.OverriddenStepText;
         Timeout = source.Timeout;
+        _explicitArguments = source._explicitArguments;
     }
 
     [JsonConstructor]
@@ -106,6 +106,21 @@ public class Step
     [JsonIgnore]
     internal Func<string> OverriddenStepText { get; set; }
 
+    private IReadOnlyList<Func<object>> _explicitArguments;
+    [JsonIgnore]
+    internal IReadOnlyList<Func<object>> ExplicitArguments
+    {
+        get => _explicitArguments;
+        set
+        {
+            _explicitArguments = value;
+            if (Runnable == null) return;
+            _stepTextTemplate = Runnable.Definition.GetText(explicitArguments: value);
+            _generatedStepText = _stepTextTemplate;
+            StepText = $"{StepPrefix} {_stepTextTemplate}";
+        }
+    }
+
     [JsonIgnore] internal Dictionary<string, string> ExampleValues { get; set; }
 
     private string SubstituteExampleValues(string text) => ExampleValues == null ? text
@@ -118,6 +133,7 @@ public class Step
     {
         Runnable = null;
         OverriddenStepText = null;
+        ExplicitArguments = null;
     }
 
     internal void ResetData()
@@ -149,7 +165,7 @@ public class Step
 
         if (evaluateArguments)
         {
-            _generatedStepText = StepTextHelper.GetStepText(Runnable.ExpressionBody, Runnable.AcceptsCancellationToken, Diagnostics.Add);
+            _generatedStepText = Runnable.Definition.GetText(true, Diagnostics.Add, ExplicitArguments);
         }
         StepText = SubstituteExampleValues($"{StepPrefix} {_generatedStepText}");
     }
@@ -157,8 +173,7 @@ public class Step
     private void SetShouldSkip()
     {
         _shouldSkip = false;
-        var methodCallExpression = Runnable.ExpressionBody as MethodCallExpression;
-        var methodInfo = methodCallExpression?.Method;
+        var methodInfo = Runnable.Definition.Method;
 
         var skipStepAttributes = (methodInfo?.GetCustomAttributes(
                                       typeof(SkipStepAttribute), true) ??
@@ -245,7 +260,7 @@ public class Step
             SetExceptionResult(e);
             if (Status == Status.Failed)
             {
-                await Console.Out.WriteLineAsync($"{Environment.NewLine}{e.GetType().Name} on '{StepPrefix}' step executing '{Runnable.GetExpressionString()}'");
+                await Console.Out.WriteLineAsync($"{Environment.NewLine}{e.GetType().Name} on '{StepPrefix}' step executing '{StepText}'");
             }
             ExceptionDispatchInfo.Capture(e).Throw();
         }
