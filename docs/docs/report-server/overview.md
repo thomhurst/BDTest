@@ -45,7 +45,7 @@ All routes are under `/bdtest`.
 | `GET /bdtest/report/{id}/all-scenarios` | **Scenarios**, with search (`q`), status (`filterByStatus`, one status or a comma-separated list), tag (`filterByTag`), exact story text (`story`), ordering (`order`) and grouping by story. Story links on a scenario page select that story. `scenarioId` opens a scenario in the side panel. Shows 100 scenario rows per page (`page`). |
 | `GET /bdtest/report/{id}/stories` | The Scenarios page, grouped by story, with the selected ordering applied within each story. Kept for older links. |
 | `GET /bdtest/report/{reportId}/scenario/{scenarioId}` | One scenario. |
-| `GET /bdtest/report/{id}/top-defects` | **Failures**, grouped by exception and location, exception type or failing step. Also at `/failures`. |
+| `GET /bdtest/report/{id}/top-defects` | **Failures**, grouped by exception and location, exception type or failing step. Stack traces can be expanded and collapsed. Also at `/failures`. |
 | `GET /bdtest/report/{id}/timings` | **Timings**: slowest and fastest scenarios. |
 | `GET /bdtest/report/{id}/warnings` | **Not run**: tests that were built but never ran. Also at `/not-run`. |
 | `GET /bdtest/report/{id}/raw-json-data` | The report as [JSON](../reports/json-data.md). |
