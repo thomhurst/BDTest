@@ -22,10 +22,16 @@ dotnet build BDTest.sln
 dotnet test BDTest.Tests/BDTest.Tests.csproj
 dotnet test BDTest.Tests/BDTest.Tests.csproj --filter "FullyQualifiedName~SomeTestName"
 
-# TUnit uses Microsoft.Testing.Platform
+# TUnit adapter and pipeline suites use Microsoft.Testing.Platform
 dotnet run --project BDTest.TUnit.Tests
+dotnet run --project BDTest.Pipeline.Tests
 dotnet run --project BDTest.TUnit.Tests -- --treenode-filter "/*/*/TUnitScenarioTests/*"
 ```
+
+The core `BDTest.Tests` and report-generator suites still use NUnit. CI evaluates
+Release `PackageReference` items to choose the TUnit runner; filenames and
+`OutputType=Exe` do not decide the runner. xUnit v3 keeps its VSTest invocation.
+Both paths save TRX results under `artifacts/test-results/<project>`.
 
 The full CI pipeline (tests, versioning, packing) is a [ModularPipelines](https://github.com/thomhurst/ModularPipelines) app:
 
@@ -62,7 +68,7 @@ Keep existing IDs, including `BDTest.xUnit` for xUnit v3 and `BDTest.Razor.Repor
 for ASP.NET Core report hosting. Future storage IDs use `BDTest.Reports.Storage.*`.
 The sample server remains non-packable. When adding a shipped project, opt it in,
 supply its package metadata, and update `PackageSelectionTests` and the artifact
-verification script. Run `dotnet test BDTest.Pipeline.Tests -c Release` to check
+verification script. Run `dotnet run --project BDTest.Pipeline.Tests -c Release` to check
 selection and metadata, including SourceGenerator and Analyzers.
 
 ## Documentation

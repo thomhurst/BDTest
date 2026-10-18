@@ -54,7 +54,12 @@ dotnet build BDTest.sln -c Release
 ```
 
 Run every `*Tests.csproj` with `dotnet test <project> -c Release`, except
-`BDTest.TUnit.Tests`, which uses `dotnet run --project BDTest.TUnit.Tests -c Release`.
+`BDTest.TUnit.Tests` and `BDTest.Pipeline.Tests`, which use
+`dotnet run --project <project> -c Release`. The core and report-generator
+suites still use NUnit. Runner selection evaluates Release `PackageReference`
+items, so imported or conditional TUnit references work and xUnit v3 executables
+keep using VSTest. Both runner paths publish TRX under
+`artifacts/test-results/<project>`.
 Do not run the publishing pipeline in `Production` locally.
 
 ## Completed nullable rollout
@@ -181,7 +186,7 @@ This decision requires no package rename or NuGet deprecation.
 
 `BDTest.Pipeline.Tests/PackageSelectionTests.cs` evaluates the complete package
 set, imported opt-ins, defaults, metadata and compiler payload settings. Run it
-with `dotnet test BDTest.Pipeline.Tests -c Release --filter FullyQualifiedName~PackageSelectionTests`.
+with `dotnet run --project BDTest.Pipeline.Tests -c Release -- --treenode-filter "/*/*/PackageSelectionTests/*"`.
 
 ## Independent report contracts (#933)
 

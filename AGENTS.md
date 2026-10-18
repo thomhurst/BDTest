@@ -17,8 +17,9 @@ dotnet build BDTest.sln
 dotnet test BDTest.Tests/BDTest.Tests.csproj
 dotnet test BDTest.Tests/BDTest.Tests.csproj --filter "FullyQualifiedName~SomeTestName"
 
-# TUnit test project runs on Microsoft.Testing.Platform — use dotnet run, not dotnet test
+# TUnit suites use Microsoft.Testing.Platform — use dotnet run, not dotnet test
 dotnet run --project BDTest.TUnit.Tests
+dotnet run --project BDTest.Pipeline.Tests
 dotnet run --project BDTest.TUnit.Tests -- --treenode-filter "/*/*/TUnitScenarioTests/*"
 
 # Documentation site (Docusaurus, Node 24)
@@ -54,11 +55,12 @@ Core and Razor reports grant `InternalsVisibleTo` only to `BDTest.Tests`, using 
 - `BDTest.ReportGenerator.RazorServer`: deployable report server using that library, with an Azure Blob data store and Azure AD auth. Not packed.
 
 **Tests / samples**
+- `BDTest.Pipeline.Tests` uses TUnit; `BDTest.ReportGenerator.Tests` and the core `BDTest.Tests` suite remain NUnit pending their separate migrations.
 - `BDTest.Example`: sample NUnit tests, also referenced by `BDTest.Tests`.
 - `BDTest.Tests` (NUnit), `BDTest.xUnit.Tests`, `BDTest.TUnit.Tests`: the framework-specific tests focus on unique-ID/context isolation under parallel execution.
 
 **Pipeline (`BDTest.Pipeline/`)**: ModularPipelines app driven by GitHub Actions (`.github/workflows/dotnet.yml`).
-- `RunUnitTestsModule` finds every `*.csproj` path containing "Tests". It uses `dotnet run` for TUnit projects and `dotnet test` for the rest.
+- `RunUnitTestsModule` finds every `*.csproj` path containing "Tests". It evaluates Release `PackageReference` items to select `dotnet run` for TUnit projects and `dotnet test` for the rest (including xUnit v3 executables). Both paths write TRX results under `artifacts/test-results/<project>`.
 - `PackProjectsModule` packs every csproj except paths containing Tests, Pipeline, Example or ReportGenerator. New package projects are picked up automatically by that naming rule.
 - Development env pushes to a local NuGet folder. Production pushes to nuget.org, gated on `PUBLISH_PACKAGES`.
 
