@@ -1,4 +1,4 @@
-@using BDTest.Razor.Reports.Constants
+﻿@using BDTest.Razor.Reports.Constants
 @using BDTest.Razor.Reports.Extensions
 @using BDTest.Razor.Reports.Helpers
 @using BDTest.Razor.Reports.Models
@@ -28,10 +28,28 @@
         return Context.GetLocalUrlWith((statusParameter, value), ("scenarioId", null), (PagerQueryParameters.Page, null));
     }
 
-    string SelectUrl(Scenario scenario) => Context.GetLocalUrlWith(("scenarioId", scenario.Guid ?? string.Empty));
+    // Selecting a scenario drops the page so the list opens on the page that contains it.
+    string SelectUrl(Scenario scenario) => Context.GetLocalUrlWith(("scenarioId", scenario.Guid ?? string.Empty), (PagerQueryParameters.Page, null));
 
     var selected = Model.Selected;
     var selectedIndex = selected == null ? -1 : scenarios.ToList().IndexOf(selected);
+
+    // Page over top-level rows (one per scenario name) so large runs render a bounded list.
+    var rows = scenarios.GroupBy(scenario => (Story: scenario.GetStoryText(), Text: scenario.GetScenarioText())).ToArray();
+    var pageQuery = Context.Request.GetQueryParameter(PagerQueryParameters.Page);
+    var pager = new Pager<IGrouping<(string Story, string Text), Scenario>>(rows, Context.GetCurrentPageNumber(), PageSize);
+    if (string.IsNullOrEmpty(pageQuery) && selected != null)
+    {
+        var selectedPage = pager.GetPageNumberWhere(row => row.Contains(selected));
+        if (selectedPage != null)
+        {
+            pager = new Pager<IGrouping<(string Story, string Text), Scenario>>(rows, selectedPage.Value.ToString(), PageSize);
+        }
+    }
+
+    var pageScenarios = pager.ItemsForCurrentPage.SelectMany(row => row).ToList();
+    var pagination = pager.GetPaginationInformation();
+    pagination.ItemName = "scenarios";
 }
 
 @await Html.PartialAsync("_ScenarioToolbar", new ScenarioToolbarViewModel { Tags = Model.Tags, GroupBy = Model.GroupBy, GroupFixed = Model.GroupFixed })
@@ -69,7 +87,7 @@ else
         <section aria-label="Scenario list" class="card clip" style="flex: 999 1 560px; min-width: 0">
             @if (Model.GroupBy == ScenarioListViewModel.GroupByStory)
             {
-                foreach (var story in scenarios.GroupBy(scenario => scenario.GetStoryText()))
+                foreach (var story in pageScenarios.GroupBy(scenario => scenario.GetStoryText()))
                 {
                     var storyAll = Model.Unfiltered.Where(scenario => scenario.GetStoryText() == story.Key).ToList();
                     var storyStatus = story.GetTotalStatus();
@@ -93,7 +111,7 @@ else
             }
             else
             {
-                Rows(scenarios);
+                Rows(pageScenarios);
             }
 
             @if (statuses != null && !statuses.Contains(Status.Passed) && counts[Status.Passed] > 0)
@@ -102,6 +120,11 @@ else
                     <span>Showing passed too?</span>
                     <a class="btn ghost sm link" href="@ToggleStatusUrl(Status.Passed)">Add Passed (@counts[Status.Passed])</a>
                 </div>
+            }
+
+            @if (pagination.TotalPages > 1)
+            {
+                @await Html.PartialAsync("_PaginationButtons", pagination)
             }
         </section>
 
@@ -125,6 +148,8 @@ else
 
 @functions
 {
+    private const int PageSize = 100;
+
     private void Rows(IEnumerable<Scenario> scenarios)
     {
         foreach (var group in scenarios.GroupBy(scenario => scenario.GetScenarioText()))
@@ -166,7 +191,7 @@ else
     {
         shown ??= scenario;
         var isSelected = Model.Selected == scenario;
-        <a class="row @(child ? "child" : "") @(isSelected && !child ? "sel" : "")" href="@Context.GetLocalUrlWith(("scenarioId", scenario.Guid ?? string.Empty))" scenario-id="@scenario.Guid" data-example-id="@(shown == scenario ? null : shown.Guid)" aria-current="@(isSelected && !child ? "true" : null)">
+        <a class="row @(child ? "child" : "") @(isSelected && !child ? "sel" : "")" href="@Context.GetLocalUrlWith(("scenarioId", scenario.Guid ?? string.Empty), (PagerQueryParameters.Page, null))" scenario-id="@scenario.Guid" data-example-id="@(shown == scenario ? null : shown.Guid)" aria-current="@(isSelected && !child ? "true" : null)">
             @shown.Status.StatusIcon()
             <span class="grow @(child ? "" : "row-title")">@title</span>
             @if (shown.RetryCount > 0)

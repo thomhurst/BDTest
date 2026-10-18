@@ -54,6 +54,19 @@ public class HistoryTests
     }
 
     [Test]
+    public async Task Comparison_tabs_keep_the_number_of_compared_runs()
+    {
+        var html = await ReportHandlerEncodingTests.RenderAsync("/Views/Shared/_HistoryHeader.cshtml",
+            new HistoryViewModel { Tab = HistoryViewModel.Flaky, Compare = 50, Filter = new RunFilter { Tag = "nightly" } });
+
+        var tabs = Regex.Matches(html, "<a class=\"tab[^\"]*\" href=\"([^\"]+)\"")
+            .Select(match => System.Web.HttpUtility.HtmlDecode(match.Groups[1].Value)).ToList();
+        Assert.That(tabs.Single(href => href.Contains("/history/timing")), Does.Contain("compare=50").And.Contain("tag=nightly"));
+        Assert.That(tabs.Single(href => href.Contains("/history/flaky")), Does.Contain("compare=50"));
+        Assert.That(tabs.Single(href => !href.Contains("/history/")), Does.Not.Contain("compare="));
+    }
+
+    [Test]
     public async Task Trend_charts_link_each_run_locally_and_encode_dates()
     {
         var previousCulture = CultureInfo.CurrentCulture;

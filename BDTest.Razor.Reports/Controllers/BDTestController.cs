@@ -112,18 +112,13 @@ public class BDTestController : Controller
             
         var statuses = GetStatusFilter();
 
+        // Statuses filter scenarios, as on the Scenarios page; stories only group the result.
         var scenariosGroupedByStories = FilterBySearch(FilterByTag(data.Scenarios))
+            .Where(scenario => statuses == null || statuses.Contains(scenario.Status))
             .GroupBy(scenario => scenario.GetStoryText())
             .OrderBy(group => group.GetTotalStatus().GetOrder())
             .ThenBy(group => group.Key)
             .ToArray();
-
-        if (statuses != null)
-        {
-            scenariosGroupedByStories = scenariosGroupedByStories
-                .Where(group => statuses.Contains(group.GetTotalStatus()))
-                .ToArray();
-        }
 
         return View("Stories", scenariosGroupedByStories);
     }

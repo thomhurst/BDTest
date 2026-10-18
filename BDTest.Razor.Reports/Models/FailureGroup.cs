@@ -66,17 +66,36 @@ public class FailureGroup
     };
 
     /// <summary>The step that failed, or the first step that recorded an exception.</summary>
-    public static Step FailingStep(Scenario scenario)
-    {
-        var steps = scenario?.Steps ?? new List<Step>();
-        return steps.FirstOrDefault(step => step.Status == Status.Failed)
-               ?? steps.FirstOrDefault(step => step.Exception != null);
-    }
+    /// <remarks>Outlines keep their executed steps on their examples, so the first failed example is searched.</remarks>
+    public static Step FailingStep(Scenario scenario) => FindFailingStep(scenario).Step;
 
+    /// <summary>The 1-based position of the failing step within its scenario or outline example, or 0.</summary>
     public static int FailingStepNumber(Scenario scenario)
     {
-        var step = FailingStep(scenario);
-        return step == null ? 0 : scenario.Steps.IndexOf(step) + 1;
+        var (step, owner) = FindFailingStep(scenario);
+        return step == null ? 0 : owner.Steps.IndexOf(step) + 1;
+    }
+
+    private static (Step Step, Scenario Owner) FindFailingStep(Scenario scenario)
+    {
+        var steps = scenario?.Steps ?? new List<Step>();
+        var step = steps.FirstOrDefault(s => s.Status == Status.Failed) ?? steps.FirstOrDefault(s => s.Exception != null);
+        if (step != null || scenario?.Examples == null)
+        {
+            return (step, scenario);
+        }
+
+        foreach (var example in scenario.Examples.Where(example => example != null)
+                     .OrderBy(example => example.Status.GetOrder()))
+        {
+            var found = FindFailingStep(example);
+            if (found.Step != null)
+            {
+                return found;
+            }
+        }
+
+        return (null, scenario);
     }
 
     /// <summary>The first stack frame with a source location, formatted as "File.cs:line 84 · Type.Method".</summary>

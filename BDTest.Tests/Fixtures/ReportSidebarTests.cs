@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 ﻿using BDTest.Maps;
 using BDTest.Razor.Reports.Controllers;
 using BDTest.Razor.Reports.Extensions;
@@ -97,6 +98,25 @@ public class ReportSidebarTests
 
         var list = await _client.GetStringAsync("/bdtest/report/run-632/all-scenarios");
         Assert.That(list, Does.Contain("<span class=\"tag\">retries 1</span>"));
+    }
+
+    [Test]
+    public async Task Large_scenario_lists_are_paged_and_open_on_the_selected_scenarios_page()
+    {
+        _repository.Report.Scenarios = Enumerable.Range(0, 150).Select(index => ReportJson.DeserializeObject<Scenario>(
+            ReportJson.SerializeObject(new
+            {
+                Guid = $"s{index:000}", ScenarioText = $"Scenario {index:000}", Status = "Passed",
+                Steps = Array.Empty<object>(), CustomTestInformation = Array.Empty<object>()
+            }))).ToList();
+
+        var first = await _client.GetStringAsync("/bdtest/report/run-632/all-scenarios?group=none&order=name");
+        Assert.That(Regex.Matches(first, "scenario-id=\"s\\d{3}\""), Has.Count.EqualTo(100));
+        Assert.That(first, Does.Contain("scenario-id=\"s099\"").And.Not.Contain("scenario-id=\"s100\""));
+        Assert.That(System.Net.WebUtility.HtmlDecode(first), Does.Contain("1–100 of 150 scenarios"));
+
+        var selected = await _client.GetStringAsync("/bdtest/report/run-632/all-scenarios?group=none&order=name&scenarioId=s130");
+        Assert.That(selected, Does.Contain("scenario-id=\"s130\"").And.Not.Contain("scenario-id=\"s099\""));
     }
 
     [Test]

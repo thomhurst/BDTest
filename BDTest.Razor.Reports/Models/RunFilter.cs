@@ -1,3 +1,5 @@
+﻿using BDTest.Constants;
+using BDTest.Razor.Reports.Helpers;
 using System.Globalization;
 using BDTest.Test;
 using Microsoft.AspNetCore.Http;
@@ -12,6 +14,9 @@ public class RunFilter
     public const string Last30Days = "30d";
     public const string Today = "today";
     public const string ThisMonth = "month";
+
+    /// <summary>The custom start and end given by <c>datetimerange</c>.</summary>
+    public const string Custom = "custom";
 
     private static readonly string[] Ranges = { Last30Days, Last7Days, Today, ThisMonth, AnyTime };
 
@@ -32,26 +37,28 @@ public class RunFilter
 
     public static RunFilter FromQuery(IQueryCollection query, string defaultRange = AnyTime)
     {
-        string Read(string name)
+        string Read(string name, string placeholder = null)
         {
             var value = query.TryGetValue(name, out var values) ? values.ToString() : null;
-            return string.IsNullOrWhiteSpace(value) || value.StartsWith("All ", StringComparison.Ordinal) ? null : value;
+            // Older report server links used "All Tags" and similar as the no-filter value.
+            return string.IsNullOrWhiteSpace(value) || string.Equals(value, placeholder, StringComparison.Ordinal) ? null : value;
         }
 
         var filter = new RunFilter
         {
             Search = Read("q")?.Trim(),
-            Tag = Read("tag"),
-            Environment = Read("environment"),
-            Branch = Read("branch"),
-            Machine = Read("machine"),
+            Tag = Read("tag", DefaultValues.ReportServer.AllTags),
+            Environment = Read("environment", DefaultValues.ReportServer.AllEnvironments),
+            Branch = Read("branch", DefaultValues.ReportServer.AllBranches),
+            Machine = Read("machine", DefaultValues.ReportServer.AllMachines),
             Status = Read("status") is { } status && (status == nameof(Test.Status.Passed) || status == nameof(Test.Status.Failed)) ? status : null,
             Range = Read("range") is { } range && Ranges.Contains(range) ? range : defaultRange
         };
 
-        // Links created by older versions of the report server use datetimerange=start..end.
-        var legacy = Read("datetimerange");
-        if (legacy != null && query.TryGetValue("range", out var explicitRange) is false && legacy.Contains(".."))
+        // datetimerange=start..end comes from older links, or from the "custom" range kept by the filter forms.
+        var rangeValue = Read("range");
+        var legacy = Read("datetimerange", DefaultValues.ReportServer.AllDateTimes);
+        if (legacy != null && (rangeValue == null || rangeValue == Custom) && legacy.Contains(".."))
         {
             var parts = legacy.Split("..");
             if (DateTime.TryParse(parts[0], CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var start)
@@ -73,9 +80,7 @@ public class RunFilter
             && Matches(Environment, record.Environment)
             && Matches(Branch, record.BranchName)
             && Matches(Machine, record.MachineName)
-            && (Status == null || (Status == nameof(Test.Status.Failed)
-                ? record.Status == Test.Status.Failed
-                : record.Status != Test.Status.Failed))
+            && (Status == null || record.Status.RunResult().ToString() == Status)
             && (from == null || record.StartedAtDateTime >= from)
             && (to == null || record.StartedAtDateTime <= to)
             && (Search == null || MatchesSearch(record)));
@@ -97,6 +102,10 @@ public class RunFilter
             _ => (null, null)
         };
     }
+
+    public string CustomRangeValue => CustomRange is { } custom
+        ? custom.Start.ToString("o", CultureInfo.InvariantCulture) + ".." + custom.End.ToString("o", CultureInfo.InvariantCulture)
+        : null;
 
     public static string RangeLabel(string range) => range switch
     {
@@ -120,7 +129,8 @@ public class RunFilter
         if (includeSearchAndStatus && Status != null) yield return new("status", Status);
         if (CustomRange is { } custom)
         {
-            yield return new("datetimerange", custom.Start.ToString("o", CultureInfo.InvariantCulture) + ".." + custom.End.ToString("o", CultureInfo.InvariantCulture));
+            yield return new("range", Custom);
+            yield return new("datetimerange", CustomRangeValue);
         }
         else
         {

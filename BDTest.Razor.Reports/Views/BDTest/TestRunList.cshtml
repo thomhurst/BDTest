@@ -1,4 +1,4 @@
-@using BDTest.Razor.Reports.Constants
+﻿@using BDTest.Razor.Reports.Constants
 @using BDTest.Razor.Reports.Helpers
 @using BDTest.Razor.Reports.Models
 @using BDTest.Test
@@ -97,6 +97,15 @@
             {
                 <input type="hidden" name="perPage" value="@pageSize">
             }
+            @if (filter.CustomRange != null)
+            {
+                <input type="hidden" name="range" value="@RunFilter.Custom">
+                <input type="hidden" name="datetimerange" value="@filter.CustomRangeValue">
+            }
+            else if (filter.Range != RunFilter.AnyTime)
+            {
+                <input type="hidden" name="range" value="@filter.Range">
+            }
             <div class="cluster" style="flex: 1 1 260px; min-height: 36px">
                 <a class="chip @(filter.Status == null ? "on" : "")" href="@Query(With(f => f.Status = null))" aria-current="@(filter.Status == null ? "true" : null)">Any status</a>
                 <a class="chip @(filter.Status == nameof(Status.Failed) ? "on" : "")" href="@Query(With(f => f.Status = nameof(Status.Failed)))" aria-current="@(filter.Status == nameof(Status.Failed) ? "true" : null)">@Status.Failed.StatusIcon()Failed</a>
@@ -152,7 +161,7 @@
                             var other = Math.Max(total - counts.Passed - counts.Failed, 0);
                             var duration = record.FinishedAtDateTime - record.StartedAtDateTime;
                             // Runs read as failed, inconclusive or passed; not implemented and skipped scenarios don't fail a run.
-                            var resultStatus = record.Status is Status.NotImplemented or Status.Skipped ? Status.Passed : record.Status;
+                            var resultStatus = record.Status.RunResult();
                             var resultText = resultStatus switch
                             {
                                 Status.Failed => $"{counts.Failed} failed",

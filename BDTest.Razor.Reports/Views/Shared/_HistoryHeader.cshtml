@@ -1,4 +1,4 @@
-@using BDTest.Razor.Reports.Helpers
+﻿@using BDTest.Razor.Reports.Helpers
 @using BDTest.Razor.Reports.Models
 @using BDTest.Razor.Reports.Models.ViewModels
 @model HistoryViewModel
@@ -39,7 +39,7 @@
                 <select class="inp" name="range">
                     @if (filter.CustomRange is { } custom)
                     {
-                        <option value="all" selected>@custom.Start.ToDay() – @custom.End.ToDay()</option>
+                        <option value="@RunFilter.Custom" selected>@custom.Start.ToDay() – @custom.End.ToDay()</option>
                     }
                     @foreach (var range in RunFilter.AllRanges)
                     {
@@ -47,6 +47,11 @@
                     }
                 </select>
             </label>
+            @if (filter.CustomRange != null)
+            {
+                @* Ignored once another range is chosen, so the custom dates survive changes to other filters only. *@
+                <input type="hidden" name="datetimerange" value="@filter.CustomRangeValue">
+            }
             @if (Model.Tab != HistoryViewModel.Trends && !Model.ChosenRuns)
             {
                 <input type="hidden" name="compare" value="@Model.Compare">
@@ -91,7 +96,14 @@
     {
         var encoder = System.Text.Encodings.Web.HtmlEncoder.Default;
         var active = Model.Tab == key;
-        var href = Url.Content(path) + RunFilter.ToQueryString(Model.Filter.ToQuery(false));
+        // Flaky tests and Timing variance compare the same runs, so the comparison size carries across tabs.
+        var query = Model.Filter.ToQuery(false).ToList();
+        if (key != HistoryViewModel.Trends && !Model.ChosenRuns && Model.Compare != new HistoryViewModel().Compare)
+        {
+            query.Add(new KeyValuePair<string, string>("compare", Model.Compare.ToString()));
+        }
+
+        var href = Url.Content(path) + RunFilter.ToQueryString(query);
         return new Microsoft.AspNetCore.Html.HtmlString(
             $"<a class=\"tab{(active ? " on" : "")}\" href=\"{encoder.Encode(href)}\"{(active ? " aria-current=\"page\"" : "")}>{encoder.Encode(text)}</a>");
     }

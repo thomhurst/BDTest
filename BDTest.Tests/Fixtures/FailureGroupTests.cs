@@ -70,6 +70,31 @@ public class FailureGroupTests
     }
 
     [Test]
+    public void Outline_failures_use_the_failing_step_of_their_failed_example()
+    {
+        var outline = ReportJson.DeserializeObject<Scenario>(ReportJson.SerializeObject(new
+        {
+            Guid = "outline", Status = "Failed", IsOutline = true, ScenarioText = "Outline", Steps = Array.Empty<object>(),
+            Examples = new object[]
+            {
+                new { Guid = "row-1", Status = "Passed", Steps = new object[] { new { StepText = "Given row 1", Status = "Passed" } } },
+                new
+                {
+                    Guid = "row-2", Status = "Failed", Steps = new object[]
+                    {
+                        new { StepText = "Given row 2", Status = "Passed" },
+                        new { StepText = "Then row 2 fails", Status = "Failed", Exception = new { TypeName = "E", Message = "boom", AsString = "boom" } }
+                    }
+                }
+            }
+        }));
+
+        Assert.That(FailureGroup.FailingStep(outline)?.StepText, Is.EqualTo("Then row 2 fails"));
+        Assert.That(FailureGroup.FailingStepNumber(outline), Is.EqualTo(2));
+        Assert.That(FailureGroup.Build(new[] { outline }, FailureGroup.ByFailingStep).Single().Title, Is.EqualTo("Then row 2 fails"));
+    }
+
+    [Test]
     public void Passed_scenarios_are_not_failures()
     {
         var passed = ReportJson.DeserializeObject<Scenario>("""{ "Guid": "p", "Status": "Passed", "Steps": [] }""");

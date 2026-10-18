@@ -40,9 +40,9 @@ All routes are under `/bdtest`.
 
 | Route | Page |
 | --- | --- |
-| `GET /bdtest/report/test-runs` | Test run list. `/` redirects here. |
+| `GET /bdtest/report/test-runs` | Test run list. `/` redirects here. `status=Passed` lists runs with no failed, inconclusive, pending or unfinished scenarios; not implemented and skipped scenarios don't stop a run counting as passed. |
 | `GET /bdtest/report/{id}/summary` | Run **Overview**. `/bdtest/report/{id}` redirects here. |
-| `GET /bdtest/report/{id}/all-scenarios` | **Scenarios**, with search (`q`), status (`filterByStatus`, one status or a comma-separated list), tag (`filterByTag`), ordering (`order`) and grouping by story. `scenarioId` opens a scenario in the side panel. |
+| `GET /bdtest/report/{id}/all-scenarios` | **Scenarios**, with search (`q`), status (`filterByStatus`, one status or a comma-separated list), tag (`filterByTag`), ordering (`order`) and grouping by story. `scenarioId` opens a scenario in the side panel. Shows 100 scenario rows per page (`page`). |
 | `GET /bdtest/report/{id}/stories` | The Scenarios page, grouped by story. Kept for older links. |
 | `GET /bdtest/report/{reportId}/scenario/{scenarioId}` | One scenario. |
 | `GET /bdtest/report/{id}/top-defects` | **Failures**, grouped by exception and location, exception type or failing step. Also at `/failures`. |

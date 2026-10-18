@@ -22,8 +22,9 @@ public class ReportTagTests
     [TestCase(false, "?filterByTag=missing", new string[0])]
     [TestCase(false, "?filterByTag=", new[] { "smoke-passed", "smoke-failed", "other", "legacy" })]
     [TestCase(true, "?filterByTag=SMOKE", new[] { "smoke-passed", "smoke-failed" })]
-    [TestCase(true, "?filterByTag=smoke&filterByStatus=Failed", new[] { "smoke-passed", "smoke-failed" })]
-    [TestCase(true, "?filterByTag=smoke&filterByStatus=Passed", new string[0])]
+    [TestCase(true, "?filterByTag=smoke&filterByStatus=Failed", new[] { "smoke-failed" })]
+    [TestCase(true, "?filterByTag=smoke&filterByStatus=Passed", new[] { "smoke-passed" })]
+    [TestCase(true, "?filterByTag=smoke&filterByStatus=Passed,Failed", new[] { "smoke-passed", "smoke-failed" })]
     [TestCase(true, "?filterByTag=missing", new string[0])]
     [TestCase(true, "", new[] { "smoke-passed", "smoke-failed", "other", "legacy" })]
     public async Task Tag_filter_runs_before_grouping_and_combines_with_status(bool stories, string query, string[] expected)

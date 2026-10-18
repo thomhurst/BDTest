@@ -1,4 +1,4 @@
-@using System.Globalization
+﻿@using System.Globalization
 @using BDTest.Razor.Reports.Helpers
 @using BDTest.Razor.Reports.Models
 @using BDTest.Razor.Reports.Models.ViewModels
@@ -14,7 +14,7 @@
     var chartRuns = runs.TakeLast(60).ToList();
     var filterQuery = RunFilter.ToQueryString(filter.ToQuery(false));
 
-    var passedRuns = runs.Count(run => run.Counts.Failed == 0);
+    var passedRuns = runs.Count(run => run.Status.RunResult() == Status.Passed);
     var rates = runs.Where(run => run.Counts.Total > 0).Select(run => (double)run.Counts.Passed / run.Counts.Total * 100).ToList();
     var durations = runs.Select(Duration).Where(duration => duration > TimeSpan.Zero).OrderBy(duration => duration).ToList();
 
@@ -75,7 +75,7 @@
     else
     {
         <section class="card stats" aria-label="Summary for the range">
-            <div class="stat"><span class="k">Runs without failures</span><b>@passedRuns of @runs.Count</b></div>
+            <div class="stat"><span class="k">Runs that passed</span><b>@passedRuns of @runs.Count</b></div>
             <div class="stat"><span class="k">Average pass rate</span><b>@(rates.Count == 0 ? "—" : rates.Average().ToString("0.#", CultureInfo.CurrentCulture) + "%")</b></div>
             <div class="stat"><span class="k">Median duration</span><b>@(durations.Count == 0 ? "—" : durations[durations.Count / 2].ToShortDuration())</b></div>
             <div class="stat"><span class="k">Flaky scenarios</span><b><a class="lnk" href="@(Url.Content("~/bdtest/report/history/flaky") + filterQuery)">Find them</a></b></div>
@@ -163,7 +163,7 @@
                         var other = Stacked(run) - run.Counts.Failed - run.Counts.Passed;
                         <tr>
                             <td style="white-space: nowrap"><a class="lnk" href="@RunUrl(run)">@run.StartedAtDateTime.ToRunDate(includeYear: false)</a></td>
-                            <td>@(run.Counts.Failed > 0 ? Status.Failed.Pill() : Status.Passed.Pill())</td>
+                            <td>@run.Status.RunResult().Pill()</td>
                             <td class="num">@run.Counts.Failed</td>
                             <td class="num">@other</td>
                             <td class="num">@run.Counts.Passed</td>

@@ -1,4 +1,4 @@
-using System.Globalization;
+﻿using System.Globalization;
 using System.Text.Encodings.Web;
 using BDTest.Test;
 using Microsoft.AspNetCore.Html;
@@ -14,6 +14,13 @@ public static class ReportUi
         Status.Failed, Status.NotImplemented, Status.Inconclusive, Status.Skipped,
         Status.NotRun, Status.Pending, Status.Passed
     };
+
+    /// <summary>
+    /// The result shown for a whole run. Not implemented and skipped scenarios are deliberate, so such runs count as
+    /// passed; inconclusive, pending and unstarted runs keep their own status and never count as passed.
+    /// </summary>
+    public static Status RunResult(this Status runStatus) =>
+        runStatus is Status.NotImplemented or Status.Skipped ? Status.Passed : runStatus;
 
     public static string Key(this Status status) => status switch
     {

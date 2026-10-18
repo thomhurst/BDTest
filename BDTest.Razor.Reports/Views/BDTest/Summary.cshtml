@@ -236,8 +236,8 @@
                         <div class="strip" role="img" aria-label="@($"Last {recent.Count} runs: {recent.Count - failedRuns} without failures, {failedRuns} failed.")">
                             @foreach (var record in recent)
                             {
-                                var key = record.Status == Status.Failed ? "f" : record.Status == Status.Passed ? "p" : record.Status.Key();
-                                <a class="bg-@key @(record.RecordId == Model.Id ? "cur" : "")" href="@Url.Content("~/bdtest/report/" + Uri.EscapeDataString(record.RecordId ?? "") + "/summary")" title="@record.StartedAtDateTime.ToRunDate() · @record.Status.Label()" aria-label="@record.StartedAtDateTime.ToRunDate(): @record.Status.Label()"></a>
+                                var key = record.Status.RunResult().Key();
+                                <a class="bg-@key @(record.RecordId == Model.Id ? "cur" : "")" href="@Url.Content("~/bdtest/report/" + Uri.EscapeDataString(record.RecordId ?? "") + "/summary")" title="@record.StartedAtDateTime.ToRunDate() · @record.Status.RunResult().Label()" aria-label="@record.StartedAtDateTime.ToRunDate(): @record.Status.RunResult().Label()"></a>
                             }
                         </div>
                         <div class="strip-axis"><span>@recent[0].StartedAtDateTime.ToDay()</span><span>This run</span></div>
