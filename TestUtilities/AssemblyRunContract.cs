@@ -6,18 +6,22 @@ using BDTest.Helpers;
 using BDTest.Test;
 #if BDTEST_NUNIT
 using AssemblyOwner = BDTest.NUnit.NUnitBDTestAssembly;
+using ScenarioFactory = BDTest.NUnit.NUnitBDTestScenario;
 using Adapter = BDTest.NUnit.NUnitBDTestBase<object>;
 using TestAttribute = global::NUnit.Framework.TestAttribute;
 #elif BDTEST_MSTEST
 using AssemblyOwner = BDTest.MSTest.MSTestBDTestAssembly;
+using ScenarioFactory = BDTest.MSTest.MSTestBDTestScenario;
 using Adapter = BDTest.MSTest.MSTestBDTestBase<object>;
 using TestAttribute = Microsoft.VisualStudio.TestTools.UnitTesting.TestMethodAttribute;
 #elif BDTEST_TUNIT
 using AssemblyOwner = BDTest.TUnit.TUnitBDTestAssembly;
+using ScenarioFactory = BDTest.TUnit.TUnitBDTestScenario;
 using Adapter = BDTest.TUnit.TUnitBDTestBase<object>;
 using TestAttribute = global::TUnit.Core.TestAttribute;
 #elif BDTEST_XUNIT
 using AssemblyOwner = BDTest.xUnit.XUnitBDTestAssembly;
+using ScenarioFactory = BDTest.xUnit.XUnitBDTestScenario;
 using Adapter = BDTest.xUnit.XUnitBDTestBase<object>;
 using TestAttribute = Xunit.FactAttribute;
 #endif
@@ -229,5 +233,70 @@ public class AssemblyRunContract : Adapter
         public int BeforeCount;
         public Task BeforeStepAsync(Step step) { Interlocked.Increment(ref BeforeCount); return Task.CompletedTask; }
         public Task AfterStepAsync(Step step) => Task.CompletedTask;
+    }
+}
+
+// Exercise the overload without a supplied run through each runner's native lifecycle.
+// This class deliberately does not inherit an adapter base or call BeginTest/EndTest.
+#if BDTEST_NUNIT
+[global::BDTest.NUnit.BDTestFixture]
+public class AssemblyCompositionContract : global::BDTest.NUnit.INUnitBDTest
+#elif BDTEST_MSTEST
+[global::BDTest.MSTest.BDTestClass]
+public class AssemblyCompositionContract : global::BDTest.MSTest.IBDTestMSTestTest
+#elif BDTEST_TUNIT
+public class AssemblyCompositionContract : global::BDTest.TUnit.IBDTestTUnitTest
+#else
+public class AssemblyCompositionContract
+#endif
+{
+    private readonly BDTestScenario<object> _host;
+
+    public AssemblyCompositionContract() => _host = ScenarioFactory.For<object>(this);
+
+    public BDTestBase BDTestHost => _host;
+
+#if BDTEST_MSTEST
+    public Microsoft.VisualStudio.TestTools.UnitTesting.TestContext TestContext
+    {
+        get;
+        set
+        {
+            field = value;
+            global::BDTest.MSTest.MSTestBDTestLifecycle.Initialize(this, value);
+        }
+    } = null!;
+#endif
+
+    [Test, ScenarioText("Assembly factory native lifecycle")]
+    public async Task FactorySelectsAssemblyRunAndExecutesWithNativeMetadata()
+    {
+        var run = AssemblyOwner.GetRun(GetType().Assembly);
+        if (!ReferenceEquals(_host.TestRun, run))
+            throw new InvalidOperationException("Factory did not select the fixture assembly run.");
+
+        var scenario = await _host.When(() => GC.KeepAlive(_host.Context))
+            .Then(() => GC.KeepAlive(run)).BDTestAsync();
+
+        if (scenario.Status != Status.Passed || scenario.ReportId != run.ReportId ||
+            !run.Scenarios.Contains(scenario) ||
+            scenario.GetScenarioText() != "Assembly factory native lifecycle")
+            throw new InvalidOperationException("Native lifecycle did not record the scenario and method metadata in the assembly run.");
+#if BDTEST_NUNIT
+        var nativeContext = global::NUnit.Framework.Internal.TestExecutionContext.CurrentContext;
+        var expectedId = $"{nativeContext.CurrentTest.Id}_{nativeContext.CurrentRepeatCount}";
+#elif BDTEST_XUNIT
+        var expectedId = Xunit.TestContext.Current.Test!.UniqueID;
+#elif BDTEST_TUNIT
+        var expectedId = global::TUnit.Core.TestContext.Current!.Id;
+#else
+        var expectedPrefix = $"{TestContext.FullyQualifiedTestClassName}.{TestContext.TestDisplayName ?? TestContext.TestName}_";
+        if (scenario.FrameworkTestId?.StartsWith(expectedPrefix, StringComparison.Ordinal) != true)
+            throw new InvalidOperationException("Native lifecycle did not bind the MSTest invocation.");
+#endif
+#if !BDTEST_MSTEST
+        if (scenario.FrameworkTestId != expectedId)
+            throw new InvalidOperationException("Native lifecycle did not bind the runner execution ID.");
+#endif
     }
 }

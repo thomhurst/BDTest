@@ -34,7 +34,25 @@ Timeouts always produce `Failed`, even when `TimeoutException` is registered.
 
 ## Registering exception types
 
-For the default run, which the framework adapters use, add types to `BDTestSettings.CustomExceptionSettings`:
+For built-in adapters, add custom types in `IBDTestConfiguration.Configure` for
+[the test assembly](assembly-runs.md):
+
+```csharp
+public sealed class TestConfiguration : IBDTestConfiguration
+{
+    public void Configure(BDTestOptions options)
+    {
+        options.SuccessExceptionTypes.Add(typeof(MyPassException));
+        options.SkipExceptionTypes.Add(typeof(MySkipException));
+        options.InconclusiveExceptionTypes.Add(typeof(MyInconclusiveException));
+    }
+}
+```
+
+The assembly run freezes these registrations when it is first created. Adapter
+runs do not read `BDTestSettings`.
+
+For the legacy standalone default run only, add types to `BDTestSettings.CustomExceptionSettings`:
 
 ```csharp
 using BDTest.Settings;
@@ -60,7 +78,7 @@ using var run = BDTestRun.Start(options);
 
 ## Built-in registrations
 
-The framework adapters register their own types in `BDTestSettings.CustomExceptionSettings` when they first run:
+The framework adapters register their own types on their assembly run during initialization, before its options are frozen:
 
 | Adapter | Success | Skip | Inconclusive |
 | --- | --- | --- | --- |
@@ -112,10 +130,11 @@ inconclusive callback falls back to the skip callback. BDTest invokes the owning
 explicit run's skip callback after finalizing a wholly skipped scenario or outline.
 Framework outcome exceptions thrown inside steps retain their original propagation.
 
-Built-in adapters register their declarations through
-`BDTestSettings.CustomExceptionSettings.RegisterFrameworkOutcomes(map)` for the
-legacy default run. That registration is thread-safe and idempotent across generic
-context types. The existing exception collections remain supported for legacy
+Built-in adapters register their declarations on their assembly run's options.
+For a legacy standalone default run, callers can explicitly use
+`BDTestSettings.CustomExceptionSettings.RegisterFrameworkOutcomes(map)`. That
+registration is thread-safe and idempotent, but does not affect adapter-owned
+assembly runs. The existing exception collections remain supported for legacy
 custom registrations; prefer the registration API for reusable declarations.
 
 ### Runner differences
