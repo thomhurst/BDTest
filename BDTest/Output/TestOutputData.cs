@@ -96,6 +96,15 @@ internal class TestOutputData : TextWriter
                 return;
             }
 
+            // NUnit can run teardown in the setup flow, where only the framework
+            // ID is present. Resolve the completed scenario before routing output.
+            if (TestId == null && FrameworkExecutionId != null &&
+                Run.Store.ScenariosByTestFrameworkId.TryGetValue(FrameworkExecutionId, out var completedScenario) &&
+                completedScenario.EndTime != default)
+            {
+                TestId = completedScenario.Guid;
+            }
+
             if (string.IsNullOrEmpty(TestId) 
                 || !Run.Store.ScenariosByInternalId.TryGetValue(TestId, out var scenario)
                 || scenario.Status == Status.NotRun)

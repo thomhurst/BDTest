@@ -3,7 +3,8 @@ using BDTest.Test;
 using NUnit.Framework;
 using NUnitTestContext = NUnit.Framework.TestContext;
 using NUnit.Framework.Interfaces;
-using NUnit.Framework.Internal;
+using NUnit.Framework.Constraints;
+using System.Runtime.ExceptionServices;
 
 namespace BDTest.NUnit;
 
@@ -28,26 +29,46 @@ public abstract class NUnitBDTestBase<TContext> : AbstractContextBDTestBase<TCon
     }
 
     // Kept callable for existing consumers; NUnit teardown uses MarkTestAsComplete.
-    public void PruneContext()
+    public void PruneContext() => EndTest();
+
+    internal override async Task ExecuteScenarioStepsAsync(Func<Task> executeSteps)
     {
-        try
+        AssertionResult[] assertions = Array.Empty<AssertionResult>();
+        // NUnit's public exception constraint isolates assertion state while preserving
+        // the original exception. Failed attempts must not modify the runner result.
+        var result = await new ThrowsNothingConstraint().ApplyToAsync(async () =>
         {
-            MarkPassIfRetriedSuccessfully();
+            try
+            {
+                await executeSteps();
+                return true;
+            }
+            finally
+            {
+                assertions = NUnitTestContext.CurrentContext.Result.Assertions.ToArray();
+            }
+        });
+
+        // Warnings are non-fatal and must remain visible in the runner.
+        foreach (var warning in assertions.Where(assertion => assertion.Status == AssertionStatus.Warning))
+        {
+            Assert.Warn(warning.Message);
         }
-        finally
+
+        if (result.ActualValue is Exception exception)
         {
-            EndTest();
+            ExceptionDispatchInfo.Capture(exception).Throw();
+        }
+
+        // Also preserve failures the user caught, or deferred in an outer multiple scope.
+        var failures = assertions.Where(assertion => assertion.Status == AssertionStatus.Failed ||
+                                                     assertion.Status == AssertionStatus.Error).ToArray();
+        if (failures.Length > 0)
+        {
+            throw new AssertionException(string.Join(Environment.NewLine, failures.Select(failure => failure.Message)));
         }
     }
 
-    private void MarkPassIfRetriedSuccessfully()
-    {
-        var allScenarios = TestRun.Store.ScenariosByTestFrameworkId;
-        if (allScenarios.TryGetValue(BDTestExecutionId, out var scenario) && scenario?.Status == Status.Passed)
-        {
-            TestExecutionContext.CurrentContext.CurrentResult.SetResult(ResultState.Success);
-        }
-    }
     // Retain the virtual hook so existing NUnit completion overrides still run.
     [TearDown]
     [Obsolete("Call EndTest() in new adapters. Retained for NUnit teardown compatibility.")]

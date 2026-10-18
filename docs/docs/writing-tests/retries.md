@@ -84,4 +84,4 @@ Each `ScenarioAttempt` has a one-based `Number`, `Status`, `Exception` (type, me
 
 JSON reports include the history, and older reports load with an empty history. Both the HTML report and the report server show a **Retry history** section for retried scenarios, so a failure stays visible after a passing retry.
 
-With NUnit, if a retried scenario finally passes, the adapter marks the NUnit result as passed. TUnit's own `[Retry]` attribute retries the whole test method instead; use either, not both.
+With NUnit, each attempt's steps and step hooks run with isolated assertion state through NUnit's public exception constraint API. A final passing attempt lets NUnit report a pass, including after `Assert.That` or `Assert.Multiple` failed earlier. A failure outside the scenario still fails the test; warnings from scenario attempts remain visible. No teardown result override is used. TUnit's own `[Retry]` attribute retries the whole test method instead; use either, not both.

@@ -106,6 +106,24 @@ public class OutputLifecycleTests
     }
 
     [Test]
+    public void Framework_id_only_flow_captures_completed_scenario_teardown()
+    {
+        using var fixture = new Capture();
+        fixture.Select();
+        var scenario = fixture.Register();
+        scenario.Status = Status.Passed;
+        scenario.EndTime = DateTime.UtcNow;
+        TestOutputData.TestId = null;
+        var writer = new TestOutputData();
+
+        writer.Write("teardown");
+        writer.Write('!');
+
+        Assert.That(scenario.TearDownOutput, Is.EqualTo("teardown!"));
+        Assert.That(scenario.TestStartupInformation, Is.Null.Or.Empty);
+    }
+
+    [Test]
     public async Task Parallel_framework_ids_keep_setup_and_teardown_separate()
     {
         await Task.WhenAll(Enumerable.Range(0, 12).Select(index => Task.Run(() =>

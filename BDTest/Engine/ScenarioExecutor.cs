@@ -82,10 +82,22 @@ internal class ScenarioExecutor : IScenarioExecutor
 
             ConsoleReporter.WriteLineToConsoleOnly($"--------------------------------------------------{Environment.NewLine}");
 
-            var stepBudget = scenario.Timeout.HasValue ? Stopwatch.StartNew() : null;
-            foreach (var step in scenario.Steps)
+            if (scenario.BdTestBaseClass is { } test)
             {
-                await step.Execute(scenario.BdTestBaseClass, scenario.Timeout, scenario.Timeout - stepBudget?.Elapsed);
+                await test.ExecuteScenarioStepsAsync(ExecuteStepsAsync);
+            }
+            else
+            {
+                await ExecuteStepsAsync();
+            }
+
+            async Task ExecuteStepsAsync()
+            {
+                var stepBudget = scenario.Timeout.HasValue ? Stopwatch.StartNew() : null;
+                foreach (var step in scenario.Steps)
+                {
+                    await step.Execute(scenario.BdTestBaseClass, scenario.Timeout, scenario.Timeout - stepBudget?.Elapsed);
+                }
             }
 
             scenario.Status = scenario.Steps.Count > 0 && scenario.Steps.All(step => step.Status == Status.Skipped)

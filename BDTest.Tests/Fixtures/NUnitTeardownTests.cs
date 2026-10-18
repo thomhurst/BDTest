@@ -45,6 +45,7 @@ public class NUnitTeardownTests : NUnitBDTestBase<MyTestContext>
     [Test, BDTestRetry(1)]
     public async Task RetriedScenarioPassesBeforeContextAndOutputAreCleared()
     {
+        var originalOutcome = TestContext.CurrentContext.Result.Outcome;
         ContextAmendment = _ =>
         {
             _amendments++;
@@ -57,8 +58,8 @@ public class NUnitTeardownTests : NUnitBDTestBase<MyTestContext>
 
         Assert.That(_scenario.Status, Is.EqualTo(Status.Passed));
         Assert.That(_scenario.RetryCount, Is.EqualTo(1));
-        Assert.That(TestContext.CurrentContext.Result.Outcome, Is.EqualTo(ResultState.Failure),
-            "The failed NUnit assertion needs correction even though the scenario passed on retry.");
+        Assert.That(TestContext.CurrentContext.Result.Outcome, Is.EqualTo(originalOutcome),
+            "Failed attempts must not change the NUnit runner result.");
         _events.Add("test finished");
     }
 
@@ -72,7 +73,7 @@ public class NUnitTeardownTests : NUnitBDTestBase<MyTestContext>
         _completing = true;
         base.MarkTestAsComplete();
         Assert.That(TestContext.CurrentContext.Result.Outcome, Is.EqualTo(ResultState.Success));
-        _events.Add("retry corrected");
+        _events.Add("result preserved");
         _events.Add(TestOutputData.FrameworkExecutionId == null && TestOutputData.TestId == null
             ? "test completed" : "test not completed");
         _ = Context;
@@ -86,7 +87,7 @@ public class NUnitTeardownTests : NUnitBDTestBase<MyTestContext>
         {
             Assert.That(_events, Is.EqualTo(new[]
             {
-                "test finished", "context present", "output active", "retry corrected", "test completed", "context removed"
+                "test finished", "context present", "output active", "result preserved", "test completed", "context removed"
             }));
             Assert.That(_completionCalls, Is.EqualTo(1));
             Assert.That(_amendments, Is.EqualTo(3), "Two attempt contexts and one replacement after context removal.");
