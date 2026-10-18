@@ -3,8 +3,6 @@ using System.Diagnostics.CodeAnalysis;
 using System.Net;
 using System.Text;
 using BDTest.Helpers;
-using BDTest.Maps;
-using BDTest.Settings;
 
 namespace BDTest;
 
@@ -42,8 +40,7 @@ public static class BDTestReportServer
     public static async Task<Uri> SendDataAndGetReportUriAsync(Uri serverAddress, BDTestRunDescriptor bdTestRunDescriptor,
         HttpClient httpClient, BDTestRun run)
     {
-        if (run == null) throw new ArgumentNullException(nameof(run));
-        run.ThrowIfDisposed();
+        var dataOutputModel = BDTestOutputModelBuilder.Build(run, bdTestRunDescriptor);
         var pingUri = new UriBuilder(serverAddress)
         {
             Path = "bdtest/ping"
@@ -62,23 +59,6 @@ public static class BDTestReportServer
         {
             Path = "bdtest/data"
         }.Uri;
-
-        var scenarios = BDTestUtil.GetScenarios(run);
-            
-        var dataOutputModel = new BDTestOutputModel
-        {
-            Id = run.ReportId,
-            Environment = bdTestRunDescriptor?.Environment ?? BDTestSettings.LegacyEnvironment,
-            Tag = bdTestRunDescriptor?.Tag ?? BDTestSettings.LegacyTag,
-            BranchName = bdTestRunDescriptor?.BranchName ?? BDTestSettings.LegacyBranchName,
-            MachineName = Environment.MachineName,
-            Scenarios = scenarios,
-            Version = BDTestVersionHelper.CurrentVersion,
-            NotRun = BDTestUtil.GetNotRunScenarios(run),
-            TestTimer = scenarios.Count == 0 ? new Output.TestTimer { TestsStartedAt = run.StartedAt } : BDTestUtil.GetTestTimer(scenarios)
-        };
-
-        AddCustomProperties(dataOutputModel);
 
         var attachments = BDTestAttachmentHelper.GetAttachments(dataOutputModel).ToArray();
         // Check ownership before posting JSON. File content is opened again for each upload attempt.
@@ -183,14 +163,6 @@ public static class BDTestReportServer
             // Round up, then recheck; cap each wait to Task.Delay's supported range.
             var milliseconds = (int)Math.Min(Math.Ceiling(remaining.TotalMilliseconds), int.MaxValue - 1);
             await Task.Delay(milliseconds).ConfigureAwait(false);
-        }
-    }
-
-    private static void AddCustomProperties(BDTestOutputModel dataOutputModel)
-    {
-        foreach (var customProperty in BDTestSettings.CustomProperties)
-        {
-            dataOutputModel.CustomProperties.Add(customProperty.Key, customProperty.Value);
         }
     }
 }

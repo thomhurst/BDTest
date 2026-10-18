@@ -1,7 +1,4 @@
 using BDTest.Maps;
-using BDTest.Output;
-using BDTest.Settings;
-using BDTest.Test;
 using System.Text.Json;
 using System.Threading;
 
@@ -21,25 +18,7 @@ public static class BDTestJsonHelper
     /// <summary>Creates a report containing only the supplied run's scenarios and pending definitions.</summary>
     public static string GetTestJsonData(BDTestRunDescriptor bdTestRunDescriptor, BDTestRun run)
     {
-        if (run == null) throw new ArgumentNullException(nameof(run));
-        run.ThrowIfDisposed();
-        var scenarios = BDTestUtil.GetScenarios(run);
-            
-        var testTimer = GetTestTimer(scenarios, run);
-            
-        var dataToOutput = new BDTestOutputModel
-        {
-            Id = run.ReportId,
-            Environment = bdTestRunDescriptor?.Environment ?? BDTestSettings.LegacyEnvironment,
-            Tag = bdTestRunDescriptor?.Tag ?? BDTestSettings.LegacyTag,
-            BranchName = bdTestRunDescriptor?.BranchName ?? BDTestSettings.LegacyBranchName,
-            MachineName = Environment.MachineName,
-            Scenarios = scenarios,
-            TestTimer = testTimer,
-            NotRun = BDTestUtil.GetNotRunScenarios(run),
-            Version = BDTestVersionHelper.CurrentVersion
-        };
-            
+        var dataToOutput = BDTestOutputModelBuilder.Build(run, bdTestRunDescriptor);
         return Serialize(dataToOutput, writeIndented: true);
     }
 
@@ -78,23 +57,5 @@ public static class BDTestJsonHelper
         }
         using var document = await JsonDocument.ParseAsync(stream, cancellationToken: cancellationToken).ConfigureAwait(false);
         return LegacyReportJson.Deserialize(document.RootElement, maximumExpandedSize);
-    }
-
-    private static TestTimer GetTestTimer(IEnumerable<Scenario> scenarios, BDTestRun run)
-    {
-        var enumerable = scenarios.ToList();
-
-        if (enumerable.Count == 0)
-        {
-            return new TestTimer { TestsStartedAt = run.StartedAt };
-        }
-
-        var testTimer = new TestTimer
-        {
-            TestsStartedAt = enumerable.GetStartDateTime(),
-            TestsFinishedAt = enumerable.GetEndDateTime()
-        };
-
-        return testTimer;
     }
 }

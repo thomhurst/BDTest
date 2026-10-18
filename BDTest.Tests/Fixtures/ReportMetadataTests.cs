@@ -93,13 +93,30 @@ public class ReportMetadataTests
     }
 
     [TestCaseSource(nameof(DescriptorFallbackCases))]
-    public async Task MissingDescriptorAndLegacyValuesKeepPathSpecificDefaults(
+    public async Task MissingMetadataIsNullInJsonAndShownAsNotSpecifiedInHtml(
         string path, string descriptorMode)
     {
         SetLegacySettings(null, null, null);
 
         await AssertMetadataAsync(path, descriptorMode == "null" ? null : new BDTestRunDescriptor(),
             null, null, null, descriptorMode == "default overload");
+    }
+
+    [Test]
+    public void Missing_metadata_stays_null_in_the_shared_model()
+    {
+        SetLegacySettings(null, null, null);
+        using var run = BDTestRun.Start();
+
+        var report = BDTestOutputModelBuilder.Build(run, new BDTestRunDescriptor());
+
+        Assert.That(report.Environment, Is.Null);
+        Assert.That(report.Tag, Is.Null);
+        Assert.That(report.BranchName, Is.Null);
+        Assert.That(BDTestHtmlHelper.GetTestHtmlReport(null, run),
+            Does.Contain("<dt>Environment</dt><dd class=\"unset\">Not Specified</dd>")
+                .And.Contain("<dt>Tag</dt><dd class=\"unset\">Not Specified</dd>")
+                .And.Contain("<dt>Branch</dt><dd class=\"unset\">Not Specified</dd>"));
     }
 
     private static async Task AssertMetadataAsync(string path, BDTestRunDescriptor descriptor,

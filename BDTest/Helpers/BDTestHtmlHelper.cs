@@ -1,7 +1,6 @@
 using BDTest.Attributes;
 using BDTest.Maps;
 using BDTest.Output;
-using BDTest.Settings;
 using BDTest.Test;
 using System.Globalization;
 using System.Security.Cryptography;
@@ -43,43 +42,8 @@ public static class BDTestHtmlHelper
     /// <summary>Creates a report containing only the supplied run's scenarios and pending definitions.</summary>
     public static string GetTestHtmlReport(BDTestRunDescriptor bdTestRunDescriptor, BDTestRun run)
     {
-        if (run == null) throw new ArgumentNullException(nameof(run));
-        run.ThrowIfDisposed();
-        var scenarios = BDTestUtil.GetScenarios(run);
-        var testTimer = GetTestTimer(scenarios, run);
-        
-        var dataToOutput = new BDTestOutputModel
-        {
-            Id = run.ReportId,
-            Environment = bdTestRunDescriptor?.Environment ?? BDTestSettings.LegacyEnvironment ?? NotSpecified,
-            Tag = bdTestRunDescriptor?.Tag ?? BDTestSettings.LegacyTag ?? NotSpecified,
-            BranchName = bdTestRunDescriptor?.BranchName ?? BDTestSettings.LegacyBranchName ?? NotSpecified,
-            MachineName = Environment.MachineName,
-            Scenarios = scenarios,
-            TestTimer = testTimer,
-            NotRun = BDTestUtil.GetNotRunScenarios(run),
-            Version = BDTestVersionHelper.CurrentVersion
-        };
-
+        var dataToOutput = BDTestOutputModelBuilder.Build(run, bdTestRunDescriptor);
         return GenerateHtmlReport(dataToOutput);
-    }
-
-    private static TestTimer GetTestTimer(IEnumerable<Scenario> scenarios, BDTestRun run)
-    {
-        var enumerable = scenarios.ToList();
-
-        if (enumerable.Count == 0)
-        {
-            return new TestTimer { TestsStartedAt = run.StartedAt };
-        }
-
-        var testTimer = new TestTimer
-        {
-            TestsStartedAt = enumerable.GetStartDateTime(),
-            TestsFinishedAt = enumerable.GetEndDateTime()
-        };
-
-        return testTimer;
     }
 
     private static string GenerateHtmlReport(BDTestOutputModel data)
@@ -183,7 +147,7 @@ public static class BDTestHtmlHelper
     private static void AppendMeta(StringBuilder html, string label, string value, bool mono)
     {
         var cssClass = string.IsNullOrEmpty(value) || value == NotSpecified ? " class=\"unset\"" : mono ? " class=\"mono\"" : "";
-        html.AppendLine($"<div><dt>{label}</dt><dd{cssClass}>{EscapeHtml(value)}</dd></div>");
+        html.AppendLine($"<div><dt>{label}</dt><dd{cssClass}>{EscapeHtml(value ?? NotSpecified)}</dd></div>");
     }
 
     private static void GenerateSummarySection(StringBuilder html, BDTestOutputModel data)

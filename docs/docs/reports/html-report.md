@@ -52,6 +52,7 @@ For other frameworks, see [Test frameworks](../frameworks/overview.md).
 ## What the report contains
 
 - **Run result:** the verdict, duration, start and end times (UTC), and the environment, tag, branch, machine and BDTest version.
+- **Run properties:** values copied from the obsolete `BDTestSettings.CustomProperties`, with keys and values HTML-encoded.
 - **Summary:** a status bar and count tiles. Totals include tests that were built but never run, so a run with unfinished definitions never reports **All passed**. Status tiles filter the scenario list; the **Built but never run** tile links to the unfinished definitions.
 - **Needs attention:** failed scenarios grouped by exception type and message, with links to each scenario. Shown only when something failed.
 - **Scenarios:** a list grouped by story. Search scenarios, steps, stories and tags; filter by status or tag; sort by story, failures first or duration. Large lists show 200 scenarios at a time. Each scenario expands to show:
