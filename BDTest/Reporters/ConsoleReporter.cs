@@ -5,38 +5,19 @@ namespace BDTest.Reporters;
 
 internal static class ConsoleReporter
 {
-    public static async Task WriteLine(string text, ConsoleColor? consoleColor = null)
+    public static async Task WriteLine(string text)
     {
-        if (consoleColor != null)
-        {
-            Console.ForegroundColor = consoleColor.Value;
-        }
-            
         await Console.Out.WriteLineAsync(text);
-        Console.ResetColor();
     }
 
-    public static void WriteLineToConsoleOnly(string text, ConsoleColor? consoleColor = null)
+    public static void WriteLineToConsoleOnly(string text)
     {
-        if (consoleColor != null)
-        {
-            Console.ForegroundColor = consoleColor.Value;
-        }
-
         TestOutputData.Instance.One.WriteLine(text);
-
-        Console.ResetColor();
     }
 
-    public static async Task Write(string text, ConsoleColor? consoleColor = null)
+    public static async Task Write(string text)
     {
-        if (consoleColor != null)
-        {
-            Console.ForegroundColor = consoleColor.Value;
-        }
-
         await Console.Out.WriteAsync(text);
-        Console.ResetColor();
     }
 
     public static async Task WriteStory(StoryText storyText)
@@ -46,7 +27,7 @@ internal static class ConsoleReporter
             return;
         }
 
-        await Write("Story: ", ConsoleColor.DarkRed);
+        await Write("Story: ");
         await WriteLine(storyText.Story);
     }
 
@@ -57,7 +38,7 @@ internal static class ConsoleReporter
             return;
         }
 
-        await Write("Scenario: ", ConsoleColor.DarkRed);
+        await Write("Scenario: ");
         await WriteLine(scenarioText.Scenario?.Trim());
     }
 }
