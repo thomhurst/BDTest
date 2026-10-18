@@ -89,7 +89,7 @@ public class CustomHtmlReportTests
     private async Task<string> RenderScenario(bool modal, string payload)
     {
         // Use the same JSON deserialization boundary as uploaded report data.
-        var scenario = JsonConvert.DeserializeObject<Scenario>(JsonConvert.SerializeObject(new
+        var scenario = ReportJson.DeserializeObject<Scenario>(ReportJson.SerializeObject(new
         {
             Guid = "custom-html-test",
             Steps = Array.Empty<object>(),

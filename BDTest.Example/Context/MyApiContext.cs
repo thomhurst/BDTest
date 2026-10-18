@@ -1,4 +1,4 @@
-using Newtonsoft.Json;
+using System.Text.Json;
 
 namespace BDTest.Example.Context;
 
@@ -22,6 +22,6 @@ public class MyApiContext
     public async Task<T> DeserializeResponse<T>()
     {
         var stringBodyContent = await ResponseMessage.Content.ReadAsStringAsync();
-        return JsonConvert.DeserializeObject<T>(stringBodyContent);
+        return JsonSerializer.Deserialize<T>(stringBodyContent);
     }  
 }

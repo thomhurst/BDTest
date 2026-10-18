@@ -340,7 +340,7 @@ public class AuthenticationTests
     private Task<HttpResponseMessage> Upload() => _client.PostAsync("/bdtest/data", UploadBody());
 
     private static StringContent UploadBody() => new(
-        JsonConvert.SerializeObject(new BDTestOutputModel
+        ReportJson.SerializeObject(new BDTestOutputModel
         {
             Id = "uploaded-report",
             TestTimer = new TestTimer()

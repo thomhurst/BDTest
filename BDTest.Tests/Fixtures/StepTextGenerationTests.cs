@@ -211,7 +211,7 @@ public class StepTextGenerationTests : AbstractContextBDTestBase<StepTextGenerat
         Assert.That(step.Exception, Is.Null);
         Assert.That(step.StepText, Is.EqualTo("When value: <error: NullReferenceException>"));
         Assert.That(step.Diagnostics.Single(), Does.Contain("value").And.Contain("NullReferenceException").And.Contain("not ready"));
-        var restored = Newtonsoft.Json.JsonConvert.DeserializeObject<Scenario>(Newtonsoft.Json.JsonConvert.SerializeObject(scenario));
+        var restored = ReportJson.DeserializeObject<Scenario>(ReportJson.SerializeObject(scenario));
         Assert.That(restored.Steps[0].Diagnostics, Is.EqualTo(step.Diagnostics));
     }
 

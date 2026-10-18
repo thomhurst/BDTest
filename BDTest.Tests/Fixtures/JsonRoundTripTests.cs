@@ -1,7 +1,8 @@
 using BDTest.Output;
+using BDTest.Helpers;
 using BDTest.Test;
 using BDTest.Test.Steps;
-using Newtonsoft.Json;
+using System.Text.Json;
 using Newtonsoft.Json.Linq;
 using NUnit.Framework;
 
@@ -9,6 +10,11 @@ namespace BDTest.Tests.Fixtures;
 
 public class JsonRoundTripTests
 {
+    private static readonly BDTestJsonContext DurationContext = new(new JsonSerializerOptions
+    {
+        Converters = { new TimespanConverter() }
+    });
+
     [TestCase(StepType.Given, "Given")]
     [TestCase(StepType.AndGiven, "And")]
     [TestCase(StepType.When, "When")]
@@ -20,9 +26,9 @@ public class JsonRoundTripTests
     public void Step_round_trip_preserves_type_and_reporting_prefix(StepType stepType, string prefix)
     {
         var step = new Step(new Runnable(() => NoOp()), stepType, "scenario", "report");
-        var restored = JsonConvert.DeserializeObject<Step>(JsonConvert.SerializeObject(step));
+        var restored = ReportJson.DeserializeObject<Step>(ReportJson.SerializeObject(step));
 
-        Assert.That((int)JObject.Parse(JsonConvert.SerializeObject(restored))["StepType"], Is.EqualTo((int)stepType));
+        Assert.That((string)JObject.Parse(ReportJson.SerializeObject(restored))["StepType"], Is.EqualTo(stepType.ToString()));
         Assert.That(restored.StepText, Is.EqualTo(step.StepText));
 
         // Regenerate text so that the stored StepText cannot hide a lost StepType.
@@ -34,7 +40,7 @@ public class JsonRoundTripTests
     [Test]
     public void Legacy_step_without_type_defaults_to_given()
     {
-        var restored = JsonConvert.DeserializeObject<Step>("{}");
+        var restored = ReportJson.DeserializeObject<Step>("{}");
         restored.OverriddenStepText = () => "legacy text";
         restored.SetStepText();
         Assert.That(restored.StepText, Is.EqualTo("Given legacy text"));
@@ -47,15 +53,14 @@ public class JsonRoundTripTests
     public void Duration_round_trip_preserves_ticks_and_wire_format(long ticks, string wireValue)
     {
         var duration = TimeSpan.FromTicks(ticks);
-        var converter = new TimespanConverter();
-        var json = JsonConvert.SerializeObject(duration, converter);
+        var json = JsonSerializer.Serialize(duration, DurationContext.TimeSpan);
 
-        Assert.That(json, Is.EqualTo(JsonConvert.SerializeObject(wireValue)));
-        Assert.That(JsonConvert.DeserializeObject<TimeSpan>(json, converter), Is.EqualTo(duration));
+        Assert.That(json, Is.EqualTo(ReportJson.SerializeObject(wireValue)));
+        Assert.That(JsonSerializer.Deserialize(json, DurationContext.TimeSpan), Is.EqualTo(duration));
 
-        var step = JsonConvert.DeserializeObject<Step>($"{{\"TimeTaken\":{json}}}");
+        var step = ReportJson.DeserializeObject<Step>($"{{\"TimeTaken\":{json}}}");
         Assert.That(step.TimeTaken, Is.EqualTo(duration));
-        Assert.That((string)JObject.Parse(JsonConvert.SerializeObject(step))["TimeTaken"], Is.EqualTo(wireValue));
+        Assert.That((string)JObject.Parse(ReportJson.SerializeObject(step))["TimeTaken"], Is.EqualTo(wireValue));
     }
 
     [TestCase("\"not a duration\"")]
@@ -71,8 +76,8 @@ public class JsonRoundTripTests
     [TestCase("{}")]
     public void Invalid_or_null_duration_throws_serialization_exception(string json)
     {
-        Assert.Throws<JsonSerializationException>(() => JsonConvert.DeserializeObject<TimeSpan>(json, new TimespanConverter()));
-        Assert.Throws<JsonSerializationException>(() => JsonConvert.DeserializeObject<Step>($"{{\"TimeTaken\":{json}}}"));
+        Assert.Throws<JsonException>(() => JsonSerializer.Deserialize(json, DurationContext.TimeSpan));
+        Assert.Throws<JsonException>(() => ReportJson.DeserializeObject<Step>($"{{\"TimeTaken\":{json}}}"));
     }
 
     private static void NoOp() { }

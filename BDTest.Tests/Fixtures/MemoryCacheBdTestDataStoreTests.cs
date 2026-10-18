@@ -99,7 +99,7 @@ public class MemoryCacheBdTestDataStoreTests
 
     private static TestRunSummary CreateRecord(int index)
     {
-        var record = JsonConvert.DeserializeObject<TestRunSummary>("{}");
+        var record = ReportJson.DeserializeObject<TestRunSummary>("{}");
         record.RecordId = index.ToString();
         record.StartedAtDateTime = new DateTime(2026, 1, 1).AddMinutes(index);
         return record;

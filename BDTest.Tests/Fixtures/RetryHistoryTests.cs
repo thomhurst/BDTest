@@ -66,7 +66,7 @@ public class RetryHistoryTests
         try
         {
             var scenario = await fixture.Run();
-            var restored = JsonConvert.DeserializeObject<Scenario>(JsonConvert.SerializeObject(scenario));
+            var restored = ReportJson.DeserializeObject<Scenario>(ReportJson.SerializeObject(scenario));
             Assert.That(restored.Attempts.Select(attempt => attempt.Status),
                 Is.EqualTo(new[] { Status.Failed, Status.Failed, Status.Passed }));
             Assert.That(restored.Attempts[0].Exception.AsString, Does.Contain("<failure 1>"));
@@ -89,7 +89,7 @@ public class RetryHistoryTests
     [Test]
     public void OldReportsHaveEmptyHistory()
     {
-        var scenario = JsonConvert.DeserializeObject<Scenario>("{\"RetryCount\":2}");
+        var scenario = ReportJson.DeserializeObject<Scenario>("{\"RetryCount\":2}");
         Assert.That(scenario.Attempts, Is.Empty);
     }
 

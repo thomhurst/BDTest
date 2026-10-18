@@ -27,7 +27,7 @@ public class RunTimingTests : BDTestBase
 
         AssertTimer(BDTestUtil.GetTestTimer(new[] { later, unstarted, earlier }),
             StartedAt, StartedAt.AddSeconds(5));
-        var report = JsonConvert.DeserializeObject<BDTestOutputModel>(BDTestJsonHelper.GetTestJsonData());
+        var report = ReportJson.DeserializeObject<BDTestOutputModel>(BDTestJsonHelper.GetTestJsonData());
         AssertTimer(report.TestTimer, StartedAt, StartedAt.AddSeconds(5));
     }
 
@@ -113,7 +113,7 @@ public class RunTimingTests : BDTestBase
 
         Assert.That(scenario.EndTime, Is.LessThan(scenario.StartTime));
         Assert.That(scenario.TimeTaken, Is.InRange(TimeSpan.Zero, outer.Elapsed));
-        var restored = JsonConvert.DeserializeObject<Scenario>(JsonConvert.SerializeObject(scenario));
+        var restored = ReportJson.DeserializeObject<Scenario>(ReportJson.SerializeObject(scenario));
         Assert.That(restored.TimeTaken, Is.EqualTo(scenario.TimeTaken));
     }
 

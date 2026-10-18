@@ -19,8 +19,7 @@ public static class BDTestExtensions
     public static IMvcBuilder AddBdTestReportControllersAndViews(this IMvcBuilder mvcBuilder)
     {
         mvcBuilder
-            .AddApplicationPart(typeof(BDTestController).Assembly)
-            .AddNewtonsoftJson();
+            .AddApplicationPart(typeof(BDTestController).Assembly);
 
         var services = mvcBuilder.Services;
             

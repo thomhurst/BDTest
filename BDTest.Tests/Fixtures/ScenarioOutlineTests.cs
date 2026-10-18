@@ -66,7 +66,7 @@ public class ScenarioOutlineTests : AbstractContextBDTestBase<ScenarioOutlineTes
         Assert.That(outline.Status, Is.EqualTo(Status.Failed));
         Assert.That(outline.Examples.Select(row => row.Status), Is.EqualTo(new[] { Status.Failed, Status.Passed }));
         Assert.That(outline.Examples[0].RetryCount, Is.EqualTo(1));
-        foreach (var result in new[] { outline, JsonConvert.DeserializeObject<Scenario>(JsonConvert.SerializeObject(outline)) })
+        foreach (var result in new[] { outline, ReportJson.DeserializeObject<Scenario>(ReportJson.SerializeObject(outline)) })
         {
             var failedRow = result.Examples[0];
             Assert.That(failedRow.EndTime, Is.GreaterThanOrEqualTo(failedRow.Attempts.Single().EndTime));
@@ -96,7 +96,7 @@ public class ScenarioOutlineTests : AbstractContextBDTestBase<ScenarioOutlineTes
 
     private static async Task AssertRowErrorReported(Scenario outline, string encodedError)
     {
-        foreach (var result in new[] { outline, JsonConvert.DeserializeObject<Scenario>(JsonConvert.SerializeObject(outline)) })
+        foreach (var result in new[] { outline, ReportJson.DeserializeObject<Scenario>(ReportJson.SerializeObject(outline)) })
         {
             Assert.That(result.Examples[0].Exception, Is.Not.Null);
             var razor = await ReportHandlerEncodingTests.RenderAsync("/Views/Shared/_ScenarioExamples.cshtml", result);
@@ -168,7 +168,7 @@ public class ScenarioOutlineTests : AbstractContextBDTestBase<ScenarioOutlineTes
         Assert.That(outline.Examples.All(row => row.Steps.All(step => step.ScenarioId == row.Guid)), Is.True);
         Assert.That(BDTestUtil.GetScenarios().Where(x => x.FrameworkTestId == _executionId), Is.EqualTo(new[] { outline }));
         Assert.That(BDTestUtil.GetNotRunScenarios().Where(x => x.TestId == _executionId), Is.Empty);
-        var restored = JsonConvert.DeserializeObject<BDTestOutputModel>(BDTestJsonHelper.GetTestJsonData());
+        var restored = ReportJson.DeserializeObject<BDTestOutputModel>(BDTestJsonHelper.GetTestJsonData());
         var restoredOutline = restored.Scenarios.Single(scenario => scenario.FrameworkTestId == _executionId);
         Assert.That(restoredOutline.Tags, Is.EqualTo(outline.Tags));
         Assert.That(restoredOutline.Examples.All(row => row.Tags.SequenceEqual(outline.Tags)), Is.True);
@@ -240,7 +240,7 @@ public class ScenarioOutlineTests : AbstractContextBDTestBase<ScenarioOutlineTes
         Assert.That(table, Does.Contain("<th>Retries</th>"));
         Assert.That(table, Does.Contain("<td>Passed</td><td>1</td>"));
         Assert.That(table, Does.Contain("<td>Passed</td><td>0</td>"));
-        foreach (var result in new[] { outline, JsonConvert.DeserializeObject<Scenario>(JsonConvert.SerializeObject(outline)) })
+        foreach (var result in new[] { outline, ReportJson.DeserializeObject<Scenario>(ReportJson.SerializeObject(outline)) })
         {
             var razor = await ReportHandlerEncodingTests.RenderAsync("/Views/Shared/_ScenarioExamples.cshtml", result);
             Assert.That(razor, Does.Contain("Retry history"));
@@ -271,7 +271,7 @@ public class ScenarioOutlineTests : AbstractContextBDTestBase<ScenarioOutlineTes
         catch (Exception exception) { thrown = exception; }
         Assert.That(thrown, fail ? Is.TypeOf<InvalidOperationException>() : Is.Null);
         var outline = BDTestUtil.GetScenarios().Single(x => x.FrameworkTestId == _executionId);
-        foreach (var result in new[] { outline, JsonConvert.DeserializeObject<Scenario>(JsonConvert.SerializeObject(outline)) })
+        foreach (var result in new[] { outline, ReportJson.DeserializeObject<Scenario>(ReportJson.SerializeObject(outline)) })
         {
             Assert.That(result.TestStartupInformation, Is.Null.Or.Empty);
             Assert.That(result.TearDownOutput, Is.Null.Or.Empty);
@@ -381,7 +381,7 @@ public class ScenarioOutlineTests : AbstractContextBDTestBase<ScenarioOutlineTes
         {
             Assert.That(row.Exception, Is.Null);
             Assert.That(outline.Exception, Is.Null);
-            var restored = JsonConvert.DeserializeObject<Scenario>(JsonConvert.SerializeObject(outline));
+            var restored = ReportJson.DeserializeObject<Scenario>(ReportJson.SerializeObject(outline));
             Assert.That(restored.Examples[0].Exception, Is.Null);
             Assert.That(restored.Exception, Is.Null);
         }
@@ -449,7 +449,7 @@ public class ScenarioOutlineTests : AbstractContextBDTestBase<ScenarioOutlineTes
 
         Assert.That(thrown, fail ? Is.TypeOf<InvalidOperationException>() : Is.Null);
         var outline = BDTestUtil.GetScenarios().Single(x => x.FrameworkTestId == _executionId);
-        var restored = JsonConvert.DeserializeObject<Scenario>(JsonConvert.SerializeObject(outline));
+        var restored = ReportJson.DeserializeObject<Scenario>(ReportJson.SerializeObject(outline));
         foreach (var result in new[] { outline, restored })
         {
             Assert.That(result.Examples, Has.Count.EqualTo(3));
@@ -560,7 +560,7 @@ public class ScenarioOutlineTests : AbstractContextBDTestBase<ScenarioOutlineTes
     {
         var outline = await ScenarioOutline("Report outline", new[] { new { Text = "<script>row</script>" }, new { Text = "second" } },
             row => Given(() => NoOp()).WithStepText(() => "value <Text>").When(() => NoOp()).Then(() => NoOp()));
-        var restored = JsonConvert.DeserializeObject<Scenario>(JsonConvert.SerializeObject(outline));
+        var restored = ReportJson.DeserializeObject<Scenario>(ReportJson.SerializeObject(outline));
         var standalone = BDTestHtmlHelper.GetTestHtmlReport();
         var exampleTable = System.Text.RegularExpressions.Regex.Match(standalone,
             $"<table class=\"examples\" id=\"examples-{outline.Guid}\">.*?</table>", System.Text.RegularExpressions.RegexOptions.Singleline).Value;

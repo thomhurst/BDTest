@@ -24,7 +24,7 @@ public class ReportStatusTests
     public void TotalStatusReflectsScenarioOutcomes(Status expected, Status[] statuses)
     {
         var scenarios = statuses.Select(status =>
-            JsonConvert.DeserializeObject<Scenario>(JsonConvert.SerializeObject(new { Status = status })));
+            ReportJson.DeserializeObject<Scenario>(ReportJson.SerializeObject(new { Status = status })));
 
         Assert.That(scenarios.GetTotalStatus(), Is.EqualTo(expected));
     }

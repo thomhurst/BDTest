@@ -1,30 +1,27 @@
-﻿using Newtonsoft.Json;
+﻿using System.Globalization;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace BDTest.Output;
 
 public class TimespanConverter : JsonConverter<TimeSpan>
 {
-    /// <summary>
-    /// Format: Days.Hours:Minutes:Seconds:Milliseconds
-    /// </summary>
+    /// <summary>The historical report duration format, including seven fractional second digits.</summary>
     public static string TimeSpanFormatString { get; } = @"d\.hh\:mm\:ss\:fffffff";
 
-    public override void WriteJson(JsonWriter writer, TimeSpan value, JsonSerializer serializer)
+    public override void Write(Utf8JsonWriter writer, TimeSpan value, JsonSerializerOptions options)
     {
-        var timespanFormatted = $"{value.ToString(TimeSpanFormatString)}";
-        writer.WriteValue(timespanFormatted);
+        writer.WriteStringValue(value.ToString(TimeSpanFormatString, CultureInfo.InvariantCulture));
     }
 
-    /// <summary>Reads a duration string in <see cref="TimeSpanFormatString"/> format. Null and invalid values are rejected.</summary>
-    /// <exception cref="JsonSerializationException">The token is not a string or does not contain a valid duration.</exception>
-    public override TimeSpan ReadJson(JsonReader reader, Type objectType, TimeSpan existingValue, bool hasExistingValue, JsonSerializer serializer)
+    public override TimeSpan Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
-        if (reader.TokenType != JsonToken.String
-            || !TimeSpan.TryParseExact((string)reader.Value, TimeSpanFormatString, null, out var parsedTimeSpan))
+        if (reader.TokenType != JsonTokenType.String
+            || !TimeSpan.TryParseExact(reader.GetString(), TimeSpanFormatString, CultureInfo.InvariantCulture, out var duration))
         {
-            throw new JsonSerializationException($"Expected a duration string in format '{TimeSpanFormatString}'. Path '{reader.Path}'.");
+            throw new JsonException($"Expected a duration string in format '{TimeSpanFormatString}'.");
         }
 
-        return parsedTimeSpan;
+        return duration;
     }
 }

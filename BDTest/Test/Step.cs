@@ -8,7 +8,7 @@ using BDTest.Helpers;
 using BDTest.Output;
 using BDTest.Settings;
 using BDTest.Test.Steps;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 namespace BDTest.Test;
 
@@ -17,49 +17,51 @@ public class Step
     [JsonIgnore]
     internal Runnable Runnable { get; private set; }
         
-    [JsonProperty]
-    public string Guid { get; private set; }
+    [JsonInclude]
+    public string Guid { get; internal set; }
         
-    [JsonProperty] 
-    public string ReportId { get; private set; }
+    [JsonInclude]
+    public string ReportId { get; internal set; }
         
-    [JsonProperty]
-    public string ScenarioId { get; private set; }
+    [JsonInclude]
+    public string ScenarioId { get; internal set; }
 
-    [JsonProperty]
-    public DateTime StartTime { get; private set; }
+    [JsonInclude]
+    public DateTime StartTime { get; internal set; }
 
-    [JsonProperty]
-    public DateTime EndTime { get; private set; }
+    [JsonInclude]
+    public DateTime EndTime { get; internal set; }
         
-    [JsonProperty]
-    private StepType StepType { get; }
+    [JsonInclude]
+    [JsonConverter(typeof(JsonStringEnumConverter<StepType>))]
+    internal StepType StepType { get; }
     private string StepPrefix => StepType.GetValue();
 
-    [JsonProperty]
-    public string Output { get; private set; }
+    [JsonInclude]
+    public string Output { get; internal set; }
 
     [JsonConverter(typeof(TimespanConverter))]
-    [JsonProperty]
-    public TimeSpan TimeTaken { get; private set; }
+    [JsonInclude]
+    public TimeSpan TimeTaken { get; internal set; }
 
-    [JsonProperty]
+    [JsonConverter(typeof(JsonStringEnumConverter<Status>))]
+    [JsonInclude]
     public Status Status { get; internal set; } = Status.NotRun;
 
-    [JsonProperty]
-    public ExceptionWrapper Exception { get; private set; }
+    [JsonInclude]
+    public ExceptionWrapper Exception { get; internal set; }
 
     /// <summary>The timeout for this step, or null for no step-specific limit.</summary>
-    [JsonProperty]
+    [JsonInclude]
     public TimeSpan? Timeout { get; internal set; }
 
     /// <summary>True when a step or scenario timeout failed this step.</summary>
-    [JsonProperty]
-    public bool TimedOut { get; private set; }
+    [JsonInclude]
+    public bool TimedOut { get; internal set; }
 
     /// <summary>Non-fatal errors encountered while rendering this attempt's step text.</summary>
-    [JsonProperty]
-    public List<string> Diagnostics { get; private set; } = new();
+    [JsonInclude]
+    public List<string> Diagnostics { get; internal set; } = new();
 
     private bool _shouldSkip;
     private readonly string _stepTextTemplate;
@@ -94,13 +96,13 @@ public class Step
     }
 
     [JsonConstructor]
-    private Step(StepType stepType)
+    internal Step(StepType stepType)
     {
         StepType = stepType;
     }
 
-    [JsonProperty]
-    public string StepText { get; private set; }
+    [JsonInclude]
+    public string StepText { get; internal set; }
 
     [JsonIgnore]
     internal Func<string> OverriddenStepText { get; set; }
@@ -326,7 +328,7 @@ public class Step
         }
         else if (!TimedOut && BDTestSettings.CustomExceptionSettings.InconclusiveExceptionTypes.Contains(exception.GetType()))
         {
-            Status = Status.Inconclusive;
+            Status = Status.NotRun;
         }
         else
         {

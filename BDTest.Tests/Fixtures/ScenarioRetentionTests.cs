@@ -33,7 +33,7 @@ public class ScenarioRetentionTests
     public void Completed_report_does_not_keep_fixture_context_or_text_closures_alive(string outcome, Status status)
     {
         var retained = ExecuteAndRelease(outcome);
-        var json = JsonConvert.SerializeObject(retained.Scenario);
+        var json = ReportJson.SerializeObject(retained.Scenario);
 
         GC.Collect();
         GC.WaitForPendingFinalizers();
@@ -46,7 +46,7 @@ public class ScenarioRetentionTests
         Assert.That(retained.Scenario.Status, Is.EqualTo(status));
         Assert.That(retained.Scenario.Steps.All(step => step.Runnable == null && step.OverriddenStepText == null), Is.True);
         Assert.That(retained.Scenario.BdTestBaseClass, Is.Null);
-        Assert.That(JsonConvert.SerializeObject(retained.Scenario), Is.EqualTo(json));
+        Assert.That(ReportJson.SerializeObject(retained.Scenario), Is.EqualTo(json));
         if (outcome == "retry")
         {
             Assert.That(retained.Scenario.RetryCount, Is.EqualTo(1));

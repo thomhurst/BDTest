@@ -1,19 +1,17 @@
 using System.Diagnostics;
-using System.Runtime.Serialization;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 namespace BDTest.Output;
 
-public class TestTimer
+public class TestTimer : IJsonOnDeserializing
 {
-    [JsonProperty] public DateTime TestsStartedAt { get; set; } = BDTestRun.Default.StartedAt;
+    [JsonInclude] public DateTime TestsStartedAt { get; set; } = BDTestRun.Default.StartedAt;
 
-    [JsonProperty] public DateTime TestsFinishedAt { get; set; } = DateTime.UtcNow;
+    [JsonInclude] public DateTime TestsFinishedAt { get; set; } = DateTime.UtcNow;
 
     // Deserialized reports must not inherit the receiving process's timestamps.
     // Supplied JSON values are applied after this callback.
-    [OnDeserializing]
-    private void ResetTimestamps(StreamingContext context)
+    void IJsonOnDeserializing.OnDeserializing()
     {
         TestsStartedAt = default;
         TestsFinishedAt = default;
