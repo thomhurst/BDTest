@@ -2,7 +2,7 @@
 # the same fail-closed checks/review gate used by the issue-pr-loop.
 [CmdletBinding()]
 param(
-    [Parameter(Mandatory)][long]$RunId,
+    [long]$RunId,
     [Parameter(Mandatory)][string]$Repo
 )
 
@@ -16,8 +16,25 @@ function Get-GitHubJson([string]$Endpoint, [switch]$Paginate) {
     $raw | ConvertFrom-Json
 }
 
+# Retry pending checks and reviews without rerunning CI. All state is revalidated
+# by the same run-specific path, using only code from the trusted workflow commit.
+if (-not $RunId) {
+    $openPages = @(Get-GitHubJson "repos/$Repo/pulls?state=open&base=main&per_page=100" -Paginate)
+    foreach ($pull in ($openPages | ForEach-Object { $_ })) {
+        if ($pull.user.login -ne 'dependabot[bot]' -and 'dependencies' -notin $pull.labels.name) { continue }
+        $pullHead = [string]$pull.head.sha
+        if ($pullHead -notmatch '^[0-9a-f]{40}$') { throw "#$($pull.number) has no valid head SHA." }
+        $latest = Get-GitHubJson "repos/$Repo/actions/workflows/dotnet.yml/runs?event=pull_request&head_sha=$pullHead&per_page=1"
+        if (@($latest.workflow_runs).Count -eq 1 -and $latest.workflow_runs[0].id) {
+            & $PSCommandPath -RunId $latest.workflow_runs[0].id -Repo $Repo
+        }
+    }
+    return
+}
+
 $run = Get-GitHubJson "repos/$Repo/actions/runs/$RunId"
-if ($run.event -ne 'pull_request' -or $run.path -ne '.github/workflows/dotnet.yml' -or
+$workflowPath = ([string]$run.path -split '@', 2)[0]
+if ($run.event -ne 'pull_request' -or $workflowPath -ne '.github/workflows/dotnet.yml' -or
     $run.status -ne 'completed' -or $run.conclusion -ne 'success') {
     Write-Output "Run $RunId is not a successful .NET PR run; skipping."
     return
@@ -53,6 +70,7 @@ foreach ($associatedPull in ($pullPages | ForEach-Object { $_ })) {
     $gateOutput = & pwsh (Join-Path $PSScriptRoot 'Assert-PrGreen.ps1') -Pr $pr.number -Repo $Repo -Json
     if ($LASTEXITCODE -ne 0) {
         Write-Output "Merge gate denied #$($pr.number); leaving it open."
+        $global:LASTEXITCODE = 0
         continue
     }
     $validatedHead = $gateOutput | ConvertFrom-Json

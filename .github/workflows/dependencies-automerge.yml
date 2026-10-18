@@ -3,6 +3,9 @@ on:
   workflow_run:
     workflows: ['.NET']
     types: [completed]
+  schedule:
+    - cron: '7,22,37,52 * * * *'
+  workflow_dispatch:
 
 permissions:
   actions: read
@@ -14,9 +17,9 @@ permissions:
 jobs:
   dependabot:
     runs-on: ubuntu-latest
-    if: github.event.workflow_run.event == 'pull_request' && github.event.workflow_run.conclusion == 'success'
+    if: github.event_name != 'workflow_run' || (github.event.workflow_run.event == 'pull_request' && github.event.workflow_run.conclusion == 'success')
     steps:
-      # workflow_run has write permissions. Never check out or execute PR code here.
+      # All triggers have write permissions. Never check out or execute PR code here.
       - uses: actions/checkout@v7.0.1
         with:
           ref: ${{ github.workflow_sha }}

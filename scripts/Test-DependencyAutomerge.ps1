@@ -19,6 +19,7 @@ function Reset-Fixture {
     $fixture.associatedPulls = @(@{ number = 123 })
     $fixture.jobs = @(@{ name = 'modularpipeline'; status = 'completed'; conclusion = 'success' })
     $fixture.latestRunId = 42
+    $fixture.openPulls = @($fixture.pull)
     $fixture.gateExit = 0
     $fixture.gateHead = $headSha
     $fixture.apiFailure = $null
@@ -45,16 +46,18 @@ function gh {
         "repos/$repo/commits/$headSha/pulls?per_page=100" { ,@($fixture.associatedPulls); break }
         "repos/$repo/pulls/123" { $fixture.pull; break }
         "repos/$repo/pulls/124" { @{ number = 124; state = 'closed' }; break }
+        "repos/$repo/pulls?state=open&base=main&per_page=100" { ,@($fixture.openPulls); break }
         "repos/$repo/actions/runs/42/jobs?per_page=100" { ,@(@{ jobs = $fixture.jobs }); break }
         "repos/$repo/actions/workflows/dotnet.yml/runs?event=pull_request&head_sha=$headSha&per_page=1" {
             @{ workflow_runs = @(@{ id = $fixture.latestRunId }) }; break
         }
         default { throw "Unexpected API endpoint: $endpoint" }
     }
-    if ($endpoint -like '*/commits/*/pulls?*') {
+    if ($endpoint -like '*/commits/*/pulls?*' -or $endpoint -like '*/pulls?state=*') {
         # Match gh api --paginate --slurp: an outer array containing response pages.
         if ($args -notcontains '--paginate' -or $args -notcontains '--slurp') { throw 'PR lookup must paginate.' }
-        $pages = @($fixture.associatedPulls | ForEach-Object { ,@($_) })
+        $pulls = if ($endpoint -like '*/pulls?state=*') { $fixture.openPulls } else { $fixture.associatedPulls }
+        $pages = @($pulls | ForEach-Object { ,@($_) })
         ConvertTo-Json -InputObject $pages -Depth 20 -Compress
     }
     else {
@@ -72,17 +75,21 @@ function pwsh {
     @{ headRefOid = $fixture.gateHead; headRefName = 'dependency-update' } | ConvertTo-Json -Compress
 }
 
-function Test-Case([string]$Name, [scriptblock]$Arrange, [bool]$ShouldMerge = $false, [bool]$ShouldThrow = $false) {
+function Test-Case([string]$Name, [scriptblock]$Arrange, [bool]$ShouldMerge = $false, [bool]$ShouldThrow = $false, [switch]$Sweep) {
     Reset-Fixture
     $fixture = $global:dependencyMergeFixture
     & $Arrange
     $caught = $false
-    try { & $scriptPath -RunId 42 -Repo $repo | Out-Null }
+    try {
+        if ($Sweep) { & $scriptPath -Repo $repo | Out-Null }
+        else { & $scriptPath -RunId 42 -Repo $repo | Out-Null }
+    }
     catch {
         $caught = $true
         if (-not $ShouldThrow) { throw }
     }
     if ($caught -ne $ShouldThrow) { throw "${Name}: unexpected exception result ($caught)." }
+    if (-not $caught -and $LASTEXITCODE -ne 0) { throw "${Name}: handled gate denial must not fail the workflow." }
     $expected = if ($ShouldMerge) { 1 } else { 0 }
     if ($fixture.merges.Count -ne $expected) { throw "${Name}: expected $expected merges; got $($fixture.merges.Count)." }
     if ($ShouldMerge) {
@@ -97,6 +104,35 @@ function Test-Case([string]$Name, [scriptblock]$Arrange, [bool]$ShouldMerge = $f
 }
 
 Test-Case 'Successful current-head CI merges Dependabot PR' {} -ShouldMerge $true
+Test-Case 'Ref-qualified workflow paths authorize the expected workflow' {
+    $fixture.run.path = '.github/workflows/dotnet.yml@refs/pull/123/merge'
+} -ShouldMerge $true
+Test-Case 'Ref-qualified unrelated workflows cannot authorize a merge' {
+    $fixture.run.path = '.github/workflows/other.yml@main'
+}
+Test-Case 'Retry sweep merges a dependency after its remaining gates become green' {} -Sweep -ShouldMerge $true
+Test-Case 'Retry sweep leaves pending review gates open' { $fixture.gateExit = 1 } -Sweep
+Test-Case 'Retry sweep never merges failed CI' { $fixture.run.conclusion = 'failure' } -Sweep
+Test-Case 'Retry sweep never merges pending CI' { $fixture.run.status = 'in_progress' } -Sweep
+Test-Case 'Retry sweep revalidates the PR head' {
+    $fixture.pull.head.sha = 'b' * 40
+    $fixture.openPulls = @(@{
+        number = 123; user = @{ login = 'dependabot[bot]' }; head = @{ sha = $headSha }
+    })
+} -Sweep
+Test-Case 'Retry sweep revalidates draft state' { $fixture.pull.draft = $true } -Sweep
+Test-Case 'Retry sweep revalidates the gated head' { $fixture.gateHead = 'b' * 40 } -Sweep
+Test-Case 'Retry sweep requires the pipeline job' { $fixture.jobs = @() } -Sweep
+Test-Case 'Retry sweep skips PRs without a CI run' { $fixture.latestRunId = $null } -Sweep
+Test-Case 'Retry sweep handles no open PRs' { $fixture.openPulls = @() } -Sweep
+Test-Case 'Retry sweep skips ordinary PRs' { $fixture.pull.user.login = 'contributor' } -Sweep
+Test-Case 'Retry sweep considers PRs across all pages' {
+    $fixture.openPulls = @(@{ number = 124; user = @{ login = 'contributor' } }, $fixture.pull)
+} -Sweep -ShouldMerge $true
+Test-Case 'Retry sweep API failure fails closed' {
+    $fixture.apiFailure = "repos/$repo/pulls?state=open&base=main&per_page=100"
+} -Sweep -ShouldThrow $true
+Test-Case 'Retry sweep rejects an invalid head before querying CI' { $fixture.pull.head.sha = 'invalid' } -Sweep -ShouldThrow $true
 Test-Case 'Dependency label supports Renovate and other authors' {
     $fixture.pull.user.login = 'renovate[bot]'; $fixture.pull.labels = @(@{ name = 'dependencies' })
 } -ShouldMerge $true
@@ -134,3 +170,5 @@ foreach ($endpoint in @(
     Test-Case "API failure fails closed: $endpoint" { $fixture.apiFailure = $endpoint } -ShouldThrow $true
 }
 Remove-Variable dependencyMergeFixture -Scope Global
+# Expected native failures above must not become the test process's exit code.
+$global:LASTEXITCODE = 0
