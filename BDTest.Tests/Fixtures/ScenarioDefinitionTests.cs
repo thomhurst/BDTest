@@ -111,6 +111,54 @@ public class ScenarioDefinitionTests
         Assert.That(CountingStepTextAttribute.Constructions, Is.EqualTo(constructions));
     }
 
+    [TestCase(false)]
+    [TestCase(true)]
+    public async Task Execution_uses_cached_templates_before_running_overridden_steps(bool configureArguments)
+    {
+        using var run = BDTestRun.Start();
+        ThrowingStepTextAttribute.ThrowOnConstruction = false;
+        var prefix = new Capture(run).When(ThrowingAttributedStep);
+        var argumentReads = 0;
+        if (configureArguments) prefix.WithArgs(() => ++argumentReads);
+        var overrideReads = 0;
+        prefix.WithStepText(() => { overrideReads++; return "override"; });
+        var builder = prefix.Then(NoOp);
+        ThrowingStepTextAttribute.ThrowOnConstruction = true;
+        try
+        {
+            var definition = builder.Definition.Steps[0];
+            var step = new Step(definition, builder.ScenarioId, "report", run);
+            Assert.That(step.StepText, Is.EqualTo("When cached text"));
+            Assert.That(overrideReads, Is.Zero);
+            if (configureArguments)
+            {
+                Assert.That(step.ExplicitArguments, Has.Count.EqualTo(1));
+                Assert.That(step.ExplicitArguments, Is.Not.SameAs(definition.ExplicitArguments));
+            }
+            var result = await builder;
+            Assert.That(result.Status, Is.EqualTo(Status.Passed));
+            Assert.That(Required(result.Steps)[0].StepText, Is.EqualTo("When override"));
+            Assert.That(overrideReads, Is.EqualTo(1));
+            Assert.That(argumentReads, Is.Zero);
+        }
+        finally
+        {
+            ThrowingStepTextAttribute.ThrowOnConstruction = false;
+        }
+    }
+
+    [ThrowingStepText]
+    private static void ThrowingAttributedStep() { }
+
+    private sealed class ThrowingStepTextAttribute : StepTextAttribute
+    {
+        internal static bool ThrowOnConstruction;
+        public ThrowingStepTextAttribute() : base("cached text")
+        {
+            if (ThrowOnConstruction) throw new InvalidOperationException("Attribute reconstructed during execution");
+        }
+    }
+
     [Test]
     public async Task Pending_information_is_an_independent_data_only_projection()
     {

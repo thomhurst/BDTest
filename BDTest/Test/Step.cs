@@ -89,6 +89,11 @@ public class Step
     private string? _generatedStepText;
 
     internal Step(Runnable runnable, StepType stepType, string? scenarioId, string? reportId, BDTestRun? run = null)
+        : this(runnable, stepType, scenarioId, reportId, run, runnable.Definition.GetText())
+    {
+    }
+
+    private Step(Runnable runnable, StepType stepType, string? scenarioId, string? reportId, BDTestRun? run, string textTemplate)
     {
         Options = (run ?? BDTestRun.Default).Options;
         Guid = System.Guid.NewGuid().ToString("N");
@@ -97,17 +102,18 @@ public class Step
         StepType = stepType;
         ReportId = reportId;
         // Construction and reporting retain placeholders without running user argument expressions.
-        _stepTextTemplate = Runnable.Definition.GetText();
+        _stepTextTemplate = textTemplate;
         _generatedStepText = _stepTextTemplate;
         SetStepText();
     }
 
     internal Step(StepDefinition definition, string? scenarioId, string? reportId, BDTestRun run)
-        : this(definition.Runnable, definition.StepType, scenarioId, reportId, run)
+        : this(definition.Runnable, definition.StepType, scenarioId, reportId, run, definition.TextTemplate)
     {
         OverriddenStepText = definition.OverriddenStepText;
         Timeout = definition.Timeout;
-        ExplicitArguments = definition.ExplicitArguments?.ToArray();
+        // The definition already rendered the template; copying readers must not run user code.
+        _explicitArguments = definition.ExplicitArguments?.ToArray();
         AttachedArguments.AddRange(definition.AttachedArguments);
     }
 

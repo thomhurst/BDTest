@@ -32,6 +32,6 @@ Use `BDTestJsonHelper` to serialize reports. Fluent builder types are no longer 
 
 ## Execution
 
-The `Given(...).When(...).Then(...)` API, direct `await`, `BDTestAsync()`, one execution per builder, retries, hooks, outlines and explicit-run ownership keep their behavior. Each branch copies definition settings; changes to a prefix after branching do not affect its existing continuations. Completed reports release runtime delegates without preventing a new continuation from using the retained definition.
+The `Given(...).When(...).Then(...)` API, direct `await`, `BDTestAsync()`, one execution per builder, retries, hooks, outlines and explicit-run ownership keep their behavior. Execution-step construction copies cached templates and argument readers without reconstructing step-text attributes or evaluating callbacks. Text overrides and argument rendering still run during step execution. Each branch copies definition settings; changes to a prefix after branching do not affect its existing continuations. Completed reports release runtime delegates without preventing a new continuation from using the retained definition.
 
 This change separates definitions from the existing report model. Integration of immutable `BDTest.Contracts` results and schema-versioned exports is a separate migration; this change alone does not switch report uploads to a new wire schema. Builder namespace cleanup and renderer extraction are also separate changes.
