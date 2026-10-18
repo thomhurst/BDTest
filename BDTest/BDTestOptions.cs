@@ -32,6 +32,7 @@ public sealed class BDTestOptions
     public SkipTestRules SkipTestRules { get; } = new();
     public SkipStepRules SkipStepRules { get; } = new();
     public DebugSettings Debug { get; } = new();
+    public AttachmentOptions Attachments { get; } = new();
 
     /// <summary>Hooks run sequentially in registration order, around the test instance hooks.</summary>
     public IList<IStepHook> StepHooks { get; } = new List<IStepHook>();

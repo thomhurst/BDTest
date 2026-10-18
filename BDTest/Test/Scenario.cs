@@ -51,6 +51,9 @@ public class Scenario
         
     [JsonInclude] public string CustomHtmlOutputForReport { get; internal set; }
 
+    /// <summary>Files captured outside steps, distinguished by Attachment.AttemptNumber.</summary>
+    [JsonInclude] public List<Attachment> Attachments { get; internal set; } = new();
+
     [JsonIgnore] internal BDTestRuntimeInformation RuntimeInformation { get; set; }
 
     [JsonConstructor]

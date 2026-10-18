@@ -12,8 +12,39 @@ internal sealed class TestRunStore
         
     // Registration, pending writes, listeners and completion must use the same gate.
     internal object Gate { get; } = new();
-    private readonly Dictionary<string, List<Action<Scenario>>> ScenarioListeners = new();
+    private readonly Dictionary<string, List<(Action<Scenario> Publish, Action Discard)>> ScenarioListeners = new();
     private readonly Dictionary<string, BufferedOutput> PendingStartupOutput = new();
+    private readonly Dictionary<string, AttachmentExecution> AttachmentExecutions = new();
+
+    private sealed class AttachmentExecution
+    {
+        internal bool Completed;
+    }
+
+    internal void BeginAttachmentExecution(string frameworkExecutionId)
+    {
+        lock (Gate)
+        {
+            // Preserve constructor writers, but never revive a completed execution's writers.
+            if (AttachmentExecutions.TryGetValue(frameworkExecutionId, out var execution) && execution.Completed)
+                AttachmentExecutions.Remove(frameworkExecutionId);
+        }
+    }
+
+    // Constructor-created writers share the lifetime later completed by adapter teardown.
+    internal Action GetAttachmentExecutionGuard(string frameworkExecutionId)
+    {
+        lock (Gate)
+        {
+            if (!AttachmentExecutions.TryGetValue(frameworkExecutionId, out var execution))
+                AttachmentExecutions.Add(frameworkExecutionId, execution = new AttachmentExecution());
+            return () =>
+            {
+                if (execution.Completed)
+                    throw new InvalidOperationException("The attachment's test execution has already completed.");
+            };
+        }
+    }
 
     internal void AppendStartupOutput(string frameworkExecutionId, char value)
     {
@@ -46,7 +77,7 @@ internal sealed class TestRunStore
         return output;
     }
 
-    internal void ListenForScenario(string frameworkExecutionId, Action<Scenario> @delegate)
+    internal void ListenForScenario(string frameworkExecutionId, Action<Scenario> @delegate, Action onDiscard = null)
     {
         lock (Gate)
         {
@@ -58,9 +89,9 @@ internal sealed class TestRunStore
 
             if (!ScenarioListeners.TryGetValue(frameworkExecutionId, out var list))
             {
-                ScenarioListeners.Add(frameworkExecutionId, list = new List<Action<Scenario>>());
+                ScenarioListeners.Add(frameworkExecutionId, list = new List<(Action<Scenario> Publish, Action Discard)>());
             }
-            list.Add(@delegate);
+            list.Add((@delegate, onDiscard));
         }
     }
 
@@ -97,9 +128,9 @@ internal sealed class TestRunStore
             if (ScenarioListeners.TryGetValue(scenario.FrameworkTestId, out var delegateList))
             {
                 ScenarioListeners.Remove(scenario.FrameworkTestId);
-                foreach (var @delegate in delegateList)
+                foreach (var listener in delegateList)
                 {
-                    @delegate(scenario);
+                    listener.Publish(scenario);
                 }
             }
         }
@@ -114,6 +145,8 @@ internal sealed class TestRunStore
             NotRun.Clear();
             ScenarioListeners.Clear();
             PendingStartupOutput.Clear();
+            foreach (var id in AttachmentExecutions.Where(pair => pair.Value.Completed).Select(pair => pair.Key).ToArray())
+                AttachmentExecutions.Remove(id);
         }
     }
 
@@ -122,8 +155,14 @@ internal sealed class TestRunStore
         lock (Gate)
         {
             PendingStartupOutput.Remove(frameworkExecutionId);
-            ScenarioListeners.Remove(frameworkExecutionId);
+            if (!AttachmentExecutions.TryGetValue(frameworkExecutionId, out var execution))
+                AttachmentExecutions.Add(frameworkExecutionId, execution = new AttachmentExecution());
+            execution.Completed = true;
+            if (ScenarioListeners.TryGetValue(frameworkExecutionId, out var listeners))
+            {
+                foreach (var listener in listeners) listener.Discard?.Invoke();
+                ScenarioListeners.Remove(frameworkExecutionId);
+            }
         }
     }
 }
-

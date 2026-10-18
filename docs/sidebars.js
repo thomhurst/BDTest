@@ -31,6 +31,7 @@ const sidebars = {
         'writing-tests/skipping',
         'writing-tests/step-hooks',
         'writing-tests/output',
+        'writing-tests/attachments',
       ],
     },
     {

@@ -74,6 +74,9 @@ public class Step
     [JsonIgnore]
     internal List<Func<StepArgument>> AttachedArguments { get; } = new();
 
+    /// <summary>Captured files from all attempts, distinguished by Attachment.AttemptNumber.</summary>
+    [JsonInclude] public List<Attachment> Attachments { get; internal set; } = new();
+
     [JsonIgnore] private RunOptions Options { get; } = RunOptions.Legacy;
 
     private bool _shouldSkip;
@@ -224,8 +227,10 @@ public class Step
         }
     }
 
-    internal async Task Execute(BDTestBase test, TimeSpan? scenarioTimeout = null, TimeSpan? remainingScenarioTime = null)
+    internal async Task Execute(BDTestBase test, TimeSpan? scenarioTimeout = null, TimeSpan? remainingScenarioTime = null,
+        Scenario scenario = null)
     {
+        using var attachmentScope = scenario == null ? null : new AttachmentScope(scenario, this);
         SetShouldSkip();
 
         // Keep both subscriptions stable for this step, including its after hooks.

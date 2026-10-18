@@ -34,7 +34,7 @@ public class MyTests(BDTestRun run) : BDTestBase
 
 ## Lifetime
 
-Dispose a run only after its tests and output writers finish. Disposal clears its stores and prevents new scenarios from being constructed or executed. It does not cancel active tests.
+Dispose a run only after its tests, output writers and attachment exporters finish. Disposal clears its stores, deletes its temporary attachment files, and prevents new scenarios from being constructed or executed. It does not cancel active tests.
 
 `BDTestUtil.ClearScenarios(run)` clears storage between executions and keeps the same report ID. Start a new run to get a new ID.
 
@@ -65,6 +65,7 @@ using var run = BDTestRun.Start(options);
 | `Debug` | `Debug` |
 | `RegisterCustomStringConverter<T>(...)` | `RegisterCustomStringConverter<T>(...)` |
 | `StepHooks` (`IStepHook`) | `BeforeStep` / `AfterStep` events |
+| `Attachments` ([byte limits](../writing-tests/attachments.md#limits)) | Fixed defaults on the shared default run |
 
 - `Start(options)` copies the registrations into the run. Later changes to the options affect only runs started afterwards.
 - `Start()` uses empty registrations and default debug settings.

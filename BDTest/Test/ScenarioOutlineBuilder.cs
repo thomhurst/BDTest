@@ -96,6 +96,7 @@ public sealed class ScenarioOutlineBuilder<TExample> : BuildableTest
                     }
                     finally
                     {
+                        lock (Run.Store.Gate) constructionOutput.AttachmentCaptureCompleted = true;
                         TestOutputData.Run = Run;
                         TestOutputData.ConstructionOutput = previousOutput;
                     }
@@ -132,6 +133,7 @@ public sealed class ScenarioOutlineBuilder<TExample> : BuildableTest
                 finally
                 {
                     var row = outline.Examples[index];
+                    lock (Run.Store.Gate) row.Attachments.AddRange(constructionOutput.Attachments);
                     if (!string.IsNullOrEmpty(constructionOutput.Startup.Value))
                         row.TestStartupInformation = constructionOutput.Startup.Value + row.TestStartupInformation;
                     if (!string.IsNullOrEmpty(constructionOutput.Teardown.Value))

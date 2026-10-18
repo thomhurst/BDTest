@@ -118,6 +118,35 @@ public class LifecycleTests : XUnitBDTestBase<XUnitContext>
         }
     }
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task ConstructorAttachmentWritersKeepTheirExecutionLifetime(bool useContext)
+    {
+        using var run = BDTestRun.Start();
+        var fixture = new ConstructorAttachmentProbe(run, useContext);
+        fixture.Writer.Attach("constructor", new byte[] { 1 }, "text/plain");
+        await ((IAsyncLifetime)fixture).InitializeAsync();
+        var scenario = await fixture.When(() => NoOp()).Then(() => NoOp()).BDTestAsync();
+        Assert.Equal("constructor", Assert.Single(scenario.Attachments).Name);
+        await fixture.DisposeAsync();
+        Assert.Throws<InvalidOperationException>(() => fixture.Writer.Attach("late", new byte[] { 2 }, "text/plain"));
+        Assert.Single(scenario.Attachments);
+    }
+
+    private sealed class ConstructorAttachmentProbe : XUnitBDTestBase<XUnitContext>
+    {
+        private readonly BDTestRun _run;
+        public override BDTestRun TestRun => _run;
+        public Interfaces.IBDTestAttachments Writer { get; }
+
+        public ConstructorAttachmentProbe(BDTestRun run, bool useContext)
+        {
+            _run = run;
+            Writer = useContext ? BDTestContext.Attachments : Attachments;
+        }
+    }
+
     private sealed class ConstructorProbe : XUnitBDTestBase<XUnitContext>
     {
         private readonly BDTestRun _run;
