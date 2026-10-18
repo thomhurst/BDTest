@@ -2,7 +2,6 @@
 using BDTest.Test;
 using NUnit.Framework;
 using NUnitTestContext = NUnit.Framework.TestContext;
-using BDTest.Maps;
 using BDTest.Output;
 using NUnit.Framework.Interfaces;
 using NUnit.Framework.Internal;
@@ -29,7 +28,7 @@ public abstract class NUnitBDTestBase<TContext> : AbstractContextBDTestBase<TCon
         TestOutputData.FrameworkExecutionId = BDTestExecutionId;
     }
 
-    [TearDown]
+    // Kept callable for existing consumers; NUnit teardown uses MarkTestAsComplete.
     public void PruneContext()
     {
         MarkPassIfRetriedSuccessfully();
@@ -38,8 +37,8 @@ public abstract class NUnitBDTestBase<TContext> : AbstractContextBDTestBase<TCon
 
     private void MarkPassIfRetriedSuccessfully()
     {
-        var allScenarios = TestHolder.ScenariosByTestFrameworkId;
-        if (allScenarios != null && allScenarios.TryGetValue(BDTestExecutionId, out var scenario) && scenario?.Status == Status.Passed)
+        var allScenarios = TestRun.Store.ScenariosByTestFrameworkId;
+        if (allScenarios.TryGetValue(BDTestExecutionId, out var scenario) && scenario?.Status == Status.Passed)
         {
             TestExecutionContext.CurrentContext.CurrentResult.SetResult(ResultState.Success);
         }
@@ -48,6 +47,8 @@ public abstract class NUnitBDTestBase<TContext> : AbstractContextBDTestBase<TCon
     [TearDown]
     protected override void MarkTestAsComplete()
     {
+        MarkPassIfRetriedSuccessfully();
+        // The context base removes the context before completing the test.
         base.MarkTestAsComplete();
     }
 }
