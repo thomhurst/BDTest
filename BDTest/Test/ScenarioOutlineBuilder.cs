@@ -125,7 +125,7 @@ public sealed class ScenarioOutlineBuilder<TExample> : BuildableTest
                     }
                     else row = outline.Examples[index];
                     // Retry hooks can throw after resetting the row to Inconclusive.
-                    row.Status = ClassifyOutcome(exception);
+                    row.Status = row.TimedOut ? Status.Failed : ClassifyOutcome(exception);
                     // Framework success exceptions must not fail the outline.
                     if (row.Status != Status.Passed)
                     {
@@ -138,6 +138,10 @@ public sealed class ScenarioOutlineBuilder<TExample> : BuildableTest
                 finally
                 {
                     var row = outline.Examples[index];
+                    if (!string.IsNullOrEmpty(constructionOutput.Startup.Value))
+                        row.TestStartupInformation = constructionOutput.Startup.Value + row.TestStartupInformation;
+                    if (!string.IsNullOrEmpty(constructionOutput.Teardown.Value))
+                        row.TearDownOutput = constructionOutput.Teardown.Value + row.TearDownOutput;
                     var constructionHtml = constructionOutput.Html.Value;
                     if (!string.IsNullOrEmpty(constructionHtml))
                         row.CustomHtmlOutputForReport = constructionHtml + row.CustomHtmlOutputForReport;

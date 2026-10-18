@@ -34,6 +34,11 @@
                     <td>
                         <details>
                             <summary>Steps and output</summary>
+                            @if (!string.IsNullOrEmpty(row.TestStartupInformation))
+                            {
+                                <h5>Startup output</h5>
+                                <pre>@row.TestStartupInformation</pre>
+                            }
                             @foreach (var step in row.Steps)
                             {
                                 <div class="my-2">
@@ -55,7 +60,12 @@
                             }
                             @if (row.RetryCount > 0)
                             {
-                                <p>Retries: @row.RetryCount</p>
+                                @await Html.PartialAsync("_RetryHistory", row)
+                            }
+                            @if (!string.IsNullOrEmpty(row.TearDownOutput))
+                            {
+                                <h5>Teardown output</h5>
+                                <pre>@row.TearDownOutput</pre>
                             }
                             @if (!string.IsNullOrEmpty(row.CustomHtmlOutputForReport))
                             {

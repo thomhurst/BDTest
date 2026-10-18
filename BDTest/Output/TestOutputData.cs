@@ -183,7 +183,11 @@ internal class TestOutputData : TextWriter
         }
 
         appendNewLine = appendNewLine && text.Length > 1;
-        TestHolder.AppendStartupOutput(frameworkExecutionId, text, appendNewLine);
+        var constructionOutput = ConstructionOutput;
+        if (constructionOutput != null && constructionOutput.FrameworkExecutionId == frameworkExecutionId)
+            constructionOutput.Startup.Append(text, appendNewLine);
+        else
+            TestHolder.AppendStartupOutput(frameworkExecutionId, text, appendNewLine);
 
         if (shouldWriteToConsole)
         {
@@ -199,7 +203,12 @@ internal class TestOutputData : TextWriter
             return;
         }
 
-        if (TestHolder.ScenariosByTestFrameworkId.TryGetValue(frameworkExecutionId, out var foundScenario))
+        var constructionOutput = ConstructionOutput;
+        if (constructionOutput != null && constructionOutput.FrameworkExecutionId == frameworkExecutionId)
+        {
+            constructionOutput.Teardown.Append(text, appendNewLine: true);
+        }
+        else if (TestHolder.ScenariosByTestFrameworkId.TryGetValue(frameworkExecutionId, out var foundScenario))
         {
             foundScenario.TeardownOutputBuffer.Append(text, appendNewLine: true);
         }

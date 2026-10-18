@@ -211,7 +211,11 @@ public static class BDTestHtmlHelper
                     html.AppendLine($"<td>{EscapeHtml(row.ExampleValues.TryGetValue(column, out var value) ? value : "")}</td>");
                 html.AppendLine($"<td>{row.Status}</td><td>{row.RetryCount}</td><td>{row.TimeTaken}</td><td>");
                 html.AppendLine("<details><summary>Steps and output</summary>");
+                if (!string.IsNullOrEmpty(row.TestStartupInformation))
+                    html.AppendLine($"<h5>Startup output</h5><pre>{EscapeHtml(row.TestStartupInformation)}</pre>");
                 html.AppendLine(GenerateScenarioDetails(row));
+                if (!string.IsNullOrEmpty(row.TearDownOutput))
+                    html.AppendLine($"<h5>Teardown output</h5><pre>{EscapeHtml(row.TearDownOutput)}</pre>");
                 if (row.Exception != null && !row.Steps.Any(step => ReferenceEquals(step.Exception, row.Exception)))
                     html.AppendLine($"<pre>{EscapeHtml(row.Exception.AsString)}</pre>");
                 html.AppendLine("</details></td></tr>");

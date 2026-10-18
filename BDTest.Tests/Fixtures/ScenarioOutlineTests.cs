@@ -97,6 +97,46 @@ public class ScenarioOutlineTests : AbstractContextBDTestBase<ScenarioOutlineTes
         Assert.That(standalone, Does.Contain(encodedError));
     }
 
+    [TestCase("success"), TestCase("skip"), TestCase("inconclusive")]
+    [NonParallelizable]
+    public async Task Timeouts_fail_examples_even_when_timeout_exceptions_have_custom_outcomes(string outcome)
+    {
+        var settings = BDTestSettings.CustomExceptionSettings;
+        var exceptionTypes = outcome switch
+        {
+            "success" => settings.SuccessExceptionTypes,
+            "skip" => settings.SkipExceptionTypes,
+            _ => settings.InconclusiveExceptionTypes
+        };
+        var previousTypes = exceptionTypes.ToArray();
+        exceptionTypes.Add(typeof(TimeoutException));
+        try
+        {
+            await Assert.ThrowsAsync<TimeoutException>(async () => await ScenarioOutline("Timeout outcomes",
+                new[] { new { Value = 1 }, new { Value = 2 } },
+                row => Given(token => TimeoutRow(row.Value, token)).WithStepTimeout(TimeSpan.FromMilliseconds(150))
+                    .When(() => NoOp()).Then(() => NoOp())).BDTestAsync().WaitAsync(TimeSpan.FromSeconds(10)));
+            var outline = BDTestUtil.GetScenarios().Single(x => x.FrameworkTestId == _executionId);
+            Assert.That(outline.Status, Is.EqualTo(Status.Failed));
+            Assert.That(outline.Examples.Select(row => row.Status), Is.EqualTo(new[] { Status.Failed, Status.Passed }));
+            Assert.That(outline.Examples[0].TimedOut, Is.True);
+            Assert.That(outline.Examples[0].Steps[0].Status, Is.EqualTo(Status.Failed));
+            Assert.That(_visited, Is.EqualTo(new[] { 1, 2 }));
+            await AssertRowErrorReported(outline, "timed out");
+        }
+        finally
+        {
+            exceptionTypes.Clear();
+            foreach (var type in previousTypes) exceptionTypes.Add(type);
+        }
+    }
+
+    private async Task TimeoutRow(int value, CancellationToken token)
+    {
+        _visited.Add(value);
+        if (value == 1) await Task.Delay(System.Threading.Timeout.Infinite, token);
+    }
+
     [Test, BDTestTag("outline")]
     public async Task Examples_share_one_outline_with_substituted_text_and_fresh_contexts()
     {
@@ -186,6 +226,67 @@ public class ScenarioOutlineTests : AbstractContextBDTestBase<ScenarioOutlineTes
         Assert.That(table, Does.Contain("<th>Retries</th>"));
         Assert.That(table, Does.Contain("<td>Passed</td><td>1</td>"));
         Assert.That(table, Does.Contain("<td>Passed</td><td>0</td>"));
+        foreach (var result in new[] { outline, JsonConvert.DeserializeObject<Scenario>(JsonConvert.SerializeObject(outline)) })
+        {
+            var razor = await ReportHandlerEncodingTests.RenderAsync("/Views/Shared/_ScenarioExamples.cshtml", result);
+            Assert.That(razor, Does.Contain("Retry history"));
+            Assert.That(razor, Does.Contain("retry first example"));
+            Assert.That(System.Net.WebUtility.HtmlDecode(razor), Does.Contain(result.Examples[0].Attempts[0].Exception.StackTrace));
+            Assert.That(System.Text.RegularExpressions.Regex.Matches(razor, "aria-label=\"Retry history\"").Count, Is.EqualTo(1));
+        }
+    }
+
+    [TestCase(false, false), TestCase(false, true), TestCase(true, false), TestCase(true, true)]
+    public async Task Explicit_construction_output_stays_with_its_example(bool duringContext, bool fail)
+    {
+        var contextCount = 0;
+        ContextAmendment = _ =>
+        {
+            if (duringContext) WriteConstructionOutput(++contextCount, fail);
+        };
+        Exception thrown = null;
+        try
+        {
+            await ScenarioOutline("Explicit construction output", new[] { new { Value = 1 }, new { Value = 2 }, new { Value = 3 } }, row =>
+            {
+                var builder = Given(() => NoOp()).When(() => NoOp()).Then(() => NoOp());
+                if (!duringContext) WriteConstructionOutput(row.Value, fail);
+                return builder;
+            });
+        }
+        catch (Exception exception) { thrown = exception; }
+        Assert.That(thrown, fail ? Is.TypeOf<InvalidOperationException>() : Is.Null);
+        var outline = BDTestUtil.GetScenarios().Single(x => x.FrameworkTestId == _executionId);
+        foreach (var result in new[] { outline, JsonConvert.DeserializeObject<Scenario>(JsonConvert.SerializeObject(outline)) })
+        {
+            Assert.That(result.TestStartupInformation, Is.Null.Or.Empty);
+            Assert.That(result.TearDownOutput, Is.Null.Or.Empty);
+            for (var index = 0; index < result.Examples.Count; index++)
+            {
+                var row = result.Examples[index];
+                Assert.That(row.TestStartupInformation, Is.EqualTo($"<startup {index + 1}>{Environment.NewLine}"));
+                Assert.That(row.TearDownOutput, Is.EqualTo($"<teardown {index + 1}>{Environment.NewLine}"));
+                Assert.That(row.Output, Does.Not.Contain("<startup").And.Not.Contain("<teardown"));
+                Assert.That(row.Status, Is.EqualTo(fail && index == 1 ? Status.Failed : Status.Passed));
+            }
+            var razor = await ReportHandlerEncodingTests.RenderAsync("/Views/Shared/_ScenarioExamples.cshtml", result);
+            foreach (var value in Enumerable.Range(1, 3))
+            {
+                Assert.That(razor, Does.Contain($"&lt;startup {value}&gt;").And.Contain($"&lt;teardown {value}&gt;"));
+            }
+        }
+        var standalone = System.Text.RegularExpressions.Regex.Match(BDTestHtmlHelper.GetTestHtmlReport(),
+            $"<table class=\"examples\" id=\"examples-{outline.Guid}\">.*?</table>",
+            System.Text.RegularExpressions.RegexOptions.Singleline).Value;
+        foreach (var value in Enumerable.Range(1, 3))
+            Assert.That(standalone, Does.Contain($"&lt;startup {value}&gt;").And.Contain($"&lt;teardown {value}&gt;"));
+    }
+
+    private void WriteConstructionOutput(int value, bool fail)
+    {
+        WriteStartupOutput($"<startup {value}>");
+        WriteTearDownOutput($"<teardown {value}>");
+        if (fail && value == 2) throw new InvalidOperationException("construction failed");
     }
 
     [Test, BDTestTag("factory-outline")]
