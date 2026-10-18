@@ -100,7 +100,7 @@ public class OutputLifecycleTests
 
         Assert.That(scenario.TestStartupInformation, Is.EqualTo("setup\r\nx"));
         Assert.That(scenario.TearDownOutput, Is.EqualTo($"teardown\r\nexplicit{Environment.NewLine}!"));
-        var restored = JsonConvert.DeserializeObject<Scenario>(JsonConvert.SerializeObject(scenario));
+        var restored = ReportJson.DeserializeObject<Scenario>(ReportJson.SerializeObject(scenario));
         Assert.That(restored.TestStartupInformation, Is.EqualTo(scenario.TestStartupInformation));
         Assert.That(restored.TearDownOutput, Is.EqualTo(scenario.TearDownOutput));
     }

@@ -1,5 +1,5 @@
 using BDTest.Output;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 namespace BDTest.Test;
 
@@ -7,21 +7,21 @@ namespace BDTest.Test;
 public class ScenarioAttempt
 {
     /// <summary>The one-based execution order, starting with the initial attempt.</summary>
-    [JsonProperty] public int Number { get; private set; }
+    [JsonInclude] public int Number { get; internal set; }
 
-    [JsonProperty]
-    public Status Status { get; private set; }
+    [JsonInclude]
+    public Status Status { get; internal set; }
 
-    [JsonProperty] public ExceptionWrapper Exception { get; private set; }
-    [JsonProperty] public DateTime StartTime { get; private set; }
-    [JsonProperty] public DateTime EndTime { get; private set; }
+    [JsonInclude] public ExceptionWrapper Exception { get; internal set; }
+    [JsonInclude] public DateTime StartTime { get; internal set; }
+    [JsonInclude] public DateTime EndTime { get; internal set; }
 
-    [JsonProperty]
+    [JsonInclude]
     [JsonConverter(typeof(TimespanConverter))]
-    public TimeSpan TimeTaken { get; private set; }
+    public TimeSpan TimeTaken { get; internal set; }
 
     [JsonConstructor]
-    private ScenarioAttempt()
+    internal ScenarioAttempt()
     {
     }
 

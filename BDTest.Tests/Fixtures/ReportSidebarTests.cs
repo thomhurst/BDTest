@@ -46,7 +46,7 @@ public class ReportSidebarTests
             Environment = "sidebar-environment",
             Tag = "sidebar-tag",
             BranchName = "sidebar-branch",
-            Scenarios = [JsonConvert.DeserializeObject<Scenario>("""
+            Scenarios = [ReportJson.DeserializeObject<Scenario>("""
                 { "Guid": "scenario-632", "Steps": [], "CustomTestInformation": [] }
                 """)]
         };
@@ -64,7 +64,7 @@ public class ReportSidebarTests
     [TestCase(true)]
     public async Task Retry_history_renders_attempt_status_duration_and_encoded_exceptions(bool retryHookFailed)
     {
-        _repository.Report.Scenarios = [JsonConvert.DeserializeObject<Scenario>("""
+        _repository.Report.Scenarios = [ReportJson.DeserializeObject<Scenario>("""
             {
               "Guid": "scenario-632", "Status": "Passed", "RetryCount": 1,
               "Steps": [], "CustomTestInformation": [],
@@ -109,7 +109,7 @@ public class ReportSidebarTests
     [Test]
     public async Task Scenario_navigation_uses_the_loaded_report()
     {
-        _repository.Report.Scenarios.Add(JsonConvert.DeserializeObject<Scenario>("""
+        _repository.Report.Scenarios.Add(ReportJson.DeserializeObject<Scenario>("""
             { "Guid": "next-scenario", "Steps": [], "CustomTestInformation": [] }
             """));
 
@@ -125,7 +125,7 @@ public class ReportSidebarTests
     [TestCase("all-scenarios")]
     public async Task Tag_filter_renders_only_matching_rows_and_keeps_all_tag_options(string page)
     {
-        _repository.Report.Scenarios = JsonConvert.DeserializeObject<List<Scenario>>("""
+        _repository.Report.Scenarios = ReportJson.DeserializeObject<List<Scenario>>("""
             [
               { "Guid": "tagged", "Tags": ["smoke"], "Steps": [], "CustomTestInformation": [] },
               { "Guid": "other", "Tags": ["regression"], "Steps": [], "CustomTestInformation": [] },

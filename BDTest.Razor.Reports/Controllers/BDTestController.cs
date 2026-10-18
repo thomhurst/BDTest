@@ -11,7 +11,7 @@ using BDTest.Test;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
+using BDTest.Helpers;
 
 namespace BDTest.Razor.Reports.Controllers;
 
@@ -41,7 +41,7 @@ public class BDTestController : Controller
     [Route("data")]
     [ServiceFilter(typeof(ReportUploadFilter))]
     [RequestSizeLimit(10 * 1024 * 1024)]
-    public async Task<IActionResult> Index([FromBody] BDTestOutputModel bdTestOutputModel)
+    public async Task<IActionResult> Index([ModelBinder(BinderType = typeof(ReportModelBinder))] BDTestOutputModel bdTestOutputModel)
     {
         if (!ModelState.IsValid || bdTestOutputModel == null)
         {
@@ -330,7 +330,7 @@ public class BDTestController : Controller
             return NotFound();
         }
             
-        return Content(JsonConvert.SerializeObject(model), "application/json");
+        return Content(BDTestJsonHelper.Serialize(model), "application/json");
     }
 
     [AllowAnonymous]

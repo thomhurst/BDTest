@@ -166,7 +166,7 @@ public class ReportDeletionTests
 
         public Task<IEnumerable<TestRunSummary>> GetAllTestRunRecords()
         {
-            var record = JsonConvert.DeserializeObject<TestRunSummary>("{}");
+            var record = ReportJson.DeserializeObject<TestRunSummary>("{}");
             record.RecordId = "run-618";
             return Task.FromResult<IEnumerable<TestRunSummary>>([record]);
         }

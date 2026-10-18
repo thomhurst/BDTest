@@ -1,10 +1,9 @@
 using System.Net;
+using System.Text.Json;
 using BDTest.Exceptions;
 using BDTest.Helpers;
-using BDTest.Maps;
 using BDTest.Output;
 using BDTest.Test;
-using Newtonsoft.Json;
 using NUnit.Framework;
 
 namespace BDTest.Tests.Fixtures;
@@ -181,14 +180,33 @@ public class BDTestRunTests
 
         foreach (var payload in new[] { json, handler.Payload })
         {
-            var report = JsonConvert.DeserializeObject<BDTestOutputModel>(payload);
+            var report = BDTestJsonHelper.Deserialize(payload);
             Assert.That(report.Id, Is.EqualTo(first.ReportId));
             Assert.That(report.Tag, Is.EqualTo(descriptor.Tag));
             Assert.That(report.Scenarios.Select(item => item.Guid), Is.EqualTo(new[] { scenario.Guid }));
             Assert.That(report.NotRun.Select(item => item.GetScenarioText()), Is.EqualTo(new[] { "first pending" }));
             Assert.That(report.Scenarios[0].Run, Is.Null, "Run ownership must not be serialized");
+            Assert.That(report.TestTimer.TestsStartedAt, Is.EqualTo(scenario.StartTime));
+            Assert.That(report.TestTimer.TestsFinishedAt, Is.EqualTo(scenario.EndTime));
+            using var document = JsonDocument.Parse(payload);
+            Assert.That(document.RootElement.GetProperty("Scenarios")[0].TryGetProperty("Run", out _), Is.False);
+            Assert.That(document.RootElement.GetProperty("NotRun")[0].TryGetProperty("Run", out _), Is.False);
         }
         Assert.That(html, Does.Contain("first scenario").And.Contain("first pending").And.Not.Contain("second scenario"));
+    }
+
+    [Test]
+    public void Empty_report_uses_the_selected_run_start_time()
+    {
+        using var run = BDTestRun.Start();
+        var beforeReport = DateTime.UtcNow;
+
+        var report = BDTestJsonHelper.Deserialize(BDTestJsonHelper.GetTestJsonData(null, run));
+
+        Assert.That(report.Id, Is.EqualTo(run.ReportId));
+        Assert.That(report.Scenarios, Is.Empty);
+        Assert.That(report.TestTimer.TestsStartedAt, Is.EqualTo(run.StartedAt));
+        Assert.That(report.TestTimer.TestsFinishedAt, Is.InRange(beforeReport, DateTime.UtcNow));
     }
 
     [Test]

@@ -38,7 +38,7 @@ public class JsonResultsTests : NUnitBDTestBase<MyTestContext>
         var json = BDTestJsonHelper.GetTestJsonData();
         var jObject = JObject.Load(new JsonTextReader(new StringReader(json)));
 
-        var scenarios = JsonConvert.DeserializeObject<List<Scenario>>(jObject.GetValue("Scenarios").ToString());
+        var scenarios = ReportJson.DeserializeObject<List<Scenario>>(jObject.GetValue("Scenarios").ToString());
             
         Assert.That(scenarios, Is.Not.Null);
         Assert.That(scenarios.Count, Is.EqualTo(1));
@@ -70,10 +70,10 @@ public class JsonResultsTests : NUnitBDTestBase<MyTestContext>
     [Test]
     public void HistoricalReportSurvivesCurrentCoreSerialization()
     {
-        var report = JsonConvert.DeserializeObject<BDTestOutputModel>(HistoricalReportFixture.ReadJson());
+        var report = ReportJson.DeserializeObject<BDTestOutputModel>(HistoricalReportFixture.ReadJson());
         HistoricalReportFixture.AssertCompatible(report);
 
-        var restored = JsonConvert.DeserializeObject<BDTestOutputModel>(BDTestJsonHelper.Serialize(report));
+        var restored = ReportJson.DeserializeObject<BDTestOutputModel>(BDTestJsonHelper.Serialize(report));
         HistoricalReportFixture.AssertCompatible(restored);
     }
 

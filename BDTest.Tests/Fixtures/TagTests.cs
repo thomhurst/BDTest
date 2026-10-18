@@ -28,7 +28,7 @@ public class TagTests : TaggedStoryBase
         var scenario = await builder.BDTestAsync();
         Assert.That(scenario.Tags, Is.EqualTo(builder.Tags));
 
-        var report = JsonConvert.DeserializeObject<BDTestOutputModel>(BDTestJsonHelper.GetTestJsonData());
+        var report = ReportJson.DeserializeObject<BDTestOutputModel>(BDTestJsonHelper.GetTestJsonData());
         Assert.That(report.Scenarios.Single(item => item.Guid == scenario.Guid).Tags, Is.EqualTo(scenario.Tags));
     }
 
@@ -55,8 +55,8 @@ public class TagTests : TaggedStoryBase
     {
         var scenario = await new BDTestBuilder().When(() => NoOp()).Then(() => NoOp()).BDTestAsync();
         Assert.That(scenario.Tags, Is.Empty);
-        Assert.That(JsonConvert.DeserializeObject<Scenario>("{}").Tags, Is.Empty);
-        Assert.That(JsonConvert.DeserializeObject<Scenario>("{\"Tags\":null}").Tags, Is.Empty);
+        Assert.That(ReportJson.DeserializeObject<Scenario>("{}").Tags, Is.Empty);
+        Assert.That(ReportJson.DeserializeObject<Scenario>("{\"Tags\":null}").Tags, Is.Empty);
     }
 
     [Test]
@@ -64,7 +64,7 @@ public class TagTests : TaggedStoryBase
     public void Unexecuted_scenarios_include_tags_in_json()
     {
         var builder = When(() => NoOp()).Then(() => NoOp());
-        var report = JsonConvert.DeserializeObject<BDTestOutputModel>(BDTestJsonHelper.GetTestJsonData());
+        var report = ReportJson.DeserializeObject<BDTestOutputModel>(BDTestJsonHelper.GetTestJsonData());
         Assert.That(report.NotRun.Single().Tags, Is.EqualTo(builder.Tags));
         Assert.That(report.NotRun.Single().Tags, Does.Contain("not-run"));
     }

@@ -1,38 +1,38 @@
 ﻿using BDTest.Output;
 using BDTest.Test;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 namespace BDTest.Maps;
 
 public class BDTestOutputModel
 {
-    [JsonProperty("id")]
+    [JsonPropertyName("id")]
     public string Id { get; set; }
         
-    [JsonProperty]
+    [JsonInclude]
     public string Environment { get; set; }
         
-    [JsonProperty]
+    [JsonInclude]
     public string Tag { get; set; }
         
-    [JsonProperty]
+    [JsonInclude]
     public string BranchName { get; set; }
         
-    [JsonProperty]
+    [JsonInclude]
     public string MachineName { get; set; }
         
-    [JsonProperty]
+    [JsonInclude]
     public TestTimer TestTimer { get; set; }
         
-    [JsonProperty]
+    [JsonInclude]
     public List<Scenario> Scenarios { get; set; } = new();
         
-    [JsonProperty]
+    [JsonInclude]
     public List<BuildableTest> NotRun { get; set; } = new();
 
-    [JsonProperty] 
+    [JsonInclude]
     public string Version { get; set; }
         
-    [JsonProperty]
-    public Dictionary<string, string> CustomProperties { get; private set; } = new();
+    [JsonInclude]
+    public Dictionary<string, string> CustomProperties { get; internal set; } = new();
 }

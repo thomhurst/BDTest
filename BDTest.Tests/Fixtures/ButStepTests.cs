@@ -74,14 +74,14 @@ public class ButStepTests : BDTestBase
             .But(() => NoOp()).WithStepText(() => "custom assertion")
             .BDTestAsync();
 
-        var report = JsonConvert.DeserializeObject<BDTestOutputModel>(BDTestJsonHelper.GetTestJsonData());
+        var report = ReportJson.DeserializeObject<BDTestOutputModel>(BDTestJsonHelper.GetTestJsonData());
         var restored = report.Scenarios.Single(scenario => scenario.Guid == result.Guid);
         Assert.That(restored.Steps.Select(step => step.StepText), Is.EqualTo(new[]
         {
             "Given no op", "But no op", "When no op", "But named action", "Then no op", "But custom assertion"
         }));
-        var json = JObject.Parse(JsonConvert.SerializeObject(result));
-        Assert.That(json["Steps"].Select(step => (int)step["StepType"]), Is.EqualTo(new[] { 0, 5, 2, 6, 3, 7 }));
+        var json = JObject.Parse(ReportJson.SerializeObject(result));
+        Assert.That(json["Steps"].Select(step => (string)step["StepType"]), Is.EqualTo(new[] { "Given", "ButGiven", "When", "ButWhen", "Then", "ButThen" }));
     }
 
     [Test]

@@ -139,7 +139,7 @@ public class StartupTests
             LoadStarted.TrySetResult();
             await ReleaseLoad.Task;
             if (Failure != null) throw Failure;
-            return new[] { Newtonsoft.Json.JsonConvert.DeserializeObject<TestRunSummary>("{\"RecordId\":\"startup-report\"}") };
+            return new[] { ReportJson.DeserializeObject<TestRunSummary>("{\"RecordId\":\"startup-report\"}") };
         }
 
         public Task<BDTestOutputModel> GetTestData(string id, CancellationToken cancellationToken) => Task.FromResult<BDTestOutputModel>(null);

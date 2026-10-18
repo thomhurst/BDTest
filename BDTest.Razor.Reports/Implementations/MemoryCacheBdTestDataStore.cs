@@ -1,10 +1,10 @@
 using System.Collections.Concurrent;
-using System.Text;
+using System.Text.Json;
+using BDTest.Helpers;
 using BDTest.Maps;
 using BDTest.Razor.Reports.Interfaces;
 using BDTest.Razor.Reports.Models;
 using Microsoft.Extensions.Caching.Memory;
-using Newtonsoft.Json;
 
 namespace BDTest.Razor.Reports.Implementations;
 
@@ -68,16 +68,7 @@ public class MemoryCacheBdTestDataStore : IMemoryCacheBdTestDataStore, IDisposab
         long size;
         using (var counter = new ByteCountingStream())
         {
-            using (var textWriter = new StreamWriter(counter, new UTF8Encoding(false), 1024, leaveOpen: true))
-            using (var jsonWriter = new JsonTextWriter(textWriter))
-            {
-                var serializer = JsonSerializer.Create(new JsonSerializerSettings
-                {
-                    Formatting = Formatting.None,
-                    PreserveReferencesHandling = PreserveReferencesHandling.Objects
-                });
-                serializer.Serialize(jsonWriter, data);
-            }
+            JsonSerializer.Serialize(counter, data, BDTestJsonContext.Default.BDTestOutputModel);
             size = counter.Length;
         }
         lock (_reportCacheLock)
@@ -112,7 +103,7 @@ public class MemoryCacheBdTestDataStore : IMemoryCacheBdTestDataStore, IDisposab
         return Task.CompletedTask;
     }
 
-    // StreamWriter encodes incrementally; retain only the byte count, never the JSON payload.
+    // Serialize UTF-8 incrementally; retain only the byte count, never the JSON payload.
     private sealed class ByteCountingStream : Stream
     {
         public override bool CanRead => false;

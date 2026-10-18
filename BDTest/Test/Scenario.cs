@@ -1,7 +1,7 @@
 using BDTest.Attributes;
 using BDTest.Constants;
 using BDTest.Output;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 namespace BDTest.Test;
 
@@ -10,15 +10,15 @@ public class Scenario
     /// <summary>Gets the owning run, or null for a deserialized report.</summary>
     [JsonIgnore] public BDTestRun Run { get; private set; }
 
-    [JsonProperty] public string Guid { get; private set; }
-    [JsonProperty] public string ReportId { get; private set; }
-    [JsonProperty] public DateTime StartTime { get; internal set; }
+    [JsonInclude] public string Guid { get; internal set; }
+    [JsonInclude] public string ReportId { get; internal set; }
+    [JsonInclude] public DateTime StartTime { get; internal set; }
 
-    [JsonProperty] public DateTime EndTime { get; internal set; }
+    [JsonInclude] public DateTime EndTime { get; internal set; }
 
-    [JsonProperty] public string FileName { get; private set; }
+    [JsonInclude] public string FileName { get; internal set; }
         
-    [JsonProperty]
+    [JsonInclude]
     public string TestStartupInformation
     {
         get => StartupOutput.Value;
@@ -33,25 +33,25 @@ public class Scenario
         ?? Examples.OrderBy(example => example.Status.GetOrder()).Select(example => example.Exception)
             .FirstOrDefault(exception => exception != null);
 
-    [JsonProperty] internal ExceptionWrapper ExecutionException { get; set; }
-    [JsonProperty] public bool IsOutline { get; internal set; }
-    [JsonProperty] public string OutlineId { get; private set; }
-    [JsonProperty] public Dictionary<string, string> ExampleValues { get; private set; } = new();
-    [JsonProperty] public List<Scenario> Examples { get; private set; } = new();
+    [JsonInclude] internal ExceptionWrapper ExecutionException { get; set; }
+    [JsonInclude] public bool IsOutline { get; internal set; }
+    [JsonInclude] public string OutlineId { get; internal set; }
+    [JsonInclude] public Dictionary<string, string> ExampleValues { get; internal set; } = new();
+    [JsonInclude] public List<Scenario> Examples { get; internal set; } = new();
         
-    [JsonProperty]
+    [JsonInclude]
     public string TearDownOutput
     {
         get => TeardownOutputBuffer.Value;
         internal set => TeardownOutputBuffer.Value = value;
     }
         
-    [JsonProperty] public string CustomHtmlOutputForReport { get; internal set; }
+    [JsonInclude] public string CustomHtmlOutputForReport { get; internal set; }
 
     [JsonIgnore] internal BDTestRuntimeInformation RuntimeInformation { get; set; }
 
     [JsonConstructor]
-    private Scenario()
+    internal Scenario()
     {
     }
 
@@ -90,38 +90,43 @@ public class Scenario
         Run.Store.AddScenario(this);
     }
 
-    [JsonProperty]
-    public string FrameworkTestId { get; private set; }
+    [JsonInclude]
+    public string FrameworkTestId { get; internal set; }
 
     /// <summary>The timeout budget for the steps in each execution attempt, or null for no limit.</summary>
-    [JsonProperty] public TimeSpan? Timeout { get; private set; }
+    [JsonInclude] public TimeSpan? Timeout { get; internal set; }
 
     /// <summary>Whether a BDTest timeout failed a step in the current attempt.</summary>
-    [JsonProperty] public bool TimedOut => Steps?.Any(step => step.TimedOut) == true;
+    public bool TimedOut => Steps?.Any(step => step.TimedOut) == true;
 
-    [JsonProperty] public List<Step> Steps { get; private set; }
+    [JsonInclude] public List<Step> Steps { get; internal set; } = new();
 
-    [JsonProperty] public string Output { get; internal set; }
+    [JsonInclude] public string Output { get; internal set; }
 
-    [JsonProperty]
+    [JsonInclude]
     public Status Status { get; internal set; } = Status.NotRun;
 
-    [JsonProperty] internal StoryText StoryText { get; private set; }
+    [JsonInclude] internal StoryText StoryText { get; set; }
 
-    [JsonProperty] internal ScenarioText ScenarioText { get; private set; }
+    [JsonInclude] internal ScenarioText ScenarioText { get; set; }
         
-    [JsonProperty] public TestInformationAttribute[] CustomTestInformation { get; private set; }
+    [JsonInclude] public TestInformationAttribute[] CustomTestInformation { get; internal set; }
 
     /// <summary>Combined story and scenario tags, distinct ignoring case.</summary>
-    [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
-    public string[] Tags { get; private set; } = Array.Empty<string>();
+    [JsonInclude]
+    public string[] Tags
+    {
+        get => _tags;
+        internal set => _tags = value ?? Array.Empty<string>();
+    }
+    private string[] _tags = Array.Empty<string>();
         
     [JsonIgnore] internal bool ShouldRetry { get; set; }
-    [JsonProperty] public int RetryCount { get; internal set; }
+    [JsonInclude] public int RetryCount { get; internal set; }
 
     /// <summary>Completed execution attempts, including the initial and final attempts, in execution order.</summary>
     /// <remarks>Reports created before attempt tracking was introduced have an empty collection.</remarks>
-    [JsonProperty] public List<ScenarioAttempt> Attempts { get; private set; } = new();
+    [JsonInclude] public List<ScenarioAttempt> Attempts { get; internal set; } = new();
 
     /// <summary>The executing test instance, or null if it has been collected after execution.</summary>
     /// <remarks>Completed scenarios retain only a weak reference to the test instance.</remarks>
@@ -147,6 +152,6 @@ public class Scenario
     }
 
     [JsonConverter(typeof(TimespanConverter))]
-    [JsonProperty]
+    [JsonInclude]
     public TimeSpan TimeTaken { get; internal set; }
 }

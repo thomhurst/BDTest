@@ -1,23 +1,22 @@
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using BDTest.Attributes;
-using Newtonsoft.Json;
 
 namespace BDTest.Helpers.JsonConverters;
 
 public class TestInformationAttributeJsonConverter : JsonConverter<TestInformationAttribute>
 {
-    public override void WriteJson(JsonWriter writer, TestInformationAttribute value, JsonSerializer serializer)
+    public override void Write(Utf8JsonWriter writer, TestInformationAttribute value, JsonSerializerOptions options)
     {
-        if (value == null)
-        {
-            return;
-        }
-            
-        writer.WriteValue(value.Information);
+        writer.WriteStringValue(value.Information);
     }
 
-    public override TestInformationAttribute ReadJson(JsonReader reader, Type objectType, TestInformationAttribute existingValue,
-        bool hasExistingValue, JsonSerializer serializer)
+    public override TestInformationAttribute Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
-        return new TestInformationAttribute(reader.Value?.ToString());
+        if (reader.TokenType != JsonTokenType.String)
+        {
+            throw new JsonException("Expected a report text string.");
+        }
+        return new TestInformationAttribute(reader.GetString());
     }
 }

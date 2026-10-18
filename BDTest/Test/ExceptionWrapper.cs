@@ -1,23 +1,23 @@
-using Newtonsoft.Json;
+﻿using System.Text.Json.Serialization;
 
 namespace BDTest.Test;
 
 public class ExceptionWrapper
 {
-    [JsonProperty]
+    [JsonInclude]
     public string Message { get; set; }
         
-    [JsonProperty]
+    [JsonInclude]
     public string StackTrace { get; set; }
         
-    [JsonProperty]
+    [JsonInclude]
     public string TypeName { get; set; }
         
-    [JsonProperty] 
+    [JsonInclude]
     public string AsString { get; set; }
 
     [JsonConstructor]
-    private ExceptionWrapper()
+    internal ExceptionWrapper()
     {
     }
 

@@ -70,7 +70,7 @@ public class AzureStorageDataStoreTests
         using var client = new HttpClient(storage);
         var store = CreateStore(client);
 
-        await Assert.ThrowsAsync<JsonReaderException>(async () =>
+        await Assert.CatchAsync<System.Text.Json.JsonException>(async () =>
         {
             if (summary)
                 await store.GetAllTestRunRecords();
@@ -275,7 +275,7 @@ public class AzureStorageDataStoreTests
                     if (active == 8) FirstBatchStarted.TrySetResult();
                     await ReleaseDownloads.Task.WaitAsync(cancellationToken);
                 }
-                var content = new StreamContent(new TrackedStream(DownloadJson ?? JsonConvert.SerializeObject(new { RecordId = name }),
+                var content = new StreamContent(new TrackedStream(DownloadJson ?? ReportJson.SerializeObject(new { RecordId = name }),
                     () => Interlocked.Increment(ref DisposedDownloads)));
                 content.Headers.LastModified = DateTimeOffset.UtcNow;
                 var response = new HttpResponseMessage(HttpStatusCode.OK) { Content = content };

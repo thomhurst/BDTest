@@ -57,12 +57,12 @@ public class ReportDateFormatTests
             culture.DateTimeFormat.ShortDatePattern = "yyyy '\"雪\" <tag>' MM dd";
             CultureInfo.CurrentCulture = culture;
             const string expected = "2026 \"雪\" <tag> 10 17 14:05:06.123";
-            var summary = JsonConvert.DeserializeObject<TestRunSummary>("{}");
+            var summary = ReportJson.DeserializeObject<TestRunSummary>("{}");
             summary.RecordId = "report-id";
             summary.Tag = "date-test";
             summary.StartedAtDateTime = Timestamp;
             summary.FinishedAtDateTime = Timestamp.AddSeconds(1);
-            var scenario = JsonConvert.DeserializeObject<Scenario>(JsonConvert.SerializeObject(new
+            var scenario = ReportJson.DeserializeObject<Scenario>(ReportJson.SerializeObject(new
             {
                 Guid = "scenario-id", ReportId = "report-id", StartTime = Timestamp, EndTime = Timestamp.AddSeconds(1)
             }));

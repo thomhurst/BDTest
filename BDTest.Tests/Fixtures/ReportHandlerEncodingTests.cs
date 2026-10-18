@@ -66,7 +66,7 @@ public class ReportHandlerEncodingTests
     public async Task Delete_values_are_data_and_never_executable_handler_source(
         [ValueSource(nameof(Values))] string value)
     {
-        var record = JsonConvert.DeserializeObject<TestRunSummary>("{}");
+        var record = ReportJson.DeserializeObject<TestRunSummary>("{}");
         record.RecordId = value;
         record.Tag = value;
         record.Environment = value;
@@ -96,7 +96,7 @@ public class ReportHandlerEncodingTests
     [Test]
     public async Task Non_admins_do_not_receive_delete_buttons()
     {
-        var record = JsonConvert.DeserializeObject<TestRunSummary>("{}");
+        var record = ReportJson.DeserializeObject<TestRunSummary>("{}");
         record.RecordId = "test-run-123";
         var html = await RenderAsync("/Views/BDTest/TestRunList.cshtml", new[] { record });
         Assert.That(Regex.IsMatch(html, "<button[^>]*>Delete</button>"), Is.False);
@@ -130,7 +130,7 @@ public class ReportHandlerEncodingTests
     public async Task Scenario_copy_url_is_data_and_preserves_the_selected_scenario(
         [ValueSource(nameof(UrlQueries))] string query)
     {
-        var scenario = JsonConvert.DeserializeObject<Scenario>(JsonConvert.SerializeObject(new
+        var scenario = ReportJson.DeserializeObject<Scenario>(ReportJson.SerializeObject(new
         {
             Guid = "selected-scenario",
             Steps = Array.Empty<object>(),

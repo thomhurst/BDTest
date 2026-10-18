@@ -1,5 +1,5 @@
 using System.Text;
-using Newtonsoft.Json;
+using System.Text.Json;
 
 namespace BDTest.Example.Helpers;
 
@@ -18,11 +18,11 @@ public class JsonContent : StringContent
     
 public class JsonContent<T> : StringContent
 {
-    public JsonContent(T content) : base(JsonConvert.SerializeObject(content), Encoding.UTF8, JsonContent.ContentType)
+    public JsonContent(T content) : base(JsonSerializer.Serialize(content), Encoding.UTF8, JsonContent.ContentType)
     {
     }
 
-    public JsonContent(T content, Encoding encoding) : base(JsonConvert.SerializeObject(content), encoding, JsonContent.ContentType)
+    public JsonContent(T content, Encoding encoding) : base(JsonSerializer.Serialize(content), encoding, JsonContent.ContentType)
     {
     }
 }

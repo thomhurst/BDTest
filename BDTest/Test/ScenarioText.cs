@@ -1,12 +1,12 @@
 ﻿using BDTest.Helpers.JsonConverters;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 namespace BDTest.Test;
 
 [JsonConverter(typeof(ScenarioTextConverter))]
 public record ScenarioText
 {
-    [JsonProperty] public string Scenario { get; private set; }
+    public string Scenario { get; private set; }
 
     public ScenarioText(string scenario)
     {

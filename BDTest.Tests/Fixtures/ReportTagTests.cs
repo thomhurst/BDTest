@@ -28,7 +28,7 @@ public class ReportTagTests
     public async Task Tag_filter_runs_before_grouping_and_combines_with_status(bool stories, string query, string[] expected)
     {
         var repository = new Repository();
-        var original = JsonConvert.SerializeObject(repository.Report);
+        var original = ReportJson.SerializeObject(repository.Report);
         var services = new ServiceCollection();
         services.AddControllersWithViews().AddBdTestReportControllersAndViews();
         using var provider = services.BuildServiceProvider();
@@ -44,7 +44,7 @@ public class ReportTagTests
         var groups = (IGrouping<string, Scenario>[])result.Model;
 
         Assert.That(groups.SelectMany(group => group).Select(scenario => scenario.Guid), Is.EquivalentTo(expected));
-        Assert.That(JsonConvert.SerializeObject(repository.Report), Is.EqualTo(original), "Filtering must not mutate cached reports.");
+        Assert.That(ReportJson.SerializeObject(repository.Report), Is.EqualTo(original), "Filtering must not mutate cached reports.");
     }
 
     [Test]
@@ -88,7 +88,7 @@ public class ReportTagTests
         };
 
         private static Scenario Create(string id, string status, string tag) =>
-            JsonConvert.DeserializeObject<Scenario>(JsonConvert.SerializeObject(new
+            ReportJson.DeserializeObject<Scenario>(ReportJson.SerializeObject(new
             {
                 Guid = id, Status = status, Tags = tag == null ? null : new[] { tag },
                 ScenarioText = "Shared scenario", StoryText = "Shared story", Steps = Array.Empty<object>()

@@ -22,7 +22,7 @@ public class JsonStreamTests
         Assert.That(stream.Position, Is.Zero);
         using var copy = new MemoryStream();
         stream.CopyTo(copy);
-        Assert.That(copy.ToArray(), Is.EqualTo(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(model))));
+        Assert.That(copy.ToArray(), Is.EqualTo(Encoding.UTF8.GetBytes(ReportJson.SerializeObject(model))));
     }
 
     [TestCase(null)]
@@ -31,7 +31,7 @@ public class JsonStreamTests
     {
         using var stream = value.AsStream<string>();
         using var reader = new StreamReader(stream);
-        Assert.That(reader.ReadToEnd(), Is.EqualTo(JsonConvert.SerializeObject(value)));
+        Assert.That(reader.ReadToEnd(), Is.EqualTo(ReportJson.SerializeObject(value)));
     }
 
     [TestCase(null)]

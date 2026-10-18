@@ -16,6 +16,12 @@ If you like using BDTest, consider buying me a coffee.
 
 Please view the [wiki](https://github.com/thomhurst/BDTest/wiki) to see how to use BDTest and how to get setup: https://github.com/thomhurst/BDTest/wiki
 
+### Report JSON migration
+
+Report serialization uses source-generated System.Text.Json metadata. See
+[the serialization migration guide](SERIALIZATION.md) for the new JSON shape,
+historical report support, and host configuration changes.
+
 ### What is it?
 BDTest is a testing and reporting framework focusing on 'Behaviour Driven Testing' ideologies. 
 It's a way to structure and run your tests so that:

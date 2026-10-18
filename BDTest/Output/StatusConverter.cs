@@ -1,26 +1,36 @@
 using BDTest.Test;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace BDTest.Output;
 
-// New reports use names. Integer tokens belong to the enum used by legacy reports.
-internal sealed class StatusConverter : StringEnumConverter
+/// <summary>Writes status names and reads numeric values using the historical report status mapping.</summary>
+public sealed class StatusConverter : JsonConverter<Status>
 {
-    public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
+    private static readonly JsonConverter<Status> NamedConverter = (JsonConverter<Status>)
+        new JsonStringEnumConverter<Status>(allowIntegerValues: false).CreateConverter(typeof(Status), new JsonSerializerOptions());
+
+    public override Status Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
-        if (reader.TokenType == JsonToken.Integer)
+        if (reader.TokenType == JsonTokenType.Number)
         {
-            return Convert.ToInt64(reader.Value) switch
+            if (!reader.TryGetInt64(out var legacyStatus))
+            {
+                throw new JsonException("Expected an integer legacy status.");
+            }
+            return legacyStatus switch
             {
                 0 => Status.Passed,
                 1 => Status.Failed,
                 2 => Status.Inconclusive,
                 3 => Status.NotImplemented,
                 4 => Status.Skipped,
-                _ => throw new JsonSerializationException($"Unknown legacy status: {reader.Value}.")
+                _ => throw new JsonException("Unknown legacy status.")
             };
         }
-        return base.ReadJson(reader, objectType, existingValue, serializer);
+        return NamedConverter.Read(ref reader, typeToConvert, options);
     }
+
+    public override void Write(Utf8JsonWriter writer, Status value, JsonSerializerOptions options)
+        => NamedConverter.Write(writer, value, options);
 }

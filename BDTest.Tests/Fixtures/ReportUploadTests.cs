@@ -30,7 +30,7 @@ public class ReportUploadTests
     [TestCase(false)]
     [TestCase(true)]
     [NonParallelizable]
-    public async Task ReportClientRoundTripsReferenceMetadataThroughServer(bool injectedClient)
+    public async Task ReportClientRoundTripsPlainJsonThroughServer(bool injectedClient)
     {
         var connectionClosed = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         // Supply authentication in this test host so both client overloads use the real upload endpoint.
@@ -39,7 +39,7 @@ public class ReportUploadTests
             context.Request.Headers["X-BDTest-Upload-Key"] = Key;
             return next(context);
         }), connectionClosed: () => connectionClosed.TrySetResult());
-        var scenario = JsonConvert.DeserializeObject<Scenario>("""
+        var scenario = ReportJson.DeserializeObject<Scenario>("""
             {"Guid":"upload-round-trip","Status":"Passed","Steps":[{"StepText":"A shared step"}]}
             """);
         scenario.Steps.Add(scenario.Steps[0]);
@@ -48,10 +48,10 @@ public class ReportUploadTests
         try
         {
             var helperJson = BDTestJsonHelper.GetTestJsonData(descriptor);
-            Assert.That(JObject.Parse(helperJson)["$id"], Is.Not.Null);
-            var helperReport = JsonConvert.DeserializeObject<BDTestOutputModel>(helperJson);
+            Assert.That(helperJson, Does.Not.Contain("\"$id\"").And.Not.Contain("\"$ref\""));
+            var helperReport = ReportJson.DeserializeObject<BDTestOutputModel>(helperJson);
             var helperScenario = helperReport.Scenarios.Single(item => item.Guid == scenario.Guid);
-            Assert.That(helperScenario.Steps[1], Is.SameAs(helperScenario.Steps[0]));
+            Assert.That(helperScenario.Steps[1], Is.Not.SameAs(helperScenario.Steps[0]));
 
             var uri = injectedClient
                 ? await BDTestReportServer.SendDataAndGetReportUriAsync(server.Client.BaseAddress, descriptor, server.Client)
@@ -59,7 +59,7 @@ public class ReportUploadTests
 
             var received = server.Store.Received.Single();
             var receivedScenario = received.Scenarios.Single(item => item.Guid == scenario.Guid);
-            Assert.That(receivedScenario.Steps[1], Is.SameAs(receivedScenario.Steps[0]));
+            Assert.That(receivedScenario.Steps[1].StepText, Is.EqualTo(receivedScenario.Steps[0].StepText));
             Assert.That(receivedScenario.Steps[0].StepText, Is.EqualTo("A shared step"));
             Assert.That(received.Tag, Is.EqualTo(helperReport.Tag));
             Assert.That(received.BranchName, Is.EqualTo(helperReport.BranchName));
@@ -249,16 +249,23 @@ public class ReportUploadTests
 
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
         Assert.That(response.Content.Headers.ContentType?.MediaType, Is.EqualTo("application/json"));
-        var data = JsonConvert.DeserializeObject<BDTestOutputModel>(await response.Content.ReadAsStringAsync());
+        var data = ReportJson.DeserializeObject<BDTestOutputModel>(await response.Content.ReadAsStringAsync());
         Assert.That(data.Id, Is.EqualTo(report.Id));
         Assert.That(data.Tag, Is.EqualTo("uploaded"));
     }
 
-    [Test]
-    public async Task HistoricalReportRendersWithoutModernOptionalFields()
+    [TestCase(false)]
+    [TestCase(true)]
+    public async Task HistoricalReportRendersWithoutModernOptionalFields(bool references)
     {
         await using var server = await UploadServer.Start();
-        using var upload = await server.Post(HistoricalReportFixture.ReadJson());
+        var json = JObject.Parse(HistoricalReportFixture.ReadJson());
+        if (references)
+        {
+            var steps = (JArray)json["Scenarios"][0]["Steps"];
+            steps.Add(new JObject { ["$ref"] = steps[0].Value<string>("$id") });
+        }
+        using var upload = await server.Post(json.ToString());
         Assert.That(upload.StatusCode, Is.EqualTo(HttpStatusCode.OK));
         var report = server.Store.Received.Single();
         Assert.That(server.Store.Summaries[report.Id].Counts.Total, Is.EqualTo(13));
@@ -284,6 +291,28 @@ public class ReportUploadTests
                 Assert.That(html, Does.Contain(scenario.TearDownOutput.TrimEnd()));
             Assert.That(html, Does.Not.Contain("Retry history"));
         }
+    }
+
+    [Test]
+    public async Task Upload_and_raw_download_ignore_host_JSON_options()
+    {
+        await using var server = await UploadServer.Start(configureJson: options =>
+        {
+            options.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.SnakeCaseLower;
+            options.IgnoreReadOnlyProperties = true;
+        });
+        using var upload = await server.Post("""
+            {"BranchName":"branch","Scenarios":[{"Guid":"scenario","FrameworkTestId":"test","StoryText":"story","ScenarioText":"scenario","Steps":[]}]}
+            """);
+        Assert.That(upload.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        var report = server.Store.Received.Single();
+        Assert.That(report.BranchName, Is.EqualTo("branch"));
+        Assert.That(report.Scenarios.Single().GetStoryText(), Is.EqualTo("story"));
+        using var raw = await server.Client.GetAsync($"bdtest/report/{report.Id}/raw-json-data");
+        Assert.That(raw.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        var downloaded = BDTestJsonHelper.Deserialize(await raw.Content.ReadAsStringAsync());
+        Assert.That(downloaded.BranchName, Is.EqualTo("branch"));
+        Assert.That(downloaded.Scenarios.Single().FrameworkTestId, Is.EqualTo("test"));
     }
 
     [Test]
@@ -364,6 +393,9 @@ public class ReportUploadTests
 
     [TestCase("null")]
     [TestCase("not JSON")]
+    [TestCase("{\"Scenarios\":[{\"StoryText\":123}]}")]
+    [TestCase("{\"Scenarios\":[{\"ScenarioText\":[]}]}")]
+    [TestCase("{\"Scenarios\":[{\"CustomTestInformation\":[true]}]}")]
     public async Task InvalidBodiesDoNotReachStorage(string body)
     {
         await using var server = await UploadServer.Start();
@@ -372,12 +404,38 @@ public class ReportUploadTests
         Assert.That(server.Store.Data, Is.Empty);
     }
 
+    [TestCase("application/json", false, HttpStatusCode.OK)]
+    [TestCase("text/json", false, HttpStatusCode.OK)]
+    [TestCase("application/vnd.bdtest+json", false, HttpStatusCode.OK)]
+    [TestCase("application/json", true, HttpStatusCode.OK)]
+    [TestCase("text/plain", false, HttpStatusCode.UnsupportedMediaType)]
+    [TestCase("text/example+json", false, HttpStatusCode.UnsupportedMediaType)]
+    public async Task Upload_reader_preserves_MVC_JSON_media_types_and_encodings(string mediaType, bool utf16, HttpStatusCode expected)
+    {
+        await using var server = await UploadServer.Start();
+        using var request = new HttpRequestMessage(HttpMethod.Post, "bdtest/data")
+        {
+            Content = new StringContent("{\"Tag\":\"café 漢字\"}", utf16 ? Encoding.Unicode : Encoding.UTF8, mediaType)
+        };
+        request.Headers.Add("X-BDTest-Upload-Key", Key);
+        using var response = await server.Client.SendAsync(request);
+        Assert.That(response.StatusCode, Is.EqualTo(expected));
+        if (expected == HttpStatusCode.OK)
+        {
+            Assert.That(server.Store.Received.Single().Tag, Is.EqualTo("café 漢字"));
+        }
+        else
+        {
+            Assert.That(server.Store.Received, Is.Empty);
+        }
+    }
+
     [TestCase(false)]
     [TestCase(true)]
     public async Task OversizedBodiesAreRejectedIncludingChunkedRequests(bool chunked)
     {
         await using var server = await UploadServer.Start();
-        var json = JsonConvert.SerializeObject(new { Tag = new string('x', 10 * 1024 * 1024) });
+        var json = ReportJson.SerializeObject(new { Tag = new string('x', 10 * 1024 * 1024) });
         using var request = new HttpRequestMessage(HttpMethod.Post, "bdtest/data") { Content = Json(json) };
         request.Headers.Add("X-BDTest-Upload-Key", Key);
         request.Headers.TransferEncodingChunked = chunked;
@@ -509,7 +567,7 @@ public class ReportUploadTests
     [TestCase("{\"Scenarios\":[{\"Status\":\"Failed\",\"Steps\":[]}],\"NotRun\":null}", true, false)]
     public void MetricsTreatNullCollectionsAsEmpty(string json, bool failed, bool warnings)
     {
-        var metrics = new OutputMetrics(JsonConvert.DeserializeObject<BDTestOutputModel>(json));
+        var metrics = new OutputMetrics(ReportJson.DeserializeObject<BDTestOutputModel>(json));
         Assert.That(metrics.AnyFailed, Is.EqualTo(failed));
         Assert.That(metrics.AllPassed, Is.EqualTo(!failed));
         Assert.That(metrics.AnyWarnings, Is.EqualTo(warnings));
@@ -565,7 +623,7 @@ public class ReportUploadTests
         }
     }
 
-    private static string Report(string id = null) => JsonConvert.SerializeObject(new
+    private static string Report(string id = null) => ReportJson.SerializeObject(new
     {
         id, Tag = "uploaded", TestTimer = new { TestsStartedAt = DateTime.UtcNow, TestsFinishedAt = DateTime.UtcNow }
     });
@@ -578,7 +636,7 @@ public class ReportUploadTests
         public RecordingStore Store { get; } = store;
 
         public static async Task<UploadServer> Start(Action<BDTestReportServerOptions> configure = null, Action<WebApplication> configureApp = null,
-            Action connectionClosed = null)
+            Action connectionClosed = null, Action<System.Text.Json.JsonSerializerOptions> configureJson = null)
         {
             var builder = WebApplication.CreateBuilder();
             builder.Logging.ClearProviders();
@@ -594,7 +652,8 @@ public class ReportUploadTests
                         connectionClosed?.Invoke();
                     }
                 })));
-            builder.Services.AddControllersWithViews().AddBdTestReportControllersAndViews();
+            builder.Services.AddControllersWithViews().AddBdTestReportControllersAndViews()
+                .AddJsonOptions(options => configureJson?.Invoke(options.JsonSerializerOptions));
             var app = builder.Build();
             var store = new RecordingStore();
             configureApp?.Invoke(app);

@@ -1,5 +1,5 @@
 using BDTest.Output;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 namespace BDTest.Test;
 

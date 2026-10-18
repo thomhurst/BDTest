@@ -38,18 +38,18 @@ public class ReportCacheCapacityTests
     }
 
     [Test]
-    public async Task Shared_references_fit_the_reference_preserving_upload_size()
+    public async Task Duplicated_values_fit_the_plain_JSON_upload_size()
     {
         var report = Report("shared");
-        var scenario = JsonConvert.DeserializeObject<Scenario>(JsonConvert.SerializeObject(new
+        var scenario = ReportJson.DeserializeObject<Scenario>(ReportJson.SerializeObject(new
         {
             Output = new string('x', 10000),
             Steps = Array.Empty<Step>()
         }));
         report.Scenarios = Enumerable.Repeat(scenario, 100).ToList();
         // Reproduce the object graph restored by the MVC binder from a supported upload.
-        report = JsonConvert.DeserializeObject<BDTestOutputModel>(BDTestJsonHelper.Serialize(report));
-        Assert.That(report.Scenarios[1], Is.SameAs(report.Scenarios[0]));
+        report = ReportJson.DeserializeObject<BDTestOutputModel>(BDTestJsonHelper.Serialize(report));
+        Assert.That(report.Scenarios[1], Is.Not.SameAs(report.Scenarios[0]));
         using var services = Services(Size(report));
         var repository = services.GetRequiredService<IDataRepository>();
 

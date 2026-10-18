@@ -5,7 +5,9 @@ using Azure.Storage.Blobs.Specialized;
 using BDTest.Maps;
 using BDTest.Razor.Reports.Interfaces;
 using BDTest.Razor.Reports.Models;
-using Newtonsoft.Json;
+using System.Text.Json;
+using BDTest.Helpers;
+using BDTest.Razor.Reports.Helpers;
 
 namespace BDTest.ReportGenerator.RazorServer;
 
@@ -38,9 +40,7 @@ public class AzureStorageDataStore : IBDTestDataStore, IAsyncDataStoreInitialize
         {
             var blobData = await _testDataContainer.GetBlockBlobClient(id).DownloadAsync(cancellationToken);
             using var content = blobData.Value.Content;
-            using var streamReader = new StreamReader(content);
-            using var reader = new JsonTextReader(streamReader);
-            return JsonSerializer.Create().Deserialize<BDTestOutputModel>(reader);
+            return await BDTestJsonHelper.DeserializeAsync(content, cancellationToken);
         }
         catch (RequestFailedException e) when(e.Status == 404)
         {
@@ -77,10 +77,7 @@ public class AzureStorageDataStore : IBDTestDataStore, IAsyncDataStoreInitialize
                     var download = await _testRunSummariesContainer.GetBlockBlobClient(newestBlobs[index].Name)
                         .DownloadAsync(cancellationToken);
                     using var content = download.Value.Content;
-                    using var streamReader = new StreamReader(content);
-                    using var reader = new JsonTextReader(streamReader);
-                    // Each concurrent download needs its own serializer and reader.
-                    summaries[index] = JsonSerializer.Create().Deserialize<TestRunSummary>(reader);
+                    summaries[index] = await JsonSerializer.DeserializeAsync(content, ReportJsonContext.Default.TestRunSummary, cancellationToken);
                 }
                 catch (RequestFailedException exception) when (exception.Status == 404)
                 {

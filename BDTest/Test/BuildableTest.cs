@@ -1,6 +1,6 @@
 using BDTest.Attributes;
 using BDTest.Constants;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 namespace BDTest.Test;
 
@@ -16,34 +16,34 @@ public class BuildableTest
     [JsonIgnore]
     internal string Guid { get; set; }
 
-    [JsonProperty] 
+    [JsonInclude]
     internal StoryText StoryText { get; set; }
 
-    [JsonProperty]
+    [JsonInclude]
     internal ScenarioText ScenarioText { get; set; }
         
-    [JsonProperty]
+    [JsonInclude]
     public string ScenarioId { get; internal set; }
         
-    [JsonProperty]
+    [JsonInclude]
     public string ReportId { get; internal set; }
 
-    [JsonProperty] 
-    public IEnumerable<string> Parameters { get; protected set; } = Enumerable.Empty<string>();
+    [JsonInclude]
+    public IEnumerable<string> Parameters { get; protected internal set; } = Enumerable.Empty<string>();
 
-    [JsonProperty]
-    public TestInformationAttribute[] CustomTestInformation { get; protected set; } = Array.Empty<TestInformationAttribute>();
+    [JsonInclude]
+    public TestInformationAttribute[] CustomTestInformation { get; protected internal set; } = Array.Empty<TestInformationAttribute>();
 
     /// <summary>Combined story and scenario tags, distinct ignoring case.</summary>
-    [JsonProperty]
-    public string[] Tags { get; protected set; } = Array.Empty<string>();
+    [JsonInclude]
+    public string[] Tags { get; protected internal set; } = Array.Empty<string>();
         
-    [JsonProperty]
-    public string CallerMember { get; protected set; }
-    [JsonProperty]
-    public string CallerFile { get; protected set; }
-    [JsonProperty]
-    public string TestId { get; protected set; }
+    [JsonInclude]
+    public string CallerMember { get; protected internal set; }
+    [JsonInclude]
+    public string CallerFile { get; protected internal set; }
+    [JsonInclude]
+    public string TestId { get; protected internal set; }
     [JsonIgnore]
     public BDTestBase BdTestBase { get; protected set; }
 

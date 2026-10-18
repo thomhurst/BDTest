@@ -1,14 +1,14 @@
 using BDTest.Maps;
 using BDTest.Razor.Reports.Extensions;
 using BDTest.Test;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 namespace BDTest.Razor.Reports.Models;
 
 public class TestRunSummary
 {
     [JsonConstructor]
-    private TestRunSummary()
+    internal TestRunSummary()
     {
     }
         
@@ -63,44 +63,44 @@ public class TestRunSummary
         }
     }
         
-    [JsonProperty]
+    [JsonInclude]
     public string RecordId { get; set; }
-    [JsonProperty]
+    [JsonInclude]
     public DateTime StartedAtDateTime { get; set; }
-    [JsonProperty]
+    [JsonInclude]
     public DateTime FinishedAtDateTime { get; set; }
-    [JsonProperty]
+    [JsonInclude]
     public Status Status { get; set; }
-    [JsonProperty]
+    [JsonInclude]
     public Counts Counts { get; set; } = new();
-    [JsonProperty]
+    [JsonInclude]
     public string Tag { get; set; }
-    [JsonProperty]
+    [JsonInclude]
     public string Environment { get; set; }
-    [JsonProperty]
+    [JsonInclude]
     public string BranchName { get; set; }
-    [JsonProperty]
+    [JsonInclude]
     public string MachineName { get; set; }
-    [JsonProperty]
+    [JsonInclude]
     public string Version { get; set; }
 }
 
 public class Counts
 {
-    [JsonProperty]
+    [JsonInclude]
     public int Total { get; set; }
-    [JsonProperty]
+    [JsonInclude]
     public int Passed { get; set; }
-    [JsonProperty]
+    [JsonInclude]
     public int Failed { get; set; }
-    [JsonProperty]
+    [JsonInclude]
     public int Inconclusive { get; set; }
-    [JsonProperty]
+    [JsonInclude]
     public int NotImplemented { get; set; }
-    [JsonProperty]
+    [JsonInclude]
     public int Skipped { get; set; }
-    [JsonProperty]
+    [JsonInclude]
     public int NotRun { get; set; }
-    [JsonProperty]
+    [JsonInclude]
     public int Pending { get; set; }
 }
