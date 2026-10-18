@@ -1,5 +1,7 @@
 using System.Text;
+using BDTest.Helpers;
 using BDTest.Maps;
+using BDTest.Test;
 using BDTest.Razor.Reports.Extensions;
 using BDTest.Razor.Reports.Interfaces;
 using BDTest.Razor.Reports.Implementations;
@@ -33,6 +35,43 @@ public class ReportCacheCapacityTests
             Assert.That(await repository.GetData(report.Id, default), Is.Not.Null);
             await AssertWithinCapacity(repository, reports, capacity, store);
         }
+    }
+
+    [Test]
+    public async Task Shared_references_fit_the_reference_preserving_upload_size()
+    {
+        var report = Report("shared");
+        var scenario = JsonConvert.DeserializeObject<Scenario>(JsonConvert.SerializeObject(new
+        {
+            Output = new string('x', 10000),
+            Steps = Array.Empty<Step>()
+        }));
+        report.Scenarios = Enumerable.Repeat(scenario, 100).ToList();
+        // Reproduce the object graph restored by the MVC binder from a supported upload.
+        report = JsonConvert.DeserializeObject<BDTestOutputModel>(BDTestJsonHelper.Serialize(report));
+        Assert.That(report.Scenarios[1], Is.SameAs(report.Scenarios[0]));
+        using var services = Services(Size(report));
+        var repository = services.GetRequiredService<IDataRepository>();
+
+        await repository.StoreData(report, report.Id);
+
+        Assert.That(await repository.GetDataForBulkRead(report.Id, default), Is.SameAs(report));
+    }
+
+    [Test]
+    public async Task Unicode_reports_use_the_exact_UTF8_byte_budget()
+    {
+        var report = Report("unicode");
+        report.Tag = new string('x', 1023) + "😀漢字é";
+        using var exactServices = Services(Size(report));
+        var repository = exactServices.GetRequiredService<IDataRepository>();
+        await repository.StoreData(report, report.Id);
+        Assert.That(await repository.GetDataForBulkRead(report.Id, default), Is.SameAs(report));
+
+        using var smallerServices = Services(Size(report) - 1);
+        var smallerRepository = smallerServices.GetRequiredService<IDataRepository>();
+        await Assert.CatchAsync<InvalidOperationException>(async () =>
+            await smallerRepository.StoreData(report, report.Id));
     }
 
     [Test]
@@ -188,7 +227,7 @@ public class ReportCacheCapacityTests
         TestTimer = new BDTest.Output.TestTimer { TestsStartedAt = default, TestsFinishedAt = default }
     };
 
-    private static long Size(BDTestOutputModel report) => Encoding.UTF8.GetByteCount(JsonConvert.SerializeObject(report));
+    private static long Size(BDTestOutputModel report) => Encoding.UTF8.GetByteCount(BDTestJsonHelper.Serialize(report));
 
     private sealed class PersistentStore : IBDTestDataStore
     {

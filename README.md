@@ -536,7 +536,9 @@ app.UseBDTestReportServer(options =>
 ```
 
 Both settings must be positive. Each full report is charged its serialized UTF-8
-JSON size when cached. The sum of those sizes cannot exceed the configured budget.
+JSON size when cached, preserving shared object references as in report uploads.
+Size measurement streams the JSON without retaining a complete serialized copy.
+The sum of those sizes cannot exceed the configured budget.
 This is an estimate of retained report size, not a hard limit on process memory:
 object overhead, temporary serialization allocations, in-flight responses, and
 report summaries are outside this budget. Treat uploaded/cached models as immutable;
