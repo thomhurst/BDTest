@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using BDTest.Attributes;
+using BDTest.Exceptions;
 using BDTest.Helpers;
 using BDTest.Interfaces.Internal;
 using BDTest.Output;
@@ -21,12 +22,13 @@ internal class ScenarioExecutor : IScenarioExecutor
     {
         try
         {
+            await _scenarioRetryManager.CheckIfAlreadyExecuted(scenario);
+
             // Completed steps and retry hooks can run inline. Iterate attempts so
             // repeated synchronous failures cannot grow the execution stack.
             // Capture the caller's synchronization context for subsequent steps and retries.
             do
             {
-                await _scenarioRetryManager.CheckIfAlreadyExecuted(scenario);
                 await ExecuteAttemptAsync(scenario);
             } while (scenario.ShouldRetry);
 
@@ -49,9 +51,15 @@ internal class ScenarioExecutor : IScenarioExecutor
     {
         var stopwatch = Stopwatch.StartNew();
         Exception attemptException = null;
+        var preparingRetry = scenario.ShouldRetry;
         try
         {
             scenario.StartTime = DateTime.UtcNow;
+            if (preparingRetry)
+            {
+                await _scenarioRetryManager.CheckIfAlreadyExecuted(scenario);
+                preparingRetry = false;
+            }
             scenario.Status = Status.Pending;
 
             TestOutputData.ClearCurrentTaskData();
@@ -83,6 +91,17 @@ internal class ScenarioExecutor : IScenarioExecutor
             scenario.Status = scenario.Steps.Count > 0 && scenario.Steps.All(step => step.Status == Status.Skipped)
                 ? Status.Skipped
                 : Status.Passed;
+        }
+        catch (ErrorOccurredDuringRetryActionException e) when (preparingRetry)
+        {
+            // Hook failures end the retry even if the underlying exception has a custom outcome.
+            attemptException = e.GetBaseException();
+            scenario.Status = Status.Failed;
+            scenario.ShouldRetry = false;
+            scenario.ExecutionException = new ExceptionWrapper(attemptException);
+
+            await ConsoleReporter.WriteLine($"{Environment.NewLine}Exception: {attemptException.Message}{Environment.NewLine}{attemptException.StackTrace}{Environment.NewLine}", ConsoleColor.DarkRed);
+            throw;
         }
         catch (NotImplementedException e)
         {

@@ -57,20 +57,61 @@ public class RetryHookTests
         await RunHooks(new NoHooks(), tearDown);
     }
 
-    [TestCase(false, false)]
-    [TestCase(false, true)]
-    [TestCase(true, false)]
-    [TestCase(true, true)]
-    public async Task RetryFailureExposesOriginalHookExceptionAndStack(bool tearDown, bool asynchronous)
+    [TestCase("setup", false, 1)]
+    [TestCase("setup", true, 1)]
+    [TestCase("teardown", false, 1)]
+    [TestCase("teardown", true, 1)]
+    [TestCase("before", false, 1)]
+    [TestCase("before", true, 1)]
+    [TestCase("setup", false, 2)]
+    [TestCase("setup", true, 2)]
+    [TestCase("teardown", false, 2)]
+    [TestCase("teardown", true, 2)]
+    [TestCase("before", false, 2)]
+    [TestCase("before", true, 2)]
+    public async Task RetryFailureRecordsFailedAttemptAndExposesOriginalHookException(
+        string hook, bool asynchronous, int failingRetry)
     {
-        var fixture = new FailingHooks(tearDown, asynchronous);
+        using var run = BDTestRun.Start();
+        using var otherRun = BDTestRun.Start();
+        var fixture = new FailingHooks(run, hook, asynchronous, failingRetry);
         try
         {
             var error = await Assert.ThrowsAsync<ErrorOccurredDuringRetryActionException>(() => fixture.RunScenario());
 
             Assert.That(error.GetBaseException(), Is.SameAs(fixture.Failure));
             Assert.That(error.GetBaseException().StackTrace, Does.Contain(nameof(FailingHooks.ThrowHookFailure)));
-            Assert.That(fixture.Attempts, Is.EqualTo(1), "A failing retry hook must stop the retry");
+            Assert.That(fixture.Attempts, Is.EqualTo(failingRetry), "A failing retry hook must stop the retry");
+
+            var scenario = run.Scenarios.Single();
+            Assert.That(scenario.Run, Is.SameAs(run));
+            Assert.That(scenario.ReportId, Is.EqualTo(run.ReportId));
+            Assert.That(otherRun.Scenarios, Is.Empty);
+            Assert.That(scenario.Status, Is.EqualTo(Status.Failed));
+            Assert.That(scenario.Exception?.Message, Is.EqualTo(fixture.Failure.Message));
+            Assert.That(scenario.Exception.StackTrace, Does.Contain(nameof(FailingHooks.ThrowHookFailure)));
+            Assert.That(scenario.Output, Is.Not.Null);
+            Assert.That(scenario.RetryCount, Is.EqualTo(failingRetry));
+            Assert.That(scenario.Attempts, Has.Count.EqualTo(failingRetry + 1));
+            for (var index = 0; index < failingRetry; index++)
+            {
+                var attempt = scenario.Attempts[index];
+                Assert.That(attempt.Number, Is.EqualTo(index + 1));
+                Assert.That(attempt.Status, Is.EqualTo(Status.Failed));
+                Assert.That(attempt.Exception.Message, Is.EqualTo("retry the scenario"));
+                Assert.That(attempt.Exception.StackTrace, Does.Contain(nameof(FailingHooks.FailStep)));
+            }
+            var failedRetry = scenario.Attempts.Last();
+            Assert.That(failedRetry.Number, Is.EqualTo(failingRetry + 1));
+            Assert.That(failedRetry.Status, Is.EqualTo(Status.Failed));
+            Assert.That(failedRetry.Exception.Message, Is.EqualTo(fixture.Failure.Message));
+            Assert.That(failedRetry.Exception.StackTrace, Does.Contain(nameof(FailingHooks.ThrowHookFailure)));
+            Assert.That(failedRetry.StartTime, Is.GreaterThanOrEqualTo(scenario.Attempts[^2].EndTime));
+            Assert.That(failedRetry.EndTime, Is.GreaterThanOrEqualTo(failedRetry.StartTime));
+            Assert.That(failedRetry.TimeTaken, Is.GreaterThan(TimeSpan.Zero));
+            Assert.That(scenario.StartTime, Is.EqualTo(failedRetry.StartTime));
+            Assert.That(scenario.EndTime, Is.EqualTo(failedRetry.EndTime));
+            Assert.That(scenario.TimeTaken, Is.EqualTo(failedRetry.TimeTaken));
         }
         finally
         {
@@ -168,27 +209,31 @@ public class RetryHookTests
 
     private sealed class NoHooks : BDTestBase;
 
-    [BDTestRetry(1)]
-    private sealed class FailingHooks(bool tearDown, bool asynchronous) : BDTestBase
+    [BDTestRetry(3)]
+    private sealed class FailingHooks(BDTestRun run, string hook, bool asynchronous, int failingRetry) : BDTestBase
     {
         private readonly string _executionId = Guid.NewGuid().ToString();
         protected override string BDTestExecutionId => _executionId;
+        public override BDTestRun TestRun => run;
         public InvalidOperationException Failure { get; } = new("retry hook failed");
         public int Attempts { get; private set; }
 
         public Task<Scenario> RunScenario() => Given(() => FailStep()).When(() => FailStep()).Then(() => FailStep()).BDTestAsync();
 
-        private void FailStep()
+        public void FailStep()
         {
             Attempts++;
             throw new Exception("retry the scenario");
         }
 
         [BDTestRetrySetUp]
-        public Task SetUp() => !tearDown ? ThrowHookFailure() : Task.CompletedTask;
+        public Task SetUp() => hook == "setup" && Attempts == failingRetry ? ThrowHookFailure() : Task.CompletedTask;
 
         [BDTestRetryTearDown]
-        public Task TearDown() => tearDown ? ThrowHookFailure() : Task.CompletedTask;
+        public Task TearDown() => hook == "teardown" && Attempts == failingRetry ? ThrowHookFailure() : Task.CompletedTask;
+
+        public override Task OnBeforeRetry() => hook == "before" && Attempts == failingRetry
+            ? ThrowHookFailure() : Task.CompletedTask;
 
         public Task ThrowHookFailure()
         {

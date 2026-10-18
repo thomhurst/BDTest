@@ -94,7 +94,7 @@ public class RetryHistoryTests
     }
 
     [Test]
-    public async Task FailingRetryHookDoesNotEraseHistoryOrAddAnUnrunAttempt()
+    public async Task FailingRetryHookKeepsBothStepAndHookFailuresInHistory()
     {
         var fixture = new RetryingScenario(2, failHook: true);
         try
@@ -102,7 +102,9 @@ public class RetryHistoryTests
             await Assert.ThrowsAsync<ErrorOccurredDuringRetryActionException>(() => fixture.Run());
             var scenario = BDTestUtil.GetScenarios().Single();
             Assert.That(scenario.RetryCount, Is.EqualTo(1));
-            Assert.That(scenario.Attempts, Has.Count.EqualTo(1));
+            Assert.That(scenario.Attempts, Has.Count.EqualTo(2));
+            Assert.That(scenario.Attempts[1].Status, Is.EqualTo(Status.Failed));
+            Assert.That(scenario.Attempts[1].Exception.Message, Is.EqualTo("hook failed"));
             Assert.That(scenario.Attempts[0].Status, Is.EqualTo(Status.Failed));
             Assert.That(scenario.Attempts[0].Exception.Message, Is.EqualTo("<failure 1>"));
 
@@ -110,7 +112,12 @@ public class RetryHistoryTests
             Assert.That(html, Does.Contain("Retry history"));
             Assert.That(html, Does.Contain("Attempt 1 · Failed"));
             Assert.That(html, Does.Contain("&lt;failure 1&gt;"));
-            Assert.That(html, Does.Not.Contain("Attempt 2 ·"));
+            Assert.That(html, Does.Contain("Attempt 2 · Failed"));
+            Assert.That(html, Does.Contain("hook failed"));
+            var restored = ReportJson.DeserializeObject<Scenario>(ReportJson.SerializeObject(scenario));
+            Assert.That(restored.Exception.Message, Is.EqualTo("hook failed"));
+            Assert.That(restored.Attempts.Select(attempt => attempt.Exception.Message),
+                Is.EqualTo(new[] { "<failure 1>", "hook failed" }));
             Assert.That(html, Does.Not.Contain("<failure 1>"));
         }
         finally
