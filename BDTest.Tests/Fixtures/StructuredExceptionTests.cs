@@ -99,9 +99,10 @@ public class StructuredExceptionTests
     [TestCase("enumerator")]
     [TestCase("move")]
     [TestCase("entry")]
-    public void Unreadable_data_does_not_replace_the_original_failure(string failure)
+    [TestCase("source")]
+    public void Unreadable_diagnostics_do_not_replace_the_original_failure(string failure)
     {
-        var exception = new UnreadableDataException(failure);
+        Exception exception = failure == "source" ? new UnreadableSourceException() : new UnreadableDataException(failure);
 
         var wrapper = new ExceptionWrapper(exception);
 
@@ -109,6 +110,7 @@ public class StructuredExceptionTests
         Assert.That(wrapper.Message, Is.EqualTo("original failure"));
         Assert.That(wrapper.InnerExceptions.Single().Message, Is.EqualTo("original cause"));
         Assert.That(wrapper.Data, Is.Empty);
+        if (failure == "source") Assert.That(wrapper.Source, Is.Null);
         Assert.That(wrapper.AsString, Does.Contain("original failure"));
         Assert.DoesNotThrow(() => ReportJson.SerializeObject(wrapper));
     }
@@ -118,18 +120,19 @@ public class StructuredExceptionTests
     [TestCase("enumerator")]
     [TestCase("move")]
     [TestCase("entry")]
-    public async Task Unreadable_data_preserves_step_failure_and_retry_behavior(string failure)
+    [TestCase("source")]
+    public async Task Unreadable_diagnostics_preserve_step_failure_and_retry_behavior(string failure)
     {
         var options = new BDTestOptions();
-        options.RetryTestRules.Add(exception => exception is UnreadableDataException, 1);
+        options.RetryTestRules.Add(exception => exception is UnreadableDataException or UnreadableSourceException, 1);
         using var run = BDTestRun.Start(options);
         var host = BDTestScenario.For<object>(new object(), run);
-        host.BeginTest("unreadable-data-" + failure);
-        var exception = new UnreadableDataException(failure);
+        host.BeginTest("unreadable-diagnostics-" + failure);
+        Exception exception = failure == "source" ? new UnreadableSourceException() : new UnreadableDataException(failure);
         var executions = 0;
         try
         {
-            var thrown = await Assert.ThrowsAsync<UnreadableDataException>(async () =>
+            var thrown = await Assert.ThrowsAsync(Is.TypeOf(exception.GetType()), async () =>
                 await host.When(() => Fail()).Then(() => { }).BDTestAsync());
 
             Assert.That(thrown, Is.SameAs(exception));
@@ -227,6 +230,11 @@ public class StructuredExceptionTests
     private static class First { public class Failure(string message) : Exception(message); }
     private static class Second { public class Failure(string message) : Exception(message); }
     private sealed class BadValue { public override string ToString() => throw new InvalidOperationException("formatter failure"); }
+
+    private sealed class UnreadableSourceException() : Exception("original failure", new Exception("original cause"))
+    {
+        public override string Source { get => throw new InvalidOperationException("source getter failed"); set { } }
+    }
 
     private sealed class UnreadableDataException(string failure) : Exception("original failure", new Exception("original cause"))
     {

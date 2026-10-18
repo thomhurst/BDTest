@@ -56,7 +56,8 @@ public class ExceptionWrapper
         TypeName = exception.GetType().FullName ?? exception.GetType().Name;
         ShortTypeName = exception.GetType().Name;
         StackTrace = exception.StackTrace;
-        Source = exception.Source;
+        try { Source = exception.Source; }
+        catch { /* Optional diagnostics must not replace the original failure. */ }
         HResult = exception.HResult;
         Data = CaptureData(exception);
         var children = GetChildren(exception);

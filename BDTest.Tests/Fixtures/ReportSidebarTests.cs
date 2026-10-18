@@ -226,6 +226,29 @@ public class ReportSidebarTests
     }
 
     [Test]
+    public async Task Flakiness_preserves_distinct_messages_and_counts_each_failed_run_once()
+    {
+        _repository.Report.Scenarios = [ReportJson.DeserializeObject<Scenario>("""
+            {"Guid":"scenario-632","Status":"Failed","CustomTestInformation":[],"Steps":[],
+             "StoryText":"story","ScenarioText":"scenario"}
+            """)];
+        _repository.Report.Scenarios.Single().ExecutionException = new ExceptionWrapper(new AggregateException(
+            new InvalidOperationException("<first cause>"), new InvalidOperationException("<second cause>"),
+            new InvalidOperationException(" <first cause> ")));
+
+        using var response = await _client.PostAsync("/bdtest/report/test-run-flakiness", new FormUrlEncodedContent(
+            new[] { new KeyValuePair<string, string>("reportIds", "run-632,failed-again,passing") }));
+        response.EnsureSuccessStatusCode();
+        var html = await response.Content.ReadAsStringAsync();
+
+        Assert.That(html, Does.Contain("InvalidOperationException <span class=\"muted\">×2</span>"));
+        var rows = Regex.Matches(html, @"<tr>\s*<td[^>]*>InvalidOperationException</td>\s*<td[^>]*>(.*?)</td>\s*<td class=""num"">(\d+)</td>\s*</tr>");
+        Assert.That(rows.Select(row => row.Groups[1].Value),
+            Is.EquivalentTo(new[] { "&lt;first cause&gt;", "&lt;second cause&gt;" }));
+        Assert.That(rows.Select(row => row.Groups[2].Value), Is.All.EqualTo("2"));
+    }
+
+    [Test]
     public async Task Old_reports_do_not_render_retry_history()
     {
         var html = await _client.GetStringAsync("/bdtest/report/run-632/scenario/scenario-632");

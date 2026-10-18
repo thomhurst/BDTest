@@ -23,6 +23,8 @@ Step, scenario and retry-attempt exceptions share the same structure. `InnerExce
 
 Data is optional diagnostics. A null or throwing `Data` getter, or a dictionary that fails during enumeration, does not replace the original failure. Capture keeps any entries read before the failure.
 
+`Source` is also optional diagnostics. If a custom exception's `Source` getter throws, capture leaves `Source` null and preserves the original failure and retry behavior.
+
 Capture stops after ten nodes on each branch. A node with omitted children has `TruncationReason` set to `DepthLimit`. A repeated exception on the current branch becomes a terminal node marked `Cycle`. The same exception in separate aggregate branches remains present in each branch.
 
 `AsString` remains available and normally contains the original `Exception.ToString()` output. For truncated graphs or a throwing formatter, it contains bounded diagnostics instead. Aggregate messages recursively format their children too, so a truncated aggregate uses an explanatory message instead of calling that formatter.
@@ -34,6 +36,8 @@ Hosted Razor reports and standalone HTML reports show an encoded, collapsible tr
 Invocation wrappers and single-child aggregates retain their diagnostic nodes and have `IsWrapper` set to `true`. Reports show a wrapper marker. They are traversed when finding root causes rather than discarded, so messages, stack traces and aggregate branches remain available.
 
 `GetRootCauses()` returns every terminal cause. It returns the exception itself when there are no children. Top defects uses terminal causes for its message/location and exception-type grouping modes; failing-step grouping still counts each scenario once. Exception-type grouping and flakiness count a scenario once per root cause type. Aggregates with different cause types contribute to each corresponding group. Standalone reports retain Copy and Wrap controls for original exception text.
+
+The flakiness Failures table retains distinct root cause type/message pairs and counts each pair once per failed run. Messages are trimmed for grouping. Multiple messages of the same type remain visible without inflating the most common failure count.
 
 ## Historical reports
 

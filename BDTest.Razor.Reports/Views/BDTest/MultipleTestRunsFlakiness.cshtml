@@ -128,19 +128,20 @@
                     var rate = flaky[index].Rate;
                     var latest = item.Present[^1];
                     var lastFailure = item.Failed[^1];
-                    var failureCauses = item.Failed.SelectMany(result =>
-                        (result.Scenario.Exception?.GetRootCauses() ?? new ExceptionWrapper[] { null })
-                            .GroupBy(cause => cause?.TypeName)
-                            .Select(group => group.First())).ToList();
-                    var commonFailure = failureCauses
+                    var causesByRun = item.Failed.Select(result =>
+                        result.Scenario.Exception?.GetRootCauses() ?? new ExceptionWrapper[] { null }).ToList();
+                    var commonFailure = causesByRun
+                        .SelectMany(causes => causes.GroupBy(cause => cause?.TypeName).Select(group => group.First()))
                         .GroupBy(cause => cause?.TypeName ?? "No exception")
                         .OrderByDescending(group => group.Count()).ThenBy(group => group.Key, StringComparer.Ordinal).First();
                     var shortType = commonFailure.Key[(commonFailure.Key.LastIndexOf('.') + 1)..];
                     var maxTime = item.Present.Max(result => result.Scenario.TimeTaken);
                     var failingRange = Range(item.Failed.Select(result => result.Scenario.TimeTaken));
                     var passingRange = Range(item.Present.Where(result => result.Scenario.Status == Status.Passed).Select(result => result.Scenario.TimeTaken));
-                    var exceptions = failureCauses
-                        .Where(cause => cause != null)
+                    var exceptions = causesByRun
+                        .SelectMany(causes => causes.Where(cause => cause != null)
+                            .GroupBy(cause => (cause.TypeName, Message: cause.Message?.Trim()))
+                            .Select(group => group.First()))
                         .GroupBy(cause => (cause.TypeName, Message: cause.Message?.Trim()))
                         .OrderByDescending(group => group.Count())
                         .ToList();
