@@ -15,10 +15,10 @@ namespace BDTest;
 public sealed class BDTestOptions
 {
     /// <summary>Creates framework-owned contexts. Null uses a public parameterless constructor.</summary>
-    public IBDTestContextFactory ContextFactory { get; set; }
+    public IBDTestContextFactory? ContextFactory { get; set; }
 
     /// <summary>Caller-owned services available to context factories. BDTest does not dispose the provider.</summary>
-    public IServiceProvider Services { get; set; }
+    public IServiceProvider? Services { get; set; }
 
 #if NET8_0_OR_GREATER
     /// <summary>Clock for execution timestamps, elapsed durations and timeout timers. Defaults to the system clock.</summary>
@@ -29,7 +29,7 @@ public sealed class BDTestOptions
     public IList<Type> SuccessExceptionTypes { get; } = new List<Type>();
     public IList<Type> SkipExceptionTypes { get; } = new List<Type>();
     public IList<Type> InconclusiveExceptionTypes { get; } = new List<Type>();
-    internal FrameworkOutcomeMap FrameworkOutcomes { get; private set; }
+    internal FrameworkOutcomeMap? FrameworkOutcomes { get; private set; }
 
     /// <summary>Registers exception types once and selects this map's runner notifications.</summary>
     /// <remarks>Call before Start. When registering several maps, the last map supplies notifications.</remarks>
@@ -65,8 +65,8 @@ public sealed class BDTestOptions
     }
 }
 
-internal sealed class StepTextConverterRegistration(Type valueType, Func<object, string> convert)
+internal sealed class StepTextConverterRegistration(Type valueType, Func<object, string?> convert)
 {
     internal bool Matches(object value) => valueType.IsInstanceOfType(value);
-    internal string Convert(object value) => convert(value);
+    internal string? Convert(object value) => convert(value);
 }

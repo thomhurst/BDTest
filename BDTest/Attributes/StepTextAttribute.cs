@@ -1,4 +1,4 @@
-﻿using System.Text.RegularExpressions;
+using System.Text.RegularExpressions;
 using BDTest.Exceptions;
 // ReSharper disable UnusedMember.Global
 
@@ -14,15 +14,15 @@ namespace BDTest.Attributes;
 [AttributeUsage(AttributeTargets.Method)]
 public class StepTextAttribute : Attribute
 {
-    public string Text { get; }
+    public string? Text { get; }
     public List<string> StepTextParameterOverrides { get; } = new();
 
-    public StepTextAttribute(string stepText)
+    public StepTextAttribute(string? stepText)
     {
         Text = stepText;
     }
 
-    public StepTextAttribute(string stepText, string parameterOverride)
+    public StepTextAttribute(string? stepText, string parameterOverride)
     {
         Text = stepText;
 
@@ -35,7 +35,7 @@ public class StepTextAttribute : Attribute
         StepTextParameterOverrides.Add(parameterOverride);
     }
         
-    public StepTextAttribute(string stepText, string[] parameterOverrides)
+    public StepTextAttribute(string? stepText, string[] parameterOverrides)
     {
         Text = stepText;
 

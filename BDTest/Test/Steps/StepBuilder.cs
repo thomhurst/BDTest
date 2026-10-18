@@ -13,22 +13,22 @@ public abstract class StepBuilder : BuildableTest
         Console.SetOut(TestOutputData.Instance);
     }
 
-    protected T WithStepText<T>(Func<string> overridingStepText) where T : StepBuilder
+    protected T WithStepText<T>(Func<string?>? overridingStepText) where T : StepBuilder
     {
         ExistingSteps.Last().OverriddenStepText = overridingStepText;
         return (T) this;
     }
 
-    protected T WithArgs<T>(Func<object>[] arguments) where T : StepBuilder
+    protected T WithArgs<T>(Func<object?>[] arguments) where T : StepBuilder
     {
         if (arguments == null) throw new ArgumentNullException(nameof(arguments));
         if (arguments.Any(argument => argument == null)) throw new ArgumentException("Argument readers cannot be null.", nameof(arguments));
-        ExistingSteps.Last().ExplicitArguments = (Func<object>[])arguments.Clone();
+        ExistingSteps.Last().ExplicitArguments = (Func<object?>[])arguments.Clone();
         return (T)this;
     }
 
     // First Test Construction - Given or When
-    internal StepBuilder(Runnable runnable, string callerMember, string callerFile, string testId, string reportId, StepType stepType, BDTestBase bdTestBase)
+    internal StepBuilder(Runnable runnable, string? callerMember, string? callerFile, string testId, string reportId, StepType stepType, BDTestBase bdTestBase)
     {
         Run = bdTestBase.TestRun;
         Run.ThrowIfDisposed();
@@ -80,7 +80,7 @@ public abstract class StepBuilder : BuildableTest
         ExistingSteps = previousSteps.Select(step => new Step(step, Guid)).ToList();
         ExistingSteps.Add(new Step(runnable, StepType, Guid, ReportId, Run));
 
-        Run.Store.NotRun.TryRemove(previousPartiallyBuiltTest.Guid, out _);
+        if (previousPartiallyBuiltTest.Guid != null) Run.Store.NotRun.TryRemove(previousPartiallyBuiltTest.Guid, out _);
         Run.Store.RegisterPending(this);
         TestOutputData.TestId = Guid;
     }

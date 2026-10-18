@@ -99,17 +99,17 @@ public class RetryHookTests
             Assert.That(scenario.Attempts, Has.Count.EqualTo(failingRetry + 1));
             for (var index = 0; index < failingRetry; index++)
             {
-                var attempt = scenario.Attempts[index];
+                var attempt = Required(scenario.Attempts)[index];
                 Assert.That(attempt.Number, Is.EqualTo(index + 1));
                 Assert.That(attempt.Status, Is.EqualTo(Status.Failed));
-                Assert.That(attempt.Exception.Message, Is.EqualTo("retry the scenario"));
-                Assert.That(attempt.Exception.StackTrace, Does.Contain(nameof(FailingHooks.FailStep)));
+                Assert.That(Required(attempt.Exception).Message, Is.EqualTo("retry the scenario"));
+                Assert.That(Required(attempt.Exception).StackTrace, Does.Contain(nameof(FailingHooks.FailStep)));
             }
-            var failedRetry = scenario.Attempts.Last();
+            var failedRetry = Required(scenario.Attempts).Last();
             Assert.That(failedRetry.Number, Is.EqualTo(failingRetry + 1));
             Assert.That(failedRetry.Status, Is.EqualTo(Status.Failed));
-            Assert.That(failedRetry.Exception.Message, Is.EqualTo(fixture.Failure.Message));
-            Assert.That(failedRetry.Exception.StackTrace, Does.Contain(nameof(FailingHooks.ThrowHookFailure)));
+            Assert.That(Required(failedRetry.Exception).Message, Is.EqualTo(fixture.Failure.Message));
+            Assert.That(Required(failedRetry.Exception).StackTrace, Does.Contain(nameof(FailingHooks.ThrowHookFailure)));
             Assert.That(failedRetry.StartTime, Is.GreaterThanOrEqualTo(scenario.Attempts[^2].EndTime));
             Assert.That(failedRetry.EndTime, Is.GreaterThanOrEqualTo(failedRetry.StartTime));
             Assert.That(failedRetry.TimeTaken, Is.GreaterThan(TimeSpan.Zero));

@@ -8,14 +8,14 @@ public abstract class AbstractContextBDTestBase<TContext> : BDTestBase where TCo
     private readonly object _contextLock = new();
     private readonly Dictionary<string, ContextEntry> _contexts = new(StringComparer.Ordinal);
     private readonly ConditionalWeakTable<string, ContextEntry> _defaultContexts = new();
-    private readonly AsyncLocal<ContextEntry> _configuring = new();
-    private readonly AsyncLocal<ContextEntry> _disposing = new();
+    private readonly AsyncLocal<ContextEntry?> _configuring = new();
+    private readonly AsyncLocal<ContextEntry?> _disposing = new();
 
     private sealed class ContextEntry
     {
         internal readonly SemaphoreSlim Gate = new(1, 1);
         internal int Attempt;
-        internal BDTestContext<TContext> Context;
+        internal BDTestContext<TContext>? Context;
         internal bool Owned = true;
         internal bool Initialized;
         internal bool Retired;
@@ -82,7 +82,7 @@ public abstract class AbstractContextBDTestBase<TContext> : BDTestBase where TCo
     {
         lock (_contextLock)
         {
-            ContextEntry entry;
+            ContextEntry? entry;
             if (IsDefaultExecutionId(executionId))
                 entry = _defaultContexts.GetValue(executionId, _ => new ContextEntry());
             else if (!_contexts.TryGetValue(executionId, out entry))
@@ -190,7 +190,7 @@ public abstract class AbstractContextBDTestBase<TContext> : BDTestBase where TCo
 
     internal override async ValueTask RemoveExecutionContextAsync(string executionId)
     {
-        ContextEntry entry;
+        ContextEntry? entry;
         lock (_contextLock)
         {
             if (IsDefaultExecutionId(executionId)) _defaultContexts.TryGetValue(executionId, out entry);

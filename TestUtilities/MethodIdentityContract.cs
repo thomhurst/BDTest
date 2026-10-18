@@ -16,7 +16,7 @@ public static class MethodIdentityContract
         })).Then(() => { }).BDTestAsync();
 
         if (scenario.GetScenarioText() != text || scenario.RetryCount != 1 || attempts != 2
-            || scenario.CustomTestInformation.Single().Information != text
+            || (scenario.CustomTestInformation ?? throw new InvalidOperationException("Expected scenario method information.")).Single().Information != text
             || !scenario.Tags.Contains("fixture") || !scenario.Tags.Contains(text))
             throw new InvalidOperationException("The adapter did not preserve test method metadata: " + text);
     }

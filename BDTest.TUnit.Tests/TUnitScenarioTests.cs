@@ -59,9 +59,10 @@ public class TUnitScenarioTests : TUnitBDTestBase<TUnitContext>
 
             await Assert.That(exception.Message).IsEqualTo("Inconclusive scenario");
             await Assert.That(scenario.Status).IsEqualTo(Status.Inconclusive);
-            await Assert.That(scenario.Steps[0].Status).IsEqualTo(Status.Passed);
-            await Assert.That(scenario.Steps[1].Status).IsEqualTo(Status.Inconclusive);
-            await Assert.That(scenario.Steps[2].Status).IsEqualTo(Status.NotRun);
+            var steps = scenario.Steps ?? throw new InvalidOperationException("Expected recorded scenario steps.");
+            await Assert.That(steps[0].Status).IsEqualTo(Status.Passed);
+            await Assert.That(steps[1].Status).IsEqualTo(Status.Inconclusive);
+            await Assert.That(steps[2].Status).IsEqualTo(Status.NotRun);
         }
     }
 
@@ -86,13 +87,16 @@ public class TUnitScenarioTests : TUnitBDTestBase<TUnitContext>
 
             await Assert.That(ReferenceEquals(exception, failure)).IsTrue();
             await Assert.That(scenario.Status).IsEqualTo(Status.Failed);
-            await Assert.That(scenario.Steps[0].Status).IsEqualTo(Status.Passed);
-            await Assert.That(scenario.Steps[1].Status).IsEqualTo(Status.Failed);
-            await Assert.That(scenario.Steps[1].Exception.Message).IsEqualTo(failure.Message);
-            await Assert.That(scenario.Steps[1].Exception.TypeName).IsEqualTo(typeof(InvalidOperationException).FullName);
-            await Assert.That(scenario.Steps[1].Exception.ShortTypeName).IsEqualTo(nameof(InvalidOperationException));
-            await Assert.That(scenario.Steps[2].Status).IsEqualTo(Status.NotRun);
-            await Assert.That(scenario.Steps[2].StartTime).IsEqualTo(default(DateTime));
+            var steps = scenario.Steps ?? throw new InvalidOperationException("Expected recorded scenario steps.");
+            await Assert.That(steps[0].Status).IsEqualTo(Status.Passed);
+            await Assert.That(steps[1].Status).IsEqualTo(Status.Failed);
+            var capturedException = steps[1].Exception
+                ?? throw new InvalidOperationException("Expected the failed step's captured exception.");
+            await Assert.That(capturedException.Message).IsEqualTo(failure.Message);
+            await Assert.That(capturedException.TypeName).IsEqualTo(typeof(InvalidOperationException).FullName);
+            await Assert.That(capturedException.ShortTypeName).IsEqualTo(nameof(InvalidOperationException));
+            await Assert.That(steps[2].Status).IsEqualTo(Status.NotRun);
+            await Assert.That(steps[2].StartTime).IsEqualTo(default(DateTime));
         }
     }
 

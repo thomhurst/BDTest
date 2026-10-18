@@ -1,4 +1,4 @@
-﻿using BDTest.Interfaces;
+using BDTest.Interfaces;
 using BDTest.Settings.Retry;
 using BDTest.Settings.Skip;
 using BDTest.Test;
@@ -10,19 +10,19 @@ namespace BDTest.Settings;
 public static class BDTestSettings
 {
     [Obsolete("BDTestSettings.Environment is obsolete. This should instead be passed in via BDTestRunDescriptor")]
-    public static string Environment { get; set; }
+    public static string? Environment { get; set; }
         
     [Obsolete("BDTestSettings.Tag is obsolete. This should instead be passed in via BDTestRunDescriptor")]
-    public static string Tag { get; set; }
+    public static string? Tag { get; set; }
         
     [Obsolete("BDTestSettings.BranchName is obsolete. This should instead be passed in via BDTestRunDescriptor")]
-    public static string BranchName { get; set; }
+    public static string? BranchName { get; set; }
 
     // Reports must still honor values set through the shipped obsolete settings.
 #pragma warning disable CS0618
-    internal static string LegacyEnvironment => Environment;
-    internal static string LegacyTag => Tag;
-    internal static string LegacyBranchName => BranchName;
+    internal static string? LegacyEnvironment => Environment;
+    internal static string? LegacyTag => Tag;
+    internal static string? LegacyBranchName => BranchName;
 #pragma warning restore CS0618
         
     [Obsolete]
@@ -95,25 +95,25 @@ public static class BDTestSettings
 
     /// <summary>Runs before each reached step, before the test instance's OnBeforeStep hook.</summary>
     /// <remarks>Handlers are awaited sequentially in registration order. Unsubscribe to remove a handler.</remarks>
-    public static event Func<Step, Task> BeforeStep;
+    public static event Func<Step, Task>? BeforeStep;
 
     /// <summary>Runs after each reached step, after the test instance's OnAfterStep hook.</summary>
     /// <remarks>
     /// Handlers receive the step's status, exception, output and timing, and are awaited sequentially
     /// in registration order. All after hooks run even if another hook fails. Unsubscribe to remove a handler.
     /// </remarks>
-    public static event Func<Step, Task> AfterStep;
+    public static event Func<Step, Task>? AfterStep;
 
-    internal static Func<Step, Task> BeforeStepHooks => BeforeStep;
-    internal static Func<Step, Task> AfterStepHooks => AfterStep;
+    internal static Func<Step, Task>? BeforeStepHooks => BeforeStep;
+    internal static Func<Step, Task>? AfterStepHooks => AfterStep;
 
     /// <summary>Runs before the instance scenario hook on each attempt in the legacy default run.</summary>
-    public static event Func<ScenarioHookContext, Task> BeforeScenario;
+    public static event Func<ScenarioHookContext, Task>? BeforeScenario;
 
     /// <summary>Runs after the instance scenario hook on each attempt in the legacy default run.</summary>
     /// <remarks>All after handlers are awaited, even when an earlier hook fails.</remarks>
-    public static event Func<ScenarioHookContext, Task> AfterScenario;
+    public static event Func<ScenarioHookContext, Task>? AfterScenario;
 
-    internal static Func<ScenarioHookContext, Task> BeforeScenarioHooks => BeforeScenario;
-    internal static Func<ScenarioHookContext, Task> AfterScenarioHooks => AfterScenario;
+    internal static Func<ScenarioHookContext, Task>? BeforeScenarioHooks => BeforeScenario;
+    internal static Func<ScenarioHookContext, Task>? AfterScenarioHooks => AfterScenario;
 }

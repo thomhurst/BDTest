@@ -147,7 +147,7 @@ public partial class ReportUploadTests
                 fixture.Attachments.Attach($"row-{row.Value}-attempt-{attempt}.txt", new byte[] { (byte)row.Value }, "text/plain");
                 if (attempt == 1) throw new InvalidOperationException("retry");
             }).Then(() => { })).BDTestAsync();
-        await BDTestReportServer.SendDataAndGetReportUriAsync(server.Client.BaseAddress, null, server.Client, run);
+        await BDTestReportServer.SendDataAndGetReportUriAsync(Required(server.Client.BaseAddress), null, server.Client, run);
         var report = server.Store.Received.Single();
         var attachments = BDTestAttachmentHelper.GetAttachments(report).ToArray();
         Assert.That(attachments, Has.Length.EqualTo(5));
@@ -204,8 +204,8 @@ public partial class ReportUploadTests
         var json = AttachmentReport(id);
         if (reason == "duplicate")
         {
-            var model = BDTestJsonHelper.Deserialize(json);
-            model.Scenarios[0].Attachments.Add(model.Scenarios[0].Attachments.Single());
+            var model = Required(BDTestJsonHelper.Deserialize(json));
+            Required(Required(model.Scenarios)[0].Attachments).Add(Required(model.Scenarios[0].Attachments).Single());
             json = BDTestJsonHelper.Serialize(model);
         }
         using var response = await server.Post(json);
@@ -254,7 +254,7 @@ public partial class ReportUploadTests
         if (permanentFailure) await Assert.ThrowsAsync<HttpRequestException>(async () => await upload);
         else await upload;
         Assert.That(attempts, Is.EqualTo(permanentFailure ? 1 : 2));
-        using var content = run.OpenAttachment(scenario.Steps[0].Attachments.Single().Id);
+        using var content = run.OpenAttachment(Required(Required(Required(scenario.Steps)[0].Attachments).Single().Id));
         Assert.That(content.Length, Is.EqualTo(3));
     }
 
@@ -268,7 +268,7 @@ public partial class ReportUploadTests
         var foreign = new AttachmentFixture(other);
         var foreignScenario = await foreign.When(() => foreign.Attachments.Attach("other", new byte[] { 1 }, "text/plain"))
             .Then(() => { }).BDTestAsync();
-        scenario.Attachments.Add(foreignScenario.Steps[0].Attachments.Single());
+        Required(scenario.Attachments).Add(Required(Required(foreignScenario.Steps)[0].Attachments).Single());
         using var handler = new AttachmentHttpHandler(request =>
         {
             Assert.That(request.Method, Is.EqualTo(HttpMethod.Get));
@@ -365,7 +365,7 @@ public partial class ReportUploadTests
         using var receipt = await firstServer.Post(AttachmentReport(attachmentId));
         var reportId = receipt.Headers.GetValues("X-BDTest-Report-Id").Single();
         var token = receipt.Headers.GetValues("X-BDTest-Attachment-Token").Single();
-        var restored = BDTestJsonHelper.Deserialize(BDTestJsonHelper.Serialize(firstServer.Store.Received.Single()));
+        var restored = Required(BDTestJsonHelper.Deserialize(BDTestJsonHelper.Serialize(firstServer.Store.Received.Single())));
         Assert.That(BDTestJsonHelper.Serialize(restored), Does.Not.Contain(token));
         await using var secondServer = await UploadServer.Start(configureServices: services =>
         {
@@ -410,9 +410,9 @@ public partial class ReportUploadTests
         var foreign = new AttachmentFixture(other);
         await foreign.When(() => foreign.Attachments.Attach("foreign", new byte[] { 9 }, "text/plain")).Then(() => { }).BDTestAsync();
 
-        var uri = await BDTestReportServer.SendDataAndGetReportUriAsync(server.Client.BaseAddress, null, server.Client, run);
+        var uri = await BDTestReportServer.SendDataAndGetReportUriAsync(Required(server.Client.BaseAddress), null, server.Client, run);
         var report = server.Store.Received.Single();
-        var attachment = report.Scenarios.Single().Steps[0].Attachments.Single();
+        var attachment = Required(Required(Required(report.Scenarios).Single().Steps)[0].Attachments).Single();
         using var response = await server.Client.GetAsync($"bdtest/report/{report.Id}/attachments/{attachment.Id}");
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
         Assert.That(await response.Content.ReadAsStringAsync(), Is.EqualTo("<svg/>"));
@@ -421,7 +421,7 @@ public partial class ReportUploadTests
         Assert.That(response.Headers.GetValues("X-Content-Type-Options"), Does.Contain("nosniff"));
         Assert.That(uri.AbsolutePath, Does.Contain(report.Id));
         Assert.That(Directory.GetFiles(files.Path, "*", SearchOption.AllDirectories), Has.Length.EqualTo(1));
-        using var captured = run.OpenAttachment(scenario.Steps[0].Attachments.Single().Id);
+        using var captured = run.OpenAttachment(Required(Required(Required(scenario.Steps)[0].Attachments).Single().Id));
         Assert.That(captured.Length, Is.EqualTo(6));
     }
 

@@ -12,16 +12,16 @@ namespace BDTest.Helpers;
 public static class StepTextHelper
 {
     /// <summary>Renders a selected step method using explicit, lazy argument readers.</summary>
-    public static string GetStepText(MethodInfo method, IReadOnlyList<Func<object>> arguments,
-        bool omitCancellationToken = false, Action<string> diagnostic = null)
+    public static string GetStepText(MethodInfo method, IReadOnlyList<Func<object?>>? arguments,
+        bool omitCancellationToken = false, Action<string>? diagnostic = null)
     {
         if (method == null) throw new ArgumentNullException(nameof(method));
         return GetStepText(method, arguments, omitCancellationToken, diagnostic, evaluateArguments: true);
     }
 
-    internal static string GetStepText(MethodInfo method, IReadOnlyList<Func<object>> arguments,
-        bool omitCancellationToken, Action<string> diagnostic, bool evaluateArguments,
-        IReadOnlyList<StepTextConverterRegistration> converters = null, Action<StepArgument> structuredArgument = null)
+    internal static string GetStepText(MethodInfo method, IReadOnlyList<Func<object?>>? arguments,
+        bool omitCancellationToken, Action<string>? diagnostic, bool evaluateArguments,
+        IReadOnlyList<StepTextConverterRegistration>? converters = null, Action<StepArgument>? structuredArgument = null)
     {
         var parameters = method.GetParameters();
         var visibleParameters = parameters.Where(p => !omitCancellationToken || p.ParameterType != typeof(CancellationToken)).ToArray();
@@ -66,8 +66,8 @@ public static class StepTextHelper
         }
     }
 
-    internal static string GetArgumentValue(Func<object> argument, string name, Action<string> diagnostic,
-        IReadOnlyList<StepTextConverterRegistration> converters = null, Action<StepArgument> structuredArgument = null)
+    internal static string GetArgumentValue(Func<object?> argument, string? name, Action<string>? diagnostic,
+        IReadOnlyList<StepTextConverterRegistration>? converters = null, Action<StepArgument>? structuredArgument = null)
     {
         try
         {
@@ -80,7 +80,7 @@ public static class StepTextHelper
             if (argumentValue is StepArgument structured)
             {
                 structuredArgument?.Invoke(structured);
-                return structured.ToString();
+                return structured.ToString() ?? "null";
             }
 
             if (converters != null)
@@ -104,7 +104,7 @@ public static class StepTextHelper
                     {
                         // Invoke through the interface to support explicit implementations.
                         var method = converterInterface.GetMethod(nameof(IStepTextStringConverter<object>.ConvertToString));
-                        return method.Invoke(converter, new[] { argumentValue }) as string ?? "null";
+                        return method?.Invoke(converter, new[] { argumentValue }) as string ?? "null";
                     }
                 }
             }
@@ -112,7 +112,7 @@ public static class StepTextHelper
             // Delegate arguments are values, not callbacks for generating step text.
             if (argumentValue is Delegate || argumentValue is string)
             {
-                return argumentValue.ToString();
+                return argumentValue.ToString() ?? "null";
             }
 
             if (argumentValue is IDictionary dictionary)

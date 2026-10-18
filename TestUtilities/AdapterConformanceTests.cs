@@ -78,7 +78,7 @@ public class AdapterConformanceTests : Adapter
     internal Task Record(string name, ScenarioHookContext scenario)
     {
         Require(ReferenceEquals(_host.Context, scenario.Context), "scenario hook received another attempt's context");
-        _hooks.Add((name, scenario.Attempt, scenario.Context, scenario.CancellationToken, scenario.Scenario.Status));
+        _hooks.Add((name, scenario.Attempt, scenario.Context ?? throw new InvalidOperationException("Expected the scenario hook context."), scenario.CancellationToken, scenario.Scenario.Status));
         if (name.EndsWith("after") && scenario.Scenario.Status is Status.Failed or Status.NotImplemented)
             Require(scenario.Scenario.Exception != null, "after hook did not receive the attempt exception");
         return Task.CompletedTask;
@@ -181,7 +181,8 @@ public class AdapterConformanceTests : Adapter
             void FailOnce() { if (++calls == 1) throw new TransientException(); }
             return _host.When(() => FailOnce()).Then(() => Complete());
         }).BDTestAsync();
-        Require(outline.Examples.All(s => s.Status == Status.Passed && s.RetryCount == 1), "outline retry mismatch");
+        var examples = outline.Examples ?? throw new InvalidOperationException("Expected outline examples.");
+        Require(examples.All(s => s.Status == Status.Passed && s.RetryCount == 1), "outline retry mismatch");
         Require(_hooks.Count == (_composition ? 8 : 16), "hooks must run for each row attempt, not the outline container");
         Require(_hooks.Where(h => h.Name == "run before").Select(h => h.Context).Distinct().Count() == 4,
             "outline attempts reused contexts");
@@ -372,11 +373,18 @@ public class AdapterConformanceTests : Adapter
         {
             var scenario = run.Scenarios.Single();
             Require(scenario.FrameworkTestId == "same-id" && scenario.ReportId == run.ReportId, "run identity leaked");
-            Require(scenario.TestStartupInformation.Contains(label + " setup") && !scenario.TestStartupInformation.Contains(other), "startup output leaked");
-            Require(scenario.Output.Contains(label + " step") && !scenario.Output.Contains(other), "step output leaked");
-            Require(scenario.TearDownOutput.Contains(label + " teardown") && !scenario.TearDownOutput.Contains(other), "teardown output leaked");
-            var report = BDTest.Helpers.BDTestJsonHelper.Deserialize(BDTest.Helpers.BDTestJsonHelper.GetTestJsonData(null, run));
-            Require(report.Scenarios.Single().ReportId == run.ReportId, "report ownership leaked");
+            var startupOutput = scenario.TestStartupInformation
+                ?? throw new InvalidOperationException("Expected startup output.");
+            var stepOutput = scenario.Output ?? throw new InvalidOperationException("Expected step output.");
+            var teardownOutput = scenario.TearDownOutput
+                ?? throw new InvalidOperationException("Expected teardown output.");
+            Require(startupOutput.Contains(label + " setup") && !startupOutput.Contains(other), "startup output leaked");
+            Require(stepOutput.Contains(label + " step") && !stepOutput.Contains(other), "step output leaked");
+            Require(teardownOutput.Contains(label + " teardown") && !teardownOutput.Contains(other), "teardown output leaked");
+            var report = BDTest.Helpers.BDTestJsonHelper.Deserialize(BDTest.Helpers.BDTestJsonHelper.GetTestJsonData(null, run))
+                ?? throw new InvalidOperationException("Expected the run report.");
+            var scenarios = report.Scenarios ?? throw new InvalidOperationException("Expected report scenarios.");
+            Require(scenarios.Single().ReportId == run.ReportId, "report ownership leaked");
         }
     }
 
@@ -394,9 +402,10 @@ public class AdapterConformanceTests : Adapter
         finally
         {
             var scenario = TestRun.Scenarios.Single();
+            var scenarioSteps = scenario.Steps ?? throw new InvalidOperationException("Expected scenario steps.");
             Require(scenario.Status == expected && scenario.RetryCount == retries
-                && scenario.Steps.Select(s => s.Status).SequenceEqual(steps),
-                $"BDTest mismatch: {scenario.Status}, retries {scenario.RetryCount}, steps {string.Join(", ", scenario.Steps.Select(s => s.Status))}");
+                && scenarioSteps.Select(s => s.Status).SequenceEqual(steps),
+                $"BDTest mismatch: {scenario.Status}, retries {scenario.RetryCount}, steps {string.Join(", ", scenarioSteps.Select(s => s.Status))}");
             var hookNames = _composition
                 ? new[] { "run before", "run after" }
                 : new[] { "run before", "instance before", "instance after", "run after" };

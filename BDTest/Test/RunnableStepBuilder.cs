@@ -30,7 +30,7 @@ public abstract class RunnableStepBuilder : StepBuilder
     }
 
     internal Task<Scenario> Invoke(BuildableTest testDetails,
-        Scenario outline = null, Dictionary<string, string> exampleValues = null)
+        Scenario? outline = null, Dictionary<string, string>? exampleValues = null)
     {
         testDetails.Run.ThrowIfDisposed();
         if (Interlocked.Exchange(ref _executionStarted, 1) != 0)
@@ -56,7 +56,7 @@ public abstract class RunnableStepBuilder : StepBuilder
 
     private static async Task<Scenario> ExecuteAsync(Scenario scenario)
     {
-        await scenario.Run.ScenarioExecutor.ExecuteAsync(scenario);
+        await scenario.ExecutionRun.ScenarioExecutor.ExecuteAsync(scenario);
         return scenario;
     }
 

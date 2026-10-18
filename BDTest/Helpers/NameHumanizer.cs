@@ -4,9 +4,10 @@ namespace BDTest.Helpers;
 
 internal static class NameHumanizer
 {
-    internal static string Humanize(string memberName)
+    [return: System.Diagnostics.CodeAnalysis.NotNullIfNotNull(nameof(memberName))]
+    internal static string? Humanize(string? memberName)
     {
-        if (string.IsNullOrEmpty(memberName)) return memberName;
+        if (memberName == null || string.IsNullOrEmpty(memberName)) return memberName;
 
         // Preserve compiler-generated and other non-identifier names as a readable fallback.
         if (memberName.Any(character => character != '_' && !char.IsLetterOrDigit(character))) return memberName;

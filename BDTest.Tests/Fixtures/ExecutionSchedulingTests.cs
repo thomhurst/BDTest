@@ -56,7 +56,7 @@ public class ExecutionSchedulingTests : BDTestBase
         }
 
         Assert.That(events, Is.EqualTo(new[] { "started", "finished", "when", "then" }));
-        Assert.That((await task).Steps.All(step => step.Status == Status.Passed), Is.True);
+        Assert.That(Required((await task).Steps).All(step => step.Status == Status.Passed), Is.True);
     }
 
     [Test, BDTest.Attributes.BDTestRetry(1)]
@@ -80,7 +80,7 @@ public class ExecutionSchedulingTests : BDTestBase
 
         Assert.That(scenario.Status, Is.EqualTo(Status.Passed));
         Assert.That(_contextAttempts, Is.EqualTo(outline ? 3 : 2));
-        Assert.That(outline ? scenario.Examples[0].RetryCount : scenario.RetryCount, Is.EqualTo(1));
+        Assert.That(outline ? Required(scenario.Examples)[0].RetryCount : scenario.RetryCount, Is.EqualTo(1));
     }
 
     [Test]

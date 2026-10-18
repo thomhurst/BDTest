@@ -8,6 +8,9 @@ namespace BDTest.Targets.Tests;
 
 public class RuntimeContractTests
 {
+    private static T Required<T>(T? value) where T : class =>
+        value ?? throw new AssertionException("Expected a non-null test value.");
+
     private static bool _initialized;
 
     [ModuleInitializer]
@@ -62,7 +65,7 @@ public class RuntimeContractTests
         var scenario = run.Scenarios.Single();
         Assert.That(scenario.TimedOut, Is.True);
         Assert.That(scenario.Status, Is.EqualTo(Status.Failed));
-        Assert.That(scenario.Steps[0].TimedOut, Is.True);
+        Assert.That(Required(scenario.Steps)[0].TimedOut, Is.True);
         Assert.That(laterRan, Is.False);
         Assert.That(scenario.TimeTaken, Is.GreaterThan(TimeSpan.Zero));
         Assert.That(scenario.StartTime.Kind, Is.EqualTo(DateTimeKind.Utc));
@@ -94,8 +97,10 @@ public class RuntimeContractTests
         }
         var scenario = run.Scenarios.Single();
         Assert.That(scenario.Status, Is.EqualTo(Status.Failed));
-        Assert.That(scenario.Steps[0].Exception.TypeName, Does.Contain(nameof(TimeoutException)));
-        Assert.That(scenario.Steps[0].Exception.Message, Does.Contain("timed out"));
+        var steps = Required(scenario.Steps);
+        var exception = steps[0].Exception ?? throw new AssertionException("Expected a timeout exception.");
+        Assert.That(exception.TypeName, Does.Contain(nameof(TimeoutException)));
+        Assert.That(exception.Message, Does.Contain("timed out"));
     }
 
     [Test]
@@ -108,7 +113,7 @@ public class RuntimeContractTests
         Assert.That(scenario.TimedOut, Is.False);
         Assert.That(scenario.StartTime.Kind, Is.EqualTo(DateTimeKind.Utc));
         Assert.That(scenario.EndTime, Is.GreaterThanOrEqualTo(scenario.StartTime));
-        Assert.That(scenario.TimeTaken, Is.GreaterThanOrEqualTo(scenario.Steps[0].TimeTaken));
+        Assert.That(scenario.TimeTaken, Is.GreaterThanOrEqualTo(Required(scenario.Steps)[0].TimeTaken));
     }
 
     private static void Fail(Exception exception) => throw exception;

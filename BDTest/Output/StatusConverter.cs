@@ -7,8 +7,9 @@ namespace BDTest.Output;
 /// <summary>Writes status names and reads numeric values using the historical report status mapping.</summary>
 public sealed class StatusConverter : JsonConverter<Status>
 {
-    private static readonly JsonConverter<Status> NamedConverter = (JsonConverter<Status>)
-        new JsonStringEnumConverter<Status>(allowIntegerValues: false).CreateConverter(typeof(Status), new JsonSerializerOptions());
+    private static readonly JsonConverter<Status> NamedConverter = (JsonConverter<Status>)(
+        new JsonStringEnumConverter<Status>(allowIntegerValues: false).CreateConverter(typeof(Status), new JsonSerializerOptions())
+        ?? throw new InvalidOperationException("The status converter is unavailable."));
 
     public override Status Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {

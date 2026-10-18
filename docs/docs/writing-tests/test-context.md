@@ -35,6 +35,8 @@ protected override ValueTask<AccountContext> CreateContextAsync(ContextCreation 
 
 `ContextCreation` exposes `ExecutionId`, zero-based `Attempt` (0 initially, 1 on the first retry), and `Services`. Each outline row starts at attempt 0.
 
+`BDTestOptions.ContextFactory` and `Services` are nullable optional registrations. `ContextCreation.Services` is also nullable when no provider is configured. Check it in custom factories before resolving services. Factory methods return a non-null context; BDTest rejects a null result rather than exposing it through `Context`.
+
 For a shared registration, implement `IBDTestContextFactory` in `BDTest.Test` and set `BDTestOptions.ContextFactory` before starting an [explicit run](../advanced/explicit-runs.md). Its method is `ValueTask<object> CreateContextAsync(Type contextType, ContextCreation creation)`. Return a new context assignable to `contextType`. The default protected factory delegates to this registration. Override `TestRun` on the adapter to select the run.
 
 ```csharp
@@ -61,7 +63,7 @@ protected override void ConfigureContext(BDTestContext<AccountContext> context)
 }
 ```
 
-The wrapper exposes `TestContext`, story text, scenario text and the current scenario. The hook may read `Context` or `BDTestContext` without creating another context. During outline construction, `CurrentScenario` is null because the row does not yet exist. Do not call `OverwriteContext` or `OverwriteContextAsync` from this hook; BDTest rejects replacement with an `InvalidOperationException`. Configure the supplied object, or override `CreateContextAsync` to select another object. If construction or configuration fails, BDTest detaches and disposes any owned context that was created. A later access can create a fresh context.
+The wrapper exposes `TestContext`, story text, scenario text and the current scenario. The hook may read `Context` or `BDTestContext` without creating another context. `CurrentScenario` has type `Scenario?` and is null before a scenario exists, including during outline construction because the row does not yet exist. Check it before accessing scenario members. Do not call `OverwriteContext` or `OverwriteContextAsync` from this hook; BDTest rejects replacement with an `InvalidOperationException`. Configure the supplied object, or override `CreateContextAsync` to select another object. If construction or configuration fails, BDTest detaches and disposes any owned context that was created. A later access can create a fresh context.
 
 ## Asynchronous initialization
 

@@ -7,7 +7,7 @@ namespace BDTest.Helpers;
 // Expand those references only when reading; current writers always emit plain values.
 internal static class LegacyReportJson
 {
-    internal static BDTestOutputModel Deserialize(JsonElement root, long maximumExpandedSize)
+    internal static BDTestOutputModel? Deserialize(JsonElement root, long maximumExpandedSize)
     {
         if (root.ValueKind != JsonValueKind.Object || !root.TryGetProperty("$id", out _))
         {
@@ -31,11 +31,12 @@ internal static class LegacyReportJson
         {
             if (element.TryGetProperty("$id", out var id))
             {
-                if (id.ValueKind != JsonValueKind.String || references.ContainsKey(id.GetString()))
+                var referenceId = id.ValueKind == JsonValueKind.String ? id.GetString() : null;
+                if (referenceId == null || references.ContainsKey(referenceId))
                 {
                     throw new JsonException("Invalid or duplicate legacy reference id.");
                 }
-                references.Add(id.GetString(), element);
+                references.Add(referenceId, element);
             }
             foreach (var property in element.EnumerateObject())
             {
@@ -64,14 +65,15 @@ internal static class LegacyReportJson
             var propertyCount = element.EnumerateObject().Count();
             if (propertyCount == 1 && element.TryGetProperty("$ref", out var reference))
             {
-                if (reference.ValueKind != JsonValueKind.String
-                    || !references.TryGetValue(reference.GetString(), out var target)
-                    || !activeReferences.Add(reference.GetString()))
+                var referenceId = reference.ValueKind == JsonValueKind.String ? reference.GetString() : null;
+                if (referenceId == null
+                    || !references.TryGetValue(referenceId, out var target)
+                    || !activeReferences.Add(referenceId))
                 {
                     throw new JsonException("Unknown or cyclic legacy report reference.");
                 }
                 Write(target, writer, references, activeReferences, depth + 1, maximumExpandedSize);
-                activeReferences.Remove(reference.GetString());
+                activeReferences.Remove(referenceId);
                 return;
             }
             if (element.TryGetProperty("$values", out var values)

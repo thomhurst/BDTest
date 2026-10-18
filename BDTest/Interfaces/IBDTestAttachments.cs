@@ -9,5 +9,5 @@ public interface IBDTestAttachments
     void Attach(string name, Stream content, string mimeType);
 
     /// <summary>Copies a file. An omitted MIME type uses application/octet-stream.</summary>
-    void AttachFile(string path, string mimeType = null);
+    void AttachFile(string path, string? mimeType = null);
 }

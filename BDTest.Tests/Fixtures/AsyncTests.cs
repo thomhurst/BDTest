@@ -42,7 +42,7 @@ public class AsyncTests : BDTestBase
         var scenario = await execution;
         Assert.That(events, Is.EqualTo(new[] { "given started", "given finished", "when", "then" }));
         Assert.That(scenario.Status, Is.EqualTo(Status.Passed));
-        Assert.That(scenario.Steps.Select(step => step.Status), Is.All.EqualTo(Status.Passed));
+        Assert.That(Required(scenario.Steps).Select(step => step.Status), Is.All.EqualTo(Status.Passed));
         Assert.That(scenario.TimeTaken, Is.GreaterThanOrEqualTo(TimeSpan.Zero));
     }
 

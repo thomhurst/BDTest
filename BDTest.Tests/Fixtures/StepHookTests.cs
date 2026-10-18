@@ -92,10 +92,10 @@ public class StepHookTests
             Assert.That(thrown, Is.SameAs(original));
             Assert.That(observedStatus, Is.EqualTo(Status.Failed));
             Assert.That(observedException, Is.EqualTo(original.Message));
-            Assert.That(Required(observed).Exception.Message, Is.EqualTo(original.Message));
+            Assert.That(Required(Required(observed).Exception).Message, Is.EqualTo(original.Message));
             Assert.That(calls, Is.EqualTo(new[] { "test after failed", "global after failed", "last after" }));
             Assert.That(GetScenario(Required(observed)).Status, Is.EqualTo(Status.Failed));
-            Assert.That(GetScenario(Required(observed)).Steps[1].Status, Is.EqualTo(Status.NotRun));
+            Assert.That(Required(GetScenario(Required(observed)).Steps)[1].Status, Is.EqualTo(Status.NotRun));
         }
         finally
         {
@@ -205,7 +205,7 @@ public class StepHookTests
             Assert.That(thrown, Is.SameAs(exception));
             Assert.That(calls, Is.EqualTo(new[] { "body", "last" }));
             Assert.That(Required(observed).Status, Is.EqualTo(Status.Failed));
-            Assert.That(Required(observed).Exception.Message, Is.EqualTo(Required(exception).Message));
+            Assert.That(Required(Required(observed).Exception).Message, Is.EqualTo(Required(exception).Message));
         }
         finally
         {
@@ -324,14 +324,14 @@ public class StepHookTests
             Before = async _ => { await Console.Out.WriteLineAsync("before output"); },
             After = async step =>
             {
-                outputs.Add(step.Output);
+                outputs.Add(Required(step.Output));
                 await Console.Out.WriteLineAsync("after output");
             }
         };
         var scenario = await test.When(() => Console.WriteLine("body output")).Then(() => NoOp()).BDTestAsync();
         Assert.That(outputs[0], Does.Contain("before output").And.Contain("body output").And.Not.Contain("after output"));
         Assert.That(outputs[1], Is.EqualTo("before output"));
-        Assert.That(scenario.Steps[0].Output, Does.Contain("after output"));
+        Assert.That(Required(scenario.Steps)[0].Output, Does.Contain("after output"));
         Assert.That(scenario.Output, Does.Contain("body output").And.Contain("after output"));
     }
 
@@ -355,9 +355,9 @@ public class StepHookTests
         var exception = await Assert.ThrowsAsync<TimeoutException>(async () =>
             await builder.BDTestAsync().WaitAsync(TimeSpan.FromSeconds(10)));
 
-        Assert.That(Required(observed).Exception.Message, Is.EqualTo(Required(exception).Message));
+        Assert.That(Required(Required(observed).Exception).Message, Is.EqualTo(Required(exception).Message));
         Assert.That(GetScenario(Required(observed)).Status, Is.EqualTo(Status.Failed));
-        Assert.That(GetScenario(Required(observed)).Steps[1].Status, Is.EqualTo(Status.NotRun));
+        Assert.That(Required(GetScenario(Required(observed)).Steps)[1].Status, Is.EqualTo(Status.NotRun));
     }
 
     [Test]
@@ -429,10 +429,10 @@ public class StepHookTests
             Assert.That(calls, Is.EqualTo(new[] { "after" }));
             Assert.That(Required(observed).TimedOut, Is.True);
             Assert.That(Required(observed).Status, Is.EqualTo(Status.Failed));
-            Assert.That(Required(observed).Exception.Message, Is.EqualTo(Required(exception).Message));
+            Assert.That(Required(Required(observed).Exception).Message, Is.EqualTo(Required(exception).Message));
             Assert.That(GetScenario(Required(observed)).TimedOut, Is.True);
             Assert.That(GetScenario(Required(observed)).Status, Is.EqualTo(Status.Failed));
-            Assert.That(GetScenario(Required(observed)).Steps[1].Status, Is.EqualTo(Status.NotRun));
+            Assert.That(Required(GetScenario(Required(observed)).Steps)[1].Status, Is.EqualTo(Status.NotRun));
         }
         finally
         {
@@ -461,7 +461,7 @@ public class StepHookTests
 
             Assert.That(thrown, Is.SameAs(failure));
             Assert.That(Required(observed).TimedOut, Is.False);
-            Assert.That(Required(observed).Exception.Message, Is.EqualTo(failure.Message));
+            Assert.That(Required(Required(observed).Exception).Message, Is.EqualTo(failure.Message));
             Assert.That(GetScenario(Required(observed)).TimedOut, Is.False);
             Assert.That(GetScenario(Required(observed)).Status, Is.EqualTo(Status.Failed));
         }
@@ -515,12 +515,12 @@ public class StepHookTests
         Assert.That(calls, Is.EqualTo(new[] { "body", "after" }));
         Assert.That(Required(observed).TimedOut, Is.True);
         Assert.That(Required(observed).Status, Is.EqualTo(Status.Failed));
-        Assert.That(Required(observed).Exception.Message, Is.EqualTo(Required(exception).Message));
+        Assert.That(Required(Required(observed).Exception).Message, Is.EqualTo(Required(exception).Message));
         Assert.That(GetScenario(Required(observed)).TimedOut, Is.True);
         Assert.That(GetScenario(Required(observed)).Status, Is.EqualTo(Status.Failed));
         if (!finalStep)
         {
-            Assert.That(GetScenario(Required(observed)).Steps[2].Status, Is.EqualTo(Status.NotRun));
+            Assert.That(Required(GetScenario(Required(observed)).Steps)[2].Status, Is.EqualTo(Status.NotRun));
         }
     }
 

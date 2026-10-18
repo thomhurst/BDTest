@@ -34,7 +34,7 @@ public class RunTimingTests : BDTestBase
         AssertTimer(BDTestUtil.GetTestTimer(new[] { later, unstarted, earlier }),
             StartedAt, StartedAt.AddSeconds(5));
         var report = ReportJson.DeserializeObject<BDTestOutputModel>(BDTestJsonHelper.GetTestJsonData());
-        AssertTimer(report.TestTimer, StartedAt, StartedAt.AddSeconds(5));
+        AssertTimer(Required(report.TestTimer), StartedAt, StartedAt.AddSeconds(5));
     }
 
     [Test]
@@ -99,7 +99,7 @@ public class RunTimingTests : BDTestBase
         Assert.That(scenario.StartTime.Kind, Is.EqualTo(DateTimeKind.Utc));
         Assert.That(scenario.EndTime.Kind, Is.EqualTo(DateTimeKind.Utc));
         Assert.That(scenario.TimeTaken, Is.InRange(measured.Elapsed, outer.Elapsed));
-        var step = scenario.Steps[0];
+        var step = Required(scenario.Steps)[0];
         Assert.That(step.StartTime.Kind, Is.EqualTo(DateTimeKind.Utc));
         Assert.That(step.EndTime.Kind, Is.EqualTo(DateTimeKind.Utc));
         Assert.That(step.TimeTaken, Is.InRange(measured.Elapsed, scenario.TimeTaken));
@@ -133,7 +133,7 @@ public class RunTimingTests : BDTestBase
         Assert.That(scenario.RetryCount, Is.EqualTo(1));
         Assert.That(scenario.StartTime, Is.EqualTo(attempts[1]));
         Assert.That(scenario.StartTime.Kind, Is.EqualTo(DateTimeKind.Utc));
-        Assert.That(scenario.TimeTaken, Is.GreaterThanOrEqualTo(scenario.Steps[0].TimeTaken));
+        Assert.That(scenario.TimeTaken, Is.GreaterThanOrEqualTo(Required(scenario.Steps)[0].TimeTaken));
         Assert.That(scenario.Steps[0].StartTime, Is.GreaterThanOrEqualTo(scenario.StartTime));
     }
 

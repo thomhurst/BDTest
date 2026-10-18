@@ -187,8 +187,8 @@ public class CustomStringConverterTests
     [Test]
     public void RegistrationAndRemovalRejectNull()
     {
-        Assert.Throws<ArgumentNullException>(() => BDTestSettings.RegisterCustomStringConverter<Value>(null));
-        Assert.Throws<ArgumentNullException>(() => BDTestSettings.RemoveCustomStringConverter<Value>(null));
+        Assert.Throws<ArgumentNullException>(() => BDTestSettings.RegisterCustomStringConverter<Value>(null!));
+        Assert.Throws<ArgumentNullException>(() => BDTestSettings.RemoveCustomStringConverter<Value>(null!));
     }
 
     [StepText("value: {0}")]

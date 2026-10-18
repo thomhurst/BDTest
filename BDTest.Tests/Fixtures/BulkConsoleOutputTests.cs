@@ -68,7 +68,7 @@ public class BulkConsoleOutputTests
     public void Invalid_slices_do_not_capture_or_forward_any_text()
     {
         using var capture = new Capture();
-        Assert.Throws<ArgumentNullException>(() => capture.Writer.Write(null, 0, 0));
+        Assert.Throws<ArgumentNullException>(() => capture.Writer.Write(null!, 0, 0));
         Assert.Throws<ArgumentOutOfRangeException>(() => capture.Writer.Write(new char[2], -1, 1));
         Assert.Throws<ArgumentOutOfRangeException>(() => capture.Writer.Write(new char[2], 0, -1));
         Assert.Catch<ArgumentException>(() => capture.Writer.Write(new char[2], 1, 2));
@@ -149,8 +149,8 @@ public class BulkConsoleOutputTests
 
     private sealed class Capture : IDisposable
     {
-        private readonly string _previousTestId = TestOutputData.TestId;
-        private readonly string _previousFrameworkId = TestOutputData.FrameworkExecutionId;
+        private readonly string? _previousTestId = TestOutputData.TestId;
+        private readonly string? _previousFrameworkId = TestOutputData.FrameworkExecutionId;
         private readonly TestDetails _details = new();
         public CountingWriter Original { get; } = new();
         public ConsoleOutputInterceptor Writer { get; }
@@ -174,8 +174,8 @@ public class BulkConsoleOutputTests
         {
             TestOutputData.TestId = _details.Guid;
             TestOutputData.ClearCurrentTaskData();
-            TestHolder.ScenariosByInternalId.TryRemove(_details.Guid, out _);
-            TestHolder.ScenariosByTestFrameworkId.TryRemove(_details.TestId, out _);
+            TestHolder.ScenariosByInternalId.TryRemove(Required(_details.Guid), out _);
+            TestHolder.ScenariosByTestFrameworkId.TryRemove(Required(_details.TestId), out _);
             TestOutputData.TestId = _previousTestId;
             TestOutputData.FrameworkExecutionId = _previousFrameworkId;
             Original.Dispose();

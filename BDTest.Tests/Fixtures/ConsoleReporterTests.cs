@@ -66,8 +66,8 @@ public class ConsoleReporterTests
                 Enumerable.Range(0, lineCount).Select(line => $"scenario-{id}: line-{line}"));
             var scenario = scenarios[id];
             Assert.That(scenario.Status, Is.EqualTo(Status.Passed));
-            Assert.That(scenario.Steps[0].Output, Is.EqualTo(expected));
-            Assert.That(scenario.Steps[1].Output, Is.EqualTo($"done-{id}"));
+            Assert.That(Required(scenario.Steps)[0].Output, Is.EqualTo(expected));
+            Assert.That(Required(scenario.Steps)[1].Output, Is.EqualTo($"done-{id}"));
             Assert.That(scenario.Output, Is.EqualTo(expected + Environment.NewLine + $"done-{id}"));
         }
         Assert.That(run.Scenarios.Count, Is.EqualTo(scenarioCount));

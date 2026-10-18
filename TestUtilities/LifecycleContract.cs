@@ -23,9 +23,11 @@ public static class LifecycleContract
         first.End();
         Console.WriteLine("second after first completion");
         var scenario = await second.Fixture.When(() => NoOp()).Then(() => NoOp()).BDTestAsync();
-        Require(scenario.TestStartupInformation.Contains("second startup") &&
-                scenario.TestStartupInformation.Contains("second after first completion") &&
-                !scenario.TestStartupInformation.Contains("first startup"), "Run startup output leaked or was lost.");
+        var startupOutput = scenario.TestStartupInformation
+            ?? throw new InvalidOperationException("Expected test startup output.");
+        Require(startupOutput.Contains("second startup") &&
+                startupOutput.Contains("second after first completion") &&
+                !startupOutput.Contains("first startup"), "Run startup output leaked or was lost.");
         second.End();
         second.End();
         Console.WriteLine("output outside any test");

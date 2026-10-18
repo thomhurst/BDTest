@@ -50,7 +50,7 @@ public class StepMetadataGeneratorTests
             """);
         var sites = Run(consumer);
         Assert.That(sites, Has.Length.EqualTo(5));
-        var methods = sites.Select(s => s.Metadata.Method.Resolve(consumer)).ToArray();
+        var methods = sites.Select(s => (s.Metadata.Method ?? throw new AssertionException("Expected step method metadata.")).Resolve(consumer)).ToArray();
         Assert.That(methods[0].IsPrivate, Is.True);
         Assert.That(methods[0].GetParameters()[0].ParameterType, Is.EqualTo(typeof(int)));
         Assert.That(methods[1].GetGenericArguments(), Is.EqualTo(new[] { typeof(int) }));
@@ -176,7 +176,7 @@ public class StepMetadataGeneratorTests
             }
             """);
         var site = Run(consumer).Single();
-        var method = site.Metadata.Method.Resolve(consumer);
+        var method = (site.Metadata.Method ?? throw new AssertionException("Expected step method metadata.")).Resolve(consumer);
         Assert.That(method.DeclaringType!.IsConstructedGenericType, Is.True);
         Assert.That(method.GetParameters()[0].ParameterType, Is.EqualTo(typeof(int)));
         Assert.That(Read(site, consumer), Is.EqualTo(new object[] { 2 }));
@@ -328,7 +328,7 @@ public class StepMetadataGeneratorTests
             }
             """.Replace("TYPE", parameterType));
         var site = Run(consumer).Single();
-        var expectedType = site.Metadata.Method.Resolve(consumer).GetParameters()[0].ParameterType;
+        var expectedType = (site.Metadata.Method ?? throw new AssertionException("Expected step method metadata.")).Resolve(consumer).GetParameters()[0].ParameterType;
         var argument = Read(site, consumer).Single() ?? throw new InvalidOperationException("Missing numeric argument");
         Assert.That(argument.GetType(), Is.EqualTo(expectedType));
         Assert.That(Convert.ToInt32(argument), Is.EqualTo(1));
@@ -352,7 +352,7 @@ public class StepMetadataGeneratorTests
             }
             """.Replace("INITIAL", initialValue));
         var site = Run(consumer).Single();
-        Assert.That(site.Metadata.Method.Resolve(consumer).Name, Is.EqualTo("Step"));
+        Assert.That((site.Metadata.Method ?? throw new AssertionException("Expected step method metadata.")).Resolve(consumer).Name, Is.EqualTo("Step"));
         Assert.That(site.Metadata.ArgumentExpression, Does.Contain("Optional.Value"));
         Assert.That(site.Metadata.TryBindArguments(consumer, site.Step, out var accessors), Is.False);
         Assert.That(accessors, Is.Empty);
@@ -376,7 +376,7 @@ public class StepMetadataGeneratorTests
             """);
         foreach (var site in Run(consumer))
         {
-            Assert.That(site.Metadata.Method.Resolve(consumer).GetParameters()[0].ParameterType, Is.EqualTo(typeof(object)));
+            Assert.That((site.Metadata.Method ?? throw new AssertionException("Expected step method metadata.")).Resolve(consumer).GetParameters()[0].ParameterType, Is.EqualTo(typeof(object)));
         }
     }
 
@@ -401,7 +401,7 @@ public class StepMetadataGeneratorTests
             }
             """);
         var site = Run(consumer).Single();
-        Assert.That(site.Metadata.Method.Resolve(consumer).Name, Is.EqualTo("Step"));
+        Assert.That((site.Metadata.Method ?? throw new AssertionException("Expected step method metadata.")).Resolve(consumer).Name, Is.EqualTo("Step"));
         Assert.That(site.Metadata.ArgumentExpression, Does.Contain("base.Value"));
         Assert.That(site.Metadata.TryBindArguments(consumer, site.Step, out var accessors), Is.False);
         Assert.That(accessors, Is.Empty);
@@ -439,7 +439,7 @@ public class StepMetadataGeneratorTests
             }
             """, resolver, Path.Combine(root, "consumer.cs"));
         var site = Run(consumer).Single();
-        Assert.That(site.Metadata.Method.Resolve(consumer).Name, Is.EqualTo("Step"));
+        Assert.That((site.Metadata.Method ?? throw new AssertionException("Expected step method metadata.")).Resolve(consumer).Name, Is.EqualTo("Step"));
         Assert.That(Read(site, consumer), Is.EqualTo(new object[] { 42 }));
     }
 

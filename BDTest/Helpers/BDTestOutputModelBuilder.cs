@@ -6,7 +6,7 @@ namespace BDTest.Helpers;
 
 internal static class BDTestOutputModelBuilder
 {
-    internal static BDTestOutputModel Build(BDTestRun run, BDTestRunDescriptor descriptor)
+    internal static BDTestOutputModel Build(BDTestRun run, BDTestRunDescriptor? descriptor)
     {
         if (run == null) throw new ArgumentNullException(nameof(run));
         run.ThrowIfDisposed();
@@ -27,8 +27,9 @@ internal static class BDTestOutputModelBuilder
         };
 
 #pragma warning disable CS0612 // Preserve the shipped setting for all report formats until its separate removal.
+        var customProperties = model.CustomProperties ?? throw new InvalidOperationException("The report has no custom properties collection.");
         foreach (var property in BDTestSettings.CustomProperties)
-            model.CustomProperties.Add(property.Key, property.Value);
+            customProperties.Add(property.Key, property.Value);
 #pragma warning restore CS0612
 
         return model;

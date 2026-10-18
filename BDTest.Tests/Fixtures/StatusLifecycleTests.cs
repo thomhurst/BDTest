@@ -96,13 +96,13 @@ public class StatusLifecycleTests
         public void FailOnce()
         {
             var scenario = BDTestUtil.GetScenarios().Single();
-            RunningStatuses.Add((scenario.Status, scenario.Steps[0].Status, scenario.Steps[1].Status));
+            RunningStatuses.Add((scenario.Status, Required(scenario.Steps)[0].Status, scenario.Steps[1].Status));
             if (RunningStatuses.Count == 1) throw new InvalidOperationException("Retry probe");
         }
         public override Task OnBeforeRetry()
         {
             var scenario = BDTestUtil.GetScenarios().Single();
-            ResetStatuses = new[] { scenario.Status }.Concat(scenario.Steps.Select(step => step.Status)).ToArray();
+            ResetStatuses = new[] { scenario.Status }.Concat(Required(scenario.Steps).Select(step => step.Status)).ToArray();
             return Task.CompletedTask;
         }
         public void Complete() => BDTest.Tests.Helpers.LegacyLifecycle.Complete(this);

@@ -15,7 +15,7 @@ public sealed class StepMetadataProviderAttribute : Attribute
 /// <summary>A catalog scoped to the assembly containing the step call sites.</summary>
 public interface IStepMetadataProvider
 {
-    StepCallSiteMetadata Find(string callerFile, int callerLine, string argumentExpression);
+    StepCallSiteMetadata? Find(string? callerFile, int callerLine, string? argumentExpression);
 }
 
 /// <summary>Looks up optional compiler metadata without invoking the step or its arguments.</summary>
@@ -34,11 +34,11 @@ public static class StepMetadataCatalog
 
     /// <summary>Finds a unique loaded call-site catalog, including tests inherited from another assembly.</summary>
     /// <remarks>Ambiguous identities return null. Catalogs are cached without preventing assembly unloading.</remarks>
-    public static StepCallSiteMetadata Find(string callerFile, int callerLine, string argumentExpression,
-        out Assembly callerAssembly)
+    public static StepCallSiteMetadata? Find(string? callerFile, int callerLine, string? argumentExpression,
+        out Assembly? callerAssembly)
     {
         callerAssembly = null;
-        StepCallSiteMetadata result = null;
+        StepCallSiteMetadata? result = null;
         foreach (var reference in LoadedAssemblies())
         {
             if (!reference.TryGetTarget(out var assembly)) continue;
@@ -55,8 +55,8 @@ public static class StepMetadataCatalog
         return result;
     }
 
-    public static StepCallSiteMetadata Find(Assembly callerAssembly, string callerFile, int callerLine,
-        string argumentExpression)
+    public static StepCallSiteMetadata? Find(Assembly callerAssembly, string? callerFile, int callerLine,
+        string? argumentExpression)
     {
         if (callerAssembly == null) throw new ArgumentNullException(nameof(callerAssembly));
         return Catalogs.GetValue(callerAssembly, CreateCatalog).Provider?.Find(callerFile, callerLine, argumentExpression);
@@ -65,7 +65,7 @@ public static class StepMetadataCatalog
     private static Catalog CreateCatalog(Assembly assembly)
     {
         var attribute = assembly.GetCustomAttribute<StepMetadataProviderAttribute>();
-        return new Catalog(attribute == null ? null : (IStepMetadataProvider)Activator.CreateInstance(attribute.ProviderType));
+        return new Catalog(attribute == null ? null : (IStepMetadataProvider?)Activator.CreateInstance(attribute.ProviderType));
     }
 
     private static WeakReference<Assembly>[] LoadedAssemblies()
@@ -84,7 +84,7 @@ public static class StepMetadataCatalog
 
     private sealed class Catalog
     {
-        public Catalog(IStepMetadataProvider provider) => Provider = provider;
-        public IStepMetadataProvider Provider { get; }
+        public Catalog(IStepMetadataProvider? provider) => Provider = provider;
+        public IStepMetadataProvider? Provider { get; }
     }
 }

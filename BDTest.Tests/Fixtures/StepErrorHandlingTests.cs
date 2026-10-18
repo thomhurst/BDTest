@@ -50,11 +50,11 @@ public class StepErrorHandlingTests : BDTestBase
         {
             if (asyncStep)
             {
-                StepTextHelper.GetStepText(typeof(StepErrorHandlingTests).GetMethod(nameof(InvalidTextAsync), System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static), new Func<object>[] { () => "argument" });
+                StepTextHelper.GetStepText(Required(typeof(StepErrorHandlingTests).GetMethod(nameof(InvalidTextAsync), System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static)), new Func<object>[] { () => "argument" });
             }
             else
             {
-                StepTextHelper.GetStepText(typeof(StepErrorHandlingTests).GetMethod(nameof(InvalidText), System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static), new Func<object>[] { () => "argument" });
+                StepTextHelper.GetStepText(Required(typeof(StepErrorHandlingTests).GetMethod(nameof(InvalidText), System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static)), new Func<object>[] { () => "argument" });
             }
         });
 

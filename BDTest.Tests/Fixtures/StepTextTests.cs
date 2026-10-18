@@ -34,7 +34,7 @@ public class StepTextTests : BDTestBase
             .Then(() => Action3Custom())
             .BDTestAsync();
             
-        Assert.That(scenario.Steps[0].StepText, Is.EqualTo("Given I have a custom step 1"));
+        Assert.That(Required(scenario.Steps)[0].StepText, Is.EqualTo("Given I have a custom step 1"));
         Assert.That(scenario.Steps[1].StepText, Is.EqualTo("When my name is Tom Longhurst"));
         Assert.That(scenario.Steps[2].StepText, Is.EqualTo("Then I have a custom step 3"));
             
@@ -51,7 +51,7 @@ public class StepTextTests : BDTestBase
             .Then(() => Action3Custom())
             .BDTestAsync();
             
-        Assert.That(scenario.Steps[0].StepText, Is.EqualTo("Given I have a custom step 1"));
+        Assert.That(Required(scenario.Steps)[0].StepText, Is.EqualTo("Given I have a custom step 1"));
         Assert.That(scenario.Steps[1].StepText, Is.EqualTo("When my name is Tom Longhurst"));
         Assert.That(scenario.Steps[2].StepText, Is.EqualTo("Then I have a custom step 3"));
             
@@ -73,7 +73,7 @@ public class StepTextTests : BDTestBase
             .And(() => Action3Custom()).WithStepText(() => text3)
             .BDTestAsync();
             
-        Assert.That(scenario.Steps[0].StepText, Is.EqualTo("Given " + text1));
+        Assert.That(Required(scenario.Steps)[0].StepText, Is.EqualTo("Given " + text1));
         Assert.That(scenario.Steps[1].StepText, Is.EqualTo("When " + text2));
         Assert.That(scenario.Steps[2].StepText, Is.EqualTo("Then " + text3));
         Assert.That(scenario.Steps[3].StepText, Is.EqualTo("And " + text3));
@@ -92,7 +92,7 @@ public class StepTextTests : BDTestBase
             .Then(() => Step_3_Without_A_StepTextAttribute_and_Hyphens())
             .BDTestAsync();
             
-        Assert.That(scenario.Steps[0].StepText, Is.EqualTo("Given step 1 without a step text attribute"));
+        Assert.That(Required(scenario.Steps)[0].StepText, Is.EqualTo("Given step 1 without a step text attribute"));
         Assert.That(scenario.Steps[1].StepText, Is.EqualTo("When step 2 without a step text attribute"));
         Assert.That(scenario.Steps[2].StepText, Is.EqualTo("Then step 3 Without A StepTextAttribute and Hyphens"));
             
@@ -109,7 +109,7 @@ public class StepTextTests : BDTestBase
             .Then(() => Console.WriteLine("the steptext should correctly have the func response"))
             .BDTestAsync();
             
-        Assert.That(scenario.Steps[1].StepText, Is.EqualTo($"When the func returns: {typeof(Func<string>)}"));
+        Assert.That(Required(scenario.Steps)[1].StepText, Is.EqualTo($"When the func returns: {typeof(Func<string>)}"));
     }
         
     [Test]
@@ -120,7 +120,7 @@ public class StepTextTests : BDTestBase
             .Then(() => StepWithListType(new List<string> {"Blah1", "Blah2", "Blah3"})).WithArgs(() => new List<string> {"Blah1", "Blah2", "Blah3"})
             .BDTestAsync();
             
-        Assert.That(scenario.Steps[2].StepText, Is.EqualTo("Then the step text can display the list Blah1, Blah2, Blah3"));
+        Assert.That(Required(scenario.Steps)[2].StepText, Is.EqualTo("Then the step text can display the list Blah1, Blah2, Blah3"));
     }
         
     [Test]
@@ -133,7 +133,7 @@ public class StepTextTests : BDTestBase
             .Then(() => StepWithStrongTypeAndStepText(new CustomClassToStepTextString())).WithArgs(() => new CustomClassToStepTextString())
             .BDTestAsync();
             
-        Assert.That(scenario.Steps[2].StepText, Is.EqualTo("Then the text is 123..................4....................................5"));
+        Assert.That(Required(scenario.Steps)[2].StepText, Is.EqualTo("Then the text is 123..................4....................................5"));
     }
         
     [Test]
@@ -143,7 +143,7 @@ public class StepTextTests : BDTestBase
             .Then(() => StepWithParametersButWithoutStepText("One", "Two"))
             .BDTestAsync();
             
-        Assert.That(scenario.Steps[1].StepText, Is.EqualTo("Then step with parameters but without step text One Two"));
+        Assert.That(Required(scenario.Steps)[1].StepText, Is.EqualTo("Then step with parameters but without step text One Two"));
     }
 
     [Test]
@@ -162,7 +162,7 @@ public class StepTextTests : BDTestBase
             })
             .BDTestAsync();
 
-        var thenStep = scenario.Steps.Last();
+        var thenStep = Required(scenario.Steps).Last();
             
         Assert.That(thenStep.StepText, Is.EqualTo("Then the text is Out of the box ToString() called"));
     }
@@ -183,7 +183,7 @@ public class StepTextTests : BDTestBase
             })
             .BDTestAsync();
 
-        var thenStep = scenario.Steps.Last();
+        var thenStep = Required(scenario.Steps).Last();
             
         Assert.That(thenStep.StepText, Is.EqualTo("Then the text is Out of the box ToString() called"));
     }
@@ -204,7 +204,7 @@ public class StepTextTests : BDTestBase
             })
             .BDTestAsync();
 
-        var thenStep = scenario.Steps.Last();
+        var thenStep = Required(scenario.Steps).Last();
             
         Assert.That(thenStep.StepText, Is.EqualTo("Then step with strong type and no step text Out of the box ToString() called"));
     }
@@ -227,7 +227,7 @@ public class StepTextTests : BDTestBase
             .Then(() => Console.WriteLine("the test passed"))
             .BDTestAsync();
             
-        var thenStep = scenario.Steps.First();
+        var thenStep = Required(scenario.Steps).First();
             
         Assert.That(thenStep.StepText, Is.EqualTo("Given step with strong type and no step text Out of the box ToString() called"));
     }

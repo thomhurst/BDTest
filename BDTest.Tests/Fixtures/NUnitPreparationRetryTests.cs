@@ -34,7 +34,7 @@ public class NUnitPreparationRetryTests : NUnitBDTestBase<NUnitPreparationRetryT
         var scenario = await When(() => Complete()).Then(() => Complete()).BDTestAsync();
         Assert.That(scenario.Status, Is.EqualTo(Status.Passed));
         Assert.That(scenario.RetryCount, Is.EqualTo(1));
-        Assert.That(scenario.Attempts.Select(attempt => attempt.Status),
+        Assert.That(Required(scenario.Attempts).Select(attempt => attempt.Status),
             Is.EqualTo(new[] { Status.Failed, Status.Passed }));
     }
 

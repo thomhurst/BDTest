@@ -1,22 +1,22 @@
-﻿using System.Text.Json.Serialization;
+using System.Text.Json.Serialization;
 
 namespace BDTest.Test;
 
 internal class BDTestRuntimeInformation
 {
     [JsonIgnore]
-    internal string CallerMember { get; set; }
+    internal string? CallerMember { get; set; }
     [JsonIgnore]
-    internal string CallerFile { get; set; }
+    internal string? CallerFile { get; set; }
     [JsonIgnore]
-    internal BDTestBase BdTestBase
+    internal BDTestBase? BdTestBase
     {
         get => _bdTestBase ?? (_completedBdTestBase != null && _completedBdTestBase.TryGetTarget(out var target) ? target : null);
         set => _bdTestBase = value;
     }
 
-    private BDTestBase _bdTestBase;
-    private WeakReference<BDTestBase> _completedBdTestBase;
+    private BDTestBase? _bdTestBase;
+    private WeakReference<BDTestBase>? _completedBdTestBase;
 
     internal void ReleaseRuntimeReferences()
     {

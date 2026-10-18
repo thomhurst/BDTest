@@ -44,7 +44,7 @@ public class ScenarioRetentionTests
         Assert.That(retained.Text.IsAlive, Is.False, "Report retained the text callback");
         Assert.That(BDTestUtil.GetScenarios(), Does.Contain(retained.Scenario));
         Assert.That(retained.Scenario.Status, Is.EqualTo(status));
-        Assert.That(retained.Scenario.Steps.All(step => step.Runnable == null && step.OverriddenStepText == null), Is.True);
+        Assert.That(Required(retained.Scenario.Steps).All(step => step.Runnable == null && step.OverriddenStepText == null), Is.True);
         Assert.That(retained.Scenario.BdTestBaseClass, Is.Null);
         Assert.That(ReportJson.SerializeObject(retained.Scenario), Is.EqualTo(json));
         if (outcome == "retry")
@@ -96,7 +96,7 @@ public class ScenarioRetentionTests
         Assert.That(listenerCalls, Is.Zero);
         Assert.That(BDTestUtil.GetScenarios(), Is.EqualTo(new[] { replacement }));
         Assert.That(completed.Status, Is.EqualTo(Status.Passed));
-        Assert.That(completed.Steps[1].StepText, Is.EqualTo("Then retained text"));
+        Assert.That(Required(completed.Steps)[1].StepText, Is.EqualTo("Then retained text"));
     }
 
     [MethodImpl(MethodImplOptions.NoInlining)]

@@ -3,21 +3,21 @@ using System.Text;
 namespace BDTest.Output;
 
 // Shared across execution-context copies made by constructor-started tasks.
-internal sealed class StartupOutputBuffer(Action beginExecution)
+internal sealed class StartupOutputBuffer(Action? beginExecution)
 {
     private readonly StringBuilder _text = new();
-    private BDTestRun _run;
-    private string _executionId;
+    private BDTestRun? _run;
+    private string? _executionId;
     private bool _completed;
 
     internal void BeginExecution() => beginExecution?.Invoke();
 
-    internal void Write(string value, char? character)
+    internal void Write(string? value, char? character)
     {
         lock (_text)
         {
             if (_completed) return;
-            if (_run == null)
+            if (_run == null || _executionId == null)
             {
                 if (character.HasValue) _text.Append(character.Value);
                 else _text.Append(value);

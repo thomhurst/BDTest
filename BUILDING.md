@@ -16,6 +16,8 @@ compiled views, and static web asset packaging without per-file content override
 - `BDTest.Targets.Tests` and `BDTest.Legacy.Tests` (modern and legacy asset coverage).
 - `BDTest.SourceGenerator`, `BDTest.Analyzers`, and their test projects. These
   packages already used nullable analysis; they now also treat warnings as errors.
+- `BDTest` and the NUnit, xUnit, MSTest and TUnit adapters (#920), on every
+  existing target framework.
 
 Test fields initialized by framework setup hooks use `null!` only at declaration,
 with their lifecycle documented. Values absent before setup or execution remain
@@ -52,17 +54,26 @@ Do not run the publishing pipeline in `Production` locally.
 
 ## Remaining rollout
 
-#855 was split into sibling deliverables under roadmap #860. The initial scope
-is #919. The remaining scopes are:
+#855 was split into sibling deliverables under roadmap #860. #919, #922 and #920
+are complete. #921 remains: `BDTest.Razor.Reports` and
+`BDTest.ReportGenerator.Tests`. Review options, storage, request values, serialized
+models and views. Complete the rollout by making both settings unconditional in
+`Directory.Build.props` and removing redundant per-project settings and remaining
+per-file nullable directives.
 
-1. #920: `BDTest` and the NUnit, xUnit, MSTest, and TUnit adapters. Annotate public
-   inputs, returns, contexts, and serialized models to match runtime behavior.
-   Preserve accepted nulls, historical reports, and target frameworks. Update
-   consumer documentation and migration notes for nullable contract changes.
-2. #921: `BDTest.Razor.Reports` and `BDTest.ReportGenerator.Tests`. Review options,
-   storage, request values, serialized models, and views. Complete the rollout by
-   making both settings unconditional in `Directory.Build.props` and removing
-   redundant per-project settings and remaining per-file nullable directives.
+Core annotations preserve optional caller metadata, run descriptors, factories,
+services, missing story attributes, unexecuted output and deserialized report
+fields. `Deserialize` and `DeserializeAsync` return null for a JSON `null` root.
+Report collections keep their historical empty defaults and accept explicit JSON
+nulls, including `Scenarios` and `NotRun` before server normalization. This avoids
+changing MVC's inferred input requirements. Runtime-only scenario
+references are nullable after deserialization or fixture collection. Context
+creation still requires a non-null object. Internal lifecycle slots are nullable
+until bound and after cleanup; normalized tags and structured arguments retain
+non-null getters with nullable setter inputs. No nullable directives or warning
+suppressions are added. Tests cover accepted nulls, omitted historical fields,
+null JSON roots and lazy argument values. See
+[consumer migration notes](docs/docs/migration/target-frameworks.md#nullable-reference-contracts).
 
 The remaining projects keep their existing diagnostic settings in this change.
 

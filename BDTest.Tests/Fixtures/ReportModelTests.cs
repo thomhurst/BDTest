@@ -56,17 +56,17 @@ public class ReportModelTests
 
         Assert.That(JToken.DeepEquals(JToken.Parse(json), JToken.Parse(Required(handler.Payload))), Is.True,
             "Formatting may differ, but JSON export and upload must have the same report values.");
-        var report = BDTestJsonHelper.Deserialize(json);
+        var report = Required(BDTestJsonHelper.Deserialize(json));
         Assert.That(report.Id, Is.EqualTo(run.ReportId));
         Assert.That(report.Environment, Is.EqualTo("staging"));
         Assert.That(report.Tag, Is.EqualTo("nightly"));
         Assert.That(report.BranchName, Is.EqualTo("main"));
         Assert.That(report.MachineName, Is.EqualTo(Environment.MachineName));
         Assert.That(report.Version, Is.EqualTo(BDTestVersionHelper.CurrentVersion));
-        Assert.That(report.Scenarios.Select(item => item.Guid), Is.EqualTo(new[] { scenario.Guid }));
-        Assert.That(report.NotRun.Select(item => item.GetScenarioText()), Is.EqualTo(new[] { "selected pending" }));
-        Assert.That(report.TestTimer.TestsStartedAt, Is.EqualTo(scenario.StartTime));
-        Assert.That(report.TestTimer.TestsFinishedAt, Is.EqualTo(scenario.EndTime));
+        Assert.That(Required(report.Scenarios).Select(item => item.Guid), Is.EqualTo(new[] { scenario.Guid }));
+        Assert.That(Required(report.NotRun).Select(item => item.GetScenarioText()), Is.EqualTo(new[] { "selected pending" }));
+        Assert.That(Required(report.TestTimer).TestsStartedAt, Is.EqualTo(scenario.StartTime));
+        Assert.That(Required(report.TestTimer).TestsFinishedAt, Is.EqualTo(scenario.EndTime));
         Assert.That(report.CustomProperties, Is.EquivalentTo(new Dictionary<string, string> { ["Build <number>"] = "42 & counting" }));
 
         var html = useDefaultRun
@@ -91,13 +91,13 @@ public class ReportModelTests
 
         foreach (var payload in new[] { json, Required(handler.Payload) })
         {
-            var report = BDTestJsonHelper.Deserialize(payload);
+            var report = Required(BDTestJsonHelper.Deserialize(payload));
             Assert.That(report.Id, Is.EqualTo(run.ReportId));
             Assert.That(report.Scenarios, Is.Empty);
             Assert.That(report.NotRun, Is.Empty);
-            Assert.That(report.TestTimer.TestsStartedAt, Is.EqualTo(run.StartedAt));
-            Assert.That(report.TestTimer.TestsFinishedAt, Is.InRange(beforeReport, DateTime.UtcNow));
-            Assert.That(report.CustomProperties["Build <number>"], Is.EqualTo("42 & counting"));
+            Assert.That(Required(report.TestTimer).TestsStartedAt, Is.EqualTo(run.StartedAt));
+            Assert.That(Required(report.TestTimer).TestsFinishedAt, Is.InRange(beforeReport, DateTime.UtcNow));
+            Assert.That(Required(report.CustomProperties)["Build <number>"], Is.EqualTo("42 & counting"));
         }
         var html = useDefaultRun ? BDTestHtmlHelper.GetTestHtmlReport() : BDTestHtmlHelper.GetTestHtmlReport(null, run);
         Assert.That(html, Does.Contain("No scenarios ran"));
@@ -111,9 +111,9 @@ public class ReportModelTests
         var report = BDTestOutputModelBuilder.Build(run, null);
         LegacySettings.CustomProperties["Build <number>"] = "next build";
 
-        Assert.That(report.CustomProperties["Build <number>"], Is.EqualTo("42 & counting"));
-        var nextReport = BDTestJsonHelper.Deserialize(BDTestJsonHelper.GetTestJsonData(null, run));
-        Assert.That(nextReport.CustomProperties["Build <number>"], Is.EqualTo("next build"));
+        Assert.That(Required(report.CustomProperties)["Build <number>"], Is.EqualTo("42 & counting"));
+        var nextReport = Required(BDTestJsonHelper.Deserialize(BDTestJsonHelper.GetTestJsonData(null, run)));
+        Assert.That(Required(nextReport.CustomProperties)["Build <number>"], Is.EqualTo("next build"));
     }
 
     [Test]
@@ -122,12 +122,12 @@ public class ReportModelTests
         using var handler = new ReportHandler();
         using var client = new HttpClient(handler);
 
-        Assert.That(Required(Assert.Throws<ArgumentNullException>(() => BDTestJsonHelper.GetTestJsonData(null, null))).ParamName,
+        Assert.That(Required(Assert.Throws<ArgumentNullException>(() => BDTestJsonHelper.GetTestJsonData(null, null!))).ParamName,
             Is.EqualTo("run"));
-        Assert.That(Required(Assert.Throws<ArgumentNullException>(() => BDTestHtmlHelper.GetTestHtmlReport(null, null))).ParamName,
+        Assert.That(Required(Assert.Throws<ArgumentNullException>(() => BDTestHtmlHelper.GetTestHtmlReport(null, null!))).ParamName,
             Is.EqualTo("run"));
         var exception = await Assert.ThrowsAsync<ArgumentNullException>(() => BDTestReportServer.SendDataAndGetReportUriAsync(
-            new Uri("https://reports.example"), null, client, null));
+            new Uri("https://reports.example"), null, client, null!));
         Assert.That(Required(exception).ParamName, Is.EqualTo("run"));
         Assert.That(handler.RequestCount, Is.Zero);
     }

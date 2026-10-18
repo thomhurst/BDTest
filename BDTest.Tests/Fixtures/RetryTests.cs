@@ -52,7 +52,7 @@ public class RetryTests : NUnitBDTestBase<RetryContext>
             
         Assert.That(scenario.RetryCount, Is.EqualTo(throwIfRetryLessThan));
         Assert.That(scenario.Attempts, Has.Count.EqualTo(throwIfRetryLessThan + 1));
-        Assert.That(scenario.Attempts.Take(throwIfRetryLessThan).Select(attempt => attempt.Status),
+        Assert.That(Required(scenario.Attempts).Take(throwIfRetryLessThan).Select(attempt => attempt.Status),
             Is.All.EqualTo(Status.Failed));
         Assert.That(scenario.Attempts.Last().Status, Is.EqualTo(Status.Passed));
         Assert.That(_retryMethodCallCount, Is.EqualTo(throwIfRetryLessThan));

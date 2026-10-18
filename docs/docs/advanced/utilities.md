@@ -48,6 +48,8 @@ var failed = BDTestUtil.GetScenarios().Where(scenario => scenario.Status == Stat
 
 Treat `BdTestBaseClass` as a best-effort runtime reference, not retained report data. Check for `null` before using it in teardown or custom reports; store any evidence you need on the scenario while the test runs.
 
+`Scenario.Run` is a nullable runtime reference and is absent from deserialized reports. `Scenario.Exception`, `Step.Exception`, optional identifiers and text also carry nullable annotations. See [nullable report fields](../reports/json-data.md#nullable-report-fields) when consuming results or historical JSON.
+
 `BDTest.Test.Step`:
 
 | Member | Description |
@@ -72,7 +74,7 @@ Treat `BdTestBaseClass` as a best-effort runtime reference, not retained report 
 | --- | --- |
 | `TestContext` | Your context object (generic version only). |
 | `TestBase` | The test class instance. |
-| `CurrentScenario` | The running scenario, or `null` while an outline row is being created. |
+| `CurrentScenario` | `Scenario?`: the running scenario, or `null` before one exists, including while an outline row is being created. |
 | `CurrentScenarioBDTestExecutionId` | The execution ID. |
 | `CurrentTestRunnerId` | The report ID of the test's run. |
 | `GetStoryText()`, `GetScenarioText()` | Story and scenario text. |

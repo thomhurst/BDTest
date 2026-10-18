@@ -6,9 +6,9 @@ namespace BDTest.Output;
 // The shared lifetime flag also reaches abandoned timeout tasks through ExecutionContext.
 internal sealed class AttachmentScope : IDisposable
 {
-    private static readonly AsyncLocal<AttachmentScope> CurrentScope = new();
-    internal static AttachmentScope Current => CurrentScope.Value;
-    private readonly AttachmentScope _previous;
+    private static readonly AsyncLocal<AttachmentScope?> CurrentScope = new();
+    internal static AttachmentScope? Current => CurrentScope.Value;
+    private readonly AttachmentScope? _previous;
     private bool _active = true;
     internal Scenario Scenario { get; }
     internal Step Step { get; }
@@ -31,7 +31,7 @@ internal sealed class AttachmentScope : IDisposable
 
     public void Dispose()
     {
-        lock (Scenario.Run.Store.Gate) _active = false;
+        lock (Scenario.ExecutionRun.Store.Gate) _active = false;
         CurrentScope.Value = _previous;
     }
 }

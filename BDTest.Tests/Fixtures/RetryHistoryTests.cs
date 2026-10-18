@@ -35,21 +35,21 @@ public class RetryHistoryTests
             Assert.That(scenario.Status, Is.EqualTo(failures > 2 ? Status.Failed : Status.Passed));
             for (var index = 0; index < count; index++)
             {
-                var attempt = scenario.Attempts[index];
+                var attempt = Required(scenario.Attempts)[index];
                 Assert.That(attempt.Number, Is.EqualTo(index + 1));
                 Assert.That(attempt.Status, Is.EqualTo(index < failures ? Status.Failed : Status.Passed));
                 Assert.That(attempt.EndTime, Is.GreaterThanOrEqualTo(attempt.StartTime));
                 Assert.That(attempt.TimeTaken, Is.GreaterThan(TimeSpan.Zero));
                 if (index < failures)
                 {
-                    Assert.That(attempt.Exception.Message, Is.EqualTo($"<failure {index + 1}>"));
-                    Assert.That(attempt.Exception.StackTrace, Does.Contain(nameof(RetryingScenario.Step)));
+                    Assert.That(Required(attempt.Exception).Message, Is.EqualTo($"<failure {index + 1}>"));
+                    Assert.That(Required(attempt.Exception).StackTrace, Does.Contain(nameof(RetryingScenario.Step)));
                 }
                 else
                     Assert.That(attempt.Exception, Is.Null);
             }
             Assert.That(scenario.Exception?.Message, Is.EqualTo(failures > 2 ? "<failure 3>" : null));
-            Assert.That(scenario.TimeTaken, Is.EqualTo(scenario.Attempts.Last().TimeTaken));
+            Assert.That(scenario.TimeTaken, Is.EqualTo(Required(scenario.Attempts).Last().TimeTaken));
             if (failures == 0)
                 Assert.That(BDTestHtmlHelper.GetTestHtmlReport(), Does.Not.Contain("Retry history"));
         }
@@ -67,10 +67,10 @@ public class RetryHistoryTests
         {
             var scenario = await fixture.Run();
             var restored = ReportJson.DeserializeObject<Scenario>(ReportJson.SerializeObject(scenario));
-            Assert.That(restored.Attempts.Select(attempt => attempt.Status),
+            Assert.That(Required(restored.Attempts).Select(attempt => attempt.Status),
                 Is.EqualTo(new[] { Status.Failed, Status.Failed, Status.Passed }));
-            Assert.That(restored.Attempts[0].Exception.AsString, Does.Contain("<failure 1>"));
-            Assert.That(restored.Attempts[1].TimeTaken, Is.EqualTo(scenario.Attempts[1].TimeTaken));
+            Assert.That(Required(restored.Attempts[0].Exception).AsString, Does.Contain("<failure 1>"));
+            Assert.That(restored.Attempts[1].TimeTaken, Is.EqualTo(Required(scenario.Attempts)[1].TimeTaken));
             Assert.That(restored.Attempts[0].StartTime, Is.EqualTo(scenario.Attempts[0].StartTime));
 
             var html = BDTestHtmlHelper.GetTestHtmlReport();
@@ -103,10 +103,10 @@ public class RetryHistoryTests
             var scenario = BDTestUtil.GetScenarios().Single();
             Assert.That(scenario.RetryCount, Is.EqualTo(1));
             Assert.That(scenario.Attempts, Has.Count.EqualTo(2));
-            Assert.That(scenario.Attempts[1].Status, Is.EqualTo(Status.Failed));
-            Assert.That(scenario.Attempts[1].Exception.Message, Is.EqualTo("hook failed"));
+            Assert.That(Required(scenario.Attempts)[1].Status, Is.EqualTo(Status.Failed));
+            Assert.That(Required(scenario.Attempts[1].Exception).Message, Is.EqualTo("hook failed"));
             Assert.That(scenario.Attempts[0].Status, Is.EqualTo(Status.Failed));
-            Assert.That(scenario.Attempts[0].Exception.Message, Is.EqualTo("<failure 1>"));
+            Assert.That(Required(scenario.Attempts[0].Exception).Message, Is.EqualTo("<failure 1>"));
 
             var html = BDTestHtmlHelper.GetTestHtmlReport();
             Assert.That(html, Does.Contain("Retry history"));
@@ -115,8 +115,8 @@ public class RetryHistoryTests
             Assert.That(html, Does.Contain("Attempt 2 · Failed"));
             Assert.That(html, Does.Contain("hook failed"));
             var restored = ReportJson.DeserializeObject<Scenario>(ReportJson.SerializeObject(scenario));
-            Assert.That(restored.Exception.Message, Is.EqualTo("hook failed"));
-            Assert.That(restored.Attempts.Select(attempt => attempt.Exception.Message),
+            Assert.That(Required(restored.Exception).Message, Is.EqualTo("hook failed"));
+            Assert.That(Required(restored.Attempts).Select(attempt => Required(attempt.Exception).Message),
                 Is.EqualTo(new[] { "<failure 1>", "hook failed" }));
             Assert.That(html, Does.Not.Contain("<failure 1>"));
         }

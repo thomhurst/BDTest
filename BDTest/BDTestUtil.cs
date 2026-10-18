@@ -34,11 +34,11 @@ public static class BDTestUtil
     }
 
     public static TestTimer GetTestTimer(IReadOnlyCollection<Scenario> scenarios,
-        BDTestOutputModel totalReportData)
+        BDTestOutputModel? totalReportData)
     {
         return scenarios.Count switch
         {
-            0 when totalReportData != null => new TestTimer
+            0 when totalReportData?.TestTimer != null => new TestTimer
             {
                 TestsStartedAt = totalReportData.TestTimer.TestsStartedAt,
                 TestsFinishedAt = totalReportData.TestTimer.TestsFinishedAt

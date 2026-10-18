@@ -41,7 +41,7 @@ internal class ScenarioRetryManager : IScenarioRetryManager
     {
         try
         {
-            var bdTestBase = scenario.BdTestBaseClass;
+            var bdTestBase = scenario.BdTestBaseClass ?? throw new InvalidOperationException("The scenario has no test instance.");
 
             // Run TearDown Attributed Method
             await bdTestBase.RunMethodWithAttribute<BDTestRetryTearDownAttribute>();
@@ -62,7 +62,7 @@ internal class ScenarioRetryManager : IScenarioRetryManager
 
     private static void ResetStepData(Scenario scenario)
     {
-        foreach (var step in scenario.Steps)
+        foreach (var step in scenario.ExecutionSteps)
         {
             step.ResetData();
         }

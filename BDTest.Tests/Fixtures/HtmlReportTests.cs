@@ -137,7 +137,7 @@ public class HtmlReportTests : BDTestBase
     {
         await Assert.CatchAsync(async () => await When(() => Fail()).Then(() => DoNothing()).BDTestAsync());
         var scenario = BDTestUtil.GetScenarios().Single();
-        Assert.That(scenario.Steps.Select(step => step.Status), Is.EqualTo(new[] { Status.Failed, Status.NotRun }));
+        Assert.That(Required(scenario.Steps).Select(step => step.Status), Is.EqualTo(new[] { Status.Failed, Status.NotRun }));
         var html = BDTestHtmlHelper.GetTestHtmlReport();
         var stepStatuses = Regex.Matches(html, "class=\"step\" data-status=\"([^\"]+)\"")
             .Select(match => match.Groups[1].Value).ToArray();

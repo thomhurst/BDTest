@@ -6,10 +6,10 @@ namespace BDTest.Test;
 public sealed class StepDocString : StepArgument
 {
     public string Content { get; }
-    public string ContentType { get; }
+    public string? ContentType { get; }
 
     [JsonConstructor]
-    public StepDocString(string content, string contentType = null)
+    public StepDocString(string content, string? contentType = null)
     {
         Content = content ?? throw new ArgumentNullException(nameof(content));
         ContentType = contentType;

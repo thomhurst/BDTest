@@ -37,10 +37,10 @@ public static class BDTestHtmlHelper
         return GetTestHtmlReport(new BDTestRunDescriptor());
     }
 
-    public static string GetTestHtmlReport(BDTestRunDescriptor bdTestRunDescriptor) => GetTestHtmlReport(bdTestRunDescriptor, BDTestRun.Default);
+    public static string GetTestHtmlReport(BDTestRunDescriptor? bdTestRunDescriptor) => GetTestHtmlReport(bdTestRunDescriptor, BDTestRun.Default);
 
     /// <summary>Creates a report containing only the supplied run's scenarios and pending definitions.</summary>
-    public static string GetTestHtmlReport(BDTestRunDescriptor bdTestRunDescriptor, BDTestRun run)
+    public static string GetTestHtmlReport(BDTestRunDescriptor? bdTestRunDescriptor, BDTestRun run)
     {
         var dataToOutput = BDTestOutputModelBuilder.Build(run, bdTestRunDescriptor);
         return GenerateHtmlReport(dataToOutput);
@@ -48,8 +48,10 @@ public static class BDTestHtmlHelper
 
     private static string GenerateHtmlReport(BDTestOutputModel data)
     {
+        var scenarios = data.Scenarios ?? new();
+        var notRun = data.NotRun ?? new();
         // Group by story so the page, the story headers and the client-side sort share one order.
-        var stories = data.Scenarios
+        var stories = scenarios
             .GroupBy(scenario => scenario.GetStoryText())
             .OrderBy(group => group.Key, StringComparer.Ordinal)
             .Select(group => group.OrderBy(scenario => scenario.GetScenarioText(), StringComparer.Ordinal).ToList())
@@ -78,7 +80,7 @@ public static class BDTestHtmlHelper
         GenerateVerdictSection(html, data);
         GenerateSummarySection(html, data);
 
-        if (data.Scenarios.Count == 0)
+        if (scenarios.Count == 0)
         {
             html.AppendLine("<section class=\"wrap sec\"><div class=\"empty\">");
             html.AppendLine("<p class=\"empty-title\">The report was generated before any test finished.</p>");
@@ -88,12 +90,12 @@ public static class BDTestHtmlHelper
         else
         {
             GenerateAttentionSection(html, data);
-            GenerateScenariosSection(html, data.Scenarios, stories);
+            GenerateScenariosSection(html, scenarios, stories);
         }
 
-        if (data.NotRun.Any())
+        if (notRun.Any())
         {
-            GenerateNotRunSection(html, data.NotRun);
+            GenerateNotRunSection(html, notRun);
         }
         html.AppendLine("</main>");
 
@@ -110,12 +112,14 @@ public static class BDTestHtmlHelper
 
     private static void GenerateVerdictSection(StringBuilder html, BDTestOutputModel data)
     {
-        var total = data.Scenarios.Count + data.NotRun.Count;
-        var failed = data.Scenarios.Count(s => s.Status == Status.Failed);
-        var passed = data.Scenarios.Count(s => s.Status == Status.Passed);
+        var scenarios = data.Scenarios ?? new();
+        var notRun = data.NotRun ?? new();
+        var total = scenarios.Count + notRun.Count;
+        var failed = scenarios.Count(s => s.Status == Status.Failed);
+        var passed = scenarios.Count(s => s.Status == Status.Passed);
 
         string verdict;
-        if (data.Scenarios.Count == 0)
+        if (scenarios.Count == 0)
             verdict = "<span class=\"v-word\">No scenarios ran</span>";
         else if (failed > 0)
             verdict = $"<span class=\"v-word\">{failed} failed</span> <span class=\"of\">of {total} scenarios</span>";
@@ -131,7 +135,7 @@ public static class BDTestHtmlHelper
         html.AppendLine("<section class=\"wrap verdict\" aria-labelledby=\"verdict-h\">");
         html.AppendLine("<div>");
         html.AppendLine("<p class=\"eyebrow\">Run result</p>");
-        html.AppendLine($"<h1 id=\"verdict-h\" class=\"verdict-h\" data-status=\"{(failed > 0 ? "failed" : data.Scenarios.Count == 0 ? "all" : "passed")}\">{verdict}</h1>");
+        html.AppendLine($"<h1 id=\"verdict-h\" class=\"verdict-h\" data-status=\"{(failed > 0 ? "failed" : scenarios.Count == 0 ? "all" : "passed")}\">{verdict}</h1>");
         html.AppendLine($"<p class=\"verdict-sub\">{timing}</p>");
         html.AppendLine("</div>");
         html.AppendLine("<dl class=\"meta\">");
@@ -144,7 +148,7 @@ public static class BDTestHtmlHelper
         html.AppendLine("</section>");
     }
 
-    private static void AppendMeta(StringBuilder html, string label, string value, bool mono)
+    private static void AppendMeta(StringBuilder html, string label, string? value, bool mono)
     {
         var cssClass = string.IsNullOrEmpty(value) || value == NotSpecified ? " class=\"unset\"" : mono ? " class=\"mono\"" : "";
         html.AppendLine($"<div><dt>{label}</dt><dd{cssClass}>{EscapeHtml(value ?? NotSpecified)}</dd></div>");
@@ -152,8 +156,9 @@ public static class BDTestHtmlHelper
 
     private static void GenerateSummarySection(StringBuilder html, BDTestOutputModel data)
     {
-        var scenarios = data.Scenarios;
-        var total = scenarios.Count + data.NotRun.Count;
+        var scenarios = data.Scenarios ?? new();
+        var notRun = data.NotRun ?? new();
+        var total = scenarios.Count + notRun.Count;
         var counts = Statuses.ToDictionary(status => status, status => scenarios.Count(s => s.Status == status));
 
         html.AppendLine("<section class=\"wrap\" aria-label=\"Test summary\">");
@@ -161,15 +166,15 @@ public static class BDTestHtmlHelper
         {
             var labels = Statuses.Where(s => counts[s] > 0)
                 .Select(s => $"{counts[s]} {Label(Key(s)).ToLowerInvariant()}").ToList();
-            if (data.NotRun.Count > 0)
-                labels.Add($"{data.NotRun.Count} built but never run");
+            if (notRun.Count > 0)
+                labels.Add($"{notRun.Count} built but never run");
             html.AppendLine($"<div class=\"bar\" role=\"img\" aria-label=\"{EscapeHtml(string.Join(", ", labels))}\">");
             foreach (var status in Statuses.Where(s => counts[s] > 0))
             {
                 html.AppendLine($"<div class=\"bar-seg\" data-status=\"{Key(status)}\" style=\"flex-grow: {counts[status]}\" title=\"{counts[status]} {Label(Key(status)).ToLowerInvariant()}\"></div>");
             }
-            if (data.NotRun.Count > 0)
-                html.AppendLine($"<div class=\"bar-seg\" data-status=\"notrun\" style=\"flex-grow: {data.NotRun.Count}\" title=\"{data.NotRun.Count} built but never run\"></div>");
+            if (notRun.Count > 0)
+                html.AppendLine($"<div class=\"bar-seg\" data-status=\"notrun\" style=\"flex-grow: {notRun.Count}\" title=\"{notRun.Count} built but never run\"></div>");
             html.AppendLine("</div>");
         }
 
@@ -182,10 +187,10 @@ public static class BDTestHtmlHelper
             var percent = total == 0 ? "0%" : $"{Math.Round(count * 100.0 / total)}%";
             html.AppendLine($"<button class=\"tile\" type=\"button\" data-status=\"{key}\" data-filter=\"{key}\" aria-pressed=\"false\"{(count == 0 ? " disabled" : "")}><span class=\"tile-top\"><span class=\"glyph\" data-g=\"{key}\" aria-hidden=\"true\"></span><span class=\"label\">{Label(key)}</span></span><span class=\"tile-n\">{count}</span><span class=\"tile-pct\">{percent}</span></button>");
         }
-        if (data.NotRun.Count > 0)
+        if (notRun.Count > 0)
         {
-            var percent = $"{Math.Round(data.NotRun.Count * 100.0 / total)}%";
-            html.AppendLine($"<a class=\"tile\" data-status=\"notrun\" href=\"#not-run\"><span class=\"tile-top\"><span class=\"glyph\" data-g=\"notrun\" aria-hidden=\"true\"></span><span class=\"label\">Built but never run</span></span><span class=\"tile-n\">{data.NotRun.Count}</span><span class=\"tile-pct\">{percent}</span></a>");
+            var percent = $"{Math.Round(notRun.Count * 100.0 / total)}%";
+            html.AppendLine($"<a class=\"tile\" data-status=\"notrun\" href=\"#not-run\"><span class=\"tile-top\"><span class=\"glyph\" data-g=\"notrun\" aria-hidden=\"true\"></span><span class=\"label\">Built but never run</span></span><span class=\"tile-n\">{notRun.Count}</span><span class=\"tile-pct\">{percent}</span></a>");
         }
         html.AppendLine("</div>");
 
@@ -203,6 +208,8 @@ public static class BDTestHtmlHelper
 
     private static void GenerateAttentionSection(StringBuilder html, BDTestOutputModel data)
     {
+        var scenarios = data.Scenarios ?? new();
+        var notRun = data.NotRun ?? new();
         // Failures that share an exception type and message usually share a cause.
         var causes = new List<(ExceptionWrapper Exception, List<(Scenario Scenario, string Suffix)> Scenarios)>();
         void AddCause(ExceptionWrapper exception, Scenario scenario, string suffix)
@@ -219,13 +226,14 @@ public static class BDTestHtmlHelper
             }
         }
 
-        foreach (var scenario in data.Scenarios.Where(s => s.Status == Status.Failed).OrderBy(s => s.GetScenarioText(), StringComparer.Ordinal))
+        foreach (var scenario in scenarios.Where(s => s.Status == Status.Failed).OrderBy(s => s.GetScenarioText(), StringComparer.Ordinal))
         {
             if (scenario.IsOutline)
             {
-                for (var index = 0; index < scenario.Examples.Count; index++)
+                var examples = scenario.Examples ?? new();
+                for (var index = 0; index < examples.Count; index++)
                 {
-                    var row = scenario.Examples[index];
+                    var row = examples[index];
                     if (row.Status == Status.Failed && row.Exception != null)
                         AddCause(row.Exception, scenario, $" · example {index + 1}");
                 }
@@ -236,7 +244,7 @@ public static class BDTestHtmlHelper
             }
         }
 
-        var failedCount = data.Scenarios.Count(s => s.Status == Status.Failed);
+        var failedCount = scenarios.Count(s => s.Status == Status.Failed);
         if (causes.Count == 0)
         {
             return;
@@ -276,13 +284,13 @@ public static class BDTestHtmlHelper
         var also = new List<string>();
         foreach (var status in new[] { Status.Inconclusive, Status.NotImplemented, Status.Skipped, Status.NotRun, Status.Pending })
         {
-            var count = data.Scenarios.Count(s => s.Status == status);
+            var count = scenarios.Count(s => s.Status == status);
             if (count > 0)
                 also.Add($"<span class=\"also-item\"><span class=\"glyph\" data-g=\"{Key(status)}\" aria-hidden=\"true\"></span><button class=\"linkbtn\" type=\"button\" data-show=\"{Key(status)}\">{count} {Label(Key(status)).ToLowerInvariant()}</button></span>");
         }
-        if (data.NotRun.Count > 0)
+        if (notRun.Count > 0)
         {
-            also.Add($"<span class=\"also-item\"><span class=\"glyph\" data-g=\"notrun\" aria-hidden=\"true\"></span><a href=\"#not-run\">{data.NotRun.Count} built but never run</a></span>");
+            also.Add($"<span class=\"also-item\"><span class=\"glyph\" data-g=\"notrun\" aria-hidden=\"true\"></span><a href=\"#not-run\">{notRun.Count} built but never run</a></span>");
         }
         if (also.Count > 0)
         {
@@ -376,7 +384,10 @@ public static class BDTestHtmlHelper
         if (tags.Length > 0)
             html.Append($"<span class=\"mono\">{EscapeHtml(string.Join("  ", tags.Select(t => "@" + t)))}</span>");
         if (scenario.IsOutline)
-            html.Append($"<span>{scenario.Examples.Count} {(scenario.Examples.Count == 1 ? "example" : "examples")}</span>");
+        {
+            var exampleCount = scenario.Examples?.Count ?? 0;
+            html.Append($"<span>{exampleCount} {(exampleCount == 1 ? "example" : "examples")}</span>");
+        }
         html.AppendLine("</span>");
         html.AppendLine("</span>");
         html.AppendLine($"<span class=\"retry-slot\">{(scenario.RetryCount > 0 ? $"<span class=\"badge\">Retries: {scenario.RetryCount}</span>" : "")}</span>");
@@ -487,19 +498,20 @@ public static class BDTestHtmlHelper
 
     private static void GenerateExamplesTable(StringBuilder html, Scenario scenario)
     {
-        var columns = scenario.Examples.SelectMany(row => row.ExampleValues.Keys).Distinct().ToArray();
+        var examples = scenario.Examples ?? new();
+        var columns = examples.SelectMany(row => (row.ExampleValues ?? new()).Keys).Distinct().ToArray();
         var columnCount = columns.Length + 5;
         html.AppendLine("<div><h3 class=\"h3\">Examples</h3><div class=\"ex-box\">");
         html.Append($"<table class=\"examples\" id=\"examples-{EscapeHtml(scenario.Guid)}\"><thead><tr><th>#</th>");
         foreach (var column in columns) html.Append($"<th>{EscapeHtml(column)}</th>");
         html.AppendLine("<th>Status</th><th>Retries</th><th>Duration</th><th><span class=\"sr\">Details</span></th></tr></thead><tbody>");
-        for (var index = 0; index < scenario.Examples.Count; index++)
+        for (var index = 0; index < examples.Count; index++)
         {
-            var row = scenario.Examples[index];
+            var row = examples[index];
             var detailsId = $"example-{EscapeHtml(row.Guid)}";
             html.Append($"<tr class=\"example-row\" data-status=\"{Key(row.Status)}\"><td class=\"mono\">{index + 1}</td>");
             foreach (var column in columns)
-                html.Append($"<td>{EscapeHtml(row.ExampleValues.TryGetValue(column, out var value) ? value : "")}</td>");
+                html.Append($"<td>{EscapeHtml(row.ExampleValues?.TryGetValue(column, out var value) == true ? value : "")}</td>");
             html.Append($"<td>{Pill(Key(row.Status))}</td><td class=\"mono\">{row.RetryCount}</td><td class=\"mono\" title=\"{row.TimeTaken}\">{FormatDuration(row.TimeTaken)}</td>");
             html.AppendLine($"<td><button class=\"mini ex-toggle\" type=\"button\" aria-expanded=\"false\" aria-controls=\"{detailsId}\">Steps and output</button></td></tr>");
             html.AppendLine($"<tr class=\"ex-detail\" id=\"{detailsId}\" hidden><td colspan=\"{columnCount}\"><div class=\"ex-detail-in\">");
@@ -536,16 +548,16 @@ public static class BDTestHtmlHelper
         html.AppendLine("</div>");
     }
 
-    private static void AppendOutput(StringBuilder html, string title, string output)
+    private static void AppendOutput(StringBuilder html, string title, string? output)
     {
-        if (string.IsNullOrEmpty(output)) return;
+        if (output == null || string.IsNullOrEmpty(output)) return;
         html.AppendLine($"<div><h3 class=\"h3\">{title}</h3>");
         var lines = output.TrimEnd().Split('\n').Length;
         AppendCode(html, $"{lines} {(lines == 1 ? "line" : "lines")}", output, true);
         html.AppendLine("</div>");
     }
 
-    private static void AppendCode(StringBuilder html, string title, string content, bool actions)
+    private static void AppendCode(StringBuilder html, string title, string? content, bool actions)
     {
         html.Append($"<div class=\"code\"><div class=\"code-bar\"><span>{EscapeHtml(title)}</span>");
         if (actions)
@@ -592,7 +604,7 @@ public static class BDTestHtmlHelper
     private static string Pill(string key) =>
         $"<span class=\"pill\" data-status=\"{key}\"><span class=\"glyph\" data-g=\"{key}\" aria-hidden=\"true\"></span>{Label(key)}</span>";
 
-    private static string GetStatusNote(Status status) => status switch
+    private static string? GetStatusNote(Status status) => status switch
     {
         Status.Skipped => "This scenario did not run its steps.",
         Status.Inconclusive => "The test could not confirm the outcome either way.",
@@ -602,9 +614,9 @@ public static class BDTestHtmlHelper
         _ => null
     };
 
-    private static (string Keyword, string Text) SplitStepText(string stepText)
+    private static (string Keyword, string Text) SplitStepText(string? stepText)
     {
-        if (string.IsNullOrEmpty(stepText)) return ("", "");
+        if (stepText == null || string.IsNullOrEmpty(stepText)) return ("", "");
         var space = stepText.IndexOf(' ');
         var first = space < 0 ? stepText : stepText.Substring(0, space);
         return first is "Given" or "When" or "Then" or "And" or "But"
@@ -619,7 +631,7 @@ public static class BDTestHtmlHelper
     }
 
     // Turns "at Ns.Type.Method(args) in /src/File.cs:line 88" into "Type.Method · File.cs:88".
-    private static string GetFirstFrame(string stackTrace)
+    private static string? GetFirstFrame(string? stackTrace)
     {
         var line = stackTrace?.Split('\n').Select(l => l.Trim()).FirstOrDefault(l => l.Length > 0);
         if (line == null) return null;
@@ -640,7 +652,7 @@ public static class BDTestHtmlHelper
     }
 
     // Reports can be generated on a different OS from the one that compiled the tests.
-    private static string GetFileName(string path) => path?.Split('/', '\\').Last();
+    private static string? GetFileName(string? path) => path?.Split('/', '\\').Last();
 
     private static string FormatTime(DateTime time, string format) => time.ToString(format, CultureInfo.InvariantCulture);
 
@@ -654,9 +666,9 @@ public static class BDTestHtmlHelper
         return $"{(int)duration.TotalDays} d {duration.Hours} h";
     }
 
-    private static string EscapeHtml(string input)
+    private static string EscapeHtml(string? input)
     {
-        if (string.IsNullOrEmpty(input))
+        if (input == null || string.IsNullOrEmpty(input))
             return string.Empty;
 
         return input.Replace("&", "&amp;")

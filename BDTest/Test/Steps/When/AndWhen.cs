@@ -9,12 +9,12 @@ public class AndWhen : When
     }
 
     /// <summary>Supplies lazy step-text arguments, evaluated once per executed attempt.</summary>
-    public new AndWhen WithArgs(params Func<object>[] arguments)
+    public new AndWhen WithArgs(params Func<object?>[] arguments)
     {
         return WithArgs<AndWhen>(arguments);
     }
 
-    public new AndWhen WithStepText(Func<string> overridingStepText)
+    public new AndWhen WithStepText(Func<string?>? overridingStepText)
     {
         return WithStepText<AndWhen>(overridingStepText);
     }

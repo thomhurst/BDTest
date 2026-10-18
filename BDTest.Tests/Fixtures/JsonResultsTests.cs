@@ -45,7 +45,7 @@ public class JsonResultsTests : NUnitBDTestBase<MyTestContext>
 
         var deserializedScenario = scenarios.First();
             
-        Assert.That(deserializedScenario.Steps[0].StepText, Is.EqualTo("When I write custom when step text"));
+        Assert.That(Required(deserializedScenario.Steps)[0].StepText, Is.EqualTo("When I write custom when step text"));
         Assert.That(deserializedScenario.Steps[1].StepText, Is.EqualTo("Then 1 2"));
 
         var compareLogic = new CompareLogic

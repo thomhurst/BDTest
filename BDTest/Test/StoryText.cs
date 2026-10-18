@@ -1,4 +1,4 @@
-﻿using BDTest.Helpers.JsonConverters;
+using BDTest.Helpers.JsonConverters;
 using System.Text.Json.Serialization;
 
 namespace BDTest.Test;
@@ -6,9 +6,9 @@ namespace BDTest.Test;
 [JsonConverter(typeof(StoryTextConverter))]
 public record StoryText
 {
-    public string Story { get; private set; }
+    public string? Story { get; private set; }
 
-    public StoryText(string story)
+    public StoryText(string? story)
     {
         Story = story;
     }

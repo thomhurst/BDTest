@@ -9,7 +9,7 @@ public static class StepArgumentHtmlHelper
 {
     private const int PreviewRows = 20;
 
-    public static string GetHtml(IReadOnlyList<StepArgument> arguments)
+    public static string GetHtml(IReadOnlyList<StepArgument>? arguments)
     {
         if (arguments == null || arguments.Count == 0) return string.Empty;
         var html = new StringBuilder();
@@ -52,5 +52,5 @@ public static class StepArgumentHtmlHelper
         html.Append("</tbody></table>");
     }
 
-    private static string Encode(string value) => WebUtility.HtmlEncode(value ?? "");
+    private static string Encode(string? value) => WebUtility.HtmlEncode(value ?? "");
 }

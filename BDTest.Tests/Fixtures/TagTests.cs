@@ -35,7 +35,7 @@ public class TagTests : TaggedStoryBase
         Assert.That(scenario.Tags, Is.EqualTo(builder.Tags));
 
         var report = ReportJson.DeserializeObject<BDTestOutputModel>(BDTestJsonHelper.GetTestJsonData());
-        Assert.That(report.Scenarios.Single(item => item.Guid == scenario.Guid).Tags, Is.EqualTo(scenario.Tags));
+        Assert.That(Required(report.Scenarios).Single(item => item.Guid == scenario.Guid).Tags, Is.EqualTo(scenario.Tags));
     }
 
     [TestCase(1)]
@@ -71,7 +71,7 @@ public class TagTests : TaggedStoryBase
     {
         var builder = When(() => NoOp()).Then(() => NoOp());
         var report = ReportJson.DeserializeObject<BDTestOutputModel>(BDTestJsonHelper.GetTestJsonData());
-        Assert.That(report.NotRun.Single().Tags, Is.EqualTo(builder.Tags));
+        Assert.That(Required(report.NotRun).Single().Tags, Is.EqualTo(builder.Tags));
         Assert.That(report.NotRun.Single().Tags, Does.Contain("not-run"));
     }
 

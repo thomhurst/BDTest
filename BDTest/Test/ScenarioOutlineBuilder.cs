@@ -11,14 +11,14 @@ namespace BDTest.Test;
 /// <summary>A single-use outline with sequential, independently retried example rows.</summary>
 public sealed class ScenarioOutlineBuilder<TExample> : BuildableTest
 {
-    private TExample[] _examples;
-    private Func<TExample, RunnableStepBuilder> _scenario;
+    private TExample[]? _examples;
+    private Func<TExample, RunnableStepBuilder>? _scenario;
     private readonly Dictionary<string, string>[] _values;
     private int _executionStarted;
 
     internal ScenarioOutlineBuilder(string text, IEnumerable<TExample> examples,
         Func<TExample, RunnableStepBuilder> scenario, BDTestBase testBase, string testId,
-        string callerMember, string callerFile)
+        string? callerMember, string? callerFile)
     {
         if (string.IsNullOrWhiteSpace(text)) throw new ArgumentException("An outline needs scenario text.", nameof(text));
         if (examples == null) throw new ArgumentNullException(nameof(examples));
@@ -33,7 +33,7 @@ public sealed class ScenarioOutlineBuilder<TExample> : BuildableTest
             return properties.ToDictionary(property => property.Name, property =>
             {
                 var value = property.GetValue(example);
-                return value == null ? "null" : Convert.ToString(value, CultureInfo.InvariantCulture);
+                return value == null ? "null" : Convert.ToString(value, CultureInfo.InvariantCulture) ?? "";
             });
         }).ToArray();
         Run = testBase.TestRun;
@@ -69,6 +69,10 @@ public sealed class ScenarioOutlineBuilder<TExample> : BuildableTest
 
     private async Task<Scenario> ExecuteAsync(Scenario outline)
     {
+        var examples = _examples ?? throw new InvalidOperationException("The outline has completed.");
+        var scenarioFactory = _scenario ?? throw new InvalidOperationException("The outline has completed.");
+        var testBase = BdTestBase ?? throw new InvalidOperationException("The outline has no test instance.");
+        var testId = TestId ?? throw new InvalidOperationException("The outline has no execution ID.");
         var clock = Run.Options.Clock;
         var timer = clock.StartTimer();
         outline.StartTime = clock.UtcNow;
@@ -78,11 +82,11 @@ public sealed class ScenarioOutlineBuilder<TExample> : BuildableTest
             .Where(pair => pair.Value.TestId == TestId).Select(pair => pair.Key));
         try
         {
-            for (var index = 0; index < _examples.Length; index++)
+            for (var index = 0; index < examples.Length; index++)
             {
                 var rowStartTime = clock.UtcNow;
                 var rowTimer = clock.StartTimer();
-                var constructionOutput = new ScenarioConstructionOutput(TestId, Run);
+                var constructionOutput = new ScenarioConstructionOutput(testId, Run);
                 try
                 {
                     RunnableStepBuilder builder;
@@ -90,11 +94,11 @@ public sealed class ScenarioOutlineBuilder<TExample> : BuildableTest
                     try
                     {
                         TestOutputData.ConstructionOutput = constructionOutput;
-                        await BdTestBase.RecreateContextOnRetryAsync(0);
-                        builder = _scenario(_examples[index]) ?? throw new InvalidOperationException("The example factory returned no scenario builder.");
+                        await testBase.RecreateContextOnRetryAsync(0);
+                        builder = scenarioFactory(examples[index]) ?? throw new InvalidOperationException("The example factory returned no scenario builder.");
                         if (builder.TestId != TestId || !ReferenceEquals(builder.BdTestBase, BdTestBase))
                         {
-                            builder.Run.Store.NotRun.TryRemove(builder.Guid, out _);
+                            if (builder.Guid != null) builder.Run.Store.NotRun.TryRemove(builder.Guid, out _);
                             throw new InvalidOperationException("Example scenarios must be built by the outline's test instance.");
                         }
                     }
@@ -110,7 +114,7 @@ public sealed class ScenarioOutlineBuilder<TExample> : BuildableTest
                 {
                     Scenario row;
                     // A factory or context error still gets an example row in the report.
-                    if (outline.Examples.Count == index)
+                    if (outline.ExecutionExamples.Count == index)
                     {
                         row = new Scenario(new List<Step>(), this, outline, _values[index])
                         {
@@ -118,7 +122,7 @@ public sealed class ScenarioOutlineBuilder<TExample> : BuildableTest
                         };
                         row.ReleaseRuntimeReferences();
                     }
-                    else row = outline.Examples[index];
+                    else row = outline.ExecutionExamples[index];
                     if (row.EndTime == default)
                     {
                         row.EndTime = clock.UtcNow;
@@ -136,8 +140,8 @@ public sealed class ScenarioOutlineBuilder<TExample> : BuildableTest
                 }
                 finally
                 {
-                    var row = outline.Examples[index];
-                    lock (Run.Store.Gate) row.Attachments.AddRange(constructionOutput.Attachments);
+                    var row = outline.ExecutionExamples[index];
+                    lock (Run.Store.Gate) row.ExecutionAttachments.AddRange(constructionOutput.Attachments);
                     if (!string.IsNullOrEmpty(constructionOutput.Startup.Value))
                         row.TestStartupInformation = constructionOutput.Startup.Value + row.TestStartupInformation;
                     if (!string.IsNullOrEmpty(constructionOutput.Teardown.Value))
@@ -150,19 +154,19 @@ public sealed class ScenarioOutlineBuilder<TExample> : BuildableTest
                 }
             }
 
-            outline.Status = outline.Examples.OrderBy(row => row.Status.GetOrder()).First().Status;
-            if (outline.Status == Status.Skipped && outline.Examples.Any(row => row.Status == Status.Passed))
+            outline.Status = outline.ExecutionExamples.OrderBy(row => row.Status.GetOrder()).First().Status;
+            if (outline.Status == Status.Skipped && outline.ExecutionExamples.Any(row => row.Status == Status.Passed))
                 outline.Status = Status.Passed;
             var failure = failures.FirstOrDefault(item => item.Status == outline.Status);
             failure.Exception?.Throw();
-            if (outline.Status == Status.Skipped) BdTestBase.NotifyScenarioSkipped("All scenario outline examples were skipped.");
+            if (outline.Status == Status.Skipped) testBase.NotifyScenarioSkipped("All scenario outline examples were skipped.");
             return outline;
         }
         finally
         {
             outline.EndTime = clock.UtcNow;
             outline.TimeTaken = timer.Elapsed;
-            outline.Output = string.Join(Environment.NewLine, outline.Examples.Select(row => row.Output));
+            outline.Output = string.Join(Environment.NewLine, outline.ExecutionExamples.Select(row => row.Output));
             Run.Store.AddScenario(outline);
             TestOutputData.TestId = outline.Guid;
             TestOutputData.FrameworkExecutionId = TestId;

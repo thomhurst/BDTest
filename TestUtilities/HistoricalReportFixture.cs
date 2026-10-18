@@ -21,19 +21,21 @@ internal static class HistoricalReportFixture
         Assert.That(report.Id, Is.EqualTo("1113e3bf269c489187245c4339dfd946"));
         Assert.That(report.Version, Is.EqualTo("1.0.0.0"));
         Assert.That(report.MachineName, Is.EqualTo("ASAZ-5CG1039PV2"));
-        Assert.That(report.TestTimer.TestsStartedAt, Is.EqualTo(RequiredProperty(expected, "TestTimer").Value<DateTime>("TestsStartedAt")));
-        Assert.That(report.TestTimer.TestsFinishedAt, Is.EqualTo(RequiredProperty(expected, "TestTimer").Value<DateTime>("TestsFinishedAt")));
-        Assert.That(report.Scenarios, Has.Count.EqualTo(13));
-        Assert.That(report.Scenarios.Count(scenario => scenario.Status == Status.Passed), Is.EqualTo(3));
-        Assert.That(report.Scenarios.Count(scenario => scenario.Status == Status.Failed), Is.EqualTo(6));
-        Assert.That(report.Scenarios.Count(scenario => scenario.Status == Status.Inconclusive), Is.EqualTo(4));
+        var timer = report.TestTimer ?? throw new AssertionException("Missing historical test timer.");
+        var scenarios = report.Scenarios ?? throw new AssertionException("Missing historical scenarios.");
+        Assert.That(timer.TestsStartedAt, Is.EqualTo(RequiredProperty(expected, "TestTimer").Value<DateTime>("TestsStartedAt")));
+        Assert.That(timer.TestsFinishedAt, Is.EqualTo(RequiredProperty(expected, "TestTimer").Value<DateTime>("TestsFinishedAt")));
+        Assert.That(scenarios, Has.Count.EqualTo(13));
+        Assert.That(scenarios.Count(scenario => scenario.Status == Status.Passed), Is.EqualTo(3));
+        Assert.That(scenarios.Count(scenario => scenario.Status == Status.Failed), Is.EqualTo(6));
+        Assert.That(scenarios.Count(scenario => scenario.Status == Status.Inconclusive), Is.EqualTo(4));
         Assert.That(report.NotRun, Is.Empty);
         Assert.That(report.CustomProperties, Is.Empty);
 
         // Compare the historical contract, excluding reference metadata and runtime-only members.
         foreach (var json in RequiredProperty(expected, "Scenarios"))
         {
-            var scenario = report.Scenarios.Single(item => item.Guid == json.Value<string>("Guid"));
+            var scenario = scenarios.Single(item => item.Guid == json.Value<string>("Guid"));
             Assert.That(scenario.GetScenarioText(), Is.EqualTo(json.Value<string>("ScenarioText")));
             Assert.That(scenario.GetStoryText(), Is.EqualTo(json.Value<string>("StoryText")));
             Assert.That(scenario.FrameworkTestId, Is.EqualTo(json.Value<string>("FrameworkTestId")));
@@ -46,14 +48,15 @@ internal static class HistoricalReportFixture
             Assert.That(scenario.TestStartupInformation, Is.EqualTo(json.Value<string>("TestStartupInformation")));
             Assert.That(scenario.TearDownOutput, Is.EqualTo(json.Value<string>("TearDownOutput")));
             Assert.That(scenario.CustomHtmlOutputForReport, Is.EqualTo(json.Value<string>("CustomHtmlOutputForReport")));
-            Assert.That(scenario.CustomTestInformation.Select(info => info.Information),
+            Assert.That((scenario.CustomTestInformation ?? throw new AssertionException("Missing historical test information.")).Select(info => info.Information),
                 Is.EqualTo(RequiredProperty(json, "CustomTestInformation").Values<string>()));
             Assert.That(scenario.RetryCount, Is.EqualTo(json.Value<int>("RetryCount")));
-            Assert.That(scenario.Steps, Has.Count.EqualTo(RequiredProperty(json, "Steps").Count()));
+            var steps = scenario.Steps ?? throw new AssertionException("Missing historical steps.");
+            Assert.That(steps, Has.Count.EqualTo(RequiredProperty(json, "Steps").Count()));
 
-            for (var index = 0; index < scenario.Steps.Count; index++)
+            for (var index = 0; index < steps.Count; index++)
             {
-                var step = scenario.Steps[index];
+                var step = steps[index];
                 var stepJson = RequiredProperty(json, "Steps")[index]
                     ?? throw new AssertionException($"Missing historical step {index}.");
                 Assert.That(step.Guid, Is.EqualTo(stepJson.Value<string>("Guid")));

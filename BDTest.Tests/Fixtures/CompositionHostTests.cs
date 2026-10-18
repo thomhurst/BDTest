@@ -61,8 +61,8 @@ public class CompositionHostTests
             Assert.That(scenario.GetStoryText(), Does.Contain("shopper"));
             Assert.That(scenario.GetScenarioText(), Is.EqualTo("The shopper pays"));
             Assert.That(scenario.Tags, Is.EquivalentTo(new[] { "checkout", "payment" }));
-            Assert.That(scenario.CustomTestInformation.Single().Information, Is.EqualTo("payment reference"));
-            Assert.That(scenario.RuntimeInformation.CallerMember, Is.EqualTo(nameof(Owner.Pays)));
+            Assert.That(Required(scenario.CustomTestInformation).Single().Information, Is.EqualTo("payment reference"));
+            Assert.That(Required(scenario.RuntimeInformation).CallerMember, Is.EqualTo(nameof(Owner.Pays)));
             Assert.That(scenario.FileName, Does.EndWith("CompositionHostTests.cs"));
         }
         finally { owner.Host.EndTest(); }
@@ -131,8 +131,8 @@ public class CompositionHostTests
             Assert.That(scenario.Output, Does.Contain(label + " step").And.Not.Contain(other));
             Assert.That(scenario.TearDownOutput, Does.Contain(label + " teardown").And.Not.Contain(other));
             Assert.That(scenario.CustomHtmlOutputForReport, Does.Contain(label + " html").And.Not.Contain(other));
-            var report = BDTestJsonHelper.Deserialize(BDTestJsonHelper.GetTestJsonData(null, run));
-            Assert.That(report.Scenarios.Single().ReportId, Is.EqualTo(run.ReportId));
+            var report = Required(BDTestJsonHelper.Deserialize(BDTestJsonHelper.GetTestJsonData(null, run)));
+            Assert.That(Required(report.Scenarios).Single().ReportId, Is.EqualTo(run.ReportId));
             Assert.That(report.Scenarios.Single().FrameworkTestId, Is.EqualTo("same-id"));
         }
     }
@@ -168,7 +168,7 @@ public class CompositionHostTests
             var outline = await owner.Examples();
             Assert.That(outline.Tags, Is.EquivalentTo(new[] { "checkout", "examples" }));
             Assert.That(outline.GetStoryText(), Does.Contain("shopper"));
-            Assert.That(outline.Examples.Select(row => row.Status), Is.All.EqualTo(Status.Passed));
+            Assert.That(Required(outline.Examples).Select(row => row.Status), Is.All.EqualTo(Status.Passed));
             Assert.That(outline.Examples, Has.Count.EqualTo(2));
             Assert.That(owner.Contexts.Distinct().Count(), Is.EqualTo(2));
         }
@@ -200,7 +200,7 @@ public class CompositionHostTests
     public void Invalid_owner_and_disposed_run_are_rejected()
     {
         using var run = BDTestRun.Start();
-        Assert.Throws<ArgumentNullException>(() => BDTestScenario.For<State>(null, run));
+        Assert.Throws<ArgumentNullException>(() => BDTestScenario.For<State>(null!, run));
         run.Dispose();
         Assert.Throws<ObjectDisposedException>(() => BDTestScenario.For<State>(this, run));
     }

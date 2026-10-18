@@ -48,10 +48,10 @@ internal class ScenarioExecutor : IScenarioExecutor
 
     private async Task ExecuteAttemptAsync(Scenario scenario)
     {
-        var clock = scenario.Run.Options.Clock;
+        var clock = scenario.ExecutionRun.Options.Clock;
         var timer = clock.StartTimer();
-        Exception attemptException = null;
-        Action reportTerminalFailure = null;
+        Exception? attemptException = null;
+        Action? reportTerminalFailure = null;
         var scopeFailed = false;
         var preparingRetry = scenario.ShouldRetry;
         try
@@ -78,7 +78,7 @@ internal class ScenarioExecutor : IScenarioExecutor
 
             async Task ExecuteInScopeAsync(Func<Task> execute)
             {
-                Action diagnostics = null;
+                Action? diagnostics = null;
                 try
                 {
                     if (scenario.BdTestBaseClass is { } test)
@@ -100,7 +100,7 @@ internal class ScenarioExecutor : IScenarioExecutor
                 if (ShouldSkip(scenario))
                 {
                     scenario.Status = Status.Skipped;
-                    scenario.Steps.ForEach(step =>
+                    scenario.ExecutionSteps.ForEach(step =>
                     {
                         if (scenario.OutlineId != null) step.SetStepText();
                         step.Status = Status.Skipped;
@@ -109,12 +109,12 @@ internal class ScenarioExecutor : IScenarioExecutor
                 }
 
                 var stepBudget = scenario.Timeout.HasValue ? clock.StartTimer() : (ExecutionTimer?)null;
-                foreach (var step in scenario.Steps)
+                foreach (var step in scenario.ExecutionSteps)
                 {
                     await step.Execute(scenario.BdTestBaseClass, scenario.Timeout, scenario.Timeout - stepBudget?.Elapsed, scenario);
                 }
 
-                scenario.Status = scenario.Steps.Count > 0 && scenario.Steps.All(step => step.Status == Status.Skipped)
+                scenario.Status = scenario.ExecutionSteps.Count > 0 && scenario.ExecutionSteps.All(step => step.Status == Status.Skipped)
                     ? Status.Skipped
                     : Status.Passed;
             }
@@ -133,12 +133,12 @@ internal class ScenarioExecutor : IScenarioExecutor
         catch (Exception e)
         {
             attemptException = e;
-            scenario.Status = ExceptionOutcomeClassifier.Classify(e, scenario.Run.Options, scenario.TimedOut);
+            scenario.Status = ExceptionOutcomeClassifier.Classify(e, scenario.ExecutionRun.Options, scenario.TimedOut);
             if (scenario.Status is Status.Failed or Status.NotImplemented)
                 scenario.ExecutionException ??= new ExceptionWrapper(e);
             if (scenario.Status == Status.Skipped)
             {
-                foreach (var step in scenario.Steps.Where(step => step.Status == Status.NotRun))
+                foreach (var step in scenario.ExecutionSteps.Where(step => step.Status == Status.NotRun))
                 {
                     step.SetStepText();
                     step.Status = Status.Skipped;
@@ -146,7 +146,7 @@ internal class ScenarioExecutor : IScenarioExecutor
             }
             if (scenario.Status != Status.Failed) throw;
 
-            var validRetryRules = scenario.Run.Options.RetryRules.Where(rule => rule.Condition(e)).ToList();
+            var validRetryRules = scenario.ExecutionRun.Options.RetryRules.Where(rule => rule.Condition(e)).ToList();
             if (validRetryRules.Any() && scenario.RetryCount < validRetryRules.Max(x => x.RetryLimit))
             {
                 scenario.ShouldRetry = true;
@@ -176,14 +176,14 @@ internal class ScenarioExecutor : IScenarioExecutor
 
             if (!scenario.ShouldRetry)
             {
-                foreach (var notRunStep in scenario.Steps.Where(step => step.Status == Status.NotRun))
+                foreach (var notRunStep in scenario.ExecutionSteps.Where(step => step.Status == Status.NotRun))
                 {
                     notRunStep.SetStepText();
                 }
 
                 ConsoleReporter.WriteLineToConsoleOnly($"Test Summary:{Environment.NewLine}");
 
-                foreach (var step in scenario.Steps)
+                foreach (var step in scenario.ExecutionSteps)
                 {
                     ConsoleReporter.WriteLineToConsoleOnly($"{step.StepText} > [{step.Status}{(step.TimedOut ? " (Timed out)" : string.Empty)}]");
                 }
@@ -193,7 +193,7 @@ internal class ScenarioExecutor : IScenarioExecutor
                 ConsoleReporter.WriteLineToConsoleOnly($"Test Result: {scenario.Status}");
 
                 scenario.Output = string.Join(Environment.NewLine,
-                    scenario.Steps.Select(step => step.Output)
+                    scenario.ExecutionSteps.Select(step => step.Output)
                         .Concat(new[] { TestOutputData.Instance.ToString().Trim() })
                         .Where(output => !string.IsNullOrWhiteSpace(output)));
                 TestOutputData.ClearCurrentTaskData();
@@ -201,7 +201,7 @@ internal class ScenarioExecutor : IScenarioExecutor
 
             var endTime = clock.UtcNow;
             var elapsed = timer.Elapsed;
-            scenario.Attempts.Add(new ScenarioAttempt(scenario.Attempts.Count + 1, scenario.Status,
+            scenario.ExecutionAttempts.Add(new ScenarioAttempt(scenario.ExecutionAttempts.Count + 1, scenario.Status,
                 attemptException, scenario.StartTime, endTime, elapsed));
 
             if (!scenario.ShouldRetry)
@@ -214,7 +214,7 @@ internal class ScenarioExecutor : IScenarioExecutor
 
     private bool ShouldSkip(Scenario scenario)
     {
-        return scenario.Run.Options.SkipTestRules.Any(x => x.Invoke(scenario));
+        return scenario.ExecutionRun.Options.SkipTestRules.Any(x => x.Invoke(scenario));
     }
 
     private async Task WriteTestInformation(Scenario scenario)

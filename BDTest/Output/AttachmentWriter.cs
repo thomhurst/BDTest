@@ -21,7 +21,7 @@ internal sealed class AttachmentWriter(BDTestRun run, string frameworkExecutionI
         if (content == null) throw new ArgumentNullException(nameof(content));
         if (!content.CanRead) throw new ArgumentException("The attachment stream must be readable.", nameof(content));
         if (mimeType == null || mimeType.Length > 256 || mimeType.Any(char.IsControl)
-            || !MediaTypeHeaderValue.TryParse(mimeType, out var mediaType) || mediaType.MediaType.Contains("*")
+            || !MediaTypeHeaderValue.TryParse(mimeType, out var mediaType) || mediaType.MediaType == null || mediaType.MediaType.Contains("*")
             || mediaType.ToString().Length > 256)
             throw new ArgumentException("A concrete MIME type is required.", nameof(mimeType));
 
@@ -35,19 +35,20 @@ internal sealed class AttachmentWriter(BDTestRun run, string frameworkExecutionI
             generation = run.AttachmentFiles.Generation;
         }
         var attachment = run.AttachmentFiles.Save(name, content, mediaType.ToString(), generation);
+        var attachmentId = attachment.Id ?? throw new InvalidOperationException("The attachment has no ID.");
         try
         {
             lock (run.Store.Gate)
             {
                 run.ThrowIfDisposed();
                 ensureExecutionActive();
-                run.AttachmentFiles.EnsureAvailable(attachment.Id);
+                run.AttachmentFiles.EnsureAvailable(attachmentId);
                 publish(attachment);
             }
         }
         catch
         {
-            run.AttachmentFiles.Remove(attachment.Id);
+            run.AttachmentFiles.Remove(attachmentId);
             throw;
         }
     }
@@ -62,7 +63,7 @@ internal sealed class AttachmentWriter(BDTestRun run, string frameworkExecutionI
             {
                 scope.ThrowIfInactive();
                 attachment.AttemptNumber = scope.AttemptNumber;
-                scope.Step.Attachments.Add(attachment);
+                scope.Step.ExecutionAttachments.Add(attachment);
             };
         }
         var construction = TestOutputData.ConstructionOutput;
@@ -88,11 +89,11 @@ internal sealed class AttachmentWriter(BDTestRun run, string frameworkExecutionI
             if (scenario.OutlineId != null)
                 scenario = run.Store.ScenariosByInternalId[scenario.OutlineId];
             attachment.AttemptNumber = scenario.RetryCount + 1;
-            scenario.Attachments.Add(attachment);
-        }, () => run.AttachmentFiles.Remove(attachment.Id));
+            scenario.ExecutionAttachments.Add(attachment);
+        }, () => run.AttachmentFiles.Remove(attachment.Id ?? throw new InvalidOperationException("The attachment has no ID.")));
     }
 
-    public void AttachFile(string path, string mimeType = null)
+    public void AttachFile(string path, string? mimeType = null)
     {
         if (string.IsNullOrWhiteSpace(path)) throw new ArgumentException("A file path is required.", nameof(path));
         using var stream = File.OpenRead(path);

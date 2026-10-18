@@ -1,4 +1,4 @@
-﻿using System.Collections.Concurrent;
+using System.Collections.Concurrent;
 using BDTest.Test;
 using NUnit.Framework;
 
@@ -20,12 +20,12 @@ public class ExplicitStepConstructionTests : AbstractContextBDTestBase<MyTestCon
             .Then(() => InjectableStep3.Print())
             .BDTestAsync();
         
-        Assert.That(scenario.Steps[0].Output, Does.StartWith("1:"));
+        Assert.That(Required(scenario.Steps)[0].Output, Does.StartWith("1:"));
         Assert.That(scenario.Steps[1].Output, Does.StartWith("2:"));
         Assert.That(scenario.Steps[2].Output, Does.StartWith("3."));
         
         Assert.That(_usedIds, Does.Not.Contain(scenario.Steps[0].Output));
-        _usedIds.Add(scenario.Steps[0].Output);
+        _usedIds.Add(Required(scenario.Steps[0].Output));
     }
     
     [Test]
@@ -36,12 +36,12 @@ public class ExplicitStepConstructionTests : AbstractContextBDTestBase<MyTestCon
             .Then(() => InjectableStep3.Print())
             .BDTestAsync();
         
-        Assert.That(scenario.Steps[0].Output, Does.StartWith("1:"));
+        Assert.That(Required(scenario.Steps)[0].Output, Does.StartWith("1:"));
         Assert.That(scenario.Steps[1].Output, Does.StartWith("2:"));
         Assert.That(scenario.Steps[2].Output, Does.StartWith("3."));
         
         Assert.That(_usedIds, Does.Not.Contain(scenario.Steps[0].Output));
-        _usedIds.Add(scenario.Steps[0].Output);
+        _usedIds.Add(Required(scenario.Steps[0].Output));
     }
     
     [Test]
@@ -52,12 +52,12 @@ public class ExplicitStepConstructionTests : AbstractContextBDTestBase<MyTestCon
             .Then(() => InjectableStep3.Print())
             .BDTestAsync();
         
-        Assert.That(scenario.Steps[0].Output, Does.StartWith("1:"));
+        Assert.That(Required(scenario.Steps)[0].Output, Does.StartWith("1:"));
         Assert.That(scenario.Steps[1].Output, Does.StartWith("2:"));
         Assert.That(scenario.Steps[2].Output, Does.StartWith("3."));
         
         Assert.That(_usedIds, Does.Not.Contain(scenario.Steps[0].Output));
-        _usedIds.Add(scenario.Steps[0].Output);
+        _usedIds.Add(Required(scenario.Steps[0].Output));
     }
 }
 

@@ -55,9 +55,9 @@ public class FrameworkOutcomeMapTests
     [Test]
     public void Null_maps_and_null_skip_callbacks_are_rejected()
     {
-        Assert.Throws<ArgumentNullException>(() => new FrameworkOutcomeMap(null));
-        Assert.Throws<ArgumentNullException>(() => new BDTestOptions().RegisterFrameworkOutcomes(null));
-        Assert.Throws<ArgumentNullException>(() => BDTestSettings.CustomExceptionSettings.RegisterFrameworkOutcomes(null));
+        Assert.Throws<ArgumentNullException>(() => new FrameworkOutcomeMap(null!));
+        Assert.Throws<ArgumentNullException>(() => new BDTestOptions().RegisterFrameworkOutcomes(null!));
+        Assert.Throws<ArgumentNullException>(() => BDTestSettings.CustomExceptionSettings.RegisterFrameworkOutcomes(null!));
     }
 
     private static void MustNotRun() => throw new InvalidOperationException("Skipped scenario executed");

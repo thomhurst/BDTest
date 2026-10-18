@@ -12,7 +12,7 @@ public class ScenarioAttempt
     [JsonInclude]
     public Status Status { get; internal set; }
 
-    [JsonInclude] public ExceptionWrapper Exception { get; internal set; }
+    [JsonInclude] public ExceptionWrapper? Exception { get; internal set; }
     [JsonInclude] public DateTime StartTime { get; internal set; }
     [JsonInclude] public DateTime EndTime { get; internal set; }
 
@@ -25,7 +25,7 @@ public class ScenarioAttempt
     {
     }
 
-    internal ScenarioAttempt(int number, Status status, Exception exception,
+    internal ScenarioAttempt(int number, Status status, Exception? exception,
         DateTime startTime, DateTime endTime, TimeSpan timeTaken)
     {
         Number = number;

@@ -3,7 +3,7 @@ namespace BDTest.Test;
 /// <summary>Identifies the test and zero-based attempt requesting a context.</summary>
 public sealed class ContextCreation
 {
-    internal ContextCreation(string executionId, int attempt, IServiceProvider services)
+    internal ContextCreation(string executionId, int attempt, IServiceProvider? services)
     {
         ExecutionId = executionId;
         Attempt = attempt;
@@ -12,7 +12,7 @@ public sealed class ContextCreation
 
     public string ExecutionId { get; }
     public int Attempt { get; }
-    public IServiceProvider Services { get; }
+    public IServiceProvider? Services { get; }
 }
 
 /// <summary>Optional asynchronous initialization, awaited once before each attempt's first step.</summary>

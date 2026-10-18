@@ -38,7 +38,7 @@ public class TestMethodMetadataTests
         var first = await fixture.Build();
         Assert.That(CountingInformationAttribute.Instances, Is.EqualTo(1));
         first.Tags[0] = "changed";
-        var firstInformation = (CountingInformationAttribute)first.CustomTestInformation[0];
+        var firstInformation = (CountingInformationAttribute)Required(first.CustomTestInformation)[0];
         firstInformation.Value = "changed";
         firstInformation.Values[0] = "changed";
         firstInformation.Items[0] = "changed";
@@ -46,7 +46,7 @@ public class TestMethodMetadataTests
         Assert.That(CountingInformationAttribute.Instances, Is.EqualTo(2));
         Assert.That(second.GetScenarioText(), Is.EqualTo("Exact private method"));
         Assert.That(second.Tags, Is.EqualTo(new[] { "original" }));
-        var secondInformation = (CountingInformationAttribute)second.CustomTestInformation[0];
+        var secondInformation = (CountingInformationAttribute)Required(second.CustomTestInformation)[0];
         Assert.That(secondInformation.Value, Is.EqualTo("original"));
         Assert.That(secondInformation.Values, Is.EqualTo(new[] { "original" }));
         Assert.That(secondInformation.Items, Is.EqualTo(new[] { "original" }));
@@ -68,7 +68,7 @@ public class TestMethodMetadataTests
         Assert.That(scenario.GetScenarioText(), Is.EqualTo("Build"));
         Assert.That(scenario.FileName, Does.EndWith("TestMethodMetadataTests.cs"));
         Assert.That(scenario.CustomTestInformation, Is.Empty);
-        Assert.That(scenario.TestMetadata.RetryCount, Is.Null);
+        Assert.That(Required(scenario.TestMetadata).RetryCount, Is.Null);
         Assert.That((await fixture.When(() => { }).Then(() => { })
             .WithScenarioText("Explicit harness text").BDTestAsync()).GetScenarioText(), Is.EqualTo("Explicit harness text"));
     }
