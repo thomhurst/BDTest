@@ -42,10 +42,25 @@ public class MemoryCacheBdTestDataStore : IMemoryCacheBdTestDataStore, IDisposab
     }
 
     public Task<BDTestOutputModel> GetTestData(string id, CancellationToken cancellationToken)
+        => GetTestData(id, cancellationToken, refreshRetention: false);
+
+    Task<BDTestOutputModel> IMemoryCacheBdTestDataStore.GetTestDataAndRefreshRetention(string id,
+        CancellationToken cancellationToken)
+        => GetTestData(id, cancellationToken, refreshRetention: true);
+
+    private Task<BDTestOutputModel> GetTestData(string id, CancellationToken cancellationToken, bool refreshRetention)
     {
+        cancellationToken.ThrowIfCancellationRequested();
         lock (_reportCacheLock)
         {
-            return Task.FromResult(_testRecordCache.Value.Get<BDTestOutputModel>(id));
+            var cache = _testRecordCache.Value;
+            var report = cache.Get<CachedReport>(id);
+            if (refreshRetention && report != null)
+            {
+                // Refresh only expiry metadata, reusing the model and its measured size.
+                SetCacheEntry(cache, id, report);
+            }
+            return Task.FromResult(report?.Model);
         }
     }
 
@@ -93,15 +108,22 @@ public class MemoryCacheBdTestDataStore : IMemoryCacheBdTestDataStore, IDisposab
                 cache.Compact(Math.Min(1, Math.Max(0.25, 2.0 / cache.Count)));
             }
 
-            cache.Set(id, data, new MemoryCacheEntryOptions
-            {
-                Size = size,
-                AbsoluteExpirationRelativeToNow = _options.ReportCacheRetention
-            });
+            SetCacheEntry(cache, id, new CachedReport(data, size));
         }
 
         return Task.CompletedTask;
     }
+
+    private void SetCacheEntry(MemoryCache cache, string id, CachedReport report)
+    {
+        cache.Set(id, report, new MemoryCacheEntryOptions
+        {
+            Size = report.Size,
+            AbsoluteExpirationRelativeToNow = _options.ReportCacheRetention
+        });
+    }
+
+    private sealed record CachedReport(BDTestOutputModel Model, long Size);
 
     // Serialize UTF-8 incrementally; retain only the byte count, never the JSON payload.
     private sealed class ByteCountingStream : Stream

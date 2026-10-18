@@ -797,10 +797,13 @@ Size measurement streams the JSON without retaining a complete serialized copy.
 The sum of those sizes cannot exceed the configured budget.
 This is an estimate of retained report size, not a hard limit on process memory:
 object overhead, temporary serialization allocations, in-flight responses, and
-report summaries are outside this budget. Treat uploaded/cached models as immutable;
-changes to a retained model are accounted for when it is next cached.
+report summaries are outside this budget. Treat uploaded/cached models as immutable.
+The measured size stays with the cache entry; ordinary reads reuse it without
+serializing the report again. Explicit replacement through the cache store measures
+the replacement model's size.
 
-Uploads and ordinary single-report reads cache reports and restart their retention.
+Uploads and ordinary single-report cache misses measure and cache reports.
+Ordinary cached reads restart retention by refreshing only the entry's expiry metadata.
 When space is needed, expired and least-recently-used reports are evicted in batches
 before the incoming report is admitted. Bulk comparisons can reuse cached reports
 but neither populate the cache nor restart retention. The host's unrelated cache
