@@ -8,7 +8,10 @@ namespace BDTest.Helpers;
 
 internal static class RetryAttributeHelper
 {
-    internal static BDTestRetryAttribute GetBDTestRetryAttribute(Scenario scenario)
+    internal static BDTestRetryAttribute GetBDTestRetryAttribute(Scenario scenario) =>
+        GetBDTestRetryAttribute(scenario, null);
+
+    internal static BDTestRetryAttribute GetBDTestRetryAttribute(Scenario scenario, IEnumerable<StackFrame> stackFrames)
     {
         var scenarioMethod = scenario?.GetScenarioMethod();
         var bdTestRetryAttribute = scenarioMethod?.GetCustomAttribute<BDTestRetryAttribute>();
@@ -17,12 +20,12 @@ internal static class RetryAttributeHelper
             return bdTestRetryAttribute;
         }
             
-        var stackFrames = new StackTrace().GetFrames() ?? Array.Empty<StackFrame>();
+        var methods = StackFramesHelper.GetMethods(stackFrames ?? StackFramesHelper.GetStackFrames()).ToArray();
 
-        var stepAttributeFrame = stackFrames.FirstOrDefault(it => GetBDTestRetryAttribute(it) != null);
-        if (stepAttributeFrame != null)
+        var attributeMethod = methods.FirstOrDefault(it => GetBDTestRetryAttribute(it) != null);
+        if (attributeMethod != null)
         {
-            return GetBDTestRetryAttribute(stepAttributeFrame);
+            return GetBDTestRetryAttribute(attributeMethod);
         }
 
         var storyClass = scenario?.GetStoryClass();
@@ -32,14 +35,9 @@ internal static class RetryAttributeHelper
             return bdTestRetryAttribute;
         }
 
-        var callingFrame = stackFrames.FirstOrDefault(it => it.GetMethod().Name == scenario?.RuntimeInformation?.CallerMember);
-        return callingFrame?.GetMethod()?.GetCustomAttribute<BDTestRetryAttribute>()
+        var callingMethod = methods.FirstOrDefault(it => it.Name == scenario?.RuntimeInformation?.CallerMember);
+        return callingMethod?.GetCustomAttribute<BDTestRetryAttribute>()
             ?? storyClass?.Assembly.GetCustomAttribute<BDTestRetryAttribute>();
-    }
-        
-    private static BDTestRetryAttribute GetBDTestRetryAttribute(StackFrame it)
-    {
-        return GetBDTestRetryAttribute(it.GetMethod());
     }
         
     private static BDTestRetryAttribute GetBDTestRetryAttribute(ICustomAttributeProvider it)
