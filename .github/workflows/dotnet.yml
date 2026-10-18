@@ -31,6 +31,9 @@ jobs:
         uses: actions/setup-dotnet@v6.0.0
         with:
           dotnet-version: 10.0.402
+      - name: Verify dependency merge safeguards
+        shell: pwsh
+        run: ./scripts/Test-DependencyAutomerge.ps1
       - name: Verify skip outcomes from test runners
         shell: pwsh
         run: ./scripts/Test-SkipOutcomes.ps1
