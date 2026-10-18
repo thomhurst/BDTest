@@ -1,0 +1,333 @@
+{
+  "schemaVersion": 1,
+  "id": "report",
+  "producerVersion": "3.1.2+revision",
+  "scenarios": [
+    {
+      "guid": "scenario",
+      "reportId": "report",
+      "storyText": "story",
+      "scenarioText": "scenario",
+      "status": "Failed",
+      "steps": [
+        {
+          "stepType": "ButThen",
+          "stepText": "But fails",
+          "status": "Failed",
+          "guid": "step",
+          "reportId": "report",
+          "scenarioId": "scenario",
+          "isRetry": true,
+          "exception": {
+            "typeName": "BDTest.Contracts.Tests.First+Failure",
+            "message": "outer",
+            "stackTrace": "stack",
+            "asString": "original",
+            "shortTypeName": "Failure",
+            "data": {
+              "expected": "42"
+            },
+            "hResult": 123,
+            "source": "source",
+            "innerExceptions": [
+              {
+                "typeName": "BDTest.Contracts.Tests.Second+Failure",
+                "message": "inner",
+                "stackTrace": null,
+                "asString": null,
+                "shortTypeName": "Failure",
+                "data": {},
+                "hResult": null,
+                "source": null,
+                "innerExceptions": [],
+                "isWrapper": false,
+                "truncationReason": null
+              }
+            ],
+            "isWrapper": true,
+            "truncationReason": "DepthLimit"
+          },
+          "output": "output",
+          "startTime": "2026-10-18T12:00:00+01:00",
+          "endTime": "2026-10-18T12:00:02+01:00",
+          "timeTaken": "00:00:02",
+          "timeout": "00:00:01",
+          "timedOut": true,
+          "diagnostics": [
+            "diagnostic"
+          ],
+          "arguments": [
+            {
+              "$type": "table",
+              "headers": [
+                "Name"
+              ],
+              "rows": [
+                [
+                  "Alice"
+                ]
+              ]
+            },
+            {
+              "$type": "docString",
+              "content": "{\"x\":1}",
+              "contentType": "application/json"
+            }
+          ],
+          "attachments": [
+            {
+              "id": "file",
+              "name": "log.txt",
+              "mimeType": "text/plain",
+              "length": 15,
+              "attemptNumber": 2,
+              "uri": "https://example.test/file"
+            }
+          ]
+        }
+      ],
+      "attempts": [
+        {
+          "number": 1,
+          "status": "Failed",
+          "exception": {
+            "typeName": "BDTest.Contracts.Tests.First+Failure",
+            "message": "outer",
+            "stackTrace": "stack",
+            "asString": "original",
+            "shortTypeName": "Failure",
+            "data": {
+              "expected": "42"
+            },
+            "hResult": 123,
+            "source": "source",
+            "innerExceptions": [
+              {
+                "typeName": "BDTest.Contracts.Tests.Second+Failure",
+                "message": "inner",
+                "stackTrace": null,
+                "asString": null,
+                "shortTypeName": "Failure",
+                "data": {},
+                "hResult": null,
+                "source": null,
+                "innerExceptions": [],
+                "isWrapper": false,
+                "truncationReason": null
+              }
+            ],
+            "isWrapper": true,
+            "truncationReason": "DepthLimit"
+          },
+          "startTime": "2026-10-18T12:00:00+01:00",
+          "endTime": "2026-10-18T12:00:02+01:00",
+          "timeTaken": "00:00:02",
+          "steps": [
+            {
+              "stepType": "ButThen",
+              "stepText": "But fails",
+              "status": "Failed",
+              "guid": "step",
+              "reportId": "report",
+              "scenarioId": "scenario",
+              "isRetry": true,
+              "exception": {
+                "typeName": "BDTest.Contracts.Tests.First+Failure",
+                "message": "outer",
+                "stackTrace": "stack",
+                "asString": "original",
+                "shortTypeName": "Failure",
+                "data": {
+                  "expected": "42"
+                },
+                "hResult": 123,
+                "source": "source",
+                "innerExceptions": [
+                  {
+                    "typeName": "BDTest.Contracts.Tests.Second+Failure",
+                    "message": "inner",
+                    "stackTrace": null,
+                    "asString": null,
+                    "shortTypeName": "Failure",
+                    "data": {},
+                    "hResult": null,
+                    "source": null,
+                    "innerExceptions": [],
+                    "isWrapper": false,
+                    "truncationReason": null
+                  }
+                ],
+                "isWrapper": true,
+                "truncationReason": "DepthLimit"
+              },
+              "output": "output",
+              "startTime": "2026-10-18T12:00:00+01:00",
+              "endTime": "2026-10-18T12:00:02+01:00",
+              "timeTaken": "00:00:02",
+              "timeout": "00:00:01",
+              "timedOut": true,
+              "diagnostics": [
+                "diagnostic"
+              ],
+              "arguments": [
+                {
+                  "$type": "table",
+                  "headers": [
+                    "Name"
+                  ],
+                  "rows": [
+                    [
+                      "Alice"
+                    ]
+                  ]
+                },
+                {
+                  "$type": "docString",
+                  "content": "{\"x\":1}",
+                  "contentType": "application/json"
+                }
+              ],
+              "attachments": [
+                {
+                  "id": "file",
+                  "name": "log.txt",
+                  "mimeType": "text/plain",
+                  "length": 15,
+                  "attemptNumber": 2,
+                  "uri": "https://example.test/file"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "exampleValues": {
+        "n": "1"
+      },
+      "examples": [
+        {
+          "guid": "row",
+          "reportId": "report",
+          "storyText": "story",
+          "scenarioText": "example",
+          "status": "Passed",
+          "steps": [],
+          "attempts": [],
+          "exampleValues": {},
+          "examples": [],
+          "tags": [],
+          "exception": null,
+          "frameworkTestId": null,
+          "fileName": null,
+          "testStartupInformation": null,
+          "tearDownOutput": null,
+          "customHtmlOutputForReport": null,
+          "output": null,
+          "startTime": "0001-01-01T00:00:00+00:00",
+          "endTime": "0001-01-01T00:00:00+00:00",
+          "timeTaken": "00:00:00",
+          "timeout": null,
+          "retryCount": 0,
+          "isOutline": false,
+          "outlineId": "scenario",
+          "attachments": [],
+          "customTestInformation": [],
+          "timedOut": false
+        }
+      ],
+      "tags": [
+        "smoke"
+      ],
+      "exception": {
+        "typeName": "BDTest.Contracts.Tests.First+Failure",
+        "message": "outer",
+        "stackTrace": "stack",
+        "asString": "original",
+        "shortTypeName": "Failure",
+        "data": {
+          "expected": "42"
+        },
+        "hResult": 123,
+        "source": "source",
+        "innerExceptions": [
+          {
+            "typeName": "BDTest.Contracts.Tests.Second+Failure",
+            "message": "inner",
+            "stackTrace": null,
+            "asString": null,
+            "shortTypeName": "Failure",
+            "data": {},
+            "hResult": null,
+            "source": null,
+            "innerExceptions": [],
+            "isWrapper": false,
+            "truncationReason": null
+          }
+        ],
+        "isWrapper": true,
+        "truncationReason": "DepthLimit"
+      },
+      "frameworkTestId": "framework",
+      "fileName": "test.cs",
+      "testStartupInformation": "setup",
+      "tearDownOutput": "teardown",
+      "customHtmlOutputForReport": "<p>html</p>",
+      "output": "output",
+      "startTime": "2026-10-18T12:00:00+01:00",
+      "endTime": "2026-10-18T12:00:03+01:00",
+      "timeTaken": "00:00:03",
+      "timeout": "00:00:02",
+      "retryCount": 1,
+      "isOutline": true,
+      "outlineId": null,
+      "attachments": [
+        {
+          "id": "file",
+          "name": "log.txt",
+          "mimeType": "text/plain",
+          "length": 15,
+          "attemptNumber": 2,
+          "uri": "https://example.test/file"
+        }
+      ],
+      "customTestInformation": [
+        "info"
+      ],
+      "timedOut": true
+    }
+  ],
+  "notRun": [
+    {
+      "scenarioId": "pending",
+      "reportId": "report",
+      "storyText": "story",
+      "scenarioText": "pending",
+      "testId": "test",
+      "callerMember": "method",
+      "callerFile": "test.cs",
+      "parameters": [
+        "n"
+      ],
+      "tags": [
+        "pending"
+      ],
+      "customTestInformation": [
+        "info"
+      ],
+      "timeout": "00:00:01"
+    }
+  ],
+  "environment": "ci",
+  "tag": "nightly",
+  "branchName": "main",
+  "machineName": "agent",
+  "testTimer": {
+    "testsStartedAt": "2026-10-18T12:00:00+01:00",
+    "testsFinishedAt": "2026-10-18T12:00:03+01:00",
+    "elapsedTime": "00:00:03"
+  },
+  "customProperties": {
+    "build": "1"
+  },
+  "attachmentUploadTokenHash": "hash"
+}

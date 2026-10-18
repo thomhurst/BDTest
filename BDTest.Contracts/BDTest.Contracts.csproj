@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <IsPackable>true</IsPackable>
+    <PackageId>BDTest.Contracts</PackageId>
+    <Title>BDTest - Report Contracts</Title>
+    <Description>Immutable, versioned BDTest report contracts independent of test execution.</Description>
+    <PackageTags>bdd testing reports contracts</PackageTags>
+    <Nullable>enable</Nullable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="System.Text.Json" Version="10.0.13" />
+  </ItemGroup>
+</Project>

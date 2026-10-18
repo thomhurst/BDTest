@@ -36,7 +36,7 @@ public class PackageSelectionTests
 
         Assert.That(selected, Is.EquivalentTo(new[]
         {
-            "BDTest", "BDTest.NUnit", "BDTest.xUnit", "BDTest.MSTest", "BDTest.TUnit",
+            "BDTest", "BDTest.Contracts", "BDTest.NUnit", "BDTest.xUnit", "BDTest.MSTest", "BDTest.TUnit",
             "BDTest.Razor.Reports", "BDTest.SourceGenerator", "BDTest.Analyzers"
         }));
     }
@@ -101,6 +101,7 @@ public class PackageSelectionTests
     [TestCase("BDTest", "netstandard2.0")]
     [TestCase("BDTest", "net8.0")]
     [TestCase("BDTest.Razor.Reports", "net10.0")]
+    [TestCase("BDTest.Contracts", "netstandard2.0")]
     public async Task Runtime_packages_initialize_documentation_before_sdk_defaults(string projectName, string target)
     {
         using var metadata = JsonDocument.Parse(await RunDotNet(new[]
