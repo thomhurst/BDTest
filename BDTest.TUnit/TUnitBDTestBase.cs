@@ -10,7 +10,7 @@ namespace BDTest.TUnit;
 public abstract class TUnitBDTestBase<TContext> : AbstractContextBDTestBase<TContext>
     where TContext : class, new()
 {
-    protected override string BDTestExecutionId => TUnitTestContext.Current!.Id;
+    protected override string BDTestExecutionId => TUnitTestContext.Current?.Id ?? base.BDTestExecutionId;
 
     [Before(HookType.Class)]
     public static void SetupTUnitExceptions()
