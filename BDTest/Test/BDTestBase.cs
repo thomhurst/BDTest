@@ -305,7 +305,7 @@ public abstract class BDTestBase
 
     /// <summary>Starts an execution with the runner's exact test method, including overload and data-row identity.</summary>
     /// <remarks>Method metadata is cached. Without a method, builders use compiler-supplied caller text.</remarks>
-    protected void BeginTest(string frameworkTestId, MethodInfo testMethod)
+    public void BeginTest(string frameworkTestId, MethodInfo testMethod)
     {
         if (string.IsNullOrWhiteSpace(frameworkTestId))
             throw new ArgumentException("A test execution ID is required.", nameof(frameworkTestId));
@@ -336,7 +336,7 @@ public abstract class BDTestBase
     }
 
     /// <summary>Awaits context disposal and clears execution state even when disposal fails. Safe to repeat.</summary>
-    protected ValueTask EndTestAsync()
+    public ValueTask EndTestAsync()
     {
         var execution = CurrentExecution;
         if (execution == null || execution == EndedExecution) return default;

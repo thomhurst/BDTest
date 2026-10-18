@@ -2,12 +2,11 @@ using BDTest.Settings;
 using BDTest.Test;
 using TUnit.Core;
 using TUnit.Core.Exceptions;
-using TUnit.Core.Extensions;
 using TUnitTestContext = TUnit.Core.TestContext;
 
 namespace BDTest.TUnit;
 
-public abstract class TUnitBDTestBase<TContext> : AbstractContextBDTestBase<TContext>
+public abstract class TUnitBDTestBase<TContext> : AbstractContextBDTestBase<TContext>, IBDTestTUnitTest
     where TContext : class
 {
     [Before(HookType.Class)]
@@ -19,22 +18,18 @@ public abstract class TUnitBDTestBase<TContext> : AbstractContextBDTestBase<TCon
     /// <summary>The reusable outcome declaration. Register it on options for explicit runs.</summary>
     public static FrameworkOutcomeMap OutcomeMap => TUnitExceptionRegistration.OutcomeMap;
 
+    BDTestBase IBDTestTUnitTest.BDTestHost => this;
+
     protected override void OnScenarioSkipped(string reason) => OutcomeMap.ReportSkip(reason);
 
-    // Keep the original public entry points, but give TUnit distinctive hook names.
-    // Its generic-base hook invoker resolves methods by name on the derived type.
-    [Before(HookType.Test)]
+    // Compatibility entry points for custom harnesses. Native execution uses global hooks.
     public void BDTestTUnitSetup() => Setup();
 
     public void Setup()
     {
-        BeginTest(TUnitTestContext.Current?.Id ?? Guid.NewGuid().ToString("N"),
-            TUnitTestContext.Current?.Metadata.TestDetails.MethodMetadata.GetReflectionInfo());
-        // TUnit isolates hook execution contexts unless their AsyncLocal values are exported.
-        TUnitTestContext.Current?.AddAsyncLocalValues();
+        TUnitBDTestLifecycle.Begin(this, TUnitTestContext.Current);
     }
 
-    [After(HookType.Test)]
     public async Task BDTestTUnitTearDown() => await EndTestAsync();
 
     public void TearDown()

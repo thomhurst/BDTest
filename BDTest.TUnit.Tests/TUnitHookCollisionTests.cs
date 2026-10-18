@@ -111,7 +111,7 @@ public abstract class TUnitHookCollisionTests : TUnitBDTestBase<TUnitContext>
 public static class TUnitHookCollisionCleanup
 {
     // Global after hooks run after all instance hooks, including the adapter cleanup.
-    [AfterEvery(HookType.Test)]
+    [AfterEvery(HookType.Test, Order = int.MaxValue)]
     public static async Task VerifyAdapterCleanup(TestContext context)
     {
         if (context.Metadata.TestDetails.Class.ClassInstance is TUnitHookCollisionTests fixture)
