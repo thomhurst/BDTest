@@ -5,6 +5,9 @@ description: Retry failing scenarios with [BDTestRetry] or global retry rules, a
 
 # Retries
 
+For built-in adapters, configure `BDTestOptions` through [assembly configuration](../configuration/assembly-runs.md). Examples using `BDTestSettings` below apply only to the legacy standalone default run; use the corresponding option registrations for adapter-owned runs.
+
+
 BDTest can retry a scenario that fails. Retries happen inside one execution: the report keeps one entry per scenario, together with the history of every attempt.
 
 Only failures are retried. Passed, skipped and inconclusive results, and exceptions registered as success, are never retried.

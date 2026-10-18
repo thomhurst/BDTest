@@ -1,4 +1,5 @@
 using NUnit.Framework;
+using BDTest.NUnit;
 
 namespace BDTest.Example;
 
@@ -15,6 +16,7 @@ public class SetUpFixture
         }
         finally
         {
+            NUnitBDTestAssembly.Dispose(typeof(SetUpFixture).Assembly);
             if (Directory.Exists(outputDirectory))
             {
                 Directory.Delete(outputDirectory, recursive: true);

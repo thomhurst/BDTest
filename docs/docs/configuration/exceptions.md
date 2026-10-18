@@ -5,6 +5,9 @@ description: How BDTest maps exceptions to step and scenario statuses, including
 
 # Exception classification
 
+For built-in adapters, configure `BDTestOptions` through [assembly configuration](../configuration/assembly-runs.md). Examples using `BDTestSettings` below apply only to the legacy standalone default run; use the corresponding option registrations for adapter-owned runs.
+
+
 Steps, scenarios and scenario outline examples share one exception classifier. When a step throws, BDTest picks a status from the exception:
 
 | Exception | Step and scenario status | Retried? |

@@ -9,11 +9,10 @@ namespace BDTest.TUnit;
 public abstract class TUnitBDTestBase<TContext> : AbstractContextBDTestBase<TContext>, IBDTestTUnitTest
     where TContext : class
 {
-    [Before(HookType.Class)]
-    public static void SetupTUnitExceptions()
-    {
-        TUnitExceptionRegistration.EnsureRegistered();
-    }
+    private BDTestRun? _assemblyRun;
+
+    /// <summary>The configured run owned by this fixture's assembly, or an explicit override.</summary>
+    public override BDTestRun TestRun => _assemblyRun ??= TUnitBDTestAssembly.GetRun(GetType().Assembly);
 
     /// <summary>The reusable outcome declaration. Register it on options for explicit runs.</summary>
     public static FrameworkOutcomeMap OutcomeMap => TUnitExceptionRegistration.OutcomeMap;
@@ -38,14 +37,11 @@ public abstract class TUnitBDTestBase<TContext> : AbstractContextBDTestBase<TCon
     }
 }
 
-// Shared by every generic context type; all registration is owned by the core.
+// Immutable declaration shared by every context type; registrations belong to each run.
 internal static class TUnitExceptionRegistration
 {
     internal static FrameworkOutcomeMap OutcomeMap { get; } = new FrameworkOutcomeMap(reason => throw new SkipTestException(reason),
         reason => throw new InconclusiveTestException(reason))
         .Skip<SkipTestException>()
         .Inconclusive<InconclusiveTestException>();
-
-    internal static void EnsureRegistered() =>
-        BDTestSettings.CustomExceptionSettings.RegisterFrameworkOutcomes(OutcomeMap);
 }

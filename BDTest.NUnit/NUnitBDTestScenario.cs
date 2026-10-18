@@ -13,6 +13,12 @@ public interface INUnitBDTest
 /// <summary>Creates NUnit scenario hosts without requiring a fixture base class.</summary>
 public static class NUnitBDTestScenario
 {
+    /// <summary>Creates a host using the run owned by the actual test instance's assembly.</summary>
+    /// <remarks>Complete assembly reporting and call NUnitBDTestAssembly.Dispose after all tests finish.</remarks>
+    public static NUnitBDTestScenario<TContext> For<TContext>(object testInstance) where TContext : class =>
+        For<TContext>(testInstance, NUnitBDTestAssembly.GetRun(
+            (testInstance ?? throw new ArgumentNullException(nameof(testInstance))).GetType().Assembly));
+
     /// <summary>Register these outcomes before starting an explicit run.</summary>
     public static FrameworkOutcomeMap OutcomeMap => NUnitExceptionRegistration.OutcomeMap;
 

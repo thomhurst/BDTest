@@ -1,4 +1,6 @@
 using BDTest.NUnit;
+using BDTest.Helpers;
+using Newtonsoft.Json.Linq;
 using BDTest.Test;
 using BDTest.Tests.Helpers;
 using NUnit.Framework;
@@ -9,10 +11,13 @@ public class SetupTeardownInfo : NUnitBDTestBase<MyTestContext>
 {
     private Scenario? _scenario;
 
+    private JToken ScenarioJson() => Required(JObject.Parse(
+        BDTestJsonHelper.GetTestJsonData(null, TestRun))["Scenarios"])
+        .Single(scenario => (string?)scenario["Guid"] == Required(_scenario).Guid);
+
     [SetUp]
     public void WriteStartupInformation()
     {
-        TestResetHelper.ResetData();
         Console.Out.WriteLine("Some startup info!");
     }
         
@@ -23,7 +28,7 @@ public class SetupTeardownInfo : NUnitBDTestBase<MyTestContext>
             
         Assert.That(Required(Required(_scenario).TearDownOutput).Trim(), Is.EqualTo("Some teardown info!"));
             
-        Assert.That(Required(JsonHelper.GetTestDynamicJsonObject().SelectToken("$.Scenarios[0].TearDownOutput")).ToString().Trim(), Is.EqualTo("Some teardown info!"));
+        Assert.That(Required(ScenarioJson()["TearDownOutput"]).ToString().Trim(), Is.EqualTo("Some teardown info!"));
     }
         
     [Test]
@@ -37,7 +42,7 @@ public class SetupTeardownInfo : NUnitBDTestBase<MyTestContext>
         Assert.That(Required(_scenario.Steps)[0].Output, Is.EqualTo("run a test"));
         Assert.That(_scenario.Steps[1].Output, Is.EqualTo("the results should have set up and tear down information added"));
             
-        Assert.That(Required(JsonHelper.GetTestDynamicJsonObject().SelectToken("$.Scenarios[0].TestStartupInformation")).ToString().Trim(), Is.EqualTo("Some startup info!"));
+        Assert.That(Required(ScenarioJson()["TestStartupInformation"]).ToString().Trim(), Is.EqualTo("Some startup info!"));
     }
     
     [Test]

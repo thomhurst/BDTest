@@ -41,6 +41,20 @@ The core, report-generator, NUnit sample, xUnit and MSTest suites still use
 references and writes TRX results for both runners. See
 [contributing](docs/docs/contributing.md#running-tests) for filters and build commands.
 
+### Assembly configuration and reporting
+
+Built-in adapters now own a frozen run per test assembly. Configure options with
+`[assembly: BDTestConfiguration(typeof(TestConfiguration))]` and implement
+`IBDTestConfiguration.Configure(BDTestOptions options)`. Global `BDTestSettings`
+execution examples in this README apply only to the legacy standalone default run.
+
+Get the run from `NUnitBDTestAssembly`, `XUnitBDTestAssembly`, `MSTestBDTestAssembly`
+or `TUnitBDTestAssembly` using `GetRun(typeof(MyTests).Assembly)`. Pass it explicitly
+to report/utility helpers. After all tests and report exports finish, call the same
+owner's `Dispose(assembly)`; a later lookup creates a fresh run for new fixtures.
+See [assembly runs and migration](docs/docs/configuration/assembly-runs.md) for
+configuration, composition, cleanup hooks and replacement APIs.
+
 ### Report JSON migration
 
 Report serialization uses source-generated System.Text.Json metadata. See
@@ -553,7 +567,8 @@ including builders executed later and scenario outline examples. Each run has a 
 An explicit run also has its own executor. JSON/HTML report helpers and report uploads
 accept a run; for example,
 `BDTestReportServer.SendDataAndGetReportUriAsync(run, serverAddress, descriptor)`.
-Existing overloads and framework adapters continue to use the legacy default run.
+Report overloads without a run still select the legacy standalone default run.
+Built-in adapters use their configured assembly run; pass it explicitly to helpers.
 
 JSON, HTML and uploads use the same report model. All three copy the obsolete
 `BDTestSettings.CustomProperties` at export time, including for explicit runs;
@@ -598,8 +613,9 @@ run after hooks follow `OnAfterStep`. Hooks also run for reached skipped steps a
 retry attempts. Every after hook runs even if another hook fails; an original step
 failure takes precedence over after-hook failures.
 
-`BDTestSettings` still configures the legacy default run used by existing adapters.
-Assembly-owned adapter lifecycles remain a separate part of #797.
+`BDTestSettings` still configures the legacy standalone default run. Built-in
+adapters use [assembly configuration](docs/docs/configuration/assembly-runs.md).
+Removal of the remaining legacy global APIs is tracked in #954.
 
 ### Report date formatting
 

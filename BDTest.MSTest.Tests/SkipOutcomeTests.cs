@@ -11,11 +11,11 @@ namespace BDTest.MSTest.Tests;
 [BDTestRetry(2)]
 public class SkipOutcomeTests : MSTestBDTestBase<object>
 {
-    static SkipOutcomeTests()
+    internal static void Configure(BDTestOptions options)
     {
-        BDTestSettings.GlobalSkipTestRules.Add(s =>
+        options.SkipTestRules.Add(s =>
             s.BdTestBaseClass is SkipOutcomeTests && s.GetScenarioText() == "Global skip probe");
-        BDTestSettings.GlobalSkipStepRules.Add<SkipProbeAttribute>(_ => true);
+        options.SkipStepRules.Add<SkipProbeAttribute>(_ => true);
     }
 
     [TestMethod]
@@ -60,7 +60,7 @@ public class SkipOutcomeTests : MSTestBDTestBase<object>
         }
         finally
         {
-            var scenario = BDTestUtil.GetScenarios().Single(s => s.FrameworkTestId == id);
+            var scenario = BDTestUtil.GetScenarios(TestRun).Single(s => s.FrameworkTestId == id);
             var steps = scenario.Steps ?? throw new InvalidOperationException("Expected recorded scenario steps.");
             if (scenario.Status != status || !steps.Select(s => s.Status).SequenceEqual(stepStatuses)
                 || scenario.RetryCount != 0 || scenario.EndTime < scenario.StartTime || scenario.Exception != null)

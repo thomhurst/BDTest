@@ -13,7 +13,7 @@ public class TestIsolationTests
     [Test, Repeat(3)]
     public async Task ExceptionAssertionsIgnoreRetainedScenariosAndRestoreRegistrations()
     {
-        NUnitBDTestBase<MyTestContext>.SetupNUnitExceptions();
+        LegacyNUnitBDTestBase<MyTestContext>.RegisterLegacyOutcomes();
         var successTypes = BDTestSettings.CustomExceptionSettings.SuccessExceptionTypes.ToArray();
         var inconclusiveTypes = BDTestSettings.CustomExceptionSettings.InconclusiveExceptionTypes.ToArray();
         var retained = await new RetainedScenario().Run();

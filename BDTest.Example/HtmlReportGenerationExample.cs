@@ -1,5 +1,5 @@
 using BDTest.Helpers;
-using NUnit.Framework;
+using BDTest.NUnit;
 
 namespace BDTest.Example;
 
@@ -17,6 +17,7 @@ public class HtmlReportGenerationExample
     {
         outputDirectory ??= Directory.GetCurrentDirectory();
         Directory.CreateDirectory(outputDirectory);
+        var run = NUnitBDTestAssembly.GetRun(typeof(HtmlReportGenerationExample).Assembly);
         var timestamp = DateTime.Now.ToString("yyyyMMdd-HHmmss");
         
         // Generate reports with custom run descriptor
@@ -28,13 +29,13 @@ public class HtmlReportGenerationExample
         };
         
         // Generate JSON report (existing functionality)
-        var jsonData = BDTestJsonHelper.GetTestJsonData(runDescriptor);
+        var jsonData = BDTestJsonHelper.GetTestJsonData(runDescriptor, run);
         var jsonPath = Path.Combine(outputDirectory, $"BDTest-Report-{timestamp}.json");
         File.WriteAllText(jsonPath, jsonData);
         Console.WriteLine($"JSON report generated: {jsonPath}");
         
         // Generate HTML report (new functionality)
-        var htmlData = BDTestHtmlHelper.GetTestHtmlReport(runDescriptor);
+        var htmlData = BDTestHtmlHelper.GetTestHtmlReport(runDescriptor, run);
         var htmlPath = Path.Combine(outputDirectory, $"BDTest-Report-{timestamp}.html");
         File.WriteAllText(htmlPath, htmlData);
         Console.WriteLine($"HTML report generated: {htmlPath}");
@@ -49,11 +50,13 @@ public class HtmlReportGenerationExample
     {
         var outputDirectory = Directory.GetCurrentDirectory();
         
-        // Generate reports with default settings
-        var jsonData = BDTestJsonHelper.GetTestJsonData();
+        var run = NUnitBDTestAssembly.GetRun(typeof(HtmlReportGenerationExample).Assembly);
+
+        // Generate reports with an empty descriptor
+        var jsonData = BDTestJsonHelper.GetTestJsonData(null, run);
         File.WriteAllText(Path.Combine(outputDirectory, "BDTest-Report.json"), jsonData);
         
-        var htmlData = BDTestHtmlHelper.GetTestHtmlReport();
+        var htmlData = BDTestHtmlHelper.GetTestHtmlReport(null, run);
         File.WriteAllText(Path.Combine(outputDirectory, "BDTest-Report.html"), htmlData);
     }
 }

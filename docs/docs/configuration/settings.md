@@ -5,20 +5,9 @@ description: Reference for BDTestSettings, the global configuration for BDTest.
 
 # Settings
 
-`BDTest.Settings.BDTestSettings` is a static class with process-wide configuration for the default run, which the framework adapters use. [Explicit runs](../advanced/explicit-runs.md#run-options) use `BDTestOptions` for execution configuration. Legacy report metadata and custom properties still apply to all report exports. Set it once, before tests run, for example in TUnit's `[Before(HookType.Assembly)]`, NUnit's `[SetUpFixture]` `[OneTimeSetUp]`, MSTest's `[AssemblyInitialize]` or a module initializer.
+Built-in adapters use [assembly configuration](assembly-runs.md) with frozen `BDTestOptions`. Configure rules, hooks and converters there. Explicit runs also use [run options](../advanced/explicit-runs.md#run-options).
 
-```csharp
-public class BDTestSetup
-{
-    [Before(HookType.Assembly)]
-    public static void Configure()
-    {
-        BDTestSettings.RegisterCustomStringConverter(new MoneyStringConverter());
-        BDTestSettings.GlobalRetryTestRules.Add(exception => exception is HttpRequestException, 2);
-        BDTestSettings.AfterStep += LogFailedSteps;
-    }
-}
-```
+The reference below describes **legacy standalone/default-run compatibility only**. `BDTest.Settings.BDTestSettings` execution settings do not configure NUnit, xUnit, MSTest or TUnit assembly runs. Legacy report metadata and custom properties still apply at export time. These static APIs will be removed by [#954](https://github.com/thomhurst/BDTest/issues/954).
 
 ## Reference
 
@@ -49,7 +38,8 @@ Settings in older wiki pages, such as `PersistentResultsDirectory`, `ReportFolde
 ## Debugging tests
 
 ```csharp
-BDTestSettings.Debug.ShouldSkipWhenStep = true;
+// Inside IBDTestConfiguration.Configure(BDTestOptions options):
+options.Debug.ShouldSkipWhenStep = true;
 ```
 
 When `true`, BDTest does not execute `When` steps (including `And` and `But` steps in the `When` phase). Use it to find tests that do not test what you think they test:

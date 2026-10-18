@@ -8,6 +8,11 @@ namespace BDTest.MSTest;
 public abstract class MSTestBDTestBase<TContext> : AbstractContextBDTestBase<TContext>, IBDTestMSTestTest
     where TContext : class
 {
+    private BDTestRun? _assemblyRun;
+
+    /// <summary>The configured run owned by this fixture's assembly, or an explicit override.</summary>
+    public override BDTestRun TestRun => _assemblyRun ??= MSTestBDTestAssembly.GetRun(GetType().Assembly);
+
     private TestContext? _testContext;
 
     public TestContext? TestContext
@@ -35,7 +40,6 @@ public abstract class MSTestBDTestBase<TContext> : AbstractContextBDTestBase<TCo
             MSTestBDTestLifecycle.Initialize(this, TestContext);
             return;
         }
-        MSTestExceptionRegistration.EnsureRegistered();
         BeginTest(Guid.NewGuid().ToString("N"));
     }
 
@@ -48,12 +52,9 @@ public abstract class MSTestBDTestBase<TContext> : AbstractContextBDTestBase<TCo
     }
 }
 
-// Shared by every generic context type; all registration is owned by the core.
+// Immutable declaration shared by every context type; registrations belong to each run.
 internal static class MSTestExceptionRegistration
 {
     internal static FrameworkOutcomeMap OutcomeMap { get; } = new FrameworkOutcomeMap(reason => Assert.Inconclusive(reason))
         .Inconclusive<AssertInconclusiveException>();
-
-    internal static void EnsureRegistered() =>
-        BDTestSettings.CustomExceptionSettings.RegisterFrameworkOutcomes(OutcomeMap);
 }

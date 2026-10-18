@@ -5,16 +5,16 @@ description: The ways to get results out of BDTest - console output, a self-cont
 
 # Reports overview
 
-BDTest collects every scenario that runs in the test process: stories, scenario text, steps, statuses, timings, output, exceptions, tags, retry history and tests that were built but never run. You choose how to publish that data.
+BDTest collects scenarios in their owning run: stories, scenario text, steps, statuses, timings, output, exceptions, tags, retry history and tests that were built but never run. You choose how to publish that data.
 
 | Output | How | Best for |
 | --- | --- | --- |
 | Console | Automatic | Reading a single test's result in your IDE or CI log. |
-| [HTML report](html-report.md) | `BDTestHtmlHelper.GetTestHtmlReport()` | One self-contained file to attach to a build or email. |
-| [JSON data](json-data.md) | `BDTestJsonHelper.GetTestJsonData()` | Your own tooling, archives, or uploading later. |
+| [HTML report](html-report.md) | `BDTestHtmlHelper.GetTestHtmlReport(descriptor, run)` | One self-contained file to attach to a build or email. |
+| [JSON data](json-data.md) | `BDTestJsonHelper.GetTestJsonData(descriptor, run)` | Your own tooling, archives, or uploading later. |
 | [Report server](../report-server/overview.md) | `BDTestReportServer.SendDataAndGetReportUriAsync(...)` | Sharing links, comparing runs, trends and flakiness. |
 
-All three helpers read from the same in-process store, so call them **after all tests have finished**, typically in an assembly-level teardown. See the "Reports after the run" section of each [framework page](../frameworks/overview.md).
+Pass the [adapter assembly run](../configuration/assembly-runs.md) to each helper, and call them **after all tests have finished**, typically in an assembly-level teardown. See the "Reports after the run" section of each [framework page](../frameworks/overview.md).
 
 ## Run descriptors
 

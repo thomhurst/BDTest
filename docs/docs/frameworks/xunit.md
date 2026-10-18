@@ -5,6 +5,9 @@ description: Use BDTest with xUnit v3 through composition or an optional base cl
 
 # xUnit
 
+The adapter uses a [configured assembly run](../configuration/assembly-runs.md). Configure `BDTestOptions` with `[assembly: BDTestConfiguration(typeof(TestConfiguration))]`; `BDTestSettings` execution settings no longer affect this adapter. Use `XUnitBDTestAssembly.GetRun(typeof(MyTests).Assembly)` for reports and call `XUnitBDTestAssembly.Dispose(assembly)` after all tests and exports finish. Explicit-run overrides remain supported.
+
+
 ```bash
 dotnet add package BDTest.xUnit
 ```
@@ -106,8 +109,7 @@ teardown, including constructor, setup, body, and teardown failures. You do not 
 `BeginTest`, `EndTest`, or inherit a BDTest class. Registering the fixture does not
 create or configure a run. It can complete hosts from several explicit runs in one
 assembly; each run retains its own contexts, output, options, and reports. Runs must
-outlive all test cleanup. An assembly fixture is a convenient owner; automatic
-assembly run configuration is separate from this registration.
+outlive all test cleanup. An assembly fixture is a convenient owner for explicit runs. Alternatively, `XUnitBDTestScenario.For<TContext>(this)` selects the configured assembly run; retain the `XUnitBDTestLifecycle` registration.
 
 Create only one composition host per native test and explicit run, regardless of
 context type. A second call for the same test and run throws before changing
@@ -225,8 +227,13 @@ public sealed class BDTestReports : IAsyncDisposable
 {
     public async ValueTask DisposeAsync()
     {
-        await File.WriteAllTextAsync("BDTest-Report.html", BDTestHtmlHelper.GetTestHtmlReport());
-        // or: await BDTestReportServer.SendDataAndGetReportUriAsync(...)
+        var assembly = typeof(BDTestReports).Assembly;
+        try
+        {
+            var run = BDTest.xUnit.XUnitBDTestAssembly.GetRun(assembly);
+            await File.WriteAllTextAsync("BDTest-Report.html", BDTestHtmlHelper.GetTestHtmlReport(null, run));
+        }
+        finally { BDTest.xUnit.XUnitBDTestAssembly.Dispose(assembly); }
     }
 }
 ```

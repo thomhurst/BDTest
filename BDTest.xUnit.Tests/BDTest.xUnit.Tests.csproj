@@ -24,6 +24,7 @@
     <ProjectReference Include="..\BDTest.SourceGenerator\BDTest.SourceGenerator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="..\TestUtilities\AssemblyRunContract.cs" Link="Conformance\AssemblyRunContract.cs" />
     <Compile Include="..\TestUtilities\AdapterConformanceTests.cs" Link="Conformance\AdapterConformanceTests.cs" />
     <Compile Include="..\TestUtilities\MethodIdentityContract.cs" Link="Helpers\MethodIdentityContract.cs" />
   </ItemGroup>

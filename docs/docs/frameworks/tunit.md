@@ -5,6 +5,9 @@ description: Use BDTest with TUnit through composition or TUnitBDTestBase<TConte
 
 # TUnit
 
+The adapter uses a [configured assembly run](../configuration/assembly-runs.md). Configure `BDTestOptions` with `[assembly: BDTestConfiguration(typeof(TestConfiguration))]`; `BDTestSettings` execution settings no longer affect this adapter. Use `TUnitBDTestAssembly.GetRun(typeof(MyTests).Assembly)` for reports and call `TUnitBDTestAssembly.Dispose(assembly)` after all tests and exports finish. Explicit-run overrides remain supported.
+
+
 TUnit is the recommended framework for BDTest, and the one used in the examples throughout this documentation.
 
 ```bash
@@ -73,7 +76,7 @@ public class BasketTests : CompanyTestBase, IBDTestTUnitTest
 }
 ```
 
-Choose the owning [explicit run](../advanced/explicit-runs.md) when creating the host. Register `TUnitBDTestLifecycle.OutcomeMap` before starting the run so framework exceptions and whole-scenario skips reach TUnit. The adapter never disposes your run. A run can instead be shared by an assembly or suite; its owner must wait for every test's completion before reporting and disposing it. Assembly-wide configuration and removal of legacy global settings are tracked by [#844](https://github.com/thomhurst/BDTest/issues/844).
+Choose the owning [explicit run](../advanced/explicit-runs.md) when creating the host. Register `TUnitBDTestLifecycle.OutcomeMap` before starting the run so framework exceptions and whole-scenario skips reach TUnit. The adapter never disposes your run. A run can instead be shared by an assembly or suite; its owner must wait for every test's completion before reporting and disposing it. Alternatively, `TUnitBDTestScenario.For<TContext>(this)` uses the configured assembly run and its outcome map; retain `IBDTestTUnitTest` registration and dispose through `TUnitBDTestAssembly` after all tests finish.
 
 TUnit supplies the actual test method and its unique execution ID, including data rows and repeats. Story, scenario text, tags, and retry attributes come from the owning instance and method. Read `_bdt.Context` inside steps so retries see the replacement context. Configure step and scenario callbacks on `BDTestOptions` when using composition; virtual instance hooks remain available on the inheritance API.
 
@@ -118,7 +121,7 @@ Contexts may have constructor dependencies: override `CreateContextAsync(Context
 ## What the adapter does
 
 - **Execution ID:** `TestContext.Current.Id`.
-- **Exceptions:** registers `SkipTestException` (from `Skip.Test(...)`) as skip and `InconclusiveTestException` as inconclusive, in a class-level `[Before]` hook.
+- **Exceptions:** registers `SkipTestException` (from `Skip.Test(...)`) as skip and `InconclusiveTestException` as inconclusive, on the frozen assembly run before tests start.
 - **Opt-in:** `IBDTestTUnitTest.BDTestHost` selects the host and its run. `TUnitBDTestBase<TContext>` implements this interface automatically.
 - **Setup:** a global `[BeforeEvery(HookType.Test, Order = int.MinValue)]` hook calls `BeginTest` and exports BDTest's `AsyncLocal` values before instance setup.
 - **Teardown:** a global `[AfterEvery(HookType.Test, Order = int.MaxValue - 1)]` hook awaits context disposal and completes the same host after instance teardown, including setup/body/teardown failures. Completion also clears output when no scenario runs.
@@ -140,7 +143,13 @@ public class BDTestReports
     [After(HookType.Assembly)]
     public static async Task AfterAllTests()
     {
-        await File.WriteAllTextAsync("BDTest-Report.html", BDTestHtmlHelper.GetTestHtmlReport());
+        var assembly = typeof(BDTestReports).Assembly;
+        try
+        {
+            var run = BDTest.TUnit.TUnitBDTestAssembly.GetRun(assembly);
+            await File.WriteAllTextAsync("BDTest-Report.html", BDTestHtmlHelper.GetTestHtmlReport(null, run));
+        }
+        finally { BDTest.TUnit.TUnitBDTestAssembly.Dispose(assembly); }
     }
 }
 ```

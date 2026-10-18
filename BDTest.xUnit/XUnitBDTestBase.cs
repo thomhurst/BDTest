@@ -11,6 +11,11 @@ namespace BDTest.xUnit;
 public abstract class XUnitBDTestBase<TContext> : AbstractContextBDTestBase<TContext>, IDisposable, IAsyncLifetime
     where TContext : class
 {
+    private BDTestRun? _assemblyRun;
+
+    /// <summary>The configured run owned by this fixture's assembly, or an explicit override.</summary>
+    public override BDTestRun TestRun => _assemblyRun ??= XUnitBDTestAssembly.GetRun(GetType().Assembly);
+
     private readonly string _frameworkTestId;
     private readonly XUnitTestExecution _execution;
 
@@ -18,7 +23,6 @@ public abstract class XUnitBDTestBase<TContext> : AbstractContextBDTestBase<TCon
 
     protected XUnitBDTestBase()
     {
-        XUnitExceptionRegistration.EnsureRegistered();
         _frameworkTestId = TestContext.Current.Test?.UniqueID
             ?? throw new InvalidOperationException("An xUnit test must be running to create a BDTest adapter.");
         _execution = new XUnitTestExecution(this,
@@ -83,12 +87,9 @@ public abstract class XUnitBDTestBase<TContext> : AbstractContextBDTestBase<TCon
     }
 }
 
-// Shared by every generic context type; all registration is owned by the core.
+// Immutable declaration shared by every context type; registrations belong to each run.
 internal static class XUnitExceptionRegistration
 {
     internal static FrameworkOutcomeMap OutcomeMap { get; } = new FrameworkOutcomeMap(reason => Assert.Skip(reason))
         .Skip<SkipException>();
-
-    internal static void EnsureRegistered() =>
-        BDTestSettings.CustomExceptionSettings.RegisterFrameworkOutcomes(OutcomeMap);
 }

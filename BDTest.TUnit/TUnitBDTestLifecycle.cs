@@ -34,7 +34,6 @@ public static class TUnitBDTestLifecycle
 
     internal static void Begin(BDTestBase host, TestContext? context)
     {
-        TUnitExceptionRegistration.EnsureRegistered();
         host.BeginTest(context?.Id ?? Guid.NewGuid().ToString("N"),
             context?.Metadata.TestDetails.MethodMetadata.GetReflectionInfo());
         context?.AddAsyncLocalValues();

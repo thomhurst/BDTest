@@ -9,6 +9,11 @@ namespace BDTest.NUnit;
 [TestFixture, BDTestFixture]
 public abstract class NUnitBDTestBase<TContext> : AbstractContextBDTestBase<TContext>, INUnitBDTest, INUnitBDTestLifecycle where TContext : class
 {
+    private BDTestRun? _assemblyRun;
+
+    /// <summary>The configured run owned by this fixture's assembly, or an explicit override.</summary>
+    public override BDTestRun TestRun => _assemblyRun ??= NUnitBDTestAssembly.GetRun(GetType().Assembly);
+
     private readonly NUnitTestLifecycle _lifecycle;
 
     protected NUnitBDTestBase() => _lifecycle = new NUnitTestLifecycle(BeginTest, Complete);
@@ -16,12 +21,6 @@ public abstract class NUnitBDTestBase<TContext> : AbstractContextBDTestBase<TCon
     BDTestBase INUnitBDTest.BDTestHost => this;
     object INUnitBDTestLifecycle.TestInstance => this;
     NUnitTestLifecycle INUnitBDTestLifecycle.Lifecycle => _lifecycle;
-
-    [OneTimeSetUp]
-    public static void SetupNUnitExceptions()
-    {
-        NUnitExceptionRegistration.EnsureRegistered();
-    }
 
     /// <summary>The reusable outcome declaration. Register it on options for explicit runs.</summary>
     public static FrameworkOutcomeMap OutcomeMap => NUnitExceptionRegistration.OutcomeMap;
@@ -87,14 +86,11 @@ public abstract class NUnitBDTestBase<TContext> : AbstractContextBDTestBase<TCon
     }
 }
 
-// Shared by every generic context type; all registration is owned by the core.
+// Immutable declaration shared by every context type; registrations belong to each run.
 internal static class NUnitExceptionRegistration
 {
     internal static FrameworkOutcomeMap OutcomeMap { get; } = new FrameworkOutcomeMap(reason => Assert.Ignore(reason), reason => Assert.Inconclusive(reason))
         .Success<SuccessException>()
         .Skip<IgnoreException>()
         .Inconclusive<InconclusiveException>();
-
-    internal static void EnsureRegistered() =>
-        BDTestSettings.CustomExceptionSettings.RegisterFrameworkOutcomes(OutcomeMap);
 }

@@ -5,6 +5,9 @@ description: Run setup and cleanup for each scenario attempt with typed context,
 
 # Scenario hooks
 
+For built-in adapters, configure `BDTestOptions` through [assembly configuration](../configuration/assembly-runs.md). Examples using `BDTestSettings` below apply only to the legacy standalone default run; use the corresponding option registrations for adapter-owned runs.
+
+
 Scenario hooks surround one attempt, including its [step hooks](step-hooks.md). Use them for per-scenario data, browser traces, telemetry and cleanup that must run after failures. All adapters use the same execution path.
 
 ## Per-test hooks

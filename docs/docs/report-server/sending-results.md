@@ -5,6 +5,9 @@ description: Upload test results to a BDTest report server at the end of a test 
 
 # Sending results
 
+For built-in adapters, pass the [configured assembly run](../configuration/assembly-runs.md) to report/utility helpers. Overloads without a run still select the legacy standalone store and do not contain adapter-owned scenarios. Export all reports before disposing through the assembly owner.
+
+
 At the end of the test run, call `BDTestReportServer.SendDataAndGetReportUriAsync`. By default it uploads scenarios from the shared default run; overloads accepting a `BDTestRun` upload only that run. It returns the URL of the new report.
 
 Only scenarios run through BDTest (`Given(...).When(...).Then(...)`) are sent.
@@ -24,17 +27,23 @@ public class SendResultsToReportServer
             "X-BDTest-Upload-Key",
             Environment.GetEnvironmentVariable("BDTEST_REPORT_UPLOAD_API_KEY"));
 
-        var reportUri = await BDTestReportServer.SendDataAndGetReportUriAsync(
-            new Uri("https://reports.example.com"),
-            new BDTestRunDescriptor
-            {
-                Tag = "API acceptance tests",
-                BranchName = Environment.GetEnvironmentVariable("BRANCH_NAME"),
-                Environment = "Pre-production",
-            },
-            client);
+        var assembly = typeof(SendResultsToReportServer).Assembly;
+        try
+        {
+            var run = BDTest.TUnit.TUnitBDTestAssembly.GetRun(assembly);
+            var reportUri = await BDTestReportServer.SendDataAndGetReportUriAsync(
+                new Uri("https://reports.example.com"),
+                new BDTestRunDescriptor
+                {
+                    Tag = "API acceptance tests",
+                    BranchName = Environment.GetEnvironmentVariable("BRANCH_NAME"),
+                    Environment = "Pre-production",
+                },
+                client, run);
 
-        Console.WriteLine($"BDTest report: {reportUri}");
+            Console.WriteLine($"BDTest report: {reportUri}");
+        }
+        finally { BDTest.TUnit.TUnitBDTestAssembly.Dispose(assembly); }
     }
 }
 ```

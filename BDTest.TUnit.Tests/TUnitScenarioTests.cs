@@ -33,7 +33,7 @@ public class TUnitScenarioTests : TUnitBDTestBase<TUnitContext>
         }
         catch (SkipTestException)
         {
-            var scenario = BDTestUtil.GetScenarios().Single(s => s.FrameworkTestId == testId);
+            var scenario = BDTestUtil.GetScenarios(TestRun).Single(s => s.FrameworkTestId == testId);
 
             await Assert.That(scenario.Status).IsEqualTo(Status.Skipped);
         }
@@ -55,7 +55,7 @@ public class TUnitScenarioTests : TUnitBDTestBase<TUnitContext>
         }
         catch (InconclusiveTestException exception)
         {
-            var scenario = BDTestUtil.GetScenarios().Single(s => s.FrameworkTestId == testId);
+            var scenario = BDTestUtil.GetScenarios(TestRun).Single(s => s.FrameworkTestId == testId);
 
             await Assert.That(exception.Message).IsEqualTo("Inconclusive scenario");
             await Assert.That(scenario.Status).IsEqualTo(Status.Inconclusive);
@@ -83,7 +83,7 @@ public class TUnitScenarioTests : TUnitBDTestBase<TUnitContext>
         }
         catch (InvalidOperationException exception)
         {
-            var scenario = BDTestUtil.GetScenarios().Single(s => s.FrameworkTestId == testId);
+            var scenario = BDTestUtil.GetScenarios(TestRun).Single(s => s.FrameworkTestId == testId);
 
             await Assert.That(ReferenceEquals(exception, failure)).IsTrue();
             await Assert.That(scenario.Status).IsEqualTo(Status.Failed);
