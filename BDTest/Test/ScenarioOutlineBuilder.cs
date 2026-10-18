@@ -7,6 +7,7 @@ using BDTest.Extensions;
 using BDTest.Helpers;
 using BDTest.Maps;
 using BDTest.Output;
+using BDTest.Settings;
 
 namespace BDTest.Test;
 
@@ -64,6 +65,17 @@ public sealed class ScenarioOutlineBuilder<TExample> : BuildableTest
         return runOnThreadPool ? Task.Run(() => ExecuteAsync(outline)) : ExecuteAsync(outline);
     }
 
+    private static Status ClassifyOutcome(Exception exception)
+    {
+        if (exception is NotImplementedException) return Status.NotImplemented;
+        var settings = BDTestSettings.CustomExceptionSettings;
+        var exceptionType = exception.GetType();
+        if (settings.SuccessExceptionTypes.Contains(exceptionType)) return Status.Passed;
+        if (settings.SkipExceptionTypes.Contains(exceptionType)) return Status.Skipped;
+        if (settings.InconclusiveExceptionTypes.Contains(exceptionType)) return Status.Inconclusive;
+        return Status.Failed;
+    }
+
     private async Task<Scenario> ExecuteAsync(Scenario outline)
     {
         outline.StartTime = DateTime.UtcNow;
@@ -91,7 +103,7 @@ public sealed class ScenarioOutlineBuilder<TExample> : BuildableTest
                         row = new Scenario(new List<Step>(), this, outline, _values[index])
                         {
                             StartTime = DateTime.UtcNow, EndTime = DateTime.UtcNow,
-                            Status = Status.Failed, ExecutionException = new ExceptionWrapper(exception)
+                            Status = ClassifyOutcome(exception), ExecutionException = new ExceptionWrapper(exception)
                         };
                         row.ReleaseRuntimeReferences();
                     }

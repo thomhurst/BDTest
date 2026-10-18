@@ -202,14 +202,14 @@ public static class BDTestHtmlHelper
             html.AppendLine($"<h4>Examples</h4><table class=\"examples\" id=\"examples-{scenario.Guid}\"><thead><tr><th>Example</th>");
             var columns = scenario.Examples.SelectMany(row => row.ExampleValues.Keys).Distinct().ToArray();
             foreach (var column in columns) html.AppendLine($"<th>{EscapeHtml(column)}</th>");
-            html.AppendLine("<th>Status</th><th>Duration</th><th>Details</th></tr></thead><tbody>");
+            html.AppendLine("<th>Status</th><th>Retries</th><th>Duration</th><th>Details</th></tr></thead><tbody>");
             for (var index = 0; index < scenario.Examples.Count; index++)
             {
                 var row = scenario.Examples[index];
                 html.AppendLine($"<tr class=\"example-row\"><td>{index + 1}</td>");
                 foreach (var column in columns)
                     html.AppendLine($"<td>{EscapeHtml(row.ExampleValues.TryGetValue(column, out var value) ? value : "")}</td>");
-                html.AppendLine($"<td>{row.Status}</td><td>{row.TimeTaken}</td><td>");
+                html.AppendLine($"<td>{row.Status}</td><td>{row.RetryCount}</td><td>{row.TimeTaken}</td><td>");
                 html.AppendLine("<details><summary>Steps and output</summary>");
                 html.AppendLine(GenerateScenarioDetails(row));
                 if (row.Steps.Count == 0 && row.Exception != null)

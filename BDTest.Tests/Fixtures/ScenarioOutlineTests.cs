@@ -104,6 +104,13 @@ public class ScenarioOutlineTests : AbstractContextBDTestBase<ScenarioOutlineTes
         Assert.That(outline.Examples.Select(row => row.RetryCount), Is.EqualTo(new[] { 1, 0 }));
         Assert.That(outline.Examples.All(row => row.Status == Status.Passed), Is.True);
         Assert.That(_contexts.Distinct().Count(), Is.EqualTo(3));
+        var html = BDTestHtmlHelper.GetTestHtmlReport();
+        var table = System.Text.RegularExpressions.Regex.Match(html,
+            $"<table class=\"examples\" id=\"examples-{outline.Guid}\">.*?</table>",
+            System.Text.RegularExpressions.RegexOptions.Singleline).Value;
+        Assert.That(table, Does.Contain("<th>Retries</th>"));
+        Assert.That(table, Does.Contain("<td>Passed</td><td>1</td>"));
+        Assert.That(table, Does.Contain("<td>Passed</td><td>0</td>"));
     }
 
     [Test]
@@ -116,6 +123,39 @@ public class ScenarioOutlineTests : AbstractContextBDTestBase<ScenarioOutlineTes
         Assert.That(outline.Examples[0].Exception.Message, Is.EqualTo("factory failed"));
         Assert.That(outline.Examples.Select(row => row.Guid).Distinct().Count(), Is.EqualTo(2));
         Assert.That(BDTestUtil.GetNotRunScenarios().Where(x => x.TestId == _executionId), Is.Empty);
+    }
+
+    [TestCase("success", Status.Passed, false)]
+    [TestCase("skipped", Status.Skipped, false)]
+    [TestCase("inconclusive", Status.Inconclusive, false)]
+    [TestCase("not-implemented", Status.NotImplemented, false)]
+    [TestCase("success", Status.Passed, true)]
+    [TestCase("skipped", Status.Skipped, true)]
+    [TestCase("inconclusive", Status.Inconclusive, true)]
+    [TestCase("not-implemented", Status.NotImplemented, true)]
+    public async Task Factory_and_context_outcomes_preserve_framework_classification(string outcome, Status rowStatus, bool duringContext)
+    {
+        var contextCount = 0;
+        if (duringContext)
+            ContextAmendment = _ => { if (++contextCount == 1) Outcome(outcome); };
+        Exception thrown = null;
+        try
+        {
+            await ScenarioOutline("Factory outcomes", new[] { new { Value = 1 }, new { Value = 2 } }, row =>
+            {
+                if (!duringContext && row.Value == 1) Outcome(outcome);
+                return Given(() => Record(row.Value)).When(() => NoOp()).Then(() => NoOp());
+            });
+        }
+        catch (Exception exception) { thrown = exception; }
+
+        var outline = BDTestUtil.GetScenarios().Single(x => x.FrameworkTestId == _executionId);
+        Assert.That(outline.Examples.Select(row => row.Status), Is.EqualTo(new[] { rowStatus, Status.Passed }));
+        Assert.That(_visited, Is.EqualTo(new[] { 2 }));
+        var expected = rowStatus == Status.Skipped ? Status.Passed : rowStatus;
+        Assert.That(outline.Status, Is.EqualTo(expected));
+        if (expected == Status.Passed) Assert.That(thrown, Is.Null);
+        else Assert.That(thrown, Is.Not.Null);
     }
 
     private RunnableStepBuilder BuildRow(int value)
