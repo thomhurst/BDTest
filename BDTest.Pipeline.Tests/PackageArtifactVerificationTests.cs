@@ -6,8 +6,8 @@ namespace BDTest.Pipeline.Tests;
 
 public class PackageArtifactVerificationTests
 {
-    private string _packageDirectory;
-    private string _scriptPath;
+    private string _packageDirectory = null!;
+    private string _scriptPath = null!;
 
     [SetUp]
     public void SetUp()
@@ -20,7 +20,11 @@ public class PackageArtifactVerificationTests
             directory = directory.Parent;
         }
 
-        Assert.That(directory, Is.Not.Null, "Cannot locate the repository's artifact verification script.");
+        if (directory is null)
+        {
+            throw new InvalidOperationException("Cannot locate the repository's artifact verification script.");
+        }
+
         _scriptPath = Path.Combine(directory.FullName, "scripts", "Test-PackageArtifacts.ps1");
 
         foreach (var id in new[] { "BDTest", "BDTest.NUnit", "BDTest.xUnit", "BDTest.MSTest", "BDTest.TUnit", "BDTest.Razor.Reports" })
@@ -81,7 +85,8 @@ public class PackageArtifactVerificationTests
             startInfo.ArgumentList.Add(argument);
         }
 
-        using var process = Process.Start(startInfo);
+        using var process = Process.Start(startInfo)
+            ?? throw new InvalidOperationException("Could not start the artifact verification script.");
         var output = process.StandardOutput.ReadToEndAsync();
         var error = process.StandardError.ReadToEndAsync();
         await process.WaitForExitAsync();

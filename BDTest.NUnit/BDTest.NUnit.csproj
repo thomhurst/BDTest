@@ -6,7 +6,6 @@
     <StartupObject />
     <NuspecFile>BDTest.NUnit.nuspec</NuspecFile>
     <NuspecProperties>version=$(Version)</NuspecProperties>
-    <LangVersion>latest</LangVersion>
     <TargetFramework>net8.0</TargetFramework>
     <SignAssembly>True</SignAssembly>
     <AssemblyOriginatorKeyFile>..\StrongNameKeyPair.snk</AssemblyOriginatorKeyFile>
