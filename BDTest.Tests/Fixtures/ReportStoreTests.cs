@@ -18,6 +18,64 @@ namespace BDTest.Tests.Fixtures;
 
 public class ReportStoreTests
 {
+    [TestCase("none")]
+    [TestCase("legacy")]
+    [TestCase("report")]
+    public async Task Oversized_memory_store_writes_fail_without_removing_existing_reports(string configuration)
+    {
+        using var hostCache = new MemoryCache(new MemoryCacheOptions());
+        using var services = Services(null);
+        var options = services.GetRequiredService<BDTestReportServerOptions>();
+        options.ReportCacheSizeLimitBytes = 8;
+        using var store = new MemoryCacheBdTestDataStore(hostCache, options);
+        if (configuration == "legacy") options.DataStore = store;
+        if (configuration == "report") options.ReportStore = store;
+        using var original = Bytes("original");
+        await store.WriteAsync("run", original, default);
+
+        foreach (var id in new[] { "new", "run" })
+        {
+            using var oversized = Bytes(new string('x', 81921));
+            await Assert.CatchAsync<InvalidOperationException>(async () =>
+                await store.WriteAsync(id, oversized, default));
+            Assert.That(oversized.CanRead, Is.True);
+        }
+
+        Assert.That(await store.OpenReadAsync("new", default), Is.Null);
+        await using var retained = await store.OpenReadAsync("run", default);
+        using var reader = new StreamReader(retained);
+        Assert.That(await reader.ReadToEndAsync(), Is.EqualTo("original"));
+    }
+
+    [TestCase(false)]
+    [TestCase(true)]
+    public async Task Raw_memory_reads_extend_retention_for_models_and_bytes(bool bytes)
+    {
+        using var hostCache = new MemoryCache(new MemoryCacheOptions());
+        using var services = Services(null);
+        var options = services.GetRequiredService<BDTestReportServerOptions>();
+        options.ReportCacheRetention = TimeSpan.FromMilliseconds(500);
+        using var store = new MemoryCacheBdTestDataStore(hostCache, options);
+        foreach (var id in new[] { "active", "idle" })
+        {
+            var model = new BDTestOutputModel { Id = id };
+            if (bytes)
+            {
+                using var input = Bytes(BDTestJsonHelper.Serialize(model));
+                await store.WriteAsync(id, input, default);
+            }
+            else await store.StoreTestData(id, model);
+        }
+
+        options.ReportCacheRetention = TimeSpan.FromHours(1);
+        await using (var download = await store.OpenReadAsync("active", default))
+            Assert.That(download, Is.Not.Null);
+        await Task.Delay(1000);
+
+        Assert.That(await store.GetTestData("active", default), Is.Not.Null);
+        Assert.That(await store.GetTestData("idle", default), Is.Null);
+    }
+
     [Test]
     public async Task Memory_store_preserves_bytes_and_leaves_input_open()
     {

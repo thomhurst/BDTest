@@ -31,6 +31,7 @@ Both values must be positive; otherwise the setter throws `ArgumentOutOfRangeExc
 ### Retention and eviction
 
 - Uploads and ordinary single-report reads cache the report and restart its retention.
+- Raw JSON downloads restart retention in cache-only hosting. With persistent stores, downloads stream directly from storage.
 - When space is needed, expired and least recently used reports are evicted in batches before the new report is admitted.
 - Bulk comparisons can use cached reports, but they do not add reports to the cache or restart retention.
 
@@ -39,6 +40,8 @@ Both values must be positive; otherwise the setter throws `ArgumentOutOfRangeExc
 **With persistent stores,** evicted or expired reports are loaded again on demand. A report larger than the whole budget bypasses the cache: uploads still store it, and reads still return it.
 
 **Cache-only hosting** is supported, but retention is best effort. Eviction, expiry or a restart permanently removes report details. An ordinary read can extend retention but cannot prevent capacity eviction. Summaries can stay in the list after their details are gone; those links show a missing report. Uploads larger than the budget return HTTP 413 without adding a summary or calling the data receiver. Increase the budget or add persistent storage to accept them.
+
+When using `MemoryCacheBdTestDataStore` through `IReportStore`, `WriteAsync` rejects reports larger than the cache budget with `InvalidOperationException`, even when other stores are configured. A rejected write preserves any existing report with the same ID.
 
 ## Upload limits
 

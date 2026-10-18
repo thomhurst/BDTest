@@ -92,14 +92,14 @@ public class MemoryCacheBdTestDataStore : IMemoryCacheBdTestDataStore, IDisposab
         return Task.CompletedTask;
     }
 
-    private void CacheReport(string id, object data, long size)
+    private void CacheReport(string id, object data, long size, bool allowOversizedBypass = true)
     {
         lock (_reportCacheLock)
         {
             var cache = _testRecordCache.Value;
             if (size > _reportCacheCapacity)
             {
-                if (_options.DataStore == null && _options.ReportStore == null)
+                if (!allowOversizedBypass || (_options.DataStore == null && _options.ReportStore == null))
                 {
                     throw new ReportTooLargeForCacheException();
                 }
@@ -198,7 +198,13 @@ public class MemoryCacheBdTestDataStore : IMemoryCacheBdTestDataStore, IDisposab
     {
         cancellationToken.ThrowIfCancellationRequested();
         object value;
-        lock (_reportCacheLock) value = _testRecordCache.Value.Get<CachedReport>(reportId)?.Value;
+        lock (_reportCacheLock)
+        {
+            var cache = _testRecordCache.Value;
+            var report = cache.Get<CachedReport>(reportId);
+            if (report != null) SetCacheEntry(cache, reportId, report);
+            value = report?.Value;
+        }
         if (value is byte[] bytes) return new MemoryStream(bytes, writable: false);
         if (value is not BDTestOutputModel model) return null;
         var stream = new MemoryStream();
@@ -222,13 +228,12 @@ public class MemoryCacheBdTestDataStore : IMemoryCacheBdTestDataStore, IDisposab
             cancellationToken.ThrowIfCancellationRequested();
             if (buffer.Length + count > _options.ReportCacheSizeLimitBytes)
             {
-                CacheReport(reportId, Array.Empty<byte>(), buffer.Length + count);
-                return;
+                throw new ReportTooLargeForCacheException();
             }
             await buffer.WriteAsync(chunk.AsMemory(0, count), cancellationToken);
         }
         cancellationToken.ThrowIfCancellationRequested();
-        CacheReport(reportId, buffer.ToArray(), buffer.Length);
+        CacheReport(reportId, buffer.ToArray(), buffer.Length, allowOversizedBypass: false);
     }
 
     Task<bool> IReportStore.DeleteAsync(string reportId, CancellationToken cancellationToken)
