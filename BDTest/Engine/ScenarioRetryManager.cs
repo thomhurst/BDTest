@@ -49,7 +49,7 @@ internal class ScenarioRetryManager : IScenarioRetryManager
             // Run Custom Test Hook In Base Class
             await bdTestBase.OnBeforeRetry();
 
-            ResetContext(scenario);
+            await bdTestBase.RecreateContextOnRetryAsync(scenario.RetryCount);
 
             // Run SetUp Attributed Method
             await bdTestBase.RunMethodWithAttribute<BDTestRetrySetUpAttribute>();
@@ -75,8 +75,4 @@ internal class ScenarioRetryManager : IScenarioRetryManager
         scenario.RetryCount++;
     }
 
-    private void ResetContext(Scenario scenario)
-    {
-        scenario.BdTestBaseClass.RecreateContextOnRetry();
-    }
 }

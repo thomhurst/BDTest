@@ -49,7 +49,7 @@ Before each retry, BDTest:
 1. resets the scenario and its steps to `NotRun`,
 2. runs methods on the test class marked `[BDTestRetryTearDown]`,
 3. calls the test class's `OnBeforeRetry()` override,
-4. creates a new `Context` (and runs [`ContextAmendment`](test-context.md#amending-a-new-context) again),
+4. disposes the previous owned context, creates and initializes a new `Context` (and runs [`ConfigureContext`](test-context.md#configuring-a-new-context) again),
 5. runs methods marked `[BDTestRetrySetUp]`,
 6. runs the steps again.
 

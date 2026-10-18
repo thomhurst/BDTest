@@ -5,20 +5,20 @@ using NUnit.Framework;
 
 namespace BDTest.Tests.Fixtures;
 
-public class ContextAmendmentTests
+public class ConfigureContextTests
 {
     [TestCase(false)]
     [TestCase(true)]
-    public void AmendmentCanReadTheContextBeingInitialized(bool frameworkId)
+    public void ConfigurationCanReadTheContextBeingInitialized(bool frameworkId)
     {
         var fixture = new ContextFixture(frameworkId);
         var calls = 0;
-        BDTestContext<MyTestContext> amended = null;
-        fixture.ContextAmendment = context =>
+        BDTestContext<MyTestContext> configured = null;
+        fixture.Configure = context =>
         {
             // Fail safely on the old implementation instead of overflowing the test host's stack.
-            Assert.That(++calls, Is.EqualTo(1), "The amendment must not recurse");
-            amended = context;
+            Assert.That(++calls, Is.EqualTo(1), "The configuration must not recurse");
+            configured = context;
             Assert.That(fixture.BDTestContext, Is.SameAs(context));
             Assert.That(fixture.Context, Is.SameAs(context.TestContext));
         };
@@ -26,8 +26,8 @@ public class ContextAmendmentTests
         try
         {
             var initialized = fixture.BDTestContext;
-            Assert.That(initialized, Is.SameAs(amended));
-            Assert.That(fixture.Context, Is.SameAs(amended.TestContext));
+            Assert.That(initialized, Is.SameAs(configured));
+            Assert.That(fixture.Context, Is.SameAs(configured.TestContext));
             Assert.That(calls, Is.EqualTo(1));
         }
         finally
@@ -38,12 +38,12 @@ public class ContextAmendmentTests
 
     [TestCase(false)]
     [TestCase(true)]
-    public void FailedAmendmentIsRethrownAndNextAccessCreatesFreshContext(bool frameworkId)
+    public void FailedConfigurationIsRethrownAndNextAccessCreatesFreshContext(bool frameworkId)
     {
         var fixture = new ContextFixture(frameworkId);
-        var expected = new InvalidOperationException("amendment failed");
+        var expected = new InvalidOperationException("configuration failed");
         var attempts = new List<BDTestContext<MyTestContext>>();
-        fixture.ContextAmendment = context =>
+        fixture.Configure = context =>
         {
             attempts.Add(context);
             if (attempts.Count == 1)
@@ -70,14 +70,14 @@ public class ContextAmendmentTests
 
     [TestCase(false)]
     [TestCase(true)]
-    public async Task RetryCreatesAndAmendsANewContextOnce(bool frameworkId)
+    public async Task RetryCreatesAndConfiguresANewContextOnce(bool frameworkId)
     {
         var fixture = new ContextFixture(frameworkId);
         var attempts = new List<BDTestContext<MyTestContext>>();
-        fixture.ContextAmendment = context =>
+        fixture.Configure = context =>
         {
             attempts.Add(context);
-            Assert.That(attempts.Count, Is.LessThanOrEqualTo(2), "The amendment must not recurse");
+            Assert.That(attempts.Count, Is.LessThanOrEqualTo(2), "The configuration must not recurse");
             Assert.That(fixture.BDTestContext, Is.SameAs(context));
             Assert.That(fixture.Context, Is.SameAs(context.TestContext));
         };
@@ -100,12 +100,12 @@ public class ContextAmendmentTests
 
     [TestCase(false)]
     [TestCase(true)]
-    public async Task FailedRetryAmendmentDoesNotRetainPartiallyInitializedContext(bool frameworkId)
+    public async Task FailedRetryConfigurationDoesNotRetainPartiallyInitializedContext(bool frameworkId)
     {
         var fixture = new ContextFixture(frameworkId);
-        var expected = new InvalidOperationException("retry amendment failed");
+        var expected = new InvalidOperationException("retry configuration failed");
         var attempts = new List<BDTestContext<MyTestContext>>();
-        fixture.ContextAmendment = context =>
+        fixture.Configure = context =>
         {
             attempts.Add(context);
             if (attempts.Count == 2)
@@ -136,6 +136,9 @@ public class ContextAmendmentTests
     {
         private readonly string _frameworkId = Guid.NewGuid().ToString();
         protected override string BDTestExecutionId => frameworkId ? _frameworkId : base.BDTestExecutionId;
+
+        public Action<BDTestContext<MyTestContext>> Configure { get; set; }
+        protected override void ConfigureContext(BDTestContext<MyTestContext> context) => Configure?.Invoke(context);
 
         private int _attempts;
 

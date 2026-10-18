@@ -15,7 +15,7 @@ BDTest does not replace your test runner. It runs inside it. An adapter package 
 | [MSTest](mstest.md) | `MSTestBDTestBase<TContext>` | `BDTest.MSTest` |
 | [Standalone](standalone.md) | `BDTestBase`, `BDTestBuilder` | `BDTest` |
 
-All adapter base classes take a [context](../writing-tests/test-context.md) type with the constraint `where TContext : class, new()`. There are no non-generic adapter base classes. Use an empty context class if you do not need state.
+All adapter base classes take a [context](../writing-tests/test-context.md) type with the constraint `where TContext : class`. The default factory needs a public parameterless constructor; custom factories support constructor dependencies. There are no non-generic adapter base classes. Use an empty context class if you do not need state.
 
 If your test class already has another base class, the core [composition host](composition.md) provides a typed context, scenario builders, and output helpers with manual lifecycle integration.
 

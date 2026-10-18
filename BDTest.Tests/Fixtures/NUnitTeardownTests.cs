@@ -18,7 +18,7 @@ public class NUnitTeardownHookTests
             .Where(method => method.IsDefined(typeof(TearDownAttribute), inherit: false))
             .Select(method => method.Name);
 
-        Assert.That(hooks, Is.EqualTo(new[] { "MarkTestAsComplete" }));
+        Assert.That(hooks, Is.EqualTo(new[] { "BDTestNUnitTearDown" }));
     }
 }
 
@@ -26,6 +26,9 @@ public class NUnitTeardownHookTests
 [TestFixture(true)]
 public class NUnitTeardownTests : NUnitBDTestBase<MyTestContext>
 {
+    private Action<BDTestContext<MyTestContext>> Configure { get; set; }
+    protected override void ConfigureContext(BDTestContext<MyTestContext> context) => Configure?.Invoke(context);
+
     private readonly BDTestRun _run;
     private readonly List<string> _events = new();
     private MyTestContext _scenarioContext;
@@ -46,7 +49,7 @@ public class NUnitTeardownTests : NUnitBDTestBase<MyTestContext>
     public async Task RetriedScenarioPassesBeforeContextAndOutputAreCleared()
     {
         var originalOutcome = TestContext.CurrentContext.Result.Outcome;
-        ContextAmendment = _ =>
+        Configure = _ =>
         {
             _amendments++;
             if (_completing) _events.Add("context removed");

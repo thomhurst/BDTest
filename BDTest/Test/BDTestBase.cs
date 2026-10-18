@@ -296,14 +296,38 @@ public abstract class BDTestBase
         Console.SetOut(TestOutputData.Instance);
     }
 
-    /// <summary>Completes this execution and clears its context and output state. Safe to repeat.</summary>
+    /// <summary>Completes this execution synchronously. Prefer EndTestAsync for asynchronous contexts.</summary>
     protected void EndTest()
     {
         var execution = CurrentExecution;
-        if (execution == null || execution == EndedExecution) return;
-        if (Interlocked.Exchange(ref execution.Completed, 1) == 0)
+        try { ContextAsyncBridge.Run(EndTestAsync); }
+        finally { ClearCompletedExecution(execution); }
+    }
+
+    /// <summary>Awaits context disposal and clears execution state even when disposal fails. Safe to repeat.</summary>
+    protected ValueTask EndTestAsync()
+    {
+        var execution = CurrentExecution;
+        if (execution == null || execution == EndedExecution) return default;
+        try
         {
-            RemoveExecutionContext(execution.Id);
+            if (Interlocked.Exchange(ref execution.Completed, 1) != 0) return default;
+            return CompleteExecutionAsync(execution);
+        }
+        finally
+        {
+            // Clear in this synchronous entry point: AsyncLocal changes inside an
+            // async method do not flow back to the caller that awaits its result.
+            // Disposal retains its captured flow until cleanup completes.
+            ClearCompletedExecution(execution);
+        }
+    }
+
+    private async ValueTask CompleteExecutionAsync(TestExecution execution)
+    {
+        try { await RemoveExecutionContextAsync(execution.Id).ConfigureAwait(false); }
+        finally
+        {
             execution.Run.Store.CompleteTest(execution.Id);
             lock (execution.Run.Store.Gate)
             {
@@ -311,15 +335,21 @@ public abstract class BDTestBase
                     execution.Run.OutputBuffers.Remove(scenario.Guid);
             }
         }
-        // A tombstone prevents repeated teardown in this flow from completing a
-        // different parallel execution retained in the instance fallback.
+    }
+
+    private void ClearCompletedExecution(TestExecution execution)
+    {
+        if (execution == null || execution == EndedExecution) return;
+        // A tombstone prevents repeated teardown from completing a parallel execution
+        // retained in the instance fallback. Sync compatibility also clears its caller's flow.
         _execution.Value = EndedExecution;
         Interlocked.CompareExchange(ref _lastExecution, null, execution);
         if (TestOutputData.Run == execution.Run && TestOutputData.FrameworkExecutionId == execution.Id)
             ClearExecutionFlow();
     }
 
-    internal virtual void RemoveExecutionContext(string executionId) { }
+    internal virtual ValueTask RemoveExecutionContextAsync(string executionId) => default;
+    internal virtual ValueTask InitializeExecutionContextAsync() => default;
 
     private static void ClearExecutionFlow()
     {
@@ -351,11 +381,15 @@ public abstract class BDTestBase
             return;
         }
         // Compatibility for standalone callers and adapters that never began a test.
-        RemoveExecutionContext(BDTestExecutionId);
-        TestRun.Store.CompleteTest(BDTestExecutionId);
-        TestOutputData.Run = TestRun;
-        TestOutputData.ClearCurrentTaskData();
-        ClearExecutionFlow();
+        var executionId = BDTestExecutionId;
+        try { ContextAsyncBridge.Run(() => RemoveExecutionContextAsync(executionId)); }
+        finally
+        {
+            TestRun.Store.CompleteTest(executionId);
+            TestOutputData.Run = TestRun;
+            TestOutputData.ClearCurrentTaskData();
+            ClearExecutionFlow();
+        }
     }
 
     public string GetStoryText()
@@ -438,8 +472,5 @@ public abstract class BDTestBase
         return methodsByType.SelectMany(methods => methods);
     }
 
-    internal virtual void RecreateContextOnRetry()
-    {
-        // No context for non-generic type
-    }
+    internal virtual ValueTask RecreateContextOnRetryAsync(int attempt) => default;
 }

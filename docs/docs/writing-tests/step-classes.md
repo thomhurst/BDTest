@@ -47,11 +47,7 @@ public abstract class MyTestBase : TUnitBDTestBase<MyTestContext>
 A field such as `private readonly AccountSteps _steps = new(Context);` is created once per test class instance, before the test's context exists. Depending on the framework's instance lifetime, tests could then share state. Always use a getter property.
 :::
 
-`Inject<T>()` is a shortcut that constructs `T` with the current `Context`:
-
-```csharp
-protected AccountSteps AccountSteps => Inject<AccountSteps>();
-```
+Construct helpers explicitly as above, or resolve them through your service provider. `Inject<T>()` has been removed.
 
 ## Using steps in tests
 

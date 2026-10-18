@@ -6,7 +6,7 @@ namespace BDTest.MSTest;
 
 [TestClass]
 public abstract class MSTestBDTestBase<TContext> : AbstractContextBDTestBase<TContext>
-    where TContext : class, new()
+    where TContext : class
 {
     public TestContext TestContext { get; set; }
 
@@ -28,6 +28,9 @@ public abstract class MSTestBDTestBase<TContext> : AbstractContextBDTestBase<TCo
     }
 
     [TestCleanup]
+    public async Task BDTestMSTestTearDown() => await EndTestAsync();
+
+    // Retain the synchronous entry point for existing callers.
     public void TearDown()
     {
         EndTest();

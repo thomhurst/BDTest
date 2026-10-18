@@ -86,7 +86,7 @@ public sealed class ScenarioOutlineBuilder<TExample> : BuildableTest
                     try
                     {
                         TestOutputData.ConstructionOutput = constructionOutput;
-                        BdTestBase.RecreateContextOnRetry();
+                        await BdTestBase.RecreateContextOnRetryAsync(0);
                         builder = _scenario(_examples[index]) ?? throw new InvalidOperationException("The example factory returned no scenario builder.");
                         if (builder.TestId != TestId || !ReferenceEquals(builder.BdTestBase, BdTestBase))
                         {

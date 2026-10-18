@@ -4,12 +4,13 @@ using BDTest.Test;
 using Xunit;
 using Xunit.Sdk;
 using Xunit.v3;
+using System.Reflection;
 
 namespace BDTest.xUnit;
 
 [BDTestLifecycle]
 public abstract class XUnitBDTestBase<TContext> : AbstractContextBDTestBase<TContext>, IDisposable, IAsyncLifetime
-    where TContext : class, new()
+    where TContext : class
 {
     private readonly string _frameworkTestId;
     private readonly StartupOutputBuffer _constructorOutput;
@@ -53,11 +54,29 @@ public abstract class XUnitBDTestBase<TContext> : AbstractContextBDTestBase<TCon
 
     /// <summary>Completes the BDTest execution when xUnit disposes the test asynchronously.</summary>
     /// <remarks>Override for asynchronous teardown and await base.DisposeAsync() in a finally block.</remarks>
-    public virtual ValueTask DisposeAsync()
+    public virtual async ValueTask DisposeAsync()
     {
-        // Preserve synchronous teardown when a derived class reimplements IDisposable.
-        ((IDisposable)this).Dispose();
-        return default;
+        var completionMethod = GetType().GetMethod(nameof(MarkTestAsComplete),
+            BindingFlags.Instance | BindingFlags.NonPublic);
+        var disposeMethod = GetType().GetInterfaceMap(typeof(IDisposable)).TargetMethods.Single();
+        // Legacy overrides must see their live context and output before completing.
+        if (completionMethod?.DeclaringType != typeof(BDTestBase) ||
+            disposeMethod.DeclaringType != typeof(XUnitBDTestBase<TContext>))
+        {
+            ((IDisposable)this).Dispose();
+            return;
+        }
+
+        InitializeExecution();
+        _constructorOutput.Complete();
+        try
+        {
+            await EndTestAsync();
+        }
+        finally
+        {
+            ClearPendingOutput();
+        }
     }
 
     public void Dispose()
@@ -65,9 +84,20 @@ public abstract class XUnitBDTestBase<TContext> : AbstractContextBDTestBase<TCon
         // A derived IAsyncLifetime implementation may bypass our initialization hook.
         InitializeExecution();
         _constructorOutput.Complete();
+        try
+        {
 #pragma warning disable CS0618 // Preserve existing overrides of the compatibility hook.
-        MarkTestAsComplete();
+            MarkTestAsComplete();
 #pragma warning restore CS0618
+        }
+        finally
+        {
+            ClearPendingOutput();
+        }
+    }
+
+    private void ClearPendingOutput()
+    {
         if (ReferenceEquals(TestOutputData.PendingStartupOutput, _constructorOutput))
             TestOutputData.PendingStartupOutput = null;
     }

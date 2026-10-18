@@ -49,12 +49,14 @@ dotnet run --project MyApp.AcceptanceTests
 dotnet run --project MyApp.AcceptanceTests -- --treenode-filter "/*/*/BasketTests/*"
 ```
 
+Contexts may have constructor dependencies: override `CreateContextAsync(ContextCreation)` to construct them. BDTest awaits `IBDTestContextLifetime.InitializeAsync()` before scenario steps and disposes owned contexts at teardown, preferring `IAsyncDisposable` over `IDisposable`. Call `await InitializeContextAsync()` when async fixture setup needs an initialized context before any scenario. See [Test context](../writing-tests/test-context.md) for factories, retries and ownership.
+
 ## What the adapter does
 
 - **Execution ID:** `TestContext.Current.Id`.
 - **Exceptions:** registers `SkipTestException` (from `Skip.Test(...)`) as skip and `InconclusiveTestException` as inconclusive, in a class-level `[Before]` hook.
 - **Setup:** a `[Before(HookType.Test)]` hook calls `BeginTest` and exports BDTest's `AsyncLocal` values so the test body sees them.
-- **Teardown:** an `[After(HookType.Test)]` hook calls `EndTest()`, which removes the context and completes the test.
+- **Teardown:** an asynchronous `[After(HookType.Test)]` hook awaits context disposal and completes the test.
 - **Skips:** a whole-scenario skip throws `SkipTestException`, so TUnit reports the test as skipped.
 
 ## Reports after the run

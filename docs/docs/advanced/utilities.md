@@ -66,7 +66,7 @@ Treat `BdTestBaseClass` as a best-effort runtime reference, not retained report 
 
 ## `BDTestContext`
 
-`BDTestContext` (and `BDTestContext<TContext>` with `TestContext`) describes the running test. It is passed to [`ContextAmendment`](../writing-tests/test-context.md#amending-a-new-context) and is available on context base classes as `BDTestContext`.
+`BDTestContext` (and `BDTestContext<TContext>` with `TestContext`) describes the running test. It is passed to [`ConfigureContext`](../writing-tests/test-context.md#configuring-a-new-context) and is available on context base classes as `BDTestContext`.
 
 | Member | Description |
 | --- | --- |

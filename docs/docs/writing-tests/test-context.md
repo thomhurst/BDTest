@@ -1,29 +1,14 @@
 ---
 title: Test context
-description: Give every test its own state object so scenarios run in parallel without leaking state.
+description: Create, initialize and dispose per-test state with factories and dependency injection.
 ---
 
 # Test context
 
-A context is an object that holds the state of one test: request models, HTTP responses, created IDs and so on. BDTest creates a separate context for each test and never shares it with other tests. That keeps tests independent and lets them run in parallel.
-
-Your context class needs a public parameterless constructor:
+A context holds the state of one test. All four framework adapters derive from `AbstractContextBDTestBase<TContext>` and expose `Context` and `BDTestContext`. Each execution has its own context, including parallel tests.
 
 ```csharp
-public class MyTestContext
-{
-    public HttpRequestMessage Request { get; set; }
-    public HttpResponseMessage Response { get; set; }
-    public string CustomerId { get; set; }
-}
-```
-
-## Using a base class
-
-Every [framework adapter](../frameworks/overview.md) takes the context type as a generic argument. Read it through the `Context` property:
-
-```csharp
-public class AccountTests : TUnitBDTestBase<MyTestContext>
+public class AccountTests : TUnitBDTestBase<AccountContext>
 {
     [Test]
     public async Task CreateAccount()
@@ -35,70 +20,96 @@ public class AccountTests : TUnitBDTestBase<MyTestContext>
 }
 ```
 
-The adapter keys each context by the framework's test ID, creates it on first access and removes it after the test. Adapters derive from `AbstractContextBDTestBase<TContext>` in the core package, which you can also use for [custom adapters](../frameworks/custom-adapters.md).
+By default, BDTest uses a public parameterless constructor. A custom factory allows constructor dependencies; context types no longer need a `new()` constraint.
 
-## Using `WithContext`
+## Factories
 
-Without a context base class, ask for a context inline:
+Override `CreateContextAsync` for a test base:
 
 ```csharp
-public class MyTests : BDTestBase
+protected override ValueTask<AccountContext> CreateContextAsync(ContextCreation creation)
 {
-    [Test]
-    public async Task Test1()
+    return new ValueTask<AccountContext>(new AccountContext(client));
+}
+```
+
+`ContextCreation` exposes `ExecutionId`, zero-based `Attempt` (0 initially, 1 on the first retry), and `Services`. Each outline row starts at attempt 0.
+
+For a shared registration, implement `IBDTestContextFactory` in `BDTest.Test` and set `BDTestOptions.ContextFactory` before starting an [explicit run](../advanced/explicit-runs.md). Its method is `ValueTask<object> CreateContextAsync(Type contextType, ContextCreation creation)`. Return a new context assignable to `contextType`. The default protected factory delegates to this registration. Override `TestRun` on the adapter to select the run.
+
+```csharp
+var options = new BDTestOptions
+{
+    ContextFactory = new ServiceProviderContextFactory(),
+    Services = services,
+};
+var run = BDTestRun.Start(options);
+```
+
+`ServiceProviderContextFactory` uses `ActivatorUtilities.CreateInstance` to create a new context with constructor dependencies from `Services`. BDTest owns the context. You own the service provider, its scope and resolved dependencies; BDTest never disposes them. Supply an appropriate scope yourself when using scoped services. The context itself is constructed directly, rather than resolved as a provider-owned service.
+
+Factory and service-provider registrations are frozen when the run starts. Replacing either property on the original options does not change that run. Factory and provider objects are shared references and must support concurrent tests. The legacy default run has no process-global factory; override `CreateContextAsync` or use an explicit run.
+
+## Configuring a new context
+
+Override the synchronous `ConfigureContext` hook to set defaults after construction:
+
+```csharp
+protected override void ConfigureContext(BDTestContext<AccountContext> context)
+{
+    context.TestContext.Request = new HttpRequestMessage();
+}
+```
+
+The wrapper exposes `TestContext`, story text, scenario text and the current scenario. The hook may read `Context` or `BDTestContext` without creating another context. During outline construction, `CurrentScenario` is null because the row does not yet exist. If construction or configuration fails, BDTest removes the entry and disposes any owned context that was created. A later access can create a fresh context.
+
+## Asynchronous initialization
+
+Implement `IBDTestContextLifetime` to initialize the context asynchronously:
+
+```csharp
+public sealed class AccountContext : IBDTestContextLifetime, IAsyncDisposable
+{
+    public async ValueTask InitializeAsync()
     {
-        await WithContext<MyTestContext>(context =>
-            Given(() => Action1(context))
-                .When(() => Action2(context))
-                .Then(() => Action3(context))
-                .BDTestAsync());
+        // Start resources, log in, or create a browser page here.
+        await StartResourcesAsync();
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        await StopResourcesAsync();
     }
 }
 ```
 
-BDTest constructs the context and passes it to the lambda.
+BDTest awaits initialization once before the first step of each attempt. It also initializes fresh contexts before retry setup hooks and outline row factories. Initialization failures stop the attempt before any steps run, remove the stored context, and dispose it. A failure during cleanup is propagated; if initialization or configuration also failed, both exceptions are retained in an `AggregateException`.
 
-## Amending a new context
+Setup-time synchronous `Context` access remains supported: it constructs and configures the context through a worker-thread bridge, which also supports async factories without blocking their synchronization context. It does **not** run `InitializeAsync`. Prefer `await InitializeContextAsync()` in async setup if setup needs initialized resources or an asynchronous factory. Subsequent synchronous access returns the configured context. Do not capture a context or a context-dependent step object across retries; read `Context` inside each step.
 
-Set `ContextAmendment` to run code each time BDTest creates a context. Use it for defaults that need more than a parameterless constructor:
+## Ownership and disposal
 
-```csharp
-public abstract class MyTestBase : TUnitBDTestBase<MyTestContext>
-{
-    protected MyTestBase()
-    {
-        ContextAmendment = bdTestContext =>
-        {
-            bdTestContext.TestContext.Request = new HttpRequestMessage();
-        };
-    }
-}
-```
+BDTest disposes each framework-owned context exactly once:
 
-The delegate receives a `BDTestContext<TContext>`. Its `TestContext` property is your context object; it also exposes the story text, scenario text and current scenario.
+- before constructing a replacement on retry or for the next outline row;
+- when an owned context is replaced with `OverwriteContext`;
+- when preparation fails after a context has been constructed;
+- at adapter teardown, including when steps throw.
 
-`ContextAmendment` runs for:
+`IAsyncDisposable` takes precedence over `IDisposable` when both are implemented. Normal adapter teardown awaits async disposal. Synchronous compatibility entry points bridge async disposal; custom adapters should await `EndTestAsync()` in teardown. A disposal exception propagates to the runner, but the context is detached and execution bookkeeping is still completed. A failure disposing a retry context stops that retry before another context is created.
 
-- the first context of each test,
-- the new context created before each [retry](retries.md),
-- each row of a [scenario outline](scenario-outlines.md).
+`OverwriteContext(context)` and `await OverwriteContextAsync(context)` install a **caller-owned** context. BDTest still initializes it before steps but does not dispose it. Pass `takeOwnership: true` to transfer ownership. Replacement first disposes the previous framework-owned context. The replacement is not installed if that cleanup fails. Reinstalling the same object does not dispose it; ownership follows the flag supplied on the latest call. Configuration hooks run for factory-created contexts, not supplied replacements.
 
-If the amendment throws, BDTest discards that context. During amendment for an outline row, `BDTestContext.CurrentScenario` is `null` because the row's scenario does not exist yet.
+## Migration
 
-## Other context members
+`ContextAmendment` is replaced by the protected `ConfigureContext(BDTestContext<TContext>)` override. `Inject<T>()` is removed; [construct step classes explicitly](step-classes.md) or resolve helpers with your configured service provider.
 
-| Member | Purpose |
-| --- | --- |
-| `Context` | The current test's context. |
-| `BDTestContext` | The wrapper holding `TestContext` plus story and scenario information. |
-| `OverwriteContext(TContext)` | Replace the current test's context with your own instance. |
-| `Inject<T>()` | Create a `T`, passing `Context` to its constructor when it has a `TContext` parameter, otherwise using its parameterless constructor. |
+**Disposal is a behavior change.** Remove manual disposal of framework-owned contexts from your teardown to avoid double disposal. Keep manually disposing caller-owned replacements and provider-owned dependencies.
 
-## Rules for parallel tests
+## Inline contexts
 
-To keep tests thread-safe and parallelisable:
+`BDTestBase.WithContext<T>(...)` is the older parameterless-construction helper. It passes an object directly to your delegate and does not use adapter context storage, factories, initialization, retry recreation or ownership. Manage that object's lifetime yourself, or use a context base class for the managed lifetime above.
 
-- Use a context base class or `WithContext<T>(...)`.
-- Do not use static fields or properties for test state. Store it in the context.
-- Do not store test state in fields of the test class. Store it in the context.
-- Expose [step classes](step-classes.md) as properties that create a new instance on each access.
+## Parallel tests
+
+Keep state in the context rather than static or fixture fields. Expose step classes through getter properties that bind to the current `Context`. Dispose explicit runs only after all their tests and teardown have finished.

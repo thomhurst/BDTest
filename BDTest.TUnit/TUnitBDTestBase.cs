@@ -8,7 +8,7 @@ using TUnitTestContext = TUnit.Core.TestContext;
 namespace BDTest.TUnit;
 
 public abstract class TUnitBDTestBase<TContext> : AbstractContextBDTestBase<TContext>
-    where TContext : class, new()
+    where TContext : class
 {
     [Before(HookType.Class)]
     public static void SetupTUnitExceptions()
@@ -35,7 +35,7 @@ public abstract class TUnitBDTestBase<TContext> : AbstractContextBDTestBase<TCon
     }
 
     [After(HookType.Test)]
-    public void BDTestTUnitTearDown() => TearDown();
+    public async Task BDTestTUnitTearDown() => await EndTestAsync();
 
     public void TearDown()
     {

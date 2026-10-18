@@ -38,11 +38,13 @@ public class BasketTests : MSTestBDTestBase<BasketContext>
 }
 ```
 
+Contexts may have constructor dependencies: override `CreateContextAsync(ContextCreation)` to construct them. BDTest awaits `IBDTestContextLifetime.InitializeAsync()` before scenario steps and disposes owned contexts at teardown, preferring `IAsyncDisposable` over `IDisposable`. Call `await InitializeContextAsync()` when async fixture setup needs an initialized context before any scenario. See [Test context](../writing-tests/test-context.md) for factories, retries and ownership.
+
 ## What the adapter does
 
 - **Execution ID:** the fully qualified class name and the test's display name (which includes the data row), plus a unique suffix so repeated executions stay separate.
 - **Initialisation:** a `[TestInitialize]` method registers `AssertInconclusiveException` as inconclusive and calls `BeginTest`.
-- **Cleanup:** a `[TestCleanup]` method calls `EndTest()`, which removes the context and completes the test.
+- **Cleanup:** an asynchronous `[TestCleanup]` method awaits context disposal and completes the test.
 - **Skips:** a whole-scenario skip calls `Assert.Inconclusive(reason)`. The runner shows it as skipped or not executed; BDTest records `Skipped`. An explicit `Assert.Inconclusive()` inside a step stays `Inconclusive` in BDTest.
 
 ## Reports after the run

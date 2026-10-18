@@ -39,12 +39,14 @@ public class BasketTests : NUnitBDTestBase<BasketContext>
 
 `[TestFixture]` is already on the base class, and you can run fixtures and tests in parallel with `[Parallelizable]`.
 
+Contexts may have constructor dependencies: override `CreateContextAsync(ContextCreation)` to construct them. BDTest awaits `IBDTestContextLifetime.InitializeAsync()` before scenario steps and disposes owned contexts at teardown, preferring `IAsyncDisposable` over `IDisposable`. Call `await InitializeContextAsync()` when async fixture setup needs an initialized context before any scenario. See [Test context](../writing-tests/test-context.md) for factories, retries and ownership.
+
 ## What the adapter does
 
 - **Execution ID:** `TestContext.CurrentContext.Test.ID` plus the current repeat count, so `[Repeat]` runs stay separate.
 - **Exceptions:** registers `SuccessException` (from `Assert.Pass`) as success, `IgnoreException` (from `Assert.Ignore`) as skip and `InconclusiveException` as inconclusive. Registration happens once, in a `[OneTimeSetUp]`.
 - **Setup:** a `[SetUp]` method calls `BeginTest` with the test ID and repeat count, which ties context and console output to the current test.
-- **Teardown:** a `[TearDown]` method calls `EndTest()`, which removes the test's context and completes the test.
+- **Teardown:** an asynchronous `[TearDown]` method awaits context disposal and completes the test. Existing `MarkTestAsComplete()` overrides remain supported through the synchronous compatibility path.
 - **Retries:** each attempt runs its steps and step hooks through NUnit's public exception constraint API. A failed attempt does not change the NUnit result when a later attempt passes. Failures outside the scenario remain failures, and scenario warnings remain visible. When the final attempt throws after recording other assertion failures, NUnit reports the exception together with those assertion diagnostics. Retry rules still receive the original exception. The adapter never overwrites the NUnit result during teardown.
 - **Skips:** a whole-scenario skip calls `Assert.Ignore(reason)`.
 

@@ -1,3 +1,4 @@
+using BDTest.Test;
 using BDTest.Attributes;
 using BDTest.NUnit;
 using NUnit.Framework;
@@ -8,6 +9,9 @@ namespace BDTest.Tests.Fixtures;
 [FixtureLifeCycle(LifeCycle.InstancePerTestCase)]
 public class NUnitContextLifetimeTests : NUnitBDTestBase<MyTestContext>
 {
+    private Action<BDTestContext<MyTestContext>> Configure { get; set; }
+    protected override void ConfigureContext(BDTestContext<MyTestContext> context) => Configure?.Invoke(context);
+
     [Test]
     public async Task ContextStateIsSharedAcrossSteps()
     {
@@ -21,7 +25,7 @@ public class NUnitContextLifetimeTests : NUnitBDTestBase<MyTestContext>
     public async Task ConcurrentAccessCreatesAndAmendsOneContext()
     {
         var amendmentCount = 0;
-        ContextAmendment = context =>
+        Configure = context =>
         {
             Interlocked.Increment(ref amendmentCount);
             context.TestContext.Id = "amended";
@@ -53,7 +57,7 @@ public class NUnitContextLifetimeTests : NUnitBDTestBase<MyTestContext>
     public void TeardownRemovesTheStoredContext()
     {
         var amendmentCount = 0;
-        ContextAmendment = _ => amendmentCount++;
+        Configure = _ => amendmentCount++;
         var original = BDTestContext;
 
         PruneContext();
@@ -69,7 +73,7 @@ public class NUnitContextLifetimeTests : NUnitBDTestBase<MyTestContext>
     public async Task RetryCreatesAndAmendsAFreshContext()
     {
         var amendmentCount = 0;
-        ContextAmendment = context =>
+        Configure = context =>
         {
             amendmentCount++;
             context.TestContext.Id = "amended";
