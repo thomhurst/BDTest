@@ -42,7 +42,7 @@ public class CheckoutTests : CompanyTestBase
 }
 ```
 
-The example shows manual lifecycle integration. It does not register framework hooks or inject the run automatically. Framework-native composition registration is tracked separately for [NUnit](https://github.com/thomhurst/BDTest/issues/895), [xUnit v3](https://github.com/thomhurst/BDTest/issues/896), [TUnit](https://github.com/thomhurst/BDTest/issues/897), and [MSTest](https://github.com/thomhurst/BDTest/issues/898). Existing adapter base classes remain available.
+The example shows manual lifecycle integration. For automatic TUnit setup and completion, implement [`IBDTestTUnitTest`](tunit.md#composition-with-an-existing-base-class). Framework-native composition registration is tracked separately for [NUnit](https://github.com/thomhurst/BDTest/issues/895), [xUnit v3](https://github.com/thomhurst/BDTest/issues/896), and [MSTest](https://github.com/thomhurst/BDTest/issues/898). Existing adapter base classes remain available.
 
 ## Lifecycle and parallel execution
 
@@ -50,7 +50,7 @@ Create the host with the actual test instance. Story attributes, class tags, cla
 
 `BeginTest(frameworkExecutionId)` remains available for manual harnesses without method identity. It uses owner class/assembly defaults and humanized compiler caller text; it does not guess a method by name or inspect stack frames. Supply explicit scenario text when needed. Existing composition integrations that rely on method attributes must migrate to the `MethodInfo` overload.
 
-Call `BeginTest` synchronously before asynchronous setup. Use a framework execution ID that distinguishes parallel tests, data rows, and repeats. Call `EndTest` in teardown even when setup or the test throws. Repeated `EndTest` calls are safe. Completion clears the execution's context and pending output state, retaining recorded scenarios for reports.
+Call `BeginTest` synchronously before asynchronous setup. Use a framework execution ID that distinguishes parallel tests, data rows, and repeats. Await `EndTestAsync()` in teardown even when setup or the test throws; this also awaits asynchronous context disposal. `EndTest()` remains a synchronous compatibility method. Repeated completion calls are safe. Completion clears the execution's context and pending output state, retaining recorded scenarios for reports. Framework integrations can call the public `BDTestBase.BeginTest(id, method)` and `EndTestAsync()` methods on either kind of host without friend-assembly access.
 
 `[BDTestRetry]` also comes from the owner: the bound test method takes precedence over the owner class and its assembly. Cached metadata continues to apply after asynchronous steps suspend and the scenario method returns.
 

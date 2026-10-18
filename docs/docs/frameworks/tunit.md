@@ -1,6 +1,6 @@
 ---
 title: TUnit
-description: Use BDTest with TUnit through TUnitBDTestBase<TContext>.
+description: Use BDTest with TUnit through composition or TUnitBDTestBase<TContext>.
 ---
 
 # TUnit
@@ -13,7 +13,71 @@ dotnet add package BDTest.TUnit
 
 `BDTest.TUnit` targets `netstandard2.0;net8.0` and depends on `TUnit.Core`. Reference the `TUnit` package in the test project.
 
-## Writing tests
+## Composition with an existing base class
+
+Implement `IBDTestTUnitTest` and return a stable host created for the actual test instance. No attribute, manual lifecycle calls, or separate hook registration is needed. The adapter registers global TUnit hooks for both composition and inheritance.
+
+```csharp
+using BDTest;
+using BDTest.Settings;
+using BDTest.Test;
+using BDTest.TUnit;
+using TUnit.Core;
+
+public class BasketTests : CompanyTestBase, IBDTestTUnitTest
+{
+    private readonly BDTestRun _run;
+    private readonly BDTestScenario<BasketContext> _bdt;
+
+    public BasketTests()
+    {
+        var options = new BDTestOptions();
+        options.RegisterFrameworkOutcomes(TUnitBDTestLifecycle.OutcomeMap);
+        _run = BDTestRun.Start(options);
+        _bdt = BDTestScenario.For<BasketContext>(this, _run);
+    }
+
+    public BDTestBase BDTestHost => _bdt;
+
+    [Before(HookType.Test)]
+    public async Task PrepareBasket()
+    {
+        await _bdt.InitializeContextAsync();
+        Console.WriteLine("Preparing basket");
+    }
+
+    [Test]
+    public async Task AddingAnItem()
+    {
+        await _bdt.Given(() => _bdt.Context.Empty())
+            .When(() => _bdt.Context.Add("Book", 12.50m))
+            .Then(() => _bdt.Context.VerifyTotal(12.50m))
+            .BDTestAsync();
+    }
+
+    // Runs after the adapter's global completion hook. This example owns one run
+    // per test instance; write its report and dispose it only after completion.
+    [AfterEvery(HookType.Test, Order = int.MaxValue)]
+    public static async Task SaveReport(TestContext context)
+    {
+        if (context.Metadata.TestDetails.ClassInstance is BasketTests test)
+        {
+            try
+            {
+                await File.WriteAllTextAsync($"{test._run.ReportId}.html",
+                    BDTest.Helpers.BDTestHtmlHelper.GetTestHtmlReport(new BDTestRunDescriptor(), test._run));
+            }
+            finally { test._run.Dispose(); }
+        }
+    }
+}
+```
+
+Choose the owning [explicit run](../advanced/explicit-runs.md) when creating the host. Register `TUnitBDTestLifecycle.OutcomeMap` before starting the run so framework exceptions and whole-scenario skips reach TUnit. The adapter never disposes your run. A run can instead be shared by an assembly or suite; its owner must wait for every test's completion before reporting and disposing it. Assembly-wide configuration and removal of legacy global settings are tracked by [#844](https://github.com/thomhurst/BDTest/issues/844).
+
+TUnit supplies the actual test method and its unique execution ID, including data rows and repeats. Story, scenario text, tags, and retry attributes come from the owning instance and method. Read `_bdt.Context` inside steps so retries see the replacement context. Configure step and scenario callbacks on `BDTestOptions` when using composition; virtual instance hooks remain available on the inheritance API.
+
+## Writing tests with inheritance
 
 Inherit from `TUnitBDTestBase<TContext>`:
 
@@ -55,9 +119,14 @@ Contexts may have constructor dependencies: override `CreateContextAsync(Context
 
 - **Execution ID:** `TestContext.Current.Id`.
 - **Exceptions:** registers `SkipTestException` (from `Skip.Test(...)`) as skip and `InconclusiveTestException` as inconclusive, in a class-level `[Before]` hook.
-- **Setup:** a `[Before(HookType.Test)]` hook calls `BeginTest` and exports BDTest's `AsyncLocal` values so the test body sees them.
-- **Teardown:** an asynchronous `[After(HookType.Test)]` hook awaits context disposal and completes the test.
+- **Opt-in:** `IBDTestTUnitTest.BDTestHost` selects the host and its run. `TUnitBDTestBase<TContext>` implements this interface automatically.
+- **Setup:** a global `[BeforeEvery(HookType.Test, Order = int.MinValue)]` hook calls `BeginTest` and exports BDTest's `AsyncLocal` values before instance setup.
+- **Teardown:** a global `[AfterEvery(HookType.Test, Order = int.MaxValue - 1)]` hook awaits context disposal and completes the same host after instance teardown, including setup/body/teardown failures. Completion also clears output when no scenario runs.
 - **Skips:** a whole-scenario skip throws `SkipTestException`, so TUnit reports the test as skipped.
+
+These hooks work with both package targets (`netstandard2.0;net8.0`); they do not depend on event-receiver stages that are only available on newer TUnit targets. Reserve `Order = int.MaxValue` for checks and report/disposal hooks that must run after BDTest completion. Ordinary setup and teardown hooks can keep their default order.
+
+To migrate from manual composition, implement `IBDTestTUnitTest`, return your existing host, and remove manual `BeginTest`/`EndTest` calls. To migrate from `TUnitBDTestBase<TContext>`, create a composition host with the same run, return it through the interface, and qualify builder/context calls with that host. Existing `Setup`, `TearDown`, `BDTestTUnitSetup`, and `BDTestTUnitTearDown` methods remain callable for custom harnesses; native TUnit execution uses the shared global lifecycle instead.
 
 ## Reports after the run
 
