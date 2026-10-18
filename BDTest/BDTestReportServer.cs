@@ -55,9 +55,9 @@ public static class BDTestReportServer
         var dataOutputModel = new BDTestOutputModel
         {
             Id = TestHolder.CurrentReportId,
-            Environment = bdTestRunDescriptor?.Environment ?? BDTestSettings.Environment,
-            Tag = bdTestRunDescriptor?.Tag ?? BDTestSettings.Tag,
-            BranchName = bdTestRunDescriptor?.BranchName ?? BDTestSettings.BranchName,
+            Environment = bdTestRunDescriptor?.Environment ?? BDTestSettings.LegacyEnvironment,
+            Tag = bdTestRunDescriptor?.Tag ?? BDTestSettings.LegacyTag,
+            BranchName = bdTestRunDescriptor?.BranchName ?? BDTestSettings.LegacyBranchName,
             MachineName = Environment.MachineName,
             Scenarios = scenarios,
             Version = BDTestVersionHelper.CurrentVersion,

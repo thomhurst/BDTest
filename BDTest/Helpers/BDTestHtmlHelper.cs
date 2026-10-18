@@ -21,9 +21,9 @@ public static class BDTestHtmlHelper
         var dataToOutput = new BDTestOutputModel
         {
             Id = BDTestUtil.GetCurrentReportId,
-            Environment = bdTestRunDescriptor?.Environment ?? BDTestSettings.Environment ?? "Not Specified",
-            Tag = bdTestRunDescriptor?.Tag ?? BDTestSettings.Tag ?? "Not Specified",
-            BranchName = bdTestRunDescriptor?.BranchName ?? BDTestSettings.BranchName ?? "Not Specified",
+            Environment = bdTestRunDescriptor?.Environment ?? BDTestSettings.LegacyEnvironment ?? "Not Specified",
+            Tag = bdTestRunDescriptor?.Tag ?? BDTestSettings.LegacyTag ?? "Not Specified",
+            BranchName = bdTestRunDescriptor?.BranchName ?? BDTestSettings.LegacyBranchName ?? "Not Specified",
             MachineName = Environment.MachineName,
             Scenarios = scenarios,
             TestTimer = testTimer,

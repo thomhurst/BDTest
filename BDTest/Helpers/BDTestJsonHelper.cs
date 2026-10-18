@@ -22,9 +22,9 @@ public static class BDTestJsonHelper
         var dataToOutput = new BDTestOutputModel
         {
             Id = BDTestUtil.GetCurrentReportId,
-            Environment = bdTestRunDescriptor?.Environment ?? BDTestSettings.Environment,
-            Tag = bdTestRunDescriptor?.Tag ?? BDTestSettings.Tag,
-            BranchName = bdTestRunDescriptor?.BranchName ?? BDTestSettings.BranchName,
+            Environment = bdTestRunDescriptor?.Environment ?? BDTestSettings.LegacyEnvironment,
+            Tag = bdTestRunDescriptor?.Tag ?? BDTestSettings.LegacyTag,
+            BranchName = bdTestRunDescriptor?.BranchName ?? BDTestSettings.LegacyBranchName,
             MachineName = Environment.MachineName,
             Scenarios = scenarios,
             TestTimer = testTimer,
