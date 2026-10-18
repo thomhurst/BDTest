@@ -260,7 +260,7 @@ public static class BDTestHtmlHelper
         }
         
         // Output
-        if (!string.IsNullOrEmpty(scenario.Output))
+        if (!scenario.IsOutline && !string.IsNullOrEmpty(scenario.Output))
         {
             html.AppendLine($"                <div class=\"output\">");
             html.AppendLine($"                    <h4>Output:</h4>");

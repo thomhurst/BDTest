@@ -249,6 +249,9 @@ display as `null`. Values are captured when the outline is built.
 Rows run sequentially with separate steps, output, status, and retry counts. Each
 row starts with a fresh `Context`, including `ContextAmendment`; runner setup and
 teardown run once for the outline. Put per-example initialization in Given steps.
+During context amendment and factory construction, `BDTestContext.CurrentScenario`
+is `null` because the example scenario does not exist yet. Steps and retry context
+amendments see the executing row.
 The factory must return a new chain from the same test instance for each row.
 All rows run even when one fails. Afterward, the first exception for the most
 severe outcome is rethrown to the test runner. Passed rows with skipped rows pass;

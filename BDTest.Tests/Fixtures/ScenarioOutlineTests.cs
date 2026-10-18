@@ -103,11 +103,14 @@ public class ScenarioOutlineTests : AbstractContextBDTestBase<ScenarioOutlineTes
     [Test, BDTestRetry(1)]
     public async Task Retries_are_per_example_and_reset_its_context()
     {
+        var amendmentScenarios = new List<Scenario>();
+        ContextAmendment = context => amendmentScenarios.Add(context.CurrentScenario);
         var outline = await ScenarioOutline("Retries", new[] { new { Value = 1 }, new { Value = 2 } },
             row => Given(() => RetryRow(row.Value)).When(() => NoOp()).Then(() => NoOp()));
         Assert.That(outline.Examples.Select(row => row.RetryCount), Is.EqualTo(new[] { 1, 0 }));
         Assert.That(outline.Examples.All(row => row.Status == Status.Passed), Is.True);
         Assert.That(_contexts.Distinct().Count(), Is.EqualTo(3));
+        Assert.That(amendmentScenarios, Is.EqualTo(new Scenario[] { null, outline.Examples[0], null }));
         var html = BDTestHtmlHelper.GetTestHtmlReport();
         var table = System.Text.RegularExpressions.Regex.Match(html,
             $"<table class=\"examples\" id=\"examples-{outline.Guid}\">.*?</table>",
@@ -173,6 +176,36 @@ public class ScenarioOutlineTests : AbstractContextBDTestBase<ScenarioOutlineTes
         }
     }
 
+    [TestCase(false)]
+    [TestCase(true)]
+    public async Task Construction_does_not_expose_an_outline_or_previous_example(bool fail)
+    {
+        var amendmentScenarios = new List<Scenario>();
+        var factoryScenarios = new List<Scenario>();
+        var stepScenarios = new List<Scenario>();
+        ContextAmendment = context => amendmentScenarios.Add(context.CurrentScenario);
+        Exception thrown = null;
+        try
+        {
+            await ScenarioOutline("Current example", new[] { new { Value = 1 }, new { Value = 2 }, new { Value = 3 } }, row =>
+            {
+                factoryScenarios.Add(BDTestContext.CurrentScenario);
+                if (fail && row.Value == 2) throw new InvalidOperationException("factory failed");
+                return Given(() => stepScenarios.Add(BDTestContext.CurrentScenario)).When(() => NoOp()).Then(() => NoOp());
+            });
+        }
+        catch (Exception exception) { thrown = exception; }
+
+        Assert.That(thrown, fail ? Is.TypeOf<InvalidOperationException>() : Is.Null);
+        Assert.That(amendmentScenarios, Has.Count.EqualTo(3));
+        Assert.That(amendmentScenarios, Is.All.Null);
+        Assert.That(factoryScenarios, Has.Count.EqualTo(3));
+        Assert.That(factoryScenarios, Is.All.Null);
+        var outline = BDTestUtil.GetScenarios().Single(x => x.FrameworkTestId == _executionId);
+        Assert.That(stepScenarios, Is.EqualTo(outline.Examples.Where(row => row.Status == Status.Passed)));
+        Assert.That(BDTestContext.CurrentScenario, Is.SameAs(outline));
+    }
+
     [TestCase(false, false)]
     [TestCase(false, true)]
     [TestCase(true, false)]
@@ -183,7 +216,7 @@ public class ScenarioOutlineTests : AbstractContextBDTestBase<ScenarioOutlineTes
         ContextAmendment = _ =>
         {
             var value = ++contextCount;
-            Console.WriteLine($"context output {value}");
+            Console.WriteLine($"context output {value} {_executionId}");
             ScenarioHtmlWriter.Text($"context markup {value}");
             if (duringContext && fail && value == 2) throw new InvalidOperationException("context failed");
         };
@@ -235,7 +268,10 @@ public class ScenarioOutlineTests : AbstractContextBDTestBase<ScenarioOutlineTes
             Assert.That(result.Output, Does.Contain("context output 1").And.Contain("context output 2").And.Contain("context output 3"));
         }
         var razor = await ReportHandlerEncodingTests.RenderAsync("/Views/Shared/_ScenarioExamples.cshtml", restored);
-        var standalone = System.Text.RegularExpressions.Regex.Match(BDTestHtmlHelper.GetTestHtmlReport(),
+        var fullStandalone = BDTestHtmlHelper.GetTestHtmlReport();
+        foreach (var value in Enumerable.Range(1, 3))
+            Assert.That(System.Text.RegularExpressions.Regex.Matches(fullStandalone, $"context output {value} {_executionId}").Count, Is.EqualTo(1));
+        var standalone = System.Text.RegularExpressions.Regex.Match(fullStandalone,
             $"<table class=\"examples\" id=\"examples-{outline.Guid}\">.*?</table>",
             System.Text.RegularExpressions.RegexOptions.Singleline).Value;
         foreach (var html in new[] { razor, standalone })
