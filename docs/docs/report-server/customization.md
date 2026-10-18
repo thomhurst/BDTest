@@ -73,7 +73,7 @@ builder.Services.AddSingleton<IUserPersonalizer, UserPersonalizer>();
 
 ## Custom delete controls
 
-Generate the delete URL with `Url.Action("DeleteReport", "BDTest", new { id })` so it includes the host's path base and current report routing. Send `DELETE` with the antiforgery token and cookie; refresh the run list only after HTTP 204. The built-in control confirms the selection, prevents duplicate submissions, and shows a retry message on failure. JavaScript is required for deletion; a plain POST form is rejected with 405. See [Security](security.md#administrators) for authorization and token requirements, and [Deletion migration](../migration/report-storage.md#report-deletion) for custom clients.
+Generate the delete URL with `Url.ReportAction("DeleteReport", new { id })` (from `BDTest.Razor.Reports.Helpers`) so it includes the host's path base and the prefix selected by `MapBDTestReports`. Send `DELETE` with the antiforgery token and cookie; refresh the run list only after HTTP 204. The built-in control confirms the selection, prevents duplicate submissions, and shows a retry message on failure. JavaScript is required for deletion; a plain POST form is rejected with 405. See [Security](security.md#administrators) for authorization and token requirements, and [Deletion migration](../migration/report-storage.md#report-deletion) for custom clients.
 
 ## Reacting to uploads
 

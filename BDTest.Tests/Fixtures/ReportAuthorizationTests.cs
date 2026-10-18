@@ -111,7 +111,7 @@ public class ReportAuthorizationTests
             allowAnonymousEndpoints: true);
         using var page = await host.Client.GetAsync("/bdtest/report/test-runs");
         Assert.That(page.StatusCode, Is.EqualTo(HttpStatusCode.OK));
-        using var delete = await host.Client.DeleteAsync("/bdtest/report/delete/missing");
+        using var delete = await host.Client.DeleteAsync("/bdtest/reports/missing");
         Assert.That(delete.StatusCode, Is.EqualTo(HttpStatusCode.Forbidden));
     }
 

@@ -20,10 +20,12 @@ using NUnit.Framework;
 namespace BDTest.Tests.Fixtures;
 
 [NonParallelizable]
-public class ReportDeletionTests
+[TestFixture("/bdtest")]
+[TestFixture("/team/reports")]
+public class ReportDeletionTests(string prefix)
 {
-    private const string ListPath = "/reports/bdtest/report/test-runs";
-    private const string DeletePath = "/reports/bdtest/reports/run-618";
+    private string ListPath => "/reports" + prefix + "/report/test-runs";
+    private string DeletePath => "/reports" + prefix + "/reports/run-618";
     private readonly RecordingRepository _repository = new();
     private WebApplication _application;
     private HttpClient _client;
@@ -61,7 +63,7 @@ public class ReportDeletionTests
             });
             await next();
         });
-        _application.MapBDTestReports();
+        _application.MapBDTestReports(prefix);
         await _application.StartAsync();
     }
 
@@ -156,7 +158,7 @@ public class ReportDeletionTests
     public async Task Legacy_delete_route_is_removed(string method)
     {
         var (_, token) = await ReadDeleteForm();
-        using var response = await DeleteAsync(method, "/reports/bdtest/report/delete/run-618", token);
+        using var response = await DeleteAsync(method, "/reports" + prefix + "/report/delete/run-618", token);
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.NotFound));
         Assert.That(_repository.DeletedIds, Is.Empty);
     }
@@ -168,7 +170,7 @@ public class ReportDeletionTests
     public async Task Invalid_id_returns_400_without_touching_storage(string id)
     {
         var (_, token) = await ReadDeleteForm();
-        using var response = await DeleteAsync("DELETE", "/reports/bdtest/reports/" + Uri.EscapeDataString(id), token);
+        using var response = await DeleteAsync("DELETE", "/reports" + prefix + "/reports/" + Uri.EscapeDataString(id), token);
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
         Assert.That(_repository.DeletedIds, Is.Empty);
     }
