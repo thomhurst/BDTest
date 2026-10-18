@@ -9,7 +9,7 @@ namespace BDTest.Example;
 public class DifferentReportScenarioTests : MyTestBase
 {
     [SetUp]
-    public void Setup()
+    public void WriteExampleStartupOutput()
     {
         WriteStartupOutput("This is some startup custom text");
     }

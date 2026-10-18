@@ -10,7 +10,7 @@ public class SetupTeardownInfo : NUnitBDTestBase<MyTestContext>
     private Scenario _scenario;
 
     [SetUp]
-    public void Setup()
+    public void WriteStartupInformation()
     {
         TestResetHelper.ResetData();
         Console.Out.WriteLine("Some startup info!");
