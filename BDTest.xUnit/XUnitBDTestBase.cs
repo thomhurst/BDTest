@@ -5,7 +5,7 @@ using Xunit.Sdk;
 
 namespace BDTest.xUnit;
 
-public abstract class XUnitBDTestBase<TContext> : AbstractContextBDTestBase<TContext>, IDisposable
+public abstract class XUnitBDTestBase<TContext> : AbstractContextBDTestBase<TContext>, IDisposable, IAsyncDisposable
     where TContext : class, new()
 {
     protected XUnitBDTestBase()
@@ -21,6 +21,15 @@ public abstract class XUnitBDTestBase<TContext> : AbstractContextBDTestBase<TCon
     protected override void OnScenarioSkipped(string reason) => Assert.Skip(reason);
 
     public void Dispose() => MarkTestAsComplete();
+
+    /// <summary>Completes the BDTest execution when xUnit disposes the test asynchronously.</summary>
+    /// <remarks>Override for asynchronous teardown and await base.DisposeAsync() in a finally block.</remarks>
+    public virtual ValueTask DisposeAsync()
+    {
+        // Preserve synchronous teardown when a derived class reimplements IDisposable.
+        ((IDisposable)this).Dispose();
+        return default;
+    }
 }
 
 // Non-generic so all context types share the same CLR-protected initialization.

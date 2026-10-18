@@ -83,6 +83,7 @@ the repository's test projects use .NET 10.
 Step builders now accept `Action`, `Func<Task>`, `Func<ValueTask>`, and cancellation-aware async delegates, including `ValueTask<T>` results. Statement bodies, `await`, null-conditionals, and patterns are supported. Consumers need C# 13 or newer (.NET SDK 9 or newer); the core still targets `netstandard2.0`.
 
 Install the optional `BDTest.SourceGenerator` package in each project containing steps to preserve method names, `[StepText]`, skip attributes, and supported automatic argument capture. Use `.WithArgs(...)` for captured locals and unsupported argument expressions, or `.WithStepText(...)` for a custom sentence. See the [migration guide](docs/delegate-step-migration.md) and [compiler metadata reference](docs/compiler-step-metadata.md).
+
 ## xUnit v3 migration for the next major version
 
 `BDTest.xUnit` now requires xUnit v3. This is a breaking change in the next major
@@ -124,6 +125,13 @@ Execution IDs come from the public `TestContext.Current.Test.UniqueID`, so theor
 rows have separate IDs and contexts even when their data is not serializable.
 Runtime BDTest skip rules now produce skipped xUnit results instead of throwing
 `NotSupportedException`.
+
+The adapter implements `IAsyncDisposable`. For asynchronous teardown, override
+`DisposeAsync()` and call `await base.DisposeAsync()` in a `finally` block, including
+when implementing `IAsyncLifetime`. xUnit v3 calls only asynchronous disposal when
+both disposal interfaces are present; hiding or explicitly reimplementing
+`DisposeAsync()` must also invoke the base cleanup.
+See the [xUnit adapter guide](docs/docs/frameworks/xunit.md) for the teardown pattern.
 
 ## Status migration for the next major version
 
