@@ -23,6 +23,13 @@ internal class TestOutputData : TextWriter
         set => AsyncLocalFrameworkExecutionId.Value = value;
     }
 
+    private static readonly AsyncLocal<ScenarioConstructionOutput> AsyncLocalConstructionOutput = new();
+    internal static ScenarioConstructionOutput ConstructionOutput
+    {
+        get => AsyncLocalConstructionOutput.Value;
+        set => AsyncLocalConstructionOutput.Value = value;
+    }
+
     public override void Write(string value)
     {
         if (string.IsNullOrEmpty(value))
@@ -54,6 +61,15 @@ internal class TestOutputData : TextWriter
     {
         lock (Lock)
         {
+            // Builders change TestId as a chain grows. Keep construction output
+            // in the example's buffer until its final scenario exists.
+            if (ConstructionOutput != null)
+            {
+                if (character.HasValue) ConstructionOutput.Text.Append(character.Value);
+                else ConstructionOutput.Text.Append(value);
+                return;
+            }
+
             if (TestId == null && FrameworkExecutionId == null)
             {
                 return;
@@ -167,7 +183,11 @@ internal class TestOutputData : TextWriter
         }
 
         appendNewLine = appendNewLine && text.Length > 1;
-        TestHolder.AppendStartupOutput(frameworkExecutionId, text, appendNewLine);
+        var constructionOutput = ConstructionOutput;
+        if (constructionOutput != null && constructionOutput.FrameworkExecutionId == frameworkExecutionId)
+            constructionOutput.Startup.Append(text, appendNewLine);
+        else
+            TestHolder.AppendStartupOutput(frameworkExecutionId, text, appendNewLine);
 
         if (shouldWriteToConsole)
         {
@@ -183,7 +203,12 @@ internal class TestOutputData : TextWriter
             return;
         }
 
-        if (TestHolder.ScenariosByTestFrameworkId.TryGetValue(frameworkExecutionId, out var foundScenario))
+        var constructionOutput = ConstructionOutput;
+        if (constructionOutput != null && constructionOutput.FrameworkExecutionId == frameworkExecutionId)
+        {
+            constructionOutput.Teardown.Append(text, appendNewLine: true);
+        }
+        else if (TestHolder.ScenariosByTestFrameworkId.TryGetValue(frameworkExecutionId, out var foundScenario))
         {
             foundScenario.TeardownOutputBuffer.Append(text, appendNewLine: true);
         }
@@ -196,6 +221,13 @@ internal class TestOutputData : TextWriter
 
     internal static void WriteCustomHtmlForReport(string testId, string htmlValue)
     {
+        var constructionOutput = ConstructionOutput;
+        if (constructionOutput != null && constructionOutput.FrameworkExecutionId == testId)
+        {
+            constructionOutput.Html.Append(htmlValue);
+            return;
+        }
+
         TestHolder.ListenForScenario(testId, scenario => scenario.CustomHtmlOutputForReport += htmlValue);
     }
 }

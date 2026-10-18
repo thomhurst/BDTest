@@ -187,6 +187,41 @@ public static class BDTestHtmlHelper
         html.AppendLine($"            </div>");
         
         html.AppendLine($"            <div class=\"scenario-details\" id=\"details-{scenario.Guid}\" style=\"display: none;\">");
+        html.AppendLine(GenerateScenarioDetails(scenario));
+        html.AppendLine("            </div>");
+        html.AppendLine("        </div>");
+        return html.ToString();
+    }
+
+    private static string GenerateScenarioDetails(Scenario scenario)
+    {
+        var html = new StringBuilder();
+
+        if (scenario.IsOutline)
+        {
+            html.AppendLine($"<h4>Examples</h4><table class=\"examples\" id=\"examples-{scenario.Guid}\"><thead><tr><th>Example</th>");
+            var columns = scenario.Examples.SelectMany(row => row.ExampleValues.Keys).Distinct().ToArray();
+            foreach (var column in columns) html.AppendLine($"<th>{EscapeHtml(column)}</th>");
+            html.AppendLine("<th>Status</th><th>Retries</th><th>Duration</th><th>Details</th></tr></thead><tbody>");
+            for (var index = 0; index < scenario.Examples.Count; index++)
+            {
+                var row = scenario.Examples[index];
+                html.AppendLine($"<tr class=\"example-row\"><td>{index + 1}</td>");
+                foreach (var column in columns)
+                    html.AppendLine($"<td>{EscapeHtml(row.ExampleValues.TryGetValue(column, out var value) ? value : "")}</td>");
+                html.AppendLine($"<td>{row.Status}</td><td>{row.RetryCount}</td><td>{row.TimeTaken}</td><td>");
+                html.AppendLine("<details><summary>Steps and output</summary>");
+                if (!string.IsNullOrEmpty(row.TestStartupInformation))
+                    html.AppendLine($"<h5>Startup output</h5><pre>{EscapeHtml(row.TestStartupInformation)}</pre>");
+                html.AppendLine(GenerateScenarioDetails(row));
+                if (!string.IsNullOrEmpty(row.TearDownOutput))
+                    html.AppendLine($"<h5>Teardown output</h5><pre>{EscapeHtml(row.TearDownOutput)}</pre>");
+                if (row.Exception != null && !row.Steps.Any(step => ReferenceEquals(step.Exception, row.Exception)))
+                    html.AppendLine($"<pre>{EscapeHtml(row.Exception.AsString)}</pre>");
+                html.AppendLine("</details></td></tr>");
+            }
+            html.AppendLine("</tbody></table>");
+        }
         
         if (scenario.RetryCount > 0 && scenario.Attempts?.Count > 0)
         {
@@ -229,7 +264,7 @@ public static class BDTestHtmlHelper
         }
         
         // Output
-        if (!string.IsNullOrEmpty(scenario.Output))
+        if (!scenario.IsOutline && !string.IsNullOrEmpty(scenario.Output))
         {
             html.AppendLine($"                <div class=\"output\">");
             html.AppendLine($"                    <h4>Output:</h4>");
@@ -245,9 +280,6 @@ public static class BDTestHtmlHelper
             html.AppendLine($"                    <div class=\"custom-html-content\">{scenario.CustomHtmlOutputForReport}</div>");
             html.AppendLine($"                </div>");
         }
-        
-        html.AppendLine($"            </div>");
-        html.AppendLine($"        </div>");
         
         return html.ToString();
     }

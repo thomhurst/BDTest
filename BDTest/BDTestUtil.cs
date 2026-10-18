@@ -6,7 +6,7 @@ namespace BDTest;
 
 public static class BDTestUtil
 {
-    public static List<Scenario> GetScenarios() => TestHolder.ScenariosByInternalId.Values.ToList();
+    public static List<Scenario> GetScenarios() => TestHolder.ScenariosByInternalId.Values.Where(scenario => scenario.OutlineId == null).ToList();
     public static string GetCurrentReportId => TestHolder.CurrentReportId;
     public static List<BuildableTest> GetNotRunScenarios() => TestHolder.NotRun.Values.ToList();
 

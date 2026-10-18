@@ -1,0 +1,81 @@
+@using BDTest.Razor.Reports.Extensions
+@model BDTest.Test.Scenario
+
+@if (Model.IsOutline)
+{
+    var columns = Model.Examples.SelectMany(row => row.ExampleValues.Keys).Distinct().ToArray();
+    <h4>Examples</h4>
+    <div class="scrollable-table-container">
+        <table class="table is-fullwidth">
+            <thead>
+            <tr>
+                <th>Example</th>
+                @foreach (var column in columns)
+                {
+                    <th>@column</th>
+                }
+                <th>Status</th>
+                <th>Duration</th>
+                <th>Details</th>
+            </tr>
+            </thead>
+            <tbody>
+            @for (var index = 0; index < Model.Examples.Count; index++)
+            {
+                var row = Model.Examples[index];
+                <tr class="example-row">
+                    <td>@(index + 1)</td>
+                    @foreach (var column in columns)
+                    {
+                        <td>@(row.ExampleValues.TryGetValue(column, out var value) ? value : "")</td>
+                    }
+                    <td><span class="@row.Status.GetCssColourValueForStatus() tag">@row.Status.AsString()</span></td>
+                    <td>@row.TimeTaken</td>
+                    <td>
+                        <details>
+                            <summary>Steps and output</summary>
+                            @if (!string.IsNullOrEmpty(row.TestStartupInformation))
+                            {
+                                <h5>Startup output</h5>
+                                <pre>@row.TestStartupInformation</pre>
+                            }
+                            @foreach (var step in row.Steps)
+                            {
+                                <div class="my-2">
+                                    <span>@step.StepText</span>
+                                    <span class="@step.Status.GetCssColourValueForStatus() tag">@step.Status.AsString()</span>
+                                    @if (step.Exception != null)
+                                    {
+                                        <pre class="text-danger">@step.Exception.AsString</pre>
+                                    }
+                                </div>
+                            }
+                            @if (!string.IsNullOrEmpty(row.Output))
+                            {
+                                <pre>@row.Output</pre>
+                            }
+                            @if (row.Exception != null && !row.Steps.Any(step => ReferenceEquals(step.Exception, row.Exception)))
+                            {
+                                <pre class="text-danger">@row.Exception.AsString</pre>
+                            }
+                            @if (row.RetryCount > 0)
+                            {
+                                @await Html.PartialAsync("_RetryHistory", row)
+                            }
+                            @if (!string.IsNullOrEmpty(row.TearDownOutput))
+                            {
+                                <h5>Teardown output</h5>
+                                <pre>@row.TearDownOutput</pre>
+                            }
+                            @if (!string.IsNullOrEmpty(row.CustomHtmlOutputForReport))
+                            {
+                                @await Html.PartialAsync("_CustomHtmlOutput", row.CustomHtmlOutputForReport)
+                            }
+                        </details>
+                    </td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+}

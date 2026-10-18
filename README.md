@@ -226,6 +226,43 @@ including derived classes and interface implementations. The first matching
 registered converter is used; within that converter, an exact type match takes
 precedence over an assignable match.
 
+### Scenario outlines and example tables
+
+Define one scenario over typed example rows with `ScenarioOutline`:
+
+```csharp
+await ScenarioOutline("Adding numbers", new[]
+{
+    new { Left = 1, Right = 2, Expected = 3 },
+    new { Left = 4, Right = 5, Expected = 9 }
+}, row => Given(() => SetNumbers(row.Left, row.Right))
+    .WithStepText(() => "numbers <Left> and <Right>")
+    .When(() => AddNumbers())
+    .Then(() => CheckResult(row.Expected)));
+```
+
+Public property names become example-table columns. Matching `<Name>` placeholders
+in step text (including `[StepText]` and `.WithStepText(...)`) use that row's values,
+formatted with invariant culture. Unknown placeholders stay unchanged; null values
+display as `null`. Values are captured when the outline is built.
+
+Rows run sequentially with separate steps, output, status, and retry counts. Each
+row starts with a fresh `Context`, including `ContextAmendment`; runner setup and
+teardown run once for the outline. Put per-example initialization in Given steps.
+During context amendment and factory construction, `BDTestContext.CurrentScenario`
+is `null` because the example scenario does not exist yet. Steps and retry context
+amendments see the executing row.
+The factory must return a new chain from the same test instance for each row.
+All rows run even when one fails. Afterward, the first exception for the most
+severe outcome is rethrown to the test runner. Passed rows with skipped rows pass;
+all-skipped rows skip. Failure, not-implemented, and inconclusive rows take priority.
+
+JSON, standalone HTML, and Razor reports contain one outline with an example table
+and per-row results. `BDTestUtil.GetScenarios()` returns the outline; its `Examples`
+collection contains the row scenarios and their `ExampleValues`. An outline needs
+at least one example and, like a regular chain, runs once through `BDTest()`,
+`BDTestAsync()`, or direct `await`.
+
 ### Asynchronous steps
 
 Asynchronous step expressions must return `Task` (including `Task<T>`). Convert

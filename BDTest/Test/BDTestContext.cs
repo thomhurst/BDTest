@@ -1,4 +1,5 @@
 using BDTest.Maps;
+using BDTest.Output;
 
 namespace BDTest.Test;
 
@@ -46,7 +47,17 @@ public class BDTestContext
         return _scenarioText = TestBase.GetScenarioText() ?? CurrentScenario?.GetScenarioText();
     }
 
-    public Scenario CurrentScenario => TestHolder.ScenariosByInternalId.Values.FirstOrDefault(scenario => scenario.FrameworkTestId == CurrentScenarioBDTestExecutionId);
+    /// <summary>The executing scenario, or null while an outline example is being constructed.</summary>
+    public Scenario CurrentScenario
+    {
+        get
+        {
+            // No row exists yet; the framework mapping may still contain the previous example.
+            if (TestOutputData.ConstructionOutput?.FrameworkExecutionId == CurrentScenarioBDTestExecutionId)
+                return null;
+            return TestHolder.ScenariosByTestFrameworkId.TryGetValue(CurrentScenarioBDTestExecutionId, out var scenario) ? scenario : null;
+        }
+    }
 
     public string CurrentTestRunnerId => TestHolder.CurrentReportId;
 }

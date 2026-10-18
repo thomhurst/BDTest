@@ -1,4 +1,4 @@
-﻿using BDTest.Attributes;
+using BDTest.Attributes;
 using BDTest.Constants;
 using BDTest.Maps;
 using BDTest.Output;
@@ -27,7 +27,16 @@ public class Scenario
     [JsonIgnore] internal BufferedOutput StartupOutput { get; set; } = new();
     [JsonIgnore] internal BufferedOutput TeardownOutputBuffer { get; } = new();
 
-    [JsonIgnore] public ExceptionWrapper Exception => Steps.Select(step => step.Exception).FirstOrDefault(exception => exception != null);
+    [JsonIgnore] public ExceptionWrapper Exception => ExecutionException
+        ?? Steps.Select(step => step.Exception).FirstOrDefault(exception => exception != null)
+        ?? Examples.OrderBy(example => example.Status.GetOrder()).Select(example => example.Exception)
+            .FirstOrDefault(exception => exception != null);
+
+    [JsonProperty] internal ExceptionWrapper ExecutionException { get; set; }
+    [JsonProperty] public bool IsOutline { get; internal set; }
+    [JsonProperty] public string OutlineId { get; private set; }
+    [JsonProperty] public Dictionary<string, string> ExampleValues { get; private set; } = new();
+    [JsonProperty] public List<Scenario> Examples { get; private set; } = new();
         
     [JsonProperty]
     public string TearDownOutput
@@ -47,30 +56,34 @@ public class Scenario
 
     internal bool AlreadyExecuted;
 
-    internal Scenario(List<Step> steps, BuildableTest testDetails)
+    internal Scenario(List<Step> steps, BuildableTest testDetails, Scenario outline = null,
+        Dictionary<string, string> exampleValues = null)
     {
         Timeout = testDetails.ScenarioTimeout;
-        Guid = testDetails.Guid;
+        Guid = testDetails.Guid == outline?.Guid ? System.Guid.NewGuid().ToString("N") : testDetails.Guid;
         FrameworkTestId = testDetails.TestId;
+        OutlineId = outline?.Guid;
+        ExampleValues = exampleValues ?? new Dictionary<string, string>();
 
         RuntimeInformation = new BDTestRuntimeInformation
         {
-            CallerFile = testDetails.CallerFile,
-            CallerMember = testDetails.CallerMember,
+            CallerFile = outline?.RuntimeInformation.CallerFile ?? testDetails.CallerFile,
+            CallerMember = outline?.RuntimeInformation.CallerMember ?? testDetails.CallerMember,
             BdTestBase = testDetails.BdTestBase
         };
             
-        TestHolder.NotRun.TryRemove(Guid, out _);
-        TestHolder.AddScenario(this);
+        TestHolder.NotRun.TryRemove(testDetails.Guid, out _);
 
         StoryText = testDetails.StoryText;
-        ScenarioText = testDetails.ScenarioText;
-        CustomTestInformation = testDetails.CustomTestInformation;
-        Tags = testDetails.Tags;
+        ScenarioText = outline?.ScenarioText ?? testDetails.ScenarioText;
+        CustomTestInformation = outline?.CustomTestInformation ?? testDetails.CustomTestInformation;
+        Tags = outline?.Tags ?? testDetails.Tags;
 
-        FileName = testDetails.CallerFile;
+        FileName = RuntimeInformation.CallerFile;
             
         Steps = steps;
+        outline?.Examples.Add(this);
+        TestHolder.AddScenario(this);
     }
 
     [JsonProperty]

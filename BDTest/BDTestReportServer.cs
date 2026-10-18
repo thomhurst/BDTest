@@ -50,7 +50,7 @@ public static class BDTestReportServer
             Path = "bdtest/data"
         }.Uri;
 
-        var scenarios = TestHolder.ScenariosByInternalId.Values.ToList();
+        var scenarios = BDTestUtil.GetScenarios();
             
         var dataOutputModel = new BDTestOutputModel
         {

@@ -1,6 +1,7 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
 using System.Linq.Expressions;
 using System.Runtime.ExceptionServices;
+using System.Text.RegularExpressions;
 using System.Threading;
 using BDTest.Attributes;
 using BDTest.Helpers;
@@ -99,6 +100,11 @@ public class Step
     [JsonIgnore]
     internal Func<string> OverriddenStepText { get; set; }
 
+    [JsonIgnore] internal Dictionary<string, string> ExampleValues { get; set; }
+
+    private string SubstituteExampleValues(string text) => ExampleValues == null ? text
+        : Regex.Replace(text, "<([^<>]+)>", match => ExampleValues.TryGetValue(match.Groups[1].Value, out var value) ? value : match.Value);
+
     [JsonIgnore]
     public bool IsRetry { get; set; }
 
@@ -127,14 +133,14 @@ public class Step
             var invokedStepText = OverriddenStepText.Invoke();
             if (!string.IsNullOrWhiteSpace(invokedStepText))
             {
-                StepText = $"{StepPrefix} {invokedStepText}";
+                StepText = SubstituteExampleValues($"{StepPrefix} {invokedStepText}");
                 return;
             }
         }
 
         SetShouldSkip();
             
-        StepText = $"{StepPrefix} {_generatedStepText}";
+        StepText = SubstituteExampleValues($"{StepPrefix} {_generatedStepText}");
     }
 
     private void SetShouldSkip()
