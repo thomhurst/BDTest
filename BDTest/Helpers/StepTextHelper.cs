@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Diagnostics;
 using System.Linq.Expressions;
+using System.Threading;
 using BDTest.Attributes;
 using BDTest.Interfaces;
 using BDTest.Settings;
@@ -25,14 +26,19 @@ public static class StepTextHelper
         return GetStepText(expression as MethodCallExpression);
     }
         
-    private static string GetStepText(MethodCallExpression methodCallExpression)
+    internal static string GetStepText(Expression expression, bool omitCancellationToken)
+    {
+        return GetStepText(expression as MethodCallExpression, omitCancellationToken);
+    }
+
+    private static string GetStepText(MethodCallExpression methodCallExpression, bool omitCancellationToken = false)
     {
         if (methodCallExpression == null)
         {
             return string.Empty;
         }
             
-        var arguments = GetMethodArguments(methodCallExpression);
+        var arguments = GetMethodArguments(methodCallExpression, omitCancellationToken);
 
         var methodInfo = methodCallExpression.Method;
 
@@ -70,10 +76,12 @@ public static class StepTextHelper
         return input;
     }
         
-    private static List<string> GetMethodArguments(MethodCallExpression methodCallExpression)
+    private static List<string> GetMethodArguments(MethodCallExpression methodCallExpression, bool omitCancellationToken)
     {
         return methodCallExpression?.Arguments != null 
-            ? methodCallExpression.Arguments.Select(GetExpressionValue).Select(value => value ?? "null").ToList() 
+            ? methodCallExpression.Arguments
+                .Where(argument => !omitCancellationToken || argument.Type != typeof(CancellationToken))
+                .Select(GetExpressionValue).Select(value => value ?? "null").ToList()
             : new List<string>();
     }
         

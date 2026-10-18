@@ -1,6 +1,7 @@
 ﻿using System.Linq.Expressions;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.Threading;
 
 namespace BDTest;
 
@@ -8,10 +9,18 @@ internal class Runnable
 {
     internal Expression<Func<Task>> Task { get; }
     internal Expression<Action> Action { get; }
+    private readonly Expression<Func<CancellationToken, Task>> _cancellableTask;
+    internal bool AcceptsCancellationToken => _cancellableTask != null;
+    internal Expression ExpressionBody => Action?.Body ?? Task?.Body ?? _cancellableTask?.Body;
 
     internal Runnable(Expression<Func<Task>> step)
     {
         Task = step ?? throw new ArgumentNullException(nameof(step));
+    }
+
+    internal Runnable(Expression<Func<CancellationToken, Task>> step)
+    {
+        _cancellableTask = step ?? throw new ArgumentNullException(nameof(step));
     }
 
     public Runnable(Expression<Action> step)
@@ -19,8 +28,14 @@ internal class Runnable
         Action = step ?? throw new ArgumentNullException(nameof(step));
     }
 
-    internal async Task Run()
+    internal async Task Run(CancellationToken cancellationToken = default)
     {
+        if (_cancellableTask != null)
+        {
+            await _cancellableTask.Compile().Invoke(cancellationToken).ConfigureAwait(false);
+            return;
+        }
+
         if (Task != null)
         {
             await Task.Compile().Invoke();
@@ -92,6 +107,6 @@ internal class Runnable
 
     internal string GetExpressionString()
     {
-        return Task?.Body?.ToString() ?? Action?.Body?.ToString();
+        return ExpressionBody?.ToString();
     }
 }

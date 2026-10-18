@@ -69,9 +69,10 @@ internal class ScenarioExecutor : IScenarioExecutor
 
             ConsoleReporter.WriteLineToConsoleOnly($"--------------------------------------------------{Environment.NewLine}", ConsoleColor.Yellow);
 
+            var stepBudget = scenario.Timeout.HasValue ? Stopwatch.StartNew() : null;
             foreach (var step in scenario.Steps)
             {
-                await step.Execute(scenario.BdTestBaseClass).ConfigureAwait(false);
+                await step.Execute(scenario.BdTestBaseClass, scenario.Timeout, scenario.Timeout - stepBudget?.Elapsed).ConfigureAwait(false);
             }
 
             scenario.Status = scenario.Steps.Count > 0 && scenario.Steps.All(step => step.Status == Status.Skipped)
@@ -84,13 +85,13 @@ internal class ScenarioExecutor : IScenarioExecutor
             scenario.Status = Status.NotImplemented;
             throw;
         }
-        catch (Exception e) when (BDTestSettings.CustomExceptionSettings.SuccessExceptionTypes.Contains(e.GetType()))
+        catch (Exception e) when (!scenario.TimedOut && BDTestSettings.CustomExceptionSettings.SuccessExceptionTypes.Contains(e.GetType()))
         {
             attemptException = e;
             scenario.Status = Status.Passed;
             throw;
         }
-        catch (Exception e) when (BDTestSettings.CustomExceptionSettings.SkipExceptionTypes.Contains(e.GetType()))
+        catch (Exception e) when (!scenario.TimedOut && BDTestSettings.CustomExceptionSettings.SkipExceptionTypes.Contains(e.GetType()))
         {
             attemptException = e;
             scenario.Status = Status.Skipped;
@@ -101,7 +102,7 @@ internal class ScenarioExecutor : IScenarioExecutor
             }
             throw;
         }
-        catch (Exception e) when (BDTestSettings.CustomExceptionSettings.InconclusiveExceptionTypes.Contains(e.GetType()))
+        catch (Exception e) when (!scenario.TimedOut && BDTestSettings.CustomExceptionSettings.InconclusiveExceptionTypes.Contains(e.GetType()))
         {
             attemptException = e;
             scenario.Status = Status.Inconclusive;
@@ -149,7 +150,7 @@ internal class ScenarioExecutor : IScenarioExecutor
 
                 foreach (var step in scenario.Steps)
                 {
-                    ConsoleReporter.WriteLineToConsoleOnly($"{step.StepText} > [{step.Status}]");
+                    ConsoleReporter.WriteLineToConsoleOnly($"{step.StepText} > [{step.Status}{(step.TimedOut ? " (Timed out)" : string.Empty)}]");
                 }
 
                 ConsoleReporter.WriteLineToConsoleOnly($"{Environment.NewLine}--------------------------------------------------{Environment.NewLine}", ConsoleColor.Yellow);

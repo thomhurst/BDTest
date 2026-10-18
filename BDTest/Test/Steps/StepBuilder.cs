@@ -47,6 +47,7 @@ public abstract class StepBuilder : BuildableTest
 
     internal StepBuilder(List<Step> previousSteps, Runnable runnable, BuildableTest previousPartiallyBuiltTest)
     {
+        ScenarioTimeout = previousPartiallyBuiltTest.ScenarioTimeout;
         StoryText = previousPartiallyBuiltTest.StoryText;
         ScenarioText = previousPartiallyBuiltTest.ScenarioText;
         BdTestBase = previousPartiallyBuiltTest.BdTestBase;

@@ -1,4 +1,5 @@
-﻿using System.Linq.Expressions;
+using System.Linq.Expressions;
+using System.Threading;
 
 namespace BDTest.Test.Steps.Given;
 
@@ -32,6 +33,11 @@ public class AndGiven : StepBuilder
         return new AndGiven(ExistingSteps, new Runnable(step), this);
     }
 
+    public AndGiven And(Expression<Func<CancellationToken, Task>> step)
+    {
+        return new AndGiven(ExistingSteps, new Runnable(step), this);
+    }
+
     public When.When When(Expression<Func<Task>> step)
     {
         return new When.When(ExistingSteps, new Runnable(step), this);
@@ -43,6 +49,16 @@ public class AndGiven : StepBuilder
     }
 
     public ButGiven But(Expression<Func<Task>> step)
+    {
+        return new ButGiven(ExistingSteps, new Runnable(step), this);
+    }
+
+    public When.When When(Expression<Func<CancellationToken, Task>> step)
+    {
+        return new When.When(ExistingSteps, new Runnable(step), this);
+    }
+
+    public ButGiven But(Expression<Func<CancellationToken, Task>> step)
     {
         return new ButGiven(ExistingSteps, new Runnable(step), this);
     }
