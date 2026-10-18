@@ -1,4 +1,3 @@
-using BDTest.Maps;
 using BDTest.Output;
 
 namespace BDTest.Test;
@@ -53,11 +52,12 @@ public class BDTestContext
         get
         {
             // No row exists yet; the framework mapping may still contain the previous example.
-            if (TestOutputData.ConstructionOutput?.FrameworkExecutionId == CurrentScenarioBDTestExecutionId)
+            if (TestOutputData.ConstructionOutput?.FrameworkExecutionId == CurrentScenarioBDTestExecutionId
+                && TestOutputData.ConstructionOutput.Run == TestBase.TestRun)
                 return null;
-            return TestHolder.ScenariosByTestFrameworkId.TryGetValue(CurrentScenarioBDTestExecutionId, out var scenario) ? scenario : null;
+            return TestBase.TestRun.Store.ScenariosByTestFrameworkId.TryGetValue(CurrentScenarioBDTestExecutionId, out var scenario) ? scenario : null;
         }
     }
 
-    public string CurrentTestRunnerId => TestHolder.CurrentReportId;
+    public string CurrentTestRunnerId => TestBase.TestRun.ReportId;
 }

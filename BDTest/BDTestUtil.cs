@@ -6,13 +6,27 @@ namespace BDTest;
 
 public static class BDTestUtil
 {
-    public static List<Scenario> GetScenarios() => TestHolder.ScenariosByInternalId.Values.Where(scenario => scenario.OutlineId == null).ToList();
+    public static List<Scenario> GetScenarios() => GetScenarios(BDTestRun.Default);
+
+    /// <summary>Gets a snapshot of the run's top-level scenarios.</summary>
+    public static List<Scenario> GetScenarios(BDTestRun run) =>
+        (run ?? throw new ArgumentNullException(nameof(run))).Store.ScenariosByInternalId.Values
+        .Where(scenario => scenario.OutlineId == null).ToList();
+
     public static string GetCurrentReportId => TestHolder.CurrentReportId;
-    public static List<BuildableTest> GetNotRunScenarios() => TestHolder.NotRun.Values.ToList();
+    public static List<BuildableTest> GetNotRunScenarios() => GetNotRunScenarios(BDTestRun.Default);
+
+    /// <summary>Gets a snapshot of the run's unfinished scenario definitions.</summary>
+    public static List<BuildableTest> GetNotRunScenarios(BDTestRun run) =>
+        (run ?? throw new ArgumentNullException(nameof(run))).Store.NotRun.Values.ToList();
 
     /// <summary>Clears recorded and not-run scenarios, pending output, and scenario listeners.</summary>
     /// <remarks>Call between test runs. This does not cancel executing tests or change the report ID.</remarks>
-    public static void ClearScenarios() => TestOutputData.ClearAllData();
+    public static void ClearScenarios() => ClearScenarios(BDTestRun.Default);
+
+    /// <summary>Clears this run's scenarios, pending definitions, listeners, and output.</summary>
+    /// <remarks>Call between executions. Does not cancel tests or change the report identifier.</remarks>
+    public static void ClearScenarios(BDTestRun run) => (run ?? throw new ArgumentNullException(nameof(run))).Clear();
 
     public static TestTimer GetTestTimer(IReadOnlyCollection<Scenario> scenarios)
     {

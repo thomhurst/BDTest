@@ -1,4 +1,4 @@
-﻿using BDTest.Attributes;
+using BDTest.Attributes;
 using BDTest.Constants;
 using Newtonsoft.Json;
 
@@ -6,6 +6,10 @@ namespace BDTest.Test;
 
 public class BuildableTest
 {
+    /// <summary>Gets the run captured when this scenario definition was built.</summary>
+    [JsonIgnore]
+    public BDTestRun Run { get; internal set; } = BDTestRun.Default;
+
     [JsonIgnore]
     internal TimeSpan? ScenarioTimeout { get; set; }
 

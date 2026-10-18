@@ -5,17 +5,19 @@ namespace BDTest.Helpers;
 
 public class HtmlWriter
 {
+    private readonly BDTestRun _run;
     private string TestId { get; }
 
-    internal HtmlWriter(string testId)
+    internal HtmlWriter(string testId, BDTestRun run = null)
     {
         TestId = testId;
+        _run = run ?? BDTestRun.Default;
     }
 
     /// <summary>Writes raw HTML without encoding. Use only for intentional markup.</summary>
     public void Custom(string html)
     {
-        TestOutputData.WriteCustomHtmlForReport(TestId, html);
+        TestOutputData.WriteCustomHtmlForReport(TestId, html, _run);
     }
 
     /// <summary>Writes encoded text linked to an HTTP(S), mailto, or relative URL.</summary>

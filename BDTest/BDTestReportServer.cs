@@ -28,9 +28,22 @@ public static class BDTestReportServer
         return await SendDataAndGetReportUriAsync(serverAddress, bdTestRunDescriptor, httpClient).ConfigureAwait(false);
     }
         
-    public static async Task<Uri> SendDataAndGetReportUriAsync(Uri serverAddress, BDTestRunDescriptor bdTestRunDescriptor,
-        HttpClient httpClient)
+    public static Task<Uri> SendDataAndGetReportUriAsync(Uri serverAddress, BDTestRunDescriptor bdTestRunDescriptor,
+        HttpClient httpClient) => SendDataAndGetReportUriAsync(serverAddress, bdTestRunDescriptor, httpClient, BDTestRun.Default);
+
+    /// <summary>Uploads only the scenarios and pending definitions owned by the supplied run.</summary>
+    public static async Task<Uri> SendDataAndGetReportUriAsync(BDTestRun run, Uri serverAddress, BDTestRunDescriptor bdTestRunDescriptor)
     {
+        using var httpClient = new HttpClient { Timeout = TimeSpan.FromMinutes(2) };
+        return await SendDataAndGetReportUriAsync(serverAddress, bdTestRunDescriptor, httpClient, run).ConfigureAwait(false);
+    }
+
+    /// <summary>Uploads the supplied run using a caller-owned HTTP client.</summary>
+    public static async Task<Uri> SendDataAndGetReportUriAsync(Uri serverAddress, BDTestRunDescriptor bdTestRunDescriptor,
+        HttpClient httpClient, BDTestRun run)
+    {
+        if (run == null) throw new ArgumentNullException(nameof(run));
+        run.ThrowIfDisposed();
         var pingUri = new UriBuilder(serverAddress)
         {
             Path = "bdtest/ping"
@@ -50,19 +63,19 @@ public static class BDTestReportServer
             Path = "bdtest/data"
         }.Uri;
 
-        var scenarios = BDTestUtil.GetScenarios();
+        var scenarios = BDTestUtil.GetScenarios(run);
             
         var dataOutputModel = new BDTestOutputModel
         {
-            Id = TestHolder.CurrentReportId,
+            Id = run.ReportId,
             Environment = bdTestRunDescriptor?.Environment ?? BDTestSettings.LegacyEnvironment,
             Tag = bdTestRunDescriptor?.Tag ?? BDTestSettings.LegacyTag,
             BranchName = bdTestRunDescriptor?.BranchName ?? BDTestSettings.LegacyBranchName,
             MachineName = Environment.MachineName,
             Scenarios = scenarios,
             Version = BDTestVersionHelper.CurrentVersion,
-            NotRun = TestHolder.NotRun.Values.ToList(),
-            TestTimer = BDTestUtil.GetTestTimer(scenarios)
+            NotRun = BDTestUtil.GetNotRunScenarios(run),
+            TestTimer = scenarios.Count == 0 ? new Output.TestTimer { TestsStartedAt = run.StartedAt } : BDTestUtil.GetTestTimer(scenarios)
         };
 
         AddCustomProperties(dataOutputModel);

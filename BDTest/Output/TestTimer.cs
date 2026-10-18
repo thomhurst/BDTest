@@ -6,7 +6,7 @@ namespace BDTest.Output;
 
 public class TestTimer
 {
-    [JsonProperty] public DateTime TestsStartedAt { get; set; } = InternalTestTimeData.TestsStartedAt ?? InternalTestTimeData.ProcessStartTime;
+    [JsonProperty] public DateTime TestsStartedAt { get; set; } = BDTestRun.Default.StartedAt;
 
     [JsonProperty] public DateTime TestsFinishedAt { get; set; } = DateTime.UtcNow;
 
@@ -28,6 +28,5 @@ public class TestTimer
 
 internal static class InternalTestTimeData
 {
-    [JsonIgnore] internal static DateTime? TestsStartedAt { get; set; }
     [JsonIgnore] internal static DateTime ProcessStartTime => Process.GetCurrentProcess().StartTime.ToUniversalTime();
 }

@@ -1,16 +1,21 @@
 using System.Text;
-using BDTest.Maps;
 using BDTest.Test;
 
 namespace BDTest.Output;
 
 internal class TestOutputData : TextWriter
 {
-    private static readonly Dictionary<string, StringBuilder> ThreadAndChars = new();
+    private static readonly AsyncLocal<BDTestRun> AsyncLocalRun = new();
+    internal static BDTestRun Run
+    {
+        get => AsyncLocalRun.Value ?? BDTestRun.Default;
+        set => AsyncLocalRun.Value = value;
+    }
+    private static Dictionary<string, StringBuilder> ThreadAndChars => Run.OutputBuffers;
+    private static object Lock => Run.Store.Gate;
     public static readonly ConsoleOutputInterceptor Instance = new();
     private static TextWriter Console => Instance.One;
-    private static readonly object Lock = new();
-    
+
     private static readonly AsyncLocal<string> AsyncLocalTestId = new();
     internal static string TestId {
         get => AsyncLocalTestId.Value;
@@ -61,9 +66,10 @@ internal class TestOutputData : TextWriter
     {
         lock (Lock)
         {
+            if (Run.Store.IsDisposed) return;
             // Builders change TestId as a chain grows. Keep construction output
             // in the example's buffer until its final scenario exists.
-            if (ConstructionOutput != null)
+            if (ConstructionOutput != null && ConstructionOutput.Run == Run)
             {
                 if (character.HasValue) ConstructionOutput.Text.Append(character.Value);
                 else ConstructionOutput.Text.Append(value);
@@ -76,7 +82,7 @@ internal class TestOutputData : TextWriter
             }
 
             if (string.IsNullOrEmpty(TestId) 
-                || !TestHolder.ScenariosByInternalId.TryGetValue(TestId, out var scenario)
+                || !Run.Store.ScenariosByInternalId.TryGetValue(TestId, out var scenario)
                 || scenario.Status == Status.NotRun)
             {
                 if (FrameworkExecutionId == null)
@@ -85,11 +91,11 @@ internal class TestOutputData : TextWriter
                 }
                 else if (character.HasValue)
                 {
-                    TestHolder.AppendStartupOutput(FrameworkExecutionId, character.Value);
+                    Run.Store.AppendStartupOutput(FrameworkExecutionId, character.Value);
                 }
                 else
                 {
-                    TestHolder.AppendStartupOutput(FrameworkExecutionId, value, appendNewLine: false);
+                    Run.Store.AppendStartupOutput(FrameworkExecutionId, value, appendNewLine: false);
                 }
                 return;
             }
@@ -133,7 +139,7 @@ internal class TestOutputData : TextWriter
                 return string.Empty;
             }
 
-            if (TestId == null && TestHolder.ScenariosByTestFrameworkId.TryGetValue(FrameworkExecutionId, out var scenario))
+            if (TestId == null && Run.Store.ScenariosByTestFrameworkId.TryGetValue(FrameworkExecutionId, out var scenario))
             {
                 TestId = scenario.Guid;
             }
@@ -149,15 +155,7 @@ internal class TestOutputData : TextWriter
         }
     }
 
-    internal static void ClearAllData()
-    {
-        // Use the same lock order as WriteCore: output, then scenario registry.
-        lock (Lock)
-        {
-            ThreadAndChars.Clear();
-            TestHolder.Clear();
-        }
-    }
+    internal static void ClearAllData() => BDTestRun.Default.Clear();
 
     public static void ClearCurrentTaskData()
     {
@@ -174,7 +172,7 @@ internal class TestOutputData : TextWriter
 
     public override Encoding Encoding { get; } = Encoding.UTF8;
 
-    internal static void CollectStartupOutput(string frameworkExecutionId, string text, bool shouldWriteToConsole, bool appendNewLine = true)
+    internal static void CollectStartupOutput(string frameworkExecutionId, string text, bool shouldWriteToConsole, bool appendNewLine = true, BDTestRun run = null)
     {
         if (frameworkExecutionId == null)
         {
@@ -182,12 +180,14 @@ internal class TestOutputData : TextWriter
             return;
         }
 
+        run ??= Run;
+        run.ThrowIfDisposed();
         appendNewLine = appendNewLine && text.Length > 1;
         var constructionOutput = ConstructionOutput;
-        if (constructionOutput != null && constructionOutput.FrameworkExecutionId == frameworkExecutionId)
+        if (constructionOutput != null && constructionOutput.FrameworkExecutionId == frameworkExecutionId && constructionOutput.Run == run)
             constructionOutput.Startup.Append(text, appendNewLine);
         else
-            TestHolder.AppendStartupOutput(frameworkExecutionId, text, appendNewLine);
+            run.Store.AppendStartupOutput(frameworkExecutionId, text, appendNewLine);
 
         if (shouldWriteToConsole)
         {
@@ -195,7 +195,7 @@ internal class TestOutputData : TextWriter
         }
     }
 
-    internal static void CollectTearDownOutput(string frameworkExecutionId, string text, bool shouldWriteToConsole)
+    internal static void CollectTearDownOutput(string frameworkExecutionId, string text, bool shouldWriteToConsole, BDTestRun run = null)
     {
         if (frameworkExecutionId == null)
         {
@@ -203,12 +203,14 @@ internal class TestOutputData : TextWriter
             return;
         }
 
+        run ??= Run;
+        run.ThrowIfDisposed();
         var constructionOutput = ConstructionOutput;
-        if (constructionOutput != null && constructionOutput.FrameworkExecutionId == frameworkExecutionId)
+        if (constructionOutput != null && constructionOutput.FrameworkExecutionId == frameworkExecutionId && constructionOutput.Run == run)
         {
             constructionOutput.Teardown.Append(text, appendNewLine: true);
         }
-        else if (TestHolder.ScenariosByTestFrameworkId.TryGetValue(frameworkExecutionId, out var foundScenario))
+        else if (run.Store.ScenariosByTestFrameworkId.TryGetValue(frameworkExecutionId, out var foundScenario))
         {
             foundScenario.TeardownOutputBuffer.Append(text, appendNewLine: true);
         }
@@ -219,15 +221,17 @@ internal class TestOutputData : TextWriter
         }
     }
 
-    internal static void WriteCustomHtmlForReport(string testId, string htmlValue)
+    internal static void WriteCustomHtmlForReport(string testId, string htmlValue, BDTestRun run = null)
     {
+        run ??= Run;
+        run.ThrowIfDisposed();
         var constructionOutput = ConstructionOutput;
-        if (constructionOutput != null && constructionOutput.FrameworkExecutionId == testId)
+        if (constructionOutput != null && constructionOutput.FrameworkExecutionId == testId && constructionOutput.Run == run)
         {
             constructionOutput.Html.Append(htmlValue);
             return;
         }
 
-        TestHolder.ListenForScenario(testId, scenario => scenario.CustomHtmlOutputForReport += htmlValue);
+        run.Store.ListenForScenario(testId, scenario => scenario.CustomHtmlOutputForReport += htmlValue);
     }
 }

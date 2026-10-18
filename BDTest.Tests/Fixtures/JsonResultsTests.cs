@@ -56,7 +56,8 @@ public class JsonResultsTests : NUnitBDTestBase<MyTestContext>
                 // The below are runtime only, and so we don't serialize.
                 MembersToIgnore =
                 {
-                    nameof(Scenario.BdTestBaseClass)
+                    nameof(Scenario.BdTestBaseClass),
+                    nameof(Scenario.Run)
                 }
             }
         };

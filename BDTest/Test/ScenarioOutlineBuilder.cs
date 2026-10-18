@@ -5,7 +5,6 @@ using System.Runtime.ExceptionServices;
 using BDTest.Exceptions;
 using BDTest.Extensions;
 using BDTest.Helpers;
-using BDTest.Maps;
 using BDTest.Output;
 using BDTest.Settings;
 
@@ -39,18 +38,20 @@ public sealed class ScenarioOutlineBuilder<TExample> : BuildableTest
                 return value == null ? "null" : Convert.ToString(value, CultureInfo.InvariantCulture);
             });
         }).ToArray();
+        Run = testBase.TestRun;
+        Run.ThrowIfDisposed();
         Guid = System.Guid.NewGuid().ToString("N");
         TestId = testId;
         BdTestBase = testBase;
         CallerMember = callerMember;
         CallerFile = callerFile;
-        ReportId = TestHolder.CurrentReportId;
+        ReportId = Run.ReportId;
         StoryText = StoryTextHelper.GetStoryText(testBase);
         ScenarioText = new ScenarioText(text);
         var testMethod = this.GetTestMethod();
         CustomTestInformation = TestInformationAttributeHelper.GetTestInformationAttributes(testMethod);
         Tags = TagHelper.GetTags(this.GetTestClass(), testMethod);
-        TestHolder.NotRun[Guid] = this;
+        Run.Store.RegisterPending(this);
     }
 
     public Task<Scenario> BDTestAsync() => Invoke(false);
@@ -59,8 +60,10 @@ public sealed class ScenarioOutlineBuilder<TExample> : BuildableTest
 
     private Task<Scenario> Invoke(bool runOnThreadPool)
     {
+        Run.ThrowIfDisposed();
         if (Interlocked.Exchange(ref _executionStarted, 1) != 0)
             throw new AlreadyExecutedException("This scenario outline has already started execution. Create a new outline to run more examples.");
+        TestOutputData.Run = Run;
         Console.SetOut(TestOutputData.Instance);
         TestOutputData.TestId = Guid;
         TestOutputData.FrameworkExecutionId = TestId;
@@ -84,13 +87,13 @@ public sealed class ScenarioOutlineBuilder<TExample> : BuildableTest
         outline.StartTime = DateTime.UtcNow;
         outline.Status = Status.Pending;
         var failures = new List<(Status Status, ExceptionDispatchInfo Exception)>();
-        var previousNotRun = new HashSet<string>(TestHolder.NotRun
+        var previousNotRun = new HashSet<string>(Run.Store.NotRun
             .Where(pair => pair.Value.TestId == TestId).Select(pair => pair.Key));
         try
         {
             for (var index = 0; index < _examples.Length; index++)
             {
-                var constructionOutput = new ScenarioConstructionOutput(TestId);
+                var constructionOutput = new ScenarioConstructionOutput(TestId, Run);
                 try
                 {
                     RunnableStepBuilder builder;
@@ -102,12 +105,13 @@ public sealed class ScenarioOutlineBuilder<TExample> : BuildableTest
                         builder = _scenario(_examples[index]) ?? throw new InvalidOperationException("The example factory returned no scenario builder.");
                         if (builder.TestId != TestId || !ReferenceEquals(builder.BdTestBase, BdTestBase))
                         {
-                            TestHolder.NotRun.TryRemove(builder.Guid, out _);
+                            builder.Run.Store.NotRun.TryRemove(builder.Guid, out _);
                             throw new InvalidOperationException("Example scenarios must be built by the outline's test instance.");
                         }
                     }
                     finally
                     {
+                        TestOutputData.Run = Run;
                         TestOutputData.ConstructionOutput = previousOutput;
                     }
                     await builder.Invoke(builder, outline: outline, exampleValues: _values[index]).ConfigureAwait(false);
@@ -169,15 +173,15 @@ public sealed class ScenarioOutlineBuilder<TExample> : BuildableTest
             outline.EndTime = DateTime.UtcNow;
             outline.TimeTaken = outline.EndTime - outline.StartTime;
             outline.Output = string.Join(Environment.NewLine, outline.Examples.Select(row => row.Output));
-            TestHolder.AddScenario(outline);
+            Run.Store.AddScenario(outline);
             TestOutputData.TestId = outline.Guid;
             TestOutputData.FrameworkExecutionId = TestId;
             outline.ReleaseRuntimeReferences();
             _examples = null;
             _scenario = null;
             // Discard unfinished chains created by a row factory that threw or branched.
-            foreach (var pending in TestHolder.NotRun.Where(pair => pair.Value.TestId == TestId && !previousNotRun.Contains(pair.Key)))
-                TestHolder.NotRun.TryRemove(pending.Key, out _);
+            foreach (var pending in Run.Store.NotRun.Where(pair => pair.Value.TestId == TestId && !previousNotRun.Contains(pair.Key)))
+                Run.Store.NotRun.TryRemove(pending.Key, out _);
         }
     }
 }

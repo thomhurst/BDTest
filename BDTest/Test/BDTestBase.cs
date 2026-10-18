@@ -1,11 +1,10 @@
-﻿using System.Linq.Expressions;
+using System.Linq.Expressions;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.ExceptionServices;
 using System.Threading;
 using BDTest.Attributes;
 using BDTest.Helpers;
-using BDTest.Maps;
 using BDTest.Output;
 using BDTest.Test.Steps.Given;
 using BDTest.Test.Steps.When;
@@ -14,6 +13,10 @@ namespace BDTest.Test;
 
 public abstract class BDTestBase
 {
+    /// <summary>Gets the run that owns this test's scenarios and output.</summary>
+    /// <remarks>Custom adapters should override this property with a stable, explicitly owned run.</remarks>
+    public virtual BDTestRun TestRun => BDTestRun.Default;
+
     private static readonly AsyncLocal<string> AsyncLocalBDTestExecutionId = new();
 
     // Retained for existing custom adapters that do not call MarkTestAsStarted.
@@ -44,37 +47,37 @@ public abstract class BDTestBase
     public Given Given(Expression<Action> step, [CallerMemberName] string callerMember = null,
         [CallerFilePath] string callerFile = null)
     {
-        return new Given(new Runnable(step), callerMember, callerFile, BDTestExecutionId, TestHolder.CurrentReportId, this);
+        return new Given(new Runnable(step), callerMember, callerFile, BDTestExecutionId, TestRun.ReportId, this);
     }
 
     public Given Given(Expression<Func<Task>> step, [CallerMemberName] string callerMember = null,
         [CallerFilePath] string callerFile = null)
     {
-        return new Given(new Runnable(step), callerMember, callerFile, BDTestExecutionId, TestHolder.CurrentReportId, this);
+        return new Given(new Runnable(step), callerMember, callerFile, BDTestExecutionId, TestRun.ReportId, this);
     }
 
     public Given Given(Expression<Func<CancellationToken, Task>> step, [CallerMemberName] string callerMember = null,
         [CallerFilePath] string callerFile = null)
     {
-        return new Given(new Runnable(step), callerMember, callerFile, BDTestExecutionId, TestHolder.CurrentReportId, this);
+        return new Given(new Runnable(step), callerMember, callerFile, BDTestExecutionId, TestRun.ReportId, this);
     }
 
     public When When(Expression<Action> step, [CallerMemberName] string callerMember = null,
         [CallerFilePath] string callerFile = null)
     {
-        return new When(new Runnable(step), callerMember, callerFile, BDTestExecutionId, TestHolder.CurrentReportId, this);
+        return new When(new Runnable(step), callerMember, callerFile, BDTestExecutionId, TestRun.ReportId, this);
     }
 
     public When When(Expression<Func<Task>> step, [CallerMemberName] string callerMember = null,
         [CallerFilePath] string callerFile = null)
     {
-        return new When(new Runnable(step), callerMember, callerFile, BDTestExecutionId, TestHolder.CurrentReportId, this);
+        return new When(new Runnable(step), callerMember, callerFile, BDTestExecutionId, TestRun.ReportId, this);
     }
 
     public When When(Expression<Func<CancellationToken, Task>> step, [CallerMemberName] string callerMember = null,
         [CallerFilePath] string callerFile = null)
     {
-        return new When(new Runnable(step), callerMember, callerFile, BDTestExecutionId, TestHolder.CurrentReportId, this);
+        return new When(new Runnable(step), callerMember, callerFile, BDTestExecutionId, TestRun.ReportId, this);
     }
 
     public void WithContext<TContext>(Func<TContext, Scenario> test) where TContext : new()
@@ -89,15 +92,15 @@ public abstract class BDTestBase
 
     public void WriteStartupOutput(string text)
     {
-        TestOutputData.CollectStartupOutput(BDTestExecutionId, text, true);
+        TestOutputData.CollectStartupOutput(BDTestExecutionId, text, true, run: TestRun);
     }
 
     public void WriteTearDownOutput(string text)
     {
-        TestOutputData.CollectTearDownOutput(BDTestExecutionId, text, true);
+        TestOutputData.CollectTearDownOutput(BDTestExecutionId, text, true, TestRun);
     }
 
-    public HtmlWriter ScenarioHtmlWriter => new(BDTestExecutionId);
+    public HtmlWriter ScenarioHtmlWriter => new(BDTestExecutionId, TestRun);
 
     /// <summary>Reports a completed whole-scenario skip to the test runner.</summary>
     /// <remarks>
@@ -138,6 +141,8 @@ public abstract class BDTestBase
     /// </remarks>
     protected void MarkTestAsStarted()
     {
+        TestRun.ThrowIfDisposed();
+        TestOutputData.Run = TestRun;
         StaticBDTestExecutionId = Guid.NewGuid().ToString("N");
         TestOutputData.TestId = null;
         TestOutputData.FrameworkExecutionId = BDTestExecutionId;
@@ -146,11 +151,13 @@ public abstract class BDTestBase
 
     protected virtual void MarkTestAsComplete()
     {
-        TestHolder.CompleteTest(BDTestExecutionId);
+        TestRun.Store.CompleteTest(BDTestExecutionId);
+        TestOutputData.Run = TestRun;
         TestOutputData.ClearCurrentTaskData();
         AsyncLocalBDTestExecutionId.Value = null;
         TestOutputData.TestId = null;
         TestOutputData.FrameworkExecutionId = null;
+        TestOutputData.Run = null;
     }
 
     public string GetStoryText()

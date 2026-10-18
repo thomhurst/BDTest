@@ -1,6 +1,5 @@
-﻿using BDTest.Extensions;
+using BDTest.Extensions;
 using BDTest.Helpers;
-using BDTest.Maps;
 using BDTest.Output;
 
 namespace BDTest.Test.Steps;
@@ -24,6 +23,9 @@ public abstract class StepBuilder : BuildableTest
     // First Test Construction - Given or When
     internal StepBuilder(Runnable runnable, string callerMember, string callerFile, string testId, string reportId, StepType stepType, BDTestBase bdTestBase)
     {
+        Run = bdTestBase.TestRun;
+        Run.ThrowIfDisposed();
+        TestOutputData.Run = Run;
         BdTestBase = bdTestBase;
         CallerMember = callerMember;
         CallerFile = callerFile;
@@ -36,7 +38,7 @@ public abstract class StepBuilder : BuildableTest
             
         ExistingSteps = new List<Step> { new(runnable, stepType, Guid, ReportId) };
             
-        TestHolder.NotRun[Guid] = this;
+        Run.Store.RegisterPending(this);
             
         StoryText = StoryTextHelper.GetStoryText(bdTestBase);
         SetScenarioText();
@@ -47,6 +49,10 @@ public abstract class StepBuilder : BuildableTest
 
     internal StepBuilder(List<Step> previousSteps, Runnable runnable, BuildableTest previousPartiallyBuiltTest)
     {
+        Run = previousPartiallyBuiltTest.Run;
+        Run.ThrowIfDisposed();
+        TestOutputData.Run = Run;
+        TestOutputData.FrameworkExecutionId = previousPartiallyBuiltTest.TestId;
         ScenarioTimeout = previousPartiallyBuiltTest.ScenarioTimeout;
         StoryText = previousPartiallyBuiltTest.StoryText;
         ScenarioText = previousPartiallyBuiltTest.ScenarioText;
@@ -65,8 +71,8 @@ public abstract class StepBuilder : BuildableTest
         ExistingSteps = previousSteps.Select(step => new Step(step, Guid)).ToList();
         ExistingSteps.Add(new Step(runnable, StepType, Guid, ReportId));
 
-        TestHolder.NotRun.TryRemove(previousPartiallyBuiltTest.Guid, out _);
-        TestHolder.NotRun[Guid] = this;
+        Run.Store.NotRun.TryRemove(previousPartiallyBuiltTest.Guid, out _);
+        Run.Store.RegisterPending(this);
         TestOutputData.TestId = Guid;
     }
         
