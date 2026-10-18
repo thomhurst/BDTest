@@ -19,7 +19,11 @@ public abstract class TUnitBDTestBase<TContext> : AbstractContextBDTestBase<TCon
 
     protected override void OnScenarioSkipped(string reason) => throw new SkipTestException(reason);
 
+    // Keep the original public entry points, but give TUnit distinctive hook names.
+    // Its generic-base hook invoker resolves methods by name on the derived type.
     [Before(HookType.Test)]
+    public void BDTestTUnitSetup() => Setup();
+
     public void Setup()
     {
         MarkTestAsStarted();
@@ -28,6 +32,8 @@ public abstract class TUnitBDTestBase<TContext> : AbstractContextBDTestBase<TCon
     }
 
     [After(HookType.Test)]
+    public void BDTestTUnitTearDown() => TearDown();
+
     public void TearDown()
     {
         RemoveContext();
