@@ -179,8 +179,9 @@ public class ReportSerializationTests
         Assert.Throws<JsonException>(() => BDTestJsonHelper.Deserialize(json));
     }
 
-    [Test]
-    public void Registration_preserves_host_MVC_formatters_and_JSON_options()
+    [TestCase(false)]
+    [TestCase(true)]
+    public void Registration_preserves_host_MVC_formatters_and_JSON_options(bool useLegacyRegistration)
     {
         var services = new ServiceCollection();
         services.AddLogging();
@@ -191,8 +192,21 @@ public class ReportSerializationTests
         });
         using var before = services.BuildServiceProvider();
         var expected = before.GetRequiredService<IOptions<MvcOptions>>().Value;
-        services.AddBDTestReports();
+        if (useLegacyRegistration)
+        {
+            var register = Required(typeof(BDTestExtensions).GetMethod("AddBdTestReportControllersAndViews"))
+                .CreateDelegate<Func<IMvcBuilder, IMvcBuilder>>();
+            Assert.That(register(mvc), Is.SameAs(mvc));
+        }
+        else
+        {
+            services.AddBDTestReports();
+        }
         using var after = services.BuildServiceProvider();
+        Assert.That(after.GetRequiredService<BDTest.Razor.Reports.Interfaces.IDataRepository>(),
+            Is.TypeOf<BDTest.Razor.Reports.Implementations.DataRepository>());
+        Assert.That(mvc.PartManager.ApplicationParts.Select(part => part.Name),
+            Does.Contain(typeof(BDTest.Razor.Reports.Controllers.BDTestController).Assembly.GetName().Name));
         var actual = after.GetRequiredService<IOptions<MvcOptions>>().Value;
 
         Assert.That(actual.InputFormatters.Select(formatter => formatter.GetType()),

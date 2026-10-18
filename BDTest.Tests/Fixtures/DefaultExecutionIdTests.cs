@@ -58,15 +58,16 @@ public class DefaultExecutionIdTests
         }
     }
 
-    [Test]
-    public async Task ExplicitStartsIsolateConcurrentExecutionsOnSharedFixture()
+    [TestCase(false)]
+    [TestCase(true)]
+    public async Task StartsIsolateConcurrentExecutionsOnSharedFixture(bool useLegacyStart)
     {
         var fixture = new ContextFixture();
         var ready = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
         var count = 0;
         var executions = await Task.WhenAll(Enumerable.Range(0, 8).Select(_ => Task.Run(async () =>
         {
-            fixture.Start();
+            fixture.Start(useLegacyStart);
             try
             {
                 var context = fixture.BDTestContext;
@@ -88,14 +89,15 @@ public class DefaultExecutionIdTests
         Assert.That(executions.Select(context => context.TestContext).Distinct().Count(), Is.EqualTo(8));
     }
 
-    [Test]
-    public void ExplicitStartAfterCompletionCreatesANewExecution()
+    [TestCase(false)]
+    [TestCase(true)]
+    public void StartAfterCompletionCreatesANewExecution(bool useLegacyStart)
     {
         var fixture = new ContextFixture();
-        fixture.Start();
+        fixture.Start(useLegacyStart);
         var first = fixture.BDTestContext;
         fixture.Complete();
-        fixture.Start();
+        fixture.Start(useLegacyStart);
         try
         {
             Assert.That(fixture.Context, Is.Not.SameAs(first.TestContext));
@@ -138,7 +140,19 @@ public class DefaultExecutionIdTests
 
     private sealed class ContextFixture : AbstractContextBDTestBase<MyTestContext>
     {
-        public void Start() => BeginTest(Guid.NewGuid().ToString("N"));
+        public void Start(bool useLegacyStart = false)
+        {
+            if (useLegacyStart)
+            {
+                Required(typeof(BDTestBase).GetMethod("MarkTestAsStarted",
+                        System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic))
+                    .CreateDelegate<Action>(this)();
+            }
+            else
+            {
+                BeginTest(Guid.NewGuid().ToString("N"));
+            }
+        }
         public void Complete() => EndTest();
 
         public async Task RunTestAsync(bool fail)
