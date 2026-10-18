@@ -81,7 +81,7 @@ internal sealed class AttachmentWriter(BDTestRun run, string frameworkExecutionI
         {
             attachment.AttemptNumber = scenario.RetryCount + 1;
             scenario.Attachments.Add(attachment);
-        });
+        }, () => run.AttachmentFiles.Remove(attachment.Id));
     }
 
     public void AttachFile(string path, string mimeType = null)

@@ -12,7 +12,7 @@ internal sealed class TestRunStore
         
     // Registration, pending writes, listeners and completion must use the same gate.
     internal object Gate { get; } = new();
-    private readonly Dictionary<string, List<Action<Scenario>>> ScenarioListeners = new();
+    private readonly Dictionary<string, List<(Action<Scenario> Publish, Action Discard)>> ScenarioListeners = new();
     private readonly Dictionary<string, BufferedOutput> PendingStartupOutput = new();
 
     internal void AppendStartupOutput(string frameworkExecutionId, char value)
@@ -46,7 +46,7 @@ internal sealed class TestRunStore
         return output;
     }
 
-    internal void ListenForScenario(string frameworkExecutionId, Action<Scenario> @delegate)
+    internal void ListenForScenario(string frameworkExecutionId, Action<Scenario> @delegate, Action onDiscard = null)
     {
         lock (Gate)
         {
@@ -58,9 +58,9 @@ internal sealed class TestRunStore
 
             if (!ScenarioListeners.TryGetValue(frameworkExecutionId, out var list))
             {
-                ScenarioListeners.Add(frameworkExecutionId, list = new List<Action<Scenario>>());
+                ScenarioListeners.Add(frameworkExecutionId, list = new List<(Action<Scenario> Publish, Action Discard)>());
             }
-            list.Add(@delegate);
+            list.Add((@delegate, onDiscard));
         }
     }
 
@@ -97,9 +97,9 @@ internal sealed class TestRunStore
             if (ScenarioListeners.TryGetValue(scenario.FrameworkTestId, out var delegateList))
             {
                 ScenarioListeners.Remove(scenario.FrameworkTestId);
-                foreach (var @delegate in delegateList)
+                foreach (var listener in delegateList)
                 {
-                    @delegate(scenario);
+                    listener.Publish(scenario);
                 }
             }
         }
@@ -122,7 +122,11 @@ internal sealed class TestRunStore
         lock (Gate)
         {
             PendingStartupOutput.Remove(frameworkExecutionId);
-            ScenarioListeners.Remove(frameworkExecutionId);
+            if (ScenarioListeners.TryGetValue(frameworkExecutionId, out var listeners))
+            {
+                foreach (var listener in listeners) listener.Discard?.Invoke();
+                ScenarioListeners.Remove(frameworkExecutionId);
+            }
         }
     }
 }

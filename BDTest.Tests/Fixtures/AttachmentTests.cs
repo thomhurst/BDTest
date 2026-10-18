@@ -369,6 +369,69 @@ public class AttachmentTests
         Assert.That(stream.ReadByte(), Is.EqualTo(-1));
     }
 
+    [TestCase(false)]
+    [TestCase(true)]
+    public async Task Completing_setup_releases_only_attachments_without_a_scenario(bool createScenario)
+    {
+        var options = new BDTestOptions();
+        options.Attachments.MaximumRunBytes = 3;
+        using var run = BDTestRun.Start(options);
+        var fixture = new Capture(run, "setup");
+        fixture.Start();
+        fixture.Attach("abc");
+        var path = Directory.GetFiles(run.AttachmentFiles.DirectoryPath).Single();
+        var attachmentId = Path.GetFileName(path);
+        if (createScenario)
+            await fixture.When(() => Done()).Then(() => Done()).BDTestAsync();
+        fixture.Finish();
+        fixture.Finish();
+
+        Assert.That(File.Exists(path), Is.EqualTo(createScenario));
+        if (createScenario)
+        {
+            using var content = run.OpenAttachment(attachmentId);
+            Assert.That(new StreamReader(content).ReadToEnd(), Is.EqualTo("abc"));
+            Assert.Throws<IOException>(() => new Capture(run, "next").Attach("abc"));
+        }
+        else
+        {
+            Assert.Throws<KeyNotFoundException>(() => run.OpenAttachment(attachmentId));
+            var next = new Capture(run, "next");
+            next.Attach("abc");
+            var scenario = await next.When(() => Done()).Then(() => Done()).BDTestAsync();
+            Assert.That(scenario.Attachments.Single().Name, Is.EqualTo("abc"));
+        }
+    }
+
+    [Test]
+    public async Task Background_setup_and_outline_factory_captures_keep_every_attachment()
+    {
+        using var run = BDTestRun.Start();
+        var fixture = new Capture(run, "outline");
+        var start = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var background = Task.Run(async () =>
+        {
+            await start.Task;
+            for (var index = 0; index < 1000; index++) fixture.Attach("background-" + index);
+        });
+        var outline = await fixture.ScenarioOutline("row <Value>", Enumerable.Range(0, 100).Select(value => new { Value = value }), row =>
+        {
+            fixture.Attach("factory-" + row.Value);
+            return fixture.When(async () =>
+            {
+                start.TrySetResult();
+                await Task.Yield();
+            }).Then(() => Done());
+        }).BDTestAsync();
+        await background.WaitAsync(TimeSpan.FromSeconds(10));
+
+        var files = outline.Attachments.Concat(outline.Examples.SelectMany(row => row.Attachments)).ToArray();
+        Assert.That(files, Has.Length.EqualTo(1100));
+        Assert.That(files.Select(file => file.Name).Distinct().Count(), Is.EqualTo(1100));
+        foreach (var row in outline.Examples)
+            Assert.That(row.Attachments.Any(file => file.Name == "factory-" + row.ExampleValues["Value"]), Is.True);
+    }
+
     private sealed class BrokenStream : MemoryStream
     {
         private bool _read;
@@ -388,6 +451,8 @@ public class AttachmentTests
     {
         public override BDTestRun TestRun => run;
         protected override string BDTestExecutionId => id;
+        public void Start() => BeginTest(id);
+        public void Finish() => EndTest();
         public bool CaptureHooks { get; init; }
         public bool CaptureRetryHook { get; init; }
         public void Attach(string name) => Attachments.Attach(name, Encoding.UTF8.GetBytes(name), "text/plain");

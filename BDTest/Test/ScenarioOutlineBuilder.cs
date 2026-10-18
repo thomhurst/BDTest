@@ -134,7 +134,7 @@ public sealed class ScenarioOutlineBuilder<TExample> : BuildableTest
                 finally
                 {
                     var row = outline.Examples[index];
-                    row.Attachments.AddRange(constructionOutput.Attachments);
+                    lock (Run.Store.Gate) row.Attachments.AddRange(constructionOutput.Attachments);
                     if (!string.IsNullOrEmpty(constructionOutput.Startup.Value))
                         row.TestStartupInformation = constructionOutput.Startup.Value + row.TestStartupInformation;
                     if (!string.IsNullOrEmpty(constructionOutput.Teardown.Value))
