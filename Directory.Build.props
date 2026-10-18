@@ -11,6 +11,12 @@
  </PropertyGroup>
  <!-- Match the library projects selected by PackProjectsModule. -->
  <PropertyGroup Condition="!$([System.Text.RegularExpressions.Regex]::IsMatch('$(MSBuildProjectName)', '(?i)Tests|Pipeline|Example|ReportGenerator'))">
+  <Authors>Tom Longhurst</Authors>
+  <Copyright>Copyright ©2021 Tom Longhurst</Copyright>
+  <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+  <PackageIcon>nuget_icon.png</PackageIcon>
+  <PackageProjectUrl>https://github.com/thomhurst/BDTest</PackageProjectUrl>
+  <RepositoryUrl>https://github.com/thomhurst/BDTest</RepositoryUrl>
   <!-- Source Link is supplied by the .NET SDK (8 and later). -->
   <PublishRepositoryUrl>true</PublishRepositoryUrl>
   <EmbedUntrackedSources>true</EmbedUntrackedSources>
@@ -22,4 +28,7 @@
   <IncludeSymbols>true</IncludeSymbols>
   <SymbolPackageFormat>snupkg</SymbolPackageFormat>
  </PropertyGroup>
+ <ItemGroup Condition="!$([System.Text.RegularExpressions.Regex]::IsMatch('$(MSBuildProjectName)', '(?i)Tests|Pipeline|Example|ReportGenerator'))">
+  <None Include="$(MSBuildThisFileDirectory)nuget_icon.png" Pack="true" PackagePath="" />
+ </ItemGroup>
 </Project>

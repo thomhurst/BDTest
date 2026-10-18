@@ -1,6 +1,10 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
+        <PackageId>BDTest.MSTest</PackageId>
+        <Title>BDTest - MSTest</Title>
+        <Description>An MSTest Extension for BDTest</Description>
+        <PackageTags>test tdd bdd testing given when then mstest</PackageTags>
         <TargetFramework>netstandard2.0</TargetFramework>
         <SignAssembly>True</SignAssembly>
         <AssemblyOriginatorKeyFile>..\StrongNameKeyPair.snk</AssemblyOriginatorKeyFile>

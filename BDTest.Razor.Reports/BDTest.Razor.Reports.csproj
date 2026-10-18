@@ -8,17 +8,9 @@
         <AssemblyOriginatorKeyFile>..\StrongNameKeyPair.snk</AssemblyOriginatorKeyFile>
         <PackageId>BDTest.Razor.Reports</PackageId>
         <Title>BDTest - Razor Reports</Title>
-        <Authors>Tom Longhurst</Authors>
         <Description>ASP.NET Core MVC controllers, Razor views and static assets for hosting BDTest reports.</Description>
         <PackageTags>test tdd bdd testing given when then reporting razor aspnetcore</PackageTags>
-        <PackageProjectUrl>https://github.com/thomhurst/BDTest</PackageProjectUrl>
-        <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
-        <PackageIcon>nuget_icon.png</PackageIcon>
     </PropertyGroup>
-
-    <ItemGroup>
-        <None Include="..\nuget_icon.png" Pack="true" PackagePath="" />
-    </ItemGroup>
 
     <ItemGroup>
         <PackageReference Include="Microsoft.AspNetCore.Components" Version="10.0.13" />

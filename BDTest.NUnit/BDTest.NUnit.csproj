@@ -4,8 +4,10 @@
     <OutputType>Library</OutputType>
     <ApplicationIcon />
     <StartupObject />
-    <NuspecFile>BDTest.NUnit.nuspec</NuspecFile>
-    <NuspecProperties>version=$(Version)</NuspecProperties>
+    <PackageId>BDTest.NUnit</PackageId>
+    <Title>BDTest - NUnit</Title>
+    <Description>An NUnit Extension for BDTest</Description>
+    <PackageTags>test tdd bdd testing given when then nunit</PackageTags>
     <TargetFramework>net8.0</TargetFramework>
     <SignAssembly>True</SignAssembly>
     <AssemblyOriginatorKeyFile>..\StrongNameKeyPair.snk</AssemblyOriginatorKeyFile>

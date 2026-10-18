@@ -60,7 +60,47 @@ foreach ($packageFile in $packages) {
             throw "Package/symbol identity mismatch: $packagePath"
         }
 
-        $assemblies = @($package.Entries | Where-Object { $_.FullName -match '^(lib|build)/.*\.dll$' })
+        $metadata = $manifest.package.metadata
+        foreach ($field in @('title', 'authors', 'description', 'copyright', 'projectUrl', 'tags')) {
+            if ([string]::IsNullOrWhiteSpace([string] $metadata.$field)) {
+                throw "Missing package metadata ${field}: $packageId"
+            }
+        }
+        if ($metadata.license.type -ne 'expression' -or $metadata.license.InnerText -ne 'Apache-2.0') {
+            throw "Missing Apache-2.0 license expression: $packageId"
+        }
+        if ($metadata.icon -ne 'nuget_icon.png' -or @($package.Entries | Where-Object FullName -EQ 'nuget_icon.png').Count -ne 1) {
+            throw "Missing or duplicate package icon: $packageId"
+        }
+        if ($metadata.repository.type -ne 'git' -or $metadata.repository.url -ne 'https://github.com/thomhurst/BDTest') {
+            throw "Missing repository metadata: $packageId"
+        }
+
+        # Shipping projects use literal versions and share the release version for project references.
+        $project = $projects | Where-Object BaseName -EQ $packageId
+        $projectXml = [xml] (Get-Content $project.FullName -Raw)
+        $expectedDependencies = @{}
+        foreach ($reference in $projectXml.SelectNodes('//PackageReference[not(@PrivateAssets="all")]')) {
+            $expectedDependencies[$reference.Include] = $reference.Version
+        }
+        foreach ($reference in $projectXml.SelectNodes('//ProjectReference')) {
+            $expectedDependencies[[System.IO.Path]::GetFileNameWithoutExtension($reference.Include.Replace('\', '/'))] = [string] $metadata.version
+        }
+        $dependencies = @($manifest.SelectNodes('//*[local-name()="dependencies"]//*[local-name()="dependency"]'))
+        foreach ($expected in $expectedDependencies.GetEnumerator()) {
+            $dependency = @($dependencies | Where-Object id -EQ $expected.Key)
+            if ($dependency.Count -ne 1 -or $dependency[0].version -ne $expected.Value) {
+                throw "Package dependency mismatch for $($expected.Key): expected $($expected.Value) in $packageId"
+            }
+        }
+        if ($dependencies.Count -ne $expectedDependencies.Count) {
+            throw "Unexpected package dependencies: $packageId"
+        }
+        if (@($package.Entries | Where-Object { $_.FullName -match '^build/.*\.dll$' }).Count -ne 0) {
+            throw "Redundant build-folder assembly: $packageId"
+        }
+
+        $assemblies = @($package.Entries | Where-Object { $_.FullName -match '^lib/.*\.dll$' })
         if ($assemblies.Count -eq 0) { throw "No library assemblies in $packagePath" }
         foreach ($assembly in $assemblies) {
             $xmlPath = [System.IO.Path]::ChangeExtension($assembly.FullName, '.xml')
@@ -70,7 +110,7 @@ foreach ($packageFile in $packages) {
             }
         }
 
-        foreach ($assembly in @($assemblies | Where-Object { $_.FullName.StartsWith('lib/') })) {
+        foreach ($assembly in $assemblies) {
             $pdbPath = [System.IO.Path]::ChangeExtension($assembly.FullName, '.pdb')
             $pdbStream = Open-PackageEntry $symbols $pdbPath
             $assemblyStream = Open-PackageEntry $package $assembly.FullName
@@ -131,7 +171,7 @@ foreach ($packageFile in $packages) {
                 $pdbStream.Dispose()
             }
         }
-        Write-Host "Verified $($manifest.package.metadata.id) $($manifest.package.metadata.version): XML, matching portable PDBs, Source Link and deterministic builds."
+        Write-Host "Verified $($manifest.package.metadata.id) $($manifest.package.metadata.version): metadata, dependencies, library contents, XML, matching portable PDBs, Source Link and deterministic builds."
     }
     finally {
         if ($null -ne $symbols) { $symbols.Dispose() }
