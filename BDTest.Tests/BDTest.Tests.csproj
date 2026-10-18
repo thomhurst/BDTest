@@ -15,6 +15,8 @@
         <PackageReference Include="nunit" Version="5.0.0" />
         <PackageReference Include="NUnit3TestAdapter" Version="6.3.1" />
         <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.11.0" />
+        <!-- The Identity token cache's Xml dependency is not pruned in test projects. -->
+        <PackageReference Include="System.Security.Cryptography.Xml" Version="10.0.13" />
     </ItemGroup>
 
     <ItemGroup>
