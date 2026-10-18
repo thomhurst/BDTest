@@ -134,6 +134,34 @@ public class ScenarioOutlineTests : AbstractContextBDTestBase<ScenarioOutlineTes
         Assert.That(BDTestUtil.GetNotRunScenarios().Where(x => x.TestId == _executionId), Is.Empty);
     }
 
+    [Test]
+    public async Task Rejected_foreign_builder_is_removed_without_discarding_unrelated_pending_scenarios()
+    {
+        var foreign = new SkipCapture();
+        var unrelated = foreign.Given(() => NoOp()).When(() => NoOp()).Then(() => NoOp());
+        RunnableStepBuilder rejected = null;
+        try
+        {
+            var exception = await Assert.ThrowsAsync<InvalidOperationException>(async () => await ScenarioOutline("Foreign builder",
+                new[] { new { Value = 1 }, new { Value = 2 } }, row => row.Value == 1
+                    ? rejected = foreign.Given(() => NoOp()).When(() => NoOp()).Then(() => NoOp())
+                    : Given(() => Record(row.Value)).When(() => NoOp()).Then(() => NoOp())));
+
+            Assert.That(exception.Message, Is.EqualTo("Example scenarios must be built by the outline's test instance."));
+            var outline = BDTestUtil.GetScenarios().Single(x => x.FrameworkTestId == _executionId);
+            Assert.That(outline.Examples.Select(row => row.Status), Is.EqualTo(new[] { Status.Failed, Status.Passed }));
+            Assert.That(_visited, Is.EqualTo(new[] { 2 }));
+            var pending = BDTestUtil.GetNotRunScenarios().ToArray();
+            Assert.That(pending, Does.Not.Contain(rejected));
+            Assert.That(pending, Does.Contain(unrelated));
+        }
+        finally
+        {
+            TestHolder.NotRun.TryRemove(unrelated.Guid, out _);
+            if (rejected != null) TestHolder.NotRun.TryRemove(rejected.Guid, out _);
+        }
+    }
+
     [TestCase("success", Status.Passed, false)]
     [TestCase("skipped", Status.Skipped, false)]
     [TestCase("inconclusive", Status.Inconclusive, false)]

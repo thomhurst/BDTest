@@ -100,7 +100,10 @@ public sealed class ScenarioOutlineBuilder<TExample> : BuildableTest
                         BdTestBase.RecreateContextOnRetry();
                         builder = _scenario(_examples[index]) ?? throw new InvalidOperationException("The example factory returned no scenario builder.");
                         if (builder.TestId != TestId || !ReferenceEquals(builder.BdTestBase, BdTestBase))
+                        {
+                            TestHolder.NotRun.TryRemove(builder.Guid, out _);
                             throw new InvalidOperationException("Example scenarios must be built by the outline's test instance.");
+                        }
                     }
                     finally
                     {
