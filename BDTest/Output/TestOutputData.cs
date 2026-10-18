@@ -23,6 +23,13 @@ internal class TestOutputData : TextWriter
         set => AsyncLocalFrameworkExecutionId.Value = value;
     }
 
+    private static readonly AsyncLocal<BufferedOutput> AsyncLocalConstructionOutput = new();
+    internal static BufferedOutput ConstructionOutput
+    {
+        get => AsyncLocalConstructionOutput.Value;
+        set => AsyncLocalConstructionOutput.Value = value;
+    }
+
     public override void Write(string value)
     {
         if (string.IsNullOrEmpty(value))
@@ -54,6 +61,15 @@ internal class TestOutputData : TextWriter
     {
         lock (Lock)
         {
+            // Builders change TestId as a chain grows. Keep construction output
+            // in the example's buffer until its final scenario exists.
+            if (ConstructionOutput != null)
+            {
+                if (character.HasValue) ConstructionOutput.Append(character.Value);
+                else ConstructionOutput.Append(value);
+                return;
+            }
+
             if (TestId == null && FrameworkExecutionId == null)
             {
                 return;

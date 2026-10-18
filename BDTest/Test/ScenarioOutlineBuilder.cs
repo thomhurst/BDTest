@@ -47,7 +47,9 @@ public sealed class ScenarioOutlineBuilder<TExample> : BuildableTest
         ReportId = TestHolder.CurrentReportId;
         StoryText = StoryTextHelper.GetStoryText(testBase);
         ScenarioText = new ScenarioText(text);
-        CustomTestInformation = TestInformationAttributeHelper.GetTestInformationAttributes(this.GetTestMethod());
+        var testMethod = this.GetTestMethod();
+        CustomTestInformation = TestInformationAttributeHelper.GetTestInformationAttributes(testMethod);
+        Tags = TagHelper.GetTags(this.GetTestClass(), testMethod);
         TestHolder.NotRun[Guid] = this;
     }
 
@@ -59,6 +61,7 @@ public sealed class ScenarioOutlineBuilder<TExample> : BuildableTest
     {
         if (Interlocked.Exchange(ref _executionStarted, 1) != 0)
             throw new AlreadyExecutedException("This scenario outline has already started execution. Create a new outline to run more examples.");
+        Console.SetOut(TestOutputData.Instance);
         TestOutputData.TestId = Guid;
         TestOutputData.FrameworkExecutionId = TestId;
         var outline = new Scenario(new List<Step>(), this) { IsOutline = true };
@@ -86,12 +89,23 @@ public sealed class ScenarioOutlineBuilder<TExample> : BuildableTest
         {
             for (var index = 0; index < _examples.Length; index++)
             {
+                var constructionOutput = new BufferedOutput();
                 try
                 {
-                    BdTestBase.RecreateContextOnRetry();
-                    var builder = _scenario(_examples[index]) ?? throw new InvalidOperationException("The example factory returned no scenario builder.");
-                    if (builder.TestId != TestId || !ReferenceEquals(builder.BdTestBase, BdTestBase))
-                        throw new InvalidOperationException("Example scenarios must be built by the outline's test instance.");
+                    RunnableStepBuilder builder;
+                    var previousOutput = TestOutputData.ConstructionOutput;
+                    try
+                    {
+                        TestOutputData.ConstructionOutput = constructionOutput;
+                        BdTestBase.RecreateContextOnRetry();
+                        builder = _scenario(_examples[index]) ?? throw new InvalidOperationException("The example factory returned no scenario builder.");
+                        if (builder.TestId != TestId || !ReferenceEquals(builder.BdTestBase, BdTestBase))
+                            throw new InvalidOperationException("Example scenarios must be built by the outline's test instance.");
+                    }
+                    finally
+                    {
+                        TestOutputData.ConstructionOutput = previousOutput;
+                    }
                     await builder.Invoke(builder, outline: outline, exampleValues: _values[index]).ConfigureAwait(false);
                 }
                 catch (Exception exception)
@@ -103,8 +117,10 @@ public sealed class ScenarioOutlineBuilder<TExample> : BuildableTest
                         row = new Scenario(new List<Step>(), this, outline, _values[index])
                         {
                             StartTime = DateTime.UtcNow, EndTime = DateTime.UtcNow,
-                            Status = ClassifyOutcome(exception), ExecutionException = new ExceptionWrapper(exception)
+                            Status = ClassifyOutcome(exception)
                         };
+                        if (row.Status != Status.Passed)
+                            row.ExecutionException = new ExceptionWrapper(exception);
                         row.ReleaseRuntimeReferences();
                     }
                     else row = outline.Examples[index];
@@ -115,6 +131,12 @@ public sealed class ScenarioOutlineBuilder<TExample> : BuildableTest
                             row.ExecutionException = new ExceptionWrapper(exception);
                         failures.Add((row.Status, ExceptionDispatchInfo.Capture(exception)));
                     }
+                }
+                finally
+                {
+                    var row = outline.Examples[index];
+                    row.Output = string.Join(Environment.NewLine,
+                        new[] { constructionOutput.Value, row.Output }.Where(output => !string.IsNullOrEmpty(output)));
                 }
             }
 

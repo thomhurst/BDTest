@@ -29,7 +29,7 @@ public class ScenarioOutlineTests : AbstractContextBDTestBase<ScenarioOutlineTes
             && scenario.ExampleValues.TryGetValue("Skip", out var skip) && skip == "True");
     }
 
-    [Test]
+    [Test, BDTestTag("outline")]
     public async Task Examples_share_one_outline_with_substituted_text_and_fresh_contexts()
     {
         var outline = await ScenarioOutline("Adding values", new[] { new { Value = 1 }, new { Value = 2 } },
@@ -37,6 +37,8 @@ public class ScenarioOutlineTests : AbstractContextBDTestBase<ScenarioOutlineTes
                 .When(() => NoOp()).Then(() => NoOp()));
 
         Assert.That(outline.Status, Is.EqualTo(Status.Passed));
+        Assert.That(outline.Tags, Does.Contain("outline"));
+        Assert.That(outline.Examples.All(row => row.Tags.SequenceEqual(outline.Tags)), Is.True);
         Assert.That(outline.Examples, Has.Count.EqualTo(2));
         Assert.That(outline.Examples.Select(row => row.Steps[0].StepText), Is.EqualTo(new[] { "Given value 1", "Given value 2" }));
         Assert.That(outline.Examples[1].ExampleValues["Value"], Is.EqualTo("2"));
@@ -49,6 +51,8 @@ public class ScenarioOutlineTests : AbstractContextBDTestBase<ScenarioOutlineTes
         Assert.That(BDTestUtil.GetNotRunScenarios().Where(x => x.TestId == _executionId), Is.Empty);
         var restored = JsonConvert.DeserializeObject<BDTestOutputModel>(BDTestJsonHelper.GetTestJsonData());
         var restoredOutline = restored.Scenarios.Single(scenario => scenario.FrameworkTestId == _executionId);
+        Assert.That(restoredOutline.Tags, Is.EqualTo(outline.Tags));
+        Assert.That(restoredOutline.Examples.All(row => row.Tags.SequenceEqual(outline.Tags)), Is.True);
         Assert.That(restoredOutline.Examples[1].Steps[0].StepText, Is.EqualTo("Given value 2"));
         Assert.That(restored.Scenarios.Any(scenario => scenario.OutlineId == outline.Guid), Is.False);
     }
@@ -113,7 +117,7 @@ public class ScenarioOutlineTests : AbstractContextBDTestBase<ScenarioOutlineTes
         Assert.That(table, Does.Contain("<td>Passed</td><td>0</td>"));
     }
 
-    [Test]
+    [Test, BDTestTag("factory-outline")]
     public async Task Factory_failure_is_reported_and_later_examples_still_run()
     {
         await Assert.ThrowsAsync<InvalidOperationException>(async () => await ScenarioOutline("Factory error",
@@ -121,6 +125,8 @@ public class ScenarioOutlineTests : AbstractContextBDTestBase<ScenarioOutlineTes
         var outline = BDTestUtil.GetScenarios().Single(x => x.FrameworkTestId == _executionId);
         Assert.That(outline.Examples.Select(row => row.Status), Is.EqualTo(new[] { Status.Failed, Status.Passed }));
         Assert.That(outline.Examples[0].Exception.Message, Is.EqualTo("factory failed"));
+        Assert.That(outline.Tags, Does.Contain("factory-outline"));
+        Assert.That(outline.Examples.All(row => row.Tags.SequenceEqual(outline.Tags)), Is.True);
         Assert.That(outline.Examples.Select(row => row.Guid).Distinct().Count(), Is.EqualTo(2));
         Assert.That(BDTestUtil.GetNotRunScenarios().Where(x => x.TestId == _executionId), Is.Empty);
     }
@@ -156,6 +162,75 @@ public class ScenarioOutlineTests : AbstractContextBDTestBase<ScenarioOutlineTes
         Assert.That(outline.Status, Is.EqualTo(expected));
         if (expected == Status.Passed) Assert.That(thrown, Is.Null);
         else Assert.That(thrown, Is.Not.Null);
+        var row = outline.Examples[0];
+        if (rowStatus == Status.Passed)
+        {
+            Assert.That(row.Exception, Is.Null);
+            Assert.That(outline.Exception, Is.Null);
+            var restored = JsonConvert.DeserializeObject<Scenario>(JsonConvert.SerializeObject(outline));
+            Assert.That(restored.Examples[0].Exception, Is.Null);
+            Assert.That(restored.Exception, Is.Null);
+        }
+    }
+
+    [TestCase(false, false)]
+    [TestCase(false, true)]
+    [TestCase(true, false)]
+    [TestCase(true, true)]
+    public async Task Construction_output_belongs_to_its_example_even_when_construction_fails(bool duringContext, bool fail)
+    {
+        var contextCount = 0;
+        ContextAmendment = _ =>
+        {
+            var value = ++contextCount;
+            Console.WriteLine($"context output {value}");
+            if (duringContext && fail && value == 2) throw new InvalidOperationException("context failed");
+        };
+        Exception thrown = null;
+        try
+        {
+            await ScenarioOutline("Construction output", new[] { new { Value = 1 }, new { Value = 2 }, new { Value = 3 } }, row =>
+            {
+                Console.WriteLine($"factory output {row.Value}");
+                var builder = Given(() => Record(row.Value)).When(() => NoOp()).Then(() => NoOp());
+                Console.WriteLine($"built output {row.Value}");
+                if (!duringContext && fail && row.Value == 2) throw new InvalidOperationException("factory failed");
+                return builder;
+            });
+        }
+        catch (Exception exception) { thrown = exception; }
+
+        Assert.That(thrown, fail ? Is.TypeOf<InvalidOperationException>() : Is.Null);
+        var outline = BDTestUtil.GetScenarios().Single(x => x.FrameworkTestId == _executionId);
+        var restored = JsonConvert.DeserializeObject<Scenario>(JsonConvert.SerializeObject(outline));
+        foreach (var result in new[] { outline, restored })
+        {
+            Assert.That(result.Examples, Has.Count.EqualTo(3));
+            for (var index = 0; index < result.Examples.Count; index++)
+            {
+                var row = result.Examples[index];
+                var value = index + 1;
+                Assert.That(row.Output, Does.Contain($"context output {value}"));
+                if (!(duringContext && fail && value == 2))
+                {
+                    Assert.That(row.Output, Does.Contain($"factory output {value}"));
+                    Assert.That(row.Output, Does.Contain($"built output {value}"));
+                }
+                foreach (var other in Enumerable.Range(1, 3).Where(other => other != value))
+                {
+                    Assert.That(row.Output, Does.Not.Contain($"output {other}"));
+                }
+                Assert.That(row.TestStartupInformation, Is.Null.Or.Empty);
+                Assert.That(row.TearDownOutput, Is.Null.Or.Empty);
+            }
+            Assert.That(result.Output, Does.Contain("context output 1").And.Contain("context output 2").And.Contain("context output 3"));
+        }
+        var razor = await ReportHandlerEncodingTests.RenderAsync("/Views/Shared/_ScenarioExamples.cshtml", restored);
+        var standalone = System.Text.RegularExpressions.Regex.Match(BDTestHtmlHelper.GetTestHtmlReport(),
+            $"<table class=\"examples\" id=\"examples-{outline.Guid}\">.*?</table>",
+            System.Text.RegularExpressions.RegexOptions.Singleline).Value;
+        foreach (var html in new[] { razor, standalone })
+            Assert.That(html, Does.Contain("context output 1").And.Contain("context output 2").And.Contain("context output 3"));
     }
 
     private RunnableStepBuilder BuildRow(int value)

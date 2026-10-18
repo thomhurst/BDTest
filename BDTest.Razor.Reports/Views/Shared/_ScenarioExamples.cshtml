@@ -39,15 +39,15 @@
                                 <div class="my-2">
                                     <span>@step.StepText</span>
                                     <span class="@step.Status.GetCssColourValueForStatus() tag">@step.Status.AsString()</span>
-                                    @if (!string.IsNullOrEmpty(step.Output))
-                                    {
-                                        <pre>@step.Output</pre>
-                                    }
                                     @if (step.Exception != null)
                                     {
                                         <pre class="text-danger">@step.Exception.AsString</pre>
                                     }
                                 </div>
+                            }
+                            @if (!string.IsNullOrEmpty(row.Output))
+                            {
+                                <pre>@row.Output</pre>
                             }
                             @if (row.Steps.Count == 0 && row.Exception != null)
                             {
