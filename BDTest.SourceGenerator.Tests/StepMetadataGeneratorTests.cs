@@ -264,6 +264,104 @@ public class StepMetadataGeneratorTests
         Assert.That(owner, Is.Null);
     }
 
+    [TestCase("byte")]
+    [TestCase("sbyte")]
+    [TestCase("short")]
+    [TestCase("ushort")]
+    public void Narrow_integral_constants_preserve_the_parameter_type(string parameterType)
+    {
+        var consumer = Compile("""
+            public sealed class Consumer : BDTest.Test.Steps.Probe
+            {
+                private void Step(TYPE value) { }
+                public static object[] Run()
+                {
+                    var test = new Consumer();
+                    test.Given(() => test.Step(1));
+                    return test.Captures.ToArray();
+                }
+            }
+            """.Replace("TYPE", parameterType));
+        var site = Run(consumer).Single();
+        var expectedType = site.Metadata.Method.Resolve(consumer).GetParameters()[0].ParameterType;
+        var argument = Read(site, consumer).Single();
+        Assert.That(argument.GetType(), Is.EqualTo(expectedType));
+        Assert.That(Convert.ToInt32(argument), Is.EqualTo(1));
+    }
+
+    [TestCase("1")]
+    [TestCase("null")]
+    public void Nullable_intermediate_paths_use_caller_text_fallback(string initialValue)
+    {
+        var consumer = Compile("""
+            public sealed class Consumer : BDTest.Test.Steps.Probe
+            {
+                private int? Optional = INITIAL;
+                private void Step(int value) { }
+                public static object[] Run() { return new Consumer().Build(); }
+                private object[] Build()
+                {
+                    Given(() => Step(Optional.Value));
+                    return Captures.ToArray();
+                }
+            }
+            """.Replace("INITIAL", initialValue));
+        var site = Run(consumer).Single();
+        Assert.That(site.Metadata.Method.Resolve(consumer).Name, Is.EqualTo("Step"));
+        Assert.That(site.Metadata.ArgumentExpression, Does.Contain("Optional.Value"));
+        Assert.That(site.Metadata.TryBindArguments(consumer, site.Step, out var accessors), Is.False);
+        Assert.That(accessors, Is.Empty);
+    }
+
+    [Test]
+    public void Dynamic_parameter_signatures_resolve_as_object()
+    {
+        var consumer = Compile("""
+            public sealed class Consumer : BDTest.Test.Steps.Probe
+            {
+                private void Step(dynamic value) { }
+                private void Generic<T>(T value) { }
+                public static object[] Run()
+                {
+                    var test = new Consumer();
+                    test.Given(() => test.Step(1)).Then(() => test.Generic<dynamic>(1));
+                    return test.Captures.ToArray();
+                }
+            }
+            """);
+        foreach (var site in Run(consumer))
+        {
+            Assert.That(site.Metadata.Method.Resolve(consumer).GetParameters()[0].ParameterType, Is.EqualTo(typeof(object)));
+        }
+    }
+
+    [Test]
+    public void Base_virtual_property_reads_use_caller_text_fallback()
+    {
+        var consumer = Compile("""
+            public class Parent : BDTest.Test.Steps.Probe
+            {
+                protected virtual int Value => 1;
+            }
+            public sealed class Consumer : Parent
+            {
+                protected override int Value => 2;
+                private void Step(int value) { }
+                public static object[] Run() { return new Consumer().Build(); }
+                private object[] Build()
+                {
+                    Given(() => Step(base.Value));
+                    return Captures.ToArray();
+                }
+            }
+            """);
+        var site = Run(consumer).Single();
+        Assert.That(site.Metadata.Method.Resolve(consumer).Name, Is.EqualTo("Step"));
+        Assert.That(site.Metadata.ArgumentExpression, Does.Contain("base.Value"));
+        Assert.That(site.Metadata.TryBindArguments(consumer, site.Step, out var accessors), Is.False);
+        Assert.That(accessors, Is.Empty);
+    }
+
     private static object[] Read(Captured site, Assembly consumer)
     {
         Assert.That(site.Metadata.TryBindArguments(consumer, site.Step, out var accessors), Is.True);

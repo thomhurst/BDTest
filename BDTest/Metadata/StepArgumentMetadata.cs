@@ -57,7 +57,10 @@ public sealed class StepArgumentMetadata
         }
 
         var members = _members.Select(m => m.Resolve(assembly)).ToArray();
-        if (members.Any(m => m == null) || (!_members[0].IsStatic &&
+        // Nullable values lose their wrapper when boxed between member reads.
+        if (members.Any(m => m == null) ||
+            members.Skip(1).Any(m => Nullable.GetUnderlyingType(m.DeclaringType) != null) ||
+            (!_members[0].IsStatic &&
             !members[0].DeclaringType.IsInstanceOfType(step.Target)))
         {
             accessor = null;

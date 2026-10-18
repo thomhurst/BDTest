@@ -106,6 +106,9 @@ public sealed class StepMetadataGenerator : IIncrementalGenerator
             if (operation.Type?.TypeKind == TypeKind.Enum) return null;
             var literal = value == null ? "(object)null" : SymbolDisplay.FormatPrimitive(value, quoteStrings: true, useHexadecimalNumbers: false);
             if (literal == null) return null;
+            if (operation.Type?.SpecialType is SpecialType.System_Byte or SpecialType.System_SByte or
+                SpecialType.System_Int16 or SpecialType.System_UInt16)
+                literal = "(" + operation.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat) + ")(" + literal + ")";
             return "new global::BDTest.Metadata.StepArgumentMetadata(" + Quote(parameterName) + ", (object)(" + literal + "))";
         }
 
@@ -121,7 +124,9 @@ public sealed class StepMetadataGenerator : IIncrementalGenerator
             (conversion.Conversion.IsIdentity || conversion.Conversion.IsReference))
             return DescribeMemberPath(conversion.Operand, members);
         if (operation is IInstanceReferenceOperation instance)
-            return instance.ReferenceKind == InstanceReferenceKind.ContainingTypeInstance;
+            // Reflection dispatches virtual getters, so it cannot preserve a base-qualified read.
+            return instance.ReferenceKind == InstanceReferenceKind.ContainingTypeInstance &&
+                   instance.Syntax is not BaseExpressionSyntax;
 
         ISymbol member;
         IOperation? receiver;
@@ -150,6 +155,8 @@ public sealed class StepMetadataGenerator : IIncrementalGenerator
 
     private static string? TypeReference(ITypeSymbol type)
     {
+        if (type is IDynamicTypeSymbol)
+            return "new global::BDTest.Metadata.StepTypeReference(typeof(object).Assembly.GetName().Name, \"System.Object\")";
         if (type is not INamedTypeSymbol named || named.IsAnonymousType || named.IsUnboundGenericType) return null;
         var allArguments = TypeArguments(named).Select(TypeReference).ToArray();
         if (allArguments.Any(a => a == null)) return null;
@@ -167,6 +174,7 @@ public sealed class StepMetadataGenerator : IIncrementalGenerator
 
     private static string Signature(ITypeSymbol type)
     {
+        if (type is IDynamicTypeSymbol) return "System.Object";
         if (type is IArrayTypeSymbol array) return Signature(array.ElementType) + "[" + new string(',', array.Rank - 1) + "]";
         if (type is ITypeParameterSymbol parameter)
             return (parameter.TypeParameterKind == TypeParameterKind.Method ? "!!" : "!") + parameter.Ordinal;
