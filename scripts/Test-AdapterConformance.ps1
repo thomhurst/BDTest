@@ -63,7 +63,7 @@ try {
         }
         # TUnit 1.75.0 does not translate InconclusiveTestException into a runner skip.
         if ($project -eq 'BDTest.TUnit.Tests') { $expected.FrameworkInconclusive = 'Failed' }
-        $styles = if ($project -eq 'BDTest.TUnit.Tests') { 2 } else { 1 }
+        $styles = if ($project -in @('BDTest.Tests', 'BDTest.TUnit.Tests')) { 2 } else { 1 }
         if ($results.Count -ne $expected.Count * $styles) {
             throw "$project expected $($expected.Count * $styles) probes, found $($results.Count). See $logPath"
         }

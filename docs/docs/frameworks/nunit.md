@@ -1,6 +1,6 @@
 ---
 title: NUnit
-description: Use BDTest with NUnit through NUnitBDTestBase<TContext>.
+description: Use BDTest with NUnit through composition or an optional base class.
 ---
 
 # NUnit
@@ -11,9 +11,56 @@ dotnet add package BDTest.NUnit
 
 `BDTest.NUnit` targets `net8.0` and depends on NUnit 5. Add `Microsoft.NET.Test.Sdk` and `NUnit3TestAdapter` to the test project as usual.
 
+## Composition with an existing base class
+
+Use `[BDTestFixture]` and implement `INUnitBDTest`. Create one stable NUnit host for the actual fixture instance and select its explicit run:
+
+```csharp
+using BDTest;
+using BDTest.NUnit;
+using BDTest.Test;
+using NUnit.Framework;
+
+[BDTestFixture]
+public class BasketTests : CompanyTestBase, INUnitBDTest
+{
+    private readonly NUnitBDTestScenario<BasketContext> _bdt;
+
+    public BasketTests()
+    {
+        _bdt = NUnitBDTestScenario.For<BasketContext>(this, AssemblyReports.Run);
+    }
+
+    BDTestBase INUnitBDTest.BDTestHost => _bdt;
+
+    [SetUp]
+    public async Task Prepare()
+    {
+        await _bdt.InitializeContextAsync();
+        Console.WriteLine("Preparing basket");
+    }
+
+    [Test]
+    public async Task AddingAnItem()
+    {
+        await _bdt.When(() => _bdt.Context.Add("Book", 12.50m))
+            .Then(() => _bdt.Context.VerifyTotal(12.50m))
+            .BDTestAsync();
+    }
+}
+```
+
+`BDTestFixture` uses NUnit 5's `IWrapSetUpTearDown` extension. It binds the host before any per-test setup and completes it after all per-test teardown, including setup/body/teardown failures. Completion awaits owned async context disposal and preserves both runner failures and disposal diagnostics. Do not call `BeginTest` or `EndTest` from fixture hooks when using this registration.
+
+The host derives from the [core composition host](composition.md). Context factories, initialization, retries, outlines, console capture and reports use the same core implementation. Read `_bdt.Context` inside each step so retries use the replacement context. To customize scenario or step hooks, derive from `NUnitBDTestScenario<TContext>` and call its protected constructor with the fixture instance and run. Register run-wide hooks on `BDTestOptions`.
+
+A fixture may share its host across parallel test methods: NUnit preserves the wrapper's execution flow, and each row/repeat receives a distinct identity. Alternatively, use `[FixtureLifeCycle(LifeCycle.InstancePerTestCase)]`. Return the same host on every `BDTestHost` access; a host created for another fixture is rejected. Constructor and one-time fixture output are outside per-test capture.
+
+NUnit selects method-level setup/teardown wrappers before class-level wrappers. If a test method declares another `IWrapSetUpTearDown` attribute, also put `[BDTestFixture]` on that method. Avoid combining independently managed BDTest hosts on one test.
+
 ## Writing tests
 
-Inherit from `NUnitBDTestBase<TContext>`:
+Optionally, inherit from `NUnitBDTestBase<TContext>`:
 
 ```csharp
 using BDTest.Attributes;
@@ -44,15 +91,35 @@ Contexts may have constructor dependencies: override `CreateContextAsync(Context
 ## What the adapter does
 
 - **Execution ID:** `TestContext.CurrentContext.Test.ID` plus the current repeat count, so `[Repeat]` runs stay separate.
-- **Exceptions:** registers `SuccessException` (from `Assert.Pass`) as success, `IgnoreException` (from `Assert.Ignore`) as skip and `InconclusiveException` as inconclusive. Registration happens once, in a `[OneTimeSetUp]`.
-- **Setup:** a `[SetUp]` method calls `BeginTest` with the test ID and repeat count, which ties context and console output to the current test.
-- **Teardown:** an asynchronous `[TearDown]` method awaits context disposal and completes the test. Existing `MarkTestAsComplete()` overrides remain supported through the synchronous compatibility path.
+- **Exceptions:** registers `SuccessException` (from `Assert.Pass`) as success, `IgnoreException` (from `Assert.Ignore`) as skip and `InconclusiveException` as inconclusive. The base class registers these outcomes on the legacy default run in `[OneTimeSetUp]`; explicit runs register them through options before starting.
+- **Lifecycle:** the base class supplies the same `BDTestFixture` registration and lifecycle path as composition. Capture starts before setup and finishes after teardown. Its callable `Setup`, `PruneContext` and `BDTestNUnitTearDown` methods remain compatibility shims for manual harnesses. Existing `MarkTestAsComplete()` overrides remain supported through the synchronous compatibility path.
 - **Retries:** each attempt runs its steps and step hooks through NUnit's public exception constraint API. A failed attempt does not change the NUnit result when a later attempt passes. Failures outside the scenario remain failures, and scenario warnings remain visible. When the final attempt throws after recording other assertion failures, NUnit reports the exception together with those assertion diagnostics. Retry rules still receive the original exception. The adapter never overwrites the NUnit result during teardown.
 - **Skips:** a whole-scenario skip calls `Assert.Ignore(reason)`.
 
 You can add your own `[SetUp]` and `[TearDown]` methods. They run alongside the adapter's.
 
 ## Reports after the run
+
+Composition requires an explicit run. Register `NUnitBDTestScenario.OutcomeMap` before starting it. The following assembly owner is an application convention, not automatic adapter configuration:
+
+```csharp
+using BDTest;
+using BDTest.NUnit;
+
+public static class AssemblyReports
+{
+    public static BDTestRun Run { get; } = CreateRun();
+
+    private static BDTestRun CreateRun()
+    {
+        var options = new BDTestOptions();
+        options.RegisterFrameworkOutcomes(NUnitBDTestScenario.OutcomeMap);
+        return BDTestRun.Start(options);
+    }
+}
+```
+
+All fixtures that select this run contribute to the same report. Select different explicitly owned runs to isolate reports, options, contexts and output; overlapping framework IDs in different runs are supported. The adapter completes each test but never disposes the run. Generate reports after all fixtures finish, then dispose the run. A reused test host must create a fresh run for the next assembly execution. Assembly-wide automatic configuration and legacy global-state removal are tracked in [#844](https://github.com/thomhurst/BDTest/issues/844).
 
 Use an NUnit `[SetUpFixture]` in the root namespace of the test assembly (or with no namespace) to run code after all tests:
 
@@ -69,10 +136,18 @@ public class BDTestReports
     {
         var descriptor = new BDTestRunDescriptor { Environment = "CI", Tag = "Acceptance" };
 
-        File.WriteAllText("BDTest-Report.html", BDTestHtmlHelper.GetTestHtmlReport(descriptor));
+        try
+        {
+            File.WriteAllText("BDTest-Report.html",
+                BDTestHtmlHelper.GetTestHtmlReport(descriptor, AssemblyReports.Run));
 
-        // Or upload to a report server:
-        // var uri = await BDTestReportServer.SendDataAndGetReportUriAsync(serverUri, descriptor, httpClient);
+            // Or upload to a report server before disposing the run:
+            // var uri = await BDTestReportServer.SendDataAndGetReportUriAsync(serverUri, descriptor, httpClient, AssemblyReports.Run);
+        }
+        finally
+        {
+            AssemblyReports.Run.Dispose();
+        }
     }
 }
 ```
@@ -80,3 +155,13 @@ public class BDTestReports
 See [HTML report](../reports/html-report.md) and [Sending results](../report-server/sending-results.md).
 
 The adapter supplies the runner's exact test method to `BeginTest(id, methodInfo)`. Scenario text, information, tags and retry attributes use cached method metadata, including when a helper constructs the scenario after an await. See [custom adapter migration](custom-adapters.md#method-identity-and-migration).
+
+## Migrating to composition
+
+1. Keep your existing company base class and add `[BDTestFixture]` plus `INUnitBDTest`.
+2. Replace inherited builder/context access with a host created for `this` and the owning run. Return it from `INUnitBDTest.BDTestHost`.
+3. Remove manual BDTest lifecycle calls. Keep ordinary NUnit setup/teardown methods; the wrapper surrounds them.
+4. Move base-class hook overrides to a derived NUnit host or run options. Keep `[Story]`, `[ScenarioText]`, tags and retry attributes on the fixture/method; the wrapper supplies exact method metadata, including overloads, rows and repeats.
+5. Generate reports from the explicit run, then dispose it after assembly teardown.
+
+Existing `NUnitBDTestBase<TContext>` fixtures need no migration. To use an explicit run with inheritance, override `TestRun` with the same stable run owner.

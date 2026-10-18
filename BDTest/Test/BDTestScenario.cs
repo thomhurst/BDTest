@@ -20,7 +20,7 @@ public static class BDTestScenario
 /// with distinct framework execution IDs, and complete every execution with EndTest. Framework
 /// integrations must preserve execution flow identity across setup, body and teardown.
 /// </remarks>
-public sealed class BDTestScenario<TContext> : AbstractContextBDTestBase<TContext> where TContext : class, new()
+public class BDTestScenario<TContext> : AbstractContextBDTestBase<TContext> where TContext : class, new()
 {
     internal BDTestScenario(object testInstance, BDTestRun run)
     {
@@ -43,4 +43,7 @@ public sealed class BDTestScenario<TContext> : AbstractContextBDTestBase<TContex
 
     /// <summary>Completes this execution and clears its context and output state. Safe to repeat.</summary>
     public new void EndTest() => base.EndTest();
+
+    /// <summary>Awaits owned context disposal and completes this execution. Safe to repeat.</summary>
+    public new ValueTask EndTestAsync() => base.EndTestAsync();
 }
