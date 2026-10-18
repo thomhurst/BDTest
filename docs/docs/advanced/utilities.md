@@ -44,7 +44,9 @@ var failed = BDTestUtil.GetScenarios().Where(scenario => scenario.Status == Stat
 | `IsOutline`, `Examples`, `ExampleValues`, `OutlineId` | [Scenario outline](../writing-tests/scenario-outlines.md) data. |
 | `FrameworkTestId`, `FileName` | The test framework's ID and the source file. |
 | `Guid`, `ReportId` | Identifiers. |
-| `BdTestBaseClass` | The test class instance that ran the scenario. |
+| `BdTestBaseClass` | The test class instance, if still available. Completed scenarios keep only a weak reference, so this may be `null` after garbage collection. Deserialized scenarios have no runtime fixture and return `null`. |
+
+Treat `BdTestBaseClass` as a best-effort runtime reference, not retained report data. Check for `null` before using it in teardown or custom reports; store any evidence you need on the scenario while the test runs.
 
 `BDTest.Test.Step`:
 

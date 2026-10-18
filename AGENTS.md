@@ -45,7 +45,7 @@ cd BDTest.Pipeline && dotnet run -c Release
 **Framework adapters** (`BDTest.NUnit`, `BDTest.xUnit`, `BDTest.MSTest`, `BDTest.TUnit`): each is one thin base class (e.g. `TUnitBDTestBase<TContext>`) deriving from `AbstractContextBDTestBase<TContext>`. Each one:
 1. Supplies `BDTestExecutionId` from the framework's test context.
 2. Registers framework-specific skip/ignore/success exceptions into `BDTestSettings.CustomExceptionSettings`.
-3. Sets `TestOutputData.FrameworkExecutionId` before each test, and calls `RemoveContext()` / `MarkTestAsComplete()` after.
+3. Calls `BeginTest(frameworkTestId)` before async setup and `EndTest()` after the test. xUnit buffers constructor output and binds the execution during initialization. Existing lifecycle overrides remain supported as compatibility shims.
 
 Core uses `InternalsVisibleTo` for `BDTest.NUnit`, `BDTest.xUnit`, `BDTest.TUnit`, and `BDTest.Tests`, with the public key from `StrongNameKeyPair.snk`. A new adapter that needs internals must be added to `BDTest/BDTest.csproj` and must also be signed.
 
