@@ -226,11 +226,6 @@ public class Step
             try
             {
                 var hookException = await RunAfterHooks(test, afterHooks).ConfigureAwait(false);
-                if (executionException == null && hookException != null)
-                {
-                    SetExceptionResult(hookException);
-                    ExceptionDispatchInfo.Capture(hookException).Throw();
-                }
                 // Hooks are not interrupted, but their elapsed time still consumes
                 // the scenario budget, including the final step's after hooks.
                 if (executionException == null && remainingScenarioTime.HasValue && stopwatch.Elapsed >= remainingScenarioTime.Value)
@@ -238,6 +233,11 @@ public class Step
                     var timeout = CreateTimeoutException("Scenario", scenarioTimeout.Value);
                     SetExceptionResult(timeout);
                     throw timeout;
+                }
+                if (executionException == null && hookException != null)
+                {
+                    SetExceptionResult(hookException);
+                    ExceptionDispatchInfo.Capture(hookException).Throw();
                 }
             }
             finally

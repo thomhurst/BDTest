@@ -382,10 +382,19 @@ public class StepHookTests
         Assert.That(GetScenario(observed).Status, Is.EqualTo(Status.Failed));
     }
 
-    [TestCase(false)]
-    [TestCase(true)]
-    public async Task After_hook_expiry_fails_the_active_step_even_when_it_is_last(bool finalStep)
+    [TestCase(false, "none")]
+    [TestCase(true, "none")]
+    [TestCase(false, "failure")]
+    [TestCase(true, "failure")]
+    [TestCase(true, "success")]
+    [TestCase(true, "skip")]
+    [TestCase(true, "inconclusive")]
+    [TestCase(true, "not implemented")]
+    public async Task After_hook_expiry_fails_the_active_step_even_when_it_is_last(bool finalStep, string kind)
     {
+        BDTestSettings.CustomExceptionSettings.SuccessExceptionTypes.Add(typeof(HookSuccessException));
+        BDTestSettings.CustomExceptionSettings.SkipExceptionTypes.Add(typeof(HookSkipException));
+        BDTestSettings.CustomExceptionSettings.InconclusiveExceptionTypes.Add(typeof(HookInconclusiveException));
         var calls = new List<string>();
         Step observed = null;
         var test = new HookTest
@@ -396,6 +405,14 @@ public class StepHookTests
                 observed = step;
                 await Task.Delay(1500);
                 calls.Add("after");
+                switch (kind)
+                {
+                    case "failure": throw new InvalidOperationException("after hook failed");
+                    case "success": throw new HookSuccessException();
+                    case "skip": throw new HookSkipException();
+                    case "inconclusive": throw new HookInconclusiveException();
+                    case "not implemented": throw new NotImplementedException("after hook not implemented");
+                }
             }
         };
         var first = test.When(() => NoOp()).Then(() => calls.Add("body"));
