@@ -69,13 +69,13 @@ public class ScenarioOutlineTests : AbstractContextBDTestBase<ScenarioOutlineTes
         Assert.That(outline.Status, Is.EqualTo(Status.Failed));
         Assert.That(outline.Examples.Select(row => row.Status), Is.EqualTo(new[] { Status.Failed, Status.Passed }));
         Assert.That(outline.Examples[0].RetryCount, Is.EqualTo(1));
-        Assert.That(outline.Examples[0].Exception.Message, Is.EqualTo(_retryHookFailure.Message));
-        Assert.That(outline.Examples[0].Exception.AsString, Is.EqualTo(_retryHookFailure.ToString()));
         foreach (var result in new[] { outline, ReportJson.DeserializeObject<Scenario>(ReportJson.SerializeObject(outline)) })
         {
             var failedRow = result.Examples[0];
             Assert.That(failedRow.Attempts, Has.Count.EqualTo(2));
             Assert.That(failedRow.Attempts.Last().Exception.Message, Is.EqualTo("<retry hook failed>"));
+            Assert.That(failedRow.Exception.Message, Is.EqualTo(_retryHookFailure.Message));
+            Assert.That(failedRow.Exception.AsString, Is.EqualTo(_retryHookFailure.ToString()));
             Assert.That(failedRow.EndTime, Is.EqualTo(failedRow.Attempts.Last().EndTime));
             Assert.That(failedRow.TimeTaken, Is.GreaterThan(TimeSpan.Zero));
             Assert.That(failedRow.TimeTaken, Is.EqualTo(failedRow.Attempts.Last().TimeTaken));
@@ -86,6 +86,8 @@ public class ScenarioOutlineTests : AbstractContextBDTestBase<ScenarioOutlineTes
             Does.Contain($"title=\"{outline.Examples[0].TimeTaken}\">"));
         Assert.That(_visited, Is.EqualTo(new[] { 1, 2 }));
         await AssertRowErrorReported(outline, "&lt;retry hook failed&gt;");
+        if (nestedCause)
+            await AssertRowErrorReported(outline, "nested cause");
     }
 
     [Test]
