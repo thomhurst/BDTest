@@ -12,7 +12,7 @@ public class PackageTests
     {
         var repository = new DirectoryInfo(TestContext.CurrentContext.TestDirectory);
         while (repository != null && !File.Exists(Path.Combine(repository.FullName, "BDTest.sln"))) repository = repository.Parent;
-        Assert.That(repository, Is.Not.Null);
+        if (repository == null) throw new InvalidOperationException("Repository root not found");
         var temporary = Path.Combine(Path.GetTempPath(), "bdtest-analyzer-consumer-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(temporary);
         try
@@ -94,7 +94,7 @@ public class PackageTests
             CreateNoWindow = true
         };
         foreach (var argument in arguments) start.ArgumentList.Add(argument);
-        using var process = Process.Start(start);
+        using var process = Process.Start(start) ?? throw new InvalidOperationException("Could not start dotnet");
         var output = process.StandardOutput.ReadToEndAsync();
         var errors = process.StandardError.ReadToEndAsync();
         try

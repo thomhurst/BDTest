@@ -27,8 +27,8 @@ public class CodeFixTests
         Assert.That(actions, Has.Count.EqualTo(1));
         var operations = await actions[0].GetOperationsAsync(default);
         var solution = operations.OfType<ApplyChangesOperation>().Single().ChangedSolution;
-        var changed = solution.GetDocument(document.Id);
-        var compilation = await changed.Project.GetCompilationAsync();
+        var changed = solution.GetDocument(document.Id) ?? throw new InvalidOperationException("Missing fixed document");
+        var compilation = await changed.Project.GetCompilationAsync() ?? throw new InvalidOperationException("Missing compilation");
         AnalyzerTests.AssertCompiles(compilation);
         Assert.That((await AnalyzerTests.Analyze(compilation)).Where(d => d.Id == id), Is.Empty,
             (await changed.GetTextAsync()).ToString());
@@ -71,17 +71,24 @@ public class CodeFixTests
         using var workspace = document.Project.Solution.Workspace;
         var action = (await Fixes(document, diagnostics.Single(d => d.Id == id))).Single();
         var operations = await action.GetOperationsAsync(default);
-        var changed = operations.OfType<ApplyChangesOperation>().Single().ChangedSolution.GetDocument(document.Id);
-        var compilation = (await changed.Project.GetCompilationAsync()).WithAssemblyName("FixedConsumer_" + Guid.NewGuid().ToString("N"));
+        var changed = operations.OfType<ApplyChangesOperation>().Single().ChangedSolution.GetDocument(document.Id)
+            ?? throw new InvalidOperationException("Missing fixed document");
+        var originalCompilation = await changed.Project.GetCompilationAsync()
+            ?? throw new InvalidOperationException("Missing compilation");
+        var compilation = originalCompilation.WithAssemblyName("FixedConsumer_" + Guid.NewGuid().ToString("N"));
         using var stream = new MemoryStream();
         var emitted = compilation.Emit(stream);
         Assert.That(emitted.Success, Is.True, string.Join(Environment.NewLine, emitted.Diagnostics));
         stream.Position = 0;
         var assembly = AssemblyLoadContext.Default.LoadFromStream(stream);
-        var type = assembly.GetType("Consumer");
-        var fixture = (BDTest.Test.BDTestBuilder)Activator.CreateInstance(type);
+        var type = assembly.GetType("Consumer", throwOnError: true)!;
+        var fixture = (BDTest.Test.BDTestBuilder)(Activator.CreateInstance(type) ?? throw new InvalidOperationException("Missing consumer instance"));
         using (fixture.TestRun)
-            Assert.That(await (Task<bool>)type.GetMethod("Run").Invoke(fixture, null), Is.True);
+        {
+            var task = (Task<bool>)(type.GetMethod("Run")!.Invoke(fixture, null)
+                ?? throw new InvalidOperationException("Missing consumer task"));
+            Assert.That(await task, Is.True);
+        }
     }
 
     private static async Task<(Document Document, ImmutableArray<Diagnostic> Diagnostics)> Document(string members)
@@ -91,7 +98,7 @@ public class CodeFixTests
             .WithCompilationOptions(new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary))
             .WithMetadataReferences(AnalyzerTests.References);
         var document = project.AddDocument("Consumer.cs", AnalyzerTests.Source(members));
-        var compilation = await document.Project.GetCompilationAsync();
+        var compilation = await document.Project.GetCompilationAsync() ?? throw new InvalidOperationException("Missing compilation");
         AnalyzerTests.AssertCompiles(compilation);
         return (document, await AnalyzerTests.Analyze(compilation));
     }

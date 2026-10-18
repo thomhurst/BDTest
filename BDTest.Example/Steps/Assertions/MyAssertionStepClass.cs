@@ -17,6 +17,8 @@ public class MyAssertionStepClass
     [StepText("the HTTP status code is {0}")]
     public void TheHttpStatusCodeIs(HttpStatusCode httpStatusCode)
     {
-        Assert.That(_context.ApiContext.ResponseMessage.StatusCode, Is.EqualTo(httpStatusCode));
+        var response = _context.ApiContext.ResponseMessage
+            ?? throw new InvalidOperationException("Execute a request before asserting its status");
+        Assert.That(response.StatusCode, Is.EqualTo(httpStatusCode));
     }
 }

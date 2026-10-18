@@ -28,7 +28,8 @@ public abstract class TUnitHookCollisionTests : TUnitBDTestBase<TUnitContext>
 {
     private int _setupCalls;
     private int _tearDownCalls;
-    private string _testId;
+    // Assigned by the before hook before teardown and cleanup verification.
+    private string _testId = null!;
 
     protected void RecordSetup()
     {

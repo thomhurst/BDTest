@@ -7,8 +7,8 @@ namespace BDTest.xUnit.Tests;
 // adapter cleanup must fail the runner, even when the test body itself passes.
 public sealed class CleanupProbe : IDisposable
 {
-    public Action VerifyCompletion { get; set; }
-    public object SetupContext { get; set; }
+    public Action? VerifyCompletion { get; set; }
+    public object? SetupContext { get; set; }
     public string[] ExpectedStartupOutput { get; set; } = [];
     public bool AsyncTeardownFinished { get; set; }
     public bool RequiresAsyncTeardown { get; set; }

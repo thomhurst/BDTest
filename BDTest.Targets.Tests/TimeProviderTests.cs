@@ -164,7 +164,7 @@ public class TimeProviderTests
         public override DateTimeOffset GetUtcNow() => Fake.GetUtcNow().Add(WallOffset);
         public override long GetTimestamp() => Fake.GetTimestamp();
         public override long TimestampFrequency => Fake.TimestampFrequency;
-        public override ITimer CreateTimer(TimerCallback callback, object state, TimeSpan dueTime, TimeSpan period)
+        public override ITimer CreateTimer(TimerCallback callback, object? state, TimeSpan dueTime, TimeSpan period)
         {
             var timer = Fake.CreateTimer(callback, state, dueTime, period);
             TimerCreated.TrySetResult();

@@ -13,7 +13,7 @@ public class HtmlReportGenerationExample
     /// Example method showing how to generate HTML reports.
     /// This can be called in a SetUpFixture OneTimeTearDown method or after test execution.
     /// </summary>
-    public static void GenerateReports(string outputDirectory = null)
+    public static void GenerateReports(string? outputDirectory = null)
     {
         outputDirectory ??= Directory.GetCurrentDirectory();
         Directory.CreateDirectory(outputDirectory);

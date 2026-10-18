@@ -55,11 +55,11 @@ public class StepMetadataGeneratorTests
         Assert.That(methods[0].GetParameters()[0].ParameterType, Is.EqualTo(typeof(int)));
         Assert.That(methods[1].GetGenericArguments(), Is.EqualTo(new[] { typeof(int) }));
         Assert.That(methods[2].GetParameters()[0].ParameterType, Is.EqualTo(typeof(string)));
-        var text = methods[0].GetCustomAttribute<StepTextAttribute>();
+        var text = methods[0].GetCustomAttribute<StepTextAttribute>() ?? throw new InvalidOperationException("Missing step text attribute");
         Assert.That(text.Text, Is.EqualTo("number {0}"));
         Assert.That(text.StepTextParameterOverrides, Is.EqualTo(new[] { "0:override" }));
         var skip = methods[0].GetCustomAttributes<SkipStepAttribute>().Single();
-        Assert.That(skip.GetType().GetProperty("Reason").GetValue(skip), Is.EqualTo("private overload"));
+        Assert.That(skip.GetType().GetProperty("Reason")!.GetValue(skip), Is.EqualTo("private overload"));
         Assert.That(Read(sites[0], consumer), Is.EqualTo(new object[] { 19 }));
         Assert.That(Read(sites[1], consumer), Is.EqualTo(new object[] { 19 }));
     }
@@ -105,7 +105,7 @@ public class StepMetadataGeneratorTests
             """);
         var site = Run(consumer).Single();
         Assert.That(site.Metadata.SupportsArgumentCapture, Is.True);
-        Assert.That(Read(site, consumer), Is.EqualTo(new object[] { 19, null }));
+        Assert.That(Read(site, consumer), Is.EqualTo(new object?[] { 19, null }));
     }
 
     [Test]
@@ -129,13 +129,13 @@ public class StepMetadataGeneratorTests
             """);
         var site = Run(consumer).Single();
         Assert.That(site.Metadata.TryBindArguments(consumer, site.Step, out var accessors), Is.True);
-        var type = consumer.GetType("Consumer");
-        Assert.That(type.GetField("Reads").GetValue(null), Is.EqualTo(0));
-        type.GetField("Value").SetValue(site.Step.Target, 42);
+        var type = consumer.GetType("Consumer", throwOnError: true)!;
+        Assert.That(type.GetField("Reads")!.GetValue(null), Is.EqualTo(0));
+        type.GetField("Value")!.SetValue(site.Step.Target, 42);
         Assert.That(accessors[0](), Is.EqualTo(42));
-        type.GetField("Value").SetValue(site.Step.Target, 57);
+        type.GetField("Value")!.SetValue(site.Step.Target, 57);
         Assert.That(accessors[0](), Is.EqualTo(57));
-        Assert.That(type.GetField("Reads").GetValue(null), Is.EqualTo(2));
+        Assert.That(type.GetField("Reads")!.GetValue(null), Is.EqualTo(2));
     }
 
     [Test]
@@ -177,7 +177,7 @@ public class StepMetadataGeneratorTests
             """);
         var site = Run(consumer).Single();
         var method = site.Metadata.Method.Resolve(consumer);
-        Assert.That(method.DeclaringType.IsConstructedGenericType, Is.True);
+        Assert.That(method.DeclaringType!.IsConstructedGenericType, Is.True);
         Assert.That(method.GetParameters()[0].ParameterType, Is.EqualTo(typeof(int)));
         Assert.That(Read(site, consumer), Is.EqualTo(new object[] { 2 }));
     }
@@ -229,7 +229,7 @@ public class StepMetadataGeneratorTests
             """);
         var site = Run(consumer).Single();
         // Roslyn may use a display class shared by the two lambdas. Never guess its layout.
-        if (site.Step.Target.GetType().Name.Contains("DisplayClass"))
+        if (site.Step.Target!.GetType().Name.Contains("DisplayClass"))
             Assert.That(site.Metadata.TryBindArguments(consumer, site.Step, out _), Is.False);
         else
             Assert.That(Read(site, consumer), Is.EqualTo(new object[] { 5 }));
@@ -259,8 +259,8 @@ public class StepMetadataGeneratorTests
             """);
         var site = Run(consumer).Single();
         Assert.That(site.Metadata.TryBindArguments(consumer, site.Step, out var accessors), Is.True);
-        Assert.That(consumer.GetType("Consumer").GetField("Reads").GetValue(null), Is.EqualTo(0));
-        Assert.That(accessors.Select(a => a()).ToArray(), Is.EqualTo(new object[] { null, 21 }));
+        Assert.That(consumer.GetType("Consumer", throwOnError: true)!.GetField("Reads")!.GetValue(null), Is.EqualTo(0));
+        Assert.That(accessors.Select(a => a()).ToArray(), Is.EqualTo(new object?[] { null, 21 }));
     }
 
     [Test]
@@ -329,7 +329,7 @@ public class StepMetadataGeneratorTests
             """.Replace("TYPE", parameterType));
         var site = Run(consumer).Single();
         var expectedType = site.Metadata.Method.Resolve(consumer).GetParameters()[0].ParameterType;
-        var argument = Read(site, consumer).Single();
+        var argument = Read(site, consumer).Single() ?? throw new InvalidOperationException("Missing numeric argument");
         Assert.That(argument.GetType(), Is.EqualTo(expectedType));
         Assert.That(Convert.ToInt32(argument), Is.EqualTo(1));
     }
@@ -407,7 +407,7 @@ public class StepMetadataGeneratorTests
         Assert.That(accessors, Is.Empty);
     }
 
-    private static object[] Read(Captured site, Assembly consumer)
+    private static object?[] Read(Captured site, Assembly consumer)
     {
         Assert.That(site.Metadata.TryBindArguments(consumer, site.Step, out var accessors), Is.True);
         return accessors.Select(a => a()).ToArray();
@@ -415,7 +415,7 @@ public class StepMetadataGeneratorTests
 
     private static Captured[] Run(Assembly assembly)
     {
-        var values = (object[])assembly.GetType("Consumer").GetMethod("Run").Invoke(null, null);
+        var values = (object[])(assembly.GetType("Consumer", throwOnError: true)!.GetMethod("Run")!.Invoke(null, null) ?? throw new InvalidOperationException("Missing captures"));
         return values.Cast<object[]>().Select(value => new Captured((StepCallSiteMetadata)value[0], (Delegate)value[1])).ToArray();
     }
 
@@ -443,7 +443,7 @@ public class StepMetadataGeneratorTests
         Assert.That(Read(site, consumer), Is.EqualTo(new object[] { 42 }));
     }
 
-    private static Assembly Compile(string consumer, SourceReferenceResolver resolver = null, string sourcePath = "consumer.cs")
+    private static Assembly Compile(string consumer, SourceReferenceResolver? resolver = null, string sourcePath = "consumer.cs")
     {
         var compilation = CreateCompilation(Probe + "\n" + consumer, sourcePath: sourcePath);
         if (resolver != null)
@@ -469,7 +469,7 @@ public class StepMetadataGeneratorTests
     private static CSharpCompilation CreateCompilation(string source, LanguageVersion languageVersion = LanguageVersion.CSharp12,
         string sourcePath = "consumer.cs")
     {
-        var references = ((string)AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES")).Split(Path.PathSeparator)
+        var references = ((string?)AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES") ?? throw new InvalidOperationException("Missing runtime assembly paths")).Split(Path.PathSeparator)
             .Select(p => MetadataReference.CreateFromFile(p)).ToList();
         if (!references.Any(r => r.FilePath == typeof(StepCallSiteMetadata).Assembly.Location))
             references.Add(MetadataReference.CreateFromFile(typeof(StepCallSiteMetadata).Assembly.Location));
