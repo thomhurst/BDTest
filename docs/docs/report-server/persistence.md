@@ -105,3 +105,39 @@ The sample server's [`AzureStorageDataStore.cs`](https://github.com/thomhurst/BD
 The report server never deletes reports by age. Configure retention in storage, for example with the sample's [`azure-storage-lifecycle.json`](https://github.com/thomhurst/BDTest/blob/main/BDTest.ReportGenerator.RazorServer/azure-storage-lifecycle.json). Summary and report deletion is not atomic, so a summary can briefly link to a missing report.
 
 Custom `IDataRepository` implementations must implement every method, including `GetDataForBulkRead`, `OpenReadAsync` and `ListAsync`. Every operation accepts cancellation; `StoreData` takes the report ID first. Bulk reads should avoid adding or refreshing full reports in cache. See [Caching and limits](caching-and-limits.md#bulk-report-comparisons).
+
+## Attachments
+
+Attachments use the independent `BDTest.Razor.Reports.Interfaces.IBDTestAttachmentStore` contract. Existing report stores require no changes. Set `options.AttachmentStore` before serving requests; report uploads containing attachments return 400 if no store is configured.
+
+```csharp
+using BDTest.Razor.Reports.Storage;
+
+app.UseBDTestReportServer(options =>
+{
+    options.UploadApiKey = Environment.GetEnvironmentVariable("BDTEST_REPORT_UPLOAD_API_KEY");
+    options.AttachmentStore = new FileBDTestAttachmentStore("/var/lib/bdtest/attachments");
+    options.MaximumAttachmentBytes = 10 * 1024 * 1024;
+    options.MaximumReportAttachmentBytes = 100 * 1024 * 1024;
+    options.MaximumAttachmentsPerReport = 1000;
+});
+```
+
+The file store creates its root if needed. Give only the host filesystem access, keep this directory outside static-file roots, and manage its lifetime and backups with the report store. Untrusted filesystem writers must not be able to create symlinks or replace directories. Only lowercase 32-character hexadecimal report/attachment IDs form storage keys; names and MIME types never form paths. Each write stages content in a random temporary file and publishes it atomically after validating the exact length. Failed or cancelled writes remove partial files and preserve previously completed content. Deletion first renames a report directory to a report-scoped `.deleting` directory. If removal fails, a later `DeleteReportAsync` call discovers and removes the remaining content, including after a server restart; failures continue to propagate until cleanup succeeds.
+
+```csharp
+public interface IBDTestAttachmentStore
+{
+    Task<Stream?> OpenReadAsync(string reportId, string attachmentId,
+        CancellationToken cancellationToken = default);
+    Task WriteAsync(string reportId, string attachmentId, Stream content, long length,
+        CancellationToken cancellationToken = default);
+    Task DeleteReportAsync(string reportId, CancellationToken cancellationToken = default);
+}
+```
+
+Readers own returned streams; return null for missing bytes. Writers read from the current position, leave input open, and must reject short or excess input without publishing partial content. All operations observe cancellation. `DeleteReportAsync` removes only that report's content and succeeds when absent. `AttachmentStorage.CopyExactlyAsync` provides a bounded copy helper. `BDTestAttachmentHelper.GetAttachments(report)` enumerates scenario, step and outline-example metadata, including retained retries.
+
+The sample Azure server configures its `AzureStorageDataStore` as the attachment store. Blobs live under `test-data/{reportId}/attachments/{attachmentId}` in the existing report container. Downloads stream directly; writes stage and validate bytes before committing a blob. Deletion lists every page under the exact report prefix. The supplied Azure lifecycle policy covers both report and attachment blobs; apply that policy in Azure to enable retention. Since blobs have individual modification times, expiry is eventual rather than transactional.
+
+The built-in repository coordinates attachment writes and report deletion within a server instance. Deletion removes attachment content before report JSON and index entries; failures propagate so deletion can be retried. Historical reports without generated attachment IDs still delete normally. For cache-only reports, expiry and capacity eviction schedule attachment cleanup without touching other reports. Cleanup failures are logged through `options.Logger`. Persistent reports keep their attachments when only their memory-cache copy expires. Custom repositories and external retention jobs must call `DeleteReportAsync` as part of their own deletion path. A cache-only host loses its report index on restart; arrange directory cleanup on host shutdown/restart or persist report JSON alongside file attachments.

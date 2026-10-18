@@ -52,9 +52,16 @@ public class BDTestController : Controller
             return BadRequest("Expected a JSON report.");
         }
 
+        if (!AttachmentManifest.IsValid(bdTestOutputModel, _bdTestReportServerOptions))
+            return BadRequest("Invalid attachment manifest or attachment storage is not configured.");
+
         // Never let an uploader choose a storage key, including after cache expiry.
         var id = Guid.NewGuid().ToString("N");
         bdTestOutputModel.Id = id;
+        var attachmentToken = BDTestAttachmentHelper.GetAttachments(bdTestOutputModel).Any()
+            ? AttachmentUploadAuthorization.Create() : null;
+        // Ignore any hash supplied by an uploader; only the receipt can authorize writes.
+        bdTestOutputModel.AttachmentUploadTokenHash = attachmentToken == null ? null : AttachmentUploadAuthorization.Hash(attachmentToken);
 
         try
         {
@@ -70,6 +77,9 @@ public class BDTestController : Controller
             await _bdTestReportServerOptions.DataReceiver.OnReceiveTestDataAsync(bdTestOutputModel);
         }
 
+        Response.Headers["X-BDTest-Report-Id"] = id;
+        if (attachmentToken != null)
+            Response.Headers["X-BDTest-Attachment-Token"] = attachmentToken;
         return Ok(Url.ActionLink("Summary", "BDTest", new { id }));
     }
 

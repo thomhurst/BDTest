@@ -15,11 +15,14 @@ internal sealed class AttachmentWriter(BDTestRun run, string frameworkExecutionI
 
     public void Attach(string name, Stream content, string mimeType)
     {
-        if (string.IsNullOrWhiteSpace(name)) throw new ArgumentException("An attachment name is required.", nameof(name));
+        if (string.IsNullOrWhiteSpace(name) || name.Length > 255
+            || name.Any(character => char.IsControl(character) || character is '/' or '\\'))
+            throw new ArgumentException("An attachment name must contain 1-255 characters without control characters or path separators.", nameof(name));
         if (content == null) throw new ArgumentNullException(nameof(content));
         if (!content.CanRead) throw new ArgumentException("The attachment stream must be readable.", nameof(content));
-        if (mimeType == null || mimeType.IndexOfAny(new[] { '\r', '\n', '\0' }) >= 0
-            || !MediaTypeHeaderValue.TryParse(mimeType, out var mediaType) || mediaType.MediaType.Contains("*"))
+        if (mimeType == null || mimeType.Length > 256 || mimeType.Any(char.IsControl)
+            || !MediaTypeHeaderValue.TryParse(mimeType, out var mediaType) || mediaType.MediaType.Contains("*")
+            || mediaType.ToString().Length > 256)
             throw new ArgumentException("A concrete MIME type is required.", nameof(mimeType));
 
         Action<Attachment> publish;

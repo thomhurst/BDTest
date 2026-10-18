@@ -108,6 +108,7 @@ public class Program
         {
             options.UploadApiKey = builder.Configuration["BDTest:UploadApiKey"];
             options.DataStore = app.Services.GetRequiredService<IBDTestDataStore>();
+            options.AttachmentStore = options.DataStore as IBDTestAttachmentStore;
             options.CustomSidebarLinksProvider = app.Services.GetRequiredService<CustomSidebarLinkProvider>();
             options.AdminAuthorizer = app.Services.GetRequiredService<AdminAuthorizer>();
             options.UserPersonalizer = app.Services.GetRequiredService<UserPersonalizer>();

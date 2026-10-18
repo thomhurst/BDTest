@@ -14,6 +14,72 @@ namespace BDTest.ReportGenerator.Tests;
 
 public class AzureStorageDataStoreTests
 {
+    [Test]
+    public async Task Attachment_write_and_read_stream_owned_bytes_with_report_scoped_keys()
+    {
+        var report = Guid.NewGuid().ToString("N");
+        var attachment = Guid.NewGuid().ToString("N");
+        using var storage = new StorageHandler(0) { DownloadJson = "content" };
+        using var client = new HttpClient(storage);
+        var store = CreateStore(client);
+        using var input = new NonSeekableStream("content", () => { });
+        await store.WriteAsync(report, attachment, input, 7);
+        Assert.That(input.CanRead, Is.True);
+        Assert.That(storage.Uploads[$"/test-data/{report}/attachments/{attachment}"], Is.EqualTo("content"));
+        using (var stream = await store.OpenReadAsync(report, attachment))
+        using (var reader = new StreamReader(stream))
+            Assert.That(await reader.ReadToEndAsync(), Is.EqualTo("content"));
+        Assert.That(storage.DisposedDownloads, Is.EqualTo(1));
+    }
+
+    [TestCase(1)]
+    [TestCase(3)]
+    public async Task Invalid_attachment_length_never_uploads_partial_blob(int length)
+    {
+        using var storage = new StorageHandler(0);
+        using var client = new HttpClient(storage);
+        using var input = new NonSeekableStream("ab", () => { });
+        await Assert.ThrowsAsync<InvalidDataException>(() => CreateStore(client).WriteAsync(
+            Guid.NewGuid().ToString("N"), Guid.NewGuid().ToString("N"), input, length));
+        Assert.That(storage.Requests, Is.Zero);
+        Assert.That(input.CanRead, Is.True);
+    }
+
+    [Test]
+    public async Task Attachment_deletion_lists_only_exact_report_prefix_across_pages()
+    {
+        var report = Guid.NewGuid().ToString("N");
+        using var storage = new StorageHandler(27) { AttachmentReport = report };
+        using var client = new HttpClient(storage);
+        await CreateStore(client).DeleteReportAsync(report);
+        Assert.That(storage.ListRequests, Is.EqualTo(2));
+        Assert.That(storage.DeletedPaths, Has.Count.EqualTo(27));
+        Assert.That(storage.DeletedPaths.All(path => path.StartsWith($"/test-data/{report}/attachments/", StringComparison.Ordinal)), Is.True);
+    }
+
+    [TestCase("read")]
+    [TestCase("write")]
+    [TestCase("delete")]
+    public async Task Attachment_operations_observe_cancellation_without_storage_requests(string operation)
+    {
+        using var storage = new StorageHandler(0);
+        using var client = new HttpClient(storage);
+        using var cancellation = new CancellationTokenSource();
+        cancellation.Cancel();
+        using var input = new MemoryStream(new byte[] { 1 });
+        var report = Guid.NewGuid().ToString("N");
+        var attachment = Guid.NewGuid().ToString("N");
+        var store = CreateStore(client);
+        await Assert.CatchAsync<OperationCanceledException>(async () =>
+        {
+            if (operation == "read") using (await store.OpenReadAsync(report, attachment, cancellation.Token)) { }
+            if (operation == "write") await store.WriteAsync(report, attachment, input, 1, cancellation.Token);
+            if (operation == "delete") await store.DeleteReportAsync(report, cancellation.Token);
+        });
+        Assert.That(storage.Requests, Is.Zero);
+        Assert.That(input.CanRead, Is.True);
+    }
+
     [TestCase("read")]
     [TestCase("write")]
     [TestCase("delete report")]
@@ -412,6 +478,7 @@ public class AzureStorageDataStoreTests
         public ConcurrentBag<string> Downloads { get; } = new();
         public ConcurrentBag<string> DeletedPaths { get; } = new();
         public ConcurrentDictionary<string, string> Uploads { get; } = new();
+        public string AttachmentReport { get; init; }
         public int ListRequests;
         public int Requests;
         public int Deletes;
@@ -449,14 +516,17 @@ public class AzureStorageDataStoreTests
             if (request.RequestUri!.Query.Contains("comp=list"))
             {
                 Interlocked.Increment(ref ListRequests);
-                Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(request.RequestUri.Query).TryGetValue("marker", out var marker);
+                var query = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(request.RequestUri.Query);
+                query.TryGetValue("marker", out var marker);
+                if (AttachmentReport != null)
+                    Assert.That(query["prefix"].ToString(), Is.EqualTo($"{AttachmentReport}/attachments/"));
                 var start = string.IsNullOrEmpty(marker) ? 0 : int.Parse(marker.ToString(), CultureInfo.InvariantCulture);
                 var end = Math.Min(start + 25, count);
                 var xml = new XElement("EnumerationResults",
                     new XAttribute("ServiceEndpoint", "https://storage.test/"),
                     new XAttribute("ContainerName", "test-runs-summaries"),
                     new XElement("Blobs", Enumerable.Range(start, end - start).Select(index =>
-                        new XElement("Blob", new XElement("Name", Name(index)),
+                        new XElement("Blob", new XElement("Name", AttachmentReport == null ? Name(index) : $"{AttachmentReport}/attachments/{index:x32}"),
                             new XElement("Properties",
                                 new XElement("Creation-Time", CreatedOn[index].ToString("R")),
                                 new XElement("Last-Modified", CreatedOn[index].ToString("R")),

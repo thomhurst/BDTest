@@ -18,6 +18,8 @@ Attachments.AttachFile("network.har", "application/json");
 
 Capture copies the content immediately to temporary files owned by the test's run. The stream overload reads from its current position, supports non-seekable streams, and leaves the source open. `AttachFile` uses only the source file's basename as the display name. Its default MIME type is `application/octet-stream`; supply an explicit type for images or text.
 
+Names must contain 1–255 characters without control characters or path separators. MIME types must be concrete, valid types of at most 256 characters without control characters. Capture rejects invalid metadata before copying content, using the same rules as the report server.
+
 ## Ownership and hooks
 
 Capture inside a step, `OnBeforeStep`, or `OnAfterStep` adds metadata to that `Step.Attachments` collection. For example:
@@ -60,6 +62,14 @@ Report JSON includes metadata only. Local paths and file content are never seria
 
 Keep the run alive until tests, writers and exporters finish. Use `using` or `try/finally` so disposal removes temporary files even when tests or export fail. `BDTestUtil.ClearScenarios(run)` also removes that run's temporary files and resets its quota. For framework adapters using the shared default run, call `BDTestUtil.ClearScenarios()` after exporting all results. Neither operation touches another run's files.
 
-:::note Current scope
-This API captures files and exports metadata. Automatic report-server uploads, attachment stores, and Razor previews/downloads are tracked separately in [#890](https://github.com/thomhurst/BDTest/issues/890) and [#891](https://github.com/thomhurst/BDTest/issues/891). Existing report upload sends JSON only; export the content yourself with `OpenAttachment` until those features ship.
-:::
+## Uploading
+
+`BDTestReportServer.SendDataAndGetReportUriAsync` uploads report JSON first, then streams each referenced attachment from that run's temporary files. Explicit-run overloads never read another run's files. Captures from retry attempts and outline examples are included. Pending files without a scenario are not uploaded. Keep the run alive until the whole upload completes; neither success nor failure clears its files automatically.
+
+Configure an [attachment store](../report-server/persistence.md#attachments) on the server and pass a caller-owned `HttpClient` carrying `X-BDTest-Upload-Key`. An older server that does not issue an attachment receipt causes the upload method to throw when the run has attachments. Runs without attachments remain compatible.
+
+The uploader uses bounded stream buffers and reopens each captured file on retry. Permanent HTTP failures stop immediately; transient failures follow the existing retry policy. A failure leaves the report and any completed attachments on the server, with missing content returning 404. Retrying the whole method creates a new report, so delete an incomplete report through the normal report deletion flow when needed. Use `try/finally` to dispose an explicit run or clear the default run after reporting, including failed uploads.
+
+`GET /bdtest/report/{reportId}/attachments/{attachmentId}` downloads a recorded attachment with its recorded MIME type and a safe filename. All types, including HTML and SVG, use `Content-Disposition: attachment`, `nosniff` and a sandbox CSP. These requests follow the host's report authorization policy. `Uri` remains null; construct the download route from the server-assigned report ID and attachment ID. The server rejects uploader-supplied attachment URIs and local paths.
+
+Inline previews and attachment links in the Razor views remain tracked in [#891](https://github.com/thomhurst/BDTest/issues/891).

@@ -8,6 +8,9 @@ public class BDTestOutputModel
 {
     [JsonPropertyName("id")]
     public string Id { get; set; }
+
+    /// <summary>Server-generated SHA-256 hash authorizing attachment writes. The upload token itself is never stored in report JSON.</summary>
+    public string AttachmentUploadTokenHash { get; set; }
         
     [JsonInclude]
     public string Environment { get; set; }
