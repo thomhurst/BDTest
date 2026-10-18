@@ -65,5 +65,37 @@ public class TUnitScenarioTests : TUnitBDTestBase<TUnitContext>
         }
     }
 
+    [Test]
+    public async Task FailingStepIsRecordedAndStopsSubsequentSteps()
+    {
+        var testId = TestContext.Current!.Id;
+        var failure = new InvalidOperationException("Expected step failure");
+
+        try
+        {
+            await Given(() => Console.WriteLine("before failure"))
+                .When(() => ThrowFailure(failure))
+                .Then(() => Assert.Fail("Subsequent steps must not run."))
+                .BDTestAsync();
+
+            Assert.Fail("The step exception should be propagated.");
+        }
+        catch (InvalidOperationException exception)
+        {
+            var scenario = BDTestUtil.GetScenarios().Single(s => s.FrameworkTestId == testId);
+
+            await Assert.That(ReferenceEquals(exception, failure)).IsTrue();
+            await Assert.That(scenario.Status).IsEqualTo(Status.Failed);
+            await Assert.That(scenario.Steps[0].Status).IsEqualTo(Status.Passed);
+            await Assert.That(scenario.Steps[1].Status).IsEqualTo(Status.Failed);
+            await Assert.That(scenario.Steps[1].Exception.Message).IsEqualTo(failure.Message);
+            await Assert.That(scenario.Steps[1].Exception.TypeName).IsEqualTo(nameof(InvalidOperationException));
+            await Assert.That(scenario.Steps[2].Status).IsEqualTo(Status.Inconclusive);
+            await Assert.That(scenario.Steps[2].StartTime).IsEqualTo(default(DateTime));
+        }
+    }
+
+    private static void ThrowFailure(Exception exception) => throw exception;
+
     private static void ThrowInconclusiveException() => throw new InconclusiveTestException("Inconclusive scenario");
 }
