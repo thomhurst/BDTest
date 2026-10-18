@@ -184,7 +184,9 @@ internal class DataRepository : IDataRepository
             catch (Exception exception) { failure ??= exception; }
 
             if (failure != null) ExceptionDispatchInfo.Capture(failure).Throw();
-            if (!deleted) _logger?.LogDebug("Report {ReportId} did not exist during deletion.", reportId);
+            if (!deleted)
+                _logger?.LogDebug("Report {ReportId} did not exist during deletion.",
+                    reportId.Replace("\r", "\\r").Replace("\n", "\\n"));
         }
         finally { _historyLock.Release(); }
     }

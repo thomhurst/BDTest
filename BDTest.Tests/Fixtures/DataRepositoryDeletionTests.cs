@@ -6,6 +6,7 @@ using BDTest.Razor.Reports.Models;
 using BDTest.Razor.Reports.Storage;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using NUnit.Framework;
 
 namespace BDTest.Tests.Fixtures;
@@ -34,9 +35,9 @@ public class DataRepositoryDeletionTests
         await _repository.GetAllTestRunRecords();
     }
 
-    private DataRepository CreateRepository(IBDTestAttachmentStore attachments = null) =>
+    private DataRepository CreateRepository(IBDTestAttachmentStore attachments = null, ILogger<DataRepository> logger = null) =>
         new(_cache, _services.GetRequiredService<ReportAttachmentGate>(),
-            reportStore: _persistent, runIndexStore: _persistent, attachmentStore: attachments);
+            reportStore: _persistent, runIndexStore: _persistent, attachmentStore: attachments, logger: logger);
 
     [TearDown]
     public void TearDown()
@@ -58,6 +59,21 @@ public class DataRepositoryDeletionTests
         Assert.That(await _repository.GetData(Id, default), Is.Null);
         Assert.That(await _repository.GetAllTestRunRecords(), Is.Empty);
         Assert.That(await _persistent.GetAllTestRunRecords(), Is.Empty);
+    }
+
+    [TestCase("missing", "missing")]
+    [TestCase("missing\rforged", "missing\\rforged")]
+    [TestCase("missing\nforged", "missing\\nforged")]
+    [TestCase("missing\r\nforged", "missing\\r\\nforged")]
+    public async Task Missing_report_log_escapes_line_breaks(string id, string loggedId)
+    {
+        var logger = new RecordingLogger();
+        _repository = CreateRepository(logger: logger);
+
+        await _repository.DeleteReport(id);
+
+        Assert.That(logger.Message, Is.EqualTo($"Report {loggedId} did not exist during deletion."));
+        Assert.That(logger.Message, Does.Not.Contain("\r").And.Not.Contain("\n"));
     }
 
     [TestCase("persistent-index")]
@@ -154,6 +170,15 @@ public class DataRepositoryDeletionTests
         }
         Assert.That(await _cache.GetTestData(Id, default), Is.Null);
         Assert.That(await _repository.GetData(Id, default), Is.Null);
+    }
+
+    private sealed class RecordingLogger : ILogger<DataRepository>
+    {
+        public string Message { get; private set; }
+        public bool IsEnabled(LogLevel logLevel) => true;
+        public IDisposable BeginScope<TState>(TState state) where TState : notnull => null;
+        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception exception, Func<TState, Exception, string> formatter)
+            => Message = formatter(state, exception);
     }
 
     private sealed class FailingAttachments : IBDTestAttachmentStore
