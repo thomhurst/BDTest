@@ -14,15 +14,7 @@ public abstract class TUnitBDTestBase<TContext> : AbstractContextBDTestBase<TCon
     [Before(HookType.Class)]
     public static void SetupTUnitExceptions()
     {
-        if (!BDTestSettings.CustomExceptionSettings.SkipExceptionTypes.Contains(typeof(SkipTestException)))
-        {
-            BDTestSettings.CustomExceptionSettings.SkipExceptionTypes.Add(typeof(SkipTestException));
-        }
-
-        if (!BDTestSettings.CustomExceptionSettings.InconclusiveExceptionTypes.Contains(typeof(InconclusiveTestException)))
-        {
-            BDTestSettings.CustomExceptionSettings.InconclusiveExceptionTypes.Add(typeof(InconclusiveTestException));
-        }
+        TUnitExceptionRegistration.EnsureRegistered();
     }
 
     protected override void OnScenarioSkipped(string reason) => throw new SkipTestException(reason);
@@ -41,4 +33,23 @@ public abstract class TUnitBDTestBase<TContext> : AbstractContextBDTestBase<TCon
         RemoveContext();
         base.MarkTestAsComplete();
     }
+}
+
+// Non-generic so all context types share the same CLR-protected initialization.
+internal static class TUnitExceptionRegistration
+{
+    static TUnitExceptionRegistration()
+    {
+        if (!BDTestSettings.CustomExceptionSettings.SkipExceptionTypes.Contains(typeof(SkipTestException)))
+        {
+            BDTestSettings.CustomExceptionSettings.SkipExceptionTypes.Add(typeof(SkipTestException));
+        }
+
+        if (!BDTestSettings.CustomExceptionSettings.InconclusiveExceptionTypes.Contains(typeof(InconclusiveTestException)))
+        {
+            BDTestSettings.CustomExceptionSettings.InconclusiveExceptionTypes.Add(typeof(InconclusiveTestException));
+        }
+    }
+
+    internal static void EnsureRegistered() { }
 }

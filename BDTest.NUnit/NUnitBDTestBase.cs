@@ -18,20 +18,7 @@ public abstract class NUnitBDTestBase<TContext> : AbstractContextBDTestBase<TCon
     [OneTimeSetUp]
     public static void SetupNUnitExceptions()
     {
-        if (!BDTestSettings.CustomExceptionSettings.SuccessExceptionTypes.Contains(typeof(SuccessException)))
-        {
-            BDTestSettings.CustomExceptionSettings.SuccessExceptionTypes.Add(typeof(SuccessException));
-        }
-            
-        if (!BDTestSettings.CustomExceptionSettings.SkipExceptionTypes.Contains(typeof(IgnoreException)))
-        {
-            BDTestSettings.CustomExceptionSettings.SkipExceptionTypes.Add(typeof(IgnoreException));
-        }
-            
-        if (!BDTestSettings.CustomExceptionSettings.InconclusiveExceptionTypes.Contains(typeof(InconclusiveException)))
-        {
-            BDTestSettings.CustomExceptionSettings.InconclusiveExceptionTypes.Add(typeof(InconclusiveException));
-        }
+        NUnitExceptionRegistration.EnsureRegistered();
     }
 
     protected override void OnScenarioSkipped(string reason) => Assert.Ignore(reason);
@@ -63,4 +50,28 @@ public abstract class NUnitBDTestBase<TContext> : AbstractContextBDTestBase<TCon
     {
         base.MarkTestAsComplete();
     }
+}
+
+// Non-generic so all context types share the same CLR-protected initialization.
+internal static class NUnitExceptionRegistration
+{
+    static NUnitExceptionRegistration()
+    {
+        if (!BDTestSettings.CustomExceptionSettings.SuccessExceptionTypes.Contains(typeof(SuccessException)))
+        {
+            BDTestSettings.CustomExceptionSettings.SuccessExceptionTypes.Add(typeof(SuccessException));
+        }
+
+        if (!BDTestSettings.CustomExceptionSettings.SkipExceptionTypes.Contains(typeof(IgnoreException)))
+        {
+            BDTestSettings.CustomExceptionSettings.SkipExceptionTypes.Add(typeof(IgnoreException));
+        }
+
+        if (!BDTestSettings.CustomExceptionSettings.InconclusiveExceptionTypes.Contains(typeof(InconclusiveException)))
+        {
+            BDTestSettings.CustomExceptionSettings.InconclusiveExceptionTypes.Add(typeof(InconclusiveException));
+        }
+    }
+
+    internal static void EnsureRegistered() { }
 }
