@@ -16,8 +16,9 @@ on:
         required: true
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
+  # Keep package publication separate and uninterrupted; ordinary builds still supersede each other.
+  group: ${{ github.workflow }}-${{ inputs.publish-packages && 'publish' || 'build' }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ !inputs.publish-packages }}
 
 jobs:
   modularpipeline:
@@ -49,14 +50,14 @@ jobs:
           NuGet__ApiKey: ${{ secrets.NUGET__APIKEY }}
           PUBLISH_PACKAGES: ${{ github.event.inputs.publish-packages }}
       - name: Upload test results
-        if: ${{ always() }}
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v7.0.2
         with:
           name: test-results
           path: artifacts/test-results/
           if-no-files-found: warn
       - name: Upload NuGet packages
-        if: ${{ always() }}
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v7.0.2
         with:
           name: packages
