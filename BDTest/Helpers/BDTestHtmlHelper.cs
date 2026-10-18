@@ -4,6 +4,7 @@ using BDTest.Output;
 using BDTest.Settings;
 using BDTest.Test;
 using System.Globalization;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 
@@ -12,6 +13,21 @@ namespace BDTest.Helpers;
 public static class BDTestHtmlHelper
 {
     private const string NotSpecified = "Not Specified";
+
+    // HTML parsing normalizes line endings before CSP checks the script's hash.
+    private static readonly string ReportScript = EmbeddedScript.Replace("\r\n", "\n").Replace("\r", "\n");
+    private static readonly string ContentSecurityPolicy = CreateContentSecurityPolicy();
+
+    private static string CreateContentSecurityPolicy()
+    {
+        using var sha256 = SHA256.Create();
+        var scriptHash = Convert.ToBase64String(sha256.ComputeHash(Encoding.UTF8.GetBytes(ReportScript)));
+        // srcdoc inherits this policy as well as its own. Keep evidence images and inline
+        // formatting available, but authorize only the report's exact script in the parent.
+        return $"default-src 'none'; script-src 'sha256-{scriptHash}'; script-src-attr 'none'; "
+            + "style-src 'unsafe-inline'; img-src data: https: http: file:; frame-src 'self'; "
+            + "base-uri 'none'; form-action 'none'";
+    }
 
     // Display order for status tiles, filters and story totals.
     private static readonly Status[] Statuses =
@@ -81,6 +97,7 @@ public static class BDTestHtmlHelper
         html.AppendLine("<html lang=\"en\">");
         html.AppendLine("<head>");
         html.AppendLine("<meta charset=\"UTF-8\">");
+        html.AppendLine($"<meta http-equiv=\"Content-Security-Policy\" content=\"{EscapeHtml(ContentSecurityPolicy)}\">");
         html.AppendLine("<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">");
         html.AppendLine("<title>BDTest Report</title>");
         html.AppendLine(EmbeddedStyles);
@@ -118,7 +135,9 @@ public static class BDTestHtmlHelper
 
         html.AppendLine("<footer class=\"wrap foot\"><span>BDTest · snapshot of one test run</span><span>Times are UTC.</span></footer>");
         html.AppendLine("</div>");
-        html.AppendLine(EmbeddedScript);
+        html.Append("<script>");
+        html.Append(ReportScript);
+        html.AppendLine("</script>");
         html.AppendLine("</body>");
         html.AppendLine("</html>");
 
@@ -906,7 +925,6 @@ font-family:var(--sans);color:var(--ink);background:var(--bg);min-height:100vh;f
 """;
 
     private const string EmbeddedScript = """
-<script>
 (function () {
   var root = document.querySelector('.rpt');
   var PAGE = 200;
@@ -1061,6 +1079,5 @@ font-family:var(--sans);color:var(--ink);background:var(--bg);min-height:100vh;f
   window.addEventListener('afterprint', function () { printing = false; if (items.length) apply(); });
   if (items.length) apply();
 })();
-</script>
 """;
 }
