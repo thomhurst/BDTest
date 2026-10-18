@@ -106,17 +106,18 @@ public class PackageArtifactVerificationTests
     public async Task Rejects_a_stale_dependency_version()
     {
         UpdateManifest(metadata => metadata.Descendants("dependency")
-            .Single(dependency => (string?)dependency.Attribute("id") == "Humanizer.Core")
-            .SetAttributeValue("version", "2.7.9"));
+            .Single(dependency => (string?)dependency.Attribute("id") == "System.Text.Json")
+            .SetAttributeValue("version", "9.0.0"));
 
-        await AssertRejected("Package dependency mismatch for Humanizer.Core");
+        await AssertRejected("Package dependency mismatch for System.Text.Json");
     }
 
-    [Test]
-    public async Task Rejects_an_unexpected_runner_dependency()
+    [TestCase("Microsoft.NET.Test.Sdk", "18.11.0")]
+    [TestCase("Humanizer.Core", "3.0.10")]
+    public async Task Rejects_an_unexpected_dependency(string id, string version)
     {
         UpdateManifest(metadata => metadata.Element("dependencies")!.Add(
-            new XElement("dependency", new XAttribute("id", "Microsoft.NET.Test.Sdk"), new XAttribute("version", "18.11.0"))));
+            new XElement("dependency", new XAttribute("id", id), new XAttribute("version", version))));
 
         await AssertRejected("Unexpected package dependencies");
     }
