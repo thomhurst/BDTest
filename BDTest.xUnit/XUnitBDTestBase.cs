@@ -1,64 +1,82 @@
-﻿using System.Reflection;
-using System.Text;
 using BDTest.Output;
+using BDTest.Settings;
 using BDTest.Test;
 using Xunit;
-using Xunit.Abstractions;
+using Xunit.Sdk;
 
 namespace BDTest.xUnit;
 
+[BDTestLifecycle]
 public abstract class XUnitBDTestBase<TContext> : AbstractContextBDTestBase<TContext>, IDisposable, IAsyncLifetime
     where TContext : class, new()
 {
     private readonly string _frameworkTestId;
-    private readonly StringBuilder _constructorOutput = new();
+    private readonly StartupOutputBuffer _constructorOutput;
+    private bool _executionStarted;
 
     protected override string BDTestExecutionId => _frameworkTestId;
 
-    protected XUnitBDTestBase(ITestOutputHelper outputHelper)
+    protected XUnitBDTestBase()
     {
-        var type = outputHelper.GetType();
-        var testMember = type.GetField("test", BindingFlags.Instance | BindingFlags.NonPublic);
-        var test = (ITest) testMember.GetValue(outputHelper);
-        
-        // v2 can share one test case across non-serializable theory rows.
-        // Each row gets its own fixture instance; retain the case ID for correlation.
-        _frameworkTestId = $"{test.TestCase.UniqueID}_{Guid.NewGuid():N}";
+        XUnitExceptionRegistration.EnsureRegistered();
+        _frameworkTestId = TestContext.Current.Test?.UniqueID
+            ?? throw new InvalidOperationException("An xUnit test must be running to create a BDTest adapter.");
+        _constructorOutput = new StartupOutputBuffer(InitializeExecution);
         TestOutputData.PendingStartupOutput = _constructorOutput;
         Console.SetOut(TestOutputData.Instance);
     }
 
     // Keep lifecycle binding outside the virtual async setup method: AsyncLocal
     // changes inside a derived async override do not flow back to xUnit's caller.
-    Task IAsyncLifetime.InitializeAsync()
+    ValueTask IAsyncLifetime.InitializeAsync()
     {
-        BeginTest(_frameworkTestId);
-        lock (_constructorOutput)
-        {
-            TestRun.Store.AppendStartupOutput(BDTestExecutionId, _constructorOutput.ToString(), appendNewLine: false);
-            _constructorOutput.Clear();
-        }
+        InitializeExecution();
         return InitializeAsync();
     }
 
-    /// <summary>Runs async setup after the execution has been bound to the derived fixture's run.</summary>
-    public virtual Task InitializeAsync() => Task.CompletedTask;
-
-    public virtual Task DisposeAsync()
+    private void InitializeExecution()
     {
-        Dispose();
-        return Task.CompletedTask;
+        if (_executionStarted) return;
+        BeginTest(_frameworkTestId);
+        _constructorOutput.Bind(TestRun, BDTestExecutionId);
+        _executionStarted = true;
     }
 
-    protected override void OnScenarioSkipped(string reason) => throw new NotSupportedException(
-        "xUnit v2 does not support runtime skipping. Use [Fact(Skip = \"reason\")] or [Theory(Skip = \"reason\")] " +
-        "to skip at discovery time. " + reason);
+    /// <summary>Runs async setup after the execution has been bound to the derived fixture's run.</summary>
+    public virtual ValueTask InitializeAsync() => default;
+
+    protected override void OnScenarioSkipped(string reason) => Assert.Skip(reason);
+
+    /// <summary>Completes the BDTest execution when xUnit disposes the test asynchronously.</summary>
+    /// <remarks>Override for asynchronous teardown and await base.DisposeAsync() in a finally block.</remarks>
+    public virtual ValueTask DisposeAsync()
+    {
+        // Preserve synchronous teardown when a derived class reimplements IDisposable.
+        ((IDisposable)this).Dispose();
+        return default;
+    }
 
     public void Dispose()
     {
+        // A derived IAsyncLifetime implementation may bypass our initialization hook.
+        InitializeExecution();
+        _constructorOutput.Complete();
         EndTest();
         if (ReferenceEquals(TestOutputData.PendingStartupOutput, _constructorOutput))
             TestOutputData.PendingStartupOutput = null;
-        lock (_constructorOutput) _constructorOutput.Clear();
     }
+}
+
+// Non-generic so all context types share the same CLR-protected initialization.
+internal static class XUnitExceptionRegistration
+{
+    static XUnitExceptionRegistration()
+    {
+        if (!BDTestSettings.CustomExceptionSettings.SkipExceptionTypes.Contains(typeof(SkipException)))
+        {
+            BDTestSettings.CustomExceptionSettings.SkipExceptionTypes.Add(typeof(SkipException));
+        }
+    }
+
+    internal static void EnsureRegistered() { }
 }

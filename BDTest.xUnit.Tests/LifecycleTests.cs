@@ -1,6 +1,5 @@
 using System.Collections.Concurrent;
 using Xunit;
-using Xunit.Abstractions;
 using BDTest.TestUtilities;
 
 namespace BDTest.xUnit.Tests;
@@ -8,19 +7,17 @@ namespace BDTest.xUnit.Tests;
 public class LifecycleTests : XUnitBDTestBase<XUnitContext>
 {
     private static readonly ConcurrentDictionary<string, byte> Ids = new();
-    private readonly ITestOutputHelper _output;
 
-    public LifecycleTests(ITestOutputHelper output) : base(output)
+    public LifecycleTests()
     {
-        _output = output;
         Console.WriteLine("startup:" + BDTestExecutionId);
     }
 
-    // Non-serializable data forces v2 to execute rows from one shared test case.
+    // Exercise constructor capture for runtime-enumerated, non-serializable rows.
     public static IEnumerable<object[]> Rows => new[] { new object[] { new object() }, new object[] { new object() } };
 
     [Theory]
-    [MemberData(nameof(Rows))]
+    [MemberData(nameof(Rows), DisableDiscoveryEnumeration = true)]
     public async Task NonSerializableRowsHaveUniqueIdsAndCaptureConstructorOutput(object row)
     {
         var id = BDTestExecutionId;
@@ -38,17 +35,17 @@ public class LifecycleTests : XUnitBDTestBase<XUnitContext>
 
     [Fact]
     public Task ExplicitRunsKeepCompletionAndOutputIsolated() =>
-        LifecycleContract.Verify(run => new Probe(run, _output).Actions);
+        LifecycleContract.Verify(run => new Probe(run).Actions);
 
     [Fact]
     public Task LegacyIdsKeepCaptureAndCleanupTogether() =>
-        LifecycleContract.VerifyLegacy(run => new LegacyProbe(run, _output).Actions);
+        LifecycleContract.VerifyLegacy(run => new LegacyProbe(run).Actions);
 
     [Fact]
     public async Task RunAssignedInConstructorOwnsConstructorOutputAndCompletion()
     {
         using var run = BDTestRun.Start();
-        var fixture = new ConstructorProbe(run, _output);
+        var fixture = new ConstructorProbe(run);
         await ((IAsyncLifetime)fixture).InitializeAsync();
         var originalContext = fixture.Context;
         var scenario = await fixture.When(() => NoOp()).Then(() => NoOp()).BDTestAsync();
@@ -59,12 +56,41 @@ public class LifecycleTests : XUnitBDTestBase<XUnitContext>
         Assert.NotSame(originalContext, fixture.Context);
     }
 
+    [Fact]
+    public async Task FailedReimplementedSetupStillCleansContextAndPendingOutput()
+    {
+        using var run = BDTestRun.Start();
+        var fixture = new FailedSetupProbe(run);
+        var originalContext = fixture.Context;
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            ((IAsyncLifetime)fixture).InitializeAsync().AsTask());
+        await fixture.DisposeAsync();
+        Assert.NotSame(originalContext, fixture.Context);
+
+        var next = new Probe(run);
+        next.Actions.Begin("ignored-runner-id");
+        var scenario = await next.When(() => NoOp()).Then(() => NoOp()).BDTestAsync();
+        Assert.True(string.IsNullOrEmpty(scenario.TestStartupInformation));
+        next.Actions.End();
+    }
+
+    private sealed class FailedSetupProbe(BDTestRun run) : XUnitBDTestBase<XUnitContext>, IAsyncLifetime
+    {
+        public override BDTestRun TestRun => run;
+
+        ValueTask IAsyncLifetime.InitializeAsync()
+        {
+            Console.WriteLine("failed setup output");
+            throw new InvalidOperationException("setup failed");
+        }
+    }
+
     private sealed class ConstructorProbe : XUnitBDTestBase<XUnitContext>
     {
         private readonly BDTestRun _run;
         public override BDTestRun TestRun => _run;
 
-        public ConstructorProbe(BDTestRun run, ITestOutputHelper output) : base(output)
+        public ConstructorProbe(BDTestRun run)
         {
             Console.WriteLine("before assigning owned run");
             _run = run;
@@ -72,14 +98,14 @@ public class LifecycleTests : XUnitBDTestBase<XUnitContext>
         }
     }
 
-    private sealed class LegacyProbe(BDTestRun run, ITestOutputHelper output) : XUnitBDTestBase<XUnitContext>(output)
+    private sealed class LegacyProbe(BDTestRun run) : XUnitBDTestBase<XUnitContext>
     {
         public override BDTestRun TestRun => run;
         protected override string BDTestExecutionId => "legacy-id";
-        public LifecycleContract.Probe Actions => new(this, _ => ((IAsyncLifetime)this).InitializeAsync().GetAwaiter().GetResult(), Dispose, () => Context);
+        public LifecycleContract.Probe Actions => new(this, _ => ((IAsyncLifetime)this).InitializeAsync().AsTask().GetAwaiter().GetResult(), Dispose, () => Context);
     }
 
-    private sealed class Probe(BDTestRun run, ITestOutputHelper output) : XUnitBDTestBase<XUnitContext>(output)
+    private sealed class Probe(BDTestRun run) : XUnitBDTestBase<XUnitContext>
     {
         public override BDTestRun TestRun => run;
         public LifecycleContract.Probe Actions => new(this, BeginTest, EndTest, () => Context);
@@ -88,20 +114,30 @@ public class LifecycleTests : XUnitBDTestBase<XUnitContext>
 
 public class AsyncLifecycleTests : XUnitBDTestBase<XUnitContext>
 {
+    private readonly TaskCompletionSource _releaseOutput = new(TaskCreationOptions.RunContinuationsAsynchronously);
+    private readonly Task _constructorTask;
     private readonly BDTestRun _run;
     public override BDTestRun TestRun => _run;
 
-    public AsyncLifecycleTests(ITestOutputHelper output) : base(output)
+    public AsyncLifecycleTests()
     {
         _run = BDTestRun.Start();
         Console.WriteLine("owned constructor");
+        _constructorTask = Task.Run(async () =>
+        {
+            await _releaseOutput.Task;
+            Console.Write('!');
+            Console.WriteLine("constructor task output");
+        });
     }
 
-    public override async Task InitializeAsync()
+    public override async ValueTask InitializeAsync()
     {
         await base.InitializeAsync();
         await Task.Yield();
         Console.WriteLine("owned async setup");
+        _releaseOutput.SetResult();
+        await _constructorTask.WaitAsync(TimeSpan.FromSeconds(10));
     }
 
     [Fact]
@@ -112,12 +148,13 @@ public class AsyncLifecycleTests : XUnitBDTestBase<XUnitContext>
             .Then(() => GC.KeepAlive(this)).BDTestAsync();
         Assert.Contains("owned constructor", scenario.TestStartupInformation);
         Assert.Contains("owned async setup", scenario.TestStartupInformation);
+        Assert.Contains("!constructor task output", scenario.TestStartupInformation);
         Assert.Contains("owned body startup", scenario.TestStartupInformation);
         Assert.Contains("owned step", scenario.Steps.First().Output);
         Assert.Single(_run.Scenarios);
     }
 
-    public override async Task DisposeAsync()
+    public override async ValueTask DisposeAsync()
     {
         try { await base.DisposeAsync(); }
         finally { _run.Dispose(); }

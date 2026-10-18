@@ -126,9 +126,11 @@ rows have separate IDs and contexts even when their data is not serializable.
 Runtime BDTest skip rules now produce skipped xUnit results instead of throwing
 `NotSupportedException`.
 
-The adapter implements `IAsyncDisposable`. For asynchronous teardown, override
+The adapter implements `IAsyncLifetime`. For asynchronous teardown, override
 `DisposeAsync()` and call `await base.DisposeAsync()` in a `finally` block, including
-when implementing `IAsyncLifetime`. xUnit v3 calls only asynchronous disposal when
+when overriding `InitializeAsync`. Prefer the virtual override to reimplementing
+`IAsyncLifetime`. Existing interface implementations bind buffered startup output
+through an inherited before-test hook. xUnit v3 calls only asynchronous disposal when
 both disposal interfaces are present; hiding or explicitly reimplementing
 `DisposeAsync()` must also invoke the base cleanup.
 See the [xUnit adapter guide](docs/docs/frameworks/xunit.md) for the teardown pattern.
@@ -268,14 +270,12 @@ when another run is active. TUnit hooks export the new flow state through
 
 NUnit uses its test ID plus repeat count. TUnit uses `TestContext.Id`. MSTest uses
 the class name and data-row display name plus an execution suffix. The current
-xUnit v2 adapter uses its test-case ID plus a unique fixture-instance suffix,
-because non-serializable theory rows can share one test case. Constructor console
-output is buffered until xUnit calls `IAsyncLifetime.InitializeAsync`, after the
+xUnit v3 adapter uses the framework test ID, including its data-row identity.
+Constructor console output is buffered until xUnit calls `IAsyncLifetime.InitializeAsync`, after the
 constructor has assigned any owned `TestRun`. The explicit interface hook binds
 capture before invoking virtual `InitializeAsync`, so async setup overrides keep
 the same output flow as the test body. Override `DisposeAsync` for async
-cleanup and call `base.DisposeAsync()` in `finally`. The xUnit v3
-migration is tracked separately in #800.
+cleanup and call `base.DisposeAsync()` in `finally`.
 
 Calling the start hook inside a separate async setup method or `Task.Run` does
 not propagate its `AsyncLocal` values back to the caller. Per-test fixture
@@ -283,7 +283,8 @@ instances retain their execution identity across runner setup/body boundaries.
 The legacy standalone default still creates an ID on first access. Existing
 `BDTestExecutionId` overrides remain supported for compatibility, but custom
 adapters should migrate to `BeginTest(id)`. `MarkTestAsStarted()` and
-`MarkTestAsComplete()` remain as obsolete compatibility shims.
+`MarkTestAsComplete()` remain as obsolete compatibility shims. See the
+[custom adapter lifecycle guide](docs/docs/advanced/custom-adapter-lifecycle.md).
 
 ### Before and after step hooks
 
