@@ -27,6 +27,74 @@ public class ScenarioOutlineTests : AbstractContextBDTestBase<ScenarioOutlineTes
         BDTestSettings.CustomExceptionSettings.InconclusiveExceptionTypes.Add(typeof(InconclusiveRowException));
         BDTestSettings.GlobalSkipTestRules.Add(scenario => scenario.BdTestBaseClass is SkipCapture
             && scenario.ExampleValues.TryGetValue("Skip", out var skip) && skip == "True");
+        BDTestSettings.GlobalSkipTestRules.Add(scenario =>
+        {
+            if (scenario.ExampleValues.TryGetValue("ThrowSkipRule", out var value) && value == "True")
+                throw new InvalidOperationException("<skip rule failed>");
+            return false;
+        });
+    }
+
+    private string _retryHook;
+
+    public override Task OnBeforeRetry()
+    {
+        if (_retryHook == "before") throw new InvalidOperationException("<retry hook failed>");
+        return Task.CompletedTask;
+    }
+
+    [BDTestRetrySetUp]
+    public void RetrySetup()
+    {
+        if (_retryHook == "setup") throw new InvalidOperationException("<retry hook failed>");
+    }
+
+    [BDTestRetryTearDown]
+    public void RetryTeardown()
+    {
+        if (_retryHook == "teardown") throw new InvalidOperationException("<retry hook failed>");
+    }
+
+    [TestCase("before"), TestCase("setup"), TestCase("teardown"), BDTestRetry(1)]
+    public async Task Retry_hook_failures_fail_the_row_and_keep_diagnostics(string hook)
+    {
+        _retryHook = hook;
+        await Assert.ThrowsAsync<ErrorOccurredDuringRetryActionException>(async () => await ScenarioOutline("Retry hook error",
+            new[] { new { Value = 1 }, new { Value = 2 } },
+            row => Given(() => RetryRow(row.Value)).When(() => NoOp()).Then(() => NoOp())));
+        var outline = BDTestUtil.GetScenarios().Single(x => x.FrameworkTestId == _executionId);
+        Assert.That(outline.Status, Is.EqualTo(Status.Failed));
+        Assert.That(outline.Examples.Select(row => row.Status), Is.EqualTo(new[] { Status.Failed, Status.Passed }));
+        Assert.That(outline.Examples[0].RetryCount, Is.EqualTo(1));
+        Assert.That(_visited, Is.EqualTo(new[] { 1, 2 }));
+        await AssertRowErrorReported(outline, "&lt;retry hook failed&gt;");
+    }
+
+    [Test]
+    public async Task Skip_rule_errors_with_unexecuted_steps_are_reported()
+    {
+        await Assert.ThrowsAsync<InvalidOperationException>(async () => await ScenarioOutline("Skip rule error",
+            new[] { new { Value = 1, ThrowSkipRule = true }, new { Value = 2, ThrowSkipRule = false } },
+            row => Given(() => Record(row.Value)).When(() => NoOp()).Then(() => NoOp())));
+        var outline = BDTestUtil.GetScenarios().Single(x => x.FrameworkTestId == _executionId);
+        Assert.That(outline.Examples.Select(row => row.Status), Is.EqualTo(new[] { Status.Failed, Status.Passed }));
+        Assert.That(outline.Examples[0].Steps.All(step => step.Exception == null), Is.True);
+        Assert.That(_visited, Is.EqualTo(new[] { 2 }));
+        await AssertRowErrorReported(outline, "&lt;skip rule failed&gt;");
+    }
+
+    private static async Task AssertRowErrorReported(Scenario outline, string encodedError)
+    {
+        foreach (var result in new[] { outline, JsonConvert.DeserializeObject<Scenario>(JsonConvert.SerializeObject(outline)) })
+        {
+            Assert.That(result.Examples[0].Exception, Is.Not.Null);
+            var razor = await ReportHandlerEncodingTests.RenderAsync("/Views/Shared/_ScenarioExamples.cshtml", result);
+            Assert.That(razor, Does.Contain(encodedError));
+        }
+        var standalone = System.Text.RegularExpressions.Regex.Match(BDTestHtmlHelper.GetTestHtmlReport(),
+            $"<table class=\"examples\" id=\"examples-{outline.Guid}\">.*?</table>",
+            System.Text.RegularExpressions.RegexOptions.Singleline).Value;
+        Assert.That(standalone, Does.Contain(encodedError));
     }
 
     [Test, BDTestTag("outline")]

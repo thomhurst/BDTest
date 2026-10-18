@@ -212,7 +212,7 @@ public static class BDTestHtmlHelper
                 html.AppendLine($"<td>{row.Status}</td><td>{row.RetryCount}</td><td>{row.TimeTaken}</td><td>");
                 html.AppendLine("<details><summary>Steps and output</summary>");
                 html.AppendLine(GenerateScenarioDetails(row));
-                if (row.Steps.Count == 0 && row.Exception != null)
+                if (row.Exception != null && !row.Steps.Any(step => ReferenceEquals(step.Exception, row.Exception)))
                     html.AppendLine($"<pre>{EscapeHtml(row.Exception.AsString)}</pre>");
                 html.AppendLine("</details></td></tr>");
             }

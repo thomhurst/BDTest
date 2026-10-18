@@ -119,17 +119,19 @@ public sealed class ScenarioOutlineBuilder<TExample> : BuildableTest
                     {
                         row = new Scenario(new List<Step>(), this, outline, _values[index])
                         {
-                            StartTime = DateTime.UtcNow, EndTime = DateTime.UtcNow,
-                            Status = ClassifyOutcome(exception)
+                            StartTime = DateTime.UtcNow, EndTime = DateTime.UtcNow
                         };
                         row.ReleaseRuntimeReferences();
                     }
                     else row = outline.Examples[index];
+                    // Retry hooks can throw after resetting the row to Inconclusive.
+                    row.Status = ClassifyOutcome(exception);
                     // Framework success exceptions must not fail the outline.
                     if (row.Status != Status.Passed)
                     {
                         if (row.Exception == null && row.Status is Status.Failed or Status.NotImplemented)
-                            row.ExecutionException = new ExceptionWrapper(exception);
+                            row.ExecutionException = new ExceptionWrapper(exception is ErrorOccurredDuringRetryActionException
+                                ? exception.GetBaseException() : exception);
                         failures.Add((row.Status, ExceptionDispatchInfo.Capture(exception)));
                     }
                 }

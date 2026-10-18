@@ -49,7 +49,7 @@
                             {
                                 <pre>@row.Output</pre>
                             }
-                            @if (row.Steps.Count == 0 && row.Exception != null)
+                            @if (row.Exception != null && !row.Steps.Any(step => ReferenceEquals(step.Exception, row.Exception)))
                             {
                                 <pre class="text-danger">@row.Exception.AsString</pre>
                             }
