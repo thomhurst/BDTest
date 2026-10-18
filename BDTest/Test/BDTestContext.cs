@@ -44,7 +44,7 @@ public class BDTestContext
             return _scenarioText;
         }
 
-        return _scenarioText = TestBase.GetScenarioText() ?? CurrentScenario?.GetScenarioText();
+        return _scenarioText = TestBase.GetScenarioText();
     }
 
     /// <summary>The executing scenario, or null while an outline example is being constructed.</summary>
