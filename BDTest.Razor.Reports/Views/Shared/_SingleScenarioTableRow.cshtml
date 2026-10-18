@@ -13,6 +13,7 @@
     <td></td>
     <td class="@indexTextClass">
          @Model.Scenario.GetScenarioText() @scenarioCountInsideParentGroup
+         @await Html.PartialAsync("_ScenarioTags", Model.Scenario.Tags)
     </td>
     <td class="align-middle">
         <div class="d-grid">

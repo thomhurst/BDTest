@@ -40,7 +40,9 @@ public abstract class StepBuilder : BuildableTest
             
         StoryText = StoryTextHelper.GetStoryText(bdTestBase);
         SetScenarioText();
-        CustomTestInformation = TestInformationAttributeHelper.GetTestInformationAttributes(this.GetTestMethod());
+        var testMethod = this.GetTestMethod();
+        CustomTestInformation = TestInformationAttributeHelper.GetTestInformationAttributes(testMethod);
+        Tags = TagHelper.GetTags(this.GetTestClass(), testMethod);
     }
 
     internal StepBuilder(List<Step> previousSteps, Runnable runnable, BuildableTest previousPartiallyBuiltTest)
@@ -55,6 +57,7 @@ public abstract class StepBuilder : BuildableTest
         ReportId = previousPartiallyBuiltTest.ReportId;
         Parameters = previousPartiallyBuiltTest.Parameters;
         CustomTestInformation = previousPartiallyBuiltTest.CustomTestInformation;
+        Tags = previousPartiallyBuiltTest.Tags;
 
         // An extension replaces its prefix in the not-run list, but sibling
         // extensions remain independent scenarios with their own step state.

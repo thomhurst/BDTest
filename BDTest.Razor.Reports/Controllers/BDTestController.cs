@@ -105,8 +105,7 @@ public class BDTestController : Controller
             
         var filterByQueryParameter = Request.GetQueryParameter(StatusConstants.FilterByStatusQueryParameterName);
 
-        var scenariosGroupedByStories = data.Scenarios
-            .Where(scenario => scenario != null)
+        var scenariosGroupedByStories = FilterByTag(data.Scenarios)
             .GroupBy(scenario => scenario.GetStoryText())
             .OrderBy(group => group.GetTotalStatus().GetOrder())
             .ThenBy(group => group.Key)
@@ -135,11 +134,11 @@ public class BDTestController : Controller
             
         var filterByQueryParameter = Request.GetQueryParameter(StatusConstants.FilterByStatusQueryParameterName);
 
-        IEnumerable<Scenario> scenarios = data.Scenarios;
+        var scenarios = FilterByTag(data.Scenarios);
             
         if (!string.IsNullOrEmpty(filterByQueryParameter) && filterByQueryParameter != StatusConstants.All)
         {
-            scenarios = data.Scenarios
+            scenarios = scenarios
                 .Where(scenario => string.Equals(filterByQueryParameter, scenario.Status.ToString(), StringComparison.OrdinalIgnoreCase));
         }
             
@@ -183,6 +182,13 @@ public class BDTestController : Controller
         }
 
         return View("AllScenarios", scenariosGroupedByScenarioTextEnumerable.ToArray());
+    }
+
+    private IEnumerable<Scenario> FilterByTag(IEnumerable<Scenario> scenarios)
+    {
+        var tag = Request.GetQueryParameter(TagConstants.FilterByTagQueryParameterName);
+        return scenarios.Where(scenario => scenario != null && (string.IsNullOrEmpty(tag)
+            || scenario.Tags.Contains(tag, StringComparer.OrdinalIgnoreCase)));
     }
         
     [HttpGet]

@@ -62,6 +62,34 @@ BDTest is written in .NET Standard, so you can use it in either .NET Framework o
 
 View the [wiki](https://github.com/thomhurst/BDTest/wiki) to see how to use BDTest and how to get setup: https://github.com/thomhurst/BDTest/wiki
 
+### Scenario and story tags
+
+Use `[BDTestTag("smoke")]` from `BDTest.Attributes` on a scenario method or a story
+class. Apply the attribute multiple times for multiple tags. Class tags apply to
+every scenario in that class, including inherited tags. Method tags combine with
+class tags; duplicates are removed ignoring case. Tag names are trimmed and cannot
+be empty.
+
+```csharp
+[BDTestTag("checkout")]
+public class CheckoutTests : BDTestBase
+{
+    [BDTestTag("smoke")]
+    public async Task Successful_checkout()
+    {
+        // Build and execute your Given/When/Then chain here.
+    }
+}
+```
+
+Tags are available through `BuildableTest.Tags` and `Scenario.Tags` and included in
+JSON output, including scenarios that have not run. Existing reports without tags
+remain supported. In the report's Scenarios or Stories page, choose a tag and press
+Apply to filter scenarios before grouping and pagination. Tag matching ignores
+case and combines with the existing status filter. Choose All tags to clear the
+tag filter. The report-level `BDTestRunDescriptor.Tag` remains separate from these
+scenario tags.
+
 ### Execution identity and asynchronous setup
 
 Use a new `BDTestBuilder` for each standalone test. Its execution ID is assigned

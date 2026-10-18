@@ -65,6 +65,7 @@ public class Scenario
         StoryText = testDetails.StoryText;
         ScenarioText = testDetails.ScenarioText;
         CustomTestInformation = testDetails.CustomTestInformation;
+        Tags = testDetails.Tags;
 
         FileName = testDetails.CallerFile;
             
@@ -87,6 +88,10 @@ public class Scenario
     [JsonProperty] internal ScenarioText ScenarioText { get; private set; }
         
     [JsonProperty] public TestInformationAttribute[] CustomTestInformation { get; private set; }
+
+    /// <summary>Combined story and scenario tags, distinct ignoring case.</summary>
+    [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+    public string[] Tags { get; private set; } = Array.Empty<string>();
         
     [JsonIgnore] internal bool ShouldRetry { get; set; }
     [JsonProperty] public int RetryCount { get; internal set; }

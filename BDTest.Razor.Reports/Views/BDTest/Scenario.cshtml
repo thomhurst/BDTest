@@ -34,6 +34,7 @@
 </script>
 
 <div class="container-fluid">
+    @await Html.PartialAsync("_ScenarioTags", Model.Tags)
     <div class="box" id="all-scenarios-container">
         <div class="btn-group" role="group" >
             <button class="btn btn-light" data-bdtest-action="expand-steps">Expand All</button>
