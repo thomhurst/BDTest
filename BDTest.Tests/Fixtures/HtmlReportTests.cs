@@ -1,5 +1,8 @@
 using System.Net;
+using System.Security.Cryptography;
+using System.Text;
 using System.Text.RegularExpressions;
+using System.Xml.Linq;
 using BDTest.Attributes;
 using BDTest.Helpers;
 using BDTest.Settings;
@@ -27,6 +30,32 @@ public class HtmlReportTests : BDTestBase
         Assert.That(html, Does.Contain("<script>"));
         Assert.That(html, Does.Not.Contain("<script src="));
         Assert.That(html, Does.Not.Contain("<link "));
+    }
+
+    [TestCase("\n")]
+    [TestCase("\r\n")]
+    public void ParentPolicyAllowsOnlyTheReportScript(string newline)
+    {
+        var html = BDTestHtmlHelper.GetTestHtmlReport().Replace("\r\n", "\n").Replace("\n", newline);
+        var policy = Regex.Match(html, "<meta http-equiv=\"Content-Security-Policy\" content=\"([^\"]*)\">");
+        Assert.That(policy.Success, Is.True);
+        Assert.That(policy.Index, Is.LessThan(html.IndexOf("<style>", StringComparison.Ordinal)));
+
+        var directives = WebUtility.HtmlDecode(policy.Groups[1].Value).Split(';', StringSplitOptions.RemoveEmptyEntries)
+            .Select(value => value.Trim().Split(' ', 2)).ToDictionary(parts => parts[0], parts => parts[1]);
+        var scripts = Regex.Matches(html, "<script>(.*?)</script>", RegexOptions.Singleline);
+        Assert.That(scripts.Count, Is.EqualTo(1));
+        // HTML parsers normalize line endings before checking inline script hashes.
+        var script = scripts[0].Groups[1].Value.Replace("\r\n", "\n").Replace("\r", "\n");
+        var hash = Convert.ToBase64String(SHA256.HashData(Encoding.UTF8.GetBytes(script)));
+        Assert.That(directives["script-src"], Is.EqualTo($"'sha256-{hash}'"));
+        Assert.That(directives["script-src-attr"], Is.EqualTo("'none'"));
+        Assert.That(directives["default-src"], Is.EqualTo("'none'"));
+        Assert.That(directives["base-uri"], Is.EqualTo("'none'"));
+        Assert.That(directives["form-action"], Is.EqualTo("'none'"));
+        Assert.That(directives["frame-src"], Is.EqualTo("'self'"));
+        Assert.That(directives["style-src"], Is.EqualTo("'unsafe-inline'"));
+        Assert.That(directives["img-src"], Is.EqualTo("data: https: http: file:"));
     }
 
     [TestCase(false)]
@@ -124,6 +153,37 @@ public class HtmlReportTests : BDTestBase
         Assert.That(frame.Value, Does.Contain("sandbox=\"allow-popups\""));
         Assert.That(frame.Value, Does.Contain("Content-Security-Policy"));
         Assert.That(html, Does.Not.Contain(payload));
+    }
+
+    [TestCase("<script>parent.document.body.innerHTML = 'compromised';</script>")]
+    [TestCase("<img src=x onerror=alert(document.cookie)>")]
+    [TestCase("</div></section></main><div id=\"escaped\">outside</div>")]
+    [TestCase("\"></iframe><script>alert('escaped')</script><iframe srcdoc=\"")]
+    [TestCase("<p style=\"color: red\"><b>Formatted</b></p><table><tr><td>Result</td></tr></table><img src=\"evidence/screenshot.png\">")]
+    public async Task CustomHtmlCannotEscapeOrChangeReportStructure(string payload)
+    {
+        var first = await When(() => WriteCustomHtml(payload)).Then(() => DoNothing()).WithScenarioText("First").BDTestAsync();
+        var second = await When(() => DoNothing()).Then(() => DoNothing()).WithScenarioText("Second").BDTestAsync();
+        var html = BDTestHtmlHelper.GetTestHtmlReport();
+        var frames = Regex.Matches(html, "<iframe\\b[^>]*></iframe>");
+        Assert.That(frames.Count, Is.EqualTo(1));
+        var frame = XElement.Parse(frames[0].Value);
+        var document = frame.Attribute("srcdoc")?.Value;
+        Assert.That(document, Does.EndWith(payload + "</body></html>"));
+        Assert.That(document, Does.Contain("default-src 'none'"));
+        Assert.That(frame.Attribute("sandbox")?.Value, Is.EqualTo("allow-popups"));
+        Assert.That(frame.Attribute("referrerpolicy")?.Value, Is.EqualTo("no-referrer"));
+
+        var parent = html.Remove(frames[0].Index, frames[0].Length);
+        Assert.That(parent, Does.Not.Contain(payload));
+        Assert.That(Regex.Matches(parent, "<script>").Count, Is.EqualTo(1));
+        Assert.That(Regex.Matches(parent, "<div class=\"scn\"").Count, Is.EqualTo(2));
+        Assert.That(Regex.Matches(parent, "<main>").Count, Is.EqualTo(1));
+        Assert.That(Regex.Matches(parent, "</main>").Count, Is.EqualTo(1));
+        Assert.That(parent, Does.Contain($"id=\"details-{first.Guid}\""));
+        Assert.That(parent, Does.Contain($"id=\"details-{second.Guid}\""));
+        Assert.That(parent, Does.Contain("<span class=\"label\">Total</span></span><span class=\"tile-n\">2</span>"));
+        Assert.That(Regex.IsMatch(parent, @"<[^>]+\son\w+\s*=", RegexOptions.IgnoreCase), Is.False);
     }
 
     [Test]
