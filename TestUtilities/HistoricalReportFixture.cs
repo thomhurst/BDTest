@@ -1,90 +1,103 @@
-
 using System.Globalization;
+using System.Runtime.CompilerServices;
 using BDTest.Maps;
 using BDTest.Output;
 using BDTest.Test;
 using Newtonsoft.Json.Linq;
-using NUnit.Framework;
 
 namespace BDTest.TestUtilities;
 
 internal static class HistoricalReportFixture
 {
     public static string ReadJson() => File.ReadAllText(
-        Path.Combine(TestContext.CurrentContext.TestDirectory, "Data", "JsonData-v2.0.60.json"));
+        Path.Combine(AppContext.BaseDirectory, "Data", "JsonData-v2.0.60.json"));
 
     public static void AssertCompatible(BDTestOutputModel report)
     {
         var expected = JObject.Parse(ReadJson());
-        Assert.That(report, Is.Not.Null);
-        Assert.That(report.Id, Is.EqualTo("1113e3bf269c489187245c4339dfd946"));
-        Assert.That(report.Version, Is.EqualTo("1.0.0.0"));
-        Assert.That(report.MachineName, Is.EqualTo("ASAZ-5CG1039PV2"));
-        var timer = report.TestTimer ?? throw new AssertionException("Missing historical test timer.");
-        var scenarios = report.Scenarios ?? throw new AssertionException("Missing historical scenarios.");
-        Assert.That(timer.TestsStartedAt, Is.EqualTo(RequiredProperty(expected, "TestTimer").Value<DateTime>("TestsStartedAt")));
-        Assert.That(timer.TestsFinishedAt, Is.EqualTo(RequiredProperty(expected, "TestTimer").Value<DateTime>("TestsFinishedAt")));
-        Assert.That(scenarios, Has.Count.EqualTo(13));
-        Assert.That(scenarios.Count(scenario => scenario.Status == Status.Passed), Is.EqualTo(3));
-        Assert.That(scenarios.Count(scenario => scenario.Status == Status.Failed), Is.EqualTo(6));
-        Assert.That(scenarios.Count(scenario => scenario.Status == Status.Inconclusive), Is.EqualTo(4));
-        Assert.That(report.NotRun, Is.Empty);
-        Assert.That(report.CustomProperties, Is.Empty);
+        ArgumentNullException.ThrowIfNull(report);
+        Equal(report.Id, "1113e3bf269c489187245c4339dfd946");
+        Equal(report.Version, "1.0.0.0");
+        Equal(report.MachineName, "ASAZ-5CG1039PV2");
+        var timer = report.TestTimer ?? throw new InvalidDataException("Missing historical test timer.");
+        var scenarios = report.Scenarios ?? throw new InvalidDataException("Missing historical scenarios.");
+        Equal(timer.TestsStartedAt, RequiredProperty(expected, "TestTimer").Value<DateTime>("TestsStartedAt"));
+        Equal(timer.TestsFinishedAt, RequiredProperty(expected, "TestTimer").Value<DateTime>("TestsFinishedAt"));
+        Equal(scenarios.Count, 13);
+        Equal(scenarios.Count(scenario => scenario.Status == Status.Passed), 3);
+        Equal(scenarios.Count(scenario => scenario.Status == Status.Failed), 6);
+        Equal(scenarios.Count(scenario => scenario.Status == Status.Inconclusive), 4);
+        Equal(report.NotRun?.Any(), false);
+        Equal(report.CustomProperties?.Any(), false);
 
         // Compare the historical contract, excluding reference metadata and runtime-only members.
         foreach (var json in RequiredProperty(expected, "Scenarios"))
         {
             var scenario = scenarios.Single(item => item.Guid == json.Value<string>("Guid"));
-            Assert.That(scenario.GetScenarioText(), Is.EqualTo(json.Value<string>("ScenarioText")));
-            Assert.That(scenario.GetStoryText(), Is.EqualTo(json.Value<string>("StoryText")));
-            Assert.That(scenario.FrameworkTestId, Is.EqualTo(json.Value<string>("FrameworkTestId")));
-            Assert.That(scenario.FileName, Is.EqualTo(json.Value<string>("FileName")));
-            Assert.That(scenario.Status.ToString(), Is.EqualTo(json.Value<string>("Status")));
-            Assert.That(scenario.StartTime, Is.EqualTo(json.Value<DateTime>("StartTime")));
-            Assert.That(scenario.EndTime, Is.EqualTo(json.Value<DateTime>("EndTime")));
-            Assert.That(scenario.TimeTaken, Is.EqualTo(Duration(json["TimeTaken"])));
-            Assert.That(scenario.Output, Is.EqualTo(json.Value<string>("Output")));
-            Assert.That(scenario.TestStartupInformation, Is.EqualTo(json.Value<string>("TestStartupInformation")));
-            Assert.That(scenario.TearDownOutput, Is.EqualTo(json.Value<string>("TearDownOutput")));
-            Assert.That(scenario.CustomHtmlOutputForReport, Is.EqualTo(json.Value<string>("CustomHtmlOutputForReport")));
-            Assert.That((scenario.CustomTestInformation ?? throw new AssertionException("Missing historical test information.")).Select(info => info.Information),
-                Is.EqualTo(RequiredProperty(json, "CustomTestInformation").Values<string>()));
-            Assert.That(scenario.RetryCount, Is.EqualTo(json.Value<int>("RetryCount")));
-            var steps = scenario.Steps ?? throw new AssertionException("Missing historical steps.");
-            Assert.That(steps, Has.Count.EqualTo(RequiredProperty(json, "Steps").Count()));
+            Equal(scenario.GetScenarioText(), json.Value<string>("ScenarioText"));
+            Equal(scenario.GetStoryText(), json.Value<string>("StoryText"));
+            Equal(scenario.FrameworkTestId, json.Value<string>("FrameworkTestId"));
+            Equal(scenario.FileName, json.Value<string>("FileName"));
+            Equal(scenario.Status.ToString(), json.Value<string>("Status"));
+            Equal(scenario.StartTime, json.Value<DateTime>("StartTime"));
+            Equal(scenario.EndTime, json.Value<DateTime>("EndTime"));
+            Equal(scenario.TimeTaken, Duration(json["TimeTaken"]));
+            Equal(scenario.Output, json.Value<string>("Output"));
+            Equal(scenario.TestStartupInformation, json.Value<string>("TestStartupInformation"));
+            Equal(scenario.TearDownOutput, json.Value<string>("TearDownOutput"));
+            Equal(scenario.CustomHtmlOutputForReport, json.Value<string>("CustomHtmlOutputForReport"));
+            SequenceEqual((scenario.CustomTestInformation ?? throw new InvalidDataException("Missing historical test information.")).Select(info => info.Information),
+                RequiredProperty(json, "CustomTestInformation").Values<string>());
+            Equal(scenario.RetryCount, json.Value<int>("RetryCount"));
+            var steps = scenario.Steps ?? throw new InvalidDataException("Missing historical steps.");
+            Equal(steps.Count, RequiredProperty(json, "Steps").Count());
 
             for (var index = 0; index < steps.Count; index++)
             {
                 var step = steps[index];
                 var stepJson = RequiredProperty(json, "Steps")[index]
-                    ?? throw new AssertionException($"Missing historical step {index}.");
-                Assert.That(step.Guid, Is.EqualTo(stepJson.Value<string>("Guid")));
-                Assert.That(step.StepText, Is.EqualTo(stepJson.Value<string>("StepText")));
-                Assert.That(step.Status.ToString(), Is.EqualTo(stepJson.Value<string>("Status")));
-                Assert.That(step.StartTime, Is.EqualTo(stepJson.Value<DateTime>("StartTime")));
-                Assert.That(step.EndTime, Is.EqualTo(stepJson.Value<DateTime>("EndTime")));
-                Assert.That(step.TimeTaken, Is.EqualTo(Duration(stepJson["TimeTaken"])));
-                Assert.That(step.Output, Is.EqualTo(stepJson.Value<string>("Output")));
-                Assert.That(step.Exception?.TypeName, Is.EqualTo((string?)stepJson.SelectToken("Exception.TypeName")));
-                Assert.That(step.Exception?.Message, Is.EqualTo((string?)stepJson.SelectToken("Exception.Message")));
-                Assert.That(step.Exception?.AsString, Is.EqualTo((string?)stepJson.SelectToken("Exception.AsString")));
-                Assert.That(step.Timeout, Is.Null);
-                Assert.That(step.TimedOut, Is.False);
+                    ?? throw new InvalidDataException($"Missing historical step {index}.");
+                Equal(step.Guid, stepJson.Value<string>("Guid"));
+                Equal(step.StepText, stepJson.Value<string>("StepText"));
+                Equal(step.Status.ToString(), stepJson.Value<string>("Status"));
+                Equal(step.StartTime, stepJson.Value<DateTime>("StartTime"));
+                Equal(step.EndTime, stepJson.Value<DateTime>("EndTime"));
+                Equal(step.TimeTaken, Duration(stepJson["TimeTaken"]));
+                Equal(step.Output, stepJson.Value<string>("Output"));
+                Equal(step.Exception?.TypeName, (string?)stepJson.SelectToken("Exception.TypeName"));
+                Equal(step.Exception?.Message, (string?)stepJson.SelectToken("Exception.Message"));
+                Equal(step.Exception?.AsString, (string?)stepJson.SelectToken("Exception.AsString"));
+                Equal(step.Timeout, null);
+                Equal(step.TimedOut, false);
             }
 
             // These fields did not exist in the snapshot and must retain safe defaults.
-            Assert.That(scenario.Tags, Is.Empty);
-            Assert.That(scenario.Attempts, Is.Empty);
-            Assert.That(scenario.Examples, Is.Empty);
-            Assert.That(scenario.ExampleValues, Is.Empty);
-            Assert.That(scenario.IsOutline, Is.False);
-            Assert.That(scenario.Timeout, Is.Null);
+            Equal(scenario.Tags?.Any(), false);
+            Equal(scenario.Attempts?.Any(), false);
+            Equal(scenario.Examples?.Any(), false);
+            Equal(scenario.ExampleValues?.Any(), false);
+            Equal(scenario.IsOutline, false);
+            Equal(scenario.Timeout, null);
         }
     }
 
+    // Shared by the NUnit core and TUnit host suites; failures remain ordinary test failures.
+    private static void Equal<T>(T actual, T expected, [CallerArgumentExpression(nameof(actual))] string? expression = null)
+    {
+        if (!EqualityComparer<T>.Default.Equals(actual, expected))
+            throw new InvalidDataException($"{expression}: expected '{expected}', got '{actual}'.");
+    }
+
+    private static void SequenceEqual<T>(IEnumerable<T> actual, IEnumerable<T> expected,
+        [CallerArgumentExpression(nameof(actual))] string? expression = null)
+    {
+        if (!actual.SequenceEqual(expected))
+            throw new InvalidDataException($"{expression}: historical values differ in content or order.");
+    }
+
     private static JToken RequiredProperty(JToken value, string name) =>
-        value[name] ?? throw new AssertionException($"Missing historical property {name}.");
+        value[name] ?? throw new InvalidDataException($"Missing historical property {name}.");
 
     private static TimeSpan Duration(JToken? value) =>
-        TimeSpan.ParseExact((string?)value ?? throw new AssertionException("Missing historical duration."), TimespanConverter.TimeSpanFormatString, CultureInfo.InvariantCulture);
+        TimeSpan.ParseExact((string?)value ?? throw new InvalidDataException("Missing historical duration."), TimespanConverter.TimeSpanFormatString, CultureInfo.InvariantCulture);
 }

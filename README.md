@@ -34,9 +34,10 @@ Full documentation lives at **[thomhurst.github.io/BDTest](https://thomhurst.git
 
 ### Repository tests
 
-Run `dotnet run --project BDTest.Pipeline.Tests -c Release` for pipeline tests and
+Run `dotnet run --project BDTest.Pipeline.Tests -c Release` for pipeline tests,
+`dotnet run --project BDTest.ReportGenerator.Tests -c Release` for report-host tests, and
 `dotnet run --project BDTest.TUnit.Tests -c Release` for the TUnit adapter suite.
-The core, report-generator, NUnit sample, xUnit and MSTest suites still use
+The core, NUnit sample, xUnit and MSTest suites still use
 `dotnet test <project> -c Release`. CI selects TUnit from evaluated package
 references and writes TRX results for both runners. See
 [contributing](docs/docs/contributing.md#running-tests) for filters and build commands.

@@ -21,7 +21,6 @@ using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using Microsoft.IdentityModel.Protocols;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using NUnit.Framework;
 
 namespace BDTest.ReportGenerator.Tests;
 
@@ -33,7 +32,7 @@ public class AuthenticationTests
     private HttpClient _client = null!; // Initialized by SetUp before each test.
     private TestDataStore _store = null!; // Initialized by SetUp before each test.
 
-    [SetUp]
+    [Before(HookType.Test)]
     public void SetUp()
     {
         _store = new TestDataStore();
@@ -43,47 +42,50 @@ public class AuthenticationTests
         _client.BaseAddress = new Uri("https://localhost");
     }
 
-    [TearDown]
+    [After(HookType.Test)]
     public void TearDown()
     {
         _client.Dispose();
         _host.Dispose();
     }
 
-    [TestCase("/")]
-    [TestCase("/bdtest/report/test-runs")]
-    [TestCase("/bdtest/report/private-report")]
-    [TestCase("/bdtest/report/private-report/summary")]
-    [TestCase("/bdtest/report/private-report/raw-json-data")]
-    [TestCase("/bdtest/report/trends")]
-    [TestCase("/bdtest/report/delete/private-report")]
+    [Test]
+    [Arguments("/")]
+    [Arguments("/bdtest/report/test-runs")]
+    [Arguments("/bdtest/report/private-report")]
+    [Arguments("/bdtest/report/private-report/summary")]
+    [Arguments("/bdtest/report/private-report/raw-json-data")]
+    [Arguments("/bdtest/report/trends")]
+    [Arguments("/bdtest/report/delete/private-report")]
     public async Task AnonymousReadersAreChallenged(string path)
     {
         using var response = await _client.GetAsync(path);
 
-        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.Redirect), await response.Content.ReadAsStringAsync());
-        Assert.That(response.Headers.Location?.Host, Is.EqualTo("login.microsoftonline.com"));
-        Assert.That(await response.Content.ReadAsStringAsync(), Does.Not.Contain("private-report"));
-        Assert.That(_store.ReportReads, Is.Zero);
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.Redirect).Because(await response.Content.ReadAsStringAsync());
+        await Assert.That(response.Headers.Location?.Host).IsEqualTo("login.microsoftonline.com");
+        await Assert.That(await response.Content.ReadAsStringAsync()).DoesNotContain("private-report");
+        await Assert.That(_store.ReportReads).IsZero();
     }
 
-    [TestCase("/bdtest/report/private-report/summary")]
-    [TestCase("/bdtest/report/private-report/raw-json-data")]
-    [TestCase("/bdtest/report/test-runs")]
+    [Test]
+    [Arguments("/bdtest/report/private-report/summary")]
+    [Arguments("/bdtest/report/private-report/raw-json-data")]
+    [Arguments("/bdtest/report/test-runs")]
     public async Task SignedInReadersCanReadReports(string path)
     {
         SignIn();
 
         using var response = await _client.GetAsync(path);
 
-        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK), await response.Content.ReadAsStringAsync());
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK).Because(await response.Content.ReadAsStringAsync());
         var body = await response.Content.ReadAsStringAsync();
-        Assert.That(body, Does.Contain(path.EndsWith("/test-runs") ? "BDTest" : "private-report"));
+        await Assert.That(body).Contains(path.EndsWith("/test-runs") ? "BDTest" : "private-report");
     }
 
-    [TestCase(null)]
-    [TestCase("application/json")]
-    [TestCase("text/plain")]
+    [Test]
+    [Arguments(null)]
+    [Arguments("application/json")]
+    [Arguments("text/plain")]
     public async Task RawReportDownloadIsAJsonObjectRegardlessOfAcceptHeader(string? accept)
     {
         SignIn();
@@ -92,15 +94,16 @@ public class AuthenticationTests
 
         using var response = await _client.SendAsync(request);
 
-        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
-        Assert.That(response.Content.Headers.ContentType?.MediaType, Is.EqualTo("application/json"));
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
+        await Assert.That(response.Content.Headers.ContentType?.MediaType).IsEqualTo("application/json");
         var json = JObject.Parse(await response.Content.ReadAsStringAsync());
-        Assert.That(json.Value<string>("id"), Is.EqualTo("private-report"));
+        await Assert.That(json.Value<string>("id")).IsEqualTo("private-report");
     }
 
-    [TestCase(null)]
-    [TestCase("")]
-    [TestCase("wrong-key")]
+    [Test]
+    [Arguments(null)]
+    [Arguments("")]
+    [Arguments("wrong-key")]
     public async Task UploadRequiresCorrectKey(string? key)
     {
         if (key != null)
@@ -110,9 +113,9 @@ public class AuthenticationTests
 
         using var response = await Upload();
 
-        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.Unauthorized));
-        Assert.That(response.Headers.Location, Is.Null);
-        Assert.That(_store.Uploads, Is.Zero);
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.Unauthorized);
+        await Assert.That(response.Headers.Location).IsNull();
+        await Assert.That(_store.Uploads).IsZero();
     }
 
     [Test]
@@ -120,8 +123,8 @@ public class AuthenticationTests
     {
         using var response = await _client.PostAsync("/BDTEST/DATA/", UploadBody());
 
-        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.Unauthorized));
-        Assert.That(_store.Uploads, Is.Zero);
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.Unauthorized);
+        await Assert.That(_store.Uploads).IsZero();
     }
 
     [Test]
@@ -131,21 +134,22 @@ public class AuthenticationTests
 
         using var response = await Upload();
 
-        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.Unauthorized));
-        Assert.That(_store.Uploads, Is.Zero);
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.Unauthorized);
+        await Assert.That(_store.Uploads).IsZero();
     }
 
-    [TestCase("/bdtest/data")]
-    [TestCase("/BDTEST/DATA/")]
+    [Test]
+    [Arguments("/bdtest/data")]
+    [Arguments("/BDTEST/DATA/")]
     public async Task UploadKeyAllowsMachineUploadWithoutSignIn(string path)
     {
         _client.DefaultRequestHeaders.Add("X-BDTest-Upload-Key", ApiKey);
 
         using var response = await _client.PostAsync(path, UploadBody());
 
-        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK), await response.Content.ReadAsStringAsync());
-        Assert.That(await response.Content.ReadAsStringAsync(), Does.Match(@"/bdtest/report/[0-9a-f]{32}/summary$"));
-        Assert.That(_store.Uploads, Is.EqualTo(1));
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK).Because(await response.Content.ReadAsStringAsync());
+        await Assert.That(await response.Content.ReadAsStringAsync()).Matches(@"/bdtest/report/[0-9a-f]{32}/summary$");
+        await Assert.That(_store.Uploads).IsEqualTo(1);
     }
 
     [Test]
@@ -155,14 +159,15 @@ public class AuthenticationTests
 
         using var response = await _client.GetAsync("/bdtest/report/private-report/raw-json-data");
 
-        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.Redirect), await response.Content.ReadAsStringAsync());
-        Assert.That(_store.ReportReads, Is.Zero);
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.Redirect).Because(await response.Content.ReadAsStringAsync());
+        await Assert.That(_store.ReportReads).IsZero();
     }
 
-    [TestCase(null)]
-    [TestCase("")]
-    [TestCase(" ")]
-    public async Task MissingServerKeyDisablesUploads(string configuredKey)
+    [Test]
+    [Arguments(null)]
+    [Arguments("")]
+    [Arguments(" ")]
+    public async Task MissingServerKeyDisablesUploads(string? configuredKey)
     {
         using var host = CreateHost(configuredKey, _store);
         using var client = host.GetTestClient();
@@ -171,8 +176,8 @@ public class AuthenticationTests
 
         using var response = await client.PostAsync("/bdtest/data", UploadBody());
 
-        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.Unauthorized));
-        Assert.That(_store.Uploads, Is.Zero);
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.Unauthorized);
+        await Assert.That(_store.Uploads).IsZero();
     }
 
     [Test]
@@ -182,8 +187,8 @@ public class AuthenticationTests
 
         using var response = await Upload();
 
-        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.Unauthorized));
-        Assert.That(_store.Uploads, Is.Zero);
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.Unauthorized);
+        await Assert.That(_store.Uploads).IsZero();
     }
 
     [Test]
@@ -191,11 +196,12 @@ public class AuthenticationTests
     {
         using var response = await _client.GetAsync("/bdtest/ping");
 
-        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK), await response.Content.ReadAsStringAsync());
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK).Because(await response.Content.ReadAsStringAsync());
     }
 
-    [TestCase("Alex Morgan")]
-    [TestCase("Jordan Lee")]
+    [Test]
+    [Arguments("Alex Morgan")]
+    [Arguments("Jordan Lee")]
     public async Task ReportPersonalizationUsesTheSignedInReader(string name)
     {
         SignIn(name);
@@ -203,12 +209,12 @@ public class AuthenticationTests
         using var response = await _client.GetAsync("/bdtest/report/private-report/summary");
         var body = await response.Content.ReadAsStringAsync();
 
-        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK), body);
-        Assert.That(body, Does.Contain($"<li class=\"menu-head\">{name}</li>"));
-        Assert.That(body, Does.Not.Contain("fbcdn.net"));
-        Assert.That(body, Does.Not.Contain("Tom Longhurst"));
-        Assert.That(body, Does.Not.Contain("Hi, Tom!"));
-        Assert.That(body, Does.Not.Contain("navbarCustomLinksDropdown"));
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK).Because(body);
+        await Assert.That(body).Contains($"<li class=\"menu-head\">{name}</li>");
+        await Assert.That(body).DoesNotContain("fbcdn.net");
+        await Assert.That(body).DoesNotContain("Tom Longhurst");
+        await Assert.That(body).DoesNotContain("Hi, Tom!");
+        await Assert.That(body).DoesNotContain("navbarCustomLinksDropdown");
     }
 
     [Test]
@@ -217,11 +223,12 @@ public class AuthenticationTests
         using var request = new HttpRequestMessage(HttpMethod.Get, "/bdtest/ping");
         request.Headers.Host = "attacker.example";
         using var response = await _client.SendAsync(request);
-        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.BadRequest);
     }
 
-    [TestCase("127.0.0.1")]
-    [TestCase("192.0.2.10")]
+    [Test]
+    [Arguments("127.0.0.1")]
+    [Arguments("192.0.2.10")]
     public async Task Trusted_proxy_applies_https_and_path_prefix_before_authentication(string proxy)
     {
         var context = await _server.SendAsync(context =>
@@ -236,16 +243,16 @@ public class AuthenticationTests
             context.Request.Headers["X-Forwarded-Prefix"] = "/reports";
         });
 
-        Assert.That(context.Response.StatusCode, Is.EqualTo(302));
+        await Assert.That(context.Response.StatusCode).IsEqualTo(302);
         var location = new Uri(context.Response.Headers.Location.ToString());
-        Assert.That(location.Host, Is.EqualTo("login.microsoftonline.com"));
-        Assert.That(HttpUtility.ParseQueryString(location.Query)["redirect_uri"],
-            Is.EqualTo("https://localhost:8443/reports/signin-oidc"));
+        await Assert.That(location.Host).IsEqualTo("login.microsoftonline.com");
+        await Assert.That(HttpUtility.ParseQueryString(location.Query)["redirect_uri"]).IsEqualTo("https://localhost:8443/reports/signin-oidc");
     }
 
-    [TestCase("")]
-    [TestCase("/team")]
-    [TestCase("/team/")]
+    [Test]
+    [Arguments("")]
+    [Arguments("/team")]
+    [Arguments("/team/")]
     public async Task Root_redirect_preserves_proxy_prefix(string prefix)
     {
         SignIn();
@@ -259,9 +266,8 @@ public class AuthenticationTests
             context.Request.Headers["X-Forwarded-Prefix"] = prefix.TrimEnd('/');
         });
 
-        Assert.That(context.Response.StatusCode, Is.EqualTo(302));
-        Assert.That(context.Response.Headers.Location.ToString(),
-            Is.EqualTo(prefix.TrimEnd('/') + "/bdtest/report/test-runs"));
+        await Assert.That(context.Response.StatusCode).IsEqualTo(302);
+        await Assert.That(context.Response.Headers.Location.ToString()).IsEqualTo(prefix.TrimEnd('/') + "/bdtest/report/test-runs");
     }
 
     [Test]
@@ -278,8 +284,8 @@ public class AuthenticationTests
             context.Request.Headers["X-Forwarded-Prefix"] = "/evil";
         });
         var location = new Uri(context.Response.Headers.Location.ToString());
-        Assert.That(location.Host, Is.EqualTo("login.microsoftonline.com"));
-        Assert.That(HttpUtility.ParseQueryString(location.Query)["redirect_uri"], Is.EqualTo("https://localhost/signin-oidc"));
+        await Assert.That(location.Host).IsEqualTo("login.microsoftonline.com");
+        await Assert.That(HttpUtility.ParseQueryString(location.Query)["redirect_uri"]).IsEqualTo("https://localhost/signin-oidc");
     }
 
     [Test]
@@ -294,11 +300,12 @@ public class AuthenticationTests
             context.Request.Headers["X-Forwarded-Host"] = "attacker.example";
         });
         var location = new Uri(context.Response.Headers.Location.ToString());
-        Assert.That(HttpUtility.ParseQueryString(location.Query)["redirect_uri"], Is.EqualTo("https://localhost/signin-oidc"));
+        await Assert.That(HttpUtility.ParseQueryString(location.Query)["redirect_uri"]).IsEqualTo("https://localhost/signin-oidc");
     }
 
-    [TestCase(false)]
-    [TestCase(true)]
+    [Test]
+    [Arguments(false)]
+    [Arguments(true)]
     public async Task ProductionErrorsRenderTheErrorPage(bool upload)
     {
         using var host = CreateHost(ApiKey, new TestDataStore { FailRequests = true }, Environments.Production);
@@ -318,13 +325,13 @@ public class AuthenticationTests
             : await client.GetAsync("/bdtest/report/failing-report/summary");
         var body = await response.Content.ReadAsStringAsync();
 
-        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.InternalServerError), body);
-        Assert.That(response.Headers.Location, Is.Null);
-        Assert.That(response.Content.Headers.ContentType?.MediaType, Is.EqualTo("text/html"));
-        Assert.That(body, Does.Contain("Something went wrong on the server"));
-        Assert.That(body, Does.Match(@"Reference [^<\s]+</span>"));
-        Assert.That(body, Does.Not.Contain("Test storage failure"));
-        Assert.That(response.Headers.CacheControl?.NoStore, Is.True);
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.InternalServerError).Because(body);
+        await Assert.That(response.Headers.Location).IsNull();
+        await Assert.That(response.Content.Headers.ContentType?.MediaType).IsEqualTo("text/html");
+        await Assert.That(body).Contains("Something went wrong on the server");
+        await Assert.That(body).Matches(@"Reference [^<\s]+</span>");
+        await Assert.That(body).DoesNotContain("Test storage failure");
+        await Assert.That(response.Headers.CacheControl?.NoStore).IsTrue();
     }
 
     [Test]
@@ -332,9 +339,8 @@ public class AuthenticationTests
     {
         using var response = await _client.GetAsync("/bdtest/error");
 
-        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
-        Assert.That(await response.Content.ReadAsStringAsync(),
-            Does.Contain("Something went wrong on the server"));
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
+        await Assert.That(await response.Content.ReadAsStringAsync()).Contains("Something went wrong on the server");
     }
 
     [Test]
@@ -343,22 +349,23 @@ public class AuthenticationTests
         SignIn();
         using var response = await _client.GetAsync("/MicrosoftIdentity/Account/SignIn");
 
-        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.Redirect));
-        Assert.That(response.Headers.Location?.Host, Is.EqualTo("login.microsoftonline.com"));
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.Redirect);
+        await Assert.That(response.Headers.Location?.Host).IsEqualTo("login.microsoftonline.com");
     }
 
-    [TestCase("css/bdtest-report.css", "text/css")]
-    [TestCase("js/BDTest.js", "text/javascript")]
-    [TestCase("favicon.ico", "image/x-icon")]
+    [Test]
+    [Arguments("css/bdtest-report.css", "text/css")]
+    [Arguments("js/BDTest.js", "text/javascript")]
+    [Arguments("favicon.ico", "image/x-icon")]
     public async Task Report_static_assets_are_anonymous_and_cached(string path, string contentType)
     {
         using var response = await _client.GetAsync($"/bdtest/assets/{path}");
 
-        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
-        Assert.That(response.Content.Headers.ContentType?.MediaType, Is.EqualTo(contentType));
-        Assert.That(await response.Content.ReadAsByteArrayAsync(), Is.Not.Empty);
-        Assert.That(response.Headers.CacheControl?.Public, Is.True);
-        Assert.That(response.Headers.CacheControl?.MaxAge, Is.EqualTo(TimeSpan.FromDays(1)));
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
+        await Assert.That(response.Content.Headers.ContentType?.MediaType).IsEqualTo(contentType);
+        await Assert.That(await response.Content.ReadAsByteArrayAsync()).IsNotEmpty();
+        await Assert.That(response.Headers.CacheControl?.Public).IsTrue();
+        await Assert.That(response.Headers.CacheControl?.MaxAge).IsEqualTo(TimeSpan.FromDays(1));
     }
 
     private Task<HttpResponseMessage> Upload() => _client.PostAsync("/bdtest/data", UploadBody());

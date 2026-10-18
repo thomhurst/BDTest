@@ -73,7 +73,7 @@ public class TestRunnerSelectionTests
     }
 
     [Test]
-    public async Task Repository_selects_both_TUnit_suites_and_keeps_other_projects_on_VSTest()
+    public async Task Repository_selects_TUnit_suites_and_keeps_other_projects_on_VSTest()
     {
         var selected = new List<string>();
         foreach (var project in Directory.EnumerateFiles(RepositoryRoot, "*.csproj", SearchOption.AllDirectories)
@@ -86,7 +86,7 @@ public class TestRunnerSelectionTests
         }
 
         await Assert.That(selected.OrderBy(name => name).ToArray())
-            .IsEquivalentTo(new[] { "BDTest.Pipeline.Tests", "BDTest.TUnit.Tests" });
+            .IsEquivalentTo(new[] { "BDTest.Pipeline.Tests", "BDTest.ReportGenerator.Tests", "BDTest.TUnit.Tests" });
     }
 
     private static string CreateTemporaryDirectory()

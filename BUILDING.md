@@ -54,13 +54,28 @@ dotnet build BDTest.sln -c Release
 ```
 
 Run every `*Tests.csproj` with `dotnet test <project> -c Release`, except
-`BDTest.TUnit.Tests` and `BDTest.Pipeline.Tests`, which use
-`dotnet run --project <project> -c Release`. The core and report-generator
-suites still use NUnit. Runner selection evaluates Release `PackageReference`
+`BDTest.TUnit.Tests`, `BDTest.Pipeline.Tests` and `BDTest.ReportGenerator.Tests`, which use
+`dotnet run --project <project> -c Release`. The core suite still uses NUnit. Runner selection evaluates Release `PackageReference`
 items, so imported or conditional TUnit references work and xUnit v3 executables
 keep using VSTest. Both runner paths publish TRX under
 `artifacts/test-results/<project>`.
 Do not run the publishing pipeline in `Production` locally.
+
+The report-generator migration (#949) preserves all 101 NUnit cases, including
+argument cases: authentication 43, Azure storage 37, JSON streams 6, startup 8,
+storage initialization 2 and personalization 5. None were removed or merged.
+TUnit creates a separate fixture per case; authentication hosts and stores are
+created and disposed by per-test hooks, and other tests own their local resources.
+No suite-wide serialization is needed. The shared historical-report validator
+uses framework-independent comparisons so both the core NUnit and host TUnit
+suites check the same snapshot, including ordered collections and missing values.
+
+Run the host suite with CI-compatible TRX output:
+
+```powershell
+dotnet run --project BDTest.ReportGenerator.Tests -c Release -- --report-trx --results-directory "$PWD/artifacts/test-results/BDTest.ReportGenerator.Tests"
+dotnet run --project BDTest.ReportGenerator.Tests -c Release -- --treenode-filter "/*/*/AzureStorageDataStoreTests/*"
+```
 
 ## Completed nullable rollout
 

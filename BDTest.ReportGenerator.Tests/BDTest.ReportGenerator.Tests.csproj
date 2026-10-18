@@ -2,6 +2,7 @@
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <IsPackable>false</IsPackable>
+    <OutputType>Exe</OutputType>
   </PropertyGroup>
   <ItemGroup>
     <Content Include="..\BDTest.ReportGenerator.RazorServer\appsettings.json" Link="sample-appsettings.json" CopyToOutputDirectory="PreserveNewest" />
@@ -11,11 +12,9 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.TestHost" Version="10.0.13" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
-        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.11.0" />
     <!-- The Identity token cache's Xml dependency is not pruned in test projects. -->
     <PackageReference Include="System.Security.Cryptography.Xml" Version="10.0.13" />
-    <PackageReference Include="NUnit" Version="5.0.0" />
-    <PackageReference Include="NUnit3TestAdapter" Version="6.3.1" />
+    <PackageReference Include="TUnit" Version="1.75.0" />
     <ProjectReference Include="..\BDTest.ReportGenerator.RazorServer\BDTest.ReportGenerator.RazorServer.csproj" />
   </ItemGroup>
   <ItemGroup>
