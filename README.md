@@ -51,12 +51,26 @@ Think of BDTest as a pure code-based alternative to SpecFlow.
 ### I need reports that translates to business acceptance criteria
 - BDTest does that!
 - BDTest produces you a clear, easy to understand report, showing what failed and what passed, with output and exceptions from tests automatically captured
-- Mark your classes and methods with [StoryText], [ScenarioText], and [StepText] attributes, providing the output you want, and your reports will produce clean text output
+- Mark your classes and methods with [Story], [ScenarioText], and [StepText] attributes, providing the output you want, and your reports will produce clean text output
 - If you don't mark your methods with attributes, BDTest will automatically convert the method name to text (separating words by capitalisation or underscores)
 - If you use the report server, you can just send the relevant party a URL directly to your test report!
 
 ## Where can I use it?
-BDTest is written in .NET Standard, so you can use it in either .NET Framework or .NET Core
+The core `BDTest` package targets `netstandard2.0`. Adapter and report-server
+requirements differ:
+
+| Package | Target framework | Test framework dependency |
+| --- | --- | --- |
+| `BDTest.NUnit` | `net8.0` | NUnit 5 |
+| `BDTest.xUnit` | `netstandard2.0` | xUnit v2 |
+| `BDTest.MSTest` | `netstandard2.0` | MSTest 4 |
+| `BDTest.TUnit` | `netstandard2.0` | TUnit |
+| `BDTest.Razor.Reports` | `net10.0` | ASP.NET Core report hosting |
+
+Choose a test target supported by both the adapter and its test framework. A
+`netstandard2.0` adapter target alone does not guarantee that its test framework
+or runner supports .NET Framework. The NUnit example below requires .NET 8 or later;
+the repository's test projects use .NET 10.
 
 ## How do I get started?
 
@@ -362,84 +376,87 @@ The server ignores client-supplied report IDs and creates a new GUID for each ac
 
 #### Example Test
 
+This complete NUnit example uses an in-memory account balance, so it needs no server
+or credentials. Add it to an NUnit test project that references `BDTest.NUnit`,
+`NUnit`, `NUnit3TestAdapter`, and `Microsoft.NET.Test.Sdk`. The steps here are
+synchronous; await `BDTestAsync()` to run the scenario. Asynchronous steps can
+return `Task`.
+
+The same source is compiled and run in
+[ReadmeExampleTests.cs](BDTest.Tests/ReadmeExampleTests.cs). From this repository, run:
+
+```sh
+dotnet test BDTest.Tests/BDTest.Tests.csproj -c Release --filter "FullyQualifiedName~ReadmeExampleTests"
+```
+
 ```csharp
-namespace BDTest.Example
+using System.Threading.Tasks;
+using BDTest.Attributes;
+using BDTest.NUnit;
+using NUnit.Framework;
+
+namespace BDTest.Tests.ReadmeExample;
+
+[Story(AsA = "account holder",
+    IWant = "to withdraw money",
+    SoThat = "I can use my savings")]
+public class ReadmeExampleTests : NUnitBDTestBase<AccountContext>
 {
-    [Story(AsA = "BDTest author",
-        IWant = "to show an example of how to use the framework",
-        SoThat = "people can get set up easier")]
-    public class ExampleTest : NUnitBDTestContext<MyTestContext>
+    // The base class creates a separate Context for each NUnit test.
+    private AccountSteps Account => new AccountSteps(Context);
+    private AccountAssertionsSteps AccountAssertions => new AccountAssertionsSteps(Context);
+
+    [Test]
+    [ScenarioText("Withdrawing money reduces the account balance")]
+    public async Task WithdrawMoney()
     {
-        // Context property is magically available, created by the `NUnitBDTestContext` base class. It's unique for each NUnit test!
-        private AccountSteps AccountSteps => new AccountSteps(Context);
-        private HttpAssertionsSteps HttpAssertions => new HttpAssertionsSteps(Context);
-        
-        [Test]
-        [ScenarioText("Searching for a non-existing account number returns Not Found")]
-        public async Task FindNonExistingAccountReturnsNotFound()
-        {
-            await When(() => AccountSteps.FindAccount(12345))
-                .Then(() => HttpAssertions.TheHttpStatusCodeIs(HttpStatusCode.NotFound))
-                .BDTestAsync();
-        }
-        
-        [Test]
-        [BugInformation("123456")]
-        [ScenarioText("Can successfully create a new account")]
-        public async Task CreateNewAccountSuccessfully()
-        {
-            await When(() => AccountSteps.CreateAnAccount())
-                .Then(() => HttpAssertions.TheHttpStatusCodeIs(HttpStatusCode.OK))
-                .BDTestAsync();
-        }
+        await Given(() => Account.CreateAnAccount(100m))
+            .When(() => Account.Withdraw(25m))
+            .Then(() => AccountAssertions.TheBalanceIs(75m))
+            .BDTestAsync();
     }
-    
-    public class AccountSteps
+}
+
+public class AccountContext
+{
+    public decimal Balance { get; set; }
+}
+
+public class AccountSteps
+{
+    private readonly AccountContext _context;
+
+    public AccountSteps(AccountContext context)
     {
-        private MyTestContext _context;
-        
-        public class AccountSteps(MyTestContext context)
-        {
-            _context = context;
-        }
-        
-        [StepText("I create an account")
-        public async Task CreateAnAccount()
-        {
-            // ... Some code to create an account!
-            // You can use all the information stored in your test context object that was passed into the constructor!
-            // And store stuff for later use - Such as assertions!
-            // e.g. 
-            // var request = new HttpRequestMessage { Method = POST, Body = SomeBody, Uri = SomeUri };
-            // _context.HttpResponse = await HttpHelper.SendAsync(request);
-        }
-        
-        [StepText("I search for the account with the customer ID '{0}'")
-        public async Task FindAccount(int customerId)
-        {
-            // ... Some code to find an account!
-            // e.g. 
-            // var request = new HttpRequestMessage { Method = GET, Uri = $"{SomeUri}/{customerId}" };
-            // _context.HttpResponse = await HttpHelper.SendAsync(request);
-        }
+        _context = context;
     }
-    
-    public class HttpAssertionsSteps
+
+    [StepText("I have an account with a balance of {0}")]
+    public void CreateAnAccount(decimal openingBalance)
     {
-        private MyTestContext _context;
-        
-        public class HttpAssertionsSteps(MyTestContext context)
-        {
-            _context = context;
-        }
-        
-        [StepText("the HTTP status code is {0}")
-        public async Task TheHttpStatusCodeIs(HttpStatusCode code)
-        {
-            // ... Some code to assert - Read data previously stored in your context object!
-            // e.g.
-            // Assert.That(_context.HttpResponse.StatusCode, Is.EqualTo(code));
-        }
+        _context.Balance = openingBalance;
+    }
+
+    [StepText("I withdraw {0}")]
+    public void Withdraw(decimal amount)
+    {
+        _context.Balance -= amount;
+    }
+}
+
+public class AccountAssertionsSteps
+{
+    private readonly AccountContext _context;
+
+    public AccountAssertionsSteps(AccountContext context)
+    {
+        _context = context;
+    }
+
+    [StepText("the account balance is {0}")]
+    public void TheBalanceIs(decimal expectedBalance)
+    {
+        Assert.That(_context.Balance, Is.EqualTo(expectedBalance));
     }
 }
 ```
@@ -518,7 +535,7 @@ The library marks uploads `[AllowAnonymous]` to bypass interactive sign-in, and 
 See [Microsoft Identity Web setup](https://github.com/AzureAD/microsoft-identity-web/wiki/web-apps) and [ASP.NET Core authorization policies](https://learn.microsoft.com/aspnet/core/security/authorization/policies) for provider configuration and policy customization.
 
 ### Report Server Example Image
-![Report Server Example Image](https://github.com/thomhurst/BDTest/blob/master/Images/Test%20Runs%20List.png?raw=true)
+![Report Server Example Image](https://github.com/thomhurst/BDTest/blob/main/Images/Test%20Runs%20List.png?raw=true)
 
 ### Bulk report comparisons
 
