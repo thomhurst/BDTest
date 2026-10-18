@@ -891,7 +891,7 @@ Use `DELETE /bdtest/reports/{id}` (including the host's path base). The endpoint
 
 Deletion requires the named `AdminAuthorizationPolicy` plus an antiforgery request token and matching cookie. The built-in run list uses JavaScript `fetch`, the configured antiforgery header, and same-origin credentials, then refreshes after 204. Custom controls can generate the URL with `Url.Action("DeleteReport", "BDTest", new { id })`. See [Security](docs/docs/report-server/security.md#administrators).
 
-The repository deletes the persistent index before attachment content and report JSON. Index failures leave report data intact; later failures may leave unlisted data for retry. Both cache invalidations are attempted even after failure or cancellation, and the original error propagates as 500. Custom stores must make deletion idempotent. Missing reports are logged at Debug level through `options.Logger`. See [Storage migration](docs/docs/migration/report-storage.md#report-deletion).
+The repository deletes the persistent index before attachment content and report JSON. Index failures leave report data intact; later failures may leave unlisted data for retry. Both cache invalidations are attempted even after failure or cancellation, and the original error propagates as 500. Custom stores must make deletion idempotent. Missing reports are logged at Debug level through the host's `ILogger` services. See [Storage migration](docs/docs/migration/report-storage.md#report-deletion).
 
 ### Bulk report comparisons
 
