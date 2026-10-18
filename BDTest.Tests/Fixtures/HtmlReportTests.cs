@@ -122,9 +122,24 @@ public class HtmlReportTests : BDTestBase
         var frame = Regex.Match(html, "<iframe class=\"custom-body\"[^>]*>");
 
         Assert.That(frame.Success, Is.True);
-        Assert.That(frame.Value, Does.Contain("sandbox=\"\""));
+        Assert.That(frame.Value, Does.Contain("sandbox=\"allow-popups\""));
         Assert.That(frame.Value, Does.Contain("Content-Security-Policy"));
         Assert.That(html, Does.Not.Contain(payload));
+    }
+
+    [Test]
+    public void RelativeEvidenceUrlsArePreservedInCustomOutput()
+    {
+        When(() => WriteEvidence()).Then(() => DoNothing()).BDTest();
+
+        var html = BDTestHtmlHelper.GetTestHtmlReport();
+        var frame = Regex.Match(html, "<iframe class=\"custom-body\"[^>]*>");
+        var document = WebUtility.HtmlDecode(Regex.Match(frame.Value, "srcdoc=\"([^\"]*)\"").Groups[1].Value);
+
+        Assert.That(document, Does.Contain("href=\"evidence/report.html\" target=\"_blank\""));
+        Assert.That(document, Does.Contain("src=\"evidence/screenshot.png\""));
+        Assert.That(document, Does.Contain("img-src data: https: http: file:"));
+        Assert.That(html, Does.Not.Contain("allow-scripts").And.Not.Contain("allow-popups-to-escape-sandbox"));
     }
 
     [Test]
@@ -177,6 +192,11 @@ public class HtmlReportTests : BDTestBase
     }
 
     private void WriteCustomHtml(string html) => ScenarioHtmlWriter.Custom(html);
+    private void WriteEvidence()
+    {
+        ScenarioHtmlWriter.Link("Supporting report", "evidence/report.html");
+        ScenarioHtmlWriter.Image("evidence/screenshot.png");
+    }
     private static void DoNothing() { }
     private static void NotImplemented() => throw new NotImplementedException("Not implemented yet");
     private static void Fail() => throw new InvalidOperationException("<failure>");

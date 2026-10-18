@@ -7,9 +7,16 @@ const vm = require('node:vm');
 const source = fs.readFileSync(path.join(__dirname, '../BDTest/Helpers/BDTestHtmlHelper.cs'), 'utf8');
 const script = source.match(/private const string EmbeddedScript = """\s*<script>([\s\S]*?)<\/script>/)[1];
 
-function verify(grouped) {
+function verify(grouped, protocol) {
   const events = {};
   const controls = {};
+  let reloads = 0;
+  const frame = {
+    sandbox: 'allow-popups',
+    get srcdoc() { return '<p>Evidence</p>'; },
+    set srcdoc(value) { assert.equal(value, '<p>Evidence</p>'); reloads++; },
+    setAttribute(name, value) { assert.equal(name, 'sandbox'); this.sandbox = value; }
+  };
   function control() {
     return { hidden: false, textContent: '', value: '', addEventListener(name, handler) { this[name] = handler; } };
   }
@@ -41,12 +48,12 @@ function verify(grouped) {
   }));
   const root = {
     querySelector: selector => controls[selector],
-    querySelectorAll: selector => selector === '.story' ? stories : selector === '.scn' ? elements : [],
+    querySelectorAll: selector => selector === '.story' ? stories : selector === '.scn' ? elements : selector === 'iframe.custom-body' ? [frame] : [],
     setAttribute() {}, addEventListener() {}
   };
   const context = vm.createContext({
     document: { querySelector: () => root },
-    window: { addEventListener(name, handler) { events[name] = handler; } }
+    window: { location: { protocol }, addEventListener(name, handler) { events[name] = handler; } }
   });
   // Fail on the former quadratic membership lookup, without timing-sensitive assertions.
   vm.runInContext(`Array.prototype.indexOf = function (value) {
@@ -55,6 +62,8 @@ function verify(grouped) {
     return -1;
   };`, context);
   vm.runInContext(script, context);
+  assert.equal(frame.sandbox, protocol === 'file:' ? 'allow-popups allow-same-origin' : 'allow-popups');
+  assert.equal(reloads, protocol === 'file:' ? 1 : 0, 'Only file reports reload frames with local-image access');
   const shown = () => elements.filter(el => !el.hidden);
   const visibleStories = () => stories.filter(story => !story.hidden).length;
   assert.equal(shown().length, 200);
@@ -87,6 +96,8 @@ function verify(grouped) {
   events.afterprint();
 }
 
-verify(true);
-verify(false);
-console.log('Report control regressions passed (grouped and flat, pagination, search, tags, print).');
+for (const protocol of ['file:', 'https:']) {
+  verify(true, protocol);
+  verify(false, protocol);
+}
+console.log('Report control regressions passed (grouped and flat, pagination, search, tags, print, local/hosted sandbox).');

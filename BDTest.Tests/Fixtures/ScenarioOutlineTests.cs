@@ -317,6 +317,22 @@ public class ScenarioOutlineTests : AbstractContextBDTestBase<ScenarioOutlineTes
     }
 
     [Test]
+    public async Task Factory_failure_keeps_inner_exception_details_in_the_html_report()
+    {
+        await Assert.ThrowsAsync<TypeInitializationException>(async () => await ScenarioOutline("Nested factory error",
+            new[] { new { Value = 1 } }, row =>
+            {
+                throw new TypeInitializationException("ExampleFactory", new InvalidOperationException("<inner factory failure>"));
+            }));
+        var outline = BDTestUtil.GetScenarios().Single(x => x.FrameworkTestId == _executionId);
+        var error = outline.Examples.Single().Exception;
+        var html = BDTestHtmlHelper.GetTestHtmlReport();
+
+        Assert.That(html, Does.Contain(System.Net.WebUtility.HtmlEncode(error.AsString)));
+        Assert.That(html, Does.Contain("&lt;inner factory failure&gt;").And.Not.Contain("<inner factory failure>"));
+    }
+
+    [Test]
     public async Task Rejected_foreign_builder_is_removed_without_discarding_unrelated_pending_scenarios()
     {
         var foreign = new SkipCapture();

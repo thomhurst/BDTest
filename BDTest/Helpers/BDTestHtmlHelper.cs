@@ -470,16 +470,16 @@ public static class BDTestHtmlHelper
 
         if (!string.IsNullOrEmpty(scenario.CustomHtmlOutputForReport))
         {
-            // Test HTML is untrusted: keep it in a scriptless, cross-origin frame with its own policy,
+            // Test HTML is untrusted: keep it in a scriptless, sandboxed frame with its own policy,
             // and attribute-encode srcdoc so quotes or </iframe> cannot escape into the report.
             var document = "<!doctype html><html><head><meta charset=\"utf-8\">"
                 + "<meta http-equiv=\"Content-Security-Policy\" content=\"default-src 'none'; "
-                + "style-src 'unsafe-inline'; img-src data: https: http:; base-uri 'none'; form-action 'none'\">"
+                + "style-src 'unsafe-inline'; img-src data: https: http: file:; base-uri 'none'; form-action 'none'\">"
                 + "<meta name=\"referrer\" content=\"no-referrer\"></head><body>"
                 + scenario.CustomHtmlOutputForReport + "</body></html>";
             html.AppendLine("<div><h3 class=\"h3\">Custom output</h3><div class=\"custom\">");
             html.AppendLine("<div class=\"custom-bar\"><span>HTML written by the test through HtmlWriter</span><span class=\"sandbox\"><svg width=\"12\" height=\"12\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><rect x=\"5\" y=\"11\" width=\"14\" height=\"10\" rx=\"2\"></rect><path d=\"M8 11V8a4 4 0 0 1 8 0v3\"></path></svg>Sandboxed frame · scripts off</span></div>");
-            html.AppendLine($"<iframe class=\"custom-body\" title=\"Custom test output\" sandbox=\"\" referrerpolicy=\"no-referrer\" srcdoc=\"{EscapeHtml(document)}\"></iframe>");
+            html.AppendLine($"<iframe class=\"custom-body\" title=\"Custom test output\" sandbox=\"allow-popups\" referrerpolicy=\"no-referrer\" srcdoc=\"{EscapeHtml(document)}\"></iframe>");
             html.AppendLine("</div></div>");
         }
     }
@@ -536,8 +536,9 @@ public static class BDTestHtmlHelper
         html.AppendLine("<div class=\"err\">");
         html.AppendLine($"<span class=\"err-type\">{EscapeHtml(exception.TypeName)}</span>");
         html.AppendLine($"<p class=\"err-msg\">{EscapeHtml(exception.Message)}</p>");
-        if (!string.IsNullOrEmpty(exception.StackTrace))
-            AppendCode(html, "Stack trace", exception.StackTrace, true);
+        var details = exception.AsString ?? exception.StackTrace;
+        if (!string.IsNullOrEmpty(details))
+            AppendCode(html, "Exception", details, true);
         html.AppendLine("</div>");
     }
 
@@ -898,6 +899,15 @@ font-family:var(--sans);color:var(--ink);background:var(--bg);min-height:100vh;f
   var state = { filter: 'all', query: '', tag: '', sort: 'story', group: true, limit: PAGE };
   var $ = function (sel) { return root.querySelector(sel); };
   var $$ = function (sel) { return Array.prototype.slice.call(root.querySelectorAll(sel)); };
+  // Opaque sandbox origins cannot load file: images. Only local reports retain their origin;
+  // scripts, forms, top navigation and sandbox escape remain disabled, including in new tabs.
+  if (window.location.protocol === 'file:') {
+    $$('iframe.custom-body').forEach(function (frame) {
+      frame.setAttribute('sandbox', 'allow-popups allow-same-origin');
+      // Reload srcdoc so the new sandbox flags take effect.
+      frame.srcdoc = frame.srcdoc;
+    });
+  }
   var search = $('#q'), tagSelect = $('#tag'), sortSelect = $('#sort'), groupBox = $('#group');
   var flat = $('#flat-list');
   var stories = $$('.story');

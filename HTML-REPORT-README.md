@@ -10,6 +10,7 @@ The BDTest framework now includes a built-in HTML report generator that creates 
 - **Search and filter** - Search scenarios, steps, stories and tags; filter by status or tag; sort by story, failures or duration; group by story
 - **Detailed test information** - Steps with keywords and durations, exceptions with copyable stack traces, retry history, scenario outline examples, output and custom HTML
 - **Safe custom HTML** - HtmlWriter output renders in a sandboxed frame with scripts disabled
+- **Evidence links and images** - Links open in new tabs that retain the sandbox restrictions. Relative screenshots work alongside reports opened from disk; only local reports retain the frame's origin so the browser can load local images. Scripts remain disabled in both the frame and new tabs.
 - **Light and dark** - Follows the browser's color scheme; prints cleanly
 - **Mobile-friendly** - Responsive layout that works at phone width
 
