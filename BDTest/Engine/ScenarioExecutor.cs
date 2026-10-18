@@ -51,6 +51,7 @@ internal class ScenarioExecutor : IScenarioExecutor
     {
         var stopwatch = Stopwatch.StartNew();
         Exception attemptException = null;
+        Action reportTerminalFailure = null;
         var preparingRetry = scenario.ShouldRetry;
         try
         {
@@ -82,10 +83,22 @@ internal class ScenarioExecutor : IScenarioExecutor
 
             ConsoleReporter.WriteLineToConsoleOnly($"--------------------------------------------------{Environment.NewLine}");
 
-            var stepBudget = scenario.Timeout.HasValue ? Stopwatch.StartNew() : null;
-            foreach (var step in scenario.Steps)
+            if (scenario.BdTestBaseClass is { } test)
             {
-                await step.Execute(scenario.BdTestBaseClass, scenario.Timeout, scenario.Timeout - stepBudget?.Elapsed);
+                await test.ExecuteScenarioStepsAsync(ExecuteStepsAsync, report => reportTerminalFailure = report);
+            }
+            else
+            {
+                await ExecuteStepsAsync();
+            }
+
+            async Task ExecuteStepsAsync()
+            {
+                var stepBudget = scenario.Timeout.HasValue ? Stopwatch.StartNew() : null;
+                foreach (var step in scenario.Steps)
+                {
+                    await step.Execute(scenario.BdTestBaseClass, scenario.Timeout, scenario.Timeout - stepBudget?.Elapsed);
+                }
             }
 
             scenario.Status = scenario.Steps.Count > 0 && scenario.Steps.All(step => step.Status == Status.Skipped)
@@ -133,6 +146,9 @@ internal class ScenarioExecutor : IScenarioExecutor
 
             await ConsoleReporter.WriteLine($"{Environment.NewLine}Exception: {e.Message}{Environment.NewLine}{e.StackTrace}{Environment.NewLine}");
 
+            // Keep the original exception for retry predicates. Only terminal failures
+            // publish additional diagnostics captured by a framework adapter.
+            reportTerminalFailure?.Invoke();
             throw;
         }
         finally

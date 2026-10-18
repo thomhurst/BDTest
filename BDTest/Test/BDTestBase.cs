@@ -199,6 +199,11 @@ public abstract class BDTestBase
     {
     }
 
+    // Framework adapters can isolate each attempt's assertions without replacing
+    // the runner's result or changing the retry/exception classification logic.
+    internal virtual Task ExecuteScenarioStepsAsync(Func<Task> executeSteps,
+        Action<Action> registerTerminalFailure) => executeSteps();
+
     internal void NotifyScenarioSkipped(string reason)
     {
         var map = TestRun.Options.FrameworkOutcomes;
