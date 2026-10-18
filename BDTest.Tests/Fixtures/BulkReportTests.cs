@@ -23,12 +23,11 @@ public class BulkReportTests(bool flakiness)
         _store = new RecordingDataStore();
         var services = new ServiceCollection();
         services.AddLogging();
-        services.AddControllersWithViews().AddBdTestReportControllersAndViews();
+        services.AddBDTestReports();
+        services.AddSingleton<IBDTestDataStore>(_store);
+        services.Configure<BDTestReportOptions>(options => options.ReportCacheSizeLimitBytes = 1024);
         _services = services.BuildServiceProvider();
-        var options = _services.GetRequiredService<BDTestReportServerOptions>();
-        options.DataStore = _store;
-        options.ReportCacheSizeLimitBytes = 1024;
-        _controller = new BDTestController(_services.GetRequiredService<IDataRepository>(), options);
+        _controller = ActivatorUtilities.CreateInstance<BDTestController>(_services);
     }
 
     [TearDown]

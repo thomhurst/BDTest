@@ -5,17 +5,20 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace BDTest.Razor.Reports.Implementations;
 
 // Applied to both controllers, so new report actions inherit the same secure default.
 public sealed class ReportAuthorizationFilter(
     bool requireAdmin,
-    BDTestReportServerOptions options,
+    IOptions<BDTestReportOptions> configuredOptions,
     IAuthorizationPolicyProvider policyProvider,
     IPolicyEvaluator policyEvaluator,
     ILogger<ReportAuthorizationFilter> logger) : IAsyncAuthorizationFilter
 {
+    private readonly BDTestReportOptions options = configuredOptions.Value;
+
     public async Task OnAuthorizationAsync(AuthorizationFilterContext context)
     {
         // Uploads use their own API key. Ping and error handling are also explicitly public.

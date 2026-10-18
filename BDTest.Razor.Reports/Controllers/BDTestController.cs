@@ -1,4 +1,4 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
 using BDTest.Maps;
 using BDTest.Razor.Reports.Constants;
 using BDTest.Razor.Reports.Extensions;
@@ -12,6 +12,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using BDTest.Helpers;
+using Microsoft.Extensions.Options;
 
 namespace BDTest.Razor.Reports.Controllers;
 
@@ -20,12 +21,20 @@ namespace BDTest.Razor.Reports.Controllers;
 public class BDTestController : Controller
 {
     private readonly IDataRepository _dataRepository;
-    private readonly BDTestReportServerOptions _bdTestReportServerOptions;
+    private readonly BDTestReportOptions _options;
+    private readonly IBDTestDataReceiver _dataReceiver;
+    private readonly IBDTestAttachmentStore _attachmentStore;
+    private readonly ILogger<BDTestController> _logger;
 
-    public BDTestController(IDataRepository dataRepository, BDTestReportServerOptions bdTestReportServerOptions)
+    public BDTestController(IDataRepository dataRepository, IOptions<BDTestReportOptions> options,
+        IBDTestDataReceiver dataReceiver = null,
+        IBDTestAttachmentStore attachmentStore = null, ILogger<BDTestController> logger = null)
     {
         _dataRepository = dataRepository;
-        _bdTestReportServerOptions = bdTestReportServerOptions;
+        _options = options.Value;
+        _dataReceiver = dataReceiver;
+        _attachmentStore = attachmentStore;
+        _logger = logger;
     }
         
     [HttpGet]
@@ -53,7 +62,7 @@ public class BDTestController : Controller
             return BadRequest("Expected a JSON report.");
         }
 
-        if (!AttachmentManifest.IsValid(bdTestOutputModel, _bdTestReportServerOptions))
+        if (!AttachmentManifest.IsValid(bdTestOutputModel, _options, _attachmentStore != null))
             return BadRequest("Invalid attachment manifest or attachment storage is not configured.");
 
         // Never let an uploader choose a storage key, including after cache expiry.
@@ -73,9 +82,9 @@ public class BDTestController : Controller
             return StatusCode(413, exception.Message);
         }
 
-        if (_bdTestReportServerOptions.DataReceiver != null)
+        if (_dataReceiver != null)
         {
-            await _bdTestReportServerOptions.DataReceiver.OnReceiveTestDataAsync(bdTestOutputModel);
+            await _dataReceiver.OnReceiveTestDataAsync(bdTestOutputModel);
         }
 
         Response.Headers["X-BDTest-Report-Id"] = id;
@@ -198,7 +207,7 @@ public class BDTestController : Controller
                 // Defaults to status. We don't need to do anything :)
                 break;
             default:
-                _bdTestReportServerOptions.Logger?.LogWarning("Unknown order: {OrderByQueryParameter}", orderByQueryParameter);
+                _logger?.LogWarning("Unknown order: {OrderByQueryParameter}", orderByQueryParameter);
                 break;
         }
 

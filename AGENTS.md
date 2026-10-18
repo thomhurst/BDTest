@@ -50,7 +50,7 @@ cd BDTest.Pipeline && dotnet run -c Release
 Core uses `InternalsVisibleTo` for `BDTest.NUnit`, `BDTest.xUnit`, `BDTest.TUnit`, and `BDTest.Tests`, with the public key from `StrongNameKeyPair.snk`. A new adapter that needs internals must be added to `BDTest/BDTest.csproj` and must also be signed.
 
 **Reporting**
-- `BDTest.Razor.Reports`: ASP.NET Core MVC controllers/views. Hosts add it with `AddBdTestReportControllersAndViews()` + `UseBDTestReportServer(...)`. Storage is pluggable through interfaces in `Interfaces/`.
+- `BDTest.Razor.Reports`: ASP.NET Core MVC controllers/views. Hosts add it with `AddBDTestReports(...)` + `UseBDTestReportServer()`. Storage is pluggable through interfaces in `Interfaces/`.
 - `BDTest.ReportGenerator.RazorServer`: deployable report server using that library, with an Azure Blob data store and Azure AD auth. Not packed.
 
 **Tests / samples**

@@ -8,15 +8,20 @@ using BDTest.Razor.Reports.Interfaces;
 using BDTest.Razor.Reports.Models;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace BDTest.Razor.Reports.Implementations;
 
 public class MemoryCacheBdTestDataStore : IMemoryCacheBdTestDataStore, IDisposable
 {
-    private readonly Lazy<MemoryCache> _testRecordCache;
-    private readonly BDTestReportServerOptions _options;
+    private readonly MemoryCache _testRecordCache;
+    private readonly BDTestReportOptions _options;
     private readonly object _reportCacheLock = new();
-    private long _reportCacheCapacity;
+    private readonly long _reportCacheCapacity;
+    private readonly bool _hasPersistentStorage;
+    private readonly IBDTestAttachmentStore _attachmentStore;
+    private readonly ReportAttachmentGate _attachmentGate;
+    private readonly ILogger<MemoryCacheBdTestDataStore> _logger;
     private readonly ConcurrentDictionary<string, TestRunSummary> _testRunSummariesDictionary = new();
     private List<TestRunSummary> _testRunSummaries = new();
     private readonly object _testRunSummariesLock = new();
@@ -24,23 +29,25 @@ public class MemoryCacheBdTestDataStore : IMemoryCacheBdTestDataStore, IDisposab
     /// <summary>Creates a dedicated bounded report cache with the default policy.</summary>
     /// <param name="testRecordCache">Retained for compatibility; the host cache is no longer used for full reports.</param>
     public MemoryCacheBdTestDataStore(IMemoryCache testRecordCache)
-        : this(testRecordCache, new BDTestReportServerOptions())
+        : this(testRecordCache, Options.Create(new BDTestReportOptions()))
     {
     }
 
     /// <summary>Creates a dedicated bounded report cache using the report server policy.</summary>
-    public MemoryCacheBdTestDataStore(IMemoryCache testRecordCache, BDTestReportServerOptions options)
+    public MemoryCacheBdTestDataStore(IMemoryCache testRecordCache, IOptions<BDTestReportOptions> options,
+        ReportAttachmentGate attachmentGate = null, IBDTestDataStore dataStore = null, IReportStore reportStore = null,
+        IBDTestAttachmentStore attachmentStore = null, ILogger<MemoryCacheBdTestDataStore> logger = null)
     {
-        _options = options;
-        // UseBDTestReportServer configures the policy after DI registration, before the first request.
-        _testRecordCache = new Lazy<MemoryCache>(() =>
+        _options = options.Value;
+        _attachmentGate = attachmentGate ?? new ReportAttachmentGate();
+        _attachmentStore = attachmentStore;
+        _logger = logger;
+        _hasPersistentStorage = dataStore != null || reportStore != null;
+        _reportCacheCapacity = _options.ReportCacheSizeLimitBytes;
+        _testRecordCache = new MemoryCache(new MemoryCacheOptions
         {
-            _reportCacheCapacity = options.ReportCacheSizeLimitBytes;
-            return new MemoryCache(new MemoryCacheOptions
-            {
-                SizeLimit = _reportCacheCapacity,
-                TrackStatistics = true
-            });
+            SizeLimit = _reportCacheCapacity,
+            TrackStatistics = true
         });
     }
 
@@ -57,7 +64,7 @@ public class MemoryCacheBdTestDataStore : IMemoryCacheBdTestDataStore, IDisposab
         CachedReport report;
         lock (_reportCacheLock)
         {
-            var cache = _testRecordCache.Value;
+            var cache = _testRecordCache;
             report = cache.Get<CachedReport>(id);
             if (refreshRetention && report != null) SetCacheEntry(cache, id, report);
         }
@@ -71,7 +78,7 @@ public class MemoryCacheBdTestDataStore : IMemoryCacheBdTestDataStore, IDisposab
     {
         lock (_reportCacheLock)
         {
-            _testRecordCache.Value.Remove(id);
+            _testRecordCache.Remove(id);
         }
         return Task.CompletedTask;
     }
@@ -97,10 +104,10 @@ public class MemoryCacheBdTestDataStore : IMemoryCacheBdTestDataStore, IDisposab
     {
         lock (_reportCacheLock)
         {
-            var cache = _testRecordCache.Value;
+            var cache = _testRecordCache;
             if (size > _reportCacheCapacity)
             {
-                if (!allowOversizedBypass || (_options.DataStore == null && _options.ReportStore == null))
+                if (!allowOversizedBypass || !_hasPersistentStorage)
                 {
                     throw new ReportTooLargeForCacheException();
                 }
@@ -130,7 +137,7 @@ public class MemoryCacheBdTestDataStore : IMemoryCacheBdTestDataStore, IDisposab
         }.RegisterPostEvictionCallback((key, value, reason, state) =>
         {
             if (reason is EvictionReason.Expired or EvictionReason.Capacity
-                && _options.DataStore == null && _options.ReportStore == null && _options.AttachmentStore != null
+                && !_hasPersistentStorage && _attachmentStore != null
                 && AttachmentStorage.IsValidId((string)key))
                 _ = DeleteExpiredAttachments((string)key);
         }));
@@ -140,16 +147,16 @@ public class MemoryCacheBdTestDataStore : IMemoryCacheBdTestDataStore, IDisposab
     {
         try
         {
-            using var lease = await _options.AttachmentGate.EnterAsync(reportId);
+            using var lease = await _attachmentGate.EnterAsync(reportId);
             lock (_reportCacheLock)
             {
-                if (_testRecordCache.Value.TryGetValue(reportId, out _)) return;
+                if (_testRecordCache.TryGetValue(reportId, out _)) return;
             }
-            await _options.AttachmentStore.DeleteReportAsync(reportId);
+            await _attachmentStore.DeleteReportAsync(reportId);
         }
         catch (Exception exception)
         {
-            _options.Logger?.LogError(exception, "Failed to remove attachments for expired report {ReportId}", reportId);
+            _logger?.LogError(exception, "Failed to remove attachments for expired report {ReportId}", reportId);
         }
     }
 
@@ -177,13 +184,7 @@ public class MemoryCacheBdTestDataStore : IMemoryCacheBdTestDataStore, IDisposab
         public override void SetLength(long value) => throw new NotSupportedException();
     }
 
-    public void Dispose()
-    {
-        if (_testRecordCache.IsValueCreated)
-        {
-            _testRecordCache.Value.Dispose();
-        }
-    }
+    public void Dispose() => _testRecordCache.Dispose();
 
     public Task StoreTestRunRecord(TestRunSummary testRunSummary)
     {
@@ -224,7 +225,7 @@ public class MemoryCacheBdTestDataStore : IMemoryCacheBdTestDataStore, IDisposab
         object value;
         lock (_reportCacheLock)
         {
-            var cache = _testRecordCache.Value;
+            var cache = _testRecordCache;
             var report = cache.Get<CachedReport>(reportId);
             if (report != null) SetCacheEntry(cache, reportId, report);
             value = report?.Value;
@@ -265,8 +266,8 @@ public class MemoryCacheBdTestDataStore : IMemoryCacheBdTestDataStore, IDisposab
         cancellationToken.ThrowIfCancellationRequested();
         lock (_reportCacheLock)
         {
-            var exists = _testRecordCache.Value.TryGetValue(reportId, out _);
-            _testRecordCache.Value.Remove(reportId);
+            var exists = _testRecordCache.TryGetValue(reportId, out _);
+            _testRecordCache.Remove(reportId);
             return Task.FromResult(exists);
         }
     }

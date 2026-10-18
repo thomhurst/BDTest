@@ -1,4 +1,4 @@
-﻿using System.Text.RegularExpressions;
+using System.Text.RegularExpressions;
 using System.Xml.Linq;
 using BDTest.Razor.Reports.Extensions;
 using BDTest.Razor.Reports.Models.ViewModels;
@@ -29,7 +29,7 @@ public class CustomHtmlReportTests
         {
             ApplicationName = typeof(BDTestExtensions).Assembly.GetName().Name
         });
-        builder.Services.AddControllersWithViews().AddBdTestReportControllersAndViews();
+        builder.Services.AddBDTestReports();
         _application = builder.Build();
     }
 

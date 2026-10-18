@@ -589,10 +589,10 @@ localization, the host's current culture determines the date format.
 
 Report uploads require an API key. Configure a strong secret on both the server and the uploader before upgrading; an unset or blank key disables uploads (`401`). Report reads require their own policy or explicit anonymous opt-in; ping remains public.
 
-For an embedded report server:
+For an embedded report server, configure options before building the host:
 
 ```csharp
-app.UseBDTestReportServer(options =>
+builder.Services.AddBDTestReports(options =>
 {
     options.UploadApiKey = configuration["BDTest:UploadApiKey"];
     options.ReportsAuthorizationPolicy = "BDTestReports.Read"; // Register this policy as shown below.
@@ -601,6 +601,8 @@ app.UseBDTestReportServer(options =>
     options.MaxUploadBytes = 10L * 1024 * 1024;           // Expanded JSON bytes.
 });
 ```
+
+`AddBDTestReports` returns `OptionsBuilder<BDTestReportOptions>` and includes startup validation. Bind an entire configuration section with `builder.Services.AddBDTestReports().BindConfiguration("BDTest")`. Register extension services with DI, and call parameterless `app.UseBDTestReportServer()` in the request pipeline for security headers. See [Report options migration](docs/docs/migration/report-options.md) when upgrading from middleware configuration.
 
 The bundled Razor server reads `BDTest:UploadApiKey` from configuration (for example the `BDTest__UploadApiKey` environment variable). Keep the secret out of source control and use HTTPS. Send it using the existing `HttpClient` overload:
 
@@ -767,10 +769,10 @@ services.AddControllersWithViews()
 services.AddRazorPages();
 ```
 
-Use the `Microsoft.AspNetCore.Authentication.OpenIdConnect`, `Microsoft.Identity.Web`, `Microsoft.Identity.Web.UI`, and `BDTest.Razor.Reports.Extensions` namespaces. Configure `UseBDTestReportServer` with your data store and `UploadApiKey` as shown above. The request pipeline must select the endpoint before checking its authorization:
+Use the `Microsoft.AspNetCore.Authentication.OpenIdConnect`, `Microsoft.Identity.Web`, `Microsoft.Identity.Web.UI`, and `BDTest.Razor.Reports.Extensions` namespaces. Register storage interfaces with DI and configure `UploadApiKey` through `AddBDTestReports` as shown above. `AddBDTestReports` includes the report controllers and views; its options builder supports configuration binding and validates options on host startup. The request pipeline must select the endpoint before checking its authorization:
 
 ```csharp
-app.UseBDTestReportServer(options =>
+services.AddBDTestReports(options =>
 {
     options.ReportsAuthorizationPolicy = "BDTestReports.Read";
     options.AdminAuthorizationPolicy = "BDTestReports.Admin";
@@ -778,6 +780,7 @@ app.UseBDTestReportServer(options =>
 });
 app.UseHttpsRedirection();
 app.UseStaticFiles(); // Only public assets belong in the web root.
+app.UseBDTestReportServer(); // Adds security headers to /bdtest responses.
 app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
@@ -804,16 +807,14 @@ The Razor report server uses a dedicated bounded cache, separate from the host's
 or serving requests:
 
 ```csharp
-app.UseBDTestReportServer(options =>
+builder.Services.AddBDTestReports(options =>
 {
     options.ReportCacheSizeLimitBytes = 64L * 1024 * 1024; // Default: 64 MiB
     options.ReportCacheRetention = TimeSpan.FromHours(8); // Default: eight hours
-    options.ReportStore = reportStore;
-    options.RunIndexStore = runIndexStore; // Optional; omit for cache-only hosting
 });
 ```
 
-Both settings must be positive. Each full report is charged its serialized UTF-8
+Both settings must be positive; invalid options fail host startup with `OptionsValidationException`. Each full report is charged its serialized UTF-8
 JSON size when cached, preserving shared object references as in report uploads.
 Accounting uses compact JSON with fixed settings, independent of the host's
 `JsonConvert.DefaultSettings`.
@@ -851,13 +852,20 @@ Implement `IReportStore` and `IRunIndexStore` in `BDTest.Razor.Reports.Storage`.
 `IReportStore` reads, overwrites and deletes UTF-8 report streams; reads return null
 when missing and transfer stream ownership to the caller. Writes leave the input open.
 `IRunIndexStore` upserts `RunIndexEntry` metadata and returns `RunIndexPage` results
-for `RunIndexQuery`: 1–500 entries, newest start time first, ordinal ID tie-breaking,
+for `RunIndexQuery`: 1â€“500 entries, newest start time first, ordinal ID tie-breaking,
 continuation tokens, and optional exact branch/environment/tag filters. Pass cancellation
 to every I/O operation. Keep index metadata independent of `TestRunSummary` UI models.
 
-Configure both `ReportStore` and `RunIndexStore` as shown above. Raw JSON downloads
+Register both stores with DI before building the host:
+
+```csharp
+builder.Services.AddSingleton<IReportStore>(reportStore);
+builder.Services.AddSingleton<IRunIndexStore>(runIndexStore);
+```
+
+Raw JSON downloads
 stream persistent bytes directly; ordinary pages deserialize and cache in the repository.
-`IBDTestDataStore` and `DataStore` remain supported through `LegacyDataStoreAdapter`
+`IBDTestDataStore` remains supported as a DI registration through `LegacyDataStoreAdapter`
 for one migration release, with the old model-loading and uncancellable I/O limitations.
 Custom repositories must implement the redesigned `IDataRepository`, including raw reads,
 paging and bulk reads; `StoreData` now takes the report ID first.

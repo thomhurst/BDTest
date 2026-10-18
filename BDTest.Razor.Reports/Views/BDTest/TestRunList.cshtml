@@ -1,18 +1,18 @@
-﻿@using BDTest.Razor.Reports.Constants
+@using BDTest.Razor.Reports.Constants
 @using BDTest.Razor.Reports.Helpers
 @using BDTest.Razor.Reports.Models
 @using BDTest.Test
 @using Microsoft.AspNetCore.Authorization
 @using Microsoft.AspNetCore.Authorization.Policy
 @model IEnumerable<BDTest.Razor.Reports.Models.TestRunSummary>
-@inject BDTestReportServerOptions BDTestReportServerOptions
+@inject Microsoft.Extensions.Options.IOptions<BDTestReportOptions> ReportOptions
 @inject IAuthorizationPolicyProvider PolicyProvider
 @inject IPolicyEvaluator PolicyEvaluator
 
 @{
     ViewBag.Title = "Test runs";
     Layout = "_Layout";
-    var adminPolicy = BDTestReportServerOptions.AdminAuthorizationPolicy;
+    var adminPolicy = ReportOptions.Value.AdminAuthorizationPolicy;
     var policy = string.IsNullOrWhiteSpace(adminPolicy) ? null : await PolicyProvider.GetPolicyAsync(adminPolicy);
     var isAdmin = false;
     if (policy != null)

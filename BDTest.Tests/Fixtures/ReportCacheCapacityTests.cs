@@ -10,6 +10,7 @@ using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using NUnit.Framework;
+using Microsoft.Extensions.Options;
 
 namespace BDTest.Tests.Fixtures;
 
@@ -207,19 +208,16 @@ public class ReportCacheCapacityTests
     [Test]
     public async Task Ordinary_cached_reads_extend_retention_but_bulk_reads_do_not()
     {
-        using var services = Services(10000);
-        var options = services.GetRequiredService<BDTestReportServerOptions>();
-        options.ReportCacheRetention = TimeSpan.FromMilliseconds(500);
+        using var services = Services(10000, retention: TimeSpan.FromSeconds(2));
         var repository = services.GetRequiredService<IDataRepository>();
         await repository.StoreData("ordinary", Report("ordinary"));
         await repository.StoreData("bulk", Report("bulk"));
 
-        // A longer refresh policy makes the expiry difference observable with one short wait.
-        options.ReportCacheRetention = TimeSpan.FromHours(1);
+        await Task.Delay(1200);
         Assert.That(await repository.GetData("ordinary", default), Is.Not.Null);
         Assert.That(await repository.GetDataForBulkRead("bulk", default), Is.Not.Null);
 
-        await Task.Delay(1000);
+        await Task.Delay(1200);
 
         Assert.That(await repository.GetDataForBulkRead("ordinary", default), Is.Not.Null);
         Assert.That(await repository.GetDataForBulkRead("bulk", default), Is.Null);
@@ -239,7 +237,7 @@ public class ReportCacheCapacityTests
         await repository.StoreData(report.Id, report);
         using var hostCache = new MemoryCache(new MemoryCacheOptions());
         using var baselineCache = new MemoryCacheBdTestDataStore(hostCache,
-            services.GetRequiredService<BDTestReportServerOptions>());
+            services.GetRequiredService<IOptions<BDTestReportOptions>>());
 
         // StoreTestData reproduces the full size-measurement/replacement work of the old read path.
         Action baseline = () => baselineCache.StoreTestData(report.Id, report).GetAwaiter().GetResult();
@@ -265,8 +263,7 @@ public class ReportCacheCapacityTests
     [Test]
     public async Task Reports_expire_after_configured_retention_in_cache_only_mode()
     {
-        using var services = Services(1000);
-        services.GetRequiredService<BDTestReportServerOptions>().ReportCacheRetention = TimeSpan.FromMilliseconds(10);
+        using var services = Services(1000, retention: TimeSpan.FromMilliseconds(10));
         var repository = services.GetRequiredService<IDataRepository>();
         await repository.StoreData("expired", Report("expired"));
 
@@ -282,8 +279,8 @@ public class ReportCacheCapacityTests
         var replacement = Report("same");
         var other = Report("other", 500);
         using var services = Services(Size(replacement) + Size(other));
-        var options = services.GetRequiredService<BDTestReportServerOptions>();
-        using var cache = new MemoryCacheBdTestDataStore(hostCache, options);
+        var options = services.GetRequiredService<IOptions<BDTestReportOptions>>().Value;
+        using var cache = new MemoryCacheBdTestDataStore(hostCache, Options.Create(options));
         await cache.StoreTestData("same", Report("same", 500));
         await cache.StoreTestData("same", replacement);
         await cache.StoreTestData("other", other);
@@ -297,10 +294,16 @@ public class ReportCacheCapacityTests
     [TestCase(-1)]
     public void Nonpositive_capacity_and_retention_are_rejected(long value)
     {
-        using var services = Services(1000);
-        var options = services.GetRequiredService<BDTestReportServerOptions>();
-        Assert.Throws<ArgumentOutOfRangeException>(() => options.ReportCacheSizeLimitBytes = value);
-        Assert.Throws<ArgumentOutOfRangeException>(() => options.ReportCacheRetention = TimeSpan.FromTicks(value));
+        var services = new ServiceCollection();
+        services.AddBDTestReports(options =>
+        {
+            options.ReportCacheSizeLimitBytes = value;
+            options.ReportCacheRetention = TimeSpan.FromTicks(value);
+        });
+        using var provider = services.BuildServiceProvider();
+        var exception = Assert.Throws<OptionsValidationException>(() =>
+            _ = provider.GetRequiredService<IOptions<BDTestReportOptions>>().Value);
+        Assert.That(exception.Failures, Has.Count.EqualTo(2));
     }
 
     private static async Task AssertWithinCapacity(IDataRepository repository, BDTestOutputModel[] reports,
@@ -325,16 +328,18 @@ public class ReportCacheCapacityTests
         }
     }
 
-    private static ServiceProvider Services(long capacity, IBDTestDataStore store = null)
+    private static ServiceProvider Services(long capacity, IBDTestDataStore store = null, TimeSpan? retention = null)
     {
         var services = new ServiceCollection();
         services.AddLogging();
-        services.AddControllersWithViews().AddBdTestReportControllersAndViews();
-        var provider = services.BuildServiceProvider();
-        var options = provider.GetRequiredService<BDTestReportServerOptions>();
-        options.ReportCacheSizeLimitBytes = capacity;
-        options.DataStore = store;
-        return provider;
+        services.AddBDTestReports();
+        services.Configure<BDTestReportOptions>(options =>
+        {
+            options.ReportCacheSizeLimitBytes = capacity;
+            options.ReportCacheRetention = retention ?? TimeSpan.FromHours(8);
+        });
+        if (store != null) services.AddSingleton<IBDTestDataStore>(store);
+        return services.BuildServiceProvider();
     }
 
     private static BDTestOutputModel Report(string id, int length = 1) => new()

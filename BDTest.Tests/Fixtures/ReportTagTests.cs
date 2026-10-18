@@ -1,4 +1,4 @@
-﻿using System.Text.RegularExpressions;
+using System.Text.RegularExpressions;
 using System.Web;
 using BDTest.Maps;
 using BDTest.Razor.Reports.Controllers;
@@ -32,12 +32,10 @@ public class ReportTagTests
         var repository = new Repository();
         var original = ReportJson.SerializeObject(repository.Report);
         var services = new ServiceCollection();
-        services.AddControllersWithViews().AddBdTestReportControllersAndViews();
+        services.AddBDTestReports();
         using var provider = services.BuildServiceProvider();
-        var controller = new BDTestController(repository, provider.GetRequiredService<BDTestReportServerOptions>())
-        {
-            ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() }
-        };
+        var controller = ActivatorUtilities.CreateInstance<BDTestController>(provider, repository);
+        controller.ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() };
         controller.Request.QueryString = new QueryString(query);
 
         var result = (ViewResult)(stories

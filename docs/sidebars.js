@@ -105,6 +105,7 @@ const sidebars = {
         'migration/generated-name-text',
         'migration/structured-exceptions',
         'migration/report-storage',
+        'migration/report-options',
         'migration/from-specflow',
       ],
     },

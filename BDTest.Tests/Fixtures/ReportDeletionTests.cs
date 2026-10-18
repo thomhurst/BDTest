@@ -33,7 +33,7 @@ public class ReportDeletionTests
     {
         var builder = WebApplication.CreateBuilder();
         builder.WebHost.UseUrls("http://127.0.0.1:0");
-        builder.Services.AddControllersWithViews().AddBdTestReportControllersAndViews();
+        builder.Services.AddBDTestReports();
         builder.Services.AddSingleton<IDataRepository>(_repository);
         builder.Services.AddAuthentication("ReportTests")
             .AddScheme<AuthenticationSchemeOptions, ReportTestAuthenticationHandler>("ReportTests", _ => { })

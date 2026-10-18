@@ -17,6 +17,8 @@ It uses:
 
 ## Configuration
 
+The host calls `AddBDTestReports().BindConfiguration("BDTest")` before building the application. The `BDTest` section binds to `BDTestReportOptions`; invalid option values fail startup. Report storage, attachment storage, administrator authorization, custom links and user personalization are DI services. Parameterless `UseBDTestReportServer()` adds security headers in the request pipeline. See [Setup](setup.md) for the library API and [Report options migration](../migration/report-options.md) for upgrading existing hosts.
+
 | Setting | Environment variable | Description |
 | --- | --- | --- |
 | `AzureAd:TenantId` | `AzureAd__TenantId` | Your Entra tenant ID. |

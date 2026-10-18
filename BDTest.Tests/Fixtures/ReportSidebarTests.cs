@@ -1,5 +1,5 @@
 using System.Text.RegularExpressions;
-﻿using BDTest.Maps;
+using BDTest.Maps;
 using BDTest.Razor.Reports.Controllers;
 using BDTest.Razor.Reports.Extensions;
 using BDTest.Razor.Reports.Interfaces;
@@ -28,11 +28,10 @@ public class ReportSidebarTests
     {
         var builder = WebApplication.CreateBuilder();
         builder.WebHost.UseUrls("http://127.0.0.1:0");
-        builder.Services.AddControllersWithViews().AddBdTestReportControllersAndViews();
+        builder.Services.AddBDTestReports();
         builder.Services.AddSingleton<IDataRepository>(_repository);
+        builder.Services.AddSingleton<IBDTestCustomSidebarLinksProvider>(_links);
         _application = builder.Build();
-        _application.UseBDTestReportServer(options => options.AllowAnonymousReports = true);
-        _application.Services.GetRequiredService<BDTestReportServerOptions>().CustomSidebarLinksProvider = _links;
         _application.MapControllers();
         await _application.StartAsync();
         _client = new HttpClient { BaseAddress = new Uri(_application.Urls.Single()) };
@@ -345,13 +344,10 @@ public class ReportSidebarTests
     public async Task Report_fetch_observes_request_cancellation()
     {
         using var cancellation = new CancellationTokenSource();
-        var options = _application.Services.GetRequiredService<BDTestReportServerOptions>();
-        var controller = new BDTestController(_repository, options)
+        var controller = ActivatorUtilities.CreateInstance<BDTestController>(_application.Services, _repository);
+        controller.ControllerContext = new ControllerContext
         {
-            ControllerContext = new ControllerContext
-            {
-                HttpContext = new DefaultHttpContext { RequestAborted = cancellation.Token }
-            }
+            HttpContext = new DefaultHttpContext { RequestAborted = cancellation.Token }
         };
         cancellation.Cancel();
 

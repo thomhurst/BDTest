@@ -44,7 +44,7 @@ builder.Services.AddRazorPages();
 The pipeline must select the endpoint before checking its authorization:
 
 ```csharp
-app.UseBDTestReportServer(options =>
+builder.Services.AddBDTestReports(options =>
 {
     options.UploadApiKey = builder.Configuration["BDTest:UploadApiKey"];
     options.DataStore = dataStore;
@@ -81,7 +81,7 @@ Every user accepted by your policy can read every report. There are no per-repor
 Uploads require a shared secret in the `X-BDTest-Upload-Key` header:
 
 ```csharp
-app.UseBDTestReportServer(options =>
+builder.Services.AddBDTestReports(options =>
 {
     options.UploadApiKey = builder.Configuration["BDTest:UploadApiKey"];
     options.ReportsAuthorizationPolicy = "BDTestReports.Read";
@@ -110,7 +110,7 @@ This major-version change removes `IAdminAuthorizer`, `NoOpAdminAuthorizer` and 
 Existing private hosts must set `ReportsAuthorizationPolicy` or apply explicit endpoint authorization. A global fallback policy alone does not configure report access. For an intentionally public host, explicitly opt in:
 
 ```csharp
-app.UseBDTestReportServer(options =>
+builder.Services.AddBDTestReports(options =>
 {
     options.AllowAnonymousReports = true;
     options.UploadApiKey = builder.Configuration["BDTest:UploadApiKey"];

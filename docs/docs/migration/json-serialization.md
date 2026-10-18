@@ -30,7 +30,7 @@ Serialization does not use global Newtonsoft settings or your host's MVC JSON op
 
 ## Report hosts
 
-`AddBdTestReportControllersAndViews()` registers BDTest's controllers and services without replacing MVC input or output formatters or changing host JSON options. Existing historical reports still render through the report server and Azure storage.
+`AddBDTestReports()` registers BDTest's controllers and services without replacing MVC input or output formatters or changing host JSON options. Existing historical reports still render through the report server and Azure storage.
 
 - If your own controllers relied on BDTest enabling Newtonsoft, reference `Microsoft.AspNetCore.Mvc.NewtonsoftJson` and call `AddNewtonsoftJson()` yourself.
 - If your app used Newtonsoft through BDTest's transitive dependency, add your own package reference.

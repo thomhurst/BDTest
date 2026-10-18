@@ -16,17 +16,21 @@ internal class DataRepository : IDataRepository
     private readonly IRunIndexStore _runIndexStore;
     private readonly SemaphoreSlim _historyLock = new(1, 1);
     private bool _historyLoaded;
-    private readonly BDTestReportServerOptions _options;
+    private readonly IBDTestAttachmentStore _attachmentStore;
+    private readonly ReportAttachmentGate _attachmentGate;
 
-    public DataRepository(IMemoryCacheBdTestDataStore memoryCacheBdTestDataStore, BDTestReportServerOptions options)
+    public DataRepository(IMemoryCacheBdTestDataStore memoryCacheBdTestDataStore, ReportAttachmentGate attachmentGate,
+        IBDTestDataStore dataStore = null, IReportStore reportStore = null, IRunIndexStore runIndexStore = null,
+        IBDTestAttachmentStore attachmentStore = null)
     {
-        _options = options;
+        _attachmentGate = attachmentGate;
+        _attachmentStore = attachmentStore;
         _memoryCacheBdTestDataStore = memoryCacheBdTestDataStore;
-        if ((options.ReportStore == null) != (options.RunIndexStore == null))
-            throw new ArgumentException("Configure both ReportStore and RunIndexStore.", nameof(options));
-        var legacy = options.DataStore == null ? null : new LegacyDataStoreAdapter(options.DataStore);
-        _reportStore = options.ReportStore ?? options.DataStore as IReportStore ?? legacy;
-        _runIndexStore = options.RunIndexStore ?? options.DataStore as IRunIndexStore ?? legacy;
+        if ((reportStore == null) != (runIndexStore == null))
+            throw new ArgumentException("Register both IReportStore and IRunIndexStore.");
+        var legacy = dataStore == null ? null : new LegacyDataStoreAdapter(dataStore);
+        _reportStore = reportStore ?? dataStore as IReportStore ?? legacy;
+        _runIndexStore = runIndexStore ?? dataStore as IRunIndexStore ?? legacy;
     }
 
     public Task<BDTestOutputModel> GetData(string reportId, CancellationToken cancellationToken)
@@ -136,7 +140,7 @@ internal class DataRepository : IDataRepository
 
     public async Task DeleteReport(string reportId, CancellationToken cancellationToken = default)
     {
-        using var lease = await _options.AttachmentGate.EnterAsync(reportId, cancellationToken);
+        using var lease = await _attachmentGate.EnterAsync(reportId, cancellationToken);
         await DeleteReportAndAttachments(reportId, cancellationToken);
     }
 
@@ -145,8 +149,8 @@ internal class DataRepository : IDataRepository
         await _historyLock.WaitAsync(cancellationToken);
         try
         {
-            if (_options.AttachmentStore != null && AttachmentStorage.IsValidId(reportId))
-                await _options.AttachmentStore.DeleteReportAsync(reportId, cancellationToken);
+            if (_attachmentStore != null && AttachmentStorage.IsValidId(reportId))
+                await _attachmentStore.DeleteReportAsync(reportId, cancellationToken);
             if (_reportStore != null)
             {
                 await _reportStore.DeleteAsync(reportId, cancellationToken);
