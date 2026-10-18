@@ -31,6 +31,8 @@ namespace BDTest.Adapters.Conformance;
 public class AdapterConformanceTests : Adapter
 #if BDTEST_TUNIT
     , global::BDTest.TUnit.IBDTestTUnitTest
+#elif BDTEST_MSTEST
+    , global::BDTest.MSTest.IBDTestMSTestTest
 #endif
 {
     private readonly List<(string Name, int Attempt, object Context, CancellationToken Token, Status Status)> _hooks = new();
@@ -52,12 +54,19 @@ public class AdapterConformanceTests : Adapter
     public AdapterConformanceTests()
     {
         _run = CreateRun();
+#if BDTEST_MSTEST
+        _composition = this is MSTestCompositionAdapterConformanceTests;
+        _host = _composition ? BDTestScenario.For<object>(this, _run) : this;
+#else
         _host = this;
+#endif
     }
 #endif
 
 #if BDTEST_NUNIT
     internal void UseHost(AbstractContextBDTestBase<object> host) => _host = host;
+#elif BDTEST_MSTEST
+    BDTestBase global::BDTest.MSTest.IBDTestMSTestTest.BDTestHost => _host;
 #endif
 
     private BDTestRun CreateRun()
@@ -477,6 +486,8 @@ public class AdapterConformanceTests : Adapter
     {
 #if BDTEST_TUNIT
         try { await global::BDTest.TUnit.TUnitBDTestLifecycle.AfterTest(global::TUnit.Core.TestContext.Current!); }
+#elif BDTEST_MSTEST
+        try { await _host.EndTestAsync(); }
 #else
         try { await EndTestAsync(); }
 #endif
@@ -652,4 +663,10 @@ public class CompositionAdapterConformanceTests : CompositionConformanceFixtureB
         }
     }
 }
+#endif
+
+#if BDTEST_MSTEST
+// Inherited test methods run the identical contract against a composed host.
+[global::BDTest.MSTest.BDTestClass]
+public class MSTestCompositionAdapterConformanceTests : AdapterConformanceTests;
 #endif
