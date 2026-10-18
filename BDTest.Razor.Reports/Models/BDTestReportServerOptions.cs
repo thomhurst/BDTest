@@ -29,6 +29,30 @@ public class BDTestReportServerOptions
 
         private long _reportCacheSizeLimitBytes = 64 * 1024 * 1024;
         private TimeSpan _reportCacheRetention = TimeSpan.FromHours(8);
+        private long _maxCompressedUploadBytes = 10 * 1024 * 1024;
+        private long _maxUploadBytes = 10 * 1024 * 1024;
+
+        /// <summary>Positive upload request body limit before decompression (default 10 MiB). Also applies to uncompressed requests.</summary>
+        public long MaxCompressedUploadBytes
+        {
+            get => _maxCompressedUploadBytes;
+            set
+            {
+                if (value <= 0) throw new ArgumentOutOfRangeException(nameof(value));
+                _maxCompressedUploadBytes = value;
+            }
+        }
+
+        /// <summary>Positive byte limit for decompressed JSON and its UTF-8 representation (default 10 MiB). Also bounds legacy reference expansion.</summary>
+        public long MaxUploadBytes
+        {
+            get => _maxUploadBytes;
+            set
+            {
+                if (value <= 0) throw new ArgumentOutOfRangeException(nameof(value));
+                _maxUploadBytes = value;
+            }
+        }
 
         /// <summary>
         /// Positive full-report cache budget, measured in serialized UTF-8 bytes (default 64 MiB).

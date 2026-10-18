@@ -40,12 +40,16 @@ public class BDTestController : Controller
     [HttpPost]
     [Route("data")]
     [ServiceFilter(typeof(ReportUploadFilter))]
-    [RequestSizeLimit(10 * 1024 * 1024)]
     public async Task<IActionResult> Index([ModelBinder(BinderType = typeof(ReportModelBinder))] BDTestOutputModel bdTestOutputModel)
     {
-        if (!ModelState.IsValid || bdTestOutputModel == null)
+        if (!ModelState.IsValid)
         {
-            return BadRequest();
+            return BadRequest(ModelState);
+        }
+
+        if (bdTestOutputModel == null)
+        {
+            return BadRequest("Expected a JSON report.");
         }
 
         // Never let an uploader choose a storage key, including after cache expiry.

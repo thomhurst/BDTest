@@ -596,6 +596,8 @@ app.UseBDTestReportServer(options =>
 {
     options.UploadApiKey = configuration["BDTest:UploadApiKey"];
     options.UploadsPerMinute = 60; // Positive limit shared by authenticated clients of this instance.
+    options.MaxCompressedUploadBytes = 10L * 1024 * 1024; // Request body bytes before decompression.
+    options.MaxUploadBytes = 10L * 1024 * 1024;           // Expanded JSON bytes.
 });
 ```
 
@@ -608,7 +610,11 @@ var reportUri = await BDTestReportServer.SendDataAndGetReportUriAsync(
     serverAddress, new BDTestRunDescriptor(), client);
 ```
 
-`POST /bdtest/data` checks the key and rate limit before parsing JSON. Uploads are limited to 10 MiB per request, including chunked requests, using ASP.NET Core's request size limit (Kestrel/IIS). Configure equivalent or stricter limits in any reverse proxy or alternative host. The default rate limit is 60 authenticated attempts per minute per server instance; excess attempts return `429` with `Retry-After`. The built-in uploader waits for that delay (seconds or an HTTP date) before retrying, with at most three upload attempts. For multiple server instances, enforce a shared limit at the gateway as well.
+`POST /bdtest/data` checks the key and rate limit before parsing or decompressing JSON. This endpoint accepts plain JSON or `Content-Encoding: gzip`, including chunked requests. Other content encodings or stacked encodings return `415`; malformed gzip or JSON returns `400`. JSON media types and UTF-8/UTF-16 support are unchanged. Other host endpoints are not decompressed by BDTest.
+
+`MaxCompressedUploadBytes` limits request body bytes before decompression (also for plain requests); `MaxUploadBytes` limits decompressed JSON bytes and its UTF-8 representation after transcoding. Both default to 10 MiB, must be positive, and are enforced while streaming; exceeding either returns `413`. `MaxUploadBytes` also bounds historical JSON reference expansion. Configure these options at startup to raise the limits, and raise any reverse-proxy or IIS request-filtering limits that would reject the request first. The endpoint replaces the mutable ASP.NET Core body-size limit with its own byte counter, excluding HTTP chunk framing. Cache capacity remains separate: raising upload limits does not raise `ReportCacheSizeLimitBytes`.
+
+The default rate limit is 60 authenticated attempts per minute per server instance; excess attempts return `429` with `Retry-After`. The built-in uploader waits for that delay (seconds or an HTTP date) before retrying, with at most three upload attempts. For multiple server instances, enforce a shared limit at the gateway as well.
 
 The server ignores client-supplied report IDs and creates a new GUID for each accepted upload. Use the returned URL to locate the report. Re-uploading (including a retry after a lost response) creates a separate report instead of replacing an existing report. Stored models, summaries, and data-receiver callbacks all receive the server-generated ID.
 
