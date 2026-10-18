@@ -19,7 +19,7 @@ namespace BDTest.Tests.Fixtures;
 public class JsonResultsTests : NUnitBDTestBase<MyTestContext>
 {
     [SetUp, TearDown]
-    public void Setup()
+    public void ResetScenarioData()
     { 
         TestResetHelper.ResetData();    
     }
