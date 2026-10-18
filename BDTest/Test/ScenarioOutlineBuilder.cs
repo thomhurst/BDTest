@@ -68,17 +68,6 @@ public sealed class ScenarioOutlineBuilder<TExample> : BuildableTest
 
     public TaskAwaiter<Scenario> GetAwaiter() => BDTestAsync().GetAwaiter();
 
-    private Status ClassifyOutcome(Exception exception)
-    {
-        if (exception is NotImplementedException) return Status.NotImplemented;
-        var settings = Run.Options;
-        var exceptionType = exception.GetType();
-        if (settings.SuccessExceptionTypes.Contains(exceptionType)) return Status.Passed;
-        if (settings.SkipExceptionTypes.Contains(exceptionType)) return Status.Skipped;
-        if (settings.InconclusiveExceptionTypes.Contains(exceptionType)) return Status.Inconclusive;
-        return Status.Failed;
-    }
-
     private async Task<Scenario> ExecuteAsync(Scenario outline)
     {
         outline.StartTime = DateTime.UtcNow;
@@ -131,7 +120,7 @@ public sealed class ScenarioOutlineBuilder<TExample> : BuildableTest
                         row.EndTime = DateTime.UtcNow;
                         row.TimeTaken = row.EndTime - row.StartTime;
                     }
-                    row.Status = row.TimedOut ? Status.Failed : ClassifyOutcome(exception);
+                    row.Status = ExceptionOutcomeClassifier.Classify(exception, Run.Options, row.TimedOut);
                     // Framework success exceptions must not fail the outline.
                     if (row.Status != Status.Passed)
                     {

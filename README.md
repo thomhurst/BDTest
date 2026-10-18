@@ -848,6 +848,23 @@ inconclusive exceptions in `InconclusiveExceptionTypes`.
 Run `pwsh scripts/Test-SkipOutcomes.ps1` to verify actual NUnit, xUnit, MSTest and TUnit
 runner outcomes as well as BDTest's scenario and step statuses.
 
+### Exception outcomes
+
+Steps, scenarios, and outline examples share the same exception classification.
+Types registered in `BDTestOptions` for an explicit run, or in
+`BDTestSettings.CustomExceptionSettings` for the legacy default run, match both
+the registered type and its subclasses. Explicit runs use their frozen registrations. Classification recursively unwraps
+`TargetInvocationException` and `AggregateException` with exactly one inner
+exception. An aggregate with multiple inner exceptions (or none) stays intact
+and is `Failed` unless its own type or a base type is explicitly registered;
+BDTest never chooses one inner exception and hides the others.
+
+After unwrapping, precedence is `NotImplementedException` (including subclasses),
+then registered success, skip, and inconclusive types, then `Failed`. BDTest
+timeouts always remain `Failed`, even when `TimeoutException` is registered.
+Classification does not replace the original exception: propagation and failure
+diagnostics preserve wrappers and their inner exceptions.
+
 ### Step and scenario timeouts
 
 Import `BDTest.Test` to use the timeout extensions. Async steps can accept a
