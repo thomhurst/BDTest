@@ -16,6 +16,18 @@ public sealed class BDTestOptions
     public IList<Type> SuccessExceptionTypes { get; } = new List<Type>();
     public IList<Type> SkipExceptionTypes { get; } = new List<Type>();
     public IList<Type> InconclusiveExceptionTypes { get; } = new List<Type>();
+    internal FrameworkOutcomeMap FrameworkOutcomes { get; private set; }
+
+    /// <summary>Registers exception types once and selects this map's runner notifications.</summary>
+    /// <remarks>Call before Start. When registering several maps, the last map supplies notifications.</remarks>
+    public void RegisterFrameworkOutcomes(FrameworkOutcomeMap map)
+    {
+        if (map == null) throw new ArgumentNullException(nameof(map));
+        map.Register(SuccessExceptionTypes.Add, SuccessExceptionTypes, SkipExceptionTypes.Add, SkipExceptionTypes,
+            InconclusiveExceptionTypes.Add, InconclusiveExceptionTypes);
+        FrameworkOutcomes = map;
+    }
+
     public RetryTestRules RetryTestRules { get; } = new();
     public SkipTestRules SkipTestRules { get; } = new();
     public SkipStepRules SkipStepRules { get; } = new();

@@ -15,7 +15,10 @@ public abstract class TUnitBDTestBase<TContext> : AbstractContextBDTestBase<TCon
         TUnitExceptionRegistration.EnsureRegistered();
     }
 
-    protected override void OnScenarioSkipped(string reason) => throw new SkipTestException(reason);
+    /// <summary>The reusable outcome declaration. Register it on options for explicit runs.</summary>
+    public static FrameworkOutcomeMap OutcomeMap => TUnitExceptionRegistration.OutcomeMap;
+
+    protected override void OnScenarioSkipped(string reason) => OutcomeMap.ReportSkip(reason);
 
     // Keep the original public entry points, but give TUnit distinctive hook names.
     // Its generic-base hook invoker resolves methods by name on the derived type.
@@ -38,21 +41,14 @@ public abstract class TUnitBDTestBase<TContext> : AbstractContextBDTestBase<TCon
     }
 }
 
-// Non-generic so all context types share the same CLR-protected initialization.
+// Shared by every generic context type; all registration is owned by the core.
 internal static class TUnitExceptionRegistration
 {
-    static TUnitExceptionRegistration()
-    {
-        if (!BDTestSettings.CustomExceptionSettings.SkipExceptionTypes.Contains(typeof(SkipTestException)))
-        {
-            BDTestSettings.CustomExceptionSettings.SkipExceptionTypes.Add(typeof(SkipTestException));
-        }
+    internal static FrameworkOutcomeMap OutcomeMap { get; } = new FrameworkOutcomeMap(reason => throw new SkipTestException(reason),
+        reason => throw new InconclusiveTestException(reason))
+        .Skip<SkipTestException>()
+        .Inconclusive<InconclusiveTestException>();
 
-        if (!BDTestSettings.CustomExceptionSettings.InconclusiveExceptionTypes.Contains(typeof(InconclusiveTestException)))
-        {
-            BDTestSettings.CustomExceptionSettings.InconclusiveExceptionTypes.Add(typeof(InconclusiveTestException));
-        }
-    }
-
-    internal static void EnsureRegistered() { }
+    internal static void EnsureRegistered() =>
+        BDTestSettings.CustomExceptionSettings.RegisterFrameworkOutcomes(OutcomeMap);
 }

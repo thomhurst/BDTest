@@ -45,7 +45,10 @@ public abstract class XUnitBDTestBase<TContext> : AbstractContextBDTestBase<TCon
     /// <summary>Runs async setup after the execution has been bound to the derived fixture's run.</summary>
     public virtual ValueTask InitializeAsync() => default;
 
-    protected override void OnScenarioSkipped(string reason) => Assert.Skip(reason);
+    /// <summary>The reusable outcome declaration. Register it on options for explicit runs.</summary>
+    public static FrameworkOutcomeMap OutcomeMap => XUnitExceptionRegistration.OutcomeMap;
+
+    protected override void OnScenarioSkipped(string reason) => OutcomeMap.ReportSkip(reason);
 
     /// <summary>Completes the BDTest execution when xUnit disposes the test asynchronously.</summary>
     /// <remarks>Override for asynchronous teardown and await base.DisposeAsync() in a finally block.</remarks>
@@ -69,16 +72,12 @@ public abstract class XUnitBDTestBase<TContext> : AbstractContextBDTestBase<TCon
     }
 }
 
-// Non-generic so all context types share the same CLR-protected initialization.
+// Shared by every generic context type; all registration is owned by the core.
 internal static class XUnitExceptionRegistration
 {
-    static XUnitExceptionRegistration()
-    {
-        if (!BDTestSettings.CustomExceptionSettings.SkipExceptionTypes.Contains(typeof(SkipException)))
-        {
-            BDTestSettings.CustomExceptionSettings.SkipExceptionTypes.Add(typeof(SkipException));
-        }
-    }
+    internal static FrameworkOutcomeMap OutcomeMap { get; } = new FrameworkOutcomeMap(reason => Assert.Skip(reason))
+        .Skip<SkipException>();
 
-    internal static void EnsureRegistered() { }
+    internal static void EnsureRegistered() =>
+        BDTestSettings.CustomExceptionSettings.RegisterFrameworkOutcomes(OutcomeMap);
 }

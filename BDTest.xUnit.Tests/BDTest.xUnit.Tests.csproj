@@ -2,6 +2,7 @@
 
     <PropertyGroup>
         <TargetFramework>net10.0</TargetFramework>
+        <DefineConstants>$(DefineConstants);BDTEST_XUNIT</DefineConstants>
         <OutputType>Exe</OutputType>
 
         <IsPackable>false</IsPackable>
@@ -25,5 +26,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\BDTest.SourceGenerator\BDTest.SourceGenerator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="..\TestUtilities\AdapterConformanceTests.cs" Link="Conformance\AdapterConformanceTests.cs" />
   </ItemGroup>
 </Project>

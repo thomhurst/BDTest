@@ -73,3 +73,7 @@ public class BDTestReports
     }
 }
 ```
+
+TUnit 1.75.0 reports a propagated `InconclusiveTestException` as Failed in TRX,
+while BDTest records Inconclusive. This difference is covered by the
+[adapter conformance suite](../configuration/exceptions.md#runner-differences).

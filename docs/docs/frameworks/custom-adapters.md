@@ -16,13 +16,14 @@ using BDTest.Test;
 public abstract class MyRunnerBDTestBase<TContext> : AbstractContextBDTestBase<TContext>
     where TContext : class, new()
 {
+    private static readonly FrameworkOutcomeMap RunnerOutcomes =
+        new FrameworkOutcomeMap(reason => throw new MyRunnerSkipException(reason))
+            .Skip<MyRunnerSkipException>();
+
     static MyRunnerBDTestBase()
     {
-        // Register the runner's special exceptions once.
-        if (!BDTestSettings.CustomExceptionSettings.SkipExceptionTypes.Contains(typeof(MyRunnerSkipException)))
-        {
-            BDTestSettings.CustomExceptionSettings.SkipExceptionTypes.Add(typeof(MyRunnerSkipException));
-        }
+        // The core deduplicates registrations across generic context types.
+        BDTestSettings.CustomExceptionSettings.RegisterFrameworkOutcomes(RunnerOutcomes);
     }
 
     // Called by the runner before each test, before any async setup starts.
@@ -34,7 +35,7 @@ public abstract class MyRunnerBDTestBase<TContext> : AbstractContextBDTestBase<T
     public void BDTestTearDown() => EndTest();
 
     // Map a whole-scenario skip onto the runner.
-    protected override void OnScenarioSkipped(string reason) => throw new MyRunnerSkipException(reason);
+    protected override void OnScenarioSkipped(string reason) => RunnerOutcomes.ReportSkip(reason);
 }
 ```
 
@@ -88,4 +89,12 @@ public async Task RunTestAsync(string frameworkTestId)
 
 ## Testing your adapter
 
-The repository's framework test projects (`BDTest.Tests`, `BDTest.xUnit.Tests`, `BDTest.MSTest.Tests`, `BDTest.TUnit.Tests`) focus on unique IDs and context isolation under parallel execution. Use them as a template. `scripts/Test-SkipOutcomes.ps1` checks runner skip outcomes against BDTest's scenario and step statuses.
+The repository's framework test projects (`BDTest.Tests`, `BDTest.xUnit.Tests`, `BDTest.MSTest.Tests`, `BDTest.TUnit.Tests`) focus on unique IDs and context isolation under parallel execution. Use them as a template. `scripts/Test-SkipOutcomes.ps1` checks runner skip outcomes against BDTest's scenario and step statuses. The shared `TestUtilities/AdapterConformanceTests.cs` suite covers all outcome categories and concurrent explicit runs. `scripts/Test-AdapterConformance.ps1` verifies its actual TRX outcomes in CI.
+
+Declare framework exception classifications and runner notifications with
+[`FrameworkOutcomeMap`](../configuration/exceptions.md#framework-outcome-maps).
+Register the map on `BDTestOptions` before starting an explicit run. For the legacy
+default run, register the declaration through
+`BDTestSettings.CustomExceptionSettings.RegisterFrameworkOutcomes(map)` and invoke
+`map.ReportSkip(reason)` from `OnScenarioSkipped`. Explicit runs use their frozen
+map's skip callback before falling back to that virtual hook.

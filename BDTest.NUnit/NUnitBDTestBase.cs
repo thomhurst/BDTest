@@ -16,7 +16,10 @@ public abstract class NUnitBDTestBase<TContext> : AbstractContextBDTestBase<TCon
         NUnitExceptionRegistration.EnsureRegistered();
     }
 
-    protected override void OnScenarioSkipped(string reason) => Assert.Ignore(reason);
+    /// <summary>The reusable outcome declaration. Register it on options for explicit runs.</summary>
+    public static FrameworkOutcomeMap OutcomeMap => NUnitExceptionRegistration.OutcomeMap;
+
+    protected override void OnScenarioSkipped(string reason) => OutcomeMap.ReportSkip(reason);
 
     [SetUp]
     public void Setup()
@@ -54,26 +57,14 @@ public abstract class NUnitBDTestBase<TContext> : AbstractContextBDTestBase<TCon
     }
 }
 
-// Non-generic so all context types share the same CLR-protected initialization.
+// Shared by every generic context type; all registration is owned by the core.
 internal static class NUnitExceptionRegistration
 {
-    static NUnitExceptionRegistration()
-    {
-        if (!BDTestSettings.CustomExceptionSettings.SuccessExceptionTypes.Contains(typeof(SuccessException)))
-        {
-            BDTestSettings.CustomExceptionSettings.SuccessExceptionTypes.Add(typeof(SuccessException));
-        }
+    internal static FrameworkOutcomeMap OutcomeMap { get; } = new FrameworkOutcomeMap(reason => Assert.Ignore(reason), reason => Assert.Inconclusive(reason))
+        .Success<SuccessException>()
+        .Skip<IgnoreException>()
+        .Inconclusive<InconclusiveException>();
 
-        if (!BDTestSettings.CustomExceptionSettings.SkipExceptionTypes.Contains(typeof(IgnoreException)))
-        {
-            BDTestSettings.CustomExceptionSettings.SkipExceptionTypes.Add(typeof(IgnoreException));
-        }
-
-        if (!BDTestSettings.CustomExceptionSettings.InconclusiveExceptionTypes.Contains(typeof(InconclusiveException)))
-        {
-            BDTestSettings.CustomExceptionSettings.InconclusiveExceptionTypes.Add(typeof(InconclusiveException));
-        }
-    }
-
-    internal static void EnsureRegistered() { }
+    internal static void EnsureRegistered() =>
+        BDTestSettings.CustomExceptionSettings.RegisterFrameworkOutcomes(OutcomeMap);
 }

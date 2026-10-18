@@ -22,7 +22,7 @@ All adapter base classes take a [context](../writing-tests/test-context.md) type
 Each adapter is a thin class that derives from `AbstractContextBDTestBase<TContext>`. It:
 
 1. supplies a unique execution ID for each test from the framework's test context, so context and output stay isolated in parallel runs,
-2. registers the framework's success, skip and inconclusive exceptions in [`BDTestSettings.CustomExceptionSettings`](../configuration/exceptions.md),
+2. declares the framework's success, skip and inconclusive exceptions in one [`FrameworkOutcomeMap`](../configuration/exceptions.md#framework-outcome-maps), registered idempotently for the default run,
 3. marks each test as started and completed, and removes its context afterwards,
 4. maps a whole-scenario [skip](../writing-tests/skipping.md#test-runner-outcome) onto the runner's skip mechanism.
 
@@ -40,3 +40,9 @@ Each adapter is a thin class that derives from `AbstractContextBDTestBase<TConte
 The examples in this documentation use TUnit. Swap the base class, test attributes and assertions for your framework.
 
 Not using one of these frameworks? See [Custom adapters](custom-adapters.md).
+
+For an explicit run, register the adapter's `OutcomeMap` on `BDTestOptions` before
+calling `BDTestRun.Start(options)`. Both classification and skip notifications use
+that run's frozen configuration. The [shared conformance suite](../configuration/exceptions.md#runner-differences)
+checks each adapter's BDTest statuses and actual runner outcomes, including the
+frameworks' explicit differences.

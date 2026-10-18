@@ -18,7 +18,7 @@ Steps, scenarios and scenario outline examples share one exception classifier. W
 
 The rows are checked in this order. Only failed outcomes are eligible for [retries](../writing-tests/retries.md). A skip keeps the statuses of steps that already ran.
 
-In every case BDTest records the exception and rethrows it, so your test runner sees the original outcome. For example, TUnit's `Skip.Test(...)` throws `SkipTestException`: BDTest records `Skipped` and TUnit reports a skipped test. NUnit's `Assert.Pass()` throws `SuccessException`: BDTest records `Passed` and NUnit reports a pass.
+In every case BDTest records the classification and rethrows the original exception, so your test runner applies its own outcome rules. For example, TUnit's `Skip.Test(...)` throws `SkipTestException`: BDTest records `Skipped` and TUnit reports a skipped test. NUnit's `Assert.Pass()` throws `SuccessException`: BDTest records `Passed` and NUnit reports a pass.
 
 Timeouts always produce `Failed`, even when `TimeoutException` is registered.
 
@@ -71,3 +71,69 @@ Standalone use registers nothing.
 ## Skip versus inconclusive
 
 Use a **skip** type for "this scenario intentionally did not run here". Skips are reported as `Skipped` and are never retried. Use an **inconclusive** type for "this scenario ran but could not decide". See [Skipping](../writing-tests/skipping.md) and [Statuses](statuses.md).
+
+## Framework outcome maps
+
+Each built-in adapter exposes an immutable `OutcomeMap` of type
+`BDTest.Settings.FrameworkOutcomeMap`. Register that declaration when selecting
+an explicit run, so classification and runner notifications belong to that run:
+
+```csharp
+var options = new BDTestOptions();
+options.RegisterFrameworkOutcomes(NUnitBDTestBase<object>.OutcomeMap);
+using var run = BDTestRun.Start(options);
+```
+
+Use the matching base class for MSTest, TUnit, or xUnit. Re-registering a map adds
+no duplicate exception types. Registration preserves existing custom types. If
+several maps are registered, their exception types accumulate and the last map
+supplies the runner notifications. `Start(options)` freezes both the exception
+types and the selected notifications. Explicit runs never read adapter mappings
+from global settings. `Start()` still starts with no mappings.
+
+For a custom adapter, declare a map once:
+
+```csharp
+var map = new FrameworkOutcomeMap(
+        reason => Runner.Skip(reason),
+        reason => Runner.Inconclusive(reason))
+    .Success<MySuccessException>()
+    .Skip<MySkipException>()
+    .Inconclusive<MyInconclusiveException>();
+options.RegisterFrameworkOutcomes(map);
+```
+
+Every fluent method returns a new map; retain its return value. `ReportSkip(reason)`
+and `ReportInconclusive(reason)` invoke the declared runner callbacks. An omitted
+inconclusive callback falls back to the skip callback. BDTest invokes the owning
+explicit run's skip callback after finalizing a wholly skipped scenario or outline.
+Framework outcome exceptions thrown inside steps retain their original propagation.
+
+Built-in adapters register their declarations through
+`BDTestSettings.CustomExceptionSettings.RegisterFrameworkOutcomes(map)` for the
+legacy default run. That registration is thread-safe and idempotent across generic
+context types. The existing exception collections remain supported for legacy
+custom registrations; prefer the registration API for reusable declarations.
+
+### Runner differences
+
+The shared suite in `TestUtilities/AdapterConformanceTests.cs` runs in all four
+adapter test projects. CI runs `scripts/Test-AdapterConformance.ps1` to compare
+BDTest statuses with actual TRX outcomes. It also tests concurrent explicit runs
+with different frozen mappings. Intentional failures are enabled only in that
+script; normal test runs catch and verify those exceptions.
+
+| Adapter | Success exception | Framework skip | Framework inconclusive | Wholly skipped scenario |
+| --- | --- | --- | --- | --- |
+| NUnit | `SuccessException`: Passed | `IgnoreException`: Skipped | `InconclusiveException`: Inconclusive | `Assert.Ignore` |
+| MSTest | None; normal completion | Uses `AssertInconclusiveException`: Inconclusive | `AssertInconclusiveException`: Inconclusive | `Assert.Inconclusive` |
+| TUnit | None; normal completion | `SkipTestException`: Skipped | `InconclusiveTestException`: Inconclusive | `SkipTestException` |
+| xUnit v3 | None; normal completion | `SkipException`: Skipped | Falls back to skip: Skipped | `Assert.Skip` |
+
+MSTest 4.5.1 has no separate runtime skip assertion. Its inconclusive results map
+to `NotExecuted` in default TRX output, as do NUnit inconclusive results.
+TUnit 1.75.0 reports its native `InconclusiveTestException` as **Failed** in TRX,
+while BDTest records **Inconclusive**. The suite asserts that difference explicitly.
+xUnit v3 supports runtime skip but has no distinct inconclusive or success exception.
+Unmapped failures and `NotImplementedException` produce runner failures; BDTest
+records them as `Failed` and `NotImplemented`, respectively.
