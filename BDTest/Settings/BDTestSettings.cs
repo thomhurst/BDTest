@@ -17,6 +17,13 @@ public static class BDTestSettings
         
     [Obsolete("BDTestSettings.BranchName is obsolete. This should instead be passed in via BDTestRunDescriptor")]
     public static string BranchName { get; set; }
+
+    // Reports must still honor values set through the shipped obsolete settings.
+#pragma warning disable CS0618
+    internal static string LegacyEnvironment => Environment;
+    internal static string LegacyTag => Tag;
+    internal static string LegacyBranchName => BranchName;
+#pragma warning restore CS0618
         
     [Obsolete]
     public static Dictionary<string, string> CustomProperties { get; } = new();
