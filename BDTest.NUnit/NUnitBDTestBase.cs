@@ -2,7 +2,6 @@
 using BDTest.Test;
 using NUnit.Framework;
 using NUnitTestContext = NUnit.Framework.TestContext;
-using BDTest.Output;
 using NUnit.Framework.Interfaces;
 using NUnit.Framework.Internal;
 
@@ -11,9 +10,6 @@ namespace BDTest.NUnit;
 [TestFixture]
 public abstract class NUnitBDTestBase<TContext> : AbstractContextBDTestBase<TContext> where TContext : class, new()
 {
-    protected override string BDTestExecutionId =>
-        $"{NUnitTestContext.CurrentContext.Test.ID}_{NUnitTestContext.CurrentContext.CurrentRepeatCount}";
-
     [OneTimeSetUp]
     public static void SetupNUnitExceptions()
     {
@@ -25,14 +21,20 @@ public abstract class NUnitBDTestBase<TContext> : AbstractContextBDTestBase<TCon
     [SetUp]
     public void Setup()
     {
-        TestOutputData.FrameworkExecutionId = BDTestExecutionId;
+        BeginTest($"{NUnitTestContext.CurrentContext.Test.ID}_{NUnitTestContext.CurrentContext.CurrentRepeatCount}");
     }
 
     // Kept callable for existing consumers; NUnit teardown uses MarkTestAsComplete.
     public void PruneContext()
     {
-        MarkPassIfRetriedSuccessfully();
-        RemoveContext();
+        try
+        {
+            MarkPassIfRetriedSuccessfully();
+        }
+        finally
+        {
+            EndTest();
+        }
     }
 
     private void MarkPassIfRetriedSuccessfully()
@@ -43,13 +45,12 @@ public abstract class NUnitBDTestBase<TContext> : AbstractContextBDTestBase<TCon
             TestExecutionContext.CurrentContext.CurrentResult.SetResult(ResultState.Success);
         }
     }
-
+    // Retain the virtual hook so existing NUnit completion overrides still run.
     [TearDown]
+    [Obsolete("Call EndTest() in new adapters. Retained for NUnit teardown compatibility.")]
     protected override void MarkTestAsComplete()
     {
-        MarkPassIfRetriedSuccessfully();
-        // The context base removes the context before completing the test.
-        base.MarkTestAsComplete();
+        PruneContext();
     }
 }
 

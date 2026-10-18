@@ -1,47 +1,29 @@
-using BDTest.Settings;
+﻿using System.Reflection;
 using BDTest.Test;
-using Xunit;
-using Xunit.Sdk;
+using Xunit.Abstractions;
 
 namespace BDTest.xUnit;
 
-public abstract class XUnitBDTestBase<TContext> : AbstractContextBDTestBase<TContext>, IDisposable, IAsyncDisposable
+public abstract class XUnitBDTestBase<TContext> : AbstractContextBDTestBase<TContext>, IDisposable
     where TContext : class, new()
 {
-    protected XUnitBDTestBase()
+    protected XUnitBDTestBase(ITestOutputHelper outputHelper)
     {
-        XUnitExceptionRegistration.EnsureRegistered();
-        BDTestExecutionId = TestContext.Current.Test?.UniqueID
-            ?? throw new InvalidOperationException("An xUnit test must be running to create a BDTest adapter.");
-        MarkTestAsStarted();
+        var type = outputHelper.GetType();
+        var testMember = type.GetField("test", BindingFlags.Instance | BindingFlags.NonPublic);
+        var test = (ITest) testMember.GetValue(outputHelper);
+        
+        // v2 can share one test case across non-serializable theory rows.
+        // Each row gets its own fixture instance; retain the case ID for correlation.
+        BeginTest($"{test.TestCase.UniqueID}_{Guid.NewGuid():N}");
     }
 
-    protected override string BDTestExecutionId { get; }
+    protected override void OnScenarioSkipped(string reason) => throw new NotSupportedException(
+        "xUnit v2 does not support runtime skipping. Use [Fact(Skip = \"reason\")] or [Theory(Skip = \"reason\")] " +
+        "to skip at discovery time. " + reason);
 
-    protected override void OnScenarioSkipped(string reason) => Assert.Skip(reason);
-
-    public void Dispose() => MarkTestAsComplete();
-
-    /// <summary>Completes the BDTest execution when xUnit disposes the test asynchronously.</summary>
-    /// <remarks>Override for asynchronous teardown and await base.DisposeAsync() in a finally block.</remarks>
-    public virtual ValueTask DisposeAsync()
+    public void Dispose()
     {
-        // Preserve synchronous teardown when a derived class reimplements IDisposable.
-        ((IDisposable)this).Dispose();
-        return default;
+        EndTest();
     }
-}
-
-// Non-generic so all context types share the same CLR-protected initialization.
-internal static class XUnitExceptionRegistration
-{
-    static XUnitExceptionRegistration()
-    {
-        if (!BDTestSettings.CustomExceptionSettings.SkipExceptionTypes.Contains(typeof(SkipException)))
-        {
-            BDTestSettings.CustomExceptionSettings.SkipExceptionTypes.Add(typeof(SkipException));
-        }
-    }
-
-    internal static void EnsureRegistered() { }
 }

@@ -234,20 +234,20 @@ scenario tags.
 
 Use a new `BDTestBuilder` for each standalone test. Its execution ID is assigned
 when it is constructed, so startup output written from async setup or `Task.Run`
-uses the same ID as the scenario. `MSTestBDTestBase<TContext>` also assigns an ID
-per fixture instance, keeping async setup, context access, and teardown together.
+uses the same ID as the scenario. Framework adapters record an execution ID once
+at test start, keeping async setup, context access, and teardown together.
 
 For a custom adapter inheriting `BDTestBase` or `AbstractContextBDTestBase<TContext>`,
-override `BDTestExecutionId` with the runner's stable per-test ID, or call the
-protected `MarkTestAsStarted()` synchronously in the flow that runs setup and the
-test. Call it before starting any async work, and call `MarkTestAsComplete()` in
-teardown. Keep both lifecycle calls inside the same async entry method so its
+call the protected `BeginTest(frameworkTestId)` synchronously before starting any
+async setup, and call `EndTest()` in teardown. The framework ID must be unique per
+execution, including each data row, repeat and parallel test. Keep both lifecycle
+calls inside the same async entry method so its
 execution identity does not leak into the caller:
 
 ```csharp
-public async Task RunTestAsync()
+public async Task RunTestAsync(string frameworkTestId)
 {
-    MarkTestAsStarted();
+    BeginTest(frameworkTestId);
     try
     {
         await SetupAsync();
@@ -255,15 +255,30 @@ public async Task RunTestAsync()
     }
     finally
     {
-        MarkTestAsComplete();
+        EndTest();
     }
 }
 ```
 
+`BeginTest` binds `TestRun`, installs console capture before the first step, and
+clears stale capture state. `EndTest` removes the context and pending output from
+the owning run, then clears capture state. Calling `EndTest` again is safe, even
+when another run is active. TUnit hooks export the new flow state through
+`TestContext.Current.AddAsyncLocalValues()`.
+
+NUnit uses its test ID plus repeat count. TUnit uses `TestContext.Id`. MSTest uses
+the class name and data-row display name plus an execution suffix. The current
+xUnit v2 adapter uses its test-case ID plus a unique fixture-instance suffix,
+because non-serializable theory rows can share one test case. The xUnit v3
+migration is tracked separately in #800.
+
 Calling the start hook inside a separate async setup method or `Task.Run` does
-not propagate its `AsyncLocal` value back to the caller. The legacy default still
-creates an ID on first access for compatibility; custom adapters using async
-setup should use the explicit lifecycle or a stable framework ID instead.
+not propagate its `AsyncLocal` values back to the caller. Per-test fixture
+instances retain their execution identity across runner setup/body boundaries.
+The legacy standalone default still creates an ID on first access. Existing
+`BDTestExecutionId` overrides remain supported for compatibility, but custom
+adapters should migrate to `BeginTest(id)`. `MarkTestAsStarted()` and
+`MarkTestAsComplete()` remain as obsolete compatibility shims.
 
 ### Before and after step hooks
 

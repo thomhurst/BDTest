@@ -17,17 +17,29 @@ public abstract class BDTestBase
     public virtual BDTestRun TestRun => BDTestRun.Default;
 
     private static readonly AsyncLocal<string> AsyncLocalBDTestExecutionId = new();
+    private readonly AsyncLocal<TestExecution> _execution = new();
+    // Some runners invoke setup and the body in separate execution contexts.
+    // Their per-test fixture instance retains the identity across that boundary.
+    private TestExecution _lastExecution;
+    private static readonly TestExecution EndedExecution = new(null, null) { Completed = 1 };
 
-    // Retained for existing custom adapters that do not call MarkTestAsStarted.
-    private static string StaticBDTestExecutionId
+    private sealed class TestExecution(string id, BDTestRun run)
     {
-        get =>
-            AsyncLocalBDTestExecutionId.Value ??
-            (AsyncLocalBDTestExecutionId.Value = Guid.NewGuid().ToString("N"));
-        set => AsyncLocalBDTestExecutionId.Value = value;
+        internal string Id { get; } = id;
+        internal BDTestRun Run { get; } = run;
+        internal int Completed;
     }
 
-    protected virtual string BDTestExecutionId => StaticBDTestExecutionId;
+    private TestExecution CurrentExecution => _execution.Value ?? Volatile.Read(ref _lastExecution);
+
+    // Retained for existing custom adapters that do not call MarkTestAsStarted.
+    private static string StaticBDTestExecutionId =>
+        AsyncLocalBDTestExecutionId.Value ??
+        (AsyncLocalBDTestExecutionId.Value = Guid.NewGuid().ToString("N"));
+
+    /// <summary>Gets the identity recorded by BeginTest, or a standalone flow identity.</summary>
+    /// <remarks>Custom adapters should call BeginTest instead of overriding this property.</remarks>
+    protected virtual string BDTestExecutionId => CurrentExecution?.Id ?? StaticBDTestExecutionId;
 
     /// <summary>Runs one scenario definition for each example and reports the rows as one outline.</summary>
     /// <remarks>Examples expose named public properties (for example, anonymous objects).
@@ -205,34 +217,88 @@ public abstract class BDTestBase
         return Task.CompletedTask;
     }
 
-    /// <summary>
-    /// Starts a new execution for a custom adapter that uses the default execution ID.
-    /// </summary>
+    /// <summary>Starts capture and context ownership for one framework test execution.</summary>
     /// <remarks>
-    /// Call synchronously in the execution flow that will run both setup and the test,
-    /// before starting any asynchronous work. Values assigned inside an async method
-    /// or Task.Run do not flow back to its caller. Call MarkTestAsComplete at teardown.
-    /// Framework adapters that override BDTestExecutionId supply their own identity.
+    /// Supply an ID unique to each data row, repeat and parallel test. Call synchronously
+    /// before asynchronous setup, and call EndTest at teardown. The ID remains stable
+    /// across async continuations. TUnit hooks must export their AsyncLocal values.
     /// </remarks>
-    protected void MarkTestAsStarted()
+    protected void BeginTest(string frameworkTestId)
     {
-        TestRun.ThrowIfDisposed();
-        TestOutputData.Run = TestRun;
-        StaticBDTestExecutionId = Guid.NewGuid().ToString("N");
+        if (string.IsNullOrWhiteSpace(frameworkTestId))
+            throw new ArgumentException("A test execution ID is required.", nameof(frameworkTestId));
+        var run = TestRun;
+        run.ThrowIfDisposed();
+        var execution = new TestExecution(frameworkTestId, run);
+        _execution.Value = execution;
+        Volatile.Write(ref _lastExecution, execution);
+        AsyncLocalBDTestExecutionId.Value = null;
+        TestOutputData.Run = run;
         TestOutputData.TestId = null;
-        TestOutputData.FrameworkExecutionId = BDTestExecutionId;
+        TestOutputData.ConstructionOutput = null;
+        TestOutputData.FrameworkExecutionId = frameworkTestId;
         Console.SetOut(TestOutputData.Instance);
     }
 
-    protected virtual void MarkTestAsComplete()
+    /// <summary>Completes this execution and clears its context and output state. Safe to repeat.</summary>
+    protected void EndTest()
     {
-        TestRun.Store.CompleteTest(BDTestExecutionId);
-        TestOutputData.Run = TestRun;
-        TestOutputData.ClearCurrentTaskData();
+        var execution = CurrentExecution;
+        if (execution == null || execution == EndedExecution) return;
+        if (Interlocked.Exchange(ref execution.Completed, 1) == 0)
+        {
+            RemoveExecutionContext(execution.Id);
+            execution.Run.Store.CompleteTest(execution.Id);
+            lock (execution.Run.Store.Gate)
+            {
+                if (execution.Run.Store.ScenariosByTestFrameworkId.TryGetValue(execution.Id, out var scenario))
+                    execution.Run.OutputBuffers.Remove(scenario.Guid);
+            }
+        }
+        // A tombstone prevents repeated teardown in this flow from completing a
+        // different parallel execution retained in the instance fallback.
+        _execution.Value = EndedExecution;
+        Interlocked.CompareExchange(ref _lastExecution, null, execution);
+        if (TestOutputData.Run == execution.Run && TestOutputData.FrameworkExecutionId == execution.Id)
+            ClearExecutionFlow();
+    }
+
+    internal virtual void RemoveExecutionContext(string executionId) { }
+
+    private static void ClearExecutionFlow()
+    {
         AsyncLocalBDTestExecutionId.Value = null;
         TestOutputData.TestId = null;
         TestOutputData.FrameworkExecutionId = null;
+        TestOutputData.ConstructionOutput = null;
         TestOutputData.Run = null;
+    }
+
+    [Obsolete("Call BeginTest(frameworkTestId) instead.")]
+    protected void MarkTestAsStarted()
+    {
+        TestRun.ThrowIfDisposed();
+        // Resolve legacy overrides after rotating the standalone ID, without
+        // reusing an execution from an earlier start in this flow.
+        _execution.Value = EndedExecution;
+        AsyncLocalBDTestExecutionId.Value = Guid.NewGuid().ToString("N");
+        BeginTest(BDTestExecutionId);
+    }
+
+    [Obsolete("Call EndTest() instead.")]
+    protected virtual void MarkTestAsComplete()
+    {
+        if (CurrentExecution != null)
+        {
+            EndTest();
+            return;
+        }
+        // Compatibility for standalone callers and adapters that never began a test.
+        RemoveExecutionContext(BDTestExecutionId);
+        TestRun.Store.CompleteTest(BDTestExecutionId);
+        TestOutputData.Run = TestRun;
+        TestOutputData.ClearCurrentTaskData();
+        ClearExecutionFlow();
     }
 
     public string GetStoryText()

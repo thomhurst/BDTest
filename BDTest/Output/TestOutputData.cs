@@ -25,7 +25,7 @@ internal class TestOutputData : TextWriter
     private static readonly AsyncLocal<string> AsyncLocalFrameworkExecutionId = new();
     public static string FrameworkExecutionId {
         get => AsyncLocalFrameworkExecutionId.Value;
-        set => AsyncLocalFrameworkExecutionId.Value = value;
+        internal set => AsyncLocalFrameworkExecutionId.Value = value;
     }
 
     private static readonly AsyncLocal<ScenarioConstructionOutput> AsyncLocalConstructionOutput = new();

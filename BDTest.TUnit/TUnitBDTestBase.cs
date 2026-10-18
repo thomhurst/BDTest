@@ -9,8 +9,6 @@ namespace BDTest.TUnit;
 public abstract class TUnitBDTestBase<TContext> : AbstractContextBDTestBase<TContext>
     where TContext : class, new()
 {
-    protected override string BDTestExecutionId => TUnitTestContext.Current?.Id ?? base.BDTestExecutionId;
-
     [Before(HookType.Class)]
     public static void SetupTUnitExceptions()
     {
@@ -26,9 +24,9 @@ public abstract class TUnitBDTestBase<TContext> : AbstractContextBDTestBase<TCon
 
     public void Setup()
     {
-        MarkTestAsStarted();
+        BeginTest(TUnitTestContext.Current?.Id ?? Guid.NewGuid().ToString("N"));
         // TUnit isolates hook execution contexts unless their AsyncLocal values are exported.
-        TUnitTestContext.Current!.AddAsyncLocalValues();
+        TUnitTestContext.Current?.AddAsyncLocalValues();
     }
 
     [After(HookType.Test)]
@@ -36,8 +34,7 @@ public abstract class TUnitBDTestBase<TContext> : AbstractContextBDTestBase<TCon
 
     public void TearDown()
     {
-        RemoveContext();
-        base.MarkTestAsComplete();
+        EndTest();
     }
 }
 

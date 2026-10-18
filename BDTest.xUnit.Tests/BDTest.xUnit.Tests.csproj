@@ -20,6 +20,7 @@
 
     <ItemGroup>
       <ProjectReference Include="..\BDTest.xUnit\BDTest.xUnit.csproj" />
+      <Compile Include="..\TestUtilities\LifecycleContract.cs" Link="Helpers\LifecycleContract.cs" />
     </ItemGroup>
 
   <ItemGroup>
