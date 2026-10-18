@@ -29,9 +29,17 @@ internal class DataRepository : IDataRepository
     {
         cancellationToken.ThrowIfCancellationRequested();
         // Check if it's already in-memory
-        var model = await _memoryCacheBdTestDataStore.GetTestData(id, cancellationToken);
+        var model = cacheResult
+            ? await _memoryCacheBdTestDataStore.GetTestDataAndRefreshRetention(id, cancellationToken)
+            : await _memoryCacheBdTestDataStore.GetTestData(id, cancellationToken);
 
-        if (model == null && _customDatastore != null)
+        if (model != null)
+        {
+            NormalizeReport(model);
+            return model;
+        }
+
+        if (_customDatastore != null)
         {
             // Search the backup persistent storage
             model = await _customDatastore.GetTestData(id, cancellationToken);
@@ -46,7 +54,7 @@ internal class DataRepository : IDataRepository
 
         if (cacheResult)
         {
-            // Single-report reads re-cache it to extend the time. Bulk reads must not retain full reports.
+            // Measure and admit only on a cache miss. Bulk reads must not retain full reports.
             await _memoryCacheBdTestDataStore.StoreTestData(id, model);
         }
 

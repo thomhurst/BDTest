@@ -183,6 +183,85 @@ public class ReportCacheCapacityTests
             async (_, _) => Assert.That(await repository.GetData(report.Id, default), Is.SameAs(report)));
     }
 
+    [TestCase(false)]
+    [TestCase(true)]
+    public async Task Cached_reads_reuse_the_size_measured_at_admission(bool persistent)
+    {
+        var report = Report("cached");
+        var store = persistent ? new PersistentStore() : null;
+        using var services = Services(Size(report), store);
+        var repository = services.GetRequiredService<IDataRepository>();
+        await repository.StoreData(report, report.Id);
+
+        // A deliberate mutation detects size measurement without relying on serializer internals.
+        // Callers must otherwise treat cached reports as immutable.
+        report.Tag = new string('x', 2000);
+        for (var read = 0; read < 3; read++)
+        {
+            Assert.That(await repository.GetData(report.Id, default), Is.SameAs(report));
+        }
+        Assert.That(await repository.GetDataForBulkRead(report.Id, default), Is.SameAs(report));
+        if (store != null) Assert.That(store.Reads, Is.Zero);
+    }
+
+    [Test]
+    public async Task Ordinary_cached_reads_extend_retention_but_bulk_reads_do_not()
+    {
+        using var services = Services(10000);
+        var options = services.GetRequiredService<BDTestReportServerOptions>();
+        options.ReportCacheRetention = TimeSpan.FromMilliseconds(500);
+        var repository = services.GetRequiredService<IDataRepository>();
+        await repository.StoreData(Report("ordinary"), "ordinary");
+        await repository.StoreData(Report("bulk"), "bulk");
+
+        // A longer refresh policy makes the expiry difference observable with one short wait.
+        options.ReportCacheRetention = TimeSpan.FromHours(1);
+        Assert.That(await repository.GetData("ordinary", default), Is.Not.Null);
+        Assert.That(await repository.GetDataForBulkRead("bulk", default), Is.Not.Null);
+
+        await Task.Delay(1000);
+
+        Assert.That(await repository.GetDataForBulkRead("ordinary", default), Is.Not.Null);
+        Assert.That(await repository.GetDataForBulkRead("bulk", default), Is.Null);
+    }
+
+    [Test]
+    public async Task Cached_reads_of_10000_scenarios_allocate_less_than_repeated_size_measurement()
+    {
+        var report = Report("large-run");
+        report.Scenarios = Enumerable.Range(0, 10000).Select(index => new Scenario
+        {
+            Guid = index.ToString(),
+            Steps = new List<Step>()
+        }).ToList();
+        using var services = Services(Size(report) * 2);
+        var repository = services.GetRequiredService<IDataRepository>();
+        await repository.StoreData(report, report.Id);
+        using var hostCache = new MemoryCache(new MemoryCacheOptions());
+        using var baselineCache = new MemoryCacheBdTestDataStore(hostCache,
+            services.GetRequiredService<BDTestReportServerOptions>());
+
+        // StoreTestData reproduces the full size-measurement/replacement work of the old read path.
+        Action baseline = () => baselineCache.StoreTestData(report.Id, report).GetAwaiter().GetResult();
+        Action read = () => repository.GetData(report.Id, default).GetAwaiter().GetResult();
+        baseline();
+        read();
+        var baselineBytes = AllocatedBytesPerCall(baseline);
+        var cachedReadBytes = AllocatedBytesPerCall(read);
+        TestContext.Out.WriteLine($"10,000 scenarios: repeated size measurement {baselineBytes:N0} bytes/read; cached read {cachedReadBytes:N0} bytes/read.");
+
+        Assert.That(cachedReadBytes, Is.LessThan(baselineBytes / 10),
+            "A cache hit must avoid report-wide serialization allocations.");
+    }
+
+    private static long AllocatedBytesPerCall(Action action)
+    {
+        const int iterations = 5;
+        var before = GC.GetAllocatedBytesForCurrentThread();
+        for (var iteration = 0; iteration < iterations; iteration++) action();
+        return (GC.GetAllocatedBytesForCurrentThread() - before) / iterations;
+    }
+
     [Test]
     public async Task Reports_expire_after_configured_retention_in_cache_only_mode()
     {
