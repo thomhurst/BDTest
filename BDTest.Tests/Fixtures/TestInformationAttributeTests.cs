@@ -12,7 +12,7 @@ namespace BDTest.Tests.Fixtures;
 public class TestInformationAttributeTests : BDTestBase
 {
     [SetUp]
-    public void BindMetadata() => BeginTest(TestContext.CurrentContext.Test.ID, global::NUnit.Framework.Internal.TestExecutionContext.CurrentContext.CurrentTest.Method.MethodInfo);
+    public void BindMetadata() => BeginTest(TestContext.CurrentContext.Test.ID, Required(global::NUnit.Framework.Internal.TestExecutionContext.CurrentContext.CurrentTest.Method).MethodInfo);
 
     [TearDown]
     public void FinishExecution() => EndTest();
@@ -31,7 +31,7 @@ public class TestInformationAttributeTests : BDTestBase
             .BDTestAsync();
             
         Assert.That(scenario.CustomTestInformation, Is.Empty);
-        Assert.That(JsonHelper.GetTestDynamicJsonObject().SelectToken("$.Scenarios[0].CustomTestInformation").ToString(), Is.EqualTo("[]"));
+        Assert.That(Required(JsonHelper.GetTestDynamicJsonObject().SelectToken("$.Scenarios[0].CustomTestInformation")).ToString(), Is.EqualTo("[]"));
     }
 
     [Test]
@@ -43,7 +43,7 @@ public class TestInformationAttributeTests : BDTestBase
             .BDTestAsync();
             
         Assert.That(scenario.CustomTestInformation.First().Print(), Is.EqualTo($"{nameof(TestInformationAttribute)} - Testing 1 Information Attribute"));
-        Assert.That(JsonHelper.GetTestDynamicJsonObject().SelectToken("$.Scenarios[0].CustomTestInformation[0]").ToString(), Is.EqualTo("Testing 1 Information Attribute"));
+        Assert.That(Required(JsonHelper.GetTestDynamicJsonObject().SelectToken("$.Scenarios[0].CustomTestInformation[0]")).ToString(), Is.EqualTo("Testing 1 Information Attribute"));
     }
         
     [Test]
@@ -56,8 +56,8 @@ public class TestInformationAttributeTests : BDTestBase
             .BDTestAsync();
             
         Assert.That(scenario.CustomTestInformation.First().Print(), Is.EqualTo($"{nameof(TestInformationAttribute)} - Testing 1 Information Attribute"));
-        Assert.That(JsonHelper.GetTestDynamicJsonObject().SelectToken("$.Scenarios[0].CustomTestInformation[0]").ToString(), Is.EqualTo("Testing 1 Information Attribute"));
+        Assert.That(Required(JsonHelper.GetTestDynamicJsonObject().SelectToken("$.Scenarios[0].CustomTestInformation[0]")).ToString(), Is.EqualTo("Testing 1 Information Attribute"));
         Assert.That(scenario.CustomTestInformation[1].Print(), Is.EqualTo($"{nameof(CustomInformationAttribute)} - Testing 2 Information Attributes"));
-        Assert.That(JsonHelper.GetTestDynamicJsonObject().SelectToken("$.Scenarios[0].CustomTestInformation[1]").ToString(), Is.EqualTo("Testing 2 Information Attributes"));
+        Assert.That(Required(JsonHelper.GetTestDynamicJsonObject().SelectToken("$.Scenarios[0].CustomTestInformation[1]")).ToString(), Is.EqualTo("Testing 2 Information Attributes"));
     }
 }

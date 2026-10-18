@@ -64,8 +64,8 @@ public class StatusLifecycleTests
         Assert.That(ReportJson.DeserializeObject<Status>(json), Is.EqualTo(status));
         var scenario = ReportJson.DeserializeObject<Scenario>($"{{\"Status\":{json},\"Steps\":[{{\"Status\":{json}}}]}}");
         var restored = JObject.Parse(ReportJson.SerializeObject(scenario));
-        Assert.That((string)restored["Status"], Is.EqualTo(status.ToString()));
-        Assert.That((string)restored["Steps"][0]["Status"], Is.EqualTo(status.ToString()));
+        Assert.That((string?)restored["Status"], Is.EqualTo(status.ToString()));
+        Assert.That((string?)Required(Required(restored["Steps"])[0])["Status"], Is.EqualTo(status.ToString()));
     }
 
     [TestCase(Status.NotRun, "Not run")]
@@ -91,7 +91,7 @@ public class StatusLifecycleTests
         private readonly string _id = Guid.NewGuid().ToString();
         protected override string BDTestExecutionId => _id;
         public List<(Status, Status, Status)> RunningStatuses { get; } = new();
-        public Status[] ResetStatuses { get; private set; }
+        public Status[] ResetStatuses { get; private set; } = [];
         public Task<Scenario> Run() => When(() => FailOnce()).Then(() => NoOp()).BDTestAsync();
         public void FailOnce()
         {
@@ -105,6 +105,6 @@ public class StatusLifecycleTests
             ResetStatuses = new[] { scenario.Status }.Concat(scenario.Steps.Select(step => step.Status)).ToArray();
             return Task.CompletedTask;
         }
-        public void Complete() => MarkTestAsComplete();
+        public void Complete() => BDTest.Tests.Helpers.LegacyLifecycle.Complete(this);
     }
 }

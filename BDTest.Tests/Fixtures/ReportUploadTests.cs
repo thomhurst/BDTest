@@ -60,7 +60,7 @@ public partial class ReportUploadTests
         var random = new byte[16_384];
         new Random(882).NextBytes(random);
         using var request = GzipRequest(ReportJson.SerializeObject(new { Tag = Convert.ToBase64String(random) }), chunked);
-        Assert.That(request.Content.Headers.ContentLength, Is.GreaterThan(server.Options.MaxCompressedUploadBytes));
+        Assert.That(Required(request.Content).Headers.ContentLength, Is.GreaterThan(server.Options.MaxCompressedUploadBytes));
         using var response = await server.Client.SendAsync(request);
 
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.RequestEntityTooLarge));
@@ -82,7 +82,7 @@ public partial class ReportUploadTests
             options.MaxUploadBytes = 256;
         });
         using var request = GzipRequest(ReportJson.SerializeObject(new { Tag = new string('x', 16_384) }), chunked, utf16);
-        Assert.That(request.Content.Headers.ContentLength, Is.LessThan(server.Options.MaxCompressedUploadBytes));
+        Assert.That(Required(request.Content).Headers.ContentLength, Is.LessThan(server.Options.MaxCompressedUploadBytes));
         using var response = await server.Client.SendAsync(request);
 
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.RequestEntityTooLarge));
@@ -155,13 +155,13 @@ public partial class ReportUploadTests
     {
         await using var server = await UploadServer.Start(options => options.MaxCompressedUploadBytes = 1024);
         using var request = GzipRequest("{}", chunked: true);
-        var gzipBytes = await request.Content.ReadAsByteArrayAsync();
-        request.Content.Dispose();
+        var gzipBytes = await Required(request.Content).ReadAsByteArrayAsync();
+        Required(request.Content).Dispose();
         var padded = new byte[16_384];
         gzipBytes.CopyTo(padded, 0);
         request.Content = new ByteArrayContent(padded);
-        request.Content.Headers.ContentType = new("application/json");
-        request.Content.Headers.ContentEncoding.Add("gzip");
+        Required(request.Content).Headers.ContentType = new("application/json");
+        Required(request.Content).Headers.ContentEncoding.Add("gzip");
         using var response = await server.Client.SendAsync(request);
 
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.RequestEntityTooLarge));
@@ -199,7 +199,7 @@ public partial class ReportUploadTests
         request.Headers.TransferEncodingChunked = chunked;
         await using var server = await UploadServer.Start(options =>
         {
-            options.MaxCompressedUploadBytes = request.Content.Headers.ContentLength.Value;
+            options.MaxCompressedUploadBytes = Required(request.Content).Headers.ContentLength ?? throw new AssertionException("Expected upload content length.");
             options.MaxUploadBytes = Encoding.UTF8.GetByteCount(json);
         });
         using var response = await server.Client.SendAsync(request);
@@ -216,8 +216,8 @@ public partial class ReportUploadTests
     {
         await using var server = await UploadServer.Start();
         using var request = GzipRequest("{}");
-        request.Content.Headers.ContentEncoding.Clear();
-        request.Content.Headers.TryAddWithoutValidation("Content-Encoding", encoding);
+        Required(request.Content).Headers.ContentEncoding.Clear();
+        Required(request.Content).Headers.TryAddWithoutValidation("Content-Encoding", encoding);
         using var response = await server.Client.SendAsync(request);
 
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.UnsupportedMediaType));
@@ -232,9 +232,9 @@ public partial class ReportUploadTests
         using var request = GzipRequest(body);
         if (!compress)
         {
-            request.Content.Dispose();
+            Required(request.Content).Dispose();
             request.Content = Json(body);
-            request.Content.Headers.ContentEncoding.Add("gzip");
+            Required(request.Content).Headers.ContentEncoding.Add("gzip");
         }
         using var response = await server.Client.SendAsync(request);
 
@@ -284,7 +284,7 @@ public partial class ReportUploadTests
             await context.Response.WriteAsync(context.Request.Headers.ContentEncoding + ":" + await reader.ReadToEndAsync());
         }));
         using var request = new HttpRequestMessage(HttpMethod.Post, "host") { Content = Json("untouched") };
-        request.Content.Headers.ContentEncoding.Add("gzip");
+        Required(request.Content).Headers.ContentEncoding.Add("gzip");
         using var response = await server.Client.SendAsync(request);
 
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
@@ -317,8 +317,8 @@ public partial class ReportUploadTests
         {
             Content = new ByteArrayContent(compressed.ToArray())
         };
-        request.Content.Headers.ContentType = new("application/json") { CharSet = utf16 ? "utf-16" : "utf-8" };
-        request.Content.Headers.ContentEncoding.Add("gzip");
+        Required(request.Content).Headers.ContentType = new("application/json") { CharSet = utf16 ? "utf-16" : "utf-8" };
+        Required(request.Content).Headers.ContentEncoding.Add("gzip");
         request.Headers.Add("X-BDTest-Upload-Key", Key);
         request.Headers.TransferEncodingChunked = chunked;
         request.Headers.ExpectContinue = true;
@@ -443,7 +443,7 @@ public partial class ReportUploadTests
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
         Assert.That(response.Headers.GetValues("Content-Security-Policy").Single(),
             Does.Contain("img-src 'self' data: https: http://images.example;"));
-        var cache = response.Headers.CacheControl;
+        var cache = Required(response.Headers.CacheControl);
         Assert.That(cache, Is.Not.Null);
         Assert.That(cache.NoStore, Is.EqualTo(!isAsset));
         if (isAsset)
@@ -488,7 +488,7 @@ public partial class ReportUploadTests
     public async Task NullImageSourcesAreRejected()
     {
         await using var server = await UploadServer.Start();
-        Assert.Throws<ArgumentNullException>(() => server.Options.AdditionalImageSources = null);
+        Assert.Throws<ArgumentNullException>(() => server.Options.AdditionalImageSources = null!);
         Assert.That(server.Options.AdditionalImageSources, Is.Empty);
     }
 
@@ -496,7 +496,7 @@ public partial class ReportUploadTests
     public async Task ReportScriptsUseTheResponseNonceAndRequestsDoNotReuseIt()
     {
         await using var server = await UploadServer.Start();
-        string previousNonce = null;
+        string? previousNonce = null;
         for (var i = 0; i < 2; i++)
         {
             using var response = await server.Client.GetAsync("bdtest/report/missing/summary");
@@ -638,8 +638,8 @@ public partial class ReportUploadTests
         var json = JObject.Parse(HistoricalReportFixture.ReadJson());
         if (references)
         {
-            var steps = (JArray)json["Scenarios"][0]["Steps"];
-            steps.Add(new JObject { ["$ref"] = steps[0].Value<string>("$id") });
+            var steps = (JArray)Required(json.SelectToken("Scenarios[0].Steps"));
+            steps.Add(new JObject { ["$ref"] = Required(steps[0]).Value<string>("$id") });
         }
         using var upload = await server.Post(json.ToString());
         Assert.That(upload.StatusCode, Is.EqualTo(HttpStatusCode.OK));
@@ -1003,7 +1003,7 @@ public partial class ReportUploadTests
         }
     }
 
-    private static string Report(string id = null) => ReportJson.SerializeObject(new
+    private static string Report(string? id = null) => ReportJson.SerializeObject(new
     {
         id, Tag = "uploaded", TestTimer = new { TestsStartedAt = DateTime.UtcNow, TestsFinishedAt = DateTime.UtcNow }
     });
@@ -1017,9 +1017,9 @@ public partial class ReportUploadTests
         public RecordingStore Store { get; } = store;
         public BDTestReportOptions Options => app.Services.GetRequiredService<IOptions<BDTestReportOptions>>().Value;
 
-        public static async Task<UploadServer> Start(Action<BDTestReportOptions> configure = null, Action<WebApplication> configureApp = null,
-            Action connectionClosed = null, Action<System.Text.Json.JsonSerializerOptions> configureJson = null,
-            Action<IServiceCollection> configureServices = null)
+        public static async Task<UploadServer> Start(Action<BDTestReportOptions>? configure = null, Action<WebApplication>? configureApp = null,
+            Action? connectionClosed = null, Action<System.Text.Json.JsonSerializerOptions>? configureJson = null,
+            Action<IServiceCollection>? configureServices = null)
         {
             var builder = WebApplication.CreateBuilder();
             builder.Logging.ClearProviders();
@@ -1055,7 +1055,7 @@ public partial class ReportUploadTests
             return new UploadServer(app, new HttpClient(new HttpClientHandler { AllowAutoRedirect = false }) { BaseAddress = new Uri(app.Urls.Single()) }, store);
         }
 
-        public async Task<HttpResponseMessage> Post(string body, string key = Key)
+        public async Task<HttpResponseMessage> Post(string body, string? key = Key)
         {
             using var request = new HttpRequestMessage(HttpMethod.Post, "bdtest/data") { Content = Json(body) };
             if (key != null) request.Headers.Add("X-BDTest-Upload-Key", key);
@@ -1074,7 +1074,7 @@ public partial class ReportUploadTests
         public ConcurrentDictionary<string, BDTestOutputModel> Data { get; } = new();
         public ConcurrentDictionary<string, TestRunSummary> Summaries { get; } = new();
         public ConcurrentBag<BDTestOutputModel> Received { get; } = new();
-        public Task<BDTestOutputModel> GetTestData(string id, CancellationToken cancellationToken) => Task.FromResult(Data.GetValueOrDefault(id));
+        public Task<BDTestOutputModel?> GetTestData(string id, CancellationToken cancellationToken) => Task.FromResult(Data.GetValueOrDefault(id));
         public Task StoreTestData(string id, BDTestOutputModel data) { Data[id] = data; return Task.CompletedTask; }
         public Task DeleteTestData(string id) { Data.TryRemove(id, out _); return Task.CompletedTask; }
         public Task<IEnumerable<TestRunSummary>> GetAllTestRunRecords() => Task.FromResult<IEnumerable<TestRunSummary>>(Summaries.Values.ToArray());

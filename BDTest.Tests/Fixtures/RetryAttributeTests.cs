@@ -1,4 +1,4 @@
-﻿using BDTest.Attributes;
+using BDTest.Attributes;
 using BDTest.Test;
 using NUnit.Framework;
 
@@ -9,7 +9,7 @@ public class RetryAttributeTests
     public class RetryOnScenarioTests : BDTestBase
     {
         [SetUp]
-        public void BindMetadata() => BeginTest(TestContext.CurrentContext.Test.ID, global::NUnit.Framework.Internal.TestExecutionContext.CurrentContext.CurrentTest.Method.MethodInfo);
+        public void BindMetadata() => BeginTest(TestContext.CurrentContext.Test.ID, Required(global::NUnit.Framework.Internal.TestExecutionContext.CurrentContext.CurrentTest.Method).MethodInfo);
         [TearDown]
         public void FinishExecution() => EndTest();
         private int _counter;
@@ -60,7 +60,7 @@ public class RetryAttributeTests
     public class RetryOnStoryTests : BDTestBase
     {
         [SetUp]
-        public void BindMetadata() => BeginTest(TestContext.CurrentContext.Test.ID, global::NUnit.Framework.Internal.TestExecutionContext.CurrentContext.CurrentTest.Method.MethodInfo);
+        public void BindMetadata() => BeginTest(TestContext.CurrentContext.Test.ID, Required(global::NUnit.Framework.Internal.TestExecutionContext.CurrentContext.CurrentTest.Method).MethodInfo);
         [TearDown]
         public void FinishExecution() => EndTest();
         private int _counter;

@@ -41,7 +41,7 @@ public class ReportTagTests
         var result = (ViewResult)(stories
             ? await controller.Stories("run", CancellationToken.None)
             : await controller.AllScenarios("run", CancellationToken.None));
-        var groups = (IGrouping<string, Scenario>[])result.Model;
+        var groups = (IGrouping<string, Scenario>[])Required(result.Model);
 
         Assert.That(groups.SelectMany(group => group).Select(scenario => scenario.Guid), Is.EquivalentTo(expected));
         Assert.That(ReportJson.SerializeObject(repository.Report), Is.EqualTo(original), "Filtering must not mutate cached reports.");
@@ -81,7 +81,7 @@ public class ReportTagTests
 
     private sealed class Repository : IDataRepository
     {
-        public BDTestOutputModel Report { get; } = new()
+        public BDTestOutputModel? Report { get; } = new()
         {
             Scenarios =
             [
@@ -92,16 +92,16 @@ public class ReportTagTests
             ]
         };
 
-        private static Scenario Create(string id, string status, string tag) =>
+        private static Scenario Create(string id, string status, string? tag) =>
             ReportJson.DeserializeObject<Scenario>(ReportJson.SerializeObject(new
             {
                 Guid = id, Status = status, Tags = tag == null ? null : new[] { tag },
                 ScenarioText = "Shared scenario", StoryText = "Shared story", Steps = Array.Empty<object>()
             }));
 
-        public Task<BDTestOutputModel> GetData(string id, CancellationToken cancellationToken) => Task.FromResult(Report);
-        public Task<BDTestOutputModel> GetDataForBulkRead(string id, CancellationToken cancellationToken) => GetData(id, cancellationToken);
-        public async Task<Stream> OpenReadAsync(string id, CancellationToken cancellationToken)
+        public Task<BDTestOutputModel?> GetData(string id, CancellationToken cancellationToken) => Task.FromResult(Report);
+        public Task<BDTestOutputModel?> GetDataForBulkRead(string id, CancellationToken cancellationToken) => GetData(id, cancellationToken);
+        public async Task<Stream?> OpenReadAsync(string id, CancellationToken cancellationToken)
         {
             var model = await GetData(id, cancellationToken);
             return model == null ? null : new MemoryStream(System.Text.Encoding.UTF8.GetBytes(BDTest.Helpers.BDTestJsonHelper.Serialize(model)));

@@ -15,12 +15,12 @@ namespace BDTest.Tests.Fixtures;
 public class StepTextGenerationTests : AbstractContextBDTestBase<StepTextGenerationTests.TextContext>
 {
     [SetUp]
-    public void BindMetadata() => BeginTest(TestContext.CurrentContext.Test.ID, global::NUnit.Framework.Internal.TestExecutionContext.CurrentContext.CurrentTest.Method.MethodInfo);
+    public void BindMetadata() => BeginTest(TestContext.CurrentContext.Test.ID, Required(global::NUnit.Framework.Internal.TestExecutionContext.CurrentContext.CurrentTest.Method).MethodInfo);
 
     [TearDown]
     public void FinishExecution() => EndTest();
 
-    private static readonly MethodInfo DisplayMethod = typeof(StepTextGenerationTests).GetMethod(nameof(Display));
+    private static readonly MethodInfo DisplayMethod = Required(typeof(StepTextGenerationTests).GetMethod(nameof(Display)));
     private readonly string _executionId = Guid.NewGuid().ToString();
     protected override string BDTestExecutionId => _executionId;
 

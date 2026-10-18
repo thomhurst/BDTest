@@ -13,9 +13,9 @@ namespace BDTest.Tests.Fixtures;
 [TestFixture(true)]
 public class BulkReportTests(bool flakiness)
 {
-    private ServiceProvider _services;
-    private RecordingDataStore _store;
-    private BDTestController _controller;
+    private ServiceProvider _services = null!; // Assigned by NUnit SetUp.
+    private RecordingDataStore _store = null!; // Assigned by NUnit SetUp.
+    private BDTestController _controller = null!; // Assigned by NUnit SetUp.
 
     [SetUp]
     public void SetUp()
@@ -38,7 +38,7 @@ public class BulkReportTests(bool flakiness)
 
     [TestCase(null)]
     [TestCase("")]
-    public async Task No_selection_redirects_without_reading_storage(string ids)
+    public async Task No_selection_redirects_without_reading_storage(string? ids)
     {
         Assert.That(await Read(ids), Is.TypeOf<RedirectToActionResult>());
         Assert.That(_store.ReadIds, Is.Empty);
@@ -86,7 +86,7 @@ public class BulkReportTests(bool flakiness)
         var ids = Enumerable.Range(0, 50).Select(i => maximumLength ? $"run-{i}".PadRight(128, 'a') : $"run-{i}").ToArray();
         var result = (ViewResult)await Read(string.Join(",", ids));
         Assert.That(result.ViewName, Is.EqualTo(flakiness ? "MultipleTestRunsFlakiness" : "MultipleTestRunsTimes"));
-        Assert.That(((IEnumerable<BDTestOutputModel>)result.Model).Select(x => x.Id), Is.EqualTo(ids));
+        Assert.That(((IEnumerable<BDTestOutputModel>)Required(result.Model)).Select(x => x.Id), Is.EqualTo(ids));
         Assert.That(_store.ReadIds, Is.EquivalentTo(ids));
         var repository = _services.GetRequiredService<IDataRepository>();
         _store.MissingIds.UnionWith(ids);
@@ -102,7 +102,7 @@ public class BulkReportTests(bool flakiness)
     {
         var ids = new[] { Guid.NewGuid().ToString("N"), Guid.NewGuid().ToString("D"), "build_1.2-Release", new string('a', 128) };
         var result = (ViewResult)await Read(string.Join(",", ids.Concat(ids)));
-        Assert.That(((IEnumerable<BDTestOutputModel>)result.Model).Select(x => x.Id), Is.EqualTo(ids));
+        Assert.That(((IEnumerable<BDTestOutputModel>)Required(result.Model)).Select(x => x.Id), Is.EqualTo(ids));
         Assert.That(_store.ReadIds, Is.EquivalentTo(ids));
     }
 
@@ -111,7 +111,7 @@ public class BulkReportTests(bool flakiness)
     {
         _store.MissingIds.Add("missing");
         var result = (ViewResult)await Read("missing,found");
-        Assert.That(((IEnumerable<BDTestOutputModel>)result.Model).Select(x => x.Id), Is.EqualTo(new[] { "found" }));
+        Assert.That(((IEnumerable<BDTestOutputModel>)Required(result.Model)).Select(x => x.Id), Is.EqualTo(new[] { "found" }));
         Assert.That(((ViewResult)await Read("missing")).ViewName, Is.EqualTo("NotFoundMultiple"));
     }
 
@@ -119,13 +119,13 @@ public class BulkReportTests(bool flakiness)
     public async Task Bulk_read_reuses_cached_report_without_reapplying_cache_policy()
     {
         var repository = _services.GetRequiredService<IDataRepository>();
-        var cached = await repository.GetData("cached", default);
+        var cached = Required(await repository.GetData("cached", default));
         // Re-caching this now-oversized model would remove it from the bounded cache.
         cached.Tag = new string('x', 2000);
         for (var iteration = 0; iteration < 2; iteration++)
         {
             var result = (ViewResult)await Read("cached");
-            Assert.That(((IEnumerable<BDTestOutputModel>)result.Model).Single(), Is.SameAs(cached));
+            Assert.That(((IEnumerable<BDTestOutputModel>)Required(result.Model)).Single(), Is.SameAs(cached));
         }
         Assert.That(_store.ReadIds, Has.Count.EqualTo(1));
     }
@@ -181,7 +181,7 @@ public class BulkReportTests(bool flakiness)
             {
                 release.SetResult();
                 var result = (ViewResult)await read;
-                Assert.That((IEnumerable<BDTestOutputModel>)result.Model, Has.Count.EqualTo(12));
+                Assert.That((IEnumerable<BDTestOutputModel>)Required(result.Model), Has.Count.EqualTo(12));
             }
         }
         finally
@@ -192,7 +192,7 @@ public class BulkReportTests(bool flakiness)
         }
     }
 
-    private Task<IActionResult> Read(string ids, CancellationToken token = default) => flakiness
+    private Task<IActionResult> Read(string? ids, CancellationToken token = default) => flakiness
         ? _controller.TestRunFlakiness(ids, token)
         : _controller.TestRunTimes(ids, token);
 
@@ -200,8 +200,8 @@ public class BulkReportTests(bool flakiness)
     {
         public System.Collections.Concurrent.ConcurrentBag<string> ReadIds { get; } = [];
         public HashSet<string> MissingIds { get; } = [];
-        public Func<string, CancellationToken, Task<BDTestOutputModel>> Read { get; set; }
-        public Task<BDTestOutputModel> GetTestData(string id, CancellationToken cancellationToken)
+        public Func<string, CancellationToken, Task<BDTestOutputModel?>>? Read { get; set; }
+        public Task<BDTestOutputModel?> GetTestData(string id, CancellationToken cancellationToken)
         {
             ReadIds.Add(id);
             return Read?.Invoke(id, cancellationToken)

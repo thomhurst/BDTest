@@ -12,6 +12,7 @@ compiled views, and static web asset packaging without per-file content override
 - `BDTest.Pipeline` and `BDTest.Pipeline.Tests` (the initial rollout in #689).
 - `BDTest.Example` and `BDTest.ReportGenerator.RazorServer`.
 - `BDTest.xUnit.Tests`, `BDTest.MSTest.Tests`, and `BDTest.TUnit.Tests`.
+- `BDTest.Tests`, including shared report JSON and historical report fixtures (#922).
 - `BDTest.Targets.Tests` and `BDTest.Legacy.Tests` (modern and legacy asset coverage).
 - `BDTest.SourceGenerator`, `BDTest.Analyzers`, and their test projects. These
   packages already used nullable analysis; they now also treat warnings as errors.
@@ -22,6 +23,15 @@ nullable. Reflection and process helpers fail explicitly when required fixture
 metadata or processes are missing. Source-generator tests retain nullable argument
 values; their dynamically compiled input strings keep independent compilation
 settings so existing consumer compatibility tests remain unchanged.
+
+The core NUnit suite models optional callback state and missing repository records
+as nullable. Required reflection metadata, JSON properties, HTTP content, and
+exception assertion results fail explicitly when absent. Intentional null inputs
+still exercise runtime guards. Context capture tests verify uniqueness in fixture
+teardown instead of using obsolete NUnit ordering attributes, preserving parallel
+fixture execution. Compatibility tests access obsolete settings and standalone
+lifecycle bridges through reflection, preserving their behavior without disabling
+obsolete diagnostics.
 
 The sample host models missing Azure configuration, missing report/attachment
 blobs, nullable deserialization results, and unauthenticated users explicitly.
@@ -45,13 +55,11 @@ Do not run the publishing pipeline in `Production` locally.
 #855 was split into sibling deliverables under roadmap #860. The initial scope
 is #919. The remaining scopes are:
 
-1. #922: `BDTest.Tests` and shared historical report fixtures. Resolve nullable
-   diagnostics and obsolete API usage while preserving regression coverage.
-2. #920: `BDTest` and the NUnit, xUnit, MSTest, and TUnit adapters. Annotate public
+1. #920: `BDTest` and the NUnit, xUnit, MSTest, and TUnit adapters. Annotate public
    inputs, returns, contexts, and serialized models to match runtime behavior.
    Preserve accepted nulls, historical reports, and target frameworks. Update
    consumer documentation and migration notes for nullable contract changes.
-3. #921: `BDTest.Razor.Reports` and `BDTest.ReportGenerator.Tests`. Review options,
+2. #921: `BDTest.Razor.Reports` and `BDTest.ReportGenerator.Tests`. Review options,
    storage, request values, serialized models, and views. Complete the rollout by
    making both settings unconditional in `Directory.Build.props` and removing
    redundant per-project settings and remaining per-file nullable directives.
@@ -59,8 +67,11 @@ is #919. The remaining scopes are:
 The remaining projects keep their existing diagnostic settings in this change.
 
 Keep the existing `CS1591` suppression for partially documented public APIs;
-completing XML documentation is separate from nullable analysis. Shared test
-files retain nullable directives until every consuming project enables analysis.
+completing XML documentation is separate from nullable analysis. The shared
+exception registration probe now inherits nullable analysis from every consumer;
+its per-file directive is no longer needed. The historical report fixture keeps an
+explicit nullable context until the report host test project enables nullable
+analysis in #921.
 Do not disable diagnostic categories or blanket-annotate public APIs to complete
 these scopes.
 

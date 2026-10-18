@@ -1,4 +1,4 @@
-﻿using BDTest.Attributes;
+using BDTest.Attributes;
 using BDTest.Exceptions;
 using BDTest.Maps;
 using BDTest.Helpers;
@@ -13,11 +13,11 @@ namespace BDTest.Tests.Fixtures;
 public class ScenarioOutlineTests : AbstractContextBDTestBase<ScenarioOutlineTests.RowContext>
 {
     [SetUp]
-    public void BindMetadata() => BeginTest(TestContext.CurrentContext.Test.ID, global::NUnit.Framework.Internal.TestExecutionContext.CurrentContext.CurrentTest.Method.MethodInfo);
+    public void BindMetadata() => BeginTest(TestContext.CurrentContext.Test.ID, Required(global::NUnit.Framework.Internal.TestExecutionContext.CurrentContext.CurrentTest.Method).MethodInfo);
 
     [TearDown]
     public void FinishExecution() => EndTest();
-    private Action<BDTestContext<RowContext>> Configure { get; set; }
+    private Action<BDTestContext<RowContext>>? Configure { get; set; }
     protected override void ConfigureContext(BDTestContext<RowContext> context) => Configure?.Invoke(context);
 
     private readonly string _executionId = Guid.NewGuid().ToString();
@@ -42,25 +42,25 @@ public class ScenarioOutlineTests : AbstractContextBDTestBase<ScenarioOutlineTes
         });
     }
 
-    private string _retryHook;
-    private Exception _retryHookFailure;
+    private string? _retryHook;
+    private Exception? _retryHookFailure;
 
     public override Task OnBeforeRetry()
     {
-        if (_retryHook == "before") throw _retryHookFailure;
+        if (_retryHook == "before") throw Required(_retryHookFailure);
         return Task.CompletedTask;
     }
 
     [BDTestRetrySetUp]
     public void RetrySetup()
     {
-        if (_retryHook == "setup") throw _retryHookFailure;
+        if (_retryHook == "setup") throw Required(_retryHookFailure);
     }
 
     [BDTestRetryTearDown]
     public void RetryTeardown()
     {
-        if (_retryHook == "teardown") throw _retryHookFailure;
+        if (_retryHook == "teardown") throw Required(_retryHookFailure);
     }
 
     [TestCase("before", false), TestCase("setup", false), TestCase("teardown", false)]
@@ -231,7 +231,7 @@ public class ScenarioOutlineTests : AbstractContextBDTestBase<ScenarioOutlineTes
     {
         var builder = ScenarioOutline("Outcomes", new[] { new { Outcome = first }, new { Outcome = second } },
             row => Given(() => Outcome(row.Outcome)).When(() => NoOp()).Then(() => NoOp()));
-        Exception thrown = null;
+        Exception? thrown = null;
         try { await builder; }
         catch (Exception exception) { thrown = exception; }
         var outline = BDTestUtil.GetScenarios().Single(x => x.FrameworkTestId == _executionId);
@@ -251,7 +251,7 @@ public class ScenarioOutlineTests : AbstractContextBDTestBase<ScenarioOutlineTes
         Assert.That(outline.Examples.Select(row => row.RetryCount), Is.EqualTo(new[] { 1, 0 }));
         Assert.That(outline.Examples.All(row => row.Status == Status.Passed), Is.True);
         Assert.That(_contexts.Distinct().Count(), Is.EqualTo(3));
-        Assert.That(amendmentScenarios, Is.EqualTo(new Scenario[] { null, outline.Examples[0], null }));
+        Assert.That(amendmentScenarios, Is.EqualTo(new Scenario?[] { null, outline.Examples[0], null }));
         var html = BDTestHtmlHelper.GetTestHtmlReport();
         var table = System.Text.RegularExpressions.Regex.Match(html,
             $"<table class=\"examples\" id=\"examples-{outline.Guid}\">.*?</table>",
@@ -277,7 +277,7 @@ public class ScenarioOutlineTests : AbstractContextBDTestBase<ScenarioOutlineTes
         {
             if (duringContext) WriteConstructionOutput(++contextCount, fail);
         };
-        Exception thrown = null;
+        Exception? thrown = null;
         try
         {
             await ScenarioOutline("Explicit construction output", new[] { new { Value = 1 }, new { Value = 2 }, new { Value = 3 } }, row =>
@@ -357,7 +357,7 @@ public class ScenarioOutlineTests : AbstractContextBDTestBase<ScenarioOutlineTes
     {
         var foreign = new SkipCapture();
         var unrelated = foreign.Given(() => NoOp()).When(() => NoOp()).Then(() => NoOp());
-        RunnableStepBuilder rejected = null;
+        RunnableStepBuilder? rejected = null;
         try
         {
             var exception = await Assert.ThrowsAsync<InvalidOperationException>(async () => await ScenarioOutline("Foreign builder",
@@ -365,7 +365,7 @@ public class ScenarioOutlineTests : AbstractContextBDTestBase<ScenarioOutlineTes
                     ? rejected = foreign.Given(() => NoOp()).When(() => NoOp()).Then(() => NoOp())
                     : Given(() => Record(row.Value)).When(() => NoOp()).Then(() => NoOp())));
 
-            Assert.That(exception.Message, Is.EqualTo("Example scenarios must be built by the outline's test instance."));
+            Assert.That(Required(exception).Message, Is.EqualTo("Example scenarios must be built by the outline's test instance."));
             var outline = BDTestUtil.GetScenarios().Single(x => x.FrameworkTestId == _executionId);
             Assert.That(outline.Examples.Select(row => row.Status), Is.EqualTo(new[] { Status.Failed, Status.Passed }));
             Assert.That(_visited, Is.EqualTo(new[] { 2 }));
@@ -393,7 +393,7 @@ public class ScenarioOutlineTests : AbstractContextBDTestBase<ScenarioOutlineTes
         var contextCount = 0;
         if (duringContext)
             Configure = _ => { if (++contextCount == 1) Outcome(outcome); };
-        Exception thrown = null;
+        Exception? thrown = null;
         try
         {
             await ScenarioOutline("Factory outcomes", new[] { new { Value = 1 }, new { Value = 2 } }, row =>
@@ -430,7 +430,7 @@ public class ScenarioOutlineTests : AbstractContextBDTestBase<ScenarioOutlineTes
         var factoryScenarios = new List<Scenario>();
         var stepScenarios = new List<Scenario>();
         Configure = context => amendmentScenarios.Add(context.CurrentScenario);
-        Exception thrown = null;
+        Exception? thrown = null;
         try
         {
             await ScenarioOutline("Current example", new[] { new { Value = 1 }, new { Value = 2 }, new { Value = 3 } }, row =>
@@ -466,7 +466,7 @@ public class ScenarioOutlineTests : AbstractContextBDTestBase<ScenarioOutlineTes
             ScenarioHtmlWriter.Text($"context markup {value}");
             if (duringContext && fail && value == 2) throw new InvalidOperationException("context failed");
         };
-        Exception thrown = null;
+        Exception? thrown = null;
         try
         {
             await ScenarioOutline("Construction output", new[] { new { Value = 1 }, new { Value = 2 }, new { Value = 3 } }, row =>
@@ -583,7 +583,7 @@ public class ScenarioOutlineTests : AbstractContextBDTestBase<ScenarioOutlineTes
         try
         {
             System.Globalization.CultureInfo.CurrentCulture = new System.Globalization.CultureInfo("fr-FR");
-            var outline = await ScenarioOutline("Text", new[] { new { Number = 1.5m, Text = "<Number>", Empty = (string)null } },
+            var outline = await ScenarioOutline("Text", new[] { new { Number = 1.5m, Text = "<Number>", Empty = (string?)null } },
                 row => Given(() => Template()).When(() => NoOp()).Then(() => NoOp()));
             Assert.That(outline.Examples[0].Steps[0].StepText, Is.EqualTo("Given 1.5 <Number> null <Unknown>"));
         }

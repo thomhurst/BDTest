@@ -58,7 +58,7 @@ public class SampleAdminPolicyTests
             new ClaimsPrincipal(new ClaimsIdentity(
                 [new Claim(ClaimTypes.Role, "BDTest.Admin")],
                 CookieAuthenticationDefaults.AuthenticationScheme)));
-        var cookie = signInContext.Response.Headers.SetCookie.Single().Split(';')[0];
+        var cookie = Required(signInContext.Response.Headers.SetCookie.Single()).Split(';')[0];
         if (tampered)
         {
             cookie = cookie[..(cookie.IndexOf('=') + 1)] + "forged-admin-ticket";
@@ -91,7 +91,7 @@ public class SampleAdminPolicyTests
     {
         var builder = Program.CreateBuilder([]);
         builder.Configuration.Sources.Clear();
-        builder.Configuration.AddInMemoryCollection(new Dictionary<string, string>
+        builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?>
         {
             ["AzureStorage:ConnectionString"] = "UseDevelopmentStorage=true",
             ["AzureAd:Instance"] = "https://login.microsoftonline.com/",

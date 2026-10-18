@@ -138,12 +138,12 @@ public class DefaultExecutionIdTests
 
     private sealed class ContextFixture : AbstractContextBDTestBase<MyTestContext>
     {
-        public void Start() => MarkTestAsStarted();
-        public void Complete() => MarkTestAsComplete();
+        public void Start() => BeginTest(Guid.NewGuid().ToString("N"));
+        public void Complete() => EndTest();
 
         public async Task RunTestAsync(bool fail)
         {
-            MarkTestAsStarted();
+            BeginTest(Guid.NewGuid().ToString("N"));
             try
             {
                 await SetupAsync();
@@ -155,7 +155,7 @@ public class DefaultExecutionIdTests
             }
             finally
             {
-                MarkTestAsComplete();
+                EndTest();
             }
         }
 

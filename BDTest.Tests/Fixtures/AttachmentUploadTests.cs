@@ -244,7 +244,7 @@ public partial class ReportUploadTests
             }
             Assert.That(reports, Is.EqualTo(1));
             Assert.That(request.Content, Is.TypeOf<StreamContent>());
-            Assert.That(await request.Content.ReadAsByteArrayAsync(), Is.EqualTo(new byte[] { 1, 2, 3 }));
+            Assert.That(await Required(request.Content).ReadAsByteArrayAsync(), Is.EqualTo(new byte[] { 1, 2, 3 }));
             attempts++;
             return new HttpResponseMessage(permanentFailure ? HttpStatusCode.Forbidden
                 : attempts == 1 ? HttpStatusCode.ServiceUnavailable : HttpStatusCode.NoContent);
@@ -287,7 +287,7 @@ public partial class ReportUploadTests
     {
         using var files = new AttachmentDirectory();
         var observing = new ObservingAttachmentStore(files.Store);
-        MemoryCacheBdTestDataStore backing = null;
+        MemoryCacheBdTestDataStore? backing = null;
         await using var server = await UploadServer.Start(options =>
         {
             options.ReportCacheRetention = TimeSpan.FromSeconds(2);
@@ -319,7 +319,7 @@ public partial class ReportUploadTests
         Assert.That(await server.Repository.GetData(reportId, default), Is.Not.Null);
         await Task.Delay(1200);
         // A repository read must refresh the authoritative memory entry, not a separate front cache.
-        Assert.That(await backing.GetTestData(reportId, default), Is.Not.Null);
+        Assert.That(await Required(backing).GetTestData(reportId, default), Is.Not.Null);
         using var download = await server.Client.GetAsync($"bdtest/report/{reportId}/attachments/{attachmentId}");
         Assert.That(download.StatusCode, Is.EqualTo(HttpStatusCode.OK));
         Assert.That(await download.Content.ReadAsByteArrayAsync(), Is.EqualTo(new byte[] { 1, 2 }));
@@ -493,7 +493,7 @@ public partial class ReportUploadTests
     private static string AttachmentReport(string id, string mime = "text/plain", long length = 2) =>
         ReportJson.SerializeObject(new { Scenarios = new[] { new { Attachments = new[] { new { Id = id, Name = "file.txt", MimeType = mime, Length = length, AttemptNumber = 1 } } } } });
 
-    private static Task<HttpResponseMessage> PostAttachment(UploadServer server, string report, string id, string token, byte[] bytes)
+    private static Task<HttpResponseMessage> PostAttachment(UploadServer server, string report, string id, string? token, byte[] bytes)
     {
         var request = new HttpRequestMessage(HttpMethod.Post, $"bdtest/data/{report}/attachments/{id}") { Content = new ByteArrayContent(bytes) };
         request.Headers.Add("X-BDTest-Upload-Key", Key);
@@ -516,7 +516,7 @@ public partial class ReportUploadTests
     private sealed class ObservingAttachmentStore(IBDTestAttachmentStore inner) : IBDTestAttachmentStore
     {
         public TaskCompletionSource<string> Deleted { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
-        public Task<Stream> OpenReadAsync(string reportId, string attachmentId, CancellationToken cancellationToken = default)
+        public Task<Stream?> OpenReadAsync(string reportId, string attachmentId, CancellationToken cancellationToken = default)
             => inner.OpenReadAsync(reportId, attachmentId, cancellationToken);
         public Task WriteAsync(string reportId, string attachmentId, Stream content, long length, CancellationToken cancellationToken = default)
             => inner.WriteAsync(reportId, attachmentId, content, length, cancellationToken);
@@ -529,11 +529,11 @@ public partial class ReportUploadTests
 
     private sealed class BlockingAttachmentStore(IBDTestAttachmentStore inner) : IBDTestAttachmentStore
     {
-        public string ReportToBlock { get; set; }
+        public string? ReportToBlock { get; set; }
         public TaskCompletionSource Writing { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
         public TaskCompletionSource Continue { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
         public bool Deleting { get; private set; }
-        public Task<Stream> OpenReadAsync(string reportId, string attachmentId, CancellationToken cancellationToken = default)
+        public Task<Stream?> OpenReadAsync(string reportId, string attachmentId, CancellationToken cancellationToken = default)
             => inner.OpenReadAsync(reportId, attachmentId, cancellationToken);
         public async Task WriteAsync(string reportId, string attachmentId, Stream content, long length, CancellationToken cancellationToken = default)
         {

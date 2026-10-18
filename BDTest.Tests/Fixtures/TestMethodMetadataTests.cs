@@ -34,7 +34,7 @@ public class TestMethodMetadataTests
         Assert.That(values.All(value => ReferenceEquals(value, values[0])), Is.True);
         Assert.That(CountingInformationAttribute.Instances, Is.Zero);
 
-        fixture.Start(method);
+        fixture.Start(Required(method));
         var first = await fixture.Build();
         Assert.That(CountingInformationAttribute.Instances, Is.EqualTo(1));
         first.Tags[0] = "changed";
@@ -107,7 +107,7 @@ public class TestMethodMetadataTests
     {
         public static int Instances;
         public string Value = "original";
-        public string[] Values { get; set; }
+        public string[] Values { get; set; } = [];
         public List<string> Items = new() { "original" };
         public CountingInformationAttribute() : base("information") => Interlocked.Increment(ref Instances);
     }

@@ -303,11 +303,11 @@ public class ReportCacheCapacityTests
         using var provider = services.BuildServiceProvider();
         var exception = Assert.Throws<OptionsValidationException>(() =>
             _ = provider.GetRequiredService<IOptions<BDTestReportOptions>>().Value);
-        Assert.That(exception.Failures, Has.Count.EqualTo(2));
+        Assert.That(Required(exception).Failures, Has.Count.EqualTo(2));
     }
 
     private static async Task AssertWithinCapacity(IDataRepository repository, BDTestOutputModel[] reports,
-        long capacity, PersistentStore persistentStore = null)
+        long capacity, PersistentStore? persistentStore = null)
     {
         // Disable fallback so bulk reads reveal only the actual retained reports.
         if (persistentStore != null) persistentStore.HideReports = true;
@@ -328,7 +328,7 @@ public class ReportCacheCapacityTests
         }
     }
 
-    private static ServiceProvider Services(long capacity, IBDTestDataStore store = null, TimeSpan? retention = null)
+    private static ServiceProvider Services(long capacity, IBDTestDataStore? store = null, TimeSpan? retention = null)
     {
         var services = new ServiceCollection();
         services.AddLogging();
@@ -356,7 +356,7 @@ public class ReportCacheCapacityTests
         public Dictionary<string, BDTestOutputModel> Reports { get; } = new();
         public bool HideReports { get; set; }
         public int Reads { get; private set; }
-        public Task<BDTestOutputModel> GetTestData(string id, CancellationToken cancellationToken)
+        public Task<BDTestOutputModel?> GetTestData(string id, CancellationToken cancellationToken)
         {
             Reads++;
             return Task.FromResult(HideReports ? null : Reports.GetValueOrDefault(id));

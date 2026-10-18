@@ -19,8 +19,9 @@ namespace BDTest.Tests.Fixtures;
 [NonParallelizable]
 public class ReportSidebarTests
 {
-    private WebApplication _application;
-    private HttpClient _client;
+    // Initialized by the asynchronous setup hook before each test.
+    private WebApplication _application = null!;
+    private HttpClient _client = null!;
     private readonly RecordingRepository _repository = new();
     private readonly RecordingLinksProvider _links = new();
 
@@ -66,7 +67,7 @@ public class ReportSidebarTests
     [TestCase(true)]
     public async Task Retry_history_renders_attempt_status_duration_and_encoded_exceptions(bool retryHookFailed)
     {
-        _repository.Report.Scenarios = [ReportJson.DeserializeObject<Scenario>("""
+        Required(_repository.Report).Scenarios = [ReportJson.DeserializeObject<Scenario>("""
             {
               "Guid": "scenario-632", "Status": "Passed", "RetryCount": 1,
               "Steps": [], "CustomTestInformation": [],
@@ -80,7 +81,7 @@ public class ReportSidebarTests
             """)];
 
         if (retryHookFailed)
-            _repository.Report.Scenarios.Single().Attempts.RemoveAt(1);
+            Required(_repository.Report).Scenarios.Single().Attempts.RemoveAt(1);
 
         var html = await _client.GetStringAsync("/bdtest/report/run-632/scenario/scenario-632");
 
@@ -105,7 +106,7 @@ public class ReportSidebarTests
     public async Task Story_links_filter_to_the_exact_story_and_preserve_it_when_searching()
     {
         const string story = "Story & <one> / 雪";
-        _repository.Report.Scenarios = Enumerable.Range(0, 3).Select(index =>
+        Required(_repository.Report).Scenarios = Enumerable.Range(0, 3).Select(index =>
             ReportJson.DeserializeObject<Scenario>(ReportJson.SerializeObject(new
             {
                 Guid = "s" + index, ScenarioText = "Scenario " + index,
@@ -139,7 +140,7 @@ public class ReportSidebarTests
     [TestCase("dateDescending", new[] { "c", "b", "a" })]
     public async Task Stories_sort_scenarios_within_each_story(string order, string[] expected)
     {
-        _repository.Report.Scenarios = new[] { 2, 0, 1 }.Select(index =>
+        Required(_repository.Report).Scenarios = new[] { 2, 0, 1 }.Select(index =>
             ReportJson.DeserializeObject<Scenario>(ReportJson.SerializeObject(new
             {
                 Guid = ((char)('a' + index)).ToString(), ScenarioText = ((char)('A' + index)).ToString(),
@@ -159,7 +160,7 @@ public class ReportSidebarTests
     [Test]
     public async Task Large_scenario_lists_are_paged_and_open_on_the_selected_scenarios_page()
     {
-        _repository.Report.Scenarios = Enumerable.Range(0, 150).Select(index => ReportJson.DeserializeObject<Scenario>(
+        Required(_repository.Report).Scenarios = Enumerable.Range(0, 150).Select(index => ReportJson.DeserializeObject<Scenario>(
             ReportJson.SerializeObject(new
             {
                 Guid = $"s{index:000}", ScenarioText = $"Scenario {index:000}", Status = "Passed",
@@ -182,12 +183,12 @@ public class ReportSidebarTests
             new AggregateException(new InvalidOperationException("<first cause>"), new ArgumentException("<second cause>"))));
         exception.Data = new Dictionary<string, string> { ["<key>"] = "<value>" };
         exception.AsString = null; // The tree must not depend on the flattened diagnostic text.
-        _repository.Report.Scenarios = [ReportJson.DeserializeObject<Scenario>("""
+        Required(_repository.Report).Scenarios = [ReportJson.DeserializeObject<Scenario>("""
             {"Guid":"scenario-632","Status":"Failed","RetryCount":1,"CustomTestInformation":[],
              "Steps":[{"StepText":"When failing","Status":"Failed"}],
              "Attempts":[{"Number":1,"Status":"Failed"}]}
             """)];
-        var scenario = _repository.Report.Scenarios.Single();
+        var scenario = Required(_repository.Report).Scenarios.Single();
         scenario.ExecutionException = ReportJson.DeserializeObject<ExceptionWrapper>(ReportJson.SerializeObject(exception));
         scenario.Steps.Single().Exception = exception;
         scenario.Attempts.Single().Exception = exception;
@@ -205,11 +206,11 @@ public class ReportSidebarTests
     [Test]
     public async Task Top_defects_and_flakiness_group_all_aggregate_root_types()
     {
-        _repository.Report.Scenarios = [ReportJson.DeserializeObject<Scenario>("""
+        Required(_repository.Report).Scenarios = [ReportJson.DeserializeObject<Scenario>("""
             {"Guid":"scenario-632","Status":"Failed","CustomTestInformation":[],"Steps":[],
              "StoryText":"story","ScenarioText":"scenario"}
             """)];
-        _repository.Report.Scenarios.Single().ExecutionException = new ExceptionWrapper(new System.Reflection.TargetInvocationException(
+        Required(_repository.Report).Scenarios.Single().ExecutionException = new ExceptionWrapper(new System.Reflection.TargetInvocationException(
             new AggregateException(new InvalidOperationException("<first cause>"), new ArgumentException("<second cause>"))));
 
         var defects = await _client.GetStringAsync("/bdtest/report/run-632/top-defects");
@@ -229,11 +230,11 @@ public class ReportSidebarTests
     [Test]
     public async Task Flakiness_preserves_distinct_messages_and_counts_each_failed_run_once()
     {
-        _repository.Report.Scenarios = [ReportJson.DeserializeObject<Scenario>("""
+        Required(_repository.Report).Scenarios = [ReportJson.DeserializeObject<Scenario>("""
             {"Guid":"scenario-632","Status":"Failed","CustomTestInformation":[],"Steps":[],
              "StoryText":"story","ScenarioText":"scenario"}
             """)];
-        _repository.Report.Scenarios.Single().ExecutionException = new ExceptionWrapper(new AggregateException(
+        Required(_repository.Report).Scenarios.Single().ExecutionException = new ExceptionWrapper(new AggregateException(
             new InvalidOperationException("<first cause>"), new InvalidOperationException("<second cause>"),
             new InvalidOperationException(" <first cause> ")));
 
@@ -259,7 +260,7 @@ public class ReportSidebarTests
     [Test]
     public async Task Scenario_navigation_uses_the_loaded_report()
     {
-        _repository.Report.Scenarios.Add(ReportJson.DeserializeObject<Scenario>("""
+        Required(_repository.Report).Scenarios.Add(ReportJson.DeserializeObject<Scenario>("""
             { "Guid": "next-scenario", "Steps": [], "CustomTestInformation": [] }
             """));
 
@@ -274,7 +275,7 @@ public class ReportSidebarTests
     [TestCase("all-scenarios")]
     public async Task Tag_filter_renders_only_matching_rows_and_keeps_all_tag_options(string page)
     {
-        _repository.Report.Scenarios = ReportJson.DeserializeObject<List<Scenario>>("""
+        Required(_repository.Report).Scenarios = ReportJson.DeserializeObject<List<Scenario>>("""
             [
               { "Guid": "tagged", "Tags": ["smoke"], "Steps": [], "CustomTestInformation": [] },
               { "Guid": "other", "Tags": ["regression"], "Steps": [], "CustomTestInformation": [] },
@@ -326,7 +327,7 @@ public class ReportSidebarTests
 
         Assert.That(_repository.ReadTokens, Has.Count.EqualTo(1));
         Assert.That(html, Does.Not.Contain("/bdtest/report/missing/raw-json-data"));
-        Assert.That(_links.Reports, Is.EqualTo(new BDTestOutputModel[] { null }));
+        Assert.That(_links.Reports, Is.EqualTo(new BDTestOutputModel?[] { null }));
     }
 
     [TestCase("test-runs")]
@@ -338,7 +339,7 @@ public class ReportSidebarTests
 
         Assert.That(_repository.ReadTokens, Is.Empty);
         Assert.That(html, Does.Not.Contain("raw-json-data"));
-        Assert.That(_links.Reports, Is.EqualTo(new BDTestOutputModel[] { null }));
+        Assert.That(_links.Reports, Is.EqualTo(new BDTestOutputModel?[] { null }));
     }
 
     [Test]
@@ -359,8 +360,8 @@ public class ReportSidebarTests
 
     private sealed class RecordingLinksProvider : IBDTestCustomSidebarLinksProvider
     {
-        public List<BDTestOutputModel> Reports { get; } = [];
-        public IEnumerable<CustomLinkData> GetCustomLinks(BDTestOutputModel report)
+        public List<BDTestOutputModel?> Reports { get; } = [];
+        public IEnumerable<CustomLinkData> GetCustomLinks(BDTestOutputModel? report)
         {
             Reports.Add(report);
             return [new CustomLinkData("Custom sidebar link", new Uri("https://example.test"))];
@@ -369,9 +370,9 @@ public class ReportSidebarTests
 
     private sealed class RecordingRepository : IDataRepository
     {
-        public BDTestOutputModel Report { get; set; }
+        public BDTestOutputModel? Report { get; set; }
         public List<CancellationToken> ReadTokens { get; } = [];
-        public Task<BDTestOutputModel> GetData(string id, CancellationToken cancellationToken)
+        public Task<BDTestOutputModel?> GetData(string id, CancellationToken cancellationToken)
         {
             ReadTokens.Add(cancellationToken);
             cancellationToken.ThrowIfCancellationRequested();
@@ -380,12 +381,12 @@ public class ReportSidebarTests
                 var passed = BDTest.Helpers.BDTestJsonHelper.Deserialize(BDTest.Helpers.BDTestJsonHelper.Serialize(Report));
                 passed.Id = id;
                 passed.Scenarios.Single().Status = Status.Passed;
-                return Task.FromResult(passed);
+                return Task.FromResult<BDTestOutputModel?>(passed);
             }
             return Task.FromResult(Report);
         }
-        public Task<BDTestOutputModel> GetDataForBulkRead(string id, CancellationToken cancellationToken) => GetData(id, cancellationToken);
-        public async Task<Stream> OpenReadAsync(string id, CancellationToken cancellationToken)
+        public Task<BDTestOutputModel?> GetDataForBulkRead(string id, CancellationToken cancellationToken) => GetData(id, cancellationToken);
+        public async Task<Stream?> OpenReadAsync(string id, CancellationToken cancellationToken)
         {
             var model = await GetData(id, cancellationToken);
             return model == null ? null : new MemoryStream(System.Text.Encoding.UTF8.GetBytes(BDTest.Helpers.BDTestJsonHelper.Serialize(model)));

@@ -43,10 +43,10 @@ public class HistoryTests
 
         var options = Regex.Matches(html, "<option value=\"[^\"]*\"[^>]*>[^<]*</option>")
             .Select(match => XElement.Parse(match.Value.Replace(" selected>", " selected=\"selected\">")))
-            .Where(option => (string)option.Attribute("value") != "" && !RunFilter.AllRanges.Contains((string)option.Attribute("value")))
+            .Where(option => Required(option.Attribute("value")).Value != "" && !RunFilter.AllRanges.Contains(Required(option.Attribute("value")).Value))
             .ToList();
         Assert.That(options, Has.Count.EqualTo(4), "Tag, environment, branch and machine each offer the value once.");
-        Assert.That(options.Select(option => (string)option.Attribute("value")), Has.All.EqualTo(value));
+        Assert.That(options.Select(option => Required(option.Attribute("value")).Value), Has.All.EqualTo(value));
         Assert.That(options.Select(option => option.Value), Has.All.EqualTo(value));
         Assert.That(options.Count(option => option.Attribute("selected") != null), Is.EqualTo(1));
         Assert.That(html, Does.Not.Contain("<script>alert(1)"));
@@ -121,11 +121,11 @@ public class HistoryTests
         var bars = Regex.Match(html, "<div class=\"plot bars cur-last\">(.*?)</div>", RegexOptions.Singleline);
         var segments = XElement.Parse("<bars>" + bars.Groups[1].Value + "</bars>").Descendants("span").ToList();
         var heights = segments.Select(segment => double.Parse(
-            Regex.Match((string)segment.Attribute("style"), @"height: ([\d.]+)%").Groups[1].Value,
+            Regex.Match(Required(segment.Attribute("style")).Value, @"height: ([\d.]+)%").Groups[1].Value,
             CultureInfo.InvariantCulture)).ToList();
         Assert.That(heights.Sum(), Is.EqualTo(100).Within(0.05), "All scenario results fill the chart, without declared tests.");
         Assert.That(heights[0], Is.EqualTo(100.0 / run.Counts.Total).Within(0.01));
-        Assert.That(segments.Count(segment => (string)segment.Attribute("class") == "bg-r"),
+        Assert.That(segments.Count(segment => (string?)segment.Attribute("class") == "bg-r"),
             Is.EqualTo(unfinished > 0 ? 2 : 1), "Pending and unfinished scenarios each have a segment.");
 
         var table = XElement.Parse(Regex.Match(html, "<tbody>(.*?)</tbody>", RegexOptions.Singleline).Value);
@@ -176,8 +176,8 @@ public class HistoryTests
 
         Assert.That(result.ViewName, Is.EqualTo("MultipleTestRunsFlakiness"));
         Assert.That(repository.ReadIds, Is.EqualTo(new[] { "nightly-3", "nightly-4" }));
-        Assert.That(((IEnumerable<BDTestOutputModel>)result.Model).Select(report => report.Id), Is.EqualTo(new[] { "nightly-3", "nightly-4" }));
-        var history = (HistoryViewModel)result.ViewData[nameof(HistoryViewModel)];
+        Assert.That(((IEnumerable<BDTestOutputModel>)Required(result.Model)).Select(report => report.Id), Is.EqualTo(new[] { "nightly-3", "nightly-4" }));
+        var history = (HistoryViewModel)Required(result.ViewData[nameof(HistoryViewModel)]);
         Assert.That(history.Tab, Is.EqualTo(HistoryViewModel.Flaky));
         Assert.That(history.Runs, Has.Count.EqualTo(5));
         Assert.That(history.ChosenRuns, Is.False);
@@ -216,18 +216,18 @@ public class HistoryTests
     {
         public List<string> ReadIds { get; } = [];
 
-        public Task<BDTestOutputModel> GetData(string id, CancellationToken cancellationToken)
+        public Task<BDTestOutputModel?> GetData(string id, CancellationToken cancellationToken)
         {
             lock (ReadIds)
             {
                 ReadIds.Add(id);
             }
 
-            return Task.FromResult(new BDTestOutputModel { Id = id });
+            return Task.FromResult<BDTestOutputModel?>(new BDTestOutputModel { Id = id });
         }
 
-        public Task<BDTestOutputModel> GetDataForBulkRead(string id, CancellationToken cancellationToken) => GetData(id, cancellationToken);
-        public Task<Stream> OpenReadAsync(string id, CancellationToken cancellationToken) => throw new NotSupportedException();
+        public Task<BDTestOutputModel?> GetDataForBulkRead(string id, CancellationToken cancellationToken) => GetData(id, cancellationToken);
+        public Task<Stream?> OpenReadAsync(string id, CancellationToken cancellationToken) => throw new NotSupportedException();
         public Task<BDTest.Razor.Reports.Storage.RunIndexPage> ListAsync(BDTest.Razor.Reports.Storage.RunIndexQuery query, CancellationToken cancellationToken) => throw new NotSupportedException();
         public Task<IEnumerable<TestRunSummary>> GetAllTestRunRecords(CancellationToken cancellationToken = default) => Task.FromResult<IEnumerable<TestRunSummary>>(runs);
         public Task StoreData(string id, BDTestOutputModel model, CancellationToken cancellationToken = default) => throw new NotSupportedException();

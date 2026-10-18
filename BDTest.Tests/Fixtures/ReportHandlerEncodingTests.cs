@@ -26,7 +26,7 @@ namespace BDTest.Tests.Fixtures;
 
 public class ReportHandlerEncodingTests
 {
-    private static readonly string[] Values =
+    private static readonly string?[] Values =
     [
         "release-1.2",
         "O'Brien's build",
@@ -42,7 +42,7 @@ public class ReportHandlerEncodingTests
 
     [Test]
     public async Task Delete_values_are_data_and_never_executable_handler_source(
-        [ValueSource(nameof(Values))] string value)
+        [ValueSource(nameof(Values))] string? value)
     {
         var record = ReportJson.DeserializeObject<TestRunSummary>("{}");
         record.RecordId = value;
@@ -59,18 +59,18 @@ public class ReportHandlerEncodingTests
             return;
         }
         var form = ReadElement(html, "<form[^>]*data-bdtest-delete[^>]*>.*?</form>");
-        var action = (string)form.Attribute("action");
+        var action = (string?)form.Attribute("action");
         Assert.That(action, Does.StartWith("/bdtest/reports/"));
-        Assert.That(Uri.UnescapeDataString(action["/bdtest/reports/".Length..]), Is.EqualTo(record.RecordId));
-        Assert.That((string)form.Attribute("method"), Is.EqualTo("post"));
+        Assert.That(Uri.UnescapeDataString(Required(action)["/bdtest/reports/".Length..]), Is.EqualTo(record.RecordId));
+        Assert.That((string?)form.Attribute("method"), Is.EqualTo("post"));
         var button = ReadElement(html, "<button[^>]*>Delete</button>");
-        Assert.That((string)button.Attribute("type"), Is.EqualTo("submit"));
-        Assert.That((string)button.Attribute("data-bdtest-action"), Is.EqualTo("delete"));
-        Assert.That((string)button.Attribute("data-test-id"), Is.EqualTo(record.RecordId ?? ""));
-        Assert.That((string)button.Attribute("data-tag"), Is.EqualTo(value ?? ""));
-        Assert.That((string)button.Attribute("data-environment"), Is.EqualTo(value ?? ""));
-        Assert.That((string)button.Attribute("data-branch"), Is.EqualTo(value ?? ""));
-        Assert.That((string)button.Attribute("data-date"), Is.EqualTo(record.StartedAtDateTime.ToString()));
+        Assert.That((string?)button.Attribute("type"), Is.EqualTo("submit"));
+        Assert.That((string?)button.Attribute("data-bdtest-action"), Is.EqualTo("delete"));
+        Assert.That((string?)button.Attribute("data-test-id"), Is.EqualTo(record.RecordId ?? ""));
+        Assert.That((string?)button.Attribute("data-tag"), Is.EqualTo(value ?? ""));
+        Assert.That((string?)button.Attribute("data-environment"), Is.EqualTo(value ?? ""));
+        Assert.That((string?)button.Attribute("data-branch"), Is.EqualTo(value ?? ""));
+        Assert.That((string?)button.Attribute("data-date"), Is.EqualTo(record.StartedAtDateTime.ToString()));
         Assert.That(button.Attributes().Select(x => x.Name.LocalName), Is.EquivalentTo(new[]
         {
             "type", "class", "data-bdtest-action", "data-test-id", "data-tag", "data-environment", "data-branch", "data-date"
@@ -103,8 +103,8 @@ public class ReportHandlerEncodingTests
     {
         var html = await RenderAsync<object>("/Views/Shared/_CopyLinkButton.cshtml", null, query: query);
         var button = ReadElement(html, "<button[^>]*>.*?Copy link</button>");
-        Assert.That((string)button.Attribute("data-bdtest-action"), Is.EqualTo("copy-url"));
-        Assert.That((string)button.Attribute("data-url"),
+        Assert.That((string?)button.Attribute("data-bdtest-action"), Is.EqualTo("copy-url"));
+        Assert.That((string?)button.Attribute("data-url"),
             Is.EqualTo("/bdtest/report/O'Brien/test-runs" + query));
         Assert.That(button.Attributes().Select(x => x.Name.LocalName),
             Is.EquivalentTo(new[] { "type", "class", "data-bdtest-action", "data-url" }));
@@ -123,11 +123,11 @@ public class ReportHandlerEncodingTests
         var html = await RenderAsync("/Views/Shared/_ScenarioPanel.cshtml",
             new ScenarioModalViewModel { Scenario = scenario }, query: query);
         var button = ReadElement(html, "<button[^>]*data-bdtest-action=\"copy-url\"[^>]*>.*?</button>");
-        Assert.That((string)button.Attribute("type"), Is.EqualTo("button"));
+        Assert.That((string?)button.Attribute("type"), Is.EqualTo("button"));
         Assert.That(button.Attributes().Select(x => x.Name.LocalName),
             Is.EquivalentTo(new[] { "class", "type", "data-bdtest-action", "data-url", "aria-label" }));
 
-        var localUrl = (string)button.Attribute("data-url");
+        var localUrl = (string?)button.Attribute("data-url");
         Assert.That(localUrl, Does.StartWith("/bdtest/"));
         var url = new Uri(new Uri("https://reports.example.test"), localUrl);
         Assert.That(url.GetLeftPart(UriPartial.Path),
@@ -149,7 +149,7 @@ public class ReportHandlerEncodingTests
         return XElement.Parse(match.Value, LoadOptions.PreserveWhitespace);
     }
 
-    internal static async Task<string> RenderAsync<T>(string path, T model, bool isAdmin = false, string query = "", string pathBase = "", string host = "reports.example.test", string requestPath = "/bdtest/report/O'Brien/test-runs", IBDTestCustomHeaderLinksProvider customHeaderLinksProvider = null, Action<ViewDataDictionary> configureViewData = null)
+    internal static async Task<string> RenderAsync<T>(string path, T? model, bool isAdmin = false, string query = "", string pathBase = "", string host = "reports.example.test", string requestPath = "/bdtest/report/O'Brien/test-runs", IBDTestCustomHeaderLinksProvider? customHeaderLinksProvider = null, Action<ViewDataDictionary>? configureViewData = null)
     {
         var builder = WebApplication.CreateBuilder();
         builder.WebHost.UseUrls("http://127.0.0.1:0");
@@ -174,12 +174,12 @@ public class ReportHandlerEncodingTests
         var view = services.GetRequiredService<ICompositeViewEngine>().GetView(null, path, isMainPage: false);
         Assert.That(view.Success, Is.True, $"Razor view not found: {path}");
         using var writer = new StringWriter();
-        var viewData = new ViewDataDictionary<T>(new EmptyModelMetadataProvider(), new ModelStateDictionary()) { Model = model };
+        var viewData = new ViewDataDictionary<T?>(new EmptyModelMetadataProvider(), new ModelStateDictionary()) { Model = model };
         configureViewData?.Invoke(viewData);
-        var viewContext = new ViewContext(actionContext, view.View, viewData,
+        var viewContext = new ViewContext(actionContext, Required(view.View), viewData,
             new TempDataDictionary(httpContext, services.GetRequiredService<ITempDataProvider>()),
             writer, new HtmlHelperOptions());
-        await view.View.RenderAsync(viewContext);
+        await Required(view.View).RenderAsync(viewContext);
         return writer.ToString();
     }
 }

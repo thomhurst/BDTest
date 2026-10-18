@@ -27,8 +27,9 @@ public class ReportDeletionTests(string prefix)
     private string ListPath => "/reports" + prefix + "/report/test-runs";
     private string DeletePath => "/reports" + prefix + "/reports/run-618";
     private readonly RecordingRepository _repository = new();
-    private WebApplication _application;
-    private HttpClient _client;
+    // Initialized by the asynchronous setup hook before each test.
+    private WebApplication _application = null!;
+    private HttpClient _client = null!;
 
     [OneTimeSetUp]
     public async Task StartReportServer()
@@ -230,11 +231,11 @@ public class ReportDeletionTests(string prefix)
         var match = Regex.Match(html, @"<form\b[^>]*data-bdtest-delete[^>]*>.*?Delete</button>\s*</form>", RegexOptions.Singleline);
         Assert.That(match.Success, Is.True, "The admin delete button must expose an antiforgery-protected DELETE action.");
         var form = XElement.Parse(match.Value);
-        Assert.That((string)form.Attribute("method"), Is.EqualTo("post"));
-        Assert.That((string)form.Attribute("action"), Is.EqualTo(DeletePath));
-        var token = form.Elements("input").Single(x => (string)x.Attribute("name") == "__RequestVerificationToken");
-        Assert.That((string)token.Attribute("value"), Is.Not.Empty);
-        return ((string)form.Attribute("action"), (string)token.Attribute("value"));
+        Assert.That((string?)form.Attribute("method"), Is.EqualTo("post"));
+        Assert.That((string?)form.Attribute("action"), Is.EqualTo(DeletePath));
+        var token = form.Elements("input").Single(x => (string?)x.Attribute("name") == "__RequestVerificationToken");
+        Assert.That((string?)token.Attribute("value"), Is.Not.Empty);
+        return (Required((string?)form.Attribute("action")), Required((string?)token.Attribute("value")));
     }
 
     private async Task<HttpResponseMessage> DeleteAsync(string method, string action, string token)
@@ -247,7 +248,7 @@ public class ReportDeletionTests(string prefix)
     private sealed class RecordingRepository : IDataRepository
     {
         public List<string> DeletedIds { get; } = [];
-        public Exception Failure { get; set; }
+        public Exception? Failure { get; set; }
         public Task DeleteReport(string id, CancellationToken cancellationToken = default)
         {
             if (Failure != null) throw Failure;
@@ -255,8 +256,8 @@ public class ReportDeletionTests(string prefix)
             return Task.CompletedTask;
         }
 
-        public Task<BDTestOutputModel> GetDataForBulkRead(string id, CancellationToken cancellationToken) => GetData(id, cancellationToken);
-        public async Task<Stream> OpenReadAsync(string id, CancellationToken cancellationToken)
+        public Task<BDTestOutputModel?> GetDataForBulkRead(string id, CancellationToken cancellationToken) => GetData(id, cancellationToken);
+        public async Task<Stream?> OpenReadAsync(string id, CancellationToken cancellationToken)
         {
             var model = await GetData(id, cancellationToken);
             return model == null ? null : new MemoryStream(System.Text.Encoding.UTF8.GetBytes(BDTest.Helpers.BDTestJsonHelper.Serialize(model)));
@@ -270,7 +271,7 @@ public class ReportDeletionTests(string prefix)
             return Task.FromResult<IEnumerable<TestRunSummary>>([record]);
         }
 
-        public Task<BDTestOutputModel> GetData(string id, CancellationToken cancellationToken) => throw new NotSupportedException();
+        public Task<BDTestOutputModel?> GetData(string id, CancellationToken cancellationToken) => throw new NotSupportedException();
         public Task StoreData(string id, BDTestOutputModel model, CancellationToken cancellationToken = default) => throw new NotSupportedException();
     }
 }

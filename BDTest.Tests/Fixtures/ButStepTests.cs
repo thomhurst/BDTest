@@ -81,7 +81,7 @@ public class ButStepTests : BDTestBase
             "Given no op", "But no op", "When no op", "But named action", "Then no op", "But custom assertion"
         }));
         var json = JObject.Parse(ReportJson.SerializeObject(result));
-        Assert.That(json["Steps"].Select(step => (string)step["StepType"]), Is.EqualTo(new[] { "Given", "ButGiven", "When", "ButWhen", "Then", "ButThen" }));
+        Assert.That(Required(json["Steps"]).Select(step => (string?)step["StepType"]), Is.EqualTo(new[] { "Given", "ButGiven", "When", "ButWhen", "Then", "ButThen" }));
     }
 
     [Test]
@@ -118,7 +118,7 @@ public class ButStepTests : BDTestBase
         var builder = but.And(() => Record(calls, "must not run"));
 
         var exception = await Assert.ThrowsAsync<InvalidOperationException>(async () => await builder.BDTestAsync());
-        Assert.That(exception.Message, Is.EqualTo("But failed"));
+        Assert.That(Required(exception).Message, Is.EqualTo("But failed"));
 
         var result = BDTestUtil.GetScenarios().Single(scenario => scenario.Guid == builder.Guid);
         Assert.That(result.Status, Is.EqualTo(Status.Failed));

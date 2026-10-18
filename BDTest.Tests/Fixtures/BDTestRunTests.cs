@@ -253,17 +253,17 @@ public class BDTestRunTests
         public override BDTestRun TestRun => run;
         protected override string BDTestExecutionId => id;
         public BDTest.Test.Steps.Then.Then Build() => When(() => Complete()).Then(() => Complete());
-        public void Start() => MarkTestAsStarted();
-        public void Finish() => MarkTestAsComplete();
+        public void Start() => BeginTest(id);
+        public void Finish() => EndTest();
     }
 
     private sealed class ReportHandler : HttpMessageHandler
     {
-        public string Payload { get; private set; }
+        public string Payload { get; private set; } = "";
 
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
-            if (request.Method == HttpMethod.Post) Payload = await request.Content.ReadAsStringAsync(cancellationToken);
+            if (request.Method == HttpMethod.Post) Payload = await Required(request.Content).ReadAsStringAsync(cancellationToken);
             return new HttpResponseMessage(HttpStatusCode.OK)
             {
                 Content = new StringContent("https://reports.example/report")

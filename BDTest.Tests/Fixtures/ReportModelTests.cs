@@ -11,27 +11,25 @@ namespace BDTest.Tests.Fixtures;
 [NonParallelizable]
 public class ReportModelTests
 {
-    private Dictionary<string, string> _customProperties;
+    private Dictionary<string, string>? _customProperties;
 
-#pragma warning disable CS0612 // Verify the shipped legacy custom-properties setting on every output path.
     [SetUp]
     public void SetUp()
     {
         TestResetHelper.ResetData();
-        _customProperties = new Dictionary<string, string>(BDTestSettings.CustomProperties);
-        BDTestSettings.CustomProperties.Clear();
-        BDTestSettings.CustomProperties.Add("Build <number>", "42 & counting");
+        _customProperties = new Dictionary<string, string>(LegacySettings.CustomProperties);
+        LegacySettings.CustomProperties.Clear();
+        LegacySettings.CustomProperties.Add("Build <number>", "42 & counting");
     }
 
     [TearDown]
     public void TearDown()
     {
-        BDTestSettings.CustomProperties.Clear();
-        foreach (var property in _customProperties)
-            BDTestSettings.CustomProperties.Add(property.Key, property.Value);
+        LegacySettings.CustomProperties.Clear();
+        foreach (var property in Required(_customProperties))
+            LegacySettings.CustomProperties.Add(property.Key, property.Value);
         TestResetHelper.ResetData();
     }
-#pragma warning restore CS0612
 
     [TestCase(false)]
     [TestCase(true)]
@@ -56,7 +54,7 @@ public class ReportModelTests
         else
             await BDTestReportServer.SendDataAndGetReportUriAsync(new Uri("https://reports.example"), descriptor, client, run);
 
-        Assert.That(JToken.DeepEquals(JToken.Parse(json), JToken.Parse(handler.Payload)), Is.True,
+        Assert.That(JToken.DeepEquals(JToken.Parse(json), JToken.Parse(Required(handler.Payload))), Is.True,
             "Formatting may differ, but JSON export and upload must have the same report values.");
         var report = BDTestJsonHelper.Deserialize(json);
         Assert.That(report.Id, Is.EqualTo(run.ReportId));
@@ -91,7 +89,7 @@ public class ReportModelTests
         using var client = new HttpClient(handler);
         await BDTestReportServer.SendDataAndGetReportUriAsync(new Uri("https://reports.example"), null, client, run);
 
-        foreach (var payload in new[] { json, handler.Payload })
+        foreach (var payload in new[] { json, Required(handler.Payload) })
         {
             var report = BDTestJsonHelper.Deserialize(payload);
             Assert.That(report.Id, Is.EqualTo(run.ReportId));
@@ -111,9 +109,7 @@ public class ReportModelTests
     {
         using var run = BDTestRun.Start();
         var report = BDTestOutputModelBuilder.Build(run, null);
-#pragma warning disable CS0612 // The legacy setting remains shared by report exports.
-        BDTestSettings.CustomProperties["Build <number>"] = "next build";
-#pragma warning restore CS0612
+        LegacySettings.CustomProperties["Build <number>"] = "next build";
 
         Assert.That(report.CustomProperties["Build <number>"], Is.EqualTo("42 & counting"));
         var nextReport = BDTestJsonHelper.Deserialize(BDTestJsonHelper.GetTestJsonData(null, run));
@@ -126,13 +122,13 @@ public class ReportModelTests
         using var handler = new ReportHandler();
         using var client = new HttpClient(handler);
 
-        Assert.That(Assert.Throws<ArgumentNullException>(() => BDTestJsonHelper.GetTestJsonData(null, null)).ParamName,
+        Assert.That(Required(Assert.Throws<ArgumentNullException>(() => BDTestJsonHelper.GetTestJsonData(null, null))).ParamName,
             Is.EqualTo("run"));
-        Assert.That(Assert.Throws<ArgumentNullException>(() => BDTestHtmlHelper.GetTestHtmlReport(null, null)).ParamName,
+        Assert.That(Required(Assert.Throws<ArgumentNullException>(() => BDTestHtmlHelper.GetTestHtmlReport(null, null))).ParamName,
             Is.EqualTo("run"));
         var exception = await Assert.ThrowsAsync<ArgumentNullException>(() => BDTestReportServer.SendDataAndGetReportUriAsync(
             new Uri("https://reports.example"), null, client, null));
-        Assert.That(exception.ParamName, Is.EqualTo("run"));
+        Assert.That(Required(exception).ParamName, Is.EqualTo("run"));
         Assert.That(handler.RequestCount, Is.Zero);
     }
 
@@ -162,13 +158,13 @@ public class ReportModelTests
     private sealed class ReportHandler : HttpMessageHandler
     {
         public int RequestCount { get; private set; }
-        public string Payload { get; private set; }
+        public string? Payload { get; private set; }
 
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
             RequestCount++;
             if (request.Method == HttpMethod.Post)
-                Payload = await request.Content.ReadAsStringAsync(cancellationToken);
+                Payload = await Required(request.Content).ReadAsStringAsync(cancellationToken);
             return new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent("https://reports.example/report") };
         }
     }

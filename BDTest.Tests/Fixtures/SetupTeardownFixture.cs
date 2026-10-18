@@ -7,23 +7,23 @@ namespace BDTest.Tests.Fixtures;
 [SetUpFixture]
 public class SetupTeardownFixture
 {
-    private string _environment;
-    private string _tag;
+    private string? _environment;
+    private string? _tag;
 
     [OneTimeSetUp]
     public void Settings()
     {
-        _environment = BDTestSettings.Environment;
-        _tag = BDTestSettings.Tag;
-        BDTestSettings.Environment = "Local";
-        BDTestSettings.Tag = "AcceptanceTests";
+        _environment = LegacySettings.Get<string>("Environment");
+        _tag = LegacySettings.Get<string>("Tag");
+        LegacySettings.Set("Environment", "Local");
+        LegacySettings.Set("Tag", "AcceptanceTests");
     }
 
     [OneTimeTearDown]
     public void RestoreSettings()
     {
-        BDTestSettings.Environment = _environment;
-        BDTestSettings.Tag = _tag;
+        LegacySettings.Set("Environment", _environment);
+        LegacySettings.Set("Tag", _tag);
     }
 
     [OneTimeTearDown]

@@ -128,10 +128,11 @@ public class CoreLifecycleTests
     {
         public override BDTestRun TestRun => run;
         protected override string BDTestExecutionId => "legacy-id";
-#pragma warning disable CS0618 // Verify the obsolete compatibility bridge.
-        public void Start() => MarkTestAsStarted();
-        public void Finish() => MarkTestAsComplete();
-#pragma warning restore CS0618
+        // Bind delegates to exercise the obsolete bridge without suppressing diagnostics.
+        public void Start() => Required(typeof(BDTestBase)
+            .GetMethod("MarkTestAsStarted", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic))
+            .CreateDelegate<Action>(this)();
+        public void Finish() => BDTest.Tests.Helpers.LegacyLifecycle.Complete(this);
     }
 
     private sealed class Probe(BDTestRun run) : AbstractContextBDTestBase<MyTestContext>

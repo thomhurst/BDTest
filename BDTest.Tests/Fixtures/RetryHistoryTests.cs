@@ -142,6 +142,6 @@ public class RetryHistoryTests
         public override Task OnBeforeRetry() => failHook
             ? throw new InvalidOperationException("hook failed")
             : Task.CompletedTask;
-        public void Complete() => MarkTestAsComplete();
+        public void Complete() => BDTest.Tests.Helpers.LegacyLifecycle.Complete(this);
     }
 }

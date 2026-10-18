@@ -21,7 +21,7 @@ public class StructuredStepArgumentTests : BDTestBase
 
     [SetUp]
     public void BindMetadata() => BeginTest(TestContext.CurrentContext.Test.ID,
-        global::NUnit.Framework.Internal.TestExecutionContext.CurrentContext.CurrentTest.Method.MethodInfo);
+        Required(global::NUnit.Framework.Internal.TestExecutionContext.CurrentContext.CurrentTest.Method).MethodInfo);
 
     [TearDown]
     public void DisposeRun()
@@ -40,7 +40,7 @@ public class StructuredStepArgumentTests : BDTestBase
         Assert.That(table.Rows[1], Is.EqualTo(new[] { "42", "Bob" }));
 
         string[] headers = ["Name"];
-        object[][] cells = [["before"], [null]];
+        object?[][] cells = [["before"], [null]];
         var explicitTable = StepTable.From(headers, cells);
         headers[0] = "changed";
         cells[0][0] = "after";
@@ -191,10 +191,10 @@ public class StructuredStepArgumentTests : BDTestBase
 
     private sealed class UploadHandler : HttpMessageHandler
     {
-        public string Json { get; private set; }
+        public string? Json { get; private set; }
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
-            if (request.Method == HttpMethod.Post) Json = await request.Content.ReadAsStringAsync(cancellationToken);
+            if (request.Method == HttpMethod.Post) Json = await Required(request.Content).ReadAsStringAsync(cancellationToken);
             return new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent("https://reports.example/report") };
         }
     }

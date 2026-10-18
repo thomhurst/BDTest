@@ -126,7 +126,7 @@ public class ScenarioRetentionTests
 
     public sealed class CaptureContext { }
 
-    private sealed class Capture(string outcome, string id = null) : AbstractContextBDTestBase<CaptureContext>
+    private sealed class Capture(string outcome, string? id = null) : AbstractContextBDTestBase<CaptureContext>
     {
         public string Id { get; } = id ?? Guid.NewGuid().ToString();
         public bool ShouldSkip => outcome == "skipped";

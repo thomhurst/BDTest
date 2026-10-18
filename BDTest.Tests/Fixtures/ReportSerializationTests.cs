@@ -56,7 +56,7 @@ public class ReportSerializationTests
         };
 
         var json = BDTestJsonHelper.Serialize(report);
-        var restored = JsonSerializer.Deserialize(json, BDTestJsonContext.Default.BDTestOutputModel);
+        var restored = Required(JsonSerializer.Deserialize(json, BDTestJsonContext.Default.BDTestOutputModel));
 
         Assert.That(json, Does.Not.Contain("\"$id\"").And.Not.Contain("\"$ref\""));
         Assert.That(json, Does.Contain("\"Status\":\"Failed\"").And.Contain("0.00:00:01:2345678"));
@@ -79,7 +79,7 @@ public class ReportSerializationTests
             {"RecordId":"report","Counts":{"Total":1,"Failed":1},"Status":1,"Tag":"tag"}
             """, ReportJsonContext.Default.TestRunSummary);
         var summaryJson = JsonSerializer.Serialize(summary, ReportJsonContext.Default.TestRunSummary);
-        var restoredSummary = JsonSerializer.Deserialize(summaryJson, ReportJsonContext.Default.TestRunSummary);
+        var restoredSummary = Required(JsonSerializer.Deserialize(summaryJson, ReportJsonContext.Default.TestRunSummary));
         Assert.That(restoredSummary.RecordId, Is.EqualTo("report"));
         Assert.That(restoredSummary.Counts.Failed, Is.EqualTo(1));
         Assert.That(JsonSerializer.Serialize(restoredSummary, ReportJsonContext.Default.TestRunSummary), Is.EqualTo(summaryJson));
@@ -114,8 +114,8 @@ public class ReportSerializationTests
             """);
 
         var expected = JsonSerializer.Deserialize<Dictionary<string, string>>("{" + properties + "}");
-        Assert.That(report.CustomProperties, Is.EquivalentTo(expected));
-        Assert.That(report.Scenarios.Single().ExampleValues, Is.EquivalentTo(expected));
+        Assert.That(report.CustomProperties, Is.EquivalentTo(Required(expected)));
+        Assert.That(report.Scenarios.Single().ExampleValues, Is.EquivalentTo(Required(expected)));
     }
 
     [TestCase(0, Status.Passed)]
@@ -191,7 +191,7 @@ public class ReportSerializationTests
         });
         using var before = services.BuildServiceProvider();
         var expected = before.GetRequiredService<IOptions<MvcOptions>>().Value;
-        mvc.AddBdTestReportControllersAndViews();
+        services.AddBDTestReports();
         using var after = services.BuildServiceProvider();
         var actual = after.GetRequiredService<IOptions<MvcOptions>>().Value;
 

@@ -26,13 +26,13 @@ public class NUnitTeardownHookTests
 [TestFixture(true)]
 public class NUnitTeardownTests : NUnitBDTestBase<MyTestContext>
 {
-    private Action<BDTestContext<MyTestContext>> Configure { get; set; }
+    private Action<BDTestContext<MyTestContext>>? Configure { get; set; }
     protected override void ConfigureContext(BDTestContext<MyTestContext> context) => Configure?.Invoke(context);
 
-    private readonly BDTestRun _run;
+    private readonly BDTestRun? _run;
     private readonly List<string> _events = new();
-    private MyTestContext _scenarioContext;
-    private Scenario _scenario;
+    private MyTestContext? _scenarioContext;
+    private Scenario? _scenario;
     private int _attempts;
     private int _amendments;
     private int _completionCalls;
@@ -66,7 +66,8 @@ public class NUnitTeardownTests : NUnitBDTestBase<MyTestContext>
         _events.Add("test finished");
     }
 
-    // Deliberately no attribute: NUnit must still invoke the user's virtual override.
+    // Deliberately no TearDown attribute: NUnit must still invoke the user's virtual override.
+    [Obsolete("Retained to verify the legacy NUnit teardown override.")]
     protected override void MarkTestAsComplete()
     {
         _completionCalls++;
@@ -94,7 +95,7 @@ public class NUnitTeardownTests : NUnitBDTestBase<MyTestContext>
             }));
             Assert.That(_completionCalls, Is.EqualTo(1));
             Assert.That(_amendments, Is.EqualTo(3), "Two attempt contexts and one replacement after context removal.");
-            Assert.That(_scenario.TearDownOutput, Does.Contain("completion override output"));
+            Assert.That(Required(_scenario).TearDownOutput, Does.Contain("completion override output"));
         }
         finally
         {

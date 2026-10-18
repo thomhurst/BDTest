@@ -233,7 +233,7 @@ public class StructuredExceptionTests
 
     private sealed class UnreadableSourceException() : Exception("original failure", new Exception("original cause"))
     {
-        public override string Source { get => throw new InvalidOperationException("source getter failed"); set { } }
+        public override string? Source { get => throw new InvalidOperationException("source getter failed"); set { } }
     }
 
     private sealed class UnreadableDataException(string failure) : Exception("original failure", new Exception("original cause"))
@@ -241,7 +241,8 @@ public class StructuredExceptionTests
         public override IDictionary Data => failure switch
         {
             "getter" => throw new InvalidOperationException("data getter failed"),
-            "null" => null,
+            // Intentionally violate the BCL contract to test defensive exception capture.
+            "null" => null!,
             _ => new UnreadableDictionary(failure)
         };
     }
@@ -259,7 +260,7 @@ public class StructuredExceptionTests
         public DictionaryEntry Entry => throw new InvalidOperationException("entry failed");
         public object Current => Entry;
         public object Key => Entry.Key;
-        public object Value => Entry.Value;
+        public object? Value => Entry.Value;
         public void Reset() => throw new NotSupportedException();
     }
 }

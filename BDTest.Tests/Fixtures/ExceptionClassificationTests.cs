@@ -10,8 +10,8 @@ namespace BDTest.Tests.Fixtures;
 [NonParallelizable]
 public class ExceptionClassificationTests : BDTestBase
 {
-    private BDTestOptions _options;
-    private BDTestRun _run;
+    private BDTestOptions _options = null!; // Assigned by NUnit SetUp.
+    private BDTestRun? _run;
     public override BDTestRun TestRun => _run ??= BDTestRun.Start(_options);
 
     [SetUp]
@@ -109,7 +109,7 @@ public class ExceptionClassificationTests : BDTestBase
         _options.SuccessExceptionTypes.Add(typeof(SuccessSignal));
         _options.SkipExceptionTypes.Add(typeof(SkipSignal));
         _options.InconclusiveExceptionTypes.Add(typeof(InconclusiveSignal));
-        BeginTest(TestContext.CurrentContext.Test.ID, global::NUnit.Framework.Internal.TestExecutionContext.CurrentContext.CurrentTest.Method.MethodInfo);
+        BeginTest(TestContext.CurrentContext.Test.ID, Required(global::NUnit.Framework.Internal.TestExecutionContext.CurrentContext.CurrentTest.Method).MethodInfo);
         var exception = Wrap(CreateException(status, subclass: true), Wrapper.Nested);
         var builder = When(() => Throw(exception)).Then(() => NoOp());
 
@@ -202,7 +202,7 @@ public class ExceptionClassificationTests : BDTestBase
         Assert.That(scenario.Steps[2].Status, Is.EqualTo(status == Status.Skipped ? Status.Skipped : Status.NotRun));
     }
 
-    private static async Task<Exception> Capture(Func<Task<Scenario>> execute)
+    private static async Task<Exception?> Capture(Func<Task<Scenario>> execute)
     {
         try { await execute(); }
         catch (Exception exception) { return exception; }

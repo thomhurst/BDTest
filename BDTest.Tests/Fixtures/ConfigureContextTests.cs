@@ -13,7 +13,7 @@ public class ConfigureContextTests
     {
         var fixture = new ContextFixture(frameworkId);
         var calls = 0;
-        BDTestContext<MyTestContext> configured = null;
+        BDTestContext<MyTestContext>? configured = null;
         fixture.Configure = context =>
         {
             // Fail safely on the old implementation instead of overflowing the test host's stack.
@@ -27,7 +27,7 @@ public class ConfigureContextTests
         {
             var initialized = fixture.BDTestContext;
             Assert.That(initialized, Is.SameAs(configured));
-            Assert.That(fixture.Context, Is.SameAs(configured.TestContext));
+            Assert.That(fixture.Context, Is.SameAs(Required(configured).TestContext));
             Assert.That(calls, Is.EqualTo(1));
         }
         finally
@@ -118,7 +118,7 @@ public class ConfigureContextTests
         {
             var original = fixture.BDTestContext;
             var error = await Assert.ThrowsAsync<ErrorOccurredDuringRetryActionException>(async () => await fixture.RunRetriedScenario());
-            Assert.That(error.GetBaseException(), Is.SameAs(expected));
+            Assert.That(Required(error).GetBaseException(), Is.SameAs(expected));
             var recovered = fixture.BDTestContext;
             Assert.That(attempts.Count, Is.EqualTo(3));
             Assert.That(recovered, Is.SameAs(attempts[2]));
@@ -137,7 +137,7 @@ public class ConfigureContextTests
         private readonly string _frameworkId = Guid.NewGuid().ToString();
         protected override string BDTestExecutionId => frameworkId ? _frameworkId : base.BDTestExecutionId;
 
-        public Action<BDTestContext<MyTestContext>> Configure { get; set; }
+        public Action<BDTestContext<MyTestContext>>? Configure { get; set; }
         protected override void ConfigureContext(BDTestContext<MyTestContext> context) => Configure?.Invoke(context);
 
         private int _attempts;
@@ -157,6 +157,7 @@ public class ConfigureContextTests
             }
         }
 
-        public void Complete() => MarkTestAsComplete();
+        // Exercise completion of standalone contexts that never called BeginTest.
+        public void Complete() => BDTest.Tests.Helpers.LegacyLifecycle.Complete(this);
     }
 }

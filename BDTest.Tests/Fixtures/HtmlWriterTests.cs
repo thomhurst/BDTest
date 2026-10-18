@@ -11,8 +11,11 @@ public class HtmlWriterTests : BDTestBase
     private readonly string _executionId = Guid.NewGuid().ToString();
     protected override string BDTestExecutionId => _executionId;
 
+    [SetUp]
+    public void BeginExecution() => BeginTest(_executionId);
+
     [TearDown]
-    public void CompleteTest() => MarkTestAsComplete();
+    public void CompleteTest() => EndTest();
 
     [Test]
     public async Task TextIsEncoded()
@@ -137,7 +140,7 @@ public class HtmlWriterTests : BDTestBase
     private static void NoOp() { }
     private static XElement ParseElement(string html) => XElement.Parse(html[..^4]);
 
-    private static void WriteUrl(HtmlWriter writer, string kind, string url)
+    private static void WriteUrl(HtmlWriter writer, string kind, string? url)
     {
         switch (kind)
         {

@@ -29,8 +29,8 @@ public class ReportHeaderTests
         }
         else
         {
-            Assert.That((string)element.Attribute("href"), Is.EqualTo(url));
-            Assert.That((string)element.Attribute("target"), Is.EqualTo("_blank"));
+            Assert.That((string?)element.Attribute("href"), Is.EqualTo(url));
+            Assert.That((string?)element.Attribute("target"), Is.EqualTo("_blank"));
         }
     }
 

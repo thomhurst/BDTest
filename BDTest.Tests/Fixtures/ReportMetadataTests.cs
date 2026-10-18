@@ -10,18 +10,17 @@ namespace BDTest.Tests.Fixtures;
 [NonParallelizable]
 public class ReportMetadataTests
 {
-    private string _environment;
-    private string _tag;
-    private string _branchName;
+    private string? _environment;
+    private string? _tag;
+    private string? _branchName;
 
-#pragma warning disable CS0618 // Exercise the shipped legacy settings through their public setters.
     [SetUp]
     public void SetUp()
     {
         TestResetHelper.ResetData();
-        _environment = BDTestSettings.Environment;
-        _tag = BDTestSettings.Tag;
-        _branchName = BDTestSettings.BranchName;
+        _environment = LegacySettings.Get<string>("Environment");
+        _tag = LegacySettings.Get<string>("Tag");
+        _branchName = LegacySettings.Get<string>("BranchName");
         SetLegacySettings("Legacy environment", "Legacy tag", "Legacy branch");
     }
 
@@ -32,13 +31,12 @@ public class ReportMetadataTests
         TestResetHelper.ResetData();
     }
 
-    private static void SetLegacySettings(string environment, string tag, string branchName)
+    private static void SetLegacySettings(string? environment, string? tag, string? branchName)
     {
-        BDTestSettings.Environment = environment;
-        BDTestSettings.Tag = tag;
-        BDTestSettings.BranchName = branchName;
+        LegacySettings.Set("Environment", environment);
+        LegacySettings.Set("Tag", tag);
+        LegacySettings.Set("BranchName", branchName);
     }
-#pragma warning restore CS0618
 
     [Test]
     public async Task DescriptorValuesOverrideLegacySettings(
@@ -119,8 +117,8 @@ public class ReportMetadataTests
                 .And.Contain("<dt>Branch</dt><dd class=\"unset\">Not Specified</dd>"));
     }
 
-    private static async Task AssertMetadataAsync(string path, BDTestRunDescriptor descriptor,
-        string environment, string tag, string branchName, bool useDefaultOverload = false)
+    private static async Task AssertMetadataAsync(string path, BDTestRunDescriptor? descriptor,
+        string? environment, string? tag, string? branchName, bool useDefaultOverload = false)
     {
         if (path == "html")
         {
@@ -140,7 +138,7 @@ public class ReportMetadataTests
             using var client = new HttpClient(handler);
             // The injected-client overload allows an entirely local upload assertion.
             await BDTestReportServer.SendDataAndGetReportUriAsync(new Uri("https://reports.example"), descriptor, client);
-            json = handler.UploadJson;
+            json = Required(handler.UploadJson);
         }
         else
         {
@@ -157,13 +155,13 @@ public class ReportMetadataTests
 
     private sealed class MetadataUploadHandler : HttpMessageHandler
     {
-        public string UploadJson { get; private set; }
+        public string? UploadJson { get; private set; }
 
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
             if (request.Method == HttpMethod.Post)
             {
-                UploadJson = await request.Content.ReadAsStringAsync(cancellationToken);
+                UploadJson = await Required(request.Content).ReadAsStringAsync(cancellationToken);
             }
 
             return new HttpResponseMessage(HttpStatusCode.OK)

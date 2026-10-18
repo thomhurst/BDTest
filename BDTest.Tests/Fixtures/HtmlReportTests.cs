@@ -16,7 +16,7 @@ namespace BDTest.Tests.Fixtures;
 public class HtmlReportTests : BDTestBase
 {
     [SetUp]
-    public void BindMetadata() => BeginTest(TestContext.CurrentContext.Test.ID, global::NUnit.Framework.Internal.TestExecutionContext.CurrentContext.CurrentTest.Method.MethodInfo);
+    public void BindMetadata() => BeginTest(TestContext.CurrentContext.Test.ID, Required(global::NUnit.Framework.Internal.TestExecutionContext.CurrentContext.CurrentTest.Method).MethodInfo);
 
     [TearDown]
     public void FinishExecution() => EndTest();
@@ -68,15 +68,17 @@ public class HtmlReportTests : BDTestBase
     [TestCase(true)]
     public void MissingDescriptorValuesUseConfiguredDefaults(bool nullDescriptor)
     {
-#pragma warning disable CS0618 // Verify compatibility with the JSON report's legacy defaults.
-        var environment = BDTestSettings.Environment;
-        var tag = BDTestSettings.Tag;
-        var branch = BDTestSettings.BranchName;
+        var environmentProperty = Required(typeof(BDTestSettings).GetProperty("Environment"));
+        var tagProperty = Required(typeof(BDTestSettings).GetProperty("Tag"));
+        var branchProperty = Required(typeof(BDTestSettings).GetProperty("BranchName"));
+        var environment = environmentProperty.GetValue(null);
+        var tag = tagProperty.GetValue(null);
+        var branch = branchProperty.GetValue(null);
         try
         {
-            BDTestSettings.Environment = "Configured environment";
-            BDTestSettings.Tag = "Configured tag";
-            BDTestSettings.BranchName = "Configured branch";
+            environmentProperty.SetValue(null, "Configured environment");
+            tagProperty.SetValue(null, "Configured tag");
+            branchProperty.SetValue(null, "Configured branch");
             var html = nullDescriptor
                 ? BDTestHtmlHelper.GetTestHtmlReport(null)
                 : BDTestHtmlHelper.GetTestHtmlReport();
@@ -87,11 +89,10 @@ public class HtmlReportTests : BDTestBase
         }
         finally
         {
-            BDTestSettings.Environment = environment;
-            BDTestSettings.Tag = tag;
-            BDTestSettings.BranchName = branch;
+            environmentProperty.SetValue(null, environment);
+            tagProperty.SetValue(null, tag);
+            branchProperty.SetValue(null, branch);
         }
-#pragma warning restore CS0618
     }
 
     [Test]
@@ -290,7 +291,7 @@ public class HtmlReportTests : BDTestBase
     {
         if (includePassingScenario)
             await When(() => DoNothing()).Then(() => DoNothing()).BDTestAsync();
-        When(() => DoNothing()).Then(() => DoNothing()).WithScenarioText("Unexecuted definition");
+        _ = When(() => DoNothing()).Then(() => DoNothing()).WithScenarioText("Unexecuted definition");
 
         var html = BDTestHtmlHelper.GetTestHtmlReport();
 

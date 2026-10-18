@@ -42,6 +42,7 @@ public class ChildFlowContextLifetimeTests
 
     private sealed class TestFixture : AbstractContextBDTestBase<MyTestContext>
     {
-        public void Complete() => MarkTestAsComplete();
+        // Exercise completion of standalone contexts that never called BeginTest.
+        public void Complete() => BDTest.Tests.Helpers.LegacyLifecycle.Complete(this);
     }
 }

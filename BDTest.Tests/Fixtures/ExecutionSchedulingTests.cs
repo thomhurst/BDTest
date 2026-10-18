@@ -7,14 +7,14 @@ namespace BDTest.Tests.Fixtures;
 public class ExecutionSchedulingTests : BDTestBase
 {
     [SetUp]
-    public void BindMetadata() => BeginTest(TestContext.CurrentContext.Test.ID, global::NUnit.Framework.Internal.TestExecutionContext.CurrentContext.CurrentTest.Method.MethodInfo);
+    public void BindMetadata() => BeginTest(TestContext.CurrentContext.Test.ID, Required(global::NUnit.Framework.Internal.TestExecutionContext.CurrentContext.CurrentTest.Method).MethodInfo);
 
     [TearDown]
     public void FinishExecution() => EndTest();
 
     private readonly string _executionId = Guid.NewGuid().ToString();
     protected override string BDTestExecutionId => _executionId;
-    private SynchronizationContext _callerContext;
+    private SynchronizationContext? _callerContext;
     private int _callerThread;
     private int _contextAttempts;
 
@@ -121,7 +121,7 @@ public class ExecutionSchedulingTests : BDTestBase
     {
         CheckCallerContext();
         var finish = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        SynchronizationContext.Current.Post(_ => finish.SetResult(), null);
+        Required(SynchronizationContext.Current).Post(_ => finish.SetResult(), null);
         await finish.Task.ConfigureAwait(false);
         Assert.That(SynchronizationContext.Current, Is.Null);
         Assert.That(Environment.CurrentManagedThreadId, Is.Not.EqualTo(_callerThread));
@@ -200,9 +200,9 @@ public class ExecutionSchedulingTests : BDTestBase
 
     private sealed class PumpedSynchronizationContext : SynchronizationContext, IDisposable
     {
-        private readonly System.Collections.Concurrent.BlockingCollection<(SendOrPostCallback Callback, object State)> _callbacks = new();
+        private readonly System.Collections.Concurrent.BlockingCollection<(SendOrPostCallback Callback, object? State)> _callbacks = new();
 
-        public override void Post(SendOrPostCallback callback, object state) => _callbacks.Add((callback, state));
+        public override void Post(SendOrPostCallback callback, object? state) => _callbacks.Add((callback, state));
 
         public void PumpUntilCompleted(Task execution)
         {

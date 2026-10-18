@@ -78,7 +78,7 @@ public class ReportRoutingTests
         await using var server = await Server.Start(protect: protect, mapHost: false);
         var endpoints = server.App.Services.GetRequiredService<EndpointDataSource>().Endpoints;
         Assert.That(endpoints.Select(endpoint => endpoint.Metadata.GetMetadata<ControllerActionDescriptor>())
-            .Where(action => action != null).Select(action => action.ControllerTypeInfo.Assembly),
+            .OfType<ControllerActionDescriptor>().Select(action => action.ControllerTypeInfo.Assembly),
             Has.All.EqualTo(typeof(BDTestExtensions).Assembly));
         using var host = await server.Client.GetAsync("/host-routing-test");
         Assert.That(host.StatusCode, Is.EqualTo(HttpStatusCode.NotFound));
@@ -151,7 +151,7 @@ public class ReportRoutingTests
     {
         await using var server = await Server.Start(prefix, "/proxy", mapHost: false);
         var reportBase = "/proxy" + prefix;
-        string reportId = null;
+        string? reportId = null;
         foreach (var status in new[] { "Passed", "Failed" })
         {
             var json = ReportJson.SerializeObject(new

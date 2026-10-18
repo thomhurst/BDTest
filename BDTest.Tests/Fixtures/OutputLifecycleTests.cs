@@ -253,7 +253,7 @@ public class OutputLifecycleTests
             _scenarios.Add(scenario);
             return scenario;
         }
-        public void Complete() => MarkTestAsComplete();
+        public void Complete() => BDTest.Tests.Helpers.LegacyLifecycle.Complete(this);
         public void Dispose()
         {
             Complete();

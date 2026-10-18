@@ -146,7 +146,7 @@ public class ScenarioHookTests
             {
                 await test.When(async token => await Task.Delay(Timeout.InfiniteTimeSpan, token))
                     .Then(() => Complete()).WithScenarioTimeout(TimeSpan.FromMilliseconds(100)).BDTestAsync();
-                return (Exception)null;
+                return (Exception?)null;
             }
             catch (Exception exception) { return exception; }
         });
@@ -265,7 +265,7 @@ public class ScenarioHookTests
         };
         var scenario = await test.When(() => Complete()).Then(() => Complete())
             .WithScenarioTimeout(TimeSpan.FromMilliseconds(100)).BDTestAsync();
-        Assert.That(hookTimes, Is.All.GreaterThan(scenario.Timeout.Value));
+        Assert.That(hookTimes, Is.All.GreaterThan((scenario.Timeout ?? throw new AssertionException("Expected a scenario timeout."))));
         Assert.That(scenario.TimeTaken, Is.GreaterThanOrEqualTo(hookTimes[0] + hookTimes[1]));
         Assert.That(scenario.Attempts.Single().TimeTaken, Is.EqualTo(scenario.TimeTaken));
         Assert.That(scenario.Status, Is.EqualTo(Status.Passed));
@@ -419,7 +419,7 @@ public class ScenarioHookTests
         public override Task OnBeforeScenario(ScenarioHookContext<State> scenario) => Before(scenario);
         public override Task OnAfterScenario(ScenarioHookContext<State> scenario) => After(scenario);
     }
-    private sealed class Hook(Func<ScenarioHookContext, Task> before, Func<ScenarioHookContext, Task> after = null) : IScenarioHook
+    private sealed class Hook(Func<ScenarioHookContext, Task> before, Func<ScenarioHookContext, Task>? after = null) : IScenarioHook
     {
         public Task BeforeScenarioAsync(ScenarioHookContext scenario) => before(scenario);
         public Task AfterScenarioAsync(ScenarioHookContext scenario) => after?.Invoke(scenario) ?? Task.CompletedTask;
