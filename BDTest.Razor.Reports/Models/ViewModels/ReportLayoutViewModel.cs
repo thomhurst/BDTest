@@ -7,12 +7,12 @@ namespace BDTest.Razor.Reports.Models.ViewModels;
 
 public class ReportLayoutViewModel
 {
-    private List<Scenario> _scenarios;
-    private Dictionary<Status, int> _counts;
-    private TestTimer _timer;
+    private List<Scenario>? _scenarios;
+    private Dictionary<Status, int>? _counts;
+    private TestTimer? _timer;
     private int? _failureCauses;
 
-    public BDTestOutputModel Report { get; set; }
+    public BDTestOutputModel? Report { get; set; }
 
     public IReadOnlyList<Scenario> Scenarios =>
         _scenarios ??= Report?.Scenarios?.Where(scenario => scenario != null).ToList() ?? new List<Scenario>();

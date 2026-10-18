@@ -10,9 +10,9 @@ internal static class ReportSecurityHeaders
 
     internal static string GetNonce(HttpContext context)
     {
-        if (context.Items.TryGetValue(NonceKey, out var existing))
+        if (context.Items.TryGetValue(NonceKey, out var existing) && existing is string nonceValue)
         {
-            return (string)existing;
+            return nonceValue;
         }
 
         var nonce = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32));

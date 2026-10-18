@@ -26,7 +26,7 @@ public static class BDTestExtensions
 
     /// <summary>Registers report controllers, views, services, and startup-validated options.</summary>
     public static OptionsBuilder<BDTestReportOptions> AddBDTestReports(this IServiceCollection services,
-        Action<BDTestReportOptions> configure = null)
+        Action<BDTestReportOptions>? configure = null)
     {
         services.AddControllersWithViews().AddApplicationPart(typeof(BDTestController).Assembly);
         services.TryAddSingleton<ReportRoutes>();
@@ -94,7 +94,7 @@ public static class BDTestExtensions
         {
             context.Response.Headers.CacheControl = "public,max-age=86400";
             var stream = typeof(BDTestExtensions).Assembly.GetManifestResourceStream("BDTest.Razor.Reports.wwwroot" + path.Replace('/', '.'));
-            return Results.Stream(stream, contentType);
+            return Results.Stream(stream ?? throw new InvalidOperationException($"Missing embedded report asset: {path}"), contentType);
         }).WithName("BDTest.Asset" + path).WithMetadata(new ReportRoutes.AssetMetadata());
     }
 

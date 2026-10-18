@@ -6,7 +6,8 @@
 @inject IDataRepository DataRepository
 
 @{
-    var report = Model.Report;
+    var report = Model.Report
+        ?? throw new InvalidOperationException("A report is required for the run header.");
     var activeTab = ViewData["RunTab"] as string ?? "overview";
     var total = Model.Scenarios.Count;
     var failed = Model.Counts[Status.Failed];
@@ -26,11 +27,11 @@
     var previous = index > 0 ? series[index - 1] : null;
     var next = index >= 0 && index < series.Count - 1 ? series[index + 1] : null;
 
-    var historyQuery = new Dictionary<string, string>
+    var historyQuery = new Dictionary<string, string?>
     {
         ["tag"] = report.Tag, ["environment"] = report.Environment, ["branch"] = report.BranchName
     }.Where(pair => !string.IsNullOrEmpty(pair.Value))
-        .Select(pair => pair.Key + "=" + Uri.EscapeDataString(pair.Value));
+        .Select(pair => pair.Key + "=" + Uri.EscapeDataString(pair.Value ?? string.Empty));
     var historyUrl = Url.ReportAction("Trends") + (historyQuery.Any() ? "?" + string.Join("&", historyQuery) : string.Empty);
     var started = Model.Timer.TestsStartedAt;
     var hasTimes = total > 0 || report.TestTimer != null;
@@ -110,7 +111,7 @@
 
 @functions
 {
-    private string RunUrl(string id, string tab)
+    private string RunUrl(string? id, string tab)
     {
         var page = tab switch
         {
@@ -123,7 +124,7 @@
         return Url.ReportAction(page, new { id = id ?? string.Empty });
     }
 
-    private Microsoft.AspNetCore.Html.IHtmlContent Tab(string key, string text, string href, string count, bool failure)
+    private Microsoft.AspNetCore.Html.IHtmlContent Tab(string key, string text, string href, string? count, bool failure)
     {
         var active = string.Equals(ViewData["RunTab"] as string ?? "overview", key, StringComparison.Ordinal);
         var encoder = System.Text.Encodings.Web.HtmlEncoder.Default;

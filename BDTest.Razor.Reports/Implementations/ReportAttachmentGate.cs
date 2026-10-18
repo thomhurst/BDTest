@@ -8,7 +8,7 @@ public sealed class ReportAttachmentGate
 
     internal async Task<IDisposable> EnterAsync(string reportId, CancellationToken cancellationToken = default)
     {
-        Entry entry;
+        Entry? entry;
         lock (_entries)
         {
             if (!_entries.TryGetValue(reportId, out entry))

@@ -65,7 +65,7 @@ Core and Razor reports grant `InternalsVisibleTo` only to `BDTest.Tests`, using 
 ## Conventions
 
 - `Directory.Build.props` sets `LangVersion=latest` and `ImplicitUsings=enable` for all projects.
-- Nullable analysis and warnings-as-errors currently apply to `BDTest.Pipeline` and `BDTest.Pipeline.Tests`; see `BUILDING.md` for the rollout plan.
+- `Nullable=enable` and `TreatWarningsAsErrors=true` apply to every project through `Directory.Build.props`; see `BUILDING.md` for nullable contract and validation guidance.
 - Package metadata is generated from csproj properties and `PackageReference`s. Shared metadata, the packed icon, and SourceLink/symbol settings live in `Directory.Build.props`; each package supplies its ID, title, description, and tags. Preserve each project's target framework.
 - Keep the docs in sync with the library. Any change to how BDTest is used (public API, attributes, settings, adapter behavior, report formats, report server options or endpoints, package names or targets) must update the matching pages in `docs/docs/` in the same PR. Add new pages to `docs/sidebars.js`. Run `npm run build` in `docs/` to check links. `.github/workflows/docs.yml` builds the site on PRs and deploys it to GitHub Pages from `main`.
 - Dependency updates arrive via Renovate/Dependabot PRs and are auto-merged by workflow.

@@ -13,26 +13,26 @@ public class FailureGroup
     private const int MaximumStackTraceCharacters = 8192;
     private const int MaximumStackFrames = 50;
 
-    public string Key { get; private init; }
+    public string Key { get; private init; } = string.Empty;
 
     /// <summary>Exception type name, or an empty string when the failure has no exception.</summary>
-    public string TypeName { get; private init; }
+    public string TypeName { get; private init; } = string.Empty;
 
     /// <summary>The headline shown for the group: an exception message or a failing step.</summary>
-    public string Title { get; private init; }
+    public string Title { get; private init; } = string.Empty;
 
     /// <summary>Where the exception was thrown, for example "CheckoutSteps.cs:line 84 · CheckoutSteps.Then".</summary>
-    public string Location { get; private init; }
+    public string? Location { get; private init; }
 
-    public ExceptionWrapper Exception { get; private init; }
+    public ExceptionWrapper? Exception { get; private init; }
 
-    public IReadOnlyList<Scenario> Scenarios { get; private init; }
+    public IReadOnlyList<Scenario> Scenarios { get; private init; } = Array.Empty<Scenario>();
 
-    public static IReadOnlyList<FailureGroup> Build(IEnumerable<Scenario> scenarios, string groupBy)
+    public static IReadOnlyList<FailureGroup> Build(IEnumerable<Scenario> scenarios, string? groupBy)
     {
         return scenarios
             .Where(scenario => scenario is { Status: Status.Failed })
-            .SelectMany(scenario => (scenario.Exception?.GetRootCauses() ?? new ExceptionWrapper[] { null })
+            .SelectMany(scenario => (scenario.Exception?.GetRootCauses().Cast<ExceptionWrapper?>() ?? new ExceptionWrapper?[] { null })
                 .GroupBy(exception => GetKey(scenario, exception, groupBy))
                 .Select(group => (Scenario: scenario, Exception: group.First(), Key: group.Key)))
             .GroupBy(entry => entry.Key)
@@ -61,7 +61,7 @@ public class FailureGroup
             .ToList();
     }
 
-    public static string Normalize(string groupBy) => groupBy switch
+    public static string Normalize(string? groupBy) => groupBy switch
     {
         ByExceptionType => ByExceptionType,
         ByFailingStep => ByFailingStep,
@@ -70,16 +70,16 @@ public class FailureGroup
 
     /// <summary>The step that failed, or the first step that recorded an exception.</summary>
     /// <remarks>Outlines keep their executed steps on their examples, so the first failed example is searched.</remarks>
-    public static Step FailingStep(Scenario scenario) => FindFailingStep(scenario).Step;
+    public static Step? FailingStep(Scenario? scenario) => FindFailingStep(scenario).Step;
 
     /// <summary>The 1-based position of the failing step within its scenario or outline example, or 0.</summary>
-    public static int FailingStepNumber(Scenario scenario)
+    public static int FailingStepNumber(Scenario? scenario)
     {
         var (step, owner) = FindFailingStep(scenario);
-        return step == null ? 0 : owner.Steps.IndexOf(step) + 1;
+        return step == null ? 0 : (owner?.Steps?.IndexOf(step) ?? -1) + 1;
     }
 
-    private static (Step Step, Scenario Owner) FindFailingStep(Scenario scenario)
+    private static (Step? Step, Scenario? Owner) FindFailingStep(Scenario? scenario)
     {
         var steps = scenario?.Steps ?? new List<Step>();
         var step = steps.FirstOrDefault(s => s.Status == Status.Failed) ?? steps.FirstOrDefault(s => s.Exception != null);
@@ -102,7 +102,7 @@ public class FailureGroup
     }
 
     /// <summary>The first stack frame with a source location, formatted as "File.cs:line 84 · Type.Method".</summary>
-    public static string GetLocation(ExceptionWrapper exception)
+    public static string? GetLocation(ExceptionWrapper? exception)
     {
         var stackTrace = exception?.StackTrace;
         if (string.IsNullOrEmpty(stackTrace))
@@ -110,7 +110,7 @@ public class FailureGroup
             return null;
         }
 
-        string fallback = null;
+        string? fallback = null;
         var text = stackTrace.Length > MaximumStackTraceCharacters ? stackTrace[..MaximumStackTraceCharacters] : stackTrace;
         foreach (var rawLine in text.Split('\n').Take(MaximumStackFrames))
         {
@@ -144,7 +144,7 @@ public class FailureGroup
         return fallback;
     }
 
-    private static string GetKey(Scenario scenario, ExceptionWrapper exception, string groupBy)
+    private static string GetKey(Scenario scenario, ExceptionWrapper? exception, string? groupBy)
     {
         return groupBy switch
         {
@@ -154,7 +154,7 @@ public class FailureGroup
         };
     }
 
-    private static string FirstLine(string text)
+    private static string? FirstLine(string? text)
     {
         if (string.IsNullOrWhiteSpace(text))
         {

@@ -7,7 +7,8 @@
 @model BDTest.Maps.BDTestOutputModel
 @inject IDataRepository DataRepository
 @{
-    var run = (ReportLayoutViewModel)ViewData[nameof(ReportLayoutViewModel)];
+    var run = ViewData[nameof(ReportLayoutViewModel)] as ReportLayoutViewModel
+        ?? throw new InvalidOperationException("The report layout model is required for this view.");
     ViewBag.Title = run.Title + " overview";
     ViewData["RunTab"] = "overview";
     Layout = "_Layout";
@@ -30,16 +31,16 @@
         .ToList();
     var position = series.FindIndex(record => record.RecordId == Model.Id);
     var recent = (position < 0 ? series : series.Take(position + 1)).TakeLast(20).ToList();
-    var recentTotal = recent.Sum(record => record.Counts.Total);
-    var recentPassRate = recentTotal == 0 ? null : (double?)recent.Sum(record => record.Counts.Passed) / recentTotal * 100;
+    var recentTotal = recent.Sum(record => (record.Counts?.Total ?? 0));
+    var recentPassRate = recentTotal == 0 ? null : (double?)recent.Sum(record => (record.Counts?.Passed ?? 0)) / recentTotal * 100;
     var durations = recent.Select(record => record.FinishedAtDateTime - record.StartedAtDateTime)
         .Where(duration => duration > TimeSpan.Zero).OrderBy(duration => duration).ToList();
     var medianDuration = durations.Count == 0 ? (TimeSpan?)null : durations[durations.Count / 2];
 
-    string ScenarioUrl(Scenario scenario) => Url.ReportScenario(reportId, scenario.Guid);
+    string? ScenarioUrl(Scenario scenario) => Url.ReportScenario(reportId, scenario.Guid);
     string StatusUrl(Status status) => Url.ReportAction("AllScenarios", new { id = reportId }) + "?" + StatusConstants.FilterByStatusQueryParameterName + "=" + status;
 
-    string Headline()
+    string? Headline()
     {
         if (failed > 0) return null;
         if (counts[Status.Passed] == total) return total == 1 ? "The scenario passed" : $"All {total} scenarios passed";
@@ -295,7 +296,7 @@
 
 @functions
 {
-    private Microsoft.AspNetCore.Html.IHtmlContent Detail(string label, string value)
+    private Microsoft.AspNetCore.Html.IHtmlContent Detail(string label, string? value)
     {
         if (string.IsNullOrEmpty(value))
         {

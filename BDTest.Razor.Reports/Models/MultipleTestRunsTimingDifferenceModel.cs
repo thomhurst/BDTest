@@ -23,7 +23,7 @@ public class MultipleTestRunsTimingDifferenceModel
 
     public int ScenarioCount { get; set; }
 
-    public string ScenarioName { get; set; }
+    public string? ScenarioName { get; set; }
 
     public TimeSpan Difference { get; set; }
 
@@ -36,6 +36,6 @@ public class MultipleTestRunsTimingDifferenceModel
 
 public record ScenarioGroupKey
 {
-    public string ScenarioText { get; set; }
-    public string StoryText { get; set; }
+    public string? ScenarioText { get; set; }
+    public string? StoryText { get; set; }
 }

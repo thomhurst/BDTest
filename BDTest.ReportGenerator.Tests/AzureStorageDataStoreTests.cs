@@ -27,7 +27,7 @@ public class AzureStorageDataStoreTests
         Assert.That(input.CanRead, Is.True);
         Assert.That(storage.Uploads[$"/test-data/{report}/attachments/{attachment}"], Is.EqualTo("content"));
         using (var stream = await store.OpenReadAsync(report, attachment))
-        using (var reader = new StreamReader(stream))
+        using (var reader = new StreamReader(stream ?? throw new AssertionException("Expected stored content.")))
             Assert.That(await reader.ReadToEndAsync(), Is.EqualTo("content"));
         Assert.That(storage.DisposedDownloads, Is.EqualTo(1));
     }
@@ -134,7 +134,7 @@ public class AzureStorageDataStoreTests
 
         Assert.That(storage.DisposedDownloads, Is.Zero);
         using (stream)
-        using (var reader = new StreamReader(stream))
+        using (var reader = new StreamReader(stream ?? throw new AssertionException("Expected stored content.")))
         {
             Assert.That(await reader.ReadToEndAsync(), Is.EqualTo(json));
         }
@@ -214,7 +214,7 @@ public class AzureStorageDataStoreTests
             Is.EqualTo(Enumerable.Range(0, 30).Select(index => StorageHandler.Name(index * 2))));
         Assert.That(second.Entries.Select(entry => entry.RecordId),
             Is.EqualTo(Enumerable.Range(30, 8).Select(index => StorageHandler.Name(index * 2))));
-        Assert.That(first.Entries[1].Counts.Total, Is.EqualTo(2));
+        Assert.That(first.Entries[1].Counts?.Total, Is.EqualTo(2));
         Assert.That(first.ContinuationToken, Is.Not.Null.And.Not.Empty);
         Assert.That(second.ContinuationToken, Is.Null);
         Assert.That(storage.ListRequests, Is.EqualTo(6));
@@ -304,7 +304,7 @@ public class AzureStorageDataStoreTests
 
         var result = await CreateStore(client).GetTestData("report", CancellationToken.None);
 
-        Assert.That(result.Id, Is.EqualTo("report"));
+        Assert.That(result?.Id, Is.EqualTo("report"));
         Assert.That(storage.DisposedDownloads, Is.EqualTo(1));
     }
 
@@ -314,15 +314,15 @@ public class AzureStorageDataStoreTests
         using var storage = new StorageHandler(1) { DownloadJson = HistoricalReportFixture.ReadJson() };
         using var client = new HttpClient(storage);
         var report = await CreateStore(client).GetTestData("1113e3bf269c489187245c4339dfd946", CancellationToken.None);
-        HistoricalReportFixture.AssertCompatible(report);
+        HistoricalReportFixture.AssertCompatible(report ?? throw new AssertionException("Expected historical report."));
 
         // StoreTestData uses AsStream; reload its JSON through the production download reader.
         using var stream = report.AsStream();
         using var reader = new StreamReader(stream);
         using var restoredStorage = new StorageHandler(1) { DownloadJson = await reader.ReadToEndAsync() };
         using var restoredClient = new HttpClient(restoredStorage);
-        var restored = await CreateStore(restoredClient).GetTestData(report.Id, CancellationToken.None);
-        HistoricalReportFixture.AssertCompatible(restored);
+        var restored = await CreateStore(restoredClient).GetTestData(report.Id ?? throw new AssertionException("Expected historical report ID."), CancellationToken.None);
+        HistoricalReportFixture.AssertCompatible(restored ?? throw new AssertionException("Expected restored historical report."));
     }
 
     [TestCase(false)]
@@ -478,7 +478,7 @@ public class AzureStorageDataStoreTests
         public ConcurrentBag<string> Downloads { get; } = new();
         public ConcurrentBag<string> DeletedPaths { get; } = new();
         public ConcurrentDictionary<string, string> Uploads { get; } = new();
-        public string AttachmentReport { get; init; }
+        public string? AttachmentReport { get; init; }
         public int ListRequests;
         public int Requests;
         public int Deletes;
@@ -486,8 +486,8 @@ public class AzureStorageDataStoreTests
         public int PeakDownloads;
         private int _activeDownloads;
         public bool GateDownloads { get; init; }
-        public string DownloadJson { get; init; }
-        public Func<int, string> SummaryJson { get; init; }
+        public string? DownloadJson { get; init; }
+        public Func<int, string>? SummaryJson { get; init; }
         public HttpStatusCode? FailedDownloadStatus { get; init; }
         public TaskCompletionSource FirstBatchStarted { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
         public TaskCompletionSource ReleaseDownloads { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);

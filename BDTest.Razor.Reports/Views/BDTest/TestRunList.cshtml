@@ -268,10 +268,10 @@
 
 @functions
 {
-    private Microsoft.AspNetCore.Html.IHtmlContent Select(string label, string name, IEnumerable<string> values, string selected)
+    private Microsoft.AspNetCore.Html.IHtmlContent Select(string label, string name, IEnumerable<string?> values, string? selected)
     {
         var encoder = System.Text.Encodings.Web.HtmlEncoder.Default;
-        var options = values.Where(value => !string.IsNullOrEmpty(value)).Distinct(StringComparer.Ordinal)
+        var options = values.OfType<string>().Where(value => !string.IsNullOrEmpty(value)).Distinct(StringComparer.Ordinal)
             .OrderBy(value => value, StringComparer.OrdinalIgnoreCase).ToList();
         if (selected != null && !options.Contains(selected, StringComparer.Ordinal))
         {

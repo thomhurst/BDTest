@@ -11,7 +11,7 @@ namespace BDTest.Razor.Reports.Routing;
 internal sealed class ReportRoutes : IApplicationModelConvention
 {
     internal sealed class AssetMetadata;
-    internal string Prefix { get; private set; }
+    internal string? Prefix { get; private set; }
     private bool _initialized;
 
     internal void Map(string prefix)

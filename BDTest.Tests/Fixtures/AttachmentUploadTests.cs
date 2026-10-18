@@ -154,9 +154,9 @@ public partial class ReportUploadTests
         Assert.That(attachments.Count(file => file.AttemptNumber == 2), Is.EqualTo(2));
         foreach (var attachment in attachments)
         {
-            using var content = await files.Store.OpenReadAsync(report.Id, attachment.Id);
+            using var content = await files.Store.OpenReadAsync(Required(report.Id), Required(attachment.Id));
             Assert.That(content, Is.Not.Null);
-            Assert.That(content.Length, Is.EqualTo(attachment.Length));
+            Assert.That(Required(content).Length, Is.EqualTo(attachment.Length));
         }
     }
 

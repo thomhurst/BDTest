@@ -2,11 +2,12 @@
 @using BDTest.Test
 @model IGrouping<string, Scenario>[]
 @{
-    var run = (ReportLayoutViewModel)ViewData[nameof(ReportLayoutViewModel)];
+    var run = ViewData[nameof(ReportLayoutViewModel)] as ReportLayoutViewModel
+        ?? throw new InvalidOperationException("The report layout model is required for this view.");
     ViewBag.Title = run.Title + " scenarios";
     ViewData["RunTab"] = "scenarios";
     Layout = "_Layout";
-    var list = ScenarioListBuilder.Build(Model, run.Scenarios, run.Report.Id, Context.Request, groupFixed: false);
+    var list = ScenarioListBuilder.Build(Model, run.Scenarios, run.Report?.Id, Context.Request, groupFixed: false);
 }
 
 @await Html.PartialAsync("_RunHeader", run)

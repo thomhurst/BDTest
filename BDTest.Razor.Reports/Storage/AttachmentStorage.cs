@@ -1,11 +1,13 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace BDTest.Razor.Reports.Storage;
 
 /// <summary>Shared identifier and bounded stream validation for attachment stores.</summary>
 public static class AttachmentStorage
 {
-    public static bool IsValidId(string id) => id?.Length == 32 && id.All(character => character is >= '0' and <= '9' or >= 'a' and <= 'f');
+    public static bool IsValidId([NotNullWhen(true)] string? id) => id?.Length == 32 && id.All(character => character is >= '0' and <= '9' or >= 'a' and <= 'f');
 
-    public static void ValidateIds(string reportId, string attachmentId = null)
+    public static void ValidateIds(string reportId, string? attachmentId = null)
     {
         if (!IsValidId(reportId)) throw new ArgumentException("A lowercase 32-character hexadecimal report ID is required.", nameof(reportId));
         if (attachmentId != null && !IsValidId(attachmentId)) throw new ArgumentException("A lowercase 32-character hexadecimal attachment ID is required.", nameof(attachmentId));

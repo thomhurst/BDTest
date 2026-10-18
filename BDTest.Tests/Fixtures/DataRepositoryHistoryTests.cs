@@ -293,7 +293,7 @@ public class DataRepositoryHistoryTests
         }
 
         public List<TestRunSummary> Records { get; } = [];
-        public ConcurrentDictionary<string, BDTestOutputModel> Reports { get; } = new();
+        public ConcurrentDictionary<string, BDTestOutputModel?> Reports { get; } = new();
         public Func<Task<IEnumerable<TestRunSummary>>>? Read { get; set; }
         public int Loads;
 
@@ -306,7 +306,7 @@ public class DataRepositoryHistoryTests
         public Task<BDTestOutputModel?> GetTestData(string id, CancellationToken cancellationToken) =>
             Task.FromResult(Reports.GetValueOrDefault(id));
 
-        public Task StoreTestData(string id, BDTestOutputModel data) { Reports[id] = data; return Task.CompletedTask; }
+        public Task StoreTestData(string id, BDTestOutputModel? data) { Reports[id] = data; return Task.CompletedTask; }
         public Task DeleteTestData(string id) { Reports.TryRemove(id, out _); return Task.CompletedTask; }
         public Task StoreTestRunRecord(TestRunSummary summary) { Records.Add(summary); return Task.CompletedTask; }
         public Task DeleteTestRunRecord(string id) { Records.RemoveAll(record => record.RecordId == id); return Task.CompletedTask; }

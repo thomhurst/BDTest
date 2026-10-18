@@ -1,4 +1,3 @@
-#nullable enable
 using System.Text.Json;
 using BDTest.Helpers;
 using BDTest.Razor.Reports.Extensions;
@@ -57,7 +56,7 @@ public sealed class LegacyDataStoreAdapter(IBDTestDataStore store) : IReportStor
     {
         cancellationToken.ThrowIfCancellationRequested();
         // Some legacy stores only add missing records. Remove first to guarantee replacement.
-        await store.DeleteTestRunRecord(entry.RecordId);
+        await store.DeleteTestRunRecord(entry.RecordId ?? throw new ArgumentException("A run record ID is required.", nameof(entry)));
         cancellationToken.ThrowIfCancellationRequested();
         await store.StoreTestRunRecord(entry.ToTestRunSummary());
         cancellationToken.ThrowIfCancellationRequested();

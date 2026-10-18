@@ -8,7 +8,7 @@ public static class ScenarioSearch
     public const string QueryParameterName = "q";
     public const string StoryQueryParameterName = "story";
 
-    public static bool Matches(Scenario scenario, string search)
+    public static bool Matches(Scenario? scenario, string? search)
     {
         if (scenario == null)
         {
@@ -20,7 +20,7 @@ public static class ScenarioSearch
             return true;
         }
 
-        bool Has(string text) => text?.Contains(search, StringComparison.OrdinalIgnoreCase) == true;
+        bool Has(string? text) => text?.Contains(search, StringComparison.OrdinalIgnoreCase) == true;
 
         return Has(scenario.GetScenarioText())
                || Has(scenario.GetStoryText())

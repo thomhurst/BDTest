@@ -40,7 +40,7 @@ public class ReportStoreTests
 
         Assert.That(await store.OpenReadAsync("new", default), Is.Null);
         await using var retained = await store.OpenReadAsync("run", default);
-        using var reader = new StreamReader(retained);
+        using var reader = new StreamReader(Required(retained));
         Assert.That(await reader.ReadToEndAsync(), Is.EqualTo("original"));
     }
 
@@ -82,12 +82,12 @@ public class ReportStoreTests
         await store.WriteAsync("run", input, default);
         Assert.That(input.CanRead, Is.True);
         await using var first = await store.OpenReadAsync("run", default);
-        using var reader = new StreamReader(first);
+        using var reader = new StreamReader(Required(first));
         Assert.That(await reader.ReadToEndAsync(), Is.EqualTo(json));
         using var replacement = Bytes("replacement");
         await store.WriteAsync("run", replacement, default);
         await using var second = await store.OpenReadAsync("run", default);
-        using var secondReader = new StreamReader(second);
+        using var secondReader = new StreamReader(Required(second));
         Assert.That(await secondReader.ReadToEndAsync(), Is.EqualTo("replacement"));
         Assert.That(await ((IReportStore)store).DeleteAsync("run", default), Is.True);
         Assert.That(await ((IReportStore)store).DeleteAsync("run", default), Is.False);
@@ -314,7 +314,7 @@ public class ReportStoreTests
         {
             cancellationToken.ThrowIfCancellationRequested();
             Tokens.Add(cancellationToken);
-            Entries[entry.RecordId] = entry;
+            Entries[Required(entry.RecordId)] = entry;
             return Task.CompletedTask;
         }
         Task<bool> IReportStore.DeleteAsync(string reportId, CancellationToken cancellationToken)
@@ -331,18 +331,18 @@ public class ReportStoreTests
 
     private sealed class LegacyStore : IBDTestDataStore
     {
-        private readonly Dictionary<string, BDTestOutputModel> _reports = new();
+        private readonly Dictionary<string, BDTestOutputModel?> _reports = new();
         private readonly Dictionary<string, TestRunSummary> _summaries = new();
         public int Calls;
         public int Deletes;
         public Action? OnRead;
         public Task<BDTestOutputModel?> GetTestData(string id, CancellationToken cancellationToken)
         { Calls++; OnRead?.Invoke(); return Task.FromResult(_reports.GetValueOrDefault(id)); }
-        public Task StoreTestData(string id, BDTestOutputModel data) { Calls++; _reports[id] = data; return Task.CompletedTask; }
+        public Task StoreTestData(string id, BDTestOutputModel? data) { Calls++; _reports[id] = data; return Task.CompletedTask; }
         public Task DeleteTestData(string id) { Deletes++; _reports.Remove(id); return Task.CompletedTask; }
         public Task<IEnumerable<TestRunSummary>> GetAllTestRunRecords()
         { Calls++; OnRead?.Invoke(); return Task.FromResult<IEnumerable<TestRunSummary>>(_summaries.Values.ToArray()); }
-        public Task StoreTestRunRecord(TestRunSummary summary) { Calls++; _summaries.TryAdd(summary.RecordId, summary); return Task.CompletedTask; }
+        public Task StoreTestRunRecord(TestRunSummary summary) { Calls++; _summaries.TryAdd(Required(summary.RecordId), summary); return Task.CompletedTask; }
         public Task DeleteTestRunRecord(string id) { Deletes++; _summaries.Remove(id); return Task.CompletedTask; }
     }
 }

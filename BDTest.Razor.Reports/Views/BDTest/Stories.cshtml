@@ -3,11 +3,12 @@
 @model IGrouping<string, Scenario>[]
 @{
     // The older Stories page is the Scenarios page grouped by story.
-    var run = (ReportLayoutViewModel)ViewData[nameof(ReportLayoutViewModel)];
+    var run = ViewData[nameof(ReportLayoutViewModel)] as ReportLayoutViewModel
+        ?? throw new InvalidOperationException("The report layout model is required for this view.");
     ViewBag.Title = run.Title + " stories";
     ViewData["RunTab"] = "scenarios";
     Layout = "_Layout";
-    var list = ScenarioListBuilder.Build(Model, run.Scenarios, run.Report.Id, Context.Request, groupFixed: true);
+    var list = ScenarioListBuilder.Build(Model, run.Scenarios, run.Report?.Id, Context.Request, groupFixed: true);
 }
 
 @await Html.PartialAsync("_RunHeader", run)

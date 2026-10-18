@@ -40,7 +40,7 @@ public static class HttpHelper
     }
 
     // Keep navigation independent of the untrusted Host header, including behind a proxy.
-    public static string GetLocalUrl(this HttpContext httpContext, string path = null)
+    public static string GetLocalUrl(this HttpContext httpContext, string? path = null)
     {
         var request = httpContext.Request;
         var localPath = request.PathBase.Add(path == null ? request.Path : new PathString(path)).ToUriComponent();
@@ -48,7 +48,7 @@ public static class HttpHelper
         return "/" + localPath.TrimStart('/') + request.QueryString.ToUriComponent();
     }
 
-    public static string GetLocalUrlWithQueryParameter(this HttpContext httpContext, string name, string value, string path = null)
+    public static string GetLocalUrlWithQueryParameter(this HttpContext httpContext, string name, string? value, string? path = null)
     {
         var query = HttpUtility.ParseQueryString(httpContext.Request.QueryString.Value ?? string.Empty);
         query[name] = value;
@@ -62,7 +62,7 @@ public static class HttpHelper
         return new Uri(httpContext.Request.GetEncodedUrl());
     }
 
-    public static string GetQueryParameter(this HttpRequest httpRequest, string queryParameterName)
+    public static string? GetQueryParameter(this HttpRequest httpRequest, string queryParameterName)
     {
         if (httpRequest.Query.TryGetValue(queryParameterName, out var queryParameterValue))
         {

@@ -1,4 +1,5 @@
 ﻿using System.Globalization;
+using System.Diagnostics.CodeAnalysis;
 using System.Text.Encodings.Web;
 using BDTest.Razor.Reports.Models;
 using BDTest.Test;
@@ -65,13 +66,13 @@ public static class ReportUi
         _ => status.ToString()
     };
 
-    public static IHtmlContent Icon(string id, string cssClass = null) =>
+    public static IHtmlContent Icon(string id, string? cssClass = null) =>
         new HtmlString($"<svg class=\"ico{(string.IsNullOrEmpty(cssClass) ? "" : " " + cssClass)}\" aria-hidden=\"true\"><use href=\"#{id}\"></use></svg>");
 
-    public static IHtmlContent StatusIcon(this Status status, string cssClass = null) =>
+    public static IHtmlContent StatusIcon(this Status status, string? cssClass = null) =>
         Icon(status.IconId(), "ico-" + status.Key() + (string.IsNullOrEmpty(cssClass) ? "" : " " + cssClass));
 
-    public static IHtmlContent Pill(this Status status, string text = null) =>
+    public static IHtmlContent Pill(this Status status, string? text = null) =>
         new HtmlString($"<span class=\"pill {status.Key()}\"><svg class=\"ico\" aria-hidden=\"true\"><use href=\"#{status.IconId()}\"></use></svg>{HtmlEncoder.Default.Encode(text ?? status.Label())}</span>");
 
     /// <summary>Formats a duration the way people read it: "0.21 s", "2.4 s", "1m 42s" or "1h 3m".</summary>
@@ -122,7 +123,7 @@ public static class ReportUi
         total <= 0 ? "0" : (part / total * 100).ToString("0.##", CultureInfo.InvariantCulture);
 
     /// <summary>Splits "Given a thing" into the keyword and the rest so the keyword can be muted.</summary>
-    public static (string Keyword, string Text) SplitStepText(string stepText)
+    public static (string Keyword, string Text) SplitStepText(string? stepText)
     {
         if (string.IsNullOrEmpty(stepText))
         {
@@ -137,16 +138,16 @@ public static class ReportUi
     }
 
     /// <summary>The non-empty lines of a story, for example "As a customer", "I want to buy items".</summary>
-    public static IReadOnlyList<string> StoryLines(string story) =>
+    public static IReadOnlyList<string> StoryLines(string? story) =>
         IsMissingStory(story)
             ? Array.Empty<string>()
             : story.Split('\n').Select(line => line.Trim()).Where(line => line.Length > 0).ToList();
 
-    public static bool IsMissingStory(string story) =>
+    public static bool IsMissingStory([NotNullWhen(false)] string? story) =>
         string.IsNullOrWhiteSpace(story) || story == BDTest.Constants.DefaultValues.StoryTextNotDefined;
 
     /// <summary>A short name for a story. "I want to buy items" becomes "Buy items"; other stories use their first line.</summary>
-    public static string StoryTitle(string story)
+    public static string StoryTitle(string? story)
     {
         var lines = StoryLines(story);
         if (lines.Count == 0)
@@ -170,7 +171,7 @@ public static class ReportUi
     }
 
     /// <summary>The story as one sentence: "As a customer, I want to buy items, so that I receive my order".</summary>
-    public static string StorySentence(string story)
+    public static string StorySentence(string? story)
     {
         var lines = StoryLines(story);
         return string.Join(", ", lines.Select((line, index) =>
@@ -178,7 +179,7 @@ public static class ReportUi
     }
 
     /// <summary>Initials for the account button when no picture is available.</summary>
-    public static string Initials(string name)
+    public static string Initials(string? name)
     {
         if (string.IsNullOrWhiteSpace(name))
         {

@@ -2,17 +2,17 @@ namespace BDTest.Razor.Reports.Models;
 
 public class CustomLinkData
 {
-    private readonly Uri _url;
+    private readonly Uri? _url;
 
-    public CustomLinkData(string text, Uri url)
+    public CustomLinkData(string? text, Uri? url)
     {
         Text = text;
         _url = url;
     }
 
-    public string Text { get; }
+    public string? Text { get; }
 
-    public string Url
+    public string? Url
     {
         get
         {

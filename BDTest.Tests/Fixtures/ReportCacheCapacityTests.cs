@@ -353,7 +353,7 @@ public class ReportCacheCapacityTests
 
     private sealed class PersistentStore : IBDTestDataStore
     {
-        public Dictionary<string, BDTestOutputModel> Reports { get; } = new();
+        public Dictionary<string, BDTestOutputModel?> Reports { get; } = new();
         public bool HideReports { get; set; }
         public int Reads { get; private set; }
         public Task<BDTestOutputModel?> GetTestData(string id, CancellationToken cancellationToken)
@@ -361,7 +361,7 @@ public class ReportCacheCapacityTests
             Reads++;
             return Task.FromResult(HideReports ? null : Reports.GetValueOrDefault(id));
         }
-        public Task StoreTestData(string id, BDTestOutputModel data) { Reports[id] = data; return Task.CompletedTask; }
+        public Task StoreTestData(string id, BDTestOutputModel? data) { Reports[id] = data; return Task.CompletedTask; }
         public Task DeleteTestData(string id) { Reports.Remove(id); return Task.CompletedTask; }
         public Task<IEnumerable<TestRunSummary>> GetAllTestRunRecords() => Task.FromResult(Enumerable.Empty<TestRunSummary>());
         public Task StoreTestRunRecord(TestRunSummary summary) => Task.CompletedTask;

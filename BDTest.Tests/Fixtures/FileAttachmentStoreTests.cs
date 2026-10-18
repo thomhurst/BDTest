@@ -111,7 +111,7 @@ public class FileAttachmentStoreTests
             Assert.That(replacement.CanRead, Is.True);
             Assert.That(original.CanRead, Is.True);
             using var read = await store.OpenReadAsync(report, attachment);
-            Assert.That(read.ReadByte(), Is.EqualTo(4));
+            Assert.That(Required(read).ReadByte(), Is.EqualTo(4));
             Assert.That(Directory.GetFiles(directory, "*", SearchOption.AllDirectories), Has.Length.EqualTo(1));
         }
         finally { if (Directory.Exists(directory)) Directory.Delete(directory, true); }

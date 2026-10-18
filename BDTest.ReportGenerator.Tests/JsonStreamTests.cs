@@ -27,9 +27,9 @@ public class JsonStreamTests
 
     [TestCase(null)]
     [TestCase("café \"quoted\"\n")]
-    public void GenericStreamSerializesNullAndStringValues(string value)
+    public void GenericStreamSerializesNullAndStringValues(string? value)
     {
-        using var stream = value.AsStream<string>();
+        using var stream = value.AsStream<string?>();
         using var reader = new StreamReader(stream);
         Assert.That(reader.ReadToEnd(), Is.EqualTo(ReportJson.SerializeObject(value)));
     }
@@ -37,7 +37,7 @@ public class JsonStreamTests
     [TestCase(null)]
     [TestCase("")]
     [TestCase("{\"value\":\"café 🧪\"}")]
-    public void StringOverloadPreservesRawText(string value)
+    public void StringOverloadPreservesRawText(string? value)
     {
         using var stream = value.AsStream();
         Assert.That(stream.Position, Is.Zero);

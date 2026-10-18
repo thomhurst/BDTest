@@ -2,7 +2,8 @@
 @using BDTest.Razor.Reports.Models.ViewModels
 @model BDTest.Maps.BDTestOutputModel
 @{
-    var run = (ReportLayoutViewModel)ViewData[nameof(ReportLayoutViewModel)];
+    var run = ViewData[nameof(ReportLayoutViewModel)] as ReportLayoutViewModel
+        ?? throw new InvalidOperationException("The report layout model is required for this view.");
     ViewBag.Title = "Scenario not found";
     ViewData["RunTab"] = "scenarios";
     Layout = "_Layout";

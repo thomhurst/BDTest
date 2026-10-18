@@ -82,7 +82,7 @@ public class ReportSerializationTests
         var summaryJson = JsonSerializer.Serialize(summary, ReportJsonContext.Default.TestRunSummary);
         var restoredSummary = Required(JsonSerializer.Deserialize(summaryJson, ReportJsonContext.Default.TestRunSummary));
         Assert.That(restoredSummary.RecordId, Is.EqualTo("report"));
-        Assert.That(restoredSummary.Counts.Failed, Is.EqualTo(1));
+        Assert.That(Required(restoredSummary.Counts).Failed, Is.EqualTo(1));
         Assert.That(JsonSerializer.Serialize(restoredSummary, ReportJsonContext.Default.TestRunSummary), Is.EqualTo(summaryJson));
     }
 

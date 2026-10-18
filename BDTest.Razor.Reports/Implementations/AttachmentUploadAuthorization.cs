@@ -10,6 +10,6 @@ internal static class AttachmentUploadAuthorization
 
     internal static string Hash(string token) => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(token)));
 
-    internal static bool IsValid(string hash, string token) => hash?.Length == 64 && token?.Length == 64
+    internal static bool IsValid(string? hash, string? token) => hash?.Length == 64 && token?.Length == 64
         && CryptographicOperations.FixedTimeEquals(Encoding.UTF8.GetBytes(hash), Encoding.UTF8.GetBytes(Hash(token)));
 }

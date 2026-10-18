@@ -2,7 +2,8 @@
 @using BDTest.Razor.Reports.Models.ViewModels
 @model BDTest.Maps.BDTestOutputModel
 @{
-    var run = (ReportLayoutViewModel)ViewData[nameof(ReportLayoutViewModel)];
+    var run = ViewData[nameof(ReportLayoutViewModel)] as ReportLayoutViewModel
+        ?? throw new InvalidOperationException("The report layout model is required for this view.");
     ViewBag.Title = run.Title + " not run";
     ViewData["RunTab"] = "notrun";
     Layout = "_Layout";
@@ -11,7 +12,7 @@
     var notRun = (Model.NotRun ?? new List<BDTest.Test.BuildableTest>()).Where(test => test != null)
         .OrderBy(test => test.GetStoryText()).ThenBy(test => test.GetScenarioText()).ToList();
 
-    string FileName(string path) => string.IsNullOrEmpty(path) ? string.Empty : path.Replace('\\', '/')[(path.Replace('\\', '/').LastIndexOf('/') + 1)..];
+    string FileName(string? path) => string.IsNullOrEmpty(path) ? string.Empty : path.Replace('\\', '/')[(path.Replace('\\', '/').LastIndexOf('/') + 1)..];
 }
 
 @await Html.PartialAsync("_RunHeader", run)

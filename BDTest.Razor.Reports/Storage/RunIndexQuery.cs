@@ -1,4 +1,3 @@
-#nullable enable
 namespace BDTest.Razor.Reports.Storage;
 
 /// <summary>Newest start time first, then ordinal report ID. Filters use ordinal equality.</summary>

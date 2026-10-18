@@ -21,13 +21,13 @@ public class BDTestController : Controller
 {
     private readonly IDataRepository _dataRepository;
     private readonly BDTestReportOptions _options;
-    private readonly IBDTestDataReceiver _dataReceiver;
-    private readonly IBDTestAttachmentStore _attachmentStore;
-    private readonly ILogger<BDTestController> _logger;
+    private readonly IBDTestDataReceiver? _dataReceiver;
+    private readonly IBDTestAttachmentStore? _attachmentStore;
+    private readonly ILogger<BDTestController>? _logger;
 
     public BDTestController(IDataRepository dataRepository, IOptions<BDTestReportOptions> options,
-        IBDTestDataReceiver dataReceiver = null,
-        IBDTestAttachmentStore attachmentStore = null, ILogger<BDTestController> logger = null)
+        IBDTestDataReceiver? dataReceiver = null,
+        IBDTestAttachmentStore? attachmentStore = null, ILogger<BDTestController>? logger = null)
     {
         _dataRepository = dataRepository;
         _options = options.Value;
@@ -130,7 +130,7 @@ public class BDTestController : Controller
         var statuses = GetStatusFilter();
 
         // Statuses filter scenarios, as on the Scenarios page; stories only group the result.
-        var scenarios = FilterBySearch(FilterByTag(data.Scenarios))
+        var scenarios = FilterBySearch(FilterByTag(data.Scenarios ?? Enumerable.Empty<Scenario>()))
             .Where(scenario => statuses == null || statuses.Contains(scenario.Status));
         var scenariosGroupedByStories = OrderScenarioGroups(scenarios)
             .SelectMany(group => group)
@@ -155,7 +155,7 @@ public class BDTestController : Controller
             
         var statuses = GetStatusFilter();
 
-        var scenarios = FilterBySearch(FilterByTag(data.Scenarios));
+        var scenarios = FilterBySearch(FilterByTag(data.Scenarios ?? Enumerable.Empty<Scenario>()));
 
         if (statuses != null)
         {
@@ -230,7 +230,7 @@ public class BDTestController : Controller
     }
 
     // filterByStatus accepts one status or a comma-separated list. Null means every status.
-    private HashSet<Status> GetStatusFilter()
+    private HashSet<Status>? GetStatusFilter()
     {
         var value = Request.GetQueryParameter(StatusConstants.FilterByStatusQueryParameterName);
         if (string.IsNullOrEmpty(value) || string.Equals(value, StatusConstants.All, StringComparison.OrdinalIgnoreCase))
@@ -241,8 +241,7 @@ public class BDTestController : Controller
         // An unknown value matches nothing, as it did before lists were supported.
         return value.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
             .Select(part => Enum.TryParse<Status>(part, true, out var status) && Enum.IsDefined(status) ? (Status?)status : null)
-            .Where(status => status != null)
-            .Select(status => status.Value)
+            .OfType<Status>()
             .ToHashSet();
     }
         
@@ -324,7 +323,7 @@ public class BDTestController : Controller
 
     [HttpGet]
     [Route("report/test-run-times")]
-    public async Task<IActionResult> TestRunTimes([FromQuery] string reportIds, CancellationToken cancellationToken)
+    public async Task<IActionResult> TestRunTimes([FromQuery] string? reportIds, CancellationToken cancellationToken)
     {
         if (string.IsNullOrEmpty(reportIds))
         {
@@ -344,7 +343,7 @@ public class BDTestController : Controller
 
     [HttpPost]
     [Route("report/test-run-flakiness")]
-    public async Task<IActionResult> TestRunFlakiness([FromForm] string reportIds, CancellationToken cancellationToken)
+    public async Task<IActionResult> TestRunFlakiness([FromForm] string? reportIds, CancellationToken cancellationToken)
     {
         if (string.IsNullOrEmpty(reportIds))
         {
@@ -386,14 +385,14 @@ public class BDTestController : Controller
     {
         var history = await GetHistory(tab);
         var ids = history.Runs.TakeLast(history.Compare)
-            .Select(run => run.RecordId)
+            .Select(run => run.RecordId).OfType<string>()
             .Where(IsValidReportId);
 
         history.Reports = await ReadReports(ids, cancellationToken);
         return View(viewName, history.Reports.ToList());
     }
 
-    private static bool IsValidReportId(string id) => !string.IsNullOrEmpty(id) && id.Length <= MaximumReportIdLength
+    private static bool IsValidReportId(string? id) => !string.IsNullOrEmpty(id) && id.Length <= MaximumReportIdLength
         && id is not "." and not ".." && id.All(character => char.IsAsciiLetterOrDigit(character)
             || character == '-' || character == '_' || character == '.');
 
@@ -404,7 +403,7 @@ public class BDTestController : Controller
         {
             cancellationToken.ThrowIfCancellationRequested();
             var reports = await Task.WhenAll(batch.Select(id => _dataRepository.GetDataForBulkRead(id, cancellationToken)));
-            foundReports.AddRange(reports.Where(report => report != null));
+            foundReports.AddRange(reports.OfType<BDTestOutputModel>());
         }
 
         return foundReports;
@@ -471,7 +470,7 @@ public class BDTestController : Controller
         return viewAction(model);
     }
 
-    private async Task<BDTestOutputModel> GetData(string id, CancellationToken cancellationToken)
+    private async Task<BDTestOutputModel?> GetData(string id, CancellationToken cancellationToken)
     {
         ViewBag.Id = id;
         var model = await _dataRepository.GetData(id, cancellationToken);

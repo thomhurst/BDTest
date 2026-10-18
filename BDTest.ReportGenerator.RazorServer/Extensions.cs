@@ -27,7 +27,7 @@ public static class Extensions
         }
     }
 
-    public static Stream AsStream(this string value)
+    public static Stream AsStream(this string? value)
     {
         return WriteStream(writer => writer.Write(value));
     }

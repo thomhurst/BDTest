@@ -49,12 +49,12 @@ public class StorageInitializationTests
         public int Calls;
         public CancellationToken Token;
         public TaskCompletionSource Started { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
-        public TaskCompletionSource<Azure.Response<BlobContainerInfo>> Completion { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        public TaskCompletionSource<Azure.Response<BlobContainerInfo>?> Completion { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
-        public override Task<Azure.Response<BlobContainerInfo>> CreateIfNotExistsAsync(
+        public override Task<Azure.Response<BlobContainerInfo>?> CreateIfNotExistsAsync(
             PublicAccessType publicAccessType = PublicAccessType.None,
-            IDictionary<string, string> metadata = null,
-            BlobContainerEncryptionScopeOptions encryptionScopeOptions = null,
+            IDictionary<string, string>? metadata = null,
+            BlobContainerEncryptionScopeOptions? encryptionScopeOptions = null,
             CancellationToken cancellationToken = default)
         {
             Calls++;

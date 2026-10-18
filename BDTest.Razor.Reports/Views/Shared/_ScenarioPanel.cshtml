@@ -3,7 +3,8 @@
 @using BDTest.Test
 @model BDTest.Razor.Reports.Models.ViewModels.ScenarioModalViewModel
 @{
-    var scenario = Model.Scenario;
+    var scenario = Model.Scenario
+        ?? throw new InvalidOperationException("A selected scenario is required for the scenario panel.");
     var exception = scenario.Exception;
     var failingStep = FailureGroup.FailingStep(scenario);
     var shareUrl = Context.GetLocalUrlWithQueryParameter("scenarioId", scenario.Guid);

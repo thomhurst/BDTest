@@ -1,4 +1,3 @@
-#nullable enable
 namespace BDTest.Razor.Reports.Storage;
 
 /// <summary>Moves UTF-8 report JSON without interpreting it.</summary>

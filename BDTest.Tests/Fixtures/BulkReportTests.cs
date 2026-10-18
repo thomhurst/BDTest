@@ -208,7 +208,7 @@ public class BulkReportTests(bool flakiness)
                 ?? Task.FromResult(MissingIds.Contains(id) ? null : new BDTestOutputModel { Id = id });
         }
         public Task<IEnumerable<TestRunSummary>> GetAllTestRunRecords() => Task.FromResult(Enumerable.Empty<TestRunSummary>());
-        public Task StoreTestData(string id, BDTestOutputModel data) => throw new NotSupportedException();
+        public Task StoreTestData(string id, BDTestOutputModel? data) => throw new NotSupportedException();
         public Task DeleteTestData(string id) => throw new NotSupportedException();
         public Task StoreTestRunRecord(TestRunSummary summary) => throw new NotSupportedException();
         public Task DeleteTestRunRecord(string id) => throw new NotSupportedException();

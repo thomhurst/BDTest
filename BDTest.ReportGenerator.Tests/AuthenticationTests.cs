@@ -28,10 +28,10 @@ namespace BDTest.ReportGenerator.Tests;
 public class AuthenticationTests
 {
     private const string ApiKey = "test-upload-key";
-    private IHost _host;
-    private TestServer _server;
-    private HttpClient _client;
-    private TestDataStore _store;
+    private IHost _host = null!; // Initialized by SetUp before each test.
+    private TestServer _server = null!; // Initialized by SetUp before each test.
+    private HttpClient _client = null!; // Initialized by SetUp before each test.
+    private TestDataStore _store = null!; // Initialized by SetUp before each test.
 
     [SetUp]
     public void SetUp()
@@ -84,7 +84,7 @@ public class AuthenticationTests
     [TestCase(null)]
     [TestCase("application/json")]
     [TestCase("text/plain")]
-    public async Task RawReportDownloadIsAJsonObjectRegardlessOfAcceptHeader(string accept)
+    public async Task RawReportDownloadIsAJsonObjectRegardlessOfAcceptHeader(string? accept)
     {
         SignIn();
         using var request = new HttpRequestMessage(HttpMethod.Get, "/bdtest/report/private-report/raw-json-data");
@@ -101,7 +101,7 @@ public class AuthenticationTests
     [TestCase(null)]
     [TestCase("")]
     [TestCase("wrong-key")]
-    public async Task UploadRequiresCorrectKey(string key)
+    public async Task UploadRequiresCorrectKey(string? key)
     {
         if (key != null)
         {
@@ -389,13 +389,13 @@ public class AuthenticationTests
         client.DefaultRequestHeaders.Add("Cookie", $"{options.Cookie.Name}={options.TicketDataFormat.Protect(ticket)}");
     }
 
-    private static IHost CreateHost(string apiKey, TestDataStore store, string environment = "Development")
+    private static IHost CreateHost(string? apiKey, TestDataStore store, string environment = "Development")
     {
         var builder = Program.CreateBuilder(["--environment", environment]);
         builder.WebHost.UseTestServer();
         builder.Configuration.Sources.Clear();
         builder.Configuration.AddJsonFile(Path.Combine(AppContext.BaseDirectory, "sample-appsettings.json"))
-            .AddInMemoryCollection(new Dictionary<string, string>
+            .AddInMemoryCollection(new Dictionary<string, string?>
             {
                 ["AzureAd:Instance"] = "https://login.microsoftonline.com/",
                 ["AzureAd:TenantId"] = "11111111-1111-1111-1111-111111111111",
@@ -426,7 +426,7 @@ public class AuthenticationTests
         public int ReportReads { get; private set; }
         public int Uploads { get; private set; }
 
-        public Task<BDTestOutputModel> GetTestData(string id, CancellationToken cancellationToken)
+        public Task<BDTestOutputModel?> GetTestData(string id, CancellationToken cancellationToken)
         {
             ReportReads++;
             if (FailRequests)
@@ -434,10 +434,10 @@ public class AuthenticationTests
                 throw new InvalidOperationException("Test storage failure");
             }
 
-            return Task.FromResult(new BDTestOutputModel { Id = id, TestTimer = new TestTimer() });
+            return Task.FromResult<BDTestOutputModel?>(new BDTestOutputModel { Id = id, TestTimer = new TestTimer() });
         }
 
-        public Task StoreTestData(string id, BDTestOutputModel data)
+        public Task StoreTestData(string id, BDTestOutputModel? data)
         {
             Uploads++;
             if (FailRequests)
