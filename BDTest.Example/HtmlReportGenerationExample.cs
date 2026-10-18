@@ -13,9 +13,10 @@ public class HtmlReportGenerationExample
     /// Example method showing how to generate HTML reports.
     /// This can be called in a SetUpFixture OneTimeTearDown method or after test execution.
     /// </summary>
-    public static void GenerateReports()
+    public static void GenerateReports(string outputDirectory = null)
     {
-        var outputDirectory = Directory.GetCurrentDirectory();
+        outputDirectory ??= Directory.GetCurrentDirectory();
+        Directory.CreateDirectory(outputDirectory);
         var timestamp = DateTime.Now.ToString("yyyyMMdd-HHmmss");
         
         // Generate reports with custom run descriptor

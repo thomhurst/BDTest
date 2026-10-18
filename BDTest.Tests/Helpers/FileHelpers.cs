@@ -1,45 +1,37 @@
-using System.Reflection;
 using NUnit.Framework;
 
 namespace BDTest.Tests.Helpers;
 
 public static class FileHelpers
 {
+    internal static string OutputRoot { get; } = Path.Combine(Path.GetTempPath(), "BDTest-" + Guid.NewGuid().ToString("N"));
+
     public static string GetUniqueTestJsonFilePath()
     {
         var outputFolder = GetUniqueTestOutputFolder();
 
-        var files = Directory.GetFiles(outputFolder);
-
-        return files.FirstOrDefault(file => Path.GetExtension(file) == ".json");
+        return Directory.EnumerateFiles(outputFolder, "*.json").Single();
     }
 
     public static string GetUniqueTestOutputFolder()
     {
-        return GetOutputFolder(
-            MakeValidFileName("BDTest-"
-                              + TestContext.CurrentContext.Test.FullName
-                              + TestContext.CurrentContext.Test.ID)
-        );
+        return GetOutputFolder($"test-{TestContext.CurrentContext.Test.ID}-{TestContext.CurrentContext.CurrentRepeatCount}");
     }
         
     public static string GetOutputFolder(string folderName)
     {
-        var outputFolder = Path.Combine(
-            Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location),
-            folderName
-        );
+        var outputFolder = Path.Combine(OutputRoot, folderName);
             
         Directory.CreateDirectory(outputFolder);
 
         return outputFolder;
     }
         
-    private static string MakeValidFileName(string name)
+    internal static void DeleteOutputRoot()
     {
-        string invalidChars = System.Text.RegularExpressions.Regex.Escape( new string(Path.GetInvalidFileNameChars()));
-        string invalidRegStr = string.Format( @"([{0}]*\.+$)|([{0}]+)", invalidChars);
-
-        return System.Text.RegularExpressions.Regex.Replace( name, invalidRegStr, "_");
+        if (Directory.Exists(OutputRoot))
+        {
+            Directory.Delete(OutputRoot, recursive: true);
+        }
     }
 }

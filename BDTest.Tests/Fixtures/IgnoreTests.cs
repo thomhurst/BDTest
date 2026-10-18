@@ -13,27 +13,22 @@ namespace BDTest.Tests.Fixtures;
 [Parallelizable(ParallelScope.None)]
 public class IgnoreTests : NUnitBDTestBase<MyTestContext>
 {
-    [SetUp]
-    public void Setup()
-    {
-        TestResetHelper.ResetData();
-    }
-        
     [Test]
     public void NUNitIgnoreException()
     {
+        var builder = Given(() => Console.WriteLine("NUnit throws an ignore exception"))
+            .When(() => Assert.Ignore())
+            .Then(() => Console.WriteLine("the test is ignored"));
+
         try
         {
-            Given(() => Console.WriteLine("NUnit throws an ignore exception"))
-                .When(() => Assert.Ignore())
-                .Then(() => Console.WriteLine("the test is ignored"))
-                .BDTest();
+            builder.BDTest();
                 
             Assert.Fail("An exception should be thrown to stop us getting here!");
         }
         catch(IgnoreException)
         {
-            var scenario = BDTestUtil.GetScenarios().First();
+            var scenario = BDTestUtil.GetScenarios().Single(scenario => scenario.Guid == builder.Guid);
                 
             Assert.That(scenario.Status, Is.EqualTo(Status.Skipped));
         }
@@ -42,19 +37,21 @@ public class IgnoreTests : NUnitBDTestBase<MyTestContext>
     [Test]
     public void CustomIgnoreException()
     {
-        BDTestSettings.CustomExceptionSettings.InconclusiveExceptionTypes.Add(typeof(MyCustomIgnoreException));
+        using var registration = new ExceptionRegistration(
+            BDTestSettings.CustomExceptionSettings.InconclusiveExceptionTypes, typeof(MyCustomIgnoreException));
+        var builder = Given(() => Console.WriteLine("NUnit throws an ignore exception"))
+            .When(() => ThrowException())
+            .Then(() => Console.WriteLine("the test is ignored"));
+
         try
         {
-            Given(() => Console.WriteLine("NUnit throws an ignore exception"))
-                .When(() => ThrowException())
-                .Then(() => Console.WriteLine("the test is ignored"))
-                .BDTest();
+            builder.BDTest();
                 
             Assert.Fail("An exception should be thrown to stop us getting here!");
         }
         catch(MyCustomIgnoreException)
         {
-            var scenario = BDTestUtil.GetScenarios().First();
+            var scenario = BDTestUtil.GetScenarios().Single(scenario => scenario.Guid == builder.Guid);
                 
             Assert.That(scenario.Status, Is.EqualTo(Status.Inconclusive));
         }

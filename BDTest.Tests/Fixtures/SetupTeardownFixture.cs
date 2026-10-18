@@ -1,5 +1,5 @@
-using System.Reflection;
 using BDTest.Settings;
+using BDTest.Tests.Helpers;
 using NUnit.Framework;
 
 namespace BDTest.Tests.Fixtures;
@@ -7,23 +7,25 @@ namespace BDTest.Tests.Fixtures;
 [SetUpFixture]
 public class SetupTeardownFixture
 {
+    private string _environment;
+    private string _tag;
+
     [OneTimeSetUp]
     public void Settings()
     {
+        _environment = BDTestSettings.Environment;
+        _tag = BDTestSettings.Tag;
         BDTestSettings.Environment = "Local";
         BDTestSettings.Tag = "AcceptanceTests";
     }
-        
+
     [OneTimeTearDown]
-    public void DeleteOutputDirectories()
+    public void RestoreSettings()
     {
-        var bdTestOutputs = Directory
-            .GetDirectories(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location))
-            .Where(directory => Path.GetFileName(directory).StartsWith("BDTest-"));
-            
-        foreach (var bdTestOutput in bdTestOutputs)
-        {
-            Directory.Delete(bdTestOutput, true);
-        }
+        BDTestSettings.Environment = _environment;
+        BDTestSettings.Tag = _tag;
     }
+
+    [OneTimeTearDown]
+    public void DeleteOutputDirectories() => FileHelpers.DeleteOutputRoot();
 }
