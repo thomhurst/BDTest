@@ -269,7 +269,12 @@ when another run is active. TUnit hooks export the new flow state through
 NUnit uses its test ID plus repeat count. TUnit uses `TestContext.Id`. MSTest uses
 the class name and data-row display name plus an execution suffix. The current
 xUnit v2 adapter uses its test-case ID plus a unique fixture-instance suffix,
-because non-serializable theory rows can share one test case. The xUnit v3
+because non-serializable theory rows can share one test case. Constructor console
+output is buffered until xUnit calls `IAsyncLifetime.InitializeAsync`, after the
+constructor has assigned any owned `TestRun`. The explicit interface hook binds
+capture before invoking virtual `InitializeAsync`, so async setup overrides keep
+the same output flow as the test body. Override `DisposeAsync` for async
+cleanup and call `base.DisposeAsync()` in `finally`. The xUnit v3
 migration is tracked separately in #800.
 
 Calling the start hook inside a separate async setup method or `Task.Run` does

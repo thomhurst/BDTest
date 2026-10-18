@@ -40,6 +40,30 @@ public static class LifecycleContract
         first.End();
     }
 
+    public static async Task VerifyLegacy(Func<BDTestRun, Probe> create)
+    {
+        using var run = BDTestRun.Start();
+        var probe = create(run);
+        probe.Begin("ignored-runner-id");
+        var originalContext = probe.Context();
+        Console.WriteLine("legacy startup");
+        var scenario = await probe.Fixture.When(() => NoOp()).Then(() => NoOp()).BDTestAsync();
+        Require(scenario.FrameworkTestId == "legacy-id", "Scenario ignored the legacy ID override.");
+        Require(scenario.TestStartupInformation?.Contains("legacy startup") == true, "Startup capture used a different ID.");
+        probe.End();
+        probe.End();
+        probe.Begin("another-runner-id");
+        Require(!ReferenceEquals(originalContext, probe.Context()), "Completion retained the overridden context.");
+        probe.Fixture.WriteStartupOutput("pending legacy output");
+        probe.Fixture.ScenarioHtmlWriter.Text("pending legacy HTML");
+        probe.End();
+        probe.Begin("third-runner-id");
+        var next = await probe.Fixture.When(() => NoOp()).Then(() => NoOp()).BDTestAsync();
+        Require(string.IsNullOrEmpty(next.TestStartupInformation), "Completion retained pending legacy output.");
+        Require(string.IsNullOrEmpty(next.CustomHtmlOutputForReport), "Completion retained pending legacy HTML.");
+        probe.End();
+    }
+
     private static void Require(bool condition, string message)
     {
         if (!condition) throw new InvalidOperationException(message);

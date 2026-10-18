@@ -25,7 +25,8 @@ public abstract class BDTestBase
 
     private sealed class TestExecution(string id, BDTestRun run)
     {
-        internal string Id { get; } = id;
+        internal string Id { get; set; } = id;
+        internal string FrameworkId { get; } = id;
         internal BDTestRun Run { get; } = run;
         internal int Completed;
     }
@@ -39,7 +40,7 @@ public abstract class BDTestBase
 
     /// <summary>Gets the identity recorded by BeginTest, or a standalone flow identity.</summary>
     /// <remarks>Custom adapters should call BeginTest instead of overriding this property.</remarks>
-    protected virtual string BDTestExecutionId => CurrentExecution?.Id ?? StaticBDTestExecutionId;
+    protected virtual string BDTestExecutionId => CurrentExecution?.FrameworkId ?? StaticBDTestExecutionId;
 
     /// <summary>Runs one scenario definition for each example and reports the rows as one outline.</summary>
     /// <remarks>Examples expose named public properties (for example, anonymous objects).
@@ -229,14 +230,18 @@ public abstract class BDTestBase
             throw new ArgumentException("A test execution ID is required.", nameof(frameworkTestId));
         var run = TestRun;
         run.ThrowIfDisposed();
+        // Seed the base property with this execution's ID before resolving legacy
+        // overrides, including overrides that decorate base.BDTestExecutionId.
         var execution = new TestExecution(frameworkTestId, run);
         _execution.Value = execution;
+        execution.Id = BDTestExecutionId;
         Volatile.Write(ref _lastExecution, execution);
         AsyncLocalBDTestExecutionId.Value = null;
         TestOutputData.Run = run;
         TestOutputData.TestId = null;
         TestOutputData.ConstructionOutput = null;
-        TestOutputData.FrameworkExecutionId = frameworkTestId;
+        TestOutputData.FrameworkExecutionId = execution.Id;
+        TestOutputData.PendingStartupOutput = null;
         Console.SetOut(TestOutputData.Instance);
     }
 
@@ -272,6 +277,7 @@ public abstract class BDTestBase
         TestOutputData.FrameworkExecutionId = null;
         TestOutputData.ConstructionOutput = null;
         TestOutputData.Run = null;
+        TestOutputData.PendingStartupOutput = null;
     }
 
     [Obsolete("Call BeginTest(frameworkTestId) instead.")]
@@ -282,7 +288,7 @@ public abstract class BDTestBase
         // reusing an execution from an earlier start in this flow.
         _execution.Value = EndedExecution;
         AsyncLocalBDTestExecutionId.Value = Guid.NewGuid().ToString("N");
-        BeginTest(BDTestExecutionId);
+        BeginTest(AsyncLocalBDTestExecutionId.Value);
     }
 
     [Obsolete("Call EndTest() instead.")]

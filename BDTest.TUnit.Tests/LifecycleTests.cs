@@ -33,6 +33,17 @@ public class LifecycleTests : TUnitBDTestBase<TUnitContext>
 
     private static void NoOp() { }
 
+    [Test]
+    public Task LegacyIdsKeepCaptureAndCleanupTogether() =>
+        LifecycleContract.VerifyLegacy(run => new LegacyProbe(run).Actions);
+
+    private sealed class LegacyProbe(BDTestRun run) : TUnitBDTestBase<TUnitContext>
+    {
+        public override BDTestRun TestRun => run;
+        protected override string BDTestExecutionId => "legacy-id";
+        public LifecycleContract.Probe Actions => new(this, _ => Setup(), () => TearDown(), () => Context);
+    }
+
     private sealed class Probe(BDTestRun run) : TUnitBDTestBase<TUnitContext>
     {
         public override BDTestRun TestRun => run;

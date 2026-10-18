@@ -100,6 +100,30 @@ public class CoreLifecycleTests
         fixture.Finish();
     }
 
+    [Test]
+    public async Task DecoratedBaseIdsResolveOncePerExecution()
+    {
+        using var run = BDTestRun.Start();
+        var fixture = new DecoratedProbe(run);
+        foreach (var id in new[] { "first", "second" })
+        {
+            fixture.Start(id);
+            Console.WriteLine("decorated startup");
+            var scenario = await fixture.When(() => NoOp()).Then(() => NoOp()).BDTestAsync();
+            Assert.That(scenario.FrameworkTestId, Is.EqualTo("prefix-" + id));
+            Assert.That(scenario.TestStartupInformation, Does.Contain("decorated startup"));
+            fixture.Finish();
+        }
+    }
+
+    private sealed class DecoratedProbe(BDTestRun run) : AbstractContextBDTestBase<MyTestContext>
+    {
+        public override BDTestRun TestRun => run;
+        protected override string BDTestExecutionId => "prefix-" + base.BDTestExecutionId;
+        public void Start(string id) => BeginTest(id);
+        public void Finish() => EndTest();
+    }
+
     private sealed class LegacyProbe(BDTestRun run) : BDTestBase
     {
         public override BDTestRun TestRun => run;

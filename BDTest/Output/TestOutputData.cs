@@ -35,6 +35,15 @@ internal class TestOutputData : TextWriter
         set => AsyncLocalConstructionOutput.Value = value;
     }
 
+    // xUnit constructs derived fixtures before their owned run is available.
+    // Buffer console output without touching any run until initialization.
+    private static readonly AsyncLocal<StringBuilder> AsyncLocalPendingStartupOutput = new();
+    internal static StringBuilder PendingStartupOutput
+    {
+        get => AsyncLocalPendingStartupOutput.Value;
+        set => AsyncLocalPendingStartupOutput.Value = value;
+    }
+
     public override void Write(string value)
     {
         if (string.IsNullOrEmpty(value))
@@ -64,6 +73,16 @@ internal class TestOutputData : TextWriter
 
     private static void WriteCore(string value, char? character = null)
     {
+        var pending = PendingStartupOutput;
+        if (pending != null)
+        {
+            lock (pending)
+            {
+                if (character.HasValue) pending.Append(character.Value);
+                else pending.Append(value);
+            }
+            return;
+        }
         lock (Lock)
         {
             if (Run.Store.IsDisposed) return;

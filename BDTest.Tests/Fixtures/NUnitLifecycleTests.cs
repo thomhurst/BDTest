@@ -34,6 +34,17 @@ public class NUnitLifecycleTests : NUnitBDTestBase<MyTestContext>
     public Task ExplicitRunsKeepCompletionAndOutputIsolated() =>
         LifecycleContract.Verify(run => new Probe(run).Actions);
 
+    [Test]
+    public Task LegacyIdsKeepCaptureAndCleanupTogether() =>
+        LifecycleContract.VerifyLegacy(run => new LegacyProbe(run).Actions);
+
+    private sealed class LegacyProbe(BDTestRun run) : NUnitBDTestBase<MyTestContext>
+    {
+        public override BDTestRun TestRun => run;
+        protected override string BDTestExecutionId => "legacy-id";
+        public LifecycleContract.Probe Actions => new(this, _ => Setup(), () => PruneContext(), () => Context);
+    }
+
     private sealed class Probe(BDTestRun run) : NUnitBDTestBase<MyTestContext>
     {
         public override BDTestRun TestRun => run;
