@@ -1,6 +1,7 @@
 ﻿using System.Linq.Expressions;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.Runtime.ExceptionServices;
 using BDTest.Attributes;
 using BDTest.Helpers;
 using BDTest.Maps;
@@ -140,20 +141,60 @@ public abstract class BDTestBase
 
     internal async Task RunMethodWithAttribute<TAttribute>()
     {
-        var methodWithAttribute = GetType().GetMethods()
-            .FirstOrDefault(method =>
-                method.GetCustomAttributes()
-                    .Any(attribute => attribute.GetType() == typeof(TAttribute)));
-
-        if (methodWithAttribute == null)
+        foreach (var method in GetMethodsWithAttribute<TAttribute>())
         {
-            return;
+            object result;
+            try
+            {
+                result = method.Invoke(this, Array.Empty<object>());
+            }
+            catch (TargetInvocationException exception) when (exception.InnerException != null)
+            {
+                ExceptionDispatchInfo.Capture(exception.InnerException).Throw();
+                throw;
+            }
+
+            if (result is Task invokedMethodTask)
+            {
+                await invokedMethodTask.ConfigureAwait(false);
+            }
+        }
+    }
+
+    private IEnumerable<MethodInfo> GetMethodsWithAttribute<TAttribute>()
+    {
+        var methodsByType = new Stack<List<MethodInfo>>();
+        var virtualMethods = new HashSet<MethodInfo>();
+
+        // Walk every declaration to include private base hooks and hidden methods.
+        // Select the most derived override once, then execute base classes first.
+        for (var type = GetType(); type != null; type = type.BaseType)
+        {
+            var methods = new List<MethodInfo>();
+            foreach (var method in type.GetMethods(BindingFlags.Instance | BindingFlags.Public |
+                                                   BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.DeclaredOnly))
+            {
+                // Keep existing public static hooks; non-public discovery is for instance hooks.
+                if (method.IsStatic && !method.IsPublic)
+                {
+                    continue;
+                }
+
+                if (method.IsVirtual && !virtualMethods.Add(method.GetBaseDefinition()))
+                {
+                    continue;
+                }
+
+                if (method.IsDefined(typeof(TAttribute), inherit: true))
+                {
+                    methods.Add(method);
+                }
+            }
+
+            methodsByType.Push(methods);
         }
 
-        if (methodWithAttribute.Invoke(this, Array.Empty<object>()) is Task invokedMethodTask)
-        {
-            await invokedMethodTask.ConfigureAwait(false);
-        }
+        return methodsByType.SelectMany(methods => methods);
     }
 
     internal virtual void RecreateContextOnRetry()
