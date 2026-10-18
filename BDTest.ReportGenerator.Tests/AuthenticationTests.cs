@@ -326,13 +326,16 @@ public class AuthenticationTests
         Assert.That(response.Headers.Location?.Host, Is.EqualTo("login.microsoftonline.com"));
     }
 
-    [Test]
-    public async Task Report_static_assets_are_anonymous_and_cached()
+    [TestCase("css/bdtest-report.css", "text/css")]
+    [TestCase("js/BDTest.js", "text/javascript")]
+    [TestCase("favicon.ico", "image/x-icon")]
+    public async Task Report_static_assets_are_anonymous_and_cached(string path, string contentType)
     {
-        using var response = await _client.GetAsync("/_content/BDTest.Razor.Reports/css/bdtest-report.css");
+        using var response = await _client.GetAsync($"/_content/BDTest.Razor.Reports/{path}");
 
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
-        Assert.That(response.Content.Headers.ContentType?.MediaType, Is.EqualTo("text/css"));
+        Assert.That(response.Content.Headers.ContentType?.MediaType, Is.EqualTo(contentType));
+        Assert.That(await response.Content.ReadAsByteArrayAsync(), Is.Not.Empty);
         Assert.That(response.Headers.CacheControl?.Public, Is.True);
         Assert.That(response.Headers.CacheControl?.MaxAge, Is.EqualTo(TimeSpan.FromDays(1)));
     }
