@@ -49,6 +49,8 @@ Create the host with the actual test instance. Story attributes, scenario method
 
 Call `BeginTest` synchronously before asynchronous setup. Use a framework execution ID that distinguishes parallel tests, data rows, and repeats. Call `EndTest` in teardown even when setup or the test throws. Repeated `EndTest` calls are safe. Completion clears the execution's context and pending output state, retaining recorded scenarios for reports.
 
+`[BDTestRetry]` also comes from the owner: the scenario method takes precedence over the owner class and its assembly. This lookup continues to use the owner after asynchronous steps suspend and the scenario method returns.
+
 Preserve the execution flow across setup, test body, and teardown. A fixture instance also retains the last execution for runners that cross execution-context boundaries. If a runner crosses those boundaries and runs several tests on one fixture concurrently, use a separate host for each execution. Do not start two executions with the same ID on the same host.
 
 ## Run ownership and outcomes

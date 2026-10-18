@@ -1,3 +1,5 @@
+using System.Reflection;
+using System.Reflection.Emit;
 using BDTest.Attributes;
 using BDTest.Helpers;
 using BDTest.Output;
@@ -9,6 +11,36 @@ namespace BDTest.Tests.Fixtures;
 
 public class CompositionHostTests
 {
+    [TestCase(typeof(RetryOwner), 3)]
+    [TestCase(typeof(ClassRetryOwner), 2)]
+    [TestCase(typeof(MethodRetryOwner), 1)]
+    public async Task Owner_retry_attributes_apply_after_the_owner_method_returns(Type ownerType, int retries)
+    {
+        // Isolate assembly defaults so other tests do not inherit this retry policy.
+        var assembly = AssemblyBuilder.DefineDynamicAssembly(
+            new AssemblyName($"CompositionRetryTests_{Guid.NewGuid():N}"), AssemblyBuilderAccess.RunAndCollect);
+        assembly.SetCustomAttribute(new CustomAttributeBuilder(
+            typeof(BDTestRetryAttribute).GetConstructor(new[] { typeof(int) })!, new object[] { 3 }));
+        var type = assembly.DefineDynamicModule("Tests")
+            .DefineType("Owner", TypeAttributes.Public, ownerType).CreateType()!;
+        var owner = (RetryOwner)Activator.CreateInstance(type)!;
+        using var run = BDTestRun.Start();
+        owner.Host = BDTestScenario.For<State>(owner, run);
+        owner.Failures = retries;
+        owner.Host.BeginTest("attributed-retry");
+        try
+        {
+            var execution = owner.Run();
+            Assert.That(execution.IsCompleted, Is.False);
+            owner.Ready.SetResult();
+            var scenario = await execution;
+            Assert.That(scenario.Status, Is.EqualTo(Status.Passed));
+            Assert.That(scenario.RetryCount, Is.EqualTo(retries));
+            Assert.That(owner.Executions, Is.EqualTo(retries + 1));
+        }
+        finally { owner.Host.EndTest(); }
+    }
+
     [Test]
     public async Task Owner_metadata_and_private_inherited_retry_hooks_use_the_test_instance()
     {
@@ -190,6 +222,32 @@ public class CompositionHostTests
         private void Remember(int value) { Host.Context.Value = value.ToString(); Contexts.Add(Host.Context); }
         [BDTestRetryTearDown] private void RetryTearDown() => Hooks.Add("owner teardown");
         [BDTestRetrySetUp] private void RetrySetUp() => Hooks.Add("owner setup");
+    }
+
+    public class RetryOwner
+    {
+        public BDTestScenario<State> Host { get; set; }
+        public TaskCompletionSource Ready { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        public int Failures { get; set; }
+        public int Executions { get; private set; }
+
+        public virtual Task<Scenario> Run() => Host.When(() => Execute()).Then(() => Complete()).BDTestAsync();
+
+        private async Task Execute()
+        {
+            // The test releases this gate only after Run has returned to its caller.
+            await Ready.Task;
+            if (++Executions <= Failures) throw new TransientException();
+        }
+    }
+
+    [BDTestRetry(2)]
+    public class ClassRetryOwner : RetryOwner { }
+
+    public class MethodRetryOwner : ClassRetryOwner
+    {
+        [BDTestRetry(1)]
+        public override Task<Scenario> Run() => base.Run();
     }
 
     private sealed class InheritedHost(BDTestRun run) : AbstractContextBDTestBase<State>
