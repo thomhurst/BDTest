@@ -141,6 +141,21 @@ A successful deletion returns 204 with no redirect, even if the report was alrea
 - `X-Content-Type-Options: nosniff`, `Referrer-Policy: no-referrer` and `X-Frame-Options: DENY`.
 - `Cache-Control: no-store` on report responses, so HTML and its nonce are not reused. Report assets use a one-day public cache.
 
-Inline styles stay allowed for Bootstrap, charts and custom output. Google Fonts is allowed for the theme. Images may use HTTP(S) or `data:` URLs so sandboxed custom HTML can show screenshots. The report CSP is added alongside any CSP your host sets, so both policies must allow a resource.
+Inline styles stay allowed for Bootstrap, charts and custom output. Google Fonts is allowed for the theme. The default image policy is `img-src 'self' data: https:`: same-origin images, `data:` URLs and HTTPS images are allowed. Plain-HTTP third-party images are blocked by default. The report CSP is added alongside any CSP your host sets, so both policies must allow a resource.
+
+### Allowing additional image origins
+
+If `IUserPersonalizer.GetProfilePictureUri` or a custom view uses a plain-HTTP image URL, switch it to HTTPS or explicitly allow its origin:
+
+```csharp
+app.UseBDTestReportServer(options =>
+{
+    options.AdditionalImageSources = new[] { "http://images.internal.example:8080" };
+});
+```
+
+`AdditionalImageSources` defaults to an empty list. Assign it before serving requests. Each value must be an absolute HTTP or HTTPS origin, with an optional port and trailing slash. Paths, credentials, query strings, fragments, wildcards, scheme-only sources and CSP expressions are rejected with `ArgumentException`; a null list throws `ArgumentNullException`. Accepted origins are normalized and copied, so later changes to the input list do not change the policy. The option extends only `img-src` and does not remove its defaults.
+
+This is a breaking change for hosts that previously relied on the broad `http:` source. An explicit origin does not override browser mixed-content restrictions on HTTPS pages or a stricter host CSP. Prefer HTTPS image URLs. This option changes the report server's policy only; the separate policies for standalone HTML reports and sandboxed custom HTML remain unchanged.
 
 Hosts with custom views or embedding needs can set `options.EnableSecurityHeaders = false` and send their own compatible headers. A replacement policy must allow the report's scripts; do not simply remove CSP protection. This setting does not change the sandbox on [custom HTML output](../writing-tests/output.md#raw-html).

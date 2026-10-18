@@ -45,6 +45,41 @@ public class BDTestReportOptions
     /// </summary>
     public bool EnableSecurityHeaders { get; set; } = true;
 
+    private IReadOnlyList<string> _additionalImageSources = Array.Empty<string>();
+
+    /// <summary>
+    /// Extra HTTP(S) origins allowed by the report image policy, in addition to self, data: and https:.
+    /// Assign before serving requests. Values must be origins without credentials, paths, queries or fragments.
+    /// The assigned list is validated and copied; arbitrary CSP expressions are not supported.
+    /// </summary>
+    public IReadOnlyList<string> AdditionalImageSources
+    {
+        get => _additionalImageSources;
+        set
+        {
+            ArgumentNullException.ThrowIfNull(value);
+            var origins = new string[value.Count];
+            for (var i = 0; i < value.Count; i++)
+            {
+                var source = value[i];
+                // Check the original path too: Uri normalizes dot segments such as /.. to /.
+                if (string.IsNullOrWhiteSpace(source) || source.Any(char.IsWhiteSpace) || source.Contains(';') ||
+                    !Uri.TryCreate(source, UriKind.Absolute, out var uri) || !uri.IsWellFormedOriginalString() ||
+                    (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps) ||
+                    uri.UserInfo.Length != 0 || uri.AbsolutePath != "/" || uri.Query.Length != 0 || uri.Fragment.Length != 0 ||
+                    source.TrimEnd('/').AsSpan(uri.Scheme.Length + 3).Contains('/'))
+                {
+                    throw new ArgumentException("Image sources must be HTTP(S) origins without credentials, paths, queries or fragments.", nameof(value));
+                }
+
+                origins[i] = new UriBuilder(uri) { Host = uri.IdnHost }.Uri.GetLeftPart(UriPartial.Authority);
+            }
+
+            _additionalImageSources = Array.AsReadOnly(origins);
+        }
+    }
+
+
     /// <summary>The secret required in the X-BDTest-Upload-Key header. Uploads are disabled when unset.</summary>
     public string? UploadApiKey { get; set; }
 

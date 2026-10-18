@@ -110,7 +110,8 @@ public static class BDTestExtensions
                 // Register before MVC so redirects, rejected requests and errors also receive headers.
                 context.Response.OnStarting(() =>
                 {
-                    ReportSecurityHeaders.Apply(context, preventCaching: context.GetEndpoint()?.Metadata.GetMetadata<ReportRoutes.AssetMetadata>() == null);
+                    ReportSecurityHeaders.Apply(context, options,
+                        preventCaching: context.GetEndpoint()?.Metadata.GetMetadata<ReportRoutes.AssetMetadata>() == null);
                     return Task.CompletedTask;
                 });
             }

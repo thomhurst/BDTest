@@ -126,6 +126,7 @@ Supply `BDTest:UploadApiKey` through user secrets or an environment variable. Op
 | `MaximumAttachmentBytes` | `long` | 10 MiB | Maximum bytes per attachment. Must be nonnegative. |
 | `MaximumReportAttachmentBytes` | `long` | 100 MiB | Maximum attachment bytes per report. Must be nonnegative. |
 | `MaximumAttachmentsPerReport` | `int` | `1000` | Maximum attachments per report. Must be nonnegative. |
+| `AdditionalImageSources` | `IReadOnlyList<string>` | Empty | Extra HTTP(S) image origins, copied and validated on assignment. See [Security](security.md#allowing-additional-image-origins). |
 | `ReportsAuthorizationPolicy` | `string?` | `null` | Named policy for all report reads. Unset denies reads unless endpoint authorization or anonymous access is enabled. |
 | `AllowAnonymousReports` | `bool` | `false` | Explicitly permit anonymous reads when no read policy is configured. Host authorization still applies. |
 | `AdminAuthorizationPolicy` | `string?` | `null` | Named policy for deleting reports. Unset disables deletion. See [Security](security.md#administrators). |
