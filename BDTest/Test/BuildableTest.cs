@@ -1,66 +1,35 @@
 using BDTest.Attributes;
-using BDTest.Constants;
 using BDTest.Metadata;
-using System.Text.Json.Serialization;
 
 namespace BDTest.Test;
 
+/// <summary>Fluent construction state. Report JSON contains definition summaries, never builders.</summary>
 public class BuildableTest
 {
-    [JsonIgnore] internal TestMethodMetadata? TestMetadata { get; set; }
+    internal ScenarioDefinition Definition { get; set; } = new();
+
+    internal TestMethodMetadata? TestMetadata { get => Definition.TestMetadata; set => Definition.TestMetadata = value; }
 
     /// <summary>Gets the run captured when this scenario definition was built.</summary>
-    [JsonIgnore]
-    public BDTestRun Run { get; internal set; } = BDTestRun.Default;
-
-    [JsonIgnore]
-    internal TimeSpan? ScenarioTimeout { get; set; }
-
-    [JsonIgnore]
-    internal string? Guid { get; set; }
-
-    [JsonInclude]
-    internal StoryText? StoryText { get; set; }
-
-    [JsonInclude]
-    internal ScenarioText? ScenarioText { get; set; }
-        
-    [JsonInclude]
-    public string? ScenarioId { get; internal set; }
-        
-    [JsonInclude]
-    public string? ReportId { get; internal set; }
-
+    public BDTestRun Run { get => Definition.Run; internal set => Definition.Run = value; }
+    internal TimeSpan? ScenarioTimeout { get => Definition.ScenarioTimeout; set => Definition.ScenarioTimeout = value; }
+    internal string? Guid { get => Definition.Guid; set => Definition.Guid = value; }
+    internal StoryText? StoryText { get => Definition.StoryText; set => Definition.StoryText = value; }
+    internal ScenarioText? ScenarioText { get => Definition.ScenarioText; set => Definition.ScenarioText = value; }
+    public string? ScenarioId { get => Definition.Guid; internal set => Definition.Guid = value; }
+    public string? ReportId { get => Definition.ReportId; internal set => Definition.ReportId = value; }
     /// <summary>Names of the parameters on the test method, not their argument values.</summary>
-    [JsonInclude]
-    [JsonPropertyName("Parameters")]
-    public IEnumerable<string?>? ParameterNames { get; protected internal set; } = Enumerable.Empty<string>();
-
-    [JsonInclude]
-    public TestInformationAttribute[]? CustomTestInformation { get; protected internal set; } = Array.Empty<TestInformationAttribute>();
+    public IEnumerable<string?>? ParameterNames { get => Definition.ParameterNames; protected internal set => Definition.ParameterNames = value; }
+    public TestInformationAttribute[]? CustomTestInformation { get => Definition.CustomTestInformation; protected internal set => Definition.CustomTestInformation = value; }
 
     /// <summary>Combined story and scenario tags, distinct ignoring case.</summary>
-    [JsonInclude]
-    public string[]? Tags { get; protected internal set; } = Array.Empty<string>();
-        
-    [JsonInclude]
-    public string? CallerMember { get; protected internal set; }
-    [JsonInclude]
-    public string? CallerFile { get; protected internal set; }
-    [JsonInclude]
-    public string? TestId { get; protected internal set; }
-    [JsonIgnore]
-    public BDTestBase? BdTestBase { get; protected set; }
+    public string[]? Tags { get => Definition.Tags; protected internal set => Definition.Tags = value; }
+    public string? CallerMember { get => Definition.CallerMember; protected internal set => Definition.CallerMember = value; }
+    public string? CallerFile { get => Definition.CallerFile; protected internal set => Definition.CallerFile = value; }
+    public string? TestId { get => Definition.TestId; protected internal set => Definition.TestId = value; }
+    public BDTestBase? BdTestBase { get => Definition.BdTestBase; protected set => Definition.BdTestBase = value; }
 
-    public string GetScenarioText()
-    {
-        var text = ScenarioText?.Scenario;
-        return text == null || string.IsNullOrWhiteSpace(text) ? DefaultValues.ScenarioTextNotDefined : text;
-    }
+    public string GetScenarioText() => Definition.GetScenarioText();
 
-    public string GetStoryText()
-    {
-        var text = StoryText?.Story;
-        return text == null || string.IsNullOrWhiteSpace(text) ? DefaultValues.StoryTextNotDefined : text;
-    }
+    public string GetStoryText() => Definition.GetStoryText();
 }

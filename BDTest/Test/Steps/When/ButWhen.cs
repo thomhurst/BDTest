@@ -4,7 +4,7 @@ public sealed class ButWhen : WhenStepBuilder
 {
     protected override StepType StepType { get; } = StepType.ButWhen;
 
-    internal ButWhen(List<Step> previousSteps, Runnable runnable, BuildableTest previousPartiallyBuiltTest) : base(previousSteps, runnable, previousPartiallyBuiltTest)
+    internal ButWhen(Runnable runnable, BuildableTest previousPartiallyBuiltTest) : base(runnable, previousPartiallyBuiltTest)
     {
     }
 

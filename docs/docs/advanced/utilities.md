@@ -12,7 +12,7 @@ description: Read collected scenarios with BDTestUtil, and the Scenario, Step an
 | Member | Returns |
 | --- | --- |
 | `GetScenarios()` / `GetScenarios(BDTestRun)` | Every executed scenario. Outlines appear once, with their rows in `Examples`. |
-| `GetNotRunScenarios()` / `GetNotRunScenarios(BDTestRun)` | `List<BuildableTest>` of chains that were built but not executed. |
+| `GetNotRunScenarios()` / `GetNotRunScenarios(BDTestRun)` | `List<ScenarioDefinitionSummary>` snapshots of chains that were built but not executed. |
 | `ClearScenarios()` / `ClearScenarios(BDTestRun)` | Clears collected scenarios. |
 | `CurrentReportId` | The default run's report ID; use `run.ReportId` for an explicit run. |
 | `GetTestTimer(IReadOnlyCollection<Scenario> scenarios)` | Start, finish and elapsed time for those scenarios. |
@@ -22,6 +22,14 @@ Use it to build custom reports or to assert on results in a teardown:
 ```csharp
 var failed = BDTestUtil.GetScenarios().Where(scenario => scenario.Status == Status.Failed).ToList();
 ```
+
+## Pending definitions
+
+`BDTest.Test.ScenarioDefinitionSummary` contains the scenario and story text, `ScenarioId`, `ReportId`, `TestId`, caller details, parameters, tags, test information, scenario `Timeout`, and `Steps`. Each `StepDefinitionSummary` contains `StepType`, unevaluated `StepText` and the step `Timeout`.
+
+These are report snapshots, not fluent builders. Later changes to a chain do not change a previously returned summary. Taking a snapshot never invokes step delegates, `WithArgs`, `WithStepText`, table readers or doc string readers. Step text therefore retains its template placeholders until execution. Identify a pending chain by `ScenarioId`, not by builder object identity.
+
+See [definition migration](../migration/scenario-definitions.md) for the change from `BuildableTest`.
 
 ## Scenario and step model
 

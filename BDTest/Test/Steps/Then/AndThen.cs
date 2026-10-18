@@ -5,7 +5,7 @@ public sealed class AndThen : ThenStepBuilder
     protected override StepType StepType { get; } = StepType.AndThen;
 
     // Actions
-    internal AndThen(List<Step> previousSteps, Runnable runnable, BuildableTest previousPartiallyBuiltTest) : base(previousSteps, runnable, previousPartiallyBuiltTest)
+    internal AndThen(Runnable runnable, BuildableTest previousPartiallyBuiltTest) : base(runnable, previousPartiallyBuiltTest)
     {
     }
 

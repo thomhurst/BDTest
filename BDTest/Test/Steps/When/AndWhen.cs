@@ -4,7 +4,7 @@ public sealed class AndWhen : WhenStepBuilder
 {
     protected override StepType StepType { get; } = StepType.AndWhen;
 
-    internal AndWhen(List<Step> previousSteps, Runnable runnable, BuildableTest previousPartiallyBuiltTest) : base(previousSteps, runnable, previousPartiallyBuiltTest)
+    internal AndWhen(Runnable runnable, BuildableTest previousPartiallyBuiltTest) : base(runnable, previousPartiallyBuiltTest)
     {
     }
 

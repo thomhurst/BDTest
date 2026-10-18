@@ -249,7 +249,7 @@ public class OutputLifecycleTests
         }
         public Scenario Register()
         {
-            var scenario = new Scenario(new List<Step>(), When(() => NoOp()));
+            var scenario = new Scenario(new List<Step>(), When(() => NoOp()).Definition);
             _scenarios.Add(scenario);
             return scenario;
         }

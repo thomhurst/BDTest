@@ -102,22 +102,13 @@ public class Step
         SetStepText();
     }
 
-    // Copy only the step definition. Execution results belong to one scenario.
-    internal Step(Step source, string? scenarioId)
+    internal Step(StepDefinition definition, string? scenarioId, string? reportId, BDTestRun run)
+        : this(definition.Runnable, definition.StepType, scenarioId, reportId, run)
     {
-        Options = source.Options;
-        Guid = System.Guid.NewGuid().ToString("N");
-        ScenarioId = scenarioId;
-        ReportId = source.ReportId;
-        Runnable = source.Runnable;
-        StepType = source.StepType;
-        _stepTextTemplate = source._stepTextTemplate;
-        _generatedStepText = _stepTextTemplate;
-        StepText = $"{StepPrefix} {_stepTextTemplate}";
-        OverriddenStepText = source.OverriddenStepText;
-        Timeout = source.Timeout;
-        _explicitArguments = source._explicitArguments;
-        AttachedArguments.AddRange(source.AttachedArguments);
+        OverriddenStepText = definition.OverriddenStepText;
+        Timeout = definition.Timeout;
+        ExplicitArguments = definition.ExplicitArguments?.ToArray();
+        AttachedArguments.AddRange(definition.AttachedArguments);
     }
 
     [JsonConstructor]

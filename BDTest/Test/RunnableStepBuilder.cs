@@ -13,8 +13,7 @@ public abstract class RunnableStepBuilder : StepBuilder
 {
     private int _executionStarted;
 
-    internal RunnableStepBuilder(List<Step> previousSteps, Runnable runnable, BuildableTest previousPartiallyBuiltTest) : base(
-        previousSteps,
+    internal RunnableStepBuilder(Runnable runnable, BuildableTest previousPartiallyBuiltTest) : base(
         runnable,
         previousPartiallyBuiltTest)
     {
@@ -41,8 +40,9 @@ public abstract class RunnableStepBuilder : StepBuilder
         TestOutputData.FrameworkExecutionId = testDetails.TestId;
         // Keep reusable builder definitions separate from report steps, whose
         // runtime references are released after the final execution attempt.
-        var steps = ExistingSteps.Select(step => new Step(step, testDetails.Guid)).ToList();
-        var scenario = new Scenario(steps, testDetails, outline, exampleValues);
+        var definition = testDetails.Definition.Snapshot();
+        var steps = definition.Steps.Select(step => new Step(step, definition.Guid, definition.ReportId, definition.Run)).ToList();
+        var scenario = new Scenario(steps, definition, outline, exampleValues);
         foreach (var step in steps)
         {
             step.ExampleValues = exampleValues;

@@ -81,6 +81,8 @@ public async Task Test1()
 
 The report shows each entry as `AttributeTypeName - Information`. The values are also available on `Scenario.CustomTestInformation`.
 
+Pending summaries returned by `BDTestUtil.GetNotRunScenarios()` are data-only: their `CustomTestInformation` entries are base `TestInformationAttribute` values containing only `Information`. They do not preserve custom attribute types or additional members, and `Print()` uses the base attribute name. Builders and executed scenarios retain the custom attribute types. See [Scenario definitions migration](../migration/scenario-definitions.md).
+
 Method tags and test information are read from the exact method supplied by the [adapter lifecycle](../frameworks/custom-adapters.md#method-identity-and-migration), not from helpers on the call stack. Class tags are combined with method tags. Standalone builders need an explicit method identity to use method attributes.
 
 Each scenario receives newly constructed test information attributes. Mutable arrays or collections in a custom attribute belong to that scenario; changing them does not change another scenario or the cached method metadata.

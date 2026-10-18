@@ -138,7 +138,7 @@ public class RunTimingTests : BDTestBase
     }
 
     private Scenario CreateScenario(DateTime start, DateTime end) =>
-        new(new List<Step>(), When(() => NoOp())) { StartTime = start, EndTime = end };
+        new(new List<Step>(), When(() => NoOp()).Definition) { StartTime = start, EndTime = end };
 
     private static void AssertTimer(TestTimer timer, DateTime start, DateTime end)
     {

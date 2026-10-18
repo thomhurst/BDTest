@@ -31,7 +31,7 @@ public class BDTestOutputModel
     public List<Scenario>? Scenarios { get; set; } = new();
         
     [JsonInclude]
-    public List<BuildableTest>? NotRun { get; set; } = new();
+    public List<ScenarioDefinitionSummary>? NotRun { get; set; } = new();
 
     [JsonInclude]
     public string? Version { get; set; }

@@ -167,7 +167,7 @@ public class BulkConsoleOutputTests
 
         public void RegisterScenario()
         {
-            _scenario = new Scenario(new List<Step>(), _details) { StartTime = DateTime.UtcNow, Status = Status.Pending };
+            _scenario = new Scenario(new List<Step>(), _details.Definition) { StartTime = DateTime.UtcNow, Status = Status.Pending };
         }
 
         public void Dispose()

@@ -4,7 +4,7 @@ public sealed class Then : ThenStepBuilder
 {
     protected override StepType StepType { get; } = StepType.Then;
 
-    internal Then(List<Step> previousSteps, Runnable runnable, BuildableTest previousPartiallyBuiltTest) : base(previousSteps, runnable, previousPartiallyBuiltTest)
+    internal Then(Runnable runnable, BuildableTest previousPartiallyBuiltTest) : base(runnable, previousPartiallyBuiltTest)
     {
     }
 

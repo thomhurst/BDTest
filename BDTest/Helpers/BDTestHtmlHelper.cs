@@ -565,7 +565,7 @@ public static class BDTestHtmlHelper
         html.AppendLine($"</div><pre class=\"pre\">{EscapeHtml(content)}</pre></div>");
     }
 
-    private static void GenerateNotRunSection(StringBuilder html, List<BuildableTest> notRun)
+    private static void GenerateNotRunSection(StringBuilder html, List<ScenarioDefinitionSummary> notRun)
     {
         html.AppendLine("<section class=\"wrap sec\" id=\"not-run\" aria-labelledby=\"nr-h\">");
         html.AppendLine("<div class=\"sec-head\"><h2 id=\"nr-h\" class=\"h2\">Tests not run</h2><p class=\"sec-note\">Built by the test framework but never executed.</p></div>");
