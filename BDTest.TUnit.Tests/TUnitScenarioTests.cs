@@ -38,4 +38,32 @@ public class TUnitScenarioTests : TUnitBDTestBase<TUnitContext>
             await Assert.That(scenario.Status).IsEqualTo(Status.Skipped);
         }
     }
+
+    [Test]
+    public async Task InconclusiveScenarioIsInconclusive()
+    {
+        var testId = TestContext.Current!.Id;
+
+        try
+        {
+            await Given(() => Console.WriteLine("a TUnit test"))
+                .When(() => ThrowInconclusiveException())
+                .Then(() => Assert.Fail("Subsequent steps must not run."))
+                .BDTestAsync();
+
+            Assert.Fail("The inconclusive exception should be propagated.");
+        }
+        catch (InconclusiveTestException exception)
+        {
+            var scenario = BDTestUtil.GetScenarios().Single(s => s.FrameworkTestId == testId);
+
+            await Assert.That(exception.Message).IsEqualTo("Inconclusive scenario");
+            await Assert.That(scenario.Status).IsEqualTo(Status.Inconclusive);
+            await Assert.That(scenario.Steps[0].Status).IsEqualTo(Status.Passed);
+            await Assert.That(scenario.Steps[1].Status).IsEqualTo(Status.Inconclusive);
+            await Assert.That(scenario.Steps[2].Status).IsEqualTo(Status.Inconclusive);
+        }
+    }
+
+    private static void ThrowInconclusiveException() => throw new InconclusiveTestException("Inconclusive scenario");
 }

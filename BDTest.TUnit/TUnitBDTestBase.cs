@@ -19,6 +19,11 @@ public abstract class TUnitBDTestBase<TContext> : AbstractContextBDTestBase<TCon
         {
             BDTestSettings.CustomExceptionSettings.SkipExceptionTypes.Add(typeof(SkipTestException));
         }
+
+        if (!BDTestSettings.CustomExceptionSettings.InconclusiveExceptionTypes.Contains(typeof(InconclusiveTestException)))
+        {
+            BDTestSettings.CustomExceptionSettings.InconclusiveExceptionTypes.Add(typeof(InconclusiveTestException));
+        }
     }
 
     protected override void OnScenarioSkipped(string reason) => throw new SkipTestException(reason);
