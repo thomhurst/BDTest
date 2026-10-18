@@ -58,6 +58,8 @@ public class BasketTests : XUnitBDTestBase<BasketContext>
 
 Contexts may have constructor dependencies: override `CreateContextAsync(ContextCreation)` to construct them. BDTest awaits `IBDTestContextLifetime.InitializeAsync()` before scenario steps and disposes owned contexts at teardown, preferring `IAsyncDisposable` over `IDisposable`. Call `await InitializeContextAsync()` when async fixture setup needs an initialized context before any scenario. See [Test context](../writing-tests/test-context.md) for factories, retries and ownership.
 
+The adapter uses the protected [constructor-output API](custom-adapters.md#constructor-output-and-assertion-scopes), so it requires no friend access to core internals. Constructor output binds only after the derived fixture has supplied its owned run.
+
 ## What the adapter does
 
 - **Execution ID:** `TestContext.Current.Test.UniqueID`. Theory rows get separate IDs and contexts, even when their data is not serializable.

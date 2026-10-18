@@ -1,4 +1,3 @@
-using BDTest.Output;
 using BDTest.Settings;
 using BDTest.Test;
 using Xunit;
@@ -13,7 +12,6 @@ public abstract class XUnitBDTestBase<TContext> : AbstractContextBDTestBase<TCon
     where TContext : class
 {
     private readonly string _frameworkTestId;
-    private readonly StartupOutputBuffer _constructorOutput;
     private bool _executionStarted;
 
     protected override string BDTestExecutionId => _frameworkTestId;
@@ -23,9 +21,7 @@ public abstract class XUnitBDTestBase<TContext> : AbstractContextBDTestBase<TCon
         XUnitExceptionRegistration.EnsureRegistered();
         _frameworkTestId = TestContext.Current.Test?.UniqueID
             ?? throw new InvalidOperationException("An xUnit test must be running to create a BDTest adapter.");
-        _constructorOutput = new StartupOutputBuffer(InitializeExecution);
-        TestOutputData.PendingStartupOutput = _constructorOutput;
-        Console.SetOut(TestOutputData.Instance);
+        CaptureStartupOutput(InitializeExecution);
     }
 
     // Keep lifecycle binding outside the virtual async setup method: AsyncLocal
@@ -40,12 +36,14 @@ public abstract class XUnitBDTestBase<TContext> : AbstractContextBDTestBase<TCon
     {
         if (_executionStarted) return;
         BeginTest(_frameworkTestId, (TestContext.Current.TestMethod as IXunitTestMethod)?.Method);
-        _constructorOutput.Bind(TestRun, BDTestExecutionId);
+        BindStartupOutput();
         _executionStarted = true;
     }
 
     /// <summary>Runs async setup after the execution has been bound to the derived fixture's run.</summary>
     public virtual ValueTask InitializeAsync() => default;
+
+    internal static void BeginPendingExecution() => BeginPendingTestExecution();
 
     /// <summary>The reusable outcome declaration. Register it on options for explicit runs.</summary>
     public static FrameworkOutcomeMap OutcomeMap => XUnitExceptionRegistration.OutcomeMap;
@@ -68,38 +66,18 @@ public abstract class XUnitBDTestBase<TContext> : AbstractContextBDTestBase<TCon
         }
 
         InitializeExecution();
-        _constructorOutput.Complete();
-        try
-        {
-            await EndTestAsync();
-        }
-        finally
-        {
-            ClearPendingOutput();
-        }
+        CompleteStartupOutput();
+        await EndTestAsync();
     }
 
     public void Dispose()
     {
         // A derived IAsyncLifetime implementation may bypass our initialization hook.
         InitializeExecution();
-        _constructorOutput.Complete();
-        try
-        {
+        CompleteStartupOutput();
 #pragma warning disable CS0618 // Preserve existing overrides of the compatibility hook.
-            MarkTestAsComplete();
+        MarkTestAsComplete();
 #pragma warning restore CS0618
-        }
-        finally
-        {
-            ClearPendingOutput();
-        }
-    }
-
-    private void ClearPendingOutput()
-    {
-        if (ReferenceEquals(TestOutputData.PendingStartupOutput, _constructorOutput))
-            TestOutputData.PendingStartupOutput = null;
     }
 }
 

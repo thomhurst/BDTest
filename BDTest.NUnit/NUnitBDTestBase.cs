@@ -36,7 +36,7 @@ public abstract class NUnitBDTestBase<TContext> : AbstractContextBDTestBase<TCon
     // Kept callable for existing consumers; normal NUnit teardown is asynchronous.
     public void PruneContext() => EndTest();
 
-    internal override async Task ExecuteScenarioStepsAsync(Func<Task> executeSteps,
+    protected override async Task ExecuteScenarioStepsAsync(Func<Task> executeSteps,
         Action<Action> registerTerminalFailure)
     {
         AssertionResult[] assertions = Array.Empty<AssertionResult>();

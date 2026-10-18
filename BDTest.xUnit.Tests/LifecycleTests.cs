@@ -160,6 +160,37 @@ public class LifecycleTests : XUnitBDTestBase<XUnitContext>
         }
     }
 
+    [Fact]
+    public async Task ConcurrentConstructorsBindToTheirOwnRunsWithTheSameRunnerId()
+    {
+        using var first = BDTestRun.Start();
+        using var second = BDTestRun.Start();
+        var ready = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var arrivals = 0;
+        var cancellationToken = TestContext.Current.CancellationToken;
+
+        async Task Verify(BDTestRun run, string marker)
+        {
+            var fixture = new ConstructorProbe(run);
+            Console.WriteLine(marker);
+            if (Interlocked.Increment(ref arrivals) == 2) ready.SetResult();
+            await ready.Task.WaitAsync(TimeSpan.FromSeconds(10), cancellationToken);
+            await ((IAsyncLifetime)fixture).InitializeAsync();
+            try
+            {
+                var scenario = await fixture.When(() => NoOp()).Then(() => NoOp()).BDTestAsync();
+                Assert.Same(scenario, Assert.Single(run.Scenarios));
+                Assert.Contains(marker, scenario.TestStartupInformation);
+                Assert.DoesNotContain(marker == "first run" ? "second run" : "first run", scenario.TestStartupInformation);
+            }
+            finally { await fixture.DisposeAsync(); }
+        }
+
+        await Task.WhenAll(Task.Run(() => Verify(first, "first run"), cancellationToken),
+            Task.Run(() => Verify(second, "second run"), cancellationToken));
+        Assert.Equal(Assert.Single(first.Scenarios).FrameworkTestId, Assert.Single(second.Scenarios).FrameworkTestId);
+    }
+
     private sealed class LegacyProbe(BDTestRun run) : XUnitBDTestBase<XUnitContext>
     {
         public override BDTestRun TestRun => run;

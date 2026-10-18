@@ -25,6 +25,7 @@ public abstract class BDTestBase
     // Some runners invoke setup and the body in separate execution contexts.
     // Their per-test fixture instance retains the identity across that boundary.
     private TestExecution _lastExecution;
+    private StartupOutputBuffer _startupOutput;
     private static readonly TestExecution EndedExecution = new(null, null) { Completed = 1 };
 
     private sealed class TestExecution(string id, BDTestRun run, TestMethodMetadata metadata = null)
@@ -224,9 +225,13 @@ public abstract class BDTestBase
     {
     }
 
-    // Framework adapters can isolate each attempt's assertions without replacing
-    // the runner's result or changing the retry/exception classification logic.
-    internal virtual Task ExecuteScenarioStepsAsync(Func<Task> executeSteps,
+    /// <summary>Runs an attempt's preparation, steps and hooks inside the runner's assertion scope.</summary>
+    /// <remarks>
+    /// Await executeSteps once and preserve its original exception for retry classification.
+    /// Use registerTerminalFailure to supply additional diagnostics that throw only if this
+    /// attempt fails without retrying. Do not overwrite the runner's overall test result.
+    /// </remarks>
+    protected internal virtual Task ExecuteScenarioStepsAsync(Func<Task> executeSteps,
         Action<Action> registerTerminalFailure) => executeSteps();
 
     internal void NotifyScenarioSkipped(string reason)
@@ -262,6 +267,32 @@ public abstract class BDTestBase
     {
         return Task.CompletedTask;
     }
+
+    /// <summary>Buffers constructor output before the derived fixture's run is available.</summary>
+    /// <remarks>Call synchronously from the adapter constructor. The callback must start and bind the execution.</remarks>
+    protected void CaptureStartupOutput(Action beginExecution)
+    {
+        if (beginExecution == null) throw new ArgumentNullException(nameof(beginExecution));
+        _startupOutput = new StartupOutputBuffer(beginExecution);
+        TestOutputData.PendingStartupOutput = _startupOutput;
+        Console.SetOut(TestOutputData.Instance);
+    }
+
+    /// <summary>Binds buffered constructor output to this fixture's run and execution after BeginTest.</summary>
+    protected void BindStartupOutput() => _startupOutput?.Bind(TestRun, BDTestExecutionId);
+
+    /// <summary>Stops constructor-task capture and clears only this fixture's pending buffer. Safe to repeat.</summary>
+    /// <remarks>Call before teardown completion, including when async setup fails or a legacy hook is used.</remarks>
+    protected void CompleteStartupOutput()
+    {
+        _startupOutput?.Complete();
+        if (ReferenceEquals(TestOutputData.PendingStartupOutput, _startupOutput))
+            TestOutputData.PendingStartupOutput = null;
+    }
+
+    /// <summary>Invokes the pending constructor buffer's callback in the runner's current execution flow.</summary>
+    /// <remarks>Use a before-test hook when derived fixtures can bypass the adapter's initialization hook.</remarks>
+    protected static void BeginPendingTestExecution() => TestOutputData.PendingStartupOutput?.BeginExecution();
 
     /// <summary>Starts capture and context ownership for one framework test execution.</summary>
     /// <remarks>

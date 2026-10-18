@@ -5,10 +5,6 @@
         <DefineConstants>$(DefineConstants);BDTEST_NUNIT</DefineConstants>
         
         <IsPackable>false</IsPackable>
-        
-        <SignAssembly>True</SignAssembly>
-        
-        <AssemblyOriginatorKeyFile>..\StrongNameKeyPair.snk</AssemblyOriginatorKeyFile>
     </PropertyGroup>
 
     <ItemGroup>
