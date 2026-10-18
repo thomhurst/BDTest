@@ -31,8 +31,10 @@ public sealed class BDTestCodeFixProvider : CodeFixProvider
         if (diagnostic.Id == "BDT001")
         {
             var statement = node.FirstAncestorOrSelf<ExpressionStatementSyntax>();
-            if (statement == null || !CanAwait(statement, model, context.CancellationToken)) return;
+            if (statement == null) return;
             var expression = BDTestAnalyzer.DiscardedExpression(statement, model);
+            if (expression.Span != diagnostic.Location.SourceSpan ||
+                !CanAwait(statement, model, context.CancellationToken)) return;
             if (BDTestAnalyzer.IsBuilder(model.GetTypeInfo(expression).Type) &&
                 !BDTestAnalyzer.IsRunnable(model.GetTypeInfo(expression).Type)) return;
             var awaited = SyntaxFactory.ExpressionStatement(Await(expression)).WithTriviaFrom(statement);
@@ -45,6 +47,7 @@ public sealed class BDTestCodeFixProvider : CodeFixProvider
                 model.GetOperation(a) is IArgumentOperation { Parameter.Type: INamedTypeSymbol { DelegateInvokeMethod.ReturnsVoid: true } });
             if (argument == null || model.GetOperation(argument) is not IArgumentOperation operation ||
                 BDTestAnalyzer.Unwrap(operation.Value) is not IAnonymousFunctionOperation { Syntax: LambdaExpressionSyntax lambda }) return;
+            if (BDTestAnalyzer.AsyncVoidCalls(lambda, model).Any()) return;
             var discarded = BDTestAnalyzer.DiscardedAwaitables(lambda, model).ToArray();
             LambdaExpressionSyntax updated;
             // An assignment discard is an entire statement, not an assignable await expression.

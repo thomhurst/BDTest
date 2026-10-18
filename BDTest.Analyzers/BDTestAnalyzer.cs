@@ -35,7 +35,7 @@ public sealed class BDTestAnalyzer : DiagnosticAnalyzer
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
         context.RegisterSyntaxNodeAction(AnalyzeDiscard, SyntaxKind.ExpressionStatement);
-        context.RegisterSyntaxNodeAction(AnalyzeVoidExpression, SyntaxKind.ArrowExpressionClause,
+        context.RegisterSyntaxNodeAction(AnalyzeExpressionBody, SyntaxKind.ArrowExpressionClause,
             SyntaxKind.SimpleLambdaExpression, SyntaxKind.ParenthesizedLambdaExpression);
         context.RegisterOperationAction(AnalyzeStep, OperationKind.Invocation);
         context.RegisterSymbolAction(AnalyzeAttributes, SymbolKind.Method, SymbolKind.NamedType);
@@ -73,15 +73,20 @@ public sealed class BDTestAnalyzer : DiagnosticAnalyzer
         ReportDiscard(context, expression);
     }
 
-    private static void AnalyzeVoidExpression(SyntaxNodeAnalysisContext context)
+    private static void AnalyzeExpressionBody(SyntaxNodeAnalysisContext context)
     {
         if (context.Node is LambdaExpressionSyntax { Body: ExpressionSyntax body } lambda &&
-            context.SemanticModel.GetOperation(lambda) is IAnonymousFunctionOperation { Symbol.ReturnsVoid: true })
+            context.SemanticModel.GetOperation(lambda) is IAnonymousFunctionOperation operation &&
+            DiscardsExpressionBody(operation.Symbol))
             ReportDiscard(context, body);
         else if (context.Node is ArrowExpressionClauseSyntax arrow && arrow.Parent != null &&
-                 context.SemanticModel.GetDeclaredSymbol(arrow.Parent) is IMethodSymbol { ReturnsVoid: true })
+                 context.SemanticModel.GetDeclaredSymbol(arrow.Parent) is IMethodSymbol method && DiscardsExpressionBody(method))
             ReportDiscard(context, arrow.Expression);
     }
+
+    private static bool DiscardsExpressionBody(IMethodSymbol method) => method.ReturnsVoid ||
+        (method.IsAsync && method.ReturnType.ToDisplayString() is
+            "System.Threading.Tasks.Task" or "System.Threading.Tasks.ValueTask");
 
     private static void ReportDiscard(SyntaxNodeAnalysisContext context, ExpressionSyntax expression)
     {
@@ -145,13 +150,13 @@ public sealed class BDTestAnalyzer : DiagnosticAnalyzer
                     context.ReportDiagnostic(Diagnostic.Create(AsyncStep, argument.Syntax.GetLocation(), "is async void"));
                 else
                 {
+                    foreach (var call in AsyncVoidCalls(lambda.Syntax, model))
+                        context.ReportDiagnostic(Diagnostic.Create(AsyncStep, call.GetLocation(), "calls an async void method"));
                     foreach (var expression in DiscardedAwaitables(lambda.Syntax, model))
                         context.ReportDiagnostic(Diagnostic.Create(AsyncStep, expression.GetLocation(), "discards awaitable work"));
                 }
             }
-            else if (target is IMethodReferenceOperation method && (method.Method.IsAsync ||
-                     method.Method.GetAttributes().Any(a => a.AttributeClass?.ToDisplayString() ==
-                         "System.Runtime.CompilerServices.AsyncStateMachineAttribute")))
+            else if (target is IMethodReferenceOperation method && IsAsyncVoid(method.Method))
                 context.ReportDiagnostic(Diagnostic.Create(AsyncStep, argument.Syntax.GetLocation(), "is async void"));
         }
 
@@ -172,6 +177,16 @@ public sealed class BDTestAnalyzer : DiagnosticAnalyzer
         var message = ValidateStepText(attribute, stepMethod.Parameters.Count(p => !IsCancellation(p.Type)));
         if (message != null) context.ReportDiagnostic(Diagnostic.Create(StepText, argument.Syntax.GetLocation(), message));
     }
+
+    private static bool IsAsyncVoid(IMethodSymbol method) => method.ReturnsVoid && (method.IsAsync ||
+        method.GetAttributes().Any(a => a.AttributeClass?.ToDisplayString() ==
+            "System.Runtime.CompilerServices.AsyncStateMachineAttribute"));
+
+    internal static IEnumerable<InvocationExpressionSyntax> AsyncVoidCalls(SyntaxNode lambda, SemanticModel model) =>
+        lambda.DescendantNodes(n => n == lambda ||
+                n is not AnonymousFunctionExpressionSyntax && n is not LocalFunctionStatementSyntax)
+            .OfType<InvocationExpressionSyntax>()
+            .Where(call => model.GetOperation(call) is IInvocationOperation operation && IsAsyncVoid(operation.TargetMethod));
 
     internal static IEnumerable<ExpressionSyntax> DiscardedAwaitables(SyntaxNode lambda, SemanticModel model)
     {
@@ -244,8 +259,8 @@ public sealed class BDTestAnalyzer : DiagnosticAnalyzer
         {
             var value = attribute.ConstructorArguments[1];
             if (value.Kind == TypedConstantKind.Error) return null;
-            var overrides = value.Kind == TypedConstantKind.Array
-                ? (value.IsNull ? ImmutableArray<TypedConstant>.Empty : value.Values) : ImmutableArray.Create(value);
+            if (value.Kind == TypedConstantKind.Array && value.IsNull) return "StepText overrides must not be a null array";
+            var overrides = value.Kind == TypedConstantKind.Array ? value.Values : ImmutableArray.Create(value);
             foreach (var item in overrides)
             {
                 if (item.Kind == TypedConstantKind.Error) return null;

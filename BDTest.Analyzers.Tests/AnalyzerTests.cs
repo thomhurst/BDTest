@@ -34,6 +34,12 @@ public class AnalyzerTests
     [TestCase("class Other { public Other When() => this; public Task BDTestAsync() => Task.CompletedTask; } void Test() { new Other().When().BDTestAsync(); }", 0)]
     [TestCase("void Test() { ScenarioOutline(\"outline\", new[] { 1 }, value => Given(() => {}).When(() => {}).Then(() => {})); }", 1)]
     [TestCase("Task Test() => ScenarioOutline(\"outline\", new[] { 1 }, value => Given(() => {}).When(() => {}).Then(() => {})).BDTestAsync();", 0)]
+    [TestCase("async Task Test() => Given(() => {}).When(() => {}).Then(() => {}).BDTestAsync();", 1)]
+    [TestCase("async ValueTask Test() => Given(() => {}).When(() => {}).Then(() => {}).BDTestAsync();", 1)]
+    [TestCase("Func<Task> Test() => async () => Given(() => {}).When(() => {}).Then(() => {}).BDTestAsync();", 1)]
+    [TestCase("async Task Test() { async Task Local() => Given(() => {}).When(() => {}).Then(() => {}).BDTestAsync(); await Local(); }", 1)]
+    [TestCase("async Task Test() => await Given(() => {}).When(() => {}).Then(() => {}).BDTestAsync();", 0)]
+    [TestCase("Func<Task> Test() => () => Given(() => {}).When(() => {}).Then(() => {}).BDTestAsync();", 0)]
     public async Task Execution_only_flags_definite_discards(string members, int count) =>
         await AssertRule(members, "BDT001", count);
 
@@ -57,6 +63,11 @@ public class AnalyzerTests
     [TestCase("void Test() { var step = Given(() => { Action nested = () => { Task.Delay(1); }; }); }", 0)]
     [TestCase("class Other { public int GetAwaiter() => 1; } void Test() { var step = Given(() => { new Other(); }); }", 0)]
     [TestCase("void Given(Action step, int other) {} void Test() { Given(() => { Task.Delay(1); }, 1); }", 0)]
+    [TestCase("async void Step() { await Task.Delay(1); } void Test() { var step = Given(() => Step()); }", 1)]
+    [TestCase("async void Step() { await Task.Delay(1); } void Test() { var step = Given(() => { Step(); }); }", 1)]
+    [TestCase("async void Step() { await Task.Delay(1); } void Test() { var step = Given(() => { if (true) Step(); }); }", 1)]
+    [TestCase("async void Step() { await Task.Delay(1); } void Test() { var step = Given(() => { Action nested = () => Step(); }); }", 0)]
+    [TestCase("async void Step() { await Task.Delay(1); } void Test() { var step = Given(() => { void Local() => Step(); }); }", 0)]
     public async Task Async_steps_respect_bound_delegate(string members, int count) =>
         await AssertRule(members, "BDT004", count);
 
@@ -78,6 +89,8 @@ public class AnalyzerTests
     [TestCase("[StepText(\"{0}\")] Task Step(int value, CancellationToken token) => Task.CompletedTask; void Test() { var step = Given(token => Step(1, token)); }", 0)]
     [TestCase("[StepText(\"{1}\")] Task Step(int value, CancellationToken token) => Task.CompletedTask; void Test() { var step = Given(() => Step(1, CancellationToken.None)); }", 0)]
     [TestCase("[StepText(\"{1}\")] Task Step(int value, CancellationToken token) => Task.CompletedTask;", 0)]
+    [TestCase("[StepText(\"{0}\", (string[])null)] void Step(int value) {}", 1)]
+    [TestCase("[StepText(\"{0}\", new string[0])] void Step(int value) {}", 0)]
     public async Task Step_text_matches_composite_format_and_visible_parameters(string members, int count) =>
         await AssertRule(members, "BDT002", count);
 

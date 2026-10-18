@@ -40,11 +40,18 @@ public class CodeFixTests
     [TestCase("async void Step() { await Task.Delay(1); } void Test() { var step = Given(Step); }", "BDT004")]
     [TestCase("async void Test() { When(() => {}).Then(() => {}); await Task.Delay(1); }", "BDT001")]
     [TestCase("void Test() { var step = Given(() => { lock (this) { Task.Delay(1); } }); }", "BDT004")]
+    [TestCase("Task Run(Action callback) => Task.CompletedTask; async Task Test() { Run(() => Given(() => {}).When(() => {}).Then(() => {})); }", "BDT001")]
+    [TestCase("Task Run(Action callback) => Task.CompletedTask; async Task Test() { Run(() => Given(() => {}).When(() => {}).Then(() => {}).BDTestAsync()); }", "BDT001")]
+    [TestCase("async void Step() { await Task.Delay(1); } void Test() { var step = Given(() => Step()); }", "BDT004")]
+    [TestCase("async void Step() { await Task.Delay(1); } void Test() { var step = Given(() => { Step(); Task.Delay(1); }); }", "BDT004")]
     public async Task No_fix_when_signature_or_step_structure_needs_manual_change(string members, string id)
     {
         var (document, diagnostics) = await Document(members);
         using var workspace = document.Project.Solution.Workspace;
-        Assert.That(await Fixes(document, diagnostics.Single(d => d.Id == id)), Is.Empty);
+        var findings = diagnostics.Where(d => d.Id == id).ToArray();
+        Assert.That(findings, Is.Not.Empty);
+        foreach (var finding in findings)
+            Assert.That(await Fixes(document, finding), Is.Empty);
     }
 
     [TestCase("BDT001")]

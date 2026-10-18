@@ -39,9 +39,9 @@ await Given(() => SetUpAccount())
 
 Directly awaiting a runnable builder is also valid. Returning `BDTestAsync()` from a Task-returning test is valid. A bare call or `_ = ...` discards the chain or execution task. Discarding `BDTestAsync().ConfigureAwait(false)` is also diagnosed.
 
-The rule proves direct discards, including void expression bodies. It does not track local variables through control flow. Returning a builder, storing it for later, passing it to a helper, and configuring an existing builder do not prove that execution is missing. Those cases are not diagnosed.
+The rule proves direct discards, including void expression bodies and async Task/ValueTask expression bodies that omit `await`. It does not track local variables through control flow. Returning a builder, storing it for later, passing it to a helper, and configuring an existing builder do not prove that execution is missing. Those cases are not diagnosed.
 
-The fix adds `await` inside an existing async function that does not return void. It is available only for runnable builders or execution tasks. An incomplete Given chain needs a When and Then before it can execute. The fix never introduces `async void` or changes a method signature.
+The fix adds `await` to a discarded expression statement inside an existing async function that does not return void. It is available only for runnable builders or execution tasks. An incomplete Given chain needs a When and Then before it can execute. The fix never introduces `async void` or changes a method signature.
 
 ## BDT002
 
@@ -52,7 +52,7 @@ StepText uses zero-based positional placeholders, including composite formatting
 void Account(string name, decimal balance) { }
 ```
 
-Use `{{` and `}}` for literal braces. Overrides use numeric indices, such as `"0:the current account"`; named overrides and named placeholders are not supported by the current runtime. An override must refer to an existing visible parameter. Overrides replace exact `{index}` occurrences in order before composite formatting, just as at runtime. A replacement containing a placeholder is validated too.
+Use `{{` and `}}` for literal braces. Overrides use numeric indices, such as `"0:the current account"`; named overrides and named placeholders are not supported by the current runtime. An override must refer to an existing visible parameter. An explicitly null override array is invalid. Overrides replace exact `{index}` occurrences in order before composite formatting, just as at runtime. A replacement containing a placeholder is validated too.
 
 CancellationToken parameters remain visible for ordinary step delegates. A cancellation-aware overload hides those parameters. The analyzer checks the selected overload when a method group or an expression lambda identifies the step method. It does not guess visibility for a method that has not been bound to a step, or for an opaque delegate supplied dynamically.
 
@@ -82,9 +82,9 @@ Given(() => SaveAsync());
 Given(async () => { await SaveAsync(); });
 ```
 
-Task, ValueTask, ValueTask of T, and cancellation-aware step overloads are valid. They do not need `AsTask()`. The rule inspects inline Action bodies and async void method groups. It does not follow arbitrary helper implementations or delegate variables, or diagnose storing an awaitable for other code to consume.
+Task, ValueTask, ValueTask of T, and cancellation-aware step overloads are valid. They do not need `AsTask()`. The rule inspects inline Action bodies, including direct calls to async void methods, and async void method groups. It does not follow arbitrary helper implementations or delegate variables, or diagnose storing an awaitable for other code to consume.
 
-For an inline lambda, the fix awaits discarded expressions and selects `Func<Task>` explicitly. Existing control flow is retained. Async void method groups require a manual method-signature change, so no fix is offered. A fix is offered only when the resulting compilation is valid.
+For an inline lambda, the fix awaits discarded expressions and selects `Func<Task>` explicitly. Existing control flow is retained. Async void method groups and calls require a manual method-signature change, so no fix is offered. A fix is offered only when the resulting compilation is valid.
 
 ## Suppression and severity
 
