@@ -1,3 +1,4 @@
+using BDTest.Engine;
 using BDTest.Settings.Retry;
 using BDTest.Settings.Skip;
 using BDTest.Test;
@@ -25,6 +26,9 @@ internal sealed class RunOptions
 
     internal RunOptions(BDTestOptions options)
     {
+#if NET8_0_OR_GREATER
+        Clock = new ExecutionClock(options.TimeProvider ?? throw new ArgumentException("TimeProvider cannot be null.", nameof(options)));
+#endif
         ContextFactory = options.ContextFactory;
         Services = options.Services;
         FrameworkOutcomes = options.FrameworkOutcomes;
@@ -49,6 +53,8 @@ internal sealed class RunOptions
             _afterScenario += hook.AfterScenarioAsync;
         }
     }
+
+    internal ExecutionClock Clock { get; } = ExecutionClock.System;
 
     internal FrameworkOutcomeMap FrameworkOutcomes { get; }
     internal IBDTestContextFactory ContextFactory { get; }

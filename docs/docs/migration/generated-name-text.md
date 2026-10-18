@@ -7,7 +7,7 @@ description: Release notes for replacing Humanizer.Core with BDTest's internal m
 
 ## Next major release notes
 
-BDTest replaces its `Humanizer.Core` dependency with an internal method name splitter. The core package still targets `netstandard2.0`. There is no new public API or configuration. If your project uses Humanizer APIs received transitively through BDTest, add a direct `Humanizer.Core` package reference.
+BDTest replaces its `Humanizer.Core` dependency with an internal method name splitter. The core package retains `netstandard2.0` alongside its `net8.0` asset. There is no new public API or configuration. If your project uses Humanizer APIs received transitively through BDTest, add a direct `Humanizer.Core` package reference.
 
 Generated step and scenario text can change. This is a breaking change for tests, snapshots or dashboards that compare exact report text. `[StepText]`, `[ScenarioText]`, `WithStepText` and `WithScenarioText` overrides keep their supplied text. Update comparisons or supply explicit text to retain a specific title.
 

@@ -9,7 +9,7 @@ description: Use BDTest with MSTest through MSTestBDTestBase<TContext>.
 dotnet add package BDTest.MSTest
 ```
 
-`BDTest.MSTest` targets `netstandard2.0` and depends on MSTest 4 (`MSTest.TestFramework`). Add `Microsoft.NET.Test.Sdk` and `MSTest.TestAdapter` to the test project.
+`BDTest.MSTest` targets `netstandard2.0;net8.0` and depends on MSTest 4 (`MSTest.TestFramework`). Add `Microsoft.NET.Test.Sdk` and `MSTest.TestAdapter` to the test project.
 
 ## Writing tests
 

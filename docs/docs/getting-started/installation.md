@@ -56,20 +56,22 @@ review migration notes when upgrading to a new major version.
 
 ## Supported targets
 
-The core `BDTest` package targets `netstandard2.0`. Adapter and report server requirements differ:
+The core `BDTest` package targets `netstandard2.0;net8.0`. Adapter and report server requirements differ:
 
 | Package | Target framework | Test framework dependency |
 | --- | --- | --- |
-| `BDTest` | `netstandard2.0` | None |
-| `BDTest.TUnit` | `netstandard2.0` | TUnit |
+| `BDTest` | `netstandard2.0;net8.0` | None |
+| `BDTest.TUnit` | `netstandard2.0;net8.0` | TUnit |
 | `BDTest.NUnit` | `net8.0` | NUnit 5 |
-| `BDTest.xUnit` | `netstandard2.0` | xUnit v3 |
-| `BDTest.MSTest` | `netstandard2.0` | MSTest 4 |
+| `BDTest.xUnit` | `netstandard2.0;net8.0` | xUnit v3 |
+| `BDTest.MSTest` | `netstandard2.0;net8.0` | MSTest 4 |
 | `BDTest.Razor.Reports` | `net10.0` | ASP.NET Core |
 | `BDTest.SourceGenerator` | `netstandard2.0` analyzer | C# 10+ compiler (.NET SDK 8+) |
 | `BDTest.Analyzers` | `netstandard2.0` analyzer | Roslyn 4.8+ (.NET SDK 8+) |
 
-BDTest's step builders take delegates and need a **C# 13 or newer** compiler (.NET SDK 9 or newer). The core package still targets `netstandard2.0`.
+BDTest's step builders take delegates and need a **C# 13 or newer** compiler (.NET SDK 9 or newer). The core package retains its `netstandard2.0` build alongside `net8.0`.
+
+The policy preserves .NET Standard runtime assets and adds native .NET 8 assets wherever the adapter dependencies allow it. NUnit retains its .NET 8 floor; ASP.NET Core report hosting stays on .NET 10. Compiler extensions keep their .NET Standard compiler-host target and analyzer packaging. NuGet selects the .NET 8 build automatically for .NET 8+ consumers. See [Target framework migration](../migration/target-frameworks.md).
 
 Choose a test project target that both the adapter and its test framework support. A `netstandard2.0` adapter does not guarantee that its test framework or runner supports .NET Framework. The NUnit adapter requires .NET 8 or later.
 
