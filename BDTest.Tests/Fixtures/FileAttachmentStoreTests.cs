@@ -5,6 +5,28 @@ namespace BDTest.Tests.Fixtures;
 
 public class FileAttachmentStoreTests
 {
+    [Test]
+    public async Task Concurrent_deletion_and_missing_content_are_successful_no_ops()
+    {
+        var directory = Path.Combine(Path.GetTempPath(), "BDTest-file-tests", Guid.NewGuid().ToString("N"));
+        var report = Guid.NewGuid().ToString("N");
+        try
+        {
+            for (var attempt = 0; attempt < 10; attempt++)
+            {
+                var store = new FileBDTestAttachmentStore(directory);
+                using var input = new MemoryStream(new byte[] { 1 });
+                await store.WriteAsync(report, Guid.NewGuid().ToString("N"), input, 1);
+                await Task.WhenAll(Enumerable.Range(0, 8).Select(_ => Task.Run(() =>
+                    new FileBDTestAttachmentStore(directory).DeleteReportAsync(report))));
+                await store.DeleteReportAsync(report);
+                Assert.That(Directory.Exists(Path.Combine(directory, report)), Is.False);
+                Assert.That(Directory.GetFileSystemEntries(directory), Is.Empty);
+            }
+        }
+        finally { Directory.Delete(directory, true); }
+    }
+
     [TestCase(1)]
     [TestCase(3)]
     public async Task Invalid_length_preserves_previous_content_and_removes_partial_file(int length)

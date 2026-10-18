@@ -4,12 +4,125 @@ using BDTest.Helpers;
 using BDTest.Razor.Reports.Interfaces;
 using BDTest.Razor.Reports.Storage;
 using BDTest.Test;
+using Microsoft.AspNetCore.Builder;
 using NUnit.Framework;
 
 namespace BDTest.Tests.Fixtures;
 
 public partial class ReportUploadTests
 {
+    [Test]
+    public async Task Stalled_body_does_not_block_other_uploads_or_deletion_and_cannot_resurrect_files()
+    {
+        using var files = new AttachmentDirectory();
+        using var body = new BlockingAttachmentBody();
+        await using var server = await UploadServer.Start(options => options.AttachmentStore = files.Store,
+            configureApp: app => app.Use(async (context, next) =>
+            {
+                if (context.Request.Headers.ContainsKey("X-Test-Stall")) context.Request.Body = body;
+                await next(context);
+            }));
+        var attachmentId = Guid.NewGuid().ToString("N");
+        using var first = await server.Post(AttachmentReport(attachmentId));
+        using var second = await server.Post(AttachmentReport(attachmentId));
+        var firstId = first.Headers.GetValues("X-BDTest-Report-Id").Single();
+        var secondId = second.Headers.GetValues("X-BDTest-Report-Id").Single();
+        using var request = new HttpRequestMessage(HttpMethod.Post, $"bdtest/data/{firstId}/attachments/{attachmentId}")
+            { Content = new ByteArrayContent(new byte[] { 1, 2 }) };
+        request.Headers.Add("X-BDTest-Upload-Key", Key);
+        request.Headers.Add("X-BDTest-Attachment-Token", first.Headers.GetValues("X-BDTest-Attachment-Token").Single());
+        request.Headers.Add("X-Test-Stall", "true");
+        var stalled = server.Client.SendAsync(request);
+        try
+        {
+            await body.Reading.Task.WaitAsync(TimeSpan.FromSeconds(10));
+            using var other = await PostAttachment(server, secondId, attachmentId,
+                second.Headers.GetValues("X-BDTest-Attachment-Token").Single(), new byte[] { 3, 4 })
+                .WaitAsync(TimeSpan.FromSeconds(10));
+            Assert.That(other.StatusCode, Is.EqualTo(HttpStatusCode.NoContent));
+            await server.Repository.DeleteReport(firstId).WaitAsync(TimeSpan.FromSeconds(10));
+        }
+        finally { body.Continue.TrySetResult(); }
+        using var rejected = await stalled;
+        Assert.That(rejected.StatusCode, Is.EqualTo(HttpStatusCode.NotFound));
+        Assert.That(await files.Store.OpenReadAsync(firstId, attachmentId), Is.Null);
+    }
+
+    [Test]
+    public async Task Active_store_write_does_not_block_another_reports_upload_or_cleanup()
+    {
+        using var files = new AttachmentDirectory();
+        var blocking = new BlockingAttachmentStore(files.Store);
+        await using var server = await UploadServer.Start(options => options.AttachmentStore = blocking);
+        var attachmentId = Guid.NewGuid().ToString("N");
+        using var first = await server.Post(AttachmentReport(attachmentId));
+        using var second = await server.Post(AttachmentReport(attachmentId));
+        var firstId = first.Headers.GetValues("X-BDTest-Report-Id").Single();
+        var secondId = second.Headers.GetValues("X-BDTest-Report-Id").Single();
+        blocking.ReportToBlock = firstId;
+        var upload = PostAttachment(server, firstId, attachmentId,
+            first.Headers.GetValues("X-BDTest-Attachment-Token").Single(), new byte[] { 1, 2 });
+        try
+        {
+            await blocking.Writing.Task.WaitAsync(TimeSpan.FromSeconds(10));
+            using var other = await PostAttachment(server, secondId, attachmentId,
+                second.Headers.GetValues("X-BDTest-Attachment-Token").Single(), new byte[] { 3, 4 })
+                .WaitAsync(TimeSpan.FromSeconds(10));
+            Assert.That(other.StatusCode, Is.EqualTo(HttpStatusCode.NoContent));
+            await server.Repository.DeleteReport(secondId).WaitAsync(TimeSpan.FromSeconds(10));
+            Assert.That(await files.Store.OpenReadAsync(secondId, attachmentId), Is.Null);
+        }
+        finally { blocking.Continue.TrySetResult(); }
+        using var completed = await upload;
+        Assert.That(completed.StatusCode, Is.EqualTo(HttpStatusCode.NoContent));
+    }
+
+    [TestCase("file")]
+    [TestCase("report")]
+    [TestCase("count")]
+    public async Task Lower_upload_limits_preserve_existing_downloads(string limit)
+    {
+        using var files = new AttachmentDirectory();
+        await using var first = await UploadServer.Start(options => options.AttachmentStore = files.Store);
+        var attachmentId = Guid.NewGuid().ToString("N");
+        using var receipt = await first.Post(AttachmentReport(attachmentId));
+        var reportId = receipt.Headers.GetValues("X-BDTest-Report-Id").Single();
+        using var upload = await PostAttachment(first, reportId, attachmentId,
+            receipt.Headers.GetValues("X-BDTest-Attachment-Token").Single(), new byte[] { 1, 2 });
+        Assert.That(upload.StatusCode, Is.EqualTo(HttpStatusCode.NoContent));
+        await using var second = await UploadServer.Start(options =>
+        {
+            options.DataStore = first.Store;
+            options.AttachmentStore = files.Store;
+            if (limit == "file") options.MaximumAttachmentBytes = 0;
+            if (limit == "report") options.MaximumReportAttachmentBytes = 0;
+            if (limit == "count") options.MaximumAttachmentsPerReport = 0;
+        });
+        using var download = await second.Client.GetAsync($"bdtest/report/{reportId}/attachments/{attachmentId}");
+        Assert.That(download.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        Assert.That(await download.Content.ReadAsByteArrayAsync(), Is.EqualTo(new byte[] { 1, 2 }));
+        using var rejected = await second.Post(AttachmentReport(Guid.NewGuid().ToString("N")));
+        Assert.That(rejected.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
+    }
+
+    [TestCase(null)]
+    [TestCase("wrong")]
+    public async Task Attachment_upload_rejects_missing_or_wrong_api_key_even_with_valid_receipt(string key)
+    {
+        using var files = new AttachmentDirectory();
+        await using var server = await UploadServer.Start(options => options.AttachmentStore = files.Store);
+        var attachmentId = Guid.NewGuid().ToString("N");
+        using var receipt = await server.Post(AttachmentReport(attachmentId));
+        var reportId = receipt.Headers.GetValues("X-BDTest-Report-Id").Single();
+        using var request = new HttpRequestMessage(HttpMethod.Post, $"bdtest/data/{reportId}/attachments/{attachmentId}")
+            { Content = new ByteArrayContent(new byte[] { 1, 2 }) };
+        if (key != null) request.Headers.Add("X-BDTest-Upload-Key", key);
+        request.Headers.Add("X-BDTest-Attachment-Token", receipt.Headers.GetValues("X-BDTest-Attachment-Token").Single());
+        using var response = await server.Client.SendAsync(request);
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.Unauthorized));
+        Assert.That(Directory.GetFiles(files.Path, "*", SearchOption.AllDirectories), Is.Empty);
+    }
+
     [Test]
     public async Task Uploader_includes_outline_retry_files_and_empty_scenario_files()
     {
@@ -349,6 +462,7 @@ public partial class ReportUploadTests
 
     private sealed class BlockingAttachmentStore(IBDTestAttachmentStore inner) : IBDTestAttachmentStore
     {
+        public string ReportToBlock { get; set; }
         public TaskCompletionSource Writing { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
         public TaskCompletionSource Continue { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
         public bool Deleting { get; private set; }
@@ -356,14 +470,30 @@ public partial class ReportUploadTests
             => inner.OpenReadAsync(reportId, attachmentId, cancellationToken);
         public async Task WriteAsync(string reportId, string attachmentId, Stream content, long length, CancellationToken cancellationToken = default)
         {
-            Writing.TrySetResult();
-            await Continue.Task.WaitAsync(cancellationToken);
+            if (ReportToBlock == null || ReportToBlock == reportId)
+            {
+                Writing.TrySetResult();
+                await Continue.Task.WaitAsync(cancellationToken);
+            }
             await inner.WriteAsync(reportId, attachmentId, content, length, cancellationToken);
         }
         public Task DeleteReportAsync(string reportId, CancellationToken cancellationToken = default)
         {
             Deleting = true;
             return inner.DeleteReportAsync(reportId, cancellationToken);
+        }
+    }
+
+    private sealed class BlockingAttachmentBody() : MemoryStream(new byte[] { 1, 2 })
+    {
+        public TaskCompletionSource Reading { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        public TaskCompletionSource Continue { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public override async ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken cancellationToken = default)
+        {
+            Reading.TrySetResult();
+            await Continue.Task.WaitAsync(cancellationToken);
+            return await base.ReadAsync(buffer, cancellationToken);
         }
     }
 

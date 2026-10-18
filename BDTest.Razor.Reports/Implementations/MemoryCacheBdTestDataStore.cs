@@ -138,9 +138,9 @@ public class MemoryCacheBdTestDataStore : IMemoryCacheBdTestDataStore, IDisposab
 
     private async Task DeleteExpiredAttachments(string reportId)
     {
-        await _options.AttachmentGate.WaitAsync();
         try
         {
+            using var lease = await _options.AttachmentGate.EnterAsync(reportId);
             lock (_reportCacheLock)
             {
                 if (_testRecordCache.Value.TryGetValue(reportId, out _)) return;
@@ -151,7 +151,6 @@ public class MemoryCacheBdTestDataStore : IMemoryCacheBdTestDataStore, IDisposab
         {
             _options.Logger?.LogError(exception, "Failed to remove attachments for expired report {ReportId}", reportId);
         }
-        finally { _options.AttachmentGate.Release(); }
     }
 
     private sealed record CachedReport(object Value, long Size);

@@ -136,12 +136,8 @@ internal class DataRepository : IDataRepository
 
     public async Task DeleteReport(string reportId, CancellationToken cancellationToken = default)
     {
-        await _options.AttachmentGate.WaitAsync(cancellationToken);
-        try
-        {
-            await DeleteReportAndAttachments(reportId, cancellationToken);
-        }
-        finally { _options.AttachmentGate.Release(); }
+        using var lease = await _options.AttachmentGate.EnterAsync(reportId, cancellationToken);
+        await DeleteReportAndAttachments(reportId, cancellationToken);
     }
 
     private async Task DeleteReportAndAttachments(string reportId, CancellationToken cancellationToken)

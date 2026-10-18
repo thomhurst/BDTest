@@ -53,7 +53,14 @@ public sealed class FileBDTestAttachmentStore : IBDTestAttachmentStore
         cancellationToken.ThrowIfCancellationRequested();
         AttachmentStorage.ValidateIds(reportId);
         var directory = Path.Combine(_root, reportId);
-        if (Directory.Exists(directory)) Directory.Delete(directory, recursive: true);
+        var deleting = Path.Combine(_root, reportId + "-" + Guid.NewGuid().ToString("N") + ".deleting");
+        // Claim the directory atomically so concurrent callers never delete the same files.
+        try { Directory.Move(directory, deleting); }
+        catch (DirectoryNotFoundException) { return Task.CompletedTask; }
+        catch (IOException) when (!Directory.Exists(directory)) { return Task.CompletedTask; }
+        try { Directory.Delete(deleting, recursive: true); }
+        catch (DirectoryNotFoundException) { }
+        catch (IOException) when (!Directory.Exists(deleting)) { }
         return Task.CompletedTask;
     }
 }

@@ -18,6 +18,8 @@ Attachments.AttachFile("network.har", "application/json");
 
 Capture copies the content immediately to temporary files owned by the test's run. The stream overload reads from its current position, supports non-seekable streams, and leaves the source open. `AttachFile` uses only the source file's basename as the display name. Its default MIME type is `application/octet-stream`; supply an explicit type for images or text.
 
+Names must contain 1–255 characters without control characters or path separators. MIME types must be concrete, valid types of at most 256 characters without control characters. Capture rejects invalid metadata before copying content, using the same rules as the report server.
+
 ## Ownership and hooks
 
 Capture inside a step, `OnBeforeStep`, or `OnAfterStep` adds metadata to that `Step.Attachments` collection. For example:

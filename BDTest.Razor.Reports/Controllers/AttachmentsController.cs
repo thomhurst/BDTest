@@ -23,34 +23,36 @@ public sealed class AttachmentsController(IDataRepository repository, BDTestRepo
         if (tokens.Count != 1 || tokens[0]?.Length != 64) return Unauthorized();
         if (options.AttachmentStore == null) return NotFound();
 
-        // Coordinate writes with explicit deletion and cache-only retention cleanup.
-        await options.AttachmentGate.WaitAsync(cancellationToken);
+        var report = await repository.GetDataForBulkRead(reportId, cancellationToken);
+        if (report == null || !AttachmentManifest.IsValid(report, options)) return NotFound();
+        if (!AttachmentUploadAuthorization.IsValid(report.AttachmentUploadTokenHash, tokens[0])) return Unauthorized();
+        var file = BDTestAttachmentHelper.GetAttachments(report).SingleOrDefault(file => file.Id == attachmentId);
+        if (file == null) return NotFound();
+        if (Request.ContentLength.HasValue && Request.ContentLength != file.Length) return BadRequest();
+        var sizeFeature = HttpContext.Features.Get<IHttpMaxRequestBodySizeFeature>();
+        if (sizeFeature is { IsReadOnly: false }) sizeFeature.MaxRequestBodySize = file.Length;
+
+        // Network reads never hold a gate needed by another upload or report cleanup.
+        await using var staging = new FileStream(Path.Combine(Path.GetTempPath(), "bdtest-upload-" + Guid.NewGuid().ToString("N")),
+            FileMode.CreateNew, FileAccess.ReadWrite, FileShare.None, 81920,
+            FileOptions.Asynchronous | FileOptions.SequentialScan | FileOptions.DeleteOnClose);
         try
         {
-            var report = await repository.GetDataForBulkRead(reportId, cancellationToken);
-            if (report == null || !AttachmentManifest.IsValid(report, options)) return NotFound();
-            if (!AttachmentUploadAuthorization.IsValid(report.AttachmentUploadTokenHash, tokens[0])) return Unauthorized();
-            var file = BDTestAttachmentHelper.GetAttachments(report).SingleOrDefault(file => file.Id == attachmentId);
-            if (file == null) return NotFound();
-            if (Request.ContentLength.HasValue && Request.ContentLength != file.Length) return BadRequest();
-            var sizeFeature = HttpContext.Features.Get<IHttpMaxRequestBodySizeFeature>();
-            if (sizeFeature is { IsReadOnly: false }) sizeFeature.MaxRequestBodySize = file.Length;
-
-            // Validate chunked input before handing content to any custom store. Disk staging bounds memory.
-            await using var staging = new FileStream(Path.Combine(Path.GetTempPath(), "bdtest-upload-" + Guid.NewGuid().ToString("N")),
-                FileMode.CreateNew, FileAccess.ReadWrite, FileShare.None, 81920,
-                FileOptions.Asynchronous | FileOptions.SequentialScan | FileOptions.DeleteOnClose);
-            try
-            {
-                await AttachmentStorage.CopyExactlyAsync(Request.Body, staging, file.Length, cancellationToken);
-            }
-            catch (InvalidDataException) { return BadRequest(); }
-            catch (BadHttpRequestException exception) when (exception.StatusCode == 413) { return StatusCode(413); }
-            staging.Position = 0;
-            await options.AttachmentStore.WriteAsync(reportId, attachmentId, staging, file.Length, cancellationToken);
-            return NoContent();
+            await AttachmentStorage.CopyExactlyAsync(Request.Body, staging, file.Length, cancellationToken);
         }
-        finally { options.AttachmentGate.Release(); }
+        catch (InvalidDataException) { return BadRequest(); }
+        catch (BadHttpRequestException exception) when (exception.StatusCode == 413) { return StatusCode(413); }
+        staging.Position = 0;
+
+        // Revalidate after staging so deletion or expiry cannot resurrect attachment content.
+        using var lease = await options.AttachmentGate.EnterAsync(reportId, cancellationToken);
+        report = await repository.GetDataForBulkRead(reportId, cancellationToken);
+        if (report == null || !AttachmentManifest.IsValid(report, options)) return NotFound();
+        if (!AttachmentUploadAuthorization.IsValid(report.AttachmentUploadTokenHash, tokens[0])) return Unauthorized();
+        var currentFile = BDTestAttachmentHelper.GetAttachments(report).SingleOrDefault(current => current.Id == attachmentId);
+        if (currentFile == null || currentFile.Length != file.Length) return NotFound();
+        await options.AttachmentStore.WriteAsync(reportId, attachmentId, staging, file.Length, cancellationToken);
+        return NoContent();
     }
 
     [HttpGet("report/{reportId}/attachments/{attachmentId}")]
@@ -59,7 +61,7 @@ public sealed class AttachmentsController(IDataRepository repository, BDTestRepo
         if (!AttachmentStorage.IsValidId(reportId) || !AttachmentStorage.IsValidId(attachmentId) || options.AttachmentStore == null)
             return NotFound();
         var report = await repository.GetDataForBulkRead(reportId, cancellationToken);
-        if (report == null || !AttachmentManifest.IsValid(report, options)) return NotFound();
+        if (report == null || !AttachmentManifest.IsValid(report, options, enforceUploadLimits: false)) return NotFound();
         var file = BDTestAttachmentHelper.GetAttachments(report).SingleOrDefault(file => file.Id == attachmentId);
         if (file == null) return NotFound();
         var stream = await options.AttachmentStore.OpenReadAsync(reportId, attachmentId, cancellationToken);

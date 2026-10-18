@@ -36,7 +36,7 @@ public class BDTestReportServerOptions
             set => _maximumAttachmentsPerReport = value >= 0 ? value : throw new ArgumentOutOfRangeException(nameof(value));
         }
         private int _maximumAttachmentsPerReport = 1000;
-        internal SemaphoreSlim AttachmentGate { get; } = new(1, 1);
+        internal ReportAttachmentGate AttachmentGate { get; } = new();
         public BDTest.Razor.Reports.Storage.IRunIndexStore? RunIndexStore { get; set; }
 #nullable enable
         public IBDTestCustomSidebarLinksProvider CustomSidebarLinksProvider { get; set; }

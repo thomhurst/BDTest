@@ -271,6 +271,34 @@ public class AttachmentTests
         Assert.That(Directory.Exists(run.AttachmentFiles.DirectoryPath), Is.False);
     }
 
+    [TestCase("screenshots/login.png")]
+    [TestCase("screenshots\\login.png")]
+    [TestCase("line\nfeed")]
+    [TestCase("control\u0001")]
+    public void Invalid_names_fail_at_capture_before_creating_files(string name)
+    {
+        using var run = BDTestRun.Start();
+        var writer = new Capture(run, "test").Attachments;
+        Assert.Throws<ArgumentException>(() => writer.Attach(name, Array.Empty<byte>(), "text/plain"));
+        Assert.That(Directory.Exists(run.AttachmentFiles.DirectoryPath), Is.False);
+    }
+
+    [Test]
+    public async Task Capture_accepts_metadata_boundaries_and_rejects_longer_values()
+    {
+        using var run = BDTestRun.Start();
+        var fixture = new Capture(run, "test");
+        var mime = "application/" + new string('a', 244);
+        Assert.Throws<ArgumentException>(() => fixture.Attachments.Attach(new string('a', 256), Array.Empty<byte>(), "text/plain"));
+        Assert.Throws<ArgumentException>(() => fixture.Attachments.Attach("name", Array.Empty<byte>(), mime + "a"));
+        Assert.Throws<ArgumentException>(() => fixture.Attachments.Attach("name", Array.Empty<byte>(), "text/plain;p=" + new string('a', 243)));
+        Assert.That(Directory.Exists(run.AttachmentFiles.DirectoryPath), Is.False);
+        fixture.Attachments.Attach(new string('a', 255), Array.Empty<byte>(), mime);
+        var scenario = await fixture.When(() => Done()).Then(() => Done()).BDTestAsync();
+        Assert.That(scenario.Attachments.Single().Name, Has.Length.EqualTo(255));
+        Assert.That(scenario.Attachments.Single().MimeType, Has.Length.EqualTo(256));
+    }
+
     [Test]
     public void Negative_limits_are_rejected_at_start()
     {
