@@ -75,8 +75,8 @@ public class RetryHistoryTests
 
             var html = BDTestHtmlHelper.GetTestHtmlReport();
             Assert.That(html, Does.Contain("Retry history"));
-            Assert.That(html, Does.Contain("Attempt 1: Failed"));
-            Assert.That(html, Does.Contain("Attempt 3: Passed"));
+            Assert.That(html, Does.Contain("Attempt 1 · Failed"));
+            Assert.That(html, Does.Contain("Attempt 3 · Passed"));
             Assert.That(html, Does.Contain("&lt;failure 1&gt;"));
             Assert.That(html, Does.Not.Contain("<failure 1>"));
         }
@@ -108,9 +108,9 @@ public class RetryHistoryTests
 
             var html = BDTestHtmlHelper.GetTestHtmlReport();
             Assert.That(html, Does.Contain("Retry history"));
-            Assert.That(html, Does.Contain("Attempt 1: Failed"));
+            Assert.That(html, Does.Contain("Attempt 1 · Failed"));
             Assert.That(html, Does.Contain("&lt;failure 1&gt;"));
-            Assert.That(html, Does.Not.Contain("Attempt 2:"));
+            Assert.That(html, Does.Not.Contain("Attempt 2 ·"));
             Assert.That(html, Does.Not.Contain("<failure 1>"));
         }
         finally

@@ -5,7 +5,6 @@ using BDTest.Helpers;
 using BDTest.Settings;
 using BDTest.Razor.Reports.Models.ViewModels;
 using BDTest.Test;
-using Newtonsoft.Json;
 using NUnit.Framework;
 
 namespace BDTest.Tests.Fixtures;
@@ -76,7 +75,7 @@ public class ScenarioOutlineTests : AbstractContextBDTestBase<ScenarioOutlineTes
             Assert.That(razor, Does.Contain($"<td>{failedRow.TimeTaken}</td>"));
         }
         Assert.That(BDTestHtmlHelper.GetTestHtmlReport(),
-            Does.Contain($"<td>{outline.Examples[0].TimeTaken}</td>"));
+            Does.Contain($"title=\"{outline.Examples[0].TimeTaken}\">"));
         Assert.That(_visited, Is.EqualTo(new[] { 1, 2 }));
         await AssertRowErrorReported(outline, "&lt;retry hook failed&gt;");
     }
@@ -238,8 +237,8 @@ public class ScenarioOutlineTests : AbstractContextBDTestBase<ScenarioOutlineTes
             $"<table class=\"examples\" id=\"examples-{outline.Guid}\">.*?</table>",
             System.Text.RegularExpressions.RegexOptions.Singleline).Value;
         Assert.That(table, Does.Contain("<th>Retries</th>"));
-        Assert.That(table, Does.Contain("<td>Passed</td><td>1</td>"));
-        Assert.That(table, Does.Contain("<td>Passed</td><td>0</td>"));
+        Assert.That(table, Does.Contain(">Passed</span></td><td class=\"mono\">1</td>"));
+        Assert.That(table, Does.Contain(">Passed</span></td><td class=\"mono\">0</td>"));
         foreach (var result in new[] { outline, ReportJson.DeserializeObject<Scenario>(ReportJson.SerializeObject(outline)) })
         {
             var razor = await ReportHandlerEncodingTests.RenderAsync("/Views/Shared/_ScenarioExamples.cshtml", result);
@@ -577,7 +576,9 @@ public class ScenarioOutlineTests : AbstractContextBDTestBase<ScenarioOutlineTes
             Assert.That(html, Does.Contain("&lt;script&gt;row&lt;/script&gt;"));
             Assert.That(html, Does.Not.Contain("<script>row</script>"));
             Assert.That(System.Text.RegularExpressions.Regex.Matches(html, "class=\"example-row\"").Count, Is.EqualTo(2));
-            Assert.That(html, Does.Contain("Given value"));
+            // The standalone report shows the step keyword in its own column.
+            var text = System.Text.RegularExpressions.Regex.Replace(System.Text.RegularExpressions.Regex.Replace(html, "<[^>]*>", " "), @"\s+", " ");
+            Assert.That(text, Does.Contain("Given value"));
         }
     }
 

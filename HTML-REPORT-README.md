@@ -4,12 +4,14 @@ The BDTest framework now includes a built-in HTML report generator that creates 
 
 ## Features
 
-- **Single-page HTML report** - Everything embedded in one file (CSS, JavaScript, data)
-- **Professional design** - Clean, modern interface with responsive layout
-- **Interactive filtering** - Filter test scenarios by status (Passed, Failed, Skipped, etc.)
-- **Detailed test information** - Shows steps, exceptions, output, and custom HTML content
-- **Test summary** - Visual summary cards with counts and timing information
-- **Mobile-friendly** - Responsive design that works on all devices
+- **Single-page HTML report** - Everything embedded in one file (CSS, JavaScript, data); works offline
+- **Run verdict first** - Failed count, duration, run metadata and a status bar at the top
+- **Needs attention** - Failed scenarios grouped by shared exception, with links to each scenario
+- **Search and filter** - Search scenarios, steps, stories and tags; filter by status or tag; sort by story, failures or duration; group by story
+- **Detailed test information** - Steps with keywords and durations, exceptions with copyable stack traces, retry history, scenario outline examples, output and custom HTML
+- **Safe custom HTML** - HtmlWriter output renders in a sandboxed frame with scripts disabled
+- **Light and dark** - Follows the browser's color scheme; prints cleanly
+- **Mobile-friendly** - Responsive layout that works at phone width
 
 ## Usage
 
@@ -80,10 +82,11 @@ Download the file from the run's artifacts and open it in a browser. The `publis
 
 The HTML report includes:
 
-- **Header**: Environment, tag, branch, machine, and version information
-- **Summary**: Visual cards showing test counts by status and timing information  
-- **Test Scenarios**: Filterable list of all test scenarios with expandable details
-- **Not Run Tests**: List of tests that were not executed (if any)
+- **Run result**: Verdict, duration, start and end times (UTC), and environment, tag, branch, machine and version
+- **Summary**: Status bar and count tiles; select a tile to filter the scenario list
+- **Needs attention**: Failures grouped by exception type and message (only when something failed)
+- **Scenarios**: Searchable, filterable list grouped by story, with expandable details
+- **Tests not run**: Tests that were built but never executed (if any)
 
 Each test scenario shows:
 - Test status with color-coded indicators
