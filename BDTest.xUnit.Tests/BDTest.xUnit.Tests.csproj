@@ -20,4 +20,7 @@
       <ProjectReference Include="..\BDTest.xUnit\BDTest.xUnit.csproj" />
     </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\BDTest.SourceGenerator\BDTest.SourceGenerator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+  </ItemGroup>
 </Project>

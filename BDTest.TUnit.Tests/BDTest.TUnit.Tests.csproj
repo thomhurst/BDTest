@@ -22,4 +22,7 @@
     <ItemGroup>
         <Compile Include="..\TestUtilities\ExceptionRegistrationProbe.cs" Link="Helpers\ExceptionRegistrationProbe.cs" />
     </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\BDTest.SourceGenerator\BDTest.SourceGenerator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+  </ItemGroup>
 </Project>

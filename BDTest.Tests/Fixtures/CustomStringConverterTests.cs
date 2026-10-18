@@ -1,4 +1,4 @@
-using System.Linq.Expressions;
+using System.Reflection;
 using BDTest.Attributes;
 using BDTest.Helpers;
 using BDTest.Interfaces;
@@ -10,6 +10,9 @@ namespace BDTest.Tests.Fixtures;
 [NonParallelizable]
 public class CustomStringConverterTests
 {
+    private static readonly MethodInfo DisplayMethod = typeof(CustomStringConverterTests)
+        .GetMethod(nameof(Display), BindingFlags.Static | BindingFlags.NonPublic);
+
     [TestCase(false)]
     [TestCase(true)]
     public async Task ConcurrentRegistrationAndRemovalDoNotLoseStepText(bool legacyAccess)
@@ -18,7 +21,7 @@ public class CustomStringConverterTests
         var converter = new ValueConverter("converted");
         var changing = new NumberConverter();
         var value = new Value();
-        Expression<Action> expression = () => Display(value);
+        Func<object>[] arguments = [() => value];
         using var start = new ManualResetEventSlim();
         using var stop = new CancellationTokenSource();
 
@@ -54,7 +57,7 @@ public class CustomStringConverterTests
             start.Wait();
             for (var i = 0; i < 500; i++)
             {
-                Assert.That(StepTextHelper.GetStepText(expression), Is.EqualTo("value: converted"));
+                Assert.That(StepTextHelper.GetStepText(DisplayMethod, arguments), Is.EqualTo("value: converted"));
             }
         })).ToArray();
 
@@ -90,11 +93,11 @@ public class CustomStringConverterTests
         BDTestSettings.RegisterCustomStringConverter(first);
         try
         {
-            Assert.That(StepTextHelper.GetStepText(() => Display(value)), Is.EqualTo("value: first"));
+            Assert.That(StepTextHelper.GetStepText(DisplayMethod, [() => value]), Is.EqualTo("value: first"));
             Assert.That(BDTestSettings.RemoveCustomStringConverter(first), Is.True);
-            Assert.That(StepTextHelper.GetStepText(() => Display(value)), Is.EqualTo("value: second"));
+            Assert.That(StepTextHelper.GetStepText(DisplayMethod, [() => value]), Is.EqualTo("value: second"));
             Assert.That(BDTestSettings.RemoveCustomStringConverter(second), Is.True);
-            Assert.That(StepTextHelper.GetStepText(() => Display(value)), Is.EqualTo("value: first"));
+            Assert.That(StepTextHelper.GetStepText(DisplayMethod, [() => value]), Is.EqualTo("value: first"));
             Assert.That(BDTestSettings.RemoveCustomStringConverter(first), Is.True);
             Assert.That(BDTestSettings.RemoveCustomStringConverter(first), Is.False);
         }
@@ -121,7 +124,7 @@ public class CustomStringConverterTests
             Assert.That(snapshot, Does.Contain(first));
             Assert.That(snapshot, Does.Not.Contain(second));
             var value = new Value();
-            Assert.That(StepTextHelper.GetStepText(() => Display(value)), Is.EqualTo("value: second"));
+            Assert.That(StepTextHelper.GetStepText(DisplayMethod, [() => value]), Is.EqualTo("value: second"));
         }
         finally
         {
@@ -146,7 +149,7 @@ public class CustomStringConverterTests
         });
         var value = new Value();
         BDTestSettings.RegisterCustomStringConverter(converter);
-        var conversion = Task.Run(() => StepTextHelper.GetStepText(() => Display(value)));
+        var conversion = Task.Run(() => StepTextHelper.GetStepText(DisplayMethod, [() => value]));
         try
         {
             await entered.Task.WaitAsync(TimeSpan.FromSeconds(10));
@@ -154,7 +157,7 @@ public class CustomStringConverterTests
                 .WaitAsync(TimeSpan.FromSeconds(5)), Is.True);
             resume.Set();
             Assert.That(await conversion, Is.EqualTo("value: active"));
-            Assert.That(StepTextHelper.GetStepText(() => Display(value)), Is.EqualTo("value: fallback"));
+            Assert.That(StepTextHelper.GetStepText(DisplayMethod, [() => value]), Is.EqualTo("value: fallback"));
         }
         finally
         {
@@ -173,7 +176,7 @@ public class CustomStringConverterTests
         try
         {
             var value = new Value();
-            Assert.That(StepTextHelper.GetStepText(() => Display(value)), Is.EqualTo("value: legacy"));
+            Assert.That(StepTextHelper.GetStepText(DisplayMethod, [() => value]), Is.EqualTo("value: legacy"));
         }
         finally
         {

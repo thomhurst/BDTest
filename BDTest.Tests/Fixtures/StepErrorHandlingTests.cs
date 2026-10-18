@@ -1,4 +1,3 @@
-using System.Linq.Expressions;
 using BDTest.Attributes;
 using BDTest.Helpers;
 using BDTest.Test;
@@ -19,8 +18,8 @@ public class StepErrorHandlingTests : BDTestBase
     [Test]
     public void NullStepNamesThePublicParameter([Values] EntryPoint entryPoint, [Values] bool asyncStep)
     {
-        Expression<Action> action = null;
-        Expression<Func<Task>> task = null;
+        Action action = null;
+        Func<Task> task = null;
 
         var exception = Assert.Throws<ArgumentNullException>(() =>
         {
@@ -50,11 +49,11 @@ public class StepErrorHandlingTests : BDTestBase
         {
             if (asyncStep)
             {
-                StepTextHelper.GetStepText(() => InvalidTextAsync("argument"));
+                StepTextHelper.GetStepText(typeof(StepErrorHandlingTests).GetMethod(nameof(InvalidTextAsync), System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static), new Func<object>[] { () => "argument" });
             }
             else
             {
-                StepTextHelper.GetStepText(() => InvalidText("argument"));
+                StepTextHelper.GetStepText(typeof(StepErrorHandlingTests).GetMethod(nameof(InvalidText), System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static), new Func<object>[] { () => "argument" });
             }
         });
 

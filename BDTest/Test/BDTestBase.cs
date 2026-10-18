@@ -1,5 +1,4 @@
-using System.Linq.Expressions;
-using System.Reflection;
+﻿using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.ExceptionServices;
 using System.Threading;
@@ -44,40 +43,116 @@ public abstract class BDTestBase
     internal static bool IsDefaultExecutionId(string executionId) =>
         ReferenceEquals(AsyncLocalBDTestExecutionId.Value, executionId);
 
-    public Given Given(Expression<Action> step, [CallerMemberName] string callerMember = null,
-        [CallerFilePath] string callerFile = null)
+    [OverloadResolutionPriority(-1)]
+    public Given Given(Action step, [CallerMemberName] string callerMember = null,
+        [CallerFilePath] string callerFile = null,
+        [CallerLineNumber] int callerLine = 0, [CallerArgumentExpression(nameof(step))] string argumentExpression = null)
     {
-        return new Given(new Runnable(step), callerMember, callerFile, BDTestExecutionId, TestRun.ReportId, this);
+        return new Given(new Runnable(step, argumentExpression, callerFile, callerLine), callerMember, callerFile, BDTestExecutionId, TestRun.ReportId, this);
     }
 
-    public Given Given(Expression<Func<Task>> step, [CallerMemberName] string callerMember = null,
-        [CallerFilePath] string callerFile = null)
+    [OverloadResolutionPriority(1)]
+    public Given Given(Func<Task> step, [CallerMemberName] string callerMember = null,
+        [CallerFilePath] string callerFile = null,
+        [CallerLineNumber] int callerLine = 0, [CallerArgumentExpression(nameof(step))] string argumentExpression = null)
     {
-        return new Given(new Runnable(step), callerMember, callerFile, BDTestExecutionId, TestRun.ReportId, this);
+        return new Given(new Runnable(step, argumentExpression, callerFile, callerLine), callerMember, callerFile, BDTestExecutionId, TestRun.ReportId, this);
     }
 
-    public Given Given(Expression<Func<CancellationToken, Task>> step, [CallerMemberName] string callerMember = null,
-        [CallerFilePath] string callerFile = null)
+    [OverloadResolutionPriority(1)]
+    public Given Given(Func<CancellationToken, Task> step, [CallerMemberName] string callerMember = null,
+        [CallerFilePath] string callerFile = null,
+        [CallerLineNumber] int callerLine = 0, [CallerArgumentExpression(nameof(step))] string argumentExpression = null)
     {
-        return new Given(new Runnable(step), callerMember, callerFile, BDTestExecutionId, TestRun.ReportId, this);
+        return new Given(new Runnable(step, argumentExpression, callerFile, callerLine), callerMember, callerFile, BDTestExecutionId, TestRun.ReportId, this);
     }
 
-    public When When(Expression<Action> step, [CallerMemberName] string callerMember = null,
-        [CallerFilePath] string callerFile = null)
+    [OverloadResolutionPriority(0)]
+    public Given Given(Func<ValueTask> step, [CallerMemberName] string callerMember = null,
+        [CallerFilePath] string callerFile = null,
+        [CallerLineNumber] int callerLine = 0, [CallerArgumentExpression(nameof(step))] string argumentExpression = null)
     {
-        return new When(new Runnable(step), callerMember, callerFile, BDTestExecutionId, TestRun.ReportId, this);
+        return new Given(new Runnable(step, argumentExpression, callerFile, callerLine), callerMember, callerFile, BDTestExecutionId, TestRun.ReportId, this);
     }
 
-    public When When(Expression<Func<Task>> step, [CallerMemberName] string callerMember = null,
-        [CallerFilePath] string callerFile = null)
+    [OverloadResolutionPriority(0)]
+    public Given Given(Func<CancellationToken, ValueTask> step, [CallerMemberName] string callerMember = null,
+        [CallerFilePath] string callerFile = null,
+        [CallerLineNumber] int callerLine = 0, [CallerArgumentExpression(nameof(step))] string argumentExpression = null)
     {
-        return new When(new Runnable(step), callerMember, callerFile, BDTestExecutionId, TestRun.ReportId, this);
+        return new Given(new Runnable(step, argumentExpression, callerFile, callerLine), callerMember, callerFile, BDTestExecutionId, TestRun.ReportId, this);
     }
 
-    public When When(Expression<Func<CancellationToken, Task>> step, [CallerMemberName] string callerMember = null,
-        [CallerFilePath] string callerFile = null)
+    [OverloadResolutionPriority(0)]
+    public Given Given<T>(Func<ValueTask<T>> step, [CallerMemberName] string callerMember = null,
+        [CallerFilePath] string callerFile = null,
+        [CallerLineNumber] int callerLine = 0, [CallerArgumentExpression(nameof(step))] string argumentExpression = null)
     {
-        return new When(new Runnable(step), callerMember, callerFile, BDTestExecutionId, TestRun.ReportId, this);
+        return new Given(Runnable.FromResult(step, argumentExpression, callerFile, callerLine), callerMember, callerFile, BDTestExecutionId, TestRun.ReportId, this);
+    }
+
+    [OverloadResolutionPriority(0)]
+    public Given Given<T>(Func<CancellationToken, ValueTask<T>> step, [CallerMemberName] string callerMember = null,
+        [CallerFilePath] string callerFile = null,
+        [CallerLineNumber] int callerLine = 0, [CallerArgumentExpression(nameof(step))] string argumentExpression = null)
+    {
+        return new Given(Runnable.FromResult(step, argumentExpression, callerFile, callerLine), callerMember, callerFile, BDTestExecutionId, TestRun.ReportId, this);
+    }
+
+    [OverloadResolutionPriority(-1)]
+    public When When(Action step, [CallerMemberName] string callerMember = null,
+        [CallerFilePath] string callerFile = null,
+        [CallerLineNumber] int callerLine = 0, [CallerArgumentExpression(nameof(step))] string argumentExpression = null)
+    {
+        return new When(new Runnable(step, argumentExpression, callerFile, callerLine), callerMember, callerFile, BDTestExecutionId, TestRun.ReportId, this);
+    }
+
+    [OverloadResolutionPriority(1)]
+    public When When(Func<Task> step, [CallerMemberName] string callerMember = null,
+        [CallerFilePath] string callerFile = null,
+        [CallerLineNumber] int callerLine = 0, [CallerArgumentExpression(nameof(step))] string argumentExpression = null)
+    {
+        return new When(new Runnable(step, argumentExpression, callerFile, callerLine), callerMember, callerFile, BDTestExecutionId, TestRun.ReportId, this);
+    }
+
+    [OverloadResolutionPriority(1)]
+    public When When(Func<CancellationToken, Task> step, [CallerMemberName] string callerMember = null,
+        [CallerFilePath] string callerFile = null,
+        [CallerLineNumber] int callerLine = 0, [CallerArgumentExpression(nameof(step))] string argumentExpression = null)
+    {
+        return new When(new Runnable(step, argumentExpression, callerFile, callerLine), callerMember, callerFile, BDTestExecutionId, TestRun.ReportId, this);
+    }
+
+    [OverloadResolutionPriority(0)]
+    public When When(Func<ValueTask> step, [CallerMemberName] string callerMember = null,
+        [CallerFilePath] string callerFile = null,
+        [CallerLineNumber] int callerLine = 0, [CallerArgumentExpression(nameof(step))] string argumentExpression = null)
+    {
+        return new When(new Runnable(step, argumentExpression, callerFile, callerLine), callerMember, callerFile, BDTestExecutionId, TestRun.ReportId, this);
+    }
+
+    [OverloadResolutionPriority(0)]
+    public When When(Func<CancellationToken, ValueTask> step, [CallerMemberName] string callerMember = null,
+        [CallerFilePath] string callerFile = null,
+        [CallerLineNumber] int callerLine = 0, [CallerArgumentExpression(nameof(step))] string argumentExpression = null)
+    {
+        return new When(new Runnable(step, argumentExpression, callerFile, callerLine), callerMember, callerFile, BDTestExecutionId, TestRun.ReportId, this);
+    }
+
+    [OverloadResolutionPriority(0)]
+    public When When<T>(Func<ValueTask<T>> step, [CallerMemberName] string callerMember = null,
+        [CallerFilePath] string callerFile = null,
+        [CallerLineNumber] int callerLine = 0, [CallerArgumentExpression(nameof(step))] string argumentExpression = null)
+    {
+        return new When(Runnable.FromResult(step, argumentExpression, callerFile, callerLine), callerMember, callerFile, BDTestExecutionId, TestRun.ReportId, this);
+    }
+
+    [OverloadResolutionPriority(0)]
+    public When When<T>(Func<CancellationToken, ValueTask<T>> step, [CallerMemberName] string callerMember = null,
+        [CallerFilePath] string callerFile = null,
+        [CallerLineNumber] int callerLine = 0, [CallerArgumentExpression(nameof(step))] string argumentExpression = null)
+    {
+        return new When(Runnable.FromResult(step, argumentExpression, callerFile, callerLine), callerMember, callerFile, BDTestExecutionId, TestRun.ReportId, this);
     }
 
     public void WithContext<TContext>(Func<TContext, Scenario> test) where TContext : new()

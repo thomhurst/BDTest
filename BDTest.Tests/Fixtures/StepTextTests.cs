@@ -41,7 +41,7 @@ public class StepTextTests : BDTestBase
     public async Task CustomStepTexts_DynamicArgumentValue(string firstName, string lastName)
     {
         var scenario = await Given(() => Action1Custom())
-            .When(() => StepThatPrintsMyName(firstName, lastName))
+            .When(() => StepThatPrintsMyName(firstName, lastName)).WithArgs(() => firstName, () => lastName)
             .Then(() => Action3Custom())
             .BDTestAsync();
             
@@ -99,7 +99,7 @@ public class StepTextTests : BDTestBase
     public async Task FuncStepTextDoesNotInvokeTheArgument()
     {
         var scenario = await Given(() => Console.WriteLine("I have a func that returns a strring"))
-            .When(() => FuncReturningStepText(() => "Blah"))
+            .When(() => FuncReturningStepText(() => "Blah")).WithArgs(() => (Func<string>)(() => "Blah"))
             .Then(() => Console.WriteLine("the steptext should correctly have the func response"))
             .BDTestAsync();
             
@@ -111,7 +111,7 @@ public class StepTextTests : BDTestBase
     {
         var scenario = await Given(() => Console.WriteLine("Empty Step"))
             .When(() => Console.WriteLine("Empty Step"))
-            .Then(() => StepWithListType(new List<string> {"Blah1", "Blah2", "Blah3"}))
+            .Then(() => StepWithListType(new List<string> {"Blah1", "Blah2", "Blah3"})).WithArgs(() => new List<string> {"Blah1", "Blah2", "Blah3"})
             .BDTestAsync();
             
         Assert.That(scenario.Steps[2].StepText, Is.EqualTo("Then the step text can display the list Blah1, Blah2, Blah3"));
@@ -124,7 +124,7 @@ public class StepTextTests : BDTestBase
             
         var scenario = await Given(() => Console.WriteLine("Empty Step"))
             .When(() => Console.WriteLine("Empty Step"))
-            .Then(() => StepWithStrongTypeAndStepText(new CustomClassToStepTextString()))
+            .Then(() => StepWithStrongTypeAndStepText(new CustomClassToStepTextString())).WithArgs(() => new CustomClassToStepTextString())
             .BDTestAsync();
             
         Assert.That(scenario.Steps[2].StepText, Is.EqualTo("Then the text is 123..................4....................................5"));
@@ -150,7 +150,10 @@ public class StepTextTests : BDTestBase
             .Then(() => StepWithStrongTypeAndStepText(new CustomClassToStepTextString
             {
                 One = "1", Two = "2", Three = "3", Four = "4", Five = "5"
-            }))
+            })).WithArgs(() => new CustomClassToStepTextString
+            {
+                One = "1", Two = "2", Three = "3", Four = "4", Five = "5"
+            })
             .BDTestAsync();
 
         var thenStep = scenario.Steps.Last();
@@ -168,7 +171,10 @@ public class StepTextTests : BDTestBase
             .Then(() => InnerSteps.StepWithStrongTypeAndStepText(new CustomClassToStepTextString
             {
                 One = "1", Two = "2", Three = "3", Four = "4", Five = "5"
-            }))
+            })).WithArgs(() => new CustomClassToStepTextString
+            {
+                One = "1", Two = "2", Three = "3", Four = "4", Five = "5"
+            })
             .BDTestAsync();
 
         var thenStep = scenario.Steps.Last();
@@ -186,7 +192,10 @@ public class StepTextTests : BDTestBase
             .Then(() => InnerSteps.StepWithStrongTypeAndNoStepText(new CustomClassToStepTextString
             {
                 One = "1", Two = "2", Three = "3", Four = "4", Five = "5"
-            }))
+            })).WithArgs(() => new CustomClassToStepTextString
+            {
+                One = "1", Two = "2", Three = "3", Four = "4", Five = "5"
+            })
             .BDTestAsync();
 
         var thenStep = scenario.Steps.Last();
@@ -204,7 +213,10 @@ public class StepTextTests : BDTestBase
         var scenario = await Given(() => InnerSteps.StepWithStrongTypeAndNoStepText(new CustomClassToStepTextString
             {
                 One = "1", Two = "2", Three = "3", Four = "4", Five = "5"
-            }))
+            })).WithArgs(() => new CustomClassToStepTextString
+            {
+                One = "1", Two = "2", Three = "3", Four = "4", Five = "5"
+            })
             .When(() => ThrowException(throwIfRetryLessThan))
             .Then(() => Console.WriteLine("the test passed"))
             .BDTestAsync();

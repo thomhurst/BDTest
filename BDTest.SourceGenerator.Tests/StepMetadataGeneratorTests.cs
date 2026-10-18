@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using System.Reflection;
 using System.Runtime.Loader;
 using BDTest.Attributes;
@@ -61,6 +62,50 @@ public class StepMetadataGeneratorTests
         Assert.That(skip.GetType().GetProperty("Reason").GetValue(skip), Is.EqualTo("private overload"));
         Assert.That(Read(sites[0], consumer), Is.EqualTo(new object[] { 19 }));
         Assert.That(Read(sites[1], consumer), Is.EqualTo(new object[] { 19 }));
+    }
+
+    [Test]
+    public void Boxing_member_values_and_constants_retains_runtime_values()
+    {
+        var consumer = Compile("""
+            public sealed class Consumer : BDTest.Test.Steps.Probe
+            {
+                private int Value = 19;
+                private void Step(object value) { }
+                public static object[] Run() { var test = new Consumer(); return test.Build(); }
+                private object[] Build()
+                {
+                    Given(() => Step(Value)).When(() => Step("ready")).Then(() => Step((byte)7));
+                    return Captures.ToArray();
+                }
+            }
+            """);
+        var sites = Run(consumer);
+        Assert.That(Read(sites[0], consumer), Is.EqualTo(new object[] { 19 }));
+        Assert.That(Read(sites[1], consumer), Is.EqualTo(new object[] { "ready" }));
+        Assert.That(Read(sites[2], consumer).Single(), Is.TypeOf<byte>().And.EqualTo((byte)7));
+    }
+
+    [Test]
+    public void Forwarded_runner_token_does_not_disable_other_automatic_arguments()
+    {
+        var consumer = Compile("""
+            public sealed class Consumer : BDTest.Test.Steps.Probe
+            {
+                private int Value = 19;
+                private System.Threading.Tasks.Task Step(int value, System.Threading.CancellationToken token)
+                    => System.Threading.Tasks.Task.CompletedTask;
+                public static object[] Run() { var test = new Consumer(); return test.Build(); }
+                private object[] Build()
+                {
+                    Given(token => Step(Value, token));
+                    return Captures.ToArray();
+                }
+            }
+            """);
+        var site = Run(consumer).Single();
+        Assert.That(site.Metadata.SupportsArgumentCapture, Is.True);
+        Assert.That(Read(site, consumer), Is.EqualTo(new object[] { 19, null }));
     }
 
     [Test]
@@ -374,9 +419,35 @@ public class StepMetadataGeneratorTests
         return values.Cast<object[]>().Select(value => new Captured((StepCallSiteMetadata)value[0], (Delegate)value[1])).ToArray();
     }
 
-    private static Assembly Compile(string consumer)
+    [TestCase(false)]
+    [TestCase(true)]
+    public void Path_mapped_caller_information_finds_method_metadata(bool lineDirective)
     {
-        var compilation = CreateCompilation(Probe + "\n" + consumer);
+        var root = Path.GetFullPath("mapped-source") + Path.DirectorySeparatorChar;
+        var resolver = new SourceFileResolver(ImmutableArray<string>.Empty, Directory.GetCurrentDirectory(),
+            ImmutableArray.Create(new KeyValuePair<string, string>(root, "/_/")));
+        var consumer = Compile((lineDirective ? "#line 600 \"generated/consumer.cs\"\n" : "") + """
+            public sealed class Consumer : BDTest.Test.Steps.Probe
+            {
+                private void Step(int value) { }
+                public static object[] Run()
+                {
+                    var test = new Consumer();
+                    test.Given(() => test.Step(42));
+                    return test.Captures.ToArray();
+                }
+            }
+            """, resolver, Path.Combine(root, "consumer.cs"));
+        var site = Run(consumer).Single();
+        Assert.That(site.Metadata.Method.Resolve(consumer).Name, Is.EqualTo("Step"));
+        Assert.That(Read(site, consumer), Is.EqualTo(new object[] { 42 }));
+    }
+
+    private static Assembly Compile(string consumer, SourceReferenceResolver resolver = null, string sourcePath = "consumer.cs")
+    {
+        var compilation = CreateCompilation(Probe + "\n" + consumer, sourcePath: sourcePath);
+        if (resolver != null)
+            compilation = compilation.WithOptions(compilation.Options.WithSourceReferenceResolver(resolver));
         RunGenerator(compilation, out var generated);
         using var stream = new MemoryStream();
         var result = generated.Emit(stream);
@@ -395,14 +466,15 @@ public class StepMetadataGeneratorTests
         return driver;
     }
 
-    private static CSharpCompilation CreateCompilation(string source, LanguageVersion languageVersion = LanguageVersion.CSharp12)
+    private static CSharpCompilation CreateCompilation(string source, LanguageVersion languageVersion = LanguageVersion.CSharp12,
+        string sourcePath = "consumer.cs")
     {
         var references = ((string)AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES")).Split(Path.PathSeparator)
             .Select(p => MetadataReference.CreateFromFile(p)).ToList();
         if (!references.Any(r => r.FilePath == typeof(StepCallSiteMetadata).Assembly.Location))
             references.Add(MetadataReference.CreateFromFile(typeof(StepCallSiteMetadata).Assembly.Location));
         return CSharpCompilation.Create("Consumer_" + Guid.NewGuid().ToString("N"),
-            new[] { CSharpSyntaxTree.ParseText(source, new CSharpParseOptions(languageVersion), path: "consumer.cs") }, references,
+            new[] { CSharpSyntaxTree.ParseText(source, new CSharpParseOptions(languageVersion), path: sourcePath) }, references,
             new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
     }
 
@@ -414,7 +486,7 @@ public class StepMetadataGeneratorTests
             public class Probe
             {
                 public System.Collections.Generic.List<object> Captures = new System.Collections.Generic.List<object>();
-                private Probe Capture(System.Action step, string expression, string file, int line)
+                private Probe Capture(System.Delegate step, string expression, string file, int line)
                 {
                     var metadata = BDTest.Metadata.StepMetadataCatalog.Find(GetType().Assembly, file, line, expression);
                     if (metadata == null) throw new System.Exception("Missing call site: " + file + ":" + line + " " + expression);
@@ -422,6 +494,10 @@ public class StepMetadataGeneratorTests
                     return this;
                 }
                 public Probe Given(System.Action step, [System.Runtime.CompilerServices.CallerArgumentExpression("step")] string expression = null,
+                    [System.Runtime.CompilerServices.CallerFilePath] string file = null, [System.Runtime.CompilerServices.CallerLineNumber] int line = 0)
+                    { return Capture(step, expression, file, line); }
+                public Probe Given(System.Func<System.Threading.CancellationToken, System.Threading.Tasks.Task> step,
+                    [System.Runtime.CompilerServices.CallerArgumentExpression("step")] string expression = null,
                     [System.Runtime.CompilerServices.CallerFilePath] string file = null, [System.Runtime.CompilerServices.CallerLineNumber] int line = 0)
                     { return Capture(step, expression, file, line); }
                 public Probe When(System.Action step, [System.Runtime.CompilerServices.CallerArgumentExpression("step")] string expression = null,
