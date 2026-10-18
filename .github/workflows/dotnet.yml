@@ -15,6 +15,10 @@ on:
         type: boolean
         required: true
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   modularpipeline:
     environment: ${{ github.ref == 'refs/heads/main' && 'Production' || 'Pull Requests' }}
@@ -36,12 +40,27 @@ jobs:
         run: ./scripts/Test-DependencyAutomerge.ps1
       - name: Verify skip outcomes from test runners
         shell: pwsh
-        run: ./scripts/Test-SkipOutcomes.ps1
+        run: ./scripts/Test-SkipOutcomes.ps1 -ResultsDirectory artifacts/test-results/skip-outcomes
       - name: Run Pipeline
         run: dotnet run -c Release
         working-directory: "BDTest.Pipeline"
         env:
           DOTNET_ENVIRONMENT: ${{ github.ref == 'refs/heads/main' && 'Production' || 'Development' }}
           NuGet__ApiKey: ${{ secrets.NUGET__APIKEY }}
-          PULL_REQUEST_BRANCH: ${{ github.event.pull_request.head.ref }}
           PUBLISH_PACKAGES: ${{ github.event.inputs.publish-packages }}
+      - name: Upload test results
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v7.0.2
+        with:
+          name: test-results
+          path: artifacts/test-results/
+          if-no-files-found: warn
+      - name: Upload NuGet packages
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v7.0.2
+        with:
+          name: packages
+          path: |
+            artifacts/packages/*.nupkg
+            artifacts/packages/*.snupkg
+          if-no-files-found: warn
