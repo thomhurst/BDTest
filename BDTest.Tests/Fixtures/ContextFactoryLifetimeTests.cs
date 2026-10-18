@@ -360,6 +360,99 @@ public class ContextFactoryLifetimeTests
     [TestCase("factory")]
     [TestCase("configure")]
     [TestCase("initialize")]
+    public async Task NotImplementedPreparationRetainsReportException(string failure)
+    {
+        var expected = new NotImplementedException(failure);
+        using var run = BDTestRun.Start(new BDTestOptions { ContextFactory = new Factory(_ =>
+        {
+            if (failure == "factory") throw expected;
+            return new ValueTask<object>(new ResourceContext(new List<string>(), new Dependency())
+            { InitializationError = failure == "initialize" ? expected : null });
+        }) });
+        var fixture = new Fixture(run) { Configure = _ =>
+        {
+            if (failure == "configure") throw expected;
+        } };
+        fixture.Start();
+        try
+        {
+            Assert.That(await Assert.ThrowsAsync<NotImplementedException>(async () => await fixture.Run()), Is.SameAs(expected));
+            var scenario = run.Scenarios.Single();
+            Assert.That(scenario.Status, Is.EqualTo(Status.NotImplemented));
+            Assert.That(scenario.Exception?.Message, Is.EqualTo(expected.Message));
+            Assert.That(scenario.ExecutionException, Is.Not.Null);
+            Assert.That(scenario.Attempts.Single().Exception?.Message, Is.EqualTo(expected.Message));
+            Assert.That(scenario.Steps.All(step => step.Status == Status.NotRun), Is.True);
+        }
+        finally { await fixture.Finish(); }
+    }
+
+    [Test]
+    public async Task ScenarioHooksReceiveInitializedContext()
+    {
+        var events = new List<string>();
+        var hook = new ContextHook();
+        var options = new BDTestOptions { ContextFactory = new Factory(_ =>
+            new ValueTask<object>(new ResourceContext(events, new Dependency()))) };
+        options.ScenarioHooks.Add(hook);
+        using var run = BDTestRun.Start(options);
+        var fixture = new Fixture(run);
+        fixture.Start();
+        try
+        {
+            await fixture.Run();
+            Assert.That(hook.Calls, Is.EqualTo(new[] { "before", "after" }));
+            Assert.That(hook.Contexts.All(context => ReferenceEquals(context, fixture.Context)), Is.True);
+        }
+        finally { await fixture.Finish(); }
+    }
+
+    [TestCase("factory")]
+    [TestCase("configure")]
+    [TestCase("initialize")]
+    public async Task FailedPreparationDoesNotRunScenarioHooks(string failure)
+    {
+        var hook = new ContextHook();
+        var options = new BDTestOptions { ContextFactory = new Factory(_ =>
+        {
+            if (failure == "factory") throw new InvalidOperationException(failure);
+            return new ValueTask<object>(new ResourceContext(new List<string>(), new Dependency())
+            { InitializationError = failure == "initialize" ? new InvalidOperationException(failure) : null });
+        }) };
+        options.ScenarioHooks.Add(hook);
+        using var run = BDTestRun.Start(options);
+        var fixture = new Fixture(run) { Configure = _ =>
+        {
+            if (failure == "configure") throw new InvalidOperationException(failure);
+        } };
+        fixture.Start();
+        try
+        {
+            await Assert.ThrowsAsync<InvalidOperationException>(async () => await fixture.Run());
+            Assert.That(hook.Calls, Is.Empty);
+            Assert.That(run.Scenarios.Single().Exception?.Message, Is.EqualTo(failure));
+        }
+        finally { await fixture.Finish(); }
+    }
+
+    private sealed class ContextHook : BDTest.Interfaces.IScenarioHook
+    {
+        public List<string> Calls { get; } = new();
+        public List<object> Contexts { get; } = new();
+        public Task BeforeScenarioAsync(ScenarioHookContext scenario) => Record("before", scenario);
+        public Task AfterScenarioAsync(ScenarioHookContext scenario) => Record("after", scenario);
+        private Task Record(string name, ScenarioHookContext scenario)
+        {
+            Calls.Add(name);
+            Contexts.Add(scenario.Context);
+            Assert.That(((ResourceContext)scenario.Context).Initializations, Is.EqualTo(1));
+            return Task.CompletedTask;
+        }
+    }
+
+    [TestCase("factory")]
+    [TestCase("configure")]
+    [TestCase("initialize")]
     public async Task SuccessfulPreparationRetryDoesNotRetainTerminalError(string failure)
     {
         var calls = 0;
