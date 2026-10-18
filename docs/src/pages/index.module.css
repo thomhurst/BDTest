@@ -72,7 +72,10 @@
 }
 
 .installChip {
+  display: block;
   padding: 0.7rem 1rem;
+  white-space: pre;
+  line-height: 1.7;
   border: 1px solid var(--bdt-border);
   border-radius: 6px;
   background: var(--bdt-surface);

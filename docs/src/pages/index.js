@@ -40,6 +40,11 @@ const stepsCode = `public class AccountSteps(AccountContext context)
         await Assert.That(context.Balance).IsEqualTo(expected);
 }`;
 
+// BDTest.TUnit depends only on TUnit.Core; TUnit brings the runner and assertions.
+const installCommands = `dotnet add package TUnit
+dotnet add package BDTest.TUnit
+dotnet add package BDTest.SourceGenerator`;
+
 const reportSteps = [
   ['Given', 'I have an account with a balance of 100'],
   ['When', 'I withdraw 25'],
@@ -107,12 +112,12 @@ function Hero() {
           </Heading>
           <p className={styles.heroDescription}>
             BDTest is a behaviour-driven testing framework for .NET with no Gherkin files and no
-            generated code. Your Given / When / Then scenarios are ordinary C#, and their results
+            generated tests. Your Given / When / Then scenarios are ordinary C#, and their results
             become reports your whole team can read.
           </p>
           <div className={styles.heroActions}>
             <Link className={styles.primaryButton} to="/docs/getting-started/installation">Get started</Link>
-            <code className={styles.installChip}>dotnet add package BDTest.TUnit</code>
+            <code className={styles.installChip}>{installCommands}</code>
           </div>
         </div>
         <ReportCard />

@@ -18,7 +18,8 @@ public async Task AddingNumbers()
     }, row => Given(() => Calculator.SetNumbers(row.Left, row.Right))
         .WithStepText(() => "numbers <Left> and <Right>")
         .When(() => Calculator.AddNumbers())
-        .Then(() => Calculator.TheResultIs(row.Expected)));
+        .Then(() => Calculator.TheResultIs(row.Expected))
+        .WithArgs(() => row.Expected));
 }
 ```
 
@@ -47,9 +48,11 @@ await ScenarioOutline("Users can sign in", new[]
     new Login("Alice", "Admin"),
     new Login("Bob", "Reader"),
 }, row => When(() => Users.LogIn(row.Name, row.Role))
+    .WithArgs(() => row.Name, () => row.Role)
     .Then(() => Users.TheDashboardIsShown()));
 ```
 
+- `row` is a lambda parameter, so the [source generator](step-text.md#which-arguments-are-captured-automatically) cannot read `row.Name` automatically. Add `.WithArgs(...)` for steps that take row values; without it, the step shows its source text instead of the `[StepText]` template.
 - Values are formatted with the invariant culture and captured when the outline is built.
 - Unknown placeholders stay unchanged.
 - `null` values display as `null`.
