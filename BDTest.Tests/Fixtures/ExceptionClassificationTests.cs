@@ -64,12 +64,13 @@ public class ExceptionClassificationTests : BDTestBase
         else AssertScenario(row, status);
     }
 
-    [TestCase(false)]
-    [TestCase(true)]
-    public async Task Multi_inner_aggregates_do_not_hide_failures(bool nested)
+    [Test]
+    public async Task Empty_and_multi_inner_aggregates_do_not_hide_failures([Values] bool empty, [Values] bool nested)
     {
         _options.SkipExceptionTypes.Add(typeof(SkipSignal));
-        Exception exception = new AggregateException(new DerivedSkipSignal(), new FailureSignal());
+        Exception exception = empty
+            ? new AggregateException()
+            : new AggregateException(new DerivedSkipSignal(), new FailureSignal());
         if (nested) exception = Wrap(exception, Wrapper.Nested);
         var builder = When(() => Throw(exception)).Then(() => NoOp());
 
@@ -80,10 +81,12 @@ public class ExceptionClassificationTests : BDTestBase
     }
 
     [Test]
-    public async Task Multi_inner_aggregates_can_be_explicitly_registered()
+    public async Task Empty_and_multi_inner_aggregates_can_be_explicitly_registered([Values] bool empty)
     {
         _options.SkipExceptionTypes.Add(typeof(AggregateException));
-        var exception = new AggregateException(new FailureSignal(), new FailureSignal());
+        var exception = empty
+            ? new AggregateException()
+            : new AggregateException(new FailureSignal(), new FailureSignal());
         var builder = When(() => Throw(exception)).Then(() => NoOp());
 
         Assert.That(await Capture(builder.BDTestAsync), Is.SameAs(exception));

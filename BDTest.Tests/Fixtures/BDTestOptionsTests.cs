@@ -39,7 +39,7 @@ public class BDTestOptionsTests
             catch (Exception exception) when (exception is RegisteredException or TargetInvocationException) { }
             try
             {
-                await fixture.ScenarioOutline("factory", new[] { 1 }, _ => throw new RegisteredException()).BDTestAsync();
+                await fixture.ScenarioOutline("factory", new[] { 1 }, _ => throw CreateException()).BDTestAsync();
             }
             catch (Exception exception) when (exception is RegisteredException or TargetInvocationException) { }
         }
@@ -208,7 +208,7 @@ public class BDTestOptionsTests
 
     private static void Complete() { }
     private static void Keep(Value value) => GC.KeepAlive(value);
-    private static void Fail() => throw CreateException();
+    private static void Fail() => throw new RegisteredException();
     [Skipped] private static void Skipped() { }
     private sealed class SkippedAttribute : SkipStepAttribute { }
     private class RegisteredException : Exception { }
