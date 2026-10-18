@@ -15,6 +15,14 @@ dotnet add package BDTest.Razor.Reports
 
 `BDTest.Razor.Reports` targets `net10.0`. Use the same version as the BDTest packages in your test projects.
 
+The package uses the shared `Microsoft.AspNetCore.App` framework and includes compiled
+Razor views. Static web assets are served under `/_content/BDTest.Razor.Reports/`.
+You do not need to copy the views or assets into your app. Keep static file middleware
+enabled as shown below.
+
+`TomLonghurst.EnumerableAsyncProcessor` is no longer a dependency of the report
+package. If your app uses that package, add a direct package reference to it.
+
 ## 2. Register the services
 
 ```csharp title="Program.cs"

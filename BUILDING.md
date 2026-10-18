@@ -2,8 +2,9 @@
 
 `Directory.Build.props` owns the shared `LangVersion=latest` and
 `ImplicitUsings=enable` settings. Projects inherit them; retain local overrides
-only when a project needs a different setting. `RazorLangVersion` controls Razor
-syntax independently and remains in `BDTest.Razor.Reports`.
+only when a project needs a different setting. `BDTest.Razor.Reports` uses the
+Razor SDK's default language version, compiled views, and static web asset
+packaging without per-file content overrides.
 
 ## First scope (#689)
 
