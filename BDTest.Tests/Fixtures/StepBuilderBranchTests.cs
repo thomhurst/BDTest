@@ -89,7 +89,7 @@ public class StepBuilderBranchTests : BDTestBase
         Assert.That(secondResult.Status, Is.EqualTo(Status.Failed));
         Assert.That(secondResult.Steps[0].Exception, Is.Not.Null);
         Assert.That(secondResult.Steps[0].Output, Does.Contain("invocation 2").And.Not.Contain("invocation 1"));
-        Assert.That(secondResult.Steps[1].Status, Is.EqualTo(Status.Inconclusive));
+        Assert.That(secondResult.Steps[1].Status, Is.EqualTo(Status.NotRun));
     }
 
     [Test]

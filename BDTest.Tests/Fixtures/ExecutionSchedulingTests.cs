@@ -92,7 +92,7 @@ public class ExecutionSchedulingTests : BDTestBase
                 var scenario = BDTestUtil.GetScenarios().Single(x => x.FrameworkTestId == _executionId);
                 Assert.That(scenario.Status, Is.EqualTo(Status.Failed));
                 Assert.That(scenario.Steps[0].Status, Is.EqualTo(Status.Failed));
-                Assert.That(scenario.Steps.Skip(1).All(step => step.Status == Status.Inconclusive), Is.True);
+                Assert.That(scenario.Steps.Skip(1).All(step => step.Status == Status.NotRun), Is.True);
             }
             else
             {

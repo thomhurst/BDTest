@@ -275,7 +275,7 @@ public class StepTextGenerationTests : AbstractContextBDTestBase<StepTextGenerat
 
         Assert.ThrowsAsync<InvalidOperationException>(async () => await builder.BDTestAsync());
         var step = BDTestUtil.GetScenarios().Single().Steps[1];
-        Assert.That(step.Status, Is.EqualTo(Status.Inconclusive));
+        Assert.That(step.Status, Is.EqualTo(Status.NotRun));
         Assert.That(step.StepText, Is.EqualTo("When value: {value}"));
         Assert.That(step.Diagnostics, Is.Empty);
     }

@@ -104,6 +104,8 @@ public static class BDTestHtmlHelper
         var passedCount = scenarios.Count(s => s.Status == Status.Passed);
         var failedCount = scenarios.Count(s => s.Status == Status.Failed);
         var skippedCount = scenarios.Count(s => s.Status == Status.Skipped);
+        var notRunCount = scenarios.Count(s => s.Status == Status.NotRun) + data.NotRun.Count;
+        var pendingCount = scenarios.Count(s => s.Status == Status.Pending);
         var inconclusiveCount = scenarios.Count(s => s.Status == Status.Inconclusive);
         var notImplementedCount = scenarios.Count(s => s.Status == Status.NotImplemented);
 
@@ -119,6 +121,8 @@ public static class BDTestHtmlHelper
         html.AppendLine($"            <div class=\"summary-item failed\"><span class=\"count\">{failedCount}</span><span class=\"label\">Failed</span></div>");
         html.AppendLine($"            <div class=\"summary-item skipped\"><span class=\"count\">{skippedCount}</span><span class=\"label\">Skipped</span></div>");
         html.AppendLine($"            <div class=\"summary-item inconclusive\"><span class=\"count\">{inconclusiveCount}</span><span class=\"label\">Inconclusive</span></div>");
+        html.AppendLine($"            <div class=\"summary-item notrun\"><span class=\"count\">{notRunCount}</span><span class=\"label\">Not run</span></div>");
+        html.AppendLine($"            <div class=\"summary-item pending\"><span class=\"count\">{pendingCount}</span><span class=\"label\">Pending</span></div>");
         html.AppendLine($"            <div class=\"summary-item not-implemented\"><span class=\"count\">{notImplementedCount}</span><span class=\"label\">Not Implemented</span></div>");
         html.AppendLine("        </div>");
         html.AppendLine($"        <div class=\"duration\"><strong>Duration:</strong> {durationString}</div>");
@@ -149,6 +153,8 @@ public static class BDTestHtmlHelper
         html.AppendLine("            <button class=\"filter-btn\" data-status=\"failed\">Failed</button>");
         html.AppendLine("            <button class=\"filter-btn\" data-status=\"skipped\">Skipped</button>");
         html.AppendLine("            <button class=\"filter-btn\" data-status=\"inconclusive\">Inconclusive</button>");
+        html.AppendLine("            <button class=\"filter-btn\" data-status=\"notrun\">Not run</button>");
+        html.AppendLine("            <button class=\"filter-btn\" data-status=\"pending\">Pending</button>");
         html.AppendLine("            <button class=\"filter-btn\" data-status=\"notimplemented\">Not Implemented</button>");
         html.AppendLine("        </div>");
 
@@ -171,7 +177,7 @@ public static class BDTestHtmlHelper
         
         html.AppendLine($"        <div class=\"scenario-item {statusClass}\" data-status=\"{statusClass}\">");
         html.AppendLine($"            <div class=\"scenario-header\">");
-        html.AppendLine($"                <div class=\"scenario-status {statusClass}\">{scenario.Status}</div>");
+        html.AppendLine($"                <div class=\"scenario-status {statusClass}\">{StatusLabel(scenario.Status)}</div>");
         html.AppendLine($"                <div class=\"scenario-info\">");
         html.AppendLine($"                    <div class=\"scenario-title\">{EscapeHtml(scenario.GetScenarioText())}</div>");
         html.AppendLine($"                    <div class=\"scenario-story\">{EscapeHtml(scenario.GetStoryText())}</div>");
@@ -247,6 +253,7 @@ public static class BDTestHtmlHelper
             {
                 var stepStatusClass = step.Status.ToString().ToLowerInvariant();
                 html.AppendLine($"                    <div class=\"step {stepStatusClass}\">");
+                html.AppendLine($"                        <span class=\"step-status\">{StatusLabel(step.Status)}</span>");
                 html.AppendLine($"                        <div class=\"step-text\">{EscapeHtml(step.StepText)}</div>");
                 if (step.Exception != null)
                 {
@@ -303,6 +310,8 @@ public static class BDTestHtmlHelper
         html.AppendLine("    </div>");
         return html.ToString();
     }
+
+    private static string StatusLabel(Status status) => status == Status.NotRun ? "Not run" : status.ToString();
 
     private static string EscapeHtml(string input)
     {
@@ -399,6 +408,7 @@ public static class BDTestHtmlHelper
         .summary-item.passed { background-color: #27ae60; }
         .summary-item.failed { background-color: #e74c3c; }
         .summary-item.skipped { background-color: #f39c12; }
+        .summary-item.notrun, .summary-item.pending { background-color: #6c757d; }
         .summary-item.inconclusive { background-color: #95a5a6; }
         .summary-item.not-implemented { background-color: #9b59b6; }
         
@@ -471,6 +481,7 @@ public static class BDTestHtmlHelper
         .scenario-status.passed { background-color: #d4edda; color: #155724; }
         .scenario-status.failed { background-color: #f8d7da; color: #721c24; }
         .scenario-status.skipped { background-color: #fff3cd; color: #856404; }
+        .scenario-status.notrun, .scenario-status.pending { background-color: #e2e3e5; color: #383d41; }
         .scenario-status.inconclusive { background-color: #d1ecf1; color: #0c5460; }
         .scenario-status.notimplemented { background-color: #e2e3e5; color: #383d41; }
         
@@ -529,6 +540,8 @@ public static class BDTestHtmlHelper
             border-left: 4px solid #28a745;
         }
         
+        .step.notrun, .step.pending { border-left-color: #6c757d; }
+        .step-status { font-size: 0.8rem; color: #495057; }
         .step.inconclusive { border-left-color: #17a2b8; }
         .step.skipped { border-left-color: #ffc107; }
         .step.notimplemented { border-left-color: #6c757d; }

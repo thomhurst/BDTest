@@ -77,7 +77,7 @@ internal class TestOutputData : TextWriter
 
             if (string.IsNullOrEmpty(TestId) 
                 || !TestHolder.ScenariosByInternalId.TryGetValue(TestId, out var scenario)
-                || (scenario.Status == Status.Inconclusive && scenario.StartTime == default))
+                || scenario.Status == Status.NotRun)
             {
                 if (FrameworkExecutionId == null)
                 {

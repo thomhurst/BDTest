@@ -343,7 +343,22 @@ let successChartData = {
             borderWidth: 0,
             data: [
                 @string.Join(",", testRunSummaries.Select(summary => summary.Counts.Failed))
-            ]    
+            ]
+        },
+        {
+            label: "Pending",
+            axis: 'y',
+            fill: true,
+            backgroundColor: "@ColourConstants.WarningHex",
+            borderColor: "rgba(0,0,0,0)",
+            pointBorderColor: "@ColourConstants.WarningHex",
+            pointBackgroundColor: "@ColourConstants.WarningHex",
+            pointHitRadius: 15,
+            pointRadius: 0,
+            borderWidth: 0,
+            data: [
+                @string.Join(",", testRunSummaries.Select(summary => summary.Counts.Pending))
+            ]
         },
         {
             label: "Inconclusive",

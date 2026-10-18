@@ -20,7 +20,7 @@ public class ExceptionTests : BDTestBase
             .Then(() => Console.WriteLine("the exception should be serialized to the json output"))
             .And(() => Console.WriteLine("the step is marked as failed"))
             .And(() => Console.WriteLine("the scenario is marked as failed"))
-            .And(() => Console.WriteLine("subsequent steps are inconclusive"));
+            .And(() => Console.WriteLine("subsequent steps are not run"));
 
         try
         {
@@ -37,11 +37,11 @@ public class ExceptionTests : BDTestBase
             Assert.That(scenario.Steps[0].Exception.Message.Contains("BDTest Exception!"));
 
             Assert.That(scenario.Steps[0].Status, Is.EqualTo(status));
-            Assert.That(scenario.Steps[1].Status, Is.EqualTo(Status.Inconclusive));
-            Assert.That(scenario.Steps[2].Status, Is.EqualTo(Status.Inconclusive));
-            Assert.That(scenario.Steps[3].Status, Is.EqualTo(Status.Inconclusive));
-            Assert.That(scenario.Steps[4].Status, Is.EqualTo(Status.Inconclusive));
-            Assert.That(scenario.Steps[5].Status, Is.EqualTo(Status.Inconclusive));
+            Assert.That(scenario.Steps[1].Status, Is.EqualTo(Status.NotRun));
+            Assert.That(scenario.Steps[2].Status, Is.EqualTo(Status.NotRun));
+            Assert.That(scenario.Steps[3].Status, Is.EqualTo(Status.NotRun));
+            Assert.That(scenario.Steps[4].Status, Is.EqualTo(Status.NotRun));
+            Assert.That(scenario.Steps[5].Status, Is.EqualTo(Status.NotRun));
 
             Assert.That(scenario.Status, Is.EqualTo(status));
 
@@ -54,19 +54,19 @@ public class ExceptionTests : BDTestBase
                 Is.EqualTo(status.ToString()));
             Assert.That(
                 json.SelectToken("$.Steps[1].Status").ToString(),
-                Is.EqualTo("Inconclusive"));
+                Is.EqualTo("NotRun"));
             Assert.That(
                 json.SelectToken("$.Steps[2].Status").ToString(),
-                Is.EqualTo("Inconclusive"));
+                Is.EqualTo("NotRun"));
             Assert.That(
                 json.SelectToken("$.Steps[3].Status").ToString(),
-                Is.EqualTo("Inconclusive"));
+                Is.EqualTo("NotRun"));
             Assert.That(
                 json.SelectToken("$.Steps[4].Status").ToString(),
-                Is.EqualTo("Inconclusive"));
+                Is.EqualTo("NotRun"));
             Assert.That(
                 json.SelectToken("$.Steps[5].Status").ToString(),
-                Is.EqualTo("Inconclusive"));
+                Is.EqualTo("NotRun"));
 
             Assert.That(json.SelectToken("$.Status").ToString(),
                 Is.EqualTo(status.ToString()));
@@ -81,7 +81,7 @@ public class ExceptionTests : BDTestBase
             .Then(() => Console.WriteLine("the exception should be serialized to the json output"))
             .And(() => Console.WriteLine("the step is marked as failed"))
             .And(() => ThrowException(exceptionType))
-            .And(() => Console.WriteLine("subsequent steps are inconclusive"))
+            .And(() => Console.WriteLine("subsequent steps are not run"))
             .And(() => Console.WriteLine("Previous steps should be marked as passed"));
 
         try
@@ -102,8 +102,8 @@ public class ExceptionTests : BDTestBase
             Assert.That(scenario.Steps[1].Status, Is.EqualTo(Status.Passed));
             Assert.That(scenario.Steps[2].Status, Is.EqualTo(Status.Passed));
             Assert.That(scenario.Steps[3].Status, Is.EqualTo(status));
-            Assert.That(scenario.Steps[4].Status, Is.EqualTo(Status.Inconclusive));
-            Assert.That(scenario.Steps[5].Status, Is.EqualTo(Status.Inconclusive));
+            Assert.That(scenario.Steps[4].Status, Is.EqualTo(Status.NotRun));
+            Assert.That(scenario.Steps[5].Status, Is.EqualTo(Status.NotRun));
 
             Assert.That(scenario.Status, Is.EqualTo(status));
 
@@ -125,10 +125,10 @@ public class ExceptionTests : BDTestBase
                 Is.EqualTo(status.ToString()));
             Assert.That(
                 json.SelectToken("$.Steps[4].Status").ToString(),
-                Is.EqualTo("Inconclusive"));
+                Is.EqualTo("NotRun"));
             Assert.That(
                 json.SelectToken("$.Steps[5].Status").ToString(),
-                Is.EqualTo("Inconclusive"));
+                Is.EqualTo("NotRun"));
 
             Assert.That(json.SelectToken("$.Status").ToString(),
                 Is.EqualTo(status.ToString()));

@@ -35,6 +35,16 @@
       </a>
     </li>
     <li>
+      <a href="#" class="dropdown-item" data-bdtest-action="status" data-value="@Status.NotRun">
+        Show Not run
+      </a>
+    </li>
+    <li>
+      <a href="#" class="dropdown-item" data-bdtest-action="status" data-value="@Status.Pending">
+        Show Pending
+      </a>
+    </li>
+    <li>
       <a href="#" class="dropdown-item" data-bdtest-action="status" data-value="@Status.Inconclusive">
         Show Inconclusive
       </a>
@@ -72,6 +82,14 @@
       case '@Status.Skipped':
         mainDropdownButton.innerHTML = 'Show Skipped';
         mainDropdownButton.className = "btn dropdown-toggle btn-warning";
+        break;
+      case '@Status.NotRun':
+        mainDropdownButton.innerHTML = 'Show Not run';
+        mainDropdownButton.className = "btn dropdown-toggle btn-secondary";
+        break;
+      case '@Status.Pending':
+        mainDropdownButton.innerHTML = 'Show Pending';
+        mainDropdownButton.className = "btn dropdown-toggle btn-secondary";
         break;
       case '@Status.Inconclusive':
         mainDropdownButton.innerHTML = 'Show Inconclusive';

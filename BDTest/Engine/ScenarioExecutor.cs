@@ -52,6 +52,7 @@ internal class ScenarioExecutor : IScenarioExecutor
         try
         {
             scenario.StartTime = DateTime.UtcNow;
+            scenario.Status = Status.Pending;
 
             TestOutputData.ClearCurrentTaskData();
 
@@ -99,7 +100,7 @@ internal class ScenarioExecutor : IScenarioExecutor
         {
             attemptException = e;
             scenario.Status = Status.Skipped;
-            foreach (var step in scenario.Steps.Where(step => step.Status == Status.Inconclusive))
+            foreach (var step in scenario.Steps.Where(step => step.Status == Status.NotRun))
             {
                 step.SetStepText();
                 step.Status = Status.Skipped;
@@ -145,7 +146,7 @@ internal class ScenarioExecutor : IScenarioExecutor
 
             if (!scenario.ShouldRetry)
             {
-                foreach (var notRunStep in scenario.Steps.Where(step => step.Status == Status.Inconclusive))
+                foreach (var notRunStep in scenario.Steps.Where(step => step.Status == Status.NotRun))
                 {
                     notRunStep.SetStepText();
                 }

@@ -30,7 +30,7 @@ internal class ScenarioRetryManager : IScenarioRetryManager
 
         ResetStepData(scenario);
 
-        scenario.Status = Status.Inconclusive;
+        scenario.Status = Status.NotRun;
 
         await RunRetryTestHooks(scenario).ConfigureAwait(false);
 

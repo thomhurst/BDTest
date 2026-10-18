@@ -82,6 +82,7 @@ public sealed class ScenarioOutlineBuilder<TExample> : BuildableTest
     private async Task<Scenario> ExecuteAsync(Scenario outline)
     {
         outline.StartTime = DateTime.UtcNow;
+        outline.Status = Status.Pending;
         var failures = new List<(Status Status, ExceptionDispatchInfo Exception)>();
         var previousNotRun = new HashSet<string>(TestHolder.NotRun
             .Where(pair => pair.Value.TestId == TestId).Select(pair => pair.Key));
@@ -129,7 +130,7 @@ public sealed class ScenarioOutlineBuilder<TExample> : BuildableTest
                         row.EndTime = DateTime.UtcNow;
                         row.TimeTaken = row.EndTime - row.StartTime;
                     }
-                    // Retry hooks can throw after resetting the row to Inconclusive.
+                    // Retry hooks can throw after resetting the row to NotRun.
                     row.Status = row.TimedOut ? Status.Failed : ClassifyOutcome(exception);
                     // Framework success exceptions must not fail the outline.
                     if (row.Status != Status.Passed)

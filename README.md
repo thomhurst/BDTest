@@ -72,6 +72,28 @@ Choose a test target supported by both the adapter and its test framework. A
 or runner supports .NET Framework. The NUnit example below requires .NET 8 or later;
 the repository's test projects use .NET 10.
 
+## Status migration for the next major version
+
+New scenarios and steps use `Status.NotRun`, which is also `default(Status)`.
+Running scenarios and steps use `Status.Pending`. Retries reset the scenario and
+its steps to `NotRun` before retry hooks run. Before-step hooks see `Pending`.
+Steps after a failure remain `NotRun`; whole-scenario skips still mark steps
+`Skipped`. `Inconclusive` now means a registered inconclusive exception occurred.
+Replace checks that used `Inconclusive` to detect unreached steps with `NotRun`.
+
+HTML and Razor reports show "Not run" and "Pending" separately from inconclusive
+results. Update report consumers and status switches to accept both new values.
+`GetOrder()` ranks statuses as Failed, NotImplemented, Inconclusive, Skipped,
+NotRun, Pending, Passed. Mixed report summaries continue to let passes override
+skips, while unfinished results take precedence over passes.
+
+The numeric enum values change. Store status names instead of integers. BDTest's
+Newtonsoft.Json serialization writes names, including in run summaries. Its reader
+preserves historical named statuses, including ambiguous `Inconclusive` results,
+and maps legacy integers 0–4 to Passed, Failed, Inconclusive, NotImplemented, Skipped.
+Integer tokens are always interpreted using that legacy mapping; new numeric enum
+values must not be used as JSON status values.
+
 ## How do I get started?
 
 View the [wiki](https://github.com/thomhurst/BDTest/wiki) to see how to use BDTest and how to get setup: https://github.com/thomhurst/BDTest/wiki

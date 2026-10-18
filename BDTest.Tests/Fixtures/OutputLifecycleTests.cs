@@ -63,6 +63,25 @@ public class OutputLifecycleTests
     }
 
     [Test]
+    public void Status_controls_startup_capture_without_a_timestamp_heuristic()
+    {
+        using var fixture = new Capture();
+        fixture.Select();
+        var scenario = fixture.Register();
+        var writer = new TestOutputData();
+        TestOutputData.TestId = scenario.Guid;
+        scenario.StartTime = DateTime.UtcNow;
+        writer.Write("startup");
+        Assert.That(scenario.TestStartupInformation, Is.EqualTo("startup"));
+
+        scenario.Status = Status.Pending;
+        scenario.StartTime = default;
+        writer.Write("running");
+        Assert.That(writer.ToString(), Is.EqualTo("running"));
+        Assert.That(scenario.TestStartupInformation, Is.EqualTo("startup"));
+    }
+
+    [Test]
     public void Character_capture_and_explicit_teardown_preserve_newlines_and_json()
     {
         using var fixture = new Capture();
@@ -72,6 +91,7 @@ public class OutputLifecycleTests
         var scenario = fixture.Register();
         writer.Write('x'); // Registered, but not started yet.
         scenario.StartTime = DateTime.Now;
+        scenario.Status = Status.Pending;
         scenario.EndTime = DateTime.Now;
         TestOutputData.TestId = scenario.Guid;
         writer.Write("teardown\r\n");
@@ -97,6 +117,7 @@ public class OutputLifecycleTests
             writer.Write(text);
             var scenario = fixture.Register();
             scenario.StartTime = DateTime.Now;
+            scenario.Status = Status.Pending;
             scenario.EndTime = DateTime.Now;
             TestOutputData.TestId = scenario.Guid;
             writer.Write(text);
@@ -189,6 +210,7 @@ public class OutputLifecycleTests
         var scenario = fixture.Register();
         TestOutputData.TestId = scenario.Guid;
         scenario.StartTime = DateTime.Now;
+        scenario.Status = Status.Pending;
         scenario.EndTime = DateTime.Now;
         for (var i = 0; i < count; i++) writer.Write('t');
         var allocated = GC.GetAllocatedBytesForCurrentThread() - before;

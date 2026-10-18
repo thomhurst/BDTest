@@ -71,6 +71,14 @@
                 {
                   <li><a href="~/bdtest/report/@currentTestReport.Id/all-scenarios?filterByStatus=NotImplemented" class="link-dark rounded nav-link indent-text-2">Not Implemented</a></li>
                 }
+                @if (metrics.AnyNotRun)
+                {
+                  <li><a href="~/bdtest/report/@currentTestReport.Id/all-scenarios?filterByStatus=NotRun" class="link-dark rounded nav-link indent-text-2">Not run</a></li>
+                }
+                @if (metrics.AnyPending)
+                {
+                  <li><a href="~/bdtest/report/@currentTestReport.Id/all-scenarios?filterByStatus=Pending" class="link-dark rounded nav-link indent-text-2">Pending</a></li>
+                }
                 @if (metrics.AnyInconclusive)
                 {
                   <li><a href="~/bdtest/report/@currentTestReport.Id/all-scenarios?filterByStatus=Inconclusive" class="link-dark rounded nav-link indent-text-2">Inconclusive</a></li>
@@ -90,7 +98,7 @@
               <li><a class="nav-link link-dark pb-0"><strong>Status:</strong></a></li>
               @{ var totalStatus = @currentTestReport.Scenarios.GetTotalStatus(); }
               <li>
-                <div class="d-grid"><button class="btn @totalStatus.GetCssColourValueForStatus() ms-4">@totalStatus</button></div></li>
+                <div class="d-grid"><button class="btn @totalStatus.GetCssColourValueForStatus() ms-4">@totalStatus.AsString()</button></div></li>
               @if (currentTestReport.Environment != null)
               {
                 <li><a class="nav-link link-dark pb-0"><strong>Environment:</strong></a></li>

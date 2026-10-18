@@ -53,6 +53,14 @@
             mainDropdownButton.innerHTML = 'Show Skipped';
             mainDropdownButton.className = "btn dropdown-toggle btn-warning";
             break;
+          case '@Status.NotRun':
+            mainDropdownButton.innerHTML = 'Show Not run';
+            mainDropdownButton.className = "btn dropdown-toggle btn-secondary";
+            break;
+          case '@Status.Pending':
+            mainDropdownButton.innerHTML = 'Show Pending';
+            mainDropdownButton.className = "btn dropdown-toggle btn-secondary";
+            break;
           case '@Status.Inconclusive':
             mainDropdownButton.innerHTML = 'Show Inconclusive';
             mainDropdownButton.className = "btn dropdown-toggle btn-warning";
@@ -231,7 +239,7 @@
 
             @foreach (var record in pager.ItemsForCurrentPage)
             {
-                var status = record.Status.ToString();
+                var status = record.Status.AsString();
                 if (record.Status == Status.Failed)
                 {
                     status += $" ({record.Counts.Failed})";

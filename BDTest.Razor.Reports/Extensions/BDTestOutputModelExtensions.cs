@@ -16,6 +16,14 @@ public class OutputMetrics
         {
             switch (scenario.Status)
             {
+                case Status.NotRun:
+                    AnyNotRun = true;
+                    AllPassed = false;
+                    break;
+                case Status.Pending:
+                    AnyPending = true;
+                    AllPassed = false;
+                    break;
                 case Status.Failed:
                     AnyFailed = true;
                     AllPassed = false;
@@ -47,6 +55,10 @@ public class OutputMetrics
 
         AnyWarnings = bdTestOutputModel.NotRun?.Any() == true;
     }
+
+    public bool AnyNotRun { get; }
+
+    public bool AnyPending { get; }
 
     public bool AnyPassed { get; }
 

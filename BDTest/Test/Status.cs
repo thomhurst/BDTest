@@ -1,24 +1,34 @@
-﻿using BDTest.Attributes;
+using BDTest.Output;
+using Newtonsoft.Json;
 
 namespace BDTest.Test;
 
+[JsonConverter(typeof(StatusConverter))]
 public enum Status
 {
-    [EnumOrder(5)] Passed,
-    [EnumOrder(1)] Failed,
-    [EnumOrder(3)] Inconclusive,
-    [EnumOrder(2)] NotImplemented,
-    [EnumOrder(4)] Skipped
+    /// <summary>Defined but not started, including steps that were never reached.</summary>
+    NotRun,
+    /// <summary>Execution has started and has not produced a result yet.</summary>
+    Pending,
+    Passed,
+    Failed,
+    /// <summary>Execution ended with a registered inconclusive exception.</summary>
+    Inconclusive,
+    NotImplemented,
+    Skipped
 }
-    
+
 public static class StatusExtensions
 {
-    public static int GetOrder(this Status status)
+    public static int GetOrder(this Status status) => status switch
     {
-        var enumType  = typeof(Status);
-        var memberInfos = enumType.GetMember(status.ToString());
-        var enumValueMemberInfo = memberInfos.FirstOrDefault(m => m.DeclaringType == enumType);
-        var valueAttributes = enumValueMemberInfo?.GetCustomAttributes(typeof(EnumOrderAttribute), false) ?? Array.Empty<object>();
-        return (valueAttributes.FirstOrDefault() as EnumOrderAttribute)?.Order ?? -1;
-    }
+        Status.Failed => 1,
+        Status.NotImplemented => 2,
+        Status.Inconclusive => 3,
+        Status.Skipped => 4,
+        Status.NotRun => 5,
+        Status.Pending => 6,
+        Status.Passed => 7,
+        _ => int.MaxValue
+    };
 }
