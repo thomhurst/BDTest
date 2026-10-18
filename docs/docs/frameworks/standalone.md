@@ -29,6 +29,8 @@ public class SmokeTests : BDTestBase
 
 Combine it with [`WithContext<T>`](../writing-tests/test-context.md#using-withcontext) for per-test state.
 
+For a typed context without inheriting a BDTest base class, use the [composition host](composition.md). It also associates metadata and retry hooks with your test instance and accepts an explicit run.
+
 ## `BDTestBuilder`
 
 `BDTestBuilder` is a `BDTestBase` that you create instead of inheriting. Each builder gets its own execution ID when it is constructed, so output written from async setup or `Task.Run` before the scenario uses the same ID as the scenario. **Create a new builder for each test.**

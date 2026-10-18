@@ -7,6 +7,8 @@ description: Connect BDTest to another test runner with BeginTest and EndTest, e
 
 An adapter connects BDTest to a test runner. The built-in adapters are small; each is a single base class. Write your own when you use a runner without an adapter, or when you need different lifecycle behaviour.
 
+To integrate without requiring test-class inheritance, create a [composition host](composition.md) with the runner's test instance and an explicit run. Its public `BeginTest` and `EndTest` methods use the same core lifecycle described below. Register the runner's outcome map on the run options before starting the run.
+
 ## Start from `AbstractContextBDTestBase<TContext>`
 
 ```csharp
