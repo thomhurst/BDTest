@@ -29,33 +29,34 @@ public class TestRunSummary
 
     private void SetCounts(BDTestOutputModel bdTestOutputModel)
     {
-        Counts.Total = bdTestOutputModel.Scenarios?.Count ?? 0;
-        Counts.NotRun = bdTestOutputModel.NotRun?.Count ?? 0;
+        var counts = Counts ??= new();
+        counts.Total = bdTestOutputModel.Scenarios?.Count ?? 0;
+        counts.NotRun = bdTestOutputModel.NotRun?.Count ?? 0;
 
         foreach (var scenario in bdTestOutputModel.Scenarios ?? Enumerable.Empty<Scenario>())
         {
             switch (scenario.Status)
             {
                 case Status.NotRun:
-                    Counts.NotRun++;
+                    counts.NotRun++;
                     break;
                 case Status.Pending:
-                    Counts.Pending++;
+                    counts.Pending++;
                     break;
                 case Status.Passed:
-                    Counts.Passed++;
+                    counts.Passed++;
                     break;
                 case Status.Failed:
-                    Counts.Failed++;
+                    counts.Failed++;
                     break;
                 case Status.Inconclusive:
-                    Counts.Inconclusive++;
+                    counts.Inconclusive++;
                     break;
                 case Status.NotImplemented:
-                    Counts.NotImplemented++;
+                    counts.NotImplemented++;
                     break;
                 case Status.Skipped:
-                    Counts.Skipped++;
+                    counts.Skipped++;
                     break;
                 default:
                     throw new ArgumentOutOfRangeException();
@@ -64,7 +65,7 @@ public class TestRunSummary
     }
         
     [JsonInclude]
-    public string RecordId { get; set; }
+    public string? RecordId { get; set; }
     [JsonInclude]
     public DateTime StartedAtDateTime { get; set; }
     [JsonInclude]
@@ -72,17 +73,17 @@ public class TestRunSummary
     [JsonInclude]
     public Status Status { get; set; }
     [JsonInclude]
-    public Counts Counts { get; set; } = new();
+    public Counts? Counts { get; set; } = new();
     [JsonInclude]
-    public string Tag { get; set; }
+    public string? Tag { get; set; }
     [JsonInclude]
-    public string Environment { get; set; }
+    public string? Environment { get; set; }
     [JsonInclude]
-    public string BranchName { get; set; }
+    public string? BranchName { get; set; }
     [JsonInclude]
-    public string MachineName { get; set; }
+    public string? MachineName { get; set; }
     [JsonInclude]
-    public string Version { get; set; }
+    public string? Version { get; set; }
 }
 
 public class Counts

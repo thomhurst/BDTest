@@ -20,14 +20,14 @@ public class RunFilter
 
     private static readonly string[] Ranges = { Last30Days, Last7Days, Today, ThisMonth, AnyTime };
 
-    public string Search { get; set; }
-    public string Tag { get; set; }
-    public string Environment { get; set; }
-    public string Branch { get; set; }
-    public string Machine { get; set; }
+    public string? Search { get; set; }
+    public string? Tag { get; set; }
+    public string? Environment { get; set; }
+    public string? Branch { get; set; }
+    public string? Machine { get; set; }
 
     /// <summary>"Passed" or "Failed", or empty for any status.</summary>
-    public string Status { get; set; }
+    public string? Status { get; set; }
 
     /// <summary>One of the range constants.</summary>
     public string Range { get; set; } = AnyTime;
@@ -37,7 +37,7 @@ public class RunFilter
 
     public static RunFilter FromQuery(IQueryCollection query, string defaultRange = AnyTime)
     {
-        string Read(string name, string placeholder = null)
+        string? Read(string name, string? placeholder = null)
         {
             var value = query.TryGetValue(name, out var values) ? values.ToString() : null;
             // Older report server links used "All Tags" and similar as the no-filter value.
@@ -103,11 +103,11 @@ public class RunFilter
         };
     }
 
-    public string CustomRangeValue => CustomRange is { } custom
+    public string? CustomRangeValue => CustomRange is { } custom
         ? custom.Start.ToString("o", CultureInfo.InvariantCulture) + ".." + custom.End.ToString("o", CultureInfo.InvariantCulture)
         : null;
 
-    public static string RangeLabel(string range) => range switch
+    public static string RangeLabel(string? range) => range switch
     {
         Last7Days => "Last 7 days",
         Last30Days => "Last 30 days",
@@ -127,10 +127,10 @@ public class RunFilter
         if (Branch != null) yield return new("branch", Branch);
         if (Machine != null) yield return new("machine", Machine);
         if (includeSearchAndStatus && Status != null) yield return new("status", Status);
-        if (CustomRange is { } custom)
+        if (CustomRangeValue is { } customRangeValue)
         {
             yield return new("range", Custom);
-            yield return new("datetimerange", CustomRangeValue);
+            yield return new("datetimerange", customRangeValue);
         }
         else
         {
@@ -146,10 +146,10 @@ public class RunFilter
         return parts.Count == 0 ? string.Empty : "?" + string.Join("&", parts);
     }
 
-    private static bool Matches(string expected, string actual) =>
+    private static bool Matches(string? expected, string? actual) =>
         expected == null || string.Equals(expected, actual, StringComparison.Ordinal);
 
     private bool MatchesSearch(TestRunSummary record) =>
         new[] { record.Tag, record.Environment, record.BranchName, record.MachineName, record.Version, record.RecordId }
-            .Any(value => value?.Contains(Search, StringComparison.OrdinalIgnoreCase) == true);
+            .Any(value => Search != null && value?.Contains(Search, StringComparison.OrdinalIgnoreCase) == true);
 }

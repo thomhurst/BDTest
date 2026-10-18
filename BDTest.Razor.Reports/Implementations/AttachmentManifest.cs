@@ -22,7 +22,7 @@ internal static class AttachmentManifest
                 || string.IsNullOrWhiteSpace(file.Name) || file.Name.Length > 255
                 || file.Name.Any(character => char.IsControl(character) || character is '/' or '\\')
                 || file.MimeType == null || file.MimeType.Length > 256 || file.MimeType.Any(char.IsControl)
-                || !MediaTypeHeaderValue.TryParse(file.MimeType, out var mime) || mime.MediaType.Contains('*')
+                || !MediaTypeHeaderValue.TryParse(file.MimeType, out var mime) || mime.MediaType == null || mime.MediaType.Contains('*')
                 || file.Uri != null)
                 return false;
             if (enforceUploadLimits) total += file.Length;

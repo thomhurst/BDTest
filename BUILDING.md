@@ -1,13 +1,15 @@
 # Build settings and diagnostic rollout
 
-`Directory.Build.props` owns shared `LangVersion=latest` and
-`ImplicitUsings=enable` settings. Projects inherit them. Keep existing target
+`Directory.Build.props` owns shared `LangVersion=latest`,
+`ImplicitUsings=enable`, `Nullable=enable` and `TreatWarningsAsErrors=true`
+settings unconditionally. All projects inherit them, including newly added projects. Keep existing target
 frameworks. `BDTest.Razor.Reports` uses the Razor SDK's default language version,
 compiled views, and static web asset packaging without per-file content overrides.
 
 ## Completed scopes
 
-`Nullable=enable` and `TreatWarningsAsErrors=true` are set centrally for:
+`Nullable=enable` and `TreatWarningsAsErrors=true` apply to the entire repository.
+The rollout covered:
 
 - `BDTest.Pipeline` and `BDTest.Pipeline.Tests` (the initial rollout in #689).
 - `BDTest.Example` and `BDTest.ReportGenerator.RazorServer`.
@@ -18,6 +20,9 @@ compiled views, and static web asset packaging without per-file content override
   packages already used nullable analysis; they now also treat warnings as errors.
 - `BDTest` and the NUnit, xUnit, MSTest and TUnit adapters (#920), on every
   existing target framework.
+- `BDTest.Razor.Reports`, its compiled views and `BDTest.ReportGenerator.Tests`
+  (#921), completing the rollout.
+- `BDTest.Contracts` and its tests, which now inherit the same central settings.
 
 Test fields initialized by framework setup hooks use `null!` only at declaration,
 with their lifecycle documented. Values absent before setup or execution remain
@@ -52,14 +57,26 @@ Run every `*Tests.csproj` with `dotnet test <project> -c Release`, except
 `BDTest.TUnit.Tests`, which uses `dotnet run --project BDTest.TUnit.Tests -c Release`.
 Do not run the publishing pipeline in `Production` locally.
 
-## Remaining rollout
+## Completed nullable rollout
 
-#855 was split into sibling deliverables under roadmap #860. #919, #922 and #920
-are complete. #921 remains: `BDTest.Razor.Reports` and
-`BDTest.ReportGenerator.Tests`. Review options, storage, request values, serialized
-models and views. Complete the rollout by making both settings unconditional in
-`Directory.Build.props` and removing redundant per-project settings and remaining
-per-file nullable directives.
+#855 was split into sibling deliverables under roadmap #860. #919, #922, #920
+and #921 are complete. No per-project nullable overrides or per-file nullable
+directives remain. Keep the existing `CS1591` suppression for partially documented
+public APIs; completing XML documentation is outside this rollout.
+
+Reporting annotations preserve optional policies, upload keys, request filters,
+custom-link values and adjacent-scenario navigation. Missing reports and attachment
+streams return null. Legacy model stores accept a null model, including a JSON
+`null` root forwarded by the storage bridge. Summary and index JSON retain omitted
+field defaults and explicit null identifiers, counts and optional metadata; storage
+writes still require a record ID. Views handle absent historical collections and
+counts without changing stored data. Required MVC context and embedded assets fail
+explicitly when missing. No nullable warning categories are suppressed.
+
+`ReportNullableContractTests` covers summary serialization, optional host setup,
+missing storage results, legacy null roots, query removal and historical rendering.
+The report host tests preserve null configuration and missing-blob fixtures, and
+use explicit nullable test state and responses.
 
 Core annotations preserve optional caller metadata, run descriptors, factories,
 services, missing story attributes, unexecuted output and deserialized report
@@ -74,17 +91,6 @@ non-null getters with nullable setter inputs. No nullable directives or warning
 suppressions are added. Tests cover accepted nulls, omitted historical fields,
 null JSON roots and lazy argument values. See
 [consumer migration notes](docs/docs/migration/target-frameworks.md#nullable-reference-contracts).
-
-The remaining projects keep their existing diagnostic settings in this change.
-
-Keep the existing `CS1591` suppression for partially documented public APIs;
-completing XML documentation is separate from nullable analysis. The shared
-exception registration probe now inherits nullable analysis from every consumer;
-its per-file directive is no longer needed. The historical report fixture keeps an
-explicit nullable context until the report host test project enables nullable
-analysis in #921.
-Do not disable diagnostic categories or blanket-annotate public APIs to complete
-these scopes.
 
 ## Package and assembly versions (#856)
 
@@ -179,8 +185,8 @@ with `dotnet test BDTest.Pipeline.Tests -c Release --filter FullyQualifiedName~P
 
 ## Independent report contracts (#933)
 
-`BDTest.Contracts` targets `netstandard2.0` and enables nullable analysis and
-warnings-as-errors in its project. It has no reference to the execution package.
+`BDTest.Contracts` targets `netstandard2.0` and inherits nullable analysis and
+warnings-as-errors from `Directory.Build.props`. It has no reference to the execution package.
 `BDTest.Contracts.Tests` runs contract immutability and serialization checks with
 only a project reference to contracts. The package opts into the same metadata,
 strong-name signing, symbols and validation as the other runtime packages.

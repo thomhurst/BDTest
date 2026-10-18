@@ -124,7 +124,7 @@ public class HistoryTests
             Regex.Match(Required(segment.Attribute("style")).Value, @"height: ([\d.]+)%").Groups[1].Value,
             CultureInfo.InvariantCulture)).ToList();
         Assert.That(heights.Sum(), Is.EqualTo(100).Within(0.05), "All scenario results fill the chart, without declared tests.");
-        Assert.That(heights[0], Is.EqualTo(100.0 / run.Counts.Total).Within(0.01));
+        Assert.That(heights[0], Is.EqualTo(100.0 / Required(run.Counts).Total).Within(0.01));
         Assert.That(segments.Count(segment => (string?)segment.Attribute("class") == "bg-r"),
             Is.EqualTo(unfinished > 0 ? 2 : 1), "Pending and unfinished scenarios each have a segment.");
 
@@ -191,9 +191,9 @@ public class HistoryTests
         run.StartedAtDateTime = started;
         run.FinishedAtDateTime = started.AddSeconds(90 + failed * 10);
         run.Status = failed > 0 ? Status.Failed : Status.Passed;
-        run.Counts.Failed = failed;
-        run.Counts.Passed = 10 - failed;
-        run.Counts.Total = 10;
+        Required(run.Counts).Failed = failed;
+        Required(run.Counts).Passed = 10 - failed;
+        Required(run.Counts).Total = 10;
         return run;
     }
 

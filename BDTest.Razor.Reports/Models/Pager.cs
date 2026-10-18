@@ -4,19 +4,19 @@ public class Pager<T>
 {
     public T[] AllItems { get; }
 
-    public Pager(T[] allItems, string currentPageString) : 
+    public Pager(T[] allItems, string? currentPageString) :
         this(allItems, currentPageString, 25, int.MaxValue)
     {
     }
         
-    public Pager(T[] allItems, string currentPageString, int pageSize) : 
+    public Pager(T[] allItems, string? currentPageString, int pageSize) :
         this(allItems, currentPageString, pageSize, int.MaxValue)
     {
     }
         
     public Pager(
         T[] allItems,
-        string currentPageString,
+        string? currentPageString,
         int pageSize,
         int maxPages)
     {

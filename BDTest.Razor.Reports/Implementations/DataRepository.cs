@@ -14,17 +14,17 @@ namespace BDTest.Razor.Reports.Implementations;
 internal class DataRepository : IDataRepository
 {
     private readonly IMemoryCacheBdTestDataStore _memoryCacheBdTestDataStore;
-    private readonly IReportStore _reportStore;
-    private readonly IRunIndexStore _runIndexStore;
+    private readonly IReportStore? _reportStore;
+    private readonly IRunIndexStore? _runIndexStore;
     private readonly SemaphoreSlim _historyLock = new(1, 1);
     private bool _historyLoaded;
-    private readonly IBDTestAttachmentStore _attachmentStore;
+    private readonly IBDTestAttachmentStore? _attachmentStore;
     private readonly ReportAttachmentGate _attachmentGate;
-    private readonly ILogger<DataRepository> _logger;
+    private readonly ILogger<DataRepository>? _logger;
 
     public DataRepository(IMemoryCacheBdTestDataStore memoryCacheBdTestDataStore, ReportAttachmentGate attachmentGate,
-        IBDTestDataStore dataStore = null, IReportStore reportStore = null, IRunIndexStore runIndexStore = null,
-        IBDTestAttachmentStore attachmentStore = null, ILogger<DataRepository> logger = null)
+        IBDTestDataStore? dataStore = null, IReportStore? reportStore = null, IRunIndexStore? runIndexStore = null,
+        IBDTestAttachmentStore? attachmentStore = null, ILogger<DataRepository>? logger = null)
     {
         _attachmentGate = attachmentGate;
         _logger = logger;
@@ -37,17 +37,17 @@ internal class DataRepository : IDataRepository
         _runIndexStore = runIndexStore ?? dataStore as IRunIndexStore ?? legacy;
     }
 
-    public async Task<BDTestOutputModel> GetData(string reportId, CancellationToken cancellationToken)
+    public async Task<BDTestOutputModel?> GetData(string reportId, CancellationToken cancellationToken)
     {
         // A read that fills the cache must finish before deletion invalidates it.
         using var lease = await _attachmentGate.EnterAsync(reportId, cancellationToken);
         return await GetData(reportId, cancellationToken, cacheResult: true);
     }
 
-    public Task<BDTestOutputModel> GetDataForBulkRead(string reportId, CancellationToken cancellationToken)
+    public Task<BDTestOutputModel?> GetDataForBulkRead(string reportId, CancellationToken cancellationToken)
         => GetData(reportId, cancellationToken, cacheResult: false);
 
-    private async Task<BDTestOutputModel> GetData(string reportId, CancellationToken cancellationToken, bool cacheResult)
+    private async Task<BDTestOutputModel?> GetData(string reportId, CancellationToken cancellationToken, bool cacheResult)
     {
         var model = cacheResult
             ? await _memoryCacheBdTestDataStore.GetTestDataAndRefreshRetention(reportId, cancellationToken)
@@ -69,7 +69,7 @@ internal class DataRepository : IDataRepository
         return model;
     }
 
-    public Task<Stream> OpenReadAsync(string reportId, CancellationToken cancellationToken)
+    public Task<Stream?> OpenReadAsync(string reportId, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
         // Persistent bytes are authoritative, including their original JSON formatting.
@@ -80,7 +80,7 @@ internal class DataRepository : IDataRepository
     {
         if (_historyLoaded || _runIndexStore == null) return;
         // Callers hold _historyLock so deletion cannot race a persisted snapshot.
-        string continuation = null;
+        string? continuation = null;
         do
         {
             var page = await _runIndexStore.ListAsync(new RunIndexQuery
@@ -132,7 +132,7 @@ internal class DataRepository : IDataRepository
             await JsonSerializer.SerializeAsync(stream, model, BDTestJsonContext.Default.BDTestOutputModel, cancellationToken);
             stream.Position = 0;
             await _reportStore.WriteAsync(reportId, stream, cancellationToken);
-            await _runIndexStore.UpsertAsync(model.GetOverview().ToRunIndexEntry(), cancellationToken);
+            await (_runIndexStore ?? throw new InvalidOperationException("A report store requires a run index store.")).UpsertAsync(model.GetOverview().ToRunIndexEntry(), cancellationToken);
         }
         cancellationToken.ThrowIfCancellationRequested();
         await _memoryCacheBdTestDataStore.StoreTestData(reportId, model);
@@ -157,7 +157,7 @@ internal class DataRepository : IDataRepository
         await _historyLock.WaitAsync(cancellationToken);
         try
         {
-            Exception failure = null;
+            Exception? failure = null;
             var deleted = false;
             try
             {

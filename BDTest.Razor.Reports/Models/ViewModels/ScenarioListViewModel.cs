@@ -8,7 +8,7 @@ public class ScenarioListViewModel
     public const string GroupByStory = "story";
     public const string GroupByNone = "none";
 
-    public string ReportId { get; set; }
+    public string? ReportId { get; set; }
 
     /// <summary>Scenarios that match every filter, in display order.</summary>
     public IReadOnlyList<Scenario> Scenarios { get; set; } = new List<Scenario>();
@@ -25,11 +25,11 @@ public class ScenarioListViewModel
     public bool GroupFixed { get; set; }
 
     /// <summary>Selected statuses, or null for every status.</summary>
-    public IReadOnlySet<Status> Statuses { get; set; }
+    public IReadOnlySet<Status>? Statuses { get; set; }
 
     public IReadOnlyList<string> Tags { get; set; } = new List<string>();
 
-    public Scenario Selected { get; set; }
+    public Scenario? Selected { get; set; }
 }
 
 public class ScenarioToolbarViewModel

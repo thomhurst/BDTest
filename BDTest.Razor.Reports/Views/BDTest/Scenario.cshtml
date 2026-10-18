@@ -38,7 +38,7 @@
     var file = string.IsNullOrEmpty(Model.FileName) ? null : Model.FileName.Replace('\\', '/');
     var fileName = file?.Split('/')[^1];
 
-    string ScenarioUrl(Scenario scenario) => Url.ReportScenario(reportId, scenario.Guid);
+    string? ScenarioUrl(Scenario scenario) => Url.ReportScenario(reportId, scenario.Guid);
 }
 
 <section class="page-head padded" aria-label="Scenario">
@@ -128,7 +128,7 @@
                         </div>
                         @if (failingStep != null)
                         {
-                            <p class="small muted">At step @failingNumber, “@failingStep.StepText”@(attempts > 1 && Model.Attempts.All(attempt => attempt.Status == Status.Failed) ? ", on every attempt" : "").</p>
+                            <p class="small muted">At step @failingNumber, “@failingStep.StepText”@(attempts > 1 && Model.Attempts?.All(attempt => attempt.Status == Status.Failed) == true ? ", on every attempt" : "").</p>
                         }
                     </div>
                     <div class="card-pad" style="gap: 10px; padding-top: 16px">
@@ -373,7 +373,7 @@
         return new Microsoft.AspNetCore.Html.HtmlString(html);
     }
 
-    private Microsoft.AspNetCore.Html.IHtmlContent OutputSection(string title, string content)
+    private Microsoft.AspNetCore.Html.IHtmlContent OutputSection(string title, string? content)
     {
         if (string.IsNullOrEmpty(content))
         {

@@ -11,7 +11,7 @@ public class UserPersonalizerTests
     [TestCase(true, null, null)]
     [TestCase(false, "Anonymous name", null)]
     [TestCase(false, null, null)]
-    public void OnlyAuthenticatedUserNamesAreShown(bool authenticated, string name, string expected)
+    public void OnlyAuthenticatedUserNamesAreShown(bool authenticated, string? name, string? expected)
     {
         var claims = name == null ? Array.Empty<Claim>() : new[] { new Claim(ClaimTypes.Name, name) };
         var context = new DefaultHttpContext

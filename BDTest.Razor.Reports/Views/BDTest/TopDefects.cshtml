@@ -4,7 +4,8 @@
 @using BDTest.Test
 @model BDTest.Maps.BDTestOutputModel
 @{
-    var run = (ReportLayoutViewModel)ViewData[nameof(ReportLayoutViewModel)];
+    var run = ViewData[nameof(ReportLayoutViewModel)] as ReportLayoutViewModel
+        ?? throw new InvalidOperationException("The report layout model is required for this view.");
     ViewBag.Title = run.Title + " failures";
     ViewData["RunTab"] = "failures";
     Layout = "_Layout";

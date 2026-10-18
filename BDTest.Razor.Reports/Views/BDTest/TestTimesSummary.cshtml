@@ -6,7 +6,8 @@
 @model BDTest.Maps.BDTestOutputModel
 @inject IDataRepository DataRepository
 @{
-    var run = (ReportLayoutViewModel)ViewData[nameof(ReportLayoutViewModel)];
+    var run = ViewData[nameof(ReportLayoutViewModel)] as ReportLayoutViewModel
+        ?? throw new InvalidOperationException("The report layout model is required for this view.");
     ViewBag.Title = run.Title + " timings";
     ViewData["RunTab"] = "timings";
     Layout = "_Layout";

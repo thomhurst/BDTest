@@ -9,7 +9,7 @@ public static class QueryUrl
     /// The current local URL with some query values changed. A null value removes the parameter.
     /// An optional path replaces the current path (it is combined with the path base).
     /// </summary>
-    public static string GetLocalUrlWith(this HttpContext httpContext, string path, params (string Name, string Value)[] changes)
+    public static string GetLocalUrlWith(this HttpContext httpContext, string? path, params (string Name, string? Value)[] changes)
     {
         var query = HttpUtility.ParseQueryString(httpContext.Request.QueryString.Value ?? string.Empty);
         foreach (var (name, value) in changes)
@@ -31,6 +31,6 @@ public static class QueryUrl
         return string.IsNullOrEmpty(queryString) ? basePath : basePath + "?" + queryString;
     }
 
-    public static string GetLocalUrlWith(this HttpContext httpContext, params (string Name, string Value)[] changes) =>
+    public static string GetLocalUrlWith(this HttpContext httpContext, params (string Name, string? Value)[] changes) =>
         httpContext.GetLocalUrlWith(null, changes);
 }

@@ -15,7 +15,7 @@
     var filterQuery = RunFilter.ToQueryString(filter.ToQuery(false));
 
     var passedRuns = runs.Count(run => run.RunResult() == Status.Passed);
-    var rates = runs.Where(run => run.Counts.Total > 0).Select(run => (double)run.Counts.Passed / run.Counts.Total * 100).ToList();
+    var rates = runs.Select(run => run.Counts).OfType<Counts>().Where(counts => counts.Total > 0).Select(counts => (double)counts.Passed / counts.Total * 100).ToList();
     var durations = runs.Select(Duration).Where(duration => duration > TimeSpan.Zero).OrderBy(duration => duration).ToList();
 
     // Stacked from the bottom: passed, then the outcomes that need a look, with failures on top.
@@ -23,7 +23,7 @@
     {
         (Status.Passed, "p"), (Status.Skipped, "s"), (Status.Pending, "r"), (Status.NotRun, "r"), (Status.Inconclusive, "i"), (Status.NotImplemented, "n"), (Status.Failed, "f")
     };
-    var maxScenarios = Math.Max(1, chartRuns.Select(run => run.Counts.Total).DefaultIfEmpty(0).Max());
+    var maxScenarios = Math.Max(1, chartRuns.Select(run => run.Counts?.Total ?? 0).DefaultIfEmpty(0).Max());
     var axisDates = AxisIndexes(chartRuns.Count).Select(index => chartRuns[index].StartedAtDateTime.ToDay()).ToList();
 
     var seconds = chartRuns.Select(run => Duration(run).TotalSeconds).ToList();
@@ -138,7 +138,7 @@
                 <div class="plot" aria-hidden="true">
                     @for (var index = 0; index < chartRuns.Count; index++)
                     {
-                        <a class="dot @(chartRuns[index].Counts.Failed > 0 ? "f" : "")" href="@RunUrl(chartRuns[index])" tabindex="-1" title="@chartRuns[index].StartedAtDateTime.ToRunDate() · @Duration(chartRuns[index]).ToShortDuration()" style="left: @F(X(index))%; top: @F(Y(seconds[index]))%"></a>
+                        <a class="dot @(chartRuns[index].Counts?.Failed > 0 ? "f" : "")" href="@RunUrl(chartRuns[index])" tabindex="-1" title="@chartRuns[index].StartedAtDateTime.ToRunDate() · @Duration(chartRuns[index]).ToShortDuration()" style="left: @F(X(index))%; top: @F(Y(seconds[index]))%"></a>
                     }
                 </div>
             </div>
@@ -161,13 +161,14 @@
                     <tbody>
                     @foreach (var run in runs.Reverse().Take(30))
                     {
-                        var other = run.Counts.Total - run.Counts.Failed - run.Counts.Passed;
+                        var counts = run.Counts ?? new Counts();
+                        var other = counts.Total - counts.Failed - counts.Passed;
                         <tr>
                             <td style="white-space: nowrap"><a class="lnk" href="@RunUrl(run)">@run.StartedAtDateTime.ToRunDate(includeYear: false)</a></td>
                             <td>@run.RunResult().Pill()</td>
-                            <td class="num">@run.Counts.Failed</td>
+                            <td class="num">@counts.Failed</td>
                             <td class="num">@other</td>
-                            <td class="num">@run.Counts.Passed</td>
+                            <td class="num">@counts.Passed</td>
                             <td class="num">@Duration(run).ToShortDuration()</td>
                         </tr>
                     }
@@ -183,22 +184,26 @@
     private static TimeSpan Duration(TestRunSummary run) =>
         run.FinishedAtDateTime > run.StartedAtDateTime ? run.FinishedAtDateTime - run.StartedAtDateTime : TimeSpan.Zero;
 
-    private static int Count(TestRunSummary run, Status status) => status switch
+    private static int Count(TestRunSummary run, Status status)
     {
-        Status.Passed => run.Counts.Passed,
-        Status.Failed => run.Counts.Failed,
-        Status.Skipped => run.Counts.Skipped,
-        Status.Pending => run.Counts.Pending,
-        Status.Inconclusive => run.Counts.Inconclusive,
-        Status.NotImplemented => run.Counts.NotImplemented,
-        // Counts.NotRun also includes declared tests; Total counts only scenarios.
-        Status.NotRun => Math.Max(0, run.Counts.Total - run.Counts.Passed - run.Counts.Failed - run.Counts.Skipped
-            - run.Counts.Pending - run.Counts.Inconclusive - run.Counts.NotImplemented),
-        _ => 0
-    };
+        if (run.Counts is not { } counts) return 0;
+        return status switch
+        {
+            Status.Passed => counts.Passed,
+            Status.Failed => counts.Failed,
+            Status.Skipped => counts.Skipped,
+            Status.Pending => counts.Pending,
+            Status.Inconclusive => counts.Inconclusive,
+            Status.NotImplemented => counts.NotImplemented,
+            // Counts.NotRun also includes declared tests; Total counts only scenarios.
+            Status.NotRun => Math.Max(0, counts.Total - counts.Passed - counts.Failed - counts.Skipped
+                - counts.Pending - counts.Inconclusive - counts.NotImplemented),
+            _ => 0
+        };
+    }
 
     private static string BarLabel(TestRunSummary run) =>
-        $"{run.StartedAtDateTime.ToRunDate()}: {run.Counts.Failed} failed, {run.Counts.Passed} passed";
+        $"{run.StartedAtDateTime.ToRunDate()}: {run.Counts?.Failed ?? 0} failed, {run.Counts?.Passed ?? 0} passed";
 
     // Up to five evenly spaced positions for date labels, always including the first and last run.
     private static IEnumerable<int> AxisIndexes(int count)

@@ -23,13 +23,16 @@ Both assets retain the source-generated `System.Text.Json` serialization paths a
 
 ## Nullable reference contracts
 
-The core library and the NUnit, xUnit, MSTest and TUnit adapters now publish nullable reference annotations on every supported target. These annotations describe existing optional values and do not change runtime signatures, target frameworks or report JSON. Consumers with nullable analysis enabled may see new warnings where a value can already be absent.
+The core library, NUnit, xUnit, MSTest and TUnit adapters, and Razor reports now publish nullable reference annotations on every supported target. These annotations describe existing optional values and do not change runtime signatures, target frameworks or report JSON. Consumers with nullable analysis enabled may see new warnings where a value can already be absent.
 
 - `BDTestOptions.ContextFactory` and `Services`, and `ContextCreation.Services`, are optional. Check the service provider before using it in a custom factory. Factory methods must return a non-null context.
 - Caller member, file and argument-expression parameters accept `null` when compiler metadata is unavailable. Custom builder wrappers should preserve those nullable parameters and forward their values unchanged.
 - `BDTestContext.CurrentScenario` can be `null` before a scenario exists, including while an outline row is being constructed. `Scenario.Run` is `null` in deserialized reports. `Scenario.BdTestBaseClass` can also be `null` after its fixture is collected.
 - Scenario, step and exception report fields that can be absent now use nullable types. Check optional text, identifiers and exceptions before dereferencing them; see [JSON data](../reports/json-data.md#nullable-report-fields).
 - The MSTest adapter's injected `TestContext` is nullable before runner initialization and in manual harnesses. Check it before reading runner metadata.
+- Reporting options keep nullable authorization policies and upload keys. `AddBDTestReports(null)` uses default options. Custom link text/URLs, absent query values and optional view-model navigation can be null.
+- `IBDTestDataStore.GetTestData` returns `Task<BDTestOutputModel?>`; legacy `StoreTestData` accepts `BDTestOutputModel?`. Update custom implementations to match these annotations. Missing report/attachment streams also return null; see [storage migration](report-storage.md).
+- `TestRunSummary` and `RunIndexEntry` identifiers, counts and optional metadata can be null in stored JSON. Omitted counts still default to an empty counts object. Check them before dereferencing; writes still need a record ID.
 - `BDTestJsonHelper.Deserialize` and `DeserializeAsync` return `null` for a JSON `null` root. Check the result before reading report fields.
 
 On the .NET 8 asset, the protected `BDTestException` constructor for formatter-based serialization is now marked obsolete, matching the runtime's obsolete serialization API. Custom exceptions should use the ordinary message and inner-exception constructors.

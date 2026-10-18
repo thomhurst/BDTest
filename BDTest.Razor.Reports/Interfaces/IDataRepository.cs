@@ -1,4 +1,3 @@
-#nullable enable
 using BDTest.Maps;
 using BDTest.Razor.Reports.Models;
 using BDTest.Razor.Reports.Storage;

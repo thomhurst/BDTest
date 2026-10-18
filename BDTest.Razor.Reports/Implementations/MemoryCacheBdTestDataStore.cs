@@ -19,9 +19,9 @@ public class MemoryCacheBdTestDataStore : IMemoryCacheBdTestDataStore, IDisposab
     private readonly object _reportCacheLock = new();
     private readonly long _reportCacheCapacity;
     private readonly bool _hasPersistentStorage;
-    private readonly IBDTestAttachmentStore _attachmentStore;
+    private readonly IBDTestAttachmentStore? _attachmentStore;
     private readonly ReportAttachmentGate _attachmentGate;
-    private readonly ILogger<MemoryCacheBdTestDataStore> _logger;
+    private readonly ILogger<MemoryCacheBdTestDataStore>? _logger;
     private readonly ConcurrentDictionary<string, TestRunSummary> _testRunSummariesDictionary = new();
     private List<TestRunSummary> _testRunSummaries = new();
     private readonly object _testRunSummariesLock = new();
@@ -34,10 +34,15 @@ public class MemoryCacheBdTestDataStore : IMemoryCacheBdTestDataStore, IDisposab
     }
 
     /// <summary>Creates a dedicated bounded report cache using the report server policy.</summary>
+    /// <param name="testRecordCache">Retained for compatibility; full reports use a dedicated cache.</param>
+    /// <param name="options">The report cache policy.</param>
+    /// <param name="attachmentGate">Optional shared attachment gate; defaults to a new gate.</param>
+    /// <param name="attachmentStore">Optional attachment storage for expiration cleanup.</param>
+    /// <param name="logger">Optional logger for cleanup failures.</param>
     /// <param name="hasPersistentStorage">Whether another store retains reports when this cache evicts them.</param>
     public MemoryCacheBdTestDataStore(IMemoryCache testRecordCache, IOptions<BDTestReportOptions> options,
-        ReportAttachmentGate attachmentGate = null, IBDTestAttachmentStore attachmentStore = null,
-        ILogger<MemoryCacheBdTestDataStore> logger = null, bool hasPersistentStorage = false)
+        ReportAttachmentGate? attachmentGate = null, IBDTestAttachmentStore? attachmentStore = null,
+        ILogger<MemoryCacheBdTestDataStore>? logger = null, bool hasPersistentStorage = false)
     {
         _options = options.Value;
         _attachmentGate = attachmentGate ?? new ReportAttachmentGate();
@@ -52,17 +57,17 @@ public class MemoryCacheBdTestDataStore : IMemoryCacheBdTestDataStore, IDisposab
         });
     }
 
-    public Task<BDTestOutputModel> GetTestData(string id, CancellationToken cancellationToken)
+    public Task<BDTestOutputModel?> GetTestData(string id, CancellationToken cancellationToken)
         => GetTestData(id, cancellationToken, refreshRetention: false);
 
-    Task<BDTestOutputModel> IMemoryCacheBdTestDataStore.GetTestDataAndRefreshRetention(string id,
+    Task<BDTestOutputModel?> IMemoryCacheBdTestDataStore.GetTestDataAndRefreshRetention(string id,
         CancellationToken cancellationToken)
         => GetTestData(id, cancellationToken, refreshRetention: true);
 
-    private async Task<BDTestOutputModel> GetTestData(string id, CancellationToken cancellationToken, bool refreshRetention)
+    private async Task<BDTestOutputModel?> GetTestData(string id, CancellationToken cancellationToken, bool refreshRetention)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        CachedReport report;
+        CachedReport? report;
         lock (_reportCacheLock)
         {
             var cache = _testRecordCache;
@@ -89,7 +94,7 @@ public class MemoryCacheBdTestDataStore : IMemoryCacheBdTestDataStore, IDisposab
         return Task.FromResult(Volatile.Read(ref _testRunSummaries).AsEnumerable());
     }
 
-    public Task StoreTestData(string id, BDTestOutputModel data)
+    public Task StoreTestData(string id, BDTestOutputModel? data)
     {
         long size;
         using (var counter = new ByteCountingStream())
@@ -101,7 +106,7 @@ public class MemoryCacheBdTestDataStore : IMemoryCacheBdTestDataStore, IDisposab
         return Task.CompletedTask;
     }
 
-    private void CacheReport(string id, object data, long size, bool allowOversizedBypass = true)
+    private void CacheReport(string id, object? data, long size, bool allowOversizedBypass = true)
     {
         lock (_reportCacheLock)
         {
@@ -119,7 +124,7 @@ public class MemoryCacheBdTestDataStore : IMemoryCacheBdTestDataStore, IDisposab
             }
 
             cache.Remove(id);
-            while (cache.GetCurrentStatistics().CurrentEstimatedSize > _reportCacheCapacity - size)
+            while ((cache.GetCurrentStatistics() ?? throw new InvalidOperationException("Report cache statistics must be enabled.")).CurrentEstimatedSize > _reportCacheCapacity - size)
             {
                 // Free least-recently-used entries in batches; always remove at least one entry.
                 cache.Compact(Math.Min(1, Math.Max(0.25, 2.0 / cache.Count)));
@@ -153,7 +158,7 @@ public class MemoryCacheBdTestDataStore : IMemoryCacheBdTestDataStore, IDisposab
             {
                 if (_testRecordCache.TryGetValue(reportId, out _)) return;
             }
-            await _attachmentStore.DeleteReportAsync(reportId);
+            if (_attachmentStore != null) await _attachmentStore.DeleteReportAsync(reportId);
         }
         catch (Exception exception)
         {
@@ -161,7 +166,7 @@ public class MemoryCacheBdTestDataStore : IMemoryCacheBdTestDataStore, IDisposab
         }
     }
 
-    private sealed record CachedReport(object Value, long Size);
+    private sealed record CachedReport(object? Value, long Size);
 
     // Serialize UTF-8 incrementally; retain only the byte count, never the JSON payload.
     private sealed class ByteCountingStream : Stream
@@ -191,7 +196,7 @@ public class MemoryCacheBdTestDataStore : IMemoryCacheBdTestDataStore, IDisposab
     {
         lock (_testRunSummariesLock)
         {
-            _testRunSummariesDictionary.TryAdd(testRunSummary.RecordId, testRunSummary);
+            _testRunSummariesDictionary.TryAdd(testRunSummary.RecordId ?? throw new ArgumentException("A run record ID is required.", nameof(testRunSummary)), testRunSummary);
 
             var testRunSummariesCopy = _testRunSummariesDictionary
                 .Values
@@ -220,10 +225,10 @@ public class MemoryCacheBdTestDataStore : IMemoryCacheBdTestDataStore, IDisposab
         return Task.CompletedTask;
     }
 
-    public async Task<Stream> OpenReadAsync(string reportId, CancellationToken cancellationToken)
+    public async Task<Stream?> OpenReadAsync(string reportId, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        object value;
+        object? value;
         lock (_reportCacheLock)
         {
             var cache = _testRecordCache;
@@ -285,7 +290,7 @@ public class MemoryCacheBdTestDataStore : IMemoryCacheBdTestDataStore, IDisposab
         cancellationToken.ThrowIfCancellationRequested();
         lock (_testRunSummariesLock)
         {
-            _testRunSummariesDictionary[entry.RecordId] = entry.ToTestRunSummary();
+            _testRunSummariesDictionary[entry.RecordId ?? throw new ArgumentException("A run record ID is required.", nameof(entry))] = entry.ToTestRunSummary();
             Interlocked.Exchange(ref _testRunSummaries, _testRunSummariesDictionary.Values
                 .OrderByDescending(record => record.StartedAtDateTime)
                 .ThenBy(record => record.RecordId, StringComparer.Ordinal).ToList());

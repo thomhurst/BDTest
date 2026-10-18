@@ -19,7 +19,7 @@
 }
 
 <main class="wrap page">
-    @if (scenarioMissing)
+    @if (run?.Report != null)
     {
         <section class="card empty">
             <span class="mark">@ReportUi.Icon("i-doc", "xl")</span>

@@ -644,7 +644,7 @@ public partial class ReportUploadTests
         using var upload = await server.Post(json.ToString());
         Assert.That(upload.StatusCode, Is.EqualTo(HttpStatusCode.OK));
         var report = server.Store.Received.Single();
-        Assert.That(server.Store.Summaries[Required(report.Id)].Counts.Total, Is.EqualTo(13));
+        Assert.That(Required(server.Store.Summaries[Required(report.Id)].Counts).Total, Is.EqualTo(13));
 
         await AssertReportPagesRender(server, report.Id);
         // Render every historical scenario, including failures and unexecuted steps with null output.
@@ -871,8 +871,8 @@ public partial class ReportUploadTests
         Assert.That(Required(report.TestTimer).TestsStartedAt, Is.EqualTo(default(DateTime)));
         Assert.That(Required(report.TestTimer).TestsFinishedAt, Is.EqualTo(default(DateTime)));
         var summary = server.Store.Summaries[Required(report.Id)];
-        Assert.That(summary.Counts.Total, Is.Zero);
-        Assert.That(summary.Counts.NotRun, Is.Zero);
+        Assert.That(Required(summary.Counts).Total, Is.Zero);
+        Assert.That(Required(summary.Counts).NotRun, Is.Zero);
         Assert.That(summary.Status, Is.EqualTo(Status.NotRun));
         Assert.That(summary.StartedAtDateTime, Is.EqualTo(default(DateTime)));
         Assert.That(summary.FinishedAtDateTime, Is.EqualTo(default(DateTime)));
@@ -947,10 +947,10 @@ public partial class ReportUploadTests
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
         var report = server.Store.Received.Single();
         var summary = server.Store.Summaries[Required(report.Id)];
-        Assert.That(summary.Counts.Total, Is.EqualTo(2));
-        Assert.That(summary.Counts.Passed, Is.EqualTo(1));
-        Assert.That(summary.Counts.Failed, Is.EqualTo(1));
-        Assert.That(summary.Counts.NotRun, Is.EqualTo(1));
+        Assert.That(Required(summary.Counts).Total, Is.EqualTo(2));
+        Assert.That(Required(summary.Counts).Passed, Is.EqualTo(1));
+        Assert.That(Required(summary.Counts).Failed, Is.EqualTo(1));
+        Assert.That(Required(summary.Counts).NotRun, Is.EqualTo(1));
         Assert.That(summary.Status, Is.EqualTo(Status.Failed));
         Assert.That(summary.StartedAtDateTime, Is.EqualTo(new DateTime(2026, 1, 1, 12, 0, 0, DateTimeKind.Utc)));
         Assert.That(summary.FinishedAtDateTime, Is.EqualTo(new DateTime(2026, 1, 1, 12, 1, 0, DateTimeKind.Utc)));
@@ -991,9 +991,9 @@ public partial class ReportUploadTests
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
         var report = server.Store.Received.Single();
         var summary = server.Store.Summaries[Required(report.Id)];
-        Assert.That(summary.Counts.NotRun, Is.EqualTo(2));
-        Assert.That(summary.Counts.Pending, Is.EqualTo(1));
-        Assert.That(summary.Counts.Inconclusive, Is.EqualTo(1));
+        Assert.That(Required(summary.Counts).NotRun, Is.EqualTo(2));
+        Assert.That(Required(summary.Counts).Pending, Is.EqualTo(1));
+        Assert.That(Required(summary.Counts).Inconclusive, Is.EqualTo(1));
         Assert.That(summary.Status, Is.EqualTo(Status.Inconclusive));
         var metrics = new OutputMetrics(report);
         Assert.That(metrics.AnyNotRun, Is.True);
@@ -1090,14 +1090,14 @@ public partial class ReportUploadTests
 
     private sealed class RecordingStore : IBDTestDataStore, IBDTestDataReceiver
     {
-        public ConcurrentDictionary<string, BDTestOutputModel> Data { get; } = new();
+        public ConcurrentDictionary<string, BDTestOutputModel?> Data { get; } = new();
         public ConcurrentDictionary<string, TestRunSummary> Summaries { get; } = new();
         public ConcurrentBag<BDTestOutputModel> Received { get; } = new();
         public Task<BDTestOutputModel?> GetTestData(string id, CancellationToken cancellationToken) => Task.FromResult(Data.GetValueOrDefault(id));
-        public Task StoreTestData(string id, BDTestOutputModel data) { Data[id] = data; return Task.CompletedTask; }
+        public Task StoreTestData(string id, BDTestOutputModel? data) { Data[id] = data; return Task.CompletedTask; }
         public Task DeleteTestData(string id) { Data.TryRemove(id, out _); return Task.CompletedTask; }
         public Task<IEnumerable<TestRunSummary>> GetAllTestRunRecords() => Task.FromResult<IEnumerable<TestRunSummary>>(Summaries.Values.ToArray());
-        public Task StoreTestRunRecord(TestRunSummary summary) { Summaries[summary.RecordId] = summary; return Task.CompletedTask; }
+        public Task StoreTestRunRecord(TestRunSummary summary) { Summaries[Required(summary.RecordId)] = summary; return Task.CompletedTask; }
         public Task DeleteTestRunRecord(string id) { Summaries.TryRemove(id, out _); return Task.CompletedTask; }
         public Task OnReceiveTestDataAsync(BDTestOutputModel model) { Received.Add(model); return Task.CompletedTask; }
     }

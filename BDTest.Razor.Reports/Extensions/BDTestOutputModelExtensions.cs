@@ -5,7 +5,7 @@ namespace BDTest.Razor.Reports.Extensions;
 
 public class OutputMetrics
 {
-    public OutputMetrics(BDTestOutputModel bdTestOutputModel)
+    public OutputMetrics(BDTestOutputModel? bdTestOutputModel)
     {
         if (bdTestOutputModel == null)
         {

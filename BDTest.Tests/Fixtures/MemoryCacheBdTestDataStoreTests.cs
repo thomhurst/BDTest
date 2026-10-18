@@ -62,12 +62,12 @@ public class MemoryCacheBdTestDataStoreTests
         var snapshot = await store.GetAllTestRunRecords();
 
         await store.StoreTestRunRecord(second);
-        await store.DeleteTestRunRecord(first.RecordId);
+        await store.DeleteTestRunRecord(Required(first.RecordId));
         await store.DeleteTestRunRecord("missing");
 
         Assert.That(snapshot, Is.EqualTo(new[] { first }));
         Assert.That(await store.GetAllTestRunRecords(), Is.EqualTo(new[] { second }));
-        await store.DeleteTestRunRecord(second.RecordId);
+        await store.DeleteTestRunRecord(Required(second.RecordId));
         Assert.That(await store.GetAllTestRunRecords(), Is.Empty);
     }
 
@@ -87,7 +87,7 @@ public class MemoryCacheBdTestDataStoreTests
             async (record, _) =>
             {
                 await store.StoreTestRunRecord(record);
-                await store.DeleteTestRunRecord(removed[int.Parse(record.RecordId) - 100].RecordId);
+                await store.DeleteTestRunRecord(Required(removed[int.Parse(Required(record.RecordId)) - 100].RecordId));
                 var snapshot = (await store.GetAllTestRunRecords()).ToArray();
                 Assert.That(snapshot, Does.Contain(record), "Completed additions must remain visible.");
                 Assert.That(snapshot.Select(item => item.StartedAtDateTime), Is.Ordered.Descending);

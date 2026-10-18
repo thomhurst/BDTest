@@ -49,11 +49,11 @@ public class RunFilterTests
             Run("complete", Status.NotImplemented)
         };
         foreach (var run in runs)
-            run.Counts.NotImplemented = 1;
-        runs[0].Counts.Inconclusive = 1;
-        runs[1].Counts.Pending = 1;
-        runs[2].Counts.NotRun = 1;
-        runs[3].Counts.Failed = 1;
+            Required(run.Counts).NotImplemented = 1;
+        Required(runs[0].Counts).Inconclusive = 1;
+        Required(runs[1].Counts).Pending = 1;
+        Required(runs[2].Counts).NotRun = 1;
+        Required(runs[3].Counts).Failed = 1;
 
         Assert.That(Parse("?status=Passed").Apply(runs, Now).Select(run => run.RecordId),
             Is.EqualTo(new[] { "complete" }));

@@ -7,7 +7,7 @@ namespace BDTest.Razor.Reports.Models.ViewModels;
 internal static class ScenarioListBuilder
 {
     public static ScenarioListViewModel Build(IEnumerable<IGrouping<string, Scenario>> groups, IReadOnlyList<Scenario> reportScenarios,
-        string reportId, HttpRequest request, bool groupFixed)
+        string? reportId, HttpRequest request, bool groupFixed)
     {
         var query = request.Query;
         var tag = query[TagConstants.FilterByTagQueryParameterName].ToString();
@@ -53,7 +53,7 @@ internal static class ScenarioListBuilder
         };
     }
 
-    public static IReadOnlySet<Status> ParseStatuses(string value)
+    public static IReadOnlySet<Status>? ParseStatuses(string? value)
     {
         if (string.IsNullOrEmpty(value) || string.Equals(value, StatusConstants.All, StringComparison.OrdinalIgnoreCase))
         {
@@ -62,8 +62,7 @@ internal static class ScenarioListBuilder
 
         return value.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
             .Select(part => Enum.TryParse<Status>(part, true, out var status) && Enum.IsDefined(status) ? (Status?)status : null)
-            .Where(status => status != null)
-            .Select(status => status.Value)
+            .OfType<Status>()
             .ToHashSet();
     }
 }

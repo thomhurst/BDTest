@@ -10,10 +10,10 @@ public class ReportScriptNonceTagHelper : TagHelper
 {
     [ViewContext]
     [HtmlAttributeNotBound]
-    public ViewContext ViewContext { get; set; }
+    public ViewContext? ViewContext { get; set; }
 
     public override void Process(TagHelperContext context, TagHelperOutput output)
     {
-        output.Attributes.SetAttribute("nonce", ReportSecurityHeaders.GetNonce(ViewContext.HttpContext));
+        output.Attributes.SetAttribute("nonce", ReportSecurityHeaders.GetNonce((ViewContext ?? throw new InvalidOperationException("MVC must supply a view context.")).HttpContext));
     }
 }

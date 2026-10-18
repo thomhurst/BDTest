@@ -210,7 +210,7 @@ public class AzureStorageDataStore : IBDTestDataStore, IReportStore, IRunIndexSt
         return summaries.OfType<TestRunSummary>().ToArray();
     }
 
-    public Task StoreTestData(string id, BDTestOutputModel data)
+    public Task StoreTestData(string id, BDTestOutputModel? data)
     {
         return _testDataContainer.GetBlockBlobClient(id).UploadAsync(data.AsStream());
     }

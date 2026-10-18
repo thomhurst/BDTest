@@ -170,7 +170,7 @@ else
 
             // Several tests share a name, or an outline has examples: expand in place.
             var outline = items.Count == 1 ? items[0] : null;
-            var children = outline != null ? outline.Examples : items;
+            var children = outline?.Examples ?? items;
             var status = outline?.Status ?? items.GetTotalStatus();
             var open = Model.Selected != null && items.Contains(Model.Selected);
             var time = outline?.TimeTaken ?? TimeSpan.FromTicks(items.Sum(item => item.TimeTaken.Ticks));
@@ -194,7 +194,7 @@ else
         }
     }
 
-    private void Row(Scenario scenario, string title, bool child, Scenario shown = null)
+    private void Row(Scenario scenario, string title, bool child, Scenario? shown = null)
     {
         shown ??= scenario;
         var isSelected = Model.Selected == scenario;

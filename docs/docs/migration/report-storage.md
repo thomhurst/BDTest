@@ -27,6 +27,24 @@ Hosts implementing `IDataRepository` directly must update `StoreData` to `(strin
 
 The report JSON schema and historical JSON reader do not change. Raw downloads now preserve stored JSON exactly, including formatting and historical metadata. Report-list URLs remain unchanged. See [Persistence](../report-server/persistence.md) for contracts and a blob-store example.
 
+## Nullable storage results
+
+`IBDTestDataStore.GetTestData` now declares `Task<BDTestOutputModel?>` for missing
+reports. Its `StoreTestData` parameter is `BDTestOutputModel?`: the legacy adapter
+continues forwarding a JSON `null` root to the store. `MemoryCacheBdTestDataStore`
+preserves that behavior and reads the null model back as null. Update custom store
+signatures without adding null-forgiving operators at read sites.
+
+`IDataRepository.GetData` and `GetDataForBulkRead`, and report/attachment
+`OpenReadAsync` implementations, also declare nullable results. Test the result
+before accessing report members or disposing/reading a returned stream.
+
+Stored `TestRunSummary` and `RunIndexEntry` values preserve explicit JSON nulls for
+`RecordId`, `Counts` and optional metadata. Omitted counts retain their empty-object
+default. Conversion between summary and index models treats missing counts as zero.
+Storage writes require a non-null record ID even though deserialization may produce
+a missing one. These annotations do not change JSON names or historical formats.
+
 ## Report deletion
 
 Replace `POST` or `DELETE /bdtest/report/delete/{id}` with `DELETE /bdtest/reports/{id}` (replace `/bdtest` with the prefix selected by `MapBDTestReports` and include any host path base). The old route is removed. The new endpoint returns 204 No Content for both deleted and missing reports, rather than a 302 redirect. Other methods at the new endpoint return 405. Invalid IDs return 400; supported IDs contain 1–128 ASCII letters, digits, dots, hyphens or underscores, excluding `.` and `..`.

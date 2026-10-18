@@ -1,4 +1,3 @@
-#nullable enable
 
 namespace BDTest.Razor.Reports.Models;
 

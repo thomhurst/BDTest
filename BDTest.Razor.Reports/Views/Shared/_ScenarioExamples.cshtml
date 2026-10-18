@@ -4,25 +4,28 @@
 
 @if (Model.IsOutline)
 {
-    var passed = Model.Examples.Count(row => row.Status == Status.Passed);
+    var examples = Model.Examples ?? new List<Scenario>();
+    var passed = examples.Count(row => row.Status == Status.Passed);
     <section aria-labelledby="examples-@Model.Guid">
         <div class="card-head">
             <h2 id="examples-@Model.Guid">Examples</h2>
-            <span class="small muted">@passed of @Model.Examples.Count passed</span>
+            <span class="small muted">@passed of @examples.Count passed</span>
         </div>
-        @for (var index = 0; index < Model.Examples.Count; index++)
+        @for (var index = 0; index < examples.Count; index++)
         {
-            var row = Model.Examples[index];
-            var stepExceptions = row.Steps.Where(step => step.Exception != null).Select(step => step.Exception).ToList();
+            var row = examples[index];
+            var steps = row.Steps ?? new List<Step>();
+            var values = row.ExampleValues ?? new Dictionary<string, string>();
+            var stepExceptions = steps.Where(step => step.Exception != null).Select(step => step.Exception).ToList();
             <details class="example-row" id="example-@row.Guid" data-expandable open="@(row.Status == Status.Failed)">
                 <summary class="ex">
                     @row.Status.StatusIcon()
                     <span class="grow" style="overflow-wrap: anywhere">
-                        @if (row.ExampleValues.Count == 0)
+                        @if (values.Count == 0)
                         {
                             @($"Example {index + 1}")
                         }
-                        @foreach (var (pair, position) in row.ExampleValues.Select((pair, position) => (pair, position)))
+                        @foreach (var (pair, position) in values.Select((pair, position) => (pair, position)))
                         {
                             if (position > 0)
                             {
@@ -40,7 +43,7 @@
                         <div class="k" style="padding-top: 8px">Setup output</div>
                         <pre class="code">@row.TestStartupInformation</pre>
                     }
-                    @foreach (var step in row.Steps)
+                    @foreach (var step in steps)
                     {
                         var (keyword, text) = ReportUi.SplitStepText(step.StepText);
                         <div class="ex-step">

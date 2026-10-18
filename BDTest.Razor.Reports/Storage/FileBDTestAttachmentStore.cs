@@ -16,18 +16,18 @@ public sealed class FileBDTestAttachmentStore : IBDTestAttachmentStore
         Directory.CreateDirectory(_root);
     }
 
-    public Task<Stream> OpenReadAsync(string reportId, string attachmentId, CancellationToken cancellationToken = default)
+    public Task<Stream?> OpenReadAsync(string reportId, string attachmentId, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
         AttachmentStorage.ValidateIds(reportId, attachmentId);
         ArgumentNullException.ThrowIfNull(attachmentId);
         try
         {
-            return Task.FromResult<Stream>(new FileStream(Path.Combine(_root, reportId, attachmentId), FileMode.Open,
+            return Task.FromResult<Stream?>(new FileStream(Path.Combine(_root, reportId, attachmentId), FileMode.Open,
                 FileAccess.Read, FileShare.Read | FileShare.Delete, 81920, FileOptions.Asynchronous | FileOptions.SequentialScan));
         }
-        catch (FileNotFoundException) { return Task.FromResult<Stream>(null); }
-        catch (DirectoryNotFoundException) { return Task.FromResult<Stream>(null); }
+        catch (FileNotFoundException) { return Task.FromResult<Stream?>(null); }
+        catch (DirectoryNotFoundException) { return Task.FromResult<Stream?>(null); }
     }
 
     public async Task WriteAsync(string reportId, string attachmentId, Stream content, long length, CancellationToken cancellationToken = default)

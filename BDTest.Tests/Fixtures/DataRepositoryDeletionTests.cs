@@ -233,7 +233,7 @@ public class DataRepositoryDeletionTests
         public Task<BDTestOutputModel?> GetTestData(string id, CancellationToken token) => _inner.GetTestData(id, token);
         public Task<BDTestOutputModel?> GetTestDataAndRefreshRetention(string id, CancellationToken token) =>
             ((IMemoryCacheBdTestDataStore)_inner).GetTestDataAndRefreshRetention(id, token);
-        public Task StoreTestData(string id, BDTestOutputModel model) => _inner.StoreTestData(id, model);
+        public Task StoreTestData(string id, BDTestOutputModel? model) => _inner.StoreTestData(id, model);
         public Task DeleteTestData(string id) => _inner.DeleteTestData(id);
         public Task<IEnumerable<TestRunSummary>> GetAllTestRunRecords() => _inner.GetAllTestRunRecords();
         public Task StoreTestRunRecord(TestRunSummary summary) => _inner.StoreTestRunRecord(summary);

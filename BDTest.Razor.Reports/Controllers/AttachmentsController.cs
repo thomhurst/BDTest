@@ -13,7 +13,7 @@ namespace BDTest.Razor.Reports.Controllers;
 [Route("")]
 [TypeFilter(typeof(ReportAuthorizationFilter), Arguments = new object[] { false })]
 public sealed class AttachmentsController(IDataRepository repository, IOptions<BDTestReportOptions> configuredOptions,
-    ReportAttachmentGate attachmentGate, IBDTestAttachmentStore attachmentStore = null) : Controller
+    ReportAttachmentGate attachmentGate, IBDTestAttachmentStore? attachmentStore = null) : Controller
 {
     private readonly BDTestReportOptions options = configuredOptions.Value;
 
@@ -27,7 +27,7 @@ public sealed class AttachmentsController(IDataRepository repository, IOptions<B
         if (attachmentStore == null) return NotFound();
 
         var report = await repository.GetDataForBulkRead(reportId, cancellationToken);
-        if (report == null || !AttachmentManifest.IsValid(report, options, attachmentStore != null)) return NotFound();
+        if (report == null || !AttachmentManifest.IsValid(report, options, hasAttachmentStore: true)) return NotFound();
         if (!AttachmentUploadAuthorization.IsValid(report.AttachmentUploadTokenHash, tokens[0])) return Unauthorized();
         var file = BDTestAttachmentHelper.GetAttachments(report).SingleOrDefault(file => file.Id == attachmentId);
         if (file == null) return NotFound();
@@ -50,7 +50,7 @@ public sealed class AttachmentsController(IDataRepository repository, IOptions<B
         // Revalidate after staging so deletion or expiry cannot resurrect attachment content.
         using var lease = await attachmentGate.EnterAsync(reportId, cancellationToken);
         report = await repository.GetDataForBulkRead(reportId, cancellationToken);
-        if (report == null || !AttachmentManifest.IsValid(report, options, attachmentStore != null)) return NotFound();
+        if (report == null || !AttachmentManifest.IsValid(report, options, hasAttachmentStore: true)) return NotFound();
         if (!AttachmentUploadAuthorization.IsValid(report.AttachmentUploadTokenHash, tokens[0])) return Unauthorized();
         var currentFile = BDTestAttachmentHelper.GetAttachments(report).SingleOrDefault(current => current.Id == attachmentId);
         if (currentFile == null || currentFile.Length != file.Length) return NotFound();
@@ -64,7 +64,7 @@ public sealed class AttachmentsController(IDataRepository repository, IOptions<B
         if (!AttachmentStorage.IsValidId(reportId) || !AttachmentStorage.IsValidId(attachmentId) || attachmentStore == null)
             return NotFound();
         var report = await repository.GetDataForBulkRead(reportId, cancellationToken);
-        if (report == null || !AttachmentManifest.IsValid(report, options, attachmentStore != null, enforceUploadLimits: false)) return NotFound();
+        if (report == null || !AttachmentManifest.IsValid(report, options, hasAttachmentStore: true, enforceUploadLimits: false)) return NotFound();
         var file = BDTestAttachmentHelper.GetAttachments(report).SingleOrDefault(file => file.Id == attachmentId);
         if (file == null) return NotFound();
         var stream = await attachmentStore.OpenReadAsync(reportId, attachmentId, cancellationToken);
@@ -72,6 +72,6 @@ public sealed class AttachmentsController(IDataRepository repository, IOptions<B
         Response.Headers["X-Content-Type-Options"] = "nosniff";
         Response.Headers.ContentSecurityPolicy = "default-src 'none'; sandbox";
         // Always download, including HTML and SVG. MVC escapes the display name and owns the stream.
-        return File(stream, file.MimeType, file.Name);
+        return File(stream, file.MimeType ?? "application/octet-stream", file.Name);
     }
 }

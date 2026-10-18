@@ -19,7 +19,7 @@ public class StartupTests
     [TestCase("")]
     [TestCase(" ")]
     [TestCase("invalid-connection-string")]
-    public async Task Invalid_storage_configuration_fails_startup_with_the_setting_name(string connectionString)
+    public async Task Invalid_storage_configuration_fails_startup_with_the_setting_name(string? connectionString)
     {
         using var host = CreateHost(new RecordingStore(), connectionString);
         var exception = await Assert.ThrowsAsync<OptionsValidationException>(() => host.StartAsync());
@@ -95,12 +95,12 @@ public class StartupTests
         Assert.That(store.Loads, Is.Zero);
     }
 
-    private static IHost CreateHost(RecordingStore store, string connectionString = "UseDevelopmentStorage=true", RecordingLogger logger = null)
+    private static IHost CreateHost(RecordingStore store, string? connectionString = "UseDevelopmentStorage=true", RecordingLogger? logger = null)
     {
         var builder = Program.CreateBuilder(["--environment", Environments.Development]);
         builder.WebHost.UseTestServer();
         builder.Configuration.Sources.Clear();
-        builder.Configuration.AddInMemoryCollection(new Dictionary<string, string>
+        builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?>
         {
             ["AzureAd:Instance"] = "https://login.microsoftonline.com/",
             ["AzureAd:TenantId"] = "11111111-1111-1111-1111-111111111111",
@@ -115,7 +115,7 @@ public class StartupTests
     private sealed class RecordingStore : IBDTestDataStore, IAsyncDataStoreInitializer
     {
         public int Loads;
-        public Exception InitializationFailure { get; init; }
+        public Exception? InitializationFailure { get; init; }
         public bool WaitForCancellation { get; init; }
         private bool _initialized;
         public TaskCompletionSource InitializationStarted { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -128,7 +128,7 @@ public class StartupTests
             _initialized = true;
         }
 
-        public Exception Failure { get; init; }
+        public Exception? Failure { get; init; }
         public TaskCompletionSource LoadStarted { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
         public TaskCompletionSource ReleaseLoad { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
@@ -142,8 +142,8 @@ public class StartupTests
             return new[] { ReportJson.DeserializeObject<TestRunSummary>("{\"RecordId\":\"startup-report\"}") };
         }
 
-        public Task<BDTestOutputModel> GetTestData(string id, CancellationToken cancellationToken) => Task.FromResult<BDTestOutputModel>(null);
-        public Task StoreTestData(string id, BDTestOutputModel data) => Task.CompletedTask;
+        public Task<BDTestOutputModel?> GetTestData(string id, CancellationToken cancellationToken) => Task.FromResult<BDTestOutputModel?>(null);
+        public Task StoreTestData(string id, BDTestOutputModel? data) => Task.CompletedTask;
         public Task DeleteTestData(string id) => Task.CompletedTask;
         public Task StoreTestRunRecord(TestRunSummary summary) => Task.CompletedTask;
         public Task DeleteTestRunRecord(string id) => Task.CompletedTask;
@@ -153,12 +153,12 @@ public class StartupTests
     {
         public List<Exception> Errors { get; } = new();
         public ILogger CreateLogger(string categoryName) => this;
-        public IDisposable BeginScope<TState>(TState state) where TState : notnull => null;
+        public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
         public bool IsEnabled(LogLevel logLevel) => true;
-        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception exception,
-            Func<TState, Exception, string> formatter)
+        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception,
+            Func<TState, Exception?, string> formatter)
         {
-            if (logLevel == LogLevel.Error) Errors.Add(exception);
+            if (logLevel == LogLevel.Error && exception != null) Errors.Add(exception);
         }
         public void Dispose() { }
     }

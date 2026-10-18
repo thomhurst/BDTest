@@ -1,4 +1,3 @@
-#nullable enable
 using BDTest.Test;
 
 namespace BDTest.Razor.Reports.Storage;
@@ -6,11 +5,11 @@ namespace BDTest.Razor.Reports.Storage;
 /// <summary>Persistent run metadata, independent of Razor view models.</summary>
 public sealed class RunIndexEntry
 {
-    public string RecordId { get; set; } = "";
+    public string? RecordId { get; set; } = "";
     public DateTime StartedAtDateTime { get; set; }
     public DateTime FinishedAtDateTime { get; set; }
     public Status Status { get; set; }
-    public RunIndexCounts Counts { get; set; } = new();
+    public RunIndexCounts? Counts { get; set; } = new();
     public string? Tag { get; set; }
     public string? Environment { get; set; }
     public string? BranchName { get; set; }
