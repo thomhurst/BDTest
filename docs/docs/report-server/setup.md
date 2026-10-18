@@ -46,6 +46,36 @@ app.Run();
 - Registration returns `OptionsBuilder<BDTestReportOptions>`, so you can chain `BindConfiguration("BDTest")`. An optional configure delegate supports settings in code. Validation runs on host startup.
 - `UseBDTestReportServer()` adds security headers to responses under the mapped report prefix. It does not configure services or options. Call it after `UsePathBase` (if you use it) and before authentication, authorization and endpoints.
 
+## Configure file-system storage
+
+Install `BDTest.Reports.Storage.FileSystem` to keep report bytes and run metadata
+in a directory. Add `using BDTest.Reports.Storage.FileSystem;`, then register it
+alongside `AddBDTestReports` before building the host:
+
+```csharp
+builder.Services.AddBDTestFileSystemStorage()
+    .BindConfiguration("BDTestFileSystem");
+```
+
+```json title="appsettings.json"
+{
+  "BDTestFileSystem": {
+    "DirectoryPath": "/var/lib/my-reports",
+    "Retention": "30.00:00:00"
+  }
+}
+```
+
+Use an absolute path suitable for your OS (for example `C:\\ReportData` in JSON
+on Windows), outside the web root. Environment variables can supply
+`BDTestFileSystem__DirectoryPath` and `BDTestFileSystem__Retention`.
+Startup validation requires a fully qualified path and retention greater than
+zero and at most 36500 days. The path has no default; retention defaults to 30 days.
+The store snapshots these options when created; restart the host to change them.
+The directory must be writable and accessible without symbolic links or reparse
+points. See [Persistence](persistence.md#file-system-package) for retention,
+concurrency and filesystem requirements.
+
 ## Choose the report prefix
 
 `app.MapBDTestReports(string prefix = "/bdtest")` maps the report controllers and their CSS, JavaScript and favicon. Call it once, before `MapControllers`, `MapControllerRoute`, or resolving MVC action descriptors. `MapControllers` alone no longer exposes reports. `MapBDTestReports` publishes only report endpoints; call `MapControllers` or `MapControllerRoute` separately to expose the host's controllers. Report conventions do not apply to those host endpoints. The prefix must be a non-root literal path containing letters, digits, slashes, hyphens or underscores; a trailing slash is accepted.

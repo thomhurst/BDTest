@@ -6,7 +6,7 @@ $repoRoot = Split-Path $PSScriptRoot -Parent
 [xml] $props = Get-Content -LiteralPath (Join-Path $repoRoot 'Directory.Build.props') -Raw
 $publicKey = $props.SelectSingleNode('/Project/PropertyGroup/BDTestPublicKey').InnerText
 $signedProjects = @('BDTest', 'BDTest.Contracts', 'BDTest.NUnit', 'BDTest.xUnit', 'BDTest.MSTest',
-    'BDTest.TUnit', 'BDTest.Razor.Reports', 'BDTest.Tests')
+    'BDTest.TUnit', 'BDTest.Razor.Reports', 'BDTest.Reports.Storage.FileSystem', 'BDTest.Tests')
 
 # Inspect built metadata without loading assemblies or their runtime dependencies.
 foreach ($project in Get-ChildItem -LiteralPath $repoRoot -Filter '*.csproj' -Depth 1) {

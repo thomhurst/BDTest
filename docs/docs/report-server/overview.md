@@ -37,8 +37,9 @@ It gives you:
 The report library's display title is **BDTest - ASP.NET Core Reports**. Install it
 using the existing `BDTest.Razor.Reports` ID. Its namespaces and static asset paths
 stay unchanged; `BDTest.ReportGenerator.RazorServer` remains a non-packable sample.
-Future store packages will use `BDTest.Reports.Storage.AzureBlob` and
-`BDTest.Reports.Storage.FileSystem`; those planned packages are not yet available.
+`BDTest.Reports.Storage.FileSystem` supplies directory-based report persistence.
+See [Persistence](persistence.md#file-system-package). The Azure Blob package is
+planned separately.
 
 ## Pages and endpoints
 

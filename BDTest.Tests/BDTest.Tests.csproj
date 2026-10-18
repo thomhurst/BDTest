@@ -40,5 +40,6 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\BDTest.Analyzers\BDTest.Analyzers.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\BDTest.Reports.Storage.FileSystem\BDTest.Reports.Storage.FileSystem.csproj" />
   </ItemGroup>
 </Project>

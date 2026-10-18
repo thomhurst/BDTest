@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <IsPackable>true</IsPackable>
+    <PackageId>BDTest.Reports.Storage.FileSystem</PackageId>
+    <Title>BDTest - File System Report Storage</Title>
+    <Description>Persistent directory-based BDTest report and run index storage with atomic writes, cancellation and retention.</Description>
+    <PackageTags>test bdd reporting storage filesystem aspnetcore</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\BDTest.Razor.Reports\BDTest.Razor.Reports.csproj" />
+    <None Update="README.md" Pack="true" PackagePath="" />
+  </ItemGroup>
+</Project>
