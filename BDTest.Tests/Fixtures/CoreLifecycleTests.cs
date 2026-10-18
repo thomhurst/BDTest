@@ -119,7 +119,7 @@ public class CoreLifecycleTests
             Assert.That(secondScenario.TearDownOutput, Does.Contain("caller output").And.Not.Contain("disposal output"));
             Assert.That(first.OutputBuffers, Is.Empty);
             await fixture.EndTestAsync();
-            Assert.That(firstScenario.TearDownOutput.Split("disposal output"), Has.Length.EqualTo(2));
+            Assert.That(Required(firstScenario.TearDownOutput).Split("disposal output"), Has.Length.EqualTo(2));
         }
         finally { await caller.EndTestAsync(); }
     }

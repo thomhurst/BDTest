@@ -30,14 +30,14 @@ public sealed class BDTestClassAttribute : TestClassAttribute
         public string TestMethodName => inner.TestMethodName;
         public string TestClassName => inner.TestClassName;
         public Type ReturnType => inner.ReturnType;
-        public object[] Arguments => inner.Arguments;
+        public object?[]? Arguments => inner.Arguments;
         public ParameterInfo[] ParameterTypes => inner.ParameterTypes;
         public MethodInfo MethodInfo => inner.MethodInfo;
-        public Attribute[] GetAllAttributes() => inner.GetAllAttributes();
+        public Attribute[]? GetAllAttributes() => inner.GetAllAttributes();
         public TAttributeType[] GetAttributes<TAttributeType>() where TAttributeType : Attribute =>
             inner.GetAttributes<TAttributeType>();
 
-        public async Task<TestResult> InvokeAsync(object[] arguments)
+        public async Task<TestResult> InvokeAsync(object[]? arguments)
         {
             var previous = MSTestBDTestLifecycle.Current.Value;
             var invocation = new MSTestBDTestLifecycle.Invocation(MethodInfo);

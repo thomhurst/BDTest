@@ -148,7 +148,9 @@ internal sealed class LifecycleProbe(AbstractContextBDTestBase<LifecycleContext>
         {
             Assert.AreEqual(1, scenario.RetryCount);
             Assert.AreEqual("Native lifecycle", scenario.GetScenarioText());
-            Assert.AreEqual("Native lifecycle", scenario.CustomTestInformation.Single().Information);
+            var information = scenario.CustomTestInformation;
+            Assert.IsNotNull(information);
+            Assert.AreEqual("Native lifecycle", information.Single().Information);
             Assert.Contains("native", scenario.Tags);
             Assert.Contains("fixture", scenario.Tags);
         }
@@ -191,15 +193,26 @@ internal sealed class LifecycleProbe(AbstractContextBDTestBase<LifecycleContext>
                 var scenario = run.Scenarios.Single();
                 Assert.AreEqual(_contexts.Count, scenario.RetryCount + 1);
                 Assert.AreEqual(run.ReportId, scenario.ReportId);
-                Assert.Contains(_label + " setup", scenario.TestStartupInformation);
-                Assert.Contains(_label + " step", scenario.Output);
-                Assert.Contains(_label + " teardown", scenario.TearDownOutput);
-                Assert.Contains(_contexts.Last().DisposalMessage, scenario.TearDownOutput);
+                var startup = scenario.TestStartupInformation;
+                var outputText = scenario.Output;
+                var teardown = scenario.TearDownOutput;
+                Assert.IsNotNull(startup);
+                Assert.IsNotNull(outputText);
+                Assert.IsNotNull(teardown);
+                Assert.Contains(_label + " setup", startup);
+                Assert.Contains(_label + " step", outputText);
+                Assert.Contains(_label + " teardown", teardown);
+                Assert.Contains(_contexts.Last().DisposalMessage, teardown);
                 var other = _label == "first" ? "second" : "first";
                 Assert.DoesNotContain(other, scenario.TestStartupInformation + scenario.Output + scenario.TearDownOutput);
                 var report = BDTestJsonHelper.Deserialize(BDTestJsonHelper.GetTestJsonData(null, run));
-                Assert.AreEqual(run.ReportId, report.Scenarios.Single().ReportId);
-                Assert.Contains(_contexts.Last().DisposalMessage, report.Scenarios.Single().TearDownOutput);
+                Assert.IsNotNull(report);
+                Assert.IsNotNull(report.Scenarios);
+                var reportedScenario = report.Scenarios.Single();
+                Assert.AreEqual(run.ReportId, reportedScenario.ReportId);
+                var reportedTeardown = reportedScenario.TearDownOutput;
+                Assert.IsNotNull(reportedTeardown);
+                Assert.Contains(_contexts.Last().DisposalMessage, reportedTeardown);
             }
             await host.EndTestAsync();
             Assert.IsTrue(_contexts.All(value => value.DisposalCalls == 1), "Repeated completion disposed twice.");
