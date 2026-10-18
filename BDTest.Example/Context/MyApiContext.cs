@@ -4,6 +4,8 @@ namespace BDTest.Example.Context;
 
 public class MyApiContext
 {
+    private static readonly JsonSerializerOptions ResponseJsonOptions = new() { PropertyNameCaseInsensitive = true };
+
     public HttpClient HttpClient { get; } = new();
     public HttpRequestMessage RequestMessage { get; set; }
     public HttpResponseMessage ResponseMessage { get; private set; }
@@ -22,6 +24,6 @@ public class MyApiContext
     public async Task<T> DeserializeResponse<T>()
     {
         var stringBodyContent = await ResponseMessage.Content.ReadAsStringAsync();
-        return JsonSerializer.Deserialize<T>(stringBodyContent);
+        return JsonSerializer.Deserialize<T>(stringBodyContent, ResponseJsonOptions);
     }  
 }
