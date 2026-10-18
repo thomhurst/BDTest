@@ -5,7 +5,7 @@ using BDTest.Settings;
 using BDTest.Test;
 using System.Globalization;
 using System.Text;
-using Newtonsoft.Json;
+using System.Text.Json;
 
 namespace BDTest.Helpers;
 
@@ -127,12 +127,12 @@ public static class BDTestHtmlHelper
 
     private static void GenerateVerdictSection(StringBuilder html, BDTestOutputModel data)
     {
-        var total = data.Scenarios.Count;
+        var total = data.Scenarios.Count + data.NotRun.Count;
         var failed = data.Scenarios.Count(s => s.Status == Status.Failed);
         var passed = data.Scenarios.Count(s => s.Status == Status.Passed);
 
         string verdict;
-        if (total == 0)
+        if (data.Scenarios.Count == 0)
             verdict = "<span class=\"v-word\">No scenarios ran</span>";
         else if (failed > 0)
             verdict = $"<span class=\"v-word\">{failed} failed</span> <span class=\"of\">of {total} scenarios</span>";
@@ -148,7 +148,7 @@ public static class BDTestHtmlHelper
         html.AppendLine("<section class=\"wrap verdict\" aria-labelledby=\"verdict-h\">");
         html.AppendLine("<div>");
         html.AppendLine("<p class=\"eyebrow\">Run result</p>");
-        html.AppendLine($"<h1 id=\"verdict-h\" class=\"verdict-h\" data-status=\"{(failed > 0 ? "failed" : total == 0 ? "all" : "passed")}\">{verdict}</h1>");
+        html.AppendLine($"<h1 id=\"verdict-h\" class=\"verdict-h\" data-status=\"{(failed > 0 ? "failed" : data.Scenarios.Count == 0 ? "all" : "passed")}\">{verdict}</h1>");
         html.AppendLine($"<p class=\"verdict-sub\">{timing}</p>");
         html.AppendLine("</div>");
         html.AppendLine("<dl class=\"meta\">");
@@ -170,29 +170,39 @@ public static class BDTestHtmlHelper
     private static void GenerateSummarySection(StringBuilder html, BDTestOutputModel data)
     {
         var scenarios = data.Scenarios;
-        var total = scenarios.Count;
+        var total = scenarios.Count + data.NotRun.Count;
         var counts = Statuses.ToDictionary(status => status, status => scenarios.Count(s => s.Status == status));
 
         html.AppendLine("<section class=\"wrap\" aria-label=\"Test summary\">");
         if (total > 0)
         {
-            var label = string.Join(", ", Statuses.Where(s => counts[s] > 0).Select(s => $"{counts[s]} {Label(Key(s)).ToLowerInvariant()}"));
-            html.AppendLine($"<div class=\"bar\" role=\"img\" aria-label=\"{EscapeHtml(label)}\">");
+            var labels = Statuses.Where(s => counts[s] > 0)
+                .Select(s => $"{counts[s]} {Label(Key(s)).ToLowerInvariant()}").ToList();
+            if (data.NotRun.Count > 0)
+                labels.Add($"{data.NotRun.Count} built but never run");
+            html.AppendLine($"<div class=\"bar\" role=\"img\" aria-label=\"{EscapeHtml(string.Join(", ", labels))}\">");
             foreach (var status in Statuses.Where(s => counts[s] > 0))
             {
                 html.AppendLine($"<div class=\"bar-seg\" data-status=\"{Key(status)}\" style=\"flex-grow: {counts[status]}\" title=\"{counts[status]} {Label(Key(status)).ToLowerInvariant()}\"></div>");
             }
+            if (data.NotRun.Count > 0)
+                html.AppendLine($"<div class=\"bar-seg\" data-status=\"notrun\" style=\"flex-grow: {data.NotRun.Count}\" title=\"{data.NotRun.Count} built but never run\"></div>");
             html.AppendLine("</div>");
         }
 
         html.AppendLine("<div class=\"tiles\" role=\"group\" aria-label=\"Filter scenarios by status\">");
-        html.AppendLine($"<button class=\"tile\" type=\"button\" data-status=\"all\" data-filter=\"all\" aria-pressed=\"true\"{(total == 0 ? " disabled" : "")}><span class=\"tile-top\"><span class=\"label\">Total</span></span><span class=\"tile-n\">{total}</span><span class=\"tile-pct\">scenarios</span></button>");
+        html.AppendLine($"<button class=\"tile\" type=\"button\" data-status=\"all\" data-filter=\"all\" aria-pressed=\"true\"{(scenarios.Count == 0 ? " disabled" : "")}><span class=\"tile-top\"><span class=\"label\">Total</span></span><span class=\"tile-n\">{total}</span><span class=\"tile-pct\">scenarios</span></button>");
         foreach (var status in Statuses)
         {
             var key = Key(status);
             var count = counts[status];
             var percent = total == 0 ? "0%" : $"{Math.Round(count * 100.0 / total)}%";
             html.AppendLine($"<button class=\"tile\" type=\"button\" data-status=\"{key}\" data-filter=\"{key}\" aria-pressed=\"false\"{(count == 0 ? " disabled" : "")}><span class=\"tile-top\"><span class=\"glyph\" data-g=\"{key}\" aria-hidden=\"true\"></span><span class=\"label\">{Label(key)}</span></span><span class=\"tile-n\">{count}</span><span class=\"tile-pct\">{percent}</span></button>");
+        }
+        if (data.NotRun.Count > 0)
+        {
+            var percent = $"{Math.Round(data.NotRun.Count * 100.0 / total)}%";
+            html.AppendLine($"<a class=\"tile\" data-status=\"notrun\" href=\"#not-run\"><span class=\"tile-top\"><span class=\"glyph\" data-g=\"notrun\" aria-hidden=\"true\"></span><span class=\"label\">Built but never run</span></span><span class=\"tile-n\">{data.NotRun.Count}</span><span class=\"tile-pct\">{percent}</span></a>");
         }
         html.AppendLine("</div>");
 
@@ -314,7 +324,7 @@ public static class BDTestHtmlHelper
             html.AppendLine("<label class=\"ctl\">Tag <select id=\"tag\"><option value=\"\">All tags</option>");
             foreach (var tag in tags)
             {
-                html.AppendLine($"<option value=\"{EscapeHtml(tag.ToLowerInvariant())}\">@{EscapeHtml(tag)}</option>");
+                html.AppendLine($"<option value=\"{EscapeHtml(JsonSerializer.Serialize(tag, BDTestJsonContext.Default.String))}\">@{EscapeHtml(tag)}</option>");
             }
             html.AppendLine("</select></label>");
         }
@@ -363,7 +373,7 @@ public static class BDTestHtmlHelper
         var status = Key(scenario.Status);
         var guid = EscapeHtml(scenario.Guid);
         var tags = scenario.Tags ?? Array.Empty<string>();
-        var tagsJson = JsonConvert.SerializeObject(tags);
+        var tagsJson = JsonSerializer.Serialize(tags, BDTestJsonContext.Default.StringArray);
 
         html.AppendLine($"<div class=\"scn\" id=\"scenario-{guid}\" data-status=\"{status}\" data-story=\"{storyIndex}\" data-i=\"{index}\" data-ms=\"{(long)scenario.TimeTaken.TotalMilliseconds}\" data-sev=\"{scenario.Status.GetOrder()}\" data-tags=\"{EscapeHtml(tagsJson)}\">");
         html.AppendLine($"<button class=\"scn-head\" type=\"button\" aria-expanded=\"false\" aria-controls=\"details-{guid}\">");
@@ -403,7 +413,7 @@ public static class BDTestHtmlHelper
         {
             html.Append("<div><dt>Tags</dt><dd><div class=\"tags\">");
             foreach (var tag in tags)
-                html.Append($"<button class=\"tag\" type=\"button\" data-tag=\"{EscapeHtml(tag.ToLowerInvariant())}\" aria-label=\"Show only scenarios tagged {EscapeHtml(tag)}\">@{EscapeHtml(tag)}</button>");
+                html.Append($"<button class=\"tag\" type=\"button\" data-tag=\"{EscapeHtml(JsonSerializer.Serialize(tag, BDTestJsonContext.Default.String))}\" aria-label=\"Show only scenarios tagged {EscapeHtml(tag)}\">@{EscapeHtml(tag)}</button>");
             html.AppendLine("</div></dd></div>");
         }
         foreach (var information in scenario.CustomTestInformation ?? Array.Empty<TestInformationAttribute>())
@@ -725,7 +735,7 @@ font-family:var(--sans);color:var(--ink);background:var(--bg);min-height:100vh;f
 .bar{display:flex;height:12px;border-radius:999px;overflow:hidden;gap:2px;background:var(--rule)}
 .bar-seg{background:var(--s);min-width:6px}
 .tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(150px,100%),1fr));gap:10px;margin-top:16px}
-.tile{appearance:none;text-align:left;cursor:pointer;background:var(--surface);border:1px solid var(--rule);border-radius:10px;padding:12px 16px 14px;display:flex;flex-direction:column;gap:2px;min-height:44px}
+.tile{appearance:none;text-align:left;text-decoration:none;cursor:pointer;background:var(--surface);border:1px solid var(--rule);border-radius:10px;padding:12px 16px 14px;display:flex;flex-direction:column;gap:2px;min-height:44px}
 .tile:hover{border-color:var(--rule-2);background:var(--surface-2)}
 .tile[aria-pressed=true]{border-color:var(--s);box-shadow:inset 0 0 0 1px var(--s)}
 .tile:disabled{opacity:.5;cursor:default}
@@ -909,6 +919,10 @@ font-family:var(--sans);color:var(--ink);background:var(--bg);min-height:100vh;f
     });
   }
   var search = $('#q'), tagSelect = $('#tag'), sortSelect = $('#sort'), groupBox = $('#group');
+  // Decode after HTML parsing so carriage returns and other control characters survive.
+  if (tagSelect) Array.prototype.forEach.call(tagSelect.options, function (option) {
+    if (option.value) option.value = JSON.parse(option.value).toLowerCase();
+  });
   var flat = $('#flat-list');
   var stories = $$('.story');
   var storyText = {};
@@ -1009,7 +1023,7 @@ font-family:var(--sans);color:var(--ink);background:var(--bg);min-height:100vh;f
       return;
     }
     if (t.hasAttribute('data-show')) { set({ filter: t.getAttribute('data-show'), query: '', tag: '' }); $('#scn-h').scrollIntoView({ behavior: 'smooth' }); return; }
-    if (t.hasAttribute('data-tag')) { set({ tag: t.getAttribute('data-tag') }); return; }
+    if (t.hasAttribute('data-tag')) { set({ tag: JSON.parse(t.getAttribute('data-tag')).toLowerCase() }); return; }
     if (t.hasAttribute('data-clear')) { set({ filter: 'all', query: '', tag: '' }); return; }
     if (t.hasAttribute('data-more')) { set({ limit: state.limit + PAGE }); return; }
     if (t.hasAttribute('data-expand')) {

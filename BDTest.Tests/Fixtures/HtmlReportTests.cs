@@ -5,7 +5,6 @@ using BDTest.Helpers;
 using BDTest.Settings;
 using BDTest.Test;
 using BDTest.Tests.Helpers;
-using Newtonsoft.Json;
 using NUnit.Framework;
 
 namespace BDTest.Tests.Fixtures;
@@ -113,10 +112,10 @@ public class HtmlReportTests : BDTestBase
     }
 
     [Test]
-    public void CustomHtmlIsIsolatedInAScriptlessFrame()
+    public async Task CustomHtmlIsIsolatedInAScriptlessFrame()
     {
         const string payload = "<script>parent.document.body.innerHTML = 'compromised';</script>";
-        When(() => WriteCustomHtml(payload)).Then(() => DoNothing()).BDTest();
+        await When(() => WriteCustomHtml(payload)).Then(() => DoNothing()).BDTestAsync();
 
         var html = BDTestHtmlHelper.GetTestHtmlReport();
         var frame = Regex.Match(html, "<iframe class=\"custom-body\"[^>]*>");
@@ -128,9 +127,9 @@ public class HtmlReportTests : BDTestBase
     }
 
     [Test]
-    public void RelativeEvidenceUrlsArePreservedInCustomOutput()
+    public async Task RelativeEvidenceUrlsArePreservedInCustomOutput()
     {
-        When(() => WriteEvidence()).Then(() => DoNothing()).BDTest();
+        await When(() => WriteEvidence()).Then(() => DoNothing()).BDTestAsync();
 
         var html = BDTestHtmlHelper.GetTestHtmlReport();
         var frame = Regex.Match(html, "<iframe class=\"custom-body\"[^>]*>");
@@ -143,10 +142,10 @@ public class HtmlReportTests : BDTestBase
     }
 
     [Test]
-    public void FailuresWithTheSameErrorAreGroupedIntoOneCause()
+    public async Task FailuresWithTheSameErrorAreGroupedIntoOneCause()
     {
-        Assert.Catch(() => When(() => Fail()).Then(() => DoNothing()).WithScenarioText("First").BDTest());
-        Assert.Catch(() => When(() => Fail()).Then(() => DoNothing()).WithScenarioText("Second").BDTest());
+        await Assert.CatchAsync(async () => await When(() => Fail()).Then(() => DoNothing()).WithScenarioText("First").BDTestAsync());
+        await Assert.CatchAsync(async () => await When(() => Fail()).Then(() => DoNothing()).WithScenarioText("Second").BDTestAsync());
 
         var html = BDTestHtmlHelper.GetTestHtmlReport();
 
@@ -158,22 +157,49 @@ public class HtmlReportTests : BDTestBase
 
     [Test]
     [BDTestTag("api\tintegration\nline\rreturn\0null\bback\fform\\slash\"quote<>&'")]
-    public void TagMetadataRoundTripsControlCharactersAndHtml()
+    public async Task TagMetadataRoundTripsControlCharactersAndHtml()
     {
-        var scenario = When(() => DoNothing()).Then(() => DoNothing()).BDTest();
+        var scenario = await When(() => DoNothing()).Then(() => DoNothing()).BDTestAsync();
         var html = BDTestHtmlHelper.GetTestHtmlReport();
         var attribute = Regex.Match(html, "data-tags=\"([^\"]*)\"").Groups[1].Value;
 
         Assert.That(attribute, Is.Not.Empty);
         var json = WebUtility.HtmlDecode(attribute);
         Assert.That(json.Any(char.IsControl), Is.False, "JSON must escape literal control characters.");
-        Assert.That(JsonConvert.DeserializeObject<string[]>(json), Is.EqualTo(scenario.Tags));
+        Assert.That(ReportJson.DeserializeObject<string[]>(json), Is.EqualTo(scenario.Tags));
+        var option = Regex.Match(html, "<option value=\"([^\"]+)\">@").Groups[1].Value;
+        var button = Regex.Match(html, "data-tag=\"([^\"]+)\"").Groups[1].Value;
+        foreach (var value in new[] { option, button })
+        {
+            Assert.That(value, Is.Not.Empty);
+            Assert.That(value.Any(char.IsControl), Is.False, "Tag controls must not contain parser-normalized characters.");
+            Assert.That(ReportJson.DeserializeObject<string>(WebUtility.HtmlDecode(value)), Is.EqualTo(scenario.Tags.Single()));
+        }
+    }
+
+    [TestCase(false)]
+    [TestCase(true)]
+    public async Task UnexecutedDefinitionsAppearInSummaryAndPreventAllPassed(bool includePassingScenario)
+    {
+        if (includePassingScenario)
+            await When(() => DoNothing()).Then(() => DoNothing()).BDTestAsync();
+        When(() => DoNothing()).Then(() => DoNothing()).WithScenarioText("Unexecuted definition");
+
+        var html = BDTestHtmlHelper.GetTestHtmlReport();
+
+        Assert.That(html, Does.Not.Contain("<span class=\"v-word\">All passed</span>"));
+        var total = includePassingScenario ? 2 : 1;
+        Assert.That(html, Does.Contain($"<span class=\"label\">Total</span></span><span class=\"tile-n\">{total}</span>"));
+        var summary = Regex.Match(html, "<section class=\"wrap\" aria-label=\"Test summary\">.*?</section>", RegexOptions.Singleline).Value;
+        Assert.That(summary, Does.Contain("href=\"#not-run\""));
+        Assert.That(summary, Does.Contain("<span class=\"label\">Built but never run</span></span><span class=\"tile-n\">1</span>"));
+        Assert.That(html, Does.Contain("Unexecuted definition"));
     }
 
     [Test]
-    public void PassingRunHasNoAttentionSection()
+    public async Task PassingRunHasNoAttentionSection()
     {
-        When(() => DoNothing()).Then(() => DoNothing()).BDTest();
+        await When(() => DoNothing()).Then(() => DoNothing()).BDTestAsync();
 
         var html = BDTestHtmlHelper.GetTestHtmlReport();
 

@@ -84,7 +84,7 @@ Download the file from the run's artifacts and open it in a browser. The `publis
 The HTML report includes:
 
 - **Run result**: Verdict, duration, start and end times (UTC), and environment, tag, branch, machine and version
-- **Summary**: Status bar and count tiles; select a tile to filter the scenario list
+- **Summary**: Status bar and count tiles include built-but-never-run definitions in the total. Status tiles filter recorded scenarios; the separate **Built but never run** tile links to unfinished definitions. A run with unfinished definitions never reports **All passed**.
 - **Needs attention**: Failures grouped by exception type and message (only when something failed)
 - **Scenarios**: Searchable, filterable list grouped by story, with expandable details
 - **Tests not run**: Tests that were built but never executed (if any)

@@ -21,6 +21,8 @@ function verify(grouped, protocol) {
     return { hidden: false, textContent: '', value: '', addEventListener(name, handler) { this[name] = handler; } };
   }
   for (const id of ['q', 'tag', 'sort', 'group', 'showing', 'no-results', 'more-label']) controls['#' + id] = control();
+  const unusualTag = 'API\tintegration\nline\rreturn\0null\bback\fform\\slash"quote<>&\'';
+  controls['#tag'].options = [{ value: '' }, { value: JSON.stringify(unusualTag) }];
   const moreButton = control();
   controls['#more'] = { hidden: false, querySelector: () => moreButton };
   const flat = { hidden: true, appendChild(el) { el.parentNode = this; } };
@@ -38,7 +40,7 @@ function verify(grouped, protocol) {
     story: Math.floor(i / 250), parentNode: homes[Math.floor(i / 250)], hidden: false,
     getAttribute(name) {
       return {
-        'data-tags': JSON.stringify([i % 2 ? 'other' : 'api\tintegration']),
+        'data-tags': JSON.stringify([i % 2 ? 'other' : unusualTag]),
         'data-story': String(this.story), 'data-status': i % 2 ? 'failed' : 'passed',
         'data-i': String(i), 'data-ms': String(i), 'data-sev': i % 2 ? '0' : '1'
       }[name];
@@ -49,7 +51,7 @@ function verify(grouped, protocol) {
   const root = {
     querySelector: selector => controls[selector],
     querySelectorAll: selector => selector === '.story' ? stories : selector === '.scn' ? elements : selector === 'iframe.custom-body' ? [frame] : [],
-    setAttribute() {}, addEventListener() {}
+    setAttribute() {}, addEventListener(name, handler) { events['root-' + name] = handler; }, contains: () => true
   };
   const context = vm.createContext({
     document: { querySelector: () => root },
@@ -79,7 +81,8 @@ function verify(grouped, protocol) {
   events.afterprint();
   assert.equal(shown().length, 200, 'Print restores pagination');
 
-  controls['#tag'].value = 'api\tintegration';
+  assert.equal(controls['#tag'].options[1].value, unusualTag.toLowerCase(), 'Tag options preserve control characters after JSON decoding');
+  controls['#tag'].value = controls['#tag'].options[1].value;
   controls['#tag'].change();
   assert.equal(shown().length, 200);
   events.beforeprint();
@@ -87,6 +90,20 @@ function verify(grouped, protocol) {
   assert.ok(shown().every(el => el.getAttribute('data-status') === 'passed'));
   events.afterprint();
   assert.equal(shown().length, 200);
+
+  const tagButton = {
+    classList: { contains: () => false },
+    hasAttribute: name => name === 'data-tag',
+    getAttribute: () => JSON.stringify('other')
+  };
+  events['root-click']({ target: { closest: () => tagButton } });
+  events.beforeprint();
+  assert.equal(shown().length, 325, 'Tag buttons match their JSON-decoded values');
+  assert.ok(shown().every(el => el.getAttribute('data-status') === 'failed'));
+  events.afterprint();
+  tagButton.getAttribute = () => JSON.stringify(unusualTag);
+  events['root-click']({ target: { closest: () => tagButton } });
+  assert.equal(controls['#tag'].value, unusualTag.toLowerCase(), 'Tag button selects matching dropdown option');
 
   controls['#q'].value = 'Scenario 648';
   controls['#q'].input();
