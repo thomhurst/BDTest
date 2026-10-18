@@ -19,6 +19,8 @@ public sealed class StepResult
     public TimeSpan TimeTaken { get; }
     public TimeSpan? Timeout { get; }
     public bool TimedOut { get; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public StepSkipReason? SkipReason { get; }
     public IReadOnlyList<string> Diagnostics { get; }
     public IReadOnlyList<StepArgument> Arguments { get; }
     public IReadOnlyList<AttachmentInfo> Attachments { get; }
@@ -41,7 +43,8 @@ public sealed class StepResult
         bool timedOut = false,
         IReadOnlyList<string>? diagnostics = null,
         IReadOnlyList<StepArgument>? arguments = null,
-        IReadOnlyList<AttachmentInfo>? attachments = null)
+        IReadOnlyList<AttachmentInfo>? attachments = null,
+        StepSkipReason? skipReason = null)
     {
         StepType = Enum.IsDefined(typeof(StepType), stepType)
             ? stepType : throw new ArgumentOutOfRangeException(nameof(stepType), stepType, "Expected a defined step type.");
@@ -59,6 +62,7 @@ public sealed class StepResult
         TimeTaken = timeTaken;
         Timeout = timeout;
         TimedOut = timedOut;
+        SkipReason = skipReason;
         Diagnostics = ContractCollections.List(diagnostics);
         Arguments = ContractCollections.List(arguments);
         Attachments = ContractCollections.List(attachments);

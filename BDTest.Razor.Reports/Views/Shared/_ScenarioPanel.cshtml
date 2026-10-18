@@ -96,7 +96,12 @@
                     var notRun = step.Status is Status.NotRun or Status.Pending;
                     <li class="@(step == failingStep ? "fail" : notRun ? "skipped" : "")">
                         @step.Status.StatusIcon()
-                        <span class="grow step-text" style="@(step == failingStep ? "font-weight: 600" : "")"><b>@keyword</b> @text</span>
+                        <span class="grow step-text" style="@(step == failingStep ? "font-weight: 600" : "")"><b>@keyword</b> @text
+                            @if (step.SkipReason != null)
+                            {
+                                <span class="small muted">@step.SkipReason</span>
+                            }
+                        </span>
                         <span class="dur">@(notRun ? "—" : step.TimeTaken.ToShortDuration())</span>
                     </li>
                 }

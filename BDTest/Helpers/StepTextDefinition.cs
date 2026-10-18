@@ -1,6 +1,7 @@
 using System.Reflection;
 using System.Threading;
 using BDTest.Metadata;
+using BDTest.Attributes;
 using BDTest.Test;
 
 namespace BDTest.Helpers;
@@ -16,6 +17,9 @@ internal sealed class StepTextDefinition
         bool omitCancellationToken = false, Assembly? fixtureAssembly = null)
     {
         if (step == null) throw new ArgumentNullException(nameof(step));
+        _skipAttributes = new Lazy<IReadOnlyList<SkipStepAttribute>>(() =>
+            Array.AsReadOnly(Method?.GetCustomAttributes(typeof(SkipStepAttribute), true)
+                .Cast<SkipStepAttribute>().ToArray() ?? Array.Empty<SkipStepAttribute>()));
         _argumentExpression = argumentExpression == null || string.IsNullOrWhiteSpace(argumentExpression) ? "step" : argumentExpression;
         _omitCancellationToken = omitCancellationToken;
 
@@ -50,6 +54,11 @@ internal sealed class StepTextDefinition
             }
         }
     }
+
+    // Resolve once per definition, on first execution so attribute constructor failures
+    // receive the same exception/timing/after-hook handling as predicate failures.
+    private readonly Lazy<IReadOnlyList<SkipStepAttribute>> _skipAttributes;
+    internal IReadOnlyList<SkipStepAttribute> SkipAttributes => _skipAttributes.Value;
 
     internal MethodInfo? Method { get; }
 

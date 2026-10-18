@@ -95,3 +95,9 @@ legacy attribute wire values. Tags retain producer order.
 `AttachmentUploadTokenHash` is optional server-managed storage metadata. It
 never contains the plaintext upload token. Preserve existing upload authorization
 when adapting this DTO to storage.
+
+`StepResult.SkipReason` optionally carries a `StepSkipReason` with `Source`,
+`AttributeType`, `RuleIndex` and `Setting`, using the same meanings as
+[step condition reasons](../writing-tests/skipping.md). JSON uses camelCase and
+omits `skipReason` when null. This additive optional field keeps schema version 1;
+existing version-1 reports without it remain readable.

@@ -532,6 +532,8 @@ public static class BDTestHtmlHelper
             html.AppendLine($"<div class=\"step-row\"><span class=\"glyph\" data-g=\"{status}\" aria-hidden=\"true\"></span><span class=\"kw\">{EscapeHtml(keyword)}</span><span class=\"step-text\">{EscapeHtml(text)}</span><span class=\"step-status\">{Label(status)}</span><span class=\"dur\">{(status == "notrun" ? "" : FormatDuration(step.TimeTaken))}</span></div>");
             if (status == "notrun")
                 html.AppendLine("<p class=\"step-note\">This step has not started.</p>");
+            if (step.SkipReason != null)
+                html.AppendLine($"<p class=\"step-note\">{EscapeHtml(step.SkipReason.ToString())}</p>");
             if (step.Exception != null)
                 AppendError(html, step.Exception);
             html.AppendLine(StepArgumentHtmlHelper.GetHtml(step.Arguments));
