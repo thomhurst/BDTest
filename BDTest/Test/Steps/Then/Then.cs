@@ -25,4 +25,14 @@ public class Then : RunnableStepBuilder
     {
         return new AndThen(ExistingSteps, new Runnable(step), this);
     }
+
+    public ButThen But(Expression<Action> step)
+    {
+        return new ButThen(ExistingSteps, new Runnable(step), this);
+    }
+
+    public ButThen But(Expression<Func<Task>> step)
+    {
+        return new ButThen(ExistingSteps, new Runnable(step), this);
+    }
 }
