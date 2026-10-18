@@ -1,4 +1,3 @@
-using System.Text.RegularExpressions;
 using BDTest.Test;
 
 namespace BDTest.Razor.Reports.Models;
@@ -10,8 +9,9 @@ public class FailureGroup
     public const string ByExceptionType = "type";
     public const string ByFailingStep = "step";
 
-    private static readonly Regex FrameRegex = new(@"^\s*at (?<method>.+?)(?: in (?<file>.+?):line (?<line>\d+))?\s*$",
-        RegexOptions.Multiline | RegexOptions.CultureInvariant, TimeSpan.FromSeconds(1));
+    // Uploaded stack traces are untrusted: only the start of the trace is inspected.
+    private const int MaximumStackTraceCharacters = 8192;
+    private const int MaximumStackFrames = 50;
 
     public string Key { get; private init; }
 
@@ -88,35 +88,38 @@ public class FailureGroup
             return null;
         }
 
-        try
+        string fallback = null;
+        var text = stackTrace.Length > MaximumStackTraceCharacters ? stackTrace[..MaximumStackTraceCharacters] : stackTrace;
+        foreach (var rawLine in text.Split('\n').Take(MaximumStackFrames))
         {
-            var frames = FrameRegex.Matches(stackTrace);
-            var frame = frames.FirstOrDefault(match => match.Groups["file"].Success) ?? frames.FirstOrDefault();
-            if (frame == null)
+            var line = rawLine.Trim();
+            if (!line.StartsWith("at ", StringComparison.Ordinal))
             {
-                return null;
+                continue;
             }
 
-            var method = frame.Groups["method"].Value;
+            var frame = line[3..];
+            var inIndex = frame.LastIndexOf(" in ", StringComparison.Ordinal);
+            var lineIndex = frame.LastIndexOf(":line ", StringComparison.Ordinal);
+            var method = inIndex > 0 ? frame[..inIndex] : frame;
             var parenthesis = method.IndexOf('(');
             if (parenthesis > 0)
             {
                 method = method[..parenthesis];
             }
 
-            if (!frame.Groups["file"].Success)
+            if (inIndex < 0 || lineIndex < inIndex)
             {
-                return method;
+                fallback ??= method;
+                continue;
             }
 
-            var file = frame.Groups["file"].Value.Replace('\\', '/');
+            var file = frame[(inIndex + 4)..lineIndex].Replace('\\', '/');
             file = file[(file.LastIndexOf('/') + 1)..];
-            return $"{file}:line {frame.Groups["line"].Value} · {method}";
+            return $"{file}:line {frame[(lineIndex + 6)..]} · {method}";
         }
-        catch (RegexMatchTimeoutException)
-        {
-            return null;
-        }
+
+        return fallback;
     }
 
     private static string GetKey(Scenario scenario, string groupBy)
