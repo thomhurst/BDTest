@@ -212,7 +212,7 @@ public class Step
 
     private bool ShouldSkip()
     {
-        if (StepType == StepType.When && BDTestSettings.Debug.ShouldSkipWhenStep)
+        if ((StepType == StepType.When || StepType == StepType.ButWhen) && BDTestSettings.Debug.ShouldSkipWhenStep)
         {
             return true;
         }

@@ -108,6 +108,26 @@ builder with its own execution limit, step state, and report entry, even when th
 original builder has already run. Create a new chain or continuation to run another scenario. Configured BDTest
 retries still run within the original execution and retain one report entry.
 
+### But steps
+
+Use `.But(...)` after a Given, When, or Then step to express a contrast. It accepts
+synchronous actions and asynchronous tasks, renders the `But` keyword in step text
+and reports, and keeps the current phase of the chain:
+
+```csharp
+await Given(() => AccountExists())
+    .But(() => AccountIsLocked())
+    .When(() => SignInAsync())
+    .But(() => RetrySignInAsync())
+    .Then(() => AccessIsDenied())
+    .But(() => AccountStillExists())
+    .BDTestAsync();
+```
+
+Repeat `.But(...)`, combine it with `.And(...)` in Given and Then phases, or use
+`.WithStepText(() => ...)` to customize its text. A But step in the When phase is
+skipped when `BDTestSettings.Debug.ShouldSkipWhenStep` is enabled.
+
 ### Step text and argument values
 
 Automatically generated step text captures argument values when the step is added

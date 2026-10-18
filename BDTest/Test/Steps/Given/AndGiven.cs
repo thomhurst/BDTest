@@ -36,4 +36,14 @@ public class AndGiven : StepBuilder
     {
         return new When.When(ExistingSteps, new Runnable(step), this);
     }
+
+    public ButGiven But(Expression<Action> step)
+    {
+        return new ButGiven(ExistingSteps, new Runnable(step), this);
+    }
+
+    public ButGiven But(Expression<Func<Task>> step)
+    {
+        return new ButGiven(ExistingSteps, new Runnable(step), this);
+    }
 }

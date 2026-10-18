@@ -31,4 +31,14 @@ public class When : StepBuilder
     {
         return new Then.Then(ExistingSteps, new Runnable(step), this);
     }
+
+    public ButWhen But(Expression<Action> step)
+    {
+        return new ButWhen(ExistingSteps, new Runnable(step), this);
+    }
+
+    public ButWhen But(Expression<Func<Task>> step)
+    {
+        return new ButWhen(ExistingSteps, new Runnable(step), this);
+    }
 }

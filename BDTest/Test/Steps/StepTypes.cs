@@ -6,7 +6,10 @@ public enum StepType
     AndGiven,
     When,
     Then,
-    AndThen
+    AndThen,
+    ButGiven,
+    ButWhen,
+    ButThen
 }
 
 public static class StepTypeExtensions
@@ -22,6 +25,10 @@ public static class StepTypeExtensions
             case StepType.AndGiven:
             case StepType.AndThen:
                 return "And";
+            case StepType.ButGiven:
+            case StepType.ButWhen:
+            case StepType.ButThen:
+                return "But";
             default:
                 throw new ArgumentOutOfRangeException(nameof(stepType), stepType, null);
         }
