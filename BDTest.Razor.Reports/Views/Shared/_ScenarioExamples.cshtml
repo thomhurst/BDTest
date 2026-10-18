@@ -51,7 +51,7 @@
                         @Html.Raw(BDTest.Helpers.StepArgumentHtmlHelper.GetHtml(step.Arguments))
                         @if (step.Exception != null)
                         {
-                            <pre class="code" style="color: var(--fail)">@step.Exception.AsString</pre>
+                            @Html.Raw(BDTest.Helpers.ExceptionHtmlHelper.GetHtml(step.Exception))
                         }
                     }
                     @if (!string.IsNullOrEmpty(row.Output))
@@ -62,7 +62,7 @@
                     @if (row.Exception != null && !stepExceptions.Any(exception => ReferenceEquals(exception, row.Exception)))
                     {
                         <div class="k" style="padding-top: 8px">Exception</div>
-                        <pre class="code" style="color: var(--fail)">@row.Exception.AsString</pre>
+                        @Html.Raw(BDTest.Helpers.ExceptionHtmlHelper.GetHtml(row.Exception))
                     }
                     @if (row.RetryCount > 0)
                     {

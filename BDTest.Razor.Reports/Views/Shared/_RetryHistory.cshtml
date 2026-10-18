@@ -21,10 +21,7 @@
                         <td style="min-width: 0">
                             @if (attempt.Exception != null)
                             {
-                                <details class="expander">
-                                    <summary class="mono" style="overflow-wrap: anywhere">@attempt.Exception.TypeName: @attempt.Exception.Message</summary>
-                                    <pre class="code" style="margin-top: 8px">@attempt.Exception.AsString</pre>
-                                </details>
+                                @Html.Raw(BDTest.Helpers.ExceptionHtmlHelper.GetHtml(attempt.Exception))
                             }
                         </td>
                     </tr>

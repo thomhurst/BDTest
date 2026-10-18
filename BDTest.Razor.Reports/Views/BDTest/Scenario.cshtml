@@ -138,6 +138,7 @@
                             <button class="btn sm" type="button" aria-pressed="true" data-bdtest-action="toggle-wrap" data-target="@traceId">Wrap</button>
                             <button class="btn sm" type="button" data-bdtest-action="copy-text" data-target="@traceId">Copy</button>
                         </div>
+                        @Html.Raw(BDTest.Helpers.ExceptionHtmlHelper.GetHtml(exception))
                         <pre class="code" id="@traceId">@(exception.AsString ?? exception.Message)</pre>
                     </div>
                 </section>
@@ -204,7 +205,7 @@
                                     @if (step.Exception != null && !(isFailing && ReferenceEquals(step.Exception, exception)))
                                     {
                                         <div class="k">Exception</div>
-                                        <pre class="code on-surface">@step.Exception.AsString</pre>
+                                        @Html.Raw(BDTest.Helpers.ExceptionHtmlHelper.GetHtml(step.Exception))
                                     }
                                     @if (step.Diagnostics?.Count > 0)
                                     {

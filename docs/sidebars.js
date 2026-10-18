@@ -103,6 +103,7 @@ const sidebars = {
         'migration/statuses',
         'migration/json-serialization',
         'migration/generated-name-text',
+        'migration/structured-exceptions',
         'migration/report-storage',
         'migration/from-specflow',
       ],

@@ -18,6 +18,7 @@ namespace BDTest.Helpers;
 [JsonSerializable(typeof(StepTable))]
 [JsonSerializable(typeof(StepDocString))]
 [JsonSerializable(typeof(Attachment))]
+[JsonSerializable(typeof(ExceptionWrapper))]
 public partial class BDTestJsonContext : JsonSerializerContext
 {
 }
