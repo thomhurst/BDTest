@@ -213,9 +213,10 @@ public partial class ReportUploadTests
         Assert.That(server.Store.Received, Is.Empty);
     }
 
-    [TestCase(false)]
-    [TestCase(true)]
-    public async Task Attachment_retries_reopen_streams_and_failure_preserves_capture(bool permanentFailure)
+    [TestCase(false, "")]
+    [TestCase(true, "")]
+    [TestCase(false, "/proxy/team/reports/")]
+    public async Task Attachment_retries_reopen_streams_and_failure_preserves_capture(bool permanentFailure, string prefix)
     {
         using var run = BDTestRun.Start();
         var fixture = new AttachmentFixture(run);
@@ -226,8 +227,14 @@ public partial class ReportUploadTests
         var reportId = Guid.NewGuid().ToString("N");
         using var handler = new AttachmentHttpHandler(async request =>
         {
-            if (request.Method == HttpMethod.Get) return new HttpResponseMessage(HttpStatusCode.OK);
-            if (request.RequestUri!.AbsolutePath == "/bdtest/data")
+            var basePath = string.IsNullOrEmpty(prefix) ? "/bdtest" : prefix.TrimEnd('/');
+            Assert.That(request.RequestUri!.AbsolutePath, Does.StartWith(basePath + "/"));
+            if (request.Method == HttpMethod.Get)
+            {
+                Assert.That(request.RequestUri.AbsolutePath, Is.EqualTo(basePath + "/ping"));
+                return new HttpResponseMessage(HttpStatusCode.OK);
+            }
+            if (request.RequestUri.AbsolutePath == basePath + "/data")
             {
                 reports++;
                 var response = new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent($"https://reports.test/bdtest/report/{reportId}") };
@@ -243,7 +250,7 @@ public partial class ReportUploadTests
                 : attempts == 1 ? HttpStatusCode.ServiceUnavailable : HttpStatusCode.NoContent);
         });
         using var client = new HttpClient(handler);
-        var upload = BDTestReportServer.SendDataAndGetReportUriAsync(new Uri("https://reports.test"), null, client, run);
+        var upload = BDTestReportServer.SendDataAndGetReportUriAsync(new Uri("https://reports.test" + prefix), null, client, run);
         if (permanentFailure) await Assert.ThrowsAsync<HttpRequestException>(async () => await upload);
         else await upload;
         Assert.That(attempts, Is.EqualTo(permanentFailure ? 1 : 2));

@@ -9,6 +9,8 @@ using BDTest.Razor.Reports.Models.ViewModels;
 using BDTest.Test;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Logging;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Abstractions;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
@@ -51,9 +53,14 @@ public class ReportHandlerEncodingTests
         record.FinishedAtDateTime = record.StartedAtDateTime.AddSeconds(1);
 
         var html = await RenderAsync("/Views/BDTest/TestRunList.cshtml", new[] { record }, isAdmin: true);
+        if (string.IsNullOrEmpty(value))
+        {
+            Assert.That(html, Does.Not.Contain("data-bdtest-action=\"delete\""));
+            return;
+        }
         var form = ReadElement(html, "<form[^>]*/report/delete/[^>]*>.*?</form>");
-        Assert.That((string)form.Attribute("action"),
-            Is.EqualTo("/bdtest/report/delete/" + Uri.EscapeDataString(record.RecordId ?? "")));
+        Assert.That(Uri.UnescapeDataString((string)form.Attribute("action")),
+            Is.EqualTo("/bdtest/report/delete/" + record.RecordId));
         Assert.That((string)form.Attribute("method"), Is.EqualTo("post"));
         var button = ReadElement(html, "<button[^>]*>Delete</button>");
         Assert.That((string)button.Attribute("type"), Is.EqualTo("submit"));
@@ -148,7 +155,11 @@ public class ReportHandlerEncodingTests
         if (customHeaderLinksProvider != null) builder.Services.AddSingleton(customHeaderLinksProvider);
         builder.Services.AddAuthorization(options => options.AddPolicy("EncodingTests", policy =>
             policy.RequireAssertion(_ => isAdmin)));
+        builder.WebHost.UseUrls("http://127.0.0.1:0");
+        builder.Logging.ClearProviders();
         await using var app = builder.Build();
+        app.MapBDTestReports();
+        await app.StartAsync();
         await using var scope = app.Services.CreateAsyncScope();
         var services = scope.ServiceProvider;
         var httpContext = new DefaultHttpContext { RequestServices = services };

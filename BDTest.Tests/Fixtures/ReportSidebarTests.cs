@@ -33,7 +33,7 @@ public class ReportSidebarTests
         builder.Services.AddSingleton<IDataRepository>(_repository);
         builder.Services.AddSingleton<IBDTestCustomSidebarLinksProvider>(_links);
         _application = builder.Build();
-        _application.MapControllers();
+        _application.MapBDTestReports();
         await _application.StartAsync();
         _client = new HttpClient { BaseAddress = new Uri(_application.Urls.Single()) };
     }

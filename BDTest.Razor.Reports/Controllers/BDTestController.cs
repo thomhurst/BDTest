@@ -8,7 +8,6 @@ using BDTest.Razor.Reports.Interfaces;
 using BDTest.Razor.Reports.Models;
 using BDTest.Razor.Reports.Models.ViewModels;
 using BDTest.Test;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using BDTest.Helpers;
@@ -16,7 +15,7 @@ using Microsoft.Extensions.Options;
 
 namespace BDTest.Razor.Reports.Controllers;
 
-[Route("bdtest")]
+[Route("")]
 [TypeFilter(typeof(ReportAuthorizationFilter), Arguments = new object[] { false })]
 public class BDTestController : Controller
 {
@@ -38,15 +37,12 @@ public class BDTestController : Controller
     }
         
     [HttpGet]
-    [AllowAnonymous]
     [Route("ping")]
     public IActionResult Ping()
     {
         return Ok();
     }
 
-    // Upload clients authenticate with the upload key, independently of the host's interactive login.
-    [AllowAnonymous]
     [HttpPost]
     [Route("data")]
     [ServiceFilter(typeof(ReportUploadFilter))]
@@ -295,7 +291,7 @@ public class BDTestController : Controller
     }
 
     [HttpGet]
-    [Route("/")]
+    [Route("")]
     public IActionResult Redirect()
     {
         return RedirectToAction("TestRuns");
@@ -454,7 +450,6 @@ public class BDTestController : Controller
         return File(stream, "application/json");
     }
 
-    [AllowAnonymous]
     // Exception handling re-executes the original HTTP method, including upload POSTs.
     [Route("error")]
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]

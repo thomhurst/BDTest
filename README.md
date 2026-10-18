@@ -787,18 +787,24 @@ Use the `Microsoft.AspNetCore.Authentication.OpenIdConnect`, `Microsoft.Identity
 ```csharp
 app.UseHttpsRedirection();
 app.UseStaticFiles(); // Only public assets belong in the web root.
-app.UseBDTestReportServer(); // Adds security headers to /bdtest responses.
+app.UseBDTestReportServer(); // Adds security headers under the mapped report prefix.
 app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseEndpoints(endpoints =>
 {
-    endpoints.MapControllers();
+    endpoints.MapBDTestReports().Add(endpoint =>
+    {
+        var action = endpoint.Metadata.OfType<Microsoft.AspNetCore.Mvc.Controllers.ControllerActionDescriptor>().SingleOrDefault();
+        if (action == null || action.ControllerName == "BDTest" && action.ActionName is "Ping" or "Index" or "Error"
+            || action.ControllerName == "Attachments" && action.ActionName == "Upload")
+            endpoint.Metadata.Add(new Microsoft.AspNetCore.Authorization.AllowAnonymousAttribute());
+    });
     endpoints.MapRazorPages();
 });
 ```
 
-The library marks uploads `[AllowAnonymous]` to bypass interactive sign-in, and its upload authorization filter requires `X-BDTest-Upload-Key` independently. Configure `UploadApiKey` for every host; no separate upload authentication middleware is needed. Use HTTPS for both browser sessions and uploads.
+The example explicitly permits anonymous uploads, errors and report assets to bypass interactive sign-in. The upload authorization filter requires `X-BDTest-Upload-Key` independently. Configure `UploadApiKey` for every host; no separate upload authentication middleware is needed. Use HTTPS for both browser sessions and uploads.
 
 For intentionally public reports, set `AllowAnonymousReports = true` instead of a read policy. A configured read policy takes precedence over this flag. The flag does not bypass host fallback policies or endpoint `RequireAuthorization(...)`, and grants no delete or upload permission. Explicit host endpoint authorization can also configure read access when no library read policy is set; a global fallback policy alone cannot. The sample sets both named policies above.
 

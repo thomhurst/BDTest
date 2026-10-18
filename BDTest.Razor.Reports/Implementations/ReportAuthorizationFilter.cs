@@ -1,8 +1,10 @@
+using BDTest.Razor.Reports.Controllers;
 using BDTest.Razor.Reports.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Authorization.Policy;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Controllers;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -21,15 +23,23 @@ public sealed class ReportAuthorizationFilter(
 
     public async Task OnAuthorizationAsync(AuthorizationFilterContext context)
     {
-        // Uploads use their own API key. Ping and error handling are also explicitly public.
-        if (context.ActionDescriptor.EndpointMetadata.OfType<IAllowAnonymous>().Any()) return;
+        var endpoint = context.HttpContext.GetEndpoint();
+        if (!requireAdmin && (endpoint?.Metadata.GetMetadata<IAllowAnonymous>() != null
+            || context.ActionDescriptor.EndpointMetadata.OfType<IAllowAnonymous>().Any())) return;
+
+        // Ingestion uses its own upload key, not the report-read policy. Host endpoint
+        // authorization still applies to these actions unless the host opts them out.
+        if (!requireAdmin && context.ActionDescriptor is ControllerActionDescriptor action
+            && (action.ControllerTypeInfo.AsType() == typeof(BDTestController)
+                && action.ActionName is nameof(BDTestController.Ping) or nameof(BDTestController.Index) or nameof(BDTestController.Error)
+                || action.ControllerTypeInfo.AsType() == typeof(AttachmentsController)
+                && action.ActionName == nameof(AttachmentsController.Upload))) return;
 
         var policyName = requireAdmin ? options.AdminAuthorizationPolicy : options.ReportsAuthorizationPolicy;
         if (string.IsNullOrWhiteSpace(policyName))
         {
             // Explicit endpoint authorization is enforced by the host's authorization middleware.
             // A fallback policy alone is not an explicit report-access configuration.
-            var endpoint = context.HttpContext.GetEndpoint();
             if (!requireAdmin && (options.AllowAnonymousReports
                 || endpoint?.Metadata.GetMetadata<IAuthorizeData>() != null
                 || endpoint?.Metadata.GetMetadata<AuthorizationPolicy>() != null)) return;

@@ -43,7 +43,7 @@
     pagination.PageSizeOptions = pageSizes;
     pagination.PageSize = pageSize;
 
-    var path = Url.Content("~/bdtest/report/test-runs");
+    var path = Url.ReportAction("TestRuns");
     var today = DateTime.UtcNow.Date;
 
     string Query(RunFilter value)
@@ -94,7 +94,7 @@
             <span class="mark">@ReportUi.Icon("i-upload", "xl")</span>
             <h2>No test runs yet</h2>
             <p>Runs appear here as soon as a test run uploads its results to this server. Send them with <span class="mono">BDTestReportServer.SendDataAndGetReportUriAsync</span> to this endpoint:</p>
-            <pre class="code" style="width: 100%; max-width: 520px; text-align: left">POST @(Context.Request.PathBase.Add("/bdtest/data").ToUriComponent())</pre>
+            <pre class="code" style="width: 100%; max-width: 520px; text-align: left">POST @(Url.ReportAction("Index"))</pre>
             <a class="lnk" href="https://thomhurst.github.io/BDTest/docs/report-server/sending-results" target="_blank" rel="noopener">How to send results</a>
         </section>
     }
@@ -174,7 +174,7 @@
                         <tbody>
                         @foreach (var record in pager.ItemsForCurrentPage)
                         {
-                            var reportUrl = Url.Content("~/bdtest/report/" + Uri.EscapeDataString(record.RecordId ?? string.Empty) + "/summary");
+                            var reportUrl = string.IsNullOrEmpty(record.RecordId) ? Url.ReportAction("TestRuns") : Url.ReportAction("Summary", new { id = record.RecordId });
                             var counts = record.Counts ?? new Counts();
                             var total = Math.Max(counts.Total, 0);
                             var other = Math.Max(total - counts.Passed - counts.Failed, 0);
@@ -234,11 +234,11 @@
                                         <ul class="menu-list">
                                             <li><a class="menu-item" href="@reportUrl">View report</a></li>
                                             <li><button class="menu-item" type="button" data-bdtest-action="copy-url" data-url="@reportUrl">Copy link</button></li>
-                                            @if (isAdmin)
+                                            @if (isAdmin && !string.IsNullOrEmpty(record.RecordId))
                                             {
                                                 <li class="menu-sep" role="separator"></li>
                                                 <li>
-                                                    <form method="post" action="@Url.Content("~/bdtest/report/delete/" + Uri.EscapeDataString(record.RecordId ?? ""))">
+                                                    <form method="post" action="@Url.ReportAction("DeleteReport", new { id = record.RecordId ?? "" })">
                                                         @Html.AntiForgeryToken()
                                                         <button type="submit" class="menu-item danger"
                                                                 data-bdtest-action="delete"

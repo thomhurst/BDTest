@@ -43,7 +43,7 @@ public static class BDTestReportServer
         var dataOutputModel = BDTestOutputModelBuilder.Build(run, bdTestRunDescriptor);
         var pingUri = new UriBuilder(serverAddress)
         {
-            Path = "bdtest/ping"
+            Path = GetReportBasePath(serverAddress) + "ping"
         }.Uri;
             
         try
@@ -57,7 +57,7 @@ public static class BDTestReportServer
             
         var uploadUri = new UriBuilder(serverAddress)
         {
-            Path = "bdtest/data"
+            Path = GetReportBasePath(serverAddress) + "data"
         }.Uri;
 
         var attachments = BDTestAttachmentHelper.GetAttachments(dataOutputModel).ToArray();
@@ -102,6 +102,10 @@ public static class BDTestReportServer
         }
         return new Uri(responseContent);
     }
+
+    // A bare origin keeps the default mapping; a supplied path is the full report prefix.
+    private static string GetReportBasePath(Uri serverAddress) => serverAddress.AbsolutePath == "/"
+        ? "/bdtest/" : serverAddress.AbsolutePath.TrimEnd('/') + "/";
 
     private static async Task SendWithRetryAsync(HttpClient httpClient, Func<HttpRequestMessage> createRequest,
         Func<HttpResponseMessage, Task> consumeResponse)

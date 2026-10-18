@@ -19,7 +19,7 @@ internal static class ReportSecurityHeaders
         return nonce;
     }
 
-    internal static void Apply(HttpContext context)
+    internal static void Apply(HttpContext context, bool preventCaching = true)
     {
         var nonce = GetNonce(context);
         // Append so any policy supplied by the host remains enforced as well.
@@ -33,6 +33,6 @@ internal static class ReportSecurityHeaders
         context.Response.Headers["Referrer-Policy"] = "no-referrer";
         context.Response.Headers["X-Frame-Options"] = "DENY";
         // Cached HTML must not reuse a nonce across responses.
-        context.Response.Headers["Cache-Control"] = "no-store";
+        if (preventCaching) context.Response.Headers["Cache-Control"] = "no-store";
     }
 }

@@ -8,7 +8,6 @@
 @{
     var report = Model.Report;
     var activeTab = ViewData["RunTab"] as string ?? "overview";
-    var reportPath = "~/bdtest/report/" + Uri.EscapeDataString(report.Id ?? string.Empty);
     var total = Model.Scenarios.Count;
     var failed = Model.Counts[Status.Failed];
     var status = Model.Status;
@@ -32,7 +31,7 @@
         ["tag"] = report.Tag, ["environment"] = report.Environment, ["branch"] = report.BranchName
     }.Where(pair => !string.IsNullOrEmpty(pair.Value))
         .Select(pair => pair.Key + "=" + Uri.EscapeDataString(pair.Value));
-    var historyUrl = Url.Content("~/bdtest/report/history") + (historyQuery.Any() ? "?" + string.Join("&", historyQuery) : string.Empty);
+    var historyUrl = Url.ReportAction("Trends") + (historyQuery.Any() ? "?" + string.Join("&", historyQuery) : string.Empty);
     var started = Model.Timer.TestsStartedAt;
     var hasTimes = total > 0 || report.TestTimer != null;
 }
@@ -40,7 +39,7 @@
 <section class="page-head" aria-label="Run">
     <div class="wrap">
         <nav class="crumbs" aria-label="Breadcrumb">
-            <a class="lnk" href="~/bdtest/report/test-runs">Runs</a><span aria-hidden="true">/</span>
+            <a class="lnk" href="@Url.ReportAction("TestRuns")">Runs</a><span aria-hidden="true">/</span>
             <a class="lnk" href="@historyUrl">@Model.Title</a>
             @if (hasTimes && started != default)
             {
@@ -76,7 +75,7 @@
                     <span class="btn sm hide-phone" aria-disabled="true">Next run@(ReportUi.Icon("i-chev-r"))</span>
                 }
                 @await Html.PartialAsync("_CopyLinkButton")
-                <a class="btn sm" href="@Url.Content(reportPath + "/raw-json-data")" download>@ReportUi.Icon("i-down")JSON</a>
+                <a class="btn sm" href="@Url.ReportAction("RawJsonData", new { id = report.Id })" download>@ReportUi.Icon("i-down")JSON</a>
             </div>
         </div>
         <div class="meta">
@@ -99,12 +98,12 @@
             }
         </div>
         <nav class="tabs" aria-label="Run sections">
-            @Tab("overview", "Overview", reportPath + "/summary", null, false)
-            @Tab("scenarios", "Scenarios", reportPath + "/all-scenarios", total.ToString(), false)
-            @Tab("failures", "Failures", reportPath + "/top-defects",
+            @Tab("overview", "Overview", Url.ReportAction("Summary", new { id = report.Id }), null, false)
+            @Tab("scenarios", "Scenarios", Url.ReportAction("AllScenarios", new { id = report.Id }), total.ToString(), false)
+            @Tab("failures", "Failures", Url.ReportAction("TopDefects", new { id = report.Id }),
                 Model.FailureCauses == 0 ? null : Model.FailureCauses + (Model.FailureCauses == 1 ? " cause" : " causes"), true)
-            @Tab("timings", "Timings", reportPath + "/timings", null, false)
-            @Tab("notrun", "Not run", reportPath + "/warnings", Model.NotRunCount == 0 ? null : Model.NotRunCount.ToString(), false)
+            @Tab("timings", "Timings", Url.ReportAction("Timings", new { id = report.Id }), null, false)
+            @Tab("notrun", "Not run", Url.ReportAction("Warnings", new { id = report.Id }), Model.NotRunCount == 0 ? null : Model.NotRunCount.ToString(), false)
         </nav>
     </div>
 </section>
@@ -115,13 +114,13 @@
     {
         var page = tab switch
         {
-            "scenarios" => "all-scenarios",
-            "failures" => "top-defects",
-            "timings" => "timings",
-            "notrun" => "warnings",
-            _ => "summary"
+            "scenarios" => "AllScenarios",
+            "failures" => "TopDefects",
+            "timings" => "Timings",
+            "notrun" => "Warnings",
+            _ => "Summary"
         };
-        return Url.Content($"~/bdtest/report/{Uri.EscapeDataString(id ?? string.Empty)}/{page}");
+        return Url.ReportAction(page, new { id = id ?? string.Empty });
     }
 
     private Microsoft.AspNetCore.Html.IHtmlContent Tab(string key, string text, string href, string count, bool failure)
@@ -130,6 +129,6 @@
         var encoder = System.Text.Encodings.Web.HtmlEncoder.Default;
         var badge = count == null ? string.Empty : $" <span class=\"cnt{(failure ? " f" : "")}\">{encoder.Encode(count)}</span>";
         return new Microsoft.AspNetCore.Html.HtmlString(
-            $"<a class=\"tab{(active ? " on" : "")}\" href=\"{encoder.Encode(Url.Content(href))}\"{(active ? " aria-current=\"page\"" : "")}>{encoder.Encode(text)}{badge}</a>");
+            $"<a class=\"tab{(active ? " on" : "")}\" href=\"{encoder.Encode(href)}\"{(active ? " aria-current=\"page\"" : "")}>{encoder.Encode(text)}{badge}</a>");
     }
 }

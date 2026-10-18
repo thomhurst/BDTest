@@ -11,7 +11,7 @@
     ViewData["RunTab"] = "timings";
     Layout = "_Layout";
 
-    var reportUrl = Url.Content("~/bdtest/report/" + Uri.EscapeDataString(Model.Id ?? string.Empty));
+    var reportId = Model.Id ?? string.Empty;
     // Skipped and unstarted scenarios did no work, so they would only crowd the fastest list.
     var ordered = run.Scenarios.Where(scenario => scenario.Status is not (Status.Skipped or Status.NotRun)).OrderBy(scenario => scenario.TimeTaken).ToList();
     var slowest = ordered.AsEnumerable().Reverse().Take(10).ToList();
@@ -37,7 +37,7 @@
         .OrderBy(duration => duration)
         .ToList();
 
-    var historyUrl = Url.Content("~/bdtest/report/history/timing") + (string.IsNullOrEmpty(Model.Tag) ? string.Empty : "?tag=" + Uri.EscapeDataString(Model.Tag));
+    var historyUrl = Url.ReportAction("TimingVariance") + (string.IsNullOrEmpty(Model.Tag) ? string.Empty : "?tag=" + Uri.EscapeDataString(Model.Tag));
 }
 
 @await Html.PartialAsync("_RunHeader", run)
@@ -73,10 +73,10 @@
 
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(520px, 100%), 1fr)); gap: 20px; align-items: start">
             <section class="card clip" aria-labelledby="slowest">
-                <div class="card-head"><h2 id="slowest">@($"Slowest {slowest.Count}")</h2><a class="lnk" href="@reportUrl/all-scenarios?order=durationDescending">Sort Scenarios by duration</a></div>
+                <div class="card-head"><h2 id="slowest">@($"Slowest {slowest.Count}")</h2><a class="lnk" href="@(Url.ReportAction("AllScenarios", new { id = reportId }))?order=durationDescending">Sort Scenarios by duration</a></div>
                 @foreach (var scenario in slowest)
                 {
-                    @BarRow(scenario, reportUrl, scale)
+                    @BarRow(scenario, reportId, scale)
                 }
             </section>
 
@@ -84,7 +84,7 @@
                 <div class="card-head"><h2 id="fastest">@($"Fastest {fastest.Count}")</h2><span class="small muted">same scale as slowest</span></div>
                 @foreach (var scenario in fastest)
                 {
-                    @BarRow(scenario, reportUrl, scale)
+                    @BarRow(scenario, reportId, scale)
                 }
             </section>
         </div>
@@ -95,17 +95,18 @@
 
 @functions
 {
-    private Microsoft.AspNetCore.Html.IHtmlContent BarRow(Scenario scenario, string reportUrl, long scale)
+    private Microsoft.AspNetCore.Html.IHtmlContent BarRow(Scenario scenario, string reportId, long scale)
     {
         var encoder = System.Text.Encodings.Web.HtmlEncoder.Default;
-        var url = reportUrl + "/scenario/" + Uri.EscapeDataString(scenario.Guid ?? string.Empty);
+        var url = Url.ReportScenario(reportId, scenario.Guid);
         var name = scenario.GetScenarioText();
         if (scenario.ExampleValues?.Count > 0)
         {
             name += " (" + string.Join(", ", scenario.ExampleValues.Values) + ")";
         }
 
-        var html = $"<a class=\"bar-row\" href=\"{encoder.Encode(url)}\">{scenario.Status.StatusIcon()}"
+        var href = url == null ? string.Empty : $" href=\"{encoder.Encode(url)}\"";
+        var html = $"<a class=\"bar-row\"{href}>{scenario.Status.StatusIcon()}"
                    + $"<span class=\"strong\" style=\"min-width: 0; overflow-wrap: anywhere\">{encoder.Encode(name)}</span>"
                    + $"<span class=\"mono muted\" style=\"text-align: right\">{encoder.Encode(scenario.TimeTaken.ToShortDuration())}</span>"
                    + $"<span></span><span class=\"track\"><span style=\"width: {ReportUi.Percent(scenario.TimeTaken.Ticks, scale)}%\"></span></span><span></span></a>";

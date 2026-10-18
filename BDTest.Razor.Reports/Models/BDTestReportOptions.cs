@@ -40,7 +40,7 @@ public class BDTestReportOptions
     public TimeSpan ReportCacheRetention { get; set; } = TimeSpan.FromHours(8);
 
     /// <summary>
-    /// Enables security headers on /bdtest responses. Disable only when the host supplies its own
+    /// Enables security headers under the mapped report prefix. Disable only when the host supplies its own
     /// compatible policy. Register UseBDTestReportServer before endpoint/authentication middleware.
     /// </summary>
     public bool EnableSecurityHeaders { get; set; } = true;

@@ -6,7 +6,7 @@
     ViewBag.Title = "Scenario not found";
     ViewData["RunTab"] = "scenarios";
     Layout = "_Layout";
-    var reportUrl = Url.Content("~/bdtest/report/" + Uri.EscapeDataString(Model.Id ?? string.Empty));
+    var reportId = Model.Id ?? string.Empty;
     var started = run.Timer.TestsStartedAt;
 }
 
@@ -21,8 +21,8 @@
             but it has no scenario with this ID. It may have been renamed.
         </p>
         <div class="cluster">
-            <a class="btn pri" href="@reportUrl/all-scenarios">Search this run</a>
-            <a class="btn" href="@reportUrl/summary">Run overview</a>
+            <a class="btn pri" href="@(Url.ReportAction("AllScenarios", new { id = reportId }))">Search this run</a>
+            <a class="btn" href="@(Url.ReportAction("Summary", new { id = reportId }))">Run overview</a>
         </div>
     </section>
 </main>

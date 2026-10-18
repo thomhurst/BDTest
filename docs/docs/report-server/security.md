@@ -56,7 +56,17 @@ app.UseStaticFiles(); // Only public assets belong in the web root.
 app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
-app.MapControllers();
+app.MapBDTestReports().Add(endpoint =>
+{
+    // Allow test jobs to authenticate with the upload key instead of interactive sign-in.
+    var action = endpoint.Metadata
+        .OfType<Microsoft.AspNetCore.Mvc.Controllers.ControllerActionDescriptor>()
+        .SingleOrDefault();
+    if (action == null || action.ControllerName == "BDTest" && action.ActionName is "Ping" or "Index" or "Error"
+        || action.ControllerName == "Attachments" && action.ActionName == "Upload")
+        endpoint.Metadata.Add(new Microsoft.AspNetCore.Authorization.AllowAnonymousAttribute());
+});
+app.MapControllers(); // The host's other MVC controllers.
 app.MapRazorPages();
 ```
 
@@ -70,10 +80,11 @@ Every user accepted by your policy can read every report. There are no per-repor
 
 ### Anonymous endpoints
 
-- `POST /bdtest/data` is `[AllowAnonymous]` so test jobs do not need an interactive sign-in. It is protected by the upload key instead.
-- `GET /bdtest/ping` is anonymous for warm-up checks.
-- The library's error page is anonymous.
-- Static CSS, JavaScript and images are public.
+Report controllers have no built-in `[AllowAnonymous]` exemptions. `.RequireAuthorization("Reports")` on `MapBDTestReports` therefore protects every endpoint, including ping, uploads, errors and assets. A fallback policy applies when you do not supply endpoint authorization metadata.
+
+Ping, error handling and ingestion do not use the library's report-read policy. Host endpoint and fallback authorization still apply to these actions. Report reads continue to fail closed until explicitly configured, and anonymous endpoint conventions never grant delete permission.
+
+The example above explicitly makes upload actions, ping, errors and report assets anonymous, matching the sample server. Upload actions still require the upload key, and attachment writes also require the server's receipt. Omit those exemptions if your jobs authenticate through the host's scheme. Keep reader and download actions protected.
 
 ## Upload key
 
@@ -88,11 +99,11 @@ builder.Services.AddBDTestReports(options =>
 });
 ```
 
-- An unset or blank key disables uploads (HTTP 401). Existing reports and the ping endpoint stay available.
+- An unset or blank key disables uploads (HTTP 401). This setting does not change reader or ping authorization.
 - Missing, incorrect or multiple key headers return HTTP 401. Keys are compared in constant time.
 - The key and rate limit are checked before the JSON body is parsed.
 - A reader's sign-in cookie cannot replace the upload key, and the upload key does not grant read access.
-- Configure `UploadApiKey` on every host. No separate upload authentication middleware is needed.
+- Configure `UploadApiKey` on every host. The endpoint must also satisfy your host's authorization policy unless you explicitly allow anonymous ingestion.
 
 Generate a long random value, keep it out of source control and share it only with the jobs that upload reports. Use HTTPS for both browser sessions and uploads. See [Sending results](sending-results.md) for the client side.
 
@@ -120,11 +131,11 @@ This permits report reads only. It grants no upload or delete permission. Altern
 
 ## Security headers
 
-`UseBDTestReportServer` adds security headers to every `/bdtest` response, including rejected uploads, redirects and missing reports. Other routes and static assets keep your host's policies.
+`UseBDTestReportServer` adds security headers to every response under the prefix selected by `MapBDTestReports`, including assets, rejected uploads, redirects and missing reports. Routes outside that prefix keep your host's policies.
 
 - A Content Security Policy with a fresh nonce for each report script. It blocks inline event handlers, plugins, base URL changes and embedding reports in other pages, and limits forms and connections to the same origin.
 - `X-Content-Type-Options: nosniff`, `Referrer-Policy: no-referrer` and `X-Frame-Options: DENY`.
-- `Cache-Control: no-store`, so HTML and its nonce are not reused.
+- `Cache-Control: no-store` on report responses, so HTML and its nonce are not reused. Report assets use a one-day public cache.
 
 Inline styles stay allowed for Bootstrap, charts and custom output. Google Fonts is allowed for the theme. Images may use HTTP(S) or `data:` URLs so sandboxed custom HTML can show screenshots. The report CSP is added alongside any CSP your host sets, so both policies must allow a resource.
 

@@ -12,6 +12,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Controllers;
 using Microsoft.AspNetCore.Mvc.Routing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -28,22 +29,26 @@ public class ReportAuthorizationTests
         foreach (var controller in new[] { typeof(BDTestController), typeof(AttachmentsController) })
         foreach (var action in controller.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly))
         {
-            if (action.IsDefined(typeof(AllowAnonymousAttribute)) || action.Name == nameof(BDTestController.DeleteReport)) continue;
+            if (action.Name == nameof(BDTestController.DeleteReport)
+                || controller == typeof(BDTestController) && action.Name is nameof(BDTestController.Ping) or nameof(BDTestController.Index) or nameof(BDTestController.Error)
+                || controller == typeof(AttachmentsController) && action.Name == nameof(AttachmentsController.Upload)) continue;
             var methods = action.GetCustomAttributes<HttpMethodAttribute>().SelectMany(attribute => attribute.HttpMethods).ToArray();
             foreach (var route in action.GetCustomAttributes().OfType<IRouteTemplateProvider>().Where(route => route.Template != null))
             {
                 var path = route.Template.StartsWith('/') ? route.Template : "/bdtest/" + route.Template;
                 path = System.Text.RegularExpressions.Regex.Replace(path, "\\{[^}]+\\}", "missing");
+                foreach (var prefix in new[] { "/bdtest", "/team/reports" })
                 foreach (var method in methods)
-                    yield return new TestCaseData(method, path).SetName($"Report_read_denied_{method}_{path}");
+                    yield return new TestCaseData(method, path.Replace("/bdtest/", prefix + "/"), prefix)
+                        .SetName($"Report_read_denied_{method}_{prefix}_{path}");
             }
         }
     }
 
     [TestCaseSource(nameof(ReadRoutes))]
-    public async Task Every_read_route_fails_closed_and_enforces_custom_policy(string method, string path)
+    public async Task Every_read_route_fails_closed_and_enforces_custom_policy(string method, string path, string prefix)
     {
-        await using var host = await ReportHost.Start();
+        await using var host = await ReportHost.Start(prefix: prefix);
         using var request = new HttpRequestMessage(new HttpMethod(method), path);
         using var denied = await host.Client.SendAsync(request);
         Assert.That(denied.StatusCode, Is.EqualTo(HttpStatusCode.Forbidden));
@@ -93,6 +98,17 @@ public class ReportAuthorizationTests
     public async Task Anonymous_opt_in_serves_reports_but_does_not_enable_deletion()
     {
         await using var host = await ReportHost.Start(options => options.AllowAnonymousReports = true);
+        using var page = await host.Client.GetAsync("/bdtest/report/test-runs");
+        Assert.That(page.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        using var delete = await host.Client.DeleteAsync("/bdtest/report/delete/missing");
+        Assert.That(delete.StatusCode, Is.EqualTo(HttpStatusCode.Forbidden));
+    }
+
+    [Test]
+    public async Task Anonymous_endpoint_conventions_do_not_enable_deletion()
+    {
+        await using var host = await ReportHost.Start(options => options.ReportsAuthorizationPolicy = "Readers",
+            allowAnonymousEndpoints: true);
         using var page = await host.Client.GetAsync("/bdtest/report/test-runs");
         Assert.That(page.StatusCode, Is.EqualTo(HttpStatusCode.OK));
         using var delete = await host.Client.DeleteAsync("/bdtest/report/delete/missing");
@@ -181,7 +197,7 @@ public class ReportAuthorizationTests
         public RecordingLogger Logs { get; } = logs;
         public BDTestReportOptions Options => app.Services.GetRequiredService<IOptions<BDTestReportOptions>>().Value;
 
-        public static async Task<ReportHost> Start(Action<BDTestReportOptions> configure = null, bool requireEndpointPolicy = false, bool useOptionsMiddleware = true, bool addAuthentication = true)
+        public static async Task<ReportHost> Start(Action<BDTestReportOptions> configure = null, bool requireEndpointPolicy = false, bool useOptionsMiddleware = true, bool addAuthentication = true, string prefix = "/bdtest", bool allowAnonymousEndpoints = false)
         {
             var builder = WebApplication.CreateBuilder();
             builder.WebHost.UseUrls("http://127.0.0.1:0");
@@ -203,8 +219,19 @@ public class ReportAuthorizationTests
             app.UseRouting();
             if (addAuthentication) app.UseAuthentication();
             app.UseAuthorization();
-            var endpoints = app.MapControllers();
-            if (requireEndpointPolicy) endpoints.RequireAuthorization("Readers");
+            var endpoints = app.MapBDTestReports(prefix);
+            if (allowAnonymousEndpoints) endpoints.AllowAnonymous();
+            if (requireEndpointPolicy)
+            {
+                endpoints.RequireAuthorization("Readers");
+                endpoints.Add(endpoint =>
+                {
+                    var action = endpoint.Metadata.OfType<ControllerActionDescriptor>().SingleOrDefault();
+                    if (action?.ControllerName == "BDTest" && action.ActionName is "Ping" or "Index" or "Error"
+                        || action?.ControllerName == "Attachments" && action.ActionName == "Upload")
+                        endpoint.Metadata.Add(new AllowAnonymousAttribute());
+                });
+            }
             await app.StartAsync();
             return new ReportHost(app, new HttpClient(new HttpClientHandler { AllowAutoRedirect = false })
             {

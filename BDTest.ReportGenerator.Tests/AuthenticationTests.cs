@@ -243,6 +243,27 @@ public class AuthenticationTests
             Is.EqualTo("https://localhost:8443/reports/signin-oidc"));
     }
 
+    [TestCase("")]
+    [TestCase("/team")]
+    [TestCase("/team/")]
+    public async Task Root_redirect_preserves_proxy_prefix(string prefix)
+    {
+        SignIn();
+        var context = await _server.SendAsync(context =>
+        {
+            context.Connection.RemoteIpAddress = IPAddress.Loopback;
+            context.Request.Scheme = "https";
+            context.Request.Host = new HostString("localhost");
+            context.Request.Path = "/";
+            context.Request.Headers.Cookie = _client.DefaultRequestHeaders.GetValues("Cookie").Single();
+            context.Request.Headers["X-Forwarded-Prefix"] = prefix.TrimEnd('/');
+        });
+
+        Assert.That(context.Response.StatusCode, Is.EqualTo(302));
+        Assert.That(context.Response.Headers.Location.ToString(),
+            Is.EqualTo(prefix.TrimEnd('/') + "/bdtest/report/test-runs"));
+    }
+
     [Test]
     public async Task Untrusted_proxy_cannot_override_the_origin_or_path_prefix()
     {
@@ -331,7 +352,7 @@ public class AuthenticationTests
     [TestCase("favicon.ico", "image/x-icon")]
     public async Task Report_static_assets_are_anonymous_and_cached(string path, string contentType)
     {
-        using var response = await _client.GetAsync($"/_content/BDTest.Razor.Reports/{path}");
+        using var response = await _client.GetAsync($"/bdtest/assets/{path}");
 
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
         Assert.That(response.Content.Headers.ContentType?.MediaType, Is.EqualTo(contentType));

@@ -7,9 +7,9 @@
     var filter = Model.Filter;
     var action = Model.Tab switch
     {
-        HistoryViewModel.Flaky => "~/bdtest/report/history/flaky",
-        HistoryViewModel.Timing => "~/bdtest/report/history/timing",
-        _ => "~/bdtest/report/history"
+        HistoryViewModel.Flaky => Url.ReportAction("TestRunFlakiness"),
+        HistoryViewModel.Timing => Url.ReportAction("TimingVariance"),
+        _ => Url.ReportAction("Trends")
     };
 
     var scope = new List<string>();
@@ -30,7 +30,7 @@
             <span class="grow"></span>
             @await Html.PartialAsync("_CopyLinkButton")
         </div>
-        <form class="filters" method="get" action="@Url.Content(action)" data-autosubmit>
+        <form class="filters" method="get" action="@action" data-autosubmit>
             @Select("Tag", "tag", "All tags", Model.AllRuns.Select(run => run.Tag), filter.Tag)
             @Select("Environment", "environment", "All", Model.AllRuns.Select(run => run.Environment), filter.Environment)
             @Select("Branch", "branch", "All", Model.AllRuns.Select(run => run.BranchName), filter.Branch)
@@ -57,12 +57,12 @@
                 <input type="hidden" name="compare" value="@Model.Compare">
             }
             <noscript><button class="btn sm" type="submit">Apply</button></noscript>
-            <a class="btn ghost sm link" href="@Url.Content(action)" style="min-height: 36px">Reset filters</a>
+            <a class="btn ghost sm link" href="@action" style="min-height: 36px">Reset filters</a>
         </form>
         <nav class="tabs" aria-label="History views">
-            @Tab(HistoryViewModel.Trends, "Trends", "~/bdtest/report/history")
-            @Tab(HistoryViewModel.Flaky, "Flaky tests", "~/bdtest/report/history/flaky")
-            @Tab(HistoryViewModel.Timing, "Timing variance", "~/bdtest/report/history/timing")
+            @Tab(HistoryViewModel.Trends, "Trends", Url.ReportAction("Trends"))
+            @Tab(HistoryViewModel.Flaky, "Flaky tests", Url.ReportAction("TestRunFlakiness"))
+            @Tab(HistoryViewModel.Timing, "Timing variance", Url.ReportAction("TimingVariance"))
         </nav>
     </div>
 </section>
@@ -103,7 +103,7 @@
             query.Add(new KeyValuePair<string, string>("compare", Model.Compare.ToString()));
         }
 
-        var href = Url.Content(path) + RunFilter.ToQueryString(query);
+        var href = path + RunFilter.ToQueryString(query);
         return new Microsoft.AspNetCore.Html.HtmlString(
             $"<a class=\"tab{(active ? " on" : "")}\" href=\"{encoder.Encode(href)}\"{(active ? " aria-current=\"page\"" : "")}>{encoder.Encode(text)}</a>");
     }

@@ -27,18 +27,16 @@ Configure the proxy to overwrite client-supplied forwarding headers and to send 
 
 ### Path prefixes
 
-To serve the reports under a prefix such as `/reports`:
+Mount reports directly with `app.MapBDTestReports("/reports")`. Navigation, assets, redirects and uploads use that prefix, and the host's `/` remains available.
 
-- If the proxy **strips** the prefix, also send `X-Forwarded-Prefix: /reports` and enable the forwarded prefix in `ForwardedHeadersOptions`.
-- If the proxy **keeps** the prefix in the forwarded path, call `app.UsePathBase("/reports")` before routing and before `UseBDTestReportServer`.
+A reverse proxy can add another path base such as `/team`:
 
-Include the prefix in your identity provider's redirect URI, for example `https://reports.example.com/reports/signin-oidc`.
+- If the proxy **strips** `/team`, send `X-Forwarded-Prefix: /team` and enable forwarded prefixes in `ForwardedHeadersOptions`.
+- If the proxy **keeps** `/team`, call `app.UsePathBase("/team")` before routing and before `UseBDTestReportServer`.
 
-:::warning Uploads ignore the path prefix
-`BDTestReportServer.SendDataAndGetReportUriAsync` replaces the path of the server address with `bdtest/ping` and `bdtest/data`. A server address of `https://reports.example.com/reports` therefore uploads to `https://reports.example.com/bdtest/data`, outside the `/reports` mapping. When you host under a prefix, also route `/bdtest/ping` and `/bdtest/data` at the root of the upload host to the report server, or give test jobs a separate unprefixed host name for uploads.
+Include the path base in your identity provider's redirect URI, for example `https://reports.example.com/team/signin-oidc`.
 
-When using root upload routes with prefixed report navigation, keep the report path base on those routes too: send `X-Forwarded-Prefix: /reports` when stripping the prefix, or rewrite the backend path to `/reports/bdtest/...` when using `UsePathBase`. This keeps the returned report URL under `/reports`. Keep upload-key enforcement enabled and apply the same HTTPS and rate limits.
-:::
+Upload clients pass the full external report base address: `https://reports.example.com/team/reports` in this example. The client appends `ping`, `data` and attachment upload paths to that address. Trailing slashes are optional. A bare origin such as `https://reports.example.com` keeps the default `/bdtest` mapping; any non-root path replaces that default, so include `/bdtest` yourself when using `UsePathBase` with the default mapping (for example `https://reports.example.com/team/bdtest`).
 
 ### Trust
 

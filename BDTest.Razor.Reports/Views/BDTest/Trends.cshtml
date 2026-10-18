@@ -36,7 +36,7 @@
     double X(int index) => chartRuns.Count == 1 ? 50 : index * 100.0 / (chartRuns.Count - 1);
     double Y(double value) => (highSeconds - value) / (highSeconds - lowSeconds) * 100;
     string F(double value) => value.ToString("0.##", CultureInfo.InvariantCulture);
-    string RunUrl(TestRunSummary run) => Url.Content("~/bdtest/report/" + Uri.EscapeDataString(run.RecordId ?? string.Empty) + "/summary");
+    string RunUrl(TestRunSummary run) => Url.ReportAction("Summary", new { id = run.RecordId ?? string.Empty });
 }
 
 @await Html.PartialAsync("_HistoryHeader", Model)
@@ -66,9 +66,9 @@
             <div class="cluster">
                 @if (latest != null)
                 {
-                    <a class="btn pri" href="@(Url.Content("~/bdtest/report/history") + RunFilter.ToQueryString(anyTime.ToQuery(false)))">Show any time</a>
+                    <a class="btn pri" href="@(Url.ReportAction("Trends") + RunFilter.ToQueryString(anyTime.ToQuery(false)))">Show any time</a>
                 }
-                <a class="btn" href="@Url.Content("~/bdtest/report/history")">Reset filters</a>
+                <a class="btn" href="@Url.ReportAction("Trends")">Reset filters</a>
             </div>
         </section>
     }
@@ -78,7 +78,7 @@
             <div class="stat"><span class="k">Runs that passed</span><b>@passedRuns of @runs.Count</b></div>
             <div class="stat"><span class="k">Average pass rate</span><b>@(rates.Count == 0 ? "—" : rates.Average().ToString("0.#", CultureInfo.CurrentCulture) + "%")</b></div>
             <div class="stat"><span class="k">Median duration</span><b>@(durations.Count == 0 ? "—" : durations[durations.Count / 2].ToShortDuration())</b></div>
-            <div class="stat"><span class="k">Flaky scenarios</span><b><a class="lnk" href="@(Url.Content("~/bdtest/report/history/flaky") + filterQuery)">Find them</a></b></div>
+            <div class="stat"><span class="k">Flaky scenarios</span><b><a class="lnk" href="@(Url.ReportAction("TestRunFlakiness") + filterQuery)">Find them</a></b></div>
         </section>
 
         <section class="card card-pad" aria-labelledby="results" style="gap: 14px">
@@ -148,7 +148,7 @@
         <section class="card clip" aria-labelledby="table">
             <div class="card-head">
                 <h2 id="table">Same data as a table</h2>
-                <a class="lnk" href="@(Url.Content("~/bdtest/report/test-runs") + filterQuery)">All @runs.Count run@(runs.Count == 1 ? "" : "s")</a>
+                <a class="lnk" href="@(Url.ReportAction("TestRuns") + filterQuery)">All @runs.Count run@(runs.Count == 1 ? "" : "s")</a>
             </div>
             <div class="table-scroll">
                 <table class="t">

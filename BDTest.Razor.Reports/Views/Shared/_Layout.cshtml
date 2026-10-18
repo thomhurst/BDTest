@@ -12,11 +12,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="color-scheme" content="light dark">
     <title>@title</title>
-    <link rel="icon" href="~/_content/BDTest.Razor.Reports/favicon.ico">
+    <link rel="icon" href="@Url.ReportAsset("/favicon.ico")">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
-    <link rel="stylesheet" href="~/_content/BDTest.Razor.Reports/css/bdtest-report.css" asp-append-version="true"/>
-    <script src="~/_content/BDTest.Razor.Reports/js/BDTest.js" asp-append-version="true" defer></script>
+    <link rel="stylesheet" href="@Url.ReportAsset("/css/bdtest-report.css")"/>
+    <script src="@Url.ReportAsset("/js/BDTest.js")" defer></script>
 </head>
 <body>
 @await Html.PartialAsync("_SvgIcons")

@@ -71,4 +71,4 @@ See [Hosting](hosting.md#behind-a-reverse-proxy) for the general rules.
 
 ## Request pipeline
 
-`Program.BuildApplication` runs, in order: forwarded headers, the exception handler and HSTS (outside Development), HTTPS redirection, static files with one-day caching, `UseBDTestReportServer`, routing, authentication and authorization, then the controller and Razor page endpoints.
+`Program.BuildApplication` runs, in order: forwarded headers, the exception handler and HSTS (outside Development), HTTPS redirection, static files with one-day caching, `UseBDTestReportServer`, routing, authentication and authorization, then `MapBDTestReports`, the host controller and Razor page endpoints. The sample explicitly redirects `/` to its run list using `Request.PathBase`, preserving a trusted proxy's forwarded prefix even when the external mount URL has no trailing slash; the library does not map the host root. Report assets live under `/bdtest/assets` and use a one-day public cache.

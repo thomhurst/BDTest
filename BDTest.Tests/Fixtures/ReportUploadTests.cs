@@ -969,7 +969,7 @@ public partial class ReportUploadTests
             var app = builder.Build();
             configureApp?.Invoke(app);
             app.UseBDTestReportServer();
-            app.MapControllers();
+            app.MapBDTestReports();
             await app.StartAsync();
             return new UploadServer(app, new HttpClient(new HttpClientHandler { AllowAutoRedirect = false }) { BaseAddress = new Uri(app.Urls.Single()) }, store);
         }

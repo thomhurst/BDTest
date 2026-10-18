@@ -9,13 +9,13 @@
     ViewData["RunTab"] = "failures";
     Layout = "_Layout";
 
-    var reportUrl = Url.Content("~/bdtest/report/" + Uri.EscapeDataString(Model.Id ?? string.Empty));
+    var reportId = Model.Id ?? string.Empty;
     var groupBy = FailureGroup.Normalize(Context.Request.Query["groupBy"].ToString());
     var groups = FailureGroup.Build(run.Scenarios, groupBy);
     var failed = run.Counts[Status.Failed];
     var index = 0;
 
-    string GroupUrl(string value) => reportUrl + "/top-defects" + (value == FailureGroup.ByExceptionAndLocation ? string.Empty : "?groupBy=" + value);
+    string GroupUrl(string value) => Url.ReportAction("TopDefects", new { id = reportId }) + (value == FailureGroup.ByExceptionAndLocation ? string.Empty : "?groupBy=" + value);
     string Plural(int count, string noun) => $"{count} {noun}{(count == 1 ? "" : "s")}";
 }
 
@@ -37,7 +37,7 @@
                     @($"All {run.Scenarios.Count} scenarios passed or ended without a failure. The tab stays in place so links to it keep working.")
                 }
             </p>
-            <a class="lnk" href="@reportUrl/all-scenarios">See all scenarios</a>
+            <a class="lnk" href="@(Url.ReportAction("AllScenarios", new { id = reportId }))">See all scenarios</a>
         </section>
     }
     else
@@ -122,7 +122,7 @@
                     {
                         detail += $" · all {scenario.RetryCount + 1} attempts";
                     }
-                    <a class="row" href="@reportUrl/scenario/@Uri.EscapeDataString(scenario.Guid ?? string.Empty)">
+                    <a class="row" href="@(Url.ReportScenario(reportId, scenario.Guid))">
                         @scenario.Status.StatusIcon()
                         <div class="grow">
                             <div class="row-title">@scenario.GetScenarioText()</div>
@@ -135,6 +135,6 @@
             </article>
         }
 
-        <p class="notice">Not implemented, inconclusive and skipped scenarios aren’t failures, so they’re listed on the <a class="lnk" href="@reportUrl/summary">Overview</a> instead.</p>
+        <p class="notice">Not implemented, inconclusive and skipped scenarios aren’t failures, so they’re listed on the <a class="lnk" href="@(Url.ReportAction("Summary", new { id = reportId }))">Overview</a> instead.</p>
     }
 </main>
