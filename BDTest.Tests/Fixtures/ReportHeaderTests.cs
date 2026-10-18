@@ -18,7 +18,7 @@ public class ReportHeaderTests
         var link = new CustomLinkData(text, url == null ? null : new Uri(url, UriKind.RelativeOrAbsolute));
         var html = await ReportHandlerEncodingTests.RenderAsync("/Views/Shared/_NavBarHeader.cshtml",
             new ReportLayoutViewModel(), customHeaderLinksProvider: new HeaderLinksProvider(link));
-        var matches = Regex.Matches(html, """<(span|a) class="dropdown-item"[^>]*>.*?</\1>""", RegexOptions.Singleline);
+        var matches = Regex.Matches(html, """<(span|a) class="menu-item"[^>]*>.*?</\1>""", RegexOptions.Singleline);
         var element = matches.Select(match => XElement.Parse(match.Value)).Single(x => x.Value == text);
 
         Assert.That(element.Name.LocalName, Is.EqualTo(expectedElement));

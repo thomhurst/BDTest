@@ -101,6 +101,61 @@ public class ReportSidebarTests
     }
 
     [Test]
+    public async Task Story_links_filter_to_the_exact_story_and_preserve_it_when_searching()
+    {
+        const string story = "Story & <one> / 雪";
+        _repository.Report.Scenarios = Enumerable.Range(0, 3).Select(index =>
+            ReportJson.DeserializeObject<Scenario>(ReportJson.SerializeObject(new
+            {
+                Guid = "s" + index, ScenarioText = "Scenario " + index,
+                StoryText = index < 2 ? story : story + " other", Status = "Passed",
+                Steps = Array.Empty<object>(), CustomTestInformation = Array.Empty<object>()
+            }))).ToList();
+
+        var detail = await _client.GetStringAsync("/bdtest/report/run-632/scenario/s0");
+        var link = Regex.Match(detail, "href=\"([^\"]+)\">2 scenarios in this story</a>");
+        Assert.That(link.Success, Is.True);
+        var url = System.Net.WebUtility.HtmlDecode(link.Groups[1].Value);
+        var list = await _client.GetStringAsync(url);
+        Assert.That(list, Does.Contain("scenario-id=\"s0\"").And.Contain("scenario-id=\"s1\"")
+            .And.Not.Contain("scenario-id=\"s2\""));
+        Assert.That(System.Net.WebUtility.HtmlDecode(list),
+            Does.Contain("name=\"story\" value=\"" + story + "\""));
+
+        var searched = await _client.GetStringAsync(url + "&q=Scenario%201");
+        Assert.That(searched, Does.Contain("scenario-id=\"s1\"").And.Not.Contain("scenario-id=\"s0\""));
+        var clear = Regex.Match(list, "href=\"([^\"]+)\">Clear filters</a>");
+        Assert.That(clear.Success, Is.True);
+        var unfiltered = await _client.GetStringAsync(System.Net.WebUtility.HtmlDecode(clear.Groups[1].Value));
+        Assert.That(unfiltered, Does.Contain("scenario-id=\"s2\""));
+    }
+
+    [TestCase("status", new[] { "b", "a", "c" })]
+    [TestCase("name", new[] { "a", "b", "c" })]
+    [TestCase("durationDescending", new[] { "c", "b", "a" })]
+    [TestCase("durationAscending", new[] { "a", "b", "c" })]
+    [TestCase("dateAscending", new[] { "a", "b", "c" })]
+    [TestCase("dateDescending", new[] { "c", "b", "a" })]
+    public async Task Stories_sort_scenarios_within_each_story(string order, string[] expected)
+    {
+        _repository.Report.Scenarios = new[] { 2, 0, 1 }.Select(index =>
+            ReportJson.DeserializeObject<Scenario>(ReportJson.SerializeObject(new
+            {
+                Guid = ((char)('a' + index)).ToString(), ScenarioText = ((char)('A' + index)).ToString(),
+                StoryText = "Shared story", Status = index == 1 ? "Failed" : "Passed",
+                StartTime = new DateTime(2026, 10, 18, 12, index, 0, DateTimeKind.Utc),
+                EndTime = new DateTime(2026, 10, 18, 12, index, index + 1, DateTimeKind.Utc),
+                TimeTaken = TimeSpan.FromSeconds(index + 1).ToString(@"d\.hh\:mm\:ss\:fffffff"),
+                Steps = Array.Empty<object>(), CustomTestInformation = Array.Empty<object>()
+            }))).ToList();
+
+        var html = await _client.GetStringAsync("/bdtest/report/run-632/stories?order=" + order);
+        var ids = Regex.Matches(html, "scenario-id=\"([^\"]+)\"")
+            .Select(match => match.Groups[1].Value);
+        Assert.That(ids, Is.EqualTo(expected));
+    }
+
+    [Test]
     public async Task Large_scenario_lists_are_paged_and_open_on_the_selected_scenarios_page()
     {
         _repository.Report.Scenarios = Enumerable.Range(0, 150).Select(index => ReportJson.DeserializeObject<Scenario>(

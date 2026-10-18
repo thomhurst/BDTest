@@ -26,7 +26,7 @@
     var slowestFiveShare = totalTicks == 0 ? 0 : (double)slowest.Take(5).Sum(scenario => scenario.TimeTaken.Ticks) / totalTicks * 100;
 
     // The median wall clock of recent runs with the same tag, ending with this run.
-    var series = (await DataRepository.GetAllTestRunRecords() ?? Enumerable.Empty<TestRunSummary>())
+    var series = (await DataRepository.GetAllTestRunRecords(Context.RequestAborted) ?? Enumerable.Empty<TestRunSummary>())
         .Where(record => record != null && string.Equals(record.Tag, Model.Tag, StringComparison.Ordinal))
         .OrderBy(record => record.StartedAtDateTime)
         .ToList();

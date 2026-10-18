@@ -141,6 +141,8 @@ public class StructuredStepArgumentTests : BDTestBase
         var restored = ReportJson.DeserializeObject<Scenario>(ReportJson.SerializeObject(outline));
         Assert.That(restored.Examples.Select(row => ((StepDocString)row.Steps[0].Arguments.Single()).Content),
             Is.EqualTo(new[] { "first", "second" }));
+        var html = await ReportHandlerEncodingTests.RenderAsync("/Views/Shared/_ScenarioExamples.cshtml", restored);
+        Assert.That(html, Does.Contain("first</code></pre>").And.Contain("second</code></pre>"));
     }
 
     [Test]

@@ -1,5 +1,6 @@
 ﻿using System.Globalization;
 using System.Text.Encodings.Web;
+using BDTest.Razor.Reports.Models;
 using BDTest.Test;
 using Microsoft.AspNetCore.Html;
 
@@ -21,6 +22,20 @@ public static class ReportUi
     /// </summary>
     public static Status RunResult(this Status runStatus) =>
         runStatus is Status.NotImplemented or Status.Skipped ? Status.Passed : runStatus;
+
+    /// <summary>Incomplete scenario counts take precedence over intentional skips and unimplemented steps.</summary>
+    public static Status RunResult(this TestRunSummary run)
+    {
+        if (run.Counts?.Failed > 0 || run.Status == Status.Failed)
+            return Status.Failed;
+        if (run.Counts?.Inconclusive > 0 || run.Status == Status.Inconclusive)
+            return Status.Inconclusive;
+        if (run.Counts?.NotRun > 0 || run.Status == Status.NotRun)
+            return Status.NotRun;
+        if (run.Counts?.Pending > 0 || run.Status == Status.Pending)
+            return Status.Pending;
+        return run.Status.RunResult();
+    }
 
     public static string Key(this Status status) => status switch
     {

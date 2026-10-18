@@ -14,6 +14,7 @@
     var reportId = report?.Id ?? Model.ReportId ?? string.Empty;
     var reportUrl = Url.Content("~/bdtest/report/" + Uri.EscapeDataString(reportId));
     var storyText = Model.GetStoryText();
+    var storyUrl = reportUrl + "/all-scenarios?story=" + Uri.EscapeDataString(storyText ?? string.Empty);
 
     var siblings = run?.Scenarios ?? (IReadOnlyList<Scenario>)new List<Scenario>();
     var index = siblings.ToList().FindIndex(scenario => scenario.Guid == Model.Guid);
@@ -49,7 +50,7 @@
             {
                 var started = run.Timer.TestsStartedAt;
                 <a class="lnk" href="@reportUrl/summary">@run.Title@(started == default ? "" : " · " + started.ToRunDate(includeYear: false))</a><span aria-hidden="true">/</span>
-                <a class="lnk" href="@(reportUrl + "/all-scenarios?q=" + Uri.EscapeDataString(Model.GetScenarioText()))">@ReportUi.StoryTitle(storyText)</a>
+                <a class="lnk" href="@storyUrl">@ReportUi.StoryTitle(storyText)</a>
                 var total = run.Scenarios.Count;
                 var failed = run.Counts[Status.Failed];
                 <span aria-hidden="true">/</span>
@@ -194,6 +195,7 @@
                             <details class="expander step-item" data-expandable open="@isFailing">
                                 <summary class="@rowClass">@stepRow</summary>
                                 <div class="step-extra @(isFailing ? "fail" : "")">
+                                    @Html.Raw(BDTest.Helpers.StepArgumentHtmlHelper.GetHtml(step.Arguments))
                                     @if (!string.IsNullOrEmpty(step.Output))
                                     {
                                         <div class="k">Step output</div>
@@ -292,7 +294,7 @@
                 @if (run != null)
                 {
                     var inStory = run.Scenarios.Count(scenario => scenario.GetStoryText() == storyText);
-                    <a class="lnk" href="@(reportUrl + "/all-scenarios")">@inStory @(inStory == 1 ? "scenario" : "scenarios") in this story</a>
+                    <a class="lnk" href="@storyUrl">@inStory @(inStory == 1 ? "scenario" : "scenarios") in this story</a>
                 }
             </section>
 
@@ -344,7 +346,7 @@
 @functions
 {
     private static bool HasExtra(Step step) =>
-        !string.IsNullOrEmpty(step.Output) || step.Exception != null || step.Diagnostics?.Count > 0;
+        !string.IsNullOrEmpty(step.Output) || step.Exception != null || step.Diagnostics?.Count > 0 || step.Arguments?.Count > 0;
 
     private static Microsoft.AspNetCore.Html.IHtmlContent Row(string rowClass, Step step, string keyword, string text,
         bool notRun, bool isFailing, double offset, double width)

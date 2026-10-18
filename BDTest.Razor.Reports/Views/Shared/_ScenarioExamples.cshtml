@@ -48,6 +48,7 @@
                             <span class="step-text"><b>@keyword</b> @text</span>
                             <span class="dur">@(step.Status is Status.NotRun or Status.Pending ? "—" : step.TimeTaken.ToShortDuration())</span>
                         </div>
+                        @Html.Raw(BDTest.Helpers.StepArgumentHtmlHelper.GetHtml(step.Arguments))
                         @if (step.Exception != null)
                         {
                             <pre class="code" style="color: var(--fail)">@step.Exception.AsString</pre>

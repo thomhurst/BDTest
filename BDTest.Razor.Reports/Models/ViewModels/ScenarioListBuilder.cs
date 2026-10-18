@@ -12,6 +12,7 @@ internal static class ScenarioListBuilder
         var query = request.Query;
         var tag = query[TagConstants.FilterByTagQueryParameterName].ToString();
         var search = query[ScenarioSearch.QueryParameterName].ToString().Trim();
+        var story = query[ScenarioSearch.StoryQueryParameterName].ToString();
         var groupBy = groupFixed || query["group"] != ScenarioListViewModel.GroupByNone
             ? ScenarioListViewModel.GroupByStory
             : ScenarioListViewModel.GroupByNone;
@@ -28,6 +29,7 @@ internal static class ScenarioListBuilder
         }
 
         var unfiltered = reportScenarios
+            .Where(scenario => string.IsNullOrEmpty(story) || string.Equals(scenario.GetStoryText(), story, StringComparison.Ordinal))
             .Where(scenario => string.IsNullOrEmpty(tag) || scenario.Tags.Contains(tag, StringComparer.OrdinalIgnoreCase))
             .Where(scenario => ScenarioSearch.Matches(scenario, search))
             .ToList();

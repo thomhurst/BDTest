@@ -451,6 +451,11 @@ body.busy, body.busy * { cursor: progress !important; }
     *, *::before, *::after { animation: none !important; transition: none !important; }
 }
 
+/* Structured step arguments */
+.step-argument pre { white-space: pre; }
+.step-argument-table { border-collapse: collapse; margin: 10px 0; }
+.step-argument-table th, .step-argument-table td { white-space: pre-wrap; border: 1px solid var(--line); padding: 8px; }
+
 /* Scenarios */
 details.example-row > summary, details.step-item > summary { list-style: none; cursor: pointer; }
 details.example-row > summary::-webkit-details-marker, details.step-item > summary::-webkit-details-marker { display: none; }

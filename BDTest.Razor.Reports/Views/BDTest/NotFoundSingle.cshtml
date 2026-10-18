@@ -12,7 +12,7 @@
     var reportUrl = Url.Content("~/bdtest/report/" + Uri.EscapeDataString(Model ?? string.Empty));
     var latest = scenarioMissing
         ? null
-        : (await DataRepository.GetAllTestRunRecords() ?? Enumerable.Empty<BDTest.Razor.Reports.Models.TestRunSummary>())
+        : (await DataRepository.GetAllTestRunRecords(Context.RequestAborted) ?? Enumerable.Empty<BDTest.Razor.Reports.Models.TestRunSummary>())
             .Where(record => record != null && !string.IsNullOrEmpty(record.RecordId))
             .OrderByDescending(record => record.StartedAtDateTime)
             .FirstOrDefault();

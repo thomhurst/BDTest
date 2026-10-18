@@ -24,7 +24,7 @@
     var slowestTime = slowest.FirstOrDefault()?.TimeTaken ?? TimeSpan.Zero;
 
     // The last runs with the same tag, oldest first, ending with this run.
-    var series = (await DataRepository.GetAllTestRunRecords() ?? Enumerable.Empty<TestRunSummary>())
+    var series = (await DataRepository.GetAllTestRunRecords(Context.RequestAborted) ?? Enumerable.Empty<TestRunSummary>())
         .Where(record => record != null && string.Equals(record.Tag, Model.Tag, StringComparison.Ordinal))
         .OrderBy(record => record.StartedAtDateTime)
         .ToList();
@@ -236,8 +236,8 @@
                         <div class="strip" role="img" aria-label="@($"Last {recent.Count} runs: {recent.Count - failedRuns} without failures, {failedRuns} failed.")">
                             @foreach (var record in recent)
                             {
-                                var key = record.Status.RunResult().Key();
-                                <a class="bg-@key @(record.RecordId == Model.Id ? "cur" : "")" href="@Url.Content("~/bdtest/report/" + Uri.EscapeDataString(record.RecordId ?? "") + "/summary")" title="@record.StartedAtDateTime.ToRunDate() · @record.Status.RunResult().Label()" aria-label="@record.StartedAtDateTime.ToRunDate(): @record.Status.RunResult().Label()"></a>
+                                var key = record.RunResult().Key();
+                                <a class="bg-@key @(record.RecordId == Model.Id ? "cur" : "")" href="@Url.Content("~/bdtest/report/" + Uri.EscapeDataString(record.RecordId ?? "") + "/summary")" title="@record.StartedAtDateTime.ToRunDate() · @record.RunResult().Label()" aria-label="@record.StartedAtDateTime.ToRunDate(): @record.RunResult().Label()"></a>
                             }
                         </div>
                         <div class="strip-axis"><span>@recent[0].StartedAtDateTime.ToDay()</span><span>This run</span></div>

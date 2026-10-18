@@ -161,7 +161,7 @@
                             var other = Math.Max(total - counts.Passed - counts.Failed, 0);
                             var duration = record.FinishedAtDateTime - record.StartedAtDateTime;
                             // Runs read as failed, inconclusive or passed; not implemented and skipped scenarios don't fail a run.
-                            var resultStatus = record.Status.RunResult();
+                            var resultStatus = record.RunResult();
                             var resultText = resultStatus switch
                             {
                                 Status.Failed => $"{counts.Failed} failed",

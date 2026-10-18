@@ -19,7 +19,7 @@
             : status == Status.Passed ? $"Passed · {total}" : status.Label();
 
     // Previous and next runs share the tag so the arrows step through one series of runs.
-    var series = (await DataRepository.GetAllTestRunRecords() ?? Enumerable.Empty<BDTest.Razor.Reports.Models.TestRunSummary>())
+    var series = (await DataRepository.GetAllTestRunRecords(Context.RequestAborted) ?? Enumerable.Empty<BDTest.Razor.Reports.Models.TestRunSummary>())
         .Where(record => record != null && string.Equals(record.Tag, report.Tag, StringComparison.Ordinal))
         .OrderBy(record => record.StartedAtDateTime)
         .ToList();

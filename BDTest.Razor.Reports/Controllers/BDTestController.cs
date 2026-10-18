@@ -1,4 +1,4 @@
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using BDTest.Maps;
 using BDTest.Razor.Reports.Constants;
 using BDTest.Razor.Reports.Extensions;
@@ -113,8 +113,10 @@ public class BDTestController : Controller
         var statuses = GetStatusFilter();
 
         // Statuses filter scenarios, as on the Scenarios page; stories only group the result.
-        var scenariosGroupedByStories = FilterBySearch(FilterByTag(data.Scenarios))
-            .Where(scenario => statuses == null || statuses.Contains(scenario.Status))
+        var scenarios = FilterBySearch(FilterByTag(data.Scenarios))
+            .Where(scenario => statuses == null || statuses.Contains(scenario.Status));
+        var scenariosGroupedByStories = OrderScenarioGroups(scenarios)
+            .SelectMany(group => group)
             .GroupBy(scenario => scenario.GetStoryText())
             .OrderBy(group => group.GetTotalStatus().GetOrder())
             .ThenBy(group => group.Key)
@@ -143,6 +145,11 @@ public class BDTestController : Controller
             scenarios = scenarios.Where(scenario => statuses.Contains(scenario.Status));
         }
 
+        return View("AllScenarios", OrderScenarioGroups(scenarios).ToArray());
+    }
+
+    private IOrderedEnumerable<IGrouping<string, Scenario>> OrderScenarioGroups(IEnumerable<Scenario> scenarios)
+    {
         var orderByQueryParameter = Request.GetQueryParameter(OrderConstants.OrderByQueryParameterName);
             
         var scenariosGroupedByScenarioTextEnumerable = scenarios.GroupBy(scenario => scenario.GetScenarioText())
@@ -184,7 +191,7 @@ public class BDTestController : Controller
                 break;
         }
 
-        return View("AllScenarios", scenariosGroupedByScenarioTextEnumerable.ToArray());
+        return scenariosGroupedByScenarioTextEnumerable;
     }
 
     private IEnumerable<Scenario> FilterByTag(IEnumerable<Scenario> scenarios)
@@ -196,6 +203,11 @@ public class BDTestController : Controller
 
     private IEnumerable<Scenario> FilterBySearch(IEnumerable<Scenario> scenarios)
     {
+        var story = Request.GetQueryParameter(ScenarioSearch.StoryQueryParameterName);
+        if (!string.IsNullOrEmpty(story))
+        {
+            scenarios = scenarios.Where(scenario => string.Equals(scenario.GetStoryText(), story, StringComparison.Ordinal));
+        }
         var search = Request.GetQueryParameter(ScenarioSearch.QueryParameterName)?.Trim();
         return string.IsNullOrEmpty(search) ? scenarios : scenarios.Where(scenario => ScenarioSearch.Matches(scenario, search));
     }
@@ -330,7 +342,7 @@ public class BDTestController : Controller
 
     private async Task<HistoryViewModel> GetHistory(string tab)
     {
-        var allRuns = (await _dataRepository.GetAllTestRunRecords() ?? Enumerable.Empty<TestRunSummary>())
+        var allRuns = (await _dataRepository.GetAllTestRunRecords(HttpContext?.RequestAborted ?? default) ?? Enumerable.Empty<TestRunSummary>())
             .Where(run => run != null)
             .ToList();
         var query = HttpContext?.Request.Query;

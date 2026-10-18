@@ -14,7 +14,7 @@
     var chartRuns = runs.TakeLast(60).ToList();
     var filterQuery = RunFilter.ToQueryString(filter.ToQuery(false));
 
-    var passedRuns = runs.Count(run => run.Status.RunResult() == Status.Passed);
+    var passedRuns = runs.Count(run => run.RunResult() == Status.Passed);
     var rates = runs.Where(run => run.Counts.Total > 0).Select(run => (double)run.Counts.Passed / run.Counts.Total * 100).ToList();
     var durations = runs.Select(Duration).Where(duration => duration > TimeSpan.Zero).OrderBy(duration => duration).ToList();
 
@@ -163,7 +163,7 @@
                         var other = Stacked(run) - run.Counts.Failed - run.Counts.Passed;
                         <tr>
                             <td style="white-space: nowrap"><a class="lnk" href="@RunUrl(run)">@run.StartedAtDateTime.ToRunDate(includeYear: false)</a></td>
-                            <td>@run.Status.RunResult().Pill()</td>
+                            <td>@run.RunResult().Pill()</td>
                             <td class="num">@run.Counts.Failed</td>
                             <td class="num">@other</td>
                             <td class="num">@run.Counts.Passed</td>

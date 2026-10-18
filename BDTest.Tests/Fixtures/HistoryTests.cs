@@ -193,8 +193,11 @@ public class HistoryTests
             return Task.FromResult(new BDTestOutputModel { Id = id });
         }
 
-        public Task<IEnumerable<TestRunSummary>> GetAllTestRunRecords() => Task.FromResult<IEnumerable<TestRunSummary>>(runs);
-        public Task StoreData(BDTestOutputModel model, string id) => throw new NotSupportedException();
-        public Task DeleteReport(string id) => throw new NotSupportedException();
+        public Task<BDTestOutputModel> GetDataForBulkRead(string id, CancellationToken cancellationToken) => GetData(id, cancellationToken);
+        public Task<Stream> OpenReadAsync(string id, CancellationToken cancellationToken) => throw new NotSupportedException();
+        public Task<BDTest.Razor.Reports.Storage.RunIndexPage> ListAsync(BDTest.Razor.Reports.Storage.RunIndexQuery query, CancellationToken cancellationToken) => throw new NotSupportedException();
+        public Task<IEnumerable<TestRunSummary>> GetAllTestRunRecords(CancellationToken cancellationToken = default) => Task.FromResult<IEnumerable<TestRunSummary>>(runs);
+        public Task StoreData(string id, BDTestOutputModel model, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+        public Task DeleteReport(string id, CancellationToken cancellationToken = default) => throw new NotSupportedException();
     }
 }

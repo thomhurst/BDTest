@@ -40,6 +40,28 @@ public class RunFilterTests
     }
 
     [Test]
+    public void Mixed_incomplete_runs_never_match_Passed_even_when_the_aggregate_is_NotImplemented()
+    {
+        var runs = new[]
+        {
+            Run("inconclusive", Status.NotImplemented), Run("pending", Status.NotImplemented),
+            Run("not-run", Status.NotImplemented), Run("failed", Status.NotImplemented),
+            Run("complete", Status.NotImplemented)
+        };
+        foreach (var run in runs)
+            run.Counts.NotImplemented = 1;
+        runs[0].Counts.Inconclusive = 1;
+        runs[1].Counts.Pending = 1;
+        runs[2].Counts.NotRun = 1;
+        runs[3].Counts.Failed = 1;
+
+        Assert.That(Parse("?status=Passed").Apply(runs, Now).Select(run => run.RecordId),
+            Is.EqualTo(new[] { "complete" }));
+        Assert.That(Parse("?status=Failed").Apply(runs, Now).Select(run => run.RecordId),
+            Is.EqualTo(new[] { "failed" }));
+    }
+
+    [Test]
     public void Values_that_start_with_All_are_real_filters_but_old_placeholders_are_ignored()
     {
         var runs = new[] { Run("browsers", Status.Passed, "All browsers"), Run("other", Status.Passed, "other") };

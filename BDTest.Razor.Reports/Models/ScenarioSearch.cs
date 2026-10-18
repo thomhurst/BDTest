@@ -6,6 +6,7 @@ namespace BDTest.Razor.Reports.Models;
 public static class ScenarioSearch
 {
     public const string QueryParameterName = "q";
+    public const string StoryQueryParameterName = "story";
 
     public static bool Matches(Scenario scenario, string search)
     {

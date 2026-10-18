@@ -80,7 +80,7 @@ public class RunFilter
             && Matches(Environment, record.Environment)
             && Matches(Branch, record.BranchName)
             && Matches(Machine, record.MachineName)
-            && (Status == null || record.Status.RunResult().ToString() == Status)
+            && (Status == null || record.RunResult().ToString() == Status)
             && (from == null || record.StartedAtDateTime >= from)
             && (to == null || record.StartedAtDateTime <= to)
             && (Search == null || MatchesSearch(record)));

@@ -10,11 +10,14 @@
     var scenarios = Model.Scenarios;
     var statuses = Model.Statuses;
     var counts = ReportUi.DisplayOrder.ToDictionary(status => status, status => Model.Unfiltered.Count(scenario => scenario.Status == status));
+    var selectedStory = Context.Request.GetQueryParameter(ScenarioSearch.StoryQueryParameterName);
     var hasFilters = statuses != null
+                     || !string.IsNullOrEmpty(selectedStory)
                      || !string.IsNullOrEmpty(Context.Request.GetQueryParameter(TagConstants.FilterByTagQueryParameterName))
                      || !string.IsNullOrEmpty(Context.Request.GetQueryParameter(ScenarioSearch.QueryParameterName));
     var clearUrl = Context.GetLocalUrlWith((statusParameter, null), (TagConstants.FilterByTagQueryParameterName, null),
-        (ScenarioSearch.QueryParameterName, null), ("scenarioId", null), (PagerQueryParameters.Page, null));
+        (ScenarioSearch.QueryParameterName, null), (ScenarioSearch.StoryQueryParameterName, null),
+        ("scenarioId", null), (PagerQueryParameters.Page, null));
 
     string ToggleStatusUrl(Status status)
     {
@@ -55,6 +58,10 @@
 @await Html.PartialAsync("_ScenarioToolbar", new ScenarioToolbarViewModel { Tags = Model.Tags, GroupBy = Model.GroupBy, GroupFixed = Model.GroupFixed })
 
 <div class="cluster">
+    @if (!string.IsNullOrEmpty(selectedStory))
+    {
+        <span class="tag">Story: @ReportUi.StoryTitle(selectedStory)</span>
+    }
     <a class="chip @(statuses == null ? "on" : "")" href="@Context.GetLocalUrlWith((statusParameter, null), ("scenarioId", null))" aria-current="@(statuses == null ? "true" : null)">All<span class="cnt">@Model.Unfiltered.Count</span></a>
     @foreach (var status in ReportUi.DisplayOrder.Where(status => counts[status] > 0 || statuses?.Contains(status) == true))
     {

@@ -6,7 +6,6 @@ using BDTest.Razor.Reports.Interfaces;
 using BDTest.Razor.Reports.Models;
 using BDTest.Razor.Reports.Models.ViewModels;
 using BDTest.Test;
-using BDTest.Razor.Reports.Views.BDTest;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
