@@ -8,4 +8,7 @@
     <PackageReference Include="MSTest.TestAdapter" Version="4.5.1" />
     <ProjectReference Include="..\BDTest.MSTest\BDTest.MSTest.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <Compile Include="..\TestUtilities\ExceptionRegistrationProbe.cs" Link="Helpers\ExceptionRegistrationProbe.cs" />
+  </ItemGroup>
 </Project>

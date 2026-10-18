@@ -17,10 +17,7 @@ public abstract class MSTestBDTestBase<TContext> : AbstractContextBDTestBase<TCo
     [TestInitialize]
     public void InitializeBDTest()
     {
-        if (!BDTestSettings.CustomExceptionSettings.InconclusiveExceptionTypes.Contains(typeof(AssertInconclusiveException)))
-        {
-            BDTestSettings.CustomExceptionSettings.InconclusiveExceptionTypes.Add(typeof(AssertInconclusiveException));
-        }
+        MSTestExceptionRegistration.EnsureRegistered();
         MarkTestAsStarted();
     }
 
@@ -30,4 +27,18 @@ public abstract class MSTestBDTestBase<TContext> : AbstractContextBDTestBase<TCo
         RemoveContext();
         base.MarkTestAsComplete();
     }
+}
+
+// Non-generic so all context types share the same CLR-protected initialization.
+internal static class MSTestExceptionRegistration
+{
+    static MSTestExceptionRegistration()
+    {
+        if (!BDTestSettings.CustomExceptionSettings.InconclusiveExceptionTypes.Contains(typeof(AssertInconclusiveException)))
+        {
+            BDTestSettings.CustomExceptionSettings.InconclusiveExceptionTypes.Add(typeof(AssertInconclusiveException));
+        }
+    }
+
+    internal static void EnsureRegistered() { }
 }
