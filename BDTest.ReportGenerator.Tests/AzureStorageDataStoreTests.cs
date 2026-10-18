@@ -5,6 +5,7 @@ using System.Xml.Linq;
 using Azure.Core.Pipeline;
 using Azure.Storage.Blobs;
 using BDTest.ReportGenerator.RazorServer;
+using BDTest.TestUtilities;
 using Newtonsoft.Json;
 using NUnit.Framework;
 
@@ -42,6 +43,23 @@ public class AzureStorageDataStoreTests
 
         Assert.That(result.Id, Is.EqualTo("report"));
         Assert.That(storage.DisposedDownloads, Is.EqualTo(1));
+    }
+
+    [Test]
+    public async Task HistoricalReportLoadsThroughStorageAndSurvivesCurrentStorageSerialization()
+    {
+        using var storage = new StorageHandler(1) { DownloadJson = HistoricalReportFixture.ReadJson() };
+        using var client = new HttpClient(storage);
+        var report = await CreateStore(client).GetTestData("1113e3bf269c489187245c4339dfd946", CancellationToken.None);
+        HistoricalReportFixture.AssertCompatible(report);
+
+        // StoreTestData uses AsStream; reload its JSON through the production download reader.
+        using var stream = report.AsStream();
+        using var reader = new StreamReader(stream);
+        using var restoredStorage = new StorageHandler(1) { DownloadJson = await reader.ReadToEndAsync() };
+        using var restoredClient = new HttpClient(restoredStorage);
+        var restored = await CreateStore(restoredClient).GetTestData(report.Id, CancellationToken.None);
+        HistoricalReportFixture.AssertCompatible(restored);
     }
 
     [TestCase(false)]

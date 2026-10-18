@@ -1,8 +1,10 @@
 using BDTest.Attributes;
 using BDTest.Helpers;
+using BDTest.Maps;
 using BDTest.NUnit;
 using BDTest.Test;
 using BDTest.Tests.Helpers;
+using BDTest.TestUtilities;
 using KellermanSoftware.CompareNetObjects;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -64,6 +66,16 @@ public class JsonResultsTests : NUnitBDTestBase<MyTestContext>
         Assert.That(comparisonResult.AreEqual, Is.True);
     }
         
+    [Test]
+    public void HistoricalReportSurvivesCurrentCoreSerialization()
+    {
+        var report = JsonConvert.DeserializeObject<BDTestOutputModel>(HistoricalReportFixture.ReadJson());
+        HistoricalReportFixture.AssertCompatible(report);
+
+        var restored = JsonConvert.DeserializeObject<BDTestOutputModel>(BDTestJsonHelper.Serialize(report));
+        HistoricalReportFixture.AssertCompatible(restored);
+    }
+
     [StepText("{0} {1}")]
     private static void CustomStep(string one, string two)
     {
