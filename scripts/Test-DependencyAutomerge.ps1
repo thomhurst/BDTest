@@ -12,7 +12,7 @@ function Reset-Fixture {
     }
     $fixture.pull = @{
         number = 123; state = 'open'; draft = $false
-        user = @{ login = 'dependabot[bot]' }; labels = @()
+        user = @{ login = 'renovate[bot]' }; labels = @(@{ name = 'dependencies' }, @{ name = 'dependency-automerge' })
         head = @{ sha = $headSha; repo = @{ full_name = $repo } }
         base = @{ ref = 'main'; repo = @{ full_name = $repo } }
     }
@@ -103,7 +103,7 @@ function Test-Case([string]$Name, [scriptblock]$Arrange, [bool]$ShouldMerge = $f
     Write-Output "PASS $Name"
 }
 
-Test-Case 'Successful current-head CI merges Dependabot PR' {} -ShouldMerge $true
+Test-Case 'Successful current-head CI merges opted-in Renovate PR' {} -ShouldMerge $true
 Test-Case 'Ref-qualified workflow paths authorize the expected workflow' {
     $fixture.run.path = '.github/workflows/dotnet.yml@refs/pull/123/merge'
 } -ShouldMerge $true
@@ -117,7 +117,7 @@ Test-Case 'Retry sweep never merges pending CI' { $fixture.run.status = 'in_prog
 Test-Case 'Retry sweep revalidates the PR head' {
     $fixture.pull.head.sha = 'b' * 40
     $fixture.openPulls = @(@{
-        number = 123; user = @{ login = 'dependabot[bot]' }; head = @{ sha = $headSha }
+        number = 123; user = $fixture.pull.user; labels = $fixture.pull.labels; head = @{ sha = $headSha }
     })
 } -Sweep
 Test-Case 'Retry sweep revalidates draft state' { $fixture.pull.draft = $true } -Sweep
@@ -133,9 +133,29 @@ Test-Case 'Retry sweep API failure fails closed' {
     $fixture.apiFailure = "repos/$repo/pulls?state=open&base=main&per_page=100"
 } -Sweep -ShouldThrow $true
 Test-Case 'Retry sweep rejects an invalid head before querying CI' { $fixture.pull.head.sha = 'invalid' } -Sweep -ShouldThrow $true
-Test-Case 'Dependency label supports Renovate and other authors' {
-    $fixture.pull.user.login = 'renovate[bot]'; $fixture.pull.labels = @(@{ name = 'dependencies' })
-} -ShouldMerge $true
+foreach ($sweep in @($false, $true)) {
+    Test-Case "Dependency label alone does not authorize merging (sweep=$sweep)" {
+        $fixture.pull.labels = @(@{ name = 'dependencies' })
+    } -Sweep:$sweep
+    Test-Case "Major updates remain manual even with a stale opt-in label (sweep=$sweep)" {
+        $fixture.pull.labels += @{ name = 'major-update' }
+    } -Sweep:$sweep
+    Test-Case "Legacy Dependabot PRs remain manual (sweep=$sweep)" {
+        $fixture.pull.user.login = 'dependabot[bot]'
+    } -Sweep:$sweep
+    Test-Case "Contributor PRs cannot opt into merging with labels (sweep=$sweep)" {
+        $fixture.pull.user.login = 'contributor'
+    } -Sweep:$sweep
+    Test-Case "Opt-in without dependency classification does not merge (sweep=$sweep)" {
+        $fixture.pull.labels = @(@{ name = 'dependency-automerge' })
+    } -Sweep:$sweep
+}
+Test-Case 'Retry sweep revalidates opt-in after listing' {
+    $fixture.openPulls = @(@{
+        number = 123; user = $fixture.pull.user; labels = $fixture.pull.labels; head = $fixture.pull.head
+    })
+    $fixture.pull.labels = @(@{ name = 'dependencies' })
+} -Sweep
 Test-Case 'Associated PRs across multiple pages are all considered' {
     $fixture.associatedPulls = @(@{ number = 124 }, @{ number = 123 })
 } -ShouldMerge $true
