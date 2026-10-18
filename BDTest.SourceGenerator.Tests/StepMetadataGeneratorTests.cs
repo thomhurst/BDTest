@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using System.Reflection;
 using System.Runtime.Loader;
 using BDTest.Attributes;
@@ -418,9 +419,35 @@ public class StepMetadataGeneratorTests
         return values.Cast<object[]>().Select(value => new Captured((StepCallSiteMetadata)value[0], (Delegate)value[1])).ToArray();
     }
 
-    private static Assembly Compile(string consumer)
+    [TestCase(false)]
+    [TestCase(true)]
+    public void Path_mapped_caller_information_finds_method_metadata(bool lineDirective)
     {
-        var compilation = CreateCompilation(Probe + "\n" + consumer);
+        var root = Path.GetFullPath("mapped-source") + Path.DirectorySeparatorChar;
+        var resolver = new SourceFileResolver(ImmutableArray<string>.Empty, Directory.GetCurrentDirectory(),
+            ImmutableArray.Create(new KeyValuePair<string, string>(root, "/_/")));
+        var consumer = Compile((lineDirective ? "#line 600 \"generated/consumer.cs\"\n" : "") + """
+            public sealed class Consumer : BDTest.Test.Steps.Probe
+            {
+                private void Step(int value) { }
+                public static object[] Run()
+                {
+                    var test = new Consumer();
+                    test.Given(() => test.Step(42));
+                    return test.Captures.ToArray();
+                }
+            }
+            """, resolver, Path.Combine(root, "consumer.cs"));
+        var site = Run(consumer).Single();
+        Assert.That(site.Metadata.Method.Resolve(consumer).Name, Is.EqualTo("Step"));
+        Assert.That(Read(site, consumer), Is.EqualTo(new object[] { 42 }));
+    }
+
+    private static Assembly Compile(string consumer, SourceReferenceResolver resolver = null, string sourcePath = "consumer.cs")
+    {
+        var compilation = CreateCompilation(Probe + "\n" + consumer, sourcePath: sourcePath);
+        if (resolver != null)
+            compilation = compilation.WithOptions(compilation.Options.WithSourceReferenceResolver(resolver));
         RunGenerator(compilation, out var generated);
         using var stream = new MemoryStream();
         var result = generated.Emit(stream);
@@ -439,14 +466,15 @@ public class StepMetadataGeneratorTests
         return driver;
     }
 
-    private static CSharpCompilation CreateCompilation(string source, LanguageVersion languageVersion = LanguageVersion.CSharp12)
+    private static CSharpCompilation CreateCompilation(string source, LanguageVersion languageVersion = LanguageVersion.CSharp12,
+        string sourcePath = "consumer.cs")
     {
         var references = ((string)AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES")).Split(Path.PathSeparator)
             .Select(p => MetadataReference.CreateFromFile(p)).ToList();
         if (!references.Any(r => r.FilePath == typeof(StepCallSiteMetadata).Assembly.Location))
             references.Add(MetadataReference.CreateFromFile(typeof(StepCallSiteMetadata).Assembly.Location));
         return CSharpCompilation.Create("Consumer_" + Guid.NewGuid().ToString("N"),
-            new[] { CSharpSyntaxTree.ParseText(source, new CSharpParseOptions(languageVersion), path: "consumer.cs") }, references,
+            new[] { CSharpSyntaxTree.ParseText(source, new CSharpParseOptions(languageVersion), path: sourcePath) }, references,
             new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
     }
 

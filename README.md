@@ -362,22 +362,21 @@ or direct `await`.
 
 ### Asynchronous steps
 
-Asynchronous step expressions must return `Task` (including `Task<T>`). Convert
-`ValueTask` and `ValueTask<T>` at the call site so BDTest waits for completion and
-reports asynchronous exceptions:
+Asynchronous step delegates can return `Task`, `Task<T>`, `ValueTask`, or
+`ValueTask<T>`. BDTest awaits each result once before running the next step and
+reports asynchronous exceptions. Return the operation directly:
 
 ```csharp
-await When(() => SaveAsync().AsTask())
+await When(() => SaveAsync()) // SaveAsync can return Task or ValueTask.
     .Then(() => VerifySaved())
     .BDTestAsync();
 ```
 
-A directly returned `ValueTask`, configured awaitable, or custom awaitable with a
-public instance `GetAwaiter()` returning an awaiter that implements `INotifyCompletion`
-and exposes a readable Boolean `IsCompleted` and parameterless `GetResult()` is
-rejected before the step runs, because binding it
-to `Action` would discard its asynchronous work. For other awaitables, write an
-`async Task` helper that awaits the operation and use that helper as the step.
+Cancellation-aware delegates can accept a `CancellationToken` and return `Task`,
+`ValueTask`, or `ValueTask<T>`. Ordinary `async` lambdas select the Task overload.
+For configured or custom awaitables, write an `async Task` helper that awaits the
+operation and use that helper as the step; directly returning these unsupported
+awaitables can bind to `Action` and discard their asynchronous work.
 Avoid hiding asynchronous work inside a synchronous or `async void` helper.
 
 ### Execution and synchronization contexts

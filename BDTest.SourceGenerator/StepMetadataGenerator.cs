@@ -40,7 +40,9 @@ public sealed class StepMetadataGenerator : IIncrementalGenerator
         if (argument?.Expression is not LambdaExpressionSyntax lambda) return null;
         var callName = invocation.Expression is MemberAccessExpressionSyntax member ? (SyntaxNode)member.Name : invocation.Expression;
         var location = callName.GetLocation().GetMappedLineSpan();
-        var file = location.Path;
+        // CallerFilePath also normalizes #line paths and applies the compiler's path map.
+        var file = context.SemanticModel.Compilation.Options.SourceReferenceResolver?
+            .NormalizePath(location.Path, invocation.SyntaxTree.FilePath) ?? location.Path;
         var line = location.StartLinePosition.Line + 1;
         var expression = lambda.ToString();
         string? method = null;
