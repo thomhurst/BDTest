@@ -35,29 +35,33 @@ public class ScenarioOutlineTests : AbstractContextBDTestBase<ScenarioOutlineTes
     }
 
     private string _retryHook;
+    private Exception _retryHookFailure;
 
     public override Task OnBeforeRetry()
     {
-        if (_retryHook == "before") throw new InvalidOperationException("<retry hook failed>");
+        if (_retryHook == "before") throw _retryHookFailure;
         return Task.CompletedTask;
     }
 
     [BDTestRetrySetUp]
     public void RetrySetup()
     {
-        if (_retryHook == "setup") throw new InvalidOperationException("<retry hook failed>");
+        if (_retryHook == "setup") throw _retryHookFailure;
     }
 
     [BDTestRetryTearDown]
     public void RetryTeardown()
     {
-        if (_retryHook == "teardown") throw new InvalidOperationException("<retry hook failed>");
+        if (_retryHook == "teardown") throw _retryHookFailure;
     }
 
-    [TestCase("before"), TestCase("setup"), TestCase("teardown"), BDTestRetry(1)]
-    public async Task Retry_hook_failures_fail_the_row_and_keep_diagnostics(string hook)
+    [TestCase("before", false), TestCase("setup", false), TestCase("teardown", false)]
+    [TestCase("before", true), TestCase("setup", true), TestCase("teardown", true), BDTestRetry(1)]
+    public async Task Retry_hook_failures_fail_the_row_and_keep_diagnostics(string hook, bool nestedCause)
     {
         _retryHook = hook;
+        _retryHookFailure = new InvalidOperationException("<retry hook failed>",
+            nestedCause ? new Exception("nested cause") : null);
         await Assert.ThrowsAsync<ErrorOccurredDuringRetryActionException>(async () => await ScenarioOutline("Retry hook error",
             new[] { new { Value = 1 }, new { Value = 2 } },
             row => Given(() => RetryRow(row.Value)).When(() => NoOp()).Then(() => NoOp())));
@@ -65,6 +69,8 @@ public class ScenarioOutlineTests : AbstractContextBDTestBase<ScenarioOutlineTes
         Assert.That(outline.Status, Is.EqualTo(Status.Failed));
         Assert.That(outline.Examples.Select(row => row.Status), Is.EqualTo(new[] { Status.Failed, Status.Passed }));
         Assert.That(outline.Examples[0].RetryCount, Is.EqualTo(1));
+        Assert.That(outline.Examples[0].Exception.Message, Is.EqualTo(_retryHookFailure.Message));
+        Assert.That(outline.Examples[0].Exception.AsString, Is.EqualTo(_retryHookFailure.ToString()));
         foreach (var result in new[] { outline, ReportJson.DeserializeObject<Scenario>(ReportJson.SerializeObject(outline)) })
         {
             var failedRow = result.Examples[0];
