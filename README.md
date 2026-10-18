@@ -76,6 +76,49 @@ the repository's test projects use .NET 10.
 
 View the [wiki](https://github.com/thomhurst/BDTest/wiki) to see how to use BDTest and how to get setup: https://github.com/thomhurst/BDTest/wiki
 
+### Custom step text converters
+
+Implement `BDTest.Interfaces.IStepTextStringConverter<T>` and register the converter
+through `BDTest.Settings.BDTestSettings`:
+
+```csharp
+var converter = new NumberTextConverter();
+BDTestSettings.RegisterCustomStringConverter(converter);
+try
+{
+    // Build steps whose arguments should use this converter.
+}
+finally
+{
+    BDTestSettings.RemoveCustomStringConverter(converter);
+}
+
+public sealed class NumberTextConverter : IStepTextStringConverter<int>
+{
+    public string ConvertToString(int value) => $"number {value}";
+}
+```
+
+`RegisterCustomStringConverter` and `RemoveCustomStringConverter` support concurrent
+registration, removal, and step text generation. Each argument uses a stable snapshot
+of converters in registration order; the first matching converter wins. Changes made
+after that snapshot apply to subsequent argument conversions. Duplicate registrations
+are allowed; removal deletes the first equal registration and returns whether one
+was found. Both methods reject null converters.
+
+Converter callbacks run outside the registration lock and can run concurrently.
+Converters must protect their own mutable state. Removal does not cancel a callback
+or exclude a converter from an earlier snapshot; wait for those conversions to finish
+before disposing converter resources. Builder-generated text is cached, so registration
+changes do not regenerate text for steps already built.
+
+The existing `CustomStringConverters` property remains a `List<object>` for compatibility.
+Direct access is supported during setup before concurrent access begins. For concurrent
+legacy access, hold `lock (BDTestSettings.CustomStringConverters)` for every read,
+enumeration, and mutation, using the same lock as the registration API and snapshots.
+Unsynchronized legacy list mutations are not thread-safe, even when other callers use
+the new API.
+
 ### Scenario and story tags
 
 Use `[BDTestTag("smoke")]` from `BDTest.Attributes` on a scenario method or a story

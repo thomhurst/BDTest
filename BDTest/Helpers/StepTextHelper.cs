@@ -98,7 +98,7 @@ public static class StepTextHelper
                 return "null";
             }
 
-            foreach (var converter in BDTestSettings.CustomStringConverters)
+            foreach (var converter in BDTestSettings.GetCustomStringConvertersSnapshot())
             {
                 var converterInterface = converter.GetType().GetInterfaces()
                     .Where(type => type.IsGenericType && type.GetGenericTypeDefinition() == typeof(IStepTextStringConverter<>))

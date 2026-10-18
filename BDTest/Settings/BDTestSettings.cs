@@ -1,4 +1,5 @@
-﻿using BDTest.Settings.Retry;
+﻿using BDTest.Interfaces;
+using BDTest.Settings.Retry;
 using BDTest.Settings.Skip;
 using BDTest.Test;
 
@@ -22,7 +23,62 @@ public static class BDTestSettings
         
     public static DebugSettings Debug { get; } = new();
 
+    /// <summary>Gets the legacy custom string converter list in registration order.</summary>
+    /// <remarks>
+    /// Prefer RegisterCustomStringConverter and RemoveCustomStringConverter during concurrent use.
+    /// Direct list access is supported during setup before any concurrent access, or while holding
+    /// lock (CustomStringConverters) for every read and mutation. Unsynchronized concurrent mutations
+    /// are not supported. Converter implementations must provide their own thread safety.
+    /// </remarks>
     public static List<object> CustomStringConverters { get; } = new();
+
+    /// <summary>Appends a converter safely during concurrent step text generation.</summary>
+    /// <remarks>
+    /// Each argument is converted using a stable snapshot in registration order; the first matching
+    /// converter wins. Registrations after a snapshot is taken apply to subsequent argument conversions.
+    /// Converter callbacks run outside the registration lock and may run concurrently.
+    /// </remarks>
+    /// <exception cref="ArgumentNullException">The converter is null.</exception>
+    public static void RegisterCustomStringConverter<T>(IStepTextStringConverter<T> converter)
+    {
+        if (converter == null)
+        {
+            throw new ArgumentNullException(nameof(converter));
+        }
+
+        lock (CustomStringConverters)
+        {
+            CustomStringConverters.Add(converter);
+        }
+    }
+
+    /// <summary>Removes the first equal converter safely during concurrent step text generation.</summary>
+    /// <returns>True if a registration was removed; otherwise, false.</returns>
+    /// <remarks>
+    /// Removal does not cancel conversions using an earlier snapshot. Do not dispose converter
+    /// resources until those conversions finish. Duplicate registrations are removed one at a time.
+    /// </remarks>
+    /// <exception cref="ArgumentNullException">The converter is null.</exception>
+    public static bool RemoveCustomStringConverter<T>(IStepTextStringConverter<T> converter)
+    {
+        if (converter == null)
+        {
+            throw new ArgumentNullException(nameof(converter));
+        }
+
+        lock (CustomStringConverters)
+        {
+            return CustomStringConverters.Remove(converter);
+        }
+    }
+
+    internal static object[] GetCustomStringConvertersSnapshot()
+    {
+        lock (CustomStringConverters)
+        {
+            return CustomStringConverters.ToArray();
+        }
+    }
 
     public static CustomExceptionSettings CustomExceptionSettings { get; } = new();
         
