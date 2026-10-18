@@ -44,7 +44,6 @@ public class Step
     [JsonInclude]
     public TimeSpan TimeTaken { get; internal set; }
 
-    [JsonConverter(typeof(JsonStringEnumConverter<Status>))]
     [JsonInclude]
     public Status Status { get; internal set; } = Status.NotRun;
 
@@ -328,7 +327,7 @@ public class Step
         }
         else if (!TimedOut && BDTestSettings.CustomExceptionSettings.InconclusiveExceptionTypes.Contains(exception.GetType()))
         {
-            Status = Status.NotRun;
+            Status = Status.Inconclusive;
         }
         else
         {

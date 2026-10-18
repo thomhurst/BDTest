@@ -10,7 +10,6 @@ public class ScenarioAttempt
     [JsonInclude] public int Number { get; internal set; }
 
     [JsonInclude]
-    [JsonConverter(typeof(JsonStringEnumConverter<Status>))]
     public Status Status { get; internal set; }
 
     [JsonInclude] public ExceptionWrapper Exception { get; internal set; }

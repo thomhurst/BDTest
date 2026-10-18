@@ -1,6 +1,5 @@
 using BDTest.Razor.Reports.Extensions;
 using BDTest.Test;
-using Newtonsoft.Json;
 using NUnit.Framework;
 
 namespace BDTest.Tests.Fixtures;
@@ -36,10 +35,10 @@ public class ReportStatusTests
     [TestCase(4, Status.Skipped)]
     public void LegacyNumericSummariesKeepTheirMeaningAndAreWrittenAsNames(int value, Status expected)
     {
-        var summary = JsonConvert.DeserializeObject<BDTest.Razor.Reports.Models.TestRunSummary>($"{{\"Status\":{value}}}");
+        var summary = ReportJson.DeserializeObject<BDTest.Razor.Reports.Models.TestRunSummary>($"{{\"Status\":{value}}}");
         Assert.That(summary.Status, Is.EqualTo(expected));
-        var json = JsonConvert.SerializeObject(summary);
+        var json = ReportJson.SerializeObject(summary);
         Assert.That(json, Does.Contain($"\"Status\":\"{expected}\""));
-        Assert.That(JsonConvert.DeserializeObject<BDTest.Razor.Reports.Models.TestRunSummary>(json).Status, Is.EqualTo(expected));
+        Assert.That(ReportJson.DeserializeObject<BDTest.Razor.Reports.Models.TestRunSummary>(json).Status, Is.EqualTo(expected));
     }
 }

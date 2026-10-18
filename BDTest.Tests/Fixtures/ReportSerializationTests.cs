@@ -103,6 +103,49 @@ public class ReportSerializationTests
         Assert.That(BDTestJsonHelper.Serialize(report), Does.Not.Contain("\"$id\"").And.Not.Contain("\"$ref\""));
     }
 
+    [TestCase("\"$values\":\"custom value\"")]
+    [TestCase("\"$ref\":\"custom reference\"")]
+    [TestCase("\"$values\":\"custom value\",\"$ref\":\"custom reference\",\"ordinary\":\"retained\"")]
+    public void Legacy_metadata_named_dictionary_keys_are_preserved(string properties)
+    {
+        var report = BDTestJsonHelper.Deserialize($$$"""
+            {"$id":"report","CustomProperties":{"$id":"properties",{{{properties}}}},
+             "Scenarios":[{"ExampleValues":{"$id":"examples",{{{properties}}}}}]}
+            """);
+
+        var expected = JsonSerializer.Deserialize<Dictionary<string, string>>("{" + properties + "}");
+        Assert.That(report.CustomProperties, Is.EquivalentTo(expected));
+        Assert.That(report.Scenarios.Single().ExampleValues, Is.EquivalentTo(expected));
+    }
+
+    [TestCase(0, Status.Passed)]
+    [TestCase(1, Status.Failed)]
+    [TestCase(2, Status.Inconclusive)]
+    [TestCase(3, Status.NotImplemented)]
+    [TestCase(4, Status.Skipped)]
+    public void Legacy_numeric_statuses_keep_their_meaning_in_scenarios_steps_and_attempts(int value, Status expected)
+    {
+        var report = BDTestJsonHelper.Deserialize($$"""
+            {"$id":"report","Scenarios":[{"Status":{{value}},"Steps":[{"Status":{{value}}}],"Attempts":[{"Status":{{value}}}]}]}
+            """);
+
+        var scenario = report.Scenarios.Single();
+        Assert.That(scenario.Status, Is.EqualTo(expected));
+        Assert.That(scenario.Steps.Single().Status, Is.EqualTo(expected));
+        Assert.That(scenario.Attempts.Single().Status, Is.EqualTo(expected));
+        Assert.That(BDTestJsonHelper.Serialize(report), Does.Contain($"\"Status\":\"{expected}\""));
+    }
+
+    [TestCase("5")]
+    [TestCase("1.5")]
+    [TestCase("1e1000")]
+    public void Invalid_numeric_statuses_fail_with_a_JSON_error(string value)
+    {
+        Assert.Throws<JsonException>(() => BDTestJsonHelper.Deserialize($$"""
+            {"Scenarios":[{"Status":{{value}}}]}
+            """));
+    }
+
     [TestCase("{\"$id\":\"report\",\"Scenarios\":[{\"$ref\":\"missing\"}]}")]
     [TestCase("{\"$id\":\"report\",\"Scenarios\":[{\"$ref\":\"report\"}]}")]
     [TestCase("{\"$id\":\"report\",\"Scenarios\":[{\"$id\":\"report\"}]}")]

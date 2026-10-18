@@ -3,7 +3,6 @@ using BDTest.Helpers;
 using BDTest.Test;
 using BDTest.Test.Steps;
 using BDTest.Tests.Helpers;
-using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using NUnit.Framework;
 
@@ -21,7 +20,7 @@ public class StatusLifecycleTests
         var step = new Step(new Runnable(() => NoOp()), StepType.Given, "scenario", "report");
         Assert.That(default(Status), Is.EqualTo(Status.NotRun));
         Assert.That(step.Status, Is.EqualTo(Status.NotRun));
-        Assert.That(JsonConvert.DeserializeObject<Scenario>("{}").Status, Is.EqualTo(Status.NotRun));
+        Assert.That(ReportJson.DeserializeObject<Scenario>("{}").Status, Is.EqualTo(Status.NotRun));
         step.Status = Status.Failed;
         step.ResetData();
         Assert.That(step.Status, Is.EqualTo(Status.NotRun));
@@ -60,11 +59,11 @@ public class StatusLifecycleTests
     [TestCase(Status.Inconclusive)]
     public void StatusNamesSurviveJsonRoundTrip(Status status)
     {
-        var json = JsonConvert.SerializeObject(status);
+        var json = ReportJson.SerializeObject(status);
         Assert.That(json, Is.EqualTo($"\"{status}\""));
-        Assert.That(JsonConvert.DeserializeObject<Status>(json), Is.EqualTo(status));
-        var scenario = JsonConvert.DeserializeObject<Scenario>($"{{\"Status\":{json},\"Steps\":[{{\"Status\":{json}}}]}}");
-        var restored = JObject.Parse(JsonConvert.SerializeObject(scenario));
+        Assert.That(ReportJson.DeserializeObject<Status>(json), Is.EqualTo(status));
+        var scenario = ReportJson.DeserializeObject<Scenario>($"{{\"Status\":{json},\"Steps\":[{{\"Status\":{json}}}]}}");
+        var restored = JObject.Parse(ReportJson.SerializeObject(scenario));
         Assert.That((string)restored["Status"], Is.EqualTo(status.ToString()));
         Assert.That((string)restored["Steps"][0]["Status"], Is.EqualTo(status.ToString()));
     }
@@ -73,7 +72,7 @@ public class StatusLifecycleTests
     [TestCase(Status.Pending, "Pending")]
     public void HtmlCountsAndLabelsUnfinishedScenarios(Status status, string label)
     {
-        var scenario = JsonConvert.DeserializeObject<Scenario>($"{{\"Guid\":\"unfinished\",\"FrameworkTestId\":\"unfinished-test\",\"Status\":\"{status}\",\"Steps\":[{{\"Status\":\"{status}\"}}]}}");
+        var scenario = ReportJson.DeserializeObject<Scenario>($"{{\"Guid\":\"unfinished\",\"FrameworkTestId\":\"unfinished-test\",\"Status\":\"{status}\",\"Steps\":[{{\"Status\":\"{status}\"}}]}}");
         BDTest.Maps.TestHolder.AddScenario(scenario);
         var html = BDTestHtmlHelper.GetTestHtmlReport();
         Assert.That(html, Does.Contain($"<span class=\"count\">1</span><span class=\"label\">{label}</span>"));

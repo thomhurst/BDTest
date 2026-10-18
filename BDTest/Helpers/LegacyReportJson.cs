@@ -60,7 +60,9 @@ internal static class LegacyReportJson
         }
         if (element.ValueKind == JsonValueKind.Object)
         {
-            if (element.TryGetProperty("$ref", out var reference))
+            // A dictionary can contain these names alongside its own $id and ordinary entries.
+            var propertyCount = element.EnumerateObject().Count();
+            if (propertyCount == 1 && element.TryGetProperty("$ref", out var reference))
             {
                 if (reference.ValueKind != JsonValueKind.String
                     || !references.TryGetValue(reference.GetString(), out var target)
@@ -72,7 +74,9 @@ internal static class LegacyReportJson
                 activeReferences.Remove(reference.GetString());
                 return;
             }
-            if (element.TryGetProperty("$values", out var values))
+            if (element.TryGetProperty("$values", out var values)
+                && values.ValueKind == JsonValueKind.Array
+                && propertyCount == (element.TryGetProperty("$id", out _) ? 2 : 1))
             {
                 Write(values, writer, references, activeReferences, depth + 1, maximumExpandedSize);
                 return;

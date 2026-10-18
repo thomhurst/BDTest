@@ -103,7 +103,6 @@ public class Scenario
 
     [JsonInclude] public string Output { get; internal set; }
 
-    [JsonConverter(typeof(JsonStringEnumConverter<Status>))]
     [JsonInclude]
     public Status Status { get; internal set; } = Status.NotRun;
 

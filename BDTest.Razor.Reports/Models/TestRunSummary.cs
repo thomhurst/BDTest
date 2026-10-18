@@ -70,7 +70,6 @@ public class TestRunSummary
     [JsonInclude]
     public DateTime FinishedAtDateTime { get; set; }
     [JsonInclude]
-    [JsonConverter(typeof(JsonStringEnumConverter<Status>))]
     public Status Status { get; set; }
     [JsonInclude]
     public Counts Counts { get; set; } = new();
@@ -102,6 +101,6 @@ public class Counts
     public int Skipped { get; set; }
     [JsonInclude]
     public int NotRun { get; set; }
-    [JsonProperty]
+    [JsonInclude]
     public int Pending { get; set; }
 }
