@@ -5,29 +5,40 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 namespace BDTest.MSTest;
 
 [TestClass]
-public abstract class MSTestBDTestBase<TContext> : AbstractContextBDTestBase<TContext>
+public abstract class MSTestBDTestBase<TContext> : AbstractContextBDTestBase<TContext>, IBDTestMSTestTest
     where TContext : class
 {
-    public TestContext? TestContext { get; set; }
+    private TestContext? _testContext;
+
+    public TestContext? TestContext
+    {
+        get => _testContext;
+        set
+        {
+            _testContext = value;
+            if (value != null) MSTestBDTestLifecycle.Initialize(this, value);
+        }
+    }
+
+    BDTestBase IBDTestMSTestTest.BDTestHost => this;
 
     /// <summary>The reusable outcome declaration. Register it on options for explicit runs.</summary>
     public static FrameworkOutcomeMap OutcomeMap => MSTestExceptionRegistration.OutcomeMap;
 
     protected override void OnScenarioSkipped(string reason) => OutcomeMap.ReportSkip(reason);
 
-    [TestInitialize]
+    // Compatibility entry points for callers that manually drive the old base lifecycle.
     public void InitializeBDTest()
     {
+        if (TestContext != null)
+        {
+            MSTestBDTestLifecycle.Initialize(this, TestContext);
+            return;
+        }
         MSTestExceptionRegistration.EnsureRegistered();
-        // TestDisplayName includes the runner's data-row display name. The suffix also
-        // distinguishes repeated executions with identical data and display names.
-        if (TestContext != null && MSTestMethodIdentity.Current.Value == null)
-            throw new InvalidOperationException("Replace [TestClass] with [BDTestClass] to supply MSTest's test MethodInfo.");
-        BeginTest($"{TestContext?.FullyQualifiedTestClassName}.{TestContext?.TestDisplayName ?? TestContext?.TestName}_{Guid.NewGuid():N}",
-            MSTestMethodIdentity.Current.Value);
+        BeginTest(Guid.NewGuid().ToString("N"));
     }
 
-    [TestCleanup]
     public async Task BDTestMSTestTearDown() => await EndTestAsync();
 
     // Retain the synchronous entry point for existing callers.

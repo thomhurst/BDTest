@@ -358,6 +358,14 @@ public abstract class BDTestBase
     {
         var executionId = execution.Id ?? throw new InvalidOperationException("The execution has no ID.");
         var run = execution.Run ?? throw new InvalidOperationException("The execution has no run.");
+        // Runners may complete in a different execution context from setup/body.
+        // Bind disposal output to its owner inside this async scope so the caller's
+        // ambient capture state is restored when completion returns or fails.
+        TestOutputData.Run = run;
+        TestOutputData.FrameworkExecutionId = executionId;
+        TestOutputData.TestId = null;
+        TestOutputData.ConstructionOutput = null;
+        TestOutputData.PendingStartupOutput = null;
         try { await RemoveExecutionContextAsync(executionId).ConfigureAwait(false); }
         finally
         {

@@ -67,7 +67,7 @@ try {
             @('AdapterConformanceTests', 'CompositionAdapterConformanceTests')
         }
         else { @('AdapterConformanceTests') }
-        $styles = if ($project -eq 'BDTest.TUnit.Tests') { 2 } else { 1 }
+        $styles = if ($project -in @('BDTest.TUnit.Tests', 'BDTest.MSTest.Tests')) { 2 } else { 1 }
         $expectedCount = $expected.Count * $fixtures.Count * $styles
         if ($results.Count -ne $expectedCount) {
             throw "$project expected $expectedCount probes, found $($results.Count). See $logPath"
@@ -108,6 +108,42 @@ try {
         }
         Write-Host "$project verified $($results.Count) runner outcomes."
     }
+
+    # MSTest's original method attribute invokes the adapter proxy, then verifies
+    # completion AFTER native setup/body/cleanup and asynchronous host disposal.
+    $resultPath = Join-Path $resultRoot 'mstest-lifecycle'
+    New-Item -ItemType Directory -Path $resultPath -Force | Out-Null
+    $trxPath = Join-Path $resultPath 'lifecycle.trx'
+    if (Test-Path -LiteralPath $trxPath) { Remove-Item -LiteralPath $trxPath }
+    $logPath = Join-Path $resultPath 'runner.log'
+    & dotnet test (Join-Path $repoRoot 'BDTest.MSTest.Tests/BDTest.MSTest.Tests.csproj') -c $Configuration --filter 'FullyQualifiedName~CompositionLifecycleTests|FullyQualifiedName~InheritanceLifecycleTests' --logger 'trx;LogFileName=lifecycle.trx' --results-directory $resultPath *> $logPath
+    if ($LASTEXITCODE -ne 1) { throw "MSTest lifecycle must exit 1 for intentional failures. See $logPath" }
+    [xml] $trx = Get-Content -LiteralPath $trxPath -Raw
+    $results = @($trx.SelectNodes("//*[local-name()='UnitTestResult']"))
+    if ($results.Count -ne 28) { throw "Expected 28 MSTest lifecycle probes. See $logPath" }
+    foreach ($name in @('RowsAndRepeatsKeepIdentityAndOutput', 'SetupFailure', 'BodyFailure', 'TeardownFailure', 'ContextDisposalFailure', 'BodyAndDisposalFailure')) {
+        $matching = @($results | Where-Object testName -Like "$name*")
+        $expectedCount = if ($name -eq 'RowsAndRepeatsKeepIdentityAndOutput') { 8 } else { 4 }
+        $expectedOutcome = if ($name -like '*Failure') { 'Failed' } else { 'Passed' }
+        if ($matching.Count -ne $expectedCount -or @($matching | Where-Object outcome -ne $expectedOutcome).Count -ne 0) {
+            throw "MSTest lifecycle $name expected $expectedCount $expectedOutcome results. See $trxPath"
+        }
+        if ($expectedOutcome -eq 'Failed') {
+            $message = 'native ' + ($name -replace 'Failure$', '').ToLowerInvariant() + ' failure'
+            if ($name -eq 'ContextDisposalFailure') { $message = 'native context disposal failure' }
+            if ($name -eq 'BodyAndDisposalFailure') { $message = 'native body failure' }
+            foreach ($result in $matching) {
+                $errorMessage = $result.SelectSingleNode(".//*[local-name()='ErrorInfo']/*[local-name()='Message']")
+                if (-not $errorMessage -or $errorMessage.InnerText -notmatch [regex]::Escape($message) -or $errorMessage.InnerText -match 'Assert\.|AssertFailedException|Native initialization did not run') {
+                    throw "MSTest lifecycle $name failed unexpectedly or completion verification failed. See $trxPath"
+                }
+                if ($name -eq 'BodyAndDisposalFailure' -and $errorMessage.InnerText -notmatch 'native context disposal failure') {
+                    throw "MSTest lifecycle lost the disposal failure after a body failure. See $trxPath"
+                }
+            }
+        }
+    }
+    Write-Host 'MSTest verified 28 native lifecycle outcomes for composition and inheritance.'
 
     # Exercise real setup/body/teardown failures on a fixture with an unrelated base.
     # Its final global hook checks awaited disposal, empty buffers and per-run reports.
