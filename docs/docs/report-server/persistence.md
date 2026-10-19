@@ -32,18 +32,33 @@ same version as `BDTest.Razor.Reports`:
 dotnet add package BDTest.Reports.Storage.FileSystem
 ```
 
-```csharp title="Illustrative fragment"
-using BDTest.Reports.Storage.FileSystem;
+Call `FileSystemStorage.Configure(builder)` before `builder.Build()` in the
+[host setup](setup.md). This example compiles against the report host and
+file-system storage packages; keep your read authorization in the `BDTest`
+configuration section or configure a named policy as described in [Security](security.md).
 
-builder.Services.AddBDTestFileSystemStorage(options =>
+```csharp sample="Storage/FileSystem.cs" title="Compiled example"
+using BDTest.Razor.Reports.Extensions;
+using BDTest.Reports.Storage.FileSystem;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.DependencyInjection;
+
+public static class FileSystemStorage
 {
-    options.DirectoryPath = Path.Combine(builder.Environment.ContentRootPath, "report-data");
-    options.Retention = TimeSpan.FromDays(30);
-});
+    public static void Configure(WebApplicationBuilder builder)
+    {
+        builder.Services.AddBDTestReports().BindConfiguration("BDTest");
+        builder.Services.AddBDTestFileSystemStorage(options =>
+        {
+            options.DirectoryPath = Path.Combine(builder.Environment.ContentRootPath, "report-data");
+            options.Retention = TimeSpan.FromDays(30);
+        });
+    }
+}
 ```
 
-This registers one `FileSystemReportStore` singleton as both storage interfaces.
-Keep the normal `AddBDTestReports` registration and authorization configuration.
+This registers one `FileSystemReportStore` singleton as both storage interfaces
+alongside `AddBDTestReports`. Keep the host's authorization configuration.
 See [storage configuration](setup.md#configure-file-system-storage) for binding
 and option validation. The package includes its own README.
 
@@ -152,12 +167,24 @@ The built-in repository loads persisted history once through every page, under a
 
 Install `BDTest.Reports.Storage.AzureBlob` alongside `BDTest.Razor.Reports` (both target .NET 10), then register the persistent store:
 
-```csharp title="Illustrative fragment"
+Call `AzureBlobStorage.Configure(builder)` before `builder.Build()` instead of
+the file-system registration above. The host owns the registered singleton and
+awaits its initialization at startup.
+
+```csharp sample="Storage/AzureBlob.cs" title="Compiled example"
 using BDTest.Razor.Reports.Extensions;
 using BDTest.Reports.Storage.AzureBlob;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.DependencyInjection;
 
-builder.Services.AddBDTestReports();
-builder.Services.AddAzureBlobReportStore().BindConfiguration("AzureStorage");
+public static class AzureBlobStorage
+{
+    public static void Configure(WebApplicationBuilder builder)
+    {
+        builder.Services.AddBDTestReports().BindConfiguration("BDTest");
+        builder.Services.AddAzureBlobReportStore().BindConfiguration("AzureStorage");
+    }
+}
 ```
 
 Set `AzureStorage:ConnectionString` in user secrets or `AzureStorage__ConnectionString` in the environment. `AzureStorageConfig` also supports `ReportsContainerName` (default `test-data`) and `SummariesContainerName` (default `test-runs-summaries`). Names must be distinct and follow Azure's 3–63 character lowercase container naming rules. Changing names selects different containers without migrating data.

@@ -149,6 +149,7 @@ You can also run the isolated README and first-test examples without any report 
 npm --prefix docs run check:samples
 dotnet run --project docs/samples/Readme -c Release --no-build
 dotnet run --project docs/samples/FirstTest -c Release --no-build
+dotnet run --project docs/samples/Standalone -c Release --no-build
 ```
 
 When a major-version change lands, add its upgrade action and focused guide link

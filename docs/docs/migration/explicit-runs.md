@@ -15,6 +15,10 @@ For NUnit, xUnit, MSTest and TUnit, use the existing
 [assembly configuration](../configuration/assembly-runs.md) and assembly owner.
 Standalone callers and custom adapters create their own run:
 
+For a complete example with packages, imports, cancellation and immutable result
+export, see [explicit runs](../advanced/explicit-runs.md). The example is compiled
+against the current projects; no additional API migration is required to use it.
+
 ```csharp title="Illustrative fragment"
 var options = new BDTestOptions();
 options.RetryTestRules.Add(error => error is IOException, retryLimit: 2);

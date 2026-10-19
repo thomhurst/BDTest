@@ -18,7 +18,8 @@ For built-in adapters, pass the [configured assembly run](../configuration/assem
 | `GetNotRunScenarios(BDTestRun)` | `IReadOnlyList<BDTest.Contracts.ScenarioDefinitionSummary>` snapshots of chains that were built but not executed. |
 | `ClearScenarios(BDTestRun)` | Clears collected scenarios. |
 | `run.ReportId` (on `BDTestRun`) | The selected run's fresh report ID. |
-| `GetTestTimer(IReadOnlyCollection<ScenarioResult> scenarios)` | Start, finish and elapsed time for those scenarios; an empty collection has unset timestamps unless a report timer is supplied. |
+| `GetTestTimer(IReadOnlyCollection<ScenarioResult> scenarios)` | Start, finish and elapsed time for those scenarios; an empty collection has unset timestamps. |
+| `run.GetSnapshot()` | Immutable scenarios, pending definitions and run timing. For an empty run, `Timer` spans run creation through the current run clock. |
 
 Use it to build custom reports or to assert on results in a teardown:
 
@@ -26,6 +27,10 @@ Use it to build custom reports or to assert on results in a teardown:
 var run = BDTest.NUnitBDTestAssembly.GetRun(typeof(MyTests).Assembly);
 var failed = BDTestUtil.GetScenarios(run).Where(scenario => scenario.Status == Status.Failed).ToList();
 ```
+
+The immutable `GetTestTimer` overload accepts only the scenario collection; it
+has no report-timer argument. Use `run.GetSnapshot().Timer` when an empty run
+needs meaningful timing. See the complete [explicit-run example](explicit-runs.md).
 
 ## Pending definitions
 
