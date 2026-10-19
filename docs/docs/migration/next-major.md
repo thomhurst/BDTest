@@ -80,6 +80,7 @@ does not establish that the framework or runner supports .NET Framework.
 | Storage and deletion | Implement cancellable `IReportStore` and `IRunIndexStore`, or use the temporary legacy bridge. Replace the old delete route with `DELETE /bdtest/reports/{id}` and handle 204. See [storage migration](report-storage.md). |
 | Authentication and uploads | Configure report-read and admin policies separately from the upload key. Unconfigured reads are denied and blank upload keys disable uploads. See [security](../report-server/security.md). |
 | URLs and proxies | Use `MapBDTestReports` and pass the full external report prefix to upload clients. See [hosting](../report-server/hosting.md). |
+| Razor view overrides | Update the Overview, Timings, Failures and Not run model types and replace layout scenario access with aggregates. See [compact page model migration](report-storage.md#compact-razor-page-models). |
 | Capacity and custom rendering | Check [upload/cache limits](../report-server/caching-and-limits.md) and [standalone HTML security](../reports/html-report-security.md) and the hosted [HTTPS image policy](../report-server/security.md#security-headers). |
 
 The new [BDTest.Contracts](../reports/contracts.md) package is currently additive.

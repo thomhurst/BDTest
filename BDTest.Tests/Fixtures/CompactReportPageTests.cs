@@ -84,6 +84,32 @@ public class CompactReportPageTests
         AssertNoSourceGraph(pages, new HashSet<object>(ReferenceEqualityComparer.Instance));
     }
 
+    [Test]
+    public void Full_data_layout_groups_failures_only_on_first_access()
+    {
+        var report = Report();
+        var scenarios = Required(report.Scenarios);
+        foreach (var scenario in scenarios) scenario.Status = Status.Passed;
+        var layout = ReportLayoutViewModel.Create(report);
+
+        // A failure introduced before first access must be included, proving creation did not group.
+        scenarios[0].Status = Status.Failed;
+        Assert.That(layout.FailureCauses, Is.EqualTo(1));
+        scenarios[0].Status = Status.Passed;
+        Assert.That(layout.FailureCauses, Is.EqualTo(1), "The computed count is reused.");
+    }
+
+    [Test]
+    public void Cached_layout_keeps_its_precomputed_zero_failure_count()
+    {
+        var report = Report();
+        var scenarios = Required(report.Scenarios);
+        foreach (var scenario in scenarios) scenario.Status = Status.Passed;
+        var pages = ReportPageModels.Create(report);
+        scenarios[0].Status = Status.Failed;
+        Assert.That(pages.Summary.Layout.FailureCauses, Is.Zero);
+    }
+
     private static void AssertNoSourceGraph(object? value, HashSet<object> seen)
     {
         if (value == null || value is string || value.GetType().IsValueType || !seen.Add(value)) return;
@@ -105,7 +131,7 @@ public class CompactReportPageTests
     }
 
     [Test]
-    public async Task Repeated_and_concurrent_reads_reuse_projections_and_replacement_and_deletion_invalidate()
+    public async Task Repeated_reads_reuse_projections_and_replacement_and_deletion_invalidate()
     {
         using var services = Services();
         var repository = services.GetRequiredService<IDataRepository>();

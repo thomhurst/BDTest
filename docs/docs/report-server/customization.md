@@ -127,6 +127,8 @@ The next major version changes these compiled Razor model contracts. Update host
 | `TopDefects.cshtml` | `TopDefectsViewModel` |
 | `Warnings.cshtml` | `WarningsViewModel` |
 
+Layouts created with `ReportLayoutViewModel.Create(report)` compute `FailureCauses` on first access and reuse the count. These request-scoped layouts retain scenarios until that computation; cached compact page layouts use a precomputed count and retain no scenario graph.
+
 Each model exposes `Layout`. The controller also places it in `ViewData[nameof(ReportLayoutViewModel)]` for shared layouts. `Layout.Report` is now `ReportMetadataViewModel` (ID, tag, environment, branch, machine, version, custom properties and `HasTimer`), not `BDTestOutputModel`. Use `Layout.ScenarioCount`, `Counts`, `Status`, `Timer`, `FailureCauses` and `NotRunCount` instead of enumerating `Layout.Scenarios`, which has been removed.
 
 Use `SummaryViewModel.OtherCount`/`OtherStatuses` and each failure group's `ScenarioCount` for totals: summary rows are limited to those displayed. `TopDefectsViewModel.ForGrouping(groupBy)` selects the cached location/type/step grouping with the same fallback for unknown values. Display rows expose `Name`, `Story`, `Guid`, status, duration and failing-step fields; they do not expose execution objects. Timings exposes `Median`, `Percentile95`, `SlowestFiveShare`, `Fastest` and `Slowest`. Warnings exposes sorted `NotRun` display rows.

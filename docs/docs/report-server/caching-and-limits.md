@@ -53,7 +53,7 @@ When using `MemoryCacheBdTestDataStore` through `IReportStore`, `WriteAsync` rej
 
 Overview (`Summary`), Timings (`TestTimesSummary`), Failures (`TopDefects`) and Not run (`Warnings`) use cached display models. The first request builds status counts, failure groupings, timing percentiles and fastest/slowest lists, and ordered warning rows. Repeated requests reuse them without traversing the full scenario graph. Culture-specific ordering has separate entries within the same budget.
 
-```csharp
+```csharp title="Illustrative fragment"
 builder.Services.AddBDTestReports(options =>
 {
     options.ReportPageCacheSizeLimitBytes = 64L * 1024 * 1024; // Default: 64 MiB, separate from full reports

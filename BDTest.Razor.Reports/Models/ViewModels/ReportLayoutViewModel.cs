@@ -12,13 +12,20 @@ public sealed record ReportMetadataViewModel(string? Id, string? Tag, string? En
 
 public class ReportLayoutViewModel
 {
+    private Lazy<int>? _failureCauses;
+    private int _failureCausesValue;
+
     public ReportMetadataViewModel? Report { get; init; }
     public int ScenarioCount { get; init; }
     public IReadOnlyDictionary<Status, int> Counts { get; init; } = Enum.GetValues<Status>().ToDictionary(status => status, _ => 0);
     public Status Status { get; init; } = Status.NotRun;
     public TestTimer Timer { get; init; } = new() { TestsStartedAt = default, TestsFinishedAt = default };
     public string Title => string.IsNullOrWhiteSpace(Report?.Tag) ? "Test run" : Report.Tag;
-    public int FailureCauses { get; init; }
+    public int FailureCauses
+    {
+        get => _failureCauses?.Value ?? _failureCausesValue;
+        init => _failureCausesValue = value;
+    }
     public int NotRunCount { get; init; }
 
     public static ReportLayoutViewModel Create(BDTestOutputModel report) => Create(report,
@@ -38,7 +45,10 @@ public class ReportLayoutViewModel
             Counts = new System.Collections.ObjectModel.ReadOnlyDictionary<Status, int>(counts),
             Status = scenarios.GetTotalStatus(),
             Timer = BDTestUtil.GetTestTimer(scenarios, report.TestTimer == null ? null : report),
-            FailureCauses = failureCauses ?? FailureGroup.Build(scenarios, FailureGroup.ByExceptionAndLocation).Count,
+            FailureCauses = failureCauses.GetValueOrDefault(),
+            // Only request-scoped full-data layouts retain scenarios for on-demand grouping.
+            _failureCauses = failureCauses.HasValue ? null : new Lazy<int>(() =>
+                FailureGroup.Build(scenarios, FailureGroup.ByExceptionAndLocation).Count),
             NotRunCount = report.NotRun?.Count ?? 0
         };
     }
