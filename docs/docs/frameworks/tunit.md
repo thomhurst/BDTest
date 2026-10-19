@@ -133,6 +133,9 @@ To migrate from manual composition, implement `IBDTestTUnitTest`, return your ex
 
 ## Reports after the run
 
+Add `BDTest.Reporting` at the same version as the adapter before using these export APIs.
+See [reporting package migration](../migration/reporting-package.md).
+
 Use an assembly-level `[After]` hook:
 
 ```csharp sample="TUnit/AssemblyReport.cs" title="Compiled example"

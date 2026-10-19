@@ -3,9 +3,12 @@ title: Sending results
 description: Upload test results to a BDTest report server at the end of a test run.
 ---
 
+
+Install `BDTest.Reporting` alongside your adapter to export JSON, generate HTML or upload reports.
+Use matching package versions; see [reporting package migration](../migration/reporting-package.md).
 # Sending results
 
-Core uploads now use [schema-versioned contracts](../reports/contracts.md).
+Uploads use [schema-versioned contracts](../reports/contracts.md).
 Upgrade the host to the matching contracts-based package generation before sending
 schema-version-1 reports. The new host also reads persisted legacy reports.
 

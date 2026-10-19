@@ -3,6 +3,9 @@ title: Explicit runs
 description: Isolate scenario storage and reporting with BDTestRun in custom adapters and long-lived hosts.
 ---
 
+
+Install `BDTest.Reporting` alongside your adapter to export JSON, generate HTML or upload reports.
+Use matching package versions; see [reporting package migration](../migration/reporting-package.md).
 # Explicit runs
 
 Built-in adapters use [isolated assembly runs](../configuration/assembly-runs.md). Custom adapters and long-lived hosts explicitly own a `BDTestRun` to keep their scenarios, options and reports separate. There is no implicit process-wide default run.

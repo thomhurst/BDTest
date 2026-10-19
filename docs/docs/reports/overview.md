@@ -3,6 +3,9 @@ title: Reports overview
 description: The ways to get results out of BDTest - console output, a self-contained HTML file, JSON data and the report server.
 ---
 
+
+Install `BDTest.Reporting` alongside your adapter to export JSON, generate HTML or upload reports.
+Use matching package versions; see [reporting package migration](../migration/reporting-package.md).
 # Reports overview
 
 BDTest collects scenarios in their owning run: stories, scenario text, steps, statuses, timings, output, exceptions, tags, retry history and tests that were built but never run. You choose how to publish that data.

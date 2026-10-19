@@ -123,6 +123,9 @@ The adapter exposes the runner-injected `TestContext` as `TestContext?`. It is a
 
 ## Reports after the run
 
+Add `BDTest.Reporting` at the same version as the adapter before using these export APIs.
+See [reporting package migration](../migration/reporting-package.md).
+
 Use `[AssemblyCleanup]` on a static method in a `[TestClass]`:
 
 ```csharp sample="MSTest/AssemblyReport.cs" title="Compiled example"

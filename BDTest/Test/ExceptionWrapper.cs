@@ -7,6 +7,9 @@ namespace BDTest.Test;
 
 public class ExceptionWrapper
 {
+    /// <summary>Copies this exception tree to an immutable result, bounding cycles and depth.</summary>
+    public Contracts.ExceptionInfo ToResult() => Helpers.ResultSnapshot.Create(this)!;
+
     private const int MaximumDepth = 10;
     private string? _shortTypeName;
     private bool _hasTruncation;

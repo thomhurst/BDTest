@@ -14,7 +14,7 @@ dotnet add package BDTest.Contracts
 ```
 
 Core execution now publishes these snapshots through `BDTestAsync()`, `BDTestUtil`,
-run results and hooks. Core JSON export, static HTML and uploads consume the same
+run results and hooks. `BDTest.Reporting` JSON export, static HTML and uploads consume the same
 contract. Hosted reports and the Azure Blob store also consume these contracts,
 without a dependency on the execution package. Hosts read both schema version 1
 and historical unversioned reports. See [migration](../migration/immutable-results.md).

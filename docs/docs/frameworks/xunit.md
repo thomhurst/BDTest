@@ -212,6 +212,9 @@ Existing overrides of the obsolete `MarkTestAsComplete()` and reimplementations 
 
 ## Reports after the run
 
+Add `BDTest.Reporting` at the same version as the adapter before using these export APIs.
+See [reporting package migration](../migration/reporting-package.md).
+
 Use an xUnit v3 assembly fixture. xUnit disposes it after every test in the assembly has finished:
 
 ```csharp sample="XUnit/AssemblyReport.cs" title="Compiled example"

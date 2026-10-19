@@ -11,4 +11,7 @@
     <ProjectReference Include="../BDTest/BDTest.csproj" />
     <ProjectReference Include="../BDTest.SourceGenerator/BDTest.SourceGenerator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\BDTest.Reporting\BDTest.Reporting.csproj" />
+  </ItemGroup>
 </Project>

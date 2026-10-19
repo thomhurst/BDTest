@@ -8,7 +8,7 @@ namespace BDTest.Helpers;
 public static class ExceptionHtmlHelper
 {
     // Compatibility entry point for the hosted report model until its migration.
-    public static string GetHtml(Test.ExceptionWrapper? exception) => GetHtml(ResultSnapshot.Create(exception));
+    public static string GetHtml(Test.ExceptionWrapper? exception) => GetHtml(exception?.ToResult());
 
     internal static IReadOnlyList<ExceptionInfo> GetRootCauses(this ExceptionInfo exception)
     {

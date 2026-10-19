@@ -4,7 +4,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 
-const source = fs.readFileSync(path.join(__dirname, '../BDTest/Helpers/BDTestHtmlHelper.cs'), 'utf8');
+const source = fs.readFileSync(path.join(__dirname, '../BDTest.Reporting/Helpers/BDTestHtmlHelper.cs'), 'utf8');
 const script = source.match(/private const string EmbeddedScript = """\r?\n([\s\S]*?)\r?\n""";/)[1];
 
 function verify(grouped, protocol) {

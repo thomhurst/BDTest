@@ -276,7 +276,7 @@ packing for stable, prerelease, metadata, minor, patch and major versions.
 `Directory.Build.props` defines `BDTestPublicKey` once and resolves
 `StrongNameKeyPair.snk` relative to the repository, independent of the working
 directory. The signed runtime packages are `BDTest`, `BDTest.NUnit`,
-`BDTest.xUnit`, `BDTest.MSTest`, `BDTest.TUnit`, `BDTest.Contracts`, `BDTest.Razor.Reports`,
+`BDTest.xUnit`, `BDTest.MSTest`, `BDTest.TUnit`, `BDTest.Contracts`, `BDTest.Reporting`, `BDTest.Razor.Reports`,
 `BDTest.Reports.Storage.AzureBlob` and `BDTest.Reports.Storage.FileSystem`.
 Their assembly names, key and version policy remain unchanged for every target.
 Keep this explicit list current when adding a runtime package.
@@ -313,7 +313,7 @@ either the NuGet or local-feed upload module. A failed check prevents publicatio
 `Directory.Build.props` defaults `IsPackable` to `false`. Shipped projects opt in
 with `<IsPackable>true</IsPackable>` in their project files. The complete package
 set is `BDTest`, `BDTest.NUnit`, `BDTest.xUnit`, `BDTest.MSTest`, `BDTest.TUnit`,
-`BDTest.Contracts`, `BDTest.Razor.Reports`, `BDTest.Reports.Storage.FileSystem`,
+`BDTest.Contracts`, `BDTest.Reporting`, `BDTest.Razor.Reports`, `BDTest.Reports.Storage.FileSystem`,
 `BDTest.Reports.Storage.AzureBlob`,
 `BDTest.SourceGenerator`, and `BDTest.Analyzers`.
 Tests, pipeline tools, examples and the sample report host are not packable.
@@ -441,3 +441,20 @@ The existing snapshot APIs from #935 are also recorded in core/contracts baselin
 `Serialize` has explicit one-argument and two-argument overloads for each report model
 so their source call patterns work without overlapping optional-parameter overloads.
 See [host migration](docs/docs/migration/immutable-results.md#hosted-reports).
+
+## Execution-side reporting package (#992)
+
+`BDTest.Reporting` is a signed, packable runtime package targeting
+`netstandard2.0;net8.0`. It depends on core; core and adapters never depend on it.
+The solution, package-selection tests and signing verification include it.
+It owns the shared export builder, JSON writer/historical reader, standalone HTML
+and HTTP uploader. Core's immutable `GetSnapshot()` boundary reuses `ResultSnapshot`;
+reporting receives no friend access. The legacy generated `BDTestJsonContext`
+stays with the execution models so their internal serialization members remain
+private. `HtmlWriter` stays in core because it captures evidence during execution.
+The package grants only the signed core test suite access to its internal builder.
+
+Public API baselines record moved types as removals from core and additions to
+reporting; namespaces and signatures stay the same. This is an authorized
+next-major assembly move, requiring a package reference and consumer rebuild.
+See [consumer migration](docs/docs/migration/reporting-package.md).

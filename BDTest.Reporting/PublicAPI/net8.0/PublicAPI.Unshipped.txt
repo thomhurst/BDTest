@@ -1,0 +1,36 @@
+#nullable enable
+BDTest.BDTestReportServer
+BDTest.BDTestRunDescriptor
+BDTest.BDTestRunDescriptor.BDTestRunDescriptor() -> void
+BDTest.BDTestRunDescriptor.BranchName.get -> string?
+BDTest.BDTestRunDescriptor.BranchName.set -> void
+BDTest.BDTestRunDescriptor.CustomProperties.get -> System.Collections.Generic.Dictionary<string!, string!>!
+BDTest.BDTestRunDescriptor.Environment.get -> string?
+BDTest.BDTestRunDescriptor.Environment.set -> void
+BDTest.BDTestRunDescriptor.Tag.get -> string?
+BDTest.BDTestRunDescriptor.Tag.set -> void
+BDTest.Helpers.BDTestAttachmentHelper
+BDTest.Helpers.BDTestHtmlHelper
+BDTest.Helpers.BDTestJsonHelper
+BDTest.Helpers.ExceptionHtmlHelper
+BDTest.Helpers.StepArgumentHtmlHelper
+static BDTest.BDTestReportServer.SendDataAndGetReportUriAsync(BDTest.BDTestRun! run, System.Uri! serverAddress, BDTest.BDTestRunDescriptor? bdTestRunDescriptor) -> System.Threading.Tasks.Task<System.Uri!>!
+static BDTest.BDTestReportServer.SendDataAndGetReportUriAsync(BDTest.BDTestRun! run, System.Uri! serverAddress, BDTest.BDTestRunDescriptor? bdTestRunDescriptor, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<System.Uri!>!
+static BDTest.BDTestReportServer.SendDataAndGetReportUriAsync(System.Uri! serverAddress, BDTest.BDTestRunDescriptor? bdTestRunDescriptor, System.Net.Http.HttpClient! httpClient, BDTest.BDTestRun! run) -> System.Threading.Tasks.Task<System.Uri!>!
+static BDTest.BDTestReportServer.SendDataAndGetReportUriAsync(System.Uri! serverAddress, BDTest.BDTestRunDescriptor? bdTestRunDescriptor, System.Net.Http.HttpClient! httpClient, BDTest.BDTestRun! run, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<System.Uri!>!
+static BDTest.Helpers.BDTestAttachmentHelper.GetAttachments(BDTest.Contracts.BDTestReport! report) -> System.Collections.Generic.IEnumerable<BDTest.Contracts.AttachmentInfo!>!
+static BDTest.Helpers.BDTestAttachmentHelper.GetAttachments(BDTest.Maps.BDTestOutputModel! report) -> System.Collections.Generic.IEnumerable<BDTest.Test.Attachment!>!
+static BDTest.Helpers.BDTestHtmlHelper.GenerateHtmlReport(BDTest.Contracts.BDTestReport! data) -> string!
+static BDTest.Helpers.BDTestHtmlHelper.GetTestHtmlReport(BDTest.BDTestRunDescriptor? bdTestRunDescriptor, BDTest.BDTestRun! run) -> string!
+static BDTest.Helpers.BDTestJsonHelper.Deserialize(string! json, long maximumExpandedSize = 104857600) -> BDTest.Maps.BDTestOutputModel?
+static BDTest.Helpers.BDTestJsonHelper.DeserializeAsync(System.IO.Stream! stream, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken), long maximumExpandedSize = 104857600) -> System.Threading.Tasks.Task<BDTest.Maps.BDTestOutputModel?>!
+static BDTest.Helpers.BDTestJsonHelper.DeserializeReport(string! json) -> BDTest.Contracts.BDTestReport!
+static BDTest.Helpers.BDTestJsonHelper.GetTestJsonData(BDTest.BDTestRunDescriptor? bdTestRunDescriptor, BDTest.BDTestRun! run) -> string!
+static BDTest.Helpers.BDTestJsonHelper.Serialize(BDTest.Contracts.BDTestReport! model) -> string!
+static BDTest.Helpers.BDTestJsonHelper.Serialize(BDTest.Contracts.BDTestReport! model, bool writeIndented) -> string!
+static BDTest.Helpers.BDTestJsonHelper.Serialize(BDTest.Maps.BDTestOutputModel? model) -> string!
+static BDTest.Helpers.BDTestJsonHelper.Serialize(BDTest.Maps.BDTestOutputModel? model, bool writeIndented) -> string!
+static BDTest.Helpers.ExceptionHtmlHelper.GetHtml(BDTest.Contracts.ExceptionInfo? exception) -> string!
+static BDTest.Helpers.ExceptionHtmlHelper.GetHtml(BDTest.Test.ExceptionWrapper? exception) -> string!
+static BDTest.Helpers.StepArgumentHtmlHelper.GetHtml(System.Collections.Generic.IReadOnlyList<BDTest.Contracts.StepArgument!>? arguments) -> string!
+static BDTest.Helpers.StepArgumentHtmlHelper.GetHtml(System.Collections.Generic.IReadOnlyList<BDTest.StepArgument!>? arguments) -> string!

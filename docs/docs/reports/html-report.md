@@ -3,6 +3,9 @@ title: HTML report
 description: Generate a single self-contained HTML report with BDTestHtmlHelper.
 ---
 
+
+Install `BDTest.Reporting` alongside your adapter to export JSON, generate HTML or upload reports.
+Use matching package versions; see [reporting package migration](../migration/reporting-package.md).
 # HTML report
 
 For built-in adapters, pass the [configured assembly run](../configuration/assembly-runs.md) to report/utility helpers. Every export and store utility requires the owning run. Export all reports before disposing through the assembly owner.

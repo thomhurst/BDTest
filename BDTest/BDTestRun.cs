@@ -42,6 +42,22 @@ public sealed class BDTestRun : IDisposable
     /// <remarks>Later registration changes do not affect this run. Callback instances are not cloned.</remarks>
     public static BDTestRun Start(BDTestOptions options) => new(options ?? throw new ArgumentNullException(nameof(options)));
 
+    /// <summary>Copies this run's results, pending definitions and timing into an immutable in-memory snapshot.</summary>
+    /// <remarks>Throws after disposal. An empty run spans its start through the current run clock.</remarks>
+    public BDTestRunSnapshot GetSnapshot()
+    {
+        lock (Store.Gate)
+        {
+            ThrowIfDisposed();
+            var scenarios = BDTestUtil.GetScenarios(this);
+            var timer = scenarios.Count == 0
+                ? new Contracts.ReportTimer(Helpers.ResultSnapshot.Utc(StartedAt), Helpers.ResultSnapshot.Utc(Options.Clock.UtcNow))
+                : BDTestUtil.GetTestTimer(scenarios);
+            return new BDTestRunSnapshot(ReportId, Helpers.BDTestVersionHelper.CurrentVersion ?? "unknown",
+                scenarios, BDTestUtil.GetNotRunScenarios(this), timer);
+        }
+    }
+
     internal void ThrowIfDisposed() => Store.ThrowIfDisposed();
 
     /// <summary>Opens captured content owned by this run. The caller must dispose the stream.</summary>

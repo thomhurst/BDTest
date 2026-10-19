@@ -3,12 +3,15 @@ title: JSON data
 description: Export, read and write BDTest report data as JSON with BDTestJsonHelper.
 ---
 
+
+Install `BDTest.Reporting` alongside your adapter to export JSON, generate HTML or upload reports.
+Use matching package versions; see [reporting package migration](../migration/reporting-package.md).
 # JSON data
 
 For built-in adapters, pass the [configured assembly run](../configuration/assembly-runs.md) to report/utility helpers. Every export and store utility requires the owning run. Export all reports before disposing through the assembly owner.
 
 
-Core exports and uploads are immutable [versioned reports](contracts.md): camelCase
+Exports and uploads are immutable [versioned reports](contracts.md): camelCase
 properties, `schemaVersion: 1`, and a separate `producerVersion`. Status and step
 type values are names; timestamps are UTC `DateTimeOffset` values and durations
 use invariant `TimeSpan` format. All collections are read-only and non-null.
