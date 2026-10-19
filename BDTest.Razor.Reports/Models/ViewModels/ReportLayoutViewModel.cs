@@ -43,7 +43,10 @@ public class ReportLayoutViewModel
             ScenarioCount = scenarios.Count,
             Counts = new System.Collections.ObjectModel.ReadOnlyDictionary<Status, int>(counts),
             Status = scenarios.GetTotalStatus(),
-            Timer = ReportResults.GetTestTimer(scenarios, report.TestTimer == null ? null : report),
+            Timer = report.TestTimer is { TestsStartedAt: var started, TestsFinishedAt: var finished }
+                && (scenarios.Count == 0 || (started != default && finished != default))
+                ? report.TestTimer
+                : ReportResults.GetTestTimer(scenarios),
             FailureCauses = failureCauses.GetValueOrDefault(),
             // Only request-scoped full-data layouts retain scenarios for on-demand grouping.
             _failureCauses = failureCauses.HasValue ? null : new Lazy<int>(() =>

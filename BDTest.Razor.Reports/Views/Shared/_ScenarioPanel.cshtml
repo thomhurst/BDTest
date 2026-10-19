@@ -5,10 +5,7 @@
 @{
     var scenario = Model.Scenario
         ?? throw new InvalidOperationException("A selected scenario is required for the scenario panel.");
-    var exception = scenario.Exception;
-    var failingStep = FailureGroup.FailingStep(scenario);
     var shareUrl = Context.GetLocalUrlWithQueryParameter("scenarioId", scenario.Guid);
-    var traceId = "panel-trace-" + scenario.Guid;
     var file = string.IsNullOrEmpty(scenario.FileName) ? null : scenario.FileName.Replace('\\', '/').Split('/')[^1];
 }
 
@@ -63,64 +60,10 @@
         }
     </div>
 
-    @if (exception != null)
-    {
-        <div class="card-pad" style="gap: 10px">
-            <div class="k">@(scenario.Status == Status.Failed ? "Failure" : scenario.Status.Label())</div>
-            <p class="strong" style="overflow-wrap: anywhere">@exception.Message</p>
-            <pre class="code" id="@traceId">@(exception.AsString ?? exception.Message)</pre>
-            <div class="cluster">
-                <button class="btn sm" type="button" data-bdtest-action="copy-text" data-target="@traceId">Copy</button>
-                @if (Model.FullPageUrl != null)
-                {
-                    <a class="btn sm" href="@Model.FullPageUrl">Full page</a>
-                }
-            </div>
-        </div>
-    }
-
-    @if (scenario.IsOutline && scenario.Examples?.Count > 0)
-    {
-        <div style="border-top: 1px solid var(--line)">
-            @await Html.PartialAsync("_ScenarioExamples", scenario)
-        </div>
-    }
-    else if (scenario.Steps?.Count > 0)
-    {
-        <div style="border-top: 1px solid var(--line)">
-            <div class="k" style="padding: 14px 20px 6px">Steps</div>
-            <ol class="steps-compact">
-                @foreach (var step in scenario.Steps)
-                {
-                    var (keyword, text) = ReportUi.SplitStepText(step.StepText);
-                    var notRun = step.Status is Status.NotRun or Status.Pending;
-                    <li class="@(step == failingStep ? "fail" : notRun ? "skipped" : "")">
-                        @step.Status.StatusIcon()
-                        <span class="grow step-text" style="@(step == failingStep ? "font-weight: 600" : "")"><b>@keyword</b> @text
-                            @if (step.SkipReason != null)
-                            {
-                                <span class="small muted">@step.SkipReason</span>
-                            }
-                        </span>
-                        <span class="dur">@(notRun ? "—" : step.TimeTaken.ToShortDuration())</span>
-                        @if (step.Attachments?.Count > 0)
-                        {
-                            <div class="compact-step-attachments">
-                                @await Html.PartialAsync("_Attachments", step.Attachments)
-                            </div>
-                        }
-                    </li>
-                }
-            </ol>
-        </div>
-    }
-
-    @if (scenario.Attachments?.Count > 0)
-    {
-        <div class="card-pad" aria-label="Scenario attachments">
-            @await Html.PartialAsync("_Attachments", scenario.Attachments)
-        </div>
-    }
+    <div class="rpt bdtest-fragment">
+        @Html.Raw(BDTest.Rendering.ReportHtmlRenderer.RenderScenario(scenario,
+            HostedRendering.Options(Url, ViewData[nameof(BDTest.Razor.Reports.Models.ViewModels.ReportLayoutViewModel)] as BDTest.Razor.Reports.Models.ViewModels.ReportLayoutViewModel, omitCustomHtml: true)))
+    </div>
 
     @if (Model.FullPageUrl != null)
     {

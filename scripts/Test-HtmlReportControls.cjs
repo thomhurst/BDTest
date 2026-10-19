@@ -54,13 +54,25 @@ function verify(grouped, protocol) {
       return [];
     }
   }));
+  const attributes = {};
+  let listenerCount = 0;
   const root = {
     querySelector: selector => controls[selector],
-    querySelectorAll: selector => selector === '.story' ? stories : selector === '.scn' ? elements : selector === 'iframe.custom-body' ? [frame] : [],
-    setAttribute() {}, addEventListener(name, handler) { events['root-' + name] = handler; }, contains: () => true
+    querySelectorAll: selector => selector === '.story' ? stories : selector === '.scn' ? elements : selector === 'iframe.custom-body[sandbox="allow-popups"]' ? [frame] : [],
+    getAttribute: name => attributes[name],
+    setAttribute(name, value) { attributes[name] = value; },
+    addEventListener(name, handler) { listenerCount++; events['root-' + name] = handler; }, contains: () => true
+  };
+  // Hosted pages can contain several independent fragments, including ones without controls.
+  const fragmentAttributes = {};
+  const fragment = {
+    getAttribute: name => fragmentAttributes[name],
+    setAttribute(name, value) { fragmentAttributes[name] = value; },
+    querySelector: () => null, querySelectorAll: () => [],
+    addEventListener() { listenerCount++; }
   };
   const context = vm.createContext({
-    document: { querySelector: () => root },
+    document: { querySelectorAll(selector) { assert.equal(selector, '.rpt'); return [fragment, root]; } },
     window: { location: { protocol }, addEventListener(name, handler) { events[name] = handler; } }
   });
   // Fail on the former quadratic membership lookup, without timing-sensitive assertions.
@@ -70,6 +82,11 @@ function verify(grouped, protocol) {
     return -1;
   };`, context);
   vm.runInContext(script, context);
+  assert.equal(attributes['data-renderer-ready'], 'true');
+  assert.equal(fragmentAttributes['data-renderer-ready'], 'true');
+  const initialListenerCount = listenerCount;
+  vm.runInContext(script, context);
+  assert.equal(listenerCount, initialListenerCount, 'Repeated script execution does not reinitialize fragments');
   assert.equal(frame.sandbox, protocol === 'file:' ? 'allow-popups allow-same-origin' : 'allow-popups');
   assert.equal(reloads, protocol === 'file:' ? 1 : 0, 'Only file reports reload frames with local-image access');
   const shown = () => elements.filter(el => !el.hidden);

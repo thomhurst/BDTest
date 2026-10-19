@@ -17,6 +17,7 @@
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
     <link rel="stylesheet" href="@Url.ReportAsset("/css/bdtest-report.css")"/>
     <script src="@Url.ReportAsset("/js/BDTest.js")" defer></script>
+    @Html.Raw(BDTest.Rendering.ReportHtmlRenderer.RenderStyles())
 </head>
 <body>
 @await Html.PartialAsync("_SvgIcons")
@@ -31,5 +32,6 @@
     <p class="muted" data-attachment-unavailable hidden>Preview unavailable. Try downloading the attachment.</p>
 </dialog>
 <div id="snackbar" role="status" aria-live="polite"></div>
+<script>@Html.Raw(BDTest.Rendering.ReportHtmlRenderer.GetScript())</script>
 </body>
 </html>

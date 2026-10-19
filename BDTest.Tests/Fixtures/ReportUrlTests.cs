@@ -61,7 +61,7 @@ public class ReportUrlTests
     }
 
     [Test]
-    public async Task Summary_status_chips_use_local_urls_with_an_escaped_report_id()
+    public async Task Summary_status_tiles_use_local_urls_with_an_escaped_report_id()
     {
         var report = new BDTestOutputModel
         {
@@ -78,7 +78,7 @@ public class ReportUrlTests
         var html = await ReportHandlerEncodingTests.RenderAsync("/Views/BDTest/Summary.cshtml", ReportPageModels.Create((report).ToReport()).Summary,
             pathBase: "/reports", host: "attacker.example", requestPath: "/bdtest/report/O'Brien/summary",
             configureViewData: viewData => viewData[nameof(ReportLayoutViewModel)] = ReportLayoutViewModel.Create((report).ToReport()));
-        var urls = Regex.Matches(html, "<a class=\"chip\" href=\"([^\"]+)\"")
+        var urls = Regex.Matches(html, "<a class=\"tile\" data-status=\"(?!all)[^\"]+\" href=\"([^\"]+)\"")
             .Select(m => HttpUtility.HtmlDecode(m.Groups[1].Value)).ToArray();
 
         await Assert.That(urls).IsEquivalentTo(new[]

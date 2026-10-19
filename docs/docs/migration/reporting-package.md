@@ -58,6 +58,8 @@ Keep the run alive until export and upload finish.
 HTML implementation now lives in the contracts-only `BDTest.Rendering` package,
 referenced transitively by reporting and hosting. The public reporting helpers
 remain forwarding facades in their existing assembly with unchanged signatures.
-Hosted views share its argument and exception fragments. Full page integration
-remains separate work; see the [rendering boundary](../reports/rendering.md).
+Hosted views share its run overview and complete scenario sections, including
+arguments, exceptions, examples, retry history and evidence. The hosted shell
+retains navigation, history and compact page caches; see the
+[rendering boundary](../reports/rendering.md).
 This does not change upload protocol behavior.

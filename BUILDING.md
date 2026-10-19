@@ -508,5 +508,9 @@ The package-selection and signing checks include the new assembly. Public API
 baselines record its three rendering methods; the reporting facade baselines
 are unchanged. Core tests compare current and historical rendering, and the
 execution-independent host suite generates standalone HTML through the package.
-Modern/legacy target tests retain compatibility coverage. Full hosted page
-composition and cache-aware integration remain in #993.
+Modern/legacy target tests retain compatibility coverage. Hosted and standalone
+reports now share overview, failure-card, scenario-evidence and not-run section
+composition. Hosted views map compact cached rows to renderer projections and
+supply authorized attachment routes; they do not rematerialize a report graph.
+The shared script is emitted through the host's nonce-bearing script element,
+and standalone documents retain their hash CSP and offline sandbox policy.

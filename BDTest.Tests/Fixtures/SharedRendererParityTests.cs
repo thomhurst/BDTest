@@ -45,9 +45,7 @@ public class SharedRendererParityTests
         await Assert.That(hosted).Contains(arguments);
         await Assert.That(standalone).Contains(arguments);
         await Assert.That(hosted).Contains(exception);
-        // The standalone original-text block adds copy/wrap controls; the diagnostic tree is identical.
-        var tree = exception[..exception.IndexOf("<details><summary>Original exception text", StringComparison.Ordinal)];
-        await Assert.That(standalone).Contains(tree);
+        await Assert.That(standalone).Contains(exception);
         await Assert.That(hosted).Contains("Show all 25 rows");
         foreach (var html in new[] { hosted, standalone })
         {

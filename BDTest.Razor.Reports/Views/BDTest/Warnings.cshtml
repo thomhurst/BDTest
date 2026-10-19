@@ -11,7 +11,6 @@
     var reportId = report.Id ?? string.Empty;
     var notRun = Model.NotRun;
 
-    string FileName(string? path) => string.IsNullOrEmpty(path) ? string.Empty : path.Replace('\\', '/')[(path.Replace('\\', '/').LastIndexOf('/') + 1)..];
 }
 
 @await Html.PartialAsync("_RunHeader", run)
@@ -47,32 +46,10 @@
             </div>
         </div>
 
-        <section class="card clip" aria-label="Tests that never ran">
-            <div class="table-scroll">
-                <table class="t">
-                    <thead>
-                    <tr>
-                        <th scope="col" style="width: 32px"><span class="visually-hidden">Status</span></th>
-                        <th scope="col">Scenario</th>
-                        <th scope="col">Story</th>
-                        <th scope="col">File</th>
-                        <th scope="col">Test method</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    @foreach (var test in notRun)
-                    {
-                        <tr>
-                            <td>@ReportUi.Icon("i-notrun", "ico-r")</td>
-                            <td class="strong">@test.Scenario</td>
-                            <td>@ReportUi.StoryTitle(test.Story)</td>
-                            <td class="mono" title="@test.CallerFile">@FileName(test.CallerFile)</td>
-                            <td class="mono">@test.CallerMember</td>
-                        </tr>
-                    }
-                    </tbody>
-                </table>
-            </div>
-        </section>
+        <div class="rpt bdtest-fragment" aria-label="Tests that never ran">
+            @Html.Raw(BDTest.Rendering.ReportHtmlRenderer.RenderNotRun(notRun.Select(test =>
+                new BDTest.Contracts.ScenarioDefinitionSummary(string.Empty, reportId, test.Story, test.Scenario,
+                    callerMember: test.CallerMember, callerFile: test.CallerFile))))
+        </div>
     }
 </main>

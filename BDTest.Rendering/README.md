@@ -14,17 +14,20 @@ File.WriteAllText("report.html", html);
 ```
 
 HTML is server-generated with embedded styles and JavaScript: one offline file,
-a hash-based parent CSP and sandboxed custom HTML. RenderArguments and
-RenderException provide encoded fragments also used by hosted Razor reports.
+a hash-based parent CSP and sandboxed custom HTML. Standalone and hosted Razor
+reports share run overviews and complete scenario sections, including steps,
+examples, retry attempts, exceptions, output and attachments. RenderArguments and
+RenderException remain available for smaller encoded fragments.
 The package neither reads historical JSON nor opens attachment URIs. Use a
 schema-aware reader to normalize historical input before rendering.
 
 BDTest.Reporting references this package for run-based export and keeps its
 existing public helpers as forwarding facades. BDTest.Razor.Reports references
-it for argument and exception fragments; hosted page composition, compact
-cached projections, customization, navigation and authorized attachment delivery
-remain in the hosted package. Complete hosted/standalone page integration is
-tracked separately in issue #993.
+it for the same run and scenario rendering. A compact ReportRunOverview supplies
+counts, metadata and timing without retaining a scenario graph or reloading a
+cached report. Hosted shells retain history, navigation, customization and compact
+page caches; URL callbacks use the host’s authorized attachment route and stored
+report identity. The rendering package never performs attachment I/O.
 
 See https://thomhurst.github.io/BDTest/docs/reports/rendering for the package
 boundary and migration guidance.

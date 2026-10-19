@@ -1,0 +1,25 @@
+@using BDTest.Contracts
+@using BDTest.Rendering
+@using BDTest.Razor.Reports.Helpers
+@using BDTest.Razor.Reports.Models.ViewModels
+@model SummaryViewModel
+@{
+    var reportId = Model.Layout.Report?.Id ?? string.Empty;
+    string Description(ReportScenarioRow scenario)
+    {
+        var text = ReportUi.StoryTitle(scenario.Story);
+        if (scenario.RetryCount > 0)
+            text += $" · failed after {scenario.RetryCount} {(scenario.RetryCount == 1 ? "retry" : "retries")}";
+        if (scenario.FailingStepNumber > 0)
+            text += $" · failed at “{scenario.FailingStepText}”";
+        return text;
+    }
+    // Preserve the hosted bounded projection and its grouping semantics; share the section composition.
+    var groups = Model.Failures.Take(3).Select(group => new ReportFailureOverview(group.TypeName,
+        group.Title, group.Location, group.ScenarioCount, group.Scenarios.Take(5).Select(scenario =>
+            new ReportFailureLink(scenario.Guid ?? string.Empty, scenario.Name, Description(scenario), scenario.TimeTaken)).ToArray())).ToArray();
+}
+<div class="rpt bdtest-fragment">
+    @Html.Raw(ReportHtmlRenderer.RenderAttention(groups, Model.Layout.Counts[Status.Failed], Model.Layout.FailureCauses,
+        id => Url.ReportScenario(reportId, id), Url.ReportAction("TopDefects", new { id = reportId })))
+</div>
