@@ -103,8 +103,6 @@ public class ReportAttachmentRenderingTests
     private static Task<string> RenderAttachments(params Attachment[] attachments) => Render("/Views/Shared/_Attachments.cshtml", attachments);
 
     private static Task<string> Render(string path, object model) => ReportHandlerEncodingTests.RenderAsync(path, model,
-        pathBase: "/host", configureViewData: data => data[nameof(ReportLayoutViewModel)] = new ReportLayoutViewModel
-        {
-            Report = ReportJson.DeserializeObject<BDTest.Maps.BDTestOutputModel>($"{{\"Id\":\"{ReportId}\"}}")
-        });
+        pathBase: "/host", configureViewData: data => data[nameof(ReportLayoutViewModel)] = ReportLayoutViewModel.Create(
+            ReportJson.DeserializeObject<BDTest.Maps.BDTestOutputModel>($"{{\"Id\":\"{ReportId}\"}}")));
 }
