@@ -177,6 +177,11 @@ const config = {
             position: 'left',
           },
           {
+            href: 'https://tomlonghurst.dev/',
+            label: 'More libraries',
+            position: 'right',
+          },
+          {
             href: 'https://www.nuget.org/packages/BDTest',
             label: 'NuGet',
             position: 'right',
@@ -211,6 +216,17 @@ const config = {
               {label: 'GitHub', href: 'https://github.com/thomhurst/BDTest'},
               {label: 'NuGet', href: 'https://www.nuget.org/packages/BDTest'},
               {label: 'Release notes', href: 'https://github.com/thomhurst/BDTest/blob/main/RELEASE_NOTES.md'},
+            ],
+          },
+          {
+            title: 'More libraries',
+            items: [
+              {label: 'TUnit', href: 'https://tunit.dev/'},
+              {label: 'ModularPipelines', href: 'https://modularpipelines.tomlonghurst.dev/'},
+              {label: 'Respire', href: 'https://respire.tomlonghurst.dev/'},
+              {label: 'Kevlar', href: 'https://kevlar.tomlonghurst.dev/'},
+              {label: 'Dekaf', href: 'https://dekaf.tomlonghurst.dev/'},
+              {label: 'All projects', href: 'https://tomlonghurst.dev/'},
             ],
           },
         ],
