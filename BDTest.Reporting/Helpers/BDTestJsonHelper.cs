@@ -10,6 +10,9 @@ public static class BDTestJsonHelper
     private const long DefaultMaximumExpandedSize = 100 * 1024 * 1024;
 
     /// <summary>Creates a report containing only the supplied run's scenarios and pending definitions.</summary>
+    /// <param name="bdTestRunDescriptor">Optional export metadata; null uses default metadata.</param>
+    /// <param name="run">The caller-owned run. Export after tests and teardown finish, before disposing it.</param>
+    /// <returns>Indented, schema-versioned JSON. Read it with <see cref="DeserializeReport"/>.</returns>
     public static string GetTestJsonData(BDTestRunDescriptor? bdTestRunDescriptor, BDTestRun run)
     {
         var dataToOutput = BDTestOutputModelBuilder.Build(run, bdTestRunDescriptor);

@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <AssemblyName>BDTest.Documentation.Storage</AssemblyName>
+    <TargetFramework>net10.0</TargetFramework>
+    <OutputType>Library</OutputType>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../../BDTest.Razor.Reports/BDTest.Razor.Reports.csproj" />
+    <ProjectReference Include="../../../BDTest.Reports.Storage.FileSystem/BDTest.Reports.Storage.FileSystem.csproj" />
+    <ProjectReference Include="../../../BDTest.Reports.Storage.AzureBlob/BDTest.Reports.Storage.AzureBlob.csproj" />
+    <Compile Include="obj/Examples/*.cs" />
+  </ItemGroup>
+</Project>

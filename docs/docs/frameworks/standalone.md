@@ -50,6 +50,10 @@ Console.WriteLine(scenario.Status);
 
 Export reports before disposing the run. Custom adapters must implement `TestRun` with a stable owned run; there is no implicit default store. See [explicit runs](../advanced/explicit-runs.md).
 
+The [complete console example](../advanced/explicit-runs.md) includes the required
+imports, cancellation, immutable result reading and JSON/HTML export, and is
+compiled against the current projects by the documentation sample checker.
+
 ## Things to know
 
 - No framework exceptions are registered. Register your framework's success, skip and inconclusive exceptions yourself; see [Exception classification](../configuration/exceptions.md).

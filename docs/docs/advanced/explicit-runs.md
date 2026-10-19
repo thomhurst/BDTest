@@ -10,23 +10,57 @@ Use matching package versions; see [reporting package migration](../migration/re
 
 Built-in adapters use [isolated assembly runs](../configuration/assembly-runs.md). Custom adapters and long-lived hosts explicitly own a `BDTestRun` to keep their scenarios, options and reports separate. There is no implicit process-wide default run.
 
-```csharp title="Illustrative fragment"
-using var run = BDTestRun.Start();
+This complete console example references `BDTest` and `BDTest.Reporting`. Use
+`BDTest` for execution, `BDTest.Contracts` for immutable result types and
+`BDTest.Helpers` for export helpers. It needs no framework adapter or report server.
 
-var tests = new MyTests(run);
-await tests.When(() => tests.Act()).Then(() => tests.Check()).BDTestAsync();
+```csharp sample="Standalone/Program.cs" title="Compiled example"
+using BDTest;
+using BDTest.Contracts;
+using BDTest.Helpers;
 
-var scenarios = BDTestUtil.GetScenarios(run);
-var json = BDTestJsonHelper.GetTestJsonData(new BDTestRunDescriptor(), run);
+using var cancellation = new CancellationTokenSource();
+using var run = BDTestRun.Start(new BDTestOptions());
+var value = 0;
 
-public class MyTests(BDTestRun run) : BDTestBase
+ScenarioResult result = await new BDTestBuilder(run)
+    .Given(() => value = 1)
+    .When(() => value += 1)
+    .Then(() => Verify(value))
+    .BDTestAsync(cancellation.Token);
+
+BDTestRunSnapshot snapshot = run.GetSnapshot();
+var descriptor = new BDTestRunDescriptor { Environment = "Local", Tag = "Smoke" };
+string json = BDTestJsonHelper.GetTestJsonData(descriptor, run);
+BDTestReport report = BDTestJsonHelper.DeserializeReport(json);
+string html = BDTestHtmlHelper.GenerateHtmlReport(report);
+
+Console.WriteLine($"{result.Status}: {snapshot.Scenarios.Count} scenario(s)");
+Console.WriteLine($"Report {report.Id}: {html.Length} HTML characters");
+
+static void Verify(int value)
 {
-    public override BDTestRun TestRun => run;
-
-    public void Act() { }
-    public void Check() { }
+    if (value != 2) throw new InvalidOperationException("Expected the value to be 2.");
 }
 ```
+
+Create a new `BDTestBuilder(run)` for each scenario; each chain executes once.
+The returned result and `GetSnapshot()` values are immutable and remain readable
+after run disposal. Attachment bytes remain owned by the live run. Save or upload
+them before disposal, which deletes the temporary files.
+
+The example renders saved report data. To export directly from the live run, use
+`BDTestHtmlHelper.GetTestHtmlReport(descriptor, run)`. JSON/HTML helpers take the
+descriptor first (pass `null` for defaults); the uploader takes the run first:
+`await uploader.UploadReportAsync(run, descriptor, cancellation.Token)`. Keep the
+run and the caller-owned `HttpClient` alive until upload finishes. See the complete
+[upload example](../report-server/sending-results.md#example-with-tunit).
+
+For inheritance, derive from `BDTestBase` and override `TestRun` to return the
+owned run. Built-in adapters instead resolve their assembly run: export after all
+tests and teardown finish, then dispose through the adapter's assembly owner
+(for example `TUnitBDTestAssembly.Dispose(assembly)`). Do not dispose an assembly run
+from an individual test.
 
 ## Rules
 

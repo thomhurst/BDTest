@@ -8,6 +8,11 @@ classification convention, local prerequisites and how to add examples.
 Projects cover the README, complete first-test walkthrough, native composition
 and inheritance for all four adapters, assembly configuration, HTML exports,
 upload API, report hosting/options migration and independent report contracts.
+They also cover standalone execution through snapshot/JSON/HTML export and both
+persistent storage registrations. `Standalone` is an executable smoke example;
+`Storage` only compiles alternative registrations and does not contact Azure.
+The [consumer API review](../api-reviews/1017-consumer-api.md) records the reviewed
+entry points, ownership rules, evidence and finding dispositions.
 `Support.cs` files supply only the application models omitted by the adapter
 pages. They do not mock library or framework APIs. The separate `Readme` and `FirstTest`
 projects support the local smoke-test commands; the other projects compile
