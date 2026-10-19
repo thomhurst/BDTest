@@ -50,3 +50,6 @@ try {
     }
 }
 finally { $env:BDTEST_CANCELLATION_RESULTS = $previousResults }
+# GitHub Actions propagates LASTEXITCODE, including the expected TUnit cancellation exit.
+# Report success only after every runner outcome and evidence file has been verified.
+exit 0
