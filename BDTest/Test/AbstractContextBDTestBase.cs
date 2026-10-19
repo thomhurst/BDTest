@@ -242,7 +242,11 @@ public abstract class AbstractContextBDTestBase<TContext> : BDTestBase where TCo
         finally { _disposing.Value = previous; }
     }
 
-    internal override async ValueTask RecreateContextOnRetryAsync(int attempt)
+    internal override ValueTask RecreateContextOnRetryAsync(int attempt) => RecreateContextAsync(attempt, initialize: true);
+
+    internal override ValueTask PrepareOutlineContextAsync() => RecreateContextAsync(0, initialize: false);
+
+    private async ValueTask RecreateContextAsync(int attempt, bool initialize)
     {
         var executionId = BDTestExecutionId;
         var entry = GetEntry(executionId);
@@ -252,7 +256,7 @@ public abstract class AbstractContextBDTestBase<TContext> : BDTestBase where TCo
             if (entry.Retired) throw new InvalidOperationException("This context execution has completed.");
             await DisposeContextAsync(entry).ConfigureAwait(false);
             entry.Attempt = attempt;
-            await PrepareContextUnderGateAsync(executionId, entry, initialize: true).ConfigureAwait(false);
+            await PrepareContextUnderGateAsync(executionId, entry, initialize).ConfigureAwait(false);
         }
         finally { entry.Gate.Release(); }
     }

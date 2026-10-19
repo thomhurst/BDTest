@@ -111,6 +111,73 @@ public class ScenarioOutlineTests : RunContextTestBase<ScenarioOutlineTests.RowC
         await AssertRowErrorReported(outline, "&lt;skip rule failed&gt;");
     }
 
+    [Test]
+    [Arguments("success"), Arguments("skip"), Arguments("inconclusive")]
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "TUnit0018", Justification = "TUnit creates a fresh fixture for each case; the callback configures that case context.")]
+    public async Task Throwing_skip_predicates_preserve_failure_before_initialization(string outcome)
+    {
+        var failure = new ArgumentException("predicate failure");
+        var calls = 0;
+        var initializations = 0;
+        var retries = 0;
+        var types = outcome switch
+        {
+            "success" => Options.SuccessExceptionTypes,
+            "skip" => Options.SkipExceptionTypes,
+            _ => Options.InconclusiveExceptionTypes
+        };
+        types.Add(typeof(ArgumentException));
+        Options.SkipTestRules.Add(_ => { calls++; throw failure; });
+        Options.RetryTestRules.Add(_ => { retries++; return true; }, 2);
+        Configure = context => context.TestContext.Initialize = () => initializations++;
+        Exception? thrown = null;
+        try
+        {
+            await ScenarioOutline("Predicate failure", new[] { new { Value = 1 }, new { Value = 2 } },
+                row => Given(() => Record(row.Value)).When(() => NoOp()).Then(() => NoOp()));
+        }
+        catch (Exception exception) { thrown = exception; }
+        var outline = BDTestUtil.GetScenarios(TestRun).Single(x => x.FrameworkTestId == _executionId);
+        await Assert.That(thrown).IsSameReferenceAs(failure);
+        await Assert.That(outline.Status).IsEqualTo(Status.Failed);
+        await Assert.That(calls).IsEqualTo(2);
+        await Assert.That(initializations).IsZero();
+        await Assert.That(retries).IsZero();
+        await Assert.That(_visited).IsEmpty();
+        foreach (var row in Required(outline.Examples))
+        {
+            await Assert.That(row.Status).IsEqualTo(Status.Failed);
+            await Assert.That(row.Attempts).Count().IsEqualTo(1);
+            await Assert.That(Required(row.Exception).Message).IsEqualTo(failure.Message);
+        }
+    }
+
+    [Test]
+    [Arguments(false), Arguments(true)]
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "TUnit0018", Justification = "TUnit creates a fresh fixture for each case; the callback configures that case context.")]
+    public async Task Skip_decision_precedes_outline_async_initialization(bool skip)
+    {
+        var calls = new List<string>();
+        Options.SkipTestRules.Add(_ => { calls.Add("predicate"); return skip; });
+        Configure = context =>
+        {
+            calls.Add("configure");
+            context.TestContext.Initialize = () =>
+            {
+                calls.Add("initialize");
+                throw new InvalidOperationException("initialization failure");
+            };
+        };
+        await Assert.That(async () => await ScenarioOutline("Order", new[] { new { Value = 1 } }, row =>
+        {
+            calls.Add("factory");
+            return Given(() => Record(row.Value)).When(() => NoOp()).Then(() => NoOp());
+        })).ThrowsExactly<InvalidOperationException>();
+        await Assert.That(calls).IsEquivalentTo(new[] { "configure", "factory", "predicate", "initialize" },
+            global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(_visited).IsEmpty();
+    }
+
     private async Task AssertRowErrorReported(BDTest.Contracts.ScenarioResult outline, string encodedError)
     {
         foreach (var result in new[] { outline, ReportJson.DeserializeObject<BDTest.Contracts.ScenarioResult>(ReportJson.SerializeObject(outline)) })
@@ -697,5 +764,14 @@ public class ScenarioOutlineTests : RunContextTestBase<ScenarioOutlineTests.RowC
         public int Notifications { get; private set; }
         protected override void OnScenarioSkipped(string reason) => Notifications++;
     }
-    public class RowContext { public int Value { get; set; } }
+    public class RowContext : IBDTestContextLifetime
+    {
+        public int Value { get; set; }
+        public Action? Initialize { get; set; }
+        public ValueTask InitializeAsync()
+        {
+            Initialize?.Invoke();
+            return default;
+        }
+    }
 }
