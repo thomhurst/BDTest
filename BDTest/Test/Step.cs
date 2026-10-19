@@ -53,7 +53,18 @@ public class Step
     /// <summary>The matched skip rule or debug setting, or null when no condition skipped this step.</summary>
     [JsonInclude]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public StepSkipReason? SkipReason { get; internal set; }
+    public StepSkipReason? SkipReason
+    {
+        get => _skipReason;
+        internal set
+        {
+            // Publication and retry clears must not race a result snapshot.
+            lock (SnapshotGate ?? this)
+                _skipReason = value;
+        }
+    }
+
+    private StepSkipReason? _skipReason;
 
     /// <summary>The timeout for this step, or null for no step-specific limit.</summary>
     [JsonInclude]

@@ -113,6 +113,40 @@ public class SnapshotPublicationTests
         await Assert.That(readerHeldGate).IsFalse().Because("User argument readers must run outside the snapshot gate.");
     }
 
+    [Test]
+    [Arguments(false)]
+    [Arguments(true)]
+    public async Task Skip_reason_publication_waits_for_snapshot_readers(bool clear)
+    {
+        using var run = BDTestRun.Start();
+        var step = new Step(new Runnable(() => DiagnosticStep("value")), StepType.When, "scenario", "report", run);
+        step.SkipReason = new BDTest.Test.StepSkipReason("Rule", "original", 1);
+        var before = ResultSnapshot.Create(step);
+        using var started = new ManualResetEventSlim();
+        Task publish;
+        bool completedWhileReading;
+        StepResult during;
+        lock (run.Store.Gate)
+        {
+            publish = Task.Factory.StartNew(() =>
+            {
+                started.Set();
+                step.SkipReason = clear ? null : new BDTest.Test.StepSkipReason("DebugSetting", setting: "replacement");
+            }, CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Default);
+            RequireCondition(started.Wait(TimeSpan.FromSeconds(10)), "The background operation did not start.");
+            completedWhileReading = publish.Wait(TimeSpan.FromMilliseconds(200));
+            during = ResultSnapshot.Create(step);
+        }
+        await publish.WaitAsync(TimeSpan.FromSeconds(10));
+        await Assert.That(completedWhileReading).IsFalse();
+        await Assert.That(during.SkipReason!.Source).IsEqualTo("Rule");
+        await Assert.That(during.SkipReason.AttributeType).IsEqualTo("original");
+        await Assert.That(during.SkipReason.RuleIndex).IsEqualTo(1);
+        var after = ResultSnapshot.Create(step);
+        if (clear) await Assert.That(after.SkipReason).IsNull();
+        else await Assert.That(after.SkipReason!.Setting).IsEqualTo("replacement");
+        await Assert.That(before.SkipReason!.Source).IsEqualTo("Rule");
+    }
     [BDTest.Attributes.StepText("value: {0}")]
     private static void DiagnosticStep(string value) { }
 
