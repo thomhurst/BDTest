@@ -7,7 +7,7 @@
     <Description>A Behaviour Driven Testing Framework</Description>
     <PackageTags>test tdd bdd testing given when then</PackageTags>
     <TargetFrameworks>netstandard2.0;net8.0</TargetFrameworks>
-    <TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);IncludeStepMetadataGenerator</TargetsForTfmSpecificContentInPackage>
+    <TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);IncludeBundledCompilerTools</TargetsForTfmSpecificContentInPackage>
   </PropertyGroup>
 
   <PropertyGroup>
@@ -39,20 +39,22 @@
     <ProjectReference Include="..\BDTest.Contracts\BDTest.Contracts.csproj" />
     <ProjectReference Include="..\BDTest.SourceGenerator\BDTest.SourceGenerator.csproj"
                       ReferenceOutputAssembly="false" PrivateAssets="all" />
+    <ProjectReference Include="..\BDTest.Analyzers\BDTest.Analyzers.csproj"
+                      ReferenceOutputAssembly="false" PrivateAssets="all" />
     <InternalsVisibleTo Include="BDTest.Tests" Key="$(BDTestPublicKey)" />
   </ItemGroup>
 
-  <!-- Add the shared compiler payload once, from the legacy target. Query its evaluated
-       output path to support NoBuild and custom output roots without a runtime dependency. -->
-  <Target Name="IncludeStepMetadataGenerator" Condition="'$(TargetFramework)' == 'netstandard2.0'">
-    <MSBuild Projects="..\BDTest.SourceGenerator\BDTest.SourceGenerator.csproj"
+  <!-- Query evaluated compiler output paths to support NoBuild and custom output roots.
+       Pack deduplicates the shared payload across runtime targets. -->
+  <Target Name="IncludeBundledCompilerTools">
+    <MSBuild Projects="..\BDTest.SourceGenerator\BDTest.SourceGenerator.csproj;..\BDTest.Analyzers\BDTest.Analyzers.csproj"
              Targets="GetTargetPath"
              Properties="Configuration=$(Configuration);TargetFramework=netstandard2.0"
              RemoveProperties="TargetFrameworks;RuntimeIdentifier;SelfContained">
-      <Output TaskParameter="TargetOutputs" ItemName="_StepMetadataGenerator" />
+      <Output TaskParameter="TargetOutputs" ItemName="_BundledCompilerTools" />
     </MSBuild>
     <ItemGroup>
-      <TfmSpecificPackageFile Include="@(_StepMetadataGenerator)" PackagePath="analyzers/dotnet/cs" />
+      <TfmSpecificPackageFile Include="@(_BundledCompilerTools)" PackagePath="analyzers/dotnet/cs" />
     </ItemGroup>
   </Target>
 </Project>

@@ -328,14 +328,16 @@ either the NuGet or local-feed upload module. A failed check prevents publicatio
 with `<IsPackable>true</IsPackable>` in their project files. The complete package
 set is `BDTest`, `BDTest.NUnit`, `BDTest.xUnit`, `BDTest.MSTest`, `BDTest.TUnit`,
 `BDTest.Contracts`, `BDTest.Reporting`, `BDTest.Rendering`, `BDTest.Razor.Reports`, `BDTest.Reports.Storage.FileSystem`,
-`BDTest.Reports.Storage.AzureBlob`,
-and `BDTest.Analyzers`.
-`BDTest.SourceGenerator` is not independently packable. Core builds it as a private
-project dependency and bundles its DLL under `analyzers/dotnet/cs`; it adds no
-runtime assembly or package dependency. NuGet consumers receive it directly or
-through an adapter. Repository consumers retain explicit analyzer project references.
-`BDTest.Analyzers.Tests/PackageTests.cs` verifies both core assets, transitive
-adapter installation and coexistence with the optional analyzer package.
+`BDTest.Reports.Storage.AzureBlob`.
+`BDTest.SourceGenerator` and `BDTest.Analyzers` are not independently packable.
+Core builds both as private project dependencies and bundles their DLLs under
+`analyzers/dotnet/cs`; neither adds a runtime assembly or package dependency.
+Pack collects their evaluated output paths, including with custom output roots;
+`pack --no-build` uses existing compiler and runtime build outputs.
+NuGet consumers receive both tools directly or through an adapter. Repository
+consumers retain explicit analyzer project references.
+`BDTest.Analyzers.Tests/PackageTests.cs` verifies both runtime assets, transitive
+adapter installation, single-target packs and coexistence of the bundled compiler tools.
 Tests, pipeline tools, examples and the sample report host are not packable.
 Project and directory names do not decide whether a project ships.
 
@@ -356,7 +358,8 @@ change. Keep `BDTest.ReportGenerator.RazorServer` as the non-shipping sample hos
 Store packages use the `BDTest.Reports.Storage` prefix.
 `BDTest.Reports.Storage.FileSystem` and `BDTest.Reports.Storage.AzureBlob` are signed,
 packable .NET 10 runtime packages with packed READMEs.
-This decision requires no package rename or NuGet deprecation.
+The runtime package IDs remain unchanged. Consumers remove old standalone
+`BDTest.Analyzers` references when upgrading to the bundled analyzer.
 
 `BDTest.Pipeline.Tests/PackageSelectionTests.cs` evaluates the complete package
 set, imported opt-ins, defaults, metadata and compiler payload settings. Run it

@@ -36,7 +36,7 @@ public class PackageSelectionTests
         await Assert.That(selected).IsEquivalentTo(new[]
         {
             "BDTest", "BDTest.Reporting", "BDTest.Rendering", "BDTest.Contracts", "BDTest.NUnit", "BDTest.xUnit", "BDTest.MSTest", "BDTest.TUnit",
-            "BDTest.Razor.Reports", "BDTest.Reports.Storage.AzureBlob", "BDTest.Reports.Storage.FileSystem", "BDTest.Analyzers"
+            "BDTest.Razor.Reports", "BDTest.Reports.Storage.AzureBlob", "BDTest.Reports.Storage.FileSystem"
         });
     }
 
@@ -84,20 +84,30 @@ public class PackageSelectionTests
 
     [Test]
     [Arguments("BDTest.Analyzers")]
-    public async Task Compiler_packages_keep_analyzer_assets_and_disable_symbols(string projectName)
+    [Arguments("BDTest.SourceGenerator")]
+    public async Task Bundled_compiler_projects_are_not_independently_packable(string projectName)
     {
-        using var metadata = await QueryMetadata(Path.Combine(RepositoryRoot, projectName, projectName + ".csproj"));
-        var properties = metadata.RootElement.GetProperty("Properties");
-        using (Assert.Multiple())
+        await Assert.That(bool.Parse(await RunDotNet(PackProjectsModule.CreatePackabilityQuery(
+            Path.Combine(RepositoryRoot, projectName, projectName + ".csproj")).Arguments!))).IsFalse();
+    }
+
+    [Test]
+    [Arguments("BDTest.NUnit")]
+    [Arguments("BDTest.xUnit")]
+    [Arguments("BDTest.MSTest")]
+    [Arguments("BDTest.TUnit")]
+    public async Task Adapters_allow_bundled_core_analyzers_to_reach_consumers(string projectName)
+    {
+        using var metadata = JsonDocument.Parse(await RunDotNet(new[]
         {
-            await Assert.That(properties.GetProperty("TargetFramework").GetString()).IsEqualTo("netstandard2.0");
-            await Assert.That(properties.GetProperty("IncludeBuildOutput").GetString()).IsEqualTo("false");
-            await Assert.That(properties.GetProperty("IncludeSymbols").GetString()).IsEqualTo("false");
-            await Assert.That(properties.GetProperty("PackageIcon").GetString()).IsEqualTo("nuget_icon.png");
-            await Assert.That(properties.GetProperty("Copyright").GetString()).IsEqualTo("Copyright © Tom Longhurst");
-            await Assert.That(metadata.RootElement.GetProperty("Items").GetProperty("None").EnumerateArray()
-                .Any(item => item.TryGetProperty("PackagePath", out var path) && path.GetString() == "analyzers/dotnet/cs")).IsTrue();
-        }
+            "msbuild", Path.Combine(RepositoryRoot, projectName, projectName + ".csproj"), "-nologo",
+            "-property:Configuration=Release", "-property:TargetFramework=net8.0", "-getItem:ProjectReference"
+        }));
+        var core = metadata.RootElement.GetProperty("Items").GetProperty("ProjectReference").EnumerateArray()
+            .Single(item => Path.GetFileName(item.GetProperty("Identity").GetString()!.Replace('\\', '/')) == "BDTest.csproj");
+        var privateAssets = core.GetProperty("PrivateAssets").GetString()!.Split(';');
+        await Assert.That(privateAssets).DoesNotContain("analyzers");
+        await Assert.That(privateAssets).DoesNotContain("all");
     }
 
     [Test]

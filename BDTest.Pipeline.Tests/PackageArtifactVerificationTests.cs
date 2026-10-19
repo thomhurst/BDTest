@@ -32,7 +32,6 @@ public class PackageArtifactVerificationTests
             CreatePackage(id, ".nupkg");
             CreatePackage(id, ".snupkg");
         }
-        CreatePackage("BDTest.Analyzers", ".nupkg");
     }
 
     [After(HookType.Test)]
@@ -84,7 +83,7 @@ public class PackageArtifactVerificationTests
     {
         File.Delete(PackagePath("BDTest", ".nupkg"));
 
-        await AssertRejected("Expected 12 primary packages", "found 11");
+        await AssertRejected("Expected 11 primary packages", "found 10");
     }
 
     [Test]
@@ -100,6 +99,7 @@ public class PackageArtifactVerificationTests
 
     [Test]
     [Arguments("lib/net8.0/BDTest.SourceGenerator.dll")]
+    [Arguments("lib/net8.0/BDTest.Analyzers.dll")]
     [Arguments("analyzers/dotnet/cs/Microsoft.CodeAnalysis.dll")]
     public async Task Rejects_compiler_runtime_payload(string path)
     {
@@ -214,6 +214,17 @@ public class PackageArtifactVerificationTests
         await AssertRejected("Redundant build-folder assembly");
     }
 
+    [Test]
+    public async Task Rejects_a_missing_bundled_analyzer()
+    {
+        using (var archive = ZipFile.Open(PackagePath("BDTest", ".nupkg"), ZipArchiveMode.Update))
+        {
+            archive.GetEntry("analyzers/dotnet/cs/BDTest.Analyzers.dll")!.Delete();
+        }
+
+        await AssertRejected("Missing or duplicate bundled analyzer");
+    }
+
     private void UpdateManifest(Action<XElement> update)
     {
         using var archive = ZipFile.Open(PackagePath("BDTest", ".nupkg"), ZipArchiveMode.Update);
@@ -308,8 +319,9 @@ public class PackageArtifactVerificationTests
         if (id == "BDTest" && extension == ".nupkg")
         {
             archive.CreateEntry("analyzers/dotnet/cs/BDTest.SourceGenerator.dll");
+            archive.CreateEntry("analyzers/dotnet/cs/BDTest.Analyzers.dll");
         }
-        if (id is "BDTest.Analyzers" or "Custom.Shipping")
+        if (id is "Custom.Shipping")
         {
             var assemblyName = id == "Custom.Shipping" ? "Example.Tests.Pipeline.ReportGenerator" : id;
             archive.CreateEntry($"analyzers/dotnet/cs/{assemblyName}.dll");

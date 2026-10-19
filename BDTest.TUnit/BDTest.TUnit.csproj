@@ -12,7 +12,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\BDTest\BDTest.csproj" />
+      <ProjectReference Include="..\BDTest\BDTest.csproj" PrivateAssets="contentfiles;build" />
     </ItemGroup>
 
     <ItemGroup>

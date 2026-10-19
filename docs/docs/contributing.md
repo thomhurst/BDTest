@@ -63,6 +63,7 @@ Use `Development` locally. `Production` can publish packages to NuGet.
 | `BDTest.Reports.Storage.AzureBlob` | Packaged Azure report, run-index and attachment store. |
 | `BDTest.ReportGenerator.RazorServer` | Sample report host (not packed). |
 | `BDTest.SourceGenerator` | Compile-time step metadata bundled in the core package; not independently packed. |
+| `BDTest.Analyzers` | Compiler diagnostics and code fixes bundled in `BDTest`; not a separate package. |
 | `BDTest.Example` | Sample NUnit tests. |
 | `BDTest.Tests` | Core and reporting tests (TUnit; signed friend assembly). |
 | `BDTest.NUnit.Tests` | NUnit adapter and sample integration tests (unsigned). |
@@ -83,7 +84,7 @@ for ASP.NET Core report hosting. Future storage IDs use `BDTest.Reports.Storage.
 The sample server remains non-packable. When adding a shipped project, opt it in,
 supply its package metadata, and update `PackageSelectionTests` and the artifact
 verification script. Run `dotnet run --project BDTest.Pipeline.Tests -c Release` to check
-selection and metadata, including SourceGenerator and Analyzers.
+selection and metadata, including the bundled source generator and analyzer.
 
 ## Documentation
 
