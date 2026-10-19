@@ -7,6 +7,11 @@ description: Deploy the report server, and run it behind a reverse proxy or unde
 
 The report server is an ordinary ASP.NET Core app. Host it anywhere that runs .NET 10: Azure App Service, a container platform, IIS or a VM.
 
+`BDTest.Razor.Reports` targets .NET 10 and depends on `BDTest.Contracts`. A host
+does not need the `BDTest` execution package or a test adapter. The built-in and
+Azure Blob readers accept schema version 1 and historical unversioned reports.
+See [report contract migration](../migration/immutable-results.md#hosted-reports).
+
 For example, on Azure App Service:
 
 1. Create an App Service for .NET 10. The free tier is enough to try it out.

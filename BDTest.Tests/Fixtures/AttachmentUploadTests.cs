@@ -376,7 +376,7 @@ public partial class ReportUploadTests
         using var receipt = await firstServer.Post(AttachmentReport(attachmentId));
         var reportId = receipt.Headers.GetValues("X-BDTest-Report-Id").Single();
         var token = receipt.Headers.GetValues("X-BDTest-Attachment-Token").Single();
-        var restored = Required(BDTestJsonHelper.Deserialize(BDTestJsonHelper.Serialize(firstServer.Store.Received.Single())));
+        var restored = Required(BDTest.Razor.Reports.Serialization.HostedReportJson.Deserialize(BDTestJsonHelper.Serialize(firstServer.Store.Received.Single())));
         await Assert.That(BDTestJsonHelper.Serialize(restored)).DoesNotContain(token);
         await using var secondServer = await UploadServer.Start(configureServices: services =>
         {

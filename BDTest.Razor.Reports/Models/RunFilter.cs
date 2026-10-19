@@ -1,7 +1,6 @@
 using BDTest.Razor.Reports.Helpers;
 using System.Globalization;
-using BDTest;
-using BDTest.Test;
+using BDTest.Contracts;
 using Microsoft.AspNetCore.Http;
 
 namespace BDTest.Razor.Reports.Models;

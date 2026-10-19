@@ -184,7 +184,7 @@ public class HistoryTests
 
         await Assert.That(result.ViewName).IsEqualTo("MultipleTestRunsFlakiness");
         await Assert.That(repository.ReadIds).IsEquivalentTo(new[] { "nightly-3", "nightly-4" }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
-        await Assert.That(((IEnumerable<BDTestOutputModel>)Required(result.Model)).Select(report => report.Id)).IsEquivalentTo((new[] { "nightly-3", "nightly-4" }).Cast<string?>(), global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(((IEnumerable<BDTest.Contracts.BDTestReport>)Required(result.Model)).Select(report => report.Id)).IsEquivalentTo((new[] { "nightly-3", "nightly-4" }).Cast<string?>(), global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
         var history = (HistoryViewModel)Required(result.ViewData[nameof(HistoryViewModel)]);
         await Assert.That(history.Tab).IsEqualTo(HistoryViewModel.Flaky);
         await Assert.That(history.Runs).Count().IsEqualTo(5);
@@ -224,21 +224,21 @@ public class HistoryTests
     {
         public List<string> ReadIds { get; } = [];
 
-        public Task<BDTestOutputModel?> GetData(string id, CancellationToken cancellationToken)
+        public Task<BDTest.Contracts.BDTestReport?> GetData(string id, CancellationToken cancellationToken)
         {
             lock (ReadIds)
             {
                 ReadIds.Add(id);
             }
 
-            return Task.FromResult<BDTestOutputModel?>(new BDTestOutputModel { Id = id });
+            return Task.FromResult<BDTest.Contracts.BDTestReport?>((new BDTestOutputModel { Id = id }).ToReport());
         }
 
-        public Task<BDTestOutputModel?> GetDataForBulkRead(string id, CancellationToken cancellationToken) => GetData(id, cancellationToken);
+        public Task<BDTest.Contracts.BDTestReport?> GetDataForBulkRead(string id, CancellationToken cancellationToken) => GetData(id, cancellationToken);
         public Task<Stream?> OpenReadAsync(string id, CancellationToken cancellationToken) => throw new NotSupportedException();
         public Task<BDTest.Razor.Reports.Storage.RunIndexPage> ListAsync(BDTest.Razor.Reports.Storage.RunIndexQuery query, CancellationToken cancellationToken) => throw new NotSupportedException();
         public Task<IEnumerable<TestRunSummary>> GetAllTestRunRecords(CancellationToken cancellationToken = default) => Task.FromResult<IEnumerable<TestRunSummary>>(runs);
-        public Task StoreData(string id, BDTestOutputModel model, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+        public Task StoreData(string id, BDTest.Contracts.BDTestReport model, CancellationToken cancellationToken = default) => throw new NotSupportedException();
         public Task DeleteReport(string id, CancellationToken cancellationToken = default) => throw new NotSupportedException();
     }
 }

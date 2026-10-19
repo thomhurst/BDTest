@@ -1,4 +1,4 @@
-using BDTest.Test;
+using BDTest.Contracts;
 
 namespace BDTest.Razor.Reports.Models;
 
@@ -24,15 +24,15 @@ public class FailureGroup
     /// <summary>Where the exception was thrown, for example "CheckoutSteps.cs:line 84 · CheckoutSteps.Then".</summary>
     public string? Location { get; private init; }
 
-    public ExceptionWrapper? Exception { get; private init; }
+    public ExceptionInfo? Exception { get; private init; }
 
-    public IReadOnlyList<Scenario> Scenarios { get; private init; } = Array.Empty<Scenario>();
+    public IReadOnlyList<ScenarioResult> Scenarios { get; private init; } = Array.Empty<ScenarioResult>();
 
-    public static IReadOnlyList<FailureGroup> Build(IEnumerable<Scenario> scenarios, string? groupBy)
+    public static IReadOnlyList<FailureGroup> Build(IEnumerable<ScenarioResult> scenarios, string? groupBy)
     {
         return scenarios
             .Where(scenario => scenario is { Status: Status.Failed })
-            .SelectMany(scenario => (scenario.Exception?.GetRootCauses().Cast<ExceptionWrapper?>() ?? new ExceptionWrapper?[] { null })
+            .SelectMany(scenario => (scenario.Exception?.GetRootCauses().Cast<ExceptionInfo?>() ?? new ExceptionInfo?[] { null })
                 .GroupBy(exception => GetKey(scenario, exception, groupBy))
                 .Select(group => (Scenario: scenario, Exception: group.First(), Key: group.Key)))
             .GroupBy(entry => entry.Key)
@@ -70,18 +70,18 @@ public class FailureGroup
 
     /// <summary>The step that failed, or the first step that recorded an exception.</summary>
     /// <remarks>Outlines keep their executed steps on their examples, so the first failed example is searched.</remarks>
-    public static Step? FailingStep(Scenario? scenario) => FindFailingStep(scenario).Step;
+    public static StepResult? FailingStep(ScenarioResult? scenario) => FindFailingStep(scenario).Step;
 
     /// <summary>The 1-based position of the failing step within its scenario or outline example, or 0.</summary>
-    public static int FailingStepNumber(Scenario? scenario)
+    public static int FailingStepNumber(ScenarioResult? scenario)
     {
         var (step, owner) = FindFailingStep(scenario);
-        return step == null ? 0 : (owner?.Steps?.IndexOf(step) ?? -1) + 1;
+        return step == null ? 0 : (owner?.Steps?.ToList().IndexOf(step) ?? -1) + 1;
     }
 
-    private static (Step? Step, Scenario? Owner) FindFailingStep(Scenario? scenario)
+    private static (StepResult? Step, ScenarioResult? Owner) FindFailingStep(ScenarioResult? scenario)
     {
-        var steps = scenario?.Steps ?? new List<Step>();
+        var steps = scenario?.Steps ?? new List<StepResult>();
         var step = steps.FirstOrDefault(s => s.Status == Status.Failed) ?? steps.FirstOrDefault(s => s.Exception != null);
         if (step != null || scenario?.Examples == null)
         {
@@ -102,7 +102,7 @@ public class FailureGroup
     }
 
     /// <summary>The first stack frame with a source location, formatted as "File.cs:line 84 · Type.Method".</summary>
-    public static string? GetLocation(ExceptionWrapper? exception)
+    public static string? GetLocation(ExceptionInfo? exception)
     {
         var stackTrace = exception?.StackTrace;
         if (string.IsNullOrEmpty(stackTrace))
@@ -144,7 +144,7 @@ public class FailureGroup
         return fallback;
     }
 
-    private static string GetKey(Scenario scenario, ExceptionWrapper? exception, string? groupBy)
+    private static string GetKey(ScenarioResult scenario, ExceptionInfo? exception, string? groupBy)
     {
         return groupBy switch
         {

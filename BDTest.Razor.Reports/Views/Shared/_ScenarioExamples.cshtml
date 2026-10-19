@@ -1,10 +1,10 @@
 @using BDTest.Razor.Reports.Helpers
-@using BDTest.Test
-@model BDTest.Test.Scenario
+@using BDTest.Contracts
+@model BDTest.Contracts.ScenarioResult
 
 @if (Model.IsOutline)
 {
-    var examples = Model.Examples ?? new List<Scenario>();
+    var examples = Model.Examples ?? new List<ScenarioResult>();
     var passed = examples.Count(row => row.Status == Status.Passed);
     <section aria-labelledby="examples-@Model.Guid">
         <div class="card-head">
@@ -14,7 +14,7 @@
         @for (var index = 0; index < examples.Count; index++)
         {
             var row = examples[index];
-            var steps = row.Steps ?? new List<Step>();
+            var steps = row.Steps ?? new List<StepResult>();
             var values = row.ExampleValues ?? new Dictionary<string, string>();
             var stepExceptions = steps.Where(step => step.Exception != null).Select(step => step.Exception).ToList();
             <details class="example-row" id="example-@row.Guid" data-expandable open="@(row.Status == Status.Failed)">
@@ -55,23 +55,23 @@
                         {
                             <p class="small muted">@step.SkipReason</p>
                         }
-                        @Html.Raw(BDTest.Helpers.StepArgumentHtmlHelper.GetHtml(step.Arguments))
-                        @await Html.PartialAsync("_Attachments", step.Attachments ?? new List<Attachment>())
+                        @Html.Raw(BDTest.Razor.Reports.Helpers.StepArgumentHtmlHelper.GetHtml(step.Arguments))
+                        @await Html.PartialAsync("_Attachments", step.Attachments ?? new List<AttachmentInfo>())
                         @if (step.Exception != null)
                         {
-                            @Html.Raw(BDTest.Helpers.ExceptionHtmlHelper.GetHtml(step.Exception))
+                            @Html.Raw(BDTest.Razor.Reports.Helpers.ExceptionHtmlHelper.GetHtml(step.Exception))
                         }
                     }
-                    @await Html.PartialAsync("_Attachments", row.Attachments ?? new List<Attachment>())
+                    @await Html.PartialAsync("_Attachments", row.Attachments ?? new List<AttachmentInfo>())
                     @if (!string.IsNullOrEmpty(row.Output))
                     {
                         <div class="k" style="padding-top: 8px">Output</div>
                         <pre class="code">@row.Output</pre>
                     }
-                    @if (row.Exception != null && !stepExceptions.Any(exception => ReferenceEquals(exception, row.Exception)))
+                    @if (row.Exception != null && !stepExceptions.Any(exception => ExceptionHtmlHelper.HasSameDetails(exception, row.Exception)))
                     {
                         <div class="k" style="padding-top: 8px">Exception</div>
-                        @Html.Raw(BDTest.Helpers.ExceptionHtmlHelper.GetHtml(row.Exception))
+                        @Html.Raw(BDTest.Razor.Reports.Helpers.ExceptionHtmlHelper.GetHtml(row.Exception))
                     }
                     @if (row.RetryCount > 0)
                     {

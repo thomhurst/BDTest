@@ -1,4 +1,4 @@
-using BDTest.Helpers;
+using BDTest.Razor.Reports.Helpers;
 using BDTest.Razor.Reports.Implementations;
 using BDTest.Razor.Reports.Interfaces;
 using BDTest.Razor.Reports.Models;

@@ -1,7 +1,5 @@
-using BDTest.Maps;
-using BDTest.Output;
+using BDTest.Contracts;
 using BDTest.Razor.Reports.Extensions;
-using BDTest.Test;
 
 namespace BDTest.Razor.Reports.Models.ViewModels;
 
@@ -20,7 +18,7 @@ public class ReportLayoutViewModel
     public IReadOnlyDictionary<Status, int> Counts { get; init; } = Enum.GetValues<Status>().ToDictionary(status => status, _ => 0);
     [System.Text.Json.Serialization.JsonConverter(typeof(BDTest.Razor.Reports.Helpers.ReportStatusConverter))]
     public Status Status { get; init; } = Status.NotRun;
-    public TestTimer Timer { get; init; } = new() { TestsStartedAt = default, TestsFinishedAt = default };
+    public ReportTimer Timer { get; init; } = new(default, default);
     public string Title => string.IsNullOrWhiteSpace(Report?.Tag) ? "Test run" : Report.Tag;
     public int FailureCauses
     {
@@ -29,23 +27,23 @@ public class ReportLayoutViewModel
     }
     public int NotRunCount { get; init; }
 
-    public static ReportLayoutViewModel Create(BDTestOutputModel report) => Create(report,
+    public static ReportLayoutViewModel Create(BDTestReport report) => Create(report,
         (report.Scenarios ?? []).Where(scenario => scenario != null).ToList(), null);
 
-    internal static ReportLayoutViewModel Create(BDTestOutputModel report, List<Scenario> scenarios, int? failureCauses)
+    internal static ReportLayoutViewModel Create(BDTestReport report, List<ScenarioResult> scenarios, int? failureCauses)
     {
         var counts = Enum.GetValues<Status>().ToDictionary(status => status, _ => 0);
         foreach (var scenario in scenarios)
             if (counts.ContainsKey(scenario.Status)) counts[scenario.Status]++;
         return new ReportLayoutViewModel
         {
-            Report = new(report.Id, report.Tag, report.Environment, report.BranchName, report.MachineName, report.Version,
-                new System.Collections.ObjectModel.ReadOnlyDictionary<string, string>(new Dictionary<string, string>(report.CustomProperties ?? [])),
+            Report = new(report.Id, report.Tag, report.Environment, report.BranchName, report.MachineName, report.ProducerVersion,
+                new System.Collections.ObjectModel.ReadOnlyDictionary<string, string>(new Dictionary<string, string>(report.CustomProperties)),
                 report.TestTimer != null),
             ScenarioCount = scenarios.Count,
             Counts = new System.Collections.ObjectModel.ReadOnlyDictionary<Status, int>(counts),
             Status = scenarios.GetTotalStatus(),
-            Timer = BDTestUtil.GetTestTimer(scenarios, report.TestTimer == null ? null : report),
+            Timer = ReportResults.GetTestTimer(scenarios, report.TestTimer == null ? null : report),
             FailureCauses = failureCauses.GetValueOrDefault(),
             // Only request-scoped full-data layouts retain scenarios for on-demand grouping.
             _failureCauses = failureCauses.HasValue ? null : new Lazy<int>(() =>

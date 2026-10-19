@@ -1,6 +1,5 @@
-using BDTest.Maps;
+using BDTest.Contracts;
 using BDTest.Razor.Reports.Helpers;
-using BDTest.Test;
 
 namespace BDTest.Razor.Reports.Models.ViewModels;
 
@@ -32,21 +31,21 @@ public sealed record WarningsViewModel(ReportLayoutViewModel Layout, IReadOnlyLi
 public sealed record ReportPageModels(SummaryViewModel Summary, TimingsViewModel Timings,
     TopDefectsViewModel TopDefects, WarningsViewModel Warnings)
 {
-    public static ReportPageModels Create(BDTestOutputModel report)
+    public static ReportPageModels Create(BDTestReport report)
     {
         var scenarios = (report.Scenarios ?? []).Where(scenario => scenario != null).ToList();
         // Share display rows across the three failure groupings and summary lists.
-        var rows = new Dictionary<Scenario, ReportScenarioRow>();
-        ReportScenarioRow Row(Scenario scenario)
+        var rows = new Dictionary<ScenarioResult, ReportScenarioRow>();
+        ReportScenarioRow Row(ScenarioResult scenario)
         {
             if (rows.TryGetValue(scenario, out var row)) return row;
             var step = FailureGroup.FailingStep(scenario);
-            var name = scenario.GetScenarioText();
+            var name = scenario.ScenarioText;
             var detail = scenario.Exception?.Message?.Trim().Split('\n')[0].Trim();
             var otherStep = scenario.Status == Status.Skipped ? null : scenario.Steps?.FirstOrDefault(s => s.Status == scenario.Status);
             var explanation = !string.IsNullOrEmpty(detail) ? scenario.Status.Label() + " · " + detail
                 : otherStep == null ? scenario.Status.Label() : $"{scenario.Status.Label()} · step “{otherStep.StepText}”";
-            row = new(scenario.Guid, name, scenario.GetStoryText(), scenario.Status, scenario.TimeTaken,
+            row = new(scenario.Guid, name, scenario.StoryText, scenario.Status, scenario.TimeTaken,
                 scenario.RetryCount, step?.StepText, FailureGroup.FailingStepNumber(scenario), explanation,
                 scenario.ExampleValues?.Count > 0 ? name + " (" + string.Join(", ", scenario.ExampleValues.Values) + ")" : name);
             rows.Add(scenario, row);
@@ -71,7 +70,7 @@ public sealed record ReportPageModels(SummaryViewModel Summary, TimingsViewModel
         var slowest = ordered.AsEnumerable().Reverse().Take(10).ToArray();
         var totalTicks = ordered.Sum(s => s.TimeTaken.Ticks);
         var others = scenarios.Where(s => s.Status is not (Status.Passed or Status.Failed))
-            .OrderBy(s => s.Status.GetOrder()).ThenBy(s => s.GetScenarioText()).ToList();
+            .OrderBy(s => s.Status.GetOrder()).ThenBy(s => s.ScenarioText).ToList();
         return new(
             new(layout, Array.AsReadOnly(groups[FailureGroup.ByExceptionAndLocation].Take(3)
                     .Select(group => group with { Trace = null, Scenarios = Array.AsReadOnly(group.Scenarios.Take(5).ToArray()) }).ToArray()),
@@ -83,7 +82,7 @@ public sealed record ReportPageModels(SummaryViewModel Summary, TimingsViewModel
                 Array.AsReadOnly(slowest.Select(Row).ToArray()), Array.AsReadOnly(ordered.Take(10).Select(Row).ToArray())),
             new(layout, new System.Collections.ObjectModel.ReadOnlyDictionary<string, IReadOnlyList<ReportFailureGroup>>(groups)),
             new(layout, Array.AsReadOnly((report.NotRun ?? []).Where(test => test != null)
-                .OrderBy(test => test.GetStoryText()).ThenBy(test => test.GetScenarioText())
-                .Select(test => new ReportWarningRow(test.GetScenarioText(), test.GetStoryText(), test.CallerFile, test.CallerMember)).ToArray())));
+                .OrderBy(test => test.StoryText).ThenBy(test => test.ScenarioText)
+                .Select(test => new ReportWarningRow(test.ScenarioText, test.StoryText, test.CallerFile, test.CallerMember)).ToArray())));
     }
 }

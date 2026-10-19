@@ -697,7 +697,7 @@ public class ScenarioOutlineTests : RunContextTestBase<ScenarioOutlineTests.RowC
         {
             "Examples" + exampleTable,
             await ReportHandlerEncodingTests.RenderAsync("/Views/Shared/_ScenarioExamples.cshtml", TestRun.Store.ScenariosByInternalId[restored.Guid]),
-            await ReportHandlerEncodingTests.RenderAsync("/Views/Shared/_ScenarioPanel.cshtml", new ScenarioModalViewModel { Scenario = TestRun.Store.ScenariosByInternalId[restored.Guid] }),
+            await ReportHandlerEncodingTests.RenderAsync("/Views/Shared/_ScenarioPanel.cshtml", new ScenarioModalViewModel { Scenario = (TestRun.Store.ScenariosByInternalId[restored.Guid]).ToResult() }),
             await ReportHandlerEncodingTests.RenderAsync("/Views/BDTest/Scenario.cshtml", TestRun.Store.ScenariosByInternalId[restored.Guid])
         })
         {

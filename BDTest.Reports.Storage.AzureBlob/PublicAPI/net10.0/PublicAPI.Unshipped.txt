@@ -1,1 +1,5 @@
 #nullable enable
+*REMOVED*BDTest.Reports.Storage.AzureBlob.AzureStorageDataStore.GetTestData(string! id, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<BDTest.Maps.BDTestOutputModel?>!
+*REMOVED*BDTest.Reports.Storage.AzureBlob.AzureStorageDataStore.StoreTestData(string! id, BDTest.Maps.BDTestOutputModel? data) -> System.Threading.Tasks.Task!
+BDTest.Reports.Storage.AzureBlob.AzureStorageDataStore.GetTestData(string! id, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<BDTest.Contracts.BDTestReport?>!
+BDTest.Reports.Storage.AzureBlob.AzureStorageDataStore.StoreTestData(string! id, BDTest.Contracts.BDTestReport? data) -> System.Threading.Tasks.Task!

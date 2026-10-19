@@ -10,11 +10,24 @@ using BDTest.ReportGenerator.RazorServer;
 using BDTest.Razor.Reports.Storage;
 using BDTest.TestUtilities;
 using Newtonsoft.Json;
+using BDTest.Contracts;
 
 namespace BDTest.ReportGenerator.Tests;
 
 public class AzureStorageDataStoreTests
 {
+    [Test]
+    public async Task Hosting_and_storage_assemblies_do_not_reference_execution()
+    {
+        foreach (var assembly in new[]
+                 {
+                     typeof(AzureStorageDataStore).Assembly,
+                     typeof(BDTest.Razor.Reports.Controllers.BDTestController).Assembly,
+                     typeof(Program).Assembly
+                 })
+            await Assert.That(assembly.GetReferencedAssemblies().Any(reference => reference.Name == "BDTest")).IsFalse();
+    }
+
     [Test]
     public async Task Attachment_write_and_read_stream_owned_bytes_with_report_scoped_keys()
     {
@@ -320,18 +333,26 @@ public class AzureStorageDataStoreTests
     [Test]
     public async Task HistoricalReportLoadsThroughStorageAndSurvivesCurrentStorageSerialization()
     {
-        using var storage = new StorageHandler(1) { DownloadJson = HistoricalReportFixture.ReadJson() };
+        using var storage = new StorageHandler(1) { DownloadJson = File.ReadAllText(
+            Path.Combine(AppContext.BaseDirectory, "Data", "JsonData-v2.0.60.json")) };
         using var client = new HttpClient(storage);
-        var report = await CreateStore(client).GetTestData("1113e3bf269c489187245c4339dfd946", CancellationToken.None);
-        HistoricalReportFixture.AssertCompatible(report ?? throw new InvalidOperationException("Expected historical report."));
+        var report = await CreateStore(client).GetTestData("1113e3bf269c489187245c4339dfd946", CancellationToken.None)
+            ?? throw new InvalidOperationException("Expected historical report.");
+        await Assert.That(report.Id).IsEqualTo("1113e3bf269c489187245c4339dfd946");
+        await Assert.That(report.ProducerVersion).IsEqualTo("1.0.0.0");
+        await Assert.That(report.Scenarios).Count().IsEqualTo(13);
+        await Assert.That(report.Scenarios.Count(scenario => scenario.Status == Status.Failed)).IsEqualTo(6);
+        await Assert.That(report.Scenarios[0].Steps[0].TimeTaken.Ticks).IsEqualTo(3728);
 
         // StoreTestData uses AsStream; reload its JSON through the production download reader.
         using var stream = report.AsStream();
         using var reader = new StreamReader(stream);
         using var restoredStorage = new StorageHandler(1) { DownloadJson = await reader.ReadToEndAsync() };
         using var restoredClient = new HttpClient(restoredStorage);
-        var restored = await CreateStore(restoredClient).GetTestData(report.Id ?? throw new InvalidOperationException("Expected historical report ID."), CancellationToken.None);
-        HistoricalReportFixture.AssertCompatible(restored ?? throw new InvalidOperationException("Expected restored historical report."));
+        var restored = await CreateStore(restoredClient).GetTestData(report.Id, CancellationToken.None)
+            ?? throw new InvalidOperationException("Expected restored historical report.");
+        await Assert.That(restored.SchemaVersion).IsEqualTo(BDTestReport.CurrentSchemaVersion);
+        await Assert.That(BDTestReportJson.Serialize(restored)).IsEqualTo(BDTestReportJson.Serialize(report));
     }
 
     [Test]

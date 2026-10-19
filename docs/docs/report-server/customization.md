@@ -5,7 +5,7 @@ description: Add team and run links, personalise the page for the signed-in user
 
 # Customizing the report server
 
-UI extension points are interfaces in `BDTest.Razor.Reports.Interfaces`. Storage interfaces live in `BDTest.Razor.Reports.Storage`; see [Persistence](persistence.md) and [Storage migration](../migration/report-storage.md). Register them with DI before building the host. Implementations can receive their dependencies through constructors. The examples use singletons; ensure singleton implementations are thread-safe and do not capture scoped dependencies. Links use `CustomLinkData(string text, Uri url)`; pass `null` as the URL for plain text.
+Report model types come from `BDTest.Contracts`. UI extension points are interfaces in `BDTest.Razor.Reports.Interfaces`. Storage interfaces live in `BDTest.Razor.Reports.Storage`; see [Persistence](persistence.md) and [Storage migration](../migration/report-storage.md). Register them with DI before building the host. Implementations can receive their dependencies through constructors. The examples use singletons; ensure singleton implementations are thread-safe and do not capture scoped dependencies. Links use `CustomLinkData(string text, Uri url)`; pass `null` as the URL for plain text.
 
 Configure report read authorization as shown in [Security](security.md#requiring-sign-in) before using these option snippets.
 
@@ -33,7 +33,7 @@ Implement `IBDTestCustomSidebarLinksProvider` to add links for the current page 
 ```csharp title="Illustrative fragment"
 public class CustomSidebarLinksProvider : IBDTestCustomSidebarLinksProvider
 {
-    public IEnumerable<CustomLinkData> GetCustomLinks([AllowNull] BDTestOutputModel currentTestReport)
+    public IEnumerable<CustomLinkData> GetCustomLinks([AllowNull] BDTestReport currentTestReport)
     {
         // currentTestReport is null on pages that are not about one report.
         if (currentTestReport?.BranchName is { } branch)
@@ -84,7 +84,7 @@ public class FailureNotifier : IBDTestDataReceiver
 {
     private readonly HttpClient _httpClient = new();
 
-    public async Task OnReceiveTestDataAsync(BDTestOutputModel report)
+    public async Task OnReceiveTestDataAsync(BDTestReport report)
     {
         var failures = report.Scenarios.Count(scenario => scenario.Status == Status.Failed);
         if (failures > 0 && report.BranchName == "main")
@@ -129,10 +129,10 @@ The next major version changes these compiled Razor model contracts. Update host
 
 Layouts created with `ReportLayoutViewModel.Create(report)` compute `FailureCauses` on first access and reuse the count. These request-scoped layouts retain scenarios until that computation; cached compact page layouts use a precomputed count and retain no scenario graph.
 
-Each model exposes `Layout`. The controller also places it in `ViewData[nameof(ReportLayoutViewModel)]` for shared layouts. `Layout.Report` is now `ReportMetadataViewModel` (ID, tag, environment, branch, machine, version, custom properties and `HasTimer`), not `BDTestOutputModel`. Use `Layout.ScenarioCount`, `Counts`, `Status`, `Timer`, `FailureCauses` and `NotRunCount` instead of enumerating `Layout.Scenarios`, which has been removed.
+Each model exposes `Layout`. The controller also places it in `ViewData[nameof(ReportLayoutViewModel)]` for shared layouts. `Layout.Report` is now `ReportMetadataViewModel` (ID, tag, environment, branch, machine, version, custom properties and `HasTimer`), not `BDTestReport`. Use `Layout.ScenarioCount`, `Counts`, `Status`, `Timer`, `FailureCauses` and `NotRunCount` instead of enumerating `Layout.Scenarios`, which has been removed.
 
 Use `SummaryViewModel.OtherCount`/`OtherStatuses` and each failure group's `ScenarioCount` for totals: summary rows are limited to those displayed. `TopDefectsViewModel.ForGrouping(groupBy)` selects the cached location/type/step grouping with the same fallback for unknown values. Display rows expose `Name`, `Story`, `Guid`, status, duration and failing-step fields; they do not expose execution objects. Timings exposes `Median`, `Percentile95`, `SlowestFiveShare`, `Fastest` and `Slowest`. Warnings exposes sorted `NotRun` display rows.
 
-Full-data pages (Scenarios, Stories and scenario detail) still receive their existing models. Their complete source report is request-local in `ViewData[nameof(BDTestOutputModel)]`. Compact pages only populate that key when a custom sidebar provider is registered. `IBDTestCustomSidebarLinksProvider.GetCustomLinks` still receives the full report (or null for a missing/global page); provider results are evaluated per request and never cached. This compatibility path requires an additional full-report read for compact pages.
+Full-data pages (Scenarios, Stories and scenario detail) receive contract `ScenarioResult` groups or a single `ScenarioResult`. Their complete source report is request-local in `ViewData[nameof(BDTestReport)]`. Compact pages only populate that key when a custom sidebar provider is registered. `IBDTestCustomSidebarLinksProvider.GetCustomLinks` still receives the full report (or null for a missing/global page); provider results are evaluated per request and never cached. This compatibility path requires an additional full-report read for compact pages.
 
 Hosts implementing `IDataRepository` directly inherit an uncached `GetReportPages(reportId, cancellationToken)` fallback using `ReportPageModels.Create(report)`. Override it to provide bounded caching and invalidation equivalent to the built-in repository. Do not mutate shared projection models or their timer. See [cache policy](caching-and-limits.md#compact-page-cache) and [migration guidance](../migration/report-storage.md#compact-razor-page-models).

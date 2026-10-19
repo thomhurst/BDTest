@@ -26,7 +26,7 @@ public class ReportStatusTests
         var scenarios = statuses.Select(status =>
             ReportJson.DeserializeObject<Scenario>(ReportJson.SerializeObject(new { Status = status })));
 
-        await Assert.That(scenarios.GetTotalStatus()).IsEqualTo(expected);
+        await Assert.That(scenarios.ToResults().GetTotalStatus()).IsEqualTo(expected);
     }
 
     [Test]

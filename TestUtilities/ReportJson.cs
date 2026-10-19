@@ -17,9 +17,12 @@ internal static class ReportJson
             ReportJsonContext.Default, new DefaultJsonTypeInfoResolver())
     };
 
-    public static string SerializeObject<T>(T value) => JsonSerializer.Serialize(value, Options);
+    public static string SerializeObject<T>(T value) => value is BDTest.Contracts.BDTestReport report
+        ? BDTest.Contracts.BDTestReportJson.Serialize(report) : JsonSerializer.Serialize(value, Options);
 
-    public static T DeserializeObject<T>(string json) => typeof(T) == typeof(BDTestOutputModel)
+    public static T DeserializeObject<T>(string json) => typeof(T) == typeof(BDTest.Contracts.BDTestReport)
+        ? (T)(object)(BDTest.Razor.Reports.Serialization.HostedReportJson.Deserialize(json) ?? throw new JsonException("Expected a report."))
+        : typeof(T) == typeof(BDTestOutputModel)
         ? (T)(object)(BDTestJsonHelper.Deserialize(json) ?? throw new JsonException("Expected a non-null report."))
         : JsonSerializer.Deserialize<T>(json, Options)
           ?? throw new JsonException($"Expected a non-null {typeof(T).Name} report value.");

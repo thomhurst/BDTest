@@ -15,10 +15,9 @@ dotnet add package BDTest.Contracts
 
 Core execution now publishes these snapshots through `BDTestAsync()`, `BDTestUtil`,
 run results and hooks. Core JSON export, static HTML and uploads consume the same
-contract. The hosted reader/storage migration is tracked separately in
-[#936](https://github.com/thomhurst/BDTest/issues/936). Current legacy hosts do not
-understand schema-versioned uploads: use local JSON/static HTML until a matching
-schema-version-1 server is available. See [migration](../migration/immutable-results.md).
+contract. Hosted reports and the Azure Blob store also consume these contracts,
+without a dependency on the execution package. Hosts read both schema version 1
+and historical unversioned reports. See [migration](../migration/immutable-results.md).
 
 ## Creating and reading a report
 
@@ -87,7 +86,9 @@ execution outcome rules. Producers remain responsible for bounded capture.
 
 Scenario and step `TimeTaken` values are measured execution durations.
 `ReportTimer.ElapsedTime` is the calendar difference, or zero when either
-endpoint is absent. `ScenarioResult.TimedOut` derives from its final steps.
+endpoint is absent. Hosted report pages display timestamps in UTC, consistently
+with run summaries, even when uploaded timestamps contain nonzero offsets.
+`ScenarioResult.TimedOut` derives from its final steps.
 Attempts can retain separate step snapshots; legacy attempt data without them
 maps to an empty list. `CustomTestInformation` contains strings, matching the
 legacy attribute wire values. Tags retain producer order.

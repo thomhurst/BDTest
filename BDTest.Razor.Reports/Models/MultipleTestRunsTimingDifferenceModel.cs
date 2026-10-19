@@ -1,10 +1,10 @@
-using BDTest.Test;
+using BDTest.Contracts;
 
 namespace BDTest.Razor.Reports.Models;
 
 public class MultipleTestRunsTimingDifferenceModel
 {
-    public MultipleTestRunsTimingDifferenceModel(IGrouping<ScenarioGroupKey, Scenario> scenarioGroup)
+    public MultipleTestRunsTimingDifferenceModel(IGrouping<ScenarioGroupKey, ScenarioResult> scenarioGroup)
     {
         var scenarios = scenarioGroup.Where(scenario => scenario.Status == Status.Passed).ToList();
             
@@ -14,7 +14,7 @@ public class MultipleTestRunsTimingDifferenceModel
         }
 
         ScenarioCount = scenarios.Count;
-        ScenarioName = scenarios.First().GetScenarioText();
+        ScenarioName = scenarios.First().ScenarioText;
         Fastest = scenarios.OrderBy(scenario => scenario.TimeTaken).First().TimeTaken;
         Slowest = scenarios.OrderByDescending(scenario => scenario.TimeTaken).First().TimeTaken;
         Average = TimeSpan.FromMilliseconds(scenarios.Average(scenario => scenario.TimeTaken.TotalMilliseconds));

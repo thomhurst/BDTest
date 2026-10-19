@@ -6,8 +6,8 @@ description: Upload test results to a BDTest report server at the end of a test 
 # Sending results
 
 Core uploads now use [schema-versioned contracts](../reports/contracts.md).
-The current legacy host migration is tracked in [#936](https://github.com/thomhurst/BDTest/issues/936).
-Use local JSON/static HTML exports until your server supports schema version 1.
+Upgrade the host to the matching contracts-based package generation before sending
+schema-version-1 reports. The new host also reads persisted legacy reports.
 
 
 For built-in adapters, pass the [configured assembly run](../configuration/assembly-runs.md) to report/utility helpers. Every export and store utility requires the owning run. Export all reports before disposing through the assembly owner.

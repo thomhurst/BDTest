@@ -1,12 +1,12 @@
 using BDTest.Razor.Reports.Constants;
-using BDTest.Test;
+using BDTest.Contracts;
 using Microsoft.AspNetCore.Http;
 
 namespace BDTest.Razor.Reports.Models.ViewModels;
 
 internal static class ScenarioListBuilder
 {
-    public static ScenarioListViewModel Build(IEnumerable<IGrouping<string, Scenario>> groups, IReadOnlyList<Scenario> reportScenarios,
+    public static ScenarioListViewModel Build(IEnumerable<IGrouping<string, ScenarioResult>> groups, IReadOnlyList<ScenarioResult> reportScenarios,
         string? reportId, HttpRequest request, bool groupFixed)
     {
         var query = request.Query;
@@ -21,7 +21,7 @@ internal static class ScenarioListBuilder
         if (groupBy == ScenarioListViewModel.GroupByStory)
         {
             // Stories with problems first, then by name; scenarios keep their order within a story.
-            scenarios = scenarios.GroupBy(scenario => scenario.GetStoryText())
+            scenarios = scenarios.GroupBy(scenario => scenario.StoryText)
                 .OrderBy(story => Extensions.ScenarioExtensions.GetTotalStatus(story).GetOrder())
                 .ThenBy(story => story.Key, StringComparer.Ordinal)
                 .SelectMany(story => story)
@@ -29,7 +29,7 @@ internal static class ScenarioListBuilder
         }
 
         var unfiltered = reportScenarios
-            .Where(scenario => string.IsNullOrEmpty(story) || string.Equals(scenario.GetStoryText(), story, StringComparison.Ordinal))
+            .Where(scenario => string.IsNullOrEmpty(story) || string.Equals(scenario.StoryText, story, StringComparison.Ordinal))
             .Where(scenario => string.IsNullOrEmpty(tag) || scenario.Tags.Contains(tag, StringComparer.OrdinalIgnoreCase))
             .Where(scenario => ScenarioSearch.Matches(scenario, search))
             .ToList();

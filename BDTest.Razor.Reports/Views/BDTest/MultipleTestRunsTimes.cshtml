@@ -1,10 +1,9 @@
 @using System.Globalization
-@using BDTest.Maps
+@using BDTest.Contracts
 @using BDTest.Razor.Reports.Helpers
 @using BDTest.Razor.Reports.Models
 @using BDTest.Razor.Reports.Models.ViewModels
-@using BDTest.Test
-@model List<BDTestOutputModel>
+@model List<BDTestReport>
 
 @{
     ViewBag.Title = "Timing variance";
@@ -16,9 +15,9 @@
     var sort = Context.Request.Query["sort"].ToString() is "average" or "name" ? Context.Request.Query["sort"].ToString() : "spread";
 
     // Remember the latest passing result of each scenario so its name can link to it.
-    var latestPassing = new Dictionary<ScenarioGroupKey, (BDTestOutputModel Report, Scenario Scenario)>();
+    var latestPassing = new Dictionary<ScenarioGroupKey, (BDTestReport Report, ScenarioResult Scenario)>();
     var entries = reports
-        .SelectMany(report => (report.Scenarios ?? new List<Scenario>())
+        .SelectMany(report => (report.Scenarios ?? new List<ScenarioResult>())
             .Where(scenario => scenario != null)
             .Select(scenario => (Report: report, Scenario: scenario)))
         .ToList();
@@ -145,9 +144,9 @@
 
 @functions
 {
-    private static ScenarioGroupKey Key(Scenario scenario) => new()
+    private static ScenarioGroupKey Key(ScenarioResult scenario) => new()
     {
-        StoryText = scenario.GetStoryText(),
-        ScenarioText = scenario.GetScenarioText()
+        StoryText = scenario.StoryText,
+        ScenarioText = scenario.ScenarioText
     };
 }

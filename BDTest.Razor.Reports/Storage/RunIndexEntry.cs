@@ -1,4 +1,4 @@
-using BDTest.Test;
+using BDTest.Contracts;
 
 namespace BDTest.Razor.Reports.Storage;
 

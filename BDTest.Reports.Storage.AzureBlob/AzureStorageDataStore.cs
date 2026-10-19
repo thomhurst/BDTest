@@ -2,11 +2,11 @@ using Azure;
 using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
 using Azure.Storage.Blobs.Specialized;
-using BDTest.Maps;
+using BDTest.Contracts;
 using BDTest.Razor.Reports.Interfaces;
 using BDTest.Razor.Reports.Models;
 using System.Text.Json;
-using BDTest.Helpers;
+using BDTest.Razor.Reports.Serialization;
 using BDTest.Razor.Reports.Helpers;
 using BDTest.Razor.Reports.Storage;
 
@@ -156,13 +156,13 @@ public class AzureStorageDataStore : IBDTestDataStore, IReportStore, IRunIndexSt
         return deleted.Value;
     }
         
-    public async Task<BDTestOutputModel?> GetTestData(string id, CancellationToken cancellationToken)
+    public async Task<BDTestReport?> GetTestData(string id, CancellationToken cancellationToken)
     {
         try
         {
             var blobData = await _testDataContainer.GetBlockBlobClient(id).DownloadAsync(cancellationToken);
             using var content = blobData.Value.Content;
-            return await BDTestJsonHelper.DeserializeAsync(content, cancellationToken);
+            return await HostedReportJson.DeserializeAsync(content, cancellationToken);
         }
         catch (RequestFailedException e) when(e.Status == 404)
         {
@@ -210,7 +210,7 @@ public class AzureStorageDataStore : IBDTestDataStore, IReportStore, IRunIndexSt
         return summaries.OfType<TestRunSummary>().ToArray();
     }
 
-    public Task StoreTestData(string id, BDTestOutputModel? data)
+    public Task StoreTestData(string id, BDTestReport? data)
     {
         return _testDataContainer.GetBlockBlobClient(id).UploadAsync(data.AsStream());
     }

@@ -1,4 +1,4 @@
-using BDTest.Maps;
+using BDTest.Contracts;
 using BDTest.Razor.Reports.Controllers;
 using BDTest.Razor.Reports.Implementations;
 using BDTest.Razor.Reports.Interfaces;
@@ -19,7 +19,7 @@ namespace BDTest.Razor.Reports.Extensions;
 
 public static class BDTestExtensions
 {
-    internal static TestRunSummary GetOverview(this BDTestOutputModel bdTestOutputModel)
+    internal static TestRunSummary GetOverview(this BDTestReport bdTestOutputModel)
     {
         return new TestRunSummary(bdTestOutputModel);
     }

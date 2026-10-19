@@ -63,7 +63,7 @@ public class ReportStoreTests
                 using var input = Bytes(BDTestJsonHelper.Serialize(model));
                 await store.WriteAsync(id, input, default);
             }
-            else await store.StoreTestData(id, model);
+            else await store.StoreTestData(id, (model).ToReport());
         }
 
         await Task.Delay(1200);
@@ -243,7 +243,7 @@ public class ReportStoreTests
         var repository = services.GetRequiredService<IDataRepository>();
         using var cancellation = new CancellationTokenSource();
         var token = cancellation.Token;
-        await repository.StoreData("run", new BDTestOutputModel { Id = "run" }, token);
+        await repository.StoreData("run", (new BDTestOutputModel { Id = "run" }).ToReport(), token);
         await Assert.That(store.Tokens.All(actual => actual == token)).IsTrue();
         await Assert.That(store.Tokens.Count).IsEqualTo(2);
         await repository.GetAllTestRunRecords(token);
@@ -253,7 +253,7 @@ public class ReportStoreTests
         await Assert.That(store.Entries).IsEmpty();
         await Assert.That(store.Tokens.All(actual => actual == token)).IsTrue();
         cancellation.Cancel();
-        await Assert.That(async () => await repository.StoreData("cancelled", new(), token)).Throws<OperationCanceledException>();
+        await Assert.That(async () => await repository.StoreData("cancelled", new BDTest.Contracts.BDTestReport(1, "cancelled", "tests"), token)).Throws<OperationCanceledException>();
         await Assert.That(store.Reports).IsEmpty();
     }
 
@@ -336,14 +336,14 @@ public class ReportStoreTests
 
     private sealed class LegacyStore : IBDTestDataStore
     {
-        private readonly Dictionary<string, BDTestOutputModel?> _reports = new();
+        private readonly Dictionary<string, BDTest.Contracts.BDTestReport?> _reports = new();
         private readonly Dictionary<string, TestRunSummary> _summaries = new();
         public int Calls;
         public int Deletes;
         public Action? OnRead;
-        public Task<BDTestOutputModel?> GetTestData(string id, CancellationToken cancellationToken)
+        public Task<BDTest.Contracts.BDTestReport?> GetTestData(string id, CancellationToken cancellationToken)
         { Calls++; OnRead?.Invoke(); return Task.FromResult(_reports.GetValueOrDefault(id)); }
-        public Task StoreTestData(string id, BDTestOutputModel? data) { Calls++; _reports[id] = data; return Task.CompletedTask; }
+        public Task StoreTestData(string id, BDTest.Contracts.BDTestReport? data) { Calls++; _reports[id] = data; return Task.CompletedTask; }
         public Task DeleteTestData(string id) { Deletes++; _reports.Remove(id); return Task.CompletedTask; }
         public Task<IEnumerable<TestRunSummary>> GetAllTestRunRecords()
         { Calls++; OnRead?.Invoke(); return Task.FromResult<IEnumerable<TestRunSummary>>(_summaries.Values.ToArray()); }

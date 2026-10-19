@@ -1,9 +1,8 @@
 using System.Runtime.ExceptionServices;
 using System.Text.Json;
-using BDTest.Helpers;
-using BDTest.Maps;
+using BDTest.Razor.Reports.Helpers;
+using BDTest.Contracts;
 using BDTest.Razor.Reports.Models.ViewModels;
-using BDTest.Output;
 using BDTest.Razor.Reports.Extensions;
 using BDTest.Razor.Reports.Interfaces;
 using BDTest.Razor.Reports.Models;
@@ -49,33 +48,33 @@ internal class DataRepository : IDataRepository
             ?? ReportPageModels.Create(model); // Oversized persistent reports bypass both caches.
     }
 
-    public async Task<BDTestOutputModel?> GetData(string reportId, CancellationToken cancellationToken)
+    public async Task<BDTestReport?> GetData(string reportId, CancellationToken cancellationToken)
     {
         // A read that fills the cache must finish before deletion invalidates it.
         using var lease = await _attachmentGate.EnterAsync(reportId, cancellationToken);
         return await GetData(reportId, cancellationToken, cacheResult: true);
     }
 
-    public Task<BDTestOutputModel?> GetDataForBulkRead(string reportId, CancellationToken cancellationToken)
+    public Task<BDTestReport?> GetDataForBulkRead(string reportId, CancellationToken cancellationToken)
         => GetData(reportId, cancellationToken, cacheResult: false);
 
-    private async Task<BDTestOutputModel?> GetData(string reportId, CancellationToken cancellationToken, bool cacheResult)
+    private async Task<BDTestReport?> GetData(string reportId, CancellationToken cancellationToken, bool cacheResult)
     {
         var model = cacheResult
             ? await _memoryCacheBdTestDataStore.GetTestDataAndRefreshRetention(reportId, cancellationToken)
             : await _memoryCacheBdTestDataStore.GetTestData(reportId, cancellationToken);
         if (model != null)
         {
-            NormalizeReport(model);
+
             return model;
         }
         if (_reportStore != null)
         {
             await using var stream = await _reportStore.OpenReadAsync(reportId, cancellationToken);
-            if (stream != null) model = await BDTestJsonHelper.DeserializeAsync(stream, cancellationToken);
+            if (stream != null) model = await HostedReportJson.DeserializeAsync(stream, cancellationToken);
         }
         if (model == null) return null;
-        NormalizeReport(model);
+
         cancellationToken.ThrowIfCancellationRequested();
         if (cacheResult) await _memoryCacheBdTestDataStore.StoreTestData(reportId, model);
         return model;
@@ -133,15 +132,15 @@ internal class DataRepository : IDataRepository
         finally { _historyLock.Release(); }
     }
 
-    public async Task StoreData(string reportId, BDTestOutputModel model, CancellationToken cancellationToken = default)
+    public async Task StoreData(string reportId, BDTestReport model, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        NormalizeReport(model);
+
         if (await _memoryCacheBdTestDataStore.GetTestData(reportId, cancellationToken) != null) return;
         if (_reportStore != null)
         {
             await using var stream = new MemoryStream();
-            await JsonSerializer.SerializeAsync(stream, model, BDTestJsonContext.Default.BDTestOutputModel, cancellationToken);
+            await JsonSerializer.SerializeAsync(stream, model, BDTestReportJsonContext.Default.BDTestReport, cancellationToken);
             stream.Position = 0;
             await _reportStore.WriteAsync(reportId, stream, cancellationToken);
             await (_runIndexStore ?? throw new InvalidOperationException("A report store requires a run index store.")).UpsertAsync(model.GetOverview().ToRunIndexEntry(), cancellationToken);
@@ -151,12 +150,6 @@ internal class DataRepository : IDataRepository
         await _memoryCacheBdTestDataStore.StoreTestRunRecord(model.GetOverview());
     }
 
-    private static void NormalizeReport(BDTestOutputModel model)
-    {
-        model.Scenarios ??= new();
-        model.NotRun ??= new();
-        model.TestTimer ??= new TestTimer { TestsStartedAt = default, TestsFinishedAt = default };
-    }
 
     public async Task DeleteReport(string reportId, CancellationToken cancellationToken = default)
     {

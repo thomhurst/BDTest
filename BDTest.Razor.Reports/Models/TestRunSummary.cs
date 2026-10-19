@@ -1,6 +1,5 @@
-using BDTest.Maps;
+using BDTest.Contracts;
 using BDTest.Razor.Reports.Extensions;
-using BDTest.Test;
 using System.Text.Json.Serialization;
 
 namespace BDTest.Razor.Reports.Models;
@@ -12,28 +11,28 @@ public class TestRunSummary
     {
     }
         
-    internal TestRunSummary(BDTestOutputModel bdTestOutputModel)
+    internal TestRunSummary(BDTestReport bdTestOutputModel)
     {
         RecordId = bdTestOutputModel.Id;
-        StartedAtDateTime = bdTestOutputModel.TestTimer?.TestsStartedAt ?? default;
-        FinishedAtDateTime = bdTestOutputModel.TestTimer?.TestsFinishedAt ?? default;
-        Status = (bdTestOutputModel.Scenarios ?? Enumerable.Empty<Scenario>()).GetTotalStatus();
+        StartedAtDateTime = bdTestOutputModel.TestTimer?.TestsStartedAt.UtcDateTime ?? default;
+        FinishedAtDateTime = bdTestOutputModel.TestTimer?.TestsFinishedAt.UtcDateTime ?? default;
+        Status = (bdTestOutputModel.Scenarios ?? Enumerable.Empty<ScenarioResult>()).GetTotalStatus();
         Tag = bdTestOutputModel.Tag;
         Environment = bdTestOutputModel.Environment;
-        Version = bdTestOutputModel.Version;
+        Version = bdTestOutputModel.ProducerVersion;
         MachineName = bdTestOutputModel.MachineName;
         BranchName = bdTestOutputModel.BranchName;
 
         SetCounts(bdTestOutputModel);
     }
 
-    private void SetCounts(BDTestOutputModel bdTestOutputModel)
+    private void SetCounts(BDTestReport bdTestOutputModel)
     {
         var counts = Counts ??= new();
         counts.Total = bdTestOutputModel.Scenarios?.Count ?? 0;
         counts.NotRun = bdTestOutputModel.NotRun?.Count ?? 0;
 
-        foreach (var scenario in bdTestOutputModel.Scenarios ?? Enumerable.Empty<Scenario>())
+        foreach (var scenario in bdTestOutputModel.Scenarios ?? Enumerable.Empty<ScenarioResult>())
         {
             switch (scenario.Status)
             {

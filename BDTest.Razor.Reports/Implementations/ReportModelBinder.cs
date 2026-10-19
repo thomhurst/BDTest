@@ -1,7 +1,7 @@
 using System.IO.Compression;
 using System.Text;
 using System.Text.Json;
-using BDTest.Helpers;
+using BDTest.Razor.Reports.Helpers;
 using BDTest.Razor.Reports.Models;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.Net.Http.Headers;
@@ -57,7 +57,7 @@ internal sealed class ReportModelBinder(IOptions<BDTestReportOptions> configured
         try
         {
             var cancellationToken = bindingContext.HttpContext.RequestAborted;
-            var report = await BDTestJsonHelper.DeserializeAsync(transcodedBody ?? expandedBody, cancellationToken,
+            var report = await HostedReportJson.DeserializeAsync(transcodedBody ?? expandedBody, cancellationToken,
                 maximumExpandedSize: options.MaxUploadBytes);
             // A gzip reader can finish before consuming trailing wire bytes. Enforce the entire request budget.
             await wireBody.CopyToAsync(Stream.Null, cancellationToken);

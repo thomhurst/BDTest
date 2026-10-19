@@ -42,10 +42,10 @@ public class ReportTagTests
         var result = (ViewResult)(stories
             ? await controller.Stories("run", CancellationToken.None)
             : await controller.AllScenarios("run", CancellationToken.None));
-        var groups = (IGrouping<string, Scenario>[])Required(result.Model);
+        var groups = (IGrouping<string, BDTest.Contracts.ScenarioResult>[])Required(result.Model);
 
 
-        await Assert.That(groups.SelectMany(group => group).Select(scenario => scenario.Guid)).IsEquivalentTo((expected).Cast<string?>(), global::TUnit.Assertions.Enums.CollectionOrdering.Any);
+        await Assert.That(groups.SelectMany(group => group).Select(scenario => scenario.Guid)).IsEquivalentTo(expected, global::TUnit.Assertions.Enums.CollectionOrdering.Any);
         await Assert.That(ReportJson.SerializeObject(repository.Report)).IsEqualTo(original).Because("Filtering must not mutate cached reports.");
     }
 
@@ -77,7 +77,7 @@ public class ReportTagTests
             Guid = "tagged", Tags = new[] { "<script>alert(1)</script>" }, Steps = Array.Empty<object>()
         }));
         var html = await ReportHandlerEncodingTests.RenderAsync("/Views/Shared/_ScenarioPanel.cshtml",
-            new ScenarioModalViewModel { Scenario = scenario });
+            new ScenarioModalViewModel { Scenario = (scenario).ToResult() });
         await Assert.That(html).DoesNotContain("<script>");
         await Assert.That(HttpUtility.HtmlDecode(html)).Contains("<span class=\"tag\"><script>alert(1)</script></span>");
     }
@@ -102,8 +102,8 @@ public class ReportTagTests
                 ScenarioText = "Shared scenario", StoryText = "Shared story", Steps = Array.Empty<object>()
             }));
 
-        public Task<BDTestOutputModel?> GetData(string id, CancellationToken cancellationToken) => Task.FromResult(Report);
-        public Task<BDTestOutputModel?> GetDataForBulkRead(string id, CancellationToken cancellationToken) => GetData(id, cancellationToken);
+        public Task<BDTest.Contracts.BDTestReport?> GetData(string id, CancellationToken cancellationToken) => Task.FromResult(Report?.ToReport());
+        public Task<BDTest.Contracts.BDTestReport?> GetDataForBulkRead(string id, CancellationToken cancellationToken) => GetData(id, cancellationToken);
         public async Task<Stream?> OpenReadAsync(string id, CancellationToken cancellationToken)
         {
             var model = await GetData(id, cancellationToken);
@@ -112,7 +112,7 @@ public class ReportTagTests
         public Task<BDTest.Razor.Reports.Storage.RunIndexPage> ListAsync(BDTest.Razor.Reports.Storage.RunIndexQuery query, CancellationToken cancellationToken) => throw new NotSupportedException();
 
         public Task<IEnumerable<TestRunSummary>> GetAllTestRunRecords(CancellationToken cancellationToken = default) => throw new NotSupportedException();
-        public Task StoreData(string id, BDTestOutputModel model, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+        public Task StoreData(string id, BDTest.Contracts.BDTestReport model, CancellationToken cancellationToken = default) => throw new NotSupportedException();
         public Task DeleteReport(string id, CancellationToken cancellationToken = default) => throw new NotSupportedException();
     }
 }

@@ -1,6 +1,6 @@
 @using BDTest.Razor.Reports.Helpers
 @using BDTest.Razor.Reports.Models.ViewModels
-@model BDTest.Maps.BDTestOutputModel
+@model BDTest.Contracts.BDTestReport
 @{
     var run = ViewData[nameof(ReportLayoutViewModel)] as ReportLayoutViewModel
         ?? throw new InvalidOperationException("The report layout model is required for this view.");

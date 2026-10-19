@@ -90,7 +90,7 @@ public class BulkReportTests(bool flakiness)
         var ids = Enumerable.Range(0, 50).Select(i => maximumLength ? $"run-{i}".PadRight(128, 'a') : $"run-{i}").ToArray();
         var result = (ViewResult)await Read(string.Join(",", ids));
         await Assert.That(result.ViewName).IsEqualTo(flakiness ? "MultipleTestRunsFlakiness" : "MultipleTestRunsTimes");
-        await Assert.That(((IEnumerable<BDTestOutputModel>)Required(result.Model)).Select(x => x.Id)).IsEquivalentTo((ids).Cast<string?>(), global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(((IEnumerable<BDTest.Contracts.BDTestReport>)Required(result.Model)).Select(x => x.Id)).IsEquivalentTo((ids).Cast<string?>(), global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
 
         await Assert.That(_store.ReadIds).IsEquivalentTo(ids, global::TUnit.Assertions.Enums.CollectionOrdering.Any);
         var repository = _services.GetRequiredService<IDataRepository>();
@@ -106,7 +106,7 @@ public class BulkReportTests(bool flakiness)
     {
         var ids = new[] { Guid.NewGuid().ToString("N"), Guid.NewGuid().ToString("D"), "build_1.2-Release", new string('a', 128) };
         var result = (ViewResult)await Read(string.Join(",", ids.Concat(ids)));
-        await Assert.That(((IEnumerable<BDTestOutputModel>)Required(result.Model)).Select(x => x.Id)).IsEquivalentTo((ids).Cast<string?>(), global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(((IEnumerable<BDTest.Contracts.BDTestReport>)Required(result.Model)).Select(x => x.Id)).IsEquivalentTo((ids).Cast<string?>(), global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
 
         await Assert.That(_store.ReadIds).IsEquivalentTo(ids, global::TUnit.Assertions.Enums.CollectionOrdering.Any);
     }
@@ -116,7 +116,7 @@ public class BulkReportTests(bool flakiness)
     {
         _store.MissingIds.Add("missing");
         var result = (ViewResult)await Read("missing,found");
-        await Assert.That(((IEnumerable<BDTestOutputModel>)Required(result.Model)).Select(x => x.Id)).IsEquivalentTo((new[] { "found" }).Cast<string?>(), global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(((IEnumerable<BDTest.Contracts.BDTestReport>)Required(result.Model)).Select(x => x.Id)).IsEquivalentTo((new[] { "found" }).Cast<string?>(), global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
         await Assert.That(((ViewResult)await Read("missing")).ViewName).IsEqualTo("NotFoundMultiple");
     }
 
@@ -125,12 +125,11 @@ public class BulkReportTests(bool flakiness)
     {
         var repository = _services.GetRequiredService<IDataRepository>();
         var cached = Required(await repository.GetData("cached", default));
-        // Re-caching this now-oversized model would remove it from the bounded cache.
-        cached.Tag = new string('x', 2000);
+        // Immutable cached reports can be reused without deserializing or reapplying policy.
         for (var iteration = 0; iteration < 2; iteration++)
         {
             var result = (ViewResult)await Read("cached");
-            await Assert.That(((IEnumerable<BDTestOutputModel>)Required(result.Model)).Single()).IsSameReferenceAs(cached);
+            await Assert.That(((IEnumerable<BDTest.Contracts.BDTestReport>)Required(result.Model)).Single()).IsSameReferenceAs(cached);
         }
         await Assert.That(_store.ReadIds).Count().IsEqualTo(1);
     }
@@ -169,7 +168,7 @@ public class BulkReportTests(bool flakiness)
                 firstBatchStarted.TrySetResult();
             }
             await release.Task.WaitAsync(token);
-            return new BDTestOutputModel { Id = id };
+            return (new BDTestOutputModel { Id = id }).ToReport();
         };
 
         var read = Read(string.Join(",", Enumerable.Range(0, 12).Select(i => $"run-{i}")), cancellation.Token);
@@ -187,7 +186,7 @@ public class BulkReportTests(bool flakiness)
             {
                 release.SetResult();
                 var result = (ViewResult)await read;
-                await Assert.That((IEnumerable<BDTestOutputModel>)Required(result.Model)).Count().IsEqualTo(12);
+                await Assert.That((IEnumerable<BDTest.Contracts.BDTestReport>)Required(result.Model)).Count().IsEqualTo(12);
             }
         }
         finally
@@ -206,15 +205,15 @@ public class BulkReportTests(bool flakiness)
     {
         public System.Collections.Concurrent.ConcurrentBag<string> ReadIds { get; } = [];
         public HashSet<string> MissingIds { get; } = [];
-        public Func<string, CancellationToken, Task<BDTestOutputModel?>>? Read { get; set; }
-        public Task<BDTestOutputModel?> GetTestData(string id, CancellationToken cancellationToken)
+        public Func<string, CancellationToken, Task<BDTest.Contracts.BDTestReport?>>? Read { get; set; }
+        public Task<BDTest.Contracts.BDTestReport?> GetTestData(string id, CancellationToken cancellationToken)
         {
             ReadIds.Add(id);
             return Read?.Invoke(id, cancellationToken)
-                ?? Task.FromResult(MissingIds.Contains(id) ? null : new BDTestOutputModel { Id = id });
+                ?? Task.FromResult<BDTest.Contracts.BDTestReport?>(MissingIds.Contains(id) ? null : new BDTest.Contracts.BDTestReport(1, id, "tests"));
         }
         public Task<IEnumerable<TestRunSummary>> GetAllTestRunRecords() => Task.FromResult(Enumerable.Empty<TestRunSummary>());
-        public Task StoreTestData(string id, BDTestOutputModel? data) => throw new NotSupportedException();
+        public Task StoreTestData(string id, BDTest.Contracts.BDTestReport? data) => throw new NotSupportedException();
         public Task DeleteTestData(string id) => throw new NotSupportedException();
         public Task StoreTestRunRecord(TestRunSummary summary) => throw new NotSupportedException();
         public Task DeleteTestRunRecord(string id) => throw new NotSupportedException();
