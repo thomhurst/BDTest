@@ -193,6 +193,18 @@ Signing and friend grants are unchanged: only signed `BDTest.Tests` has access
 to core and Razor internals. Pipeline runner selection still uses evaluated
 package references, including VSTest for xUnit executable projects.
 
+The cached-report allocation probe (#995) runs with normal suite parallelism.
+Retention refresh schedules eviction callbacks; thread-pool queue growth can add
+occasional allocations on the measuring thread independently of scenario count.
+After eight warmup calls, it takes the median of 31 individual synchronous calls,
+with no awaits, assertions or logging inside the measurement. Exact equality
+between small and 10,000-scenario cache hits and the strict comparison against
+repeated serialization/replacement remain required. This measures typical
+cache-hit allocations, not total background-callback allocations or throughput.
+Validate the focused `ReportCacheCapacityTests` fixture and the full core suite,
+including a run alongside other test projects using `--no-build` after the solution
+build; rebuilding loaded assemblies during a run causes Windows file-lock errors.
+
 Initial validation on Windows with SDK 10.0.402: Release solution build completed with
 zero warnings/errors. Two full core runs with default parallel execution each
 reported 1,974 passed and the same two symbolic-link privilege skips as the

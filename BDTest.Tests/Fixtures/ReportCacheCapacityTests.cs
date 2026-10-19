@@ -242,16 +242,14 @@ public class ReportCacheCapacityTests
         var small = Report("small-run");
         await repository.StoreData(small.Id, small);
         Action smallRead = () => repository.GetData(small.Id, default).GetAwaiter().GetResult();
-        baseline();
-        read();
-        smallRead();
         var baselineBytes = AllocatedBytesPerCall(baseline);
         var cachedReadBytes = AllocatedBytesPerCall(read);
-        Console.Out.WriteLine($"10,000 scenarios: repeated size measurement {baselineBytes:N0} bytes/read; cached read {cachedReadBytes:N0} bytes/read.");
+        var smallReadBytes = AllocatedBytesPerCall(smallRead);
+        Console.Out.WriteLine($"Median bytes/read: repeated size measurement {baselineBytes:N0}; 10,000 cached scenarios {cachedReadBytes:N0}; small cached report {smallReadBytes:N0}.");
 
         // Generated serialization of immutable contracts now allocates little even for large graphs.
         // Check the cache invariant directly instead of depending on the old mutable serializer's ratio.
-        await Assert.That(cachedReadBytes).IsEqualTo(AllocatedBytesPerCall(smallRead))
+        await Assert.That(cachedReadBytes).IsEqualTo(smallReadBytes)
             .Because("Cached read allocation must be independent of the number of scenarios.");
         await Assert.That(cachedReadBytes).IsLessThan(baselineBytes)
             .Because("A cache hit must avoid the serialization and replacement work.");
@@ -259,10 +257,43 @@ public class ReportCacheCapacityTests
 
     private static long AllocatedBytesPerCall(Action action)
     {
-        const int iterations = 5;
-        var before = GC.GetAllocatedBytesForCurrentThread();
-        for (var iteration = 0; iteration < iterations; iteration++) action();
-        return (GC.GetAllocatedBytesForCurrentThread() - before) / iterations;
+        // Retention refresh queues eviction callbacks. Growing the worker's local queue
+        // allocates on this thread (observed +536/+1048 bytes for 64/128 slots), even
+        // though the report-sized work is unchanged. A five-call average includes those
+        // occasional costs. Compare typical warmed calls, retaining exact byte equality
+        // and counting every allocation made on each sampled call, without rounding.
+        for (var iteration = 0; iteration < 8; iteration++) action();
+        var samples = new long[31];
+        for (var iteration = 0; iteration < samples.Length; iteration++)
+        {
+            var before = GC.GetAllocatedBytesForCurrentThread();
+            action();
+            samples[iteration] = GC.GetAllocatedBytesForCurrentThread() - before;
+        }
+        Array.Sort(samples);
+        return samples[samples.Length / 2];
+    }
+
+    [Test]
+    public async Task Allocation_probe_ignores_occasional_overhead_but_detects_per_call_growth()
+    {
+        static void Allocate() => GC.KeepAlive(new byte[64]);
+        var calls = 0;
+        var ordinary = AllocatedBytesPerCall(Allocate);
+        var occasional = AllocatedBytesPerCall(() =>
+        {
+            Allocate();
+            // Model queue expansion during measurement, not just during warmup.
+            if (++calls % 3 == 0) GC.KeepAlive(new object[128]);
+        });
+        var repeated = AllocatedBytesPerCall(() =>
+        {
+            Allocate();
+            GC.KeepAlive(new object[1]);
+        });
+
+        await Assert.That(occasional).IsEqualTo(ordinary);
+        await Assert.That(repeated).IsGreaterThan(ordinary);
     }
 
     [Test]
