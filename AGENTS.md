@@ -39,7 +39,7 @@ cd BDTest.Pipeline && dotnet run -c Release
 
 ## Architecture
 
-**Core library (`BDTest/`, netstandard2.0, strong-named)**
+**Core library (`BDTest/`, netstandard2.0;net8.0, strong-named)**
 - `Test/BDTestBase` exposes `Given/When/Then` builders (`Test/Steps/*`) that produce a `BuildableTest`, which becomes a `Scenario` of `Step`s when `BDTestAsync()` runs.
 - `Test/AbstractContextBDTestBase<TContext>` adds a per-test `Context` object, keyed by the framework's execution ID (`BDTestExecutionId`). Context is recreated on retry.
 - `Engine/ScenarioExecutor` runs scenarios (skip checks, step execution, exception classification, retries via `ScenarioRetryManager`).
@@ -68,13 +68,13 @@ Core and Razor reports grant `InternalsVisibleTo` only to `BDTest.Tests`, using 
 
 **Pipeline (`BDTest.Pipeline/`)**: ModularPipelines app driven by GitHub Actions (`.github/workflows/dotnet.yml`).
 - `RunUnitTestsModule` finds every `*.csproj` path containing "Tests". It evaluates Release package references and `UseMicrosoftTestingPlatformRunner`, using `dotnet run` for TUnit and opted-in xUnit v3 projects and `dotnet test` for the rest. Both paths write TRX results under `artifacts/test-results/<project>`.
-- `PackProjectsModule` packs every csproj except paths containing Tests, Pipeline, Example or ReportGenerator. New package projects are picked up automatically by that naming rule.
+- `PackProjectsModule` evaluates each csproj's `IsPackable` with MSBuild in Release configuration and packs only projects that evaluate to `true`. `Directory.Build.props` defaults it to `false`; new shipped packages must explicitly opt in with `<IsPackable>true</IsPackable>` and supply their package metadata. Update `BDTest.Pipeline.Tests/PackageSelectionTests.cs` and the package fixtures and count assertions in `BDTest.Pipeline.Tests/PackageArtifactVerificationTests.cs` when adding a package. `scripts/Test-PackageArtifacts.ps1` discovers packages automatically; change it only when new verification requirements need coverage. Run `dotnet run --project BDTest.Pipeline.Tests -c Release -- --treenode-filter "/*/*/PackageSelectionTests/*"` to verify selection and metadata; see [package selection and naming](BUILDING.md#package-selection-and-naming-858) for the maintained policy.
 - Development env pushes to a local NuGet folder. Production pushes to nuget.org, gated on `PUBLISH_PACKAGES`.
 
 ## Conventions
 
 - `Directory.Build.props` sets `LangVersion=latest` and `ImplicitUsings=enable` for all projects.
 - `Nullable=enable` and `TreatWarningsAsErrors=true` apply to every project through `Directory.Build.props`; see `BUILDING.md` for nullable contract and validation guidance.
-- Package metadata is generated from csproj properties and `PackageReference`s. Shared metadata, the packed icon, and SourceLink/symbol settings live in `Directory.Build.props`; each package supplies its ID, title, description, and tags. Preserve each project's target framework.
+- Package metadata comes from csproj properties and `PackageReference`s. `Directory.Build.props` imports `build/PackageMetadata.targets` through `BeforeMicrosoftNETSdkTargets`; that file applies shared metadata, the packed icon, and SourceLink/symbol settings to evaluated packable projects. Each package supplies its ID, title, description, and tags. Preserve each project's actual `TargetFramework`/`TargetFrameworks`; see [contributor packaging guidance](docs/docs/contributing.md#repository-layout) and [supported targets](docs/docs/getting-started/installation.md#supported-targets).
 - Keep the docs in sync with the library. Any change to how BDTest is used (public API, attributes, settings, adapter behavior, report formats, report server options or endpoints, package names or targets) must update the matching pages in `docs/docs/` in the same PR. Add new pages to `docs/sidebars.js`. Run `npm run build` in `docs/` to check links. `.github/workflows/docs.yml` builds the site on PRs and deploys it to GitHub Pages from `main`.
 - Dependency updates arrive via Renovate/Dependabot PRs and are auto-merged by workflow.
