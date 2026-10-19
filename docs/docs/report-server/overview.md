@@ -17,6 +17,10 @@ It gives you:
 - a **History** section for the runs that match a tag, environment, branch, machine and date range: **Trends** (results and duration per run), **Flaky tests** (scenarios that both passed and failed) and **Timing variance**,
 - links you can send to anyone with access. Pages follow the system light or dark theme and work on phones.
 
+![Overview tab of a single test run](/img/report-server-run-overview.png)
+
+![History trends for one tag](/img/report-server-history-trends.png)
+
 ## How it fits together
 
 ```text
