@@ -1,1 +1,70 @@
 #nullable enable
+*REMOVED*BDTest.BDTestRun.Scenarios.get -> System.Collections.Generic.IReadOnlyCollection<BDTest.Test.Scenario!>!
+*REMOVED*BDTest.Interfaces.IStepHook.AfterStepAsync(BDTest.Test.Step! step) -> System.Threading.Tasks.Task!
+*REMOVED*BDTest.Interfaces.IStepHook.BeforeStepAsync(BDTest.Test.Step! step) -> System.Threading.Tasks.Task!
+*REMOVED*BDTest.Test.RunnableStepBuilder.BDTestAsync() -> System.Threading.Tasks.Task<BDTest.Test.Scenario!>!
+*REMOVED*BDTest.Test.RunnableStepBuilder.GetAwaiter() -> System.Runtime.CompilerServices.TaskAwaiter<BDTest.Test.Scenario!>
+*REMOVED*BDTest.Test.Scenario.Status.get -> BDTest.Test.Status
+*REMOVED*BDTest.Test.ScenarioAttempt.Status.get -> BDTest.Test.Status
+*REMOVED*BDTest.Test.ScenarioHookContext.Scenario.get -> BDTest.Test.Scenario!
+*REMOVED*BDTest.Test.ScenarioOutlineBuilder<TExample>.BDTestAsync() -> System.Threading.Tasks.Task<BDTest.Test.Scenario!>!
+*REMOVED*BDTest.Test.ScenarioOutlineBuilder<TExample>.GetAwaiter() -> System.Runtime.CompilerServices.TaskAwaiter<BDTest.Test.Scenario!>
+*REMOVED*BDTest.Test.Status
+*REMOVED*BDTest.Test.Status.Failed = 3 -> BDTest.Test.Status
+*REMOVED*BDTest.Test.Status.Inconclusive = 4 -> BDTest.Test.Status
+*REMOVED*BDTest.Test.Status.NotImplemented = 5 -> BDTest.Test.Status
+*REMOVED*BDTest.Test.Status.NotRun = 0 -> BDTest.Test.Status
+*REMOVED*BDTest.Test.Status.Passed = 2 -> BDTest.Test.Status
+*REMOVED*BDTest.Test.Status.Pending = 1 -> BDTest.Test.Status
+*REMOVED*BDTest.Test.Status.Skipped = 6 -> BDTest.Test.Status
+*REMOVED*BDTest.Test.Step.Status.get -> BDTest.Test.Status
+*REMOVED*BDTest.Test.StepDefinitionSummary.StepType.get -> BDTest.Test.Steps.StepType
+*REMOVED*BDTest.Test.Steps.StepType
+*REMOVED*BDTest.Test.Steps.StepType.AndGiven = 1 -> BDTest.Test.Steps.StepType
+*REMOVED*BDTest.Test.Steps.StepType.AndThen = 4 -> BDTest.Test.Steps.StepType
+*REMOVED*BDTest.Test.Steps.StepType.AndWhen = 8 -> BDTest.Test.Steps.StepType
+*REMOVED*BDTest.Test.Steps.StepType.ButGiven = 5 -> BDTest.Test.Steps.StepType
+*REMOVED*BDTest.Test.Steps.StepType.ButThen = 7 -> BDTest.Test.Steps.StepType
+*REMOVED*BDTest.Test.Steps.StepType.ButWhen = 6 -> BDTest.Test.Steps.StepType
+*REMOVED*BDTest.Test.Steps.StepType.Given = 0 -> BDTest.Test.Steps.StepType
+*REMOVED*BDTest.Test.Steps.StepType.Then = 3 -> BDTest.Test.Steps.StepType
+*REMOVED*BDTest.Test.Steps.StepType.When = 2 -> BDTest.Test.Steps.StepType
+*REMOVED*static BDTest.BDTestUtil.GetNotRunScenarios(BDTest.BDTestRun! run) -> System.Collections.Generic.List<BDTest.Test.ScenarioDefinitionSummary!>!
+*REMOVED*static BDTest.BDTestUtil.GetScenarios(BDTest.BDTestRun! run) -> System.Collections.Generic.List<BDTest.Test.Scenario!>!
+*REMOVED*static BDTest.Helpers.BDTestJsonHelper.Serialize(BDTest.Maps.BDTestOutputModel? model, bool writeIndented = false) -> string!
+*REMOVED*static BDTest.Test.StatusExtensions.GetOrder(this BDTest.Test.Status status) -> int
+*REMOVED*static BDTest.Test.Steps.StepTypeExtensions.GetValue(this BDTest.Test.Steps.StepType stepType) -> string!
+*REMOVED*virtual BDTest.Test.BDTestBase.OnAfterStep(BDTest.Test.Step! step) -> System.Threading.Tasks.Task!
+*REMOVED*virtual BDTest.Test.BDTestBase.OnBeforeStep(BDTest.Test.Step! step) -> System.Threading.Tasks.Task!
+*REMOVED*~BDTest.Helpers.BDTestJsonContext.Status.get -> System.Text.Json.Serialization.Metadata.JsonTypeInfo<BDTest.Test.Status>
+*REMOVED*~BDTest.Helpers.BDTestJsonContext.StepType.get -> System.Text.Json.Serialization.Metadata.JsonTypeInfo<BDTest.Test.Steps.StepType>
+BDTest.BDTestRun.Scenarios.get -> System.Collections.Generic.IReadOnlyCollection<BDTest.Contracts.ScenarioResult!>!
+BDTest.Interfaces.IStepHook.AfterStepAsync(BDTest.Contracts.StepResult! step) -> System.Threading.Tasks.Task!
+BDTest.Interfaces.IStepHook.BeforeStepAsync(BDTest.Contracts.StepResult! step) -> System.Threading.Tasks.Task!
+BDTest.Test.RunnableStepBuilder.BDTestAsync() -> System.Threading.Tasks.Task<BDTest.Contracts.ScenarioResult!>!
+BDTest.Test.RunnableStepBuilder.GetAwaiter() -> System.Runtime.CompilerServices.TaskAwaiter<BDTest.Contracts.ScenarioResult!>
+BDTest.Test.Scenario.Status.get -> BDTest.Contracts.Status
+BDTest.Test.ScenarioAttempt.Status.get -> BDTest.Contracts.Status
+BDTest.Test.ScenarioHookContext.Scenario.get -> BDTest.Contracts.ScenarioResult!
+BDTest.Test.ScenarioOutlineBuilder<TExample>.BDTestAsync() -> System.Threading.Tasks.Task<BDTest.Contracts.ScenarioResult!>!
+BDTest.Test.ScenarioOutlineBuilder<TExample>.GetAwaiter() -> System.Runtime.CompilerServices.TaskAwaiter<BDTest.Contracts.ScenarioResult!>
+BDTest.Test.Step.Status.get -> BDTest.Contracts.Status
+BDTest.Test.StepDefinitionSummary.StepType.get -> BDTest.Contracts.StepType
+static BDTest.BDTestUtil.GetNotRunScenarios(BDTest.BDTestRun! run) -> System.Collections.Generic.IReadOnlyList<BDTest.Contracts.ScenarioDefinitionSummary!>!
+static BDTest.BDTestUtil.GetScenarios(BDTest.BDTestRun! run) -> System.Collections.Generic.IReadOnlyList<BDTest.Contracts.ScenarioResult!>!
+static BDTest.BDTestUtil.GetTestTimer(System.Collections.Generic.IReadOnlyCollection<BDTest.Contracts.ScenarioResult!>! scenarios) -> BDTest.Contracts.ReportTimer!
+static BDTest.Helpers.BDTestAttachmentHelper.GetAttachments(BDTest.Contracts.BDTestReport! report) -> System.Collections.Generic.IEnumerable<BDTest.Contracts.AttachmentInfo!>!
+static BDTest.Helpers.BDTestHtmlHelper.GenerateHtmlReport(BDTest.Contracts.BDTestReport! data) -> string!
+static BDTest.Helpers.BDTestJsonHelper.DeserializeReport(string! json) -> BDTest.Contracts.BDTestReport!
+static BDTest.Helpers.BDTestJsonHelper.Serialize(BDTest.Contracts.BDTestReport! model) -> string!
+static BDTest.Helpers.BDTestJsonHelper.Serialize(BDTest.Contracts.BDTestReport! model, bool writeIndented) -> string!
+static BDTest.Helpers.BDTestJsonHelper.Serialize(BDTest.Maps.BDTestOutputModel? model) -> string!
+static BDTest.Helpers.BDTestJsonHelper.Serialize(BDTest.Maps.BDTestOutputModel? model, bool writeIndented) -> string!
+static BDTest.Helpers.ExceptionHtmlHelper.GetHtml(BDTest.Contracts.ExceptionInfo? exception) -> string!
+static BDTest.Helpers.StepArgumentHtmlHelper.GetHtml(System.Collections.Generic.IReadOnlyList<BDTest.Contracts.StepArgument!>? arguments) -> string!
+static BDTest.Test.StatusExtensions.GetOrder(this BDTest.Contracts.Status status) -> int
+static BDTest.Test.Steps.StepTypeExtensions.GetValue(this BDTest.Contracts.StepType stepType) -> string!
+virtual BDTest.Test.BDTestBase.OnAfterStep(BDTest.Contracts.StepResult! step) -> System.Threading.Tasks.Task!
+virtual BDTest.Test.BDTestBase.OnBeforeStep(BDTest.Contracts.StepResult! step) -> System.Threading.Tasks.Task!
+~BDTest.Helpers.BDTestJsonContext.Status.get -> System.Text.Json.Serialization.Metadata.JsonTypeInfo<BDTest.Contracts.Status>
+~BDTest.Helpers.BDTestJsonContext.StepType.get -> System.Text.Json.Serialization.Metadata.JsonTypeInfo<BDTest.Contracts.StepType>
