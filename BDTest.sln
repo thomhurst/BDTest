@@ -51,6 +51,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BDTest.Contracts.Tests", "B
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BDTest.NUnit.Tests", "BDTest.NUnit.Tests\BDTest.NUnit.Tests.csproj", "{568C8505-C312-4B2F-9F1D-8D7EE1EBA031}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BDTest.Reports.Storage.FileSystem", "BDTest.Reports.Storage.FileSystem\BDTest.Reports.Storage.FileSystem.csproj", "{CAD7FF63-0F0B-406E-9BC5-32A82B54CDBD}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -61,6 +63,10 @@ Global
 		{568C8505-C312-4B2F-9F1D-8D7EE1EBA031}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{568C8505-C312-4B2F-9F1D-8D7EE1EBA031}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{568C8505-C312-4B2F-9F1D-8D7EE1EBA031}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CAD7FF63-0F0B-406E-9BC5-32A82B54CDBD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CAD7FF63-0F0B-406E-9BC5-32A82B54CDBD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CAD7FF63-0F0B-406E-9BC5-32A82B54CDBD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CAD7FF63-0F0B-406E-9BC5-32A82B54CDBD}.Release|Any CPU.Build.0 = Release|Any CPU
 		{343E74C1-C242-4310-9C37-53CC0CABE4CD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{343E74C1-C242-4310-9C37-53CC0CABE4CD}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{343E74C1-C242-4310-9C37-53CC0CABE4CD}.Release|Any CPU.ActiveCfg = Release|Any CPU

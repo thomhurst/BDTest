@@ -14,8 +14,9 @@ Package IDs remain stable for the next major version: `BDTest`, `BDTest.NUnit`,
 `BDTest.SourceGenerator`, `BDTest.Analyzers`, and `BDTest.Razor.Reports`.
 The report package is displayed as **BDTest - ASP.NET Core Reports**; its namespaces
 and static asset paths stay unchanged. `BDTest.ReportGenerator.RazorServer` remains
-an unpacked sample host. Future storage packages use `BDTest.Reports.Storage.*`,
-with `AzureBlob` and `FileSystem` planned; these are not currently published packages.
+an unpacked sample host. Storage packages use `BDTest.Reports.Storage.*`:
+`BDTest.Reports.Storage.FileSystem` provides directory-based persistence on .NET 10;
+`AzureBlob` is planned separately.
 No package rename or deprecation is part of this policy.
 
 Projects ship only when they explicitly set `IsPackable=true`. See
@@ -113,6 +114,7 @@ requirements differ:
 | `BDTest.MSTest` | `netstandard2.0;net8.0` | MSTest 4 |
 | `BDTest.TUnit` | `netstandard2.0;net8.0` | TUnit |
 | `BDTest.Razor.Reports` | `net10.0` | ASP.NET Core report hosting |
+| `BDTest.Reports.Storage.FileSystem` | `net10.0` | Directory-based report storage |
 | `BDTest.SourceGenerator` | `netstandard2.0` analyzer | Roslyn 4.8+ |
 | `BDTest.Analyzers` | `netstandard2.0` analyzer | Roslyn 4.8+ |
 
@@ -909,6 +911,23 @@ listed after their details expire or are evicted; those links show a missing rep
 Use a persistent store when reports must survive these events.
 
 ### Writing a persistent store
+
+For directory-based storage, install `BDTest.Reports.Storage.FileSystem` and add
+`using BDTest.Reports.Storage.FileSystem;` to your report host:
+
+```csharp
+builder.Services.AddBDTestFileSystemStorage(options =>
+{
+    options.DirectoryPath = Path.Combine(builder.Environment.ContentRootPath, "report-data");
+    options.Retention = TimeSpan.FromDays(30);
+});
+```
+
+Keep the normal `AddBDTestReports` registration and authorization configuration.
+This registers both storage contracts with atomic file replacement, cancellation,
+validated IDs and age-based retention. Use a dedicated writable local directory
+outside the web root. See [file-system persistence](docs/docs/report-server/persistence.md#file-system-package)
+for configuration, concurrency and retention behavior.
 
 Implement `IReportStore` and `IRunIndexStore` in `BDTest.Razor.Reports.Storage`.
 `IReportStore` reads, overwrites and deletes UTF-8 report streams; reads return null

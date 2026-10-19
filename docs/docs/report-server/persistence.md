@@ -17,6 +17,60 @@ The repository owns deserialization, normalization, caching and conversion to `T
 
 Configure report read authorization as shown in [Security](security.md#requiring-sign-in) before using these option snippets.
 
+## File-system package
+
+Install `BDTest.Reports.Storage.FileSystem` in a .NET 10 report host, using the
+same version as `BDTest.Razor.Reports`:
+
+```bash
+dotnet add package BDTest.Reports.Storage.FileSystem
+```
+
+```csharp
+using BDTest.Reports.Storage.FileSystem;
+
+builder.Services.AddBDTestFileSystemStorage(options =>
+{
+    options.DirectoryPath = Path.Combine(builder.Environment.ContentRootPath, "report-data");
+    options.Retention = TimeSpan.FromDays(30);
+});
+```
+
+This registers one `FileSystemReportStore` singleton as both storage interfaces.
+Keep the normal `AddBDTestReports` registration and authorization configuration.
+See [storage configuration](setup.md#configure-file-system-storage) for binding
+and option validation. The package includes its own README.
+
+Use a dedicated, writable directory outside the web root on a local filesystem
+that supports atomic file replacement and exclusive file sharing. Network shares
+are not supported. The host creates the directory on first use. Restrict write
+access to the host and trusted administrators, including access to its ancestors.
+Symbolic links/reparse points are rejected; these checks cannot protect against
+a privileged local writer changing paths concurrently.
+
+IDs must contain 1–128 ASCII letters, digits, hyphens or underscores. Filenames
+use SHA-256 keys, so IDs remain case-sensitive on Windows and cannot introduce
+paths, reserved device names or alternate data streams. Report and index writes
+use temporary files in the same directory, then atomic rename/replacement.
+Readers holding an old file can finish. Failed or cancelled copies preserve the
+previous version and remove their temporary file. Cancellation after publication
+does not undo a committed write. Inputs remain open; callers dispose read streams.
+
+A persistent `store.lock` file serializes cooperating store instances/processes,
+including retention scans. Lock waits retry native contention errors on Windows,
+Linux and macOS. Lock waits and asynchronous I/O honor cancellation.
+Do not delete that file while a host is running. Report bytes and index entries
+remain separate operations, so a report write and its metadata update are not a
+transaction. Listing scans index metadata only and applies the standard filtering,
+ordering and keyset paging; use an indexed service for very large histories.
+
+Retention defaults to 30 days since each report or index file's last write, tracked
+independently. Read/list operations and successful writes/upserts prune expired
+files and abandoned temporary files. Reads do not extend retention. There is no
+background timer or disk-byte quota: an idle directory is cleaned when another
+read, list or write occurs. Retention does not invalidate models or history already
+cached by the host, and this package does not store or clean up attachments.
+
 ## Report bytes
 
 ```csharp

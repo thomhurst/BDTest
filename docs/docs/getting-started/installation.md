@@ -42,7 +42,10 @@ For independent immutable report DTOs, add `BDTest.Contracts`. It has no depende
 on the execution package. See [report contracts](../reports/contracts.md) for its
 versioned JSON shape and the current migration boundary.
 
-For a report server, add `BDTest.Razor.Reports` to an ASP.NET Core project. See [Report server setup](../report-server/setup.md).
+For a report server, add `BDTest.Razor.Reports` to an ASP.NET Core project. Add
+`BDTest.Reports.Storage.FileSystem` for persistent directory-based storage. Both
+target .NET 10. See [Report server setup](../report-server/setup.md) and
+[Persistence](../report-server/persistence.md#file-system-package).
 
 :::tip Keep versions aligned
 Use the same version for every BDTest package in a solution. The adapters, the report server and the core package share data models.
@@ -57,10 +60,10 @@ its package ID, namespaces and static asset paths remain unchanged. No package
 rename, replacement reference or NuGet deprecation is required.
 
 `BDTest.ReportGenerator.RazorServer` remains an unpacked sample application.
-Future storage packages use the `BDTest.Reports.Storage.*` prefix, with
-`BDTest.Reports.Storage.AzureBlob` and `BDTest.Reports.Storage.FileSystem`
-planned. These planned packages are not currently available; use the
-[existing storage contracts](../report-server/persistence.md) until they ship.
+Storage packages use the `BDTest.Reports.Storage.*` prefix.
+`BDTest.Reports.Storage.FileSystem` provides directory-based persistence;
+`BDTest.Reports.Storage.AzureBlob` is planned separately. Custom stores use the
+[existing storage contracts](../report-server/persistence.md).
 
 ## Assembly versions
 
@@ -85,6 +88,7 @@ The core `BDTest` package targets `netstandard2.0;net8.0`. Adapter and report se
 | `BDTest.xUnit` | `netstandard2.0;net8.0` | xUnit v3 |
 | `BDTest.MSTest` | `netstandard2.0;net8.0` | MSTest 4 |
 | `BDTest.Razor.Reports` | `net10.0` | ASP.NET Core |
+| `BDTest.Reports.Storage.FileSystem` | `net10.0` | ASP.NET Core report storage |
 | `BDTest.SourceGenerator` | `netstandard2.0` analyzer | C# 10+ compiler (.NET SDK 8+) |
 | `BDTest.Analyzers` | `netstandard2.0` analyzer | Roslyn 4.8+ (.NET SDK 8+) |
 

@@ -36,7 +36,7 @@ public class PackageSelectionTests
         await Assert.That(selected).IsEquivalentTo(new[]
         {
             "BDTest", "BDTest.Contracts", "BDTest.NUnit", "BDTest.xUnit", "BDTest.MSTest", "BDTest.TUnit",
-            "BDTest.Razor.Reports", "BDTest.SourceGenerator", "BDTest.Analyzers"
+            "BDTest.Razor.Reports", "BDTest.Reports.Storage.FileSystem", "BDTest.SourceGenerator", "BDTest.Analyzers"
         });
     }
 
@@ -102,6 +102,7 @@ public class PackageSelectionTests
     [Arguments("BDTest", "netstandard2.0")]
     [Arguments("BDTest", "net8.0")]
     [Arguments("BDTest.Razor.Reports", "net10.0")]
+    [Arguments("BDTest.Reports.Storage.FileSystem", "net10.0")]
     [Arguments("BDTest.Contracts", "netstandard2.0")]
     public async Task Runtime_packages_initialize_documentation_before_sdk_defaults(string projectName, string target)
     {
@@ -117,6 +118,26 @@ public class PackageSelectionTests
             await Assert.That(properties.GetProperty("DocumentationFile").GetString()).EndsWith(projectName + ".xml");
             await Assert.That(properties.GetProperty("IncludeSymbols").GetString()).IsEqualTo("true");
             await Assert.That(properties.GetProperty("Copyright").GetString()).IsEqualTo("Copyright © Tom Longhurst");
+        }
+    }
+
+    [Test]
+    public async Task File_system_storage_ships_a_signed_runtime_and_readme()
+    {
+        using var metadata = JsonDocument.Parse(await RunDotNet(new[]
+        {
+            "msbuild", Path.Combine(RepositoryRoot, "BDTest.Reports.Storage.FileSystem", "BDTest.Reports.Storage.FileSystem.csproj"),
+            "-nologo", "-property:Configuration=Release", "-getProperty:IsPackable,SignAssembly,PackageReadmeFile", "-getItem:None"
+        }));
+        var properties = metadata.RootElement.GetProperty("Properties");
+        using (Assert.Multiple())
+        {
+            await Assert.That(properties.GetProperty("IsPackable").GetString()).IsEqualTo("true");
+            await Assert.That(properties.GetProperty("SignAssembly").GetString()).IsEqualTo("true");
+            await Assert.That(properties.GetProperty("PackageReadmeFile").GetString()).IsEqualTo("README.md");
+            await Assert.That(metadata.RootElement.GetProperty("Items").GetProperty("None").EnumerateArray()
+                .Any(item => item.GetProperty("Identity").GetString() == "README.md"
+                    && item.GetProperty("Pack").GetString() == "true")).IsTrue();
         }
     }
 

@@ -197,7 +197,8 @@ packing for stable, prerelease, metadata, minor, patch and major versions.
 `Directory.Build.props` defines `BDTestPublicKey` once and resolves
 `StrongNameKeyPair.snk` relative to the repository, independent of the working
 directory. The signed runtime packages are `BDTest`, `BDTest.NUnit`,
-`BDTest.xUnit`, `BDTest.MSTest`, `BDTest.TUnit`, `BDTest.Contracts` and `BDTest.Razor.Reports`.
+`BDTest.xUnit`, `BDTest.MSTest`, `BDTest.TUnit`, `BDTest.Contracts`, `BDTest.Razor.Reports`
+and `BDTest.Reports.Storage.FileSystem`.
 Their assembly names, key and version policy remain unchanged for every target.
 Keep this explicit list current when adding a runtime package.
 
@@ -233,7 +234,8 @@ either the NuGet or local-feed upload module. A failed check prevents publicatio
 `Directory.Build.props` defaults `IsPackable` to `false`. Shipped projects opt in
 with `<IsPackable>true</IsPackable>` in their project files. The complete package
 set is `BDTest`, `BDTest.NUnit`, `BDTest.xUnit`, `BDTest.MSTest`, `BDTest.TUnit`,
-`BDTest.Contracts`, `BDTest.Razor.Reports`, `BDTest.SourceGenerator`, and `BDTest.Analyzers`.
+`BDTest.Contracts`, `BDTest.Razor.Reports`, `BDTest.Reports.Storage.FileSystem`,
+`BDTest.SourceGenerator`, and `BDTest.Analyzers`.
 Tests, pipeline tools, examples and the sample report host are not packable.
 Project and directory names do not decide whether a project ships.
 
@@ -251,8 +253,9 @@ Keep the existing package IDs for the next major version, including the
 `BDTest.xUnit` casing for xUnit v3. `BDTest.Razor.Reports` has the display title
 **BDTest - ASP.NET Core Reports**; its ID, namespaces and static asset paths do not
 change. Keep `BDTest.ReportGenerator.RazorServer` as the non-shipping sample host.
-Future store packages use the `BDTest.Reports.Storage` prefix; the planned IDs are
-`BDTest.Reports.Storage.AzureBlob` and `BDTest.Reports.Storage.FileSystem`.
+Store packages use the `BDTest.Reports.Storage` prefix.
+`BDTest.Reports.Storage.FileSystem` is a signed, packable .NET 10 runtime package
+with a packed README. `BDTest.Reports.Storage.AzureBlob` is planned separately.
 This decision requires no package rename or NuGet deprecation.
 
 `BDTest.Pipeline.Tests/PackageSelectionTests.cs` evaluates the complete package
