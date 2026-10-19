@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Globalization;
 using System.Text;
 
 namespace BDTest.Compiler;
@@ -105,8 +106,25 @@ internal static class NamedStepTemplate
         return IsName(name);
     }
 
-    private static bool IsName(string name) => name.Length > 0 && (name[0] == '_' || char.IsLetter(name[0])) &&
-        name.Skip(1).All(c => c == '_' || char.IsLetterOrDigit(c));
+    private static bool IsName(string name)
+    {
+        if (name.Length == 0) return false;
+        for (var position = 0; position < name.Length; position++)
+        {
+            // Classify Unicode scalars, so supplementary characters do not become
+            // two invalid surrogate code units. Unpaired surrogates are rejected.
+            var category = CharUnicodeInfo.GetUnicodeCategory(name, position);
+            var letter = category == UnicodeCategory.UppercaseLetter || category == UnicodeCategory.LowercaseLetter ||
+                category == UnicodeCategory.TitlecaseLetter || category == UnicodeCategory.ModifierLetter ||
+                category == UnicodeCategory.OtherLetter || category == UnicodeCategory.LetterNumber;
+            if (!letter && name[position] != '_' && (position == 0 ||
+                (category != UnicodeCategory.DecimalDigitNumber && category != UnicodeCategory.ConnectorPunctuation &&
+                 category != UnicodeCategory.NonSpacingMark && category != UnicodeCategory.SpacingCombiningMark &&
+                 category != UnicodeCategory.Format))) return false;
+            if (char.IsHighSurrogate(name[position])) position++;
+        }
+        return true;
+    }
 
     // Recognize obsolete composite alignment without interpreting malformed brace text.
     private static bool IsPositionalName(string name)

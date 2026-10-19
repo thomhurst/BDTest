@@ -502,7 +502,7 @@ BDTest.StepTextAttribute
 BDTest.StepTextAttribute.StepTextAttribute(string? stepText) -> void
 BDTest.StepTextAttribute.StepTextAttribute(string? stepText, string! parameterOverride) -> void
 BDTest.StepTextAttribute.StepTextAttribute(string? stepText, string![]! parameterOverrides) -> void
-BDTest.StepTextAttribute.StepTextParameterOverrides.get -> System.Collections.Generic.List<string!>!
+BDTest.StepTextAttribute.ParameterOverrides.get -> System.Collections.Generic.IReadOnlyList<string!>!
 BDTest.StepTextAttribute.Text.get -> string?
 BDTest.StepTypeExtensions
 BDTest.StoryAttribute

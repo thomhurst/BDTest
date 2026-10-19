@@ -7,12 +7,16 @@ description: Migrate positional StepText placeholders and display overrides to p
 
 The next major version replaces `string.Format` step templates with named placeholders. Match the template name to the step method's parameter name, regardless of its position:
 
-```csharp title="Before"
+**Before:**
+
+```csharp title="Illustrative fragment"
 [StepText("I transfer {0} from {1}", "1:my account")]
 public void Transfer(decimal amount, string account) { }
 ```
 
-```csharp title="After"
+**After:**
+
+```csharp title="Illustrative fragment"
 [StepText("I transfer {amount} from {account}", "account=my account")]
 public void Transfer(decimal amount, string account) { }
 ```

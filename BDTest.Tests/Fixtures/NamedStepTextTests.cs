@@ -12,6 +12,40 @@ namespace BDTest.Tests.Fixtures;
 public class NamedStepTextTests : RunTestBase
 {
     [Test]
+    [Arguments("a\u0301"), Arguments("a\u0903"), Arguments("a\u203F"), Arguments("a\u200C")]
+    [Arguments("\u2160"), Arguments("\U00010400"), Arguments("a\U00010400"), Arguments("a\U0001D7CE")]
+    public async Task UnicodeNamesAreParsedAndAcceptOverrides(string name)
+    {
+        var token = BDTest.Compiler.NamedStepTemplate.Parse("{" + name + ":F2}").Single();
+        await Assert.That(token.Name).IsEqualTo(name);
+        await Assert.That(token.Format).IsEqualTo("F2");
+        await Assert.That(BDTest.Compiler.NamedStepTemplate.Validate("{" + name + "}", [name], [name + "=display"]))
+            .IsEmpty();
+        await Assert.That(BDTest.Compiler.NamedStepTemplate.Validate("{" + name + "}", [], []))
+            .IsEquivalentTo(new[] { "StepText placeholder '" + name + "' does not name a visible parameter" });
+    }
+
+    [Test]
+    [Arguments("\u0301a"), Arguments("\u203Fa"), Arguments("\u200Ca"), Arguments("a\uD800"), Arguments("a\uDC00")]
+    [Arguments("\U0001F600"), Arguments("a\U0001F600")]
+    public async Task InvalidUnicodeNamesRemainLiteral(string name)
+    {
+        var token = BDTest.Compiler.NamedStepTemplate.Parse("{" + name + "}").Single();
+        await Assert.That(token.Name).IsNull();
+        await Assert.That(token.Text).IsEqualTo("{" + name + "}");
+    }
+
+    [Test]
+    public async Task UnicodeParameterNamesRenderValuesAndOverrides()
+    {
+        await Assert.That(Render(nameof(Unicode), [() => "first", () => "second", () => "third"]))
+            .IsEqualTo("first second replacement");
+    }
+
+    [StepText("{a\u0301} {\u2160} {a\u203F}", "a\u203F=replacement")]
+    private static void Unicode(string a\u0301, string \u2160, string a\u203F) { }
+
+    [Test]
     public async Task NamesSurviveReorderingAndFormatsUseInvariantCulture()
     {
         var original = CultureInfo.CurrentCulture;

@@ -52,11 +52,11 @@ internal static class StepTextValidation
         {
             var value = attribute.ConstructorArguments[1];
             if (value.Kind == TypedConstantKind.Error) return Enumerable.Empty<string>();
-            if (value.IsNull) overrides = null;
-            else if (value.Kind == TypedConstantKind.Array)
+            if (value.Kind == TypedConstantKind.Array)
             {
-                if (value.Values.Any(item => item.Kind == TypedConstantKind.Error)) return Enumerable.Empty<string>();
-                overrides = value.Values.Select(item => item.Value as string);
+                if (value.IsNull) overrides = null;
+                else if (value.Values.Any(item => item.Kind == TypedConstantKind.Error)) return Enumerable.Empty<string>();
+                else overrides = value.Values.Select(item => item.Value as string);
             }
             else overrides = new[] { value.Value as string };
         }

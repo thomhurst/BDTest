@@ -199,6 +199,49 @@ public class AnalyzerTests
         Assert.That(diagnostics.Single().GetMessage(), Does.Contain("missing"));
     }
 
+    [TestCase(false)]
+    [TestCase(true)]
+    public async Task Unicode_parameter_names_are_validated(bool withGenerator)
+    {
+        Compilation compilation = CreateCompilation(Source("""
+            [StepText("{a\u0301} {\u2160} {a\u203F}", "a\u203F=override")]
+            void Valid(int a\u0301, int \u2160, int a\u203F) {}
+            [StepText("{missing\u0301} {missing\U00010400} {missing\u200C}")]
+            void Invalid() {}
+            """));
+        AssertCompiles(compilation);
+        var diagnostics = ImmutableArray<Diagnostic>.Empty;
+        if (withGenerator)
+        {
+            GeneratorDriver driver = CSharpGeneratorDriver.Create(new StepMetadataGenerator());
+            driver.RunGeneratorsAndUpdateCompilation(compilation, out compilation, out diagnostics);
+        }
+        diagnostics = diagnostics.AddRange(await Analyze(compilation));
+        Assert.That(diagnostics.Select(d => d.Id), Is.EqualTo(new[] { "BDT002", "BDT002", "BDT002" }));
+        Assert.That(diagnostics.All(d => d.GetMessage().Contains("does not name a visible parameter")), Is.True);
+    }
+
+    [TestCase(false, "(string)null", "must use 'parameterName=text'")]
+    [TestCase(true, "(string)null", "must use 'parameterName=text'")]
+    [TestCase(false, "new string[] { null }", "must use 'parameterName=text'")]
+    [TestCase(true, "new string[] { null }", "must use 'parameterName=text'")]
+    [TestCase(false, "(string[])null", "must not be a null array")]
+    [TestCase(true, "(string[])null", "must not be a null array")]
+    public async Task Null_override_diagnostics_distinguish_strings_from_arrays(bool withGenerator, string argument, string message)
+    {
+        Compilation compilation = CreateCompilation(Source("[StepText(\"{value}\", " + argument + ")] void Step(int value) {}"));
+        AssertCompiles(compilation);
+        var diagnostics = ImmutableArray<Diagnostic>.Empty;
+        if (withGenerator)
+        {
+            GeneratorDriver driver = CSharpGeneratorDriver.Create(new StepMetadataGenerator());
+            driver.RunGeneratorsAndUpdateCompilation(compilation, out compilation, out diagnostics);
+        }
+        diagnostics = diagnostics.AddRange(await Analyze(compilation));
+        Assert.That(diagnostics.Select(d => d.Id), Is.EqualTo(new[] { "BDT002" }));
+        Assert.That(diagnostics.Single().GetMessage(), Does.Contain(message));
+    }
+
     private static async Task AssertRule(string members, string id, int count)
     {
         var compilation = CreateCompilation(Source(members));
