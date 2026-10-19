@@ -81,7 +81,7 @@ public class StepBuilderBranchTests : RunTestBase
         var timeTaken = firstStep.TimeTaken;
         await Assert.That(async () => await second.BDTestAsync()).ThrowsExactly<InvalidOperationException>();
         var secondResult = BDTestUtil.GetScenarios(TestRun).Single(scenario =>
-            scenario.FrameworkTestId == firstResult.FrameworkTestId && scenario.GetScenarioText() == "failed branch");
+            scenario.FrameworkTestId == firstResult.FrameworkTestId && scenario.ScenarioText == "failed branch");
 
         await Assert.That(firstResult.Status).IsEqualTo(Status.Passed);
         await Assert.That(firstStep.Status).IsEqualTo(Status.Passed);
@@ -159,8 +159,8 @@ public class StepBuilderBranchTests : RunTestBase
         var first = prefix.Then(() => Console.WriteLine("first"));
         var second = prefix.Then(() => Console.WriteLine("second"));
 
-        Scenario secondResult;
-        Scenario firstResult;
+        BDTest.Contracts.ScenarioResult secondResult;
+        BDTest.Contracts.ScenarioResult firstResult;
         switch (mode)
         {
             case "async":

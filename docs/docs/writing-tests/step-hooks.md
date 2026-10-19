@@ -19,13 +19,13 @@ options.StepHooks.Add(new StepLogger());
 
 public sealed class StepLogger : BDTest.Interfaces.IStepHook
 {
-    public Task BeforeStepAsync(BDTest.Test.Step step)
+    public Task BeforeStepAsync(BDTest.Contracts.StepResult step)
     {
         Console.WriteLine($"Starting: {step.StepText}");
         return Task.CompletedTask;
     }
 
-    public Task AfterStepAsync(BDTest.Test.Step step)
+    public Task AfterStepAsync(BDTest.Contracts.StepResult step)
     {
         Console.WriteLine($"Finished: {step.Status}");
         return Task.CompletedTask;
@@ -37,12 +37,12 @@ Hooks can run concurrently for different tests. Keep their shared state thread-s
 
 ## Per-test hooks
 
-Override `OnBeforeStep(Step step)` and `OnAfterStep(Step step)` on your test class or base class. They return `Task` and can use the test's `Context`:
+Override `OnBeforeStep(BDTest.Contracts.StepResult step)` and `OnAfterStep(BDTest.Contracts.StepResult step)` on your test class or base class. They return `Task` and can use the test's `Context`:
 
 ```csharp title="Illustrative fragment"
 public abstract class UiTestBase : TUnitBDTestBase<UiContext>
 {
-    public override async Task OnAfterStep(Step step)
+    public override async Task OnAfterStep(BDTest.Contracts.StepResult step)
     {
         if (step.Status == Status.Failed)
         {
@@ -73,12 +73,20 @@ Hook registrations remain fixed for the lifetime of the run, including retries.
 - The original execution exception takes precedence. Secondary after-hook exceptions are logged.
 - Otherwise the first after-hook exception decides the step result, using the usual [exception classification](../configuration/exceptions.md) and [retry](retries.md) rules.
 
+## Snapshot semantics
+
+Each hook receives a fresh immutable `BDTest.Contracts.StepResult`. Retaining a
+before snapshot does not turn it into an after result. Before hooks see `Pending`,
+no end time, and the current text before lazy argument/text evaluation. After hooks
+see the completed execution snapshot. Collections cannot be changed through the
+result; use the test context, attachment writer or HTML writer to record evidence.
+
 ## What after hooks see
 
 After hooks receive the step's `Status`, `Exception`, `Output`, `StartTime`, `EndTime` and `TimeTaken`.
 
 - Timing includes before hooks and the step, and excludes after hooks.
-- Output written by hooks is included in the step's output.
+- The final result includes output written by hooks; a snapshot already delivered to a hook remains unchanged.
 - All after hooks observe the execution result before after-hook failures are applied.
 
 ## When hooks run

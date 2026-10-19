@@ -397,7 +397,7 @@ public class AdapterConformanceTests : Adapter
             Require(startupOutput.Contains(label + " setup") && !startupOutput.Contains(other), "startup output leaked");
             Require(stepOutput.Contains(label + " step") && !stepOutput.Contains(other), "step output leaked");
             Require(teardownOutput.Contains(label + " teardown") && !teardownOutput.Contains(other), "teardown output leaked");
-            var report = BDTest.Helpers.BDTestJsonHelper.Deserialize(BDTest.Helpers.BDTestJsonHelper.GetTestJsonData(null, run))
+            var report = BDTest.Helpers.BDTestJsonHelper.DeserializeReport(BDTest.Helpers.BDTestJsonHelper.GetTestJsonData(null, run))
                 ?? throw new InvalidOperationException("Expected the run report.");
             var scenarios = report.Scenarios ?? throw new InvalidOperationException("Expected report scenarios.");
             Require(scenarios.Single().ReportId == run.ReportId, "report ownership leaked");

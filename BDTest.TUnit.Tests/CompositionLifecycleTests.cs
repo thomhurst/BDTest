@@ -119,11 +119,11 @@ public class CompositionLifecycleTests : CompanyTestBase, IBDTestTUnitTest
                 var other = _label == "first" ? "second" : "first";
                 await Assert.That(scenario.ReportId).IsEqualTo(_run.ReportId);
                 await Assert.That(scenario.TestStartupInformation).Contains(_label + " setup");
-                if (scenario.GetScenarioText() != "Composition metadata")
+                if (scenario.ScenarioText != "Composition metadata")
                     await Assert.That(scenario.Output).Contains(_label + " step");
                 await Assert.That(scenario.TearDownOutput).Contains(_label + " teardown");
                 await Assert.That(scenario.TestStartupInformation + scenario.Output + scenario.TearDownOutput).DoesNotContain(other);
-                var report = BDTestJsonHelper.Deserialize(BDTestJsonHelper.GetTestJsonData(null, _run))
+                var report = BDTestJsonHelper.DeserializeReport(BDTestJsonHelper.GetTestJsonData(null, _run))
                     ?? throw new InvalidOperationException("Expected the composition run's report.");
                 var scenarios = report.Scenarios ?? throw new InvalidOperationException("Expected composition report scenarios.");
                 await Assert.That(scenarios.Single().ReportId).IsEqualTo(_run.ReportId);

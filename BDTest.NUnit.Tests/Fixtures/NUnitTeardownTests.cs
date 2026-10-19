@@ -32,7 +32,7 @@ public class NUnitTeardownTests : NUnitBDTestBase<MyTestContext>
     private readonly BDTestRun? _run;
     private readonly List<string> _events = new();
     private MyTestContext? _scenarioContext;
-    private Scenario? _scenario;
+    private BDTest.Contracts.ScenarioResult? _scenario;
     private int _attempts;
     private int _amendments;
     private int _completionCalls;
@@ -95,7 +95,7 @@ public class NUnitTeardownTests : NUnitBDTestBase<MyTestContext>
             }));
             Assert.That(_completionCalls, Is.EqualTo(1));
             Assert.That(_amendments, Is.EqualTo(3), "Two attempt contexts and one replacement after context removal.");
-            Assert.That(Required(_scenario).TearDownOutput, Does.Contain("completion override output"));
+            Assert.That(TestRun.Scenarios.Single(s => s.Guid == Required(_scenario).Guid).TearDownOutput, Does.Contain("completion override output"));
         }
         finally
         {

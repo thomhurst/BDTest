@@ -154,7 +154,7 @@ public class StructuredStepArgumentTests : BDTestBase
         using var handler = new UploadHandler();
         using var client = new HttpClient(handler);
         await BDTestReportServer.SendDataAndGetReportUriAsync(new Uri("https://reports.example"), new BDTestRunDescriptor(), client, TestRun);
-        var restored = Required(BDTestJsonHelper.Deserialize(Required(handler.Json)));
+        var restored = Required(BDTestJsonHelper.DeserializeReport(Required(handler.Json)));
         var step = Required(Required(restored.Scenarios).Single().Steps)[0];
         await Assert.That(((StepTable)step.Arguments[0]).Rows).Count().IsEqualTo(1000);
         await Assert.That(((StepDocString)step.Arguments[1]).Content).IsEqualTo(doc.Content);

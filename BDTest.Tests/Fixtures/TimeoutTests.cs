@@ -271,7 +271,7 @@ public class TimeoutTests : RunTestBase
         await Assert.That(() => builder.WithScenarioTimeout(TimeSpan.FromMilliseconds(milliseconds))).ThrowsExactly<ArgumentOutOfRangeException>();
     }
 
-    private Scenario Report(BuildableTest builder) => BDTestUtil.GetScenarios(TestRun).Single(scenario => scenario.Guid == builder.Guid);
+    private BDTest.Contracts.ScenarioResult Report(BuildableTest builder) => BDTestUtil.GetScenarios(TestRun).Single(scenario => scenario.Guid == builder.Guid);
     private void Later() => _laterSteps++;
     private Task Complete(CancellationToken token) { _tokens.Add(token); return Task.CompletedTask; }
     private static Task CancelIndependently() => throw new OperationCanceledException("User cancellation");

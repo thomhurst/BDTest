@@ -32,8 +32,8 @@ public class ExceptionTests : RunTestBase
         catch
         {
             var scenario = BDTestUtil.GetScenarios(TestRun).Single(scenario => scenario.Guid == builder.Guid);
-            var json = Required(JsonHelper.GetTestDynamicJsonObject(TestRun)["Scenarios"])
-                .Single(item => (string?)item["Guid"] == builder.Guid);
+            var json = Required(JsonHelper.GetTestDynamicJsonObject(TestRun)["scenarios"])
+                .Single(item => (string?)item["guid"] == builder.Guid);
 
             await Assert.That(Required(Required(Required(scenario.Steps)[0].Exception).Message).Contains("BDTest Exception!")).IsTrue();
 
@@ -81,8 +81,8 @@ public class ExceptionTests : RunTestBase
         catch
         {
             var scenario = BDTestUtil.GetScenarios(TestRun).Single(scenario => scenario.Guid == builder.Guid);
-            var json = Required(JsonHelper.GetTestDynamicJsonObject(TestRun)["Scenarios"])
-                .Single(item => (string?)item["Guid"] == builder.Guid);
+            var json = Required(JsonHelper.GetTestDynamicJsonObject(TestRun)["scenarios"])
+                .Single(item => (string?)item["guid"] == builder.Guid);
 
             await Assert.That(Required(Required(Required(scenario.Steps)[3].Exception).Message).Contains("BDTest Exception!")).IsTrue();
 

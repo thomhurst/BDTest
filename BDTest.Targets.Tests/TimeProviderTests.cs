@@ -22,8 +22,8 @@ public class TimeProviderTests
         options.TimeProvider = TimeProvider.System;
         var scenario = await new TestHost(run).When(() => clock.Fake.Advance(TimeSpan.FromSeconds(3)))
             .Then(() => { }).BDTestAsync();
-        Assert.That(scenario.StartTime, Is.EqualTo(start.UtcDateTime));
-        Assert.That(scenario.EndTime, Is.EqualTo(start.AddSeconds(3).UtcDateTime));
+        Assert.That(scenario.StartTime, Is.EqualTo(start));
+        Assert.That(scenario.EndTime, Is.EqualTo(start.AddSeconds(3)));
         Assert.That(scenario.TimeTaken, Is.EqualTo(TimeSpan.FromSeconds(3)));
         Assert.That(Required(scenario.Steps)[0].TimeTaken, Is.EqualTo(TimeSpan.FromSeconds(3)));
         Assert.That(Required(scenario.Steps)[0].StartTime, Is.EqualTo(scenario.StartTime));
@@ -102,12 +102,12 @@ public class TimeProviderTests
                 clock.Fake.Advance(TimeSpan.FromSeconds(3));
             }).Then(() => { })).BDTestAsync();
 
-        Assert.That(outline.StartTime, Is.EqualTo(start.UtcDateTime));
-        Assert.That(outline.EndTime, Is.EqualTo(start.AddDays(-1).AddSeconds(6).UtcDateTime));
+        Assert.That(outline.StartTime, Is.EqualTo(start));
+        Assert.That(outline.EndTime, Is.EqualTo(start.AddDays(-1).AddSeconds(6)));
         Assert.That(outline.TimeTaken, Is.EqualTo(TimeSpan.FromSeconds(6)));
         Assert.That(Required(outline.Examples).Select(row => row.TimeTaken),
             Is.EqualTo(new[] { TimeSpan.FromSeconds(3), TimeSpan.FromSeconds(3) }));
-        var report = BDTestJsonHelper.Deserialize(BDTestJsonHelper.GetTestJsonData(null, run))
+        var report = BDTestJsonHelper.DeserializeReport(BDTestJsonHelper.GetTestJsonData(null, run))
             ?? throw new AssertionException("Expected a report.");
         var timer = report.TestTimer ?? throw new AssertionException("Expected report timing.");
         Assert.That(timer.TestsStartedAt, Is.EqualTo(outline.StartTime));
@@ -130,8 +130,8 @@ public class TimeProviderTests
 
         var outline = run.Scenarios.Single();
         var row = Required(outline.Examples).Single();
-        Assert.That(row.StartTime, Is.EqualTo(start.UtcDateTime));
-        Assert.That(row.EndTime, Is.EqualTo(start.AddDays(-1).AddSeconds(4).UtcDateTime));
+        Assert.That(row.StartTime, Is.EqualTo(start));
+        Assert.That(row.EndTime, Is.EqualTo(start.AddDays(-1).AddSeconds(4)));
         Assert.That(row.TimeTaken, Is.EqualTo(TimeSpan.FromSeconds(4)));
         Assert.That(outline.StartTime, Is.EqualTo(row.StartTime));
         Assert.That(outline.EndTime, Is.EqualTo(row.EndTime));
@@ -147,11 +147,11 @@ public class TimeProviderTests
         using var run = BDTestRun.Start(new BDTestOptions { TimeProvider = clock });
         clock.Fake.Advance(TimeSpan.FromSeconds(5));
 
-        var report = BDTestJsonHelper.Deserialize(BDTestJsonHelper.GetTestJsonData(null, run))
+        var report = BDTestJsonHelper.DeserializeReport(BDTestJsonHelper.GetTestJsonData(null, run))
             ?? throw new AssertionException("Expected a report.");
         var timer = report.TestTimer ?? throw new AssertionException("Expected report timing.");
-        Assert.That(timer.TestsStartedAt, Is.EqualTo(start.UtcDateTime));
-        Assert.That(timer.TestsFinishedAt, Is.EqualTo(start.AddSeconds(5).UtcDateTime));
+        Assert.That(timer.TestsStartedAt, Is.EqualTo(start));
+        Assert.That(timer.TestsFinishedAt, Is.EqualTo(start.AddSeconds(5)));
         Assert.That(timer.ElapsedTime, Is.EqualTo(TimeSpan.FromSeconds(5)));
     }
 

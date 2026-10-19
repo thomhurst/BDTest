@@ -143,7 +143,7 @@ public class ScenarioRetentionTests : TestRunOwner
             .Then(() => GC.KeepAlive(Context)).WithStepText(() => text.GetText());
 
         [BDTestRetry(1)]
-        public Scenario Run(TextSource text)
+        public BDTest.Contracts.ScenarioResult Run(TextSource text)
         {
             BeginTest(Id, typeof(Capture).GetMethod(nameof(Run)));
             var builder = Build(text);

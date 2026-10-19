@@ -9,9 +9,9 @@ In the next major version, fluent construction and pending report data use separ
 
 ## Pending report consumers
 
-`BDTestUtil.GetNotRunScenarios(run)` now return `List<BDTest.Test.ScenarioDefinitionSummary>`. `BDTestOutputModel.NotRun` uses the same type. Replace declarations of `List<BuildableTest>` used for pending report data with `List<ScenarioDefinitionSummary>`.
+`BDTestUtil.GetNotRunScenarios(run)` now return `IReadOnlyList<BDTest.Contracts.ScenarioDefinitionSummary>`. New `BDTestReport.NotRun` uses the same type; historical `BDTestOutputModel` retains the legacy summary. Replace declarations of `List<BuildableTest>` used for pending report data with `IReadOnlyList<BDTest.Contracts.ScenarioDefinitionSummary>`.
 
-Read `GetStoryText()`, `GetScenarioText()`, `ParameterNames`, tags and caller details as before. The summary adds `Timeout` and `Steps`, where each step has `StepType`, template `StepText` and `Timeout`. `ScenarioId` identifies the pending definition and matches the fluent builder's `ScenarioId`. Compare this ID rather than comparing a summary with a builder instance. Summaries have no `BdTestBase` or `Run` reference and cannot be executed or extended.
+Read `StoryText`, `ScenarioText`, `Parameters`, tags and caller details as before. The summary adds `Timeout` and `Steps`, where each step has `StepType`, template `StepText` and `Timeout`. `ScenarioId` identifies the pending definition and matches the fluent builder's `ScenarioId`. Compare this ID rather than comparing a summary with a builder instance. Summaries have no `BdTestBase` or `Run` reference and cannot be executed or extended.
 
 ```csharp title="Illustrative fragment"
 using BDTest;
@@ -20,7 +20,7 @@ using BDTest.Test;
 List<ScenarioDefinitionSummary> pending = BDTestUtil.GetNotRunScenarios(run);
 foreach (var definition in pending)
 {
-    Console.WriteLine($"{definition.ScenarioId}: {definition.GetScenarioText()}");
+    Console.WriteLine($"{definition.ScenarioId}: {definition.ScenarioText}");
 }
 ```
 

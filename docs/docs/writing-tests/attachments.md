@@ -25,7 +25,7 @@ Names must contain 1–255 characters without control characters or path separat
 Capture inside a step, `OnBeforeStep`, or `OnAfterStep` adds metadata to that `Step.Attachments` collection. For example:
 
 ```csharp title="Illustrative fragment"
-public override async Task OnAfterStep(Step step)
+public override async Task OnAfterStep(BDTest.Contracts.StepResult step)
 {
     if (step.Status == Status.Failed)
     {
@@ -37,7 +37,7 @@ public override async Task OnAfterStep(Step step)
 
 Outside a step, capture adds to `Scenario.Attachments`. Setup capture waits for the scenario to be created. If the test ends without creating a scenario, adapter teardown deletes its pending attachments and releases their byte quota. Captures that start or finish after `EndTest` throw `InvalidOperationException`; an in-progress copy rolls back its file and byte quota. Saved writers and context attachment writers retain the lifetime of their original execution, including writers created in a constructor before adapter setup. Capture during an outline's example factory belongs to that example, including when the factory throws. Setup and teardown for the whole outline belong to the outline, including background setup copies that finish while an example is running.
 
-Each attachment has `Id`, `Name`, `MimeType`, `Length`, `AttemptNumber`, and nullable `Uri` metadata in namespace `BDTest.Test`. Collections retain files from every retry; `AttemptNumber` is one-based and corresponds to `Scenario.Attempts.Number`. Files are not copied between attempts or example rows. Content from abandoned step tasks is rejected after the step and its after hooks finish.
+Each attachment has `Id`, `Name`, `MimeType`, `Length`, `AttemptNumber`, and nullable `Uri` immutable `AttachmentInfo` metadata in namespace `BDTest.Contracts`. Collections retain files from every retry; `AttemptNumber` is one-based and corresponds to `Scenario.Attempts.Number`. Files are not copied between attempts or example rows. Content from abandoned step tasks is rejected after the step and its after hooks finish.
 
 Parallel tests and explicit runs keep independent ownership, even when separate runs use the same framework test ID. Custom adapters must supply distinct execution IDs for parallel tests within a run.
 
@@ -66,7 +66,7 @@ Keep the run alive until tests, writers and exporters finish. Use `using` or `tr
 
 `BDTestReportServer.SendDataAndGetReportUriAsync` uploads report JSON first, then streams each referenced attachment from that run's temporary files. Explicit-run overloads never read another run's files. Captures from retry attempts and outline examples are included. Pending files without a scenario are not uploaded. Keep the run alive until the whole upload completes; neither success nor failure clears its files automatically.
 
-Configure an [attachment store](../report-server/persistence.md#attachments) on the server and pass a caller-owned `HttpClient` carrying `X-BDTest-Upload-Key`. An older server that does not issue an attachment receipt causes the upload method to throw when the run has attachments. Runs without attachments remain compatible.
+Configure an [attachment store](../report-server/persistence.md#attachments) on the server and pass a caller-owned `HttpClient` carrying `X-BDTest-Upload-Key`. An older server that does not issue an attachment receipt causes the upload method to throw when the run has attachments. This describes the legacy upload protocol. The new schema-versioned core exporter requires the host migration in [#936](https://github.com/thomhurst/BDTest/issues/936), even for runs without attachments; see [server compatibility](../migration/immutable-results.md).
 
 Pass a final `CancellationToken` to the upload method to cancel an active attachment request or its retry delay. No later attachment starts once cancellation is observed. Cancellation closes upload streams but retains captures until the run is cleared or disposed, and does not undo report or attachment requests already accepted by the server. See [upload cancellation](../report-server/sending-results.md#cancellation).
 

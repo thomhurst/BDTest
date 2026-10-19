@@ -111,9 +111,9 @@ public class ScenarioOutlineTests : RunContextTestBase<ScenarioOutlineTests.RowC
         await AssertRowErrorReported(outline, "&lt;skip rule failed&gt;");
     }
 
-    private async Task AssertRowErrorReported(Scenario outline, string encodedError)
+    private async Task AssertRowErrorReported(BDTest.Contracts.ScenarioResult outline, string encodedError)
     {
-        foreach (var result in new[] { outline, ReportJson.DeserializeObject<Scenario>(ReportJson.SerializeObject(outline)) })
+        foreach (var result in new[] { outline, ReportJson.DeserializeObject<BDTest.Contracts.ScenarioResult>(ReportJson.SerializeObject(outline)) })
         {
             await Assert.That(Required(result.Examples)[0].Exception).IsNotNull();
             var razor = await ReportHandlerEncodingTests.RenderAsync("/Views/Shared/_ScenarioExamples.cshtml", result);
@@ -290,7 +290,7 @@ public class ScenarioOutlineTests : RunContextTestBase<ScenarioOutlineTests.RowC
         if (fail) await Assert.That(thrown).IsTypeOf<InvalidOperationException>();
         else await Assert.That(thrown).IsNull();
         var outline = BDTestUtil.GetScenarios(TestRun).Single(x => x.FrameworkTestId == _executionId);
-        foreach (var result in new[] { outline, ReportJson.DeserializeObject<Scenario>(ReportJson.SerializeObject(outline)) })
+        foreach (var result in new[] { outline, ReportJson.DeserializeObject<BDTest.Contracts.ScenarioResult>(ReportJson.SerializeObject(outline)) })
         {
 
             await Assert.That(result.TestStartupInformation).IsNullOrEmpty();
@@ -305,7 +305,7 @@ public class ScenarioOutlineTests : RunContextTestBase<ScenarioOutlineTests.RowC
                 await Assert.That(row.Output).DoesNotContain("<startup").And.DoesNotContain("<teardown");
                 await Assert.That(row.Status).IsEqualTo(fail && index == 1 ? Status.Failed : Status.Passed);
             }
-            var razor = await ReportHandlerEncodingTests.RenderAsync("/Views/Shared/_ScenarioExamples.cshtml", result);
+            var razor = await ReportHandlerEncodingTests.RenderAsync("/Views/Shared/_ScenarioExamples.cshtml", TestRun.Store.ScenariosByInternalId[result.Guid]);
             foreach (var value in Enumerable.Range(1, 3))
             {
 
@@ -502,7 +502,7 @@ public class ScenarioOutlineTests : RunContextTestBase<ScenarioOutlineTests.RowC
         if (fail) await Assert.That(thrown).IsTypeOf<InvalidOperationException>();
         else await Assert.That(thrown).IsNull();
         var outline = BDTestUtil.GetScenarios(TestRun).Single(x => x.FrameworkTestId == _executionId);
-        var restored = ReportJson.DeserializeObject<Scenario>(ReportJson.SerializeObject(outline));
+        var restored = ReportJson.DeserializeObject<BDTest.Contracts.ScenarioResult>(ReportJson.SerializeObject(outline));
         foreach (var result in new[] { outline, restored })
         {
             await Assert.That(result.Examples).Count().IsEqualTo(3);
@@ -535,7 +535,7 @@ public class ScenarioOutlineTests : RunContextTestBase<ScenarioOutlineTests.RowC
 
             await Assert.That(result.Output).Contains("context output 1").And.Contains("context output 2").And.Contains("context output 3");
         }
-        var razor = await ReportHandlerEncodingTests.RenderAsync("/Views/Shared/_ScenarioExamples.cshtml", restored);
+        var razor = await ReportHandlerEncodingTests.RenderAsync("/Views/Shared/_ScenarioExamples.cshtml", TestRun.Store.ScenariosByInternalId[restored.Guid]);
         var fullStandalone = BDTestHtmlHelper.GetTestHtmlReport(null, TestRun);
         foreach (var value in Enumerable.Range(1, 3))
             await Assert.That(System.Text.RegularExpressions.Regex.Matches(fullStandalone, $"context output {value} {_executionId}").Count).IsEqualTo(1);
@@ -621,7 +621,7 @@ public class ScenarioOutlineTests : RunContextTestBase<ScenarioOutlineTests.RowC
     {
         var outline = await ScenarioOutline("Report outline", new[] { new { Text = "<script>row</script>" }, new { Text = "second" } },
             row => Given(() => NoOp()).WithStepText(() => "value <Text>").When(() => NoOp()).Then(() => NoOp()));
-        var restored = ReportJson.DeserializeObject<Scenario>(ReportJson.SerializeObject(outline));
+        var restored = ReportJson.DeserializeObject<BDTest.Contracts.ScenarioResult>(ReportJson.SerializeObject(outline));
         var standalone = BDTestHtmlHelper.GetTestHtmlReport(null, TestRun);
         var exampleTable = System.Text.RegularExpressions.Regex.Match(standalone,
             $"<table class=\"examples\" id=\"examples-{outline.Guid}\">.*?</table>", System.Text.RegularExpressions.RegexOptions.Singleline).Value;
@@ -629,9 +629,9 @@ public class ScenarioOutlineTests : RunContextTestBase<ScenarioOutlineTests.RowC
         foreach (var html in new[]
         {
             "Examples" + exampleTable,
-            await ReportHandlerEncodingTests.RenderAsync("/Views/Shared/_ScenarioExamples.cshtml", restored),
-            await ReportHandlerEncodingTests.RenderAsync("/Views/Shared/_ScenarioPanel.cshtml", new ScenarioModalViewModel { Scenario = restored }),
-            await ReportHandlerEncodingTests.RenderAsync("/Views/BDTest/Scenario.cshtml", restored)
+            await ReportHandlerEncodingTests.RenderAsync("/Views/Shared/_ScenarioExamples.cshtml", TestRun.Store.ScenariosByInternalId[restored.Guid]),
+            await ReportHandlerEncodingTests.RenderAsync("/Views/Shared/_ScenarioPanel.cshtml", new ScenarioModalViewModel { Scenario = TestRun.Store.ScenariosByInternalId[restored.Guid] }),
+            await ReportHandlerEncodingTests.RenderAsync("/Views/BDTest/Scenario.cshtml", TestRun.Store.ScenariosByInternalId[restored.Guid])
         })
         {
             await Assert.That(html).Contains("Examples");

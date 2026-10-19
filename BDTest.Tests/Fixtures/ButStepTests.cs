@@ -75,7 +75,7 @@ public class ButStepTests : RunTestBase
             .But(() => NoOp()).WithStepText(() => "custom assertion")
             .BDTestAsync();
 
-        var report = ReportJson.DeserializeObject<BDTestOutputModel>(BDTestJsonHelper.GetTestJsonData(null, TestRun));
+        var report = BDTestJsonHelper.DeserializeReport(BDTestJsonHelper.GetTestJsonData(null, TestRun));
         var restored = Required(report.Scenarios).Single(scenario => scenario.Guid == result.Guid);
         await Assert.That(Required(restored.Steps).Select(step => step.StepText)).IsEquivalentTo((new[]
         {

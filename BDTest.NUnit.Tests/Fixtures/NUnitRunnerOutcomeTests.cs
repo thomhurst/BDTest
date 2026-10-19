@@ -79,7 +79,7 @@ public class NUnitRunnerOutcomeTests
 [BDTestRetry(1)]
 public class NUnitOutcomeProbe : NUnitBDTestBase<MyTestContext>
 {
-    internal static readonly ConcurrentDictionary<string, Scenario> Scenarios = new();
+    internal static readonly ConcurrentDictionary<string, BDTest.Contracts.ScenarioResult> Scenarios = new();
     internal static readonly ConcurrentDictionary<string, Exception[]> RetryExceptions = new();
     private readonly List<Exception> _retryExceptions = new();
     private readonly BDTestRun _run;

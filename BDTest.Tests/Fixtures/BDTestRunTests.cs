@@ -92,7 +92,7 @@ public class BDTestRunTests
         var results = await Task.WhenAll(Task.Run(() => Execute(first, "first")), Task.Run(() => Execute(second, "second")));
         foreach (var (run, text, index) in new[] { (first, "first", 0), (second, "second", 1) })
         {
-            var scenario = results[index];
+            var scenario = run.Scenarios.Single(s => s.Guid == results[index].Guid);
             var other = index == 0 ? "second" : "first";
             await Assert.That(run.Scenarios).IsEquivalentTo(new[] { scenario }, EqualityComparer<Scenario>.Default, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
             await Assert.That(scenario.ReportId).IsEqualTo(run.ReportId);
@@ -223,7 +223,7 @@ public class BDTestRunTests
         using var run = BDTestRun.Start();
         var beforeReport = DateTime.UtcNow;
 
-        var report = Required(BDTestJsonHelper.Deserialize(BDTestJsonHelper.GetTestJsonData(null, run)));
+        var report = Required(BDTestJsonHelper.DeserializeReport(BDTestJsonHelper.GetTestJsonData(null, run)));
 
         await Assert.That(report.Id).IsEqualTo(run.ReportId);
         await Assert.That(report.Scenarios).IsEmpty();

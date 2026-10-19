@@ -66,15 +66,17 @@ public class ImmutableResultTests
         var outline = await fixture.ScenarioOutline("row <Value>", new[] { new { Value = "one" } }, row =>
             fixture.When(() => FailOnce()).Then(() => NoOp())
                 .WithDocString(new Test.StepDocString("text", "text/plain")));
+        #pragma warning disable BDT001 // Deliberately retain unexecuted definitions for export.
         _ = new Capture(otherRun).When(() => NoOp()).Then(() => NoOp());
-        var pending = fixture.When(() => NoOp()).Then(() => NoOp()).WithScenarioText("pending");
+        _ = fixture.When(() => NoOp()).Then(() => NoOp()).WithScenarioText("pending");
+        #pragma warning restore BDT001
         var json = BDTestJsonHelper.GetTestJsonData(null, run);
         using var document = JsonDocument.Parse(json);
         Assert.That(document.RootElement.GetProperty("schemaVersion").GetInt32(), Is.EqualTo(BDTestReport.CurrentSchemaVersion));
         Assert.That(document.RootElement.GetProperty("producerVersion").GetString(), Is.Not.Null.And.Not.Empty);
         var restored = BDTestJsonHelper.DeserializeReport(json);
         Assert.That(restored.Id, Is.EqualTo(run.ReportId));
-        Assert.That(restored.NotRun.Single().ScenarioId, Is.EqualTo(pending.ScenarioId));
+        Assert.That(restored.NotRun.Single().ScenarioText, Is.EqualTo("pending"));
         var row = restored.Scenarios.Single().Examples.Single();
         Assert.That(row.ExampleValues["Value"], Is.EqualTo("one"));
         Assert.That(row.Attempts.Select(attempt => attempt.Status), Is.EqualTo(new[] { Status.Failed, Status.Passed }));
@@ -84,7 +86,7 @@ public class ImmutableResultTests
         Assert.That(row.Attempts[1].Steps[1].Arguments.Single(), Is.TypeOf<Contracts.StepDocString>());
         Assert.That(row.Steps[0].StepType, Is.EqualTo(StepType.When));
         Assert.That(outline.EndTime, Is.Not.EqualTo(default(DateTimeOffset)));
-        Assert.That(json, Does.Not.Contain("Runnable").And.Not.Contain("BdTestBase"));
+        Assert.That(json, Does.Not.Contain("\"runnable\"").And.Not.Contain("\"bdTestBase\""));
 
         void FailOnce()
         {

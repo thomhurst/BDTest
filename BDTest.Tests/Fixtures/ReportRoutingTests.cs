@@ -43,7 +43,7 @@ public class ReportRoutingTests
         using var run = BDTestRun.Start();
         var fixture = new RoutingFixture(run);
         var scenario = await fixture.When(() => { }).Then(() => { }).BDTestAsync();
-        var uri = await BDTestReportServer.SendDataAndGetReportUriAsync(
+        var uri = await BDTest.Tests.Helpers.LegacyHostUpload.SendAsync(
             new Uri(server.Client.BaseAddress!, reportBase), new BDTestRunDescriptor(), server.Client, run);
         await Assert.That(uri.AbsolutePath).StartsWith(reportBase + "/report/");
         var id = uri.Segments[^2].TrimEnd('/');

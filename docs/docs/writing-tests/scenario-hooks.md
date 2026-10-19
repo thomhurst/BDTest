@@ -28,7 +28,7 @@ public abstract class InstrumentedTests : NUnitBDTestBase<ScenarioState>
     public override Task OnBeforeScenario(ScenarioHookContext<ScenarioState> attempt)
     {
         attempt.Context.StartedAt = DateTime.UtcNow;
-        Console.WriteLine($"Starting {attempt.Scenario.GetScenarioText()}, attempt {attempt.Attempt}");
+        Console.WriteLine($"Starting {attempt.Scenario.ScenarioText}, attempt {attempt.Attempt}");
         return Task.CompletedTask;
     }
 
@@ -42,9 +42,9 @@ public abstract class InstrumentedTests : NUnitBDTestBase<ScenarioState>
 
 `ScenarioHookContext<TContext>` provides:
 
-- `Scenario`: the executing scenario, including text, story, tags, steps and example values. After hooks see the attempt's status and exception.
+- `Scenario`: a fresh immutable `BDTest.Contracts.ScenarioResult` at each hook boundary, including text, story, tags, steps and example values. Before hooks see `Pending` and unrun steps; after hooks see the attempt outcome before timing and attempt history are finalized. Retained snapshots never change. The typed `Context` remains available for setup and cleanup.
 - `Context`: the same typed object as the test's `Context` when the attempt starts.
-- `Attempt`: zero for the initial attempt, then one, two and so on for retries. Report `ScenarioAttempt.Number` is one-based instead.
+- `Attempt`: zero for the initial attempt, then one, two and so on for retries. Report `ScenarioAttemptResult.Number` is one-based instead.
 - `CancellationToken`: a fresh token for this attempt, cancelled when a step times out, before after hooks run. This token is separate from step tokens. An ordinary exception does not cancel it. Run disposal does not cancel active attempts.
 
 `BDTestBase` also exposes untyped `OnBeforeScenario(ScenarioHookContext)` and `OnAfterScenario(ScenarioHookContext)` hooks. The untyped context exposes `object Context`, which is null for a test without a context-based base class. Context-based bases dispatch these hooks to their typed overloads.
@@ -67,7 +67,7 @@ public sealed class ScenarioLogger : IScenarioHook
 {
     public Task BeforeScenarioAsync(ScenarioHookContext attempt)
     {
-        Console.WriteLine($"Starting {attempt.Scenario.GetStoryText()}");
+        Console.WriteLine($"Starting {attempt.Scenario.StoryText}");
         return Task.CompletedTask;
     }
 

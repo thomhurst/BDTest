@@ -30,7 +30,7 @@ internal static class ResultSnapshot
     internal static StepResult Create(Step step) => new(step.StepType, step.StepText ?? "", step.Status,
         step.Guid, step.ReportId, step.ScenarioId, step.IsRetry, Create(step.Exception), step.Output,
         Utc(step.StartTime), Utc(step.EndTime), step.TimeTaken, step.Timeout, step.TimedOut,
-        step.Diagnostics, step.Arguments.Select(Create).ToArray(), step.Attachments?.Select(Create).ToArray());
+        step.Diagnostics, step.Arguments.Select(Create).ToArray(), step.Attachments?.Select(Create).ToArray(), step.SkipReason == null ? null : new Contracts.StepSkipReason(step.SkipReason.Source, step.SkipReason.AttributeType, step.SkipReason.RuleIndex, step.SkipReason.Setting));
 
     internal static Contracts.ScenarioDefinitionSummary Create(ScenarioDefinition definition) => new(
         definition.Guid ?? "", definition.ReportId ?? "", definition.GetStoryText(), definition.GetScenarioText(),
@@ -55,10 +55,11 @@ internal static class ResultSnapshot
     private static ExceptionInfo? Create(ExceptionWrapper? exception, int depth, HashSet<ExceptionWrapper> path)
     {
         if (exception == null) return null;
-        var truncation = !path.Add(exception) ? "Cycle" : depth >= 9 ? "DepthLimit" : exception.TruncationReason;
+        var added = path.Add(exception);
+        var truncation = !added ? "Cycle" : depth >= 9 && exception.InnerExceptions?.Count > 0 ? "DepthLimit" : exception.TruncationReason;
         var children = truncation == null
             ? exception.InnerExceptions?.Select(child => Create(child, depth + 1, path)!).ToArray() : null;
-        path.Remove(exception);
+        if (added) path.Remove(exception);
         return new ExceptionInfo(exception.TypeName ?? "", exception.Message ?? "", exception.StackTrace,
             exception.AsString, exception.ShortTypeName, exception.Data, exception.HResult, exception.Source,
             children, exception.IsWrapper, truncation);

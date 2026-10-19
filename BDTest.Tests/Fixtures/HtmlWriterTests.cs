@@ -70,7 +70,7 @@ public class HtmlWriterTests : RunTestBase
         "https://example.com/image.png", "http://example.com/report", "HTTPS://example.com/",
         "//example.com/image.png", "/images/a.png", "images/a b.png", "./a.png", "../a.png",
         "#scenario", "?a=1&b=2", "/path/javascript:example", "?next=javascript:example",
-        "#javascript:example", "./name:part.png", "images/é.png",
+        "#javascript:example", "./name:part.png", "images/Ã©.png",
         "javascript%3Aalert(1)", "javascript&#58;alert(1)"
     };
 

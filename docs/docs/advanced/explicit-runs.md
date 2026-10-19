@@ -72,9 +72,9 @@ Implement `BDTest.Interfaces.IStepHook`:
 ```csharp title="Illustrative fragment"
 public sealed class TimingHook : IStepHook
 {
-    public Task BeforeStepAsync(Step step) => Task.CompletedTask;
+    public Task BeforeStepAsync(BDTest.Contracts.StepResult step) => Task.CompletedTask;
 
-    public Task AfterStepAsync(Step step)
+    public Task AfterStepAsync(BDTest.Contracts.StepResult step)
     {
         Console.WriteLine($"{step.StepText} took {step.TimeTaken}");
         return Task.CompletedTask;

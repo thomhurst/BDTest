@@ -13,12 +13,12 @@ dependency on `BDTest`, test adapters, test instances or executable delegates.
 dotnet add package BDTest.Contracts
 ```
 
-This is an additive contract surface for the next major version. Existing
-`BDTestJsonHelper`, `BDTestUtil`, hooks and hosted report APIs still use the
-[legacy model](json-data.md). They do not yet produce or consume these DTOs.
-Core snapshot migration and a hosted legacy compatibility reader are separate
-deliverables under [#798](https://github.com/thomhurst/BDTest/issues/798).
-Do not submit the new JSON shape to an existing report server yet.
+Core execution now publishes these snapshots through `BDTestAsync()`, `BDTestUtil`,
+run results and hooks. Core JSON export, static HTML and uploads consume the same
+contract. The hosted reader/storage migration is tracked separately in
+[#936](https://github.com/thomhurst/BDTest/issues/936). Current legacy hosts do not
+understand schema-versioned uploads: use local JSON/static HTML until a matching
+schema-version-1 server is available. See [migration](../migration/immutable-results.md).
 
 ## Creating and reading a report
 
@@ -42,7 +42,7 @@ only when the report contract changes. `producerVersion` identifies the full
 producer release and revision; it does not select a schema. The current-schema
 reader rejects missing, non-integer and unsupported schema versions with
 `JsonException`. Unversioned historical reports must continue through the
-[existing legacy reader](json-data.md#reading-and-writing-reports).
+[existing legacy reader](json-data.md#reading-and-writing-legacy-reports).
 
 The schema uses camelCase property names and named status and step type values.
 JSON readers reject numeric enum values, including numeric strings, and unknown

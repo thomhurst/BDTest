@@ -487,6 +487,8 @@ public class StepHookTests : TestRunOwner
         }
     }
 
+    private Step GetStep(Step step) => GetScenario(step).Steps.Single(s => s.Guid == step.Guid);
+
     private Scenario GetScenario(Step step) => BDTestUtil.GetScenarios(TestRun).Single(scenario => scenario.Guid == step.ScenarioId);
     private static void Throw(Exception exception) => throw exception;
     private static void NoOp() { }

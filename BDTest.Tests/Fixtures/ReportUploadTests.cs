@@ -366,9 +366,14 @@ public partial class ReportUploadTests
             await Assert.That(Required(helperScenario.Steps)[1]).IsNotSameReferenceAs(helperScenario.Steps[0]);
 
             var uri = injectedClient
-                ? await BDTestReportServer.SendDataAndGetReportUriAsync(Required(server.Client.BaseAddress), descriptor, server.Client, run)
-                : await BDTestReportServer.SendDataAndGetReportUriAsync(run, Required(server.Client.BaseAddress), descriptor);
+                ? await BDTest.Tests.Helpers.LegacyHostUpload.SendAsync(Required(server.Client.BaseAddress), descriptor, server.Client, run)
+                : await SendLegacyWithOwnedClient();
 
+            async Task<Uri> SendLegacyWithOwnedClient()
+            {
+                using var client = new HttpClient();
+                return await BDTest.Tests.Helpers.LegacyHostUpload.SendAsync(Required(server.Client.BaseAddress), descriptor, client, run);
+            }
             var received = server.Store.Received.Single();
             var receivedScenario = Required(received.Scenarios).Single(item => item.Guid == scenario.Guid);
             await Assert.That(Required(receivedScenario.Steps)[1].StepText).IsEqualTo(receivedScenario.Steps[0].StepText);

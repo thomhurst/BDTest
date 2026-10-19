@@ -16,6 +16,7 @@ public class AttachmentTests
         fixture.Attachments.Attach("setup.txt", new byte[] { 1 }, "text/plain");
         var scenario = await fixture.When(() => fixture.Attach("step.txt")).Then(() => Done()).BDTestAsync();
         fixture.BDTestContext.Attachments.Attach("teardown.txt", new byte[] { 2 }, "text/plain");
+        scenario = run.Scenarios.Single();
 
         await Assert.That(Required(scenario.Attachments).Select(file => file.Name)).IsEquivalentTo((new[] { "setup.txt", "teardown.txt" }).Cast<string?>(), global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
         await Assert.That(Required(Required(scenario.Steps)[0].Attachments).Select(file => file.Name)).IsEquivalentTo((new[] { "before.txt", "step.txt", "after.txt" }).Cast<string?>(), global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
@@ -462,6 +463,7 @@ public class AttachmentTests
             }).Then(() => Done());
         }).BDTestAsync();
         await background.WaitAsync(TimeSpan.FromSeconds(10));
+        outline = run.Scenarios.Single();
 
         await Assert.That(outline.Attachments).Count().IsEqualTo(1000);
         await Assert.That(Required(outline.Examples).All(row => Required(row.Attachments).Count == 1)).IsTrue();
@@ -542,7 +544,7 @@ public class AttachmentTests
         using var source = new PausedStream();
         var capture = Task.Run(() => fixture.Attachments.Attach("setup", source, "text/plain"));
         await source.Started.Task.WaitAsync(TimeSpan.FromSeconds(10));
-        Scenario outline;
+        BDTest.Contracts.ScenarioResult outline;
         try
         {
             outline = await fixture.ScenarioOutline("row <Value>", new[] { new { Value = 1 }, new { Value = 2 } }, row =>

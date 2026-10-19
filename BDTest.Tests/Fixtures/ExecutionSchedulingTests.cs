@@ -128,7 +128,7 @@ public class ExecutionSchedulingTests : RunTestBase
 
     private async Task<BDTest.Contracts.ScenarioResult> RunOnSingleThreadContext(Func<Task<BDTest.Contracts.ScenarioResult>> run)
     {
-        var completed = new TaskCompletionSource<Scenario>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var completed = new TaskCompletionSource<BDTest.Contracts.ScenarioResult>(TaskCreationOptions.RunContinuationsAsynchronously);
         var thread = new Thread(() =>
         {
             using var context = new PumpedSynchronizationContext();

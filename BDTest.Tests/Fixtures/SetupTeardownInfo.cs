@@ -9,11 +9,11 @@ namespace BDTest.Tests.Fixtures;
 
 public class SetupTeardownInfo : TUnitBDTestBase<MyTestContext>
 {
-    private Scenario? _scenario;
+    private BDTest.Contracts.ScenarioResult? _scenario;
 
     private JToken ScenarioJson() => Required(JObject.Parse(
-        BDTestJsonHelper.GetTestJsonData(null, TestRun))["Scenarios"])
-        .Single(scenario => (string?)scenario["Guid"] == Required(_scenario).Guid);
+        BDTestJsonHelper.GetTestJsonData(null, TestRun))["scenarios"])
+        .Single(scenario => (string?)scenario["guid"] == Required(_scenario).Guid);
 
     [Before(HookType.Test)]
     public void WriteStartupInformation()

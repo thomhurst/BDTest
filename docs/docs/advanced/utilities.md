@@ -15,10 +15,10 @@ For built-in adapters, pass the [configured assembly run](../configuration/assem
 | Member | Returns |
 | --- | --- |
 | `GetScenarios(BDTestRun)` | Every executed scenario. Outlines appear once, with their rows in `Examples`. |
-| `GetNotRunScenarios(BDTestRun)` | `List<ScenarioDefinitionSummary>` snapshots of chains that were built but not executed. |
+| `GetNotRunScenarios(BDTestRun)` | `IReadOnlyList<BDTest.Contracts.ScenarioDefinitionSummary>` snapshots of chains that were built but not executed. |
 | `ClearScenarios(BDTestRun)` | Clears collected scenarios. |
 | `run.ReportId` (on `BDTestRun`) | The selected run's fresh report ID. |
-| `GetTestTimer(IReadOnlyCollection<Scenario> scenarios)` | Start, finish and elapsed time for those scenarios; an empty collection has unset timestamps unless a report timer is supplied. |
+| `GetTestTimer(IReadOnlyCollection<ScenarioResult> scenarios)` | Start, finish and elapsed time for those scenarios; an empty collection has unset timestamps unless a report timer is supplied. |
 
 Use it to build custom reports or to assert on results in a teardown:
 
@@ -29,7 +29,7 @@ var failed = BDTestUtil.GetScenarios(run).Where(scenario => scenario.Status == S
 
 ## Pending definitions
 
-`BDTest.Test.ScenarioDefinitionSummary` contains the scenario and story text, `ScenarioId`, `ReportId`, `TestId`, caller details, parameters, tags, test information, scenario `Timeout`, and `Steps`. Each `StepDefinitionSummary` contains `StepType`, unevaluated `StepText` and the step `Timeout`.
+`BDTest.Contracts.ScenarioDefinitionSummary` contains the scenario and story text, `ScenarioId`, `ReportId`, `TestId`, caller details, parameters, tags, test information, scenario `Timeout`, and `Steps`. Each `StepDefinitionSummary` contains `StepType`, unevaluated `StepText` and the step `Timeout`.
 
 These are report snapshots, not fluent builders. Later changes to a chain do not change a previously returned summary. Taking a snapshot never invokes step delegates, `WithArgs`, `WithStepText`, table readers or doc string readers. Step text therefore retains its template placeholders until execution. Identify a pending chain by `ScenarioId`, not by builder object identity.
 
@@ -37,38 +37,35 @@ See [definition migration](../migration/scenario-definitions.md) for the change 
 
 ## Scenario and step model
 
-`BDTest.Test.Scenario` is returned by `BDTestAsync()` and stored for reports.
+`BDTest.Contracts.ScenarioResult` is returned by `BDTestAsync()` and `BDTestUtil.GetScenarios(run)`. Each call creates an immutable snapshot; query again after teardown to include later output. Results remain usable after clearing or disposing the run.
 
 | Member | Description |
 | --- | --- |
 | `Status` | Final [status](../configuration/statuses.md). |
-| `Steps` | `List<Step>` for the final attempt. |
-| `GetStoryText()`, `GetScenarioText()` | Resolved story and scenario text. |
+| `Steps` | `IReadOnlyList<StepResult>` for the final attempt. |
+| `StoryText`, `ScenarioText` | Resolved story and scenario text. |
 | `StartTime`, `EndTime`, `TimeTaken` | Timing of the final attempt. |
 | `Exception` | The exception that ended the scenario, if any. |
 | `Output` | Console output from all steps. |
 | `TestStartupInformation`, `TearDownOutput` | [Setup and teardown output](../writing-tests/output.md#setup-and-teardown-output). |
 | `CustomHtmlOutputForReport` | HTML added through `ScenarioHtmlWriter`. |
-| `CustomTestInformation` | `[TestInformation]` attributes. |
+| `CustomTestInformation` | Captured information strings. |
 | `Tags` | [Tags](../writing-tests/tags-and-information.md). |
 | `RetryCount`, `Attempts` | [Retry](../writing-tests/retries.md) history. |
 | `Timeout`, `TimedOut` | [Timeout](../writing-tests/timeouts.md) configuration and result. |
 | `IsOutline`, `Examples`, `ExampleValues`, `OutlineId` | [Scenario outline](../writing-tests/scenario-outlines.md) data. |
 | `FrameworkTestId`, `FileName` | The test framework's ID and the source file. |
 | `Guid`, `ReportId` | Identifiers. |
-| `BdTestBaseClass` | The test class instance, if still available. Completed scenarios keep only a weak reference, so this may be `null` after garbage collection. Deserialized scenarios have no runtime fixture and return `null`. |
+Snapshots expose no fixture, run, executable delegate or live runtime object.
+Timestamps use UTC `DateTimeOffset`; see [the result contract](../reports/contracts.md).
 
-Treat `BdTestBaseClass` as a best-effort runtime reference, not retained report data. Check for `null` before using it in teardown or custom reports; store any evidence you need on the scenario while the test runs.
-
-`Scenario.Run` is a nullable runtime reference and is absent from deserialized reports. `Scenario.Exception`, `Step.Exception`, optional identifiers and text also carry nullable annotations. See [nullable report fields](../reports/json-data.md#nullable-report-fields) when consuming results or historical JSON.
-
-`BDTest.Test.Step`:
+`BDTest.Contracts.StepResult`:
 
 | Member | Description |
 | --- | --- |
 | `StepText` | Text including the keyword, for example `Given I have an account`. |
 | `Status` | Step status. |
-| `Exception` | An `ExceptionWrapper` with type, message and stack trace. |
+| `Exception` | An immutable `ExceptionInfo` with type, message and stack trace. |
 | `Output` | Console output written during the step and its hooks. |
 | `StartTime`, `EndTime`, `TimeTaken` | Timing. |
 | `Timeout`, `TimedOut` | Timeout data. |

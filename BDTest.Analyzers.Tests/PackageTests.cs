@@ -25,7 +25,7 @@ public class PackageTests
 #else
             const string configuration = "Release";
 #endif
-            foreach (var package in new[] { "BDTest", "BDTest.Analyzers", "BDTest.SourceGenerator" })
+            foreach (var package in new[] { "BDTest.Contracts", "BDTest", "BDTest.Analyzers", "BDTest.SourceGenerator" })
             {
                 var packed = await Dotnet(repository.FullName, "pack", package + "/" + package + ".csproj",
                     "-c", configuration, "--no-build", "--no-restore", "-o", feed,

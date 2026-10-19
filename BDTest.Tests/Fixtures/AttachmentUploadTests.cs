@@ -150,7 +150,7 @@ public partial class ReportUploadTests
                 fixture.Attachments.Attach($"row-{row.Value}-attempt-{attempt}.txt", new byte[] { (byte)row.Value }, "text/plain");
                 if (attempt == 1) throw new InvalidOperationException("retry");
             }).Then(() => { })).BDTestAsync();
-        await BDTestReportServer.SendDataAndGetReportUriAsync(Required(server.Client.BaseAddress), null, server.Client, run);
+        await BDTest.Tests.Helpers.LegacyHostUpload.SendAsync(Required(server.Client.BaseAddress), null, server.Client, run);
         var report = server.Store.Received.Single();
         var attachments = BDTestAttachmentHelper.GetAttachments(report).ToArray();
 
@@ -422,7 +422,7 @@ public partial class ReportUploadTests
         var foreign = new AttachmentFixture(other);
         await foreign.When(() => foreign.Attachments.Attach("foreign", new byte[] { 9 }, "text/plain")).Then(() => { }).BDTestAsync();
 
-        var uri = await BDTestReportServer.SendDataAndGetReportUriAsync(Required(server.Client.BaseAddress), null, server.Client, run);
+        var uri = await BDTest.Tests.Helpers.LegacyHostUpload.SendAsync(Required(server.Client.BaseAddress), null, server.Client, run);
         var report = server.Store.Received.Single();
         var attachment = Required(Required(Required(report.Scenarios).Single().Steps)[0].Attachments).Single();
         using var response = await server.Client.GetAsync($"bdtest/report/{report.Id}/attachments/{attachment.Id}");

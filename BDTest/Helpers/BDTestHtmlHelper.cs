@@ -320,7 +320,7 @@ public static class BDTestHtmlHelper
             html.AppendLine("<label class=\"ctl\">Tag <select id=\"tag\"><option value=\"\">All tags</option>");
             foreach (var tag in tags)
             {
-                html.AppendLine($"<option value=\"{EscapeHtml(JsonSerializer.Serialize(tag, BDTestJsonContext.Default.String))}\">@{EscapeHtml(tag)}</option>");
+                html.AppendLine($"<option value=\"{EscapeHtml(JsonSerializer.Serialize(tag, BDTestReportJsonContext.Default.String))}\">@{EscapeHtml(tag)}</option>");
             }
             html.AppendLine("</select></label>");
         }
@@ -369,7 +369,7 @@ public static class BDTestHtmlHelper
         var status = Key(scenario.Status);
         var guid = EscapeHtml(scenario.Guid);
         var tags = scenario.Tags ?? Array.Empty<string>();
-        var tagsJson = JsonSerializer.Serialize(tags, BDTestJsonContext.Default.StringArray);
+        var tagsJson = JsonSerializer.Serialize(tags.ToArray(), BDTestJsonContext.Default.StringArray);
 
         html.AppendLine($"<div class=\"scn\" id=\"scenario-{guid}\" data-status=\"{status}\" data-story=\"{storyIndex}\" data-i=\"{index}\" data-ms=\"{(long)scenario.TimeTaken.TotalMilliseconds}\" data-sev=\"{scenario.Status.GetOrder()}\" data-tags=\"{EscapeHtml(tagsJson)}\">");
         html.AppendLine($"<button class=\"scn-head\" type=\"button\" aria-expanded=\"false\" aria-controls=\"details-{guid}\">");
@@ -412,7 +412,7 @@ public static class BDTestHtmlHelper
         {
             html.Append("<div><dt>Tags</dt><dd><div class=\"tags\">");
             foreach (var tag in tags)
-                html.Append($"<button class=\"tag\" type=\"button\" data-tag=\"{EscapeHtml(JsonSerializer.Serialize(tag, BDTestJsonContext.Default.String))}\" aria-label=\"Show only scenarios tagged {EscapeHtml(tag)}\">@{EscapeHtml(tag)}</button>");
+                html.Append($"<button class=\"tag\" type=\"button\" data-tag=\"{EscapeHtml(JsonSerializer.Serialize(tag, BDTestReportJsonContext.Default.String))}\" aria-label=\"Show only scenarios tagged {EscapeHtml(tag)}\">@{EscapeHtml(tag)}</button>");
             html.AppendLine("</div></dd></div>");
         }
         foreach (var information in scenario.CustomTestInformation)

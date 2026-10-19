@@ -31,7 +31,7 @@ public class StepSkipEvaluationTests
         var builder = prefix.Then(NoOp);
         await Assert.That(calls).IsEmpty();
         var scenario = await builder.BDTestAsync();
-        var step = Required(scenario.Steps)[0];
+        var step = run.Store.ScenariosByInternalId[scenario.Guid].ExecutionSteps[0];
         step.SetStepText();
         step.SetStepText();
         await Assert.That(calls).IsEquivalentTo(new[] { "global before", "instance before", "predicate", "global before", "instance before" }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
@@ -45,7 +45,7 @@ public class StepSkipEvaluationTests
         var options = new BDTestOptions();
         options.SkipStepRules.Add<ConditionalSkipAttribute>(_ => throw failure);
         var afterCalls = 0;
-        Step? observed = null;
+        BDTest.Contracts.StepResult? observed = null;
         options.StepHooks.Add(new Hook { After = step =>
         {
             afterCalls++;
@@ -105,7 +105,7 @@ public class StepSkipEvaluationTests
         var options = new BDTestOptions();
         options.SkipStepRules.Add<ConditionalSkipAttribute>(_ => ++evaluations == 1);
         options.RetryTestRules.Add(_ => true, 1);
-        var reasons = new List<StepSkipReason?>();
+        var reasons = new List<BDTest.Contracts.StepSkipReason?>();
         options.StepHooks.Add(new Hook { After = step =>
         {
             if (step.StepType == StepType.When) reasons.Add(step.SkipReason);
@@ -190,7 +190,7 @@ public class StepSkipEvaluationTests
         options.SkipStepRules.Add<ConditionalSkipAttribute>(_ => true);
         using var run = BDTestRun.Start(options);
         var scenario = await new Fixture(run).When(Skippable).Then(NoOp).BDTestAsync();
-        var step = Required(scenario.Steps)[0];
+        var step = run.Store.ScenariosByInternalId[scenario.Guid].ExecutionSteps[0];
         // A report may come from an untrusted producer.
         step.SkipReason = new StepSkipReason("Rule", "<script>unsafe</script>", 0);
         var restored = Required(Required(BDTestJsonHelper.Deserialize(BDTestJsonHelper.GetTestJsonData(null, run))).Scenarios).Single();
@@ -198,7 +198,7 @@ public class StepSkipEvaluationTests
         foreach (var html in new[]
         {
             BDTestHtmlHelper.GetTestHtmlReport(null, run),
-            await ReportHandlerEncodingTests.RenderAsync("/Views/BDTest/Scenario.cshtml", restored)
+            await ReportHandlerEncodingTests.RenderAsync("/Views/BDTest/Scenario.cshtml", run.Store.ScenariosByInternalId[restored.Guid])
         })
         {
             await Assert.That(html).Contains("Skip rule 0 matched &lt;script&gt;unsafe&lt;/script&gt;.");
@@ -291,16 +291,16 @@ public class StepSkipEvaluationTests
 
     private sealed class Hook : IStepHook
     {
-        public Func<Step, Task> Before { get; init; } = _ => Task.CompletedTask;
-        public Func<Step, Task> After { get; init; } = _ => Task.CompletedTask;
-        public Task BeforeStepAsync(Step step) => Before(step);
-        public Task AfterStepAsync(Step step) => After(step);
+        public Func<BDTest.Contracts.StepResult, Task> Before { get; init; } = _ => Task.CompletedTask;
+        public Func<BDTest.Contracts.StepResult, Task> After { get; init; } = _ => Task.CompletedTask;
+        public Task BeforeStepAsync(BDTest.Contracts.StepResult step) => Before(step);
+        public Task AfterStepAsync(BDTest.Contracts.StepResult step) => After(step);
     }
 
     private sealed class Fixture(BDTestRun run) : BDTestBase
     {
         public override BDTestRun TestRun => run;
-        public Func<Step, Task> Before { get; init; } = _ => Task.CompletedTask;
-        public override Task OnBeforeStep(Step step) => Before(step);
+        public Func<BDTest.Contracts.StepResult, Task> Before { get; init; } = _ => Task.CompletedTask;
+        public override Task OnBeforeStep(BDTest.Contracts.StepResult step) => Before(step);
     }
 }
