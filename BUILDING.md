@@ -205,8 +205,10 @@ After integrating #967, the Release build and all eleven other test projects
 passed. The full core run passed 2,001 cases with two expected symbolic-link
 skips (2,003 total). The first run overlapped other suites and npm installation
 and hit the unchanged 10-second attachment disk-write guard; the full rerun with
-no competing validation passed. Run the suites sequentially when validating
-these bounded disk/timing probes. The file-store CI command selected all 25
+no competing validation passed. The attachment ownership regression now permits
+parallel execution and joins its background writer with a five-minute cooperative
+cancellation guard instead of a ten-second disk-throughput deadline (#983).
+Validate it alongside other build/test activity. The file-store CI command selected all 25
 cases (23 passed and two Windows skips); native Darwin locking remains covered
 by macOS CI. Signing, report controls and the documentation build also passed.
 
