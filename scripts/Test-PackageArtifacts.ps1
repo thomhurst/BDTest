@@ -142,13 +142,18 @@ foreach ($packageFile in $packages) {
         }
 
         if ($packageId -eq 'BDTest') {
+            $analyzerPath = 'analyzers/dotnet/cs/BDTest.Analyzers.dll'
+            if (@($package.Entries | Where-Object FullName -EQ $analyzerPath).Count -ne 1) {
+                throw "Missing or duplicate bundled analyzer: $packageId"
+            }
             $generatorPath = 'analyzers/dotnet/cs/BDTest.SourceGenerator.dll'
             if (@($package.Entries | Where-Object FullName -EQ $generatorPath).Count -ne 1) {
                 throw "Missing or duplicate bundled source generator: $packageId"
             }
             if (@($package.Entries | Where-Object {
                 $_.Name -like 'Microsoft.CodeAnalysis*.dll' -or
-                ($_.Name -eq 'BDTest.SourceGenerator.dll' -and $_.FullName -ne $generatorPath)
+                ($_.Name -eq 'BDTest.SourceGenerator.dll' -and $_.FullName -ne $generatorPath) -or
+                ($_.Name -eq 'BDTest.Analyzers.dll' -and $_.FullName -ne $analyzerPath)
             }).Count -ne 0) {
                 throw "Unexpected compiler runtime assembly: $packageId"
             }

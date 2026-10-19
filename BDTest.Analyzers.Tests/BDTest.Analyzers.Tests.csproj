@@ -11,7 +11,7 @@
     <ProjectReference Include="../BDTest/BDTest.csproj" />
     <ProjectReference Include="../BDTest.Analyzers/BDTest.Analyzers.csproj" OutputItemType="Analyzer" />
     <ProjectReference Include="../BDTest.SourceGenerator/BDTest.SourceGenerator.csproj" />
-    <!-- Package-consumer tests pack the adapter to verify transitive generator delivery. -->
+    <!-- Package-consumer tests pack the adapter to verify transitive compiler-tool delivery. -->
     <ProjectReference Include="../BDTest.NUnit/BDTest.NUnit.csproj" ReferenceOutputAssembly="false" />
   </ItemGroup>
 </Project>

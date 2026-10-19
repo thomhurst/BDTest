@@ -18,7 +18,7 @@ Install `BDTest` or any framework adapter in each project containing step calls.
 
 The generator DLL ships in the core package under `analyzers/dotnet/cs`. It has no runtime Roslyn dependency and is not a runtime assembly reference. The metadata contract lives in both core runtime assets, in `BDTest.Metadata`.
 
-When upgrading, remove any explicit `BDTest.SourceGenerator` package reference, including entries in `Directory.Packages.props`. The standalone package is no longer produced; keeping an older copy can load two generator versions. Keep core and adapter versions aligned. `BDTest.Analyzers` remains an optional separate package.
+When upgrading, remove any explicit `BDTest.SourceGenerator` package reference, including entries in `Directory.Packages.props`. The standalone package is no longer produced; keeping an older copy can load two generator versions. Keep core and adapter versions aligned. `BDTest.Analyzers` is also bundled in core; remove its old standalone package reference as well.
 
 Repository contributors using project references still reference the generator project explicitly as an analyzer in consumer projects: analyzer project references do not flow transitively like NuGet analyzer assets.
 
@@ -60,7 +60,7 @@ These restrictions are explicit: a source generator can add source files, but ca
 
 The generator validates `[StepText]` attributes at compile time, even when a step has no generated call-site metadata. Diagnostic `BDT002` rejects unknown parameter names, references to hidden `CancellationToken` parameters, positional placeholders and invalid overrides. Templates use `{parameterName}` or `{parameterName:format}`, and overrides use `"parameterName=text"`. Literal JSON and unmatched braces remain text, and `{{` / `}}` escape braces. Override values are never interpreted as templates. See [BDT002](analyzers.md#bdt002) for examples and suppression.
 
-When `BDTest.Analyzers` is installed too, it recognizes the generator's validation marker and does not duplicate these diagnostics. Neither compiler tool executes argument readers, converters or user formatters. Runtime rendering uses the same grammar and records invalid templates as diagnostics without changing the step outcome.
+The analyzer bundled in `BDTest` recognizes the generator's validation marker and does not duplicate these diagnostics. Neither compiler tool executes argument readers, converters or user formatters. Runtime rendering uses the same grammar and records invalid templates as diagnostics without changing the step outcome.
 
 ## Validation
 

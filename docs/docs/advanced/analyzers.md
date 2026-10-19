@@ -5,19 +5,11 @@ description: Catch unexecuted scenarios, invalid step text, incomplete stories a
 
 # Analyzers and code fixes
 
-Install `BDTest.Analyzers` in each project that defines BDTest tests or steps:
+The core `BDTest` package includes the analyzer and IDE code fixes automatically, including when it is installed through a framework adapter. No separate tooling reference is needed.
 
-```bash
-dotnet add package BDTest.Analyzers
-```
+When upgrading, remove any explicit `BDTest.Analyzers` package reference. The standalone package is no longer produced; the compiler assembly remains `BDTest.Analyzers.dll` and the rule IDs are unchanged. Do not mark the core `BDTest` reference with `ExcludeAssets="analyzers"` if you want these checks.
 
-Keep the package version aligned with your other BDTest packages. Mark the reference private so your test project does not export the tooling to its consumers:
-
-```xml
-<PackageReference Include="BDTest.Analyzers" Version="*" PrivateAssets="all" />
-```
-
-The package contains a `netstandard2.0` Roslyn component under `analyzers/dotnet/cs`. NuGet loads it automatically; no DLL reference is needed. It requires Roslyn 4.8 or newer (.NET SDK 8 or newer). BDTest step overload selection requires a C# 13 or newer compiler, as described in [Installation](../getting-started/installation.md). The analyzer works alongside the [source generator bundled in BDTest](source-generator.md), which supplies report metadata and also validates named step templates. When the analyzer package is installed, template diagnostics are emitted once by the generator.
+`BDTest` contains the unsigned `netstandard2.0` Roslyn component under `analyzers/dotnet/cs`, separate from its signed runtime assemblies. NuGet loads it automatically; no DLL reference is needed. It requires Roslyn 4.8 or newer (.NET SDK 8 or newer). BDTest step overload selection requires a C# 13 or newer compiler, as described in [Installation](../getting-started/installation.md). The analyzer works alongside the [source generator bundled in BDTest](source-generator.md), which supplies report metadata and also validates named step templates. Template diagnostics are emitted once by the generator.
 
 | Rule | Default severity | Meaning | Code fix |
 | --- | --- | --- | --- |
@@ -69,7 +61,7 @@ void Account(string name, decimal balance) { }
 
 Use `{{` and `}}` for literal braces. Other brace text, such as JSON, malformed placeholders and unmatched braces, remains literal. Overrides use `"parameterName=text"`; replacement text is literal, including any braces or equals signs. Empty replacement text is valid. Positional placeholders (`{0}`) and positional overrides (`"0:text"`) are obsolete and produce errors. Unknown placeholder or override names, null override arrays and malformed overrides are also errors.
 
-`CancellationToken` parameters are always excluded from visible parameter names, including ordinary delegates and methods that have not yet been bound to a step. Referencing a token in a template or override is an error. User formatters, runtime converters and argument values are never executed by compiler validation. The same validation runs at runtime when neither compiler package is installed.
+`CancellationToken` parameters are always excluded from visible parameter names, including ordinary delegates and methods that have not yet been bound to a step. Referencing a token in a template or override is an error. User formatters, runtime converters and argument values are never executed by compiler validation. The same validation runs at runtime when compiler validation is disabled.
 
 ## BDT003
 

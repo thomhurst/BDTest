@@ -25,7 +25,7 @@ dotnet add package BDTest.MSTest
 
 The core `BDTest` package includes the source generator, including when installed through an adapter. It lets BDTest render `[StepText]`, method names and supported argument values in reports automatically. See [Step text](../writing-tests/step-text.md#compiler-step-metadata).
 
-Add optional compile-time checks and IDE fixes with `dotnet add package BDTest.Analyzers`, marked `PrivateAssets="all"`. See [Analyzers and code fixes](../advanced/analyzers.md) for rule IDs, installation and suppression.
+The core package also includes compile-time checks and IDE fixes automatically, including through adapters. Remove old `BDTest.Analyzers` references when upgrading; that separate package is no longer produced. See [Analyzers and code fixes](../advanced/analyzers.md) for rule IDs and suppression.
 
 To use BDTest without a framework adapter, install only the core package:
 
@@ -61,7 +61,7 @@ The package IDs in the table below stay unchanged for the next major version.
 `BDTest.xUnit` retains its existing casing and supports xUnit v3.
 `BDTest.Razor.Reports` uses the display title **BDTest - ASP.NET Core Reports**;
 its package ID, namespaces and static asset paths remain unchanged. No package
-rename, replacement reference or NuGet deprecation is required.
+rename is required for these runtime packages. The former standalone `BDTest.Analyzers` package is now bundled in `BDTest`; remove its old reference.
 
 `BDTest.ReportGenerator.RazorServer` remains an unpacked sample application.
 Storage packages use the `BDTest.Reports.Storage.*` prefix.
@@ -119,7 +119,6 @@ A typical TUnit test project:
 
   <ItemGroup>
     <PackageReference Include="BDTest.TUnit" Version="*" />
-    <PackageReference Include="BDTest.Analyzers" Version="*" PrivateAssets="all" />
     <PackageReference Include="TUnit" Version="*" />
   </ItemGroup>
 </Project>
