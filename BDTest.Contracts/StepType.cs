@@ -17,7 +17,7 @@ public enum StepType
     AndWhen
 }
 
-internal sealed class StepTypeJsonConverter : JsonStringEnumConverter<StepType>
+public sealed class StepTypeJsonConverter : JsonStringEnumConverter<StepType>
 {
     public StepTypeJsonConverter() : base(namingPolicy: null, allowIntegerValues: false)
     {

@@ -1,3 +1,5 @@
+using BDTest.Contracts;
+using BDTest.Helpers;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using BDTest.Exceptions;
@@ -57,11 +59,14 @@ public abstract class RunnableStepBuilder : StepBuilder
     }
 
     /// <exception cref="AlreadyExecutedException">Execution has already started on this builder.</exception>
-    public Task<Scenario> BDTestAsync()
+    public Task<ScenarioResult> BDTestAsync()
     {
-        return Invoke(this);
+        return SnapshotAsync(Invoke(this));
     }
 
     /// <exception cref="AlreadyExecutedException">Execution has already started on this builder.</exception>
-    public TaskAwaiter<Scenario> GetAwaiter() => Invoke(this).GetAwaiter();
+    private static async Task<ScenarioResult> SnapshotAsync(Task<Scenario> execution) =>
+        ResultSnapshot.Create(await execution);
+
+    public TaskAwaiter<ScenarioResult> GetAwaiter() => BDTestAsync().GetAwaiter();
 }

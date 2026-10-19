@@ -43,7 +43,7 @@ public class ScenarioRetentionTests : TestRunOwner
         await Assert.That(retained.Fixture.IsAlive).IsFalse().Because("Report retained the fixture");
         await Assert.That(retained.Context.IsAlive).IsFalse().Because("Report retained the context");
         await Assert.That(retained.Text.IsAlive).IsFalse().Because("Report retained the text callback");
-        await Assert.That(BDTestUtil.GetScenarios(TestRun)).Contains(retained.Scenario);
+        await Assert.That(BDTestUtil.GetScenarios(TestRun).Select(s => s.Guid)).Contains(Required(retained.Scenario.Guid));
         await Assert.That(retained.Scenario.Status).IsEqualTo(status);
         await Assert.That(Required(retained.Scenario.Steps).All(step => step.Runnable == null && step.OverriddenStepText == null)).IsTrue();
         await Assert.That(retained.Scenario.BdTestBaseClass).IsNull();
@@ -60,7 +60,7 @@ public class ScenarioRetentionTests : TestRunOwner
     {
         var fixture = new Capture(TestRun, "passed");
         var scenario = fixture.Run(new TextSource());
-        await Assert.That(scenario.BdTestBaseClass).IsSameReferenceAs(fixture);
+        await Assert.That(TestRun.Store.ScenariosByInternalId[scenario.Guid].BdTestBaseClass).IsSameReferenceAs(fixture);
         GC.KeepAlive(fixture);
     }
 
@@ -84,7 +84,7 @@ public class ScenarioRetentionTests : TestRunOwner
         var writer = new TestOutputData();
         writer.Write("old step output");
         await Assert.That(writer.ToString()).IsEqualTo("old step output");
-        await Assert.That(BDTestUtil.GetNotRunScenarios(TestRun).Select(item => item.ScenarioId)).Contains(pending.Guid);
+        await Assert.That(BDTestUtil.GetNotRunScenarios(TestRun).Select(item => item.ScenarioId)).Contains(Required(pending.Guid));
 
         BDTestUtil.ClearScenarios(TestRun);
         BDTestUtil.ClearScenarios(TestRun); // Reset is idempotent.
@@ -97,7 +97,7 @@ public class ScenarioRetentionTests : TestRunOwner
 
         await Assert.That(replacement.TestStartupInformation).IsNullOrEmpty();
         await Assert.That(listenerCalls).IsZero();
-        await Assert.That(BDTestUtil.GetScenarios(TestRun)).IsEquivalentTo(new[] { replacement }, EqualityComparer<Scenario>.Default, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(BDTestUtil.GetScenarios(TestRun)).IsEquivalentTo(new[] { replacement }, EqualityComparer<BDTest.Contracts.ScenarioResult>.Create((left, right) => new KellermanSoftware.CompareNetObjects.CompareLogic().Compare(left, right).AreEqual, _ => 0), global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
         await Assert.That(completed.Status).IsEqualTo(Status.Passed);
         await Assert.That(Required(completed.Steps)[1].StepText).IsEqualTo("Then retained text");
     }
@@ -143,7 +143,7 @@ public class ScenarioRetentionTests : TestRunOwner
             .Then(() => GC.KeepAlive(Context)).WithStepText(() => text.GetText());
 
         [BDTestRetry(1)]
-        public Scenario Run(TextSource text)
+        public BDTest.Contracts.ScenarioResult Run(TextSource text)
         {
             BeginTest(Id, typeof(Capture).GetMethod(nameof(Run)));
             var builder = Build(text);

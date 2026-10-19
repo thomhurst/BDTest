@@ -52,7 +52,7 @@ public class DefaultExecutionIdTests : TestRunOwner
             var scenario = await fixture.When(() => NoOp()).Then(() => NoOp()).BDTestAsync();
             await Assert.That(scenario.TestStartupInformation).Contains("context startup");
             fixture.WriteTearDownOutput("context teardown");
-            await Assert.That(scenario.TearDownOutput).Contains("context teardown");
+            await Assert.That(fixture.TestRun.Scenarios.Single(s => s.Guid == scenario.Guid).TearDownOutput).Contains("context teardown");
         }
         finally
         {

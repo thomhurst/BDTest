@@ -38,7 +38,7 @@ public class JsonResultsTests : RunTUnitTestBase<MyTestContext>
         var json = BDTestJsonHelper.GetTestJsonData(null, TestRun);
         var jObject = JObject.Load(new JsonTextReader(new StringReader(json)));
 
-        var scenarios = ReportJson.DeserializeObject<List<Scenario>>(Required(jObject.GetValue("Scenarios")).ToString());
+        var scenarios = BDTestJsonHelper.DeserializeReport(json).Scenarios;
             
         await Assert.That(scenarios).IsNotNull();
         await Assert.That(scenarios.Count).IsEqualTo(1);

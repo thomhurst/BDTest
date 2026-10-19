@@ -83,8 +83,10 @@ An exception in any retry hook fails the scenario and ends retrying, even if the
 | `Scenario.Attempts` | Every completed attempt in order, including the first and the last. |
 | `Step.IsRetry` | Whether the step ran as part of a retry. |
 
-Each `ScenarioAttempt` has a one-based `Number`, `Status`, `Exception` (type, message and stack trace), `StartTime`, `EndTime` and `TimeTaken`. `Scenario.Status`, `Steps` and `TimeTaken` describe the final attempt.
+Each immutable `ScenarioAttemptResult` has a one-based `Number`, `Status`, `Exception` (type, message and stack trace), `StartTime`, `EndTime` and `TimeTaken`. `ScenarioResult.Status`, `Steps` and `TimeTaken` describe the final attempt.
 
 JSON reports include the history, and older reports load with an empty history. Both the HTML report and the report server show a **Retry history** section for retried scenarios, so a failure stays visible after a passing retry.
 
 With NUnit, each attempt's steps and step hooks run with isolated assertion state through NUnit's public exception constraint API. A final passing attempt lets NUnit report a pass, including after `Assert.That` or `Assert.Multiple` failed earlier. A failure outside the scenario still fails the test; warnings from scenario attempts remain visible. If the final attempt throws after recording other assertion failures, NUnit reports both; earlier attempts discard those assertion diagnostics. Retry conditions receive the original exception. No teardown result override is used. TUnit's own `[Retry]` attribute retries the whole test method instead; use either, not both.
+
+Each attempt retains its own immutable `Steps`, including arguments, exception diagnostics and attachments, even after retry resets the runtime steps.

@@ -87,9 +87,9 @@ public class CompositionTests : CompanyTestBase, IAsyncLifetime
         Assert.Equal(1, RetryCalls);
         Assert.Equal(1, scenario.RetryCount);
         Assert.Equal(_id, scenario.FrameworkTestId);
-        Assert.Equal("Composition row", scenario.GetScenarioText());
+        Assert.Equal("Composition row", scenario.ScenarioText);
         Assert.Contains("composition owner", scenario.Tags);
-        Assert.Contains("composition metadata", scenario.GetStoryText());
+        Assert.Contains("composition metadata", scenario.StoryText);
         Assert.Contains("composition constructor:" + _id, scenario.TestStartupInformation);
         Assert.Contains("composition setup:" + _id, scenario.TestStartupInformation);
         Assert.NotNull(scenario.Steps);
@@ -109,7 +109,7 @@ public class CompositionTests : CompanyTestBase, IAsyncLifetime
 
         Assert.True(context.Disposed);
         Assert.Equal(_id, scenario.FrameworkTestId);
-        Assert.Same(scenario, Assert.Single(run.Scenarios));
+        Assert.Equal(scenario.Guid, Assert.Single(run.Scenarios).Guid);
     }
 
     [Fact]
@@ -125,7 +125,7 @@ public class CompositionTests : CompanyTestBase, IAsyncLifetime
         var scenario = await host.When(() => GC.KeepAlive(this)).Then(() => GC.KeepAlive(this)).BDTestAsync();
         await host.EndTestAsync();
         Assert.Equal(_id, scenario.FrameworkTestId);
-        Assert.Same(scenario, Assert.Single(run.Scenarios));
+        Assert.Equal(scenario.Guid, Assert.Single(run.Scenarios).Guid);
     }
 
     private sealed class FactoryContext(string value) : IDisposable
@@ -163,6 +163,7 @@ public class CompositionTests : CompanyTestBase, IAsyncLifetime
         attachments.Attach("original.txt", new byte[] { 1 }, "text/plain");
         Assert.NotNull(scenario.Steps);
         Assert.Contains("original host step", scenario.Steps[0].Output);
+        scenario = _runs.First.Scenarios.Single(s => s.Guid == scenario.Guid);
         Assert.Contains("original host teardown", scenario.TearDownOutput);
         Assert.NotNull(scenario.Attachments);
         Assert.Single(scenario.Attachments);
@@ -180,7 +181,7 @@ public class CompositionTests : CompanyTestBase, IAsyncLifetime
 
         Assert.Throws<InvalidOperationException>(() => XUnitBDTestScenario.For<object>(this, run));
         Assert.Throws<InvalidOperationException>(() => attachments.Attach("late.txt", new byte[] { 1 }, "text/plain"));
-        Assert.Same(scenario, Assert.Single(run.Scenarios));
+        Assert.Equal(scenario.Guid, Assert.Single(run.Scenarios).Guid);
     }
 
     [Fact]

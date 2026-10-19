@@ -20,7 +20,7 @@ public class AsyncScenarioMetadataTests : RunTestBase
 
         var scenario = await When(() => NoOp()).Then(() => NoOp()).BDTestAsync();
 
-        await Assert.That(scenario.GetScenarioText()).IsEqualTo("Unannotated test keeps its name after suspension");
+        await Assert.That(scenario.ScenarioText).IsEqualTo("Unannotated test keeps its name after suspension");
         await Assert.That(scenario.CustomTestInformation).IsEmpty();
     }
 
@@ -32,7 +32,7 @@ public class AsyncScenarioMetadataTests : RunTestBase
 
         var scenario = await When(() => NoOp()).Then(() => NoOp()).BDTestAsync();
 
-        await Assert.That(scenario.GetScenarioText()).IsEqualTo("Explicit text after suspension");
+        await Assert.That(scenario.ScenarioText).IsEqualTo("Explicit text after suspension");
     }
 
     [Test]
@@ -45,10 +45,10 @@ public class AsyncScenarioMetadataTests : RunTestBase
         var scenario = await Given(() => NoOp()).When(() => NoOp()).Then(() => NoOp()).BDTestAsync();
 
 
-        await Assert.That(Required(scenario.CustomTestInformation).Select(attribute => attribute.Print())).IsEquivalentTo(new[]
+        await Assert.That(Required(scenario.CustomTestInformation).Select(attribute => attribute)).IsEquivalentTo(new[]
         {
-            "TestInformationAttribute - First piece of information",
-            "CustomInformationAttribute - Custom information"
+            "First piece of information",
+            "Custom information"
         }, global::TUnit.Assertions.Enums.CollectionOrdering.Any);
     }
 
@@ -61,7 +61,7 @@ public class AsyncScenarioMetadataTests : RunTestBase
         var scenario = await When(() => NoOp()).Then(() => NoOp())
             .WithScenarioText("Fluent text after suspension").BDTestAsync();
 
-        await Assert.That(scenario.GetScenarioText()).IsEqualTo("Fluent text after suspension");
+        await Assert.That(scenario.ScenarioText).IsEqualTo("Fluent text after suspension");
     }
 
     [Test]
@@ -74,8 +74,8 @@ public class AsyncScenarioMetadataTests : RunTestBase
 
         var scenario = await When(() => NoOp()).Then(() => NoOp()).BDTestAsync();
 
-        await Assert.That(scenario.GetScenarioText()).IsEqualTo("Integer overload");
-        await Assert.That(Required(scenario.CustomTestInformation).Select(attribute => attribute.Print())).IsEquivalentTo(new[] { "TestInformationAttribute - Integer information" }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(scenario.ScenarioText).IsEqualTo("Integer overload");
+        await Assert.That(Required(scenario.CustomTestInformation).Select(attribute => attribute)).IsEquivalentTo(new[] { "Integer information" }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 
     [Test]
@@ -88,8 +88,8 @@ public class AsyncScenarioMetadataTests : RunTestBase
 
         var scenario = await When(() => NoOp()).Then(() => NoOp()).BDTestAsync();
 
-        await Assert.That(scenario.GetScenarioText()).IsEqualTo("String overload");
-        await Assert.That(Required(scenario.CustomTestInformation).Select(attribute => attribute.Print())).IsEquivalentTo(new[] { "TestInformationAttribute - String information" }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(scenario.ScenarioText).IsEqualTo("String overload");
+        await Assert.That(Required(scenario.CustomTestInformation).Select(attribute => attribute)).IsEquivalentTo(new[] { "String information" }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 
     private static void NoOp() { }

@@ -1,3 +1,4 @@
+using BDTest.Contracts;
 using System.Globalization;
 using System.Reflection;
 using System.Runtime.CompilerServices;
@@ -52,7 +53,7 @@ public sealed class ScenarioOutlineBuilder<TExample> : BuildableTest
         Run.Store.RegisterPending(Definition);
     }
 
-    public Task<Scenario> BDTestAsync()
+    private Task<Scenario> Invoke()
     {
         Run.ThrowIfDisposed();
         if (Interlocked.Exchange(ref _executionStarted, 1) != 0)
@@ -65,7 +66,12 @@ public sealed class ScenarioOutlineBuilder<TExample> : BuildableTest
         return ExecuteAsync(outline);
     }
 
-    public TaskAwaiter<Scenario> GetAwaiter() => BDTestAsync().GetAwaiter();
+    public Task<ScenarioResult> BDTestAsync() => SnapshotAsync(Invoke());
+
+    private static async Task<ScenarioResult> SnapshotAsync(Task<Scenario> execution) =>
+        ResultSnapshot.Create(await execution);
+
+    public TaskAwaiter<ScenarioResult> GetAwaiter() => BDTestAsync().GetAwaiter();
 
     private async Task<Scenario> ExecuteAsync(Scenario outline)
     {

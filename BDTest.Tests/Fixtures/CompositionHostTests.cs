@@ -59,12 +59,12 @@ public class CompositionHostTests
             await Assert.That(owner.Host.Context).IsNotSameReferenceAs(original);
             await Assert.That(owner.Host.Context.Value).IsEqualTo("paid");
             await Assert.That(owner.Hooks).IsEquivalentTo(new[] { "base teardown", "owner teardown", "base setup", "owner setup" }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
-            await Assert.That(scenario.GetStoryText()).Contains("shopper");
-            await Assert.That(scenario.GetScenarioText()).IsEqualTo("The shopper pays");
+            await Assert.That(scenario.StoryText).Contains("shopper");
+            await Assert.That(scenario.ScenarioText).IsEqualTo("The shopper pays");
 
             await Assert.That(scenario.Tags).IsEquivalentTo(new[] { "checkout", "payment" }, global::TUnit.Assertions.Enums.CollectionOrdering.Any);
-            await Assert.That(Required(scenario.CustomTestInformation).Single().Information).IsEqualTo("payment reference");
-            await Assert.That(Required(scenario.RuntimeInformation).CallerMember).IsEqualTo(nameof(Owner.Pays));
+            await Assert.That(Required(scenario.CustomTestInformation).Single()).IsEqualTo("payment reference");
+            await Assert.That(Required(owner.Host.TestRun.Store.ScenariosByInternalId[scenario.Guid].RuntimeInformation).CallerMember).IsEqualTo(nameof(Owner.Pays));
             await Assert.That(scenario.FileName).EndsWith("CompositionHostTests.cs");
         }
         finally { owner.Host.EndTest(); }
@@ -79,7 +79,7 @@ public class CompositionHostTests
         using var second = BDTestRun.Start();
         var entered = 0;
         var ready = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        async Task<Scenario> Execute(BDTestRun run, string label)
+        async Task<BDTest.Contracts.ScenarioResult> Execute(BDTestRun run, string label)
         {
             AbstractContextBDTestBase<State> host;
             Action end;
@@ -126,8 +126,8 @@ public class CompositionHostTests
         var scenarios = await Task.WhenAll(Task.Run(() => Execute(first, "first")), Task.Run(() => Execute(second, "second")));
         foreach (var (run, label, other, index) in new[] { (first, "first", "second", 0), (second, "second", "first", 1) })
         {
-            var scenario = scenarios[index];
-            await Assert.That(run.Scenarios).IsEquivalentTo(new[] { scenario }, EqualityComparer<Scenario>.Default, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
+            var scenario = run.Scenarios.Single(s => s.Guid == scenarios[index].Guid);
+            await Assert.That(run.Scenarios.Select(s => s.Guid)).IsEquivalentTo(new[] { scenario.Guid }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
             await Assert.That(scenario.FrameworkTestId).IsEqualTo("same-id");
             await Assert.That(scenario.ReportId).IsEqualTo(run.ReportId);
 
@@ -138,7 +138,7 @@ public class CompositionHostTests
             await Assert.That(scenario.TearDownOutput).Contains(label + " teardown").And.DoesNotContain(other);
 
             await Assert.That(scenario.CustomHtmlOutputForReport).Contains(label + " html").And.DoesNotContain(other);
-            var report = Required(BDTestJsonHelper.Deserialize(BDTestJsonHelper.GetTestJsonData(null, run)));
+            var report = Required(BDTestJsonHelper.DeserializeReport(BDTestJsonHelper.GetTestJsonData(null, run)));
             await Assert.That(Required(report.Scenarios).Single().ReportId).IsEqualTo(run.ReportId);
             await Assert.That(report.Scenarios.Single().FrameworkTestId).IsEqualTo("same-id");
         }
@@ -176,7 +176,7 @@ public class CompositionHostTests
             var outline = await owner.Examples();
 
             await Assert.That(outline.Tags).IsEquivalentTo(new[] { "checkout", "examples" }, global::TUnit.Assertions.Enums.CollectionOrdering.Any);
-            await Assert.That(outline.GetStoryText()).Contains("shopper");
+            await Assert.That(outline.StoryText).Contains("shopper");
 
             await Assert.That((Required(outline.Examples).Select(row => row.Status)).All(item => Equals(item, Status.Passed))).IsTrue();
             await Assert.That(outline.Examples).Count().IsEqualTo(2);
@@ -198,8 +198,8 @@ public class CompositionHostTests
                 var scenario = await owner.Host.When(() => Complete()).Then(() => Complete()).BDTestAsync();
                 await Assert.That(scenario.Tags).IsEquivalentTo(new[] { "checkout" }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
                 await Assert.That(scenario.CustomTestInformation).IsEmpty();
-                await Assert.That(scenario.GetScenarioText()).IsEqualTo("Without method identity composition uses owner defaults and caller text");
-                await Assert.That(scenario.GetStoryText()).Contains("shopper");
+                await Assert.That(scenario.ScenarioText).IsEqualTo("Without method identity composition uses owner defaults and caller text");
+                await Assert.That(scenario.StoryText).Contains("shopper");
             }
             finally { owner.Host.EndTest(); }
         }
@@ -237,7 +237,7 @@ public class CompositionHostTests
         public Owner(BDTestRun run) => Host = BDTestScenario.For<State>(this, run);
 
         [ScenarioText("The shopper pays"), BDTestTag("payment"), TestInformation("payment reference")]
-        public Task<Scenario> Pays() => Host.Given(() => Complete()).When(() => Pay()).Then(() => Complete()).BDTestAsync();
+        public Task<BDTest.Contracts.ScenarioResult> Pays() => Host.Given(() => Complete()).When(() => Pay()).Then(() => Complete()).BDTestAsync();
 
         private void Pay()
         {
@@ -246,7 +246,7 @@ public class CompositionHostTests
         }
 
         [BDTestTag("examples")]
-        public Task<Scenario> Examples() => Host.ScenarioOutline("example <Value>", new[] { new { Value = 1 }, new { Value = 2 } },
+        public Task<BDTest.Contracts.ScenarioResult> Examples() => Host.ScenarioOutline("example <Value>", new[] { new { Value = 1 }, new { Value = 2 } },
             row => Host.When(() => Remember(row.Value)).Then(() => Complete())).BDTestAsync();
 
         private void Remember(int value) { Host.Context.Value = value.ToString(); Contexts.Add(Host.Context); }
@@ -261,7 +261,7 @@ public class CompositionHostTests
         public int Failures { get; set; }
         public int Executions { get; private set; }
 
-        public virtual Task<Scenario> Run() => Host.When(() => Execute()).Then(() => Complete()).BDTestAsync();
+        public virtual Task<BDTest.Contracts.ScenarioResult> Run() => Host.When(() => Execute()).Then(() => Complete()).BDTestAsync();
 
         private async Task Execute()
         {
@@ -277,7 +277,7 @@ public class CompositionHostTests
     public class MethodRetryOwner : ClassRetryOwner
     {
         [BDTestRetry(1)]
-        public override Task<Scenario> Run() => base.Run();
+        public override Task<BDTest.Contracts.ScenarioResult> Run() => base.Run();
     }
 
     private sealed class InheritedHost(BDTestRun run) : AbstractContextBDTestBase<State>

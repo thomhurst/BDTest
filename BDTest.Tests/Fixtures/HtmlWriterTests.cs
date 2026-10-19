@@ -111,7 +111,7 @@ public class HtmlWriterTests : RunTestBase
         ScenarioHtmlWriter.Text("before");
         var exception = await Assert.That(() => WriteUrl(ScenarioHtmlWriter, kind, url)).ThrowsExactly<ArgumentException>();
         await Assert.That(exception!.ParamName).IsEqualTo("url");
-        await Assert.That(scenario.CustomHtmlOutputForReport).IsEqualTo("<span>before</span><br>");
+        await Assert.That(BDTestUtil.GetScenarios(TestRun).Single(s => s.Guid == scenario.Guid).CustomHtmlOutputForReport).IsEqualTo("<span>before</span><br>");
     }
 
     [Test]
@@ -143,7 +143,7 @@ public class HtmlWriterTests : RunTestBase
         return Required((await EmptyScenario()).CustomHtmlOutputForReport);
     }
 
-    private Task<Scenario> EmptyScenario() => When(() => NoOp()).Then(() => NoOp()).BDTestAsync();
+    private Task<BDTest.Contracts.ScenarioResult> EmptyScenario() => When(() => NoOp()).Then(() => NoOp()).BDTestAsync();
     private static void NoOp() { }
     private static XElement ParseElement(string html) => XElement.Parse(html[..^4]);
 

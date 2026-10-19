@@ -33,7 +33,7 @@ public class FluentBuilderTests : RunTestBase
         await Assert.That(then.GetScenarioText()).IsEqualTo("first");
         await Assert.That(andThen.GetScenarioText()).IsEqualTo("second");
         await Assert.That(butThen.GetScenarioText()).IsEqualTo("final");
-        await Assert.That(scenario.GetScenarioText()).IsEqualTo("continued");
+        await Assert.That(scenario.ScenarioText).IsEqualTo("continued");
         await Assert.That(Required(scenario.Steps).Select(step => step.StepType)).IsEquivalentTo(new[]
         {
             StepType.Given, StepType.AndGiven, StepType.ButGiven, StepType.When,
@@ -51,7 +51,7 @@ public class FluentBuilderTests : RunTestBase
     {
         var scenario = await When(() => NoOp()).Then(() => NoOp()).WithScenarioText("named")
             .And(() => NoOp()).But(() => NoOp());
-        await Assert.That(scenario.GetScenarioText()).IsEqualTo("named");
+        await Assert.That(scenario.ScenarioText).IsEqualTo("named");
     }
 
     [Test]
@@ -105,7 +105,7 @@ public class FluentBuilderTests : RunTestBase
         var builder = When(() => Value(value)).Then(() => NoOp());
         await Assert.That(builder.ParameterNames).IsEquivalentTo((new[] { "value" }).Cast<string?>(), global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
         var pending = BDTestUtil.GetNotRunScenarios(TestRun).Single(definition => definition.ScenarioId == builder.ScenarioId);
-        await Assert.That(pending.ParameterNames).IsEquivalentTo((new[] { "value" }).Cast<string?>(), global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(pending.Parameters).IsEquivalentTo((new[] { "value" }).Cast<string?>(), global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
         await Assert.That(builder.ReportId).IsEqualTo(TestRun.ReportId);
         await Assert.That(typeof(BDTestUtil).GetProperty("GetCurrentReportId")).IsNull();
         await Assert.That(typeof(BDTestContext).GetProperty("CurrentTestRunnerId")).IsNull();

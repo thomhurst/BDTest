@@ -33,8 +33,7 @@ public sealed class BDTestRun : IDisposable
     public string ReportId { get; } = Guid.NewGuid().ToString("N");
 
     /// <summary>Gets a snapshot of top-level scenarios recorded by this run.</summary>
-    public IReadOnlyCollection<Scenario> Scenarios => Store.ScenariosByInternalId.Values
-        .Where(scenario => scenario.OutlineId == null).ToArray();
+    public IReadOnlyCollection<Contracts.ScenarioResult> Scenarios => BDTestUtil.GetScenarios(this);
 
     /// <summary>Starts an empty run with a new report identifier.</summary>
     public static BDTestRun Start() => new(new BDTestOptions());

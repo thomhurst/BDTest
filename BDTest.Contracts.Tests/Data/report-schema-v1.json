@@ -314,7 +314,8 @@
       "customTestInformation": [
         "info"
       ],
-      "timeout": "00:00:01"
+      "timeout": "00:00:01",
+      "steps": []
     }
   ],
   "environment": "ci",

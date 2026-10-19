@@ -8,11 +8,19 @@ description: Export, read and write BDTest report data as JSON with BDTestJsonHe
 For built-in adapters, pass the [configured assembly run](../configuration/assembly-runs.md) to report/utility helpers. Every export and store utility requires the owning run. Export all reports before disposing through the assembly owner.
 
 
-The JSON report is the raw data behind every BDTest report: the same model the report server stores.
+Core exports and uploads are immutable [versioned reports](contracts.md): camelCase
+properties, `schemaVersion: 1`, and a separate `producerVersion`. Status and step
+type values are names; timestamps are UTC `DateTimeOffset` values and durations
+use invariant `TimeSpan` format. All collections are read-only and non-null.
 
-The independent [versioned contracts package](contracts.md) provides immutable DTOs
-for new report integrations. Existing core exports and hosted reports still use the
-legacy model described here until their migrations land.
+Read a new export with `BDTestJsonHelper.DeserializeReport(json)` (returns
+`BDTest.Contracts.BDTestReport`), and write it with `BDTestJsonHelper.Serialize(report)`.
+`BDTestReportJson` in the contracts package provides the same schema without a
+runtime dependency. Missing or unsupported schema versions are rejected.
+
+Legacy hosted readers and storage still use the unversioned model described
+below, pending [#936](https://github.com/thomhurst/BDTest/issues/936). Do not upload
+new reports to those hosts. See [migration](../migration/immutable-results.md).
 
 ## Exporting
 
@@ -30,9 +38,9 @@ File.WriteAllText("BDTest-Report.json", json);
 
 The output is indented.
 
-## Reading and writing reports
+## Reading and writing legacy reports
 
-Use the serializer methods to work with `BDTestOutputModel` directly:
+For historical unversioned data, use the legacy serializer methods to work with `BDTestOutputModel` directly:
 
 ```csharp title="Illustrative fragment"
 using BDTest.Helpers;
@@ -51,14 +59,14 @@ string json = BDTestJsonHelper.Serialize(report, writeIndented: true);
 | Method | Notes |
 | --- | --- |
 | `Serialize(BDTestOutputModel? model, bool writeIndented = false)` | Writes plain JSON with BDTest's fixed contract; a null model writes `null`. |
-| `Deserialize(string json, long maximumExpandedSize = 100 MiB)` | Reads current and historical reports. |
+| `Deserialize(string json, long maximumExpandedSize = 100 MiB)` | Reads unversioned historical reports. |
 | `DeserializeAsync(Stream stream, CancellationToken cancellationToken = default, long maximumExpandedSize = 100 MiB)` | Reads UTF-8 JSON from a stream and leaves the stream open. |
 
 Both readers accept reports written by older BDTest versions with Newtonsoft.Json, including `$id`/`$ref` references and `$values` wrappers. They reject missing, duplicate or cyclic references. `maximumExpandedSize` limits how large legacy references may expand; a negative value throws `ArgumentOutOfRangeException`.
 
 Both readers return a nullable model: the JSON literal `null` produces `null`. Handle that result before accessing report members.
 
-## The model
+## The legacy model
 
 `BDTestOutputModel` (namespace `BDTest.Maps`):
 

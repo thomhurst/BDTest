@@ -63,5 +63,5 @@ public class AsyncTests : RunTestBase
         events.Add(name);
     }
 
-    private static async Task<Scenario> AwaitBuilder(RunnableStepBuilder builder) => await builder;
+    private static async Task<BDTest.Contracts.ScenarioResult> AwaitBuilder(RunnableStepBuilder builder) => await builder;
 }

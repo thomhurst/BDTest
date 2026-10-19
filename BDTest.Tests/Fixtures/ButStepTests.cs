@@ -75,14 +75,14 @@ public class ButStepTests : RunTestBase
             .But(() => NoOp()).WithStepText(() => "custom assertion")
             .BDTestAsync();
 
-        var report = ReportJson.DeserializeObject<BDTestOutputModel>(BDTestJsonHelper.GetTestJsonData(null, TestRun));
+        var report = BDTestJsonHelper.DeserializeReport(BDTestJsonHelper.GetTestJsonData(null, TestRun));
         var restored = Required(report.Scenarios).Single(scenario => scenario.Guid == result.Guid);
         await Assert.That(Required(restored.Steps).Select(step => step.StepText)).IsEquivalentTo((new[]
         {
             "Given no op", "But no op", "When no op", "But named action", "Then no op", "But custom assertion"
         }).Cast<string?>(), global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
-        var json = JObject.Parse(ReportJson.SerializeObject(result));
-        await Assert.That(Required(json["Steps"]).Select(step => (string?)step["StepType"])).IsEquivalentTo((new[] { "Given", "ButGiven", "When", "ButWhen", "Then", "ButThen" }).Cast<string?>(), global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        var json = JObject.Parse(BDTestJsonHelper.GetTestJsonData(null, TestRun))["scenarios"]!.Single();
+        await Assert.That(Required(json["steps"]).Select(step => (string?)step["stepType"])).IsEquivalentTo((new[] { "Given", "ButGiven", "When", "ButWhen", "Then", "ButThen" }).Cast<string?>(), global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 
     [Test]

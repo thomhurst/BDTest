@@ -56,7 +56,7 @@ public class SkipOutcomeTests : BDTest.NUnit.NUnitBDTestBase<object>
         .Then(() => MustNotRun()).BDTestAsync(), Status.Inconclusive,
         Status.Passed, Status.Inconclusive, Status.NotRun);
 
-    private async Task CheckScenario(Func<Task<Scenario>> run, Status status, params Status[] stepStatuses)
+    private async Task CheckScenario(Func<Task<BDTest.Contracts.ScenarioResult>> run, Status status, params Status[] stepStatuses)
     {
         var id = BDTestExecutionId;
         try

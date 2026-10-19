@@ -1,6 +1,6 @@
 using System.Net;
 using System.Text;
-using BDTest.Test;
+using BDTest.Contracts;
 
 namespace BDTest.Helpers;
 
@@ -8,6 +8,10 @@ namespace BDTest.Helpers;
 public static class StepArgumentHtmlHelper
 {
     private const int PreviewRows = 20;
+
+    // Compatibility entry point for the hosted report model until its migration.
+    public static string GetHtml(IReadOnlyList<Test.StepArgument>? arguments) =>
+        GetHtml(arguments?.Select(ResultSnapshot.Create).ToArray());
 
     public static string GetHtml(IReadOnlyList<StepArgument>? arguments)
     {

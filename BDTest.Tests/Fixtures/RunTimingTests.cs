@@ -29,8 +29,9 @@ public class RunTimingTests : RunTestBase
 
         await AssertTimer(BDTestUtil.GetTestTimer(new[] { later, unstarted, earlier }),
             StartedAt, StartedAt.AddSeconds(5));
-        var report = ReportJson.DeserializeObject<BDTestOutputModel>(BDTestJsonHelper.GetTestJsonData(null, TestRun));
-        await AssertTimer(Required(report.TestTimer), StartedAt, StartedAt.AddSeconds(5));
+        var report = BDTestJsonHelper.DeserializeReport(BDTestJsonHelper.GetTestJsonData(null, TestRun));
+        await Assert.That(report.TestTimer!.TestsStartedAt).IsEqualTo(new DateTimeOffset(StartedAt));
+        await Assert.That(report.TestTimer.TestsFinishedAt).IsEqualTo(new DateTimeOffset(StartedAt.AddSeconds(5)));
     }
 
     [Test]
@@ -66,10 +67,10 @@ public class RunTimingTests : RunTestBase
     [Test]
     public async Task Empty_run_defaults_use_utc()
     {
-        var timer = Required(BDTestJsonHelper.Deserialize(BDTestJsonHelper.GetTestJsonData(null, TestRun))).TestTimer!;
+        var timer = Required(BDTestJsonHelper.DeserializeReport(BDTestJsonHelper.GetTestJsonData(null, TestRun))).TestTimer!;
 
-        await Assert.That(timer.TestsStartedAt.Kind).IsEqualTo(DateTimeKind.Utc);
-        await Assert.That(timer.TestsFinishedAt.Kind).IsEqualTo(DateTimeKind.Utc);
+        await Assert.That(timer.TestsStartedAt.Offset).IsEqualTo(TimeSpan.Zero);
+        await Assert.That(timer.TestsFinishedAt.Offset).IsEqualTo(TimeSpan.Zero);
         await Assert.That(InternalTestTimeData.ProcessStartTime.Kind).IsEqualTo(DateTimeKind.Utc);
     }
 
@@ -81,7 +82,7 @@ public class RunTimingTests : RunTestBase
         var measured = new Stopwatch();
         var outer = Stopwatch.StartNew();
         var test = When(() => TimedStep(measured, fail)).Then(() => NoOp());
-        Scenario scenario;
+        BDTest.Contracts.ScenarioResult scenario;
         if (fail)
         {
             await Assert.That(async () => await test.BDTestAsync()).ThrowsExactly<InvalidOperationException>();
@@ -93,18 +94,18 @@ public class RunTimingTests : RunTestBase
         }
         outer.Stop();
 
-        await Assert.That(scenario.StartTime.Kind).IsEqualTo(DateTimeKind.Utc);
-        await Assert.That(scenario.EndTime.Kind).IsEqualTo(DateTimeKind.Utc);
+        await Assert.That(scenario.StartTime.Offset).IsEqualTo(TimeSpan.Zero);
+        await Assert.That(scenario.EndTime.Offset).IsEqualTo(TimeSpan.Zero);
 
         await Assert.That(scenario.TimeTaken).IsGreaterThanOrEqualTo(measured.Elapsed).And.IsLessThanOrEqualTo(outer.Elapsed);
         var step = Required(scenario.Steps)[0];
-        await Assert.That(step.StartTime.Kind).IsEqualTo(DateTimeKind.Utc);
-        await Assert.That(step.EndTime.Kind).IsEqualTo(DateTimeKind.Utc);
+        await Assert.That(step.StartTime.Offset).IsEqualTo(TimeSpan.Zero);
+        await Assert.That(step.EndTime.Offset).IsEqualTo(TimeSpan.Zero);
 
         await Assert.That(step.TimeTaken).IsGreaterThanOrEqualTo(measured.Elapsed).And.IsLessThanOrEqualTo(scenario.TimeTaken);
         if (fail)
         {
-            await Assert.That(scenario.Steps[1].StartTime).IsEqualTo(default(DateTime));
+            await Assert.That(scenario.Steps[1].StartTime).IsEqualTo(default(DateTimeOffset));
             await Assert.That(scenario.Steps[1].TimeTaken).IsEqualTo(TimeSpan.Zero);
         }
     }
@@ -119,7 +120,7 @@ public class RunTimingTests : RunTestBase
         await Assert.That(scenario.EndTime).IsLessThan(scenario.StartTime);
 
         await Assert.That(scenario.TimeTaken).IsGreaterThanOrEqualTo(TimeSpan.Zero).And.IsLessThanOrEqualTo(outer.Elapsed);
-        var restored = ReportJson.DeserializeObject<Scenario>(ReportJson.SerializeObject(scenario));
+        var restored = ReportJson.DeserializeObject<BDTest.Contracts.ScenarioResult>(ReportJson.SerializeObject(scenario));
         await Assert.That(restored.TimeTaken).IsEqualTo(scenario.TimeTaken);
     }
 
@@ -131,8 +132,8 @@ public class RunTimingTests : RunTestBase
         var scenario = await When(() => FailFirstAttempt(attempts)).Then(() => NoOp()).BDTestAsync();
 
         await Assert.That(scenario.RetryCount).IsEqualTo(1);
-        await Assert.That(scenario.StartTime).IsEqualTo(attempts[1]);
-        await Assert.That(scenario.StartTime.Kind).IsEqualTo(DateTimeKind.Utc);
+        await Assert.That(scenario.StartTime).IsEqualTo(new DateTimeOffset(attempts[1]));
+        await Assert.That(scenario.StartTime.Offset).IsEqualTo(TimeSpan.Zero);
         await Assert.That(scenario.TimeTaken).IsGreaterThanOrEqualTo(Required(scenario.Steps)[0].TimeTaken);
         await Assert.That(scenario.Steps[0].StartTime).IsGreaterThanOrEqualTo(scenario.StartTime);
     }
@@ -159,11 +160,11 @@ public class RunTimingTests : RunTestBase
     }
 
     private void MoveStartIntoFuture() =>
-        BDTestUtil.GetScenarios(TestRun).Single().StartTime = DateTime.UtcNow.AddDays(1);
+        TestRun.Store.ScenariosByInternalId.Values.Single().StartTime = DateTime.UtcNow.AddDays(1);
 
     private void FailFirstAttempt(List<DateTime> attempts)
     {
-        attempts.Add(BDTestUtil.GetScenarios(TestRun).Single().StartTime);
+        attempts.Add(TestRun.Store.ScenariosByInternalId.Values.Single().StartTime);
         if (attempts.Count == 1)
         {
             throw new InvalidOperationException("retry");

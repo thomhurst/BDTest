@@ -60,8 +60,8 @@ public class ContextScenarioTextTests : TUnitBDTestBase<MyTestContext>
             .WithScenarioText("Fluent scenario text")
             .BDTestAsync();
 
-        await Assert.That(context.CurrentScenario).IsSameReferenceAs(scenario);
-        await Assert.That(scenario.GetScenarioText()).IsEqualTo("Fluent scenario text");
+        await Assert.That(context.CurrentScenario?.Guid).IsEqualTo(scenario.Guid);
+        await Assert.That(scenario.ScenarioText).IsEqualTo("Fluent scenario text");
         await Assert.That(context.GetScenarioText()).IsEqualTo(expected);
     }
 

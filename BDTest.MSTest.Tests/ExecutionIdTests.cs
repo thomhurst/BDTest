@@ -54,7 +54,7 @@ public class ExecutionIdTests : MSTestBDTestBase<ExecutionIdTests.TestContextDat
         Assert.IsNotNull(testContext.TestDisplayName);
         Assert.Contains(testContext.TestDisplayName, _setupId);
         WriteTearDownOutput("teardown " + _setupId);
-        var teardownOutput = scenario.TearDownOutput;
+        var teardownOutput = TestRun.Scenarios.Single(result => result.Guid == scenario.Guid).TearDownOutput;
         Assert.IsNotNull(teardownOutput);
         Assert.Contains("teardown " + _setupId, teardownOutput);
     }

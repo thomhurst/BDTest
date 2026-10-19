@@ -200,7 +200,7 @@ public class LifecycleTests : XUnitBDTestBase<XUnitContext>
             try
             {
                 var scenario = await fixture.When(() => NoOp()).Then(() => NoOp()).BDTestAsync();
-                Assert.Same(scenario, Assert.Single(run.Scenarios));
+                Assert.Equal(scenario.Guid, Assert.Single(run.Scenarios).Guid);
                 Assert.Contains(marker, scenario.TestStartupInformation);
                 Assert.DoesNotContain(marker == "first run" ? "second run" : "first run", scenario.TestStartupInformation);
             }

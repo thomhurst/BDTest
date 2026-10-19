@@ -9,24 +9,30 @@ In the next major version, fluent construction and pending report data use separ
 
 ## Pending report consumers
 
-`BDTestUtil.GetNotRunScenarios(run)` now return `List<BDTest.Test.ScenarioDefinitionSummary>`. `BDTestOutputModel.NotRun` uses the same type. Replace declarations of `List<BuildableTest>` used for pending report data with `List<ScenarioDefinitionSummary>`.
+`BDTestUtil.GetNotRunScenarios(run)` now returns `IReadOnlyList<BDTest.Contracts.ScenarioDefinitionSummary>`. New `BDTestReport.NotRun` uses the same type; historical `BDTestOutputModel` retains the legacy summary. Replace declarations of `List<BuildableTest>` used for pending report data with `IReadOnlyList<BDTest.Contracts.ScenarioDefinitionSummary>`.
 
-Read `GetStoryText()`, `GetScenarioText()`, `ParameterNames`, tags and caller details as before. The summary adds `Timeout` and `Steps`, where each step has `StepType`, template `StepText` and `Timeout`. `ScenarioId` identifies the pending definition and matches the fluent builder's `ScenarioId`. Compare this ID rather than comparing a summary with a builder instance. Summaries have no `BdTestBase` or `Run` reference and cannot be executed or extended.
+Read `StoryText`, `ScenarioText`, `Parameters`, tags and caller details as before. The summary adds `Timeout` and `Steps`, where each step has `StepType`, template `StepText` and `Timeout`. `ScenarioId` identifies the pending definition and matches the fluent builder's `ScenarioId`. Compare this ID rather than comparing a summary with a builder instance. Summaries have no `BdTestBase` or `Run` reference and cannot be executed or extended.
 
-```csharp title="Illustrative fragment"
+```csharp sample="NUnit/PendingDefinitions.cs" title="Compiled example"
 using BDTest;
-using BDTest.Test;
+using BDTest.Contracts;
 
-List<ScenarioDefinitionSummary> pending = BDTestUtil.GetNotRunScenarios(run);
-foreach (var definition in pending)
+public static class PendingDefinitionsExample
 {
-    Console.WriteLine($"{definition.ScenarioId}: {definition.GetScenarioText()}");
+    public static void Print(BDTestRun run)
+    {
+        IReadOnlyList<ScenarioDefinitionSummary> pending = BDTestUtil.GetNotRunScenarios(run);
+        foreach (var definition in pending)
+        {
+            Console.WriteLine($"{definition.ScenarioId}: {definition.ScenarioText}");
+        }
+    }
 }
 ```
 
-Each query returns independent snapshots. Changing a summary or its arrays does not change the builder or snapshots from another query. Pending JSON retains the previous text and metadata field names, including `Parameters` for `ParameterNames`; historical reports without `Steps` or `Timeout` still load. Step templates are cached during construction and refreshed when `WithArgs` configures explicit readers. Pending queries and exports do not reconstruct custom `StepTextAttribute` instances. Export never evaluates lazy readers, including `WithStepText`, so pending steps show template text rather than callback-generated text.
+Each query returns independent immutable snapshots with read-only collections. Later builder changes do not change earlier snapshots. Schema-versioned pending JSON uses the contract's camel-case field names, including `parameters`; historical unversioned reports without `Steps` or `Timeout` still load through the legacy reader. Step templates are cached during construction and refreshed when `WithArgs` configures explicit readers. Pending queries and exports do not reconstruct custom `StepTextAttribute` instances. Export never evaluates lazy readers, including `WithStepText`, so pending steps show template text rather than callback-generated text.
 
-Pending `CustomTestInformation` entries intentionally contain only the base `TestInformationAttribute` and its `Information` string. Custom attribute types, additional members and custom type names in `Print()` are not retained in these data-only snapshots. Replace subtype checks on pending summaries with reads of `Information`. Builders and executed scenarios still expose custom attribute instances; JSON continues to store only the information strings. This avoids retaining user objects or invoking custom constructors during pending export.
+Pending and executed result `CustomTestInformation` entries contain only strings copied from each attribute's `Information` property. Custom attribute types, additional members and custom type names in `Print()` are not retained in these data-only snapshots. Replace subtype checks with reads of the strings. Builders retain custom attribute instances; snapshots and JSON store only information strings. This avoids retaining user objects or invoking custom constructors during export.
 
 Use `BDTestJsonHelper` to serialize reports. Fluent builder types are no longer part of `BDTestJsonContext`'s report graph. Do not pass a builder to a serializer expecting report data.
 
@@ -34,4 +40,4 @@ Use `BDTestJsonHelper` to serialize reports. Fluent builder types are no longer 
 
 The `Given(...).When(...).Then(...)` API, direct `await`, `BDTestAsync()`, one execution per builder, retries, hooks, outlines and explicit-run ownership keep their behavior. Execution-step construction copies cached templates and argument readers without reconstructing step-text attributes or evaluating callbacks. Text overrides and argument rendering still run during step execution. Each branch copies definition settings; changes to a prefix after branching do not affect its existing continuations. Completed reports release runtime delegates without preventing a new continuation from using the retained definition.
 
-This change separates definitions from the existing report model. Integration of immutable `BDTest.Contracts` results and schema-versioned exports is a separate migration; this change alone does not switch report uploads to a new wire schema. Builder namespace cleanup and renderer extraction are also separate changes.
+Execution now returns immutable `BDTest.Contracts` results, and exports and uploads use schema-versioned reports. See [Immutable results](immutable-results.md) for the result API and hosted-server compatibility requirements. Builder namespace cleanup and renderer extraction remain separate changes.

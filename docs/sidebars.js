@@ -105,6 +105,7 @@ const sidebars = {
         'migration/explicit-runs',
         'migration/delegate-steps',
         'migration/scenario-definitions',
+        'migration/immutable-results',
         'migration/async-only',
         'migration/fluent-builders',
         'migration/internal-helpers',

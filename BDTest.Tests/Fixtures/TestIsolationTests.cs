@@ -34,7 +34,7 @@ public class TestIsolationTests
             await then.ThrowsExceptionOnThen(exception, status);
         }
 
-        await Assert.That(retainedFixture.TestRun.Scenarios).Contains(retained);
+        await Assert.That(retainedFixture.TestRun.Scenarios.Select(s => s.Guid)).Contains(retained.Guid);
     }
 
 
@@ -68,7 +68,7 @@ public class TestIsolationTests
         private readonly string _executionId = Guid.NewGuid().ToString();
         protected override string BDTestExecutionId => _executionId;
 
-        public async Task<Scenario> Run() => await When(() => Console.WriteLine("retained scenario"))
+        public async Task<BDTest.Contracts.ScenarioResult> Run() => await When(() => Console.WriteLine("retained scenario"))
             .Then(() => Console.WriteLine("unrelated to current assertions")).BDTestAsync();
     }
 }

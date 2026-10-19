@@ -1,3 +1,4 @@
+using BDTest.Contracts;
 using BDTest.Output;
 using System.Text.Json.Serialization;
 
@@ -20,6 +21,8 @@ public class ScenarioAttempt
     [JsonInclude]
     [JsonConverter(typeof(TimespanConverter))]
     public TimeSpan TimeTaken { get; internal set; }
+
+    [JsonIgnore] internal IReadOnlyList<StepResult> Steps { get; set; } = Array.Empty<StepResult>();
 
     [JsonConstructor]
     internal ScenarioAttempt()

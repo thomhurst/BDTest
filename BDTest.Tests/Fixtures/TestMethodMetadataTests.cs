@@ -38,22 +38,22 @@ public class TestMethodMetadataTests
         fixture.Start(Required(method));
         var first = await fixture.Build();
         await Assert.That(CountingInformationAttribute.Instances).IsEqualTo(1);
-        first.Tags[0] = "changed";
-        var firstInformation = (CountingInformationAttribute)Required(first.CustomTestInformation)[0];
+        run.Store.ScenariosByInternalId[first.Guid].Tags[0] = "changed";
+        var firstInformation = (CountingInformationAttribute)Required(run.Store.ScenariosByInternalId[first.Guid].CustomTestInformation)[0];
         firstInformation.Value = "changed";
         firstInformation.Values[0] = "changed";
         firstInformation.Items[0] = "changed";
         var second = await fixture.Build();
         await Assert.That(CountingInformationAttribute.Instances).IsEqualTo(2);
-        await Assert.That(second.GetScenarioText()).IsEqualTo("Exact private method");
+        await Assert.That(second.ScenarioText).IsEqualTo("Exact private method");
         await Assert.That(second.Tags).IsEquivalentTo(new[] { "original" }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
-        var secondInformation = (CountingInformationAttribute)Required(second.CustomTestInformation)[0];
+        var secondInformation = (CountingInformationAttribute)Required(run.Store.ScenariosByInternalId[second.Guid].CustomTestInformation)[0];
         await Assert.That(secondInformation.Value).IsEqualTo("original");
         await Assert.That(secondInformation.Values).IsEquivalentTo(new[] { "original" }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
         await Assert.That(secondInformation.Items).IsEquivalentTo(new[] { "original" }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
         fixture.Finish();
         var fallback = await fixture.Build();
-        await Assert.That(fallback.GetScenarioText()).IsEqualTo("Build");
+        await Assert.That(fallback.ScenarioText).IsEqualTo("Build");
         await Assert.That(fallback.CustomTestInformation).IsEmpty();
     }
 
@@ -66,12 +66,12 @@ public class TestMethodMetadataTests
         using var run = BDTestRun.Start();
         var fixture = new Harness(run);
         var scenario = await fixture.Build();
-        await Assert.That(scenario.GetScenarioText()).IsEqualTo("Build");
+        await Assert.That(scenario.ScenarioText).IsEqualTo("Build");
         await Assert.That(scenario.FileName).EndsWith("TestMethodMetadataTests.cs");
         await Assert.That(scenario.CustomTestInformation).IsEmpty();
-        await Assert.That(Required(scenario.TestMetadata).RetryCount).IsNull();
+        await Assert.That(Required(run.Store.ScenariosByInternalId[scenario.Guid].TestMetadata).RetryCount).IsNull();
         await Assert.That((await fixture.When(() => { }).Then(() => { })
-            .WithScenarioText("Explicit harness text").BDTestAsync()).GetScenarioText()).IsEqualTo("Explicit harness text");
+            .WithScenarioText("Explicit harness text").BDTestAsync()).ScenarioText).IsEqualTo("Explicit harness text");
     }
 
     [Test]
@@ -98,7 +98,7 @@ public class TestMethodMetadataTests
         public override BDTestRun TestRun => run;
         public void Start(MethodInfo method) => BeginTest(Guid.NewGuid().ToString("N"), method);
         public void Finish() => EndTest();
-        public Task<Scenario> Build() => When(() => { }).Then(() => { }).BDTestAsync();
+        public Task<BDTest.Contracts.ScenarioResult> Build() => When(() => { }).Then(() => { }).BDTestAsync();
 
         [ScenarioText("Exact private method"), BDTestTag("original"), CountingInformation(Values = new[] { "original" })]
         private void Annotated() { }

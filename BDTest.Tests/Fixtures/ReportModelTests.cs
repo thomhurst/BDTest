@@ -35,15 +35,15 @@ public class ReportModelTests
         await BDTestReportServer.SendDataAndGetReportUriAsync(new Uri("https://reports.example"), descriptor, client, run);
 
         await Assert.That(JToken.DeepEquals(JToken.Parse(json), JToken.Parse(Required(handler.Payload)))).IsTrue().Because("Formatting may differ, but JSON export and upload must have the same report values.");
-        var report = Required(BDTestJsonHelper.Deserialize(json));
+        var report = Required(BDTestJsonHelper.DeserializeReport(json));
         await Assert.That(report.Id).IsEqualTo(run.ReportId);
         await Assert.That(report.Environment).IsEqualTo("staging");
         await Assert.That(report.Tag).IsEqualTo("nightly");
         await Assert.That(report.BranchName).IsEqualTo("main");
         await Assert.That(report.MachineName).IsEqualTo(Environment.MachineName);
-        await Assert.That(report.Version).IsEqualTo(BDTestVersionHelper.CurrentVersion);
+        await Assert.That(report.ProducerVersion).IsEqualTo(BDTestVersionHelper.CurrentVersion);
         await Assert.That(Required(report.Scenarios).Select(item => item.Guid)).IsEquivalentTo(new[] { scenario.Guid }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
-        await Assert.That(Required(report.NotRun).Select(item => item.GetScenarioText())).IsEquivalentTo(new[] { "selected pending" }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(Required(report.NotRun).Select(item => item.ScenarioText)).IsEquivalentTo(new[] { "selected pending" }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
         await Assert.That(Required(report.TestTimer).TestsStartedAt).IsEqualTo(scenario.StartTime);
         await Assert.That(Required(report.TestTimer).TestsFinishedAt).IsEqualTo(scenario.EndTime);
 
@@ -70,13 +70,13 @@ public class ReportModelTests
 
         foreach (var payload in new[] { json, Required(handler.Payload) })
         {
-            var report = Required(BDTestJsonHelper.Deserialize(payload));
+            var report = Required(BDTestJsonHelper.DeserializeReport(payload));
             await Assert.That(report.Id).IsEqualTo(run.ReportId);
             await Assert.That(report.Scenarios).IsEmpty();
             await Assert.That(report.NotRun).IsEmpty();
-            await Assert.That(Required(report.TestTimer).TestsStartedAt).IsEqualTo(run.StartedAt);
+            await Assert.That(Required(report.TestTimer).TestsStartedAt).IsEqualTo(new DateTimeOffset(run.StartedAt));
 
-            await Assert.That(Required(report.TestTimer).TestsFinishedAt).IsGreaterThanOrEqualTo(beforeReport).And.IsLessThanOrEqualTo(DateTime.UtcNow);
+            await Assert.That(Required(report.TestTimer).TestsFinishedAt).IsGreaterThanOrEqualTo(new DateTimeOffset(beforeReport)).And.IsLessThanOrEqualTo(DateTimeOffset.UtcNow);
             await Assert.That(Required(report.CustomProperties)["Build <number>"]).IsEqualTo("42 & counting");
         }
         var html = BDTestHtmlHelper.GetTestHtmlReport(Descriptor(), run);
@@ -93,7 +93,7 @@ public class ReportModelTests
         descriptor.CustomProperties["Build <number>"] = "next build";
 
         await Assert.That(Required(report.CustomProperties)["Build <number>"]).IsEqualTo("42 & counting");
-        var nextReport = Required(BDTestJsonHelper.Deserialize(BDTestJsonHelper.GetTestJsonData(descriptor, run)));
+        var nextReport = Required(BDTestJsonHelper.DeserializeReport(BDTestJsonHelper.GetTestJsonData(descriptor, run)));
         await Assert.That(Required(nextReport.CustomProperties)["Build <number>"]).IsEqualTo("next build");
     }
 

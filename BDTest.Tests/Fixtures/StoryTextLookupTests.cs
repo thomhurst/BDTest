@@ -33,16 +33,16 @@ public class StoryTextLookupTests
             : $"As {article} {role}{Environment.NewLine}I want consistent stories{Environment.NewLine}So that reports match{Environment.NewLine}";
 
         var scenario = await test.When(() => Step()).Then(() => Step()).BDTestAsync();
-        var reportedStory = JsonHelper.GetTestDynamicJsonObject(test.TestRun).SelectToken("$.Scenarios[0].StoryText");
+        var reportedStory = JsonHelper.GetTestDynamicJsonObject(test.TestRun).SelectToken("$.scenarios[0].storyText");
 
         using (Assert.Multiple())
         {
             await Assert.That(test.GetStoryText()).IsEqualTo(expected);
-            await Assert.That(scenario.GetStoryText()).IsEqualTo(expected ?? DefaultValues.StoryTextNotDefined);
+            await Assert.That(scenario.StoryText).IsEqualTo(expected ?? DefaultValues.StoryTextNotDefined);
             await Assert.That(reportedStory).IsNotNull();
             if (expected == null)
             {
-                await Assert.That(Required(reportedStory).Type).IsEqualTo(JTokenType.Null);
+                await Assert.That(Required(reportedStory).ToString()).IsEqualTo(DefaultValues.StoryTextNotDefined);
             }
             else
             {

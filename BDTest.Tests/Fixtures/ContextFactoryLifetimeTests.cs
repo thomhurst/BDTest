@@ -207,8 +207,8 @@ public class ContextFactoryLifetimeTests
             await Assert.That(await Assert.That(async () => await fixture.Run()).ThrowsExactly<InvalidOperationException>()).IsSameReferenceAs(expected);
             await Assert.That(run.Scenarios.Single().Status).IsEqualTo(Status.Failed);
             await Assert.That(run.Scenarios.Single().Exception?.Message).IsEqualTo(failure);
-            await Assert.That(run.Scenarios.Single().ExecutionException?.TypeName).IsEqualTo(typeof(InvalidOperationException).FullName);
-            await Assert.That(run.Scenarios.Single().ExecutionException?.ShortTypeName).IsEqualTo(nameof(InvalidOperationException));
+            await Assert.That(run.Scenarios.Single().Exception?.TypeName).IsEqualTo(typeof(InvalidOperationException).FullName);
+            await Assert.That(run.Scenarios.Single().Exception?.ShortTypeName).IsEqualTo(nameof(InvalidOperationException));
             await Assert.That(events).DoesNotContain("step");
             if (contexts.Count > 0) await Assert.That(contexts[0].Disposals).IsEqualTo(1);
             await fixture.InitializeContextAsync();
@@ -388,7 +388,7 @@ public class ContextFactoryLifetimeTests
             var scenario = run.Scenarios.Single();
             await Assert.That(scenario.Status).IsEqualTo(Status.NotImplemented);
             await Assert.That(scenario.Exception?.Message).IsEqualTo(expected.Message);
-            await Assert.That(scenario.ExecutionException).IsNotNull();
+            await Assert.That(scenario.Exception).IsNotNull();
             await Assert.That(Required(scenario.Attempts).Single().Exception?.Message).IsEqualTo(expected.Message);
             await Assert.That(Required(scenario.Steps).All(step => step.Status == Status.NotRun)).IsTrue();
         }
@@ -484,7 +484,7 @@ public class ContextFactoryLifetimeTests
             await Assert.That(scenario.Status).IsEqualTo(Status.Passed);
             await Assert.That(scenario.RetryCount).IsEqualTo(1);
             await Assert.That(scenario.Exception).IsNull();
-            await Assert.That(scenario.ExecutionException).IsNull();
+            await Assert.That(scenario.Exception).IsNull();
             await Assert.That(Required(scenario.Attempts)[0].Exception).IsNotNull();
         }
         finally { await fixture.Finish(); }
@@ -594,7 +594,7 @@ public class ContextFactoryLifetimeTests
         public void FinishSync() => EndTest();
         // A delegate preserves the original cleanup exception without a reflection wrapper.
         public void CompleteLegacy() => BDTest.Tests.Helpers.LegacyLifecycle.Complete(this);
-        public Task<Scenario> Run() => When(() => VerifyInitialized()).Then(() => Complete()).BDTestAsync();
+        public Task<BDTest.Contracts.ScenarioResult> Run() => When(() => VerifyInitialized()).Then(() => Complete()).BDTestAsync();
         public async Task VerifyInitialized()
         {
             await Assert.That(Context.Initializations).IsEqualTo(1);

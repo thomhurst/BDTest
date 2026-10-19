@@ -30,8 +30,8 @@ internal static class ScenarioHookExecutor
                         ?? new ScenarioHookContext(scenario, null, cancellation.Token);
                     if (beforeHooks != null)
                         foreach (Func<ScenarioHookContext, Task> hook in beforeHooks.GetInvocationList())
-                            await hook(context);
-                    if (test != null) await test.OnBeforeScenario(context);
+                            await hook(CreateContext());
+                    if (test != null) await test.OnBeforeScenario(CreateContext());
                     await execute();
                 });
             }
@@ -65,9 +65,11 @@ internal static class ScenarioHookExecutor
             // Throw only after every cleanup handler has had a chance to run.
             if (executionException != null) ExceptionDispatchInfo.Capture(executionException).Throw();
 
+            ScenarioHookContext CreateContext() => context!.WithSnapshot(scenario);
+
             async Task InvokeAfter(Func<ScenarioHookContext, Task> hook)
             {
-                try { await executeInScope(() => hook(context)); }
+                try { await executeInScope(() => hook(CreateContext())); }
                 catch (Exception exception)
                 {
                     if (executionException == null)

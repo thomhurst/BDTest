@@ -16,6 +16,7 @@ public class AttachmentTests
         fixture.Attachments.Attach("setup.txt", new byte[] { 1 }, "text/plain");
         var scenario = await fixture.When(() => fixture.Attach("step.txt")).Then(() => Done()).BDTestAsync();
         fixture.BDTestContext.Attachments.Attach("teardown.txt", new byte[] { 2 }, "text/plain");
+        scenario = run.Scenarios.Single();
 
         await Assert.That(Required(scenario.Attachments).Select(file => file.Name)).IsEquivalentTo((new[] { "setup.txt", "teardown.txt" }).Cast<string?>(), global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
         await Assert.That(Required(Required(scenario.Steps)[0].Attachments).Select(file => file.Name)).IsEquivalentTo((new[] { "before.txt", "step.txt", "after.txt" }).Cast<string?>(), global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
@@ -25,7 +26,7 @@ public class AttachmentTests
         await Assert.That(new StreamReader(content).ReadToEnd()).IsEqualTo("step.txt");
         await Assert.That(attachment.Length).IsEqualTo(8);
         await Assert.That(attachment.AttemptNumber).IsEqualTo(1);
-        var restoredScenario = Required(Required(BDTestJsonHelper.Deserialize(BDTestJsonHelper.GetTestJsonData(null, run))).Scenarios).Single();
+        var restoredScenario = Required(Required(BDTestJsonHelper.DeserializeReport(BDTestJsonHelper.GetTestJsonData(null, run))).Scenarios).Single();
         await Assert.That(Required(restoredScenario.Attachments).Select(file => file.Name)).IsEquivalentTo((new[] { "setup.txt", "teardown.txt" }).Cast<string?>(), global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 
@@ -59,7 +60,7 @@ public class AttachmentTests
         var fixture = new Capture(run, "test");
         await fixture.When(() => fixture.Attach("private-file-content")).Then(() => Done()).BDTestAsync();
         var json = BDTestJsonHelper.GetTestJsonData(null, run);
-        var restored = Required(Required(Required(Required(BDTestJsonHelper.Deserialize(json)).Scenarios).Single().Steps)[0].Attachments).Single();
+        var restored = Required(Required(Required(Required(BDTestJsonHelper.DeserializeReport(json)).Scenarios).Single().Steps)[0].Attachments).Single();
         await Assert.That(restored.Name).IsEqualTo("private-file-content");
         await Assert.That(restored.MimeType).IsEqualTo("text/plain");
         await Assert.That(restored.AttemptNumber).IsEqualTo(1);
@@ -78,7 +79,7 @@ public class AttachmentTests
         using var second = BDTestRun.Start();
         var ready = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var entered = 0;
-        async Task<Scenario> Execute(BDTestRun run, string text)
+        async Task<BDTest.Contracts.ScenarioResult> Execute(BDTestRun run, string text)
         {
             var fixture = new Capture(run, "same-id");
             return await fixture.When(async () =>
@@ -344,7 +345,7 @@ public class AttachmentTests
         var secondFixture = new Capture(second, "same-id");
         var secondScenario = await secondFixture.When(() => saved.Attach("saved", new byte[] { 1 }, "text/plain"))
             .Then(() => Done()).BDTestAsync();
-        await Assert.That(Required(firstScenario.Attachments).Single().Name).IsEqualTo("saved");
+        await Assert.That(Required(first.Scenarios.Single().Attachments).Single().Name).IsEqualTo("saved");
         await Assert.That(secondScenario.Attachments).IsEmpty();
         await Assert.That(Required(secondScenario.Steps).SelectMany(step => Required(step.Attachments))).IsEmpty();
     }
@@ -462,6 +463,7 @@ public class AttachmentTests
             }).Then(() => Done());
         }).BDTestAsync();
         await background.WaitAsync(TimeSpan.FromSeconds(10));
+        outline = run.Scenarios.Single();
 
         await Assert.That(outline.Attachments).Count().IsEqualTo(1000);
         await Assert.That(Required(outline.Examples).All(row => Required(row.Attachments).Count == 1)).IsTrue();
@@ -542,7 +544,7 @@ public class AttachmentTests
         using var source = new PausedStream();
         var capture = Task.Run(() => fixture.Attachments.Attach("setup", source, "text/plain"));
         await source.Started.Task.WaitAsync(TimeSpan.FromSeconds(10));
-        Scenario outline;
+        BDTest.Contracts.ScenarioResult outline;
         try
         {
             outline = await fixture.ScenarioOutline("row <Value>", new[] { new { Value = 1 }, new { Value = 2 } }, row =>
@@ -656,12 +658,12 @@ public class AttachmentTests
         public bool CaptureHooks { get; init; }
         public bool CaptureRetryHook { get; init; }
         public void Attach(string name) => Attachments.Attach(name, Encoding.UTF8.GetBytes(name), "text/plain");
-        public override Task OnBeforeStep(Step step)
+        public override Task OnBeforeStep(BDTest.Contracts.StepResult step)
         {
             if (CaptureHooks) Attach("before.txt");
             return Task.CompletedTask;
         }
-        public override Task OnAfterStep(Step step)
+        public override Task OnAfterStep(BDTest.Contracts.StepResult step)
         {
             if (CaptureHooks) Attach("after.txt");
             return Task.CompletedTask;

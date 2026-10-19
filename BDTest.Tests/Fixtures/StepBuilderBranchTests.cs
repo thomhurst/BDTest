@@ -23,22 +23,22 @@ public class StepBuilderBranchTests : RunTestBase
         var second = prefix.Then(() => calls.Add("second"));
 
 
-        await Assert.That(BDTestUtil.GetNotRunScenarios(TestRun).Select(item => item.ScenarioId)).Contains(first.Guid).And.Contains(second.Guid);
-        await Assert.That(BDTestUtil.GetNotRunScenarios(TestRun).Select(item => item.ScenarioId)).DoesNotContain(prefix.Guid);
+        await Assert.That(BDTestUtil.GetNotRunScenarios(TestRun).Select(item => item.ScenarioId)).Contains(Required(first.Guid)).And.Contains(Required(second.Guid));
+        await Assert.That(BDTestUtil.GetNotRunScenarios(TestRun).Select(item => item.ScenarioId)).DoesNotContain(Required(prefix.Guid));
 
         var firstResult = await first.BDTestAsync();
         await Assert.That(calls).IsEquivalentTo(new[] { "given", "and given", "when", "first" }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
 
-        await Assert.That(BDTestUtil.GetNotRunScenarios(TestRun).Select(item => item.ScenarioId)).Contains(second.Guid).And.DoesNotContain(first.Guid);
+        await Assert.That(BDTestUtil.GetNotRunScenarios(TestRun).Select(item => item.ScenarioId)).Contains(Required(second.Guid)).And.DoesNotContain(Required(first.Guid));
         calls.Clear();
         var secondResult = await second.BDTestAsync();
 
         await Assert.That(calls).IsEquivalentTo(new[] { "given", "and given", "when", "second" }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
         await Assert.That(firstResult.Guid).IsNotEqualTo(secondResult.Guid);
 
-        await Assert.That(BDTestUtil.GetScenarios(TestRun)).Contains(firstResult).And.Contains(secondResult);
+        await Assert.That(BDTestUtil.GetScenarios(TestRun).Select(s => s.Guid)).Contains(firstResult.Guid).And.Contains(secondResult.Guid);
 
-        await Assert.That(BDTestUtil.GetNotRunScenarios(TestRun).Select(item => item.ScenarioId)).DoesNotContain(first.Guid).And.DoesNotContain(second.Guid);
+        await Assert.That(BDTestUtil.GetNotRunScenarios(TestRun).Select(item => item.ScenarioId)).DoesNotContain(Required(first.Guid)).And.DoesNotContain(Required(second.Guid));
         await Assert.That(Required(firstResult.Steps).All(step => step.ScenarioId == firstResult.Guid)).IsTrue();
         await Assert.That(Required(secondResult.Steps).All(step => step.ScenarioId == secondResult.Guid)).IsTrue();
         await Assert.That(firstResult.Steps.Select(step => step.Guid)
@@ -81,7 +81,7 @@ public class StepBuilderBranchTests : RunTestBase
         var timeTaken = firstStep.TimeTaken;
         await Assert.That(async () => await second.BDTestAsync()).ThrowsExactly<InvalidOperationException>();
         var secondResult = BDTestUtil.GetScenarios(TestRun).Single(scenario =>
-            scenario.FrameworkTestId == firstResult.FrameworkTestId && scenario.GetScenarioText() == "failed branch");
+            scenario.FrameworkTestId == firstResult.FrameworkTestId && scenario.ScenarioText == "failed branch");
 
         await Assert.That(firstResult.Status).IsEqualTo(Status.Passed);
         await Assert.That(firstStep.Status).IsEqualTo(Status.Passed);
@@ -159,8 +159,8 @@ public class StepBuilderBranchTests : RunTestBase
         var first = prefix.Then(() => Console.WriteLine("first"));
         var second = prefix.Then(() => Console.WriteLine("second"));
 
-        Scenario secondResult;
-        Scenario firstResult;
+        BDTest.Contracts.ScenarioResult secondResult;
+        BDTest.Contracts.ScenarioResult firstResult;
         switch (mode)
         {
             case "async":
@@ -176,7 +176,7 @@ public class StepBuilderBranchTests : RunTestBase
 
         await Assert.That(Required(firstResult.Steps)[1].Output).IsEqualTo("first");
         await Assert.That(Required(secondResult.Steps)[1].Output).IsEqualTo("second");
-        await Assert.That(Required(firstResult.TearDownOutput).Trim()).IsEqualTo("teardown");
+        await Assert.That(Required(BDTestUtil.GetScenarios(TestRun).Single(s => s.Guid == firstResult.Guid).TearDownOutput).Trim()).IsEqualTo("teardown");
 
         await Assert.That(secondResult.TearDownOutput).IsNullOrEmpty();
     }

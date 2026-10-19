@@ -143,11 +143,11 @@ public class NUnitCompositionTests
                 Assert.That(scenario.TestStartupInformation, Does.Contain(label + " setup").And.Not.Contain(other));
                 Assert.That(scenario.Output, Does.Contain(label + " step").And.Not.Contain(other));
                 Assert.That(scenario.TearDownOutput, Does.Contain(label + " teardown").And.Not.Contain(other));
-                Assert.That(scenario.GetScenarioText(), Is.EqualTo("Native row metadata"));
+                Assert.That(scenario.ScenarioText, Is.EqualTo("Native row metadata"));
                 Assert.That(scenario.Tags, Is.EquivalentTo(new[] { "native-row", "native-class" }));
                 Assert.That(scenario.RetryCount, Is.EqualTo(1));
             }
-            var report = Required(BDTestJsonHelper.Deserialize(BDTestJsonHelper.GetTestJsonData(null, run)));
+            var report = Required(BDTestJsonHelper.DeserializeReport(BDTestJsonHelper.GetTestJsonData(null, run)));
             Assert.That(Required(report.Scenarios).Select(s => s.ReportId), Is.All.EqualTo(run.ReportId));
         }
         var contexts = NUnitCompositionEvidence.Contexts.ToArray();

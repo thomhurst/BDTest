@@ -28,7 +28,7 @@ public class TUnitExecutionIdTests
     [Test]
     public async Task ExecutionWithoutFlowingTestContextUsesStableFallback()
     {
-        Task<Scenario> execution;
+        Task<BDTest.Contracts.ScenarioResult> execution;
         using (ExecutionContext.SuppressFlow())
         {
             execution = Task.Run(() => RunWithoutCurrentTestAsync("background startup"));
@@ -45,7 +45,7 @@ public class TUnitExecutionIdTests
         next.TearDown();
     }
 
-    private static async Task<Scenario> RunWithoutCurrentTestAsync(string startupOutput)
+    private static async Task<BDTest.Contracts.ScenarioResult> RunWithoutCurrentTestAsync(string startupOutput)
     {
         await Assert.That(TestContext.Current).IsNull();
         var fixture = new AdapterProbe();

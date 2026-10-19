@@ -1,3 +1,4 @@
+using BDTest.Contracts;
 using System.Runtime.ExceptionServices;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -52,7 +53,18 @@ public class Step
     /// <summary>The matched skip rule or debug setting, or null when no condition skipped this step.</summary>
     [JsonInclude]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public StepSkipReason? SkipReason { get; internal set; }
+    public StepSkipReason? SkipReason
+    {
+        get => _skipReason;
+        internal set
+        {
+            // Publication and retry clears must not race a result snapshot.
+            lock (SnapshotGate ?? this)
+                _skipReason = value;
+        }
+    }
+
+    private StepSkipReason? _skipReason;
 
     /// <summary>The timeout for this step, or null for no step-specific limit.</summary>
     [JsonInclude]
@@ -85,6 +97,7 @@ public class Step
 
     [JsonIgnore] private RunOptions Options => _options ?? throw new InvalidOperationException("A report step cannot be executed.");
     private readonly RunOptions? _options;
+    [JsonIgnore] internal object? SnapshotGate { get; }
 
     internal List<Attachment> ExecutionAttachments => Attachments ?? throw new InvalidOperationException("The step has no attachment collection.");
     private List<string> ExecutionDiagnostics => Diagnostics ?? throw new InvalidOperationException("The step has no diagnostics collection.");
@@ -101,6 +114,7 @@ public class Step
     private Step(Runnable runnable, StepType stepType, string? scenarioId, string? reportId, BDTestRun run, string textTemplate)
     {
         _options = (run ?? throw new ArgumentNullException(nameof(run))).Options;
+        SnapshotGate = run.Store.Gate;
         Guid = System.Guid.NewGuid().ToString("N");
         ScenarioId = scenarioId;
         Runnable = runnable;
@@ -169,7 +183,8 @@ public class Step
     {
         _generatedStepText = _stepTextTemplate;
         StepText = SubstituteExampleValues($"{StepPrefix} {_stepTextTemplate}");
-        ExecutionDiagnostics.Clear();
+        lock (SnapshotGate ?? this)
+            ExecutionDiagnostics.Clear();
         Arguments = Array.Empty<StepArgument>();
         TimedOut = false;
         SkipReason = null;
@@ -191,11 +206,11 @@ public class Step
             // A nonempty text override retains its existing behavior: inline readers are bypassed.
             if (string.IsNullOrWhiteSpace(invokedStepText))
             {
-                _generatedStepText = ExecutionRunnable.Definition.GetText(true, ExecutionDiagnostics.Add, ExplicitArguments, Options.Converters, arguments.Add);
+                _generatedStepText = ExecutionRunnable.Definition.GetText(true, AddDiagnostic, ExplicitArguments, Options.Converters, arguments.Add);
             }
             foreach (var reader in AttachedArguments)
             {
-                StepTextHelper.GetArgumentValue(reader, "attachment", ExecutionDiagnostics.Add, Options.Converters, arguments.Add);
+                StepTextHelper.GetArgumentValue(reader, "attachment", AddDiagnostic, Options.Converters, arguments.Add);
             }
             Arguments = arguments;
         }
@@ -207,6 +222,13 @@ public class Step
         }
 
         StepText = SubstituteExampleValues($"{StepPrefix} {_generatedStepText}");
+    }
+
+    private void AddDiagnostic(string diagnostic)
+    {
+        // Match snapshot reads without holding the gate while user readers or converters execute.
+        lock (SnapshotGate ?? this)
+            ExecutionDiagnostics.Add(diagnostic);
     }
 
     private StepSkipReason? EvaluateSkipReason()
@@ -250,14 +272,14 @@ public class Step
 
             if (beforeHooks != null)
             {
-                foreach (Func<Step, Task> hook in beforeHooks.GetInvocationList())
+                foreach (Func<StepResult, Task> hook in beforeHooks.GetInvocationList())
                 {
-                    await hook(this);
+                    await hook(ResultSnapshot.Create(this));
                 }
             }
             if (test != null)
             {
-                await test.OnBeforeStep(this);
+                await test.OnBeforeStep(ResultSnapshot.Create(this));
             }
 
             beforeHooksCompleted = true;
@@ -333,7 +355,7 @@ public class Step
         }
     }
 
-    private async Task<Exception?> RunAfterHooks(BDTestBase? test, Func<Step, Task>? globalHooks)
+    private async Task<Exception?> RunAfterHooks(BDTestBase? test, Func<StepResult, Task>? globalHooks)
     {
         Exception? firstException = null;
         if (test != null)
@@ -342,18 +364,18 @@ public class Step
         }
         if (globalHooks != null)
         {
-            foreach (Func<Step, Task> hook in globalHooks.GetInvocationList())
+            foreach (Func<StepResult, Task> hook in globalHooks.GetInvocationList())
             {
                 await Invoke(hook);
             }
         }
         return firstException;
 
-        async Task Invoke(Func<Step, Task> hook)
+        async Task Invoke(Func<StepResult, Task> hook)
         {
             try
             {
-                await hook(this);
+                await hook(ResultSnapshot.Create(this));
             }
             catch (Exception e)
             {

@@ -21,12 +21,12 @@ public class ScenarioDefinitionTests
 
         await Assert.That((definition.Steps.Select(step => step.GetType())).All(item => Equals(item, typeof(StepDefinition)))).IsTrue();
         var result = await builder;
-        result.Tags[0] = "changed result";
+        run.Store.ScenariosByInternalId[result.Guid].Tags[0] = "changed result";
         await Assert.That(definition.Tags).IsEquivalentTo(new[] { "definition" }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
         await Assert.That(definition.Steps[0].Timeout).IsEqualTo(TimeSpan.FromSeconds(3));
         await Assert.That(definition.ScenarioTimeout).IsEqualTo(TimeSpan.FromSeconds(5));
         await Assert.That(definition.Steps[0].Runnable).IsNotNull();
-        await Assert.That(Required(result.Steps)[0].Runnable).IsNull();
+        await Assert.That(run.Store.ScenariosByInternalId[result.Guid].ExecutionSteps[0].Runnable).IsNull();
         var extended = builder.And(NoOp);
         await Assert.That((await extended).Status).IsEqualTo(Status.Passed);
     }
@@ -42,21 +42,21 @@ public class ScenarioDefinitionTests
             .WithDocString(() => { reads++; return new StepDocString("text"); })
             .WithScenarioText("pending definition");
         var pending = BDTestUtil.GetNotRunScenarios(run).Single();
-        await Assert.That(pending).IsTypeOf<ScenarioDefinitionSummary>();
+        await Assert.That(pending).IsTypeOf<BDTest.Contracts.ScenarioDefinitionSummary>();
         await Assert.That(pending.ScenarioId).IsEqualTo(builder.ScenarioId);
-        Required(pending.Tags)[0] = "changed summary";
+        await Assert.That(() => ((IList<string>)pending.Tags)[0] = "changed summary").ThrowsExactly<NotSupportedException>();
         await Assert.That(builder.Tags).IsEquivalentTo(new[] { "definition" }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
         await Assert.That(run.Store.NotRun.Single().Value).IsSameReferenceAs(builder.Definition);
         var json = BDTestJsonHelper.GetTestJsonData(new BDTestRunDescriptor(), run);
-        var restored = Required(Required(BDTestJsonHelper.Deserialize(json)).NotRun).Single();
-        await Assert.That(restored.GetScenarioText()).IsEqualTo("pending definition");
+        var restored = Required(Required(BDTestJsonHelper.DeserializeReport(json)).NotRun).Single();
+        await Assert.That(restored.ScenarioText).IsEqualTo("pending definition");
         await Assert.That(restored.Steps).Count().IsEqualTo(2);
 
         await Assert.That(json).DoesNotContain("\"Runnable\"").And.DoesNotContain("\"BdTestBase\"").And.DoesNotContain("\"Definition\"");
         await Assert.That(reads).IsZero();
         _ = builder.WithScenarioText("changed definition");
-        await Assert.That(pending.GetScenarioText()).IsEqualTo("pending definition");
-        await Assert.That(BDTestUtil.GetNotRunScenarios(run).Single().GetScenarioText()).IsEqualTo("changed definition");
+        await Assert.That(pending.ScenarioText).IsEqualTo("pending definition");
+        await Assert.That(BDTestUtil.GetNotRunScenarios(run).Single().ScenarioText).IsEqualTo("changed definition");
     }
 
     [Test]
@@ -174,14 +174,13 @@ public class ScenarioDefinitionTests
 
         var summary = BDTestUtil.GetNotRunScenarios(run).Single();
         var projected = Required(summary.CustomTestInformation).Single();
-        await Assert.That(projected).IsTypeOf<TestInformationAttribute>();
-        await Assert.That(projected.Information).IsEqualTo("bug 123");
-        await Assert.That(projected.Print()).IsEqualTo("TestInformationAttribute - bug 123");
-        summary.CustomTestInformation[0] = new TestInformationAttribute("changed");
+        await Assert.That(projected).IsTypeOf<string>();
+        await Assert.That(projected).IsEqualTo("bug 123");
+        await Assert.That(() => ((IList<string>)summary.CustomTestInformation)[0] = "changed").ThrowsExactly<NotSupportedException>();
         await Assert.That(Required(builder.CustomTestInformation).Single()).IsSameReferenceAs(information);
-        await Assert.That(Required(BDTestUtil.GetNotRunScenarios(run).Single().CustomTestInformation).Single().Information).IsEqualTo("bug 123");
+        await Assert.That(Required(BDTestUtil.GetNotRunScenarios(run).Single().CustomTestInformation).Single()).IsEqualTo("bug 123");
         var result = await builder;
-        await Assert.That(Required(result.CustomTestInformation).Single()).IsSameReferenceAs(information);
+        await Assert.That(Required(result.CustomTestInformation).Single()).IsEqualTo(information.Information);
         await Assert.That(information.Details).IsEquivalentTo(new[] { "custom" }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 

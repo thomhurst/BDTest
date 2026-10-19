@@ -1,3 +1,5 @@
+using Step = BDTest.Contracts.StepResult;
+using Scenario = BDTest.Contracts.ScenarioResult;
 using BDTest.Attributes;
 using BDTest.Settings;
 using BDTest.Test;
@@ -12,20 +14,20 @@ public class StepHookTests : TestRunOwner
     public async Task Hooks_are_awaited_in_order_for_each_step()
     {
         var calls = new List<string>();
-        Func<Step, Task> before = async step =>
+        Func<BDTest.Contracts.StepResult, Task> before = async step =>
         {
             await Task.Yield();
             calls.Add("run before");
         };
-        Func<Step, Task> after = async step =>
+        Func<BDTest.Contracts.StepResult, Task> after = async step =>
         {
             await Task.Yield();
             await Assert.That(step.Status).IsEqualTo(Status.Passed);
             await Assert.That(step.EndTime).IsGreaterThanOrEqualTo(step.StartTime);
             calls.Add("run after");
         };
-        Func<Step, Task> secondBefore = async _ => { await Task.Yield(); calls.Add("second before"); };
-        Func<Step, Task> secondAfter = async _ => { await Task.Yield(); calls.Add("second after"); };
+        Func<BDTest.Contracts.StepResult, Task> secondBefore = async _ => { await Task.Yield(); calls.Add("second before"); };
+        Func<BDTest.Contracts.StepResult, Task> secondAfter = async _ => { await Task.Yield(); calls.Add("second after"); };
         Options.StepHooks.Add(new CallbackStepHook(before: before));
         Options.StepHooks.Add(new CallbackStepHook(before: secondBefore));
         Options.StepHooks.Add(new CallbackStepHook(after: after));
@@ -55,13 +57,13 @@ public class StepHookTests : TestRunOwner
         Step? observed = null;
         Status? observedStatus = null;
         string? observedException = null;
-        Func<Step, Task> after = async _ =>
+        Func<BDTest.Contracts.StepResult, Task> after = async _ =>
         {
             await Task.Yield();
             calls.Add("run after failed");
             throw new Exception("run hook failed");
         };
-        Func<Step, Task> lastAfter = _ => { calls.Add("last after"); return Task.CompletedTask; };
+        Func<BDTest.Contracts.StepResult, Task> lastAfter = _ => { calls.Add("last after"); return Task.CompletedTask; };
         Options.StepHooks.Add(new CallbackStepHook(after: after));
         Options.StepHooks.Add(new CallbackStepHook(after: lastAfter));
         using var test = new HookTest(() => TestRun)
@@ -81,7 +83,7 @@ public class StepHookTests : TestRunOwner
         await Assert.That(thrown).IsSameReferenceAs(original);
         await Assert.That(observedStatus).IsEqualTo(Status.Failed);
         await Assert.That(observedException).IsEqualTo(original.Message);
-        await Assert.That(Required(Required(observed).Exception).Message).IsEqualTo(original.Message);
+        await Assert.That(Required(GetStep(Required(observed)).Exception).Message).IsEqualTo(original.Message);
         await Assert.That(calls).IsEquivalentTo(new[] { "test after failed", "run after failed", "last after" }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
         await Assert.That(GetScenario(Required(observed)).Status).IsEqualTo(Status.Failed);
         await Assert.That(Required(GetScenario(Required(observed)).Steps)[1].Status).IsEqualTo(Status.NotRun);
@@ -140,18 +142,19 @@ public class StepHookTests : TestRunOwner
         await Assert.That(thrown).IsSameReferenceAs(exception);
         await Assert.That(afterCalls).IsEqualTo(1);
         await Assert.That(observedStatus).IsEqualTo(phase == "after" ? Status.Passed : expected);
-        await Assert.That(Required(observed).Status).IsEqualTo(expected);
+        await Assert.That(Required(observed).Status).IsEqualTo(observedStatus);
+        await Assert.That(GetStep(Required(observed)).Status).IsEqualTo(expected);
         await Assert.That(GetScenario(Required(observed)).Status).IsEqualTo(expected);
         await Assert.That(stepCalls).IsEquivalentTo(phase == "before" ? Array.Empty<string>() : new[] { "step" }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
-        await Assert.That(Required(observed).Exception?.Message).IsEqualTo(expected is Status.Failed or Status.NotImplemented ? Required(exception).Message : null);
+        await Assert.That(GetStep(Required(observed)).Exception?.Message).IsEqualTo(expected is Status.Failed or Status.NotImplemented ? Required(exception).Message : null);
     }
 
     [Test]
     public async Task Run_before_failure_skips_body_but_still_runs_after_hooks()
     {
         var calls = new List<string>();
-        Func<Step, Task> before = _ => throw new InvalidOperationException("before failed");
-        Func<Step, Task> after = _ => { calls.Add("run after"); return Task.CompletedTask; };
+        Func<BDTest.Contracts.StepResult, Task> before = _ => throw new InvalidOperationException("before failed");
+        Func<BDTest.Contracts.StepResult, Task> after = _ => { calls.Add("run after"); return Task.CompletedTask; };
         Options.StepHooks.Add(new CallbackStepHook(before: before));
         Options.StepHooks.Add(new CallbackStepHook(after: after));
         using var test = new HookTest(() => TestRun)
@@ -171,8 +174,8 @@ public class StepHookTests : TestRunOwner
         var exception = new InvalidOperationException("after failed");
         var calls = new List<string>();
         Step? observed = null;
-        Func<Step, Task> after = _ => Task.FromException(exception);
-        Func<Step, Task> last = step => { observed = step; calls.Add("last"); return Task.CompletedTask; };
+        Func<BDTest.Contracts.StepResult, Task> after = _ => Task.FromException(exception);
+        Func<BDTest.Contracts.StepResult, Task> last = step => { observed = step; calls.Add("last"); return Task.CompletedTask; };
         Options.StepHooks.Add(new CallbackStepHook(after: after));
         Options.StepHooks.Add(new CallbackStepHook(after: last));
         using var test = new HookTest(() => TestRun);
@@ -180,8 +183,8 @@ public class StepHookTests : TestRunOwner
             await test.When(() => calls.Add("body")).Then(() => calls.Add("unreached")).BDTestAsync()).ThrowsExactly<InvalidOperationException>();
         await Assert.That(thrown).IsSameReferenceAs(exception);
         await Assert.That(calls).IsEquivalentTo(new[] { "body", "last" }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
-        await Assert.That(Required(observed).Status).IsEqualTo(Status.Failed);
-        await Assert.That(Required(Required(observed).Exception).Message).IsEqualTo(Required(exception).Message);
+        await Assert.That(GetStep(Required(observed)).Status).IsEqualTo(Status.Failed);
+        await Assert.That(Required(GetStep(Required(observed)).Exception).Message).IsEqualTo(Required(exception).Message);
 
     }
 
@@ -232,9 +235,9 @@ public class StepHookTests : TestRunOwner
     public async Task Registration_changes_do_not_mutate_the_running_snapshot()
     {
         var calls = new List<string>();
-        Func<Step, Task> added = _ => { calls.Add("added"); return Task.CompletedTask; };
+        Func<BDTest.Contracts.StepResult, Task> added = _ => { calls.Add("added"); return Task.CompletedTask; };
         var registered = false;
-        Func<Step, Task> before = _ =>
+        Func<BDTest.Contracts.StepResult, Task> before = _ =>
         {
             if (!registered)
             {
@@ -275,7 +278,7 @@ public class StepHookTests : TestRunOwner
                 }
             };
             var scenario = await test.When(() => NoOp()).Then(() => NoOp()).BDTestAsync();
-            await Assert.That(steps).IsEquivalentTo(Required(scenario.Steps), EqualityComparer<Step>.Default, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
+            await Assert.That(steps.Select(s => s.Guid)).IsEquivalentTo(Required(scenario.Steps.Select(s => s.Guid)), global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
             await Assert.That(steps.All(step => step.ScenarioId == scenario.Guid)).IsTrue();
             return scenario;
         });
@@ -325,7 +328,7 @@ public class StepHookTests : TestRunOwner
         var exception = await Assert.That(async () =>
             await builder.BDTestAsync().WaitAsync(TimeSpan.FromSeconds(10))).ThrowsExactly<TimeoutException>();
 
-        await Assert.That(Required(Required(observed).Exception).Message).IsEqualTo(Required(exception).Message);
+        await Assert.That(Required(GetStep(Required(observed)).Exception).Message).IsEqualTo(Required(exception).Message);
         await Assert.That(GetScenario(Required(observed)).Status).IsEqualTo(Status.Failed);
         await Assert.That(Required(GetScenario(Required(observed)).Steps)[1].Status).IsEqualTo(Status.NotRun);
     }
@@ -349,6 +352,7 @@ public class StepHookTests : TestRunOwner
         await Assert.That(Required(exception).Message).StartsWith("Scenario");
         await Assert.That(calls).IsEquivalentTo(new[] { "after" }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
         await Assert.That(Required(observed).TimedOut).IsTrue();
+        await Assert.That(GetStep(Required(observed)).TimedOut).IsTrue();
         await Assert.That(GetScenario(Required(observed)).Status).IsEqualTo(Status.Failed);
     }
 
@@ -378,7 +382,7 @@ public class StepHookTests : TestRunOwner
         };
         var calls = new List<string>();
         Step? observed = null;
-        Func<Step, Task> before = async _ =>
+        Func<BDTest.Contracts.StepResult, Task> before = async _ =>
         {
             await Task.Delay(150);
             throw failure;
@@ -397,8 +401,9 @@ public class StepHookTests : TestRunOwner
         await Assert.That(Required(exception).Message).StartsWith("Scenario");
         await Assert.That(calls).IsEquivalentTo(new[] { "after" }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
         await Assert.That(Required(observed).TimedOut).IsTrue();
-        await Assert.That(Required(observed).Status).IsEqualTo(Status.Failed);
-        await Assert.That(Required(Required(observed).Exception).Message).IsEqualTo(Required(exception).Message);
+        await Assert.That(GetStep(Required(observed)).TimedOut).IsTrue();
+        await Assert.That(GetStep(Required(observed)).Status).IsEqualTo(Status.Failed);
+        await Assert.That(Required(GetStep(Required(observed)).Exception).Message).IsEqualTo(Required(exception).Message);
         await Assert.That(GetScenario(Required(observed)).TimedOut).IsTrue();
         await Assert.That(GetScenario(Required(observed)).Status).IsEqualTo(Status.Failed);
         await Assert.That(Required(GetScenario(Required(observed)).Steps)[1].Status).IsEqualTo(Status.NotRun);
@@ -412,7 +417,7 @@ public class StepHookTests : TestRunOwner
     {
         var failure = new InvalidOperationException("before hook failed within budget");
         Step? observed = null;
-        Func<Step, Task> before = _ => throw failure;
+        Func<BDTest.Contracts.StepResult, Task> before = _ => throw failure;
         using var test = new HookTest(() => TestRun)
         {
             Before = runHook ? _ => Task.CompletedTask : before,
@@ -425,7 +430,7 @@ public class StepHookTests : TestRunOwner
 
         await Assert.That(thrown).IsSameReferenceAs(failure);
         await Assert.That(Required(observed).TimedOut).IsFalse();
-        await Assert.That(Required(Required(observed).Exception).Message).IsEqualTo(failure.Message);
+        await Assert.That(Required(GetStep(Required(observed)).Exception).Message).IsEqualTo(failure.Message);
         await Assert.That(GetScenario(Required(observed)).TimedOut).IsFalse();
         await Assert.That(GetScenario(Required(observed)).Status).IsEqualTo(Status.Failed);
 
@@ -474,9 +479,10 @@ public class StepHookTests : TestRunOwner
 
         await Assert.That(Required(exception).Message).StartsWith("Scenario");
         await Assert.That(calls).IsEquivalentTo(new[] { "body", "after" }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
-        await Assert.That(Required(observed).TimedOut).IsTrue();
-        await Assert.That(Required(observed).Status).IsEqualTo(Status.Failed);
-        await Assert.That(Required(Required(observed).Exception).Message).IsEqualTo(Required(exception).Message);
+        await Assert.That(Required(observed).TimedOut).IsFalse();
+        await Assert.That(GetStep(Required(observed)).TimedOut).IsTrue();
+        await Assert.That(GetStep(Required(observed)).Status).IsEqualTo(Status.Failed);
+        await Assert.That(Required(GetStep(Required(observed)).Exception).Message).IsEqualTo(Required(exception).Message);
         await Assert.That(GetScenario(Required(observed)).TimedOut).IsTrue();
         await Assert.That(GetScenario(Required(observed)).Status).IsEqualTo(Status.Failed);
         if (!finalStep)
@@ -484,6 +490,8 @@ public class StepHookTests : TestRunOwner
             await Assert.That(Required(GetScenario(Required(observed)).Steps)[2].Status).IsEqualTo(Status.NotRun);
         }
     }
+
+    private Step GetStep(Step step) => GetScenario(step).Steps.Single(s => s.Guid == step.Guid);
 
     private Scenario GetScenario(Step step) => BDTestUtil.GetScenarios(TestRun).Single(scenario => scenario.Guid == step.ScenarioId);
     private static void Throw(Exception exception) => throw exception;
@@ -522,9 +530,9 @@ public class StepHookTests : TestRunOwner
             }
         }
         public void Dispose() => EndTest();
-        public Func<Step, Task> Before { get; init; } = _ => Task.CompletedTask;
-        public Func<Step, Task> After { get; init; } = _ => Task.CompletedTask;
-        public override Task OnBeforeStep(Step step) => Before(step);
-        public override Task OnAfterStep(Step step) => After(step);
+        public Func<BDTest.Contracts.StepResult, Task> Before { get; init; } = _ => Task.CompletedTask;
+        public Func<BDTest.Contracts.StepResult, Task> After { get; init; } = _ => Task.CompletedTask;
+        public override Task OnBeforeStep(BDTest.Contracts.StepResult step) => Before(step);
+        public override Task OnAfterStep(BDTest.Contracts.StepResult step) => After(step);
     }
 }

@@ -17,7 +17,7 @@ public class MemoryCacheBdTestDataStore : IMemoryCacheBdTestDataStore, IDisposab
 {
     private static readonly JsonSerializerOptions PageSizeOptions = new()
     {
-        Converters = { new System.Text.Json.Serialization.JsonStringEnumConverter<BDTest.Test.Status>() }
+        Converters = { new System.Text.Json.Serialization.JsonStringEnumConverter<BDTest.Contracts.Status>() }
     };
     private readonly MemoryCache _testRecordCache;
     private readonly MemoryCache _pageCache;

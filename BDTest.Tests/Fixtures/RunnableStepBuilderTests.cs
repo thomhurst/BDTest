@@ -104,14 +104,14 @@ public class RunnableStepBuilderTests : RunTestBase
         }
 
         var scenarios = await Task.WhenAll(callers);
-        var completed = scenarios.OfType<Scenario>().ToArray();
+        var completed = scenarios.OfType<BDTest.Contracts.ScenarioResult>().ToArray();
         await Assert.That(rejectionCount).IsEqualTo(callerCount - expectedExecutions);
         await Assert.That(_executions).IsEqualTo(expectedExecutions);
 
         await Assert.That((completed).Length).IsEqualTo(expectedExecutions);
         var reported = BDTestUtil.GetScenarios(TestRun).Where(x => x.FrameworkTestId == builder.TestId).ToArray();
 
-        await Assert.That(reported).IsEquivalentTo(completed, EqualityComparer<Scenario>.Default, global::TUnit.Assertions.Enums.CollectionOrdering.Any);
+        await Assert.That(reported).IsEquivalentTo(completed, EqualityComparer<BDTest.Contracts.ScenarioResult>.Create((left, right) => new KellermanSoftware.CompareNetObjects.CompareLogic().Compare(left, right).AreEqual, _ => 0), global::TUnit.Assertions.Enums.CollectionOrdering.Any);
         await Assert.That(completed.Select(x => x.Guid).Distinct().Count()).IsEqualTo(expectedExecutions);
     }
 
@@ -132,7 +132,7 @@ public class RunnableStepBuilderTests : RunTestBase
         await Assert.That(_executions).IsEqualTo(2);
         await Assert.That(firstResult.Guid).IsNotEqualTo(secondResult.Guid);
 
-        await Assert.That(BDTestUtil.GetScenarios(TestRun).Where(x => x.FrameworkTestId == parent.TestId)).IsEquivalentTo(new[] { firstResult, secondResult }, EqualityComparer<Scenario>.Default, global::TUnit.Assertions.Enums.CollectionOrdering.Any);
+        await Assert.That(BDTestUtil.GetScenarios(TestRun).Where(x => x.FrameworkTestId == parent.TestId)).IsEquivalentTo(new[] { firstResult, secondResult }, EqualityComparer<BDTest.Contracts.ScenarioResult>.Create((left, right) => new KellermanSoftware.CompareNetObjects.CompareLogic().Compare(left, right).AreEqual, _ => 0), global::TUnit.Assertions.Enums.CollectionOrdering.Any);
     }
 
     [Test]
@@ -150,7 +150,7 @@ public class RunnableStepBuilderTests : RunTestBase
         await Assert.That(extended.Steps).Count().IsEqualTo(4);
         await Assert.That(Required(original.Steps).Intersect(Required(extended.Steps))).IsEmpty();
 
-        await Assert.That(BDTestUtil.GetScenarios(TestRun).Where(x => x.FrameworkTestId == parent.TestId)).IsEquivalentTo(new[] { original, extended }, EqualityComparer<Scenario>.Default, global::TUnit.Assertions.Enums.CollectionOrdering.Any);
+        await Assert.That(BDTestUtil.GetScenarios(TestRun).Where(x => x.FrameworkTestId == parent.TestId)).IsEquivalentTo(new[] { original, extended }, EqualityComparer<BDTest.Contracts.ScenarioResult>.Create((left, right) => new KellermanSoftware.CompareNetObjects.CompareLogic().Compare(left, right).AreEqual, _ => 0), global::TUnit.Assertions.Enums.CollectionOrdering.Any);
     }
 
     [Test, BDTestRetry(1)]
@@ -175,7 +175,7 @@ public class RunnableStepBuilderTests : RunTestBase
         return Task.CompletedTask;
     }
 
-    private static async Task<Scenario> Execute(RunnableStepBuilder builder, EntryPoint entryPoint)
+    private static async Task<BDTest.Contracts.ScenarioResult> Execute(RunnableStepBuilder builder, EntryPoint entryPoint)
     {
         return entryPoint switch
         {
@@ -185,12 +185,12 @@ public class RunnableStepBuilderTests : RunTestBase
         };
     }
 
-    private async Task AssertReportedOnce(Scenario scenario)
+    private async Task AssertReportedOnce(BDTest.Contracts.ScenarioResult scenario)
     {
         var reported = BDTestUtil.GetScenarios(TestRun).Where(x => x.FrameworkTestId == scenario.FrameworkTestId).ToList();
         await Assert.That(reported).Count().IsEqualTo(1);
         // Re-execution used to overwrite the same report key with a different Scenario.
-        await Assert.That(reported[0]).IsSameReferenceAs(scenario);
+        await Assert.That(reported[0].Guid).IsEqualTo(scenario.Guid);
     }
 
     private void CountExecution() => Interlocked.Increment(ref _executions);

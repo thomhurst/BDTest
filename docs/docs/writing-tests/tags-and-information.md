@@ -30,7 +30,7 @@ public class CheckoutTests : TUnitBDTestBase<CheckoutContext>
 - Method tags combine with class tags. Duplicates are removed, ignoring case.
 - Tag names are trimmed and cannot be empty.
 
-Tags are available on `BuildableTest.Tags` and `Scenario.Tags` and are written to JSON output, including for tests that did not run.
+Tags are available on `BuildableTest.Tags` and immutable `ScenarioResult.Tags` snapshots and are written to JSON output, including for tests that did not run.
 
 On the report server's **Scenarios** page, pick a tag to filter scenarios before grouping and paging. Tag matching ignores case and combines with the status filter. Choose **All tags** to clear the filter.
 
@@ -79,9 +79,9 @@ public async Task Test1()
 }
 ```
 
-The report shows each entry as `AttributeTypeName - Information`. The values are also available on `Scenario.CustomTestInformation`.
+Static HTML reports show each entry's text under the generic **Information** label. Executed `BDTest.Contracts.ScenarioResult.CustomTestInformation` and pending `BDTest.Contracts.ScenarioDefinitionSummary.CustomTestInformation` expose read-only collections of information strings, also used by schema-versioned JSON reports.
 
-Pending summaries returned by `BDTestUtil.GetNotRunScenarios(run)` are data-only: their `CustomTestInformation` entries are base `TestInformationAttribute` values containing only `Information`. They do not preserve custom attribute types or additional members, and `Print()` uses the base attribute name. Builders and executed scenarios retain the custom attribute types. See [Scenario definitions migration](../migration/scenario-definitions.md).
+Result snapshots and pending summaries do not retain custom attribute instances, additional members, type names or `Print()` behavior. Include any identifying label in the attribute's `Information` text, as the `BugInformationAttribute` example does. Builders retain their attribute instances; report consumers read strings. Historical reports retain their legacy model. See [Immutable results migration](../migration/immutable-results.md) and [Scenario definitions migration](../migration/scenario-definitions.md).
 
 Method tags and test information are read from the exact method supplied by the [adapter lifecycle](../frameworks/custom-adapters.md#method-identity-and-migration), not from helpers on the call stack. Class tags are combined with method tags. Standalone builders need an explicit method identity to use method attributes.
 

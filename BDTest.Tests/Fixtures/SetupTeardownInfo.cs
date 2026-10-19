@@ -9,11 +9,11 @@ namespace BDTest.Tests.Fixtures;
 
 public class SetupTeardownInfo : TUnitBDTestBase<MyTestContext>
 {
-    private Scenario? _scenario;
+    private BDTest.Contracts.ScenarioResult? _scenario;
 
     private JToken ScenarioJson() => Required(JObject.Parse(
-        BDTestJsonHelper.GetTestJsonData(null, TestRun))["Scenarios"])
-        .Single(scenario => (string?)scenario["Guid"] == Required(_scenario).Guid);
+        BDTestJsonHelper.GetTestJsonData(null, TestRun))["scenarios"])
+        .Single(scenario => (string?)scenario["guid"] == Required(_scenario).Guid);
 
     [Before(HookType.Test)]
     public void WriteStartupInformation()
@@ -26,9 +26,9 @@ public class SetupTeardownInfo : TUnitBDTestBase<MyTestContext>
     {
         Console.Out.WriteLine("Some teardown info!");
             
-        await Assert.That(Required(Required(_scenario).TearDownOutput).Trim()).IsEqualTo("Some teardown info!");
+        await Assert.That(Required(BDTestUtil.GetScenarios(TestRun).Single(s => s.Guid == Required(_scenario).Guid).TearDownOutput).Trim()).IsEqualTo("Some teardown info!");
 
-        await Assert.That(Required(ScenarioJson()["TearDownOutput"]).ToString().Trim()).IsEqualTo("Some teardown info!");
+        await Assert.That(Required(ScenarioJson()["tearDownOutput"]).ToString().Trim()).IsEqualTo("Some teardown info!");
     }
         
     [System.Diagnostics.CodeAnalysis.SuppressMessage("TUnit", "TUnit0018", Justification = "Each TUnit case owns this fixture; scenario callbacks and teardown intentionally observe its state.")]
@@ -43,7 +43,7 @@ public class SetupTeardownInfo : TUnitBDTestBase<MyTestContext>
         await Assert.That(Required(_scenario.Steps)[0].Output).IsEqualTo("run a test");
         await Assert.That(_scenario.Steps[1].Output).IsEqualTo("the results should have set up and tear down information added");
 
-        await Assert.That(Required(ScenarioJson()["TestStartupInformation"]).ToString().Trim()).IsEqualTo("Some startup info!");
+        await Assert.That(Required(ScenarioJson()["testStartupInformation"]).ToString().Trim()).IsEqualTo("Some startup info!");
     }
     
     [System.Diagnostics.CodeAnalysis.SuppressMessage("TUnit", "TUnit0018", Justification = "Each TUnit case owns this fixture; scenario callbacks and teardown intentionally observe its state.")]

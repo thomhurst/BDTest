@@ -107,9 +107,9 @@ public class ReportMetadataTests
         }
 
         var metadata = JObject.Parse(json);
-        await Assert.That(metadata.Value<string>("Environment")).IsEqualTo(environment);
-        await Assert.That(metadata.Value<string>("Tag")).IsEqualTo(tag);
-        await Assert.That(metadata.Value<string>("BranchName")).IsEqualTo(branchName);
+        await Assert.That(metadata.Value<string>("environment")).IsEqualTo(environment);
+        await Assert.That(metadata.Value<string>("tag")).IsEqualTo(tag);
+        await Assert.That(metadata.Value<string>("branchName")).IsEqualTo(branchName);
     }
 
     private sealed class MetadataUploadHandler : HttpMessageHandler

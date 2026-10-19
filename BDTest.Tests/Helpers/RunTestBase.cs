@@ -77,8 +77,8 @@ public abstract class RunTUnitTestBase<TContext> : TUnitBDTestBase<TContext>, ID
     }
 }
 
-internal sealed class CallbackStepHook(Func<Step, Task>? before = null, Func<Step, Task>? after = null) : IStepHook
+internal sealed class CallbackStepHook(Func<BDTest.Contracts.StepResult, Task>? before = null, Func<BDTest.Contracts.StepResult, Task>? after = null) : IStepHook
 {
-    public Task BeforeStepAsync(Step step) => before?.Invoke(step) ?? Task.CompletedTask;
-    public Task AfterStepAsync(Step step) => after?.Invoke(step) ?? Task.CompletedTask;
+    public Task BeforeStepAsync(BDTest.Contracts.StepResult step) => before?.Invoke(step) ?? Task.CompletedTask;
+    public Task AfterStepAsync(BDTest.Contracts.StepResult step) => after?.Invoke(step) ?? Task.CompletedTask;
 }

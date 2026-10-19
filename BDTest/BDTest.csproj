@@ -34,6 +34,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\BDTest.Contracts\BDTest.Contracts.csproj" />
     <InternalsVisibleTo Include="BDTest.Tests" Key="$(BDTestPublicKey)" />
   </ItemGroup>
 </Project>

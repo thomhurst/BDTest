@@ -92,7 +92,7 @@ public class StatusLifecycleTests : TestRunOwner
         protected override string BDTestExecutionId => _id;
         public List<(Status, Status, Status)> RunningStatuses { get; } = new();
         public Status[] ResetStatuses { get; private set; } = [];
-        public Task<Scenario> Run() => When(() => FailOnce()).Then(() => NoOp()).BDTestAsync();
+        public Task<BDTest.Contracts.ScenarioResult> Run() => When(() => FailOnce()).Then(() => NoOp()).BDTestAsync();
         public void FailOnce()
         {
             var scenario = BDTestUtil.GetScenarios(TestRun).Single();

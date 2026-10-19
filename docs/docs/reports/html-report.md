@@ -28,8 +28,9 @@ File.WriteAllText("BDTest-Report.html", html);
 | Overload | Use |
 | --- | --- |
 | `GetTestHtmlReport(BDTestRunDescriptor, BDTestRun)` | Report on an [explicit run](../advanced/explicit-runs.md). |
+| `GenerateHtmlReport(BDTest.Contracts.BDTestReport)` | Render an immutable report, including a deserialized schema-versioned export. |
 
-The method returns a string; you decide where to write it.
+Both methods return a string; you decide where to write it. JSON export and HTML rendering use the same immutable contract snapshots. Rendering a saved report does not require an active run. Timestamps with a non-zero offset in saved reports are converted to UTC for display; the original contract values are preserved.
 
 ## Generating it after all tests
 

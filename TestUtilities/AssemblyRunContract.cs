@@ -95,8 +95,8 @@ public class AssemblyRunContract : Adapter
             Require(outcomes[1].Steps![0].StepText!.Contains("second conversion"), "second assembly inherited another converter");
             Require(outcomes[0].Steps![1].Status == Status.Skipped, "first assembly lost its skip rule");
             Require(outcomes[1].Steps![1].Status == Status.Passed, "second assembly inherited another skip rule");
-            Require(ReferenceEquals(first.Scenarios.Single(), outcomes[0]), "first store contains another assembly's scenario");
-            Require(ReferenceEquals(second.Scenarios.Single(), outcomes[1]), "second store contains another assembly's scenario");
+            Require(first.Scenarios.Single().Guid == outcomes[0].Guid, "first store contains another assembly's scenario");
+            Require(second.Scenarios.Single().Guid == outcomes[1].Guid, "second store contains another assembly's scenario");
             var firstHtml = BDTestHtmlHelper.GetTestHtmlReport(new BDTestRunDescriptor(), first);
             var secondHtml = BDTestHtmlHelper.GetTestHtmlReport(new BDTestRunDescriptor(), second);
             Require(firstHtml.Contains("first assembly") && !firstHtml.Contains("second assembly"), "first report leaked another assembly's output");
@@ -126,7 +126,7 @@ public class AssemblyRunContract : Adapter
         }
     }
 
-    private async Task<Scenario> Execute(BDTestRun run, string output)
+    private async Task<BDTest.Contracts.ScenarioResult> Execute(BDTestRun run, string output)
     {
         var host = BDTestScenario.For<object>(this, run);
         host.BeginTest("shared assembly-local test ID");
@@ -231,8 +231,8 @@ public class AssemblyRunContract : Adapter
     public sealed class ProbeHook : IStepHook
     {
         public int BeforeCount;
-        public Task BeforeStepAsync(Step step) { Interlocked.Increment(ref BeforeCount); return Task.CompletedTask; }
-        public Task AfterStepAsync(Step step) => Task.CompletedTask;
+        public Task BeforeStepAsync(BDTest.Contracts.StepResult step) { Interlocked.Increment(ref BeforeCount); return Task.CompletedTask; }
+        public Task AfterStepAsync(BDTest.Contracts.StepResult step) => Task.CompletedTask;
     }
 }
 
@@ -279,8 +279,8 @@ public class AssemblyCompositionContract
             .Then(() => GC.KeepAlive(run)).BDTestAsync();
 
         if (scenario.Status != Status.Passed || scenario.ReportId != run.ReportId ||
-            !run.Scenarios.Contains(scenario) ||
-            scenario.GetScenarioText() != "Assembly factory native lifecycle")
+            !run.Scenarios.Any(result => result.Guid == scenario.Guid) ||
+            scenario.ScenarioText != "Assembly factory native lifecycle")
             throw new InvalidOperationException("Native lifecycle did not record the scenario and method metadata in the assembly run.");
 #if BDTEST_NUNIT
         var nativeContext = global::NUnit.Framework.Internal.TestExecutionContext.CurrentContext;

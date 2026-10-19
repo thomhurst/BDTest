@@ -345,7 +345,7 @@ public class AdapterConformanceTests : Adapter
         using var second = BDTestRun.Start();
         var entered = 0;
         var ready = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        async Task<Scenario> Execute(BDTestRun run, string label)
+        async Task<BDTest.Contracts.ScenarioResult> Execute(BDTestRun run, string label)
         {
             AbstractContextBDTestBase<object> host;
             Action end;
@@ -397,7 +397,7 @@ public class AdapterConformanceTests : Adapter
             Require(startupOutput.Contains(label + " setup") && !startupOutput.Contains(other), "startup output leaked");
             Require(stepOutput.Contains(label + " step") && !stepOutput.Contains(other), "step output leaked");
             Require(teardownOutput.Contains(label + " teardown") && !teardownOutput.Contains(other), "teardown output leaked");
-            var report = BDTest.Helpers.BDTestJsonHelper.Deserialize(BDTest.Helpers.BDTestJsonHelper.GetTestJsonData(null, run))
+            var report = BDTest.Helpers.BDTestJsonHelper.DeserializeReport(BDTest.Helpers.BDTestJsonHelper.GetTestJsonData(null, run))
                 ?? throw new InvalidOperationException("Expected the run report.");
             var scenarios = report.Scenarios ?? throw new InvalidOperationException("Expected report scenarios.");
             Require(scenarios.Single().ReportId == run.ReportId, "report ownership leaked");
@@ -487,7 +487,7 @@ public class AdapterConformanceTests : Adapter
     }
 #endif
 
-    private async Task Check(Func<Task<Scenario>> execute, Status expected, int retries, params Status[] steps)
+    private async Task Check(Func<Task<BDTest.Contracts.ScenarioResult>> execute, Status expected, int retries, params Status[] steps)
     {
         try { await execute(); }
         finally

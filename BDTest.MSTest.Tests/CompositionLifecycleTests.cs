@@ -147,10 +147,10 @@ internal sealed class LifecycleProbe(AbstractContextBDTestBase<LifecycleContext>
         if (retry)
         {
             Assert.AreEqual(1, scenario.RetryCount);
-            Assert.AreEqual("Native lifecycle", scenario.GetScenarioText());
+            Assert.AreEqual("Native lifecycle", scenario.ScenarioText);
             var information = scenario.CustomTestInformation;
             Assert.IsNotNull(information);
-            Assert.AreEqual("Native lifecycle", information.Single().Information);
+            Assert.AreEqual("Native lifecycle", information.Single());
             Assert.Contains("native", scenario.Tags);
             Assert.Contains("fixture", scenario.Tags);
         }
@@ -205,7 +205,7 @@ internal sealed class LifecycleProbe(AbstractContextBDTestBase<LifecycleContext>
                 Assert.Contains(_contexts.Last().DisposalMessage, teardown);
                 var other = _label == "first" ? "second" : "first";
                 Assert.DoesNotContain(other, scenario.TestStartupInformation + scenario.Output + scenario.TearDownOutput);
-                var report = BDTestJsonHelper.Deserialize(BDTestJsonHelper.GetTestJsonData(null, run));
+                var report = BDTestJsonHelper.DeserializeReport(BDTestJsonHelper.GetTestJsonData(null, run));
                 Assert.IsNotNull(report);
                 Assert.IsNotNull(report.Scenarios);
                 var reportedScenario = report.Scenarios.Single();

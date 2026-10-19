@@ -25,8 +25,8 @@ public class ScenarioTextTests : RunTestBase
             .Then(() => Console.WriteLine("the attribute should be serialized to the json output"))
             .BDTestAsync();
 
-        await Assert.That(scenario.GetScenarioText()).IsEqualTo("My test that does stuff");
-        await Assert.That(Required(JsonHelper.GetTestDynamicJsonObject(TestRun).SelectToken("$.Scenarios[0].ScenarioText")).ToString()).IsEqualTo("My test that does stuff");
+        await Assert.That(scenario.ScenarioText).IsEqualTo("My test that does stuff");
+        await Assert.That(Required(JsonHelper.GetTestDynamicJsonObject(TestRun).SelectToken("$.scenarios[0].scenarioText")).ToString()).IsEqualTo("My test that does stuff");
     }
         
     [Test]
@@ -36,8 +36,8 @@ public class ScenarioTextTests : RunTestBase
             .Then(() => Console.WriteLine("the scenario text should be set to the method name"))
             .BDTestAsync();
             
-        await Assert.That(scenario.GetScenarioText()).IsEqualTo("No scenario text");
-        await Assert.That(Required(JsonHelper.GetTestDynamicJsonObject(TestRun).SelectToken("$.Scenarios[0].ScenarioText")).ToString()).IsEqualTo("No scenario text");
+        await Assert.That(scenario.ScenarioText).IsEqualTo("No scenario text");
+        await Assert.That(Required(JsonHelper.GetTestDynamicJsonObject(TestRun).SelectToken("$.scenarios[0].scenarioText")).ToString()).IsEqualTo("No scenario text");
     }
         
     [Test]
@@ -47,8 +47,8 @@ public class ScenarioTextTests : RunTestBase
             .Then(() => Console.WriteLine("the scenario text should be set to the method name"))
             .BDTestAsync();
             
-        await Assert.That(scenario.GetScenarioText()).IsEqualTo("No Scenario Text with Hyphens");
-        await Assert.That(Required(JsonHelper.GetTestDynamicJsonObject(TestRun).SelectToken("$.Scenarios[0].ScenarioText")).ToString()).IsEqualTo("No Scenario Text with Hyphens");
+        await Assert.That(scenario.ScenarioText).IsEqualTo("No Scenario Text with Hyphens");
+        await Assert.That(Required(JsonHelper.GetTestDynamicJsonObject(TestRun).SelectToken("$.scenarios[0].scenarioText")).ToString()).IsEqualTo("No Scenario Text with Hyphens");
     }
 
     [Test]
@@ -60,7 +60,7 @@ public class ScenarioTextTests : RunTestBase
             .WithScenarioText("Method ScenarioText overwrites attribute ScenarioText")
             .BDTestAsync();
             
-        await Assert.That(scenario.GetScenarioText()).IsEqualTo("Method ScenarioText overwrites attribute ScenarioText");
+        await Assert.That(scenario.ScenarioText).IsEqualTo("Method ScenarioText overwrites attribute ScenarioText");
     }
         
     [Test]
@@ -71,6 +71,6 @@ public class ScenarioTextTests : RunTestBase
             .WithScenarioText("My Method ScenarioText")
             .BDTestAsync();
             
-        await Assert.That(scenario.GetScenarioText()).IsEqualTo("My Method ScenarioText");
+        await Assert.That(scenario.ScenarioText).IsEqualTo("My Method ScenarioText");
     }
 }

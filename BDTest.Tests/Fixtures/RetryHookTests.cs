@@ -98,7 +98,7 @@ public class RetryHookTests
             await Assert.That(fixture.Attempts).IsEqualTo(failingRetry).Because("A failing retry hook must stop the retry");
 
             var scenario = run.Scenarios.Single();
-            await Assert.That(scenario.Run).IsSameReferenceAs(run);
+            await Assert.That(run.Store.ScenariosByInternalId[scenario.Guid].Run).IsSameReferenceAs(run);
             await Assert.That(scenario.ReportId).IsEqualTo(run.ReportId);
             await Assert.That(otherRun.Scenarios).IsEmpty();
             await Assert.That(scenario.Status).IsEqualTo(Status.Failed);
@@ -248,7 +248,7 @@ public class RetryHookTests
         public InvalidOperationException Failure { get; } = new("retry hook failed");
         public int Attempts { get; private set; }
 
-        public Task<Scenario> RunScenario() => Given(() => FailStep()).When(() => FailStep()).Then(() => FailStep()).BDTestAsync();
+        public Task<BDTest.Contracts.ScenarioResult> RunScenario() => Given(() => FailStep()).When(() => FailStep()).Then(() => FailStep()).BDTestAsync();
 
         public void FailStep()
         {

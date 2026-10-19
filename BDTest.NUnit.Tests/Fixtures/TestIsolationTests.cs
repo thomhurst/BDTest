@@ -20,7 +20,7 @@ public class TestIsolationTests
             Assert.That(Directory.GetFiles(folder), Is.Empty);
             Example.HtmlReportGenerationExample.GenerateReports(folder);
             var json = FileHelpers.GetUniqueTestJsonFilePath();
-            Assert.That(File.ReadAllText(json), Does.Contain("Scenarios"));
+            Assert.That(File.ReadAllText(json), Does.Contain("schemaVersion").And.Contain("scenarios"));
             Assert.That(Directory.GetFiles(folder, "*.html"), Has.Length.EqualTo(1));
 
             FileHelpers.DeleteOutputRoot();

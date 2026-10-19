@@ -121,13 +121,13 @@ public class CoreLifecycleTests : TestRunOwner
             await Assert.That(TestOutputData.TestId).IsEqualTo(secondScenario.Guid);
             Console.WriteLine("caller output");
 
-            await Assert.That(firstScenario.TearDownOutput).Contains("disposal output").And.DoesNotContain("caller output");
+            await Assert.That(first.Store.ScenariosByInternalId[firstScenario.Guid].TearDownOutput).Contains("disposal output").And.DoesNotContain("caller output");
 
-            await Assert.That(secondScenario.TearDownOutput).Contains("caller output").And.DoesNotContain("disposal output");
+            await Assert.That(second.Scenarios.Single(s => s.Guid == secondScenario.Guid).TearDownOutput).Contains("caller output").And.DoesNotContain("disposal output");
             await Assert.That(first.OutputBuffers).IsEmpty();
             await fixture.EndTestAsync();
 
-            await Assert.That((Required(firstScenario.TearDownOutput).Split("disposal output")).Length).IsEqualTo(2);
+            await Assert.That((Required(first.Store.ScenariosByInternalId[firstScenario.Guid].TearDownOutput).Split("disposal output")).Length).IsEqualTo(2);
         }
         finally { await caller.EndTestAsync(); }
     }
