@@ -1,4 +1,4 @@
-﻿using BDTest.Attributes;
+using BDTest;
 using NUnit.Framework;
 
 namespace BDTest.Example;

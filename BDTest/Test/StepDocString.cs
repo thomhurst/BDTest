@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace BDTest.Test;
+namespace BDTest;
 
 /// <summary>A multiline step value with an optional content type hint, such as application/json.</summary>
 public sealed class StepDocString : StepArgument

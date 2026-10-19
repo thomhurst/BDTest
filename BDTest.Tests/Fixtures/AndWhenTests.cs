@@ -1,9 +1,7 @@
-using BDTest.Attributes;
+using BDTest;
 using BDTest.Helpers;
 using BDTest.Settings;
 using BDTest.Test;
-using BDTest.Test.Steps;
-using BDTest.Test.Steps.When;
 using System.Threading.Tasks;
 
 namespace BDTest.Tests.Fixtures;

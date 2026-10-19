@@ -1,9 +1,8 @@
-using BDTest.Attributes;
+using BDTest;
 using BDTest.Helpers;
 using BDTest.Maps;
 using BDTest.Settings;
 using BDTest.Test;
-using BDTest.Test.Steps;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Threading.Tasks;

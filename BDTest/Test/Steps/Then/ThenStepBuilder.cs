@@ -1,7 +1,7 @@
 using System.Runtime.CompilerServices;
 using System.Threading;
 
-namespace BDTest.Test.Steps.Then;
+namespace BDTest;
 
 /// <summary>Shared continuations for then steps.</summary>
 public abstract class ThenStepBuilder : RunnableStepBuilder

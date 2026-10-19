@@ -1,5 +1,4 @@
-using BDTest.NUnit;
-using BDTest.Attributes;
+using BDTest;
 using BDTest.TestUtilities;
 using NUnit.Framework;
 

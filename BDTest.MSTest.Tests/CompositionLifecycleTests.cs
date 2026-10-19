@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Concurrent;
 using System.Reflection;
 using System.Runtime.CompilerServices;
-using BDTest.Attributes;
+using BDTest;
 using BDTest.Helpers;
 using BDTest.Settings;
 using BDTest.Test;

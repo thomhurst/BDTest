@@ -1,4 +1,5 @@
 using BDTest.Contracts;
+using BDTest.Test;
 using System.Globalization;
 using System.Reflection;
 using System.Runtime.CompilerServices;
@@ -7,7 +8,7 @@ using BDTest.Exceptions;
 using BDTest.Helpers;
 using BDTest.Output;
 
-namespace BDTest.Test;
+namespace BDTest;
 
 /// <summary>A single-use outline with sequential, independently retried example rows.</summary>
 public sealed class ScenarioOutlineBuilder<TExample> : BuildableTest

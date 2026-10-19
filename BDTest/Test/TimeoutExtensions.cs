@@ -1,6 +1,5 @@
-using BDTest.Test.Steps;
 
-namespace BDTest.Test;
+namespace BDTest;
 
 /// <summary>Configures optional execution limits while retaining the concrete fluent builder type.</summary>
 public static class TimeoutExtensions

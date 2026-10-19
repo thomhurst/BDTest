@@ -23,8 +23,6 @@ Implement `IBDTestTUnitTest` and return a stable host created for the actual tes
 ```csharp sample="TUnit/Composition.cs" title="Compiled example"
 using BDTest;
 using BDTest.Settings;
-using BDTest.Test;
-using BDTest.TUnit;
 using TUnit.Core;
 
 public class ComposedBasketTests : CompanyTestBase, IBDTestTUnitTest
@@ -88,8 +86,7 @@ TUnit supplies the actual test method and its unique execution ID, including dat
 Inherit from `TUnitBDTestBase<TContext>`:
 
 ```csharp sample="TUnit/Inheritance.cs" title="Compiled example"
-using BDTest.Attributes;
-using BDTest.TUnit;
+using BDTest;
 
 [Story(AsA = "shopper", IWant = "to add items to my basket", SoThat = "I can buy them")]
 public class BasketTests : TUnitBDTestBase<BasketContext>
@@ -149,10 +146,10 @@ public class BDTestReports
         var assembly = typeof(BDTestReports).Assembly;
         try
         {
-            var run = BDTest.TUnit.TUnitBDTestAssembly.GetRun(assembly);
+            var run = BDTest.TUnitBDTestAssembly.GetRun(assembly);
             await File.WriteAllTextAsync("BDTest-Report.html", BDTestHtmlHelper.GetTestHtmlReport(null, run));
         }
-        finally { BDTest.TUnit.TUnitBDTestAssembly.Dispose(assembly); }
+        finally { BDTest.TUnitBDTestAssembly.Dispose(assembly); }
     }
 }
 ```

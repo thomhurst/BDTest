@@ -1,4 +1,4 @@
-namespace BDTest.Test.Steps.Then;
+namespace BDTest;
 
 public sealed class ButThen : ThenStepBuilder
 {

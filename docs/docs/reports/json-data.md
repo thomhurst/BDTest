@@ -27,7 +27,7 @@ new reports to those hosts. See [migration](../migration/immutable-results.md).
 ```csharp title="Illustrative fragment"
 using BDTest.Helpers;
 
-var run = BDTest.NUnit.NUnitBDTestAssembly.GetRun(typeof(MyTests).Assembly);
+var run = BDTest.NUnitBDTestAssembly.GetRun(typeof(MyTests).Assembly);
 var json = BDTestJsonHelper.GetTestJsonData(new BDTestRunDescriptor { Tag = "Nightly" }, run);
 File.WriteAllText("BDTest-Report.json", json);
 ```

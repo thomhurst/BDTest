@@ -1,7 +1,7 @@
 using System.Runtime.CompilerServices;
 using System.Threading;
 
-namespace BDTest.Test.Steps.When;
+namespace BDTest;
 
 /// <summary>Shared continuations for when steps.</summary>
 public abstract class WhenStepBuilder : StepBuilder
@@ -17,52 +17,52 @@ public abstract class WhenStepBuilder : StepBuilder
     }
 
     [OverloadResolutionPriority(-1)]
-    public Then.Then Then(Action step, [CallerFilePath] string? callerFile = null,
+    public Then Then(Action step, [CallerFilePath] string? callerFile = null,
         [CallerLineNumber] int callerLine = 0, [CallerArgumentExpression(nameof(step))] string? argumentExpression = null)
     {
-        return new Then.Then(new Runnable(step, argumentExpression, callerFile, callerLine), this);
+        return new Then(new Runnable(step, argumentExpression, callerFile, callerLine), this);
     }
 
     [OverloadResolutionPriority(1)]
-    public Then.Then Then(Func<Task> step, [CallerFilePath] string? callerFile = null,
+    public Then Then(Func<Task> step, [CallerFilePath] string? callerFile = null,
         [CallerLineNumber] int callerLine = 0, [CallerArgumentExpression(nameof(step))] string? argumentExpression = null)
     {
-        return new Then.Then(new Runnable(step, argumentExpression, callerFile, callerLine), this);
+        return new Then(new Runnable(step, argumentExpression, callerFile, callerLine), this);
     }
 
     [OverloadResolutionPriority(1)]
-    public Then.Then Then(Func<CancellationToken, Task> step, [CallerFilePath] string? callerFile = null,
+    public Then Then(Func<CancellationToken, Task> step, [CallerFilePath] string? callerFile = null,
         [CallerLineNumber] int callerLine = 0, [CallerArgumentExpression(nameof(step))] string? argumentExpression = null)
     {
-        return new Then.Then(new Runnable(step, argumentExpression, callerFile, callerLine), this);
+        return new Then(new Runnable(step, argumentExpression, callerFile, callerLine), this);
     }
 
     [OverloadResolutionPriority(0)]
-    public Then.Then Then(Func<ValueTask> step, [CallerFilePath] string? callerFile = null,
+    public Then Then(Func<ValueTask> step, [CallerFilePath] string? callerFile = null,
         [CallerLineNumber] int callerLine = 0, [CallerArgumentExpression(nameof(step))] string? argumentExpression = null)
     {
-        return new Then.Then(new Runnable(step, argumentExpression, callerFile, callerLine), this);
+        return new Then(new Runnable(step, argumentExpression, callerFile, callerLine), this);
     }
 
     [OverloadResolutionPriority(0)]
-    public Then.Then Then(Func<CancellationToken, ValueTask> step, [CallerFilePath] string? callerFile = null,
+    public Then Then(Func<CancellationToken, ValueTask> step, [CallerFilePath] string? callerFile = null,
         [CallerLineNumber] int callerLine = 0, [CallerArgumentExpression(nameof(step))] string? argumentExpression = null)
     {
-        return new Then.Then(new Runnable(step, argumentExpression, callerFile, callerLine), this);
+        return new Then(new Runnable(step, argumentExpression, callerFile, callerLine), this);
     }
 
     [OverloadResolutionPriority(0)]
-    public Then.Then Then<T>(Func<ValueTask<T>> step, [CallerFilePath] string? callerFile = null,
+    public Then Then<T>(Func<ValueTask<T>> step, [CallerFilePath] string? callerFile = null,
         [CallerLineNumber] int callerLine = 0, [CallerArgumentExpression(nameof(step))] string? argumentExpression = null)
     {
-        return new Then.Then(Runnable.FromResult(step, argumentExpression, callerFile, callerLine), this);
+        return new Then(Runnable.FromResult(step, argumentExpression, callerFile, callerLine), this);
     }
 
     [OverloadResolutionPriority(0)]
-    public Then.Then Then<T>(Func<CancellationToken, ValueTask<T>> step, [CallerFilePath] string? callerFile = null,
+    public Then Then<T>(Func<CancellationToken, ValueTask<T>> step, [CallerFilePath] string? callerFile = null,
         [CallerLineNumber] int callerLine = 0, [CallerArgumentExpression(nameof(step))] string? argumentExpression = null)
     {
-        return new Then.Then(Runnable.FromResult(step, argumentExpression, callerFile, callerLine), this);
+        return new Then(Runnable.FromResult(step, argumentExpression, callerFile, callerLine), this);
     }
 
     [OverloadResolutionPriority(-1)]

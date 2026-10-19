@@ -1,6 +1,5 @@
-using BDTest.Attributes;
+using BDTest;
 using BDTest.Constants;
-using BDTest.Test.Steps;
 using System.Text.Json.Serialization;
 
 namespace BDTest.Test;

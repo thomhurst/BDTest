@@ -1,7 +1,7 @@
 using System.Runtime.CompilerServices;
 using System.Threading;
 
-namespace BDTest.Test.Steps.Given;
+namespace BDTest;
 
 /// <summary>Shared continuations for given steps.</summary>
 public abstract class GivenStepBuilder : StepBuilder
@@ -66,52 +66,52 @@ public abstract class GivenStepBuilder : StepBuilder
     }
 
     [OverloadResolutionPriority(-1)]
-    public When.When When(Action step, [CallerFilePath] string? callerFile = null,
+    public When When(Action step, [CallerFilePath] string? callerFile = null,
         [CallerLineNumber] int callerLine = 0, [CallerArgumentExpression(nameof(step))] string? argumentExpression = null)
     {
-        return new When.When(new Runnable(step, argumentExpression, callerFile, callerLine), this);
+        return new When(new Runnable(step, argumentExpression, callerFile, callerLine), this);
     }
 
     [OverloadResolutionPriority(1)]
-    public When.When When(Func<Task> step, [CallerFilePath] string? callerFile = null,
+    public When When(Func<Task> step, [CallerFilePath] string? callerFile = null,
         [CallerLineNumber] int callerLine = 0, [CallerArgumentExpression(nameof(step))] string? argumentExpression = null)
     {
-        return new When.When(new Runnable(step, argumentExpression, callerFile, callerLine), this);
+        return new When(new Runnable(step, argumentExpression, callerFile, callerLine), this);
     }
 
     [OverloadResolutionPriority(1)]
-    public When.When When(Func<CancellationToken, Task> step, [CallerFilePath] string? callerFile = null,
+    public When When(Func<CancellationToken, Task> step, [CallerFilePath] string? callerFile = null,
         [CallerLineNumber] int callerLine = 0, [CallerArgumentExpression(nameof(step))] string? argumentExpression = null)
     {
-        return new When.When(new Runnable(step, argumentExpression, callerFile, callerLine), this);
+        return new When(new Runnable(step, argumentExpression, callerFile, callerLine), this);
     }
 
     [OverloadResolutionPriority(0)]
-    public When.When When(Func<ValueTask> step, [CallerFilePath] string? callerFile = null,
+    public When When(Func<ValueTask> step, [CallerFilePath] string? callerFile = null,
         [CallerLineNumber] int callerLine = 0, [CallerArgumentExpression(nameof(step))] string? argumentExpression = null)
     {
-        return new When.When(new Runnable(step, argumentExpression, callerFile, callerLine), this);
+        return new When(new Runnable(step, argumentExpression, callerFile, callerLine), this);
     }
 
     [OverloadResolutionPriority(0)]
-    public When.When When(Func<CancellationToken, ValueTask> step, [CallerFilePath] string? callerFile = null,
+    public When When(Func<CancellationToken, ValueTask> step, [CallerFilePath] string? callerFile = null,
         [CallerLineNumber] int callerLine = 0, [CallerArgumentExpression(nameof(step))] string? argumentExpression = null)
     {
-        return new When.When(new Runnable(step, argumentExpression, callerFile, callerLine), this);
+        return new When(new Runnable(step, argumentExpression, callerFile, callerLine), this);
     }
 
     [OverloadResolutionPriority(0)]
-    public When.When When<T>(Func<ValueTask<T>> step, [CallerFilePath] string? callerFile = null,
+    public When When<T>(Func<ValueTask<T>> step, [CallerFilePath] string? callerFile = null,
         [CallerLineNumber] int callerLine = 0, [CallerArgumentExpression(nameof(step))] string? argumentExpression = null)
     {
-        return new When.When(Runnable.FromResult(step, argumentExpression, callerFile, callerLine), this);
+        return new When(Runnable.FromResult(step, argumentExpression, callerFile, callerLine), this);
     }
 
     [OverloadResolutionPriority(0)]
-    public When.When When<T>(Func<CancellationToken, ValueTask<T>> step, [CallerFilePath] string? callerFile = null,
+    public When When<T>(Func<CancellationToken, ValueTask<T>> step, [CallerFilePath] string? callerFile = null,
         [CallerLineNumber] int callerLine = 0, [CallerArgumentExpression(nameof(step))] string? argumentExpression = null)
     {
-        return new When.When(Runnable.FromResult(step, argumentExpression, callerFile, callerLine), this);
+        return new When(Runnable.FromResult(step, argumentExpression, callerFile, callerLine), this);
     }
 
     [OverloadResolutionPriority(-1)]

@@ -3,7 +3,7 @@ using BDTest.Test;
 using TUnit.Core;
 using TUnit.Core.Extensions;
 
-namespace BDTest.TUnit;
+namespace BDTest;
 
 /// <summary>Framework hooks shared by composed tests and the optional base class.</summary>
 public static class TUnitBDTestLifecycle

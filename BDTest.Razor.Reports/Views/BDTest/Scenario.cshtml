@@ -243,7 +243,7 @@
             }
 
             @{
-                var information = Model.CustomTestInformation ?? Array.Empty<BDTest.Attributes.TestInformationAttribute>();
+                var information = Model.CustomTestInformation ?? Array.Empty<BDTest.TestInformationAttribute>();
                 var hasCustom = !string.IsNullOrEmpty(Model.CustomHtmlOutputForReport);
                 var anyOutput = hasCustom || information.Length > 0 || !string.IsNullOrEmpty(Model.TestStartupInformation)
                                 || !string.IsNullOrEmpty(Model.TearDownOutput) || !string.IsNullOrEmpty(Model.Output);

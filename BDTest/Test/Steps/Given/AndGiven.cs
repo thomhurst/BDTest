@@ -1,4 +1,4 @@
-namespace BDTest.Test.Steps.Given;
+namespace BDTest;
 
 public sealed class AndGiven : GivenStepBuilder
 {

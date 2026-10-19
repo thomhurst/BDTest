@@ -3,6 +3,7 @@ using System.Text.Json;
 using BDTest.Exceptions;
 using BDTest.Helpers;
 using BDTest.Output;
+using BDTest;
 using BDTest.Test;
 using System.Threading.Tasks;
 
@@ -276,7 +277,7 @@ public class BDTestRunTests
     {
         public override BDTestRun TestRun => run;
         protected override string BDTestExecutionId => id;
-        public BDTest.Test.Steps.Then.Then Build() => When(() => Complete()).Then(() => Complete());
+        public BDTest.Then Build() => When(() => Complete()).Then(() => Complete());
         public void Start() => BeginTest(id);
         public void Finish() => EndTest();
     }

@@ -39,7 +39,7 @@ The context class needs a public parameterless constructor. See [Test context](.
 Steps are ordinary methods. Group them into classes that receive the context in their constructor. `[StepText]` controls how each step appears in the report; `{0}` is replaced by the first argument.
 
 ```csharp sample="FirstTest/AccountSteps.cs" title="Compiled example: AccountSteps.cs"
-using BDTest.Attributes;
+using BDTest;
 
 public class AccountSteps
 {
@@ -73,8 +73,7 @@ TUnit assertions are awaited, so the assertion step returns `Task`. BDTest accep
 Inherit from `TUnitBDTestBase<TContext>`. Expose step classes as **properties**, not fields, so that each test gets steps bound to its own `Context`.
 
 ```csharp sample="FirstTest/WithdrawalTests.cs" title="Compiled example: WithdrawalTests.cs"
-using BDTest.Attributes;
-using BDTest.TUnit;
+using BDTest;
 
 [Story(AsA = "account holder",
     IWant = "to withdraw money",
@@ -124,7 +123,7 @@ public class AccountReports
         var assembly = typeof(AccountReports).Assembly;
         try
         {
-            var run = BDTest.TUnit.TUnitBDTestAssembly.GetRun(assembly);
+            var run = BDTest.TUnitBDTestAssembly.GetRun(assembly);
             var html = BDTestHtmlHelper.GetTestHtmlReport(new BDTestRunDescriptor
             {
                 Environment = "Local",
@@ -132,7 +131,7 @@ public class AccountReports
             }, run);
             await File.WriteAllTextAsync(Path.Combine(AppContext.BaseDirectory, "BDTest-Report.html"), html);
         }
-        finally { BDTest.TUnit.TUnitBDTestAssembly.Dispose(assembly); }
+        finally { BDTest.TUnitBDTestAssembly.Dispose(assembly); }
     }
 }
 ```

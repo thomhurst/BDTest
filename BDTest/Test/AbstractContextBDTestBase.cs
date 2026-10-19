@@ -1,7 +1,8 @@
+using BDTest.Test;
 using System.Runtime.CompilerServices;
 using System.Threading;
 
-namespace BDTest.Test;
+namespace BDTest;
 
 public abstract class AbstractContextBDTestBase<TContext> : BDTestBase where TContext : class
 {

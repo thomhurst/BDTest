@@ -1,7 +1,7 @@
 using BDTest.Example.Context;
 using BDTest.Example.Steps;
 using BDTest.Example.Steps.Assertions;
-using BDTest.NUnit;
+using BDTest;
 
 namespace BDTest.Example;
 

@@ -1,5 +1,5 @@
 using System.Diagnostics;
-using BDTest.Attributes;
+using BDTest;
 using BDTest.Helpers;
 using BDTest.Maps;
 using BDTest.Output;

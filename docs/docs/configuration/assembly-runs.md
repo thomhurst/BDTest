@@ -36,10 +36,10 @@ Hooks, converters, context factories and service providers are caller-owned refe
 
 | Framework | Assembly owner | Composition factory using the assembly run |
 | --- | --- | --- |
-| NUnit | `BDTest.NUnit.NUnitBDTestAssembly` | `NUnitBDTestScenario.For<TContext>(this)` |
-| xUnit | `BDTest.xUnit.XUnitBDTestAssembly` | `XUnitBDTestScenario.For<TContext>(this)` |
-| MSTest | `BDTest.MSTest.MSTestBDTestAssembly` | `MSTestBDTestScenario.For<TContext>(this)` |
-| TUnit | `BDTest.TUnit.TUnitBDTestAssembly` | `TUnitBDTestScenario.For<TContext>(this)` |
+| NUnit | `BDTest.NUnitBDTestAssembly` | `NUnitBDTestScenario.For<TContext>(this)` |
+| xUnit | `BDTest.XUnitBDTestAssembly` | `XUnitBDTestScenario.For<TContext>(this)` |
+| MSTest | `BDTest.MSTestBDTestAssembly` | `MSTestBDTestScenario.For<TContext>(this)` |
+| TUnit | `BDTest.TUnitBDTestAssembly` | `TUnitBDTestScenario.For<TContext>(this)` |
 
 Base-class adapters resolve the assembly of the actual derived fixture. Framework-specific composition factories resolve the assembly of the supplied test instance; keep the framework lifecycle registration described on its framework page. Explicit-run overloads and `TestRun` overrides still select caller-owned runs and bypass assembly configuration. Such callers register the framework's outcome map before `BDTestRun.Start(options)`.
 

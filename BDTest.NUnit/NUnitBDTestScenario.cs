@@ -1,7 +1,7 @@
 using BDTest.Settings;
 using BDTest.Test;
 
-namespace BDTest.NUnit;
+namespace BDTest;
 
 /// <summary>Supplies the NUnit scenario host owned by a test fixture.</summary>
 public interface INUnitBDTest

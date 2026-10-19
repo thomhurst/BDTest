@@ -3,7 +3,7 @@ using BDTest.Test;
 using Xunit;
 using Xunit.v3;
 
-namespace BDTest.xUnit;
+namespace BDTest;
 
 /// <summary>Creates framework-owned composition hosts without requiring a test base class.</summary>
 public static class XUnitBDTestScenario

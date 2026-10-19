@@ -1,6 +1,5 @@
-using BDTest.Test.Steps;
 
-namespace BDTest.Test;
+namespace BDTest;
 
 /// <summary>Attaches structured report values to the most recent step without changing its method signature.</summary>
 public static class StructuredStepArgumentExtensions

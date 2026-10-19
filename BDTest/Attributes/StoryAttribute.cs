@@ -1,6 +1,6 @@
 using BDTest.Exceptions;
 
-namespace BDTest.Attributes;
+namespace BDTest;
 
 [AttributeUsage(AttributeTargets.Class)]
 public class StoryAttribute : Attribute

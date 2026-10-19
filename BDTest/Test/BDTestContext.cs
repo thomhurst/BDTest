@@ -1,7 +1,8 @@
+using BDTest.Test;
 using BDTest.Output;
 using System.Runtime.CompilerServices;
 
-namespace BDTest.Test;
+namespace BDTest;
 
 public class BDTestContext<TTestContext> : BDTestContext
 {

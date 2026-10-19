@@ -1,6 +1,6 @@
 using System.Reflection;
 
-namespace BDTest.NUnit;
+namespace BDTest;
 
 /// <summary>Owns one configured BDTest run per test assembly for NUnit.</summary>
 public static class NUnitBDTestAssembly

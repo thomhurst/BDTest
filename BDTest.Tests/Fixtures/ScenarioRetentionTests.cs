@@ -1,5 +1,5 @@
 using System.Runtime.CompilerServices;
-using BDTest.Attributes;
+using BDTest;
 using BDTest.Exceptions;
 using BDTest.Maps;
 using BDTest.Output;
@@ -139,7 +139,7 @@ public class ScenarioRetentionTests : TestRunOwner
         protected override string BDTestExecutionId => Id;
         private int _attempts;
 
-        public BDTest.Test.Steps.Then.Then Build(TextSource text) => When(() => Step(), callerMember: nameof(Run))
+        public BDTest.Then Build(TextSource text) => When(() => Step(), callerMember: nameof(Run))
             .Then(() => GC.KeepAlive(Context)).WithStepText(() => text.GetText());
 
         [BDTestRetry(1)]

@@ -15,8 +15,7 @@ Scenario hooks surround one attempt, including its [step hooks](step-hooks.md). 
 Override the typed hooks on any context-based test base:
 
 ```csharp title="Illustrative fragment"
-using BDTest.NUnit;
-using BDTest.Test;
+using BDTest;
 
 public class ScenarioState
 {
@@ -56,7 +55,6 @@ For an [explicit run](../advanced/explicit-runs.md), implement `BDTest.Interface
 ```csharp title="Illustrative fragment"
 using BDTest;
 using BDTest.Interfaces;
-using BDTest.Test;
 
 var options = new BDTestOptions();
 options.ScenarioHooks.Add(new ScenarioLogger());

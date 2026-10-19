@@ -1,7 +1,8 @@
+using BDTest.Test;
 using BDTest.Helpers;
 using BDTest.Output;
 
-namespace BDTest.Test.Steps;
+namespace BDTest;
 
 public abstract class StepBuilder : BuildableTest
 {

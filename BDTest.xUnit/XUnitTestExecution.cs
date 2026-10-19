@@ -1,6 +1,6 @@
 using System.Threading;
 
-namespace BDTest.xUnit;
+namespace BDTest;
 
 // Both adapter styles use one binding/capture/completion path. The native fixture
 // also retains this object when construction or user setup/teardown throws.

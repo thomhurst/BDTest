@@ -1,6 +1,7 @@
+using BDTest.Test;
 using System.Reflection;
 
-namespace BDTest.Test;
+namespace BDTest;
 
 /// <summary>Creates scenario hosts for test classes that do not inherit a BDTest base class.</summary>
 public static class BDTestScenario

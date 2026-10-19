@@ -1,18 +1,18 @@
-using BDTest.Attributes;
+using BDTest;
 using BDTest.Interfaces;
 using BDTest.Settings;
 using BDTest.Test;
 #if BDTEST_NUNIT
-using Adapter = BDTest.NUnit.NUnitBDTestBase<object>;
+using Adapter = BDTest.NUnitBDTestBase<object>;
 using TestAttribute = global::NUnit.Framework.TestAttribute;
 #elif BDTEST_MSTEST
-using Adapter = BDTest.MSTest.MSTestBDTestBase<object>;
+using Adapter = BDTest.MSTestBDTestBase<object>;
 using TestAttribute = Microsoft.VisualStudio.TestTools.UnitTesting.TestMethodAttribute;
 #elif BDTEST_TUNIT
-using Adapter = BDTest.TUnit.TUnitBDTestBase<object>;
+using Adapter = BDTest.TUnitBDTestBase<object>;
 using TestAttribute = global::TUnit.Core.TestAttribute;
 #elif BDTEST_XUNIT
-using Adapter = BDTest.xUnit.XUnitBDTestBase<object>;
+using Adapter = BDTest.XUnitBDTestBase<object>;
 using TestAttribute = Xunit.FactAttribute;
 #endif
 
@@ -23,16 +23,16 @@ namespace BDTest.Adapters.Conformance;
 #if BDTEST_NUNIT
 [global::NUnit.Framework.FixtureLifeCycle(global::NUnit.Framework.LifeCycle.InstancePerTestCase)]
 #elif BDTEST_MSTEST
-[global::BDTest.MSTest.BDTestClass]
+[global::BDTest.BDTestClass]
 #elif BDTEST_TUNIT
 [global::TUnit.Core.Arguments(false)]
 [global::TUnit.Core.Arguments(true)]
 #endif
 public class AdapterConformanceTests : Adapter
 #if BDTEST_TUNIT
-    , global::BDTest.TUnit.IBDTestTUnitTest
+    , global::BDTest.IBDTestTUnitTest
 #elif BDTEST_MSTEST
-    , global::BDTest.MSTest.IBDTestMSTestTest
+    , global::BDTest.IBDTestMSTestTest
 #endif
 {
     private readonly List<(string Name, int Attempt, object Context, CancellationToken Token, Status Status)> _hooks = new();
@@ -44,7 +44,7 @@ public class AdapterConformanceTests : Adapter
 #if BDTEST_TUNIT
     private readonly BDTestScenario<object>? _tunitHost;
     protected virtual AbstractContextBDTestBase<object> ScenarioHost => _tunitHost ?? (AbstractContextBDTestBase<object>)this;
-    BDTestBase global::BDTest.TUnit.IBDTestTUnitTest.BDTestHost => ScenarioHost;
+    BDTestBase global::BDTest.IBDTestTUnitTest.BDTestHost => ScenarioHost;
 
     public AdapterConformanceTests(bool composition)
     {
@@ -57,7 +57,7 @@ public class AdapterConformanceTests : Adapter
 #elif BDTEST_MSTEST
     private readonly BDTestScenario<object>? _mstestHost;
     protected virtual AbstractContextBDTestBase<object> ScenarioHost => _mstestHost ?? (AbstractContextBDTestBase<object>)this;
-    BDTestBase global::BDTest.MSTest.IBDTestMSTestTest.BDTestHost => ScenarioHost;
+    BDTestBase global::BDTest.IBDTestMSTestTest.BDTestHost => ScenarioHost;
 #else
     protected virtual AbstractContextBDTestBase<object> ScenarioHost => this;
 #endif
@@ -115,8 +115,12 @@ public class AdapterConformanceTests : Adapter
     }
 
     [Test]
-    public Task Pass() => Check(() => ScenarioHost.Given(() => Complete()).When(() => Complete())
-        .Then(() => Complete()).BDTestAsync(), Status.Passed, 0, Status.Passed, Status.Passed, Status.Passed);
+    public Task Pass()
+    {
+        Require(typeof(Adapter).Namespace == "BDTest", "adapter bases must be usable with using BDTest");
+        return Check(() => ScenarioHost.Given(() => Complete()).When(() => Complete())
+            .Then(() => Complete()).BDTestAsync(), Status.Passed, 0, Status.Passed, Status.Passed, Status.Passed);
+    }
 
     [Test]
     public Task Fail() => CheckFailure(() => Check(() => ScenarioHost.Given(() => Complete()).When(() => FailStep())
@@ -422,7 +426,7 @@ public class AdapterConformanceTests : Adapter
         {
             if (!ReferenceEquals(ScenarioHost, this))
             {
-                var host = global::BDTest.xUnit.XUnitBDTestScenario.For<IsolationContext>(this, run);
+                var host = global::BDTest.XUnitBDTestScenario.For<IsolationContext>(this, run);
                 return (host, host.EndTestAsync);
             }
             var fixture = new IsolationProbe(run);
@@ -470,7 +474,7 @@ public class AdapterConformanceTests : Adapter
         await two.End();
     }
 
-    private sealed class IsolationProbe(BDTestRun run) : global::BDTest.xUnit.XUnitBDTestBase<IsolationContext>
+    private sealed class IsolationProbe(BDTestRun run) : global::BDTest.XUnitBDTestBase<IsolationContext>
     {
         public override BDTestRun TestRun => run;
     }
@@ -566,7 +570,7 @@ public class AdapterConformanceTests : Adapter
     public async Task DisposeRun()
     {
 #if BDTEST_TUNIT
-        try { await global::BDTest.TUnit.TUnitBDTestLifecycle.AfterTest(global::TUnit.Core.TestContext.Current!); }
+        try { await global::BDTest.TUnitBDTestLifecycle.AfterTest(global::TUnit.Core.TestContext.Current!); }
 #elif BDTEST_MSTEST
         try { await ScenarioHost.EndTestAsync(); }
 #else
@@ -585,7 +589,7 @@ public class AdapterConformanceTests : Adapter
 #if BDTEST_XUNIT
         if (!ReferenceEquals(ScenarioHost, this))
         {
-            var host = global::BDTest.xUnit.XUnitBDTestScenario.For<LifetimeContext>(this, run);
+            var host = global::BDTest.XUnitBDTestScenario.For<LifetimeContext>(this, run);
             return new LifetimeProbe(run, host, factory.Contexts,
                 () => Task.CompletedTask, () => host.EndTestAsync().AsTask());
         }
@@ -628,13 +632,13 @@ public class AdapterConformanceTests : Adapter
     }
 
 #if BDTEST_NUNIT
-    private sealed class ContextLifetimeProbe(BDTestRun run) : BDTest.NUnit.NUnitBDTestBase<LifetimeContext>
+    private sealed class ContextLifetimeProbe(BDTestRun run) : BDTest.NUnitBDTestBase<LifetimeContext>
 #elif BDTEST_MSTEST
-    private sealed class ContextLifetimeProbe(BDTestRun run) : BDTest.MSTest.MSTestBDTestBase<LifetimeContext>
+    private sealed class ContextLifetimeProbe(BDTestRun run) : BDTest.MSTestBDTestBase<LifetimeContext>
 #elif BDTEST_TUNIT
-    private sealed class ContextLifetimeProbe(BDTestRun run) : BDTest.TUnit.TUnitBDTestBase<LifetimeContext>
+    private sealed class ContextLifetimeProbe(BDTestRun run) : BDTest.TUnitBDTestBase<LifetimeContext>
 #elif BDTEST_XUNIT
-    private sealed class ContextLifetimeProbe(BDTestRun run) : BDTest.xUnit.XUnitBDTestBase<LifetimeContext>
+    private sealed class ContextLifetimeProbe(BDTestRun run) : BDTest.XUnitBDTestBase<LifetimeContext>
 #endif
     {
         public override BDTestRun TestRun => run;
@@ -707,13 +711,13 @@ public class AdapterConformanceTests : Adapter
 // Exercise the same contract through the runner extension on an unrelated fixture base.
 public abstract class CompositionConformanceFixtureBase { }
 
-[global::BDTest.NUnit.BDTestFixture]
+[global::BDTest.BDTestFixture]
 [global::NUnit.Framework.FixtureLifeCycle(global::NUnit.Framework.LifeCycle.InstancePerTestCase)]
-public class CompositionAdapterConformanceTests : CompositionConformanceFixtureBase, BDTest.NUnit.INUnitBDTest
+public class CompositionAdapterConformanceTests : CompositionConformanceFixtureBase, BDTest.INUnitBDTest
 {
     internal AdapterConformanceTests Cases { get; } = new();
     private readonly CompositionHost _host;
-    BDTestBase BDTest.NUnit.INUnitBDTest.BDTestHost => _host;
+    BDTestBase BDTest.INUnitBDTest.BDTestHost => _host;
 
     public CompositionAdapterConformanceTests()
     {
@@ -722,7 +726,7 @@ public class CompositionAdapterConformanceTests : CompositionConformanceFixtureB
     }
 
     private sealed class CompositionHost(CompositionAdapterConformanceTests owner, BDTestRun run)
-        : BDTest.NUnit.NUnitBDTestScenario<object>(owner, run)
+        : BDTest.NUnitBDTestScenario<object>(owner, run)
     {
         public override Task OnBeforeScenario(ScenarioHookContext<object> scenario) =>
             owner.Cases.Record("instance before", scenario);
@@ -773,7 +777,7 @@ public class CompositionAdapterConformanceTests : CompositionConformanceFixtureB
 
 #if BDTEST_MSTEST
 // Inherited test methods run the identical contract against a composed host.
-[global::BDTest.MSTest.BDTestClass]
+[global::BDTest.BDTestClass]
 public class MSTestCompositionAdapterConformanceTests : AdapterConformanceTests;
 #endif
 
@@ -786,7 +790,7 @@ public class CompositionAdapterConformanceTests : AdapterConformanceTests
     protected override AbstractContextBDTestBase<object> ScenarioHost => _host;
 
     public CompositionAdapterConformanceTests() =>
-        _host = global::BDTest.xUnit.XUnitBDTestScenario.For<object>(this, TestRun);
+        _host = global::BDTest.XUnitBDTestScenario.For<object>(this, TestRun);
 
     public override async ValueTask DisposeAsync()
     {

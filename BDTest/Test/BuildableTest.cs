@@ -1,7 +1,7 @@
-using BDTest.Attributes;
+using BDTest.Test;
 using BDTest.Metadata;
 
-namespace BDTest.Test;
+namespace BDTest;
 
 /// <summary>Fluent construction state. Report JSON contains definition summaries, never builders.</summary>
 public class BuildableTest

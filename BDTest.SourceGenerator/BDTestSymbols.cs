@@ -1,4 +1,3 @@
-using System;
 using Microsoft.CodeAnalysis;
 
 namespace BDTest.Compiler;
@@ -10,9 +9,15 @@ internal static class BDTestSymbols
 
     internal static bool IsBuilderMethod(IMethodSymbol method)
     {
-        var type = method.ContainingType;
-        var space = type.ContainingNamespace.ToDisplayString();
-        return (type.Name == "BDTestBase" && space == "BDTest.Test") ||
-               space == "BDTest.Test.Steps" || space.StartsWith("BDTest.Test.Steps.", StringComparison.Ordinal);
+        // The root namespace also contains unrelated consumer APIs. Identify the
+        // host/builder hierarchy instead of accepting every method in that namespace.
+        for (var type = method.ContainingType; type != null; type = type.BaseType)
+        {
+            if (type.ContainingNamespace.ToDisplayString() == "BDTest" &&
+                type.ContainingAssembly.Name == "BDTest" &&
+                type.Name is "BDTestBase" or "StepBuilder")
+                return true;
+        }
+        return false;
     }
 }

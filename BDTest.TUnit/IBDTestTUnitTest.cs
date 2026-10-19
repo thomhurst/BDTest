@@ -1,6 +1,6 @@
 using BDTest.Test;
 
-namespace BDTest.TUnit;
+namespace BDTest;
 
 /// <summary>Opts a TUnit test instance into automatic BDTest setup and asynchronous completion.</summary>
 public interface IBDTestTUnitTest

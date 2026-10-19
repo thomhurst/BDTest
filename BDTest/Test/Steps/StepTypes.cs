@@ -1,4 +1,5 @@
-namespace BDTest.Test.Steps;
+using BDTest.Contracts;
+namespace BDTest;
 
 public static class StepTypeExtensions
 {

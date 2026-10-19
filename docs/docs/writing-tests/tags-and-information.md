@@ -7,7 +7,7 @@ description: Tag scenarios for filtering with [BDTestTag] and attach extra detai
 
 ## Tags
 
-Use `[BDTestTag]` from `BDTest.Attributes` on a scenario method or a story class. Apply it several times for several tags.
+Use `[BDTestTag]` from `BDTest` on a scenario method or a story class. Apply it several times for several tags.
 
 ```csharp title="Illustrative fragment"
 [BDTestTag("checkout")]

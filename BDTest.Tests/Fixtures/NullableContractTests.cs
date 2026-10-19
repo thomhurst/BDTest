@@ -1,5 +1,5 @@
 using System.Text;
-using BDTest.Attributes;
+using BDTest;
 using BDTest.Helpers;
 using BDTest.Metadata;
 using BDTest.Test;

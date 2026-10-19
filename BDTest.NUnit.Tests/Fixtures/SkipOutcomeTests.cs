@@ -1,4 +1,4 @@
-using BDTest.Attributes;
+using BDTest;
 using BDTest.Settings;
 using BDTest.Test;
 using NUnit.Framework;
@@ -9,7 +9,7 @@ namespace BDTest.Tests.Fixtures;
 // the TRX outcomes, while the finally block checks BDTest's own recorded statuses.
 [NonParallelizable]
 [BDTestRetry(2)]
-public class SkipOutcomeTests : BDTest.NUnit.NUnitBDTestBase<object>
+public class SkipOutcomeTests : BDTest.NUnitBDTestBase<object>
 {
     internal static void Configure(BDTestOptions options)
     {

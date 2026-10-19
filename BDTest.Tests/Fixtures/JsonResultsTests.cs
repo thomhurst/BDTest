@@ -1,7 +1,6 @@
-using BDTest.Attributes;
+using BDTest;
 using BDTest.Helpers;
 using BDTest.Maps;
-using BDTest.TUnit;
 using BDTest.Test;
 using BDTest.Tests.Helpers;
 using BDTest.TestUtilities;

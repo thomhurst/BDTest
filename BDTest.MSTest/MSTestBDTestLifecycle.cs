@@ -4,7 +4,7 @@ using BDTest.Settings;
 using BDTest.Test;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace BDTest.MSTest;
+namespace BDTest;
 
 /// <summary>Connects MSTest's native context injection to the shared BDTest lifecycle.</summary>
 public static class MSTestBDTestLifecycle

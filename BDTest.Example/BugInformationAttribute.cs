@@ -1,4 +1,4 @@
-using BDTest.Attributes;
+using BDTest;
 
 namespace BDTest.Example;
 

@@ -1,4 +1,4 @@
-using BDTest.Attributes;
+using BDTest;
 using BDTest.Exceptions;
 using BDTest.Interfaces.Internal;
 using BDTest.Reporters;

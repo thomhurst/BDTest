@@ -1,5 +1,5 @@
 using System.Threading.Tasks.Sources;
-using BDTest.Attributes;
+using BDTest;
 using BDTest.Test;
 using BDTest.Tests.Helpers;
 using System.Threading.Tasks;

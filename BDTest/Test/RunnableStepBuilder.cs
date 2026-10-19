@@ -1,12 +1,12 @@
 using BDTest.Contracts;
 using BDTest.Helpers;
+using BDTest.Test;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using BDTest.Exceptions;
-using BDTest.Test.Steps;
 using BDTest.Output;
 
-namespace BDTest.Test;
+namespace BDTest;
 
 /// <summary>A scenario builder that supports one execution through BDTestAsync() or direct await.</summary>
 /// <remarks>Repeated or concurrent execution attempts throw <see cref="AlreadyExecutedException"/>, even after failure.

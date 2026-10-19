@@ -1,7 +1,7 @@
 using System.Collections.Concurrent;
 using System.Reflection;
 using System.Runtime.CompilerServices;
-using BDTest.Attributes;
+using BDTest;
 using BDTest.Helpers;
 
 namespace BDTest.Metadata;

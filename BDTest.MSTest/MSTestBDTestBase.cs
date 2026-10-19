@@ -1,8 +1,8 @@
-﻿using BDTest.Test;
+using BDTest.Test;
 using BDTest.Settings;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace BDTest.MSTest;
+namespace BDTest;
 
 [TestClass]
 public abstract class MSTestBDTestBase<TContext> : AbstractContextBDTestBase<TContext>, IBDTestMSTestTest

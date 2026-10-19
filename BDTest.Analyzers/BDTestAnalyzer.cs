@@ -47,15 +47,15 @@ public sealed class BDTestAnalyzer : DiagnosticAnalyzer
     internal static bool IsBuilder(ITypeSymbol? type)
     {
         for (var current = type as INamedTypeSymbol; current != null; current = current.BaseType)
-            if (IsType(current, "BDTest.Test.Steps.StepBuilder") ||
-                (current.Name == "ScenarioOutlineBuilder" && current.ContainingNamespace.ToDisplayString() == "BDTest.Test" &&
+            if (IsType(current, "BDTest.StepBuilder") ||
+                (current.Name == "ScenarioOutlineBuilder" && current.ContainingNamespace.ToDisplayString() == "BDTest" &&
                  current.ContainingAssembly.Name == "BDTest")) return true;
         return false;
     }
 
     internal static bool IsRunnable(ITypeSymbol? type) => type is INamedTypeSymbol named &&
-        (IsType(named, "BDTest.Test.RunnableStepBuilder") || IsRunnable(named.BaseType) ||
-         (named.Name == "ScenarioOutlineBuilder" && named.ContainingNamespace.ToDisplayString() == "BDTest.Test" &&
+        (IsType(named, "BDTest.RunnableStepBuilder") || IsRunnable(named.BaseType) ||
+         (named.Name == "ScenarioOutlineBuilder" && named.ContainingNamespace.ToDisplayString() == "BDTest" &&
           named.ContainingAssembly.Name == "BDTest"));
 
     internal static ExpressionSyntax DiscardedExpression(ExpressionStatementSyntax statement, SemanticModel model)
@@ -225,7 +225,7 @@ public sealed class BDTestAnalyzer : DiagnosticAnalyzer
     {
         for (IMethodSymbol? current = method; current != null; current = current.OverriddenMethod)
         {
-            var attribute = current.GetAttributes().FirstOrDefault(a => IsType(a.AttributeClass, "BDTest.Attributes.StepTextAttribute"));
+            var attribute = current.GetAttributes().FirstOrDefault(a => IsType(a.AttributeClass, "BDTest.StepTextAttribute"));
             if (attribute != null) return attribute;
         }
         return null;
@@ -237,12 +237,12 @@ public sealed class BDTestAnalyzer : DiagnosticAnalyzer
         {
             var location = attribute.ApplicationSyntaxReference?.GetSyntax(context.CancellationToken).GetLocation();
             if (location == null) continue;
-            if (context.Symbol is IMethodSymbol method && IsType(attribute.AttributeClass, "BDTest.Attributes.StepTextAttribute"))
+            if (context.Symbol is IMethodSymbol method && IsType(attribute.AttributeClass, "BDTest.StepTextAttribute"))
             {
                 var message = ValidateStepText(attribute, method.Parameters.Length);
                 if (message != null) context.ReportDiagnostic(Diagnostic.Create(StepText, location, message));
             }
-            else if (IsType(attribute.AttributeClass, "BDTest.Attributes.StoryAttribute"))
+            else if (IsType(attribute.AttributeClass, "BDTest.StoryAttribute"))
             {
                 var supplied = attribute.NamedArguments.Where(a => a.Value.Value is string text && !string.IsNullOrEmpty(text))
                     .Select(a => a.Key).ToList();

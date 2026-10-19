@@ -1,16 +1,14 @@
 using BDTest.Contracts;
+using BDTest.Test;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.ExceptionServices;
 using System.Threading;
-using BDTest.Attributes;
 using BDTest.Helpers;
 using BDTest.Metadata;
 using BDTest.Output;
-using BDTest.Test.Steps.Given;
-using BDTest.Test.Steps.When;
 
-namespace BDTest.Test;
+namespace BDTest;
 
 public abstract class BDTestBase
 {

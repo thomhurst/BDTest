@@ -2,7 +2,7 @@ using System.Net;
 using System.Net.Http;
 using System.Text.RegularExpressions;
 using System.Threading;
-using BDTest.Attributes;
+using BDTest;
 using BDTest.Helpers;
 using BDTest.Output;
 using BDTest.Test;

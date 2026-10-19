@@ -1,7 +1,7 @@
 using BDTest.Test;
 using BDTest.Settings;
 
-namespace BDTest.MSTest;
+namespace BDTest;
 
 /// <summary>Creates composition hosts using the assembly-owned or an explicitly supplied run.</summary>
 public static class MSTestBDTestScenario

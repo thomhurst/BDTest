@@ -1,6 +1,6 @@
 using Step = BDTest.Contracts.StepResult;
 using Scenario = BDTest.Contracts.ScenarioResult;
-using BDTest.Attributes;
+using BDTest;
 using BDTest.Settings;
 using BDTest.Test;
 using System.Threading.Tasks;

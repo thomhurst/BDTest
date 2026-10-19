@@ -1,7 +1,8 @@
-﻿using System.Globalization;
+using System.Globalization;
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Encodings.Web;
 using BDTest.Razor.Reports.Models;
+using BDTest;
 using BDTest.Test;
 using Microsoft.AspNetCore.Html;
 

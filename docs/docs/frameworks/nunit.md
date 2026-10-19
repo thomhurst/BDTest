@@ -20,8 +20,6 @@ Use `[BDTestFixture]` and implement `INUnitBDTest`. Create one stable NUnit host
 
 ```csharp sample="NUnit/Composition.cs" title="Compiled example"
 using BDTest;
-using BDTest.NUnit;
-using BDTest.Test;
 using NUnit.Framework;
 
 [BDTestFixture]
@@ -66,8 +64,7 @@ NUnit selects method-level setup/teardown wrappers before class-level wrappers. 
 Optionally, inherit from `NUnitBDTestBase<TContext>`:
 
 ```csharp sample="NUnit/Inheritance.cs" title="Compiled example"
-using BDTest.Attributes;
-using BDTest.NUnit;
+using BDTest;
 using NUnit.Framework;
 
 [Story(AsA = "shopper", IWant = "to add items to my basket", SoThat = "I can buy them")]
@@ -119,7 +116,7 @@ public class BDTestReports
     public async Task AfterAllTests()
     {
         var assembly = typeof(BDTestReports).Assembly;
-        var run = BDTest.NUnit.NUnitBDTestAssembly.GetRun(assembly);
+        var run = BDTest.NUnitBDTestAssembly.GetRun(assembly);
         var descriptor = new BDTestRunDescriptor { Environment = "CI", Tag = "Acceptance" };
 
         try
@@ -132,7 +129,7 @@ public class BDTestReports
         }
         finally
         {
-            BDTest.NUnit.NUnitBDTestAssembly.Dispose(assembly);
+            BDTest.NUnitBDTestAssembly.Dispose(assembly);
         }
     }
 }

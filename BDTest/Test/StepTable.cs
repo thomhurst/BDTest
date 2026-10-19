@@ -2,7 +2,7 @@ using System.Globalization;
 using System.Reflection;
 using System.Text.Json.Serialization;
 
-namespace BDTest.Test;
+namespace BDTest;
 
 /// <summary>An immutable snapshot of table headers and cells for a step report.</summary>
 public sealed class StepTable : StepArgument

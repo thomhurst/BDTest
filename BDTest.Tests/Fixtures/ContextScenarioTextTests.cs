@@ -1,6 +1,5 @@
 using System.Runtime.CompilerServices;
-using BDTest.Attributes;
-using BDTest.TUnit;
+using BDTest;
 using System.Threading.Tasks;
 
 namespace BDTest.Tests.Fixtures;

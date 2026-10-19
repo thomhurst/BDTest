@@ -1,5 +1,5 @@
 using BDTest.Helpers;
-using BDTest.NUnit;
+using BDTest;
 
 namespace BDTest.Example;
 

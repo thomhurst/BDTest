@@ -1,6 +1,6 @@
 using BDTest.Test;
 
-namespace BDTest.MSTest;
+namespace BDTest;
 
 /// <summary>Supplies the stable scenario host selected by an MSTest fixture.</summary>
 /// <remarks>Use BDTestClass and forward MSTest's TestContext setter to MSTestBDTestLifecycle.Initialize.</remarks>

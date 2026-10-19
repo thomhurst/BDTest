@@ -2,7 +2,7 @@ using System.Collections;
 using System.Diagnostics;
 using System.Reflection;
 using System.Threading;
-using BDTest.Attributes;
+using BDTest;
 using BDTest.Test;
 
 namespace BDTest.Helpers;

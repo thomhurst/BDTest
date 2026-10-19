@@ -1,4 +1,4 @@
-﻿namespace BDTest.Test;
+namespace BDTest;
 
 // ReSharper disable once UnusedType.Global
 public class BDTestBuilder : BDTestBase

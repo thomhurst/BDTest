@@ -2,7 +2,7 @@ using System.Text.RegularExpressions;
 using BDTest.Exceptions;
 // ReSharper disable UnusedMember.Global
 
-namespace BDTest.Attributes;
+namespace BDTest;
 
 /// <summary>
 /// Attribute <c>StepText</c> is used to customise the Gherkin Step Text output that BDDfy produces when running a scenario,

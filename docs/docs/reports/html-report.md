@@ -14,7 +14,7 @@ For built-in adapters, pass the [configured assembly run](../configuration/assem
 using BDTest;
 using BDTest.Helpers;
 
-var run = BDTest.NUnit.NUnitBDTestAssembly.GetRun(typeof(MyTests).Assembly);
+var run = BDTest.NUnitBDTestAssembly.GetRun(typeof(MyTests).Assembly);
 var html = BDTestHtmlHelper.GetTestHtmlReport(new BDTestRunDescriptor
 {
     Environment = "Production",
@@ -45,12 +45,12 @@ public class TestReportSetup
         var assembly = typeof(TestReportSetup).Assembly;
         try
         {
-            var run = BDTest.TUnit.TUnitBDTestAssembly.GetRun(assembly);
+            var run = BDTest.TUnitBDTestAssembly.GetRun(assembly);
             var timestamp = DateTime.Now.ToString("yyyyMMdd-HHmmss");
             await File.WriteAllTextAsync($"BDTest-Report-{timestamp}.json", BDTestJsonHelper.GetTestJsonData(null, run));
             await File.WriteAllTextAsync($"BDTest-Report-{timestamp}.html", BDTestHtmlHelper.GetTestHtmlReport(null, run));
         }
-        finally { BDTest.TUnit.TUnitBDTestAssembly.Dispose(assembly); }
+        finally { BDTest.TUnitBDTestAssembly.Dispose(assembly); }
     }
 }
 ```

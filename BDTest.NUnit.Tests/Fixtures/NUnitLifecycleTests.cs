@@ -1,5 +1,5 @@
 using System.Collections.Concurrent;
-using BDTest.NUnit;
+using BDTest;
 using NUnit.Framework;
 
 namespace BDTest.Tests.Fixtures;

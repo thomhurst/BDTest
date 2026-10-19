@@ -1,4 +1,4 @@
-﻿namespace BDTest.Attributes;
+namespace BDTest;
 
 [AttributeUsage(AttributeTargets.Method | AttributeTargets.Class | AttributeTargets.Assembly, AllowMultiple = false, Inherited = true)]
 public class BDTestRetryAttribute : Attribute

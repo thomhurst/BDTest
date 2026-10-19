@@ -1,5 +1,4 @@
-using BDTest.MSTest;
-using BDTest.Attributes;
+using BDTest;
 using BDTest.TestUtilities;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Runtime.CompilerServices;

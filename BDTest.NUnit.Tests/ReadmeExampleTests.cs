@@ -1,6 +1,5 @@
 using System.Threading.Tasks;
-using BDTest.Attributes;
-using BDTest.NUnit;
+using BDTest;
 using NUnit.Framework;
 
 namespace BDTest.Tests.ReadmeExample;

@@ -41,8 +41,6 @@ constructor. Supply the actual test instance and an explicit, caller-owned run:
 ```csharp sample="XUnit/Composition.cs" title="Compiled example"
 using BDTest;
 using BDTest.Helpers;
-using BDTest.Test;
-using BDTest.xUnit;
 using Xunit;
 
 [assembly: AssemblyFixture(typeof(XUnitBDTestLifecycle))]
@@ -137,8 +135,7 @@ target frameworks and xUnit v3 runner requirements remain unchanged.
 Inherit from `XUnitBDTestBase<TContext>`. The base class has a parameterless constructor:
 
 ```csharp sample="XUnit/Inheritance.cs" title="Compiled example"
-using BDTest.Attributes;
-using BDTest.xUnit;
+using BDTest;
 using Xunit;
 
 [Story(AsA = "shopper", IWant = "to add items to my basket", SoThat = "I can buy them")]
@@ -230,10 +227,10 @@ public sealed class BDTestReports : IAsyncDisposable
         var assembly = typeof(BDTestReports).Assembly;
         try
         {
-            var run = BDTest.xUnit.XUnitBDTestAssembly.GetRun(assembly);
+            var run = BDTest.XUnitBDTestAssembly.GetRun(assembly);
             await File.WriteAllTextAsync("BDTest-Report.html", BDTestHtmlHelper.GetTestHtmlReport(null, run));
         }
-        finally { BDTest.xUnit.XUnitBDTestAssembly.Dispose(assembly); }
+        finally { BDTest.XUnitBDTestAssembly.Dispose(assembly); }
     }
 }
 ```

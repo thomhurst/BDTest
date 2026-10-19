@@ -1,7 +1,7 @@
 global using BDTest.Tests.Helpers;
 
 using BDTest.Interfaces;
-using BDTest.TUnit;
+using BDTest;
 using BDTest.Test;
 
 namespace BDTest.Tests.Helpers;

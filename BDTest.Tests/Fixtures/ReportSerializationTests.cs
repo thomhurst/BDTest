@@ -1,5 +1,5 @@
 using System.Text.Json;
-using BDTest.Attributes;
+using BDTest;
 using BDTest.Helpers;
 using BDTest.Maps;
 using BDTest.Output;
@@ -7,7 +7,6 @@ using BDTest.Razor.Reports.Extensions;
 using BDTest.Razor.Reports.Helpers;
 using BDTest.Razor.Reports.Models;
 using BDTest.Test;
-using BDTest.Test.Steps;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;

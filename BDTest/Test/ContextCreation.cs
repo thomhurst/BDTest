@@ -1,4 +1,4 @@
-namespace BDTest.Test;
+namespace BDTest;
 
 /// <summary>Identifies the test and zero-based attempt requesting a context.</summary>
 public sealed class ContextCreation

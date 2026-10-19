@@ -1,4 +1,4 @@
-using BDTest.Test.Steps;
+using BDTest;
 
 namespace BDTest.Test;
 

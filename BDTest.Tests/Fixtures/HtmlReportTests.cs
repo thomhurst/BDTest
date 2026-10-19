@@ -3,7 +3,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Xml.Linq;
-using BDTest.Attributes;
+using BDTest;
 using BDTest.Helpers;
 using BDTest.Settings;
 using BDTest.Test;

@@ -1,5 +1,5 @@
 using System.Runtime.ExceptionServices;
-using BDTest.Attributes;
+using BDTest;
 using BDTest.Exceptions;
 using BDTest.Helpers;
 using BDTest.Interfaces.Internal;

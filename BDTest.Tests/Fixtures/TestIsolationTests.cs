@@ -1,6 +1,6 @@
 using System.IO;
 using System.Collections.Concurrent;
-using BDTest.TUnit;
+using BDTest;
 using BDTest.Settings;
 using BDTest.Test;
 using BDTest.Tests.Helpers;

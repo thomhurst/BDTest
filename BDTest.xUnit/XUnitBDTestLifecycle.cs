@@ -2,7 +2,7 @@ using System.Collections.Concurrent;
 using Xunit;
 using Xunit.v3;
 
-namespace BDTest.xUnit;
+namespace BDTest;
 
 /// <summary>Completes opted-in BDTest hosts after xUnit setup, body and teardown, including failures.</summary>
 /// <remarks>Register with [assembly: AssemblyFixture(typeof(XUnitBDTestLifecycle))]. Runs remain caller-owned.</remarks>

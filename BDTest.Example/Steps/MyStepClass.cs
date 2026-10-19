@@ -1,4 +1,4 @@
-using BDTest.Attributes;
+using BDTest;
 using BDTest.Example.Context;
 using BDTest.Example.Helpers;
 
