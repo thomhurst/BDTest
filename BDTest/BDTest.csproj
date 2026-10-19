@@ -7,6 +7,7 @@
     <Description>A Behaviour Driven Testing Framework</Description>
     <PackageTags>test tdd bdd testing given when then</PackageTags>
     <TargetFrameworks>netstandard2.0;net8.0</TargetFrameworks>
+    <_BundledCompilerToolsTargetFramework>$(TargetFrameworks.Split(';')[0])</_BundledCompilerToolsTargetFramework>
     <TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);IncludeBundledCompilerTools</TargetsForTfmSpecificContentInPackage>
   </PropertyGroup>
 
@@ -45,8 +46,9 @@
   </ItemGroup>
 
   <!-- Query evaluated compiler output paths to support NoBuild and custom output roots.
-       Pack deduplicates the shared payload across runtime targets. -->
-  <Target Name="IncludeBundledCompilerTools">
+       Collect once from the first selected runtime target, including single-target packs. -->
+  <Target Name="IncludeBundledCompilerTools"
+          Condition="'$(TargetFrameworks)' == '' Or '$(TargetFramework)' == '$(_BundledCompilerToolsTargetFramework)'">
     <MSBuild Projects="..\BDTest.SourceGenerator\BDTest.SourceGenerator.csproj;..\BDTest.Analyzers\BDTest.Analyzers.csproj"
              Targets="GetTargetPath"
              Properties="Configuration=$(Configuration);TargetFramework=netstandard2.0"

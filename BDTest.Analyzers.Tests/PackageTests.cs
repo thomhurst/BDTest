@@ -57,8 +57,8 @@ public class PackageTests
                 };
                 if (package == "BDTest" && packTarget != null)
                 {
-                    // Restore matching dependency groups before packing a selected runtime asset.
-                    var restored = await Dotnet(repository, "restore", "BDTest/BDTest.csproj",
+                    // Restore only core with the selected TFM; its dependencies keep their own targets.
+                    var restored = await Dotnet(repository, "restore", "BDTest/BDTest.csproj", "--no-dependencies",
                         "-p:TargetFrameworks=" + packTarget);
                     Assert.That(restored.ExitCode, Is.Zero, restored.Output);
                     arguments.Add("-p:TargetFrameworks=" + packTarget);
