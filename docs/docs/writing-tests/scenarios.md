@@ -211,5 +211,5 @@ Generic steps accept `Action`, `Func<Task>`, `Func<ValueTask>` and
 `Func<ValueTask<T>>`, including cancellation-token variants of asynchronous
 steps. `[StepText]`, `WithStepText`, `WithArgs` and `WithScenarioText` work as
 usual. The source generator also discovers generic step methods. Report JSON
-uses `stepType: "Step"`; existing step-kind values remain unchanged. Generic
+uses `stepType: "Step"`; existing step-kind values remain unchanged. Standalone and hosted HTML reports display `Step` in the keyword column. Generic
 chains and typed Given/When/Then chains are separate fluent entry points.

@@ -23,9 +23,9 @@ public class GenericStepTests : RunTestBase
         var restored = report.Scenarios!.Single(scenario => scenario.Guid == result.Guid);
         await Assert.That(restored.Steps!.Select(step => step.StepText)).IsEquivalentTo(new string?[] { "Step record first", "Step record second", "Step custom text" }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
         var html = BDTestHtmlHelper.GenerateHtmlReport(report);
-        await Assert.That(html).Contains("Step custom text");
+        await Assert.That(html).Contains("<span class=\"kw\">Step</span> <span class=\"step-text\">custom text</span>");
         var hosted = await ReportHandlerEncodingTests.RenderAsync("/Views/BDTest/Scenario.cshtml", restored);
-        await Assert.That(hosted).Contains("Step custom text");
+        await Assert.That(hosted).Contains("<span class=\"kw\">Step</span> <span class=\"step-text\">custom text</span>");
         var json = JObject.Parse(BDTestJsonHelper.GetTestJsonData(null, TestRun))["scenarios"]!.Single();
         await Assert.That(json["steps"]!.All(step => (string?)step["stepType"] == "Step")).IsTrue();
     }
