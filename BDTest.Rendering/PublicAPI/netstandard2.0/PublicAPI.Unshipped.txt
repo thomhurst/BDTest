@@ -1,5 +1,49 @@
 #nullable enable
+BDTest.Rendering.ReportFailureLink
+BDTest.Rendering.ReportFailureLink.Description.get -> string?
+BDTest.Rendering.ReportFailureLink.Duration.get -> System.TimeSpan?
+BDTest.Rendering.ReportFailureLink.Name.get -> string!
+BDTest.Rendering.ReportFailureLink.ReportFailureLink(string! scenarioId, string! name, string? description = null, System.TimeSpan? duration = null) -> void
+BDTest.Rendering.ReportFailureLink.ScenarioId.get -> string!
+BDTest.Rendering.ReportFailureOverview
+BDTest.Rendering.ReportFailureOverview.Location.get -> string?
+BDTest.Rendering.ReportFailureOverview.Message.get -> string!
+BDTest.Rendering.ReportFailureOverview.ReportFailureOverview(string! typeName, string! message, string? location, int scenarioCount, System.Collections.Generic.IReadOnlyList<BDTest.Rendering.ReportFailureLink!>! scenarios) -> void
+BDTest.Rendering.ReportFailureOverview.ScenarioCount.get -> int
+BDTest.Rendering.ReportFailureOverview.Scenarios.get -> System.Collections.Generic.IReadOnlyList<BDTest.Rendering.ReportFailureLink!>!
+BDTest.Rendering.ReportFailureOverview.TypeName.get -> string!
 BDTest.Rendering.ReportHtmlRenderer
+BDTest.Rendering.ReportRenderOptions
+BDTest.Rendering.ReportRenderOptions.AttachmentUrl.get -> System.Func<BDTest.Contracts.AttachmentInfo!, string?>?
+BDTest.Rendering.ReportRenderOptions.AttachmentUrl.set -> void
+BDTest.Rendering.ReportRenderOptions.Hosted.get -> bool
+BDTest.Rendering.ReportRenderOptions.Hosted.set -> void
+BDTest.Rendering.ReportRenderOptions.OmitCustomHtml.get -> bool
+BDTest.Rendering.ReportRenderOptions.OmitCustomHtml.set -> void
+BDTest.Rendering.ReportRenderOptions.ReportRenderOptions() -> void
+BDTest.Rendering.ReportRunOverview
+BDTest.Rendering.ReportRunOverview.BranchName.get -> string?
+BDTest.Rendering.ReportRunOverview.Counts.get -> System.Collections.Generic.IReadOnlyDictionary<BDTest.Contracts.Status, int>!
+BDTest.Rendering.ReportRunOverview.CustomProperties.get -> System.Collections.Generic.IReadOnlyDictionary<string!, string!>!
+BDTest.Rendering.ReportRunOverview.Environment.get -> string?
+BDTest.Rendering.ReportRunOverview.MachineName.get -> string?
+BDTest.Rendering.ReportRunOverview.NotRunCount.get -> int
+BDTest.Rendering.ReportRunOverview.ProducerVersion.get -> string?
+BDTest.Rendering.ReportRunOverview.ReportRunOverview(int scenarioCount, int notRunCount, System.Collections.Generic.IReadOnlyDictionary<BDTest.Contracts.Status, int>! counts, string? environment = null, string? tag = null, string? branchName = null, string? machineName = null, string? producerVersion = null, BDTest.Contracts.ReportTimer? timer = null, System.Collections.Generic.IReadOnlyDictionary<string!, string!>? customProperties = null) -> void
+BDTest.Rendering.ReportRunOverview.ScenarioCount.get -> int
+BDTest.Rendering.ReportRunOverview.Tag.get -> string?
+BDTest.Rendering.ReportRunOverview.Timer.get -> BDTest.Contracts.ReportTimer?
 static BDTest.Rendering.ReportHtmlRenderer.GenerateHtmlReport(BDTest.Contracts.BDTestReport! data) -> string!
+static BDTest.Rendering.ReportHtmlRenderer.GetScript() -> string!
 static BDTest.Rendering.ReportHtmlRenderer.RenderArguments(System.Collections.Generic.IReadOnlyList<BDTest.Contracts.StepArgument!>? arguments) -> string!
+static BDTest.Rendering.ReportHtmlRenderer.RenderAttachments(System.Collections.Generic.IEnumerable<BDTest.Contracts.AttachmentInfo!>! attachments, BDTest.Rendering.ReportRenderOptions? options = null) -> string!
+static BDTest.Rendering.ReportHtmlRenderer.RenderAttention(System.Collections.Generic.IReadOnlyList<BDTest.Rendering.ReportFailureOverview!>! groups, int failedScenarioCount, int? totalCauses = null, System.Func<string!, string?>? scenarioUrl = null, string? allFailuresUrl = null) -> string!
+static BDTest.Rendering.ReportHtmlRenderer.RenderCustomHtml(string! content, bool hosted = false) -> string!
+static BDTest.Rendering.ReportHtmlRenderer.RenderExamples(BDTest.Contracts.ScenarioResult! scenario, BDTest.Rendering.ReportRenderOptions? options = null) -> string!
 static BDTest.Rendering.ReportHtmlRenderer.RenderException(BDTest.Contracts.ExceptionInfo? exception) -> string!
+static BDTest.Rendering.ReportHtmlRenderer.RenderNotRun(System.Collections.Generic.IEnumerable<BDTest.Contracts.ScenarioDefinitionSummary!>! notRun) -> string!
+static BDTest.Rendering.ReportHtmlRenderer.RenderRetryHistory(BDTest.Contracts.ScenarioResult! scenario) -> string!
+static BDTest.Rendering.ReportHtmlRenderer.RenderRunOverview(BDTest.Rendering.ReportRunOverview! data, System.Func<BDTest.Contracts.Status?, string?>? statusUrl = null, string? notRunUrl = null) -> string!
+static BDTest.Rendering.ReportHtmlRenderer.RenderScenario(BDTest.Contracts.ScenarioResult! scenario, BDTest.Rendering.ReportRenderOptions? options = null) -> string!
+static BDTest.Rendering.ReportHtmlRenderer.RenderStyles() -> string!
+static BDTest.Rendering.ReportRunOverview.FromReport(BDTest.Contracts.BDTestReport! report) -> BDTest.Rendering.ReportRunOverview!

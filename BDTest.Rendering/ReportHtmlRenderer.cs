@@ -11,7 +11,7 @@ using System.Text.Json;
 namespace BDTest.Rendering;
 
 /// <summary>HTML rendering over immutable contracts, independent of test execution and hosting.</summary>
-public static class ReportHtmlRenderer
+public static partial class ReportHtmlRenderer
 {
     private const string NotSpecified = "Not Specified";
 
@@ -38,7 +38,8 @@ public static class ReportHtmlRenderer
     public static string RenderArguments(IReadOnlyList<StepArgument>? arguments) => StepArgumentHtmlHelper.GetHtml(arguments);
 
     /// <summary>Renders an encoded exception tree with bounded traversal and original diagnostic text.</summary>
-    public static string RenderException(ExceptionInfo? exception) => ExceptionHtmlHelper.GetHtml(exception);
+    public static string RenderException(ExceptionInfo? exception) => ExceptionHtmlHelper.GetHtml(exception,
+        (builder, text) => AppendCode(builder, "Original exception text", text, true));
 
     /// <summary>Creates one self-contained offline HTML document from an immutable report.</summary>
     public static string GenerateHtmlReport(BDTestReport data)
@@ -72,8 +73,7 @@ public static class ReportHtmlRenderer
         html.AppendLine("</div></header>");
 
         html.AppendLine("<main>");
-        GenerateVerdictSection(html, data);
-        GenerateSummarySection(html, data);
+        html.Append(RenderRunOverview(ReportRunOverview.FromReport(data)));
 
         if (scenarios.Count == 0)
         {
@@ -90,7 +90,7 @@ public static class ReportHtmlRenderer
 
         if (notRun.Any())
         {
-            GenerateNotRunSection(html, notRun);
+            html.Append(RenderNotRun(notRun));
         }
         html.AppendLine("</main>");
 
@@ -103,102 +103,6 @@ public static class ReportHtmlRenderer
         html.AppendLine("</html>");
 
         return html.ToString();
-    }
-
-    private static void GenerateVerdictSection(StringBuilder html, BDTestReport data)
-    {
-        var scenarios = data.Scenarios.ToList();
-        var notRun = data.NotRun.ToList();
-        var total = scenarios.Count + notRun.Count;
-        var failed = scenarios.Count(s => s.Status == Status.Failed);
-        var passed = scenarios.Count(s => s.Status == Status.Passed);
-
-        string verdict;
-        if (scenarios.Count == 0)
-            verdict = "<span class=\"v-word\">No scenarios ran</span>";
-        else if (failed > 0)
-            verdict = $"<span class=\"v-word\">{failed} failed</span> <span class=\"of\">of {total} scenarios</span>";
-        else
-            verdict = $"<span class=\"v-word\">{(passed == total ? "All passed" : "No failures")}</span> <span class=\"of\">of {total} scenarios</span>";
-
-        var startedAt = data.TestTimer?.TestsStartedAt ?? default;
-        var finishedAt = data.TestTimer?.TestsFinishedAt ?? default;
-        var timing = startedAt == default || finishedAt == default
-            ? "<span class=\"unset\">No timing recorded</span>"
-            : $"<span class=\"mono\">{FormatDuration(finishedAt - startedAt)}</span> · {FormatTime(startedAt, "yyyy-MM-dd HH:mm:ss")} → {FormatTime(finishedAt, "HH:mm:ss")} UTC";
-
-        html.AppendLine("<section class=\"wrap verdict\" aria-labelledby=\"verdict-h\">");
-        html.AppendLine("<div>");
-        html.AppendLine("<p class=\"eyebrow\">Run result</p>");
-        html.AppendLine($"<h1 id=\"verdict-h\" class=\"verdict-h\" data-status=\"{(failed > 0 ? "failed" : scenarios.Count == 0 ? "all" : "passed")}\">{verdict}</h1>");
-        html.AppendLine($"<p class=\"verdict-sub\">{timing}</p>");
-        html.AppendLine("</div>");
-        html.AppendLine("<dl class=\"meta\">");
-        AppendMeta(html, "Environment", data.Environment, false);
-        AppendMeta(html, "Tag", data.Tag, false);
-        AppendMeta(html, "Branch", data.BranchName, true);
-        AppendMeta(html, "Machine", data.MachineName, true);
-        AppendMeta(html, "Version", data.ProducerVersion, true);
-        html.AppendLine("</dl>");
-        html.AppendLine("</section>");
-    }
-
-    private static void AppendMeta(StringBuilder html, string label, string? value, bool mono)
-    {
-        var cssClass = string.IsNullOrEmpty(value) || value == NotSpecified ? " class=\"unset\"" : mono ? " class=\"mono\"" : "";
-        html.AppendLine($"<div><dt>{label}</dt><dd{cssClass}>{EscapeHtml(value ?? NotSpecified)}</dd></div>");
-    }
-
-    private static void GenerateSummarySection(StringBuilder html, BDTestReport data)
-    {
-        var scenarios = data.Scenarios.ToList();
-        var notRun = data.NotRun.ToList();
-        var total = scenarios.Count + notRun.Count;
-        var counts = Statuses.ToDictionary(status => status, status => scenarios.Count(s => s.Status == status));
-
-        html.AppendLine("<section class=\"wrap\" aria-label=\"Test summary\">");
-        if (total > 0)
-        {
-            var labels = Statuses.Where(s => counts[s] > 0)
-                .Select(s => $"{counts[s]} {Label(Key(s)).ToLowerInvariant()}").ToList();
-            if (notRun.Count > 0)
-                labels.Add($"{notRun.Count} built but never run");
-            html.AppendLine($"<div class=\"bar\" role=\"img\" aria-label=\"{EscapeHtml(string.Join(", ", labels))}\">");
-            foreach (var status in Statuses.Where(s => counts[s] > 0))
-            {
-                html.AppendLine($"<div class=\"bar-seg\" data-status=\"{Key(status)}\" style=\"flex-grow: {counts[status]}\" title=\"{counts[status]} {Label(Key(status)).ToLowerInvariant()}\"></div>");
-            }
-            if (notRun.Count > 0)
-                html.AppendLine($"<div class=\"bar-seg\" data-status=\"notrun\" style=\"flex-grow: {notRun.Count}\" title=\"{notRun.Count} built but never run\"></div>");
-            html.AppendLine("</div>");
-        }
-
-        html.AppendLine("<div class=\"tiles\" role=\"group\" aria-label=\"Filter scenarios by status\">");
-        html.AppendLine($"<button class=\"tile\" type=\"button\" data-status=\"all\" data-filter=\"all\" aria-pressed=\"true\"{(scenarios.Count == 0 ? " disabled" : "")}><span class=\"tile-top\"><span class=\"label\">Total</span></span><span class=\"tile-n\">{total}</span><span class=\"tile-pct\">scenarios</span></button>");
-        foreach (var status in Statuses)
-        {
-            var key = Key(status);
-            var count = counts[status];
-            var percent = total == 0 ? "0%" : $"{Math.Round(count * 100.0 / total)}%";
-            html.AppendLine($"<button class=\"tile\" type=\"button\" data-status=\"{key}\" data-filter=\"{key}\" aria-pressed=\"false\"{(count == 0 ? " disabled" : "")}><span class=\"tile-top\"><span class=\"glyph\" data-g=\"{key}\" aria-hidden=\"true\"></span><span class=\"label\">{Label(key)}</span></span><span class=\"tile-n\">{count}</span><span class=\"tile-pct\">{percent}</span></button>");
-        }
-        if (notRun.Count > 0)
-        {
-            var percent = $"{Math.Round(notRun.Count * 100.0 / total)}%";
-            html.AppendLine($"<a class=\"tile\" data-status=\"notrun\" href=\"#not-run\"><span class=\"tile-top\"><span class=\"glyph\" data-g=\"notrun\" aria-hidden=\"true\"></span><span class=\"label\">Built but never run</span></span><span class=\"tile-n\">{notRun.Count}</span><span class=\"tile-pct\">{percent}</span></a>");
-        }
-        html.AppendLine("</div>");
-
-        if (data.CustomProperties?.Count > 0)
-        {
-            html.AppendLine($"<details class=\"runprops\"><summary>Run properties ({data.CustomProperties.Count})</summary><dl>");
-            foreach (var property in data.CustomProperties)
-            {
-                html.AppendLine($"<dt>{EscapeHtml(property.Key)}</dt><dd>{EscapeHtml(property.Value)}</dd>");
-            }
-            html.AppendLine("</dl></details>");
-        }
-        html.AppendLine("</section>");
     }
 
     private static void GenerateAttentionSection(StringBuilder html, BDTestReport data)
@@ -245,36 +149,12 @@ public static class ReportHtmlRenderer
             return;
         }
 
-        html.AppendLine("<section class=\"wrap sec\" aria-labelledby=\"att-h\">");
-        html.AppendLine("<div class=\"sec-head\">");
-        html.AppendLine("<h2 id=\"att-h\" class=\"h2\">Needs attention</h2>");
-        html.AppendLine($"<p class=\"sec-note\">{failedCount} failed {(failedCount == 1 ? "scenario traces" : "scenarios trace")} back to {causes.Count} {(causes.Count == 1 ? "cause" : "causes")}.</p>");
-        html.AppendLine("</div>");
-        html.AppendLine("<div class=\"att-grid\">");
-        foreach (var cause in causes.Select(c => new
-        {
-            c.Exception,
-            c.Scenarios,
-            ScenarioCount = c.Scenarios.Select(s => s.Scenario.Guid).Distinct().Count()
-        }).OrderByDescending(c => c.ScenarioCount))
-        {
-            var where = GetFirstFrame(cause.Exception.StackTrace);
-            html.AppendLine("<article class=\"cause\">");
-            html.AppendLine($"<div class=\"cause-top\"><span class=\"err-type\">{EscapeHtml(cause.Exception.TypeName)}</span><span class=\"cause-n\">{cause.ScenarioCount} {(cause.ScenarioCount == 1 ? "scenario" : "scenarios")}</span></div>");
-            html.AppendLine($"<p class=\"cause-msg\">{EscapeHtml(cause.Exception.Message)}</p>");
-            if (where != null)
-            {
-                html.AppendLine($"<div class=\"cause-where\">at {EscapeHtml(where)}</div>");
-            }
-            html.AppendLine("<ul>");
-            foreach (var (scenario, suffix) in cause.Scenarios)
-            {
-                html.AppendLine($"<li><button class=\"linkbtn\" type=\"button\" data-go=\"{EscapeHtml(scenario.Guid)}\">{EscapeHtml(scenario.ScenarioText + suffix)}</button></li>");
-            }
-            html.AppendLine("</ul>");
-            html.AppendLine("</article>");
-        }
-        html.AppendLine("</div>");
+        var groups = causes.Select(cause => new ReportFailureOverview(cause.Exception.TypeName,
+            cause.Exception.Message, GetFirstFrame(cause.Exception.StackTrace) is { } location ? "at " + location : null,
+            cause.Scenarios.Select(item => item.Scenario.Guid).Distinct().Count(),
+            cause.Scenarios.Select(item => new ReportFailureLink(item.Scenario.Guid, item.Scenario.ScenarioText + item.Suffix)).ToArray()))
+            .OrderByDescending(group => group.ScenarioCount).ToArray();
+        html.Append(RenderAttention(groups, failedCount));
 
         var also = new List<string>();
         foreach (var status in new[] { Status.Inconclusive, Status.NotImplemented, Status.Skipped, Status.NotRun, Status.Pending })
@@ -289,9 +169,8 @@ public static class ReportHtmlRenderer
         }
         if (also.Count > 0)
         {
-            html.AppendLine($"<div class=\"also\"><span>Also in this run:</span>{string.Concat(also)}</div>");
+            html.AppendLine($"<div class=\"wrap also\"><span>Also in this run:</span>{string.Concat(also)}</div>");
         }
-        html.AppendLine("</section>");
     }
 
     private static void GenerateScenariosSection(StringBuilder html, List<Scenario> scenarios, List<List<Scenario>> stories)
@@ -397,45 +276,70 @@ public static class ReportHtmlRenderer
         {
             html.AppendLine($"<p class=\"note\" data-status=\"{status}\"><b>{Label(status)}.</b> {note}</p>");
         }
-        GenerateScenarioDetails(html, scenario);
+        html.Append(RenderScenario(scenario));
         html.AppendLine("</div>");
 
-        html.AppendLine("<aside class=\"body-side\" aria-label=\"Scenario details\"><dl class=\"side-dl\">");
-        html.AppendLine($"<div><dt>Duration</dt><dd class=\"mono\">{FormatDuration(scenario.TimeTaken)}</dd></div>");
-        if (scenario.StartTime != default)
-            html.AppendLine($"<div><dt>Started</dt><dd class=\"mono\">{FormatTime(scenario.StartTime, "yyyy-MM-dd HH:mm:ss.fff")} UTC</dd></div>");
-        if (!string.IsNullOrEmpty(scenario.FileName))
-            html.AppendLine($"<div><dt>File</dt><dd class=\"mono\" title=\"{EscapeHtml(scenario.FileName)}\">{EscapeHtml(GetFileName(scenario.FileName))}</dd></div>");
-        if (tags.Count > 0)
-        {
-            html.Append("<div><dt>Tags</dt><dd><div class=\"tags\">");
-            foreach (var tag in tags)
-                html.Append($"<button class=\"tag\" type=\"button\" data-tag=\"{EscapeHtml(JsonSerializer.Serialize(tag, BDTestReportJsonContext.Default.String))}\" aria-label=\"Show only scenarios tagged {EscapeHtml(tag)}\">@{EscapeHtml(tag)}</button>");
-            html.AppendLine("</div></dd></div>");
-        }
-        foreach (var information in scenario.CustomTestInformation)
-            html.AppendLine($"<div><dt>Information</dt><dd>{EscapeHtml(information)}</dd></div>");
-        html.AppendLine("</dl></aside>");
         html.AppendLine("</div>");
         html.AppendLine("</div>");
     }
 
-    private static void GenerateScenarioDetails(StringBuilder html, Scenario scenario)
+    private static void GenerateScenarioDetails(StringBuilder html, Scenario scenario, ReportRenderOptions? options)
     {
         if (scenario.IsOutline)
         {
-            GenerateExamplesTable(html, scenario);
+            if (scenario.Steps.Count > 0)
+            {
+                html.AppendLine("<div><h3 class=\"h3\">Outline</h3>");
+                AppendSteps(html, scenario.Steps, options);
+                html.AppendLine("</div>");
+            }
+            GenerateExamplesTable(html, scenario, options);
         }
 
+        AppendRetryHistory(html, scenario);
+
+        // Errors raised outside a step (setup, skip rules, retry hooks) have no step to show them.
+        var exception = scenario.IsOutline ? null : scenario.Exception;
+        if (exception != null && !scenario.Steps.Any(step => SameException(step.Exception, exception)))
+        {
+            html.AppendLine("<div><h3 class=\"h3\">Error</h3>");
+            AppendError(html, exception);
+            html.AppendLine("</div>");
+        }
+
+        if (!scenario.IsOutline)
+        {
+            html.AppendLine("<div><h3 class=\"h3\">Steps</h3>");
+            AppendSteps(html, scenario.Steps, options);
+            html.AppendLine("</div>");
+        }
+
+        html.Append(RenderAttachments(scenario.Attachments, options));
+        AppendOutput(html, "Startup output", scenario.TestStartupInformation);
+        // Outline output aggregates its rows; render each row once under its owner.
+        if (!scenario.IsOutline) AppendOutput(html, "Output", scenario.Output);
+        AppendOutput(html, "Teardown output", scenario.TearDownOutput);
+
+        if (options?.OmitCustomHtml != true && !string.IsNullOrEmpty(scenario.CustomHtmlOutputForReport))
+        {
+            html.AppendLine("<div><h3 class=\"h3\">Custom output</h3><div class=\"custom\">");
+            html.AppendLine("<div class=\"custom-bar\"><span>HTML written by the test through HtmlWriter</span><span class=\"sandbox\">Sandboxed frame · scripts off</span></div>");
+            html.AppendLine(RenderCustomHtml(scenario.CustomHtmlOutputForReport!, options?.Hosted == true));
+            html.AppendLine("</div></div>");
+        }
+    }
+
+    private static void AppendRetryHistory(StringBuilder html, Scenario scenario)
+    {
         if (scenario.RetryCount > 0 && scenario.Attempts?.Count > 0)
         {
-            html.AppendLine("<div><h3 class=\"h3\">Retry history</h3><div class=\"attempts\">");
+            html.AppendLine($"<section aria-label=\"Retry history\"><h3 class=\"h3\">Retry history</h3><p>Retries: {scenario.RetryCount}</p><div class=\"attempts\">");
             for (var index = 0; index < scenario.Attempts.Count; index++)
             {
                 var attempt = scenario.Attempts[index];
                 var key = Key(attempt.Status);
                 var final = index == scenario.Attempts.Count - 1;
-                var label = $"<span class=\"glyph\" data-g=\"{key}\" aria-hidden=\"true\"></span>Attempt {attempt.Number} · {Label(key)}{(final ? " (final)" : "")} <span class=\"mono\">{FormatDuration(attempt.TimeTaken)}</span>";
+                var label = $"<span class=\"glyph\" data-g=\"{key}\" aria-hidden=\"true\"></span><span>Attempt {attempt.Number} · {Label(key)}</span>{(final ? " (final)" : "")} <span class=\"mono\" title=\"{attempt.TimeTaken}\">{FormatDuration(attempt.TimeTaken)}</span>";
                 if (attempt.Exception == null)
                 {
                     html.AppendLine($"<span class=\"attempt\" data-final=\"{(final ? "true" : "false")}\">{label}</span>");
@@ -445,44 +349,9 @@ public static class ReportHtmlRenderer
                 AppendError(html, attempt.Exception);
                 html.AppendLine("</details>");
             }
-            html.AppendLine("</div></div>");
+            html.AppendLine("</div></section>");
         }
 
-        // Errors raised outside a step (setup, skip rules, retry hooks) have no step to show them.
-        var exception = scenario.IsOutline ? null : scenario.Exception;
-        if (exception != null && scenario.Steps?.Any(step => SameException(step.Exception, exception)) != true)
-        {
-            html.AppendLine("<div><h3 class=\"h3\">Error</h3>");
-            AppendError(html, exception);
-            html.AppendLine("</div>");
-        }
-
-        if (scenario.Steps?.Any() == true && !scenario.IsOutline)
-        {
-            html.AppendLine("<div><h3 class=\"h3\">Steps</h3>");
-            AppendSteps(html, scenario.Steps);
-            html.AppendLine("</div>");
-        }
-
-        AppendOutput(html, "Startup output", scenario.TestStartupInformation);
-        if (!scenario.IsOutline)
-            AppendOutput(html, "Output", scenario.Output);
-        AppendOutput(html, "Teardown output", scenario.TearDownOutput);
-
-        if (!string.IsNullOrEmpty(scenario.CustomHtmlOutputForReport))
-        {
-            // Test HTML is untrusted: keep it in a scriptless, sandboxed frame with its own policy,
-            // and attribute-encode srcdoc so quotes or </iframe> cannot escape into the report.
-            var document = "<!doctype html><html><head><meta charset=\"utf-8\">"
-                + "<meta http-equiv=\"Content-Security-Policy\" content=\"default-src 'none'; "
-                + "style-src 'unsafe-inline'; img-src data: https: http: file:; base-uri 'none'; form-action 'none'\">"
-                + "<meta name=\"referrer\" content=\"no-referrer\"></head><body>"
-                + scenario.CustomHtmlOutputForReport + "</body></html>";
-            html.AppendLine("<div><h3 class=\"h3\">Custom output</h3><div class=\"custom\">");
-            html.AppendLine("<div class=\"custom-bar\"><span>HTML written by the test through HtmlWriter</span><span class=\"sandbox\"><svg width=\"12\" height=\"12\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><rect x=\"5\" y=\"11\" width=\"14\" height=\"10\" rx=\"2\"></rect><path d=\"M8 11V8a4 4 0 0 1 8 0v3\"></path></svg>Sandboxed frame · scripts off</span></div>");
-            html.AppendLine($"<iframe class=\"custom-body\" title=\"Custom test output\" sandbox=\"allow-popups\" referrerpolicy=\"no-referrer\" srcdoc=\"{EscapeHtml(document)}\"></iframe>");
-            html.AppendLine("</div></div>");
-        }
     }
 
     private static bool SameException(ExceptionInfo? left, ExceptionInfo right, int depth = 0)
@@ -507,12 +376,12 @@ public static class ReportHtmlRenderer
         && (scenarioText.StartsWith(stepText + "\r\n", StringComparison.Ordinal)
             || scenarioText.StartsWith(stepText + "\n", StringComparison.Ordinal));
 
-    private static void GenerateExamplesTable(StringBuilder html, Scenario scenario)
+    private static void GenerateExamplesTable(StringBuilder html, Scenario scenario, ReportRenderOptions? options)
     {
         var examples = scenario.Examples;
         var columns = examples.SelectMany(row => (row.ExampleValues).Keys).Distinct().ToArray();
         var columnCount = columns.Length + 5;
-        html.AppendLine("<div><h3 class=\"h3\">Examples</h3><div class=\"ex-box\">");
+        html.AppendLine($"<div><h3 class=\"h3\">Examples</h3><p>{examples.Count(row => row.Status == Status.Passed)} of {examples.Count} passed</p><div class=\"ex-box\">");
         html.Append($"<table class=\"examples\" id=\"examples-{EscapeHtml(scenario.Guid)}\"><thead><tr><th>#</th>");
         foreach (var column in columns) html.Append($"<th>{EscapeHtml(column)}</th>");
         html.AppendLine("<th>Status</th><th>Retries</th><th>Duration</th><th><span class=\"sr\">Details</span></th></tr></thead><tbody>");
@@ -526,21 +395,32 @@ public static class ReportHtmlRenderer
             html.Append($"<td>{Pill(Key(row.Status))}</td><td class=\"mono\">{row.RetryCount}</td><td class=\"mono\" title=\"{row.TimeTaken}\">{FormatDuration(row.TimeTaken)}</td>");
             html.AppendLine($"<td><button class=\"mini ex-toggle\" type=\"button\" aria-expanded=\"false\" aria-controls=\"{detailsId}\">Steps and output</button></td></tr>");
             html.AppendLine($"<tr class=\"ex-detail\" id=\"{detailsId}\" hidden><td colspan=\"{columnCount}\"><div class=\"ex-detail-in\">");
-            GenerateScenarioDetails(html, row);
+            html.AppendLine($"<h4>Example {index + 1}</h4>");
+            html.Append(RenderScenario(row, options));
             html.AppendLine("</div></td></tr>");
         }
         html.AppendLine("</tbody></table></div></div>");
     }
 
-    private static void AppendSteps(StringBuilder html, IEnumerable<Step> steps)
+    private static void AppendSteps(StringBuilder html, IReadOnlyList<Step> steps, ReportRenderOptions? options)
     {
+        var starts = steps.Where(step => step.StartTime != default).Select(step => step.StartTime).ToArray();
+        var ends = steps.Where(step => step.EndTime != default).Select(step => step.EndTime).ToArray();
+        var timelineStart = starts.Length > 0 ? starts.Min() : default;
+        var timelineTicks = Math.Max(1, ends.Length > 0 ? (ends.Max() - timelineStart).Ticks : 1);
         html.AppendLine("<ol class=\"steps\">");
         foreach (var step in steps)
         {
             var status = Key(step.Status);
             var (keyword, text) = SplitStepText(step.StepText);
             html.AppendLine($"<li class=\"step\" data-status=\"{status}\">");
-            html.AppendLine($"<div class=\"step-row\"><span class=\"glyph\" data-g=\"{status}\" aria-hidden=\"true\"></span><span class=\"kw\">{EscapeHtml(keyword)}</span><span class=\"step-text\">{EscapeHtml(text)}</span><span class=\"step-status\">{Label(status)}</span><span class=\"dur\">{(status == "notrun" ? "" : FormatDuration(step.TimeTaken))}</span></div>");
+            html.AppendLine($"<details class=\"expander step-item\" open><summary class=\"step-row\"><span class=\"glyph\" data-g=\"{status}\" aria-hidden=\"true\"></span><span class=\"kw\">{EscapeHtml(keyword)}</span> <span class=\"step-text\">{EscapeHtml(text)}</span><span class=\"step-status\">{Label(status)}</span><span class=\"dur\">{(status == "notrun" ? "" : FormatDuration(step.TimeTaken))}</span></summary>");
+            if (step.StartTime != default && step.EndTime != default)
+            {
+                var offset = Math.Min(100, Math.Max(0, (double)(step.StartTime - timelineStart).Ticks / timelineTicks * 100));
+                var width = Math.Min(100 - offset, Math.Max(0, (double)step.TimeTaken.Ticks / timelineTicks * 100));
+                html.AppendLine($"<div class=\"step-timing\"><span>Time in scenario: {FormatTime(step.StartTime, "HH:mm:ss.fff")} → {FormatTime(step.EndTime, "HH:mm:ss.fff")} UTC</span><span class=\"step-timeline\" aria-hidden=\"true\"><span style=\"margin-left:{offset.ToString("0.##", CultureInfo.InvariantCulture)}%;width:{width.ToString("0.##", CultureInfo.InvariantCulture)}%\"></span></span></div>");
+            }
             if (status == "notrun")
                 html.AppendLine("<p class=\"step-note\">This step has not started.</p>");
             if (step.SkipReason != null)
@@ -548,6 +428,11 @@ public static class ReportHtmlRenderer
             if (step.Exception != null)
                 AppendError(html, step.Exception);
             html.AppendLine(StepArgumentHtmlHelper.GetHtml(step.Arguments));
+            html.Append(RenderAttachments(step.Attachments, options));
+            AppendOutput(html, "Step output", step.Output);
+            if (step.Diagnostics.Count > 0) AppendOutput(html, "Diagnostics", string.Join(Environment.NewLine, step.Diagnostics));
+            if (step.TimedOut) html.AppendLine("<p class=\"step-note\">Timed out</p>");
+            html.AppendLine("</details>");
             html.AppendLine("</li>");
         }
         html.AppendLine("</ol>");
@@ -556,8 +441,7 @@ public static class ReportHtmlRenderer
     private static void AppendError(StringBuilder html, ExceptionWrapper exception)
     {
         html.AppendLine("<div class=\"err\">");
-        html.AppendLine(ExceptionHtmlHelper.GetHtml(exception,
-            (builder, text) => AppendCode(builder, "Original exception text", text, true)));
+        html.AppendLine(RenderException(exception));
         html.AppendLine("</div>");
     }
 
@@ -706,19 +590,20 @@ public static class ReportHtmlRenderer
 
     private const string EmbeddedStyles = """
 <style>
-body{margin:0}
-.rpt{--sans:"Segoe UI Variable Text","Segoe UI",-apple-system,BlinkMacSystemFont,"Helvetica Neue",system-ui,sans-serif;--mono:ui-monospace,"Cascadia Mono","SF Mono",Menlo,Consolas,"Liberation Mono",monospace;
+body:has(> .rpt){margin:0}
+.rpt {
+&{--sans:"Segoe UI Variable Text","Segoe UI",-apple-system,BlinkMacSystemFont,"Helvetica Neue",system-ui,sans-serif;--mono:ui-monospace,"Cascadia Mono","SF Mono",Menlo,Consolas,"Liberation Mono",monospace;
 --bg:#F3F4F1;--surface:#FFFFFF;--surface-2:#F7F8F6;--sunken:#ECEEEA;--ink:#15171A;--ink-2:#3D4249;--muted:#5A6069;--rule:#DCDFD9;--rule-2:#C4C8C1;--accent:#1F4FD1;--code-bg:#F0F1EE;--code-ink:#22262B;
 --passed:#1B7A42;--passed-bg:#E2F1E7;--failed:#BF2519;--failed-bg:#FBE6E3;--skipped:#965400;--skipped-bg:#FAEDD8;--inconclusive:#545E6A;--inconclusive-bg:#E7E9EC;--notimplemented:#6A3EC2;--notimplemented-bg:#EEE7FB;--notrun:#7A8089;--notrun-bg:#EEEFEC;
 font-family:var(--sans);color:var(--ink);background:var(--bg);min-height:100vh;font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
-@media (prefers-color-scheme:dark){.rpt{--bg:#0F1113;--surface:#171A1D;--surface-2:#1C2024;--sunken:#22272C;--ink:#ECEEF0;--ink-2:#C2C7CE;--muted:#99A0AA;--rule:#2A2F35;--rule-2:#3A4047;--accent:#8EAEFF;--code-bg:#0B0D0F;--code-ink:#D9DDE2;
+@media (prefers-color-scheme:dark){&{--bg:#0F1113;--surface:#171A1D;--surface-2:#1C2024;--sunken:#22272C;--ink:#ECEEF0;--ink-2:#C2C7CE;--muted:#99A0AA;--rule:#2A2F35;--rule-2:#3A4047;--accent:#8EAEFF;--code-bg:#0B0D0F;--code-ink:#D9DDE2;
 --passed:#5CCF8C;--passed-bg:#13291D;--failed:#FF7F72;--failed-bg:#35160F;--skipped:#F0B060;--skipped-bg:#2F2310;--inconclusive:#AEB6C1;--inconclusive-bg:#252A30;--notimplemented:#BBA0FF;--notimplemented-bg:#261D3B;--notrun:#8C939C;--notrun-bg:#1E2226}}
-.rpt *{box-sizing:border-box}
-.rpt [hidden]{display:none!important}
-.rpt button,.rpt input,.rpt select{font:inherit;color:inherit}
-.rpt :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-.rpt a{color:var(--accent)}.rpt a:hover{color:var(--ink)}
-.rpt code{font-family:var(--mono);font-size:.9em}
+& :where(*){all:revert;box-sizing:border-box}
+& [hidden]{display:none!important}
+& button,& input,& select{font:inherit;color:inherit}
+& :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+& a{color:var(--accent)}& a:hover{color:var(--ink)}
+& code{font-family:var(--mono);font-size:.9em}
 .wrap{max-width:1200px;margin:0 auto;padding:0 32px}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 .mono{font-family:var(--mono)}
@@ -745,7 +630,7 @@ font-family:var(--sans);color:var(--ink);background:var(--bg);min-height:100vh;f
 .brand-sub{font-weight:500;color:var(--muted)}
 .gen{font-size:13px;color:var(--muted)}
 .eyebrow{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:650;margin:0}
-.verdict{display:flex;flex-wrap:wrap;gap:28px 64px;align-items:flex-end;padding-top:44px;padding-bottom:28px}
+.verdict{display:flex;flex-direction:row;flex-wrap:wrap;gap:28px 64px;align-items:flex-end;padding-top:44px;padding-bottom:28px}
 .verdict-h{margin:6px 0;font-size:52px;line-height:1.04;letter-spacing:-.025em;font-weight:750}
 .verdict-h .of{color:var(--ink-2);font-weight:500}
 .v-word{color:var(--s)}
@@ -773,7 +658,7 @@ font-family:var(--sans);color:var(--ink);background:var(--bg);min-height:100vh;f
 .h2{margin:0;font-size:21px;letter-spacing:-.01em;font-weight:720}
 .sec-note{margin:0;color:var(--ink-2);font-size:14px}
 .att-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(380px,100%),1fr));gap:12px}
-.cause{background:var(--surface);border:1px solid color-mix(in oklab,var(--failed) 32%,var(--rule));border-radius:12px;padding:18px 20px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.cause{display:block;background:var(--surface);border:1px solid color-mix(in oklab,var(--failed) 32%,var(--rule));border-radius:12px;padding:18px 20px;display:flex;flex-direction:column;gap:6px;min-width:0}
 .cause-top{display:flex;justify-content:space-between;align-items:center;gap:12px}
 .cause-n{font-family:var(--mono);font-size:12.5px;color:var(--failed);font-weight:600;white-space:nowrap}
 .err-type{font-family:var(--mono);font-size:12.5px;font-weight:600;color:var(--failed);overflow-wrap:anywhere}
@@ -824,7 +709,7 @@ font-family:var(--sans);color:var(--ink);background:var(--bg);min-height:100vh;f
 .scenario-title{font-weight:640;font-size:15px;overflow-wrap:anywhere}
 .scn-sub{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;gap:2px 12px;overflow-wrap:anywhere}
 .scn-sub:empty{display:none}
-.rpt[data-grouped=true] .scn-story{display:none}
+&[data-grouped=true] .scn-story{display:none}
 .badge{font-family:var(--mono);font-size:12px;padding:3px 8px;border-radius:6px;background:var(--sunken);color:var(--ink-2);white-space:nowrap}
 .dur{font-family:var(--mono);font-size:13px;color:var(--ink-2);white-space:nowrap;text-align:right;min-width:64px}
 .chev{color:var(--muted);transition:transform .15s}
@@ -836,7 +721,7 @@ font-family:var(--sans);color:var(--ink);background:var(--bg);min-height:100vh;f
 .note{margin:0;padding:12px 14px;border-radius:8px;background:var(--s-bg);color:var(--ink);font-size:14px;overflow-wrap:anywhere}
 .note b{color:var(--s)}
 .steps{list-style:none;margin:0;padding:0}
-.step+.step{border-top:1px solid var(--rule)}
+.step+.step{display:block;border-top:1px solid var(--rule)}
 .step-row{display:grid;grid-template-columns:9px 54px minmax(0,1fr) auto auto;gap:12px;align-items:start;padding:9px 0}
 .step-row .glyph{margin-top:7px}
 .kw{font-family:var(--mono);font-size:11.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);padding-top:2px}
@@ -854,14 +739,14 @@ font-family:var(--sans);color:var(--ink);background:var(--bg);min-height:100vh;f
 .err{margin:0 0 12px 75px;padding:14px 16px;border-radius:8px;background:var(--failed-bg);display:flex;flex-direction:column;gap:8px;min-width:0}
 .body-main>div>.err,.ex-detail-in>div>.err{margin-left:0}
 .err-msg{margin:0;font-size:14.5px;overflow-wrap:anywhere;white-space:pre-wrap}
-.code{border:1px solid var(--rule);border-radius:8px;background:var(--code-bg);overflow:hidden;min-width:0}
+.code{white-space:normal;max-height:none;overflow:visible;border:1px solid var(--rule);border-radius:8px;background:var(--code-bg);overflow:hidden;min-width:0}
 .code-bar{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:5px 6px 5px 12px;border-bottom:1px solid var(--rule);font-size:12px;color:var(--muted);background:var(--surface);min-height:41px}
 .code-actions{display:flex;gap:6px}
 .mini{appearance:none;font-size:12px;padding:0 10px;height:30px;border:1px solid var(--rule-2);background:var(--surface);color:var(--ink-2);border-radius:6px;cursor:pointer;white-space:nowrap}
 .mini:hover{color:var(--ink);background:var(--surface-2)}
 .mini[aria-pressed=true]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
 .pre{margin:0;padding:12px 14px;font-family:var(--mono);font-size:12.5px;line-height:1.65;color:var(--code-ink);max-height:280px;overflow:auto;white-space:pre;tab-size:4}
-.rpt[data-wrap=true] .pre{white-space:pre-wrap;overflow-wrap:anywhere}
+&[data-wrap=true] .pre{white-space:pre-wrap;overflow-wrap:anywhere}
 .attempts{display:flex;flex-wrap:wrap;gap:8px}
 .attempt{display:inline-flex;align-items:center;gap:8px;padding:6px 10px;border:1px solid var(--rule);border-radius:8px;font-size:13px;background:var(--surface-2)}
 .attempt .mono{font-size:12.5px;color:var(--muted)}
@@ -920,16 +805,30 @@ font-family:var(--sans);color:var(--ink);background:var(--bg);min-height:100vh;f
 }
 @media print{
 .toolbar,.mini,.ghost,.chev,.more{display:none!important}
-.rpt{background:#FFFFFF}
+&{background:#FFFFFF}
 .scn,.cause,.tile{break-inside:avoid}
 .pre{max-height:none;white-space:pre-wrap}
+}
+&.bdtest-fragment { min-height:0; background:var(--surface); border-radius:8px; padding:20px; }
+&.bdtest-fragment .wrap { padding-left:0; padding-right:0; }
+.scn-body { grid-template-columns:minmax(0,1fr); }
+.scenario-content { display:flex; flex-direction:column; gap:20px; min-width:0; }
+.step-timing { margin:8px 0; color:var(--muted); font-size:12px; }
+.step-timeline { display:block; height:6px; margin-top:4px; background:var(--sunken); }
+.step-timeline>span { display:block; height:6px; background:var(--s); }
+.attachment-list ul { list-style:none; padding:0; }
+.attachment-item { display:flex; gap:12px; margin:8px 0; overflow-wrap:anywhere; }
+.attachment-preview img { max-width:180px; max-height:120px; }
+.attachment-item .small { display:block; }
 }
 </style>
 """;
 
     private const string EmbeddedScript = """
 (function () {
-  var root = document.querySelector('.rpt');
+  document.querySelectorAll('.rpt').forEach(function (root) {
+  if (root.getAttribute('data-renderer-ready')) return;
+  root.setAttribute('data-renderer-ready', 'true');
   var PAGE = 200;
   var printing = false;
   var state = { filter: 'all', query: '', tag: '', sort: 'story', group: true, limit: PAGE };
@@ -938,7 +837,7 @@ font-family:var(--sans);color:var(--ink);background:var(--bg);min-height:100vh;f
   // Opaque sandbox origins cannot load file: images. Only local reports retain their origin;
   // scripts, forms, top navigation and sandbox escape remain disabled, including in new tabs.
   if (window.location.protocol === 'file:') {
-    $$('iframe.custom-body').forEach(function (frame) {
+    $$('iframe.custom-body[sandbox="allow-popups"]').forEach(function (frame) {
       frame.setAttribute('sandbox', 'allow-popups allow-same-origin');
       // Reload srcdoc so the new sandbox flags take effect.
       frame.srcdoc = frame.srcdoc;
@@ -975,6 +874,7 @@ font-family:var(--sans);color:var(--ink);background:var(--bg);min-height:100vh;f
   }
 
   function apply() {
+    if (!flat) return;
     var q = state.query.trim().toLowerCase();
     var base = items.filter(function (it) { return (!q || it.hay.indexOf(q) >= 0) && (!state.tag || it.tags.indexOf(state.tag) >= 0); });
     var visible = base.filter(function (it) { return state.filter === 'all' || it.status === state.filter; });
@@ -988,7 +888,7 @@ font-family:var(--sans);color:var(--ink);background:var(--bg);min-height:100vh;f
       if (match) shown++;
     });
     stories.forEach(function (s) { s.hidden = !state.group || !s.querySelector('.scn:not([hidden])'); });
-    flat.hidden = state.group;
+    if (flat) flat.hidden = state.group;
     root.setAttribute('data-grouped', state.group ? 'true' : 'false');
 
     $$('[data-filter]').forEach(function (b) {
@@ -1081,6 +981,7 @@ font-family:var(--sans);color:var(--ink);background:var(--bg);min-height:100vh;f
   window.addEventListener('beforeprint', function () { printing = true; if (items.length) apply(); });
   window.addEventListener('afterprint', function () { printing = false; if (items.length) apply(); });
   if (items.length) apply();
+  });
 })();
 """;
 }

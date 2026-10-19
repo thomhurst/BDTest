@@ -94,7 +94,7 @@ public class ReportAttachmentRenderingTests
             await Assert.That(html).Contains("outline setup");
             await Assert.That(html).Contains("row setup");
             await Assert.That(html).Contains("row step");
-            var row = Regex.Match(html, "<details class=\"example-row\".*?</details>", RegexOptions.Singleline).Value;
+            var row = Regex.Match(html, "<tr class=\"ex-detail\".*?</tr>", RegexOptions.Singleline).Value;
             await Assert.That(row).Contains("row setup");
             await Assert.That(row).Contains("row step");
             await Assert.That(row).DoesNotContain("outline setup");

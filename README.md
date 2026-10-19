@@ -13,9 +13,10 @@ and rebuild consumers when upgrading to the next major release. See
 [reporting package migration](https://thomhurst.github.io/BDTest/docs/migration/reporting-package).
 
 `BDTest.Rendering` provides HTML rendering over immutable contracts without an
-execution dependency. Reporting and hosted reports share its argument and
-exception renderers; tools can reference it directly for offline HTML. See the
-[rendering boundary and remaining page integration](https://thomhurst.github.io/BDTest/docs/reports/rendering).
+execution dependency. Standalone and hosted reports share run overviews and
+scenario details, including steps, examples, retries and evidence; tools can
+reference it directly for offline HTML. See the
+[shared rendering boundary](https://thomhurst.github.io/BDTest/docs/reports/rendering).
 
 Persistent report storage is available through `BDTest.Reports.Storage.AzureBlob`
 and `BDTest.Reports.Storage.FileSystem`; see [report persistence](https://thomhurst.github.io/BDTest/docs/report-server/persistence).

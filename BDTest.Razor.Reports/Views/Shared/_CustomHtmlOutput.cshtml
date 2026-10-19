@@ -1,14 +1,2 @@
 @model string
-
-@{
-    // Uploaded HTML is untrusted. Keep the sandbox empty (especially no scripts or same-origin)
-    // and let Razor attribute-encode srcdoc so quotes or </iframe> cannot escape into the report.
-    // The policy precedes all uploaded markup and applies only to this isolated document.
-    var document = "<!doctype html><html><head><meta charset=\"utf-8\">"
-        + "<meta http-equiv=\"Content-Security-Policy\" content=\"default-src 'none'; "
-        + "style-src 'unsafe-inline'; img-src data: https: http:; base-uri 'none'; form-action 'none'\">"
-        + "<meta name=\"referrer\" content=\"no-referrer\"></head><body>"
-        + Model + "</body></html>";
-}
-
-<iframe class="custom-frame" title="Custom test output" sandbox="" referrerpolicy="no-referrer" srcdoc="@document"></iframe>
+@Html.Raw(BDTest.Rendering.ReportHtmlRenderer.RenderCustomHtml(Model, hosted: true))

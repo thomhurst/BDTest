@@ -133,8 +133,8 @@ public class AndWhenTests : RunTestBase
         var restored = Required(Required(BDTestJsonHelper.DeserializeReport(BDTestJsonHelper.GetTestJsonData(null, run))).Scenarios).Single();
         await Assert.That(Required(restored.Steps)[1].StepType).IsEqualTo(StepType.AndWhen);
         await Assert.That(restored.Steps[1].StepText).IsEqualTo("And named report");
-        await Assert.That(BDTestHtmlHelper.GetTestHtmlReport(null, run)).Contains("<span class=\"kw\">And</span><span class=\"step-text\">named report</span>");
-        await Assert.That(await ReportHandlerEncodingTests.RenderAsync("/Views/BDTest/Scenario.cshtml", run.Store.ScenariosByInternalId[restored.Guid])).Contains("<b>And</b> named report");
+        await Assert.That(BDTestHtmlHelper.GetTestHtmlReport(null, run)).Contains("<span class=\"kw\">And</span> <span class=\"step-text\">named report</span>");
+        await Assert.That(await ReportHandlerEncodingTests.RenderAsync("/Views/BDTest/Scenario.cshtml", run.Store.ScenariosByInternalId[restored.Guid])).Contains("<span class=\"kw\">And</span> <span class=\"step-text\">named report</span>");
     }
 
     private static void NoOp() { }

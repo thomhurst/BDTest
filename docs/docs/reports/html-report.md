@@ -38,7 +38,9 @@ Both methods return a string; you decide where to write it. JSON export and HTML
 For tools that consume saved immutable reports without execution, use
 `BDTest.Rendering.ReportHtmlRenderer.GenerateHtmlReport(report)` from the
 [shared rendering package](rendering.md). The existing helper delegates to the
-same implementation.
+same implementation. Hosted run overviews and scenario pages use the same
+content sections, including step details, examples, retries, output and evidence.
+Hosted navigation and history remain part of the server shell.
 
 ## Generating it after all tests
 
