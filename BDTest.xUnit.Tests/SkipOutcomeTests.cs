@@ -22,7 +22,7 @@ public class SkipOutcomeTests : XUnitBDTestBase<object>
     public Task GlobalRuleSkips()
     {
         return CheckScenario(() => Given(() => MustNotRun()).When(() => MustNotRun())
-            .Then(() => MustNotRun()).BDTestAsync(), Status.Skipped,
+            .Then(() => MustNotRun()).BDTestAsync(global::Xunit.TestContext.Current.CancellationToken), Status.Skipped,
             Status.Skipped, Status.Skipped, Status.Skipped);
     }
 
@@ -37,17 +37,17 @@ public class SkipOutcomeTests : XUnitBDTestBase<object>
 
     [Fact]
     public Task AllStepsSkip() => CheckScenario(() => Given(() => SkippedStep()).When(() => SkippedStep())
-        .Then(() => SkippedStep()).BDTestAsync(), Status.Skipped,
+        .Then(() => SkippedStep()).BDTestAsync(global::Xunit.TestContext.Current.CancellationToken), Status.Skipped,
         Status.Skipped, Status.Skipped, Status.Skipped);
 
     [Fact]
     public Task PartialStepsPass() => CheckScenario(() => Given(() => ExecutedStep()).When(() => SkippedStep())
-        .Then(() => ExecutedStep()).BDTestAsync(), Status.Passed,
+        .Then(() => ExecutedStep()).BDTestAsync(global::Xunit.TestContext.Current.CancellationToken), Status.Passed,
         Status.Passed, Status.Skipped, Status.Passed);
 
     [Fact]
     public Task FrameworkSkipInStep() => CheckScenario(() => Given(() => ExecutedStep()).When(() => Assert.Skip("probe"))
-        .Then(() => MustNotRun()).BDTestAsync(), Status.Skipped,
+        .Then(() => MustNotRun()).BDTestAsync(global::Xunit.TestContext.Current.CancellationToken), Status.Skipped,
         Status.Passed, Status.Skipped, Status.Skipped);
 
     private async Task CheckScenario(Func<Task<BDTest.Contracts.ScenarioResult>> run, Status status, params Status[] stepStatuses)

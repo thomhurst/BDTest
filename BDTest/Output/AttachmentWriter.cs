@@ -41,6 +41,8 @@ internal sealed class AttachmentWriter(BDTestRun run, string frameworkExecutionI
             lock (run.Store.Gate)
             {
                 run.ThrowIfDisposed();
+                if (ExecutionOutputScope.IsDetached)
+                    throw new InvalidOperationException("Cannot attach output from a completed or abandoned callback.");
                 ensureExecutionActive();
                 run.AttachmentFiles.EnsureAvailable(attachmentId);
                 publish(attachment);
@@ -55,6 +57,8 @@ internal sealed class AttachmentWriter(BDTestRun run, string frameworkExecutionI
 
     private Action<Attachment> GetPublisher()
     {
+        if (ExecutionOutputScope.IsDetached)
+            throw new InvalidOperationException("Cannot attach output from a completed or abandoned callback.");
         var scope = AttachmentScope.Current;
         if (scope?.Scenario.Run == run && scope.Scenario.FrameworkTestId == frameworkExecutionId)
         {

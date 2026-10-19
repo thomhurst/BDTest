@@ -85,7 +85,7 @@ public class CheckoutTests : CompanyTestBase, IAsyncLifetime
     public async Task Pays()
     {
         await _bdt.When(() => _bdt.Context.Pay())
-            .Then(() => _bdt.Context.VerifyReceipt()).BDTestAsync();
+            .Then(() => _bdt.Context.VerifyReceipt()).BDTestAsync(Xunit.TestContext.Current.CancellationToken);
     }
 
     public ValueTask DisposeAsync()
@@ -150,7 +150,7 @@ public class BasketTests : XUnitBDTestBase<BasketContext>
         await Given(() => Basket.IsEmpty())
             .When(() => Basket.Add("Book", 12.50m))
             .Then(() => Basket.TheTotalIs(12.50m))
-            .BDTestAsync();
+            .BDTestAsync(Xunit.TestContext.Current.CancellationToken);
     }
 }
 ```

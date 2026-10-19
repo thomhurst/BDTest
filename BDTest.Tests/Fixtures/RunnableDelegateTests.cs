@@ -78,7 +78,9 @@ public class RunnableDelegateTests : TestRunOwner
         Options.Debug.ShouldSkipWhenStep = true;
         var step = new Step(probe.CreateRunnable(kind), StepType.When, "scenario", "report", TestRun);
         Options.Debug.ShouldSkipWhenStep = true;
-        await step.Execute(null);
+        var scenario = new Scenario(new List<Step> { step }, new BuildableTest { Run = TestRun, Guid = Guid.NewGuid().ToString("N"), TestId = Guid.NewGuid().ToString("N") }.Definition.Snapshot());
+        using var cancellation = new BDTest.Engine.ExecutionCancellation(scenario, CancellationToken.None, CancellationToken.None);
+        await step.Execute(null, scenario, cancellation);
 
         await Assert.That(step.Status).IsEqualTo(Status.Skipped);
         await Assert.That(probe.Values).IsEmpty();

@@ -32,8 +32,11 @@ public sealed class ScenarioResult
     public IReadOnlyList<AttachmentInfo> Attachments { get; }
     public IReadOnlyList<string> CustomTestInformation { get; }
 
-    /// <summary>Whether a timeout failed a step in the final attempt.</summary>
-    public bool TimedOut => Steps.Any(step => step.TimedOut);
+    /// <summary>Whether a timeout failed a hook or step in the final attempt or an outline row.</summary>
+    public bool TimedOut => AttemptTimedOut || Steps.Any(step => step.TimedOut) || Examples.Any(example => example.TimedOut);
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public bool AttemptTimedOut { get; }
 
     [JsonConstructor]
     public ScenarioResult(
@@ -62,7 +65,8 @@ public sealed class ScenarioResult
         bool isOutline = false,
         string? outlineId = null,
         IReadOnlyList<AttachmentInfo>? attachments = null,
-        IReadOnlyList<string>? customTestInformation = null)
+        IReadOnlyList<string>? customTestInformation = null,
+        bool attemptTimedOut = false)
     {
         Guid = guid ?? throw new ArgumentNullException(nameof(guid));
         ReportId = reportId ?? throw new ArgumentNullException(nameof(reportId));
@@ -87,6 +91,7 @@ public sealed class ScenarioResult
         TimeTaken = timeTaken;
         Timeout = timeout;
         RetryCount = retryCount;
+        AttemptTimedOut = attemptTimedOut;
         IsOutline = isOutline;
         OutlineId = outlineId;
         Attachments = ContractCollections.List(attachments);

@@ -23,7 +23,7 @@ public abstract class XUnitParallelTestsUniqueId : XUnitBDTestBase<XUnitContext>
 
         var scenario = await When(() => WaitForOtherTests(id, context))
             .Then(() => AssertIsolatedContext(id, context))
-            .BDTestAsync();
+            .BDTestAsync(global::Xunit.TestContext.Current.CancellationToken);
 
         Assert.Equal(id, scenario.FrameworkTestId);
         Assert.Equal(Status.Passed, scenario.Status);

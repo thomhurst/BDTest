@@ -35,7 +35,7 @@ public class MyTests(BDTestRun run) : BDTestBase
 
 ## Lifetime
 
-Dispose a run only after its tests, output writers and attachment exporters finish. Disposal clears its stores, deletes its temporary attachment files, and prevents new scenarios from being constructed or executed. It does not cancel active tests.
+Dispose a run only after its tests, output writers and attachment exporters finish. Disposal clears its stores, deletes its temporary attachment files, and prevents new scenarios from being constructed or executed. It does not cancel active tests. Pass a token to each chain or outline with `BDTestAsync(cancellationToken)` when the host needs to cancel execution.
 
 `BDTestUtil.ClearScenarios(run)` clears storage between executions and keeps the same report ID. Start a new run to get a new ID.
 
@@ -72,9 +72,9 @@ Implement `BDTest.Interfaces.IStepHook`:
 ```csharp title="Illustrative fragment"
 public sealed class TimingHook : IStepHook
 {
-    public Task BeforeStepAsync(BDTest.Contracts.StepResult step) => Task.CompletedTask;
+    public Task BeforeStepAsync(BDTest.Contracts.StepResult step, System.Threading.CancellationToken cancellationToken) => Task.CompletedTask;
 
-    public Task AfterStepAsync(BDTest.Contracts.StepResult step)
+    public Task AfterStepAsync(BDTest.Contracts.StepResult step, System.Threading.CancellationToken cancellationToken)
     {
         Console.WriteLine($"{step.StepText} took {step.TimeTaken}");
         return Task.CompletedTask;
@@ -82,7 +82,7 @@ public sealed class TimingHook : IStepHook
 }
 ```
 
-Run hooks run sequentially in registration order. Before hooks run before the test instance's `OnBeforeStep`; after hooks run after `OnAfterStep`. They also run for reached skipped steps and on retries. Every after hook runs even if another hook fails, and an original step failure takes precedence over after-hook failures.
+Run hooks run sequentially in registration order. Before hooks run before the test instance's `OnBeforeStep`; after hooks run after `OnAfterStep`. They also run for reached skipped steps and on retries. Every after hook is attempted even if another hook fails, and an original step failure takes precedence over after-hook failures. `IStepHook` methods take a second `CancellationToken` argument for cooperative cancellation. Step and scenario budgets cover hooks, including after hooks. Cancelled cleanup has a bounded grace period; see [Timeouts and cancellation](../writing-tests/timeouts.md).
 
 ### Scenario hooks for a run
 
@@ -97,6 +97,6 @@ var options = new BDTestOptions { TimeProvider = TimeProvider.System };
 using var run = BDTestRun.Start(options);
 ```
 
-The provider supplies UTC execution timestamps, monotonic elapsed durations, and step/scenario timeout timers. Scenario outlines use the same clock for parent timing and factory-error rows. Empty reports use the run clock for their finish timestamp. Pass a fake provider to test timing without real delays. Advance it after the timed step has started and its timer is registered. Application delays still use their own clocks unless you explicitly pass the same provider to them.
+The provider supplies UTC execution timestamps, monotonic elapsed durations, and step/scenario timeout timers. Scenario outlines use the same clock for parent timing and factory-error rows. Empty reports use the run clock for their finish timestamp. Pass a fake provider to test timing without real delays. Advance it after the timed step has started and its timer is registered. Application delays still use their own clocks unless you explicitly pass the same provider to them. Cancellation cleanup uses a 250 millisecond real-time grace period per operation, independent of this provider.
 
 BDTest copies the provider reference when the run starts. Keep it alive until the run and any timed-out work finish. Changing `options.TimeProvider` later does not affect an existing run. Null is rejected. The .NET Standard asset retains system UTC timestamps and monotonic `Stopwatch` timing; it does not expose the provider option.

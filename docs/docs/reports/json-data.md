@@ -153,3 +153,5 @@ serialized. Static HTML and hosted reports display the reason as encoded text.
 Older reports without `SkipReason` deserialize with a null reason. Absence does
 not imply that a step ran: historical, scenario-level and exception-based skips
 can have no condition reason. See [skip behavior](../writing-tests/skipping.md).
+
+Scenario JSON also records the optional `AttemptTimedOut` flag when true for timeouts during context preparation or scenario hooks, where no step may have timed out. `TimedOut` includes that flag, timed-out steps, and timed-out outline rows. Older reports without `AttemptTimedOut` default it to `false`.

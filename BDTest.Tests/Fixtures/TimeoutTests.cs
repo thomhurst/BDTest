@@ -91,7 +91,7 @@ public class TimeoutTests : RunTestBase
         await Assert.That(scenario.Status).IsEqualTo(Status.Passed);
         await Assert.That(scenario.TimedOut).IsFalse();
         await Assert.That(_tokens).Count().IsEqualTo(5);
-        await Assert.That(_tokens.All(token => !token.CanBeCanceled)).IsTrue();
+        await Assert.That(_tokens.All(token => token.CanBeCanceled)).IsTrue();
         await Assert.That(Required(scenario.Steps).Select(step => step.StepText)).IsEquivalentTo((new[] { "Given complete", "And complete", "When complete", "Then complete", "And complete" }).Cast<string?>(), global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
         var second = await Given(token => Complete(token)).When(token => Complete(token)).Then(() => Later()).BDTestAsync();
         await Assert.That(second.Status).IsEqualTo(Status.Passed);

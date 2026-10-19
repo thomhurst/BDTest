@@ -1,5 +1,7 @@
 using BDTest.Contracts;
 using BDTest.Test;
+using System.Threading;
+using BDTest.Engine;
 using System.Globalization;
 using System.Reflection;
 using System.Runtime.CompilerServices;
@@ -54,7 +56,7 @@ public sealed class ScenarioOutlineBuilder<TExample> : BuildableTest
         Run.Store.RegisterPending(Definition);
     }
 
-    private Task<Scenario> Invoke()
+    private Task<Scenario> Invoke(CancellationToken cancellationToken = default)
     {
         Run.ThrowIfDisposed();
         if (Interlocked.Exchange(ref _executionStarted, 1) != 0)
@@ -64,17 +66,20 @@ public sealed class ScenarioOutlineBuilder<TExample> : BuildableTest
         TestOutputData.TestId = Guid;
         TestOutputData.FrameworkExecutionId = TestId;
         var outline = new Scenario(new List<Step>(), Definition.Snapshot()) { IsOutline = true };
-        return ExecuteAsync(outline);
+        return ExecuteAsync(outline, cancellationToken);
     }
 
     public Task<ScenarioResult> BDTestAsync() => SnapshotAsync(Invoke());
+
+    /// <summary>Executes rows with caller and framework cancellation.</summary>
+    public Task<ScenarioResult> BDTestAsync(CancellationToken cancellationToken) => SnapshotAsync(Invoke(cancellationToken));
 
     private static async Task<ScenarioResult> SnapshotAsync(Task<Scenario> execution) =>
         ResultSnapshot.Create(await execution);
 
     public TaskAwaiter<ScenarioResult> GetAwaiter() => BDTestAsync().GetAwaiter();
 
-    private async Task<Scenario> ExecuteAsync(Scenario outline)
+    private async Task<Scenario> ExecuteAsync(Scenario outline, CancellationToken cancellationToken)
     {
         var examples = _examples ?? throw new InvalidOperationException("The outline has completed.");
         var scenarioFactory = _scenario ?? throw new InvalidOperationException("The outline has completed.");
@@ -84,6 +89,7 @@ public sealed class ScenarioOutlineBuilder<TExample> : BuildableTest
         var timer = clock.StartTimer();
         outline.StartTime = clock.UtcNow;
         outline.Status = Status.Pending;
+        using var cancellation = new ExecutionCancellation(outline, cancellationToken, testBase.ExecutionCancellationToken);
         var failures = new List<(Status Status, ExceptionDispatchInfo Exception)>();
         var previousNotRun = new HashSet<string>(Run.Store.NotRun
             .Where(pair => pair.Value.TestId == TestId).Select(pair => pair.Key));
@@ -96,12 +102,14 @@ public sealed class ScenarioOutlineBuilder<TExample> : BuildableTest
                 var constructionOutput = new ScenarioConstructionOutput(testId, Run);
                 try
                 {
+                    cancellation.ThrowIfCancelled();
                     RunnableStepBuilder builder;
                     var previousOutput = TestOutputData.ConstructionOutput;
                     try
                     {
                         TestOutputData.ConstructionOutput = constructionOutput;
-                        await testBase.PrepareOutlineContextAsync();
+                        await cancellation.RunAsync(() => testBase.PrepareOutlineContextAsync().AsTask());
+                        cancellation.ThrowIfCancelled();
                         builder = scenarioFactory(examples[index]) ?? throw new InvalidOperationException("The example factory returned no scenario builder.");
                         if (builder.TestId != TestId || !ReferenceEquals(builder.BdTestBase, BdTestBase))
                         {
@@ -115,7 +123,7 @@ public sealed class ScenarioOutlineBuilder<TExample> : BuildableTest
                         TestOutputData.Run = Run;
                         TestOutputData.ConstructionOutput = previousOutput;
                     }
-                    await builder.Invoke(builder, outline: outline, exampleValues: _values[index]);
+                    await builder.Invoke(builder, outline: outline, exampleValues: _values[index], cancellationToken: cancellation.Token);
                 }
                 catch (Exception exception)
                 {
@@ -138,7 +146,7 @@ public sealed class ScenarioOutlineBuilder<TExample> : BuildableTest
                     // Completed execution owns its outcome, including forced configuration failures.
                     // Only construction failures still need exception classification here.
                     if (row.ExecutionAttempts.Count == 0)
-                        row.Status = ExceptionOutcomeClassifier.Classify(exception, Run.Options, row.TimedOut);
+                        row.Status = ExceptionOutcomeClassifier.Classify(exception, Run.Options, row.TimedOut || row.ExecutionCancelled || outline.ExecutionCancelled);
                     // Framework success exceptions must not fail the outline.
                     if (row.Status != Status.Passed)
                     {
@@ -162,6 +170,10 @@ public sealed class ScenarioOutlineBuilder<TExample> : BuildableTest
                     row.Output = string.Join(Environment.NewLine,
                         new[] { constructionOutput.Text.Value, row.Output }.Where(output => !string.IsNullOrEmpty(output)));
                 }
+                // A later row replaces Context just like a retry. Never race abandoned work.
+                if (outline.UncooperativeExecution || outline.ExecutionExamples[index].UncooperativeExecution ||
+                    cancellationToken.IsCancellationRequested || testBase.ExecutionCancellationToken.IsCancellationRequested)
+                    break;
             }
 
             outline.Status = outline.ExecutionExamples.OrderBy(row => row.Status.GetOrder()).First().Status;

@@ -115,7 +115,7 @@ Every `Given`, `When`, `Then`, `And` and `But` accepts these delegates:
 | `Func<CancellationToken, Task>` | `When(token => SubmitAsync(token))` |
 | `Func<CancellationToken, ValueTask>`, `Func<CancellationToken, ValueTask<T>>` | `When(token => SaveAsync(token))` |
 
-Lambdas can have statement bodies and `await`. Method groups work too: `Given(CreateUser)`. The token overloads are for [timeouts](timeouts.md). See [Asynchronous steps](async-steps.md) for the rules.
+Lambdas can have statement bodies and `await`. Method groups work too: `Given(CreateUser)`. The token overloads observe [execution cancellation and timeouts](timeouts.md). See [Asynchronous steps](async-steps.md) for the rules.
 
 Delegate builders need a C# 13 or newer compiler (.NET SDK 9 or newer), so overload priority picks `Func<Task>` for ordinary async lambdas.
 

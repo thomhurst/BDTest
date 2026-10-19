@@ -47,6 +47,8 @@ public async Task WithSharedState()
 
 Builders still execute only once. Running the same chain or outline again throws `AlreadyExecutedException`, including after a failure or while the first execution is running. Create a new chain or outline to run again. Configured retries remain part of the original execution.
 
+Use `BDTestAsync(cancellationToken)` when execution must observe a caller token. The parameterless overload and direct `await` still work. A caller token alone does not move work onto the thread pool, so cancellation cannot interrupt a synchronous or non-yielding prefix without a timeout. See [Timeouts and cancellation](../writing-tests/timeouts.md).
+
 ## Do not block
 
 Do not replace `.BDTest()` with `.Result`, `.Wait()` or `.GetAwaiter().GetResult()`. Blocking can deadlock UI, STA and other single-threaded contexts. Keep the context processing messages while awaiting.
@@ -54,8 +56,8 @@ Do not replace `.BDTest()` with `.Result`, `.Wait()` or `.GetAwaiter().GetResult
 ## Behaviour changes
 
 - Scenario execution starts inline, without a scenario-level `Task.Run`.
-- Steps, hooks, retries and outline rows preserve the caller's synchronization context. An async step resumes there unless its own code opts out, for example with `ConfigureAwait(false)`. Later steps still start on the caller's context.
-- Timeout-enabled step bodies still run on the thread pool so the timeout can bound synchronous work.
+- Without an active timeout, steps, hooks, retries and outline rows preserve the caller's synchronization context. An async step resumes there unless its own code opts out, for example with `ConfigureAwait(false)`. Later steps still start on the caller's context.
+- Timeout-enabled operations, including hooks and attempt preparation, run on the thread pool so the timeout can bound synchronous work. Already-cancelled cleanup also uses the thread pool with a bounded grace period.
 - If a test relied on the old thread-pool scheduling, schedule that work explicitly.
 - Use the fixture's `Context` to share state between steps. `AsyncLocal` changes inside a step do not flow back to the caller.
 

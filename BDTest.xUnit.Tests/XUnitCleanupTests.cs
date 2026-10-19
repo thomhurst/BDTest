@@ -40,7 +40,7 @@ public abstract class XUnitCleanupTests(CleanupProbe probe) : XUnitBDTestBase<ob
         var originalContext = Context;
         if (Probe.SetupContext != null) Assert.Same(Probe.SetupContext, originalContext);
         var scenario = await When(() => Assert.Same(originalContext, Context))
-            .Then(() => Assert.Same(originalContext, Context)).BDTestAsync();
+            .Then(() => Assert.Same(originalContext, Context)).BDTestAsync(global::Xunit.TestContext.Current.CancellationToken);
         foreach (var expected in Probe.ExpectedStartupOutput)
             Assert.Contains(expected, scenario.TestStartupInformation);
         Probe.VerifyCompletion = () => Assert.NotSame(originalContext, Context);

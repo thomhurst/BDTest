@@ -69,6 +69,7 @@ Timestamps use UTC `DateTimeOffset`; see [the result contract](../reports/contra
 | `Output` | Console output written during the step and its hooks. |
 | `StartTime`, `EndTime`, `TimeTaken` | Timing. |
 | `Timeout`, `TimedOut` | Timeout data. |
+| `CancellationToken` | Effective execution token for step hooks and delegates; see [cancellation](../writing-tests/timeouts.md). Runtime-only, excluded from report JSON. |
 | `IsRetry` | Whether the step ran in a retry. |
 | `Diagnostics` | Messages about step text generation. |
 | `Guid`, `ScenarioId`, `ReportId` | Identifiers. |

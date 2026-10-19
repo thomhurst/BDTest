@@ -231,8 +231,8 @@ public class AssemblyRunContract : Adapter
     public sealed class ProbeHook : IStepHook
     {
         public int BeforeCount;
-        public Task BeforeStepAsync(BDTest.Contracts.StepResult step) { Interlocked.Increment(ref BeforeCount); return Task.CompletedTask; }
-        public Task AfterStepAsync(BDTest.Contracts.StepResult step) => Task.CompletedTask;
+        public Task BeforeStepAsync(BDTest.Contracts.StepResult step, System.Threading.CancellationToken cancellationToken) { Interlocked.Increment(ref BeforeCount); return Task.CompletedTask; }
+        public Task AfterStepAsync(BDTest.Contracts.StepResult step, System.Threading.CancellationToken cancellationToken) => Task.CompletedTask;
     }
 }
 
@@ -276,7 +276,13 @@ public class AssemblyCompositionContract
             throw new InvalidOperationException("Factory did not select the fixture assembly run.");
 
         var scenario = await _host.When(() => GC.KeepAlive(_host.Context))
-            .Then(() => GC.KeepAlive(run)).BDTestAsync();
+            .Then(() => GC.KeepAlive(run)).BDTestAsync(
+#if BDTEST_XUNIT
+                Xunit.TestContext.Current.CancellationToken
+#else
+                CancellationToken.None
+#endif
+            );
 
         if (scenario.Status != Status.Passed || scenario.ReportId != run.ReportId ||
             !run.Scenarios.Any(result => result.Guid == scenario.Guid) ||

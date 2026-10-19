@@ -198,7 +198,7 @@ public class ImmutableResultTests
 
     private sealed class StepHook(List<StepResult> before, List<StepResult> after) : IStepHook
     {
-        public Task BeforeStepAsync(StepResult step) { before.Add(step); return Task.CompletedTask; }
-        public Task AfterStepAsync(StepResult step) { after.Add(step); return Task.CompletedTask; }
+        public Task BeforeStepAsync(StepResult step, System.Threading.CancellationToken cancellationToken) { before.Add(step); return Task.CompletedTask; }
+        public Task AfterStepAsync(StepResult step, System.Threading.CancellationToken cancellationToken) { after.Add(step); return Task.CompletedTask; }
     }
 }

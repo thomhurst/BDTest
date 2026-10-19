@@ -103,6 +103,9 @@ public class Step
     private List<string> ExecutionDiagnostics => Diagnostics ?? throw new InvalidOperationException("The step has no diagnostics collection.");
     private Runnable ExecutionRunnable => Runnable ?? throw new InvalidOperationException("A report step cannot be executed.");
 
+    /// <summary>The effective token for this step and its hooks; cancelled during timeout or scenario cancellation.</summary>
+    [JsonIgnore] internal CancellationToken CancellationToken { get; private set; }
+
     private string? _stepTextTemplate;
     private string? _generatedStepText;
     private IReadOnlyList<string> _templateDiagnostics = Array.Empty<string>();
@@ -180,6 +183,7 @@ public class Step
 
     internal void ReleaseRuntimeReferences()
     {
+        CancellationToken = default;
         Runnable = null;
         OverriddenStepText = null;
         ExplicitArguments = null;
@@ -208,28 +212,35 @@ public class Step
     internal void SetStepText(bool evaluateArguments = false)
     {
         var invokedStepText = OverriddenStepText?.Invoke();
+        var generatedStepText = _generatedStepText;
+        var diagnostics = new List<string>();
+        var arguments = new List<StepArgument>();
         if (evaluateArguments)
         {
-            var arguments = new List<StepArgument>();
             // A nonempty text override retains its existing behavior: inline readers are bypassed.
             if (string.IsNullOrWhiteSpace(invokedStepText))
             {
-                _generatedStepText = ExecutionRunnable.Definition.GetText(true, AddDiagnostic, ExplicitArguments, Options.Converters, arguments.Add);
+                generatedStepText = ExecutionRunnable.Definition.GetText(true, diagnostics.Add, ExplicitArguments, Options.Converters, arguments.Add);
             }
             foreach (var reader in AttachedArguments)
             {
-                StepTextHelper.GetArgumentValue(reader, "attachment", AddDiagnostic, Options.Converters, arguments.Add);
+                StepTextHelper.GetArgumentValue(reader, "attachment", diagnostics.Add, Options.Converters, arguments.Add);
             }
-            Arguments = arguments;
         }
-
-        if (!string.IsNullOrWhiteSpace(invokedStepText))
+        // Argument readers can ignore cancellation too. Publish only while this callback owns capture.
+        ExecutionOutputScope.Commit(() =>
         {
-            StepText = SubstituteExampleValues($"{StepPrefix} {invokedStepText}");
-            return;
-        }
-
-        StepText = SubstituteExampleValues($"{StepPrefix} {_generatedStepText}");
+            lock (SnapshotGate ?? this)
+            {
+                if (evaluateArguments)
+                {
+                    _generatedStepText = generatedStepText;
+                    foreach (var diagnostic in diagnostics) AddDiagnostic(diagnostic);
+                    Arguments = arguments;
+                }
+                StepText = SubstituteExampleValues($"{StepPrefix} {(string.IsNullOrWhiteSpace(invokedStepText) ? _generatedStepText : invokedStepText)}");
+            }
+        });
     }
 
     private void AddDiagnostic(string diagnostic)
@@ -261,38 +272,33 @@ public class Step
             : null;
     }
 
-    internal async Task Execute(BDTestBase? test, TimeSpan? scenarioTimeout = null, TimeSpan? remainingScenarioTime = null,
-        Scenario? scenario = null)
+    internal async Task Execute(BDTestBase? test, Scenario scenario, ExecutionCancellation attempt)
     {
-        using var attachmentScope = scenario == null ? null : new AttachmentScope(scenario, this);
+        using var cancellation = new ExecutionCancellation(scenario, this, attempt);
+        var token = cancellation.Token;
+        CancellationToken = token;
+        using var attachmentScope = new AttachmentScope(scenario, this);
         SkipReason = null;
-
-        // Keep both subscriptions stable for this step, including its after hooks.
         var beforeHooks = Options.BeforeStep;
         var afterHooks = Options.AfterStep;
         Exception? executionException = null;
-        var beforeHooksCompleted = false;
         var timer = Options.Clock.StartTimer();
         try
         {
             StartTime = Options.Clock.UtcNow;
             Status = Status.Pending;
-
             if (beforeHooks != null)
-            {
-                foreach (Func<StepResult, Task> hook in beforeHooks.GetInvocationList())
-                {
-                    await hook(ResultSnapshot.Create(this));
-                }
-            }
+                foreach (Func<StepResult, CancellationToken, Task> hook in beforeHooks.GetInvocationList())
+                    await cancellation.RunAsync(() => hook(ResultSnapshot.Create(this), token));
             if (test != null)
+                await cancellation.RunAsync(() => test.OnBeforeStep(ResultSnapshot.Create(this), token));
+
+            await cancellation.RunAsync(() =>
             {
-                await test.OnBeforeStep(ResultSnapshot.Create(this));
-            }
-
-            beforeHooksCompleted = true;
-
-            SkipReason = EvaluateSkipReason();
+                var reason = EvaluateSkipReason();
+                ExecutionOutputScope.Commit(() => SkipReason = reason);
+                return Task.CompletedTask;
+            });
             if (SkipReason != null)
             {
                 SetStepText();
@@ -301,53 +307,35 @@ public class Step
                 return;
             }
 
-            // Render once per attempt, after hooks and skip checks, immediately before invocation.
-            SetStepText(evaluateArguments: true);
-
-            var remaining = remainingScenarioTime - timer.Elapsed;
-            var scenarioLimit = remaining.HasValue && (!Timeout.HasValue || remaining.Value <= Timeout.Value);
-            var limit = scenarioLimit ? remaining : Timeout;
-            if (limit.HasValue)
+            // Render and invoke within the same cancellation/output boundary.
+            var runnable = ExecutionRunnable;
+            await cancellation.RunAsync(() =>
             {
-                await RunWithTimeout(limit.Value, scenarioLimit ? "Scenario" : "Step", (scenarioLimit ? scenarioTimeout : Timeout) ?? throw new InvalidOperationException("The configured timeout is missing."));
-            }
-            else
-            {
-                await ExecutionRunnable.Run();
-            }
+                SetStepText(evaluateArguments: true);
+                token.ThrowIfCancellationRequested();
+                return runnable.Run(token);
+            });
             Status = Status.Passed;
         }
         catch (Exception e)
         {
-            // Preserve failures raised within budget even if after hooks later exceed it.
-            if (!beforeHooksCompleted && remainingScenarioTime.HasValue && timer.Elapsed >= remainingScenarioTime.Value)
-            {
-                e = CreateTimeoutException("Scenario", scenarioTimeout ?? throw new InvalidOperationException("The scenario timeout is missing."));
-            }
             executionException = e;
             SetExceptionResult(e);
             if (Status == Status.Failed)
-            {
                 await Console.Out.WriteLineAsync($"{Environment.NewLine}{e.GetType().Name} on '{StepPrefix}' step executing '{StepText}'");
-            }
-            ExceptionDispatchInfo.Capture(e).Throw();
+            throw;
         }
         finally
         {
             EndTime = Options.Clock.UtcNow;
             TimeTaken = timer.Elapsed;
             Output = TestOutputData.Instance.ToString().Trim();
+            // A later cleanup timeout must not reclassify an earlier failure.
+            var timedOut = TimedOut;
+            var scenarioTimedOut = scenario.AttemptTimedOut;
             try
             {
-                var hookException = await RunAfterHooks(test, afterHooks);
-                // Hooks are not interrupted, but their elapsed time still consumes
-                // the scenario budget, including the final step's after hooks.
-                if (executionException == null && remainingScenarioTime.HasValue && timer.Elapsed >= remainingScenarioTime.Value)
-                {
-                    var timeout = CreateTimeoutException("Scenario", scenarioTimeout ?? throw new InvalidOperationException("The scenario timeout is missing."));
-                    SetExceptionResult(timeout);
-                    throw timeout;
-                }
+                var hookException = await RunAfterHooks(test, afterHooks, cancellation);
                 if (executionException == null && hookException != null)
                 {
                     SetExceptionResult(hookException);
@@ -356,35 +344,30 @@ public class Step
             }
             finally
             {
-                // Include hook output without charging after-hook work to the step duration.
+                if (executionException != null)
+                {
+                    TimedOut = timedOut;
+                    scenario.AttemptTimedOut = scenarioTimedOut;
+                }
                 Output = TestOutputData.Instance.ToString().Trim();
                 TestOutputData.ClearCurrentTaskData();
             }
         }
     }
 
-    private async Task<Exception?> RunAfterHooks(BDTestBase? test, Func<StepResult, Task>? globalHooks)
+    private async Task<Exception?> RunAfterHooks(BDTestBase? test, Func<StepResult, CancellationToken, Task>? globalHooks,
+        ExecutionCancellation cancellation)
     {
         Exception? firstException = null;
-        if (test != null)
-        {
-            await Invoke(test.OnAfterStep);
-        }
+        if (test != null) await Invoke(() => test.OnAfterStep(ResultSnapshot.Create(this), CancellationToken));
         if (globalHooks != null)
-        {
-            foreach (Func<StepResult, Task> hook in globalHooks.GetInvocationList())
-            {
-                await Invoke(hook);
-            }
-        }
+            foreach (Func<StepResult, CancellationToken, Task> hook in globalHooks.GetInvocationList())
+                await Invoke(() => hook(ResultSnapshot.Create(this), CancellationToken));
         return firstException;
 
-        async Task Invoke(Func<StepResult, Task> hook)
+        async Task Invoke(Func<Task> hook)
         {
-            try
-            {
-                await hook(ResultSnapshot.Create(this));
-            }
+            try { await cancellation.RunAsync(hook, cleanup: true); }
             catch (Exception e)
             {
                 firstException ??= e;
@@ -395,90 +378,9 @@ public class Step
 
     private void SetExceptionResult(Exception exception)
     {
-        Status = ExceptionOutcomeClassifier.Classify(exception, Options, TimedOut);
-
+        Status = ExceptionOutcomeClassifier.Classify(exception, Options, TimedOut || (exception is OperationCanceledException && CancellationToken.IsCancellationRequested));
         if (Status == Status.Failed || Status == Status.NotImplemented)
-        {
             Exception = new ExceptionWrapper(exception);
-        }
-    }
-
-    private async Task RunWithTimeout(TimeSpan remaining, string scope, TimeSpan configuredTimeout)
-    {
-        if (remaining <= TimeSpan.Zero)
-        {
-            throw CreateTimeoutException(scope, configuredTimeout);
-        }
-
-        var runnable = ExecutionRunnable;
-        CancellationTokenSource? cancellation = new();
-#if !NET8_0_OR_GREATER
-        using var delayCancellation = new CancellationTokenSource();
-#endif
-        // A scheduling boundary also bounds synchronous steps and the synchronous
-        // portion of an async method. Never let late completion mutate step results.
-        var token = cancellation.Token;
-        var execution = Task.Run(() => runnable.Run(token));
-        try
-        {
-#if NET8_0_OR_GREATER
-            // Carry user exceptions as values so a user's TimeoutException cannot
-            // be mistaken for the timeout raised by WaitAsync.
-            Exception? failure;
-            try
-            {
-                failure = await CaptureFailure(execution).WaitAsync(remaining, Options.Clock.Provider).ConfigureAwait(false);
-            }
-            catch (TimeoutException)
-            {
-                TimedOut = true;
-                _ = CancelAndObserve(execution, cancellation);
-                cancellation = null;
-                throw CreateTimeoutException(scope, configuredTimeout);
-            }
-            if (failure != null) ExceptionDispatchInfo.Capture(failure).Throw();
-            return;
-#else
-            var delay = Task.Delay(remaining, delayCancellation.Token);
-            if (await Task.WhenAny(execution, delay).ConfigureAwait(false) == execution)
-            {
-                await execution.ConfigureAwait(false);
-                return;
-            }
-            TimedOut = true;
-            _ = CancelAndObserve(execution, cancellation);
-            cancellation = null;
-            throw CreateTimeoutException(scope, configuredTimeout);
-#endif
-        }
-        finally
-        {
-#if !NET8_0_OR_GREATER
-            delayCancellation.Cancel();
-#endif
-            cancellation?.Dispose();
-        }
-    }
-
-#if NET8_0_OR_GREATER
-    private static async Task<Exception?> CaptureFailure(Task execution)
-    {
-        try
-        {
-            await execution.ConfigureAwait(false);
-            return null;
-        }
-        catch (Exception exception)
-        {
-            return exception;
-        }
-    }
-#endif
-
-    private TimeoutException CreateTimeoutException(string scope, TimeSpan configuredTimeout)
-    {
-        TimedOut = true;
-        return new TimeoutException($"{scope} timed out after {configuredTimeout} while executing '{StepText}'.");
     }
 
     internal static Task CancelAndObserve(Task execution, CancellationTokenSource cancellation)

@@ -31,6 +31,8 @@ public async Task CreateAccount() => await When(() => Accounts.CreateAccountAsyn
 Do not call `.Result`, `.Wait()` or `.GetAwaiter().GetResult()` on a scenario. Blocking a single-threaded synchronization context can deadlock. The synchronous `.BDTest()` method has been removed for this reason; see [Migrating to async-only execution](../migration/async-only.md).
 :::
 
+Use `.BDTestAsync(cancellationToken)` to cancel a chain or outline. Token-aware steps receive a token combining execution cancellation, any adapter token and applicable timeouts. With no timeout, cancellation bounds waiting for yielding asynchronous work; it cannot interrupt a synchronous or non-yielding prefix. See [Timeouts and cancellation](timeouts.md) for cleanup and retry behavior.
+
 ## `ValueTask` and other awaitables
 
 Step delegates can return `Task`, `Task<T>`, `ValueTask` or `ValueTask<T>`. BDTest awaits each result once before the next step starts, and reports asynchronous exceptions. Return the operation directly; no `.AsTask()` is needed:
@@ -52,15 +54,15 @@ Avoid hiding asynchronous work in a synchronous or `async void` helper, and do n
 
 ## Execution order and threads
 
-`BDTestAsync()` and direct `await` run steps in order. BDTest does not schedule a thread-pool task for each scenario or step. Execution begins inline, and each asynchronous step must finish before the next one starts. When every step completes synchronously, the whole scenario can complete on the calling thread.
+`BDTestAsync()` and direct `await` run steps in order. Without a timeout, BDTest does not schedule a thread-pool task for each scenario or step. Execution begins inline, and each asynchronous step must finish before the next one starts. When every step completes synchronously, the whole scenario can complete on the calling thread.
 
 ## Synchronization contexts
 
-BDTest preserves the caller's synchronization context across steps, [hooks](step-hooks.md), [retries](retries.md) and [outline rows](scenario-outlines.md).
+Without a timeout, BDTest preserves the caller's synchronization context across steps, [hooks](step-hooks.md), [retries](retries.md) and [outline rows](scenario-outlines.md).
 
 - An asynchronous step resumes on that context unless its own code opts out, for example with `ConfigureAwait(false)`.
 - Later steps still start on the caller's context.
-- Steps with a [timeout](timeouts.md) run their bodies on the thread pool, so the timeout can bound synchronous work.
+- Operations with an active [timeout](timeouts.md), including hooks, run on the thread pool so the timeout can bound synchronous work. Already-cancelled cleanup also runs on the thread pool with a bounded grace period.
 
 When running under a UI or STA context, await the async entry points and keep the context processing messages.
 

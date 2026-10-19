@@ -21,7 +21,7 @@ Given(() => Initialize())
 When(() => SaveValueTaskAsync()); // No AsTask() workaround needed.
 ```
 
-The cancellation token retains the existing timeout behavior: steps receive a token cancelled when their step or scenario budget expires, and the default token when no timeout applies. Custom awaitables and configured awaitables should be awaited inside an async lambda. An explicitly supplied `Action` has void semantics; BDTest cannot inspect its body for discarded asynchronous results. Avoid `async void` and do not cast asynchronous steps to `Action`.
+Steps receive a token combining explicit `BDTestAsync(cancellationToken)` cancellation, any adapter token, and the step or scenario budget. Even without an external cancellation source or timeout, they receive a fresh cancellable token, which remains uncancelled during normal execution. See [Timeouts and cancellation](../writing-tests/timeouts.md) for hook coverage, cleanup and retry behavior. Custom awaitables and configured awaitables should be awaited inside an async lambda. An explicitly supplied `Action` has void semantics; BDTest cannot inspect its body for discarded asynchronous results. Avoid `async void` and do not cast asynchronous steps to `Action`.
 
 ## Names, attributes, and arguments
 

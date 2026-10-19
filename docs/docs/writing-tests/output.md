@@ -9,7 +9,7 @@ description: How BDTest captures console output, records setup and teardown outp
 
 BDTest captures everything written to `Console` while a step runs and stores it on that step (`Step.Output`) and on the scenario (`Scenario.Output`). Reports show the output next to the step that wrote it. You do not need a special logger: `Console.WriteLine` is enough.
 
-Output is tracked per test, using the framework's test ID, so parallel tests do not mix their output.
+Output is tracked per test, using the framework's test ID, so parallel tests do not mix their output. When cancelled work outlives its [grace period](timeouts.md#cooperative-cancellation), its later captured console, custom HTML, startup and teardown writes are suppressed. They cannot alter completed report output.
 
 :::note xUnit
 The xUnit adapter does not write to `ITestOutputHelper`. BDTest captures output by replacing `Console.Out`, and reports it in BDTest reports. Inject `Xunit.ITestOutputHelper` and write to it yourself if you also want the output in xUnit's results.

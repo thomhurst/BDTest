@@ -164,7 +164,7 @@ public class ExceptionClassificationTests : BDTestBase
         var scenario = TestRun.Scenarios.Single();
         await Assert.That(scenario.TimedOut).IsTrue();
         await Assert.That(scenario.Status).IsEqualTo(Status.Failed);
-        await Assert.That(Required(scenario.Steps)[0].Status).IsEqualTo(Status.Failed);
+        await Assert.That(Required(scenario.Steps).All(step => step.Status == Status.NotRun)).IsTrue();
     }
 
     [Test]

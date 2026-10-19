@@ -26,7 +26,7 @@ public class LifecycleTests : XUnitBDTestBase<XUnitContext>
         await Task.Yield();
         Assert.Equal(id, BDTestExecutionId);
         Assert.Same(context, Context);
-        var scenario = await When(() => GC.KeepAlive(row)).Then(() => NoOp()).BDTestAsync();
+        var scenario = await When(() => GC.KeepAlive(row)).Then(() => NoOp()).BDTestAsync(global::Xunit.TestContext.Current.CancellationToken);
         Assert.Equal(id, scenario.FrameworkTestId);
         Assert.Contains("startup:" + id, scenario.TestStartupInformation);
     }
@@ -101,7 +101,7 @@ public class LifecycleTests : XUnitBDTestBase<XUnitContext>
         var fixture = new ConstructorProbe(run);
         await ((IAsyncLifetime)fixture).InitializeAsync();
         var originalContext = fixture.Context;
-        var scenario = await fixture.When(() => NoOp()).Then(() => NoOp()).BDTestAsync();
+        var scenario = await fixture.When(() => NoOp()).Then(() => NoOp()).BDTestAsync(global::Xunit.TestContext.Current.CancellationToken);
         Assert.Single(run.Scenarios);
         Assert.Contains("before assigning owned run", scenario.TestStartupInformation);
         Assert.Contains("after assigning owned run", scenario.TestStartupInformation);
@@ -122,7 +122,7 @@ public class LifecycleTests : XUnitBDTestBase<XUnitContext>
 
         var next = new Probe(run);
         next.Actions.Begin("ignored-runner-id");
-        var scenario = await next.When(() => NoOp()).Then(() => NoOp()).BDTestAsync();
+        var scenario = await next.When(() => NoOp()).Then(() => NoOp()).BDTestAsync(global::Xunit.TestContext.Current.CancellationToken);
         Assert.True(string.IsNullOrEmpty(scenario.TestStartupInformation));
         next.Actions.End();
     }
@@ -147,7 +147,7 @@ public class LifecycleTests : XUnitBDTestBase<XUnitContext>
         var fixture = new ConstructorAttachmentProbe(run, useContext);
         fixture.Writer.Attach("constructor", new byte[] { 1 }, "text/plain");
         await ((IAsyncLifetime)fixture).InitializeAsync();
-        var scenario = await fixture.When(() => NoOp()).Then(() => NoOp()).BDTestAsync();
+        var scenario = await fixture.When(() => NoOp()).Then(() => NoOp()).BDTestAsync(global::Xunit.TestContext.Current.CancellationToken);
         var attachments = scenario.Attachments ?? throw new InvalidOperationException("Expected constructor attachments.");
         Assert.Equal("constructor", Assert.Single(attachments).Name);
         await fixture.DisposeAsync();
@@ -259,7 +259,7 @@ public class AsyncLifecycleTests : XUnitBDTestBase<XUnitContext>
     {
         Console.WriteLine("owned body startup");
         var scenario = await When(() => Console.WriteLine("owned step"))
-            .Then(() => GC.KeepAlive(this)).BDTestAsync();
+            .Then(() => GC.KeepAlive(this)).BDTestAsync(global::Xunit.TestContext.Current.CancellationToken);
         Assert.Contains("owned constructor", scenario.TestStartupInformation);
         Assert.Contains("owned async setup", scenario.TestStartupInformation);
         Assert.Contains("!constructor task output", scenario.TestStartupInformation);

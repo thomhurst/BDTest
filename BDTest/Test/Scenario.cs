@@ -110,11 +110,15 @@ public class Scenario
     [JsonInclude]
     public string? FrameworkTestId { get; internal set; }
 
-    /// <summary>The timeout budget for the steps in each execution attempt, or null for no limit.</summary>
+    /// <summary>The timeout budget for hooks and steps in each execution attempt, or null for no limit.</summary>
     [JsonInclude] public TimeSpan? Timeout { get; internal set; }
 
-    /// <summary>Whether a BDTest timeout failed a step in the current attempt.</summary>
-    public bool TimedOut => Steps?.Any(step => step.TimedOut) == true;
+    /// <summary>Whether a BDTest timeout failed a hook or step in the current attempt.</summary>
+    public bool TimedOut => AttemptTimedOut || Steps?.Any(step => step.TimedOut) == true || Examples?.Any(example => example.TimedOut) == true;
+
+    [JsonInclude, JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] internal bool AttemptTimedOut { get; set; }
+    [JsonIgnore] internal bool ExecutionCancelled { get; set; }
+    [JsonIgnore] internal bool UncooperativeExecution { get; set; }
 
     [JsonInclude] public List<Step>? Steps { get; internal set; } = new();
 

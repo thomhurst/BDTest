@@ -4,5 +4,5 @@ namespace BDTest.Interfaces.Internal;
 
 internal interface IScenarioExecutor
 {
-    Task ExecuteAsync(Scenario scenario);
+    Task ExecuteAsync(Scenario scenario, System.Threading.CancellationToken cancellationToken = default);
 }

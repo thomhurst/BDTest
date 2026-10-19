@@ -23,8 +23,8 @@ public class ScenarioHookContext
     public object? Context { get; }
     /// <summary>Zero for the first attempt, then one, two and so on for retries.</summary>
     public int Attempt { get; }
-    /// <summary>Cancelled when a step times out. Each attempt receives a fresh token.</summary>
-    /// <remarks>Scenario hooks are awaited without a timeout; cleanup can ignore this signal.</remarks>
+    /// <summary>Signals caller/framework cancellation and step/scenario timeouts. Each attempt receives a fresh token.</summary>
+    /// <remarks>Scenario hooks consume the attempt budget. Cancelled cleanup has a bounded grace period.</remarks>
     public CancellationToken CancellationToken { get; }
 }
 
