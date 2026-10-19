@@ -100,6 +100,9 @@ You can add your own `[SetUp]` and `[TearDown]` methods. They run alongside the 
 
 ## Reports after the run
 
+Add `BDTest.Reporting` at the same version as the adapter before using these export APIs.
+See [reporting package migration](../migration/reporting-package.md).
+
 Inheritance and the no-run composition overload share `NUnitBDTestAssembly.GetRun(assembly)`. Pass that run explicitly to report helpers. The adapter completes each test but leaves run disposal to assembly cleanup, after reporting. Reused hosts must dispose the previous assembly run and create new fixtures for the next execution.
 
 Use an NUnit `[SetUpFixture]` with no namespace so it covers the entire test assembly to run code after all tests:

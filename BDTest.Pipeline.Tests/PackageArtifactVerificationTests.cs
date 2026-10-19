@@ -27,7 +27,7 @@ public class PackageArtifactVerificationTests
 
         _scriptPath = Path.Combine(directory.FullName, "scripts", "Test-PackageArtifacts.ps1");
 
-        foreach (var id in new[] { "BDTest", "BDTest.Contracts", "BDTest.NUnit", "BDTest.xUnit", "BDTest.MSTest", "BDTest.TUnit", "BDTest.Razor.Reports", "BDTest.Reports.Storage.FileSystem", "BDTest.Reports.Storage.AzureBlob" })
+        foreach (var id in new[] { "BDTest", "BDTest.Reporting", "BDTest.Contracts", "BDTest.NUnit", "BDTest.xUnit", "BDTest.MSTest", "BDTest.TUnit", "BDTest.Razor.Reports", "BDTest.Reports.Storage.FileSystem", "BDTest.Reports.Storage.AzureBlob" })
         {
             CreatePackage(id, ".nupkg");
             CreatePackage(id, ".snupkg");
@@ -85,7 +85,7 @@ public class PackageArtifactVerificationTests
     {
         File.Delete(PackagePath("BDTest", ".nupkg"));
 
-        await AssertRejected("Expected 11 primary packages", "found 10");
+        await AssertRejected("Expected 12 primary packages", "found 11");
     }
 
     [Test]

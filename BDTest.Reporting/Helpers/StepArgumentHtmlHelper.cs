@@ -11,7 +11,7 @@ public static class StepArgumentHtmlHelper
 
     // Compatibility entry point for the hosted report model until its migration.
     public static string GetHtml(IReadOnlyList<global::BDTest.StepArgument>? arguments) =>
-        GetHtml(arguments?.Select(ResultSnapshot.Create).ToArray());
+        GetHtml(arguments?.Select(argument => argument.ToResult()).ToArray());
 
     public static string GetHtml(IReadOnlyList<Contracts.StepArgument>? arguments)
     {

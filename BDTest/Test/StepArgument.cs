@@ -9,4 +9,7 @@ namespace BDTest;
 public abstract class StepArgument
 {
     private protected StepArgument() { }
+
+    /// <summary>Copies this structured value to an immutable result.</summary>
+    public Contracts.StepArgument ToResult() => Helpers.ResultSnapshot.Create(this);
 }

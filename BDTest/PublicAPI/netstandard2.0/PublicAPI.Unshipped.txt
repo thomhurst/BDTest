@@ -36,7 +36,22 @@
 *REMOVED*BDTest.Attributes.TestInformationAttribute.Print() -> string!
 *REMOVED*BDTest.Attributes.TestInformationAttribute.TestInformationAttribute(string? information) -> void
 *REMOVED*BDTest.BDTestOptions.ContextFactory.get -> BDTest.Test.IBDTestContextFactory?
+*REMOVED*BDTest.BDTestReportServer
 *REMOVED*BDTest.BDTestRun.Scenarios.get -> System.Collections.Generic.IReadOnlyCollection<BDTest.Test.Scenario!>!
+*REMOVED*BDTest.BDTestRunDescriptor
+*REMOVED*BDTest.BDTestRunDescriptor.BDTestRunDescriptor() -> void
+*REMOVED*BDTest.BDTestRunDescriptor.BranchName.get -> string?
+*REMOVED*BDTest.BDTestRunDescriptor.BranchName.set -> void
+*REMOVED*BDTest.BDTestRunDescriptor.CustomProperties.get -> System.Collections.Generic.Dictionary<string!, string!>!
+*REMOVED*BDTest.BDTestRunDescriptor.Environment.get -> string?
+*REMOVED*BDTest.BDTestRunDescriptor.Environment.set -> void
+*REMOVED*BDTest.BDTestRunDescriptor.Tag.get -> string?
+*REMOVED*BDTest.BDTestRunDescriptor.Tag.set -> void
+*REMOVED*BDTest.Helpers.BDTestAttachmentHelper
+*REMOVED*BDTest.Helpers.BDTestHtmlHelper
+*REMOVED*BDTest.Helpers.BDTestJsonHelper
+*REMOVED*BDTest.Helpers.ExceptionHtmlHelper
+*REMOVED*BDTest.Helpers.StepArgumentHtmlHelper
 *REMOVED*BDTest.Interfaces.IScenarioHook.AfterScenarioAsync(BDTest.Test.ScenarioHookContext! scenario) -> System.Threading.Tasks.Task!
 *REMOVED*BDTest.Interfaces.IScenarioHook.BeforeScenarioAsync(BDTest.Test.ScenarioHookContext! scenario) -> System.Threading.Tasks.Task!
 *REMOVED*BDTest.Interfaces.IStepHook.AfterStepAsync(BDTest.Test.Step! step) -> System.Threading.Tasks.Task!
@@ -281,9 +296,19 @@
 *REMOVED*override BDTest.Test.BDTestScenario<TContext>.TestRun.get -> BDTest.BDTestRun!
 *REMOVED*override BDTest.Test.StepDocString.ToString() -> string!
 *REMOVED*override BDTest.Test.StepTable.ToString() -> string!
+*REMOVED*static BDTest.BDTestReportServer.SendDataAndGetReportUriAsync(BDTest.BDTestRun! run, System.Uri! serverAddress, BDTest.BDTestRunDescriptor? bdTestRunDescriptor) -> System.Threading.Tasks.Task<System.Uri!>!
+*REMOVED*static BDTest.BDTestReportServer.SendDataAndGetReportUriAsync(BDTest.BDTestRun! run, System.Uri! serverAddress, BDTest.BDTestRunDescriptor? bdTestRunDescriptor, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<System.Uri!>!
+*REMOVED*static BDTest.BDTestReportServer.SendDataAndGetReportUriAsync(System.Uri! serverAddress, BDTest.BDTestRunDescriptor? bdTestRunDescriptor, System.Net.Http.HttpClient! httpClient, BDTest.BDTestRun! run) -> System.Threading.Tasks.Task<System.Uri!>!
+*REMOVED*static BDTest.BDTestReportServer.SendDataAndGetReportUriAsync(System.Uri! serverAddress, BDTest.BDTestRunDescriptor? bdTestRunDescriptor, System.Net.Http.HttpClient! httpClient, BDTest.BDTestRun! run, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<System.Uri!>!
 *REMOVED*static BDTest.BDTestUtil.GetNotRunScenarios(BDTest.BDTestRun! run) -> System.Collections.Generic.List<BDTest.Test.ScenarioDefinitionSummary!>!
 *REMOVED*static BDTest.BDTestUtil.GetScenarios(BDTest.BDTestRun! run) -> System.Collections.Generic.List<BDTest.Test.Scenario!>!
+*REMOVED*static BDTest.Helpers.BDTestAttachmentHelper.GetAttachments(BDTest.Maps.BDTestOutputModel! report) -> System.Collections.Generic.IEnumerable<BDTest.Test.Attachment!>!
+*REMOVED*static BDTest.Helpers.BDTestHtmlHelper.GetTestHtmlReport(BDTest.BDTestRunDescriptor? bdTestRunDescriptor, BDTest.BDTestRun! run) -> string!
+*REMOVED*static BDTest.Helpers.BDTestJsonHelper.Deserialize(string! json, long maximumExpandedSize = 104857600) -> BDTest.Maps.BDTestOutputModel?
+*REMOVED*static BDTest.Helpers.BDTestJsonHelper.DeserializeAsync(System.IO.Stream! stream, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken), long maximumExpandedSize = 104857600) -> System.Threading.Tasks.Task<BDTest.Maps.BDTestOutputModel?>!
+*REMOVED*static BDTest.Helpers.BDTestJsonHelper.GetTestJsonData(BDTest.BDTestRunDescriptor? bdTestRunDescriptor, BDTest.BDTestRun! run) -> string!
 *REMOVED*static BDTest.Helpers.BDTestJsonHelper.Serialize(BDTest.Maps.BDTestOutputModel? model, bool writeIndented = false) -> string!
+*REMOVED*static BDTest.Helpers.ExceptionHtmlHelper.GetHtml(BDTest.Test.ExceptionWrapper? exception) -> string!
 *REMOVED*static BDTest.Helpers.StepArgumentHtmlHelper.GetHtml(System.Collections.Generic.IReadOnlyList<BDTest.Test.StepArgument!>? arguments) -> string!
 *REMOVED*static BDTest.Test.BDTestBase.BeginPendingTestExecution() -> void
 *REMOVED*static BDTest.Test.BDTestScenario.For<TContext>(object! testInstance, BDTest.BDTestRun! run) -> BDTest.Test.BDTestScenario<TContext!>!
@@ -381,18 +406,6 @@ BDTest.BDTestContext.TestBase.get -> BDTest.BDTestBase!
 BDTest.BDTestContext<TTestContext>
 BDTest.BDTestContext<TTestContext>.TestContext.get -> TTestContext
 BDTest.BDTestOptions.ContextFactory.get -> BDTest.IBDTestContextFactory?
-BDTest.BDTestReportUploadOptions
-BDTest.BDTestReportUploadOptions.BDTestReportUploadOptions(System.Uri! serverAddress) -> void
-BDTest.BDTestReportUploadOptions.ServerAddress.get -> System.Uri!
-BDTest.BDTestReportUploadOptions.Timeout.get -> System.TimeSpan
-BDTest.BDTestReportUploadOptions.Timeout.set -> void
-BDTest.BDTestReportUploadOptions.UploadKey.get -> string?
-BDTest.BDTestReportUploadOptions.UploadKey.set -> void
-BDTest.BDTestReportUploadOptions.UseGzip.get -> bool
-BDTest.BDTestReportUploadOptions.UseGzip.set -> void
-BDTest.BDTestReportUploader
-BDTest.BDTestReportUploader.BDTestReportUploader(System.Net.Http.HttpClient! httpClient, BDTest.BDTestReportUploadOptions! options) -> void
-BDTest.BDTestReportUploader.UploadAsync(BDTest.BDTestRun! run, BDTest.BDTestRunDescriptor? descriptor = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<System.Uri!>!
 BDTest.BDTestRetryAttribute
 BDTest.BDTestRetryAttribute.BDTestRetryAttribute(int count) -> void
 BDTest.BDTestRetryAttribute.Count.get -> int
@@ -400,7 +413,14 @@ BDTest.BDTestRetrySetUpAttribute
 BDTest.BDTestRetrySetUpAttribute.BDTestRetrySetUpAttribute() -> void
 BDTest.BDTestRetryTearDownAttribute
 BDTest.BDTestRetryTearDownAttribute.BDTestRetryTearDownAttribute() -> void
+BDTest.BDTestRun.GetSnapshot() -> BDTest.BDTestRunSnapshot!
 BDTest.BDTestRun.Scenarios.get -> System.Collections.Generic.IReadOnlyCollection<BDTest.Contracts.ScenarioResult!>!
+BDTest.BDTestRunSnapshot
+BDTest.BDTestRunSnapshot.NotRun.get -> System.Collections.Generic.IReadOnlyList<BDTest.Contracts.ScenarioDefinitionSummary!>!
+BDTest.BDTestRunSnapshot.ReportId.get -> string!
+BDTest.BDTestRunSnapshot.Scenarios.get -> System.Collections.Generic.IReadOnlyList<BDTest.Contracts.ScenarioResult!>!
+BDTest.BDTestRunSnapshot.Timer.get -> BDTest.Contracts.ReportTimer!
+BDTest.BDTestRunSnapshot.Version.get -> string!
 BDTest.BDTestScenario
 BDTest.BDTestScenario<TContext>
 BDTest.BDTestScenario<TContext>.BDTestScenario(object! testInstance, BDTest.BDTestRun! run) -> void
@@ -503,6 +523,7 @@ BDTest.ServiceProviderContextFactory.ServiceProviderContextFactory() -> void
 BDTest.SkipStepAttribute
 BDTest.SkipStepAttribute.SkipStepAttribute() -> void
 BDTest.StepArgument
+BDTest.StepArgument.ToResult() -> BDTest.Contracts.StepArgument!
 BDTest.StepBuilder
 BDTest.StepDocString
 BDTest.StepDocString.Content.get -> string!
@@ -513,10 +534,10 @@ BDTest.StepTable.Headers.get -> System.Collections.Generic.IReadOnlyList<string!
 BDTest.StepTable.Rows.get -> System.Collections.Generic.IReadOnlyList<System.Collections.Generic.IReadOnlyList<string!>!>!
 BDTest.StepTable.StepTable(System.Collections.Generic.IReadOnlyList<string?>! headers, System.Collections.Generic.IReadOnlyList<System.Collections.Generic.IReadOnlyList<string?>!>! rows) -> void
 BDTest.StepTextAttribute
+BDTest.StepTextAttribute.ParameterOverrides.get -> System.Collections.Generic.IReadOnlyList<string!>!
 BDTest.StepTextAttribute.StepTextAttribute(string? stepText) -> void
 BDTest.StepTextAttribute.StepTextAttribute(string? stepText, string! parameterOverride) -> void
 BDTest.StepTextAttribute.StepTextAttribute(string? stepText, string![]! parameterOverrides) -> void
-BDTest.StepTextAttribute.ParameterOverrides.get -> System.Collections.Generic.IReadOnlyList<string!>!
 BDTest.StepTextAttribute.Text.get -> string?
 BDTest.StepTypeExtensions
 BDTest.StoryAttribute
@@ -531,6 +552,7 @@ BDTest.StoryAttribute.SoThat.get -> string?
 BDTest.StoryAttribute.SoThat.set -> void
 BDTest.StoryAttribute.StoryAttribute() -> void
 BDTest.StructuredStepArgumentExtensions
+BDTest.Test.ExceptionWrapper.ToResult() -> BDTest.Contracts.ExceptionInfo!
 BDTest.Test.Scenario.BdTestBaseClass.get -> BDTest.BDTestBase?
 BDTest.Test.Scenario.CustomTestInformation.get -> BDTest.TestInformationAttribute![]?
 BDTest.Test.Scenario.Status.get -> BDTest.Contracts.Status
@@ -597,21 +619,10 @@ override BDTest.BDTestScenario<TContext>.TestRun.get -> BDTest.BDTestRun!
 override BDTest.StepDocString.ToString() -> string!
 override BDTest.StepTable.ToString() -> string!
 static BDTest.BDTestBase.BeginPendingTestExecution() -> void
-static BDTest.BDTestReportUploadOptions.FromEnvironment(System.Uri! serverAddress, string! variableName = "BDTEST_UPLOAD_KEY") -> BDTest.BDTestReportUploadOptions!
 static BDTest.BDTestScenario.For<TContext>(object! testInstance, BDTest.BDTestRun! run) -> BDTest.BDTestScenario<TContext!>!
 static BDTest.BDTestUtil.GetNotRunScenarios(BDTest.BDTestRun! run) -> System.Collections.Generic.IReadOnlyList<BDTest.Contracts.ScenarioDefinitionSummary!>!
 static BDTest.BDTestUtil.GetScenarios(BDTest.BDTestRun! run) -> System.Collections.Generic.IReadOnlyList<BDTest.Contracts.ScenarioResult!>!
 static BDTest.BDTestUtil.GetTestTimer(System.Collections.Generic.IReadOnlyCollection<BDTest.Contracts.ScenarioResult!>! scenarios) -> BDTest.Contracts.ReportTimer!
-static BDTest.Helpers.BDTestAttachmentHelper.GetAttachments(BDTest.Contracts.BDTestReport! report) -> System.Collections.Generic.IEnumerable<BDTest.Contracts.AttachmentInfo!>!
-static BDTest.Helpers.BDTestHtmlHelper.GenerateHtmlReport(BDTest.Contracts.BDTestReport! data) -> string!
-static BDTest.Helpers.BDTestJsonHelper.DeserializeReport(string! json) -> BDTest.Contracts.BDTestReport!
-static BDTest.Helpers.BDTestJsonHelper.Serialize(BDTest.Contracts.BDTestReport! model) -> string!
-static BDTest.Helpers.BDTestJsonHelper.Serialize(BDTest.Contracts.BDTestReport! model, bool writeIndented) -> string!
-static BDTest.Helpers.BDTestJsonHelper.Serialize(BDTest.Maps.BDTestOutputModel? model) -> string!
-static BDTest.Helpers.BDTestJsonHelper.Serialize(BDTest.Maps.BDTestOutputModel? model, bool writeIndented) -> string!
-static BDTest.Helpers.ExceptionHtmlHelper.GetHtml(BDTest.Contracts.ExceptionInfo? exception) -> string!
-static BDTest.Helpers.StepArgumentHtmlHelper.GetHtml(System.Collections.Generic.IReadOnlyList<BDTest.Contracts.StepArgument!>? arguments) -> string!
-static BDTest.Helpers.StepArgumentHtmlHelper.GetHtml(System.Collections.Generic.IReadOnlyList<BDTest.StepArgument!>? arguments) -> string!
 static BDTest.StepTable.From(string?[]! headers, params object?[]![]! rows) -> BDTest.StepTable!
 static BDTest.StepTable.From<T>(System.Collections.Generic.IEnumerable<T>! rows) -> BDTest.StepTable!
 static BDTest.StepTypeExtensions.GetValue(this BDTest.Contracts.StepType stepType) -> string!

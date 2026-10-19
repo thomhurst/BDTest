@@ -3,6 +3,9 @@ title: Assembly runs
 description: Configure, report and dispose isolated runs owned by the built-in adapters.
 ---
 
+
+Install `BDTest.Reporting` alongside your adapter to export JSON, generate HTML or upload reports.
+Use matching package versions; see [reporting package migration](../migration/reporting-package.md).
 # Assembly runs
 
 The NUnit, xUnit, MSTest and TUnit adapters share one `BDTestRun` per concrete test assembly and framework. Different assemblies, including assemblies with the same name loaded separately, get separate options, scenario stores, captured output and report IDs. Different context types in the same assembly share a run.

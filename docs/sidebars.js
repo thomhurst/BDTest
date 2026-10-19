@@ -107,6 +107,7 @@ const sidebars = {
         'migration/named-step-text',
         'migration/scenario-definitions',
         'migration/immutable-results',
+        'migration/reporting-package',
         'migration/async-only',
         'migration/fluent-builders',
         'migration/internal-helpers',

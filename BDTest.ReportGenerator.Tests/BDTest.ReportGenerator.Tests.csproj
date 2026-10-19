@@ -22,4 +22,7 @@
   <ItemGroup>
     <ProjectReference Include="..\BDTest.Analyzers\BDTest.Analyzers.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\BDTest.Reporting\BDTest.Reporting.csproj" />
+  </ItemGroup>
 </Project>

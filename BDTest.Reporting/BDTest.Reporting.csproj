@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <IsPackable>true</IsPackable>
+    <PackageId>BDTest.Reporting</PackageId>
+    <Title>BDTest - Report Generation and Upload</Title>
+    <Description>JSON and self-contained HTML reports and report-server uploads for BDTest runs.</Description>
+    <PackageTags>test bdd reporting json html</PackageTags>
+    <TargetFrameworks>netstandard2.0;net8.0</TargetFrameworks>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\BDTest\BDTest.csproj" />
+    <InternalsVisibleTo Include="BDTest.Tests" Key="$(BDTestPublicKey)" />
+    <None Include="README.md" Pack="true" PackagePath="" />
+  </ItemGroup>
+</Project>

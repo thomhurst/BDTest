@@ -55,12 +55,18 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BDTest.Reports.Storage.File
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BDTest.Reports.Storage.AzureBlob", "BDTest.Reports.Storage.AzureBlob\BDTest.Reports.Storage.AzureBlob.csproj", "{0A52E9DD-980F-4284-96D4-29E634CBE76F}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BDTest.Reporting", "BDTest.Reporting\BDTest.Reporting.csproj", "{A7A98787-A454-4E89-A5C7-27D32D133FCF}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{A7A98787-A454-4E89-A5C7-27D32D133FCF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A7A98787-A454-4E89-A5C7-27D32D133FCF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A7A98787-A454-4E89-A5C7-27D32D133FCF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A7A98787-A454-4E89-A5C7-27D32D133FCF}.Release|Any CPU.Build.0 = Release|Any CPU
 		{0A52E9DD-980F-4284-96D4-29E634CBE76F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{0A52E9DD-980F-4284-96D4-29E634CBE76F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0A52E9DD-980F-4284-96D4-29E634CBE76F}.Release|Any CPU.ActiveCfg = Release|Any CPU

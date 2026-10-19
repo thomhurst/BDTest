@@ -109,6 +109,12 @@ BDTest records the scenario, its steps, their status and any console output. If 
 
 ## 5. Produce a report
 
+Install `BDTest.Reporting` at the same version as the adapter for this section:
+
+```bash
+dotnet add package BDTest.Reporting
+```
+
 Add an assembly-level hook that writes an HTML report after all tests have run:
 
 ```csharp sample="FirstTest/AccountReports.cs" title="Compiled example: AccountReports.cs"
