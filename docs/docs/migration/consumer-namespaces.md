@@ -12,7 +12,7 @@ are not compatibility aliases.
 
 | Previous namespace | Types now in `BDTest` |
 | --- | --- |
-| `BDTest.Test.Steps` and its `Given`, `When`, `Then` subnamespaces | All concrete step kinds, `StepBuilder`, the three continuation bases, `StepType` and its extensions |
+| `BDTest.Test.Steps` and its `Given`, `When`, `Then` subnamespaces | All concrete step kinds, `StepBuilder`, the three continuation bases, `StepTypeExtensions` |
 | `BDTest.Attributes` | Story, scenario, step text, retry, tag, skip and test-information attributes |
 | `BDTest.Test` | `BDTestBase`, `AbstractContextBDTestBase<T>`, `BDTestBuilder`, `BDTestScenario`, `BuildableTest`, `RunnableStepBuilder`, `ScenarioOutlineBuilder<T>` |
 | `BDTest.Test` | `BDTestContext`, `ContextCreation`, context factories/lifetime interfaces, `ScenarioHookContext`, structured step arguments and timeout/argument extensions |
@@ -39,11 +39,13 @@ and `Then(...).But(...)` returns `ButThen`. Custom adapters retain the protected
 [lifecycle, startup-output, pending-execution and assertion-scope API](../frameworks/custom-adapters.md).
 No additional friend assembly access is required.
 
-Keep `using BDTest.Test;` where you explicitly name result types such as
-`Scenario`, `Step`, `Status`, `ScenarioAttempt` or `ScenarioDefinitionSummary`.
-These result models and the independent `BDTest.Contracts` DTOs retain their
-namespaces. Report JSON property names, discriminators and historical payloads
-are unchanged. Report renderer/storage namespaces are also unchanged.
+Use `using BDTest.Contracts;` when explicitly naming immutable results such as
+`ScenarioResult`, `StepResult`, `ScenarioDefinitionSummary`, `Status` or `StepType`.
+These contracts retain their namespace; the namespace migration does not move
+them back into the execution package. The result migration is described in
+[immutable execution results](immutable-results.md). Legacy mutable models remain
+in `BDTest.Test` for the report compatibility bridge. Report renderer/storage
+namespaces are unchanged.
 
 Package IDs, assembly names, signing and target frameworks are unchanged. Install
 matching versions of the core, adapter, source generator and analyzer packages.

@@ -86,7 +86,7 @@ public class SnapshotPublicationTests
             throw new InvalidOperationException("argument unavailable");
         }
         if (operation == "inline") step.ExplicitArguments = new Func<object?>[] { ReadArgument };
-        if (operation == "attached") step.AttachedArguments.Add(() => { ReadArgument(); return new BDTest.Test.StepDocString(""); });
+        if (operation == "attached") step.AttachedArguments.Add(() => { ReadArgument(); return new global::BDTest.StepDocString(""); });
         if (operation == "reset") step.Diagnostics!.Add("previous attempt");
         var before = ResultSnapshot.Create(step);
         using var started = new ManualResetEventSlim();
@@ -147,7 +147,7 @@ public class SnapshotPublicationTests
         else await Assert.That(after.SkipReason!.Setting).IsEqualTo("replacement");
         await Assert.That(before.SkipReason!.Source).IsEqualTo("Rule");
     }
-    [BDTest.Attributes.StepText("value: {0}")]
+    [BDTest.StepText("value: {0}")]
     private static void DiagnosticStep(string value) { }
 
     [Test]

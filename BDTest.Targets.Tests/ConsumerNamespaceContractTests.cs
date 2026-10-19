@@ -54,7 +54,7 @@ public class ConsumerNamespaceContractTests
         ButThen butThen = andThen.But(() => calls++);
         RunnableStepBuilder runnable = butThen.WithDocString(new StepDocString("details"))
             .WithStepTimeout(TimeSpan.FromSeconds(10));
-        var scenario = await runnable.BDTestAsync();
+        BDTest.Contracts.ScenarioResult scenario = await runnable.BDTestAsync();
         Assert.That(calls, Is.EqualTo(9));
         Assert.That(scenario.Steps, Has.Count.EqualTo(9));
     }
@@ -62,7 +62,9 @@ public class ConsumerNamespaceContractTests
     [Test]
     public void No_public_step_type_uses_the_old_namespace_or_repeats_its_namespace_name()
     {
-        var types = typeof(BDTest.BDTestRun).Assembly.GetExportedTypes();
+        var assembly = typeof(BDTest.BDTestRun).Assembly;
+        var types = assembly.GetExportedTypes();
+        Assert.That(assembly.GetType("BDTest.StepType"), Is.Null, "The result enum belongs to BDTest.Contracts.");
         Assert.That(types.Where(type => type.Namespace?.StartsWith("BDTest.Test.Steps", StringComparison.Ordinal) == true), Is.Empty);
         Assert.That(types.Where(type => type.Namespace?.Split('.').Last() == type.Name.Split('`')[0]), Is.Empty);
     }

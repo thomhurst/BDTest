@@ -1,4 +1,4 @@
-using BDTest.Test.Steps;
+using BDTest;
 using BDTest.Contracts;
 using BDTest.Test;
 
@@ -55,10 +55,10 @@ internal static class ResultSnapshot
     internal static AttachmentInfo Create(Attachment attachment) => new(attachment.Id ?? "", attachment.Name ?? "",
         attachment.MimeType ?? "", attachment.Length, attachment.AttemptNumber, attachment.Uri);
 
-    internal static Contracts.StepArgument Create(Test.StepArgument argument) => argument switch
+    internal static Contracts.StepArgument Create(global::BDTest.StepArgument argument) => argument switch
     {
-        Test.StepTable table => new Contracts.StepTable(table.Headers, table.Rows),
-        Test.StepDocString text => new Contracts.StepDocString(text.Content, text.ContentType),
+        global::BDTest.StepTable table => new Contracts.StepTable(table.Headers, table.Rows),
+        global::BDTest.StepDocString text => new Contracts.StepDocString(text.Content, text.ContentType),
         _ => throw new InvalidOperationException("Unknown structured step argument.")
     };
 

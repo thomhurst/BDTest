@@ -357,6 +357,13 @@ intact; explicit removal entries preserve the migration's audit trail. Core's
 contract and legacy JSON serializers use separate compact and explicit-formatting
 overloads to satisfy the optional-parameter overload compatibility diagnostics.
 
+The consumer namespace migration (#973) records removed old names and replacement
+root names in unshipped baselines for each affected target. It preserves existing
+caller-info overloads and their optional defaults. Those moved methods carry
+individual `RS0026` suppressions: the overload sets already existed before the
+namespace move. Addition/removal diagnostics remain enabled, and newly added
+methods do not inherit these exceptions. Shipped snapshots remain unchanged.
+
 Every packable runtime project imports `build/PublicApi.targets` through the
 existing package metadata hook. It privately references
 `Microsoft.CodeAnalysis.PublicApiAnalyzers`; compiler extensions

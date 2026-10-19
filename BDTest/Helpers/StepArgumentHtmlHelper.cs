@@ -10,10 +10,10 @@ public static class StepArgumentHtmlHelper
     private const int PreviewRows = 20;
 
     // Compatibility entry point for the hosted report model until its migration.
-    public static string GetHtml(IReadOnlyList<Test.StepArgument>? arguments) =>
+    public static string GetHtml(IReadOnlyList<global::BDTest.StepArgument>? arguments) =>
         GetHtml(arguments?.Select(ResultSnapshot.Create).ToArray());
 
-    public static string GetHtml(IReadOnlyList<StepArgument>? arguments)
+    public static string GetHtml(IReadOnlyList<Contracts.StepArgument>? arguments)
     {
         if (arguments == null || arguments.Count == 0) return string.Empty;
         var html = new StringBuilder();
@@ -22,7 +22,7 @@ public static class StepArgumentHtmlHelper
             html.Append("<div class=\"step-argument\" style=\"overflow-x:auto\">");
             switch (argument)
             {
-                case StepTable table:
+                case Contracts.StepTable table:
                     AppendTable(html, table, table.Rows.Take(PreviewRows));
                     if (table.Rows.Count > PreviewRows)
                     {
@@ -31,7 +31,7 @@ public static class StepArgumentHtmlHelper
                         html.Append("</details>");
                     }
                     break;
-                case StepDocString docString:
+                case Contracts.StepDocString docString:
                     html.Append($"<pre><code data-content-type=\"{Encode(docString.ContentType)}\">{Encode(docString.Content)}</code></pre>");
                     break;
             }
@@ -40,7 +40,7 @@ public static class StepArgumentHtmlHelper
         return html.ToString();
     }
 
-    private static void AppendTable(StringBuilder html, StepTable table, IEnumerable<IReadOnlyList<string>> rows)
+    private static void AppendTable(StringBuilder html, Contracts.StepTable table, IEnumerable<IReadOnlyList<string>> rows)
     {
         html.Append("<table class=\"table step-argument-table\"><thead><tr>");
         foreach (var header in table.Headers)

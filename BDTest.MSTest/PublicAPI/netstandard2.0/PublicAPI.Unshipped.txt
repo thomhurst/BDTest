@@ -1,1 +1,51 @@
 #nullable enable
+*REMOVED*BDTest.MSTest.BDTestClassAttribute
+*REMOVED*BDTest.MSTest.BDTestClassAttribute.BDTestClassAttribute() -> void
+*REMOVED*BDTest.MSTest.IBDTestMSTestTest
+*REMOVED*BDTest.MSTest.IBDTestMSTestTest.BDTestHost.get -> BDTest.Test.BDTestBase!
+*REMOVED*BDTest.MSTest.MSTestBDTestAssembly
+*REMOVED*BDTest.MSTest.MSTestBDTestBase<TContext>
+*REMOVED*BDTest.MSTest.MSTestBDTestBase<TContext>.BDTestMSTestTearDown() -> System.Threading.Tasks.Task!
+*REMOVED*BDTest.MSTest.MSTestBDTestBase<TContext>.InitializeBDTest() -> void
+*REMOVED*BDTest.MSTest.MSTestBDTestBase<TContext>.MSTestBDTestBase() -> void
+*REMOVED*BDTest.MSTest.MSTestBDTestBase<TContext>.TearDown() -> void
+*REMOVED*BDTest.MSTest.MSTestBDTestBase<TContext>.TestContext.get -> Microsoft.VisualStudio.TestTools.UnitTesting.TestContext?
+*REMOVED*BDTest.MSTest.MSTestBDTestBase<TContext>.TestContext.set -> void
+*REMOVED*BDTest.MSTest.MSTestBDTestLifecycle
+*REMOVED*BDTest.MSTest.MSTestBDTestScenario
+*REMOVED*override BDTest.MSTest.BDTestClassAttribute.GetTestMethodAttribute(Microsoft.VisualStudio.TestTools.UnitTesting.TestMethodAttribute! testMethodAttribute) -> Microsoft.VisualStudio.TestTools.UnitTesting.TestMethodAttribute!
+*REMOVED*override BDTest.MSTest.MSTestBDTestBase<TContext>.OnScenarioSkipped(string! reason) -> void
+*REMOVED*override BDTest.MSTest.MSTestBDTestBase<TContext>.TestRun.get -> BDTest.BDTestRun!
+*REMOVED*static BDTest.MSTest.MSTestBDTestAssembly.Dispose(System.Reflection.Assembly! assembly) -> void
+*REMOVED*static BDTest.MSTest.MSTestBDTestAssembly.GetRun(System.Reflection.Assembly! assembly) -> BDTest.BDTestRun!
+*REMOVED*static BDTest.MSTest.MSTestBDTestBase<TContext>.OutcomeMap.get -> BDTest.Settings.FrameworkOutcomeMap!
+*REMOVED*static BDTest.MSTest.MSTestBDTestLifecycle.Initialize(BDTest.MSTest.IBDTestMSTestTest! test, Microsoft.VisualStudio.TestTools.UnitTesting.TestContext! context) -> void
+*REMOVED*static BDTest.MSTest.MSTestBDTestLifecycle.OutcomeMap.get -> BDTest.Settings.FrameworkOutcomeMap!
+*REMOVED*static BDTest.MSTest.MSTestBDTestScenario.For<TContext>(object! testInstance) -> BDTest.Test.BDTestScenario<TContext!>!
+*REMOVED*static BDTest.MSTest.MSTestBDTestScenario.For<TContext>(object! testInstance, BDTest.BDTestRun! run) -> BDTest.Test.BDTestScenario<TContext!>!
+*REMOVED*static BDTest.MSTest.MSTestBDTestScenario.OutcomeMap.get -> BDTest.Settings.FrameworkOutcomeMap!
+BDTest.BDTestClassAttribute
+BDTest.BDTestClassAttribute.BDTestClassAttribute() -> void
+BDTest.IBDTestMSTestTest
+BDTest.IBDTestMSTestTest.BDTestHost.get -> BDTest.BDTestBase!
+BDTest.MSTestBDTestAssembly
+BDTest.MSTestBDTestBase<TContext>
+BDTest.MSTestBDTestBase<TContext>.BDTestMSTestTearDown() -> System.Threading.Tasks.Task!
+BDTest.MSTestBDTestBase<TContext>.InitializeBDTest() -> void
+BDTest.MSTestBDTestBase<TContext>.MSTestBDTestBase() -> void
+BDTest.MSTestBDTestBase<TContext>.TearDown() -> void
+BDTest.MSTestBDTestBase<TContext>.TestContext.get -> Microsoft.VisualStudio.TestTools.UnitTesting.TestContext?
+BDTest.MSTestBDTestBase<TContext>.TestContext.set -> void
+BDTest.MSTestBDTestLifecycle
+BDTest.MSTestBDTestScenario
+override BDTest.BDTestClassAttribute.GetTestMethodAttribute(Microsoft.VisualStudio.TestTools.UnitTesting.TestMethodAttribute! testMethodAttribute) -> Microsoft.VisualStudio.TestTools.UnitTesting.TestMethodAttribute!
+override BDTest.MSTestBDTestBase<TContext>.OnScenarioSkipped(string! reason) -> void
+override BDTest.MSTestBDTestBase<TContext>.TestRun.get -> BDTest.BDTestRun!
+static BDTest.MSTestBDTestAssembly.Dispose(System.Reflection.Assembly! assembly) -> void
+static BDTest.MSTestBDTestAssembly.GetRun(System.Reflection.Assembly! assembly) -> BDTest.BDTestRun!
+static BDTest.MSTestBDTestBase<TContext>.OutcomeMap.get -> BDTest.Settings.FrameworkOutcomeMap!
+static BDTest.MSTestBDTestLifecycle.Initialize(BDTest.IBDTestMSTestTest! test, Microsoft.VisualStudio.TestTools.UnitTesting.TestContext! context) -> void
+static BDTest.MSTestBDTestLifecycle.OutcomeMap.get -> BDTest.Settings.FrameworkOutcomeMap!
+static BDTest.MSTestBDTestScenario.For<TContext>(object! testInstance) -> BDTest.BDTestScenario<TContext!>!
+static BDTest.MSTestBDTestScenario.For<TContext>(object! testInstance, BDTest.BDTestRun! run) -> BDTest.BDTestScenario<TContext!>!
+static BDTest.MSTestBDTestScenario.OutcomeMap.get -> BDTest.Settings.FrameworkOutcomeMap!
