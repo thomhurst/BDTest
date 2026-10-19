@@ -11,48 +11,28 @@ namespace BDTest.Tests.Fixtures;
 [NonParallelizable]
 public class ReportModelTests
 {
-    private Dictionary<string, string>? _customProperties;
-
-    [SetUp]
-    public void SetUp()
+    private static BDTestRunDescriptor Descriptor() => new()
     {
-        TestResetHelper.ResetData();
-        _customProperties = new Dictionary<string, string>(LegacySettings.CustomProperties);
-        LegacySettings.CustomProperties.Clear();
-        LegacySettings.CustomProperties.Add("Build <number>", "42 & counting");
-    }
+        Environment = "staging", Tag = "nightly", BranchName = "main",
+        CustomProperties = { ["Build <number>"] = "42 & counting" }
+    };
 
-    [TearDown]
-    public void TearDown()
-    {
-        LegacySettings.CustomProperties.Clear();
-        foreach (var property in Required(_customProperties))
-            LegacySettings.CustomProperties.Add(property.Key, property.Value);
-        TestResetHelper.ResetData();
-    }
-
-    [TestCase(false)]
-    [TestCase(true)]
-    public async Task Json_and_upload_contain_the_same_complete_run_snapshot(bool useDefaultRun)
+    [Test]
+    public async Task Json_and_upload_contain_the_same_complete_run_snapshot()
     {
         using var explicitRun = BDTestRun.Start();
         using var otherRun = BDTestRun.Start();
-        var run = useDefaultRun ? BDTestRun.Default : explicitRun;
+        var run = explicitRun;
         var fixture = new Capture(run);
         var scenario = await fixture.Build().WithScenarioText("selected scenario").BDTestAsync();
         _ = fixture.Build().WithScenarioText("selected pending");
         await new Capture(otherRun).Build().WithScenarioText("other scenario").BDTestAsync();
         _ = new Capture(otherRun).Build().WithScenarioText("other pending");
-        var descriptor = new BDTestRunDescriptor { Environment = "staging", Tag = "nightly", BranchName = "main" };
-        var json = useDefaultRun
-            ? BDTestJsonHelper.GetTestJsonData(descriptor)
-            : BDTestJsonHelper.GetTestJsonData(descriptor, run);
+        var descriptor = Descriptor();
+        var json = BDTestJsonHelper.GetTestJsonData(descriptor, run);
         using var handler = new ReportHandler();
         using var client = new HttpClient(handler);
-        if (useDefaultRun)
-            await BDTestReportServer.SendDataAndGetReportUriAsync(new Uri("https://reports.example"), descriptor, client);
-        else
-            await BDTestReportServer.SendDataAndGetReportUriAsync(new Uri("https://reports.example"), descriptor, client, run);
+        await BDTestReportServer.SendDataAndGetReportUriAsync(new Uri("https://reports.example"), descriptor, client, run);
 
         Assert.That(JToken.DeepEquals(JToken.Parse(json), JToken.Parse(Required(handler.Payload))), Is.True,
             "Formatting may differ, but JSON export and upload must have the same report values.");
@@ -69,25 +49,22 @@ public class ReportModelTests
         Assert.That(Required(report.TestTimer).TestsFinishedAt, Is.EqualTo(scenario.EndTime));
         Assert.That(report.CustomProperties, Is.EquivalentTo(new Dictionary<string, string> { ["Build <number>"] = "42 & counting" }));
 
-        var html = useDefaultRun
-            ? BDTestHtmlHelper.GetTestHtmlReport(descriptor)
-            : BDTestHtmlHelper.GetTestHtmlReport(descriptor, run);
+        var html = BDTestHtmlHelper.GetTestHtmlReport(descriptor, run);
         Assert.That(html, Does.Contain("selected scenario").And.Contain("selected pending"));
         Assert.That(html, Does.Not.Contain("other scenario").And.Not.Contain("other pending"));
         Assert.That(html, Does.Contain("<dt>Build &lt;number&gt;</dt><dd>42 &amp; counting</dd>"));
     }
 
-    [TestCase(false)]
-    [TestCase(true)]
-    public async Task Empty_reports_keep_the_selected_run_start_and_properties(bool useDefaultRun)
+    [Test]
+    public async Task Empty_reports_keep_the_selected_run_start_and_properties()
     {
         using var explicitRun = BDTestRun.Start();
-        var run = useDefaultRun ? BDTestRun.Default : explicitRun;
+        var run = explicitRun;
         var beforeReport = DateTime.UtcNow;
-        var json = useDefaultRun ? BDTestJsonHelper.GetTestJsonData() : BDTestJsonHelper.GetTestJsonData(null, run);
+        var json = BDTestJsonHelper.GetTestJsonData(Descriptor(), run);
         using var handler = new ReportHandler();
         using var client = new HttpClient(handler);
-        await BDTestReportServer.SendDataAndGetReportUriAsync(new Uri("https://reports.example"), null, client, run);
+        await BDTestReportServer.SendDataAndGetReportUriAsync(new Uri("https://reports.example"), Descriptor(), client, run);
 
         foreach (var payload in new[] { json, Required(handler.Payload) })
         {
@@ -99,7 +76,7 @@ public class ReportModelTests
             Assert.That(Required(report.TestTimer).TestsFinishedAt, Is.InRange(beforeReport, DateTime.UtcNow));
             Assert.That(Required(report.CustomProperties)["Build <number>"], Is.EqualTo("42 & counting"));
         }
-        var html = useDefaultRun ? BDTestHtmlHelper.GetTestHtmlReport() : BDTestHtmlHelper.GetTestHtmlReport(null, run);
+        var html = BDTestHtmlHelper.GetTestHtmlReport(Descriptor(), run);
         Assert.That(html, Does.Contain("No scenarios ran"));
         Assert.That(html, Does.Contain("<dt>Build &lt;number&gt;</dt><dd>42 &amp; counting</dd>"));
     }
@@ -108,11 +85,12 @@ public class ReportModelTests
     public void Report_properties_are_copied_at_export_time_even_for_explicit_runs()
     {
         using var run = BDTestRun.Start();
-        var report = BDTestOutputModelBuilder.Build(run, null);
-        LegacySettings.CustomProperties["Build <number>"] = "next build";
+        var descriptor = Descriptor();
+        var report = BDTestOutputModelBuilder.Build(run, descriptor);
+        descriptor.CustomProperties["Build <number>"] = "next build";
 
         Assert.That(Required(report.CustomProperties)["Build <number>"], Is.EqualTo("42 & counting"));
-        var nextReport = Required(BDTestJsonHelper.Deserialize(BDTestJsonHelper.GetTestJsonData(null, run)));
+        var nextReport = Required(BDTestJsonHelper.Deserialize(BDTestJsonHelper.GetTestJsonData(descriptor, run)));
         Assert.That(Required(nextReport.CustomProperties)["Build <number>"], Is.EqualTo("next build"));
     }
 
@@ -140,10 +118,10 @@ public class ReportModelTests
         using var handler = new ReportHandler();
         using var client = new HttpClient(handler);
 
-        Assert.Throws<ObjectDisposedException>(() => BDTestJsonHelper.GetTestJsonData(null, run));
-        Assert.Throws<ObjectDisposedException>(() => BDTestHtmlHelper.GetTestHtmlReport(null, run));
+        Assert.Throws<ObjectDisposedException>(() => BDTestJsonHelper.GetTestJsonData(Descriptor(), run));
+        Assert.Throws<ObjectDisposedException>(() => BDTestHtmlHelper.GetTestHtmlReport(Descriptor(), run));
         await Assert.ThrowsAsync<ObjectDisposedException>(() => BDTestReportServer.SendDataAndGetReportUriAsync(
-            new Uri("https://reports.example"), null, client, run));
+            new Uri("https://reports.example"), Descriptor(), client, run));
         Assert.That(handler.RequestCount, Is.Zero);
     }
 

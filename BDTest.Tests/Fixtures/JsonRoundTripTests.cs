@@ -8,7 +8,7 @@ using NUnit.Framework;
 
 namespace BDTest.Tests.Fixtures;
 
-public class JsonRoundTripTests
+public class JsonRoundTripTests : TestRunOwner
 {
     private static readonly BDTestJsonContext DurationContext = new(new JsonSerializerOptions
     {
@@ -26,7 +26,7 @@ public class JsonRoundTripTests
     [TestCase(StepType.ButThen, "But")]
     public void Step_round_trip_preserves_type_and_reporting_prefix(StepType stepType, string prefix)
     {
-        var step = new Step(new Runnable(() => NoOp()), stepType, "scenario", "report");
+        var step = new Step(new Runnable(() => NoOp()), stepType, "scenario", "report", TestRun);
         var restored = ReportJson.DeserializeObject<Step>(ReportJson.SerializeObject(step));
 
         Assert.That((string?)JObject.Parse(ReportJson.SerializeObject(restored))["StepType"], Is.EqualTo(stepType.ToString()));

@@ -7,11 +7,8 @@ using NUnit.Framework;
 namespace BDTest.Tests.Fixtures;
 
 [NonParallelizable]
-public class DelegateStepTests : BDTestBase
+public class DelegateStepTests : RunTestBase
 {
-    [SetUp]
-    public void Setup() => TestResetHelper.ResetData();
-
     [Test]
     public async Task Every_continuation_accepts_Task_ValueTask_and_generic_ValueTask_delegates()
     {
@@ -38,7 +35,7 @@ public class DelegateStepTests : BDTestBase
     [Test]
     public async Task Explicit_generic_root_and_continuation_calls_preserve_generated_skip_attributes()
     {
-        BDTest.Settings.BDTestSettings.GlobalSkipStepRules.Add<SkipDelegateStepAttribute>(_ => true);
+        Options.SkipStepRules.Add<SkipDelegateStepAttribute>(_ => true);
         var given = await Given<int>(() => SkippedValueTask()).When(() => Accept(42)).Then(() => Accept(42)).BDTestAsync();
         var when = await When<int>(() => SkippedValueTask()).Then(() => Accept(42)).BDTestAsync();
         var then = await When(() => Accept(42)).Then<int>(() => SkippedValueTask()).BDTestAsync();
@@ -126,7 +123,7 @@ public class DelegateStepTests : BDTestBase
     {
         var builder = When(() => { throw new InvalidOperationException("delegate failure"); }).Then(() => Accept(42));
         Assert.ThrowsAsync<InvalidOperationException>(async () => await builder.BDTestAsync());
-        var step = Required(BDTestUtil.GetScenarios().Single().Steps)[0];
+        var step = Required(BDTestUtil.GetScenarios(TestRun).Single().Steps)[0];
         Assert.That(step.Output, Does.Contain("delegate failure").And.Contain("executing").And.Contain("When"));
     }
 

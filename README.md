@@ -46,8 +46,8 @@ references and writes TRX results for both runners. See
 
 Built-in adapters now own a frozen run per test assembly. Configure options with
 `[assembly: BDTestConfiguration(typeof(TestConfiguration))]` and implement
-`IBDTestConfiguration.Configure(BDTestOptions options)`. Global `BDTestSettings`
-execution examples in this README apply only to the legacy standalone default run.
+`IBDTestConfiguration.Configure(BDTestOptions options)`. Standalone callers configure
+options before starting their explicitly owned run.
 
 Get the run from `NUnitBDTestAssembly`, `XUnitBDTestAssembly`, `MSTestBDTestAssembly`
 or `TUnitBDTestAssembly` using `GetRun(typeof(MyTests).Assembly)`. Pass it explicitly
@@ -211,20 +211,11 @@ Follow the [getting started guide](https://thomhurst.github.io/BDTest/docs/getti
 
 ### Custom step text converters
 
-Implement `BDTest.Interfaces.IStepTextStringConverter<T>` and register the converter
-through `BDTest.Settings.BDTestSettings`:
+Implement `BDTest.Interfaces.IStepTextStringConverter<T>` and register it in
+assembly configuration or on options before starting a run:
 
 ```csharp
-var converter = new NumberTextConverter();
-BDTestSettings.RegisterCustomStringConverter(converter);
-try
-{
-    // Build steps whose arguments should use this converter.
-}
-finally
-{
-    BDTestSettings.RemoveCustomStringConverter(converter);
-}
+options.RegisterCustomStringConverter<int>(new NumberTextConverter());
 
 public sealed class NumberTextConverter : IStepTextStringConverter<int>
 {
@@ -232,25 +223,10 @@ public sealed class NumberTextConverter : IStepTextStringConverter<int>
 }
 ```
 
-`RegisterCustomStringConverter` and `RemoveCustomStringConverter` support concurrent
-registration, removal, and step text generation. Each argument uses a stable snapshot
-of converters in registration order; the first matching converter wins. Changes made
-after that snapshot apply to subsequent argument conversions. Duplicate registrations
-are allowed; removal deletes the first equal registration and returns whether one
-was found. Both methods reject null converters.
-
-Converter callbacks run outside the registration lock and can run concurrently.
-Converters must protect their own mutable state. Removal does not cancel a callback
-or exclude a converter from an earlier snapshot; wait for those conversions to finish
-before disposing converter resources. Text is rendered once per executed attempt, so
-registration changes apply to later renders, including retries, but do not rewrite completed report text.
-
-The existing `CustomStringConverters` property remains a `List<object>` for compatibility.
-Direct access is supported during setup before concurrent access begins. For concurrent
-legacy access, hold `lock (BDTestSettings.CustomStringConverters)` for every read,
-enumeration, and mutation, using the same lock as the registration API and snapshots.
-Unsynchronized legacy list mutations are not thread-safe, even when other callers use
-the new API.
+The first matching typed registration wins, using the registered `T` interface
+contract. Registrations freeze when the run starts and remain fixed through retries.
+Callbacks can run concurrently and must protect mutable state. Keep converter
+resources alive until the run completes. Null converters are rejected.
 
 ### Scenario and story tags
 
@@ -262,7 +238,7 @@ be empty.
 
 ```csharp
 [BDTestTag("checkout")]
-public class CheckoutTests : BDTestBase
+public class CheckoutTests : TUnitBDTestBase<object>
 {
     [BDTestTag("smoke")]
     public async Task Successful_checkout()
@@ -328,7 +304,7 @@ cleanup and call `base.DisposeAsync()` in `finally`.
 Calling the start hook inside a separate async setup method or `Task.Run` does
 not propagate its `AsyncLocal` values back to the caller. Per-test fixture
 instances retain their execution identity across runner setup/body boundaries.
-The legacy standalone default still creates an ID on first access. Existing
+Standalone builders create an execution ID on construction. Existing
 `BDTestExecutionId` overrides remain supported for compatibility, but custom
 adapters should migrate to `BeginTest(id)`. `MarkTestAsStarted()` and
 `MarkTestAsComplete()` remain as obsolete compatibility shims. See the
@@ -336,39 +312,32 @@ adapters should migrate to `BeginTest(id)`. `MarkTestAsStarted()` and
 
 ### Before and after step hooks
 
-Register asynchronous global hooks during test-run setup:
+Register `BDTest.Interfaces.IStepHook` instances on `options.StepHooks` before
+the run starts, or in assembly configuration:
 
 ```csharp
-BDTestSettings.BeforeStep += step =>
-{
-    Console.WriteLine($"Starting: {step.StepText}");
-    return Task.CompletedTask;
-};
+options.StepHooks.Add(new StepLogger());
 
-BDTestSettings.AfterStep += async step =>
+public sealed class StepLogger : IStepHook
 {
-    if (step.Status == Status.Failed)
+    public Task BeforeStepAsync(Step step)
     {
-        await SaveScreenshotAsync(step.ScenarioId, step.Guid);
+        Console.WriteLine($"Starting: {step.StepText}");
+        return Task.CompletedTask;
     }
-};
+    public Task AfterStepAsync(Step step)
+    {
+        Console.WriteLine($"Finished: {step.Status}");
+        return Task.CompletedTask;
+    }
+}
 ```
 
-Use `BDTest.Settings` for `BDTestSettings` and `BDTest.Test` for `Step` and `Status`.
-For per-test hooks, override `OnBeforeStep(Step step)` and `OnAfterStep(Step step)`
-on your `BDTestBase` or framework adapter. These methods return `Task` and can
-access the test's context. Global handlers may run concurrently for different
-tests, so keep their shared state thread-safe. Remove a global handler with `-=`
-when its registration is no longer needed.
-
-For each reached step, BDTest awaits global before hooks in registration order,
-then the test's before hook, then the step, then the test's after hook, then global
-after hooks in registration order. Subscriptions are captured at step entry;
-changes during a step apply to subsequent steps. Before hooks stop at the first
-exception. Every after hook still runs if a before hook, the step, or another
-after hook throws. The original execution exception takes precedence; secondary
-after-hook exceptions are logged. Otherwise the first after-hook exception
-determines the result using the usual exception and retry rules.
+For per-test hooks, override `OnBeforeStep(Step step)` and `OnAfterStep(Step step)`.
+Run hooks surround the instance hooks in registration order. Registrations freeze
+at run startup. Hook objects may be shared across concurrent tests and must protect
+mutable state. Before hooks stop at the first exception; every after hook runs,
+and the original execution failure takes precedence over secondary hook failures.
 
 After hooks receive the step's `Status`, `Exception`, `Output`, `StartTime`,
 `EndTime`, and `TimeTaken`. Timing includes before hooks and the step, and excludes
@@ -423,7 +392,7 @@ await Given(() => AccountExists())
 
 Repeat `.But(...)`, combine it with `.And(...)` in Given and Then phases, or use
 `.WithStepText(() => ...)` to customize its text. A But step in the When phase is
-skipped when `BDTestSettings.Debug.ShouldSkipWhenStep` is enabled.
+skipped when `options.Debug.ShouldSkipWhenStep` is enabled.
 
 ### Step text and argument values
 
@@ -481,7 +450,7 @@ severe outcome is rethrown to the test runner. Passed rows with skipped rows pas
 all-skipped rows skip. Failure, not-implemented, and inconclusive rows take priority.
 
 JSON, standalone HTML, and Razor reports contain one outline with an example table
-and per-row results. `BDTestUtil.GetScenarios()` returns the outline; its `Examples`
+and per-row results. `BDTestUtil.GetScenarios(run)` returns the outline; its `Examples`
 collection contains the row scenarios and their `ExampleValues`. An outline needs
 at least one example and, like a regular chain, runs once through `BDTestAsync()`
 or direct `await`.
@@ -568,14 +537,13 @@ including builders executed later and scenario outline examples. Each run has a 
 An explicit run also has its own executor. JSON/HTML report helpers and report uploads
 accept a run; for example,
 `BDTestReportServer.SendDataAndGetReportUriAsync(run, serverAddress, descriptor)`.
-Report overloads without a run still select the legacy standalone default run.
+Every report export and store utility requires a run.
 Built-in adapters use their configured assembly run; pass it explicitly to helpers.
 
-JSON, HTML and uploads use the same report model. All three copy the obsolete
-`BDTestSettings.CustomProperties` at export time, including for explicit runs;
-HTML displays these values under **Run properties**. Configure this process-wide
-dictionary before exporting, without concurrent changes. Descriptor metadata takes
-precedence over the legacy settings. Missing metadata stays `null` in JSON and
+JSON, HTML and uploads use the same report model. Metadata comes only from the
+supplied `BDTestRunDescriptor`, including its `CustomProperties` dictionary. Exports
+copy custom properties; HTML displays them under **Run properties**. Do not mutate
+a descriptor concurrently with export. Missing metadata stays `null` in JSON and
 uploads; HTML displays "Not Specified". See [report output guidance](https://thomhurst.github.io/BDTest/docs/reports/overview).
 
 Dispose a run only after its tests and output writers finish. Disposal clears its stores
@@ -599,9 +567,8 @@ using var run = BDTestRun.Start(options);
 
 `Start(options)` copies exception types, retry and skip rules, debug settings, typed
 converters and ordered step hooks. Later changes to the options affect only new runs.
-`Start()` uses empty registrations and default debug settings. Explicit runs do not
-inherit execution settings from `BDTestSettings`; register any framework exceptions
-your custom adapter needs.
+`Start()` uses empty registrations and default debug settings. Register any framework
+outcomes your custom adapter needs before starting the run.
 Configure options before starting a run, without concurrent mutations. Callback,
 converter and hook instances are not cloned and remain responsible for their own
 thread safety.
@@ -614,9 +581,9 @@ run after hooks follow `OnAfterStep`. Hooks also run for reached skipped steps a
 retry attempts. Every after hook runs even if another hook fails; an original step
 failure takes precedence over after-hook failures.
 
-`BDTestSettings` still configures the legacy standalone default run. Built-in
-adapters use [assembly configuration](docs/docs/configuration/assembly-runs.md).
-Removal of the remaining legacy global APIs is tracked in #954.
+Custom adapters must implement `TestRun`. Standalone builders require
+`new BDTestBuilder(run)` and core composition requires
+`BDTestScenario.For<TContext>(testInstance, run)`. See [migration from global settings](docs/docs/migration/explicit-runs.md).
 
 ### Report date formatting
 
@@ -667,7 +634,7 @@ The bundled Razor server reads `BDTest:UploadApiKey` from configuration (for exa
 using var client = new HttpClient();
 client.DefaultRequestHeaders.Add("X-BDTest-Upload-Key", uploadApiKey);
 var reportUri = await BDTestReportServer.SendDataAndGetReportUriAsync(
-    serverAddress, new BDTestRunDescriptor(), client);
+    serverAddress, new BDTestRunDescriptor(), client, run);
 ```
 
 `POST /bdtest/data` checks the key and rate limit before parsing or decompressing JSON. This endpoint accepts plain JSON or `Content-Encoding: gzip`, including chunked requests. Other content encodings or stacked encodings return `415`; malformed gzip or JSON returns `400`. JSON media types and UTF-8/UTF-16 support are unchanged. Other host endpoints are not decompressed by BDTest.
@@ -806,7 +773,7 @@ client.DefaultRequestHeaders.Add(
 var reportUri = await BDTestReportServer.SendDataAndGetReportUriAsync(
     new Uri("https://your-report-host"),
     new BDTestRunDescriptor(),
-    client);
+    client, run);
 ```
 
 For your own ASP.NET Core host, register an authentication provider and named read and admin policies. For example, with the `Microsoft.Identity.Web` and `Microsoft.Identity.Web.UI` packages:
@@ -995,7 +962,7 @@ the xUnit runner report these scenarios as skipped, without retries.
 Standalone `BDTestBase`/`BDTestBuilder` callers can still inspect the returned
 skipped scenario. Custom adapters can override `OnScenarioSkipped(string reason)`
 to invoke their runner's skip mechanism. Register runner skip exception types in
-`BDTestSettings.CustomExceptionSettings.SkipExceptionTypes`, keeping genuine
+`options.SkipExceptionTypes`, keeping genuine
 inconclusive exceptions in `InconclusiveExceptionTypes`.
 
 Run `pwsh scripts/Test-SkipOutcomes.ps1` to verify actual NUnit, xUnit, MSTest and TUnit
@@ -1004,9 +971,8 @@ runner outcomes as well as BDTest's scenario and step statuses.
 ### Exception outcomes
 
 Steps, scenarios, and outline examples share the same exception classification.
-Types registered in `BDTestOptions` for an explicit run, or in
-`BDTestSettings.CustomExceptionSettings` for the legacy default run, match both
-the registered type and its subclasses. Explicit runs use their frozen registrations. Classification recursively unwraps
+Types registered in `BDTestOptions` match both
+the registered type and its subclasses. Runs use their frozen registrations. Classification recursively unwraps
 `TargetInvocationException` and `AggregateException` with exactly one inner
 exception. An aggregate with multiple inner exceptions (or none) stays intact
 and is `Failed` unless its own type or a base type is explicitly registered;

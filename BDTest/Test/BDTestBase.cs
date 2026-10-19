@@ -18,7 +18,7 @@ public abstract class BDTestBase
 
     /// <summary>Gets the run that owns this test's scenarios and output.</summary>
     /// <remarks>Custom adapters should override this property with a stable, explicitly owned run.</remarks>
-    public virtual BDTestRun TestRun => BDTestRun.Default;
+    public abstract BDTestRun TestRun { get; }
 
     private static readonly AsyncLocal<string?> AsyncLocalBDTestExecutionId = new();
     private readonly AsyncLocal<TestExecution?> _execution = new();
@@ -231,10 +231,10 @@ public abstract class BDTestBase
         else OnScenarioSkipped(reason);
     }
 
-    /// <summary>Runs before each reached step, after the global before hooks.</summary>
+    /// <summary>Runs before each reached step, after the run before hooks.</summary>
     public virtual Task OnBeforeStep(Step step) => Task.CompletedTask;
 
-    /// <summary>Runs after each reached step, before the global after hooks.</summary>
+    /// <summary>Runs after each reached step, before the run after hooks.</summary>
     /// <remarks>
     /// The step contains its status, exception, output and timing. This hook runs even when the
     /// step or a before hook throws, and for individually skipped steps, but not for unreached steps

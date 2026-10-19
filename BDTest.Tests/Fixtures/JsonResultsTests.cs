@@ -16,12 +16,12 @@ namespace BDTest.Tests.Fixtures;
     IWant = "to make sure that BDTest works",
     SoThat = "other developers can use it confidently")]
 [Parallelizable(ParallelScope.None)]
-public class JsonResultsTests : LegacyNUnitBDTestBase<MyTestContext>
+public class JsonResultsTests : RunNUnitTestBase<MyTestContext>
 {
     [SetUp, TearDown]
     public void ResetScenarioData()
     { 
-        TestResetHelper.ResetData();    
+
     }
         
     [Test]
@@ -33,9 +33,9 @@ public class JsonResultsTests : LegacyNUnitBDTestBase<MyTestContext>
             .Then(() => CustomStep("1", "2"))
             .BDTestAsync();
 
-        var inMemoryScenario = BDTestUtil.GetScenarios().Single();
+        var inMemoryScenario = BDTestUtil.GetScenarios(TestRun).Single();
             
-        var json = BDTestJsonHelper.GetTestJsonData();
+        var json = BDTestJsonHelper.GetTestJsonData(null, TestRun);
         var jObject = JObject.Load(new JsonTextReader(new StringReader(json)));
 
         var scenarios = ReportJson.DeserializeObject<List<Scenario>>(Required(jObject.GetValue("Scenarios")).ToString());

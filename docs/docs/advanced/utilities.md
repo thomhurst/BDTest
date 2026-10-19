@@ -5,20 +5,20 @@ description: Read collected scenarios with BDTestUtil, and the Scenario, Step an
 
 # Utilities and model
 
-For built-in adapters, pass the [configured assembly run](../configuration/assembly-runs.md) to report/utility helpers. Overloads without a run still select the legacy standalone store and do not contain adapter-owned scenarios. Export all reports before disposing through the assembly owner.
+For built-in adapters, pass the [configured assembly run](../configuration/assembly-runs.md) to report/utility helpers. Every export and store utility requires the owning run. Export all reports before disposing through the assembly owner.
 
 
 ## `BDTestUtil`
 
-`BDTest.BDTestUtil` is the public read API over the scenarios collected in the process.
+`BDTest.BDTestUtil` is the public read API over the scenarios collected in the supplied run.
 
 | Member | Returns |
 | --- | --- |
-| `GetScenarios()` / `GetScenarios(BDTestRun)` | Every executed scenario. Outlines appear once, with their rows in `Examples`. |
-| `GetNotRunScenarios()` / `GetNotRunScenarios(BDTestRun)` | `List<ScenarioDefinitionSummary>` snapshots of chains that were built but not executed. |
-| `ClearScenarios()` / `ClearScenarios(BDTestRun)` | Clears collected scenarios. |
-| `CurrentReportId` | The default run's report ID; use `run.ReportId` for an explicit run. |
-| `GetTestTimer(IReadOnlyCollection<Scenario> scenarios)` | Start, finish and elapsed time for those scenarios. |
+| `GetScenarios(BDTestRun)` | Every executed scenario. Outlines appear once, with their rows in `Examples`. |
+| `GetNotRunScenarios(BDTestRun)` | `List<ScenarioDefinitionSummary>` snapshots of chains that were built but not executed. |
+| `ClearScenarios(BDTestRun)` | Clears collected scenarios. |
+| `run.ReportId` (on `BDTestRun`) | The selected run's fresh report ID. |
+| `GetTestTimer(IReadOnlyCollection<Scenario> scenarios)` | Start, finish and elapsed time for those scenarios; an empty collection has unset timestamps unless a report timer is supplied. |
 
 Use it to build custom reports or to assert on results in a teardown:
 

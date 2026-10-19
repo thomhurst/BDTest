@@ -11,51 +11,34 @@ namespace BDTest.Tests.Fixtures;
 public class TestIsolationTests
 {
     [Test, Repeat(3)]
-    public async Task ExceptionAssertionsIgnoreRetainedScenariosAndRestoreRegistrations()
+    public async Task ExceptionAssertionsUseIsolatedRunsAndPreserveOtherRuns()
     {
-        LegacyNUnitBDTestBase<MyTestContext>.RegisterLegacyOutcomes();
-        var successTypes = BDTestSettings.CustomExceptionSettings.SuccessExceptionTypes.ToArray();
-        var inconclusiveTypes = BDTestSettings.CustomExceptionSettings.InconclusiveExceptionTypes.ToArray();
-        var retained = await new RetainedScenario().Run();
-
-        await new CustomPassExceptionsTests().NUNitSuccessException();
-        await new CustomPassExceptionsTests().CustomException();
-        await new IgnoreTests().NUNitIgnoreException();
-        await new IgnoreTests().CustomIgnoreException();
+        using var retainedFixture = new RetainedScenario();
+        var retained = await retainedFixture.Run();
+        using var nunitPass = new CustomPassExceptionsTests();
+        await nunitPass.NUNitSuccessException();
+        using var customPass = new CustomPassExceptionsTests();
+        await customPass.CustomException();
+        using var nunitIgnore = new IgnoreTests();
+        await nunitIgnore.NUNitIgnoreException();
+        using var customIgnore = new IgnoreTests();
+        await customIgnore.CustomIgnoreException();
         foreach (var (exception, status) in new[]
                  {
                      (typeof(Exception), Status.Failed),
                      (typeof(NotImplementedException), Status.NotImplemented)
                  })
         {
-            await new ExceptionTests().ThrowsExceptionOnGiven(exception, status);
-            await new ExceptionTests().ThrowsExceptionOnThen(exception, status);
+            using var given = new ExceptionTests();
+            await given.ThrowsExceptionOnGiven(exception, status);
+            using var then = new ExceptionTests();
+            await then.ThrowsExceptionOnThen(exception, status);
         }
 
-        Assert.That(BDTestUtil.GetScenarios(), Does.Contain(retained));
-        Assert.That(BDTestSettings.CustomExceptionSettings.SuccessExceptionTypes, Is.EquivalentTo(successTypes));
-        Assert.That(BDTestSettings.CustomExceptionSettings.InconclusiveExceptionTypes, Is.EquivalentTo(inconclusiveTypes));
+        Assert.That(retainedFixture.TestRun.Scenarios, Does.Contain(retained));
     }
 
-    [TestCase(false)]
-    [TestCase(true)]
-    public void ExceptionRegistrationPreservesExistingEntries(bool alreadyRegistered)
-    {
-        var types = new ConcurrentBag<Type>(new[] { typeof(ArgumentException), typeof(ArgumentException) });
-        if (alreadyRegistered)
-        {
-            types.Add(typeof(MyAllowedException));
-        }
 
-        var original = types.ToArray();
-        var registration = new ExceptionRegistration(types, typeof(MyAllowedException));
-        Assert.That(types, Does.Contain(typeof(MyAllowedException)));
-        // Another owner's registration added after ours must survive cleanup too.
-        types.Add(typeof(InvalidOperationException));
-        registration.Dispose();
-        registration.Dispose();
-        Assert.That(types, Is.EquivalentTo(original.Append(typeof(InvalidOperationException))));
-    }
 
     [Test, Repeat(3)]
     public void JsonLookupRejectsAmbiguousOutput()
@@ -79,32 +62,9 @@ public class TestIsolationTests
         }
     }
 
-    [TestCase(null, null)]
-    [TestCase("original environment", "original tag")]
-    public void FixtureRestoresPreviousSettings(string? environment, string? tag)
-    {
-        var originalEnvironment = LegacySettings.Get<string>("Environment");
-        var originalTag = LegacySettings.Get<string>("Tag");
-        try
-        {
-            LegacySettings.Set("Environment", environment);
-            LegacySettings.Set("Tag", tag);
-            var fixture = new SetupTeardownFixture();
-            fixture.Settings();
-            Assert.That(LegacySettings.Get<string>("Environment"), Is.EqualTo("Local"));
-            Assert.That(LegacySettings.Get<string>("Tag"), Is.EqualTo("AcceptanceTests"));
-            fixture.RestoreSettings();
-            Assert.That(LegacySettings.Get<string>("Environment"), Is.EqualTo(environment));
-            Assert.That(LegacySettings.Get<string>("Tag"), Is.EqualTo(tag));
-        }
-        finally
-        {
-            LegacySettings.Set("Environment", originalEnvironment);
-            LegacySettings.Set("Tag", originalTag);
-        }
-    }
 
-    private sealed class RetainedScenario : BDTestBase
+
+    private sealed class RetainedScenario : RunTestBase
     {
         private readonly string _executionId = Guid.NewGuid().ToString();
         protected override string BDTestExecutionId => _executionId;

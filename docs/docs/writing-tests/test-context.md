@@ -50,7 +50,7 @@ var run = BDTestRun.Start(options);
 
 `ServiceProviderContextFactory` uses `ActivatorUtilities.CreateInstance` to create a new context with constructor dependencies from `Services`. BDTest owns the context. You own the service provider, its scope and resolved dependencies; BDTest never disposes them. Supply an appropriate scope yourself when using scoped services. The context itself is constructed directly, rather than resolved as a provider-owned service.
 
-Factory and service-provider registrations are frozen when the run starts. Replacing either property on the original options does not change that run. Factory and provider objects are shared references and must support concurrent tests. The legacy default run has no process-global factory; override `CreateContextAsync` or use an explicit run.
+Factory and service-provider registrations are frozen when the run starts. Replacing either property on the original options does not change that run. Factory and provider objects are shared references and must support concurrent tests. Override `CreateContextAsync` for per-fixture context creation.
 
 ## Configuring a new context
 

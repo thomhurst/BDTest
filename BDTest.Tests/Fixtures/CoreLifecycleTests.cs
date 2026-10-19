@@ -4,7 +4,7 @@ using NUnit.Framework;
 
 namespace BDTest.Tests.Fixtures;
 
-public class CoreLifecycleTests
+public class CoreLifecycleTests : TestRunOwner
 {
     [Test]
     public async Task CompletionClearsOnlyTheOwningRunAndCanBeRepeated()
@@ -33,7 +33,7 @@ public class CoreLifecycleTests
         Assert.That(TestOutputData.FrameworkExecutionId, Is.Null);
         Assert.That(TestOutputData.TestId, Is.Null);
         Assert.That(TestOutputData.ConstructionOutput, Is.Null);
-        Assert.That(TestOutputData.Run, Is.SameAs(BDTestRun.Default));
+        Assert.That(TestOutputData.Run, Is.Null);
 
         firstFixture.Start("same-id");
         Assert.That(firstFixture.Context, Is.Not.SameAs(original));

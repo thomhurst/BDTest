@@ -6,16 +6,12 @@ using NUnit.Framework;
 namespace BDTest.Tests.Fixtures;
 
 [NonParallelizable]
-public class AsyncScenarioMetadataTests : BDTestBase
+public class AsyncScenarioMetadataTests : RunTestBase
 {
-    [SetUp]
-    public void BindMetadata() => BeginTest(TestContext.CurrentContext.Test.ID, Required(global::NUnit.Framework.Internal.TestExecutionContext.CurrentContext.CurrentTest.Method).MethodInfo);
+    protected override bool BindCurrentTestMetadata => true;
 
     [TearDown]
     public void FinishExecution() => EndTest();
-
-    [SetUp]
-    public void Setup() => TestResetHelper.ResetData();
 
     [Test]
     public async Task Unannotated_test_keeps_its_name_after_suspension()

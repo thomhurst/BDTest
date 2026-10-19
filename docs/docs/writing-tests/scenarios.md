@@ -23,7 +23,7 @@ Each step is a delegate, usually a lambda that calls one method. BDTest runs the
 **Inherit a base class** (recommended). Use a [framework adapter](../frameworks/overview.md) such as `TUnitBDTestBase<TContext>`. A standalone `BDTestBase` has no runner method identity; it uses caller text and does not discover method attributes:
 
 ```csharp
-public class MyTests : BDTestBase
+public class MyTests : TUnitBDTestBase<object>
 {
     [Test]
     public async Task Test1()
@@ -44,7 +44,8 @@ public class MyTests
     [Test]
     public async Task Test1()
     {
-        await new BDTestBuilder()
+        using var run = BDTestRun.Start();
+        await new BDTestBuilder(run)
             .Given(() => Action1())
             .When(() => Action2())
             .Then(() => Action3())

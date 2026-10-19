@@ -5,7 +5,7 @@ description: Isolate scenario storage and reporting with BDTestRun in custom ada
 
 # Explicit runs
 
-Built-in adapters use [isolated assembly runs](../configuration/assembly-runs.md). The legacy standalone base and report overloads without a run still use a shared default store. Custom adapters and long-lived hosts can own a `BDTestRun` instead, to keep a separate set of scenarios and produce a separate report.
+Built-in adapters use [isolated assembly runs](../configuration/assembly-runs.md). Custom adapters and long-lived hosts explicitly own a `BDTestRun` to keep their scenarios, options and reports separate. There is no implicit process-wide default run.
 
 ```csharp
 using var run = BDTestRun.Start();
@@ -30,7 +30,7 @@ public class MyTests(BDTestRun run) : BDTestBase
 - Override `TestRun` and keep it stable for the test instance. Builders and scenarios capture their run, including builders executed later and scenario outline rows.
 - Each run has a new `ReportId` and its own stores for scenarios, unfinished definitions, listeners and output. An explicit run also has its own executor.
 - The JSON and HTML helpers and the report upload accept a run, for example `BDTestReportServer.SendDataAndGetReportUriAsync(run, serverAddress, descriptor)`.
-- Report overloads without a run use the legacy shared default run. Pass the adapter assembly run explicitly.
+- Every report export requires a run. Pass the adapter assembly run explicitly.
 - Upload overloads accept a final `CancellationToken`, for example `BDTestReportServer.SendDataAndGetReportUriAsync(serverAddress, descriptor, httpClient, run, cancellationToken)`. Cancellation stops warm-up, requests and retry waits while preserving run isolation and caller-owned client lifetime; see [upload cancellation](../report-server/sending-results.md#cancellation). Await completion or cancellation before disposing the run.
 
 ## Lifetime
@@ -58,22 +58,11 @@ options.ScenarioHooks.Add(new MyScenarioHook());
 using var run = BDTestRun.Start(options);
 ```
 
-| Option | Equivalent global setting |
-| --- | --- |
-| `SuccessExceptionTypes`, `SkipExceptionTypes`, `InconclusiveExceptionTypes` | [`CustomExceptionSettings`](../configuration/exceptions.md) |
-| `RetryTestRules` | `GlobalRetryTestRules` |
-| `SkipTestRules` | `GlobalSkipTestRules` |
-| `SkipStepRules` | `GlobalSkipStepRules` |
-| `Debug` | `Debug` |
-| `RegisterCustomStringConverter<T>(...)` | `RegisterCustomStringConverter<T>(...)` |
-| `StepHooks` (`IStepHook`) | `BeforeStep` / `AfterStep` events |
-| `Attachments` ([byte limits](../writing-tests/attachments.md#limits)) | Fixed defaults on the shared default run |
-| `ScenarioHooks` (`IScenarioHook`) | `BeforeScenario` / `AfterScenario` events |
-| `ContextFactory`, `Services` | No global equivalent; see [test context](../writing-tests/test-context.md#factories) |
+See the [options reference](../configuration/settings.md) for all registrations.
 
 - `Start(options)` copies the registrations into the run. Later changes to the options affect only runs started afterwards.
 - `Start()` uses empty registrations and default debug settings.
-- **Explicit runs do not inherit execution settings from `BDTestSettings`.** Register any framework exceptions your adapter needs on the options. Report exports still use the [legacy metadata fallbacks and custom properties](../reports/overview.md#run-descriptors) at export time.
+- Register any framework outcomes your custom adapter needs on the options. Report metadata comes only from the [descriptor](../reports/overview.md#run-descriptors).
 - Configure options before starting a run, without concurrent changes. Callback, converter and hook instances are shared, not cloned, so they must be thread-safe.
 
 ### Step hooks for a run
@@ -99,10 +88,6 @@ Run hooks run sequentially in registration order. Before hooks run before the te
 
 Register `BDTest.Interfaces.IScenarioHook` instances on `ScenarioHooks`. Hooks receive the scenario, its context, a zero-based attempt number and an attempt cancellation token. Run hooks surround the instance's scenario hooks on every attempt, including skips, retries and outline rows. See [Scenario hooks](../writing-tests/scenario-hooks.md) for ordering, exception rules and timing.
 
-## The default run
-
-`BDTestSettings` configures the legacy standalone default run. Built-in adapters use assembly configuration and do not read these execution settings.
-
 ## Execution clock (.NET 8+)
 
 The modern core build accepts a thread-safe `TimeProvider` on run options:
@@ -114,4 +99,4 @@ using var run = BDTestRun.Start(options);
 
 The provider supplies UTC execution timestamps, monotonic elapsed durations, and step/scenario timeout timers. Scenario outlines use the same clock for parent timing and factory-error rows. Empty reports use the run clock for their finish timestamp. Pass a fake provider to test timing without real delays. Advance it after the timed step has started and its timer is registered. Application delays still use their own clocks unless you explicitly pass the same provider to them.
 
-BDTest copies the provider reference when the run starts. Keep it alive until the run and any timed-out work finish. Changing `options.TimeProvider` later does not affect an existing run. Null is rejected. The shared default run uses `TimeProvider.System`. The .NET Standard asset retains system UTC timestamps and monotonic `Stopwatch` timing; it does not expose the provider option.
+BDTest copies the provider reference when the run starts. Keep it alive until the run and any timed-out work finish. Changing `options.TimeProvider` later does not affect an existing run. Null is rejected. The .NET Standard asset retains system UTC timestamps and monotonic `Stopwatch` timing; it does not expose the provider option.

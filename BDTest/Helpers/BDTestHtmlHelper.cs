@@ -32,13 +32,6 @@ public static class BDTestHtmlHelper
     private static readonly Status[] Statuses =
         { Status.Passed, Status.Failed, Status.Skipped, Status.Inconclusive, Status.NotImplemented, Status.NotRun, Status.Pending };
 
-    public static string GetTestHtmlReport()
-    {
-        return GetTestHtmlReport(new BDTestRunDescriptor());
-    }
-
-    public static string GetTestHtmlReport(BDTestRunDescriptor? bdTestRunDescriptor) => GetTestHtmlReport(bdTestRunDescriptor, BDTestRun.Default);
-
     /// <summary>Creates a report containing only the supplied run's scenarios and pending definitions.</summary>
     public static string GetTestHtmlReport(BDTestRunDescriptor? bdTestRunDescriptor, BDTestRun run)
     {
@@ -84,7 +77,7 @@ public static class BDTestHtmlHelper
         {
             html.AppendLine("<section class=\"wrap sec\"><div class=\"empty\">");
             html.AppendLine("<p class=\"empty-title\">The report was generated before any test finished.</p>");
-            html.AppendLine("<p>Call <code>GetTestHtmlReport()</code> after your tests finish, for example in a <code>[OneTimeTearDown]</code>, so every scenario is included.</p>");
+            html.AppendLine("<p>Call <code>GetTestHtmlReport(descriptor, run)</code> after your tests finish, for example in a <code>[OneTimeTearDown]</code>, so every scenario is included.</p>");
             html.AppendLine("</div></section>");
         }
         else

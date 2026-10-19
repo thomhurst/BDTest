@@ -8,10 +8,10 @@ public class HtmlWriter
     private readonly BDTestRun _run;
     private string TestId { get; }
 
-    internal HtmlWriter(string testId, BDTestRun? run = null)
+    internal HtmlWriter(string testId, BDTestRun run)
     {
         TestId = testId;
-        _run = run ?? BDTestRun.Default;
+        _run = run ?? throw new ArgumentNullException(nameof(run));
     }
 
     /// <summary>Writes raw HTML without encoding. Use only for intentional markup.</summary>

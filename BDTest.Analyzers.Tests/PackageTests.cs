@@ -67,6 +67,7 @@ public class PackageTests
 
             await File.WriteAllTextAsync(sourceFile, AnalyzerTests.Prefix + """
                 [Story] class Consumer : BDTestBuilder {
+                    public Consumer(BDTest.BDTestRun run) : base(run) {}
                     [StepText("{1}")] void Step(int value) {}
                     void Test() { Given((Action)(() => Task.Delay(1))); }
                 }

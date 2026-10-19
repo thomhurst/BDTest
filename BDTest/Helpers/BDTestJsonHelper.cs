@@ -8,13 +8,6 @@ public static class BDTestJsonHelper
 {
     private const long DefaultMaximumExpandedSize = 100 * 1024 * 1024;
 
-    public static string GetTestJsonData()
-    {
-        return GetTestJsonData(new BDTestRunDescriptor());
-    }
-
-    public static string GetTestJsonData(BDTestRunDescriptor? bdTestRunDescriptor) => GetTestJsonData(bdTestRunDescriptor, BDTestRun.Default);
-
     /// <summary>Creates a report containing only the supplied run's scenarios and pending definitions.</summary>
     public static string GetTestJsonData(BDTestRunDescriptor? bdTestRunDescriptor, BDTestRun run)
     {

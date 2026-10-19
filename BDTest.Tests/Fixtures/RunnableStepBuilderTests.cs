@@ -6,10 +6,9 @@ using NUnit.Framework;
 namespace BDTest.Tests.Fixtures;
 
 [FixtureLifeCycle(LifeCycle.InstancePerTestCase)]
-public class RunnableStepBuilderTests : BDTestBase
+public class RunnableStepBuilderTests : RunTestBase
 {
-    [SetUp]
-    public void BindMetadata() => BeginTest(TestContext.CurrentContext.Test.ID, Required(global::NUnit.Framework.Internal.TestExecutionContext.CurrentContext.CurrentTest.Method).MethodInfo);
+    protected override bool BindCurrentTestMetadata => true;
 
     [TearDown]
     public void FinishExecution() => EndTest();
@@ -48,7 +47,7 @@ public class RunnableStepBuilderTests : BDTestBase
         var builder = Given(() => CountAndThrow(failure)).When(() => NoOp()).Then(() => NoOp());
 
         var exception = await Assert.ThrowsAsync<InvalidOperationException>(async () => await Execute(builder, first));
-        var scenario = BDTestUtil.GetScenarios().Single(x => x.FrameworkTestId == builder.TestId);
+        var scenario = BDTestUtil.GetScenarios(TestRun).Single(x => x.FrameworkTestId == builder.TestId);
         foreach (var entryPoint in Enum.GetValues<EntryPoint>())
         {
             await Assert.ThrowsAsync<AlreadyExecutedException>(async () => await Execute(builder, entryPoint));
@@ -108,7 +107,7 @@ public class RunnableStepBuilderTests : BDTestBase
         Assert.That(rejectionCount, Is.EqualTo(callerCount - expectedExecutions));
         Assert.That(_executions, Is.EqualTo(expectedExecutions));
         Assert.That(completed, Has.Length.EqualTo(expectedExecutions));
-        var reported = BDTestUtil.GetScenarios().Where(x => x.FrameworkTestId == builder.TestId).ToArray();
+        var reported = BDTestUtil.GetScenarios(TestRun).Where(x => x.FrameworkTestId == builder.TestId).ToArray();
         Assert.That(reported, Is.EquivalentTo(completed));
         Assert.That(completed.Select(x => x.Guid).Distinct().Count(), Is.EqualTo(expectedExecutions));
     }
@@ -128,7 +127,7 @@ public class RunnableStepBuilderTests : BDTestBase
 
         Assert.That(_executions, Is.EqualTo(2));
         Assert.That(firstResult.Guid, Is.Not.EqualTo(secondResult.Guid));
-        Assert.That(BDTestUtil.GetScenarios().Where(x => x.FrameworkTestId == parent.TestId),
+        Assert.That(BDTestUtil.GetScenarios(TestRun).Where(x => x.FrameworkTestId == parent.TestId),
             Is.EquivalentTo(new[] { firstResult, secondResult }));
     }
 
@@ -146,7 +145,7 @@ public class RunnableStepBuilderTests : BDTestBase
         Assert.That(original.Steps, Has.Count.EqualTo(3));
         Assert.That(extended.Steps, Has.Count.EqualTo(4));
         Assert.That(Required(original.Steps).Intersect(Required(extended.Steps)), Is.Empty);
-        Assert.That(BDTestUtil.GetScenarios().Where(x => x.FrameworkTestId == parent.TestId),
+        Assert.That(BDTestUtil.GetScenarios(TestRun).Where(x => x.FrameworkTestId == parent.TestId),
             Is.EquivalentTo(new[] { original, extended }));
     }
 
@@ -182,9 +181,9 @@ public class RunnableStepBuilderTests : BDTestBase
         };
     }
 
-    private static void AssertReportedOnce(Scenario scenario)
+    private void AssertReportedOnce(Scenario scenario)
     {
-        var reported = BDTestUtil.GetScenarios().Where(x => x.FrameworkTestId == scenario.FrameworkTestId).ToList();
+        var reported = BDTestUtil.GetScenarios(TestRun).Where(x => x.FrameworkTestId == scenario.FrameworkTestId).ToList();
         Assert.That(reported, Has.Count.EqualTo(1));
         // Re-execution used to overwrite the same report key with a different Scenario.
         Assert.That(reported[0], Is.SameAs(scenario));

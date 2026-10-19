@@ -13,14 +13,10 @@ namespace BDTest.Tests.Fixtures;
 [BDTestTag(" shared ")]
 public class TagTests : TaggedStoryBase
 {
-    [SetUp]
-    public void BindMetadata() => BeginTest(TestContext.CurrentContext.Test.ID, Required(global::NUnit.Framework.Internal.TestExecutionContext.CurrentContext.CurrentTest.Method).MethodInfo);
+    protected override bool BindCurrentTestMetadata => true;
 
     [TearDown]
     public void FinishExecution() => EndTest();
-
-    [SetUp]
-    public void Reset() => TestResetHelper.ResetData();
 
     [Test]
     [BDTestTag("smoke")]
@@ -34,7 +30,7 @@ public class TagTests : TaggedStoryBase
         var scenario = await builder.BDTestAsync();
         Assert.That(scenario.Tags, Is.EqualTo(builder.Tags));
 
-        var report = ReportJson.DeserializeObject<BDTestOutputModel>(BDTestJsonHelper.GetTestJsonData());
+        var report = ReportJson.DeserializeObject<BDTestOutputModel>(BDTestJsonHelper.GetTestJsonData(null, TestRun));
         Assert.That(Required(report.Scenarios).Single(item => item.Guid == scenario.Guid).Tags, Is.EqualTo(scenario.Tags));
     }
 
@@ -59,7 +55,7 @@ public class TagTests : TaggedStoryBase
     [Test]
     public async Task Untagged_scenarios_and_old_json_have_empty_tags()
     {
-        var scenario = await new BDTestBuilder().When(() => NoOp()).Then(() => NoOp()).BDTestAsync();
+        var scenario = await new BDTestBuilder(TestRun).When(() => NoOp()).Then(() => NoOp()).BDTestAsync();
         Assert.That(scenario.Tags, Is.Empty);
         Assert.That(ReportJson.DeserializeObject<Scenario>("{}").Tags, Is.Empty);
         Assert.That(ReportJson.DeserializeObject<Scenario>("{\"Tags\":null}").Tags, Is.Empty);
@@ -70,7 +66,7 @@ public class TagTests : TaggedStoryBase
     public void Unexecuted_scenarios_include_tags_in_json()
     {
         var builder = When(() => NoOp()).Then(() => NoOp());
-        var report = ReportJson.DeserializeObject<BDTestOutputModel>(BDTestJsonHelper.GetTestJsonData());
+        var report = ReportJson.DeserializeObject<BDTestOutputModel>(BDTestJsonHelper.GetTestJsonData(null, TestRun));
         Assert.That(Required(report.NotRun).Single().Tags, Is.EqualTo(builder.Tags));
         Assert.That(report.NotRun.Single().Tags, Does.Contain("not-run"));
     }
@@ -93,7 +89,7 @@ public class TagTests : TaggedStoryBase
 }
 
 [BDTestTag("inherited")]
-public abstract class TaggedStoryBase : BDTestBase
+public abstract class TaggedStoryBase : RunTestBase
 {
     [BDTestTag("base-method")]
     public virtual Task Inherited_method_tags_combine_with_override_tags() => Task.CompletedTask;

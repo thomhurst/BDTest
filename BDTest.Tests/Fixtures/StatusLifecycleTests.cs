@@ -9,15 +9,12 @@ using NUnit.Framework;
 namespace BDTest.Tests.Fixtures;
 
 [NonParallelizable]
-public class StatusLifecycleTests
+public class StatusLifecycleTests : TestRunOwner
 {
-    [SetUp]
-    public void Reset() => TestResetHelper.ResetData();
-
     [Test]
     public void NewResultsAndResetStepsAreNotRun()
     {
-        var step = new Step(new Runnable(() => NoOp()), StepType.Given, "scenario", "report");
+        var step = new Step(new Runnable(() => NoOp()), StepType.Given, "scenario", "report", TestRun);
         Assert.That(default(Status), Is.EqualTo(Status.NotRun));
         Assert.That(step.Status, Is.EqualTo(Status.NotRun));
         Assert.That(ReportJson.DeserializeObject<Scenario>("{}").Status, Is.EqualTo(Status.NotRun));
@@ -29,7 +26,7 @@ public class StatusLifecycleTests
     [Test]
     public async Task RunningScenarioAndStepArePendingAndRetryHooksSeeNotRun()
     {
-        var fixture = new RetryingFixture();
+        using var fixture = new RetryingFixture();
         try
         {
             var scenario = await fixture.Run();
@@ -74,8 +71,8 @@ public class StatusLifecycleTests
     public void HtmlCountsAndLabelsScenarioStatuses(Status status, string label)
     {
         var scenario = ReportJson.DeserializeObject<Scenario>($"{{\"Guid\":\"unfinished\",\"FrameworkTestId\":\"unfinished-test\",\"Status\":\"{status}\",\"Steps\":[{{\"Status\":\"{status}\"}}]}}");
-        BDTest.Maps.TestHolder.AddScenario(scenario);
-        var html = BDTestHtmlHelper.GetTestHtmlReport();
+        TestRun.Store.AddScenario(scenario);
+        var html = BDTestHtmlHelper.GetTestHtmlReport(null, TestRun);
         var key = status.ToString().ToLowerInvariant();
         Assert.That(html, Does.Contain($"<span class=\"label\">{label}</span></span><span class=\"tile-n\">1</span>"));
         Assert.That(html, Does.Contain($"data-filter=\"{key}\" aria-pressed=\"false\"><span>{label}</span><span class=\"n\">1</span>"));
@@ -86,7 +83,7 @@ public class StatusLifecycleTests
     private static void NoOp() { }
 
     [BDTestRetry(1)]
-    private sealed class RetryingFixture : BDTestBase
+    private sealed class RetryingFixture : RunTestBase
     {
         private readonly string _id = Guid.NewGuid().ToString();
         protected override string BDTestExecutionId => _id;
@@ -95,13 +92,13 @@ public class StatusLifecycleTests
         public Task<Scenario> Run() => When(() => FailOnce()).Then(() => NoOp()).BDTestAsync();
         public void FailOnce()
         {
-            var scenario = BDTestUtil.GetScenarios().Single();
+            var scenario = BDTestUtil.GetScenarios(TestRun).Single();
             RunningStatuses.Add((scenario.Status, Required(scenario.Steps)[0].Status, scenario.Steps[1].Status));
             if (RunningStatuses.Count == 1) throw new InvalidOperationException("Retry probe");
         }
         public override Task OnBeforeRetry()
         {
-            var scenario = BDTestUtil.GetScenarios().Single();
+            var scenario = BDTestUtil.GetScenarios(TestRun).Single();
             ResetStatuses = new[] { scenario.Status }.Concat(Required(scenario.Steps).Select(step => step.Status)).ToArray();
             return Task.CompletedTask;
         }

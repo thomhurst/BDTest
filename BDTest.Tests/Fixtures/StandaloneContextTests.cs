@@ -12,7 +12,8 @@ namespace BDTest.Tests.Fixtures;
 public class UniqueContextTests
 {
     [Parallelizable(ParallelScope.Fixtures)]
-    public class AsyncNonNUnitContextTests : AbstractContextBDTestBase<MyTestContext>
+    [FixtureLifeCycle(LifeCycle.SingleInstance)]
+    public class AsyncNonNUnitContextTests : RunContextTestBase<MyTestContext>
     {
         private MyTestContext? _context1;
         private MyTestContext? _context2;
@@ -45,7 +46,8 @@ public class UniqueContextTests
     }
 
     [Parallelizable(ParallelScope.Fixtures)]
-    public class NonNUnitContextTests : AbstractContextBDTestBase<MyTestContext>
+    [FixtureLifeCycle(LifeCycle.SingleInstance)]
+    public class NonNUnitContextTests : RunContextTestBase<MyTestContext>
     {
         private MyTestContext? _context1;
         private MyTestContext? _context2;
@@ -78,7 +80,8 @@ public class UniqueContextTests
     }
 
     [Parallelizable(ParallelScope.Children)]
-    public class NonNUnitParallelContextTests : AbstractContextBDTestBase<MyTestContext>
+    [FixtureLifeCycle(LifeCycle.SingleInstance)]
+    public class NonNUnitParallelContextTests : RunContextTestBase<MyTestContext>
     {
         private readonly ConcurrentBag<MyTestContext> _contexts = new();
         private readonly TaskCompletionSource<bool> _completionSource = new();

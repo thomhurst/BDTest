@@ -7,7 +7,8 @@ namespace BDTest.Tests.Fixtures;
 [Story(AsA = "BDTest developer",
     IWant = "to make sure that test contexts are different for each test",
     SoThat = "tests don't share state")]
-public class InlineContextTests : BDTestBase
+[FixtureLifeCycle(LifeCycle.SingleInstance)]
+public class InlineContextTests : RunTestBase
 {
     private MyTestContext? _context1;
     private MyTestContext? _context2;

@@ -40,14 +40,14 @@ cd BDTest.Pipeline && dotnet run -c Release
 - `Test/BDTestBase` exposes `Given/When/Then` builders (`Test/Steps/*`) that produce a `BuildableTest`, which becomes a `Scenario` of `Step`s when `BDTestAsync()` runs.
 - `Test/AbstractContextBDTestBase<TContext>` adds a per-test `Context` object, keyed by the framework's execution ID (`BDTestExecutionId`). Context is recreated on retry.
 - `Engine/ScenarioExecutor` runs scenarios (skip checks, step execution, exception classification, retries via `ScenarioRetryManager`).
-- `Maps/TestHolder` is the static, process-wide store of all scenarios (by internal ID and by framework ID) plus not-run tests and the current report ID. `BDTestUtil` is the public read API over it.
+- `BDTestRun` owns `Maps/TestRunStore`, the executor, output and report ID. `BDTestUtil` requires the owning run to read or clear scenarios.
 - `Output/` captures console output per test (`ConsoleOutputInterceptor`, `TestOutputData`, keyed by `FrameworkExecutionId`).
-- `Settings/BDTestSettings` is global static config, including `CustomExceptionSettings` (which exception types count as success / inconclusive).
-- `BDTestReportServer.SendDataAndGetReportUriAsync` POSTs all collected scenarios (`BDTestOutputModel`) to a report server at `bdtest/data`.
+- `BDTestOptions` configures exception types, rules, converters and hooks; each run freezes its registrations at startup. There is no global settings object or default run.
+- `BDTestReportServer.SendDataAndGetReportUriAsync` POSTs the selected run's collected scenarios (`BDTestOutputModel`) to a report server at `bdtest/data`.
 
 **Framework adapters** (`BDTest.NUnit`, `BDTest.xUnit`, `BDTest.MSTest`, `BDTest.TUnit`): each is one thin base class (e.g. `TUnitBDTestBase<TContext>`) deriving from `AbstractContextBDTestBase<TContext>`. Each one:
 1. Supplies `BDTestExecutionId` from the framework's test context.
-2. Registers framework-specific skip/ignore/success exceptions into `BDTestSettings.CustomExceptionSettings`.
+2. Registers framework outcomes in the configured assembly run's `BDTestOptions`.
 3. Calls `BeginTest(frameworkTestId)` before async setup and `EndTest()` after the test. xUnit buffers constructor output and binds the execution during initialization. Existing lifecycle overrides remain supported as compatibility shims.
 
 Core and Razor reports grant `InternalsVisibleTo` only to `BDTest.Tests`, using SDK items and the single `BDTestPublicKey` in `Directory.Build.props`. Official and third-party adapters use the documented protected lifecycle, constructor-output and assertion-scope API; do not add adapter friend grants. Signing is centralized in `Directory.Build.props`: shipped runtime packages and the friend test assembly use the existing `StrongNameKeyPair.snk`; compiler extensions (`BDTest.SourceGenerator`, `BDTest.Analyzers`), pipeline, samples, report host and other tests stay unsigned. See `BUILDING.md` for verification.

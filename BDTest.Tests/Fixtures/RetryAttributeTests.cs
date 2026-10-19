@@ -6,7 +6,8 @@ namespace BDTest.Tests.Fixtures;
 
 public class RetryAttributeTests
 {
-    public class RetryOnScenarioTests : BDTestBase
+    [FixtureLifeCycle(LifeCycle.SingleInstance)]
+    public class RetryOnScenarioTests : RunTestBase
     {
         [SetUp]
         public void BindMetadata() => BeginTest(TestContext.CurrentContext.Test.ID, Required(global::NUnit.Framework.Internal.TestExecutionContext.CurrentContext.CurrentTest.Method).MethodInfo);
@@ -45,7 +46,7 @@ public class RetryAttributeTests
         [OneTimeTearDown]
         public void OneTimeTearDown()
         {
-            var scenarios = BDTestUtil.GetScenarios().Where(x => x.GetScenarioText() == "RetryOnScenarioTests").ToList();
+            var scenarios = BDTestUtil.GetScenarios(TestRun).Where(x => x.GetScenarioText() == "RetryOnScenarioTests").ToList();
             Assert.That(scenarios.Count, Is.EqualTo(1));
             Assert.That(scenarios.First().Status, Is.EqualTo(Status.Passed));
         }
@@ -57,7 +58,8 @@ public class RetryAttributeTests
     }
         
     [BDTestRetry(3)]
-    public class RetryOnStoryTests : BDTestBase
+    [FixtureLifeCycle(LifeCycle.SingleInstance)]
+    public class RetryOnStoryTests : RunTestBase
     {
         [SetUp]
         public void BindMetadata() => BeginTest(TestContext.CurrentContext.Test.ID, Required(global::NUnit.Framework.Internal.TestExecutionContext.CurrentContext.CurrentTest.Method).MethodInfo);
@@ -96,7 +98,7 @@ public class RetryAttributeTests
         [OneTimeTearDown]
         public void OneTimeTearDown()
         {
-            var scenarios = BDTestUtil.GetScenarios().Where(x => x.GetScenarioText() == "RetryOnStoryTests").ToList();
+            var scenarios = BDTestUtil.GetScenarios(TestRun).Where(x => x.GetScenarioText() == "RetryOnStoryTests").ToList();
             Assert.That(scenarios.Count, Is.EqualTo(1));
             Assert.That(scenarios.First().Status, Is.EqualTo(Status.Passed));
         }

@@ -10,13 +10,8 @@ namespace BDTest.Tests.Fixtures;
 [Story(AsA = "BDTest developer",
     IWant = "to make sure that BDTest flags tests not executed",
     SoThat = "consumers aren't missing any test coverage accidentally")]
-public class NotRunWarnings : BDTestBase
+public class NotRunWarnings : RunTestBase
 {
-    [OneTimeSetUp]
-    public void Setup()
-    {
-        TestResetHelper.ResetData();
-    }
 
     [Test]
     public async Task Test()
@@ -29,7 +24,7 @@ public class NotRunWarnings : BDTestBase
 
         NotRunTest3();
 
-        var notRunScenarios = BDTestUtil.GetNotRunScenarios();
+        var notRunScenarios = BDTestUtil.GetNotRunScenarios(TestRun);
         Assert.That(notRunScenarios.Count, Is.EqualTo(3));
 
         Assert.That(notRunScenarios.Any(scenario => scenario.GetScenarioText() == "Custom NotRunTest1"));

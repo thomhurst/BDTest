@@ -36,9 +36,9 @@ as nullable. Required reflection metadata, JSON properties, HTTP content, and
 exception assertion results fail explicitly when absent. Intentional null inputs
 still exercise runtime guards. Context capture tests verify uniqueness in fixture
 teardown instead of using obsolete NUnit ordering attributes, preserving parallel
-fixture execution. Compatibility tests access obsolete settings and standalone
-lifecycle bridges through reflection, preserving their behavior without disabling
-obsolete diagnostics.
+fixture execution. Standalone/core tests own configured runs instead of saving and restoring global
+settings. Compatibility tests access obsolete lifecycle bridges through reflection,
+preserving their behavior without disabling obsolete diagnostics.
 
 The sample host models missing Azure configuration, missing report/attachment
 blobs, nullable deserialization results, and unauthenticated users explicitly.

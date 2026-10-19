@@ -10,14 +10,11 @@ namespace BDTest.Tests.Fixtures;
 [NonParallelizable]
 public class AssemblyRetryAttributeTests
 {
-    [SetUp]
-    public void Reset() => TestResetHelper.ResetData();
-
     [TestCase(false)]
     [TestCase(true)]
     public async Task AssemblyAttributeRetriesUntilSuccess(bool suspend)
     {
-        var fixture = CreateScenario(typeof(RetryScenario), 2);
+        using var fixture = CreateScenario(typeof(RetryScenario), 2);
         fixture.Failures = 2;
 
         var scenario = await fixture.Run(suspend);
@@ -32,12 +29,12 @@ public class AssemblyRetryAttributeTests
     [TestCase(2, 2)]
     public async Task AssemblyAttributeLimitsRetries(int? assemblyRetryCount, int expectedRetries)
     {
-        var fixture = CreateScenario(typeof(RetryScenario), assemblyRetryCount);
+        using var fixture = CreateScenario(typeof(RetryScenario), assemblyRetryCount);
         fixture.Failures = 3;
 
         await Assert.ThrowsAsync<InvalidOperationException>(() => fixture.Run(true));
 
-        Assert.That(BDTestUtil.GetScenarios().Single().RetryCount, Is.EqualTo(expectedRetries));
+        Assert.That(BDTestUtil.GetScenarios(fixture.TestRun).Single().RetryCount, Is.EqualTo(expectedRetries));
         Assert.That(fixture.Executions, Is.EqualTo(expectedRetries + 1));
     }
 
@@ -45,12 +42,12 @@ public class AssemblyRetryAttributeTests
     [TestCase(typeof(MethodRetryScenario), 0)]
     public async Task MoreSpecificAttributesOverrideAssembly(Type fixtureType, int expectedRetries)
     {
-        var fixture = CreateScenario(fixtureType, 2);
+        using var fixture = CreateScenario(fixtureType, 2);
         fixture.Failures = 3;
 
         await Assert.ThrowsAsync<InvalidOperationException>(() => fixture.Run(true));
 
-        Assert.That(BDTestUtil.GetScenarios().Single().RetryCount, Is.EqualTo(expectedRetries));
+        Assert.That(BDTestUtil.GetScenarios(fixture.TestRun).Single().RetryCount, Is.EqualTo(expectedRetries));
         Assert.That(fixture.Executions, Is.EqualTo(expectedRetries + 1));
     }
 
@@ -73,7 +70,7 @@ public class AssemblyRetryAttributeTests
         return fixture;
     }
 
-    public class RetryScenario : BDTestBase
+    public class RetryScenario : RunTestBase
     {
         public void Start() => BeginTest(Guid.NewGuid().ToString("N"), GetType().GetMethod(nameof(Run)));
         public int Failures { get; set; }

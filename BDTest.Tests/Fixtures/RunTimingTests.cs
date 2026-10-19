@@ -11,18 +11,14 @@ using NUnit.Framework;
 namespace BDTest.Tests.Fixtures;
 
 [NonParallelizable]
-public class RunTimingTests : BDTestBase
+public class RunTimingTests : RunTestBase
 {
-    [SetUp]
-    public void BindMetadata() => BeginTest(TestContext.CurrentContext.Test.ID, Required(global::NUnit.Framework.Internal.TestExecutionContext.CurrentContext.CurrentTest.Method).MethodInfo);
+    protected override bool BindCurrentTestMetadata => true;
 
     [TearDown]
     public void FinishExecution() => EndTest();
 
     private static readonly DateTime StartedAt = new(2026, 10, 17, 12, 0, 0, DateTimeKind.Utc);
-
-    [SetUp]
-    public void Setup() => TestResetHelper.ResetData();
 
     [Test]
     public void Unstarted_scenarios_do_not_change_report_boundaries()
@@ -33,7 +29,7 @@ public class RunTimingTests : BDTestBase
 
         AssertTimer(BDTestUtil.GetTestTimer(new[] { later, unstarted, earlier }),
             StartedAt, StartedAt.AddSeconds(5));
-        var report = ReportJson.DeserializeObject<BDTestOutputModel>(BDTestJsonHelper.GetTestJsonData());
+        var report = ReportJson.DeserializeObject<BDTestOutputModel>(BDTestJsonHelper.GetTestJsonData(null, TestRun));
         AssertTimer(Required(report.TestTimer), StartedAt, StartedAt.AddSeconds(5));
     }
 
@@ -70,7 +66,7 @@ public class RunTimingTests : BDTestBase
     [Test]
     public void Empty_run_defaults_use_utc()
     {
-        var timer = BDTestUtil.GetTestTimer(Array.Empty<Scenario>());
+        var timer = Required(BDTestJsonHelper.Deserialize(BDTestJsonHelper.GetTestJsonData(null, TestRun))).TestTimer!;
 
         Assert.That(timer.TestsStartedAt.Kind, Is.EqualTo(DateTimeKind.Utc));
         Assert.That(timer.TestsFinishedAt.Kind, Is.EqualTo(DateTimeKind.Utc));
@@ -88,7 +84,7 @@ public class RunTimingTests : BDTestBase
         if (fail)
         {
             await Assert.ThrowsAsync<InvalidOperationException>(async () => await test.BDTestAsync());
-            scenario = BDTestUtil.GetScenarios().Single();
+            scenario = BDTestUtil.GetScenarios(TestRun).Single();
         }
         else
         {
@@ -158,12 +154,12 @@ public class RunTimingTests : BDTestBase
         }
     }
 
-    private static void MoveStartIntoFuture() =>
-        BDTestUtil.GetScenarios().Single().StartTime = DateTime.UtcNow.AddDays(1);
+    private void MoveStartIntoFuture() =>
+        BDTestUtil.GetScenarios(TestRun).Single().StartTime = DateTime.UtcNow.AddDays(1);
 
-    private static void FailFirstAttempt(List<DateTime> attempts)
+    private void FailFirstAttempt(List<DateTime> attempts)
     {
-        attempts.Add(BDTestUtil.GetScenarios().Single().StartTime);
+        attempts.Add(BDTestUtil.GetScenarios(TestRun).Single().StartTime);
         if (attempts.Count == 1)
         {
             throw new InvalidOperationException("retry");

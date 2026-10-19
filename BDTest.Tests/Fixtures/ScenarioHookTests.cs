@@ -215,7 +215,7 @@ public class ScenarioHookTests
     {
         var firstCalls = 0;
         var secondCalls = 0;
-        var globalCalls = 0;
+        var thirdCalls = 0;
         var options = new BDTestOptions();
         options.ScenarioHooks.Add(new Hook(_ => { Interlocked.Increment(ref firstCalls); return Task.CompletedTask; }));
         using var first = BDTestRun.Start(options);
@@ -223,19 +223,17 @@ public class ScenarioHookTests
         options.ScenarioHooks.Add(new Hook(_ => { Interlocked.Increment(ref secondCalls); return Task.CompletedTask; }));
         using var second = BDTestRun.Start(options);
         options.ScenarioHooks.Clear();
-        Task Global(ScenarioHookContext _) { Interlocked.Increment(ref globalCalls); return Task.CompletedTask; }
-        BDTestSettings.BeforeScenario += Global;
-        try
-        {
-            await Task.WhenAll(Task.Run(() => new Fixture(first).When(() => Complete()).Then(() => Complete()).BDTestAsync()),
-                Task.Run(() => new Fixture(second).When(() => Complete()).Then(() => Complete()).BDTestAsync()));
-            Assert.That(firstCalls, Is.EqualTo(1));
-            Assert.That(secondCalls, Is.EqualTo(1));
-            Assert.That(globalCalls, Is.Zero);
-            await new Fixture(BDTestRun.Default).When(() => Complete()).Then(() => Complete()).BDTestAsync();
-            Assert.That(globalCalls, Is.EqualTo(1));
-        }
-        finally { BDTestSettings.BeforeScenario -= Global; }
+        Task Third(ScenarioHookContext _) { Interlocked.Increment(ref thirdCalls); return Task.CompletedTask; }
+        options.ScenarioHooks.Add(new Hook(Third));
+        using var third = BDTestRun.Start(options);
+        await Task.WhenAll(Task.Run(() => new Fixture(first).When(() => Complete()).Then(() => Complete()).BDTestAsync()),
+            Task.Run(() => new Fixture(second).When(() => Complete()).Then(() => Complete()).BDTestAsync()));
+        Assert.That(firstCalls, Is.EqualTo(1));
+        Assert.That(secondCalls, Is.EqualTo(1));
+        Assert.That(thirdCalls, Is.Zero);
+        await new Fixture(third).When(() => Complete()).Then(() => Complete()).BDTestAsync();
+        Assert.That(thirdCalls, Is.EqualTo(1));
+
     }
 
     [Test]

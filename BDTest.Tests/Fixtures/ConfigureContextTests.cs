@@ -11,7 +11,7 @@ public class ConfigureContextTests
     [TestCase(true)]
     public void ConfigurationCanReadTheContextBeingInitialized(bool frameworkId)
     {
-        var fixture = new ContextFixture(frameworkId);
+        using var fixture = new ContextFixture(frameworkId);
         var calls = 0;
         BDTestContext<MyTestContext>? configured = null;
         fixture.Configure = context =>
@@ -40,7 +40,7 @@ public class ConfigureContextTests
     [TestCase(true)]
     public void FailedConfigurationIsRethrownAndNextAccessCreatesFreshContext(bool frameworkId)
     {
-        var fixture = new ContextFixture(frameworkId);
+        using var fixture = new ContextFixture(frameworkId);
         var expected = new InvalidOperationException("configuration failed");
         var attempts = new List<BDTestContext<MyTestContext>>();
         fixture.Configure = context =>
@@ -72,7 +72,7 @@ public class ConfigureContextTests
     [TestCase(true)]
     public async Task RetryCreatesAndConfiguresANewContextOnce(bool frameworkId)
     {
-        var fixture = new ContextFixture(frameworkId);
+        using var fixture = new ContextFixture(frameworkId);
         var attempts = new List<BDTestContext<MyTestContext>>();
         fixture.Configure = context =>
         {
@@ -102,7 +102,7 @@ public class ConfigureContextTests
     [TestCase(true)]
     public async Task FailedRetryConfigurationDoesNotRetainPartiallyInitializedContext(bool frameworkId)
     {
-        var fixture = new ContextFixture(frameworkId);
+        using var fixture = new ContextFixture(frameworkId);
         var expected = new InvalidOperationException("retry configuration failed");
         var attempts = new List<BDTestContext<MyTestContext>>();
         fixture.Configure = context =>
@@ -132,7 +132,7 @@ public class ConfigureContextTests
     }
 
     [BDTestRetry(1)]
-    private sealed class ContextFixture(bool frameworkId) : AbstractContextBDTestBase<MyTestContext>
+    private sealed class ContextFixture(bool frameworkId) : RunContextTestBase<MyTestContext>
     {
         private readonly string _frameworkId = Guid.NewGuid().ToString();
         protected override string BDTestExecutionId => frameworkId ? _frameworkId : base.BDTestExecutionId;

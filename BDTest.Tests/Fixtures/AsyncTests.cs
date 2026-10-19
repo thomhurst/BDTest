@@ -8,7 +8,7 @@ namespace BDTest.Tests.Fixtures;
 [Story(AsA = "BDTest developer",
     IWant = "to make sure that BDTest works asynchronously",
     SoThat = "tests run with maximum performance")]
-public class AsyncTests : BDTestBase
+public class AsyncTests : RunTestBase
 {
     [TestCase("async")]
     [TestCase("await-builder")]

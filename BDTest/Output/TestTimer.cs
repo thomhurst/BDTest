@@ -5,9 +5,9 @@ namespace BDTest.Output;
 
 public class TestTimer : IJsonOnDeserializing
 {
-    [JsonInclude] public DateTime TestsStartedAt { get; set; } = BDTestRun.Default.StartedAt;
+    [JsonInclude] public DateTime TestsStartedAt { get; set; }
 
-    [JsonInclude] public DateTime TestsFinishedAt { get; set; } = DateTime.UtcNow;
+    [JsonInclude] public DateTime TestsFinishedAt { get; set; }
 
     // Deserialized reports must not inherit the receiving process's timestamps.
     // Supplied JSON values are applied after this callback.

@@ -8,15 +8,15 @@ namespace BDTest.Tests.Fixtures;
 [Story(AsA = "BDTest developer",
     IWant = "to make sure that certain steps can be skipped conditionally",
     SoThat = "tests can be run with different behaviour for different test environments")]
-public class SkipCertainStepsTests : BDTestBase
+public class SkipCertainStepsTests : RunTestBase
 {
-    [OneTimeSetUp]
+    [SetUp]
     public void Setup()
     {
-        BDTestSettings.GlobalSkipStepRules.Add<SkipAttribute1>(attr => true);
-        BDTestSettings.GlobalSkipStepRules.Add<SkipAttribute2>(attr => true);
-        BDTestSettings.GlobalSkipStepRules.Add<SkipAttribute3>(attr => true);
-        BDTestSettings.GlobalSkipStepRules.Add<SkipAttributeWithParameter>(attr => attr.ShouldSkip);
+        Options.SkipStepRules.Add<SkipAttribute1>(attr => true);
+        Options.SkipStepRules.Add<SkipAttribute2>(attr => true);
+        Options.SkipStepRules.Add<SkipAttribute3>(attr => true);
+        Options.SkipStepRules.Add<SkipAttributeWithParameter>(attr => attr.ShouldSkip);
     }
 
     [Test]

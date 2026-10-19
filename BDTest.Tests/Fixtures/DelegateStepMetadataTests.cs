@@ -9,7 +9,7 @@ using NUnit.Framework;
 namespace BDTest.Tests.Fixtures;
 
 [NonParallelizable]
-public class DelegateStepMetadataTests : BDTestBase
+public class DelegateStepMetadataTests : RunTestBase
 {
     private int _value;
     private int _reads;
@@ -18,7 +18,7 @@ public class DelegateStepMetadataTests : BDTestBase
     [SetUp]
     public void Setup()
     {
-        TestResetHelper.ResetData();
+
         _value = 0;
         _reads = 0;
     }

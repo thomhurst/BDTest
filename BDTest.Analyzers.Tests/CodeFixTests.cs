@@ -62,7 +62,6 @@ public class CodeFixTests
             ? "When((Func<Task>)Work).Then(AssertCompleted);"
             : "await Given((Action)(() => Work())).When(() => {}).Then(AssertCompleted).BDTestAsync();";
         var (document, diagnostics) = await Document("""
-            public override BDTest.BDTestRun TestRun { get; } = BDTest.BDTestRun.Start();
             bool completed;
             async Task Work() { await Task.Yield(); completed = true; }
             void AssertCompleted() { if (!completed) throw new Exception("Step was not awaited"); }
@@ -82,13 +81,11 @@ public class CodeFixTests
         stream.Position = 0;
         var assembly = AssemblyLoadContext.Default.LoadFromStream(stream);
         var type = assembly.GetType("Consumer", throwOnError: true)!;
-        var fixture = (BDTest.Test.BDTestBuilder)(Activator.CreateInstance(type) ?? throw new InvalidOperationException("Missing consumer instance"));
-        using (fixture.TestRun)
-        {
-            var task = (Task<bool>)(type.GetMethod("Run")!.Invoke(fixture, null)
-                ?? throw new InvalidOperationException("Missing consumer task"));
-            Assert.That(await task, Is.True);
-        }
+        using var run = BDTestRun.Start();
+        var fixture = (BDTest.Test.BDTestBuilder)(Activator.CreateInstance(type, run) ?? throw new InvalidOperationException("Missing consumer instance"));
+        var task = (Task<bool>)(type.GetMethod("Run")!.Invoke(fixture, null)
+            ?? throw new InvalidOperationException("Missing consumer task"));
+        Assert.That(await task, Is.True);
     }
 
     private static async Task<(Document Document, ImmutableArray<Diagnostic> Diagnostics)> Document(string members)

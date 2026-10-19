@@ -10,36 +10,8 @@ namespace BDTest.Tests.Fixtures;
 [NonParallelizable]
 public class ReportMetadataTests
 {
-    private string? _environment;
-    private string? _tag;
-    private string? _branchName;
-
-    [SetUp]
-    public void SetUp()
-    {
-        TestResetHelper.ResetData();
-        _environment = LegacySettings.Get<string>("Environment");
-        _tag = LegacySettings.Get<string>("Tag");
-        _branchName = LegacySettings.Get<string>("BranchName");
-        SetLegacySettings("Legacy environment", "Legacy tag", "Legacy branch");
-    }
-
-    [TearDown]
-    public void TearDown()
-    {
-        SetLegacySettings(_environment, _tag, _branchName);
-        TestResetHelper.ResetData();
-    }
-
-    private static void SetLegacySettings(string? environment, string? tag, string? branchName)
-    {
-        LegacySettings.Set("Environment", environment);
-        LegacySettings.Set("Tag", tag);
-        LegacySettings.Set("BranchName", branchName);
-    }
-
     [Test]
-    public async Task DescriptorValuesOverrideLegacySettings(
+    public async Task DescriptorValuesAreExported(
         [Values("upload", "json", "html")] string path, [Values(false, true)] bool emptyValues)
     {
         var environment = emptyValues ? "" : "Descriptor environment";
@@ -51,7 +23,7 @@ public class ReportMetadataTests
     }
 
     [Test]
-    public async Task NullDescriptorPropertyFallsBackIndependently(
+    public async Task NullDescriptorPropertyRemainsNullIndependently(
         [Values("upload", "json", "html")] string path,
         [Values("Environment", "Tag", "BranchName")] string missingProperty)
     {
@@ -67,43 +39,32 @@ public class ReportMetadataTests
         }
 
         await AssertMetadataAsync(path, descriptor,
-            missingProperty == "Environment" ? "Legacy environment" : "Descriptor environment",
-            missingProperty == "Tag" ? "Legacy tag" : "Descriptor tag",
-            missingProperty == "BranchName" ? "Legacy branch" : "Descriptor branch");
+            missingProperty == "Environment" ? null : "Descriptor environment",
+            missingProperty == "Tag" ? null : "Descriptor tag",
+            missingProperty == "BranchName" ? null : "Descriptor branch");
     }
 
-    public static IEnumerable<TestCaseData> DescriptorFallbackCases()
+    public static IEnumerable<TestCaseData> MissingDescriptorCases()
     {
         foreach (var path in new[] { "upload", "json", "html" })
-        foreach (var mode in new[] { "null", "empty", "default overload" })
+        foreach (var mode in new[] { "null", "empty" })
         {
-            if (path == "upload" && mode == "default overload") continue;
             yield return new TestCaseData(path, mode);
         }
     }
 
-    [TestCaseSource(nameof(DescriptorFallbackCases))]
-    public async Task MissingDescriptorValuesUseLegacySettings(
-        string path, string descriptorMode)
-    {
-        await AssertMetadataAsync(path, descriptorMode == "null" ? null : new BDTestRunDescriptor(),
-            "Legacy environment", "Legacy tag", "Legacy branch", descriptorMode == "default overload");
-    }
-
-    [TestCaseSource(nameof(DescriptorFallbackCases))]
+    [TestCaseSource(nameof(MissingDescriptorCases))]
     public async Task MissingMetadataIsNullInJsonAndShownAsNotSpecifiedInHtml(
         string path, string descriptorMode)
     {
-        SetLegacySettings(null, null, null);
 
         await AssertMetadataAsync(path, descriptorMode == "null" ? null : new BDTestRunDescriptor(),
-            null, null, null, descriptorMode == "default overload");
+            null, null, null);
     }
 
     [Test]
     public void Missing_metadata_stays_null_in_the_shared_model()
     {
-        SetLegacySettings(null, null, null);
         using var run = BDTestRun.Start();
 
         var report = BDTestOutputModelBuilder.Build(run, new BDTestRunDescriptor());
@@ -118,13 +79,12 @@ public class ReportMetadataTests
     }
 
     private static async Task AssertMetadataAsync(string path, BDTestRunDescriptor? descriptor,
-        string? environment, string? tag, string? branchName, bool useDefaultOverload = false)
+        string? environment, string? tag, string? branchName)
     {
+        using var run = BDTestRun.Start();
         if (path == "html")
         {
-            var html = useDefaultOverload
-                ? BDTestHtmlHelper.GetTestHtmlReport()
-                : BDTestHtmlHelper.GetTestHtmlReport(descriptor);
+            var html = BDTestHtmlHelper.GetTestHtmlReport(descriptor, run);
             Assert.That(html, Does.Match($"<dt>Environment</dt><dd[^>]*>{System.Text.RegularExpressions.Regex.Escape(environment ?? "Not Specified")}</dd>"));
             Assert.That(html, Does.Match($"<dt>Tag</dt><dd[^>]*>{System.Text.RegularExpressions.Regex.Escape(tag ?? "Not Specified")}</dd>"));
             Assert.That(html, Does.Match($"<dt>Branch</dt><dd[^>]*>{System.Text.RegularExpressions.Regex.Escape(branchName ?? "Not Specified")}</dd>"));
@@ -137,14 +97,12 @@ public class ReportMetadataTests
             using var handler = new MetadataUploadHandler();
             using var client = new HttpClient(handler);
             // The injected-client overload allows an entirely local upload assertion.
-            await BDTestReportServer.SendDataAndGetReportUriAsync(new Uri("https://reports.example"), descriptor, client);
+            await BDTestReportServer.SendDataAndGetReportUriAsync(new Uri("https://reports.example"), descriptor, client, run);
             json = Required(handler.UploadJson);
         }
         else
         {
-            json = useDefaultOverload
-                ? BDTestJsonHelper.GetTestJsonData()
-                : BDTestJsonHelper.GetTestJsonData(descriptor);
+            json = BDTestJsonHelper.GetTestJsonData(descriptor, run);
         }
 
         var metadata = JObject.Parse(json);

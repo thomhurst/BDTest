@@ -5,7 +5,7 @@ description: Custom HTML isolation and Content Security Policy in standalone rep
 
 # HTML report security
 
-`BDTestHtmlHelper.GetTestHtmlReport()` returns a single offline HTML document with
+`BDTestHtmlHelper.GetTestHtmlReport(descriptor, run)` returns a single offline HTML document with
 embedded styles and JavaScript. Its Content Security Policy permits only the exact
 report script, using a SHA-256 hash. Inline event handlers, other scripts, network
 connections, plugins, forms, and base URL changes are blocked. Filtering, searching,

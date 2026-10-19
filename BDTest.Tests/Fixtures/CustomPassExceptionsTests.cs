@@ -11,8 +11,9 @@ namespace BDTest.Tests.Fixtures;
 [Story(AsA = "BDTest developer",
     IWant = "to make sure that specific exceptions can be registered as 'passable'",
     SoThat = "BDTest works well with other frameworks such as NUnit")]
-public class CustomPassExceptionsTests : LegacyNUnitBDTestBase<MyTestContext>
+public class CustomPassExceptionsTests : RunNUnitTestBase<MyTestContext>
 {
+    public CustomPassExceptionsTests() => Options.SuccessExceptionTypes.Add(typeof(MyAllowedException));
     [Test]
     public async Task NUNitSuccessException()
     {
@@ -28,7 +29,7 @@ public class CustomPassExceptionsTests : LegacyNUnitBDTestBase<MyTestContext>
         }
         catch (SuccessException)
         {
-            var scenario = BDTestUtil.GetScenarios().Single(scenario => scenario.Guid == builder.Guid);
+            var scenario = BDTestUtil.GetScenarios(TestRun).Single(scenario => scenario.Guid == builder.Guid);
             Assert.That(scenario.Status, Is.EqualTo(Status.Passed));
         }
     }
@@ -36,8 +37,6 @@ public class CustomPassExceptionsTests : LegacyNUnitBDTestBase<MyTestContext>
     [Test]
     public async Task CustomException()
     {
-        using var registration = new ExceptionRegistration(
-            BDTestSettings.CustomExceptionSettings.SuccessExceptionTypes, typeof(MyAllowedException));
 
         var builder = Given(() => Console.WriteLine("NUnit throws a success exception"))
             .When(() => ThrowException())
@@ -51,7 +50,7 @@ public class CustomPassExceptionsTests : LegacyNUnitBDTestBase<MyTestContext>
         }
         catch (MyAllowedException)
         {
-            var scenario = BDTestUtil.GetScenarios().Single(scenario => scenario.Guid == builder.Guid);
+            var scenario = BDTestUtil.GetScenarios(TestRun).Single(scenario => scenario.Guid == builder.Guid);
             Assert.That(scenario.Status, Is.EqualTo(Status.Passed));
         }
     }

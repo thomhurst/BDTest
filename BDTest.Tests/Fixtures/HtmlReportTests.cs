@@ -13,21 +13,17 @@ using NUnit.Framework;
 namespace BDTest.Tests.Fixtures;
 
 [NonParallelizable]
-public class HtmlReportTests : BDTestBase
+public class HtmlReportTests : RunTestBase
 {
-    [SetUp]
-    public void BindMetadata() => BeginTest(TestContext.CurrentContext.Test.ID, Required(global::NUnit.Framework.Internal.TestExecutionContext.CurrentContext.CurrentTest.Method).MethodInfo);
+    protected override bool BindCurrentTestMetadata => true;
 
     [TearDown]
     public void FinishExecution() => EndTest();
 
-    [SetUp]
-    public void SetUp() => TestResetHelper.ResetData();
-
     [Test]
     public void EmptyReportIsSelfContained()
     {
-        var html = BDTestHtmlHelper.GetTestHtmlReport();
+        var html = BDTestHtmlHelper.GetTestHtmlReport(null, TestRun);
 
         Assert.That(html, Does.StartWith("<!DOCTYPE html>"));
         Assert.That(html, Does.Contain("<span class=\"label\">Total</span></span><span class=\"tile-n\">0</span>"));
@@ -42,7 +38,7 @@ public class HtmlReportTests : BDTestBase
     [TestCase("\r\n")]
     public void ParentPolicyAllowsOnlyTheReportScript(string newline)
     {
-        var html = BDTestHtmlHelper.GetTestHtmlReport().Replace("\r\n", "\n").Replace("\n", newline);
+        var html = BDTestHtmlHelper.GetTestHtmlReport(null, TestRun).Replace("\r\n", "\n").Replace("\n", newline);
         var policy = Regex.Match(html, "<meta http-equiv=\"Content-Security-Policy\" content=\"([^\"]*)\">");
         Assert.That(policy.Success, Is.True);
         Assert.That(policy.Index, Is.LessThan(html.IndexOf("<style>", StringComparison.Ordinal)));
@@ -66,33 +62,10 @@ public class HtmlReportTests : BDTestBase
 
     [TestCase(false)]
     [TestCase(true)]
-    public void MissingDescriptorValuesUseConfiguredDefaults(bool nullDescriptor)
+    public void MissingDescriptorValuesAreNotSpecified(bool nullDescriptor)
     {
-        var environmentProperty = Required(typeof(BDTestSettings).GetProperty("Environment"));
-        var tagProperty = Required(typeof(BDTestSettings).GetProperty("Tag"));
-        var branchProperty = Required(typeof(BDTestSettings).GetProperty("BranchName"));
-        var environment = environmentProperty.GetValue(null);
-        var tag = tagProperty.GetValue(null);
-        var branch = branchProperty.GetValue(null);
-        try
-        {
-            environmentProperty.SetValue(null, "Configured environment");
-            tagProperty.SetValue(null, "Configured tag");
-            branchProperty.SetValue(null, "Configured branch");
-            var html = nullDescriptor
-                ? BDTestHtmlHelper.GetTestHtmlReport(null)
-                : BDTestHtmlHelper.GetTestHtmlReport();
-
-            Assert.That(html, Does.Contain("<dt>Environment</dt><dd>Configured environment</dd>"));
-            Assert.That(html, Does.Contain("<dt>Tag</dt><dd>Configured tag</dd>"));
-            Assert.That(html, Does.Contain("<dt>Branch</dt><dd class=\"mono\">Configured branch</dd>"));
-        }
-        finally
-        {
-            environmentProperty.SetValue(null, environment);
-            tagProperty.SetValue(null, tag);
-            branchProperty.SetValue(null, branch);
-        }
+        var html = BDTestHtmlHelper.GetTestHtmlReport(nullDescriptor ? null : new BDTestRunDescriptor(), TestRun);
+        Assert.That(html, Does.Contain("Not Specified"));
     }
 
     [Test]
@@ -108,7 +81,7 @@ public class HtmlReportTests : BDTestBase
             Environment = unsafeText,
             Tag = "Explicit tag",
             BranchName = "Explicit branch"
-        });
+        }, TestRun);
 
         Assert.That(html, Does.Not.Contain(unsafeText));
         Assert.That(html, Does.Contain($"<dt>Environment</dt><dd>{encodedText}</dd>"));
@@ -122,8 +95,8 @@ public class HtmlReportTests : BDTestBase
     public async Task NotImplementedScenarioMatchesItsFilter()
     {
         await Assert.CatchAsync(async () => await When(() => NotImplemented()).Then(() => DoNothing()).BDTestAsync());
-        Assert.That(BDTestUtil.GetScenarios().Single().Status, Is.EqualTo(Status.NotImplemented));
-        var html = BDTestHtmlHelper.GetTestHtmlReport();
+        Assert.That(BDTestUtil.GetScenarios(TestRun).Single().Status, Is.EqualTo(Status.NotImplemented));
+        var html = BDTestHtmlHelper.GetTestHtmlReport(null, TestRun);
         var scenarioStatus = Regex.Match(html, "class=\"scn\" id=\"[^\"]+\" data-status=\"([^\"]+)\"").Groups[1].Value;
         var filterStatus = Regex.Match(html, "class=\"seg-btn\" type=\"button\" data-filter=\"([^\"]+)\" aria-pressed=\"false\"><span>Not implemented</span>").Groups[1].Value;
 
@@ -136,9 +109,9 @@ public class HtmlReportTests : BDTestBase
     public async Task StepsAfterFailureAreNotReportedAsPassed()
     {
         await Assert.CatchAsync(async () => await When(() => Fail()).Then(() => DoNothing()).BDTestAsync());
-        var scenario = BDTestUtil.GetScenarios().Single();
+        var scenario = BDTestUtil.GetScenarios(TestRun).Single();
         Assert.That(Required(scenario.Steps).Select(step => step.Status), Is.EqualTo(new[] { Status.Failed, Status.NotRun }));
-        var html = BDTestHtmlHelper.GetTestHtmlReport();
+        var html = BDTestHtmlHelper.GetTestHtmlReport(null, TestRun);
         var stepStatuses = Regex.Matches(html, "class=\"step\" data-status=\"([^\"]+)\"")
             .Select(match => match.Groups[1].Value).ToArray();
 
@@ -153,7 +126,7 @@ public class HtmlReportTests : BDTestBase
         const string payload = "<script>parent.document.body.innerHTML = 'compromised';</script>";
         await When(() => WriteCustomHtml(payload)).Then(() => DoNothing()).BDTestAsync();
 
-        var html = BDTestHtmlHelper.GetTestHtmlReport();
+        var html = BDTestHtmlHelper.GetTestHtmlReport(null, TestRun);
         var frame = Regex.Match(html, "<iframe class=\"custom-body\"[^>]*>");
 
         Assert.That(frame.Success, Is.True);
@@ -171,7 +144,7 @@ public class HtmlReportTests : BDTestBase
     {
         var first = await When(() => WriteCustomHtml(payload)).Then(() => DoNothing()).WithScenarioText("First").BDTestAsync();
         var second = await When(() => DoNothing()).Then(() => DoNothing()).WithScenarioText("Second").BDTestAsync();
-        var html = BDTestHtmlHelper.GetTestHtmlReport();
+        var html = BDTestHtmlHelper.GetTestHtmlReport(null, TestRun);
         var frames = Regex.Matches(html, "<iframe\\b[^>]*></iframe>");
         Assert.That(frames.Count, Is.EqualTo(1));
         var frame = XElement.Parse(frames[0].Value);
@@ -198,7 +171,7 @@ public class HtmlReportTests : BDTestBase
     {
         await When(() => WriteEvidence()).Then(() => DoNothing()).BDTestAsync();
 
-        var html = BDTestHtmlHelper.GetTestHtmlReport();
+        var html = BDTestHtmlHelper.GetTestHtmlReport(null, TestRun);
         var frame = Regex.Match(html, "<iframe class=\"custom-body\"[^>]*>");
         var document = WebUtility.HtmlDecode(Regex.Match(frame.Value, "srcdoc=\"([^\"]*)\"").Groups[1].Value);
 
@@ -214,7 +187,7 @@ public class HtmlReportTests : BDTestBase
         await Assert.CatchAsync(async () => await When(() => Fail()).Then(() => DoNothing()).WithScenarioText("First").BDTestAsync());
         await Assert.CatchAsync(async () => await When(() => Fail()).Then(() => DoNothing()).WithScenarioText("Second").BDTestAsync());
 
-        var html = BDTestHtmlHelper.GetTestHtmlReport();
+        var html = BDTestHtmlHelper.GetTestHtmlReport(null, TestRun);
 
         Assert.That(html, Does.Contain("Needs attention"));
         Assert.That(Regex.Matches(html, "<article class=\"cause\">").Count, Is.EqualTo(1));
@@ -228,11 +201,11 @@ public class HtmlReportTests : BDTestBase
     {
         await Assert.CatchAsync(async () => await ScenarioOutline("Failing outline", new[] { 1, 2 },
             row => When(() => Fail()).Then(() => DoNothing())));
-        var outline = BDTestUtil.GetScenarios().Single();
+        var outline = BDTestUtil.GetScenarios(TestRun).Single();
         if (includeOrdinaryScenario)
             await Assert.CatchAsync(async () => await When(() => Fail()).Then(() => DoNothing()).BDTestAsync());
 
-        var html = BDTestHtmlHelper.GetTestHtmlReport();
+        var html = BDTestHtmlHelper.GetTestHtmlReport(null, TestRun);
         var count = includeOrdinaryScenario ? 2 : 1;
         Assert.That(html, Does.Contain($"<span class=\"cause-n\">{count} {(count == 1 ? "scenario" : "scenarios")}</span>"));
         Assert.That(html, Does.Contain($"<span class=\"v-word\">{count} failed</span>"));
@@ -247,7 +220,7 @@ public class HtmlReportTests : BDTestBase
             new InvalidOperationException("<first cause>"), new ArgumentException("<second cause>")));
         await Assert.CatchAsync(async () => await When(() => ThrowStructuredFailure(exception)).Then(() => DoNothing()).BDTestAsync());
 
-        var html = BDTestHtmlHelper.GetTestHtmlReport();
+        var html = BDTestHtmlHelper.GetTestHtmlReport(null, TestRun);
 
         Assert.That(Regex.Matches(html, "<article class=\"cause\">").Count, Is.EqualTo(2));
         Assert.That(html, Does.Contain("<span class=\"err-type\">System.InvalidOperationException</span>"));
@@ -267,7 +240,7 @@ public class HtmlReportTests : BDTestBase
     public async Task TagMetadataRoundTripsControlCharactersAndHtml()
     {
         var scenario = await When(() => DoNothing()).Then(() => DoNothing()).BDTestAsync();
-        var html = BDTestHtmlHelper.GetTestHtmlReport();
+        var html = BDTestHtmlHelper.GetTestHtmlReport(null, TestRun);
         var attribute = Regex.Match(html, "data-tags=\"([^\"]*)\"").Groups[1].Value;
 
         Assert.That(attribute, Is.Not.Empty);
@@ -293,7 +266,7 @@ public class HtmlReportTests : BDTestBase
             await When(() => DoNothing()).Then(() => DoNothing()).BDTestAsync();
         _ = When(() => DoNothing()).Then(() => DoNothing()).WithScenarioText("Unexecuted definition");
 
-        var html = BDTestHtmlHelper.GetTestHtmlReport();
+        var html = BDTestHtmlHelper.GetTestHtmlReport(null, TestRun);
 
         Assert.That(html, Does.Not.Contain("<span class=\"v-word\">All passed</span>"));
         var total = includePassingScenario ? 2 : 1;
@@ -309,7 +282,7 @@ public class HtmlReportTests : BDTestBase
     {
         await When(() => DoNothing()).Then(() => DoNothing()).BDTestAsync();
 
-        var html = BDTestHtmlHelper.GetTestHtmlReport();
+        var html = BDTestHtmlHelper.GetTestHtmlReport(null, TestRun);
 
         Assert.That(html, Does.Not.Contain("Needs attention"));
         Assert.That(html, Does.Contain("<span class=\"v-word\">All passed</span>"));

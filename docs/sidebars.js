@@ -101,6 +101,7 @@ const sidebars = {
       label: 'Migration',
       items: [
         'migration/target-frameworks',
+        'migration/explicit-runs',
         'migration/delegate-steps',
         'migration/scenario-definitions',
         'migration/async-only',

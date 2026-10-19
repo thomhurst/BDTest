@@ -5,7 +5,7 @@ description: Generate a single self-contained HTML report with BDTestHtmlHelper.
 
 # HTML report
 
-For built-in adapters, pass the [configured assembly run](../configuration/assembly-runs.md) to report/utility helpers. Overloads without a run still select the legacy standalone store and do not contain adapter-owned scenarios. Export all reports before disposing through the assembly owner.
+For built-in adapters, pass the [configured assembly run](../configuration/assembly-runs.md) to report/utility helpers. Every export and store utility requires the owning run. Export all reports before disposing through the assembly owner.
 
 
 `BDTestHtmlHelper` builds one self-contained HTML page. CSS, JavaScript and data are all embedded, so the file works offline and can be shared by email or attached to a build.
@@ -27,8 +27,6 @@ File.WriteAllText("BDTest-Report.html", html);
 
 | Overload | Use |
 | --- | --- |
-| `GetTestHtmlReport()` | Legacy default run and descriptor. |
-| `GetTestHtmlReport(BDTestRunDescriptor)` | Label the legacy default run. |
 | `GetTestHtmlReport(BDTestRunDescriptor, BDTestRun)` | Report on an [explicit run](../advanced/explicit-runs.md). |
 
 The method returns a string; you decide where to write it.
@@ -61,7 +59,7 @@ For other frameworks, see [Test frameworks](../frameworks/overview.md).
 ## What the report contains
 
 - **Run result:** the verdict, duration, start and end times (UTC), and the environment, tag, branch, machine and BDTest version.
-- **Run properties:** values copied from the obsolete `BDTestSettings.CustomProperties`, with keys and values HTML-encoded.
+- **Run properties:** values copied from `BDTestRunDescriptor.CustomProperties`, with keys and values HTML-encoded.
 - **Summary:** a status bar and count tiles. Totals include tests that were built but never run, so a run with unfinished definitions never reports **All passed**. Status tiles filter the scenario list; the **Built but never run** tile links to the unfinished definitions.
 - **Needs attention:** failed scenarios grouped by exception type and message, with links to each scenario. Shown only when something failed.
 - **Scenarios:** a list grouped by story. Search scenarios, steps, stories and tags; filter by status or tag; sort by story, failures first or duration. Large lists show 200 scenarios at a time. Each scenario expands to show:

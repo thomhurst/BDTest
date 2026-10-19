@@ -10,7 +10,12 @@ namespace BDTest.Test;
 internal sealed class ScenarioDefinition
 {
     internal TestMethodMetadata? TestMetadata { get; set; }
-    internal BDTestRun Run { get; set; } = BDTestRun.Default;
+    private BDTestRun? _run;
+    internal BDTestRun Run
+    {
+        get => _run ?? throw new InvalidOperationException("The scenario definition has no owning run.");
+        set => _run = value ?? throw new ArgumentNullException(nameof(value));
+    }
     internal TimeSpan? ScenarioTimeout { get; set; }
     internal string? Guid { get; set; }
     internal StoryText? StoryText { get; set; }

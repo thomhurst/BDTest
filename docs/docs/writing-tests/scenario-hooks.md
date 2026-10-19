@@ -5,7 +5,7 @@ description: Run setup and cleanup for each scenario attempt with typed context,
 
 # Scenario hooks
 
-For built-in adapters, configure `BDTestOptions` through [assembly configuration](../configuration/assembly-runs.md). Examples using `BDTestSettings` below apply only to the legacy standalone default run; use the corresponding option registrations for adapter-owned runs.
+Configure `BDTestOptions` through [assembly configuration](../configuration/assembly-runs.md), or before starting an [explicit run](../advanced/explicit-runs.md). The examples below belong in that configuration.
 
 
 Scenario hooks surround one attempt, including its [step hooks](step-hooks.md). Use them for per-scenario data, browser traces, telemetry and cleanup that must run after failures. All adapters use the same execution path.
@@ -79,9 +79,8 @@ public sealed class ScenarioLogger : IScenarioHook
 }
 ```
 
-`Start(options)` copies the registrations. Later registration changes affect only later runs. Explicit runs do not inherit global events. Hook objects can run concurrently for different tests and must protect their shared state.
+`Start(options)` copies the registrations. Later registration changes affect only later runs. Hook objects can run concurrently for different tests and must protect their shared state.
 
-For the legacy default run, subscribe to `BDTestSettings.BeforeScenario` and `BDTestSettings.AfterScenario`. Both are `Func<ScenarioHookContext, Task>` events. Remove subscriptions with `-=` when no longer needed. Both event lists are captured at the start of each attempt; changes during an attempt apply to later attempts.
 
 ## Order and failures
 
@@ -89,11 +88,11 @@ BDTest creates, configures and asynchronously initializes the context before sce
 
 For every prepared attempt, BDTest awaits:
 
-1. Run or global before hooks in registration order.
+1. Run before hooks in registration order.
 2. Instance `OnBeforeScenario`.
 3. Scenario skip checks, then steps with their step hooks.
 4. Instance `OnAfterScenario`.
-5. Run or global after hooks in registration order.
+5. Run after hooks in registration order.
 
 Before hooks stop at the first exception. Steps remain `NotRun` after an ordinary before-hook failure. Every after hook runs once the attempt's hook context has been created, even if a before hook or another after hook fails. A context construction, configuration, initialization or retry-setup failure happens before scenario hooks begin; no scenario hooks run for that failed preparation.
 

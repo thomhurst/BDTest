@@ -5,11 +5,9 @@ using BDTest.Test;
 
 namespace BDTest.Settings;
 
-// Explicit runs copy registrations once. Only the legacy default run reads live global settings.
+// Each run copies its registrations once at startup.
 internal sealed class RunOptions
 {
-    internal static RunOptions Legacy { get; } = new();
-    private readonly bool _legacy;
     private readonly Type[] _success = Array.Empty<Type>();
     private readonly Type[] _skip = Array.Empty<Type>();
     private readonly Type[] _inconclusive = Array.Empty<Type>();
@@ -21,8 +19,6 @@ internal sealed class RunOptions
     private readonly Func<Step, Task>? _afterStep;
     private readonly Func<ScenarioHookContext, Task>? _beforeScenario;
     private readonly Func<ScenarioHookContext, Task>? _afterScenario;
-
-    private RunOptions() => _legacy = true;
 
     internal RunOptions(BDTestOptions options)
     {
@@ -60,17 +56,16 @@ internal sealed class RunOptions
     internal IBDTestContextFactory? ContextFactory { get; }
     internal IServiceProvider? Services { get; }
 
-    internal IEnumerable<Type> SuccessExceptionTypes => _legacy ? BDTestSettings.CustomExceptionSettings.SuccessExceptionTypes : _success;
-    internal IEnumerable<Type> SkipExceptionTypes => _legacy ? BDTestSettings.CustomExceptionSettings.SkipExceptionTypes : _skip;
-    internal IEnumerable<Type> InconclusiveExceptionTypes => _legacy ? BDTestSettings.CustomExceptionSettings.InconclusiveExceptionTypes : _inconclusive;
-    internal IReadOnlyList<RetryTestRule> RetryRules => _legacy ? BDTestSettings.GlobalRetryTestRules.Rules : _retryRules;
-    internal IReadOnlyList<Func<Scenario, bool>> SkipTestRules => _legacy ? BDTestSettings.GlobalSkipTestRules.Rules : _skipTestRules;
-    internal IReadOnlyList<SkipStepRule<object>> SkipStepRules => _legacy ? BDTestSettings.GlobalSkipStepRules.Rules : _skipStepRules;
-    internal bool ShouldSkipWhenStep => _legacy ? BDTestSettings.Debug.ShouldSkipWhenStep : _skipWhen;
-    internal Func<Step, Task>? BeforeStep => _legacy ? BDTestSettings.BeforeStepHooks : _beforeStep;
-    internal Func<Step, Task>? AfterStep => _legacy ? BDTestSettings.AfterStepHooks : _afterStep;
-    internal Func<ScenarioHookContext, Task>? BeforeScenario => _legacy ? BDTestSettings.BeforeScenarioHooks : _beforeScenario;
-    internal Func<ScenarioHookContext, Task>? AfterScenario => _legacy ? BDTestSettings.AfterScenarioHooks : _afterScenario;
-    // Null selects legacy converters in the standalone StepTextHelper API.
-    internal IReadOnlyList<StepTextConverterRegistration>? Converters { get; }
+    internal IEnumerable<Type> SuccessExceptionTypes => _success;
+    internal IEnumerable<Type> SkipExceptionTypes => _skip;
+    internal IEnumerable<Type> InconclusiveExceptionTypes => _inconclusive;
+    internal IReadOnlyList<RetryTestRule> RetryRules => _retryRules;
+    internal IReadOnlyList<Func<Scenario, bool>> SkipTestRules => _skipTestRules;
+    internal IReadOnlyList<SkipStepRule<object>> SkipStepRules => _skipStepRules;
+    internal bool ShouldSkipWhenStep => _skipWhen;
+    internal Func<Step, Task>? BeforeStep => _beforeStep;
+    internal Func<Step, Task>? AfterStep => _afterStep;
+    internal Func<ScenarioHookContext, Task>? BeforeScenario => _beforeScenario;
+    internal Func<ScenarioHookContext, Task>? AfterScenario => _afterScenario;
+    internal IReadOnlyList<StepTextConverterRegistration> Converters { get; }
 }

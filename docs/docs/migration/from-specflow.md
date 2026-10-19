@@ -20,7 +20,7 @@ SpecFlow (and Reqnroll) bind Gherkin text to C# methods with regular expressions
 | `ScenarioContext` / context injection | The per-test [`Context`](../writing-tests/test-context.md) object |
 | `Scenario Outline:` + `Examples:` | [`ScenarioOutline(...)`](../writing-tests/scenario-outlines.md) with typed rows |
 | `@tags` | [`[BDTestTag("...")]`](../writing-tests/tags-and-information.md) |
-| `[BeforeStep]` / `[AfterStep]` hooks | [`OnBeforeStep` / `OnAfterStep`](../writing-tests/step-hooks.md) or `BDTestSettings.BeforeStep` / `AfterStep` |
+| `[BeforeStep]` / `[AfterStep]` hooks | [`OnBeforeStep` / `OnAfterStep`](../writing-tests/step-hooks.md) or `IStepHook` registrations on `BDTestOptions.StepHooks` |
 | `[BeforeScenario]` / `[AfterScenario]` | Your framework's per-test hooks, such as TUnit's `[Before(HookType.Test)]` / `[After(HookType.Test)]` |
 | `@ignore` | Your framework's ignore attribute, or a [skip rule](../writing-tests/skipping.md) |
 | `ScenarioContext.Pending()` | Throw `NotImplementedException`: the step becomes `NotImplemented` |

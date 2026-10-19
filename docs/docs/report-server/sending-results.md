@@ -5,10 +5,10 @@ description: Upload test results to a BDTest report server at the end of a test 
 
 # Sending results
 
-For built-in adapters, pass the [configured assembly run](../configuration/assembly-runs.md) to report/utility helpers. Overloads without a run still select the legacy standalone store and do not contain adapter-owned scenarios. Export all reports before disposing through the assembly owner.
+For built-in adapters, pass the [configured assembly run](../configuration/assembly-runs.md) to report/utility helpers. Every export and store utility requires the owning run. Export all reports before disposing through the assembly owner.
 
 
-At the end of the test run, call `BDTestReportServer.SendDataAndGetReportUriAsync`. By default it uploads scenarios from the shared default run; overloads accepting a `BDTestRun` upload only that run. It returns the URL of the new report.
+At the end of the test run, call `BDTestReportServer.SendDataAndGetReportUriAsync`. Every overload requires a `BDTestRun` and uploads only that run. It returns the URL of the new report.
 
 Only scenarios run through BDTest (`Given(...).When(...).Then(...)`) are sent.
 
@@ -62,13 +62,10 @@ The report server requires the `X-BDTest-Upload-Key` header on every upload. `Se
 
 | Overload | Use |
 | --- | --- |
-| `(Uri serverAddress, BDTestRunDescriptor descriptor, HttpClient httpClient)` | Recommended. Your client carries the upload key. |
-| `(Uri serverAddress, BDTestRunDescriptor descriptor)` | Creates its own client with a 2-minute timeout. Works only if no proxy or key is needed, so not with current servers. |
 | `(BDTestRun run, Uri serverAddress, BDTestRunDescriptor descriptor)` | Upload an [explicit run](../advanced/explicit-runs.md). |
 | `(Uri serverAddress, BDTestRunDescriptor descriptor, HttpClient httpClient, BDTestRun run)` | Explicit run with your own client. |
-| `(Uri serverAddress)` | Obsolete. |
 
-All return `Task<Uri>`, the summary page of the new report. Each non-obsolete overload also has a version with a final `CancellationToken cancellationToken` parameter. Existing signatures remain available and forward with `CancellationToken.None`.
+All return `Task<Uri>`, the summary page of the new report. Each overload also has a version with a final `CancellationToken cancellationToken` parameter. Existing signatures remain available and forward with `CancellationToken.None`.
 
 ## Cancellation
 
@@ -77,10 +74,6 @@ Pass a token to stop warm-up, HTTP requests (including response buffering and at
 ```csharp
 using var cancellation = new CancellationTokenSource(TimeSpan.FromSeconds(30));
 var reportUri = await BDTestReportServer.SendDataAndGetReportUriAsync(
-    serverAddress, descriptor, httpClient, cancellation.Token);
-
-// To upload an explicit run instead:
-var runReportUri = await BDTestReportServer.SendDataAndGetReportUriAsync(
     serverAddress, descriptor, httpClient, run, cancellation.Token);
 ```
 

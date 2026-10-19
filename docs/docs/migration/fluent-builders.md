@@ -9,7 +9,7 @@ The next major release removes the old members below without obsolete aliases.
 
 | Before | After |
 | --- | --- |
-| `BDTestUtil.GetCurrentReportId` | `BDTestUtil.CurrentReportId` (the default run's ID) |
+| `BDTestUtil.GetCurrentReportId` | `run.ReportId` (the owning run's ID) |
 | `BDTestContext.CurrentTestRunnerId` | `BDTestContext.ReportId` (the owning test run's ID) |
 | `BuildableTest.Parameters` | `BuildableTest.ParameterNames` (test method parameter names, not values) |
 

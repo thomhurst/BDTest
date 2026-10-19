@@ -7,7 +7,7 @@ using NUnit.Framework;
 namespace BDTest.Tests.Fixtures;
 
 [NonParallelizable]
-public class ConsoleReporterTests
+public class ConsoleReporterTests : TestRunOwner
 {
     [Test]
     public void Core_has_no_references_to_process_wide_console_colour_mutations()
@@ -73,8 +73,5 @@ public class ConsoleReporterTests
         Assert.That(run.Scenarios.Count, Is.EqualTo(scenarioCount));
     }
 
-    private sealed class Fixture(BDTestRun run) : BDTestBuilder
-    {
-        public override BDTestRun TestRun => run;
-    }
+    private sealed class Fixture(BDTestRun run) : BDTestBuilder(run);
 }

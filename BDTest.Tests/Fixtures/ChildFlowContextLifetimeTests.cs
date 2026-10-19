@@ -10,7 +10,7 @@ public class ChildFlowContextLifetimeTests
     [TestCase(true)]
     public void CompletedChildFlowDoesNotRetainContext(bool overwrite)
     {
-        var fixture = new TestFixture();
+        using var fixture = new TestFixture();
         fixture.Complete(); // Ensure the child creates its own execution ID.
         var context = CreateChildContext(fixture, overwrite);
         fixture.Complete();
@@ -40,7 +40,7 @@ public class ChildFlowContextLifetimeTests
         }).GetAwaiter().GetResult();
     }
 
-    private sealed class TestFixture : AbstractContextBDTestBase<MyTestContext>
+    private sealed class TestFixture : RunContextTestBase<MyTestContext>
     {
         // Exercise completion of standalone contexts that never called BeginTest.
         public void Complete() => BDTest.Tests.Helpers.LegacyLifecycle.Complete(this);

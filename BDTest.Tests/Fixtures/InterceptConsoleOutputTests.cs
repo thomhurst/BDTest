@@ -8,7 +8,7 @@ namespace BDTest.Tests.Fixtures;
 [Story(AsA = "BDTest developer",
     IWant = "to make sure that I can intercept console output",
     SoThat = "tests contain useful information")]
-public class InterceptConsoleOutputTests : BDTestBase
+public class InterceptConsoleOutputTests : RunTestBase
 {
     // Async - .BDTestAsync()
     [Test]

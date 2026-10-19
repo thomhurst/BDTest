@@ -10,10 +10,9 @@ using NUnit.Framework;
 namespace BDTest.Tests.Fixtures;
 
 [FixtureLifeCycle(LifeCycle.InstancePerTestCase)]
-public class ScenarioOutlineTests : AbstractContextBDTestBase<ScenarioOutlineTests.RowContext>
+public class ScenarioOutlineTests : RunContextTestBase<ScenarioOutlineTests.RowContext>
 {
-    [SetUp]
-    public void BindMetadata() => BeginTest(TestContext.CurrentContext.Test.ID, Required(global::NUnit.Framework.Internal.TestExecutionContext.CurrentContext.CurrentTest.Method).MethodInfo);
+    protected override bool BindCurrentTestMetadata => true;
 
     [TearDown]
     public void FinishExecution() => EndTest();
@@ -26,15 +25,14 @@ public class ScenarioOutlineTests : AbstractContextBDTestBase<ScenarioOutlineTes
     private readonly List<int> _visited = new();
     private readonly Dictionary<int, int> _attempts = new();
 
-    [OneTimeSetUp]
-    public static void RegisterOutcomes()
+    public ScenarioOutlineTests()
     {
-        BDTestSettings.CustomExceptionSettings.SkipExceptionTypes.Add(typeof(SkipRowException));
-        BDTestSettings.CustomExceptionSettings.SuccessExceptionTypes.Add(typeof(SuccessRowException));
-        BDTestSettings.CustomExceptionSettings.InconclusiveExceptionTypes.Add(typeof(InconclusiveRowException));
-        BDTestSettings.GlobalSkipTestRules.Add(scenario => scenario.BdTestBaseClass is SkipCapture
+        Options.SkipExceptionTypes.Add(typeof(SkipRowException));
+        Options.SuccessExceptionTypes.Add(typeof(SuccessRowException));
+        Options.InconclusiveExceptionTypes.Add(typeof(InconclusiveRowException));
+        Options.SkipTestRules.Add(scenario => scenario.BdTestBaseClass is SkipCapture
             && Required(scenario.ExampleValues).TryGetValue("Skip", out var skip) && skip == "True");
-        BDTestSettings.GlobalSkipTestRules.Add(scenario =>
+        Options.SkipTestRules.Add(scenario =>
         {
             if (Required(scenario.ExampleValues).TryGetValue("ThrowSkipRule", out var value) && value == "True")
                 throw new InvalidOperationException("<skip rule failed>");
@@ -73,7 +71,7 @@ public class ScenarioOutlineTests : AbstractContextBDTestBase<ScenarioOutlineTes
         await Assert.ThrowsAsync<ErrorOccurredDuringRetryActionException>(async () => await ScenarioOutline("Retry hook error",
             new[] { new { Value = 1 }, new { Value = 2 } },
             row => Given(() => RetryRow(row.Value)).When(() => NoOp()).Then(() => NoOp())));
-        var outline = BDTestUtil.GetScenarios().Single(x => x.FrameworkTestId == _executionId);
+        var outline = BDTestUtil.GetScenarios(TestRun).Single(x => x.FrameworkTestId == _executionId);
         Assert.That(outline.Status, Is.EqualTo(Status.Failed));
         Assert.That(Required(outline.Examples).Select(row => row.Status), Is.EqualTo(new[] { Status.Failed, Status.Passed }));
         Assert.That(outline.Examples[0].RetryCount, Is.EqualTo(1));
@@ -91,7 +89,7 @@ public class ScenarioOutlineTests : AbstractContextBDTestBase<ScenarioOutlineTes
             var razor = await ReportHandlerEncodingTests.RenderAsync("/Views/Shared/_ScenarioExamples.cshtml", result);
             Assert.That(razor, Does.Contain($"title=\"{failedRow.TimeTaken}\""));
         }
-        Assert.That(BDTestHtmlHelper.GetTestHtmlReport(),
+        Assert.That(BDTestHtmlHelper.GetTestHtmlReport(null, TestRun),
             Does.Contain($"title=\"{outline.Examples[0].TimeTaken}\">"));
         Assert.That(_visited, Is.EqualTo(new[] { 1, 2 }));
         await AssertRowErrorReported(outline, "&lt;retry hook failed&gt;");
@@ -105,14 +103,14 @@ public class ScenarioOutlineTests : AbstractContextBDTestBase<ScenarioOutlineTes
         await Assert.ThrowsAsync<InvalidOperationException>(async () => await ScenarioOutline("Skip rule error",
             new[] { new { Value = 1, ThrowSkipRule = true }, new { Value = 2, ThrowSkipRule = false } },
             row => Given(() => Record(row.Value)).When(() => NoOp()).Then(() => NoOp())));
-        var outline = BDTestUtil.GetScenarios().Single(x => x.FrameworkTestId == _executionId);
+        var outline = BDTestUtil.GetScenarios(TestRun).Single(x => x.FrameworkTestId == _executionId);
         Assert.That(Required(outline.Examples).Select(row => row.Status), Is.EqualTo(new[] { Status.Failed, Status.Passed }));
         Assert.That(Required(outline.Examples[0].Steps).All(step => step.Exception == null), Is.True);
         Assert.That(_visited, Is.EqualTo(new[] { 2 }));
         await AssertRowErrorReported(outline, "&lt;skip rule failed&gt;");
     }
 
-    private static async Task AssertRowErrorReported(Scenario outline, string encodedError)
+    private async Task AssertRowErrorReported(Scenario outline, string encodedError)
     {
         foreach (var result in new[] { outline, ReportJson.DeserializeObject<Scenario>(ReportJson.SerializeObject(outline)) })
         {
@@ -120,7 +118,7 @@ public class ScenarioOutlineTests : AbstractContextBDTestBase<ScenarioOutlineTes
             var razor = await ReportHandlerEncodingTests.RenderAsync("/Views/Shared/_ScenarioExamples.cshtml", result);
             Assert.That(razor, Does.Contain(encodedError));
         }
-        var standalone = System.Text.RegularExpressions.Regex.Match(BDTestHtmlHelper.GetTestHtmlReport(),
+        var standalone = System.Text.RegularExpressions.Regex.Match(BDTestHtmlHelper.GetTestHtmlReport(null, TestRun),
             $"<table class=\"examples\" id=\"examples-{outline.Guid}\">.*?</table>",
             System.Text.RegularExpressions.RegexOptions.Singleline).Value;
         Assert.That(standalone, Does.Contain(encodedError));
@@ -130,34 +128,26 @@ public class ScenarioOutlineTests : AbstractContextBDTestBase<ScenarioOutlineTes
     [NonParallelizable]
     public async Task Timeouts_fail_examples_even_when_timeout_exceptions_have_custom_outcomes(string outcome)
     {
-        var settings = BDTestSettings.CustomExceptionSettings;
+        var settings = Options;
         var exceptionTypes = outcome switch
         {
             "success" => settings.SuccessExceptionTypes,
             "skip" => settings.SkipExceptionTypes,
             _ => settings.InconclusiveExceptionTypes
         };
-        var previousTypes = exceptionTypes.ToArray();
         exceptionTypes.Add(typeof(TimeoutException));
-        try
-        {
-            await Assert.ThrowsAsync<TimeoutException>(async () => await ScenarioOutline("Timeout outcomes",
-                new[] { new { Value = 1 }, new { Value = 2 } },
-                row => Given(token => TimeoutRow(row.Value, token)).WithStepTimeout(TimeSpan.FromMilliseconds(150))
-                    .When(() => NoOp()).Then(() => NoOp())).BDTestAsync().WaitAsync(TimeSpan.FromSeconds(10)));
-            var outline = BDTestUtil.GetScenarios().Single(x => x.FrameworkTestId == _executionId);
-            Assert.That(outline.Status, Is.EqualTo(Status.Failed));
-            Assert.That(Required(outline.Examples).Select(row => row.Status), Is.EqualTo(new[] { Status.Failed, Status.Passed }));
-            Assert.That(outline.Examples[0].TimedOut, Is.True);
-            Assert.That(Required(outline.Examples[0].Steps)[0].Status, Is.EqualTo(Status.Failed));
-            Assert.That(_visited, Is.EqualTo(new[] { 1, 2 }));
-            await AssertRowErrorReported(outline, "timed out");
-        }
-        finally
-        {
-            exceptionTypes.Clear();
-            foreach (var type in previousTypes) exceptionTypes.Add(type);
-        }
+        await Assert.ThrowsAsync<TimeoutException>(async () => await ScenarioOutline("Timeout outcomes",
+            new[] { new { Value = 1 }, new { Value = 2 } },
+            row => Given(token => TimeoutRow(row.Value, token)).WithStepTimeout(TimeSpan.FromMilliseconds(150))
+                .When(() => NoOp()).Then(() => NoOp())).BDTestAsync().WaitAsync(TimeSpan.FromSeconds(10)));
+        var outline = BDTestUtil.GetScenarios(TestRun).Single(x => x.FrameworkTestId == _executionId);
+        Assert.That(outline.Status, Is.EqualTo(Status.Failed));
+        Assert.That(Required(outline.Examples).Select(row => row.Status), Is.EqualTo(new[] { Status.Failed, Status.Passed }));
+        Assert.That(outline.Examples[0].TimedOut, Is.True);
+        Assert.That(Required(outline.Examples[0].Steps)[0].Status, Is.EqualTo(Status.Failed));
+        Assert.That(_visited, Is.EqualTo(new[] { 1, 2 }));
+        await AssertRowErrorReported(outline, "timed out");
+
     }
 
     private async Task TimeoutRow(int value, CancellationToken token)
@@ -184,9 +174,9 @@ public class ScenarioOutlineTests : AbstractContextBDTestBase<ScenarioOutlineTes
         Assert.That(outline.Examples[0].Output, Does.Contain("row output 1").And.Not.Contain("row output 2"));
         Assert.That(outline.Examples[1].Output, Does.Contain("row output 2").And.Not.Contain("row output 1"));
         Assert.That(outline.Examples.All(row => Required(row.Steps).All(step => step.ScenarioId == row.Guid)), Is.True);
-        Assert.That(BDTestUtil.GetScenarios().Where(x => x.FrameworkTestId == _executionId), Is.EqualTo(new[] { outline }));
-        Assert.That(BDTestUtil.GetNotRunScenarios().Where(x => x.TestId == _executionId), Is.Empty);
-        var restored = ReportJson.DeserializeObject<BDTestOutputModel>(BDTestJsonHelper.GetTestJsonData());
+        Assert.That(BDTestUtil.GetScenarios(TestRun).Where(x => x.FrameworkTestId == _executionId), Is.EqualTo(new[] { outline }));
+        Assert.That(BDTestUtil.GetNotRunScenarios(TestRun).Where(x => x.TestId == _executionId), Is.Empty);
+        var restored = ReportJson.DeserializeObject<BDTestOutputModel>(BDTestJsonHelper.GetTestJsonData(null, TestRun));
         var restoredOutline = Required(restored.Scenarios).Single(scenario => scenario.FrameworkTestId == _executionId);
         Assert.That(restoredOutline.Tags, Is.EqualTo(outline.Tags));
         Assert.That(Required(restoredOutline.Examples).All(row => row.Tags.SequenceEqual(outline.Tags)), Is.True);
@@ -201,7 +191,7 @@ public class ScenarioOutlineTests : AbstractContextBDTestBase<ScenarioOutlineTes
             row => Given(() => RecordAndFail(row.Value)).When(() => NoOp()).Then(() => NoOp()));
 
         await Assert.ThrowsAsync<InvalidOperationException>(async () => await builder);
-        var outline = BDTestUtil.GetScenarios().Single(x => x.FrameworkTestId == _executionId);
+        var outline = BDTestUtil.GetScenarios(TestRun).Single(x => x.FrameworkTestId == _executionId);
         Assert.That(_visited, Is.EqualTo(new[] { 1, 2 }));
         Assert.That(Required(outline.Examples).Select(row => row.Status), Is.EqualTo(new[] { Status.Failed, Status.Passed }));
         Assert.That(outline.Status, Is.EqualTo(Status.Failed));
@@ -234,7 +224,7 @@ public class ScenarioOutlineTests : AbstractContextBDTestBase<ScenarioOutlineTes
         Exception? thrown = null;
         try { await builder; }
         catch (Exception exception) { thrown = exception; }
-        var outline = BDTestUtil.GetScenarios().Single(x => x.FrameworkTestId == _executionId);
+        var outline = BDTestUtil.GetScenarios(TestRun).Single(x => x.FrameworkTestId == _executionId);
         Assert.That(outline.Status, Is.EqualTo(expected));
         Assert.That(outline.Examples, Has.Count.EqualTo(2));
         if (expected == Status.Passed) Assert.That(thrown, Is.Null);
@@ -252,7 +242,7 @@ public class ScenarioOutlineTests : AbstractContextBDTestBase<ScenarioOutlineTes
         Assert.That(outline.Examples.All(row => row.Status == Status.Passed), Is.True);
         Assert.That(_contexts.Distinct().Count(), Is.EqualTo(3));
         Assert.That(amendmentScenarios, Is.EqualTo(new Scenario?[] { null, outline.Examples[0], null }));
-        var html = BDTestHtmlHelper.GetTestHtmlReport();
+        var html = BDTestHtmlHelper.GetTestHtmlReport(null, TestRun);
         var table = System.Text.RegularExpressions.Regex.Match(html,
             $"<table class=\"examples\" id=\"examples-{outline.Guid}\">.*?</table>",
             System.Text.RegularExpressions.RegexOptions.Singleline).Value;
@@ -289,7 +279,7 @@ public class ScenarioOutlineTests : AbstractContextBDTestBase<ScenarioOutlineTes
         }
         catch (Exception exception) { thrown = exception; }
         Assert.That(thrown, fail ? Is.TypeOf<InvalidOperationException>() : Is.Null);
-        var outline = BDTestUtil.GetScenarios().Single(x => x.FrameworkTestId == _executionId);
+        var outline = BDTestUtil.GetScenarios(TestRun).Single(x => x.FrameworkTestId == _executionId);
         foreach (var result in new[] { outline, ReportJson.DeserializeObject<Scenario>(ReportJson.SerializeObject(outline)) })
         {
             Assert.That(result.TestStartupInformation, Is.Null.Or.Empty);
@@ -308,7 +298,7 @@ public class ScenarioOutlineTests : AbstractContextBDTestBase<ScenarioOutlineTes
                 Assert.That(razor, Does.Contain($"&lt;startup {value}&gt;").And.Contain($"&lt;teardown {value}&gt;"));
             }
         }
-        var standalone = System.Text.RegularExpressions.Regex.Match(BDTestHtmlHelper.GetTestHtmlReport(),
+        var standalone = System.Text.RegularExpressions.Regex.Match(BDTestHtmlHelper.GetTestHtmlReport(null, TestRun),
             $"<table class=\"examples\" id=\"examples-{outline.Guid}\">.*?</table>",
             System.Text.RegularExpressions.RegexOptions.Singleline).Value;
         foreach (var value in Enumerable.Range(1, 3))
@@ -327,13 +317,13 @@ public class ScenarioOutlineTests : AbstractContextBDTestBase<ScenarioOutlineTes
     {
         await Assert.ThrowsAsync<InvalidOperationException>(async () => await ScenarioOutline("Factory error",
             new[] { new { Value = 1 }, new { Value = 2 } }, row => BuildRow(row.Value)));
-        var outline = BDTestUtil.GetScenarios().Single(x => x.FrameworkTestId == _executionId);
+        var outline = BDTestUtil.GetScenarios(TestRun).Single(x => x.FrameworkTestId == _executionId);
         Assert.That(Required(outline.Examples).Select(row => row.Status), Is.EqualTo(new[] { Status.Failed, Status.Passed }));
         Assert.That(Required(outline.Examples[0].Exception).Message, Is.EqualTo("factory failed"));
         Assert.That(outline.Tags, Does.Contain("factory-outline"));
         Assert.That(outline.Examples.All(row => row.Tags.SequenceEqual(outline.Tags)), Is.True);
         Assert.That(outline.Examples.Select(row => row.Guid).Distinct().Count(), Is.EqualTo(2));
-        Assert.That(BDTestUtil.GetNotRunScenarios().Where(x => x.TestId == _executionId), Is.Empty);
+        Assert.That(BDTestUtil.GetNotRunScenarios(TestRun).Where(x => x.TestId == _executionId), Is.Empty);
     }
 
     [Test]
@@ -344,9 +334,9 @@ public class ScenarioOutlineTests : AbstractContextBDTestBase<ScenarioOutlineTes
             {
                 throw new TypeInitializationException("ExampleFactory", new InvalidOperationException("<inner factory failure>"));
             }));
-        var outline = BDTestUtil.GetScenarios().Single(x => x.FrameworkTestId == _executionId);
+        var outline = BDTestUtil.GetScenarios(TestRun).Single(x => x.FrameworkTestId == _executionId);
         var error = Required(outline.Examples).Single().Exception;
-        var html = BDTestHtmlHelper.GetTestHtmlReport();
+        var html = BDTestHtmlHelper.GetTestHtmlReport(null, TestRun);
 
         Assert.That(html, Does.Contain(System.Net.WebUtility.HtmlEncode(Required(error).AsString)));
         Assert.That(html, Does.Contain("&lt;inner factory failure&gt;").And.Not.Contain("<inner factory failure>"));
@@ -355,7 +345,7 @@ public class ScenarioOutlineTests : AbstractContextBDTestBase<ScenarioOutlineTes
     [Test]
     public async Task Rejected_foreign_builder_is_removed_without_discarding_unrelated_pending_scenarios()
     {
-        var foreign = new SkipCapture();
+        var foreign = new SkipCapture(TestRun);
         var unrelated = foreign.Given(() => NoOp()).When(() => NoOp()).Then(() => NoOp());
         RunnableStepBuilder? rejected = null;
         try
@@ -366,17 +356,17 @@ public class ScenarioOutlineTests : AbstractContextBDTestBase<ScenarioOutlineTes
                     : Given(() => Record(row.Value)).When(() => NoOp()).Then(() => NoOp())));
 
             Assert.That(Required(exception).Message, Is.EqualTo("Example scenarios must be built by the outline's test instance."));
-            var outline = BDTestUtil.GetScenarios().Single(x => x.FrameworkTestId == _executionId);
+            var outline = BDTestUtil.GetScenarios(TestRun).Single(x => x.FrameworkTestId == _executionId);
             Assert.That(Required(outline.Examples).Select(row => row.Status), Is.EqualTo(new[] { Status.Failed, Status.Passed }));
             Assert.That(_visited, Is.EqualTo(new[] { 2 }));
-            var pending = BDTestUtil.GetNotRunScenarios().Select(item => item.ScenarioId).ToArray();
+            var pending = BDTestUtil.GetNotRunScenarios(TestRun).Select(item => item.ScenarioId).ToArray();
             Assert.That(pending, Does.Not.Contain(rejected?.Guid));
             Assert.That(pending, Does.Contain(unrelated.Guid));
         }
         finally
         {
-            TestHolder.NotRun.TryRemove(Required(unrelated.Guid), out _);
-            if (rejected != null) TestHolder.NotRun.TryRemove(Required(rejected.Guid), out _);
+            TestRun.Store.NotRun.TryRemove(Required(unrelated.Guid), out _);
+            if (rejected != null) TestRun.Store.NotRun.TryRemove(Required(rejected.Guid), out _);
         }
     }
 
@@ -404,7 +394,7 @@ public class ScenarioOutlineTests : AbstractContextBDTestBase<ScenarioOutlineTes
         }
         catch (Exception exception) { thrown = exception; }
 
-        var outline = BDTestUtil.GetScenarios().Single(x => x.FrameworkTestId == _executionId);
+        var outline = BDTestUtil.GetScenarios(TestRun).Single(x => x.FrameworkTestId == _executionId);
         Assert.That(Required(outline.Examples).Select(row => row.Status), Is.EqualTo(new[] { rowStatus, Status.Passed }));
         Assert.That(_visited, Is.EqualTo(new[] { 2 }));
         var expected = rowStatus == Status.Skipped ? Status.Passed : rowStatus;
@@ -447,7 +437,7 @@ public class ScenarioOutlineTests : AbstractContextBDTestBase<ScenarioOutlineTes
         Assert.That(amendmentScenarios, Is.All.Null);
         Assert.That(factoryScenarios, Has.Count.EqualTo(3));
         Assert.That(factoryScenarios, Is.All.Null);
-        var outline = BDTestUtil.GetScenarios().Single(x => x.FrameworkTestId == _executionId);
+        var outline = BDTestUtil.GetScenarios(TestRun).Single(x => x.FrameworkTestId == _executionId);
         Assert.That(stepScenarios, Is.EqualTo(Required(outline.Examples).Where(row => row.Status == Status.Passed)));
         Assert.That(BDTestContext.CurrentScenario, Is.SameAs(outline));
     }
@@ -483,7 +473,7 @@ public class ScenarioOutlineTests : AbstractContextBDTestBase<ScenarioOutlineTes
         catch (Exception exception) { thrown = exception; }
 
         Assert.That(thrown, fail ? Is.TypeOf<InvalidOperationException>() : Is.Null);
-        var outline = BDTestUtil.GetScenarios().Single(x => x.FrameworkTestId == _executionId);
+        var outline = BDTestUtil.GetScenarios(TestRun).Single(x => x.FrameworkTestId == _executionId);
         var restored = ReportJson.DeserializeObject<Scenario>(ReportJson.SerializeObject(outline));
         foreach (var result in new[] { outline, restored })
         {
@@ -514,7 +504,7 @@ public class ScenarioOutlineTests : AbstractContextBDTestBase<ScenarioOutlineTes
             Assert.That(result.Output, Does.Contain("context output 1").And.Contain("context output 2").And.Contain("context output 3"));
         }
         var razor = await ReportHandlerEncodingTests.RenderAsync("/Views/Shared/_ScenarioExamples.cshtml", restored);
-        var fullStandalone = BDTestHtmlHelper.GetTestHtmlReport();
+        var fullStandalone = BDTestHtmlHelper.GetTestHtmlReport(null, TestRun);
         foreach (var value in Enumerable.Range(1, 3))
             Assert.That(System.Text.RegularExpressions.Regex.Matches(fullStandalone, $"context output {value} {_executionId}").Count, Is.EqualTo(1));
         var standalone = System.Text.RegularExpressions.Regex.Match(fullStandalone,
@@ -535,7 +525,7 @@ public class ScenarioOutlineTests : AbstractContextBDTestBase<ScenarioOutlineTes
     [TestCase(true, Status.Skipped, 1)]
     public async Task Rule_skips_substitute_row_text_and_notify_the_adapter_once(bool skipBoth, Status status, int notifications)
     {
-        var capture = new SkipCapture();
+        var capture = new SkipCapture(TestRun);
         var outline = await capture.ScenarioOutline("Rule skips", new[] { new { Skip = true }, new { Skip = skipBoth } },
             row => capture.Given(() => NoOp()).WithStepText(() => "skip <Skip>").When(() => NoOp()).Then(() => NoOp()));
         Assert.That(outline.Status, Is.EqualTo(status));
@@ -596,7 +586,7 @@ public class ScenarioOutlineTests : AbstractContextBDTestBase<ScenarioOutlineTes
         var outline = await ScenarioOutline("Report outline", new[] { new { Text = "<script>row</script>" }, new { Text = "second" } },
             row => Given(() => NoOp()).WithStepText(() => "value <Text>").When(() => NoOp()).Then(() => NoOp()));
         var restored = ReportJson.DeserializeObject<Scenario>(ReportJson.SerializeObject(outline));
-        var standalone = BDTestHtmlHelper.GetTestHtmlReport();
+        var standalone = BDTestHtmlHelper.GetTestHtmlReport(null, TestRun);
         var exampleTable = System.Text.RegularExpressions.Regex.Match(standalone,
             $"<table class=\"examples\" id=\"examples-{outline.Guid}\">.*?</table>", System.Text.RegularExpressions.RegexOptions.Singleline).Value;
         Assert.That(exampleTable, Is.Not.Empty);
@@ -663,8 +653,9 @@ public class ScenarioOutlineTests : AbstractContextBDTestBase<ScenarioOutlineTes
     private class SkipRowException : Exception { }
     private class SuccessRowException : Exception { }
     private class InconclusiveRowException : Exception { }
-    private class SkipCapture : BDTestBase
+    private class SkipCapture(BDTestRun run) : BDTestBase
     {
+        public override BDTestRun TestRun => run;
         private readonly string _id = Guid.NewGuid().ToString();
         protected override string BDTestExecutionId => _id;
         public int Notifications { get; private set; }

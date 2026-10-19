@@ -123,23 +123,16 @@ public class StepSkipEvaluationTests
     }
 
     [Test]
-    public async Task Legacy_registration_after_construction_is_live_but_explicit_runs_are_frozen()
+    public async Task Registrations_after_start_do_not_change_run_rules()
     {
         var evaluations = 0;
-        var legacy = new Fixture(BDTestRun.Default).When(LateRegistered).Then(NoOp);
-        BDTestSettings.GlobalSkipStepRules.Add<LateSkipAttribute>(_ => { evaluations++; return true; });
-        Assert.That(evaluations, Is.Zero);
-        var legacyScenario = await legacy.BDTestAsync();
-        Assert.That(evaluations, Is.EqualTo(1));
-        Assert.That(Required(legacyScenario.Steps)[0].Status, Is.EqualTo(Status.Skipped));
-
         var options = new BDTestOptions();
         using var frozen = BDTestRun.Start(options);
         var builder = new Fixture(frozen).When(LateRegistered).Then(NoOp);
         options.SkipStepRules.Add<LateSkipAttribute>(_ => { evaluations++; return true; });
         var scenario = await builder.BDTestAsync();
         Assert.That(Required(scenario.Steps)[0].Status, Is.EqualTo(Status.Passed));
-        Assert.That(evaluations, Is.EqualTo(1));
+        Assert.That(evaluations, Is.Zero);
     }
 
     [Test]

@@ -8,7 +8,7 @@ public class BaseContextCompletionTests
     [Test]
     public void CompletionRemovesContextBeforeResettingExecutionId()
     {
-        var fixture = new TestFixture();
+        using var fixture = new TestFixture();
         var executionId = fixture.ExecutionId;
         var original = fixture.Context;
 
@@ -23,7 +23,7 @@ public class BaseContextCompletionTests
     [Test]
     public void CompletionPreservesOtherExecutionContexts()
     {
-        var fixture = new TestFixture { SelectedExecutionId = "first" };
+        using var fixture = new TestFixture { SelectedExecutionId = "first" };
         var first = fixture.Context;
         fixture.SelectedExecutionId = "second";
         var second = fixture.Context;
@@ -37,7 +37,7 @@ public class BaseContextCompletionTests
         fixture.Complete();
     }
 
-    private sealed class TestFixture : AbstractContextBDTestBase<MyTestContext>
+    private sealed class TestFixture : RunContextTestBase<MyTestContext>
     {
         public string? SelectedExecutionId { get; set; }
         public string ExecutionId => BDTestExecutionId;

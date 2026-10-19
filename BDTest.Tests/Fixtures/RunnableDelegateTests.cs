@@ -9,7 +9,7 @@ using NUnit.Framework;
 namespace BDTest.Tests.Fixtures;
 
 [NonParallelizable]
-public class RunnableDelegateTests
+public class RunnableDelegateTests : TestRunOwner
 {
     [TestCase("Action")]
     [TestCase("Task")]
@@ -73,20 +73,14 @@ public class RunnableDelegateTests
     public async Task Skipped_steps_never_invoke_the_delegate(string kind)
     {
         using var probe = new Probe();
-        var step = new Step(probe.CreateRunnable(kind), StepType.When, "scenario", "report");
-        var previous = BDTestSettings.Debug.ShouldSkipWhenStep;
-        try
-        {
-            BDTestSettings.Debug.ShouldSkipWhenStep = true;
-            await step.Execute(null);
+        Options.Debug.ShouldSkipWhenStep = true;
+        var step = new Step(probe.CreateRunnable(kind), StepType.When, "scenario", "report", TestRun);
+        Options.Debug.ShouldSkipWhenStep = true;
+        await step.Execute(null);
 
-            Assert.That(step.Status, Is.EqualTo(Status.Skipped));
-            Assert.That(probe.Values, Is.Empty);
-        }
-        finally
-        {
-            BDTestSettings.Debug.ShouldSkipWhenStep = previous;
-        }
+        Assert.That(step.Status, Is.EqualTo(Status.Skipped));
+        Assert.That(probe.Values, Is.Empty);
+
     }
 
     [Test]
@@ -106,7 +100,7 @@ public class RunnableDelegateTests
     }
 
     [BDTestRetry(1)]
-    private sealed class Probe : AbstractContextBDTestBase<ProbeContext>, IDisposable
+    private sealed class Probe : RunContextTestBase<ProbeContext>, IDisposable
     {
         private readonly string _executionId = Guid.NewGuid().ToString();
         protected override string BDTestExecutionId => _executionId;
@@ -153,10 +147,10 @@ public class RunnableDelegateTests
             Record();
         }
 
-        public void Dispose()
+        public override void Dispose()
         {
             RemoveContext();
-            BDTest.Tests.Helpers.LegacyLifecycle.Complete(this);
+            base.Dispose();
         }
     }
 }
