@@ -25,7 +25,6 @@ Use **Microsoft.Testing.Platform (MTP)** for xUnit v3. Reference `xunit.v3`, mak
 
 <ItemGroup>
   <PackageReference Include="BDTest.xUnit" Version="*" />
-  <PackageReference Include="BDTest.SourceGenerator" Version="*" PrivateAssets="all" />
   <PackageReference Include="xunit.v3" Version="4.0.2" />
   <PackageReference Include="Microsoft.Testing.Extensions.TrxReport" Version="2.5.1" />
 </ItemGroup>

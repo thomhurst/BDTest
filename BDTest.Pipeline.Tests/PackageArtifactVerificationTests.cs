@@ -32,7 +32,6 @@ public class PackageArtifactVerificationTests
             CreatePackage(id, ".nupkg");
             CreatePackage(id, ".snupkg");
         }
-        CreatePackage("BDTest.SourceGenerator", ".nupkg");
         CreatePackage("BDTest.Analyzers", ".nupkg");
     }
 
@@ -85,7 +84,31 @@ public class PackageArtifactVerificationTests
     {
         File.Delete(PackagePath("BDTest", ".nupkg"));
 
-        await AssertRejected("Expected 13 primary packages", "found 12");
+        await AssertRejected("Expected 12 primary packages", "found 11");
+    }
+
+    [Test]
+    public async Task Rejects_a_missing_bundled_generator()
+    {
+        using (var archive = ZipFile.Open(PackagePath("BDTest", ".nupkg"), ZipArchiveMode.Update))
+        {
+            archive.GetEntry("analyzers/dotnet/cs/BDTest.SourceGenerator.dll")!.Delete();
+        }
+
+        await AssertRejected("Missing or duplicate bundled source generator");
+    }
+
+    [Test]
+    [Arguments("lib/net8.0/BDTest.SourceGenerator.dll")]
+    [Arguments("analyzers/dotnet/cs/Microsoft.CodeAnalysis.dll")]
+    public async Task Rejects_compiler_runtime_payload(string path)
+    {
+        using (var archive = ZipFile.Open(PackagePath("BDTest", ".nupkg"), ZipArchiveMode.Update))
+        {
+            archive.CreateEntry(path);
+        }
+
+        await AssertRejected("Unexpected compiler runtime assembly");
     }
 
     [Test]
@@ -263,7 +286,8 @@ public class PackageArtifactVerificationTests
                 .Select(reference => new XElement("dependency",
                     new XAttribute("id", reference.Attribute("Include")!.Value),
                     new XAttribute("version", reference.Attribute("Version")!.Value)))
-                .Concat(project.Descendants("ProjectReference").Select(reference =>
+                .Concat(project.Descendants("ProjectReference")
+                    .Where(reference => (string?)reference.Attribute("PrivateAssets") != "all").Select(reference =>
                     new XElement("dependency", new XAttribute("id", Path.GetFileNameWithoutExtension(reference.Attribute("Include")!.Value.Replace('\\', '/'))),
                         new XAttribute("version", version))))));
         var manifest = new XDocument(new XElement("package", new XElement("metadata",
@@ -281,7 +305,11 @@ public class PackageArtifactVerificationTests
         }
 
         archive.CreateEntry("nuget_icon.png");
-        if (id is "BDTest.SourceGenerator" or "BDTest.Analyzers" or "Custom.Shipping")
+        if (id == "BDTest" && extension == ".nupkg")
+        {
+            archive.CreateEntry("analyzers/dotnet/cs/BDTest.SourceGenerator.dll");
+        }
+        if (id is "BDTest.Analyzers" or "Custom.Shipping")
         {
             var assemblyName = id == "Custom.Shipping" ? "Example.Tests.Pipeline.ReportGenerator" : id;
             archive.CreateEntry($"analyzers/dotnet/cs/{assemblyName}.dll");

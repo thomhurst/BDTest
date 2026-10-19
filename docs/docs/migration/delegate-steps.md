@@ -25,7 +25,7 @@ Steps receive a token combining explicit `BDTestAsync(cancellationToken)` cancel
 
 ## Names, attributes, and arguments
 
-Install the optional [BDTest.SourceGenerator package](../advanced/source-generator.md) directly in every project containing step calls. For simple method calls, its metadata preserves humanized names, `[StepText]`, inherited skip attributes (including custom `SkipStepIf` attributes), and supported argument values. Caller file, line, and lambda text identify the call site. Continuation builders preserve these compiler values too. Method groups retain their selected method and attributes without the generator.
+The [source generator bundled in BDTest](../advanced/source-generator.md) is enabled automatically in projects referencing core or an adapter. For simple method calls, its metadata preserves humanized names, `[StepText]`, inherited skip attributes (including custom `SkipStepIf` attributes), and supported argument values. Caller file, line, and lambda text identify the call site. Continuation builders preserve these compiler values too. Method groups retain their selected method and attributes without the generator.
 
 Automatic argument capture supports constants and field/property paths rooted in `this` or static state. Captured locals, method calls, allocations, and other unsupported argument expressions need explicit readers:
 

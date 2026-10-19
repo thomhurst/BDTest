@@ -62,7 +62,7 @@ Use `Development` locally. `Production` can publish packages to NuGet.
 | `BDTest.Razor.Reports` | Report server controllers and views. |
 | `BDTest.Reports.Storage.AzureBlob` | Packaged Azure report, run-index and attachment store. |
 | `BDTest.ReportGenerator.RazorServer` | Sample report host (not packed). |
-| `BDTest.SourceGenerator` | Optional compile-time step metadata. |
+| `BDTest.SourceGenerator` | Compile-time step metadata bundled in the core package; not independently packed. |
 | `BDTest.Example` | Sample NUnit tests. |
 | `BDTest.Tests` | Core and reporting tests (TUnit; signed friend assembly). |
 | `BDTest.NUnit.Tests` | NUnit adapter and sample integration tests (unsigned). |

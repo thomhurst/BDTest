@@ -20,7 +20,12 @@ file-system storage package require .NET 10. Delegate overload resolution needs
 C# 13 or later (.NET SDK 9 or later), even when selecting the .NET Standard asset.
 Compiler extensions still target their .NET Standard compiler host.
 
-Package IDs stay the same, including `BDTest.xUnit` and `BDTest.Razor.Reports`.
+The source generator now ships inside `BDTest` and arrives automatically through
+adapters. Remove explicit `BDTest.SourceGenerator` package references and central
+version entries; the standalone package is no longer produced. See
+[source generator migration](../advanced/source-generator.md#installation).
+
+Runtime package IDs stay the same, including `BDTest.xUnit` and `BDTest.Razor.Reports`.
 The latter's display name is **BDTest - ASP.NET Core Reports**.
 `BDTest.ReportGenerator.RazorServer` is a sample host, not a NuGet package.
 `BDTest.Reports.Storage.FileSystem` is an optional storage package; its addition
@@ -52,7 +57,7 @@ See the [framework guides](../frameworks/overview.md) for the installed APIs.
 | Existing usage | Upgrade action |
 | --- | --- |
 | Nested builder, base or attribute namespaces | Replace test-authoring imports with `using BDTest;`; see [consumer namespaces](consumer-namespaces.md). Rebuild consumers and update reflection names. |
-| Expression-tree step signatures | Use [delegate steps](delegate-steps.md). Install `BDTest.SourceGenerator` in projects containing steps to preserve method metadata, attributes and supported argument capture. Use `WithArgs` for unsupported expressions. |
+| Expression-tree step signatures | Use [delegate steps](delegate-steps.md). The bundled source generator preserves method metadata, attributes and supported argument capture. Use `WithArgs` for unsupported expressions. |
 | Positional `[StepText]` placeholders and overrides | Use [parameter names](named-step-text.md): `{amount}` instead of `{0}`, and `"user=an administrator"` instead of `"1:an administrator"`. |
 | Synchronous `BDTest()` | Return `Task` from the test and use `await` or `BDTestAsync()`; see [async-only execution](async-only.md). |
 | Global execution settings in adapters | `BDTestSettings` has been removed. Move settings into `IBDTestConfiguration` selected by the assembly's `BDTestConfiguration` attribute. Built-in adapters use a frozen [assembly run](../configuration/assembly-runs.md). |

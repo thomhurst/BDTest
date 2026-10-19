@@ -42,8 +42,7 @@ const stepsCode = `public class AccountSteps(AccountContext context)
 
 // BDTest.TUnit depends only on TUnit.Core; TUnit brings the runner and assertions.
 const installCommands = `dotnet add package TUnit
-dotnet add package BDTest.TUnit
-dotnet add package BDTest.SourceGenerator`;
+dotnet add package BDTest.TUnit`;
 
 const reportSteps = [
   ['Given', 'I have an account with a balance of 100'],
@@ -131,7 +130,7 @@ function Walkthrough() {
     <section className={`${styles.container} ${styles.walkthrough}`} aria-labelledby="walkthrough-heading">
       <Heading as="h2" id="walkthrough-heading" className={styles.sectionTitle}>Steps are methods. Scenarios are tests.</Heading>
       <p className={styles.sectionLead}>
-        Use your test runner, your IDE and your debugger as usual. The optional source generator
+        Use your test runner, your IDE and your debugger as usual. The bundled source generator
         records which method each step calls. BDTest then reads the attributes and current argument
         values just before each step runs, and writes them into the report.
       </p>

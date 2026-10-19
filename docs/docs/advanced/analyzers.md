@@ -17,7 +17,7 @@ Keep the package version aligned with your other BDTest packages. Mark the refer
 <PackageReference Include="BDTest.Analyzers" Version="*" PrivateAssets="all" />
 ```
 
-The package contains a `netstandard2.0` Roslyn component under `analyzers/dotnet/cs`. NuGet loads it automatically; no DLL reference is needed. It requires Roslyn 4.8 or newer (.NET SDK 8 or newer). BDTest step overload selection requires a C# 13 or newer compiler, as described in [Installation](../getting-started/installation.md). The analyzer works alongside [BDTest.SourceGenerator](source-generator.md), which supplies report metadata and also validates named step templates. When both packages are installed, template diagnostics are emitted once by the generator.
+The package contains a `netstandard2.0` Roslyn component under `analyzers/dotnet/cs`. NuGet loads it automatically; no DLL reference is needed. It requires Roslyn 4.8 or newer (.NET SDK 8 or newer). BDTest step overload selection requires a C# 13 or newer compiler, as described in [Installation](../getting-started/installation.md). The analyzer works alongside the [source generator bundled in BDTest](source-generator.md), which supplies report metadata and also validates named step templates. When the analyzer package is installed, template diagnostics are emitted once by the generator.
 
 | Rule | Default severity | Meaning | Code fix |
 | --- | --- | --- | --- |

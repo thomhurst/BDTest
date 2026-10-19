@@ -31,7 +31,7 @@ The source generator and analyzer diagnose invalid templates with `BDT002`, incl
 
 ## Argument capture and fallback
 
-Install `BDTest.SourceGenerator` in each consumer project. Named templates do not expand the set of [supported generated argument readers](../advanced/source-generator.md). When a method is known but a captured local, factory expression or other unsupported argument cannot be read automatically, the source expression remains the fallback. Use `.WithArgs(...)` in method parameter order to restore named template rendering. Without method metadata, `WithArgs` values append to the source expression instead.
+The source generator is included automatically with `BDTest` and its adapters. Named templates do not expand the set of [supported generated argument readers](../advanced/source-generator.md). When a method is known but a captured local, factory expression or other unsupported argument cannot be read automatically, the source expression remains the fallback. Use `.WithArgs(...)` in method parameter order to restore named template rendering. Without method metadata, `WithArgs` values append to the source expression instead.
 
 Construction, skipped/unreached steps and reporting never read arguments. Supported templates retain named placeholders, including their formats, until execution. Each executed attempt reads current values once, after hooks and skip checks; retries preserve this behavior. Template diagnostics are available for skipped and unreached steps too, and report refresh does not duplicate them.
 

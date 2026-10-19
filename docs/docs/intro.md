@@ -49,7 +49,7 @@ BDTest structures tests so that they:
 BDTest started as a reaction to SpecFlow. Think of BDTest as a pure code alternative:
 
 - **No Gherkin files.** There is no second language to learn and keep in sync with the code.
-- **No generated tests.** Your test bodies are your code and run as written, inside your usual runner. The optional source generator only records step metadata for reports.
+- **No generated tests.** Your test bodies are your code and run as written, inside your usual runner. The bundled source generator only records step metadata for reports.
 - **Easier debugging.** Stack traces point at your step methods, not at generated classes. You can step into every method from any IDE.
 - **Richer arguments.** Pass enums, models, collections and other objects into steps.
 - **Reusable steps.** A method is not tied to `Given`, `When` or `Then`. Use the same method in any position without extra attributes.
@@ -62,11 +62,10 @@ You still get business-readable output. Mark classes and methods with [`[Story]`
 
 | Package | Purpose |
 | --- | --- |
-| `BDTest` | Core framework: builders, context, step text, settings, JSON and HTML reports. |
+| `BDTest` | Core framework: builders, context, step text, settings and bundled compile-time step metadata. |
 | `BDTest.NUnit`, `BDTest.xUnit`, `BDTest.MSTest`, `BDTest.TUnit` | Base classes that connect BDTest to each test framework. |
 | `BDTest.Razor.Reports` | Report server controllers and views for an ASP.NET Core app. |
 | `BDTest.Reports.Storage.AzureBlob` | Persistent Azure Blob report storage. |
-| `BDTest.SourceGenerator` | Optional compile-time step metadata. |
 
 ## Next steps
 

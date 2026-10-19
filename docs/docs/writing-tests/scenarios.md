@@ -16,7 +16,7 @@ await Given(() => Account.CreateAnAccount(100m))
     .BDTestAsync();
 ```
 
-Each step is a delegate, usually a lambda that calls one method. BDTest runs the delegate as written. With the optional [source generator](../advanced/source-generator.md), it also knows which method the lambda calls, so it can build readable [step text](step-text.md) from `[StepText]` or the method name.
+Each step is a delegate, usually a lambda that calls one method. BDTest runs the delegate as written. With the bundled [source generator](../advanced/source-generator.md), it also knows which method the lambda calls, so it can build readable [step text](step-text.md) from `[StepText]` or the method name.
 
 ## Two ways to start
 

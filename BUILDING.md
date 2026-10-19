@@ -329,7 +329,13 @@ with `<IsPackable>true</IsPackable>` in their project files. The complete packag
 set is `BDTest`, `BDTest.NUnit`, `BDTest.xUnit`, `BDTest.MSTest`, `BDTest.TUnit`,
 `BDTest.Contracts`, `BDTest.Reporting`, `BDTest.Rendering`, `BDTest.Razor.Reports`, `BDTest.Reports.Storage.FileSystem`,
 `BDTest.Reports.Storage.AzureBlob`,
-`BDTest.SourceGenerator`, and `BDTest.Analyzers`.
+and `BDTest.Analyzers`.
+`BDTest.SourceGenerator` is not independently packable. Core builds it as a private
+project dependency and bundles its DLL under `analyzers/dotnet/cs`; it adds no
+runtime assembly or package dependency. NuGet consumers receive it directly or
+through an adapter. Repository consumers retain explicit analyzer project references.
+`BDTest.Analyzers.Tests/PackageTests.cs` verifies both core assets, transitive
+adapter installation and coexistence with the optional analyzer package.
 Tests, pipeline tools, examples and the sample report host are not packable.
 Project and directory names do not decide whether a project ships.
 

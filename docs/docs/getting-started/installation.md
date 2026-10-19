@@ -23,17 +23,11 @@ dotnet add package BDTest.xUnit
 dotnet add package BDTest.MSTest
 ```
 
-Then add the source generator to every project that contains steps. It lets BDTest render `[StepText]`, method names and argument values in reports; without it, steps show their source text. See [Step text](../writing-tests/step-text.md#install-the-source-generator).
+The core `BDTest` package includes the source generator, including when installed through an adapter. It lets BDTest render `[StepText]`, method names and supported argument values in reports automatically. See [Step text](../writing-tests/step-text.md#compiler-step-metadata).
 
-```bash
-dotnet add package BDTest.SourceGenerator
-```
+Add optional compile-time checks and IDE fixes with `dotnet add package BDTest.Analyzers`, marked `PrivateAssets="all"`. See [Analyzers and code fixes](../advanced/analyzers.md) for rule IDs, installation and suppression.
 
-Mark it `PrivateAssets="all"` in the project file so it does not flow to projects that reference yours.
-
-Add optional compile-time checks and IDE fixes with `dotnet add package BDTest.Analyzers`, also marked `PrivateAssets="all"`. See [Analyzers and code fixes](../advanced/analyzers.md) for rule IDs, installation and suppression.
-
-To use BDTest without a framework adapter, install only the core package (plus the generator):
+To use BDTest without a framework adapter, install only the core package:
 
 ```bash
 dotnet add package BDTest
@@ -101,7 +95,7 @@ The core `BDTest` package targets `netstandard2.0;net8.0`. Adapter and report se
 | `BDTest.Razor.Reports` | `net10.0` | ASP.NET Core |
 | `BDTest.Reports.Storage.FileSystem` | `net10.0` | ASP.NET Core report storage |
 | `BDTest.Reports.Storage.AzureBlob` | `net10.0` | Azure Blob Storage / ASP.NET Core |
-| `BDTest.SourceGenerator` | `netstandard2.0` analyzer | C# 10+ compiler (.NET SDK 8+) |
+| Source generator (bundled in `BDTest`) | `netstandard2.0` analyzer | C# 10+ compiler (.NET SDK 8+) |
 | `BDTest.Analyzers` | `netstandard2.0` analyzer | Roslyn 4.8+ (.NET SDK 8+) |
 
 BDTest's step builders take delegates and need a **C# 13 or newer** compiler (.NET SDK 9 or newer). The core package retains its `netstandard2.0` build alongside `net8.0`.
@@ -125,7 +119,6 @@ A typical TUnit test project:
 
   <ItemGroup>
     <PackageReference Include="BDTest.TUnit" Version="*" />
-    <PackageReference Include="BDTest.SourceGenerator" Version="*" PrivateAssets="all" />
     <PackageReference Include="BDTest.Analyzers" Version="*" PrivateAssets="all" />
     <PackageReference Include="TUnit" Version="*" />
   </ItemGroup>
