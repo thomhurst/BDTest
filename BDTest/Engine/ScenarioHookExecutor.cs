@@ -15,7 +15,6 @@ internal static class ScenarioHookExecutor
         var beforeHooks = scenario.ExecutionRun.Options.BeforeScenario;
         var afterHooks = scenario.ExecutionRun.Options.AfterScenario;
         var cancellation = new CancellationTokenSource();
-        var token = cancellation.Token;
         TaskCompletionSource<bool>? cleanupFinished = null;
         try
         {
@@ -66,8 +65,7 @@ internal static class ScenarioHookExecutor
             // Throw only after every cleanup handler has had a chance to run.
             if (executionException != null) ExceptionDispatchInfo.Capture(executionException).Throw();
 
-            ScenarioHookContext CreateContext() => test?.CreateScenarioHookContext(scenario, token)
-                ?? new ScenarioHookContext(scenario, null, token);
+            ScenarioHookContext CreateContext() => context!.WithSnapshot(scenario);
 
             async Task InvokeAfter(Func<ScenarioHookContext, Task> hook)
             {

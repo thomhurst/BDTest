@@ -43,7 +43,7 @@ public abstract class InstrumentedTests : NUnitBDTestBase<ScenarioState>
 `ScenarioHookContext<TContext>` provides:
 
 - `Scenario`: a fresh immutable `BDTest.Contracts.ScenarioResult` at each hook boundary, including text, story, tags, steps and example values. Before hooks see `Pending` and unrun steps; after hooks see the attempt outcome before timing and attempt history are finalized. Retained snapshots never change. The typed `Context` remains available for setup and cleanup.
-- `Context`: the same typed object as the test's `Context` when the attempt starts.
+- `Context`: the same typed object as the test's `Context` when the attempt starts. All hooks for that attempt retain this object even if a hook or step calls `OverwriteContext` or `RemoveContext`; refreshing the result snapshot does not create a new context. Context replacement/removal still follows its normal disposal rules.
 - `Attempt`: zero for the initial attempt, then one, two and so on for retries. Report `ScenarioAttemptResult.Number` is one-based instead.
 - `CancellationToken`: a fresh token for this attempt, cancelled when a step times out, before after hooks run. This token is separate from step tokens. An ordinary exception does not cancel it. Run disposal does not cancel active attempts.
 

@@ -9,6 +9,12 @@ internal static class ResultSnapshot
 {
     internal static ScenarioResult Create(Scenario scenario)
     {
+        lock (scenario.Run?.Store.Gate ?? scenario)
+            return CreateScenario(scenario);
+    }
+
+    private static ScenarioResult CreateScenario(Scenario scenario)
+    {
         var steps = scenario.Steps?.Select(Create).ToArray();
         var examples = scenario.Examples?.Select(Create).ToArray();
         // Reuse the projected exception node so renderers can avoid displaying it twice.
@@ -27,7 +33,13 @@ internal static class ResultSnapshot
             scenario.CustomTestInformation?.Select(item => item.Information ?? "").ToArray());
     }
 
-    internal static StepResult Create(Step step) => new(step.StepType, step.StepText ?? "", step.Status,
+    internal static StepResult Create(Step step)
+    {
+        lock (step.SnapshotGate ?? step)
+            return CreateStep(step);
+    }
+
+    private static StepResult CreateStep(Step step) => new(step.StepType, step.StepText ?? "", step.Status,
         step.Guid, step.ReportId, step.ScenarioId, step.IsRetry, Create(step.Exception), step.Output,
         Utc(step.StartTime), Utc(step.EndTime), step.TimeTaken, step.Timeout, step.TimedOut,
         step.Diagnostics, step.Arguments.Select(Create).ToArray(), step.Attachments?.Select(Create).ToArray(), step.SkipReason == null ? null : new Contracts.StepSkipReason(step.SkipReason.Source, step.SkipReason.AttributeType, step.SkipReason.RuleIndex, step.SkipReason.Setting));

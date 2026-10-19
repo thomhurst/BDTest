@@ -121,14 +121,30 @@ Delegate builders need a C# 13 or newer compiler (.NET SDK 9 or newer), so overl
 
 ## Running the scenario
 
-`BDTestAsync()` returns `Task<Scenario>`. The builder is also awaitable, so these are equivalent:
+`BDTestAsync()` returns `Task<BDTest.Contracts.ScenarioResult>`. The builder is also awaitable, so these are equivalent ways to run a new chain:
 
-```csharp title="Illustrative fragment"
-Scenario scenario = await Given(...).When(...).Then(...).BDTestAsync();
-Scenario scenario = await Given(...).When(...).Then(...);
+```csharp sample="NUnit/ScenarioResults.cs" title="Compiled example"
+using BDTest;
+using BDTest.Contracts;
+using BDTest.Test;
+
+public static class ScenarioResultsExample
+{
+    public static async Task RunAsync(BDTestRun run)
+    {
+        ScenarioResult explicitResult = await new BDTestBuilder(run)
+            .When(() => Console.WriteLine("Act"))
+            .Then(() => Console.WriteLine("Check"))
+            .BDTestAsync();
+        ScenarioResult awaitedResult = await new BDTestBuilder(run)
+            .When(() => Console.WriteLine("Act"))
+            .Then(() => Console.WriteLine("Check"));
+        Console.WriteLine($"{explicitResult.Status}, {awaitedResult.Status}");
+    }
+}
 ```
 
-The returned [`Scenario`](../advanced/utilities.md#scenario-and-step-model) holds the status, steps, timings, output and retry history.
+The returned [`ScenarioResult`](../advanced/utilities.md#scenario-and-step-model) is an immutable snapshot of the status, steps, timings, output and retry history. Later teardown output appears in a fresh `BDTestUtil.GetScenarios(run)` query; previously returned results stay unchanged.
 
 When a step throws:
 

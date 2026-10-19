@@ -86,6 +86,7 @@ public class Step
 
     [JsonIgnore] private RunOptions Options => _options ?? throw new InvalidOperationException("A report step cannot be executed.");
     private readonly RunOptions? _options;
+    [JsonIgnore] internal object? SnapshotGate { get; }
 
     internal List<Attachment> ExecutionAttachments => Attachments ?? throw new InvalidOperationException("The step has no attachment collection.");
     private List<string> ExecutionDiagnostics => Diagnostics ?? throw new InvalidOperationException("The step has no diagnostics collection.");
@@ -102,6 +103,7 @@ public class Step
     private Step(Runnable runnable, StepType stepType, string? scenarioId, string? reportId, BDTestRun run, string textTemplate)
     {
         _options = (run ?? throw new ArgumentNullException(nameof(run))).Options;
+        SnapshotGate = run.Store.Gate;
         Guid = System.Guid.NewGuid().ToString("N");
         ScenarioId = scenarioId;
         Runnable = runnable;

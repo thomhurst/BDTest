@@ -8,6 +8,49 @@ namespace BDTest.Tests.Fixtures;
 
 public class ScenarioHookTests
 {
+    [TestCase(false, "before")]
+    [TestCase(true, "before")]
+    [TestCase(false, "step")]
+    [TestCase(true, "step")]
+    [TestCase(false, "after")]
+    [TestCase(true, "after")]
+    public async Task Hooks_keep_the_original_context_when_it_is_replaced_or_removed(bool remove, string boundary)
+    {
+        var contexts = new List<ScenarioHookContext>();
+        var options = new BDTestOptions();
+        Fixture? fixture = null;
+        options.ScenarioHooks.Add(new Hook(s =>
+        {
+            contexts.Add(s);
+            if (boundary == "before") ChangeContext();
+            return Task.CompletedTask;
+        }, s => { contexts.Add(s); return Task.CompletedTask; }));
+        using var run = BDTestRun.Start(options);
+        fixture = new Fixture(run)
+        {
+            Before = s => { contexts.Add(s); return Task.CompletedTask; },
+            After = s =>
+            {
+                contexts.Add(s);
+                if (boundary == "after") ChangeContext();
+                return Task.CompletedTask;
+            }
+        };
+        await fixture.When(() => ChangeDuringStep()).Then(() => Complete());
+        Assert.That(contexts, Has.Count.EqualTo(4));
+        Assert.That(contexts.Select(s => s.Context), Is.All.SameAs(contexts[0].Context));
+        Assert.That(contexts.Take(2).Select(s => s.Scenario.Status), Is.All.EqualTo(Status.Pending));
+        Assert.That(contexts.Skip(2).Select(s => s.Scenario.Status), Is.All.EqualTo(Status.Passed));
+        Assert.That(fixture.CreatedContexts, Is.EqualTo(1), "Reading a hook must not create a replacement context.");
+
+        void ChangeDuringStep() { if (boundary == "step") ChangeContext(); }
+        void ChangeContext()
+        {
+            if (remove) fixture!.RemoveForTest();
+            else fixture!.OverwriteContext(new State());
+        }
+    }
+
     [Test]
     public async Task Hooks_wrap_steps_in_registration_order_and_receive_typed_context()
     {
@@ -338,6 +381,13 @@ public class ScenarioHookTests
     private sealed class State { public int Attempt { get; set; } }
     private sealed class Fixture(BDTestRun run) : AbstractContextBDTestBase<State>
     {
+        public int CreatedContexts { get; private set; }
+        public void RemoveForTest() => RemoveContext();
+        protected override async ValueTask<State> CreateContextAsync(ContextCreation creation)
+        {
+            CreatedContexts++;
+            return await base.CreateContextAsync(creation);
+        }
         private readonly string _id = Guid.NewGuid().ToString("N");
         protected override string BDTestExecutionId => _id;
         public override BDTestRun TestRun => run;

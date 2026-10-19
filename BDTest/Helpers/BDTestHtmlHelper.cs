@@ -452,7 +452,7 @@ public static class BDTestHtmlHelper
 
         // Errors raised outside a step (setup, skip rules, retry hooks) have no step to show them.
         var exception = scenario.IsOutline ? null : scenario.Exception;
-        if (exception != null && scenario.Steps?.Any(step => ReferenceEquals(step.Exception, exception)) != true)
+        if (exception != null && scenario.Steps?.Any(step => SameException(step.Exception, exception)) != true)
         {
             html.AppendLine("<div><h3 class=\"h3\">Error</h3>");
             AppendError(html, exception);
@@ -486,6 +486,28 @@ public static class BDTestHtmlHelper
             html.AppendLine("</div></div>");
         }
     }
+
+    private static bool SameException(ExceptionInfo? left, ExceptionInfo right, int depth = 0)
+    {
+        if (ReferenceEquals(left, right)) return true;
+        // Match saved reports by value; fail conservatively beyond the renderer's tree limit.
+        if (left == null || depth > 9 || left.TypeName != right.TypeName || left.Message != right.Message
+            || !SameOrPropagatedText(left.StackTrace, right.StackTrace) || !SameOrPropagatedText(left.AsString, right.AsString)
+            || left.ShortTypeName != right.ShortTypeName || left.HResult != right.HResult
+            || left.Source != right.Source || left.IsWrapper != right.IsWrapper
+            || left.TruncationReason != right.TruncationReason || left.Data.Count != right.Data.Count
+            || left.InnerExceptions.Count != right.InnerExceptions.Count) return false;
+        if (left.Data.Any(entry => !right.Data.TryGetValue(entry.Key, out var value) || value != entry.Value)) return false;
+        for (var index = 0; index < left.InnerExceptions.Count; index++)
+            if (!SameException(left.InnerExceptions[index], right.InnerExceptions[index], depth + 1)) return false;
+        return true;
+    }
+
+    // Rethrowing a step failure can append scenario frames to the same diagnostic text.
+    private static bool SameOrPropagatedText(string? stepText, string? scenarioText) =>
+        stepText == scenarioText || !string.IsNullOrEmpty(stepText) && scenarioText != null
+        && (scenarioText.StartsWith(stepText + "\r\n", StringComparison.Ordinal)
+            || scenarioText.StartsWith(stepText + "\n", StringComparison.Ordinal));
 
     private static void GenerateExamplesTable(StringBuilder html, Scenario scenario)
     {

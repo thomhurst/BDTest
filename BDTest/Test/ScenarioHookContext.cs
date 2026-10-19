@@ -16,6 +16,8 @@ public class ScenarioHookContext
     }
 
     public ScenarioResult Scenario { get; }
+    internal virtual ScenarioHookContext WithSnapshot(Scenario scenario) =>
+        new(scenario, Context, CancellationToken);
     /// <summary>The test's context, or null for a non-context test base.</summary>
     public object? Context { get; }
     /// <summary>Zero for the first attempt, then one, two and so on for retries.</summary>
@@ -32,4 +34,6 @@ public sealed class ScenarioHookContext<TContext> : ScenarioHookContext
         : base(scenario, context, cancellationToken) => Context = context;
 
     public new TContext Context { get; }
+    internal override ScenarioHookContext WithSnapshot(Scenario scenario) =>
+        new ScenarioHookContext<TContext>(scenario, Context, CancellationToken);
 }

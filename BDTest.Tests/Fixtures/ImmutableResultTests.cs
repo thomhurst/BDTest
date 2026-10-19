@@ -9,6 +9,72 @@ namespace BDTest.Tests.Fixtures;
 
 public class ImmutableResultTests
 {
+    [TestCase("scenario")]
+    [TestCase("step")]
+    [TestCase("query")]
+    public async Task Snapshot_reads_wait_for_attachment_publication(string boundary)
+    {
+        using var run = BDTestRun.Start();
+        var result = await new Capture(run).When(() => NoOp()).Then(() => NoOp());
+        var scenario = run.Store.ScenariosByInternalId[result.Guid];
+        using var started = new ManualResetEventSlim();
+        Task<object> read;
+        bool completedWhilePublishing;
+        lock (run.Store.Gate)
+        {
+            read = Task.Factory.StartNew<object>(() =>
+            {
+                started.Set();
+                return boundary switch
+                {
+                    "step" => ResultSnapshot.Create(scenario.ExecutionSteps[0]),
+                    "query" => run.Scenarios.Single(),
+                    _ => ResultSnapshot.Create(scenario)
+                };
+            }, CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Default);
+            Assert.That(started.Wait(TimeSpan.FromSeconds(10)), Is.True);
+            completedWhilePublishing = read.Wait(TimeSpan.FromMilliseconds(100));
+            var attachment = new Attachment { Id = "published", Name = "capture.txt", MimeType = "text/plain" };
+            scenario.ExecutionAttachments.Add(attachment);
+            scenario.ExecutionSteps[0].ExecutionAttachments.Add(attachment);
+        }
+        var snapshot = await read.WaitAsync(TimeSpan.FromSeconds(10));
+        Assert.That(completedWhilePublishing, Is.False, "A snapshot must wait for an in-flight attachment publication.");
+        Assert.That(snapshot is StepResult step ? step.Attachments.Single().Id
+            : ((ScenarioResult)snapshot).Attachments.Single().Id, Is.EqualTo("published"));
+    }
+
+    [Test]
+    public async Task Saved_failed_report_renders_the_step_error_once()
+    {
+        using var run = BDTestRun.Start();
+        await Assert.ThrowsAsync<InvalidOperationException>(async () => await new Capture(run)
+            .When(() => throw new InvalidOperationException("saved failure")).Then(() => NoOp()));
+        var report = BDTestJsonHelper.DeserializeReport(BDTestJsonHelper.GetTestJsonData(null, run));
+        var scenario = report.Scenarios.Single();
+        Assert.That(scenario.Exception, Is.Not.SameAs(scenario.Steps[0].Exception));
+        var html = BDTestHtmlHelper.GenerateHtmlReport(report);
+        Assert.That(html, Does.Contain("saved failure"));
+        Assert.That(html, Does.Not.Contain("<h3 class=\"h3\">Error</h3>"));
+    }
+
+    [TestCase(false)]
+    [TestCase(true)]
+    public void Saved_report_keeps_distinct_scenario_diagnostics(bool differentInnerError)
+    {
+        var stepError = new ExceptionInfo("Failure", "same message",
+            data: new Dictionary<string, string> { ["owner"] = "step" },
+            innerExceptions: new[] { new ExceptionInfo("Inner", "step cause") });
+        var scenarioError = new ExceptionInfo("Failure", "same message",
+            data: new Dictionary<string, string> { ["owner"] = differentInnerError ? "step" : "scenario" },
+            innerExceptions: new[] { new ExceptionInfo("Inner", differentInnerError ? "scenario cause" : "step cause") });
+        var scenario = new ScenarioResult("scenario", "report", "story", "scenario", Status.Failed,
+            steps: new[] { new StepResult(StepType.When, "step", Status.Failed, exception: stepError) }, exception: scenarioError);
+        var report = new BDTestReport(1, "report", "test", new[] { scenario });
+        var restored = BDTestJsonHelper.DeserializeReport(BDTestJsonHelper.Serialize(report));
+        Assert.That(BDTestHtmlHelper.GenerateHtmlReport(restored), Does.Contain("<h3 class=\"h3\">Error</h3>"));
+    }
+
     [Test]
     public async Task Snapshots_cannot_change_execution_and_do_not_change_after_teardown_or_clear()
     {
