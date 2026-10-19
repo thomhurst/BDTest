@@ -29,6 +29,9 @@ foreach ($project in $projects) {
     if ($project.Name -eq 'BDTest.TUnit.Tests') {
         & dotnet run --project $projectPath -c $Configuration -- --treenode-filter '/*/*/SkipOutcomeTests/*' --report-trx --report-trx-filename outcomes.trx --results-directory $resultPath
     }
+    elseif ($project.Name -eq 'BDTest.xUnit.Tests') {
+        & dotnet run --project $projectPath -c $Configuration -- --filter-class '*SkipOutcomeTests' --report-trx --report-trx-filename outcomes.trx --results-directory $resultPath
+    }
     else {
         & dotnet test $projectPath -c $Configuration --filter 'FullyQualifiedName~SkipOutcomeTests' --logger 'trx;LogFileName=outcomes.trx' --results-directory $resultPath
     }

@@ -133,6 +133,26 @@ public class BulkConsoleOutputTests
         await Task.WhenAll(tasks);
     }
 
+    [Test]
+    public async Task Console_only_writes_use_the_capture_lock_without_capturing_summary_text()
+    {
+        using var capture = new Capture();
+        var checkedWrites = 0;
+        capture.Original.BeforeWrite = () =>
+        {
+            if (!Monitor.IsEntered(capture.Writer.SynchronizedWriter))
+                throw new InvalidOperationException("Original console writes must acquire the capture monitor first.");
+            checkedWrites++;
+        };
+
+        capture.Writer.SynchronizedWriter.Write("captured");
+        capture.Writer.WriteLineToConsoleOnly("summary");
+
+        await Assert.That(capture.Writer.ToString()).IsEqualTo("captured");
+        await Assert.That(capture.Original.ToString()).IsEqualTo("capturedsummary" + capture.Original.NewLine);
+        await Assert.That(checkedWrites).IsGreaterThanOrEqualTo(2);
+    }
+
     private static string WriteForm(TextWriter writer, string form)
     {
         const string text = "bulk \uD83D\uDE80\ntext";
@@ -202,10 +222,12 @@ public class BulkConsoleOutputTests
 
     private sealed class CountingWriter : StringWriter
     {
+        public Action? BeforeWrite { get; set; }
         public int CharacterWrites { get; private set; }
         public int BulkWrites { get; private set; }
+        public override void WriteLine(string? value) { BeforeWrite?.Invoke(); base.WriteLine(value); }
         public override void Write(char value) { CharacterWrites++; base.Write(value); }
-        public override void Write(string? value) { BulkWrites++; base.Write(value); }
+        public override void Write(string? value) { BeforeWrite?.Invoke(); BulkWrites++; base.Write(value); }
         public override void Write(char[] buffer, int index, int count) { BulkWrites++; base.Write(buffer, index, count); }
     }
 }

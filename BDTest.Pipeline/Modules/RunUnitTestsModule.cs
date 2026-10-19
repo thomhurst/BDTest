@@ -30,7 +30,7 @@ public class RunUnitTestsModule : Module<List<CommandResult>>
                     WorkingDirectory = context.Git().RootDirectory!.Path,
                     ThrowOnNonZeroExitCode = true
                 }, cancellationToken);
-            if (UsesTUnitRunner(evaluation.StandardOutput))
+            if (UsesMicrosoftTestingPlatform(evaluation.StandardOutput))
             {
                 results.Add(await context.DotNet().Run(new DotNetRunOptions
                 {
@@ -70,15 +70,22 @@ public class RunUnitTestsModule : Module<List<CommandResult>>
 
     public static GenericCommandLineToolOptions CreateRunnerQuery(string projectPath) => new("dotnet")
     {
-        Arguments = ["msbuild", projectPath, "-nologo", "-property:Configuration=Release", "-getItem:PackageReference"]
+        Arguments = ["msbuild", projectPath, "-nologo", "-property:Configuration=Release", "-getItem:PackageReference", "-getProperty:UseMicrosoftTestingPlatformRunner"]
     };
 
-    public static bool UsesTUnitRunner(string evaluatedProject)
+    public static bool UsesMicrosoftTestingPlatform(string evaluatedProject)
     {
         using var evaluation = JsonDocument.Parse(evaluatedProject);
+        var useMtp = string.Equals(evaluation.RootElement.GetProperty("Properties")
+            .GetProperty("UseMicrosoftTestingPlatformRunner").GetString(), "true", StringComparison.OrdinalIgnoreCase);
         return evaluation.RootElement.GetProperty("Items").GetProperty("PackageReference")
             .EnumerateArray()
-            .Any(package => string.Equals(package.GetProperty("Identity").GetString(), "TUnit",
-                StringComparison.OrdinalIgnoreCase));
+            .Any(package =>
+            {
+                var name = package.GetProperty("Identity").GetString();
+                return string.Equals(name, "TUnit", StringComparison.OrdinalIgnoreCase)
+                    || (useMtp && (string.Equals(name, "xunit.v3", StringComparison.OrdinalIgnoreCase)
+                        || string.Equals(name, "xunit.v3.mtp-v2", StringComparison.OrdinalIgnoreCase)));
+            });
     }
 }

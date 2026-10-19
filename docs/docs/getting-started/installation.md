@@ -15,7 +15,8 @@ dotnet add package BDTest.TUnit
 # NUnit
 dotnet add package BDTest.NUnit
 
-# xUnit v3
+# xUnit v3 (Microsoft.Testing.Platform)
+dotnet add package xunit.v3
 dotnet add package BDTest.xUnit
 
 # MSTest
@@ -132,3 +133,5 @@ A typical TUnit test project:
 ```
 
 TUnit test projects are executables that run on Microsoft.Testing.Platform; do not add `Microsoft.NET.Test.Sdk`. Replace `*` with the versions you want to pin. Continue with [your first test](first-test.md).
+
+For xUnit v3, use `xunit.v3` with `<OutputType>Exe</OutputType>` and `<UseMicrosoftTestingPlatformRunner>true</UseMicrosoftTestingPlatformRunner>`, then run `dotnet run --project <project>`. Do not add VSTest packages to this setup. See [xUnit setup](../frameworks/xunit.md) for the complete MTP configuration, optional TRX reporting, and a VSTest fallback.

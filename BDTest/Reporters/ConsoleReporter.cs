@@ -12,7 +12,7 @@ internal static class ConsoleReporter
 
     public static void WriteLineToConsoleOnly(string? text)
     {
-        TestOutputData.Instance.One.WriteLine(text);
+        TestOutputData.Instance.WriteLineToConsoleOnly(text);
     }
 
     public static async Task Write(string? text)

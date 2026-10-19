@@ -292,7 +292,7 @@ public abstract class BDTestBase
         if (beginExecution == null) throw new ArgumentNullException(nameof(beginExecution));
         _startupOutput = new StartupOutputBuffer(beginExecution);
         TestOutputData.PendingStartupOutput = _startupOutput;
-        Console.SetOut(TestOutputData.Instance);
+        Console.SetOut(TestOutputData.Instance.SynchronizedWriter);
     }
 
     /// <summary>Binds buffered constructor output to this fixture's run and execution after BeginTest.</summary>
@@ -341,7 +341,7 @@ public abstract class BDTestBase
         TestOutputData.ConstructionOutput = null;
         TestOutputData.FrameworkExecutionId = execution.Id;
         TestOutputData.PendingStartupOutput = null;
-        Console.SetOut(TestOutputData.Instance);
+        Console.SetOut(TestOutputData.Instance.SynchronizedWriter);
     }
 
     /// <summary>Completes this execution synchronously. Prefer EndTestAsync for asynchronous contexts.</summary>

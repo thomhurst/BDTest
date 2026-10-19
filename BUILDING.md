@@ -53,10 +53,12 @@ dotnet build BDTest.sln -c Release
 ```
 
 Run every `*Tests.csproj` with `dotnet test <project> -c Release`, except
-`BDTest.Tests`, `BDTest.TUnit.Tests`, `BDTest.Pipeline.Tests` and `BDTest.ReportGenerator.Tests`, which use
-`dotnet run --project <project> -c Release`. NUnit adapter and sample coverage lives in
-`BDTest.NUnit.Tests`, run with `dotnet test`. Runner selection evaluates Release `PackageReference`
-items, so imported or conditional TUnit references work and xUnit v3 executables
+`BDTest.Tests`, `BDTest.TUnit.Tests`, `BDTest.xUnit.Tests`, `BDTest.Pipeline.Tests` and
+`BDTest.ReportGenerator.Tests`, which use `dotnet run --project <project> -c Release`.
+NUnit adapter and sample coverage lives in `BDTest.NUnit.Tests`, run with
+`dotnet test`. Runner selection evaluates Release `PackageReference` items and
+`UseMicrosoftTestingPlatformRunner`, including imported and conditional values,
+to select MTP for TUnit and opted-in xUnit v3 projects. Other projects
 keep using VSTest. Both runner paths publish TRX under
 `artifacts/test-results/<project>`.
 Do not run the publishing pipeline in `Production` locally.
@@ -191,7 +193,7 @@ process protocol and all normal runner arguments to the generated Microsoft
 Testing Platform application, retaining extension registration and TRX output.
 Signing and friend grants are unchanged: only signed `BDTest.Tests` has access
 to core and Razor internals. Pipeline runner selection still uses evaluated
-package references, including VSTest for xUnit executable projects.
+package references and the xUnit MTP opt-in, including MTP for the xUnit suite.
 
 The cached-report allocation probe (#995) runs with normal suite parallelism.
 Retention refresh schedules eviction callbacks; thread-pool queue growth can add

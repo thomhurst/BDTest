@@ -11,7 +11,7 @@ public abstract class StepBuilder : BuildableTest
 
     static StepBuilder()
     {
-        Console.SetOut(TestOutputData.Instance);
+        Console.SetOut(TestOutputData.Instance.SynchronizedWriter);
     }
 
     protected void SetStepText(Func<string?>? overridingStepText)

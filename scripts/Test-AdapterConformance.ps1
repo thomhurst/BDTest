@@ -30,19 +30,18 @@ try {
         if ($project -eq 'BDTest.TUnit.Tests') {
             & dotnet run --project $projectPath -c $Configuration -- --treenode-filter '/*/*/AdapterConformanceTests/*' --report-trx --report-trx-filename conformance.trx --results-directory $resultPath *> $logPath
         }
+        elseif ($project -eq 'BDTest.xUnit.Tests') {
+            $cleanupFile = Join-Path $resultPath 'native-cleanup.txt'
+            if (Test-Path -LiteralPath $cleanupFile) { Remove-Item -LiteralPath $cleanupFile }
+            $env:BDTEST_CONFORMANCE_CLEANUP_FILE = $cleanupFile
+            & dotnet run --project $projectPath -c $Configuration -- --filter-class '*AdapterConformanceTests' '*NativeCompositionFailureTests' '*NativeInheritanceFailureTests' --report-trx --report-trx-filename conformance.trx --results-directory $resultPath *> $logPath
+        }
         else {
-            $filter = 'FullyQualifiedName~AdapterConformanceTests'
-            if ($project -eq 'BDTest.xUnit.Tests') {
-                $filter += '|FullyQualifiedName~NativeCompositionFailureTests|FullyQualifiedName~NativeInheritanceFailureTests'
-                $cleanupFile = Join-Path $resultPath 'native-cleanup.txt'
-                if (Test-Path -LiteralPath $cleanupFile) { Remove-Item -LiteralPath $cleanupFile }
-                $env:BDTEST_CONFORMANCE_CLEANUP_FILE = $cleanupFile
-            }
-            & dotnet test $projectPath -c $Configuration --filter $filter --logger 'trx;LogFileName=conformance.trx' --results-directory $resultPath *> $logPath
+            & dotnet test $projectPath -c $Configuration --filter 'FullyQualifiedName~AdapterConformanceTests' --logger 'trx;LogFileName=conformance.trx' --results-directory $resultPath *> $logPath
         }
         $runnerExit = $LASTEXITCODE
         # VSTest returns 1 for failed tests; Microsoft.Testing.Platform returns 2.
-        $expectedExit = if ($project -eq 'BDTest.TUnit.Tests') { 2 } else { 1 }
+        $expectedExit = if ($project -in @('BDTest.TUnit.Tests', 'BDTest.xUnit.Tests')) { 2 } else { 1 }
         if ($runnerExit -ne $expectedExit) { throw "$project must exit $expectedExit for intentional failures; got $runnerExit. See $logPath" }
         [xml] $trx = Get-Content -LiteralPath $trxPath -Raw
         $results = @($trx.SelectNodes("//*[local-name()='UnitTestResult']"))

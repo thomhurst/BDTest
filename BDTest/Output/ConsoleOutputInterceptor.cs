@@ -6,6 +6,7 @@ internal class ConsoleOutputInterceptor : TextWriter
 {
     internal readonly TextWriter One;
     internal readonly TestOutputData Two;
+    internal TextWriter SynchronizedWriter { get; }
 
     public ConsoleOutputInterceptor() : this(Console.Out)
     {
@@ -15,6 +16,19 @@ internal class ConsoleOutputInterceptor : TextWriter
     {
         One = originalWriter;
         Two = new TestOutputData();
+        // Console.SetOut synchronizes its argument. Reuse that wrapper so Unix
+        // ConsolePal and concurrent writers always acquire the same monitor.
+        SynchronizedWriter = TextWriter.Synchronized(this);
+    }
+
+    internal void WriteLineToConsoleOnly(string? value)
+    {
+        // Unix ConsolePal locks Console.Out while writing to the original stream.
+        // Take that outer lock first, just like writes through the interceptor.
+        lock (SynchronizedWriter)
+        {
+            One.WriteLine(value);
+        }
     }
 
     public override Encoding Encoding => One.Encoding;
