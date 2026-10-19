@@ -33,12 +33,12 @@ public class HelperBoundaryTests
         Assert.That(friends[0].GetPublicKey(), Is.Not.Empty);
     }
 
-    [TestCase(0, BDTest.Test.Status.Passed)]
-    [TestCase(1, BDTest.Test.Status.Failed)]
-    [TestCase(2, BDTest.Test.Status.Inconclusive)]
-    [TestCase(3, BDTest.Test.Status.NotImplemented)]
-    [TestCase(4, BDTest.Test.Status.Skipped)]
-    public void Standalone_status_metadata_preserves_the_historical_mapping(int legacy, BDTest.Test.Status expected)
+    [TestCase(0, BDTest.Contracts.Status.Passed)]
+    [TestCase(1, BDTest.Contracts.Status.Failed)]
+    [TestCase(2, BDTest.Contracts.Status.Inconclusive)]
+    [TestCase(3, BDTest.Contracts.Status.NotImplemented)]
+    [TestCase(4, BDTest.Contracts.Status.Skipped)]
+    public void Standalone_status_metadata_preserves_the_historical_mapping(int legacy, BDTest.Contracts.Status expected)
     {
         var metadata = BDTestJsonContext.Default.Status;
         Assert.That(System.Text.Json.JsonSerializer.Deserialize(legacy.ToString(), metadata), Is.EqualTo(expected));
@@ -61,7 +61,7 @@ public class HelperBoundaryTests
         var scenario = report.Scenarios!.Single();
         Assert.That(scenario.GetScenarioText(), Is.EqualTo("a scenario"));
         Assert.That(scenario.GetStoryText(), Is.EqualTo("a story"));
-        Assert.That(scenario.Status, Is.EqualTo(BDTest.Test.Status.Passed));
+        Assert.That(scenario.Status, Is.EqualTo(BDTest.Contracts.Status.Passed));
         Assert.That(scenario.Steps!.Single().TimeTaken,
             Is.EqualTo(new TimeSpan(1, 2, 3, 4).Add(TimeSpan.FromTicks(1234567))));
         var serialized = System.Text.Json.JsonSerializer.Serialize(report, context.BDTestOutputModel);

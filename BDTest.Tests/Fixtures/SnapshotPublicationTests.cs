@@ -168,4 +168,3 @@ public class SnapshotPublicationTests
         await Assert.That(restored.Scenarios.Single().StartTime.Offset).IsEqualTo(start.Offset);
     }
 }
-

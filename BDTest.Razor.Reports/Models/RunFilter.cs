@@ -1,4 +1,4 @@
-using BDTest.Razor.Reports.Helpers;
+﻿using BDTest.Razor.Reports.Helpers;
 using System.Globalization;
 using BDTest.Test;
 using Microsoft.AspNetCore.Http;
