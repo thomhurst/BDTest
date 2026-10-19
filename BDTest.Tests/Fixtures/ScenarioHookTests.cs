@@ -167,8 +167,11 @@ public class ScenarioHookTests
     [Arguments(true)]
     public async Task Timeout_callbacks_do_not_block_cleanup_and_token_is_cancelled_before_cleanup(bool callbackThrows)
     {
-        using var run = BDTestRun.Start();
+        var clock = new FakeTimeProvider();
+        var timeout = TimeSpan.FromMilliseconds(100);
+        using var run = BDTestRun.Start(new BDTestOptions { TimeProvider = clock });
         using var releaseCallback = new ManualResetEventSlim();
+        CancellationTokenRegistration registration = default;
         var callbackFinished = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
         var cleanupRan = false;
         var cancelledInCleanup = false;
@@ -176,7 +179,7 @@ public class ScenarioHookTests
         {
             Before = s =>
             {
-                s.CancellationToken.Register(() =>
+                registration = s.CancellationToken.Register(() =>
                 {
                     try
                     {
@@ -200,8 +203,14 @@ public class ScenarioHookTests
         {
             try
             {
-                await test.When(async token => await Task.Delay(Timeout.InfiniteTimeSpan, token))
-                    .Then(() => Complete()).WithScenarioTimeout(TimeSpan.FromMilliseconds(100)).BDTestAsync();
+                await test.When(async token =>
+                    {
+                        // The step's deadline is armed and Before has registered the callback.
+                        // Scheduling delays cannot consume the virtual scenario budget.
+                        clock.Advance(timeout);
+                        await Task.Delay(Timeout.InfiniteTimeSpan, token);
+                    })
+                    .Then(() => Complete()).WithScenarioTimeout(timeout).BDTestAsync();
                 return (Exception?)null;
             }
             catch (Exception exception) { return exception; }
@@ -213,12 +222,14 @@ public class ScenarioHookTests
             await Assert.That(await execution).IsTypeOf<TimeoutException>();
             await Assert.That(cleanupRan).IsTrue();
             await Assert.That(cancelledInCleanup).IsTrue();
+            await callbackFinished.Task.WaitAsync(TimeSpan.FromSeconds(10));
         }
         finally
         {
             releaseCallback.Set();
             await execution;
-            await callbackFinished.Task.WaitAsync(TimeSpan.FromSeconds(10));
+            // Join an executing callback, but do not wait for one that setup never registered.
+            await registration.DisposeAsync();
         }
     }
 
