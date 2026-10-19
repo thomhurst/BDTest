@@ -172,7 +172,8 @@ public class Step
     {
         _generatedStepText = _stepTextTemplate;
         StepText = SubstituteExampleValues($"{StepPrefix} {_stepTextTemplate}");
-        ExecutionDiagnostics.Clear();
+        lock (SnapshotGate ?? this)
+            ExecutionDiagnostics.Clear();
         Arguments = Array.Empty<StepArgument>();
         TimedOut = false;
         SkipReason = null;
@@ -194,11 +195,11 @@ public class Step
             // A nonempty text override retains its existing behavior: inline readers are bypassed.
             if (string.IsNullOrWhiteSpace(invokedStepText))
             {
-                _generatedStepText = ExecutionRunnable.Definition.GetText(true, ExecutionDiagnostics.Add, ExplicitArguments, Options.Converters, arguments.Add);
+                _generatedStepText = ExecutionRunnable.Definition.GetText(true, AddDiagnostic, ExplicitArguments, Options.Converters, arguments.Add);
             }
             foreach (var reader in AttachedArguments)
             {
-                StepTextHelper.GetArgumentValue(reader, "attachment", ExecutionDiagnostics.Add, Options.Converters, arguments.Add);
+                StepTextHelper.GetArgumentValue(reader, "attachment", AddDiagnostic, Options.Converters, arguments.Add);
             }
             Arguments = arguments;
         }
@@ -210,6 +211,13 @@ public class Step
         }
 
         StepText = SubstituteExampleValues($"{StepPrefix} {_generatedStepText}");
+    }
+
+    private void AddDiagnostic(string diagnostic)
+    {
+        // Match snapshot reads without holding the gate while user readers or converters execute.
+        lock (SnapshotGate ?? this)
+            ExecutionDiagnostics.Add(diagnostic);
     }
 
     private StepSkipReason? EvaluateSkipReason()

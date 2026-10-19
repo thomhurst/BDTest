@@ -72,6 +72,50 @@ public class SnapshotPublicationTests
         Assert.That(ResultSnapshot.Create(outline).Examples.Single().Guid, Is.EqualTo(example.Guid));
     }
 
+    [TestCase("inline")]
+    [TestCase("attached")]
+    [TestCase("reset")]
+    public async Task Diagnostic_publication_waits_for_snapshot_readers(string operation)
+    {
+        using var run = BDTestRun.Start();
+        var step = new Step(new Runnable(() => DiagnosticStep("value")), StepType.When, "scenario", "report", run);
+        var readerHeldGate = false;
+        object? ReadArgument()
+        {
+            readerHeldGate = Monitor.IsEntered(run.Store.Gate);
+            throw new InvalidOperationException("argument unavailable");
+        }
+        if (operation == "inline") step.ExplicitArguments = new Func<object?>[] { ReadArgument };
+        if (operation == "attached") step.AttachedArguments.Add(() => { ReadArgument(); return new BDTest.Test.StepDocString(""); });
+        if (operation == "reset") step.Diagnostics!.Add("previous attempt");
+        var before = ResultSnapshot.Create(step);
+        using var started = new ManualResetEventSlim();
+        Task publish;
+        bool completedWhileReading;
+        int countWhileReading;
+        lock (run.Store.Gate)
+        {
+            publish = Task.Factory.StartNew(() =>
+            {
+                started.Set();
+                if (operation == "reset") step.ResetData();
+                else step.SetStepText(evaluateArguments: true);
+            }, CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Default);
+            Assert.That(started.Wait(TimeSpan.FromSeconds(10)), Is.True);
+            completedWhileReading = publish.Wait(TimeSpan.FromMilliseconds(200));
+            countWhileReading = ResultSnapshot.Create(step).Diagnostics.Count;
+        }
+        await publish.WaitAsync(TimeSpan.FromSeconds(10));
+        Assert.That(completedWhileReading, Is.False);
+        Assert.That(countWhileReading, Is.EqualTo(operation == "reset" ? 1 : 0));
+        Assert.That(ResultSnapshot.Create(step).Diagnostics, Has.Count.EqualTo(operation == "reset" ? 0 : 1));
+        Assert.That(before.Diagnostics, Has.Count.EqualTo(operation == "reset" ? 1 : 0));
+        Assert.That(readerHeldGate, Is.False, "User argument readers must run outside the snapshot gate.");
+    }
+
+    [BDTest.Attributes.StepText("value: {0}")]
+    private static void DiagnosticStep(string value) { }
+
     [TestCase(1)]
     [TestCase(-5)]
     public void Saved_report_displays_offset_timestamps_in_utc(int offsetHours)
