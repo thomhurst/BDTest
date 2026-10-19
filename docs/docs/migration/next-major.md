@@ -53,6 +53,12 @@ you construct yourself remains yours to dispose. Native adapters now share the
 [composition lifecycle](../frameworks/composition.md); remove manual lifecycle
 calls when opting into native registration.
 
+## Retry and scenario skip policies
+
+[Retry attributes](../writing-tests/retries.md) now replace run retry rules instead of extending their limits. Precedence is test method, concrete fixture class, assembly, then run defaults. Remove an attribute to opt into run rules; use `[BDTestRetry(0)]` to opt out of all retries. Keep method attributes on the actual adapter-supplied test method, not helper methods.
+
+A retry predicate error now stops retrying and records an output diagnostic while preserving the original test exception. [Scenario skip predicates](../writing-tests/skipping.md#skipping-whole-scenarios) run once before initial context initialization and scenario hooks, not on every attempt. Move skip decisions that need execution-time state into steps using the framework's skip exception. A throwing scenario skip predicate fails immediately without retries. Step skip predicates retain their per-attempt behavior.
+
 ## Framework adapters
 
 - [xUnit](../frameworks/xunit.md) now requires xUnit v3. Replace v2 packages,

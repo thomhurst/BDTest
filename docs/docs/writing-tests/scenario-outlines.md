@@ -61,7 +61,7 @@ await ScenarioOutline("Users can sign in", new[]
 ## How rows run
 
 - Rows run one after another, each with its own steps, output, status and retry count.
-- Each row starts with a fresh `Context`, and [`ConfigureContext`](test-context.md#configuring-a-new-context) runs for it. BDTest awaits each row's `IBDTestContextLifetime.InitializeAsync` before its factory and steps. Your framework's setup and teardown run once for the whole outline.
+- Each row starts with a fresh `Context`, and [`ConfigureContext`](test-context.md#configuring-a-new-context) runs for it. The factory sees the newly configured context. After the factory builds the row, BDTest evaluates its scenario skip rules once, then awaits `IBDTestContextLifetime.InitializeAsync` before scenario hooks and steps. A throwing skip predicate fails the row without initialization, hooks or retries, even when its exception type is registered as success. A matching skip still initializes the context and runs scenario hooks, as for an ordinary scenario. Your framework's setup and teardown run once for the whole outline.
 - While the factory runs and the context is amended, `BDTestContext.CurrentScenario` is `null` because the row's scenario does not exist yet. Steps and retry amendments see the executing row.
 - The factory must return a new chain from the same test instance for each row.
 

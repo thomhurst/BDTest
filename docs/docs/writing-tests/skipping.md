@@ -82,6 +82,10 @@ options.SkipTestRules.Add(scenario =>
     scenario.Tags.Contains("manual"));
 ```
 
+Scenario predicates run once before the first attempt's asynchronous context initialization, scenario hooks and steps. For [outline rows](scenario-outlines.md), context construction/configuration and the row factory run first so the predicate receives the completed row definition. Matching skip rules still run scenario hooks and initialize their context. Evaluation stops at the first matching rule. Retries reuse this decision; changing state cannot cause a later attempt to become skipped through `SkipTestRules`. Step skip rules still evaluate on each reached step attempt.
+
+A throwing scenario predicate fails the scenario without retrying or running hooks/steps, even if that exception type normally has a custom outcome. The original predicate exception is reported and thrown, and scenario output includes a `Scenario skip predicate failed` diagnostic. A started scenario can still be skipped by a framework skip exception.
+
 ## Skipping from a step
 
 Throw your framework's skip exception from a step, for example `Skip.Test("reason")` in TUnit, `Assert.Ignore()` in NUnit or `Assert.Skip("reason")` in xUnit. The adapters register these exceptions as **skip** exceptions; see [Exception classification](../configuration/exceptions.md).

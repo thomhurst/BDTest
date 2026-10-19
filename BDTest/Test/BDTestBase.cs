@@ -504,5 +504,7 @@ public abstract class BDTestBase
         return methodsByType.SelectMany(methods => methods);
     }
 
+    internal virtual ValueTask PrepareOutlineContextAsync() => default;
+
     internal virtual ValueTask RecreateContextOnRetryAsync(int attempt) => default;
 }

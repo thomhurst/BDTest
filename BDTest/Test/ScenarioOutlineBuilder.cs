@@ -100,7 +100,7 @@ public sealed class ScenarioOutlineBuilder<TExample> : BuildableTest
                     try
                     {
                         TestOutputData.ConstructionOutput = constructionOutput;
-                        await testBase.RecreateContextOnRetryAsync(0);
+                        await testBase.PrepareOutlineContextAsync();
                         builder = scenarioFactory(examples[index]) ?? throw new InvalidOperationException("The example factory returned no scenario builder.");
                         if (builder.TestId != TestId || !ReferenceEquals(builder.BdTestBase, BdTestBase))
                         {
@@ -134,7 +134,10 @@ public sealed class ScenarioOutlineBuilder<TExample> : BuildableTest
                         row.EndTime = clock.UtcNow;
                         row.TimeTaken = rowTimer.Elapsed;
                     }
-                    row.Status = ExceptionOutcomeClassifier.Classify(exception, Run.Options, row.TimedOut);
+                    // Completed execution owns its outcome, including forced configuration failures.
+                    // Only construction failures still need exception classification here.
+                    if (row.ExecutionAttempts.Count == 0)
+                        row.Status = ExceptionOutcomeClassifier.Classify(exception, Run.Options, row.TimedOut);
                     // Framework success exceptions must not fail the outline.
                     if (row.Status != Status.Passed)
                     {

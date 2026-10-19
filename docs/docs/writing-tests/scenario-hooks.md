@@ -90,7 +90,7 @@ For every prepared attempt, BDTest awaits:
 
 1. Run before hooks in registration order.
 2. Instance `OnBeforeScenario`.
-3. Scenario skip checks, then steps with their step hooks.
+3. Steps with their step hooks, unless the scenario skip decision prevents them.
 4. Instance `OnAfterScenario`.
 5. Run after hooks in registration order.
 
@@ -98,7 +98,7 @@ Before hooks stop at the first exception. Steps remain `NotRun` after an ordinar
 
 An execution exception takes precedence over after-hook exceptions. Otherwise, the first after-hook exception determines the result. Hook exceptions follow the usual [exception classification](../configuration/exceptions.md) and [retry rules](retries.md). Later after hooks see a result updated by an earlier after-hook failure. Secondary failures are logged. Reports include console output from scenario hooks, including when a skip or before-hook failure prevents steps from running.
 
-Whole-scenario skip rules still run scenario hooks, while no step hooks run for that skip. Framework skips that prevent the test method from running cannot invoke BDTest hooks. Each retry gets a fresh context and token after retry setup. Each [scenario outline](scenario-outlines.md) row runs hooks independently on each attempt; the outline container does not run hooks. Definition/factory failures before a row can execute do not run hooks.
+Whole-scenario skip rules are evaluated once before initial asynchronous context initialization and hooks (after outline factory construction). A throwing predicate fails without hooks or retries. Matching skip rules still run scenario hooks, while no step hooks run for that skip. Framework skips that prevent the test method from running cannot invoke BDTest hooks. Each retry gets a fresh context and token after retry setup. Each [scenario outline](scenario-outlines.md) row runs hooks independently on each attempt; the outline container does not run hooks. Definition/factory failures before a row can execute do not run hooks.
 
 ## Timing and cleanup
 

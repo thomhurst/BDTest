@@ -31,7 +31,7 @@ public async Task CallsAFlakyService()
 [assembly: BDTest.Attributes.BDTestRetry(1)]
 ```
 
-BDTest looks for the attribute on the scenario method first, then on the step frames, the story class, the calling frame and finally the assembly. The closest attribute wins, so `[BDTestRetry(0)]` on a method turns off a class or assembly default.
+BDTest selects one retry policy before the first attempt: the adapter-supplied test method attribute, then the concrete fixture class attribute, then its assembly attribute, then run retry rules. The first attribute found replaces every less-specific default, including a larger run limit. `[BDTestRetry(0)]` disables retries even when run rules would retry. Method identity comes from the adapter, including private, overloaded and async methods; BDTest does not inspect the call stack.
 
 ## Run retry rules
 
@@ -43,7 +43,9 @@ options.RetryTestRules.Add(
     retryLimit: 3);
 ```
 
-When several rules match, the largest `retryLimit` applies. A scenario that a rule no longer allows to retry can still use a `[BDTestRetry]` attribute.
+Run rules apply only when no method, class or assembly retry attribute exists. Their exception filters are evaluated against each failed attempt; when several rules match, the largest `retryLimit` applies. The selected policy remains fixed throughout the scenario.
+
+If a retry predicate throws, retrying stops. The original test exception remains the thrown exception and the reported scenario/attempt failure. Scenario output includes a `Retry predicate failed; retrying stopped` diagnostic with the predicate error. An attribute policy does not evaluate run retry predicates.
 
 ## What happens between attempts
 
