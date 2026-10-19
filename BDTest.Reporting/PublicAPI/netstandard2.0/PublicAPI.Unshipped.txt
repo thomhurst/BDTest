@@ -48,3 +48,6 @@ static BDTest.Helpers.ExceptionHtmlHelper.GetHtml(BDTest.Contracts.ExceptionInfo
 static BDTest.Helpers.ExceptionHtmlHelper.GetHtml(BDTest.Test.ExceptionWrapper? exception) -> string!
 static BDTest.Helpers.StepArgumentHtmlHelper.GetHtml(System.Collections.Generic.IReadOnlyList<BDTest.Contracts.StepArgument!>? arguments) -> string!
 static BDTest.Helpers.StepArgumentHtmlHelper.GetHtml(System.Collections.Generic.IReadOnlyList<BDTest.StepArgument!>? arguments) -> string!
+BDTest.Helpers.BDTestReportContextExtensions
+static BDTest.Helpers.BDTestReportContextExtensions.CreateHtmlReport<TContext>(this TContext! context, BDTest.BDTestRun! run, System.Func<TContext!, BDTest.BDTestRunDescriptor!>! adapter) -> string!
+static BDTest.Helpers.BDTestReportContextExtensions.ToBDTestRunDescriptor<TContext>(this TContext! context, System.Func<TContext!, BDTest.BDTestRunDescriptor!>! adapter) -> BDTest.BDTestRunDescriptor!

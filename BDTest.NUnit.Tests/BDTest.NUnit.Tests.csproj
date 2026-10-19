@@ -30,4 +30,7 @@
     <PackageReference Include="Microsoft.Extensions.TimeProvider.Testing" Version="8.0.0" />
     <ProjectReference Include="..\BDTest.Reporting\BDTest.Reporting.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <Compile Include="..\TestUtilities\ReportContextContractTests.cs" Link="Conformance\ReportContextContractTests.cs" />
+  </ItemGroup>
 </Project>
