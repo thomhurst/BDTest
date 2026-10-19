@@ -441,29 +441,46 @@ public class AttachmentTests
     }
 
     [Test]
-    // Keep the bounded disk-write probe independent of other file-store fixtures.
-    [NotInParallel]
     public async Task Background_setup_and_outline_factory_captures_keep_every_attachment()
     {
         using var run = BDTestRun.Start();
         var fixture = new Capture(run, "outline");
+        // This is a cancellation guard for a stuck test, not a disk-throughput assertion.
+        // Both producers stop cooperatively; always join the writer before disposing its run.
+        using var guard = new CancellationTokenSource(TimeSpan.FromMinutes(5));
+        var cancellationToken = guard.Token;
         var start = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var background = Task.Run(async () =>
         {
-            await start.Task;
-            for (var index = 0; index < 1000; index++) fixture.Attach("background-" + index);
-        });
-        var outline = await fixture.ScenarioOutline("row <Value>", Enumerable.Range(0, 100).Select(value => new { Value = value }), row =>
-        {
-            fixture.Attach("factory-" + row.Value);
-            return fixture.When(async () =>
+            await start.Task.WaitAsync(cancellationToken);
+            for (var index = 0; index < 1000; index++)
             {
-                start.TrySetResult();
-                await Task.Yield();
-            }).Then(() => Done());
-        }).BDTestAsync();
-        await background.WaitAsync(TimeSpan.FromSeconds(10));
-        outline = run.Scenarios.Single();
+                cancellationToken.ThrowIfCancellationRequested();
+                fixture.Attach("background-" + index);
+            }
+        });
+        try
+        {
+            await fixture.ScenarioOutline("row <Value>", Enumerable.Range(0, 100).Select(value => new { Value = value }), row =>
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                fixture.Attach("factory-" + row.Value);
+                return fixture.When(async () =>
+                {
+                    start.TrySetResult();
+                    await Task.Yield();
+                }).Then(() => Done());
+            }).BDTestAsync();
+            await background;
+        }
+        finally
+        {
+            // Also release the start wait if the outline fails before its first step.
+            guard.Cancel();
+            try { await background; }
+            catch (OperationCanceledException exception) when (exception.CancellationToken == cancellationToken) { }
+        }
+        var outline = run.Scenarios.Single();
 
         await Assert.That(outline.Attachments).Count().IsEqualTo(1000);
         await Assert.That(Required(outline.Examples).All(row => Required(row.Attachments).Count == 1)).IsTrue();
