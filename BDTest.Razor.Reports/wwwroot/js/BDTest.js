@@ -111,7 +111,39 @@ function closeMenus(except) {
     }
 }
 
+function attachmentUnavailable(image) {
+    if (!image.matches('img[data-attachment-image]')) return;
+    const container = image.closest('.attachment-item, .attachment-lightbox');
+    if (!container) return;
+    image.hidden = true;
+    const button = image.closest('.attachment-preview');
+    if (button) button.hidden = true;
+    container.querySelector('[data-attachment-unavailable]').hidden = false;
+}
+
+function previewAttachment(button) {
+    const source = button.querySelector('img');
+    const dialog = document.getElementById('attachment-lightbox');
+    if (!source || !dialog) return;
+    const image = dialog.querySelector('img');
+    dialog.querySelector('[data-attachment-unavailable]').hidden = true;
+    dialog.querySelector('#attachment-caption').textContent = source.alt;
+    image.hidden = false;
+    image.alt = source.alt;
+    // Only use the image URL emitted by the attachment view, never uploaded Uri metadata.
+    image.src = source.src;
+    dialog.showModal();
+}
+
 onDomLoaded(function () {
+    // Image failures do not bubble. Also catch failures that happened before this script loaded.
+    document.addEventListener('error', function (event) {
+        if (event.target.matches) attachmentUnavailable(event.target);
+    }, true);
+    for (const image of document.querySelectorAll('img[data-attachment-image][src]')) {
+        if (image.complete && image.naturalWidth === 0) attachmentUnavailable(image);
+    }
+
     document.addEventListener('submit', function (event) {
         const form = event.target;
         if (form.matches('form[data-bdtest-delete]')) {
@@ -130,6 +162,12 @@ onDomLoaded(function () {
         }
 
         switch (element.dataset.bdtestAction) {
+            case 'preview-attachment':
+                previewAttachment(element);
+                break;
+            case 'close-attachment':
+                document.getElementById('attachment-lightbox').close();
+                break;
             case 'copy-url':
                 copyToClipboard(new URL(element.dataset.url, window.location.href).href, 'Link copied');
                 break;
