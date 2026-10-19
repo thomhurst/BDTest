@@ -1,6 +1,7 @@
 using BDTest;
 using BDTest.Test;
 using Newtonsoft.Json;
+using Microsoft.Extensions.Time.Testing;
 using System.Threading.Tasks;
 
 namespace BDTest.Tests.Fixtures;
@@ -147,12 +148,32 @@ public class TimeoutTests : RunTestBase
     [BDTestRetry(1)]
     public async Task Retry_uses_fresh_token_and_clears_timeout_results()
     {
-        var scenario = await When(token => TimeoutOnce(token)).WithStepTimeout(Timeout).Then(() => Later()).BDTestAsync();
+        var clock = new TimeoutClock();
+        Options.TimeProvider = clock;
+        var scenario = await When(token => TimeoutOnce(token, clock)).WithStepTimeout(Timeout).Then(() => Later()).BDTestAsync()
+            .WaitAsync(TimeSpan.FromSeconds(10)); // Deadlock guard only; the step deadline uses virtual time.
+        await _cancelled.Task.WaitAsync(TimeSpan.FromSeconds(10));
+
+        var attempts = Required(scenario.Attempts);
+        await Assert.That(attempts).Count().IsEqualTo(2);
+        await Assert.That(attempts[0].Status).IsEqualTo(Status.Failed);
+        await Assert.That(attempts[0].Steps[0].TimedOut).IsTrue();
+        await Assert.That(Required(attempts[0].Steps[0].Exception).Message).StartsWith("Step timed out");
+        await Assert.That(attempts[0].Steps[0].TimeTaken).IsEqualTo(Timeout);
+        await Assert.That(attempts[0].Steps[1].Status).IsEqualTo(Status.NotRun);
+        await Assert.That(attempts[1].Status).IsEqualTo(Status.Passed);
+        await Assert.That(attempts[1].Steps[0].TimedOut).IsFalse();
+        await Assert.That(attempts[1].Steps[0].Exception).IsNull();
         await Assert.That(scenario.RetryCount).IsEqualTo(1);
         await Assert.That(scenario.Status).IsEqualTo(Status.Passed);
         await Assert.That(scenario.TimedOut).IsFalse();
-        await Assert.That(Required(scenario.Steps)[0].Exception).IsNull();
+        await Assert.That(scenario.Exception).IsNull();
+        await Assert.That(Required(scenario.Steps)[0].TimedOut).IsFalse();
+        await Assert.That(scenario.Steps[0].Exception).IsNull();
+        await Assert.That(_laterSteps).IsEqualTo(1);
         await Assert.That(_tokens).Count().IsEqualTo(2);
+        await Assert.That(_tokens.All(token => token.CanBeCanceled)).IsTrue();
+        await Assert.That(_tokens[0].IsCancellationRequested).IsTrue();
         await Assert.That(_tokens[0]).IsNotEqualTo(_tokens[1]);
         await Assert.That(_tokens[1].IsCancellationRequested).IsFalse();
     }
@@ -283,10 +304,32 @@ public class TimeoutTests : RunTestBase
         return Task.CompletedTask;
     }
     private static async Task CompleteAndSpendBudget(CancellationToken token) => await Task.Delay(600, token);
-    private Task TimeoutOnce(CancellationToken token)
+    private async Task TimeoutOnce(CancellationToken token, TimeoutClock clock)
     {
         _tokens.Add(token);
-        return _tokens.Count == 1 ? WaitForCancellation(token) : Task.CompletedTask;
+        if (_tokens.Count == 1)
+        {
+            // Task.Run may enter the step before WaitAsync creates its timer. Advance
+            // only after it is armed, and leave time frozen throughout the retry.
+            await clock.TimerCreated.Task;
+            clock.Fake.Advance(Timeout);
+            await WaitForCancellation(token);
+        }
+    }
+
+    private sealed class TimeoutClock : TimeProvider
+    {
+        internal FakeTimeProvider Fake { get; } = new();
+        internal TaskCompletionSource<bool> TimerCreated { get; } = NewSignal();
+        public override DateTimeOffset GetUtcNow() => Fake.GetUtcNow();
+        public override long GetTimestamp() => Fake.GetTimestamp();
+        public override long TimestampFrequency => Fake.TimestampFrequency;
+        public override ITimer CreateTimer(TimerCallback callback, object? state, TimeSpan dueTime, TimeSpan period)
+        {
+            var timer = Fake.CreateTimer(callback, state, dueTime, period);
+            TimerCreated.TrySetResult(true);
+            return timer;
+        }
     }
     private async Task WaitForCancellation(CancellationToken token)
     {
