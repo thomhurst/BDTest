@@ -14,8 +14,8 @@ public class TestRunSummary
     internal TestRunSummary(BDTestReport bdTestOutputModel)
     {
         RecordId = bdTestOutputModel.Id;
-        StartedAtDateTime = bdTestOutputModel.TestTimer?.TestsStartedAt.DateTime ?? default;
-        FinishedAtDateTime = bdTestOutputModel.TestTimer?.TestsFinishedAt.DateTime ?? default;
+        StartedAtDateTime = bdTestOutputModel.TestTimer?.TestsStartedAt.UtcDateTime ?? default;
+        FinishedAtDateTime = bdTestOutputModel.TestTimer?.TestsFinishedAt.UtcDateTime ?? default;
         Status = (bdTestOutputModel.Scenarios ?? Enumerable.Empty<ScenarioResult>()).GetTotalStatus();
         Tag = bdTestOutputModel.Tag;
         Environment = bdTestOutputModel.Environment;

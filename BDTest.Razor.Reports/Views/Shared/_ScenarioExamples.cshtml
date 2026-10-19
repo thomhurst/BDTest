@@ -68,7 +68,7 @@
                         <div class="k" style="padding-top: 8px">Output</div>
                         <pre class="code">@row.Output</pre>
                     }
-                    @if (row.Exception != null && !stepExceptions.Any(exception => ReferenceEquals(exception, row.Exception)))
+                    @if (row.Exception != null && !stepExceptions.Any(exception => ExceptionHtmlHelper.HasSameDetails(exception, row.Exception)))
                     {
                         <div class="k" style="padding-top: 8px">Exception</div>
                         @Html.Raw(BDTest.Razor.Reports.Helpers.ExceptionHtmlHelper.GetHtml(row.Exception))

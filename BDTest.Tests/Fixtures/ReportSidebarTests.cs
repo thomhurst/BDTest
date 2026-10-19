@@ -182,7 +182,7 @@ public class ReportSidebarTests
     }
 
     [Test]
-    public async Task Structured_exceptions_render_all_branches_in_steps_scenarios_and_retries()
+    public async Task Shared_structured_exceptions_render_all_branches_once_per_scenario_and_retry()
     {
         var exception = new ExceptionWrapper(new System.Reflection.TargetInvocationException(
             new AggregateException(new InvalidOperationException("<first cause>"), new ArgumentException("<second cause>"))));
@@ -209,7 +209,8 @@ public class ReportSidebarTests
 
         await Assert.That(html).DoesNotContain("<first cause>").And.DoesNotContain("<key>");
         await Assert.That(html).Contains("exception-wrapper");
-        await Assert.That(html.Split("<details class=\"exception-tree\" open>").Length - 1).IsEqualTo(3);
+        // The scenario card and retry retain their trees; the identical step failure is not repeated.
+        await Assert.That(html.Split("<details class=\"exception-tree\" open>").Length - 1).IsEqualTo(2);
     }
 
     [Test]

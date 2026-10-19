@@ -207,7 +207,7 @@
                                         <div class="k">Step output</div>
                                         <pre class="code on-surface">@step.Output</pre>
                                     }
-                                    @if (step.Exception != null && !(isFailing && ReferenceEquals(step.Exception, exception)))
+                                    @if (step.Exception != null && !(isFailing && ExceptionHtmlHelper.HasSameDetails(step.Exception, exception)))
                                     {
                                         <div class="k">Exception</div>
                                         @Html.Raw(BDTest.Razor.Reports.Helpers.ExceptionHtmlHelper.GetHtml(step.Exception))

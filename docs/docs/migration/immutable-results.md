@@ -68,6 +68,11 @@ Update copied Razor views to `ScenarioResult`, `StepResult`, `ExceptionInfo` and
 in `ViewData[nameof(BDTestReport)]`. `ReportLayoutViewModel.Timer` is `ReportTimer`.
 The compact summary models and existing summary/index JSON keep their names.
 
+Run summaries normalize timestamp offsets to UTC so history ordering, date filters
+and durations compare instants. Scenario and outline pages display shared failure
+details once even after a JSON round trip; exceptions with different diagnostic
+data or inner exceptions remain separate.
+
 Contract properties are read-only. Construct a new `BDTestReport` when changing
 metadata. The upload controller assigns a fresh storage ID and attachment-token
 hash to a new report, ignoring uploader-supplied identity/credentials, before

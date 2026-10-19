@@ -31,6 +31,28 @@ public partial class ReportUploadTests
     private const string Key = "test-upload-secret";
 
     [Test]
+    [Arguments("text/plain")]
+    [Arguments("application/x-www-form-urlencoded")]
+    [Arguments("multipart/form-data")]
+    public async Task Browser_simple_content_types_cannot_upload_reports_even_with_a_valid_API_key(string mediaType)
+    {
+        await using var server = await UploadServer.Start();
+        using var request = new HttpRequestMessage(HttpMethod.Post, "bdtest/data")
+        {
+            Content = mediaType == "multipart/form-data"
+                ? new MultipartFormDataContent { { new StringContent("{\"Tag\":\"cross-site\"}"), "report" } }
+                : new StringContent("{\"Tag\":\"cross-site\"}", Encoding.UTF8, mediaType)
+        };
+        request.Headers.Add("X-BDTest-Upload-Key", Key);
+        request.Headers.Add("Origin", "https://untrusted.example");
+        using var response = await server.Client.SendAsync(request);
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.UnsupportedMediaType);
+        await Assert.That(server.Store.Data).IsEmpty();
+        await Assert.That(server.Store.Summaries).IsEmpty();
+        await Assert.That(server.Store.Received).IsEmpty();
+    }
+
+    [Test]
     [Arguments(0)]
     [Arguments(-1)]
     public async Task UploadLimitsMustBePositive(long value)
