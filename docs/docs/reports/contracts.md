@@ -86,7 +86,9 @@ execution outcome rules. Producers remain responsible for bounded capture.
 
 Scenario and step `TimeTaken` values are measured execution durations.
 `ReportTimer.ElapsedTime` is the calendar difference, or zero when either
-endpoint is absent. `ScenarioResult.TimedOut` derives from its final steps.
+endpoint is absent. Hosted report pages display timestamps in UTC, consistently
+with run summaries, even when uploaded timestamps contain nonzero offsets.
+`ScenarioResult.TimedOut` derives from its final steps.
 Attempts can retain separate step snapshots; legacy attempt data without them
 maps to an empty list. `CustomTestInformation` contains strings, matching the
 legacy attribute wire values. Tags retain producer order.

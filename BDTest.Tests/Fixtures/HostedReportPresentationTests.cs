@@ -1,12 +1,36 @@
 using System.Text.RegularExpressions;
 using BDTest.Contracts;
 using BDTest.Razor.Reports.Models;
+using BDTest.Razor.Reports.Helpers;
 using BDTest.Razor.Reports.Serialization;
 
 namespace BDTest.Tests.Fixtures;
 
 public class HostedReportPresentationTests
 {
+    [Test]
+    [Arguments(2)]
+    [Arguments(-4)]
+    [Arguments(0)]
+    public async Task Report_timestamp_formats_match_utc_summary_across_date_boundaries(int offsetHours)
+    {
+        var timestamp = new DateTimeOffset(2026, 10, 19, 1, 2, 3, 456, TimeSpan.FromHours(offsetHours));
+        var summary = new TestRunSummary(new BDTestReport(1, "offsets", "tests",
+            testTimer: new ReportTimer(timestamp, timestamp.AddMinutes(1))));
+
+        await Assert.That(timestamp.ToRunDate()).IsEqualTo(summary.StartedAtDateTime.ToRunDate());
+        await Assert.That(timestamp.ToRunDate(false, true)).IsEqualTo(summary.StartedAtDateTime.ToRunDate(false, true));
+        await Assert.That(timestamp.ToClock()).IsEqualTo(summary.StartedAtDateTime.ToClock());
+        await Assert.That(timestamp.ToClock(true)).IsEqualTo(summary.StartedAtDateTime.ToClock(true));
+    }
+
+    [Test]
+    public async Task Unset_report_timestamps_render_empty()
+    {
+        await Assert.That(default(DateTimeOffset).ToRunDate()).IsEqualTo(string.Empty);
+        await Assert.That(default(DateTimeOffset).ToClock()).IsEqualTo(string.Empty);
+    }
+
     [Test]
     public async Task Summary_timestamps_preserve_instants_across_different_offsets()
     {

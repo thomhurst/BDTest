@@ -103,10 +103,10 @@ public static class ReportUi
 
     /// <summary>"18 Oct 2026, 02:00" in the request culture, or an empty string when unset.</summary>
     internal static string ToRunDate(this DateTimeOffset dateTime, bool includeYear = true, bool withSeconds = false) =>
-        dateTime.DateTime.ToRunDate(includeYear, withSeconds);
+        dateTime.UtcDateTime.ToRunDate(includeYear, withSeconds);
 
     internal static string ToClock(this DateTimeOffset dateTime, bool milliseconds = false) =>
-        dateTime.DateTime.ToClock(milliseconds);
+        dateTime.UtcDateTime.ToClock(milliseconds);
 
     public static string ToRunDate(this DateTime dateTime, bool includeYear = true, bool withSeconds = false)
     {
