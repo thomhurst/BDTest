@@ -10,6 +10,8 @@ public class ReportingBoundaryTests
     [TestCase(typeof(BDTestHtmlHelper))]
     [TestCase(typeof(BDTestJsonHelper))]
     [TestCase(typeof(BDTestReportServer))]
+    [TestCase(typeof(BDTestReportUploader))]
+    [TestCase(typeof(BDTestReportUploadOptions))]
     [TestCase(typeof(BDTestRunDescriptor))]
     [TestCase(typeof(BDTestAttachmentHelper))]
     [TestCase(typeof(ExceptionHtmlHelper))]

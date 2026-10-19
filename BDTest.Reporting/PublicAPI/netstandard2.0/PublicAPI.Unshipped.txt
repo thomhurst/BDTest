@@ -1,5 +1,17 @@
 #nullable enable
 BDTest.BDTestReportServer
+BDTest.BDTestReportUploadOptions
+BDTest.BDTestReportUploadOptions.BDTestReportUploadOptions(System.Uri! serverAddress) -> void
+BDTest.BDTestReportUploadOptions.ServerAddress.get -> System.Uri!
+BDTest.BDTestReportUploadOptions.Timeout.get -> System.TimeSpan
+BDTest.BDTestReportUploadOptions.Timeout.set -> void
+BDTest.BDTestReportUploadOptions.UploadKey.get -> string?
+BDTest.BDTestReportUploadOptions.UploadKey.set -> void
+BDTest.BDTestReportUploadOptions.UseGzip.get -> bool
+BDTest.BDTestReportUploadOptions.UseGzip.set -> void
+BDTest.BDTestReportUploader
+BDTest.BDTestReportUploader.BDTestReportUploader(System.Net.Http.HttpClient! httpClient, BDTest.BDTestReportUploadOptions! options) -> void
+BDTest.BDTestReportUploader.UploadAsync(BDTest.BDTestRun! run, BDTest.BDTestRunDescriptor? descriptor = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<System.Uri!>!
 BDTest.BDTestRunDescriptor
 BDTest.BDTestRunDescriptor.BDTestRunDescriptor() -> void
 BDTest.BDTestRunDescriptor.BranchName.get -> string?
@@ -18,6 +30,7 @@ static BDTest.BDTestReportServer.SendDataAndGetReportUriAsync(BDTest.BDTestRun! 
 static BDTest.BDTestReportServer.SendDataAndGetReportUriAsync(BDTest.BDTestRun! run, System.Uri! serverAddress, BDTest.BDTestRunDescriptor? bdTestRunDescriptor, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<System.Uri!>!
 static BDTest.BDTestReportServer.SendDataAndGetReportUriAsync(System.Uri! serverAddress, BDTest.BDTestRunDescriptor? bdTestRunDescriptor, System.Net.Http.HttpClient! httpClient, BDTest.BDTestRun! run) -> System.Threading.Tasks.Task<System.Uri!>!
 static BDTest.BDTestReportServer.SendDataAndGetReportUriAsync(System.Uri! serverAddress, BDTest.BDTestRunDescriptor? bdTestRunDescriptor, System.Net.Http.HttpClient! httpClient, BDTest.BDTestRun! run, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<System.Uri!>!
+static BDTest.BDTestReportUploadOptions.FromEnvironment(System.Uri! serverAddress, string! variableName = "BDTEST_UPLOAD_KEY") -> BDTest.BDTestReportUploadOptions!
 static BDTest.Helpers.BDTestAttachmentHelper.GetAttachments(BDTest.Contracts.BDTestReport! report) -> System.Collections.Generic.IEnumerable<BDTest.Contracts.AttachmentInfo!>!
 static BDTest.Helpers.BDTestAttachmentHelper.GetAttachments(BDTest.Maps.BDTestOutputModel! report) -> System.Collections.Generic.IEnumerable<BDTest.Test.Attachment!>!
 static BDTest.Helpers.BDTestHtmlHelper.GenerateHtmlReport(BDTest.Contracts.BDTestReport! data) -> string!

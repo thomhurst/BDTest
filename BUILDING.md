@@ -448,7 +448,8 @@ See [host migration](docs/docs/migration/immutable-results.md#hosted-reports).
 `netstandard2.0;net8.0`. It depends on core; core and adapters never depend on it.
 The solution, package-selection tests and signing verification include it.
 It owns the shared export builder, JSON writer/historical reader, standalone HTML
-and HTTP uploader. Core's immutable `GetSnapshot()` boundary reuses `ResultSnapshot`;
+and HTTP uploaders, including `BDTestReportUploader`, its options and streaming
+transport. Core's immutable `GetSnapshot()` boundary reuses `ResultSnapshot`;
 reporting receives no friend access. The legacy generated `BDTestJsonContext`
 stays with the execution models so their internal serialization members remain
 private. `HtmlWriter` stays in core because it captures evidence during execution.

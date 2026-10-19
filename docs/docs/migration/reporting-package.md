@@ -23,6 +23,7 @@ execution-to-reporting dependency this major-version change removes.
 ## API ownership
 
 `BDTest.Reporting` owns `BDTestRunDescriptor`, `BDTestReportServer`,
+`BDTestReportUploader`, `BDTestReportUploadOptions`,
 `BDTestJsonHelper`, `BDTestHtmlHelper`, `BDTestAttachmentHelper`,
 `ExceptionHtmlHelper` and `StepArgumentHtmlHelper`. JSON, HTML and uploads share
 one model builder that consumes the selected run's snapshot.
@@ -50,6 +51,8 @@ JSON readers retain historical compatibility and reference-expansion limits.
 Standalone HTML remains self-contained with its existing parent CSP, sandboxed
 custom HTML and event listeners. Upload cancellation, retries, caller-owned
 clients and run-owned attachment streams retain their existing behavior.
+The configurable uploader retains streaming JSON, optional gzip, upload keys and
+per-attempt timeouts; its transport and options move together into reporting.
 Keep the run alive until export and upload finish.
 
 `BDTest.Razor.Reports` continues to consume independent contracts. Hosted and
