@@ -50,8 +50,7 @@ public class WithdrawalTests : TUnitBDTestBase<AccountContext>
     {
         await Given(() => Context.Balance = 100m)
             .When(() => Context.Balance -= 25m)
-            .Then(async () => await Assert.That(Context.Balance).IsEqualTo(75m))
-            .BDTestAsync();
+            .Then(async () => await Assert.That(Context.Balance).IsEqualTo(75m));
     }
 }
 

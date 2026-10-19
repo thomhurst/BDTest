@@ -19,8 +19,7 @@ public class ReadmeExampleTests : NUnitBDTestBase<AccountContext>
     {
         await Given(() => Account.CreateAnAccount(100m))
             .When(() => Account.Withdraw(25m))
-            .Then(() => AccountAssertions.TheBalanceIs(75m))
-            .BDTestAsync();
+            .Then(() => AccountAssertions.TheBalanceIs(75m));
     }
 }
 
