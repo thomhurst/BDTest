@@ -44,6 +44,13 @@ public class CodeFixTests
     [TestCase("Task Run(Action callback) => Task.CompletedTask; async Task Test() { Run(() => Given(() => {}).When(() => {}).Then(() => {}).BDTestAsync()); }", "BDT001")]
     [TestCase("async void Step() { await Task.Delay(1); } void Test() { var step = Given(() => Step()); }", "BDT004")]
     [TestCase("async void Step() { await Task.Delay(1); } void Test() { var step = Given(() => { Step(); Task.Delay(1); }); }", "BDT004")]
+    [TestCase("void Test() => _ = Given(() => {}).When(() => {}).Then(() => {});", "BDT001")]
+    [TestCase("async Task Test() => _ = Given(() => {}).When(() => {}).Then(() => {}).BDTestAsync();", "BDT001")]
+    [TestCase("async ValueTask Test() => _ = Given(() => {}).When(() => {}).Then(() => {}).BDTestAsync().ConfigureAwait(false);", "BDT001")]
+    [TestCase("Action Test() => () => _ = Given(() => {});", "BDT001")]
+    [TestCase("Func<Task> Test() => async () => _ = Given(() => {}).When(() => {}).Then(() => {}).BDTestAsync();", "BDT001")]
+    [TestCase("async Task Test() { async Task Local() => _ = Given(() => {}).When(() => {}).Then(() => {}).BDTestAsync(); await Local(); }", "BDT001")]
+    [TestCase("Task Run(Action callback) => Task.CompletedTask; async Task Test() { Run(() => _ = Given(() => {}).When(() => {}).Then(() => {}).BDTestAsync()); }", "BDT001")]
     public async Task No_fix_when_signature_or_step_structure_needs_manual_change(string members, string id)
     {
         var (document, diagnostics) = await Document(members);

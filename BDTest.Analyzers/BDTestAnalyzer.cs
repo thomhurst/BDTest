@@ -56,19 +56,21 @@ public sealed class BDTestAnalyzer : DiagnosticAnalyzer
          (named.Name == "ScenarioOutlineBuilder" && named.ContainingNamespace.ToDisplayString() == "BDTest" &&
           named.ContainingAssembly.Name == "BDTest"));
 
-    internal static ExpressionSyntax DiscardedExpression(ExpressionStatementSyntax statement, SemanticModel model)
+    internal static ExpressionSyntax DiscardedExpression(ExpressionStatementSyntax statement, SemanticModel model) =>
+        DiscardedExpression(statement.Expression, model);
+
+    private static ExpressionSyntax DiscardedExpression(ExpressionSyntax expression, SemanticModel model)
     {
-        if (statement.Expression is AssignmentExpressionSyntax assignment &&
+        if (expression is AssignmentExpressionSyntax assignment &&
             model.GetOperation(assignment) is ISimpleAssignmentOperation { Target: IDiscardOperation })
             return assignment.Right;
-        return statement.Expression;
+        return expression;
     }
 
     private static void AnalyzeDiscard(SyntaxNodeAnalysisContext context)
     {
         var statement = (ExpressionStatementSyntax)context.Node;
-        var expression = DiscardedExpression(statement, context.SemanticModel);
-        ReportDiscard(context, expression);
+        ReportDiscard(context, statement.Expression);
     }
 
     private static void AnalyzeExpressionBody(SyntaxNodeAnalysisContext context)
@@ -88,6 +90,7 @@ public sealed class BDTestAnalyzer : DiagnosticAnalyzer
 
     private static void ReportDiscard(SyntaxNodeAnalysisContext context, ExpressionSyntax expression)
     {
+        expression = DiscardedExpression(expression, context.SemanticModel);
         var operation = Unwrap(context.SemanticModel.GetOperation(expression));
         // Only prove direct discards. Locals, returns and helper arguments can escape for later execution.
         if (operation is not IInvocationOperation invocation) return;
