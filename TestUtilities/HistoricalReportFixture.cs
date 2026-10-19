@@ -1,7 +1,6 @@
 using System.Globalization;
 using System.Runtime.CompilerServices;
 using BDTest.Maps;
-using BDTest.Output;
 using BDTest.Test;
 using Newtonsoft.Json.Linq;
 
@@ -99,5 +98,5 @@ internal static class HistoricalReportFixture
         value[name] ?? throw new InvalidDataException($"Missing historical property {name}.");
 
     private static TimeSpan Duration(JToken? value) =>
-        TimeSpan.ParseExact((string?)value ?? throw new InvalidDataException("Missing historical duration."), TimespanConverter.TimeSpanFormatString, CultureInfo.InvariantCulture);
+        TimeSpan.ParseExact((string?)value ?? throw new InvalidDataException("Missing historical duration."), @"d\.hh\:mm\:ss\:fffffff", CultureInfo.InvariantCulture);
 }

@@ -1,9 +1,5 @@
-using BDTest.Output;
-using System.Text.Json.Serialization;
-
 namespace BDTest.Test;
 
-[JsonConverter(typeof(StatusConverter))]
 public enum Status
 {
     /// <summary>Defined but not started, including steps that were never reached.</summary>

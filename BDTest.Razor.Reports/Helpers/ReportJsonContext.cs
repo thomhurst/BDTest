@@ -5,6 +5,7 @@ using BDTest.Razor.Reports.Storage;
 namespace BDTest.Razor.Reports.Helpers;
 
 /// <summary>Generated metadata for stored report summaries.</summary>
+[JsonSourceGenerationOptions(Converters = new[] { typeof(ReportStatusConverter) })]
 [JsonSerializable(typeof(TestRunSummary))]
 [JsonSerializable(typeof(RunIndexEntry))]
 public partial class ReportJsonContext : JsonSerializerContext

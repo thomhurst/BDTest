@@ -2,7 +2,7 @@ using BDTest.Test;
 
 namespace BDTest.Helpers;
 
-public static class StoryTextHelper
+internal static class StoryTextHelper
 {
     public static StoryText? GetStoryText(BDTestBase bdTestBase)
     {

@@ -107,6 +107,7 @@ const sidebars = {
         'migration/scenario-definitions',
         'migration/async-only',
         'migration/fluent-builders',
+        'migration/internal-helpers',
         'migration/statuses',
         'migration/json-serialization',
         'migration/generated-name-text',

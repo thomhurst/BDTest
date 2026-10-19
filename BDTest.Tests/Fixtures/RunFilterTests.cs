@@ -71,6 +71,27 @@ public class RunFilterTests
     }
 
     [Test]
+    public async Task All_historical_filter_placeholders_remain_unrestricted()
+    {
+        var filter = Parse("?tag=All%20Tags&environment=All%20Environments&branch=All%20Branches"
+            + "&machine=All%20Machines&datetimerange=All%20DateTimes");
+        await Assert.That(filter.Tag).IsNull();
+        await Assert.That(filter.Environment).IsNull();
+        await Assert.That(filter.Branch).IsNull();
+        await Assert.That(filter.Machine).IsNull();
+        await Assert.That(filter.CustomRange).IsNull();
+        await Assert.That(filter.Range).IsEqualTo(RunFilter.AnyTime);
+    }
+
+    [Test]
+    public async Task Missing_story_rendering_recognizes_core_and_historical_defaults()
+    {
+        await Assert.That(BDTest.Razor.Reports.Helpers.ReportUi.IsMissingStory(new Scenario().GetStoryText())).IsTrue();
+        await Assert.That(BDTest.Razor.Reports.Helpers.ReportUi.IsMissingStory("Story Text Not Defined")).IsTrue();
+        await Assert.That(BDTest.Razor.Reports.Helpers.ReportUi.IsMissingStory("A real story")).IsFalse();
+    }
+
+    [Test]
     public async Task Custom_dates_are_kept_until_another_range_is_chosen()
     {
         const string dates = "2026-10-01T00:00:00.0000000Z..2026-10-10T00:00:00.0000000Z";

@@ -37,7 +37,7 @@ Serialization does not use global Newtonsoft settings or your host's MVC JSON op
 
 ## Custom converters
 
-BDTest's JSON converter classes now derive from `System.Text.Json` converters. Replace custom Newtonsoft serialization code and attributes with `System.Text.Json` equivalents, and supply extra application types through your own generated context.
+BDTest's implementation JSON converters are internal; use the public generated metadata instead of constructing them. For standalone status values use `BDTestJsonContext.Default.Status` to preserve named output and historical numeric input. See [helper migration](internal-helpers.md). Replace custom Newtonsoft serialization code and attributes with `System.Text.Json` equivalents, and supply extra application types through your own generated context.
 
 ## Trimming and NativeAOT
 

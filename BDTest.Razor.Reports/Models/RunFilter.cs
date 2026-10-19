@@ -1,5 +1,4 @@
-﻿using BDTest.Constants;
-using BDTest.Razor.Reports.Helpers;
+﻿using BDTest.Razor.Reports.Helpers;
 using System.Globalization;
 using BDTest.Test;
 using Microsoft.AspNetCore.Http;
@@ -47,17 +46,17 @@ public class RunFilter
         var filter = new RunFilter
         {
             Search = Read("q")?.Trim(),
-            Tag = Read("tag", DefaultValues.ReportServer.AllTags),
-            Environment = Read("environment", DefaultValues.ReportServer.AllEnvironments),
-            Branch = Read("branch", DefaultValues.ReportServer.AllBranches),
-            Machine = Read("machine", DefaultValues.ReportServer.AllMachines),
+            Tag = Read("tag", LegacyReportDefaults.AllTags),
+            Environment = Read("environment", LegacyReportDefaults.AllEnvironments),
+            Branch = Read("branch", LegacyReportDefaults.AllBranches),
+            Machine = Read("machine", LegacyReportDefaults.AllMachines),
             Status = Read("status") is { } status && (status == nameof(Test.Status.Passed) || status == nameof(Test.Status.Failed)) ? status : null,
             Range = Read("range") is { } range && Ranges.Contains(range) ? range : defaultRange
         };
 
         // datetimerange=start..end comes from older links, or from the "custom" range kept by the filter forms.
         var rangeValue = Read("range");
-        var legacy = Read("datetimerange", DefaultValues.ReportServer.AllDateTimes);
+        var legacy = Read("datetimerange", LegacyReportDefaults.AllDateTimes);
         if (legacy != null && (rangeValue == null || rangeValue == Custom) && legacy.Contains(".."))
         {
             var parts = legacy.Split("..");

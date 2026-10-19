@@ -4,7 +4,7 @@ using BDTest.Attributes;
 
 namespace BDTest.Helpers.JsonConverters;
 
-public class TestInformationAttributeJsonConverter : JsonConverter<TestInformationAttribute>
+internal class TestInformationAttributeJsonConverter : JsonConverter<TestInformationAttribute>
 {
     public override void Write(Utf8JsonWriter writer, TestInformationAttribute value, JsonSerializerOptions options)
     {

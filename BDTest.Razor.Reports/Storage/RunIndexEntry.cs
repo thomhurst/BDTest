@@ -8,6 +8,7 @@ public sealed class RunIndexEntry
     public string? RecordId { get; set; } = "";
     public DateTime StartedAtDateTime { get; set; }
     public DateTime FinishedAtDateTime { get; set; }
+    [System.Text.Json.Serialization.JsonConverter(typeof(BDTest.Razor.Reports.Helpers.ReportStatusConverter))]
     public Status Status { get; set; }
     public RunIndexCounts? Counts { get; set; } = new();
     public string? Tag { get; set; }

@@ -43,6 +43,7 @@ public class Step
     public TimeSpan TimeTaken { get; internal set; }
 
     [JsonInclude]
+    [JsonConverter(typeof(StatusConverter))]
     public Status Status { get; internal set; } = Status.NotRun;
 
     [JsonInclude]

@@ -11,6 +11,8 @@ internal static class ReportJson
 {
     private static readonly JsonSerializerOptions Options = new()
     {
+        // Anonymous fixture objects also need the core status wire mapping.
+        Converters = { BDTestJsonContext.Default.Status.Converter },
         TypeInfoResolver = JsonTypeInfoResolver.Combine(BDTestJsonContext.Default,
             ReportJsonContext.Default, new DefaultJsonTypeInfoResolver())
     };

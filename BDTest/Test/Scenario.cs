@@ -118,6 +118,7 @@ public class Scenario
     [JsonInclude] public string? Output { get; internal set; }
 
     [JsonInclude]
+    [JsonConverter(typeof(StatusConverter))]
     public Status Status { get; internal set; } = Status.NotRun;
 
     [JsonInclude] internal StoryText? StoryText { get; set; }
