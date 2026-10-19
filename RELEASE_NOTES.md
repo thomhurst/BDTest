@@ -14,7 +14,7 @@ retain the concrete type, allowing `.Then(...).WithScenarioText("name").And(...)
 Both `WithContext<T>(...)` overloads are removed; construct inline contexts yourself
 or use a context base class for framework-managed lifetime.
 
-See the [migration guide](https://thomhurst.github.io/BDTest/docs/migration/fluent-builders).
+See the [migration guide](https://bdtest.tomlonghurst.dev/docs/migration/fluent-builders).
 Tracked by [#828](https://github.com/thomhurst/BDTest/issues/828).
 
 ### Breaking: report server image sources
@@ -32,7 +32,7 @@ options.AdditionalImageSources = new[] { "http://images.internal.example:8080" }
 The option accepts HTTP(S) origins only, validates and copies the list, and extends
 only the image directive. Browser mixed-content restrictions and host CSPs still
 apply. Standalone HTML reports and sandboxed custom HTML retain their own policies.
-See [report server security](https://thomhurst.github.io/BDTest/docs/report-server/security#allowing-additional-image-origins).
+See [report server security](https://bdtest.tomlonghurst.dev/docs/report-server/security#allowing-additional-image-origins).
 Tracked by [#853](https://github.com/thomhurst/BDTest/issues/853).
 
 ### Breaking: managed context lifetime and factories
@@ -58,7 +58,7 @@ should await `EndTestAsync()` during teardown. Legacy synchronous completion hoo
 remain supported through a compatibility bridge. Explicitly constructed inline
 contexts retain their caller-managed lifetime.
 
-See [test context](https://thomhurst.github.io/BDTest/docs/writing-tests/test-context)
+See [test context](https://bdtest.tomlonghurst.dev/docs/writing-tests/test-context)
 for ownership and migration details. Tracked by [#824](https://github.com/thomhurst/BDTest/issues/824).
 
 ### Breaking: asynchronous scenario execution only
@@ -95,6 +95,6 @@ blocking can deadlock a single-threaded synchronization context. Tests that reli
 on the old thread-pool scheduling must schedule that work explicitly. Use the
 fixture's `Context` to share state between steps, rather than mutations to `AsyncLocal` values.
 
-See the [migration guide](https://thomhurst.github.io/BDTest/docs/migration/async-only)
+See the [migration guide](https://bdtest.tomlonghurst.dev/docs/migration/async-only)
 for outlines and context helpers. This breaking change is tracked by
 [#801](https://github.com/thomhurst/BDTest/issues/801). No analyzer or code fix is included.

@@ -50,8 +50,8 @@ const config = {
   tagline: 'Behaviour-driven tests and reports in plain C#',
   favicon: 'img/favicon.svg',
 
-  url: 'https://thomhurst.github.io',
-  baseUrl: '/BDTest/',
+  url: 'https://bdtest.tomlonghurst.dev',
+  baseUrl: '/',
 
   organizationName: 'thomhurst',
   projectName: 'BDTest',
@@ -96,7 +96,7 @@ const config = {
         content: {
           enableMarkdownFiles: true,
           enableLlmsFullTxt: true,
-          // Relative links omit the /BDTest/ baseUrl, which 404s once llms.txt is fetched away from the site.
+          // Relative links 404 once llms.txt is fetched away from the site.
           relativePaths: false,
           includeDocs: true,
           includeBlog: false,

@@ -50,4 +50,4 @@ idle directories are cleaned on the next read, list or write. Abandoned temporar
 files are removed during pruning. This does not invalidate the report host's
 existing memory cache, and it does not manage attachments.
 
-See [persistent storage documentation](https://thomhurst.github.io/BDTest/docs/report-server/persistence).
+See [persistent storage documentation](https://bdtest.tomlonghurst.dev/docs/report-server/persistence).

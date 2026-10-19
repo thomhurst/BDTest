@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-BDTest is a code-only BDD testing and reporting framework for .NET (an alternative to SpecFlow, no Gherkin or generated code). Tests are written as `Given(...).When(...).Then(...).BDTestAsync()` chains; step/scenario/story text comes from `[StepText]`, `[ScenarioText]`, `[Story]` attributes or is humanized from method names. Usage docs live in the Docusaurus site under `docs/` (published to https://thomhurst.github.io/BDTest/).
+BDTest is a code-only BDD testing and reporting framework for .NET (an alternative to SpecFlow, no Gherkin or generated code). Tests are written as `Given(...).When(...).Then(...).BDTestAsync()` chains; step/scenario/story text comes from `[StepText]`, `[ScenarioText]`, `[Story]` attributes or is humanized from method names. Usage docs live in the Docusaurus site under `docs/` (published to https://bdtest.tomlonghurst.dev/).
 
 ## Commands
 

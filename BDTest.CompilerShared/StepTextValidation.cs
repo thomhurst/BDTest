@@ -10,7 +10,7 @@ internal static class StepTextValidation
 {
     internal static readonly DiagnosticDescriptor Rule = new("BDT002", "Use valid StepText parameters", "{0}",
         "BDTest", DiagnosticSeverity.Error, isEnabledByDefault: true,
-        helpLinkUri: "https://thomhurst.github.io/BDTest/docs/advanced/analyzers#bdt002");
+        helpLinkUri: "https://bdtest.tomlonghurst.dev/docs/advanced/analyzers#bdt002");
 
     internal static IEnumerable<Diagnostic> ValidateReferencedStep(IInvocationOperation invocation)
     {

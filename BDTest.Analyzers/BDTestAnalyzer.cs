@@ -15,7 +15,7 @@ public sealed class BDTestAnalyzer : DiagnosticAnalyzer
 {
     private static DiagnosticDescriptor Rule(string id, string title, string message, DiagnosticSeverity severity) =>
         new(id, title, message, "BDTest", severity, isEnabledByDefault: true,
-            helpLinkUri: "https://thomhurst.github.io/BDTest/docs/advanced/analyzers#" + id.ToLowerInvariant());
+            helpLinkUri: "https://bdtest.tomlonghurst.dev/docs/advanced/analyzers#" + id.ToLowerInvariant());
 
     public static readonly DiagnosticDescriptor Execution = Rule("BDT001", "Execute and observe the BDTest scenario",
         "{0}", DiagnosticSeverity.Warning);

@@ -65,4 +65,4 @@ each blob independently, so report, index and attachment deletion is eventual.
 Hosts that copied the sample store can remove their copies and use this package's
 namespace and registration extension. Default container names and
 `AzureStorage:ConnectionString` remain unchanged. See the
-[persistence documentation](https://thomhurst.github.io/BDTest/docs/report-server/persistence).
+[persistence documentation](https://bdtest.tomlonghurst.dev/docs/report-server/persistence).

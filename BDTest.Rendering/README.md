@@ -29,5 +29,5 @@ cached report. Hosted shells retain history, navigation, customization and compa
 page caches; URL callbacks use the host’s authorized attachment route and stored
 report identity. The rendering package never performs attachment I/O.
 
-See https://thomhurst.github.io/BDTest/docs/reports/rendering for the package
+See https://bdtest.tomlonghurst.dev/docs/reports/rendering for the package
 boundary and migration guidance.
