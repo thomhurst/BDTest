@@ -78,7 +78,7 @@ The uploader uses bounded stream buffers and reopens each captured file on retry
 
 The scenario page and selected-scenario panel show attachments beneath their owning step or scenario. Before/after-step hook captures stay with that step; setup and teardown captures appear in the scenario attachments section. Outline examples keep their own files. Attachments are grouped by their recorded **Attempt** number, including files from earlier retries even when the final attempt passed. Expand a step on the scenario page to see its files.
 
-PNG, JPEG, GIF, WebP, BMP and AVIF MIME types have inline thumbnails. Select a thumbnail to open a larger preview; use **Close preview** or Escape to return. Every file also has a download link. SVG, HTML, PDF, unknown image types and other content are download-only. Names and MIME metadata appear as text; attachment content is never inserted as HTML. A filename extension does not enable previews.
+PNG, JPEG, GIF, WebP, BMP and AVIF MIME types have inline thumbnails, including valid MIME types with parameters such as `image/png; version=1`. Select a thumbnail to open a larger preview; use **Close preview** or Escape to return. Every file also has a download link. SVG, HTML, PDF, unknown image types and other content are download-only. Names and MIME metadata appear as text; attachment content is never inserted as HTML. A filename extension does not enable previews.
 
 The views build URLs from the server-assigned report ID and recorded attachment ID, respecting the host path base and report route prefix. They use the same authorized download endpoint for images and files, preserving its download disposition, `nosniff` and sandbox headers. Uploaded `Uri` metadata is never used for navigation.
 

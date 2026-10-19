@@ -1,6 +1,7 @@
 @using BDTest.Razor.Reports.Models.ViewModels
 @using BDTest.Razor.Reports.Storage
 @using BDTest.Test
+@using System.Net.Http.Headers
 @model IEnumerable<Attachment>
 @{
     // Only the stored report identity is authoritative; captured URIs and scenario ReportIds are not.
@@ -44,6 +45,7 @@
 @functions
 {
     // Never infer safety from a file extension or from image/* (which also includes SVG).
-    private static bool IsRasterImage(string? mimeType) => mimeType?.ToLowerInvariant() is
+    private static bool IsRasterImage(string? mimeType) =>
+        MediaTypeHeaderValue.TryParse(mimeType, out var parsed) && parsed.MediaType?.ToLowerInvariant() is
         "image/png" or "image/jpeg" or "image/gif" or "image/webp" or "image/bmp" or "image/avif";
 }
