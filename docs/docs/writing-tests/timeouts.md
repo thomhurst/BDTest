@@ -5,7 +5,7 @@ description: Bound individual steps and whole scenarios with WithStepTimeout and
 
 # Timeouts
 
-Import `BDTest.Test` to use the timeout extensions. Async steps can accept a `CancellationToken` in every `Given`, `When`, `Then`, `And` and `But` position:
+Import `BDTest` to use the timeout extensions. Async steps can accept a `CancellationToken` in every `Given`, `When`, `Then`, `And` and `But` position:
 
 ```csharp title="Illustrative fragment"
 using BDTest;
