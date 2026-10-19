@@ -24,7 +24,7 @@
     <ProjectReference Include="..\BDTest.Analyzers\BDTest.Analyzers.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Microsoft.Extensions.TimeProvider.Testing" Version="8.0.0" />
+    <PackageReference Include="Microsoft.Extensions.TimeProvider.Testing" Version="10.11.0" />
     <ProjectReference Include="..\BDTest.Reporting\BDTest.Reporting.csproj" />
   </ItemGroup>
   <ItemGroup>
