@@ -2,6 +2,8 @@ using Step = BDTest.Contracts.StepResult;
 using Scenario = BDTest.Contracts.ScenarioResult;
 using BDTest;
 using BDTest.Settings;
+using BDTest.Interfaces;
+using Microsoft.Extensions.Time.Testing;
 using BDTest.Test;
 using System.Threading.Tasks;
 
@@ -380,26 +382,34 @@ public class StepHookTests : TestRunOwner
             "not implemented" => new NotImplementedException("before hook not implemented"),
             _ => new InvalidOperationException("before hook failed")
         };
+        var clock = new FakeTimeProvider();
+        Options.TimeProvider = clock;
         var calls = new List<string>();
         Step? observed = null;
-        Func<BDTest.Contracts.StepResult, Task> before = async _ =>
+        async Task Before(CancellationToken token)
         {
-            await Task.Delay(150);
+            var cancelled = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            using var registration = token.Register(() => cancelled.TrySetResult());
+            clock.Advance(TimeSpan.FromMilliseconds(50));
+            // Expiry must be observed before the hook faults; elapsed time alone does not
+            // order the deadline and exception continuations under thread-pool contention.
+            await cancelled.Task;
+            calls.Add("before failure");
             throw failure;
-        };
+        }
         using var test = new HookTest(() => TestRun)
         {
-            Before = runHook ? _ => Task.CompletedTask : before,
+            BeforeWithToken = runHook ? null : Before,
             After = step => { observed = step; calls.Add("after"); return Task.CompletedTask; }
         };
-        if (runHook) { Options.StepHooks.Add(new CallbackStepHook(before: before)); }
+        if (runHook) { Options.StepHooks.Add(new CancellableBeforeStepHook(Before)); }
         var builder = test.When(() => calls.Add("body")).Then(() => calls.Add("later"))
             .WithScenarioTimeout(TimeSpan.FromMilliseconds(50));
         var exception = await Assert.That(async () =>
             await builder.BDTestAsync().WaitAsync(TimeSpan.FromSeconds(10))).ThrowsExactly<TimeoutException>();
 
         await Assert.That(Required(exception).Message).StartsWith("Scenario");
-        await Assert.That(calls).IsEquivalentTo(new[] { "after" }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(calls).IsEquivalentTo(new[] { "before failure", "after" }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
         await Assert.That(Required(observed).TimedOut).IsTrue();
         await Assert.That(GetStep(Required(observed)).TimedOut).IsTrue();
         await Assert.That(GetStep(Required(observed)).Status).IsEqualTo(Status.Failed);
@@ -515,6 +525,12 @@ public class StepHookTests : TestRunOwner
     private sealed class HookSkipException : Exception;
     private sealed class HookInconclusiveException : Exception;
 
+    private sealed class CancellableBeforeStepHook(Func<CancellationToken, Task> before) : IStepHook
+    {
+        public Task BeforeStepAsync(Step step, CancellationToken cancellationToken) => before(cancellationToken);
+        public Task AfterStepAsync(Step step, CancellationToken cancellationToken) => Task.CompletedTask;
+    }
+
     private sealed class HookTest(Func<BDTestRun> run) : BDTestBase, IDisposable
     {
         private readonly string _id = Guid.NewGuid().ToString("N");
@@ -534,6 +550,9 @@ public class StepHookTests : TestRunOwner
         public Func<BDTest.Contracts.StepResult, Task> Before { get; init; } = _ => Task.CompletedTask;
         public Func<BDTest.Contracts.StepResult, Task> After { get; init; } = _ => Task.CompletedTask;
         public override Task OnBeforeStep(BDTest.Contracts.StepResult step) => Before(step);
+        public Func<CancellationToken, Task>? BeforeWithToken { get; init; }
+        public override Task OnBeforeStep(Step step, CancellationToken cancellationToken) =>
+            BeforeWithToken?.Invoke(cancellationToken) ?? base.OnBeforeStep(step, cancellationToken);
         public Func<Step, CancellationToken, Task>? AfterWithToken { get; init; }
         public override Task OnAfterStep(Step step, CancellationToken cancellationToken) =>
             AfterWithToken?.Invoke(step, cancellationToken) ?? After(step);
