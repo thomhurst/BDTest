@@ -308,17 +308,17 @@ public class TimeoutTests : RunTestBase
         return Task.CompletedTask;
     }
     private static async Task CompleteAndSpendBudget(CancellationToken token) => await Task.Delay(600, token);
-    private async Task TimeoutOnce(CancellationToken token, TimeoutClock clock)
+    private Task TimeoutOnce(CancellationToken token, TimeoutClock clock)
     {
         _tokens.Add(token);
         if (_tokens.Count == 1)
         {
-            // Task.Run may enter the step before WaitAsync creates its timer. Advance
-            // only after it is armed, and leave time frozen throughout the retry.
-            await clock.TimerCreated.Task;
+            // Keep cancellation observable without a pending async step that must resume
+            // within the real-time grace period. The execution owns this registration.
+            token.Register(() => _cancelled.TrySetResult(true));
             clock.Fake.Advance(Timeout);
-            await WaitForCancellation(token);
         }
+        return Task.CompletedTask;
     }
 
     private sealed class TimeoutClock : TimeProvider
