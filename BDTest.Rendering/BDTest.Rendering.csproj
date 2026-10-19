@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <IsPackable>true</IsPackable>
+    <PackageId>BDTest.Rendering</PackageId>
+    <Title>BDTest - HTML Rendering</Title>
+    <Description>Self-contained HTML reports and shared report fragments over immutable BDTest contracts, independent of test execution.</Description>
+    <PackageTags>bdd testing reports html rendering contracts</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\BDTest.Contracts\BDTest.Contracts.csproj" />
+    <None Include="README.md" Pack="true" PackagePath="" />
+  </ItemGroup>
+</Project>

@@ -19,6 +19,9 @@ contract. Hosted reports and the Azure Blob store also consume these contracts,
 without a dependency on the execution package. Hosts read both schema version 1
 and historical unversioned reports. See [migration](../migration/immutable-results.md).
 
+The [shared HTML renderer](rendering.md) consumes these contracts through
+`BDTest.Rendering`, also without an execution dependency.
+
 ## Creating and reading a report
 
 ```csharp sample="Contracts/Program.cs" title="Compiled example"

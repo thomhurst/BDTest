@@ -290,7 +290,7 @@ packing for stable, prerelease, metadata, minor, patch and major versions.
 `Directory.Build.props` defines `BDTestPublicKey` once and resolves
 `StrongNameKeyPair.snk` relative to the repository, independent of the working
 directory. The signed runtime packages are `BDTest`, `BDTest.NUnit`,
-`BDTest.xUnit`, `BDTest.MSTest`, `BDTest.TUnit`, `BDTest.Contracts`, `BDTest.Reporting`, `BDTest.Razor.Reports`,
+`BDTest.xUnit`, `BDTest.MSTest`, `BDTest.TUnit`, `BDTest.Contracts`, `BDTest.Reporting`, `BDTest.Rendering`, `BDTest.Razor.Reports`,
 `BDTest.Reports.Storage.AzureBlob` and `BDTest.Reports.Storage.FileSystem`.
 Their assembly names, key and version policy remain unchanged for every target.
 Keep this explicit list current when adding a runtime package.
@@ -327,7 +327,7 @@ either the NuGet or local-feed upload module. A failed check prevents publicatio
 `Directory.Build.props` defaults `IsPackable` to `false`. Shipped projects opt in
 with `<IsPackable>true</IsPackable>` in their project files. The complete package
 set is `BDTest`, `BDTest.NUnit`, `BDTest.xUnit`, `BDTest.MSTest`, `BDTest.TUnit`,
-`BDTest.Contracts`, `BDTest.Reporting`, `BDTest.Razor.Reports`, `BDTest.Reports.Storage.FileSystem`,
+`BDTest.Contracts`, `BDTest.Reporting`, `BDTest.Rendering`, `BDTest.Razor.Reports`, `BDTest.Reports.Storage.FileSystem`,
 `BDTest.Reports.Storage.AzureBlob`,
 `BDTest.SourceGenerator`, and `BDTest.Analyzers`.
 Tests, pipeline tools, examples and the sample report host are not packable.
@@ -493,3 +493,20 @@ the injected context via the lifecycle invocation, avoiding the experimental
 `TestContext.Current` API. Other adapters read the current context when scenario
 execution starts. Framework-specific factories supply tokens; core-only hosts
 remain framework-independent and accept explicit tokens.
+
+## Shared HTML rendering foundation (#1003)
+
+`BDTest.Rendering` is a signed, packable netstandard2.0 package whose sole
+project dependency is `BDTest.Contracts`. It owns standalone HTML generation
+and shared argument/exception markup. Reporting's existing public helpers are
+compatibility facades; hosted Razor views call the shared fragment APIs directly.
+No rendering friend grants, core dependencies or reflection JSON are introduced.
+Existing generated contract metadata serializes the tag list. Run capture,
+model-building validation and upload transport remain in their existing owners.
+
+The package-selection and signing checks include the new assembly. Public API
+baselines record its three rendering methods; the reporting facade baselines
+are unchanged. Core tests compare current and historical rendering, and the
+execution-independent host suite generates standalone HTML through the package.
+Modern/legacy target tests retain compatibility coverage. Full hosted page
+composition and cache-aware integration remain in #993.

@@ -55,6 +55,9 @@ The configurable uploader retains streaming JSON, optional gzip, upload keys and
 per-attempt timeouts; its transport and options move together into reporting.
 Keep the run alive until export and upload finish.
 
-`BDTest.Razor.Reports` continues to consume independent contracts. Hosted and
-standalone renderer unification is separate work; this package extraction does
-not change hosted rendering or upload protocol behavior.
+HTML implementation now lives in the contracts-only `BDTest.Rendering` package,
+referenced transitively by reporting and hosting. The public reporting helpers
+remain forwarding facades in their existing assembly with unchanged signatures.
+Hosted views share its argument and exception fragments. Full page integration
+remains separate work; see the [rendering boundary](../reports/rendering.md).
+This does not change upload protocol behavior.

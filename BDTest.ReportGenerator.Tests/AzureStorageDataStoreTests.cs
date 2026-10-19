@@ -22,6 +22,7 @@ public class AzureStorageDataStoreTests
         foreach (var assembly in new[]
                  {
                      typeof(AzureStorageDataStore).Assembly,
+                     typeof(BDTest.Rendering.ReportHtmlRenderer).Assembly,
                      typeof(BDTest.Razor.Reports.Controllers.BDTestController).Assembly,
                      typeof(Program).Assembly
                  })

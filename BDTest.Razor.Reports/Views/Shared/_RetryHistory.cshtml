@@ -21,7 +21,7 @@
                         <td style="min-width: 0">
                             @if (attempt.Exception != null)
                             {
-                                @Html.Raw(BDTest.Razor.Reports.Helpers.ExceptionHtmlHelper.GetHtml(attempt.Exception))
+                                @Html.Raw(BDTest.Rendering.ReportHtmlRenderer.RenderException(attempt.Exception))
                             }
                         </td>
                     </tr>

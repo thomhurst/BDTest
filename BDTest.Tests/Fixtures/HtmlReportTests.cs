@@ -304,7 +304,10 @@ public class HtmlReportTests : RunTestBase
     [Arguments(3_720_000, "1 h 02 m")]
     public async Task DurationsAreReadable(int milliseconds, string expected)
     {
-        await Assert.That(BDTestHtmlHelper.FormatDuration(TimeSpan.FromMilliseconds(milliseconds))).IsEqualTo(expected);
+        var scenario = new BDTest.Contracts.ScenarioResult("scenario", "report", "story", "scenario",
+            BDTest.Contracts.Status.Passed, timeTaken: TimeSpan.FromMilliseconds(milliseconds));
+        var html = BDTestHtmlHelper.GenerateHtmlReport(new BDTest.Contracts.BDTestReport(1, "report", "tests", [scenario]));
+        await Assert.That(html).Contains($"<div><dt>Duration</dt><dd class=\"mono\">{expected}</dd></div>");
     }
 
     private void WriteCustomHtml(string html) => ScenarioHtmlWriter.Custom(html);

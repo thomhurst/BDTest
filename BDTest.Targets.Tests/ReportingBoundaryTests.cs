@@ -34,6 +34,19 @@ public class ReportingBoundaryTests
     }
 
     [Test]
+    public void Shared_renderer_and_legacy_facades_keep_the_contract_boundary()
+    {
+        var assembly = typeof(BDTest.Rendering.ReportHtmlRenderer).Assembly;
+        Assert.That(assembly.GetName().Name, Is.EqualTo("BDTest.Rendering"));
+        Assert.That(assembly.GetReferencedAssemblies().Where(reference => reference.Name!.StartsWith("BDTest", StringComparison.Ordinal))
+            .Select(reference => reference.Name), Is.EqualTo(new[] { "BDTest.Contracts" }));
+        var exception = new ExceptionInfo("Failure", "<failure>", innerExceptions: new[] { new ExceptionInfo("Inner", "cause") });
+        Assert.That(ExceptionHtmlHelper.GetHtml(exception), Is.EqualTo(BDTest.Rendering.ReportHtmlRenderer.RenderException(exception)));
+        var arguments = new Contracts.StepArgument[] { new Contracts.StepDocString("<content>", "text/plain") };
+        Assert.That(StepArgumentHtmlHelper.GetHtml(arguments), Is.EqualTo(BDTest.Rendering.ReportHtmlRenderer.RenderArguments(arguments)));
+    }
+
+    [Test]
     public async Task Snapshot_is_isolated_and_retained_after_the_run_is_cleared_and_disposed()
     {
         using var run = BDTestRun.Start();
