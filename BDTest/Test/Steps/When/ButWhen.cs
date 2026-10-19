@@ -1,4 +1,4 @@
-namespace BDTest.Test.Steps.When;
+namespace BDTest;
 
 public sealed class ButWhen : WhenStepBuilder
 {

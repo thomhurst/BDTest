@@ -1,6 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 
-namespace BDTest.Test;
+namespace BDTest;
 
 /// <summary>Constructs contexts with dependencies from the execution's service provider.</summary>
 /// <remarks>

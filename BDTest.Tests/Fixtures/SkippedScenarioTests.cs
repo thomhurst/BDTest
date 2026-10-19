@@ -1,4 +1,4 @@
-using BDTest.Attributes;
+using BDTest;
 using BDTest.Settings;
 using BDTest.Test;
 using System.Threading.Tasks;

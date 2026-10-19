@@ -1,5 +1,5 @@
 using System.Text.Json.Serialization;
-using BDTest.Attributes;
+using BDTest;
 using BDTest.Maps;
 using BDTest.Output;
 using BDTest.Test;

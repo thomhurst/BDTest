@@ -1,4 +1,4 @@
-namespace BDTest.Attributes;
+namespace BDTest;
 
 /// <summary>Adds a tag to a scenario method or every scenario in a story class.</summary>
 [AttributeUsage(AttributeTargets.Class | AttributeTargets.Method, AllowMultiple = true, Inherited = true)]

@@ -1,4 +1,4 @@
-using BDTest.Attributes;
+using BDTest;
 using BDTest.Test;
 using Newtonsoft.Json;
 using System.Threading.Tasks;

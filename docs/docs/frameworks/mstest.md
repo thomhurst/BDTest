@@ -20,9 +20,7 @@ Use `[BDTestClass]`, implement `IBDTestMSTestTest`, and forward MSTest's public 
 
 ```csharp sample="MSTest/Composition.cs" title="Compiled example"
 using BDTest;
-using BDTest.MSTest;
 using BDTest.Settings;
-using BDTest.Test;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 [BDTestClass]
@@ -91,8 +89,7 @@ Method metadata, class story/tags, and attributed retry hooks come from the owni
 Inherit from `MSTestBDTestBase<TContext>` and mark the class with `[BDTestClass]`:
 
 ```csharp sample="MSTest/Inheritance.cs" title="Compiled example"
-using BDTest.Attributes;
-using BDTest.MSTest;
+using BDTest;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 [BDTestClass]
@@ -142,10 +139,10 @@ public class BDTestReports
         var assembly = typeof(BDTestReports).Assembly;
         try
         {
-            var run = BDTest.MSTest.MSTestBDTestAssembly.GetRun(assembly);
+            var run = BDTest.MSTestBDTestAssembly.GetRun(assembly);
             await File.WriteAllTextAsync("BDTest-Report.html", BDTestHtmlHelper.GetTestHtmlReport(null, run));
         }
-        finally { BDTest.MSTest.MSTestBDTestAssembly.Dispose(assembly); }
+        finally { BDTest.MSTestBDTestAssembly.Dispose(assembly); }
         // or: await BDTestReportServer.SendDataAndGetReportUriAsync(...)
     }
 }

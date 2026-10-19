@@ -1,4 +1,4 @@
-namespace BDTest.Attributes;
+namespace BDTest;
 
 public abstract class SkipStepAttribute : Attribute
 {

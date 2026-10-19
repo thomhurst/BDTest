@@ -1,7 +1,6 @@
-using BDTest.Attributes;
+using BDTest;
 using BDTest.Constants;
 using BDTest.Metadata;
-using BDTest.Test.Steps;
 
 namespace BDTest.Test;
 

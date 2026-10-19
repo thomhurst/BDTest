@@ -126,7 +126,6 @@ Delegate builders need a C# 13 or newer compiler (.NET SDK 9 or newer), so overl
 ```csharp sample="NUnit/ScenarioResults.cs" title="Compiled example"
 using BDTest;
 using BDTest.Contracts;
-using BDTest.Test;
 
 public static class ScenarioResultsExample
 {

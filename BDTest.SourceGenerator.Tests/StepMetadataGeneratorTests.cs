@@ -1,7 +1,7 @@
 using System.Collections.Immutable;
 using System.Reflection;
 using System.Runtime.Loader;
-using BDTest.Attributes;
+using BDTest;
 using BDTest.Metadata;
 using BDTest.SourceGenerator;
 using Microsoft.CodeAnalysis;
@@ -16,10 +16,10 @@ public class StepMetadataGeneratorTests
     public void All_step_names_resolve_private_overloaded_and_generic_methods()
     {
         var consumer = Compile("""
-            public sealed class Consumer : BDTest.Test.Steps.Probe
+            public sealed class Consumer : BDTest.Probe
             {
                 private int Value = 3;
-                [BDTest.Attributes.StepText("number {0}", "0:override")]
+                [BDTest.StepText("number {0}", "0:override")]
                 [SkipStepIf("private overload")]
                 private void Step(int value) { }
                 private void Step(string value) { }
@@ -42,7 +42,7 @@ public class StepMetadataGeneratorTests
                     return Captures.ToArray();
                 }
             }
-            public sealed class SkipStepIfAttribute : BDTest.Attributes.SkipStepAttribute
+            public sealed class SkipStepIfAttribute : BDTest.SkipStepAttribute
             {
                 public SkipStepIfAttribute(string reason) { Reason = reason; }
                 public string Reason { get; }
@@ -68,7 +68,7 @@ public class StepMetadataGeneratorTests
     public void Boxing_member_values_and_constants_retains_runtime_values()
     {
         var consumer = Compile("""
-            public sealed class Consumer : BDTest.Test.Steps.Probe
+            public sealed class Consumer : BDTest.Probe
             {
                 private int Value = 19;
                 private void Step(object value) { }
@@ -90,7 +90,7 @@ public class StepMetadataGeneratorTests
     public void Forwarded_runner_token_does_not_disable_other_automatic_arguments()
     {
         var consumer = Compile("""
-            public sealed class Consumer : BDTest.Test.Steps.Probe
+            public sealed class Consumer : BDTest.Probe
             {
                 private int Value = 19;
                 private System.Threading.Tasks.Task Step(int value, System.Threading.CancellationToken token)
@@ -112,7 +112,7 @@ public class StepMetadataGeneratorTests
     public void Binding_does_not_evaluate_getters_and_accessors_read_current_state()
     {
         var consumer = Compile("""
-            public sealed class Consumer : BDTest.Test.Steps.Probe
+            public sealed class Consumer : BDTest.Probe
             {
                 public static int Reads;
                 public int Value;
@@ -142,14 +142,14 @@ public class StepMetadataGeneratorTests
     public void Open_generic_declaring_types_preserve_caller_text_fallback()
     {
         var consumer = Compile("""
-            public sealed class Consumer : BDTest.Test.Steps.Probe
+            public sealed class Consumer : BDTest.Probe
             {
                 private sealed class Hidden<T>
                 {
                     private static void Step<TMethod>(T first, TMethod second) { }
                     public static object[] Build()
                     {
-                        var probe = new BDTest.Test.Steps.Probe();
+                        var probe = new BDTest.Probe();
                         probe.Given(() => Step<string>(second: "second", first: default(T)));
                         return probe.Captures.ToArray();
                     }
@@ -167,7 +167,7 @@ public class StepMetadataGeneratorTests
     public void Constructed_generic_receivers_resolve_without_inaccessible_references()
     {
         var consumer = Compile("""
-            public sealed class Consumer : BDTest.Test.Steps.Probe
+            public sealed class Consumer : BDTest.Probe
             {
                 private sealed class Hidden<T> { public void Step(T value) { } }
                 private Hidden<int> Target = new Hidden<int>();
@@ -191,7 +191,7 @@ public class StepMetadataGeneratorTests
     public void Unsupported_arguments_keep_identity_when_possible_and_caller_text(string body, bool hasMethod)
     {
         var consumer = Compile("""
-            public sealed class Consumer : BDTest.Test.Steps.Probe
+            public sealed class Consumer : BDTest.Probe
             {
                 private int Value;
                 private int GetValue() { throw new System.Exception("must not run"); }
@@ -212,7 +212,7 @@ public class StepMetadataGeneratorTests
     public void Closure_target_is_rejected_without_inspecting_compiler_generated_fields()
     {
         var consumer = Compile("""
-            public sealed class Consumer : BDTest.Test.Steps.Probe
+            public sealed class Consumer : BDTest.Probe
             {
                 private int Value = 5;
                 private void Step(int value) { }
@@ -242,7 +242,7 @@ public class StepMetadataGeneratorTests
     public void Static_member_paths_named_arguments_and_null_constants_remain_lazy()
     {
         var consumer = Compile("""
-            public sealed class Consumer : BDTest.Test.Steps.Probe
+            public sealed class Consumer : BDTest.Probe
             {
                 public static int Reads;
                 public static Consumer Current { get { Reads++; return Instance; } }
@@ -263,10 +263,11 @@ public class StepMetadataGeneratorTests
         Assert.That(accessors.Select(a => a()).ToArray(), Is.EqualTo(new object?[] { null, 21 }));
     }
 
-    [Test]
-    public void Unrelated_method_names_do_not_generate_metadata()
+    [TestCase("")]
+    [TestCase("namespace BDTest;")]
+    public void Unrelated_method_names_do_not_generate_metadata(string namespaceDeclaration)
     {
-        var compilation = CreateCompilation("class Unrelated { void Given(System.Action step) { } void Test() { Given(() => { }); } }");
+        var compilation = CreateCompilation(namespaceDeclaration + "class Unrelated { void Given(System.Action step) { } void Test() { Given(() => { }); } }");
         var driver = RunGenerator(compilation, out _);
         Assert.That(driver.GetRunResult().GeneratedTrees, Is.Empty);
     }
@@ -283,7 +284,7 @@ public class StepMetadataGeneratorTests
     public void Generated_source_compiles_on_supported_language_versions(LanguageVersion languageVersion)
     {
         var compilation = CreateCompilation(Probe + "\n" + """
-            public sealed class Consumer : BDTest.Test.Steps.Probe
+            public sealed class Consumer : BDTest.Probe
             {
                 private void Step(int value) { }
                 private void Build() { Given(() => Step(1)); }
@@ -298,7 +299,7 @@ public class StepMetadataGeneratorTests
     {
         var path = "unique-" + Guid.NewGuid().ToString("N") + ".cs";
         var source = "#line 600 \"" + path + "\"\n" + """
-            public sealed class Consumer : BDTest.Test.Steps.Probe { private void Build() { Given(() => Step(1)); } private void Step(int value) { } }
+            public sealed class Consumer : BDTest.Probe { private void Build() { Given(() => Step(1)); } private void Step(int value) { } }
             """;
         Assert.That(StepMetadataCatalog.Find(path, 600, "() => Step(1)", out _), Is.Null);
         var first = Compile(source);
@@ -316,7 +317,7 @@ public class StepMetadataGeneratorTests
     public void Narrow_integral_constants_preserve_the_parameter_type(string parameterType)
     {
         var consumer = Compile("""
-            public sealed class Consumer : BDTest.Test.Steps.Probe
+            public sealed class Consumer : BDTest.Probe
             {
                 private void Step(TYPE value) { }
                 public static object[] Run()
@@ -339,7 +340,7 @@ public class StepMetadataGeneratorTests
     public void Nullable_intermediate_paths_use_caller_text_fallback(string initialValue)
     {
         var consumer = Compile("""
-            public sealed class Consumer : BDTest.Test.Steps.Probe
+            public sealed class Consumer : BDTest.Probe
             {
                 private int? Optional = INITIAL;
                 private void Step(int value) { }
@@ -362,7 +363,7 @@ public class StepMetadataGeneratorTests
     public void Dynamic_parameter_signatures_resolve_as_object()
     {
         var consumer = Compile("""
-            public sealed class Consumer : BDTest.Test.Steps.Probe
+            public sealed class Consumer : BDTest.Probe
             {
                 private void Step(dynamic value) { }
                 private void Generic<T>(T value) { }
@@ -384,7 +385,7 @@ public class StepMetadataGeneratorTests
     public void Base_virtual_property_reads_use_caller_text_fallback()
     {
         var consumer = Compile("""
-            public class Parent : BDTest.Test.Steps.Probe
+            public class Parent : BDTest.Probe
             {
                 protected virtual int Value => 1;
             }
@@ -427,7 +428,7 @@ public class StepMetadataGeneratorTests
         var resolver = new SourceFileResolver(ImmutableArray<string>.Empty, Directory.GetCurrentDirectory(),
             ImmutableArray.Create(new KeyValuePair<string, string>(root, "/_/")));
         var consumer = Compile((lineDirective ? "#line 600 \"generated/consumer.cs\"\n" : "") + """
-            public sealed class Consumer : BDTest.Test.Steps.Probe
+            public sealed class Consumer : BDTest.Probe
             {
                 private void Step(int value) { }
                 public static object[] Run()
@@ -481,10 +482,12 @@ public class StepMetadataGeneratorTests
     private sealed record Captured(StepCallSiteMetadata Metadata, Delegate Step);
 
     private const string Probe = """
-        namespace BDTest.Test.Steps
+        namespace BDTest
         {
-            public class Probe
+            public class Probe : BDTestBase
             {
+                // This probe inspects generated call sites without executing a scenario.
+                public override BDTestRun TestRun => throw new System.InvalidOperationException("Probe does not execute tests");
                 public System.Collections.Generic.List<object> Captures = new System.Collections.Generic.List<object>();
                 private Probe Capture(System.Delegate step, string expression, string file, int line)
                 {

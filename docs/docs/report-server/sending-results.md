@@ -35,7 +35,7 @@ public class SendResultsToReportServer
         var assembly = typeof(SendResultsToReportServer).Assembly;
         try
         {
-            var run = BDTest.TUnit.TUnitBDTestAssembly.GetRun(assembly);
+            var run = BDTest.TUnitBDTestAssembly.GetRun(assembly);
             var reportUri = await BDTestReportServer.SendDataAndGetReportUriAsync(
                 new Uri("https://reports.example.com"),
                 new BDTestRunDescriptor
@@ -48,7 +48,7 @@ public class SendResultsToReportServer
 
             Console.WriteLine($"BDTest report: {reportUri}");
         }
-        finally { BDTest.TUnit.TUnitBDTestAssembly.Dispose(assembly); }
+        finally { BDTest.TUnitBDTestAssembly.Dispose(assembly); }
     }
 }
 ```

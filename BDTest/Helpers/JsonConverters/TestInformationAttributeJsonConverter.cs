@@ -1,6 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using BDTest.Attributes;
+using BDTest;
 
 namespace BDTest.Helpers.JsonConverters;
 

@@ -4,7 +4,7 @@ using NUnit.Framework.Constraints;
 using NUnit.Framework.Interfaces;
 using NUnitTestContext = NUnit.Framework.TestContext;
 
-namespace BDTest.NUnit;
+namespace BDTest;
 
 internal static class NUnitScenarioExecution
 {

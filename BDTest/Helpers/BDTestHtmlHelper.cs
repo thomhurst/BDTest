@@ -3,6 +3,7 @@ using Scenario = BDTest.Contracts.ScenarioResult;
 using Step = BDTest.Contracts.StepResult;
 using ExceptionWrapper = BDTest.Contracts.ExceptionInfo;
 using ScenarioDefinitionSummary = BDTest.Contracts.ScenarioDefinitionSummary;
+using BDTest;
 using BDTest.Maps;
 using BDTest.Output;
 using BDTest.Test;

@@ -1,6 +1,5 @@
+using BDTest;
 using BDTest.Test;
-using BDTest.Attributes;
-using BDTest.NUnit;
 using NUnit.Framework;
 
 namespace BDTest.Tests.Fixtures;

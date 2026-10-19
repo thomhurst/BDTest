@@ -1,7 +1,7 @@
 using System.Reflection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace BDTest.MSTest;
+namespace BDTest;
 
 /// <summary>Owns BDTest completion around MSTest's native setup, test and cleanup.</summary>
 [AttributeUsage(AttributeTargets.Class, Inherited = false)]

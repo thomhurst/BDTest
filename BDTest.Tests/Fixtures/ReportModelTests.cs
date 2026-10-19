@@ -1,6 +1,7 @@
 using System.Net;
 using BDTest.Helpers;
 using BDTest.Settings;
+using BDTest;
 using BDTest.Test;
 using BDTest.Tests.Helpers;
 using Newtonsoft.Json.Linq;
@@ -131,7 +132,7 @@ public class ReportModelTests
     private sealed class Capture(BDTestRun run) : BDTestBase
     {
         public override BDTestRun TestRun => run;
-        public BDTest.Test.Steps.Then.Then Build() => When(() => Complete()).Then(() => Complete());
+        public BDTest.Then Build() => When(() => Complete()).Then(() => Complete());
     }
 
     private sealed class ReportHandler : HttpMessageHandler

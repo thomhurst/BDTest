@@ -1,8 +1,9 @@
 using BDTest.Contracts;
 using BDTest.Helpers;
+using BDTest.Test;
 using System.Threading;
 
-namespace BDTest.Test;
+namespace BDTest;
 
 /// <summary>The scenario, context and cancellation signal for one execution attempt.</summary>
 public class ScenarioHookContext

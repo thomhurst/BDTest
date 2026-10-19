@@ -1,6 +1,6 @@
 using System.Reflection;
 
-namespace BDTest.xUnit;
+namespace BDTest;
 
 /// <summary>Owns one configured BDTest run per test assembly for XUnit.</summary>
 public static class XUnitBDTestAssembly

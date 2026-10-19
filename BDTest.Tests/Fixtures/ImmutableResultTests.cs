@@ -151,7 +151,7 @@ public class ImmutableResultTests
         var calls = 0;
         var outline = await fixture.ScenarioOutline("row <Value>", new[] { new { Value = "one" } }, row =>
             fixture.When(() => FailOnce()).Then(() => NoOp())
-                .WithDocString(new Test.StepDocString("text", "text/plain")));
+                .WithDocString(new global::BDTest.StepDocString("text", "text/plain")));
         #pragma warning disable BDT001 // Deliberately retain unexecuted definitions for export.
         _ = new Capture(otherRun).When(() => NoOp()).Then(() => NoOp());
         _ = fixture.When(() => NoOp()).Then(() => NoOp()).WithScenarioText("pending");

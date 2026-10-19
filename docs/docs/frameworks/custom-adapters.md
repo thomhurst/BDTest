@@ -14,7 +14,6 @@ To integrate without requiring test-class inheritance, create a [composition hos
 ```csharp title="Illustrative fragment"
 using BDTest;
 using BDTest.Settings;
-using BDTest.Test;
 
 public abstract class MyRunnerBDTestBase<TContext> : AbstractContextBDTestBase<TContext>
     where TContext : class

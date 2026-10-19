@@ -5,7 +5,7 @@ using Xunit.Sdk;
 using Xunit.v3;
 using System.Reflection;
 
-namespace BDTest.xUnit;
+namespace BDTest;
 
 [BDTestLifecycle]
 public abstract class XUnitBDTestBase<TContext> : AbstractContextBDTestBase<TContext>, IDisposable, IAsyncLifetime

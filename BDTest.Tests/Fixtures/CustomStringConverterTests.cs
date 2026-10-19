@@ -1,5 +1,5 @@
 using System.Reflection;
-using BDTest.Attributes;
+using BDTest;
 using BDTest.Helpers;
 using BDTest.Interfaces;
 using System.Threading.Tasks;

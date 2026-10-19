@@ -4,7 +4,7 @@ using TUnit.Core;
 using TUnit.Core.Exceptions;
 using TUnitTestContext = TUnit.Core.TestContext;
 
-namespace BDTest.TUnit;
+namespace BDTest;
 
 public abstract class TUnitBDTestBase<TContext> : AbstractContextBDTestBase<TContext>, IBDTestTUnitTest
     where TContext : class

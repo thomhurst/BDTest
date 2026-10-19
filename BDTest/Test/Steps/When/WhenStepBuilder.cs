@@ -1,7 +1,7 @@
 using System.Runtime.CompilerServices;
 using System.Threading;
 
-namespace BDTest.Test.Steps.When;
+namespace BDTest;
 
 /// <summary>Shared continuations for when steps.</summary>
 public abstract class WhenStepBuilder : StepBuilder
@@ -17,55 +17,63 @@ public abstract class WhenStepBuilder : StepBuilder
     }
 
     [OverloadResolutionPriority(-1)]
-    public Then.Then Then(Action step, [CallerFilePath] string? callerFile = null,
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("ApiDesign", "RS0026", Justification = "Existing caller-info overload preserved by the next-major namespace migration; no overload or optional parameter was added.")]
+    public Then Then(Action step, [CallerFilePath] string? callerFile = null,
         [CallerLineNumber] int callerLine = 0, [CallerArgumentExpression(nameof(step))] string? argumentExpression = null)
     {
-        return new Then.Then(new Runnable(step, argumentExpression, callerFile, callerLine), this);
+        return new Then(new Runnable(step, argumentExpression, callerFile, callerLine), this);
     }
 
     [OverloadResolutionPriority(1)]
-    public Then.Then Then(Func<Task> step, [CallerFilePath] string? callerFile = null,
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("ApiDesign", "RS0026", Justification = "Existing caller-info overload preserved by the next-major namespace migration; no overload or optional parameter was added.")]
+    public Then Then(Func<Task> step, [CallerFilePath] string? callerFile = null,
         [CallerLineNumber] int callerLine = 0, [CallerArgumentExpression(nameof(step))] string? argumentExpression = null)
     {
-        return new Then.Then(new Runnable(step, argumentExpression, callerFile, callerLine), this);
+        return new Then(new Runnable(step, argumentExpression, callerFile, callerLine), this);
     }
 
     [OverloadResolutionPriority(1)]
-    public Then.Then Then(Func<CancellationToken, Task> step, [CallerFilePath] string? callerFile = null,
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("ApiDesign", "RS0026", Justification = "Existing caller-info overload preserved by the next-major namespace migration; no overload or optional parameter was added.")]
+    public Then Then(Func<CancellationToken, Task> step, [CallerFilePath] string? callerFile = null,
         [CallerLineNumber] int callerLine = 0, [CallerArgumentExpression(nameof(step))] string? argumentExpression = null)
     {
-        return new Then.Then(new Runnable(step, argumentExpression, callerFile, callerLine), this);
+        return new Then(new Runnable(step, argumentExpression, callerFile, callerLine), this);
     }
 
     [OverloadResolutionPriority(0)]
-    public Then.Then Then(Func<ValueTask> step, [CallerFilePath] string? callerFile = null,
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("ApiDesign", "RS0026", Justification = "Existing caller-info overload preserved by the next-major namespace migration; no overload or optional parameter was added.")]
+    public Then Then(Func<ValueTask> step, [CallerFilePath] string? callerFile = null,
         [CallerLineNumber] int callerLine = 0, [CallerArgumentExpression(nameof(step))] string? argumentExpression = null)
     {
-        return new Then.Then(new Runnable(step, argumentExpression, callerFile, callerLine), this);
+        return new Then(new Runnable(step, argumentExpression, callerFile, callerLine), this);
     }
 
     [OverloadResolutionPriority(0)]
-    public Then.Then Then(Func<CancellationToken, ValueTask> step, [CallerFilePath] string? callerFile = null,
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("ApiDesign", "RS0026", Justification = "Existing caller-info overload preserved by the next-major namespace migration; no overload or optional parameter was added.")]
+    public Then Then(Func<CancellationToken, ValueTask> step, [CallerFilePath] string? callerFile = null,
         [CallerLineNumber] int callerLine = 0, [CallerArgumentExpression(nameof(step))] string? argumentExpression = null)
     {
-        return new Then.Then(new Runnable(step, argumentExpression, callerFile, callerLine), this);
+        return new Then(new Runnable(step, argumentExpression, callerFile, callerLine), this);
     }
 
     [OverloadResolutionPriority(0)]
-    public Then.Then Then<T>(Func<ValueTask<T>> step, [CallerFilePath] string? callerFile = null,
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("ApiDesign", "RS0026", Justification = "Existing caller-info overload preserved by the next-major namespace migration; no overload or optional parameter was added.")]
+    public Then Then<T>(Func<ValueTask<T>> step, [CallerFilePath] string? callerFile = null,
         [CallerLineNumber] int callerLine = 0, [CallerArgumentExpression(nameof(step))] string? argumentExpression = null)
     {
-        return new Then.Then(Runnable.FromResult(step, argumentExpression, callerFile, callerLine), this);
+        return new Then(Runnable.FromResult(step, argumentExpression, callerFile, callerLine), this);
     }
 
     [OverloadResolutionPriority(0)]
-    public Then.Then Then<T>(Func<CancellationToken, ValueTask<T>> step, [CallerFilePath] string? callerFile = null,
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("ApiDesign", "RS0026", Justification = "Existing caller-info overload preserved by the next-major namespace migration; no overload or optional parameter was added.")]
+    public Then Then<T>(Func<CancellationToken, ValueTask<T>> step, [CallerFilePath] string? callerFile = null,
         [CallerLineNumber] int callerLine = 0, [CallerArgumentExpression(nameof(step))] string? argumentExpression = null)
     {
-        return new Then.Then(Runnable.FromResult(step, argumentExpression, callerFile, callerLine), this);
+        return new Then(Runnable.FromResult(step, argumentExpression, callerFile, callerLine), this);
     }
 
     [OverloadResolutionPriority(-1)]
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("ApiDesign", "RS0026", Justification = "Existing caller-info overload preserved by the next-major namespace migration; no overload or optional parameter was added.")]
     public AndWhen And(Action step, [CallerFilePath] string? callerFile = null,
         [CallerLineNumber] int callerLine = 0, [CallerArgumentExpression(nameof(step))] string? argumentExpression = null)
     {
@@ -73,6 +81,7 @@ public abstract class WhenStepBuilder : StepBuilder
     }
 
     [OverloadResolutionPriority(1)]
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("ApiDesign", "RS0026", Justification = "Existing caller-info overload preserved by the next-major namespace migration; no overload or optional parameter was added.")]
     public AndWhen And(Func<Task> step, [CallerFilePath] string? callerFile = null,
         [CallerLineNumber] int callerLine = 0, [CallerArgumentExpression(nameof(step))] string? argumentExpression = null)
     {
@@ -80,6 +89,7 @@ public abstract class WhenStepBuilder : StepBuilder
     }
 
     [OverloadResolutionPriority(1)]
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("ApiDesign", "RS0026", Justification = "Existing caller-info overload preserved by the next-major namespace migration; no overload or optional parameter was added.")]
     public AndWhen And(Func<CancellationToken, Task> step, [CallerFilePath] string? callerFile = null,
         [CallerLineNumber] int callerLine = 0, [CallerArgumentExpression(nameof(step))] string? argumentExpression = null)
     {
@@ -87,6 +97,7 @@ public abstract class WhenStepBuilder : StepBuilder
     }
 
     [OverloadResolutionPriority(0)]
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("ApiDesign", "RS0026", Justification = "Existing caller-info overload preserved by the next-major namespace migration; no overload or optional parameter was added.")]
     public AndWhen And(Func<ValueTask> step, [CallerFilePath] string? callerFile = null,
         [CallerLineNumber] int callerLine = 0, [CallerArgumentExpression(nameof(step))] string? argumentExpression = null)
     {
@@ -94,6 +105,7 @@ public abstract class WhenStepBuilder : StepBuilder
     }
 
     [OverloadResolutionPriority(0)]
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("ApiDesign", "RS0026", Justification = "Existing caller-info overload preserved by the next-major namespace migration; no overload or optional parameter was added.")]
     public AndWhen And(Func<CancellationToken, ValueTask> step, [CallerFilePath] string? callerFile = null,
         [CallerLineNumber] int callerLine = 0, [CallerArgumentExpression(nameof(step))] string? argumentExpression = null)
     {
@@ -101,6 +113,7 @@ public abstract class WhenStepBuilder : StepBuilder
     }
 
     [OverloadResolutionPriority(0)]
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("ApiDesign", "RS0026", Justification = "Existing caller-info overload preserved by the next-major namespace migration; no overload or optional parameter was added.")]
     public AndWhen And<T>(Func<ValueTask<T>> step, [CallerFilePath] string? callerFile = null,
         [CallerLineNumber] int callerLine = 0, [CallerArgumentExpression(nameof(step))] string? argumentExpression = null)
     {
@@ -108,6 +121,7 @@ public abstract class WhenStepBuilder : StepBuilder
     }
 
     [OverloadResolutionPriority(0)]
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("ApiDesign", "RS0026", Justification = "Existing caller-info overload preserved by the next-major namespace migration; no overload or optional parameter was added.")]
     public AndWhen And<T>(Func<CancellationToken, ValueTask<T>> step, [CallerFilePath] string? callerFile = null,
         [CallerLineNumber] int callerLine = 0, [CallerArgumentExpression(nameof(step))] string? argumentExpression = null)
     {
@@ -115,6 +129,7 @@ public abstract class WhenStepBuilder : StepBuilder
     }
 
     [OverloadResolutionPriority(-1)]
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("ApiDesign", "RS0026", Justification = "Existing caller-info overload preserved by the next-major namespace migration; no overload or optional parameter was added.")]
     public ButWhen But(Action step, [CallerFilePath] string? callerFile = null,
         [CallerLineNumber] int callerLine = 0, [CallerArgumentExpression(nameof(step))] string? argumentExpression = null)
     {
@@ -122,6 +137,7 @@ public abstract class WhenStepBuilder : StepBuilder
     }
 
     [OverloadResolutionPriority(1)]
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("ApiDesign", "RS0026", Justification = "Existing caller-info overload preserved by the next-major namespace migration; no overload or optional parameter was added.")]
     public ButWhen But(Func<Task> step, [CallerFilePath] string? callerFile = null,
         [CallerLineNumber] int callerLine = 0, [CallerArgumentExpression(nameof(step))] string? argumentExpression = null)
     {
@@ -129,6 +145,7 @@ public abstract class WhenStepBuilder : StepBuilder
     }
 
     [OverloadResolutionPriority(1)]
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("ApiDesign", "RS0026", Justification = "Existing caller-info overload preserved by the next-major namespace migration; no overload or optional parameter was added.")]
     public ButWhen But(Func<CancellationToken, Task> step, [CallerFilePath] string? callerFile = null,
         [CallerLineNumber] int callerLine = 0, [CallerArgumentExpression(nameof(step))] string? argumentExpression = null)
     {
@@ -136,6 +153,7 @@ public abstract class WhenStepBuilder : StepBuilder
     }
 
     [OverloadResolutionPriority(0)]
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("ApiDesign", "RS0026", Justification = "Existing caller-info overload preserved by the next-major namespace migration; no overload or optional parameter was added.")]
     public ButWhen But(Func<ValueTask> step, [CallerFilePath] string? callerFile = null,
         [CallerLineNumber] int callerLine = 0, [CallerArgumentExpression(nameof(step))] string? argumentExpression = null)
     {
@@ -143,6 +161,7 @@ public abstract class WhenStepBuilder : StepBuilder
     }
 
     [OverloadResolutionPriority(0)]
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("ApiDesign", "RS0026", Justification = "Existing caller-info overload preserved by the next-major namespace migration; no overload or optional parameter was added.")]
     public ButWhen But(Func<CancellationToken, ValueTask> step, [CallerFilePath] string? callerFile = null,
         [CallerLineNumber] int callerLine = 0, [CallerArgumentExpression(nameof(step))] string? argumentExpression = null)
     {
@@ -150,6 +169,7 @@ public abstract class WhenStepBuilder : StepBuilder
     }
 
     [OverloadResolutionPriority(0)]
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("ApiDesign", "RS0026", Justification = "Existing caller-info overload preserved by the next-major namespace migration; no overload or optional parameter was added.")]
     public ButWhen But<T>(Func<ValueTask<T>> step, [CallerFilePath] string? callerFile = null,
         [CallerLineNumber] int callerLine = 0, [CallerArgumentExpression(nameof(step))] string? argumentExpression = null)
     {
@@ -157,6 +177,7 @@ public abstract class WhenStepBuilder : StepBuilder
     }
 
     [OverloadResolutionPriority(0)]
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("ApiDesign", "RS0026", Justification = "Existing caller-info overload preserved by the next-major namespace migration; no overload or optional parameter was added.")]
     public ButWhen But<T>(Func<CancellationToken, ValueTask<T>> step, [CallerFilePath] string? callerFile = null,
         [CallerLineNumber] int callerLine = 0, [CallerArgumentExpression(nameof(step))] string? argumentExpression = null)
     {

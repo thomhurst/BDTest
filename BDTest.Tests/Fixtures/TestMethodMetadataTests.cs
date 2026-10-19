@@ -2,7 +2,7 @@ using System.IO;
 using System.Reflection;
 using System.Reflection.Metadata;
 using System.Reflection.PortableExecutable;
-using BDTest.Attributes;
+using BDTest;
 using BDTest.Metadata;
 using BDTest.Test;
 using System.Threading.Tasks;

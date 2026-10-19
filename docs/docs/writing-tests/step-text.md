@@ -181,10 +181,10 @@ In a [scenario outline](scenario-outlines.md), `<Name>` placeholders in step tex
 
 ## Tables and doc strings
 
-Use `StepTable` and `StepDocString` from `BDTest.Test` for structured step arguments. Both the hosted Razor report and the standalone HTML report show tables and multiline code blocks with HTML-encoded values.
+Use `StepTable` and `StepDocString` from `BDTest` for structured step arguments. Both the hosted Razor report and the standalone HTML report show tables and multiline code blocks with HTML-encoded values.
 
 ```csharp title="Illustrative fragment"
-using BDTest.Test;
+using BDTest;
 
 private StepTable Users => StepTable.From(new[]
 {

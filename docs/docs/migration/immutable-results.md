@@ -21,7 +21,8 @@ This major-version change separates mutable execution from immutable report data
 
 Add `using BDTest.Contracts` or explicit aliases when both execution argument
 builders and contract `StepTable`/`StepDocString` types are used. Builders still
-accept `BDTest.Test` structured arguments; result arguments use the contracts types.
+accept structured arguments from `BDTest`; result arguments use the contracts types.
+See [consumer namespaces](consumer-namespaces.md) for the namespace migration.
 
 Results contain no fixture, execution delegate or run reference. Nested lists,
 dictionaries, tables and exception trees are immutable. Query `run.Scenarios` again

@@ -1,4 +1,4 @@
-using BDTest.Attributes;
+using BDTest;
 using BDTest.Settings.Retry;
 using BDTest.Settings.Skip;
 using System.Threading.Tasks;

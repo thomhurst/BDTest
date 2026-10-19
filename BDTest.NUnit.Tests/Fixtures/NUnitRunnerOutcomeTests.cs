@@ -1,7 +1,6 @@
 using System.Collections.Concurrent;
 using System.Security;
-using BDTest.Attributes;
-using BDTest.NUnit;
+using BDTest;
 using BDTest.Test;
 using NUnit.Framework;
 using NUnit.Framework.Api;

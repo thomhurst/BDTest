@@ -1,4 +1,4 @@
-using BDTest.Attributes;
+using BDTest;
 using BDTest.Test;
 
 namespace BDTest.Tests.Fixtures;

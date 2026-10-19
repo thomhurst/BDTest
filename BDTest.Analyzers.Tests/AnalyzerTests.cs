@@ -146,14 +146,14 @@ public class AnalyzerTests
         using System;
         using System.Threading;
         using System.Threading.Tasks;
+        using BDTest;
         using BDTest.Test;
-        using BDTest.Attributes;
 
         """;
 
     internal static readonly ImmutableArray<MetadataReference> References =
         ((string?)AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES") ?? throw new InvalidOperationException("Missing runtime assembly paths")).Split(Path.PathSeparator)
-            .Append(typeof(BDTest.Test.BDTestBuilder).Assembly.Location).Distinct()
+            .Append(typeof(BDTest.BDTestBuilder).Assembly.Location).Distinct()
             .Select(p => MetadataReference.CreateFromFile(p)).ToImmutableArray<MetadataReference>();
 
     internal static CSharpCompilation CreateCompilation(string source) => CSharpCompilation.Create("AnalyzerConsumer",

@@ -19,7 +19,7 @@ For an explicit run, read `run.ReportId`. The serialized not-run definition fiel
 
 `Given`, `AndGiven`, `ButGiven`, `When`, `AndWhen`, `ButWhen`, `Then`, `AndThen` and `ButThen` are sealed. They no longer inherit from one another. Their names and delegate overloads stay the same.
 
-Use `var` or the specific step kind when retaining a chain for further customization. For example, change `Then checks = builder.Then(Check).But(OtherCheck);` to `var checks = builder.Then(Check).But(OtherCheck);` (its type is `ButThen`). When sharing continuations across kinds, use `GivenStepBuilder`, `WhenStepBuilder` or `ThenStepBuilder` from the corresponding `BDTest.Test.Steps` subnamespace. `RunnableStepBuilder` still provides execution and direct await for any completed chain. These abstract bases do not expose fluent text/argument customization; use a concrete builder for that.
+Use `var` or the specific step kind when retaining a chain for further customization. For example, change `Then checks = builder.Then(Check).But(OtherCheck);` to `var checks = builder.Then(Check).But(OtherCheck);` (its type is `ButThen`). When sharing continuations across kinds, use `GivenStepBuilder`, `WhenStepBuilder` or `ThenStepBuilder` from `BDTest` (see [consumer namespace migration](consumer-namespaces.md)). `RunnableStepBuilder` still provides execution and direct await for any completed chain. These abstract bases do not expose fluent text/argument customization; use a concrete builder for that.
 
 Each concrete builder's `WithStepText` and `WithArgs` returns that same concrete type. `Then`, `AndThen` and `ButThen` also return themselves from `WithScenarioText`, so naming a scenario no longer ends the fluent chain:
 

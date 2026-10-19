@@ -25,7 +25,7 @@ all reports before the owner disposes the run.
 
 ```csharp
 using BDTest.Helpers;
-using BDTest.NUnit;
+using BDTest;
 
 var run = NUnitBDTestAssembly.GetRun(typeof(MyTests).Assembly);
 var htmlReport = BDTestHtmlHelper.GetTestHtmlReport(null, run);
@@ -40,7 +40,6 @@ report metadata unset.
 ```csharp
 using BDTest;
 using BDTest.Helpers;
-using BDTest.NUnit;
 
 var run = NUnitBDTestAssembly.GetRun(typeof(MyTests).Assembly);
 var runDescriptor = new BDTestRunDescriptor
@@ -62,7 +61,7 @@ combine report exports there and dispose the assembly run only after every expor
 
 ```csharp
 using BDTest.Helpers;
-using BDTest.NUnit;
+using BDTest;
 using NUnit.Framework;
 
 [SetUpFixture]

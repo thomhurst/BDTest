@@ -1,5 +1,5 @@
 using System.Net;
-using BDTest.Attributes;
+using BDTest;
 using NUnit.Framework;
 
 namespace BDTest.Example;

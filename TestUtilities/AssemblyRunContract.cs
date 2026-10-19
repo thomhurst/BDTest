@@ -1,35 +1,35 @@
 using System.Reflection;
 using System.Reflection.Emit;
-using BDTest.Attributes;
+using BDTest;
 using BDTest.Interfaces;
 using BDTest.Helpers;
 using BDTest.Test;
 #if BDTEST_NUNIT
-using AssemblyOwner = BDTest.NUnit.NUnitBDTestAssembly;
-using ScenarioFactory = BDTest.NUnit.NUnitBDTestScenario;
-using Adapter = BDTest.NUnit.NUnitBDTestBase<object>;
+using AssemblyOwner = BDTest.NUnitBDTestAssembly;
+using ScenarioFactory = BDTest.NUnitBDTestScenario;
+using Adapter = BDTest.NUnitBDTestBase<object>;
 using TestAttribute = global::NUnit.Framework.TestAttribute;
 #elif BDTEST_MSTEST
-using AssemblyOwner = BDTest.MSTest.MSTestBDTestAssembly;
-using ScenarioFactory = BDTest.MSTest.MSTestBDTestScenario;
-using Adapter = BDTest.MSTest.MSTestBDTestBase<object>;
+using AssemblyOwner = BDTest.MSTestBDTestAssembly;
+using ScenarioFactory = BDTest.MSTestBDTestScenario;
+using Adapter = BDTest.MSTestBDTestBase<object>;
 using TestAttribute = Microsoft.VisualStudio.TestTools.UnitTesting.TestMethodAttribute;
 #elif BDTEST_TUNIT
-using AssemblyOwner = BDTest.TUnit.TUnitBDTestAssembly;
-using ScenarioFactory = BDTest.TUnit.TUnitBDTestScenario;
-using Adapter = BDTest.TUnit.TUnitBDTestBase<object>;
+using AssemblyOwner = BDTest.TUnitBDTestAssembly;
+using ScenarioFactory = BDTest.TUnitBDTestScenario;
+using Adapter = BDTest.TUnitBDTestBase<object>;
 using TestAttribute = global::TUnit.Core.TestAttribute;
 #elif BDTEST_XUNIT
-using AssemblyOwner = BDTest.xUnit.XUnitBDTestAssembly;
-using ScenarioFactory = BDTest.xUnit.XUnitBDTestScenario;
-using Adapter = BDTest.xUnit.XUnitBDTestBase<object>;
+using AssemblyOwner = BDTest.XUnitBDTestAssembly;
+using ScenarioFactory = BDTest.XUnitBDTestScenario;
+using Adapter = BDTest.XUnitBDTestBase<object>;
 using TestAttribute = Xunit.FactAttribute;
 #endif
 
 namespace BDTest.Adapters.Conformance;
 
 #if BDTEST_MSTEST
-[global::BDTest.MSTest.BDTestClass]
+[global::BDTest.BDTestClass]
 #endif
 public class AssemblyRunContract : Adapter
 {
@@ -239,13 +239,13 @@ public class AssemblyRunContract : Adapter
 // Exercise the overload without a supplied run through each runner's native lifecycle.
 // This class deliberately does not inherit an adapter base or call BeginTest/EndTest.
 #if BDTEST_NUNIT
-[global::BDTest.NUnit.BDTestFixture]
-public class AssemblyCompositionContract : global::BDTest.NUnit.INUnitBDTest
+[global::BDTest.BDTestFixture]
+public class AssemblyCompositionContract : global::BDTest.INUnitBDTest
 #elif BDTEST_MSTEST
-[global::BDTest.MSTest.BDTestClass]
-public class AssemblyCompositionContract : global::BDTest.MSTest.IBDTestMSTestTest
+[global::BDTest.BDTestClass]
+public class AssemblyCompositionContract : global::BDTest.IBDTestMSTestTest
 #elif BDTEST_TUNIT
-public class AssemblyCompositionContract : global::BDTest.TUnit.IBDTestTUnitTest
+public class AssemblyCompositionContract : global::BDTest.IBDTestTUnitTest
 #else
 public class AssemblyCompositionContract
 #endif
@@ -263,7 +263,7 @@ public class AssemblyCompositionContract
         set
         {
             field = value;
-            global::BDTest.MSTest.MSTestBDTestLifecycle.Initialize(this, value);
+            global::BDTest.MSTestBDTestLifecycle.Initialize(this, value);
         }
     } = null!;
 #endif

@@ -1,3 +1,4 @@
+using BDTest;
 using BDTest.Test;
 using System.Threading.Tasks;
 
@@ -57,7 +58,7 @@ public class ExecutionSchedulingTests : RunTestBase
         await Assert.That(Required((await task).Steps).All(step => step.Status == Status.Passed)).IsTrue();
     }
 
-    [Test, BDTest.Attributes.BDTestRetry(1)]
+    [Test, BDTest.BDTestRetry(1)]
     [MatrixDataSource]
     public async Task CallerContextSurvivesStepsHooksRetriesAndOutlineRows(
         [Matrix] bool directAwait, [Matrix] bool outline)
@@ -158,7 +159,7 @@ public class ExecutionSchedulingTests : RunTestBase
         await Assert.That(ambient.Value).IsEqualTo("caller");
     }
 
-    [Test, BDTest.Attributes.BDTestRetry(64)]
+    [Test, BDTest.BDTestRetry(64)]
     [MatrixDataSource]
     public async Task SynchronousRetriesDoNotAccumulateStackFrames([Matrix] bool directAwait)
     {

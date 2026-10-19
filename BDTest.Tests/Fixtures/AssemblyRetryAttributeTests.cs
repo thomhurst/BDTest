@@ -1,6 +1,6 @@
 using System.Reflection;
 using System.Reflection.Emit;
-using BDTest.Attributes;
+using BDTest;
 using BDTest.Test;
 using BDTest.Tests.Helpers;
 using System.Threading.Tasks;

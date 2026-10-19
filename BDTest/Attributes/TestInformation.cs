@@ -1,7 +1,7 @@
 using BDTest.Helpers.JsonConverters;
 using System.Text.Json.Serialization;
 
-namespace BDTest.Attributes;
+namespace BDTest;
 
 [JsonConverter(typeof(TestInformationAttributeJsonConverter))]
 [AttributeUsage(AttributeTargets.Method, AllowMultiple = true)]

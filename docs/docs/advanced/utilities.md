@@ -23,7 +23,7 @@ For built-in adapters, pass the [configured assembly run](../configuration/assem
 Use it to build custom reports or to assert on results in a teardown:
 
 ```csharp title="Illustrative fragment"
-var run = BDTest.NUnit.NUnitBDTestAssembly.GetRun(typeof(MyTests).Assembly);
+var run = BDTest.NUnitBDTestAssembly.GetRun(typeof(MyTests).Assembly);
 var failed = BDTestUtil.GetScenarios(run).Where(scenario => scenario.Status == Status.Failed).ToList();
 ```
 

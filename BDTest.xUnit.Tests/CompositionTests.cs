@@ -1,9 +1,7 @@
 using System.Collections.Concurrent;
 using BDTest;
-using BDTest.Attributes;
 using BDTest.Helpers;
 using BDTest.Test;
-using BDTest.xUnit;
 using Xunit;
 
 [assembly: AssemblyFixture(typeof(XUnitBDTestLifecycle))]

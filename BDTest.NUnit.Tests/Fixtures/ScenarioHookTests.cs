@@ -1,3 +1,4 @@
+using BDTest;
 using BDTest.Test;
 using NUnit.Framework;
 
@@ -80,7 +81,7 @@ public class ScenarioHookTests
 
     private sealed class State { public int Attempt { get; set; } }
 
-    private sealed class NUnitFixture(BDTestRun run) : BDTest.NUnit.NUnitBDTestBase<State>
+    private sealed class NUnitFixture(BDTestRun run) : BDTest.NUnitBDTestBase<State>
     {
         public override BDTestRun TestRun => run;
         public Func<ScenarioHookContext<State>, Task> Before { get; init; } = _ => Task.CompletedTask;

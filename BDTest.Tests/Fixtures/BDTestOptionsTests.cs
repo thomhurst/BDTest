@@ -1,8 +1,7 @@
 using System.Reflection;
-using BDTest.Attributes;
+using BDTest;
 using BDTest.Interfaces;
 using BDTest.Test;
-using BDTest.Test.Steps.Then;
 using System.Threading.Tasks;
 
 namespace BDTest.Tests.Fixtures;

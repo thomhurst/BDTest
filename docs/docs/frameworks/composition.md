@@ -11,7 +11,6 @@ Derive from `BDTestScenario<TContext>` and call its protected constructor with t
 
 ```csharp title="Illustrative fragment"
 using BDTest;
-using BDTest.Test;
 using System.Reflection;
 
 public class CheckoutTests : CompanyTestBase

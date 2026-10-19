@@ -1,5 +1,4 @@
-using BDTest.Attributes;
-using BDTest.TUnit;
+using BDTest;
 using BDTest.Test;
 using System.Threading.Tasks;
 

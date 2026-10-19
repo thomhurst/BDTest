@@ -1,5 +1,5 @@
 using System.Reflection;
-using BDTest.Attributes;
+using BDTest;
 using BDTest.Settings;
 using BDTest.Tests.Helpers;
 using BDTest.Test;

@@ -1,6 +1,6 @@
 using System.Reflection;
 
-namespace BDTest.MSTest;
+namespace BDTest;
 
 /// <summary>Owns one configured BDTest run per test assembly for MSTest.</summary>
 public static class MSTestBDTestAssembly

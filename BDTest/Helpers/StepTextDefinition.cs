@@ -1,7 +1,7 @@
 using System.Reflection;
 using System.Threading;
 using BDTest.Metadata;
-using BDTest.Attributes;
+using BDTest;
 using BDTest.Test;
 
 namespace BDTest.Helpers;

@@ -1,10 +1,10 @@
-﻿using BDTest.Settings;
+using BDTest.Settings;
 using BDTest.Test;
 using NUnit.Framework;
 using NUnitTestContext = NUnit.Framework.TestContext;
 using System.Reflection;
 
-namespace BDTest.NUnit;
+namespace BDTest;
 
 [TestFixture, BDTestFixture]
 public abstract class NUnitBDTestBase<TContext> : AbstractContextBDTestBase<TContext>, INUnitBDTest, INUnitBDTestLifecycle where TContext : class

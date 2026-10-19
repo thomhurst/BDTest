@@ -28,7 +28,7 @@ package versions. See the [migration guide](https://thomhurst.github.io/BDTest/d
 ## Write and run a test
 
 ```csharp sample="Readme/Readme.cs" title="Compiled example"
-using BDTest.TUnit;
+using BDTest;
 using TUnit.Core;
 using TUnit.Assertions;
 using TUnit.Assertions.Extensions;

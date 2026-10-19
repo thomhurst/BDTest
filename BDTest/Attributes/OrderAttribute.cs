@@ -1,4 +1,4 @@
-namespace BDTest.Attributes;
+namespace BDTest;
 
 internal class EnumOrderAttribute : Attribute
 {

@@ -13,7 +13,7 @@ Configure `BDTestOptions` through [assembly configuration](../configuration/asse
 Create an attribute that derives from `SkipStepAttribute`, put it on step methods, and register a rule that decides when those steps are skipped:
 
 ```csharp title="Illustrative fragment"
-using BDTest.Attributes;
+using BDTest;
 
 public class SkipInProductionAttribute : SkipStepAttribute
 {

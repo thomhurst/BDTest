@@ -28,7 +28,7 @@ public async Task CallsAFlakyService()
 ```
 
 ```csharp title="Illustrative fragment"
-[assembly: BDTest.Attributes.BDTestRetry(1)]
+[assembly: BDTest.BDTestRetry(1)]
 ```
 
 BDTest selects one retry policy before the first attempt: the adapter-supplied test method attribute, then the concrete fixture class attribute, then its assembly attribute, then run retry rules. The first attribute found replaces every less-specific default, including a larger run limit. `[BDTestRetry(0)]` disables retries even when run rules would retry. Method identity comes from the adapter, including private, overloaded and async methods; BDTest does not inspect the call stack.

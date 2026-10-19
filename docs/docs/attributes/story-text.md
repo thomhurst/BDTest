@@ -8,8 +8,7 @@ description: Format story roles, goals, and benefits with StoryAttribute.
 Apply `[Story]` to a test class to describe its role, goal, and benefit:
 
 ```csharp title="Illustrative fragment"
-using BDTest.Attributes;
-using BDTest.Test;
+using BDTest;
 
 [Story(AsA = "engineer", IWant = "to run scenarios", SoThat = "reports explain their purpose")]
 public class ScenarioTests : TUnitBDTestBase<object>

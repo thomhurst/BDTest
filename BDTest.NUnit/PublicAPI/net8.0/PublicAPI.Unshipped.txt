@@ -1,1 +1,53 @@
 #nullable enable
+*REMOVED*BDTest.NUnit.BDTestFixtureAttribute
+*REMOVED*BDTest.NUnit.BDTestFixtureAttribute.BDTestFixtureAttribute() -> void
+*REMOVED*BDTest.NUnit.BDTestFixtureAttribute.Wrap(NUnit.Framework.Internal.Commands.TestCommand! command) -> NUnit.Framework.Internal.Commands.TestCommand!
+*REMOVED*BDTest.NUnit.INUnitBDTest
+*REMOVED*BDTest.NUnit.INUnitBDTest.BDTestHost.get -> BDTest.Test.BDTestBase!
+*REMOVED*BDTest.NUnit.NUnitBDTestAssembly
+*REMOVED*BDTest.NUnit.NUnitBDTestBase<TContext>
+*REMOVED*BDTest.NUnit.NUnitBDTestBase<TContext>.BDTestNUnitTearDown() -> System.Threading.Tasks.Task!
+*REMOVED*BDTest.NUnit.NUnitBDTestBase<TContext>.NUnitBDTestBase() -> void
+*REMOVED*BDTest.NUnit.NUnitBDTestBase<TContext>.PruneContext() -> void
+*REMOVED*BDTest.NUnit.NUnitBDTestBase<TContext>.Setup() -> void
+*REMOVED*BDTest.NUnit.NUnitBDTestScenario
+*REMOVED*BDTest.NUnit.NUnitBDTestScenario<TContext>
+*REMOVED*BDTest.NUnit.NUnitBDTestScenario<TContext>.NUnitBDTestScenario(object! testInstance, BDTest.BDTestRun! run) -> void
+*REMOVED*override BDTest.NUnit.NUnitBDTestBase<TContext>.ExecuteScenarioStepsAsync(System.Func<System.Threading.Tasks.Task!>! executeSteps, System.Action<System.Action!>! registerTerminalFailure) -> System.Threading.Tasks.Task!
+*REMOVED*override BDTest.NUnit.NUnitBDTestBase<TContext>.MarkTestAsComplete() -> void
+*REMOVED*override BDTest.NUnit.NUnitBDTestBase<TContext>.OnScenarioSkipped(string! reason) -> void
+*REMOVED*override BDTest.NUnit.NUnitBDTestBase<TContext>.TestRun.get -> BDTest.BDTestRun!
+*REMOVED*override BDTest.NUnit.NUnitBDTestScenario<TContext>.ExecuteScenarioStepsAsync(System.Func<System.Threading.Tasks.Task!>! executeSteps, System.Action<System.Action!>! registerTerminalFailure) -> System.Threading.Tasks.Task!
+*REMOVED*override BDTest.NUnit.NUnitBDTestScenario<TContext>.OnScenarioSkipped(string! reason) -> void
+*REMOVED*static BDTest.NUnit.NUnitBDTestAssembly.Dispose(System.Reflection.Assembly! assembly) -> void
+*REMOVED*static BDTest.NUnit.NUnitBDTestAssembly.GetRun(System.Reflection.Assembly! assembly) -> BDTest.BDTestRun!
+*REMOVED*static BDTest.NUnit.NUnitBDTestBase<TContext>.OutcomeMap.get -> BDTest.Settings.FrameworkOutcomeMap!
+*REMOVED*static BDTest.NUnit.NUnitBDTestScenario.For<TContext>(object! testInstance) -> BDTest.NUnit.NUnitBDTestScenario<TContext!>!
+*REMOVED*static BDTest.NUnit.NUnitBDTestScenario.For<TContext>(object! testInstance, BDTest.BDTestRun! run) -> BDTest.NUnit.NUnitBDTestScenario<TContext!>!
+*REMOVED*static BDTest.NUnit.NUnitBDTestScenario.OutcomeMap.get -> BDTest.Settings.FrameworkOutcomeMap!
+BDTest.BDTestFixtureAttribute
+BDTest.BDTestFixtureAttribute.BDTestFixtureAttribute() -> void
+BDTest.BDTestFixtureAttribute.Wrap(NUnit.Framework.Internal.Commands.TestCommand! command) -> NUnit.Framework.Internal.Commands.TestCommand!
+BDTest.INUnitBDTest
+BDTest.INUnitBDTest.BDTestHost.get -> BDTest.BDTestBase!
+BDTest.NUnitBDTestAssembly
+BDTest.NUnitBDTestBase<TContext>
+BDTest.NUnitBDTestBase<TContext>.BDTestNUnitTearDown() -> System.Threading.Tasks.Task!
+BDTest.NUnitBDTestBase<TContext>.NUnitBDTestBase() -> void
+BDTest.NUnitBDTestBase<TContext>.PruneContext() -> void
+BDTest.NUnitBDTestBase<TContext>.Setup() -> void
+BDTest.NUnitBDTestScenario
+BDTest.NUnitBDTestScenario<TContext>
+BDTest.NUnitBDTestScenario<TContext>.NUnitBDTestScenario(object! testInstance, BDTest.BDTestRun! run) -> void
+override BDTest.NUnitBDTestBase<TContext>.ExecuteScenarioStepsAsync(System.Func<System.Threading.Tasks.Task!>! executeSteps, System.Action<System.Action!>! registerTerminalFailure) -> System.Threading.Tasks.Task!
+override BDTest.NUnitBDTestBase<TContext>.MarkTestAsComplete() -> void
+override BDTest.NUnitBDTestBase<TContext>.OnScenarioSkipped(string! reason) -> void
+override BDTest.NUnitBDTestBase<TContext>.TestRun.get -> BDTest.BDTestRun!
+override BDTest.NUnitBDTestScenario<TContext>.ExecuteScenarioStepsAsync(System.Func<System.Threading.Tasks.Task!>! executeSteps, System.Action<System.Action!>! registerTerminalFailure) -> System.Threading.Tasks.Task!
+override BDTest.NUnitBDTestScenario<TContext>.OnScenarioSkipped(string! reason) -> void
+static BDTest.NUnitBDTestAssembly.Dispose(System.Reflection.Assembly! assembly) -> void
+static BDTest.NUnitBDTestAssembly.GetRun(System.Reflection.Assembly! assembly) -> BDTest.BDTestRun!
+static BDTest.NUnitBDTestBase<TContext>.OutcomeMap.get -> BDTest.Settings.FrameworkOutcomeMap!
+static BDTest.NUnitBDTestScenario.For<TContext>(object! testInstance) -> BDTest.NUnitBDTestScenario<TContext!>!
+static BDTest.NUnitBDTestScenario.For<TContext>(object! testInstance, BDTest.BDTestRun! run) -> BDTest.NUnitBDTestScenario<TContext!>!
+static BDTest.NUnitBDTestScenario.OutcomeMap.get -> BDTest.Settings.FrameworkOutcomeMap!

@@ -1,1 +1,45 @@
 #nullable enable
+*REMOVED*BDTest.xUnit.XUnitBDTestAssembly
+*REMOVED*BDTest.xUnit.XUnitBDTestBase<TContext>
+*REMOVED*BDTest.xUnit.XUnitBDTestBase<TContext>.Dispose() -> void
+*REMOVED*BDTest.xUnit.XUnitBDTestBase<TContext>.XUnitBDTestBase() -> void
+*REMOVED*BDTest.xUnit.XUnitBDTestLifecycle
+*REMOVED*BDTest.xUnit.XUnitBDTestLifecycle.OnTestFinished(Xunit.v3.IXunitTest! test) -> void
+*REMOVED*BDTest.xUnit.XUnitBDTestLifecycle.OnTestFinishedAsync(Xunit.v3.IXunitTest! test) -> System.Threading.Tasks.ValueTask
+*REMOVED*BDTest.xUnit.XUnitBDTestLifecycle.OnTestStarting(Xunit.v3.IXunitTest! test) -> void
+*REMOVED*BDTest.xUnit.XUnitBDTestLifecycle.OnTestStartingAsync(Xunit.v3.IXunitTest! test) -> System.Threading.Tasks.ValueTask
+*REMOVED*BDTest.xUnit.XUnitBDTestLifecycle.XUnitBDTestLifecycle() -> void
+*REMOVED*BDTest.xUnit.XUnitBDTestScenario
+*REMOVED*override BDTest.xUnit.XUnitBDTestBase<TContext>.BDTestExecutionId.get -> string!
+*REMOVED*override BDTest.xUnit.XUnitBDTestBase<TContext>.OnScenarioSkipped(string! reason) -> void
+*REMOVED*override BDTest.xUnit.XUnitBDTestBase<TContext>.TestRun.get -> BDTest.BDTestRun!
+*REMOVED*static BDTest.xUnit.XUnitBDTestAssembly.Dispose(System.Reflection.Assembly! assembly) -> void
+*REMOVED*static BDTest.xUnit.XUnitBDTestAssembly.GetRun(System.Reflection.Assembly! assembly) -> BDTest.BDTestRun!
+*REMOVED*static BDTest.xUnit.XUnitBDTestBase<TContext>.OutcomeMap.get -> BDTest.Settings.FrameworkOutcomeMap!
+*REMOVED*static BDTest.xUnit.XUnitBDTestScenario.For<TContext>(object! testInstance) -> BDTest.Test.BDTestScenario<TContext!>!
+*REMOVED*static BDTest.xUnit.XUnitBDTestScenario.For<TContext>(object! testInstance, BDTest.BDTestRun! run) -> BDTest.Test.BDTestScenario<TContext!>!
+*REMOVED*static BDTest.xUnit.XUnitBDTestScenario.OutcomeMap.get -> BDTest.Settings.FrameworkOutcomeMap!
+*REMOVED*virtual BDTest.xUnit.XUnitBDTestBase<TContext>.DisposeAsync() -> System.Threading.Tasks.ValueTask
+*REMOVED*virtual BDTest.xUnit.XUnitBDTestBase<TContext>.InitializeAsync() -> System.Threading.Tasks.ValueTask
+BDTest.XUnitBDTestAssembly
+BDTest.XUnitBDTestBase<TContext>
+BDTest.XUnitBDTestBase<TContext>.Dispose() -> void
+BDTest.XUnitBDTestBase<TContext>.XUnitBDTestBase() -> void
+BDTest.XUnitBDTestLifecycle
+BDTest.XUnitBDTestLifecycle.OnTestFinished(Xunit.v3.IXunitTest! test) -> void
+BDTest.XUnitBDTestLifecycle.OnTestFinishedAsync(Xunit.v3.IXunitTest! test) -> System.Threading.Tasks.ValueTask
+BDTest.XUnitBDTestLifecycle.OnTestStarting(Xunit.v3.IXunitTest! test) -> void
+BDTest.XUnitBDTestLifecycle.OnTestStartingAsync(Xunit.v3.IXunitTest! test) -> System.Threading.Tasks.ValueTask
+BDTest.XUnitBDTestLifecycle.XUnitBDTestLifecycle() -> void
+BDTest.XUnitBDTestScenario
+override BDTest.XUnitBDTestBase<TContext>.BDTestExecutionId.get -> string!
+override BDTest.XUnitBDTestBase<TContext>.OnScenarioSkipped(string! reason) -> void
+override BDTest.XUnitBDTestBase<TContext>.TestRun.get -> BDTest.BDTestRun!
+static BDTest.XUnitBDTestAssembly.Dispose(System.Reflection.Assembly! assembly) -> void
+static BDTest.XUnitBDTestAssembly.GetRun(System.Reflection.Assembly! assembly) -> BDTest.BDTestRun!
+static BDTest.XUnitBDTestBase<TContext>.OutcomeMap.get -> BDTest.Settings.FrameworkOutcomeMap!
+static BDTest.XUnitBDTestScenario.For<TContext>(object! testInstance) -> BDTest.BDTestScenario<TContext!>!
+static BDTest.XUnitBDTestScenario.For<TContext>(object! testInstance, BDTest.BDTestRun! run) -> BDTest.BDTestScenario<TContext!>!
+static BDTest.XUnitBDTestScenario.OutcomeMap.get -> BDTest.Settings.FrameworkOutcomeMap!
+virtual BDTest.XUnitBDTestBase<TContext>.DisposeAsync() -> System.Threading.Tasks.ValueTask
+virtual BDTest.XUnitBDTestBase<TContext>.InitializeAsync() -> System.Threading.Tasks.ValueTask

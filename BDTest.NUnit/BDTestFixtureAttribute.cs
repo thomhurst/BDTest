@@ -4,7 +4,7 @@ using NUnit.Framework.Interfaces;
 using NUnit.Framework.Internal;
 using NUnit.Framework.Internal.Commands;
 
-namespace BDTest.NUnit;
+namespace BDTest;
 
 /// <summary>Wraps each NUnit setup, test body and teardown in one BDTest execution.</summary>
 /// <remarks>The fixture must implement INUnitBDTest. Apply to a method too when it declares other setup/teardown wrappers.</remarks>

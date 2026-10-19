@@ -82,7 +82,7 @@ public class CodeFixTests
         var assembly = AssemblyLoadContext.Default.LoadFromStream(stream);
         var type = assembly.GetType("Consumer", throwOnError: true)!;
         using var run = BDTestRun.Start();
-        var fixture = (BDTest.Test.BDTestBuilder)(Activator.CreateInstance(type, run) ?? throw new InvalidOperationException("Missing consumer instance"));
+        var fixture = (BDTest.BDTestBuilder)(Activator.CreateInstance(type, run) ?? throw new InvalidOperationException("Missing consumer instance"));
         var task = (Task<bool>)(type.GetMethod("Run")!.Invoke(fixture, null)
             ?? throw new InvalidOperationException("Missing consumer task"));
         Assert.That(await task, Is.True);
