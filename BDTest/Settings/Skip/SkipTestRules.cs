@@ -13,8 +13,9 @@ public class SkipTestRules
     internal IReadOnlyList<Func<Scenario, bool>> Rules => _rules.Snapshot;
 
     /// <summary>
-    /// Registers a rule safely during concurrent evaluation. Rules added during
-    /// an evaluation take effect on subsequent evaluations.
+    /// Registers a scenario predicate for subsequently started runs. Predicates are evaluated
+    /// once before the first attempt, stopping at the first match. A throwing predicate fails
+    /// the scenario without retries.
     /// </summary>
     public void Add(Func<Scenario, bool> condition)
     {

@@ -16,8 +16,8 @@ Built-in adapters use [assembly configuration](assembly-runs.md). Standalone cal
 | `RegisterFrameworkOutcomes(map)` | Register framework exception types and outcome callbacks. |
 | `RegisterCustomStringConverter<T>(converter)` | Add a typed converter. See [Step text](../writing-tests/step-text.md#custom-converters). |
 | `SkipStepRules` | Attribute-based predicates; see [Skipping](../writing-tests/skipping.md). |
-| `SkipTestRules` | Predicates for whole scenarios. |
-| `RetryTestRules` | Exception predicates and retry limits; see [Retries](../writing-tests/retries.md). |
+| `SkipTestRules` | Predicates evaluated once before scenario execution; a predicate error fails without retrying. |
+| `RetryTestRules` | Default exception predicates and retry limits, replaced by explicit retry attributes; see [Retries](../writing-tests/retries.md). |
 | `StepHooks` | Ordered `IStepHook` instances; see [Step hooks](../writing-tests/step-hooks.md). |
 | `ScenarioHooks` | Ordered `IScenarioHook` instances; see [Scenario hooks](../writing-tests/scenario-hooks.md). |
 | `ContextFactory`, `Services` | [Context creation](../writing-tests/test-context.md#factories). |

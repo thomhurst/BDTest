@@ -11,8 +11,9 @@ public class RetryTestRules
     internal IReadOnlyList<RetryTestRule> Rules => _rules.Snapshot;
 
     /// <summary>
-    /// Registers a rule safely during concurrent evaluation. Rules added during
-    /// an evaluation take effect on subsequent evaluations.
+    /// Registers an exception filter and default retry limit for subsequently started runs.
+    /// Explicit retry attributes replace these defaults. A throwing predicate stops retries
+    /// and records a diagnostic without replacing the original test failure.
     /// </summary>
     public void Add(Func<Exception, bool> condition, int retryLimit)
     {

@@ -1,3 +1,4 @@
+using System.Runtime.ExceptionServices;
 using BDTest.Attributes;
 using BDTest.Exceptions;
 using BDTest.Helpers;
@@ -23,12 +24,18 @@ internal class ScenarioExecutor : IScenarioExecutor
         {
             await _scenarioRetryManager.CheckIfAlreadyExecuted(scenario);
 
+            var retryPolicy = ScenarioRetryPolicy.Resolve(scenario);
+            var skip = false;
+            Exception? skipPredicateException = null;
+            try { skip = ShouldSkip(scenario); }
+            catch (Exception exception) { skipPredicateException = exception; }
+
             // Completed steps and retry hooks can run inline. Iterate attempts so
             // repeated synchronous failures cannot grow the execution stack.
             // Capture the caller's synchronization context for subsequent steps and retries.
             do
             {
-                await ExecuteAttemptAsync(scenario);
+                await ExecuteAttemptAsync(scenario, retryPolicy, skip, skipPredicateException);
             } while (scenario.ShouldRetry);
 
             // Notify after finalizing the scenario, outside retry/exception classification.
@@ -46,7 +53,7 @@ internal class ScenarioExecutor : IScenarioExecutor
         }
     }
 
-    private async Task ExecuteAttemptAsync(Scenario scenario)
+    private async Task ExecuteAttemptAsync(Scenario scenario, ScenarioRetryPolicy retryPolicy, bool skip, Exception? skipPredicateException)
     {
         var clock = scenario.ExecutionRun.Options.Clock;
         var timer = clock.StartTimer();
@@ -74,6 +81,12 @@ internal class ScenarioExecutor : IScenarioExecutor
 
             ConsoleReporter.WriteLineToConsoleOnly($"--------------------------------------------------{Environment.NewLine}");
 
+            if (skipPredicateException != null)
+            {
+                await ConsoleReporter.WriteLine($"Scenario skip predicate failed: {skipPredicateException}");
+                ExceptionDispatchInfo.Capture(skipPredicateException).Throw();
+            }
+
             await ScenarioHookExecutor.ExecuteAsync(scenario, ExecuteScenarioAsync, ExecuteInScopeAsync);
 
             async Task ExecuteInScopeAsync(Func<Task> execute)
@@ -97,7 +110,7 @@ internal class ScenarioExecutor : IScenarioExecutor
 
             async Task ExecuteScenarioAsync()
             {
-                if (ShouldSkip(scenario))
+                if (skip)
                 {
                     scenario.Status = Status.Skipped;
                     scenario.ExecutionSteps.ForEach(step =>
@@ -133,7 +146,9 @@ internal class ScenarioExecutor : IScenarioExecutor
         catch (Exception e)
         {
             attemptException = e;
-            scenario.Status = ExceptionOutcomeClassifier.Classify(e, scenario.ExecutionRun.Options, scenario.TimedOut);
+            scenario.Status = skipPredicateException != null
+                ? Status.Failed
+                : ExceptionOutcomeClassifier.Classify(e, scenario.ExecutionRun.Options, scenario.TimedOut);
             if (scenario.Status is Status.Failed or Status.NotImplemented)
                 scenario.ExecutionException ??= new ExceptionWrapper(e);
             if (scenario.Status == Status.Skipped)
@@ -146,18 +161,20 @@ internal class ScenarioExecutor : IScenarioExecutor
             }
             if (scenario.Status != Status.Failed) throw;
 
-            var validRetryRules = scenario.ExecutionRun.Options.RetryRules.Where(rule => rule.Condition(e)).ToList();
-            if (validRetryRules.Any() && scenario.RetryCount < validRetryRules.Max(x => x.RetryLimit))
+            scenario.ShouldRetry = false;
+            if (skipPredicateException == null)
             {
-                scenario.ShouldRetry = true;
-                return;
+                try
+                {
+                    scenario.ShouldRetry = retryPolicy.ShouldRetry(e, scenario.RetryCount);
+                }
+                catch (Exception predicateException)
+                {
+                    // A configuration failure must not replace the failed test or start another attempt.
+                    await ConsoleReporter.WriteLine($"Retry predicate failed; retrying stopped: {predicateException}");
+                }
             }
-
-            if (scenario.TestMetadata?.RetryCount is int retryCount && scenario.RetryCount < retryCount)
-            {
-                scenario.ShouldRetry = true;
-                return;
-            }
+            if (scenario.ShouldRetry) return;
 
             await ConsoleReporter.WriteLine($"{Environment.NewLine}Exception: {e.Message}{Environment.NewLine}{e.StackTrace}{Environment.NewLine}");
 
