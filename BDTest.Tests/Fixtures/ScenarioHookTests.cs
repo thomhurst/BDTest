@@ -130,25 +130,24 @@ public class ScenarioHookTests
     {
         var before = new List<ScenarioHookContext<State>>();
         var after = new List<(int Attempt, Status Status, bool Cancelled)>();
-        var clock = new TimerClock();
+        var clock = new FakeTimeProvider();
         var timeout = TimeSpan.FromMilliseconds(100);
         var options = new BDTestOptions { TimeProvider = clock };
         options.RetryTestRules.Add(e => e is TimeoutException, 1);
         using var run = BDTestRun.Start(options);
         var test = new Fixture(run)
         {
-            Before = s => { clock.ResetTimerSignal(); before.Add(s); s.Context.Attempt = s.Attempt; return Task.CompletedTask; },
+            Before = s => { before.Add(s); s.Context.Attempt = s.Attempt; return Task.CompletedTask; },
             After = s => { after.Add((s.Attempt, s.Scenario.Status, s.CancellationToken.IsCancellationRequested)); return Task.CompletedTask; }
         };
         var outline = await test.ScenarioOutline("row <Value>", new[] { new { Value = 1 }, new { Value = 2 } },
-            row => test.When(async token =>
+            row => test.When(() =>
             {
                 if (test.Context.Attempt == 0)
                 {
-                    // Wait until WaitAsync has armed the timeout before advancing virtual time.
-                    await clock.TimerCreated.Task;
-                    clock.Fake.Advance(timeout);
-                    await Task.Delay(Timeout.InfiniteTimeSpan, token);
+                    // Consume the budget in a completed step. Retry/context coverage must not
+                    // depend on scheduling an async cancellation continuation within the grace period.
+                    clock.Advance(timeout);
                 }
             }).Then(() => Complete()).WithScenarioTimeout(timeout)).BDTestAsync()
             .WaitAsync(TimeSpan.FromSeconds(30)); // Deadlock guard only; scenario time is entirely virtual.
@@ -388,22 +387,6 @@ public class ScenarioHookTests
         options.ScenarioHooks.Add(null!);
         using var run = BDTestRun.Start(options);
     }).ThrowsExactly<ArgumentException>();
-
-    private sealed class TimerClock : TimeProvider
-    {
-        internal FakeTimeProvider Fake { get; } = new();
-        internal TaskCompletionSource TimerCreated { get; private set; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
-        internal void ResetTimerSignal() => TimerCreated = new(TaskCreationOptions.RunContinuationsAsynchronously);
-        public override DateTimeOffset GetUtcNow() => Fake.GetUtcNow();
-        public override long GetTimestamp() => Fake.GetTimestamp();
-        public override long TimestampFrequency => Fake.TimestampFrequency;
-        public override ITimer CreateTimer(TimerCallback callback, object? state, TimeSpan dueTime, TimeSpan period)
-        {
-            var timer = Fake.CreateTimer(callback, state, dueTime, period);
-            TimerCreated.TrySetResult();
-            return timer;
-        }
-    }
 
     private sealed class State { public int Attempt { get; set; } }
     private sealed class Fixture(BDTestRun run) : AbstractContextBDTestBase<State>
