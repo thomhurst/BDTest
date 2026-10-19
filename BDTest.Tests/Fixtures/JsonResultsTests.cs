@@ -68,12 +68,21 @@ public class JsonResultsTests : RunTUnitTestBase<MyTestContext>
     }
         
     [Test]
-    public void HistoricalReportSurvivesCurrentCoreSerialization()
+    [Arguments(false)]
+    [Arguments(true)]
+    public async Task HistoricalReportSurvivesCurrentCoreSerialization(bool writeIndented)
     {
         var report = ReportJson.DeserializeObject<BDTestOutputModel>(HistoricalReportFixture.ReadJson());
         HistoricalReportFixture.AssertCompatible(report);
 
-        var restored = ReportJson.DeserializeObject<BDTestOutputModel>(BDTestJsonHelper.Serialize(report));
+        Func<BDTestOutputModel?, string> serializeCompact = BDTestJsonHelper.Serialize;
+        var compact = serializeCompact(report);
+        var json = BDTestJsonHelper.Serialize(report, writeIndented: writeIndented);
+        await Assert.That(compact).IsEqualTo(BDTestJsonHelper.Serialize(report, writeIndented: false));
+        await Assert.That(compact.Contains('\n')).IsFalse();
+        await Assert.That(json.Contains('\n')).IsEqualTo(writeIndented);
+        await Assert.That(serializeCompact(null)).IsEqualTo("null");
+        var restored = ReportJson.DeserializeObject<BDTestOutputModel>(json);
         HistoricalReportFixture.AssertCompatible(restored);
     }
 

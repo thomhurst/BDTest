@@ -1,1 +1,41 @@
 #nullable enable
+*REMOVED*BDTest.Razor.Reports.Models.TestRunSummary.Status.get -> BDTest.Test.Status
+*REMOVED*BDTest.Razor.Reports.Models.ViewModels.ReportLayoutViewModel.Counts.get -> System.Collections.Generic.IReadOnlyDictionary<BDTest.Test.Status, int>!
+*REMOVED*BDTest.Razor.Reports.Models.ViewModels.ReportLayoutViewModel.Status.get -> BDTest.Test.Status
+*REMOVED*BDTest.Razor.Reports.Models.ViewModels.ReportScenarioRow.Deconstruct(out string? Guid, out string! Name, out string! Story, out BDTest.Test.Status Status, out System.TimeSpan TimeTaken, out int RetryCount, out string? FailingStepText, out int FailingStepNumber, out string! Explanation, out string! TimingName) -> void
+*REMOVED*BDTest.Razor.Reports.Models.ViewModels.ReportScenarioRow.ReportScenarioRow(string? Guid, string! Name, string! Story, BDTest.Test.Status Status, System.TimeSpan TimeTaken, int RetryCount, string? FailingStepText, int FailingStepNumber, string! Explanation, string! TimingName) -> void
+*REMOVED*BDTest.Razor.Reports.Models.ViewModels.ReportScenarioRow.Status.get -> BDTest.Test.Status
+*REMOVED*BDTest.Razor.Reports.Models.ViewModels.ScenarioListViewModel.Statuses.get -> System.Collections.Generic.IReadOnlySet<BDTest.Test.Status>?
+*REMOVED*BDTest.Razor.Reports.Storage.RunIndexEntry.Status.get -> BDTest.Test.Status
+*REMOVED*static BDTest.Razor.Reports.Extensions.ScenarioExtensions.AsString(this BDTest.Test.Status status) -> string!
+*REMOVED*static BDTest.Razor.Reports.Extensions.ScenarioExtensions.GetCssColourValueForStatus(this BDTest.Test.Status status) -> string!
+*REMOVED*static BDTest.Razor.Reports.Extensions.ScenarioExtensions.GetTotalStatus(this System.Collections.Generic.IEnumerable<BDTest.Test.Scenario!>! scenarios) -> BDTest.Test.Status
+*REMOVED*static BDTest.Razor.Reports.Helpers.ReportUi.IconId(this BDTest.Test.Status status) -> string!
+*REMOVED*static BDTest.Razor.Reports.Helpers.ReportUi.Key(this BDTest.Test.Status status) -> string!
+*REMOVED*static BDTest.Razor.Reports.Helpers.ReportUi.Label(this BDTest.Test.Status status) -> string!
+*REMOVED*static BDTest.Razor.Reports.Helpers.ReportUi.Pill(this BDTest.Test.Status status, string? text = null) -> Microsoft.AspNetCore.Html.IHtmlContent!
+*REMOVED*static BDTest.Razor.Reports.Helpers.ReportUi.RunResult(this BDTest.Razor.Reports.Models.TestRunSummary! run) -> BDTest.Test.Status
+*REMOVED*static BDTest.Razor.Reports.Helpers.ReportUi.RunResult(this BDTest.Test.Status runStatus) -> BDTest.Test.Status
+*REMOVED*static BDTest.Razor.Reports.Helpers.ReportUi.StatusIcon(this BDTest.Test.Status status, string? cssClass = null) -> Microsoft.AspNetCore.Html.IHtmlContent!
+*REMOVED*static readonly BDTest.Razor.Reports.Helpers.ReportUi.DisplayOrder -> BDTest.Test.Status[]!
+*REMOVED*~BDTest.Razor.Reports.Helpers.ReportJsonContext.Status.get -> System.Text.Json.Serialization.Metadata.JsonTypeInfo<BDTest.Test.Status>
+BDTest.Razor.Reports.Models.TestRunSummary.Status.get -> BDTest.Contracts.Status
+BDTest.Razor.Reports.Models.ViewModels.ReportLayoutViewModel.Counts.get -> System.Collections.Generic.IReadOnlyDictionary<BDTest.Contracts.Status, int>!
+BDTest.Razor.Reports.Models.ViewModels.ReportLayoutViewModel.Status.get -> BDTest.Contracts.Status
+BDTest.Razor.Reports.Models.ViewModels.ReportScenarioRow.Deconstruct(out string? Guid, out string! Name, out string! Story, out BDTest.Contracts.Status Status, out System.TimeSpan TimeTaken, out int RetryCount, out string? FailingStepText, out int FailingStepNumber, out string! Explanation, out string! TimingName) -> void
+BDTest.Razor.Reports.Models.ViewModels.ReportScenarioRow.ReportScenarioRow(string? Guid, string! Name, string! Story, BDTest.Contracts.Status Status, System.TimeSpan TimeTaken, int RetryCount, string? FailingStepText, int FailingStepNumber, string! Explanation, string! TimingName) -> void
+BDTest.Razor.Reports.Models.ViewModels.ReportScenarioRow.Status.get -> BDTest.Contracts.Status
+BDTest.Razor.Reports.Models.ViewModels.ScenarioListViewModel.Statuses.get -> System.Collections.Generic.IReadOnlySet<BDTest.Contracts.Status>?
+BDTest.Razor.Reports.Storage.RunIndexEntry.Status.get -> BDTest.Contracts.Status
+static BDTest.Razor.Reports.Extensions.ScenarioExtensions.AsString(this BDTest.Contracts.Status status) -> string!
+static BDTest.Razor.Reports.Extensions.ScenarioExtensions.GetCssColourValueForStatus(this BDTest.Contracts.Status status) -> string!
+static BDTest.Razor.Reports.Extensions.ScenarioExtensions.GetTotalStatus(this System.Collections.Generic.IEnumerable<BDTest.Test.Scenario!>! scenarios) -> BDTest.Contracts.Status
+static BDTest.Razor.Reports.Helpers.ReportUi.IconId(this BDTest.Contracts.Status status) -> string!
+static BDTest.Razor.Reports.Helpers.ReportUi.Key(this BDTest.Contracts.Status status) -> string!
+static BDTest.Razor.Reports.Helpers.ReportUi.Label(this BDTest.Contracts.Status status) -> string!
+static BDTest.Razor.Reports.Helpers.ReportUi.Pill(this BDTest.Contracts.Status status, string? text = null) -> Microsoft.AspNetCore.Html.IHtmlContent!
+static BDTest.Razor.Reports.Helpers.ReportUi.RunResult(this BDTest.Contracts.Status runStatus) -> BDTest.Contracts.Status
+static BDTest.Razor.Reports.Helpers.ReportUi.RunResult(this BDTest.Razor.Reports.Models.TestRunSummary! run) -> BDTest.Contracts.Status
+static BDTest.Razor.Reports.Helpers.ReportUi.StatusIcon(this BDTest.Contracts.Status status, string? cssClass = null) -> Microsoft.AspNetCore.Html.IHtmlContent!
+static readonly BDTest.Razor.Reports.Helpers.ReportUi.DisplayOrder -> BDTest.Contracts.Status[]!
+~BDTest.Razor.Reports.Helpers.ReportJsonContext.Status.get -> System.Text.Json.Serialization.Metadata.JsonTypeInfo<BDTest.Contracts.Status>

@@ -41,6 +41,15 @@ standard invariant durations, and UTC timestamps. Use
 reports. The old `Deserialize`/`DeserializeAsync` APIs remain for historical
 unversioned data; they do not provide a versioned-to-legacy conversion.
 
+`BDTestJsonHelper.Serialize(report)` writes compact JSON for a `BDTestReport`.
+Use `Serialize(report, writeIndented: true)` for formatted JSON. These are separate
+one- and two-argument overloads: the formatting parameter is
+required when selecting the two-argument method. Existing calls keep the same
+syntax and output. The legacy `BDTestOutputModel` serializer uses the same
+overload pattern and still accepts null. Reflection-based callers should select
+the one-argument overload when omitting formatting; neither two-argument method
+declares an optional default.
+
 Hosted migration is tracked in [#936](https://github.com/thomhurst/BDTest/issues/936).
 The current legacy host cannot consume the new uploads. Export JSON or static HTML
 locally until using a server that explicitly supports schema version 1; keep client

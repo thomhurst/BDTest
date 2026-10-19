@@ -23,7 +23,10 @@ public static class BDTestJsonHelper
     });
 
     /// <summary>Writes an immutable, schema-versioned report using generated contract metadata.</summary>
-    public static string Serialize(BDTestReport model, bool writeIndented = false) =>
+    public static string Serialize(BDTestReport model) => Serialize(model, writeIndented: false);
+
+    /// <summary>Writes an immutable, schema-versioned report with explicit formatting.</summary>
+    public static string Serialize(BDTestReport model, bool writeIndented) =>
         JsonSerializer.Serialize(model, (writeIndented ? ReportIndentedContext : BDTestReportJsonContext.Default).BDTestReport);
 
     /// <summary>Reads the current schema. Historical unversioned reports use the legacy Deserialize API.</summary>
@@ -35,7 +38,10 @@ public static class BDTestJsonHelper
     });
 
     /// <summary>Writes plain report JSON using generated metadata, without reference preservation.</summary>
-    public static string Serialize(BDTestOutputModel? model, bool writeIndented = false)
+    public static string Serialize(BDTestOutputModel? model) => Serialize(model, writeIndented: false);
+
+    /// <summary>Writes plain legacy report JSON with explicit formatting.</summary>
+    public static string Serialize(BDTestOutputModel? model, bool writeIndented)
     {
         return JsonSerializer.Serialize(model, (writeIndented ? IndentedContext : BDTestJsonContext.Default).BDTestOutputModel);
     }

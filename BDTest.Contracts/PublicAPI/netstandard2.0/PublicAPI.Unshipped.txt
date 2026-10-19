@@ -1,1 +1,15 @@
 #nullable enable
+*REMOVED*BDTest.Contracts.ScenarioDefinitionSummary.ScenarioDefinitionSummary(string! scenarioId, string! reportId, string! storyText, string! scenarioText, string? testId = null, string? callerMember = null, string? callerFile = null, System.Collections.Generic.IReadOnlyList<string!>? parameters = null, System.Collections.Generic.IReadOnlyList<string!>? tags = null, System.Collections.Generic.IReadOnlyList<string!>? customTestInformation = null, System.TimeSpan? timeout = null) -> void
+BDTest.Contracts.ScenarioDefinitionSummary.ScenarioDefinitionSummary(string! scenarioId, string! reportId, string! storyText, string! scenarioText, string? testId = null, string? callerMember = null, string? callerFile = null, System.Collections.Generic.IReadOnlyList<string!>? parameters = null, System.Collections.Generic.IReadOnlyList<string!>? tags = null, System.Collections.Generic.IReadOnlyList<string!>? customTestInformation = null, System.TimeSpan? timeout = null, System.Collections.Generic.IReadOnlyList<BDTest.Contracts.StepDefinitionSummary!>? steps = null) -> void
+BDTest.Contracts.ScenarioDefinitionSummary.Steps.get -> System.Collections.Generic.IReadOnlyList<BDTest.Contracts.StepDefinitionSummary!>!
+BDTest.Contracts.StatusJsonConverter
+BDTest.Contracts.StatusJsonConverter.StatusJsonConverter() -> void
+BDTest.Contracts.StepDefinitionSummary
+BDTest.Contracts.StepDefinitionSummary.StepDefinitionSummary(BDTest.Contracts.StepType stepType, string! stepText, System.TimeSpan? timeout = null) -> void
+BDTest.Contracts.StepDefinitionSummary.StepText.get -> string!
+BDTest.Contracts.StepDefinitionSummary.StepType.get -> BDTest.Contracts.StepType
+BDTest.Contracts.StepDefinitionSummary.Timeout.get -> System.TimeSpan?
+BDTest.Contracts.StepTypeJsonConverter
+BDTest.Contracts.StepTypeJsonConverter.StepTypeJsonConverter() -> void
+~BDTest.Contracts.BDTestReportJsonContext.IReadOnlyListStepDefinitionSummary.get -> System.Text.Json.Serialization.Metadata.JsonTypeInfo<System.Collections.Generic.IReadOnlyList<BDTest.Contracts.StepDefinitionSummary>>
+~BDTest.Contracts.BDTestReportJsonContext.StepDefinitionSummary.get -> System.Text.Json.Serialization.Metadata.JsonTypeInfo<BDTest.Contracts.StepDefinitionSummary>

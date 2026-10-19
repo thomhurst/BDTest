@@ -350,6 +350,13 @@ strong-name signing, symbols and validation as the other runtime packages.
 
 ## Public API baselines (#974)
 
+The unshipped entries reconciled in #980 record the immutable result migration
+already merged in #968, including contract enums, pending step definitions,
+builder/hook results and JSON metadata. The original shipped snapshot stays
+intact; explicit removal entries preserve the migration's audit trail. Core's
+contract and legacy JSON serializers use separate compact and explicit-formatting
+overloads to satisfy the optional-parameter overload compatibility diagnostics.
+
 Every packable runtime project imports `build/PublicApi.targets` through the
 existing package metadata hook. It privately references
 `Microsoft.CodeAnalysis.PublicApiAnalyzers`; compiler extensions

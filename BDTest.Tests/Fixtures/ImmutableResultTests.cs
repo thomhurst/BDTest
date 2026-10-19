@@ -9,6 +9,25 @@ namespace BDTest.Tests.Fixtures;
 public class ImmutableResultTests
 {
     [Test]
+    [Arguments(false)]
+    [Arguments(true)]
+    public async Task Report_serialization_overloads_preserve_formatting_and_round_trip(bool writeIndented)
+    {
+        var report = new BDTestReport(BDTestReport.CurrentSchemaVersion, "report", "test",
+            new[] { new ScenarioResult("scenario", "report", "story", "scenario", Status.Passed) });
+        Func<BDTestReport, string> serializeCompact = BDTestJsonHelper.Serialize;
+        var compact = serializeCompact(report);
+        var json = BDTestJsonHelper.Serialize(report, writeIndented: writeIndented);
+
+        await Assert.That(compact).IsEqualTo(BDTestJsonHelper.Serialize(report, writeIndented: false));
+        await Assert.That(compact.Contains('\n')).IsFalse();
+        await Assert.That(json.Contains('\n')).IsEqualTo(writeIndented);
+        var restored = BDTestJsonHelper.DeserializeReport(json);
+        await Assert.That(restored.Id).IsEqualTo(report.Id);
+        await Assert.That(restored.Scenarios.Single().Status).IsEqualTo(Status.Passed);
+    }
+
+    [Test]
     [Arguments("scenario")]
     [Arguments("step")]
     [Arguments("query")]
