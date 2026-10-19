@@ -15,7 +15,7 @@ public enum Status
     Skipped
 }
 
-internal sealed class StatusJsonConverter : JsonStringEnumConverter<Status>
+public sealed class StatusJsonConverter : JsonStringEnumConverter<Status>
 {
     public StatusJsonConverter() : base(namingPolicy: null, allowIntegerValues: false)
     {

@@ -79,7 +79,7 @@ public class CompositionHostTests
         using var second = BDTestRun.Start();
         var entered = 0;
         var ready = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        async Task<Scenario> Execute(BDTestRun run, string label)
+        async Task<BDTest.Contracts.ScenarioResult> Execute(BDTestRun run, string label)
         {
             AbstractContextBDTestBase<State> host;
             Action end;
@@ -237,7 +237,7 @@ public class CompositionHostTests
         public Owner(BDTestRun run) => Host = BDTestScenario.For<State>(this, run);
 
         [ScenarioText("The shopper pays"), BDTestTag("payment"), TestInformation("payment reference")]
-        public Task<Scenario> Pays() => Host.Given(() => Complete()).When(() => Pay()).Then(() => Complete()).BDTestAsync();
+        public Task<BDTest.Contracts.ScenarioResult> Pays() => Host.Given(() => Complete()).When(() => Pay()).Then(() => Complete()).BDTestAsync();
 
         private void Pay()
         {
@@ -246,7 +246,7 @@ public class CompositionHostTests
         }
 
         [BDTestTag("examples")]
-        public Task<Scenario> Examples() => Host.ScenarioOutline("example <Value>", new[] { new { Value = 1 }, new { Value = 2 } },
+        public Task<BDTest.Contracts.ScenarioResult> Examples() => Host.ScenarioOutline("example <Value>", new[] { new { Value = 1 }, new { Value = 2 } },
             row => Host.When(() => Remember(row.Value)).Then(() => Complete())).BDTestAsync();
 
         private void Remember(int value) { Host.Context.Value = value.ToString(); Contexts.Add(Host.Context); }
@@ -261,7 +261,7 @@ public class CompositionHostTests
         public int Failures { get; set; }
         public int Executions { get; private set; }
 
-        public virtual Task<Scenario> Run() => Host.When(() => Execute()).Then(() => Complete()).BDTestAsync();
+        public virtual Task<BDTest.Contracts.ScenarioResult> Run() => Host.When(() => Execute()).Then(() => Complete()).BDTestAsync();
 
         private async Task Execute()
         {
@@ -277,7 +277,7 @@ public class CompositionHostTests
     public class MethodRetryOwner : ClassRetryOwner
     {
         [BDTestRetry(1)]
-        public override Task<Scenario> Run() => base.Run();
+        public override Task<BDTest.Contracts.ScenarioResult> Run() => base.Run();
     }
 
     private sealed class InheritedHost(BDTestRun run) : AbstractContextBDTestBase<State>

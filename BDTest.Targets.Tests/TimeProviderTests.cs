@@ -1,3 +1,4 @@
+using Status = BDTest.Contracts.Status;
 #if !LEGACY_CORE
 using BDTest.Test;
 using BDTest.Helpers;

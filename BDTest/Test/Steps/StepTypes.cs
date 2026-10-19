@@ -1,17 +1,4 @@
-﻿namespace BDTest.Test.Steps;
-
-public enum StepType
-{
-    Given,
-    AndGiven,
-    When,
-    Then,
-    AndThen,
-    ButGiven,
-    ButWhen,
-    ButThen,
-    AndWhen
-}
+namespace BDTest.Test.Steps;
 
 public static class StepTypeExtensions
 {

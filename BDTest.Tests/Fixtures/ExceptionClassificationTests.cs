@@ -207,7 +207,7 @@ public class ExceptionClassificationTests : BDTestBase
         await Assert.That(scenario.Steps[2].Status).IsEqualTo(status == Status.Skipped ? Status.Skipped : Status.NotRun);
     }
 
-    private static async Task<Exception?> Capture(Func<Task<Scenario>> execute)
+    private static async Task<Exception?> Capture(Func<Task<BDTest.Contracts.ScenarioResult>> execute)
     {
         try { await execute(); }
         catch (Exception exception) { return exception; }

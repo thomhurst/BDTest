@@ -146,7 +146,7 @@ public class ConfigureContextTests
 
         private int _attempts;
 
-        public async Task<Scenario> RunRetriedScenario() => await Given(() => ReadContext())
+        public async Task<BDTest.Contracts.ScenarioResult> RunRetriedScenario() => await Given(() => ReadContext())
             .When(() => FailFirstAttempt())
             .Then(() => ReadContext())
             .BDTestAsync();

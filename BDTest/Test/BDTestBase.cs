@@ -1,3 +1,4 @@
+using BDTest.Contracts;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.ExceptionServices;
@@ -232,7 +233,7 @@ public abstract class BDTestBase
     }
 
     /// <summary>Runs before each reached step, after the run before hooks.</summary>
-    public virtual Task OnBeforeStep(Step step) => Task.CompletedTask;
+    public virtual Task OnBeforeStep(BDTest.Contracts.StepResult step) => Task.CompletedTask;
 
     /// <summary>Runs after each reached step, before the run after hooks.</summary>
     /// <remarks>
@@ -241,7 +242,7 @@ public abstract class BDTestBase
     /// or a skipped scenario. Hooks run again on each retry. An existing exception takes precedence
     /// over an after-hook exception; otherwise a hook exception determines the step result.
     /// </remarks>
-    public virtual Task OnAfterStep(Step step) => Task.CompletedTask;
+    public virtual Task OnAfterStep(StepResult step) => Task.CompletedTask;
 
     /// <summary>Runs once per scenario attempt, after the run's before hooks and before skip checks.</summary>
     public virtual Task OnBeforeScenario(ScenarioHookContext scenario) => Task.CompletedTask;

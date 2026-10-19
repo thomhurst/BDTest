@@ -129,7 +129,7 @@ public class RetryHistoryTests : TestRunOwner
         private readonly string _executionId = Guid.NewGuid().ToString();
         private int _runs;
         protected override string BDTestExecutionId => _executionId;
-        public Task<Scenario> Run() => When(() => Step()).Then(() => Done()).BDTestAsync();
+        public Task<BDTest.Contracts.ScenarioResult> Run() => When(() => Step()).Then(() => Done()).BDTestAsync();
         public void Step()
         {
             if (++_runs <= failures)

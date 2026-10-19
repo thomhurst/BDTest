@@ -238,7 +238,7 @@ public class StepTextGenerationTests : RunContextTestBase<StepTextGenerationTest
     public async Task TextReflectsChangesMadeByBeforeStepHooks()
     {
         var value = 0;
-        Func<Step, Task> hook = step => { value++; return Task.CompletedTask; };
+        Func<BDTest.Contracts.StepResult, Task> hook = step => { value++; return Task.CompletedTask; };
         Options.StepHooks.Add(new CallbackStepHook(before: hook));
         var scenario = await When(() => Display(value)).WithArgs(() => value).Then(() => Display(value)).WithArgs(() => value).BDTestAsync();
         await Assert.That(Required(scenario.Steps).Select(step => step.StepText)).IsEquivalentTo((new[] { "When value: 1", "Then value: 2" }).Cast<string?>(), global::TUnit.Assertions.Enums.CollectionOrdering.Matching);

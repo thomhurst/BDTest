@@ -1,3 +1,4 @@
+using Status = BDTest.Contracts.Status;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.Versioning;
@@ -68,7 +69,7 @@ public class RuntimeContractTests
         Assert.That(Required(scenario.Steps)[0].TimedOut, Is.True);
         Assert.That(laterRan, Is.False);
         Assert.That(scenario.TimeTaken, Is.GreaterThan(TimeSpan.Zero));
-        Assert.That(scenario.StartTime.Kind, Is.EqualTo(DateTimeKind.Utc));
+        Assert.That(scenario.StartTime.Offset, Is.EqualTo(TimeSpan.Zero));
     }
 
     [Test]
@@ -111,7 +112,7 @@ public class RuntimeContractTests
             .WithStepTimeout(TimeSpan.FromSeconds(10)).Then(() => { }).BDTestAsync();
         Assert.That(scenario.Status, Is.EqualTo(Status.Passed));
         Assert.That(scenario.TimedOut, Is.False);
-        Assert.That(scenario.StartTime.Kind, Is.EqualTo(DateTimeKind.Utc));
+        Assert.That(scenario.StartTime.Offset, Is.EqualTo(TimeSpan.Zero));
         Assert.That(scenario.EndTime, Is.GreaterThanOrEqualTo(scenario.StartTime));
         Assert.That(scenario.TimeTaken, Is.GreaterThanOrEqualTo(Required(scenario.Steps)[0].TimeTaken));
     }

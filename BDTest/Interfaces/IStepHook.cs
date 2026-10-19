@@ -1,3 +1,4 @@
+using BDTest.Contracts;
 using BDTest.Test;
 
 namespace BDTest.Interfaces;
@@ -10,6 +11,6 @@ namespace BDTest.Interfaces;
 /// </remarks>
 public interface IStepHook
 {
-    Task BeforeStepAsync(Step step);
-    Task AfterStepAsync(Step step);
+    Task BeforeStepAsync(StepResult step);
+    Task AfterStepAsync(StepResult step);
 }

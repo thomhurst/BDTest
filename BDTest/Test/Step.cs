@@ -1,3 +1,4 @@
+using BDTest.Contracts;
 using System.Runtime.ExceptionServices;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -250,14 +251,14 @@ public class Step
 
             if (beforeHooks != null)
             {
-                foreach (Func<Step, Task> hook in beforeHooks.GetInvocationList())
+                foreach (Func<StepResult, Task> hook in beforeHooks.GetInvocationList())
                 {
-                    await hook(this);
+                    await hook(ResultSnapshot.Create(this));
                 }
             }
             if (test != null)
             {
-                await test.OnBeforeStep(this);
+                await test.OnBeforeStep(ResultSnapshot.Create(this));
             }
 
             beforeHooksCompleted = true;
@@ -333,7 +334,7 @@ public class Step
         }
     }
 
-    private async Task<Exception?> RunAfterHooks(BDTestBase? test, Func<Step, Task>? globalHooks)
+    private async Task<Exception?> RunAfterHooks(BDTestBase? test, Func<StepResult, Task>? globalHooks)
     {
         Exception? firstException = null;
         if (test != null)
@@ -342,18 +343,18 @@ public class Step
         }
         if (globalHooks != null)
         {
-            foreach (Func<Step, Task> hook in globalHooks.GetInvocationList())
+            foreach (Func<StepResult, Task> hook in globalHooks.GetInvocationList())
             {
                 await Invoke(hook);
             }
         }
         return firstException;
 
-        async Task Invoke(Func<Step, Task> hook)
+        async Task Invoke(Func<StepResult, Task> hook)
         {
             try
             {
-                await hook(this);
+                await hook(ResultSnapshot.Create(this));
             }
             catch (Exception e)
             {

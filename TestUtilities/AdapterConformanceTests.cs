@@ -345,7 +345,7 @@ public class AdapterConformanceTests : Adapter
         using var second = BDTestRun.Start();
         var entered = 0;
         var ready = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        async Task<Scenario> Execute(BDTestRun run, string label)
+        async Task<BDTest.Contracts.ScenarioResult> Execute(BDTestRun run, string label)
         {
             AbstractContextBDTestBase<object> host;
             Action end;
@@ -487,7 +487,7 @@ public class AdapterConformanceTests : Adapter
     }
 #endif
 
-    private async Task Check(Func<Task<Scenario>> execute, Status expected, int retries, params Status[] steps)
+    private async Task Check(Func<Task<BDTest.Contracts.ScenarioResult>> execute, Status expected, int retries, params Status[] steps)
     {
         try { await execute(); }
         finally

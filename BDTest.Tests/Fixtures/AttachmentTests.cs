@@ -78,7 +78,7 @@ public class AttachmentTests
         using var second = BDTestRun.Start();
         var ready = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var entered = 0;
-        async Task<Scenario> Execute(BDTestRun run, string text)
+        async Task<BDTest.Contracts.ScenarioResult> Execute(BDTestRun run, string text)
         {
             var fixture = new Capture(run, "same-id");
             return await fixture.When(async () =>
@@ -656,12 +656,12 @@ public class AttachmentTests
         public bool CaptureHooks { get; init; }
         public bool CaptureRetryHook { get; init; }
         public void Attach(string name) => Attachments.Attach(name, Encoding.UTF8.GetBytes(name), "text/plain");
-        public override Task OnBeforeStep(Step step)
+        public override Task OnBeforeStep(BDTest.Contracts.StepResult step)
         {
             if (CaptureHooks) Attach("before.txt");
             return Task.CompletedTask;
         }
-        public override Task OnAfterStep(Step step)
+        public override Task OnAfterStep(BDTest.Contracts.StepResult step)
         {
             if (CaptureHooks) Attach("after.txt");
             return Task.CompletedTask;

@@ -18,7 +18,7 @@ public class BDTestRunTests
         using var first = BDTestRun.Start();
         using var second = BDTestRun.Start();
         var fixture = new Capture(first, "same-id");
-        Func<Task<Scenario>> execute;
+        Func<Task<BDTest.Contracts.ScenarioResult>> execute;
         if (useOutline)
         {
             var outline = fixture.ScenarioOutline("example <Value>", new[] { new { Value = 1 } },
@@ -74,7 +74,7 @@ public class BDTestRunTests
         using var second = BDTestRun.Start();
         var ready = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var entered = 0;
-        async Task<Scenario> Execute(BDTestRun run, string text)
+        async Task<BDTest.Contracts.ScenarioResult> Execute(BDTestRun run, string text)
         {
             var fixture = new Capture(run, "same-id");
             fixture.WriteStartupOutput(text + " setup");

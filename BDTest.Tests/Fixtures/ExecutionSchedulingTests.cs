@@ -91,8 +91,8 @@ public class ExecutionSchedulingTests : RunTestBase
         await Assert.That(scenario.Status).IsEqualTo(Status.Passed);
     }
 
-    public override Task OnBeforeStep(Step step) => CheckHookContext();
-    public override Task OnAfterStep(Step step) => CheckHookContext();
+    public override Task OnBeforeStep(BDTest.Contracts.StepResult step) => CheckHookContext();
+    public override Task OnAfterStep(BDTest.Contracts.StepResult step) => CheckHookContext();
     public override Task OnBeforeRetry() => CheckHookContext();
 
     private Task CheckHookContext() => _callerContext == null ? Task.CompletedTask : YieldOnCallerContext();
@@ -126,7 +126,7 @@ public class ExecutionSchedulingTests : RunTestBase
         await Assert.That(Environment.CurrentManagedThreadId).IsNotEqualTo(_callerThread);
     }
 
-    private async Task<Scenario> RunOnSingleThreadContext(Func<Task<Scenario>> run)
+    private async Task<BDTest.Contracts.ScenarioResult> RunOnSingleThreadContext(Func<Task<BDTest.Contracts.ScenarioResult>> run)
     {
         var completed = new TaskCompletionSource<Scenario>(TaskCreationOptions.RunContinuationsAsynchronously);
         var thread = new Thread(() =>
@@ -183,7 +183,7 @@ public class ExecutionSchedulingTests : RunTestBase
         }
     }
 
-    private static async Task<Scenario> AwaitBuilder(RunnableStepBuilder builder) => await builder;
+    private static async Task<BDTest.Contracts.ScenarioResult> AwaitBuilder(RunnableStepBuilder builder) => await builder;
 
     private static void RecordThread(List<int> threads) => threads.Add(Environment.CurrentManagedThreadId);
 

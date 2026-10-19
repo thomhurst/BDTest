@@ -16,6 +16,7 @@ public sealed class ScenarioDefinitionSummary
     public IReadOnlyList<string> Tags { get; }
     public IReadOnlyList<string> CustomTestInformation { get; }
     public TimeSpan? Timeout { get; }
+    public IReadOnlyList<StepDefinitionSummary> Steps { get; }
 
     [JsonConstructor]
     public ScenarioDefinitionSummary(
@@ -29,7 +30,8 @@ public sealed class ScenarioDefinitionSummary
         IReadOnlyList<string>? parameters = null,
         IReadOnlyList<string>? tags = null,
         IReadOnlyList<string>? customTestInformation = null,
-        TimeSpan? timeout = null)
+        TimeSpan? timeout = null,
+        IReadOnlyList<StepDefinitionSummary>? steps = null)
     {
         ScenarioId = scenarioId ?? throw new ArgumentNullException(nameof(scenarioId));
         ReportId = reportId ?? throw new ArgumentNullException(nameof(reportId));
@@ -42,5 +44,6 @@ public sealed class ScenarioDefinitionSummary
         Tags = ContractCollections.List(tags);
         CustomTestInformation = ContractCollections.List(customTestInformation);
         Timeout = timeout;
+        Steps = ContractCollections.List(steps);
     }
 }

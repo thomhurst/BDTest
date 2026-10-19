@@ -70,7 +70,7 @@ public class HtmlWriterTests : RunTestBase
         "https://example.com/image.png", "http://example.com/report", "HTTPS://example.com/",
         "//example.com/image.png", "/images/a.png", "images/a b.png", "./a.png", "../a.png",
         "#scenario", "?a=1&b=2", "/path/javascript:example", "?next=javascript:example",
-        "#javascript:example", "./name:part.png", "images/Ã©.png",
+        "#javascript:example", "./name:part.png", "images/é.png",
         "javascript%3Aalert(1)", "javascript&#58;alert(1)"
     };
 
@@ -143,7 +143,7 @@ public class HtmlWriterTests : RunTestBase
         return Required((await EmptyScenario()).CustomHtmlOutputForReport);
     }
 
-    private Task<Scenario> EmptyScenario() => When(() => NoOp()).Then(() => NoOp()).BDTestAsync();
+    private Task<BDTest.Contracts.ScenarioResult> EmptyScenario() => When(() => NoOp()).Then(() => NoOp()).BDTestAsync();
     private static void NoOp() { }
     private static XElement ParseElement(string html) => XElement.Parse(html[..^4]);
 

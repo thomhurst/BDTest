@@ -97,7 +97,7 @@ public class NUnitOutcomeProbe : NUnitBDTestBase<MyTestContext>
 
     public override BDTestRun TestRun => _run;
     private Func<Task> _afterStep = () => Task.CompletedTask;
-    public override Task OnAfterStep(Step step) => _afterStep();
+    public override Task OnAfterStep(BDTest.Contracts.StepResult step) => _afterStep();
 
     [TestCase("plain-retry")]
     [TestCase("assert-retry")]

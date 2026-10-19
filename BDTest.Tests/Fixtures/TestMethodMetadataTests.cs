@@ -98,7 +98,7 @@ public class TestMethodMetadataTests
         public override BDTestRun TestRun => run;
         public void Start(MethodInfo method) => BeginTest(Guid.NewGuid().ToString("N"), method);
         public void Finish() => EndTest();
-        public Task<Scenario> Build() => When(() => { }).Then(() => { }).BDTestAsync();
+        public Task<BDTest.Contracts.ScenarioResult> Build() => When(() => { }).Then(() => { }).BDTestAsync();
 
         [ScenarioText("Exact private method"), BDTestTag("original"), CountingInformation(Values = new[] { "original" })]
         private void Annotated() { }

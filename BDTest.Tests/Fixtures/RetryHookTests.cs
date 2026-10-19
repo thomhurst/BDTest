@@ -248,7 +248,7 @@ public class RetryHookTests
         public InvalidOperationException Failure { get; } = new("retry hook failed");
         public int Attempts { get; private set; }
 
-        public Task<Scenario> RunScenario() => Given(() => FailStep()).When(() => FailStep()).Then(() => FailStep()).BDTestAsync();
+        public Task<BDTest.Contracts.ScenarioResult> RunScenario() => Given(() => FailStep()).When(() => FailStep()).Then(() => FailStep()).BDTestAsync();
 
         public void FailStep()
         {

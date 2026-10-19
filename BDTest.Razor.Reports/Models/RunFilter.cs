@@ -1,4 +1,4 @@
-﻿using BDTest.Razor.Reports.Helpers;
+using BDTest.Razor.Reports.Helpers;
 using System.Globalization;
 using BDTest.Test;
 using Microsoft.AspNetCore.Http;
@@ -50,7 +50,7 @@ public class RunFilter
             Environment = Read("environment", LegacyReportDefaults.AllEnvironments),
             Branch = Read("branch", LegacyReportDefaults.AllBranches),
             Machine = Read("machine", LegacyReportDefaults.AllMachines),
-            Status = Read("status") is { } status && (status == nameof(Test.Status.Passed) || status == nameof(Test.Status.Failed)) ? status : null,
+            Status = Read("status") is { } status && (status == nameof(Contracts.Status.Passed) || status == nameof(Contracts.Status.Failed)) ? status : null,
             Range = Read("range") is { } range && Ranges.Contains(range) ? range : defaultRange
         };
 

@@ -1,16 +1,34 @@
 using System.Net;
 using System.Text;
-using BDTest.Test;
+using BDTest.Contracts;
 
 namespace BDTest.Helpers;
 
 /// <summary>Shared, HTML-encoded exception trees for hosted and standalone reports.</summary>
 public static class ExceptionHtmlHelper
 {
-    public static string GetHtml(ExceptionWrapper? exception) => GetHtml(exception,
+    // Compatibility entry point for the hosted report model until its migration.
+    public static string GetHtml(Test.ExceptionWrapper? exception) => GetHtml(ResultSnapshot.Create(exception));
+
+    internal static IReadOnlyList<ExceptionInfo> GetRootCauses(this ExceptionInfo exception)
+    {
+        var causes = new List<ExceptionInfo>();
+        var pending = new Stack<ExceptionInfo>();
+        pending.Push(exception);
+        while (pending.Count > 0)
+        {
+            var current = pending.Pop();
+            if (current.InnerExceptions.Count == 0) causes.Add(current);
+            else for (var index = current.InnerExceptions.Count - 1; index >= 0; index--)
+                pending.Push(current.InnerExceptions[index]);
+        }
+        return causes;
+    }
+
+    public static string GetHtml(ExceptionInfo? exception) => GetHtml(exception,
         (html, text) => html.Append($"<pre>{Encode(text)}</pre>"));
 
-    internal static string GetHtml(ExceptionWrapper? exception, Action<StringBuilder, string?> appendOriginalText)
+    internal static string GetHtml(ExceptionInfo? exception, Action<StringBuilder, string?> appendOriginalText)
     {
         if (exception == null) return string.Empty;
         var html = new StringBuilder();
@@ -18,7 +36,7 @@ public static class ExceptionHtmlHelper
         return html.ToString();
     }
 
-    private static void AppendException(StringBuilder html, ExceptionWrapper exception, int depth,
+    private static void AppendException(StringBuilder html, ExceptionInfo exception, int depth,
         Action<StringBuilder, string?> appendOriginalText)
     {
         html.Append(depth == 0 ? "<details class=\"exception-tree\" open>" : "<details class=\"exception-tree\">");

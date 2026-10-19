@@ -72,7 +72,7 @@ public class StructuredStepArgumentTests : BDTestBase
         await Assert.That(((StepTable)Required(result.Steps)[0].Arguments[0]).Rows[0][0]).IsEqualTo("11");
     }
 
-    public override Task OnBeforeStep(Step step)
+    public override Task OnBeforeStep(BDTest.Contracts.StepResult step)
     {
         if (_setBeforeStep)
             _reads = 10;

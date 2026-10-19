@@ -1,3 +1,5 @@
+using BDTest.Contracts;
+using BDTest.Helpers;
 using System.Threading;
 
 namespace BDTest.Test;
@@ -7,13 +9,13 @@ public class ScenarioHookContext
 {
     internal ScenarioHookContext(Scenario scenario, object? context, CancellationToken cancellationToken)
     {
-        Scenario = scenario;
+        Scenario = ResultSnapshot.Create(scenario);
         Context = context;
         Attempt = scenario.RetryCount;
         CancellationToken = cancellationToken;
     }
 
-    public Scenario Scenario { get; }
+    public ScenarioResult Scenario { get; }
     /// <summary>The test's context, or null for a non-context test base.</summary>
     public object? Context { get; }
     /// <summary>Zero for the first attempt, then one, two and so on for retries.</summary>

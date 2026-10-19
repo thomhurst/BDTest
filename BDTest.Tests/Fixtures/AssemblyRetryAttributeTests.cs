@@ -79,7 +79,7 @@ public class AssemblyRetryAttributeTests
         public int Failures { get; set; }
         public int Executions { get; private set; }
 
-        public virtual async Task<Scenario> Run(bool suspend)
+        public virtual async Task<BDTest.Contracts.ScenarioResult> Run(bool suspend)
         {
             if (suspend)
                 await Task.Yield();
@@ -107,6 +107,6 @@ public class AssemblyRetryAttributeTests
     public class MethodRetryScenario : ClassRetryScenario
     {
         [BDTestRetry(0)]
-        public override Task<Scenario> Run(bool suspend) => base.Run(suspend);
+        public override Task<BDTest.Contracts.ScenarioResult> Run(bool suspend) => base.Run(suspend);
     }
 }

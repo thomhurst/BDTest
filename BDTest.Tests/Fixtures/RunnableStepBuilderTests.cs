@@ -175,7 +175,7 @@ public class RunnableStepBuilderTests : RunTestBase
         return Task.CompletedTask;
     }
 
-    private static async Task<Scenario> Execute(RunnableStepBuilder builder, EntryPoint entryPoint)
+    private static async Task<BDTest.Contracts.ScenarioResult> Execute(RunnableStepBuilder builder, EntryPoint entryPoint)
     {
         return entryPoint switch
         {

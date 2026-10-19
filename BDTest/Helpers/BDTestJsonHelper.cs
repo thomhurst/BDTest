@@ -1,3 +1,4 @@
+using BDTest.Contracts;
 using BDTest.Maps;
 using System.Text.Json;
 using System.Threading;
@@ -14,6 +15,19 @@ public static class BDTestJsonHelper
         var dataToOutput = BDTestOutputModelBuilder.Build(run, bdTestRunDescriptor);
         return Serialize(dataToOutput, writeIndented: true);
     }
+
+    private static readonly BDTestReportJsonContext ReportIndentedContext = new(new JsonSerializerOptions
+    {
+        WriteIndented = true,
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+    });
+
+    /// <summary>Writes an immutable, schema-versioned report using generated contract metadata.</summary>
+    public static string Serialize(BDTestReport model, bool writeIndented = false) =>
+        JsonSerializer.Serialize(model, (writeIndented ? ReportIndentedContext : BDTestReportJsonContext.Default).BDTestReport);
+
+    /// <summary>Reads the current schema. Historical unversioned reports use the legacy Deserialize API.</summary>
+    public static BDTestReport DeserializeReport(string json) => BDTestReportJson.Deserialize(json);
 
     private static readonly BDTestJsonContext IndentedContext = new(new JsonSerializerOptions
     {
