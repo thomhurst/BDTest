@@ -5,7 +5,7 @@ description: Build Given / When / Then chains, the rules for which steps can fol
 
 # Scenarios and steps
 
-A scenario is a chain of steps that starts with `Given` or `When` and ends with `Then`. You run it by awaiting the chain or by calling `BDTestAsync()`.
+A BDD scenario is a chain of steps that starts with `Given` or `When` and ends with `Then`. You run it by awaiting the chain or by calling `BDTestAsync()`.
 
 ```csharp title="Illustrative fragment"
 await Given(() => Account.CreateAnAccount(100m))
@@ -178,3 +178,38 @@ BDTest records every chain it builds. If a chain is built but never executed, it
 Building a chain records its definition: step delegates, lazy arguments, text, tags, metadata and timeouts. Execution copies that definition into fresh scenario and step state. Branches and continuations keep independent configuration, including when a continuation is created after the original chain finishes. A single builder still runs once; retries use the same execution and re-evaluate arguments for each attempt.
 
 Pending reports contain data-only [definition summaries](../advanced/utilities.md#pending-definitions). Reporting never executes pending step, argument or text callbacks. Do not serialize a fluent builder as a report model; use [`BDTestJsonHelper`](../reports/json-data.md).
+
+## Generic step chains
+
+Use `Step(...)` when a workflow does not need Given/When/Then phases. A single
+step or any number of chained steps can be awaited directly or executed with
+`BDTestAsync()`. All steps display the `Step` keyword, preserve execution order,
+and use the usual failure, retry, hook, timeout and reporting behavior.
+
+```csharp sample="NUnit/GenericWorkflowTests.cs" title="Compiled example"
+using BDTest;
+using NUnit.Framework;
+
+public class GenericWorkflowTests : NUnitBDTestBase<object>
+{
+    [Test]
+    public async Task Records_a_workflow()
+    {
+        var values = new List<string>();
+        await Step(() => values.Add("created"))
+            .WithStepText(() => "create a record")
+            .Step(async () => { await Task.Yield(); values.Add("saved"); })
+            .WithStepText(() => "save the record")
+            .Step(() => Assert.That(values, Is.EqualTo(new[] { "created", "saved" })))
+            .WithStepText(() => "verify the workflow")
+            .BDTestAsync();
+    }
+}
+```
+
+Generic steps accept `Action`, `Func<Task>`, `Func<ValueTask>` and
+`Func<ValueTask<T>>`, including cancellation-token variants of asynchronous
+steps. `[StepText]`, `WithStepText`, `WithArgs` and `WithScenarioText` work as
+usual. The source generator also discovers generic step methods. Report JSON
+uses `stepType: "Step"`; existing step-kind values remain unchanged. Standalone and hosted HTML reports display `Step` in the keyword column. Generic
+chains and typed Given/When/Then chains are separate fluent entry points.

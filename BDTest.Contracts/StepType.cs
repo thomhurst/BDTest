@@ -14,7 +14,8 @@ public enum StepType
     ButGiven,
     ButWhen,
     ButThen,
-    AndWhen
+    AndWhen,
+    Step
 }
 
 public sealed class StepTypeJsonConverter : JsonStringEnumConverter<StepType>

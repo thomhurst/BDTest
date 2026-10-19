@@ -532,7 +532,7 @@ public static partial class ReportHtmlRenderer
         if (stepText == null || string.IsNullOrEmpty(stepText)) return ("", "");
         var space = stepText.IndexOf(' ');
         var first = space < 0 ? stepText : stepText.Substring(0, space);
-        return first is "Given" or "When" or "Then" or "And" or "But"
+        return first is "Given" or "When" or "Then" or "And" or "But" or "Step"
             ? (first, space < 0 ? "" : stepText.Substring(space + 1))
             : ("", stepText);
     }

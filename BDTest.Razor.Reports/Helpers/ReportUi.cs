@@ -138,7 +138,7 @@ public static class ReportUi
 
         var space = stepText.IndexOf(' ');
         var first = space < 0 ? stepText : stepText[..space];
-        return first is "Given" or "When" or "Then" or "And" or "But"
+        return first is "Given" or "When" or "Then" or "And" or "But" or "Step"
             ? (first, space < 0 ? string.Empty : stepText[(space + 1)..])
             : (string.Empty, stepText);
     }

@@ -228,7 +228,7 @@ public class TimeoutTests : RunTestBase
             released.TrySetResult(true);
             if (callbackThrows) { throw new InvalidOperationException("callback failure"); }
         });
-        var observation = Step.CancelAndObserve(execution.Task, cancellation);
+        var observation = BDTest.Test.Step.CancelAndObserve(execution.Task, cancellation);
         try
         {
             await entered.Task.WaitAsync(TimeSpan.FromSeconds(10));

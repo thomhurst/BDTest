@@ -22,3 +22,5 @@ BDTest.Contracts.StepTypeJsonConverter.StepTypeJsonConverter() -> void
 ~BDTest.Contracts.BDTestReportJsonContext.IReadOnlyListStepDefinitionSummary.get -> System.Text.Json.Serialization.Metadata.JsonTypeInfo<System.Collections.Generic.IReadOnlyList<BDTest.Contracts.StepDefinitionSummary>>
 ~BDTest.Contracts.BDTestReportJsonContext.StepDefinitionSummary.get -> System.Text.Json.Serialization.Metadata.JsonTypeInfo<BDTest.Contracts.StepDefinitionSummary>
 ~BDTest.Contracts.BDTestReportJsonContext.Uri.get -> System.Text.Json.Serialization.Metadata.JsonTypeInfo<System.Uri>
+
+BDTest.Contracts.StepType.Step = 9 -> BDTest.Contracts.StepType
