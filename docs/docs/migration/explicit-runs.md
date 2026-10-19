@@ -28,7 +28,7 @@ options.StepHooks.Add(new MyStepHook());
 options.ScenarioHooks.Add(new MyScenarioHook());
 using var run = BDTestRun.Start(options);
 var builder = new BDTestBuilder(run);
-await builder.When(() => Act()).Then(() => Check()).BDTestAsync();
+await builder.When(() => Act()).Then(() => Check());
 var json = BDTestJsonHelper.GetTestJsonData(null, run);
 ```
 

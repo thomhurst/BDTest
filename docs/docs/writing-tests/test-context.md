@@ -14,8 +14,7 @@ public class AccountTests : TUnitBDTestBase<AccountContext>
     public async Task CreateAccount()
     {
         await When(() => CreateAccount(Context))
-            .Then(() => TheResponseIsOk(Context))
-            .BDTestAsync();
+            .Then(() => TheResponseIsOk(Context));
     }
 }
 ```

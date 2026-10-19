@@ -57,8 +57,7 @@ public void SetName(string firstName, string lastName) { ... }
 await Given(() => SetName("Tom", "Longhurst"))  // "Given my name is Tom Longhurst"
     .When(() => SetName("Tom", "Longhurst"))    // "When my name is Tom Longhurst"
     .Then(() => SetName("Tom", "Longhurst"))    // "Then my name is Tom Longhurst"
-    .And(() => SetName("Tom", "Longhurst"))     // "And my name is Tom Longhurst"
-    .BDTestAsync();
+    .And(() => SetName("Tom", "Longhurst"));     // "And my name is Tom Longhurst"
 ```
 
 ### Parameter overrides
@@ -109,8 +108,7 @@ var order = GetOrder();
 
 await When(() => Orders.Submit(order))
     .WithArgs(() => order)
-    .Then(() => Orders.TheOrderIsAccepted(Context.OrderId))
-    .BDTestAsync();
+    .Then(() => Orders.TheOrderIsAccepted(Context.OrderId));
 ```
 
 - Explicit readers replace automatic ones.
@@ -133,8 +131,7 @@ Call `.WithStepText(() => "...")` after a step to replace its text in that scena
 ```csharp title="Illustrative fragment"
 await When(() => UpdateSteps.UpdateTheField(request => request.EmailAddress, newEmailAddress))
     .WithStepText(() => $"I update the customer's email address to '{newEmailAddress}'")
-    .Then(() => HttpAssertions.TheStatusCodeIs(HttpStatusCode.OK))
-    .BDTestAsync();
+    .Then(() => HttpAssertions.TheStatusCodeIs(HttpStatusCode.OK));
 ```
 
 The delegate runs when the step executes, and again on each retry, so it can show values changed by earlier steps. It also runs when BDTest formats a step that was skipped or not reached. It is never called while the chain is built. Keep it free of side effects. A `null` callback, or a callback returning `null`, empty or whitespace text, uses the automatic text for that attempt. `WithArgs` readers can return `null`; it is rendered as `null`.

@@ -121,7 +121,7 @@ public async Task RunTestAsync(string frameworkTestId, System.Reflection.MethodI
     try
     {
         await SetupAsync();
-        await When(() => ActAsync()).Then(() => Verify()).BDTestAsync();
+        await When(() => ActAsync()).Then(() => Verify());
     }
     finally
     {

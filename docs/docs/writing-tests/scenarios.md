@@ -12,8 +12,7 @@ await Given(() => Account.CreateAnAccount(100m))
     .And(() => Account.AddPayee("Alice"))
     .When(() => Account.Transfer(25m, "Alice"))
     .Then(() => Assertions.TheBalanceIs(75m))
-    .And(() => Assertions.AlicesBalanceIs(25m))
-    .BDTestAsync();
+    .And(() => Assertions.AlicesBalanceIs(25m));
 ```
 
 Each step is a delegate, usually a lambda that calls one method. BDTest runs the delegate as written. With the bundled [source generator](../advanced/source-generator.md), it also knows which method the lambda calls, so it can build readable [step text](step-text.md) from `[StepText]` or the method name.
@@ -30,8 +29,7 @@ public class MyTests : TUnitBDTestBase<object>
     {
         await Given(() => Action1())
             .When(() => Action2())
-            .Then(() => Action3())
-            .BDTestAsync();
+            .Then(() => Action3());
     }
 }
 ```
@@ -48,8 +46,7 @@ public class MyTests
         await new BDTestBuilder(run)
             .Given(() => Action1())
             .When(() => Action2())
-            .Then(() => Action3())
-            .BDTestAsync();
+            .Then(() => Action3());
     }
 }
 ```
@@ -79,8 +76,7 @@ Use `.And(...)` after `When` to add another action. It remains in the `When` pha
 await Given(() => AccountExists())
     .When(() => SignInAsync())
     .And(() => UpdateProfileAsync())
-    .Then(() => ProfileIsUpdated())
-    .BDTestAsync();
+    .Then(() => ProfileIsUpdated());
 ```
 
 `And` supports all the delegate overloads below, generated step metadata, lazy [`WithArgs`](step-text.md#withargs) and `WithStepText` overrides. You can continue with another `And`, a `But` or `Then`. Two continuations from the same `When` produce independent scenarios.
@@ -97,8 +93,7 @@ await Given(() => AccountExists())
     .When(() => SignInAsync())
     .But(() => RetrySignInAsync())
     .Then(() => AccessIsDenied())
-    .But(() => AccountStillExists())
-    .BDTestAsync();
+    .But(() => AccountStillExists());
 ```
 
 A `But` step in the `When` phase is skipped when [`Debug.ShouldSkipWhenStep`](../configuration/settings.md#debugging-tests) is on.
@@ -165,8 +160,7 @@ Each continuation (for example `Then(...).And(...)`) creates an independent buil
 await When(() => Action())
     .Then(() => Check())
     .WithScenarioText("Checking works")
-    .And(() => AnotherCheck())
-    .BDTestAsync();
+    .And(() => AnotherCheck());
 ```
 
 `WithArgs` and `WithStepText` return the concrete builder on every step kind. `WithScenarioText` does the same on `Then`, `AndThen` and `ButThen`, so you can continue chaining after naming a scenario. Continuations inherit the text at construction; changing one branch later does not rename its siblings. The step kinds are sealed and do not inherit from each other. See the [migration guide](../migration/fluent-builders.md) for explicitly typed variables.
@@ -201,8 +195,7 @@ public class GenericWorkflowTests : NUnitBDTestBase<object>
             .Step(async () => { await Task.Yield(); values.Add("saved"); })
             .WithStepText(() => "save the record")
             .Step(() => Assert.That(values, Is.EqualTo(new[] { "created", "saved" })))
-            .WithStepText(() => "verify the workflow")
-            .BDTestAsync();
+            .WithStepText(() => "verify the workflow");
     }
 }
 ```

@@ -25,11 +25,10 @@ Execute each scenario and observe its completion:
 ```csharp title="Illustrative fragment"
 await Given(() => SetUpAccount())
     .When(() => SubmitOrder())
-    .Then(() => AssertOrder())
-    .BDTestAsync();
+    .Then(() => AssertOrder());
 ```
 
-Directly awaiting a runnable builder is also valid. Returning `BDTestAsync()` from a Task-returning test is valid. A bare call or `_ = ...` discards the chain or execution task. Discarding `BDTestAsync().ConfigureAwait(false)` is also diagnosed.
+Awaiting `BDTestAsync()`, or returning it from a Task-returning test, is also valid. A bare call or `_ = ...` discards the chain or execution task. Discarding `BDTestAsync().ConfigureAwait(false)` is also diagnosed.
 
 The rule proves direct discards, including void expression bodies and async Task/ValueTask expression bodies that omit `await`. It does not track local variables through control flow. Returning a builder, storing it for later, passing it to a helper, and configuring an existing builder do not prove that execution is missing. Those cases are not diagnosed.
 

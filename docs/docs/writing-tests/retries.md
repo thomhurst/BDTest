@@ -22,8 +22,7 @@ Apply `[BDTestRetry(count)]` to a test method, a test class or the whole assembl
 public async Task CallsAFlakyService()
 {
     await When(() => Api.CallTheService())
-        .Then(() => Assertions.TheCallSucceeded())
-        .BDTestAsync();
+        .Then(() => Assertions.TheCallSucceeded());
 }
 ```
 

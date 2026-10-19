@@ -41,7 +41,7 @@ public async Task WithSharedState()
 {
     var context = new MyContext();
     await Given(() => Prepare(context))
-        .When(() => Act(context)).Then(() => Verify(context)).BDTestAsync();
+        .When(() => Act(context)).Then(() => Verify(context));
 }
 ```
 

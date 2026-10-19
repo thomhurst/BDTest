@@ -59,8 +59,7 @@ public class AccountTests : MyTestBase
     public async Task CreateAccountSuccessfully()
     {
         await When(() => AccountSteps.CreateAnAccount())
-            .Then(() => HttpAssertions.TheHttpStatusCodeIs(HttpStatusCode.OK))
-            .BDTestAsync();
+            .Then(() => HttpAssertions.TheHttpStatusCodeIs(HttpStatusCode.OK));
     }
 }
 ```

@@ -49,8 +49,7 @@ For binary content such as screenshots, logs and HAR files, use [attachments](at
 public async Task CreatesAnOrder()
 {
     await When(() => Orders.Create())
-        .Then(() => Orders.TheOrderExists())
-        .BDTestAsync();
+        .Then(() => Orders.TheOrderExists());
 
     ScenarioHtmlWriter.Link("Open the order in the admin portal", $"https://admin.example.com/orders/{Context.OrderId}");
     ScenarioHtmlWriter.LineBreak();

@@ -54,8 +54,7 @@ public class WithdrawalTests : TUnitBDTestBase<AccountContext>
     {
         await Given(() => Account.CreateAnAccount(100m))
             .When(() => Account.Withdraw(25m))
-            .Then(() => Account.TheBalanceIs(75m))
-            .BDTestAsync();
+            .Then(() => Account.TheBalanceIs(75m));
     }
 }
 ```

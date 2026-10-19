@@ -88,13 +88,12 @@ public class WithdrawalTests : TUnitBDTestBase<AccountContext>
     {
         await Given(() => Account.CreateAnAccount(100m))
             .When(() => Account.Withdraw(25m))
-            .Then(() => AccountAssertions.TheBalanceIs(75m))
-            .BDTestAsync();
+            .Then(() => AccountAssertions.TheBalanceIs(75m));
     }
 }
 ```
 
-Test methods return `Task` and await the chain. You can also await the chain directly without calling `BDTestAsync()`.
+Test methods return `Task` and await the chain. Call `BDTestAsync(cancellationToken)` instead when execution must observe a cancellation token.
 
 ## 4. Run it
 

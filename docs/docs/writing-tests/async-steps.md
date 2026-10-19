@@ -14,12 +14,11 @@ public async Task CreateAndFetchAccount()
     await Given(() => Accounts.ANewCustomer())          // void
         .When(() => Accounts.CreateAccountAsync())      // Task
         .Then(() => Accounts.FetchAccountAsync())       // Task<T>
-        .And(() => Assertions.TheAccountIsActive())     // void
-        .BDTestAsync();
+        .And(() => Assertions.TheAccountIsActive());     // void
 }
 ```
 
-Test methods return `Task` and await the scenario, either with `BDTestAsync()` or by awaiting the chain directly:
+Test methods return `Task` and await the chain. Expression-bodied tests work too:
 
 ```csharp title="Illustrative fragment"
 [Test]
@@ -39,8 +38,7 @@ Step delegates can return `Task`, `Task<T>`, `ValueTask` or `ValueTask<T>`. BDTe
 
 ```csharp title="Illustrative fragment"
 await When(() => Repository.SaveAsync())   // Task or ValueTask
-    .Then(() => Assertions.TheItemWasSaved())
-    .BDTestAsync();
+    .Then(() => Assertions.TheItemWasSaved());
 ```
 
 - `ValueTask<T>` results are awaited and their values ignored.

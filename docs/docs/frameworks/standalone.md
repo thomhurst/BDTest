@@ -23,8 +23,7 @@ public class SmokeTests(BDTestRun run) : BDTestBase
     public async Task HomePageLoads()
     {
         await When(() => Browser.OpenTheHomePage())
-            .Then(() => Browser.TheTitleIs("Welcome"))
-            .BDTestAsync();
+            .Then(() => Browser.TheTitleIs("Welcome"));
     }
 }
 ```
@@ -42,8 +41,7 @@ using var run = BDTestRun.Start();
 var scenario = await new BDTestBuilder(run)
     .Given(() => Steps.Prepare())
     .When(() => Steps.Act())
-    .Then(() => Steps.Verify())
-    .BDTestAsync();
+    .Then(() => Steps.Verify());
 
 Console.WriteLine(scenario.Status);
 ```

@@ -20,8 +20,7 @@ public class CheckoutTests : TUnitBDTestBase<CheckoutContext>
     {
         await Given(() => Basket.HasItems())
             .When(() => Checkout.Pay())
-            .Then(() => Orders.OrderIsPlaced())
-            .BDTestAsync();
+            .Then(() => Orders.OrderIsPlaced());
     }
 }
 ```

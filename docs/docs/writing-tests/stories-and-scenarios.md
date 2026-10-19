@@ -50,8 +50,7 @@ public async Task ResetLinkIsEmailed()
 {
     await Given(() => Customers.ARegisteredCustomer())
         .When(() => Customers.RequestAPasswordReset())
-        .Then(() => Emails.AResetLinkWasSent())
-        .BDTestAsync();
+        .Then(() => Emails.AResetLinkWasSent());
 }
 ```
 

@@ -52,8 +52,7 @@ public class ComposedBasketTests : CompanyTestBase, IBDTestTUnitTest
     {
         await _bdt.Given(() => _bdt.Context.Empty())
             .When(() => _bdt.Context.Add("Book", 12.50m))
-            .Then(() => _bdt.Context.VerifyTotal(12.50m))
-            .BDTestAsync();
+            .Then(() => _bdt.Context.VerifyTotal(12.50m));
     }
 }
 
@@ -99,8 +98,7 @@ public class BasketTests : TUnitBDTestBase<BasketContext>
     {
         await Given(() => Basket.IsEmpty())
             .When(() => Basket.Add("Book", 12.50m))
-            .Then(() => Basket.TheTotalIs(12.50m))
-            .BDTestAsync();
+            .Then(() => Basket.TheTotalIs(12.50m));
     }
 }
 ```

@@ -31,8 +31,7 @@ public class CheckoutTests : CompanyTestBase
             _bdt.WriteStartupOutput("Preparing checkout");
             await _bdt.Given(() => _bdt.Context.AddItem("x"))
                 .When(() => _bdt.Context.Pay())
-                .Then(() => _bdt.Context.VerifyReceipt())
-                .BDTestAsync();
+                .Then(() => _bdt.Context.VerifyReceipt());
         }
         finally
         {
