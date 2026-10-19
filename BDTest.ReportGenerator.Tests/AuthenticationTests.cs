@@ -1,3 +1,5 @@
+using BDTest.Razor.Reports.Storage;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using System.Net;
 using System.Security.Claims;
 using System.Text;
@@ -412,6 +414,8 @@ public class AuthenticationTests
                 ["BDTest:UploadApiKey"] = apiKey,
                 ["ReverseProxy:KnownProxies:0"] = "192.0.2.10"
             });
+        builder.Services.RemoveAll<IReportStore>();
+        builder.Services.RemoveAll<IRunIndexStore>();
         builder.Services.AddSingleton<IBDTestDataStore>(store);
         // Exercise the real cookie/OIDC handlers without contacting Entra ID.
         builder.Services.PostConfigure<OpenIdConnectOptions>(OpenIdConnectDefaults.AuthenticationScheme, options =>

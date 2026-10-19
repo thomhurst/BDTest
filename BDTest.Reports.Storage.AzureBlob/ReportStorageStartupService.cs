@@ -1,6 +1,9 @@
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using BDTest.Razor.Reports.Interfaces;
 
-namespace BDTest.ReportGenerator.RazorServer;
+namespace BDTest.Reports.Storage.AzureBlob;
 
 public sealed class ReportStorageStartupService(
     IServiceProvider services,

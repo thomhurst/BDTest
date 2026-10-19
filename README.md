@@ -7,6 +7,9 @@ BDTest is a code-only behaviour-driven testing and reporting framework for .NET.
 Write `Given` / `When` / `Then` scenarios in C#, run them with your test framework,
 and share readable HTML reports. No Gherkin files or generated test bodies are needed.
 
+Persistent report storage is available through `BDTest.Reports.Storage.AzureBlob`
+and `BDTest.Reports.Storage.FileSystem`; see [report persistence](https://thomhurst.github.io/BDTest/docs/report-server/persistence).
+
 ## Install
 
 In a .NET 10 executable test project with implicit usings enabled:

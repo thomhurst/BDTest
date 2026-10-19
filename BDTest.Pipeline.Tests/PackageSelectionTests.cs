@@ -36,7 +36,7 @@ public class PackageSelectionTests
         await Assert.That(selected).IsEquivalentTo(new[]
         {
             "BDTest", "BDTest.Contracts", "BDTest.NUnit", "BDTest.xUnit", "BDTest.MSTest", "BDTest.TUnit",
-            "BDTest.Razor.Reports", "BDTest.Reports.Storage.FileSystem", "BDTest.SourceGenerator", "BDTest.Analyzers"
+            "BDTest.Razor.Reports", "BDTest.Reports.Storage.AzureBlob", "BDTest.Reports.Storage.FileSystem", "BDTest.SourceGenerator", "BDTest.Analyzers"
         });
     }
 
@@ -103,6 +103,7 @@ public class PackageSelectionTests
     [Arguments("BDTest", "net8.0")]
     [Arguments("BDTest.Razor.Reports", "net10.0")]
     [Arguments("BDTest.Reports.Storage.FileSystem", "net10.0")]
+    [Arguments("BDTest.Reports.Storage.AzureBlob", "net10.0")]
     [Arguments("BDTest.Contracts", "netstandard2.0")]
     public async Task Runtime_packages_initialize_documentation_before_sdk_defaults(string projectName, string target)
     {

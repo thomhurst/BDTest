@@ -1,3 +1,4 @@
+using BDTest.Reports.Storage.AzureBlob;
 using TUnit.Assertions.Enums;
 using System.Text;
 using BDTest.Maps;

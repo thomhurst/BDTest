@@ -9,7 +9,7 @@ using Azure.Storage.Blobs;
 using BDTest.Razor.Reports.Extensions;
 using BDTest.Razor.Reports.Interfaces;
 using BDTest.Razor.Reports.Storage;
-using BDTest.ReportGenerator.RazorServer;
+using BDTest.Reports.Storage.AzureBlob;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.TestHost;

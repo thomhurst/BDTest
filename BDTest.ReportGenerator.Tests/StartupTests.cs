@@ -1,3 +1,6 @@
+using BDTest.Reports.Storage.AzureBlob;
+using BDTest.Razor.Reports.Storage;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using TUnit.Assertions.Enums;
 using BDTest.Maps;
 using BDTest.Razor.Reports.Interfaces;
@@ -109,6 +112,8 @@ public class StartupTests
             ["AzureAd:ClientId"] = "22222222-2222-2222-2222-222222222222",
             ["AzureStorage:ConnectionString"] = connectionString
         });
+        builder.Services.RemoveAll<IReportStore>();
+        builder.Services.RemoveAll<IRunIndexStore>();
         builder.Services.AddSingleton<IBDTestDataStore>(store);
         if (logger != null) builder.Services.AddLogging(logging => logging.AddProvider(logger));
         return Program.BuildApplication(builder);

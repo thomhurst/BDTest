@@ -4,7 +4,7 @@ using System.Text.Json.Serialization.Metadata;
 using BDTest.Helpers;
 using BDTest.Razor.Reports.Helpers;
 
-namespace BDTest.ReportGenerator.RazorServer;
+namespace BDTest.Reports.Storage.AzureBlob;
 
 public static class Extensions
 {

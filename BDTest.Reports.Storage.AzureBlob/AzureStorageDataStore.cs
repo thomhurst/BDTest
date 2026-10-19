@@ -10,7 +10,7 @@ using BDTest.Helpers;
 using BDTest.Razor.Reports.Helpers;
 using BDTest.Razor.Reports.Storage;
 
-namespace BDTest.ReportGenerator.RazorServer;
+namespace BDTest.Reports.Storage.AzureBlob;
 
 public class AzureStorageDataStore : IBDTestDataStore, IReportStore, IRunIndexStore, IBDTestAttachmentStore, IAsyncDataStoreInitializer
 {
@@ -27,12 +27,12 @@ public class AzureStorageDataStore : IBDTestDataStore, IReportStore, IRunIndexSt
 
     public AzureStorageDataStore(AzureStorageConfig azureStorageConfig)
     {
-        var connectionString = azureStorageConfig.ConnectionString;
-        var blobClient = new BlobServiceClient(connectionString);
+        ArgumentNullException.ThrowIfNull(azureStorageConfig);
+        var blobClient = azureStorageConfig.CreateClient();
             
-        _testRunSummariesContainer = blobClient.GetBlobContainerClient("test-runs-summaries");
+        _testRunSummariesContainer = blobClient.GetBlobContainerClient(azureStorageConfig.SummariesContainerName);
             
-        _testDataContainer = blobClient.GetBlobContainerClient("test-data");
+        _testDataContainer = blobClient.GetBlobContainerClient(azureStorageConfig.ReportsContainerName);
     }
 
     /// <summary>Attachment blobs share the report container so its lifecycle policy applies to both.</summary>

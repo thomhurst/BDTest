@@ -65,6 +65,7 @@ You still get business-readable output. Mark classes and methods with [`[Story]`
 | `BDTest` | Core framework: builders, context, step text, settings, JSON and HTML reports. |
 | `BDTest.NUnit`, `BDTest.xUnit`, `BDTest.MSTest`, `BDTest.TUnit` | Base classes that connect BDTest to each test framework. |
 | `BDTest.Razor.Reports` | Report server controllers and views for an ASP.NET Core app. |
+| `BDTest.Reports.Storage.AzureBlob` | Persistent Azure Blob report storage. |
 | `BDTest.SourceGenerator` | Optional compile-time step metadata. |
 
 ## Next steps

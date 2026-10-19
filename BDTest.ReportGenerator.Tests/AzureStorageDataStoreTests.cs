@@ -1,3 +1,4 @@
+using BDTest.Reports.Storage.AzureBlob;
 using TUnit.Assertions.Enums;
 using System.Collections.Concurrent;
 using System.Globalization;

@@ -1,3 +1,4 @@
+using BDTest.Reports.Storage.AzureBlob;
 using System.Net;
 using BDTest.Razor.Reports.Extensions;
 using BDTest.Razor.Reports.Interfaces;
@@ -6,7 +7,6 @@ using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc.Controllers;
-using Microsoft.Extensions.Options;
 using Microsoft.Identity.Web;
 using Microsoft.Identity.Web.UI;
 using Microsoft.Net.Http.Headers;
@@ -70,14 +70,9 @@ public class Program
             options.AdminAuthorizationPolicy = "BDTestReports.Admin";
         }).BindConfiguration("BDTest");
 
-        services.AddSingleton<AzureStorageDataStore>();
-        services.AddSingleton<IBDTestDataStore>(provider => provider.GetRequiredService<AzureStorageDataStore>());
-        services.AddSingleton<IBDTestAttachmentStore>(provider => provider.GetRequiredService<AzureStorageDataStore>());
+        services.AddAzureBlobReportStore().BindConfiguration("AzureStorage");
         services.AddSingleton<IBDTestCustomSidebarLinksProvider, CustomSidebarLinkProvider>();
         services.AddSingleton<IUserPersonalizer, UserPersonalizer>();
-
-        AddConfig(services, builder.Configuration);
-        services.AddHostedService<ReportStorageStartupService>();
 
         services.AddRazorPages();
 
@@ -136,13 +131,4 @@ public class Program
         return app;
     }
 
-    private static void AddConfig(IServiceCollection services, IConfiguration configuration)
-    {
-        services.AddOptions<AzureStorageConfig>()
-            .Bind(configuration.GetSection("AzureStorage"))
-            .Validate(config => config.HasValidConnectionString(),
-                "AzureStorage:ConnectionString must be a valid Azure Blob Storage connection string.")
-            .ValidateOnStart();
-        services.AddSingleton(provider => provider.GetRequiredService<IOptions<AzureStorageConfig>>().Value);
-    }
 }

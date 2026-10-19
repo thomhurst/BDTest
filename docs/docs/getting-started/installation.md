@@ -62,7 +62,7 @@ rename, replacement reference or NuGet deprecation is required.
 `BDTest.ReportGenerator.RazorServer` remains an unpacked sample application.
 Storage packages use the `BDTest.Reports.Storage.*` prefix.
 `BDTest.Reports.Storage.FileSystem` provides directory-based persistence;
-`BDTest.Reports.Storage.AzureBlob` is planned separately. Custom stores use the
+`BDTest.Reports.Storage.AzureBlob` provides [Azure Blob persistence](../report-server/persistence.md#azure-and-memory-implementations). Custom stores use the
 [existing storage contracts](../report-server/persistence.md).
 
 ## Assembly versions
@@ -89,6 +89,7 @@ The core `BDTest` package targets `netstandard2.0;net8.0`. Adapter and report se
 | `BDTest.MSTest` | `netstandard2.0;net8.0` | MSTest 4 |
 | `BDTest.Razor.Reports` | `net10.0` | ASP.NET Core |
 | `BDTest.Reports.Storage.FileSystem` | `net10.0` | ASP.NET Core report storage |
+| `BDTest.Reports.Storage.AzureBlob` | `net10.0` | Azure Blob Storage / ASP.NET Core |
 | `BDTest.SourceGenerator` | `netstandard2.0` analyzer | C# 10+ compiler (.NET SDK 8+) |
 | `BDTest.Analyzers` | `netstandard2.0` analyzer | Roslyn 4.8+ (.NET SDK 8+) |
 
