@@ -687,10 +687,10 @@ synchronous; await `BDTestAsync()` to run the scenario. Asynchronous steps can
 return `Task`.
 
 The same source is compiled and run in
-[ReadmeExampleTests.cs](BDTest.Tests/ReadmeExampleTests.cs). From this repository, run:
+[ReadmeExampleTests.cs](BDTest.NUnit.Tests/ReadmeExampleTests.cs). From this repository, run:
 
 ```sh
-dotnet test BDTest.Tests/BDTest.Tests.csproj -c Release --filter "FullyQualifiedName~ReadmeExampleTests"
+dotnet test BDTest.NUnit.Tests/BDTest.NUnit.Tests.csproj -c Release --filter "FullyQualifiedName~ReadmeExampleTests"
 ```
 
 ```csharp

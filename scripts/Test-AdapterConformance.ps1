@@ -19,7 +19,7 @@ $previousMode = $env:BDTEST_CONFORMANCE_RUNNER
 $previousCleanupFile = $env:BDTEST_CONFORMANCE_CLEANUP_FILE
 try {
     $env:BDTEST_CONFORMANCE_RUNNER = '1'
-    foreach ($project in @('BDTest.Tests', 'BDTest.MSTest.Tests', 'BDTest.xUnit.Tests', 'BDTest.TUnit.Tests')) {
+    foreach ($project in @('BDTest.NUnit.Tests', 'BDTest.MSTest.Tests', 'BDTest.xUnit.Tests', 'BDTest.TUnit.Tests')) {
         $projectPath = Join-Path $repoRoot "$project/$project.csproj"
         $resultPath = Join-Path $resultRoot $project
         New-Item -ItemType Directory -Path $resultPath -Force | Out-Null
@@ -72,7 +72,7 @@ try {
         if ($project -eq 'BDTest.xUnit.Tests') { $expected.ExplicitAdapterRunsIsolateContextOutputAndCompletion = 'Passed' }
         # TUnit 1.75.0 does not translate InconclusiveTestException into a runner skip.
         if ($project -eq 'BDTest.TUnit.Tests') { $expected.FrameworkInconclusive = 'Failed' }
-        $fixtures = if ($project -in @('BDTest.Tests', 'BDTest.xUnit.Tests')) {
+        $fixtures = if ($project -in @('BDTest.NUnit.Tests', 'BDTest.xUnit.Tests')) {
             @('AdapterConformanceTests', 'CompositionAdapterConformanceTests')
         }
         else { @('AdapterConformanceTests') }

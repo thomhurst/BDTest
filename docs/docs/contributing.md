@@ -20,6 +20,7 @@ dotnet build BDTest.sln
 ```bash
 # NUnit, xUnit and MSTest projects use VSTest
 dotnet test BDTest.Tests/BDTest.Tests.csproj
+dotnet test BDTest.NUnit.Tests/BDTest.NUnit.Tests.csproj
 dotnet test BDTest.Tests/BDTest.Tests.csproj --filter "FullyQualifiedName~SomeTestName"
 
 # TUnit adapter, pipeline and report-generator suites use Microsoft.Testing.Platform
@@ -29,7 +30,10 @@ dotnet run --project BDTest.ReportGenerator.Tests
 dotnet run --project BDTest.TUnit.Tests -- --treenode-filter "/*/*/TUnitScenarioTests/*"
 ```
 
-The core `BDTest.Tests` suite still uses NUnit. CI evaluates
+The core `BDTest.Tests` suite still uses NUnit pending its TUnit conversion.
+`BDTest.NUnit.Tests` owns NUnit adapter lifecycle, execution IDs, runner outcomes,
+shared conformance and sample integration; `BDTest.Example` remains an NUnit sample.
+The new suite is unsigned and has no friend access to core or Razor reports. CI evaluates
 Release `PackageReference` items to choose the TUnit runner; filenames and
 `OutputType=Exe` do not decide the runner. xUnit v3 keeps its VSTest invocation.
 Both paths save TRX results under `artifacts/test-results/<project>`.
@@ -53,7 +57,9 @@ Use `Development` locally. `Production` can publish packages to NuGet.
 | `BDTest.ReportGenerator.RazorServer` | Sample report host (not packed). |
 | `BDTest.SourceGenerator` | Optional compile-time step metadata. |
 | `BDTest.Example` | Sample NUnit tests. |
-| `*.Tests` | Test projects. |
+| `BDTest.Tests` | Core and reporting tests (currently NUnit; signed friend assembly). |
+| `BDTest.NUnit.Tests` | NUnit adapter and sample integration tests (unsigned). |
+| `*.Tests` | Other framework, compiler, contract and tooling suites. |
 | `BDTest.Pipeline` | CI pipeline. |
 | `docs` | This documentation site. |
 

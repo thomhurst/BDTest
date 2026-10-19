@@ -15,6 +15,7 @@ dotnet build BDTest.sln
 
 # NUnit / xUnit test projects (VSTest-based)
 dotnet test BDTest.Tests/BDTest.Tests.csproj
+dotnet test BDTest.NUnit.Tests/BDTest.NUnit.Tests.csproj
 dotnet test BDTest.Tests/BDTest.Tests.csproj --filter "FullyQualifiedName~SomeTestName"
 
 # TUnit suites use Microsoft.Testing.Platform — use dotnet run, not dotnet test
@@ -57,8 +58,10 @@ Core and Razor reports grant `InternalsVisibleTo` only to `BDTest.Tests`, using 
 
 **Tests / samples**
 - `BDTest.Pipeline.Tests` and `BDTest.ReportGenerator.Tests` use TUnit; the core `BDTest.Tests` suite remains NUnit pending its separate migration.
-- `BDTest.Example`: sample NUnit tests, also referenced by `BDTest.Tests`.
-- `BDTest.Tests` (NUnit), `BDTest.xUnit.Tests`, `BDTest.TUnit.Tests`: the framework-specific tests focus on unique-ID/context isolation under parallel execution.
+- `BDTest.Example`: sample NUnit tests, referenced by `BDTest.NUnit.Tests`.
+- `BDTest.Tests`: core and report behavior coverage, still NUnit until #950. It retains the sole signed test friend grant.
+- `BDTest.NUnit.Tests`: unsigned NUnit adapter, lifecycle, runner outcomes, shared conformance and sample integration coverage.
+- `BDTest.xUnit.Tests`, `BDTest.MSTest.Tests`, `BDTest.TUnit.Tests`: coverage on each adapter's native framework, including unique-ID/context isolation under parallel execution.
 
 **Pipeline (`BDTest.Pipeline/`)**: ModularPipelines app driven by GitHub Actions (`.github/workflows/dotnet.yml`).
 - `RunUnitTestsModule` finds every `*.csproj` path containing "Tests". It evaluates Release `PackageReference` items to select `dotnet run` for TUnit projects and `dotnet test` for the rest (including xUnit v3 executables). Both paths write TRX results under `artifacts/test-results/<project>`.

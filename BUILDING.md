@@ -31,7 +31,7 @@ metadata or processes are missing. Source-generator tests retain nullable argume
 values; their dynamically compiled input strings keep independent compilation
 settings so existing consumer compatibility tests remain unchanged.
 
-The core NUnit suite models optional callback state and missing repository records
+The core suite (currently NUnit pending #950) models optional callback state and missing repository records
 as nullable. Required reflection metadata, JSON properties, HTTP content, and
 exception assertion results fail explicitly when absent. Intentional null inputs
 still exercise runtime guards. Context capture tests verify uniqueness in fixture
@@ -55,7 +55,8 @@ dotnet build BDTest.sln -c Release
 
 Run every `*Tests.csproj` with `dotnet test <project> -c Release`, except
 `BDTest.TUnit.Tests`, `BDTest.Pipeline.Tests` and `BDTest.ReportGenerator.Tests`, which use
-`dotnet run --project <project> -c Release`. The core suite still uses NUnit. Runner selection evaluates Release `PackageReference`
+`dotnet run --project <project> -c Release`. The core suite still uses NUnit pending #950; NUnit adapter and sample coverage now lives in
+`BDTest.NUnit.Tests`, also run with `dotnet test`. Runner selection evaluates Release `PackageReference`
 items, so imported or conditional TUnit references work and xUnit v3 executables
 keep using VSTest. Both runner paths publish TRX under
 `artifacts/test-results/<project>`.
@@ -76,6 +77,61 @@ Run the host suite with CI-compatible TRX output:
 dotnet run --project BDTest.ReportGenerator.Tests -c Release -- --report-trx --results-directory "$PWD/artifacts/test-results/BDTest.ReportGenerator.Tests"
 dotnet run --project BDTest.ReportGenerator.Tests -c Release -- --treenode-filter "/*/*/AzureStorageDataStoreTests/*"
 ```
+
+## NUnit extraction and core migration baseline (#962, #950)
+
+At `8c485fb`, `dotnet test BDTest.Tests/BDTest.Tests.csproj -c Release --list-tests`
+discovered **2,036 cases**, including argument cases and explicit probes. The
+baseline TRX also contains 2,036 definitions: 1,986 passed and 50 were not executed.
+The VSTest console summary counts 1,998 (1,986 passed + 12 skips); it excludes
+38 explicit probes. Use discovered definitions, not that console total, for
+migration accounting. NUnit repeats execute within a discovered case, so they do
+not add definitions.
+
+The extraction moves **140 cases** to `BDTest.NUnit.Tests` and retains **1,896**
+in `BDTest.Tests`. No cases are removed or merged. Existing namespaces, method
+names, attributes, argument values and repeat counts are preserved so discovery
+identities can be compared directly. Comparing the baseline TRX `(className, testName)`
+multiset with both extracted-suite TRX files found no missing or additional cases.
+Framework-neutral nested context fixtures
+stay in core; the two NUnit context fixtures move with their original outer
+story attribute. The example report-isolation method moves separately from its
+core fixture, preserving its full test name and three repetitions.
+
+| Moved coverage | Discovered cases |
+| --- | ---: |
+| Shared adapter and assembly conformance | 40 |
+| Composition tests and explicit composition probes | 30 |
+| Runner outcome tests and explicit outcome probes | 34 |
+| Context lifetime, identity, lifecycle and teardown | 18 |
+| Preparation retry and retry | 3 |
+| Skip outcomes | 6 |
+| Method identity | 4 |
+| API sample, README scenario and report isolation | 5 |
+| **Total** | **140** |
+
+`BDTest.NUnit.Tests` is unsigned, references the NUnit sample and adapter, and
+runs their shared contracts with the source generator and analyzers enabled.
+Core drops its sample reference and NUnit conformance sources, but keeps its
+NUnit adapter dependency until #950 converts its remaining behavior tests.
+Both suites link the same small NUnit assertion, output-directory and context
+helpers from `TestUtilities`; they do not reference each other's assemblies.
+`OutputCaptureInspection` preserves internal capture/buffer cleanup checks via
+reflection and fails explicitly if those members disappear. It adds no friend
+grant or shipped API. Core and Razor reports still grant friend access only to
+the signed `BDTest.Tests` assembly.
+
+Run the dedicated suite and the native runner outcome checks with:
+
+```powershell
+dotnet test BDTest.NUnit.Tests/BDTest.NUnit.Tests.csproj -c Release
+pwsh scripts/Test-SkipOutcomes.ps1
+pwsh scripts/Test-AdapterConformance.ps1
+```
+
+The solution includes the new project. The pipeline discovers it by its existing
+Tests-project rule and selects VSTest from its evaluated package references;
+TRX results go to `artifacts/test-results/BDTest.NUnit.Tests`.
 
 ## Completed nullable rollout
 
