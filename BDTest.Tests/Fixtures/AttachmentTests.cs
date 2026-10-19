@@ -2,6 +2,7 @@ using System.IO;
 using System.Text;
 using BDTest.Helpers;
 using BDTest.Test;
+using Microsoft.Extensions.Time.Testing;
 using System.Threading.Tasks;
 
 namespace BDTest.Tests.Fixtures;
@@ -241,20 +242,29 @@ public class AttachmentTests
     [Test]
     public async Task Abandoned_timeout_tasks_cannot_attach_to_completed_steps_or_later_attempts()
     {
-        using var run = BDTestRun.Start();
+        var clock = new FakeTimeProvider();
+        var options = new BDTestOptions { TimeProvider = clock };
+        options.RetryTestRules.Add(_ => true, retryLimit: 1);
+        using var run = BDTestRun.Start(options);
         var fixture = new Capture(run, "test");
         var finish = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var result = new TaskCompletionSource<Exception?>(TaskCreationOptions.RunContinuationsAsynchronously);
         async Task LateStep()
         {
+            // The step budget includes hooks and argument capture. Expire it only after
+            // this delegate enters, so scheduling delays cannot prevent result publication.
+            clock.Advance(TimeSpan.FromMilliseconds(100));
             await finish.Task;
             try { fixture.Attach("late"); result.SetResult(null); }
             catch (Exception exception) { result.SetResult(exception); }
         }
         try
         {
-            await Assert.That(async () => await fixture.When(() => LateStep())
+            var failure = await Assert.That(async () => await fixture.When(() => LateStep())
                 .WithStepTimeout(TimeSpan.FromMilliseconds(100)).Then(() => Done()).BDTestAsync().WaitAsync(TimeSpan.FromSeconds(10))).ThrowsExactly<TimeoutException>();
+            await Assert.That(Required(failure).Message).Contains("Cancellation was ignored").And.Contains("retries disabled");
+            await Assert.That(run.Scenarios.Single().RetryCount).IsZero();
+            await Assert.That(Required(run.Scenarios.Single().Steps)[0].TimedOut).IsTrue();
         }
         finally { finish.TrySetResult(); }
         await Assert.That(await result.Task.WaitAsync(TimeSpan.FromSeconds(10))).IsTypeOf<InvalidOperationException>();
