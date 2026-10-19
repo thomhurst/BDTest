@@ -1,4 +1,4 @@
-using BDTest.Test;
+using BDTest.Contracts;
 
 namespace BDTest.Razor.Reports.Models.ViewModels;
 
@@ -11,10 +11,10 @@ public class ScenarioListViewModel
     public string? ReportId { get; set; }
 
     /// <summary>Scenarios that match every filter, in display order.</summary>
-    public IReadOnlyList<Scenario> Scenarios { get; set; } = new List<Scenario>();
+    public IReadOnlyList<ScenarioResult> Scenarios { get; set; } = new List<ScenarioResult>();
 
     /// <summary>Scenarios that match the tag and search filters, before the status filter. Used for the status counts.</summary>
-    public IReadOnlyList<Scenario> Unfiltered { get; set; } = new List<Scenario>();
+    public IReadOnlyList<ScenarioResult> Unfiltered { get; set; } = new List<ScenarioResult>();
 
     /// <summary>Number of scenarios in the run.</summary>
     public int Total { get; set; }
@@ -29,7 +29,7 @@ public class ScenarioListViewModel
 
     public IReadOnlyList<string> Tags { get; set; } = new List<string>();
 
-    public Scenario? Selected { get; set; }
+    public ScenarioResult? Selected { get; set; }
 }
 
 public class ScenarioToolbarViewModel

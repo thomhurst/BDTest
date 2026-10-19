@@ -128,7 +128,7 @@ public class ReportHandlerEncodingTests
             CustomTestInformation = Array.Empty<object>()
         }));
         var html = await RenderAsync("/Views/Shared/_ScenarioPanel.cshtml",
-            new ScenarioModalViewModel { Scenario = scenario }, query: query);
+            new ScenarioModalViewModel { Scenario = (scenario).ToResult() }, query: query);
         var button = await ReadElement(html, "<button[^>]*data-bdtest-action=\"copy-url\"[^>]*>.*?</button>");
         await Assert.That((string?)button.Attribute("type")).IsEqualTo("button");
 
@@ -156,6 +156,17 @@ public class ReportHandlerEncodingTests
         return XElement.Parse(match.Value, LoadOptions.PreserveWhitespace);
     }
 
+    private static object? HostModel(object? value) => value switch
+    {
+        BDTest.Maps.BDTestOutputModel report => report.ToReport(),
+        Scenario scenario => scenario.ToResult(),
+        IEnumerable<Scenario> scenarios => scenarios.ToResults(),
+        IEnumerable<BDTest.Maps.BDTestOutputModel> reports => reports.Select(report => report.ToReport()).ToList(),
+        IEnumerable<Attachment> attachments => attachments.Select(file => new BDTest.Contracts.AttachmentInfo(
+            file.Id ?? "", file.Name ?? "", file.MimeType ?? "", file.Length, file.AttemptNumber, file.Uri)).ToArray(),
+        _ => value
+    };
+
     internal static async Task<string> RenderAsync<T>(string path, T? model, bool isAdmin = false, string query = "", string pathBase = "", string host = "reports.example.test", string requestPath = "/bdtest/report/O'Brien/test-runs", IBDTestCustomHeaderLinksProvider? customHeaderLinksProvider = null, Action<ViewDataDictionary>? configureViewData = null)
     {
         var builder = WebApplication.CreateBuilder();
@@ -181,8 +192,10 @@ public class ReportHandlerEncodingTests
         var view = services.GetRequiredService<ICompositeViewEngine>().GetView(null, path, isMainPage: false);
         await Assert.That(view.Success).IsTrue().Because($"Razor view not found: {path}");
         using var writer = new StringWriter();
-        var viewData = new ViewDataDictionary<T?>(new EmptyModelMetadataProvider(), new ModelStateDictionary()) { Model = model };
+        var viewData = new ViewDataDictionary<object?>(new EmptyModelMetadataProvider(), new ModelStateDictionary()) { Model = HostModel(model) };
         configureViewData?.Invoke(viewData);
+        if (viewData.TryGetValue(nameof(BDTest.Maps.BDTestOutputModel), out var report))
+            viewData[nameof(BDTest.Contracts.BDTestReport)] = HostModel(report);
         var viewContext = new ViewContext(actionContext, Required(view.View), viewData,
             new TempDataDictionary(httpContext, services.GetRequiredService<ITempDataProvider>()),
             writer, new HtmlHelperOptions());

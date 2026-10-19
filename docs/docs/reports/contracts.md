@@ -15,10 +15,9 @@ dotnet add package BDTest.Contracts
 
 Core execution now publishes these snapshots through `BDTestAsync()`, `BDTestUtil`,
 run results and hooks. Core JSON export, static HTML and uploads consume the same
-contract. The hosted reader/storage migration is tracked separately in
-[#936](https://github.com/thomhurst/BDTest/issues/936). Current legacy hosts do not
-understand schema-versioned uploads: use local JSON/static HTML until a matching
-schema-version-1 server is available. See [migration](../migration/immutable-results.md).
+contract. Hosted reports and the Azure Blob store also consume these contracts,
+without a dependency on the execution package. Hosts read both schema version 1
+and historical unversioned reports. See [migration](../migration/immutable-results.md).
 
 ## Creating and reading a report
 

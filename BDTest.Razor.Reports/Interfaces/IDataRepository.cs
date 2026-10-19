@@ -1,4 +1,4 @@
-using BDTest.Maps;
+using BDTest.Contracts;
 using BDTest.Razor.Reports.Models.ViewModels;
 using BDTest.Razor.Reports.Models;
 using BDTest.Razor.Reports.Storage;
@@ -14,13 +14,13 @@ public interface IDataRepository
         return report == null ? null : ReportPageModels.Create(report);
     }
 
-    Task<BDTestOutputModel?> GetData(string reportId, CancellationToken cancellationToken);
+    Task<BDTestReport?> GetData(string reportId, CancellationToken cancellationToken);
     /// <summary>Reads without adding or refreshing full reports in the cache.</summary>
-    Task<BDTestOutputModel?> GetDataForBulkRead(string reportId, CancellationToken cancellationToken);
+    Task<BDTestReport?> GetDataForBulkRead(string reportId, CancellationToken cancellationToken);
     /// <summary>The caller owns the returned stream, or receives null for a missing report.</summary>
     Task<Stream?> OpenReadAsync(string reportId, CancellationToken cancellationToken);
     Task<RunIndexPage> ListAsync(RunIndexQuery query, CancellationToken cancellationToken);
     Task<IEnumerable<TestRunSummary>> GetAllTestRunRecords(CancellationToken cancellationToken = default);
-    Task StoreData(string reportId, BDTestOutputModel model, CancellationToken cancellationToken = default);
+    Task StoreData(string reportId, BDTestReport model, CancellationToken cancellationToken = default);
     Task DeleteReport(string reportId, CancellationToken cancellationToken = default);
 }

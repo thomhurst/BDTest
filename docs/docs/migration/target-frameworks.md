@@ -31,7 +31,7 @@ The core library, NUnit, xUnit, MSTest and TUnit adapters, and Razor reports now
 - Scenario, step and exception report fields that can be absent now use nullable types. Check optional text, identifiers and exceptions before dereferencing them; see [JSON data](../reports/json-data.md#nullable-report-fields).
 - The MSTest adapter's injected `TestContext` is nullable before runner initialization and in manual harnesses. Check it before reading runner metadata.
 - Reporting options keep nullable authorization policies and upload keys. `AddBDTestReports(null)` uses default options. Custom link text/URLs, absent query values and optional view-model navigation can be null.
-- `IBDTestDataStore.GetTestData` returns `Task<BDTestOutputModel?>`; legacy `StoreTestData` accepts `BDTestOutputModel?`. Update custom implementations to match these annotations. Missing report/attachment streams also return null; see [storage migration](report-storage.md).
+- `IBDTestDataStore.GetTestData` returns `Task<BDTestReport?>`; legacy `StoreTestData` accepts `BDTestReport?`. Update custom implementations to match these annotations. Missing report/attachment streams also return null; see [storage migration](report-storage.md).
 - `TestRunSummary` and `RunIndexEntry` identifiers, counts and optional metadata can be null in stored JSON. Omitted counts still default to an empty counts object. Check them before dereferencing; writes still need a record ID.
 - `BDTestJsonHelper.Deserialize` and `DeserializeAsync` return `null` for a JSON `null` root. Check the result before reading report fields.
 

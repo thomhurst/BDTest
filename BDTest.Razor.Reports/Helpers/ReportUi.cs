@@ -2,8 +2,7 @@ using System.Globalization;
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Encodings.Web;
 using BDTest.Razor.Reports.Models;
-using BDTest;
-using BDTest.Test;
+using BDTest.Contracts;
 using Microsoft.AspNetCore.Html;
 
 namespace BDTest.Razor.Reports.Helpers;
@@ -103,6 +102,12 @@ public static class ReportUi
     }
 
     /// <summary>"18 Oct 2026, 02:00" in the request culture, or an empty string when unset.</summary>
+    internal static string ToRunDate(this DateTimeOffset dateTime, bool includeYear = true, bool withSeconds = false) =>
+        dateTime.DateTime.ToRunDate(includeYear, withSeconds);
+
+    internal static string ToClock(this DateTimeOffset dateTime, bool milliseconds = false) =>
+        dateTime.DateTime.ToClock(milliseconds);
+
     public static string ToRunDate(this DateTime dateTime, bool includeYear = true, bool withSeconds = false)
     {
         if (dateTime == default)

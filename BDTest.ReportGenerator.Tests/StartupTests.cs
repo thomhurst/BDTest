@@ -2,7 +2,7 @@ using BDTest.Reports.Storage.AzureBlob;
 using BDTest.Razor.Reports.Storage;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using TUnit.Assertions.Enums;
-using BDTest.Maps;
+using BDTest.Contracts;
 using BDTest.Razor.Reports.Interfaces;
 using BDTest.Razor.Reports.Models;
 using BDTest.ReportGenerator.RazorServer;
@@ -149,8 +149,8 @@ public class StartupTests
             return new[] { ReportJson.DeserializeObject<TestRunSummary>("{\"RecordId\":\"startup-report\"}") };
         }
 
-        public Task<BDTestOutputModel?> GetTestData(string id, CancellationToken cancellationToken) => Task.FromResult<BDTestOutputModel?>(null);
-        public Task StoreTestData(string id, BDTestOutputModel? data) => Task.CompletedTask;
+        public Task<BDTestReport?> GetTestData(string id, CancellationToken cancellationToken) => Task.FromResult<BDTestReport?>(null);
+        public Task StoreTestData(string id, BDTestReport? data) => Task.CompletedTask;
         public Task DeleteTestData(string id) => Task.CompletedTask;
         public Task StoreTestRunRecord(TestRunSummary summary) => Task.CompletedTask;
         public Task DeleteTestRunRecord(string id) => Task.CompletedTask;

@@ -18,9 +18,28 @@ Read a new export with `BDTestJsonHelper.DeserializeReport(json)` (returns
 `BDTestReportJson` in the contracts package provides the same schema without a
 runtime dependency. Missing or unsupported schema versions are rejected.
 
-Legacy hosted readers and storage still use the unversioned model described
-below, pending [#936](https://github.com/thomhurst/BDTest/issues/936). Do not upload
-new reports to those hosts. See [migration](../migration/immutable-results.md).
+Hosted uploads, caches and storage use `BDTestReport`. The host's
+`BDTest.Razor.Reports.Serialization.HostedReportJson.Deserialize` and
+`DeserializeAsync` select schema version 1 or, when `schemaVersion` is absent,
+the historical reader. Unsupported or malformed versions throw `JsonException`
+(and return HTTP 400 on upload). `producerVersion` is informational.
+
+```csharp title="Illustrative fragment"
+using BDTest.Razor.Reports.Serialization;
+
+await using var stream = File.OpenRead("BDTest-Report.json");
+var report = await HostedReportJson.DeserializeAsync(stream, cancellationToken,
+    maximumExpandedSize: 100 * 1024 * 1024);
+```
+
+Both hosted readers return null for a JSON `null` root. The async reader leaves
+the input stream open and observes cancellation. Historical `$id`/`$ref` and
+`$values` expansion retains the configured byte limit and rejects duplicate,
+missing or cyclic references. Historical numeric statuses, `Processing`, custom
+duration strings, exceptions and outline metadata are converted to contracts;
+legacy `Version` becomes `ProducerVersion`. Missing/null legacy collections become
+empty lists. Stored raw JSON downloads preserve the original bytes; uploads and
+model-based stores write schema version 1. See [migration](../migration/immutable-results.md).
 
 ## Exporting
 
@@ -58,7 +77,7 @@ string json = BDTestJsonHelper.Serialize(report, writeIndented: true);
 
 | Method | Notes |
 | --- | --- |
-| `Serialize(BDTestOutputModel? model, bool writeIndented = false)` | Writes plain JSON with BDTest's fixed contract; a null model writes `null`. |
+| `Serialize(BDTestOutputModel? model)` / `Serialize(BDTestOutputModel? model, bool writeIndented)` | Writes plain JSON with BDTest's fixed contract; a null model writes `null`. |
 | `Deserialize(string json, long maximumExpandedSize = 100 MiB)` | Reads unversioned historical reports. |
 | `DeserializeAsync(Stream stream, CancellationToken cancellationToken = default, long maximumExpandedSize = 100 MiB)` | Reads UTF-8 JSON from a stream and leaves the stream open. |
 

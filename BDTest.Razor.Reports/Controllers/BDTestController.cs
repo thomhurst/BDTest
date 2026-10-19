@@ -1,5 +1,5 @@
 using System.Diagnostics;
-using BDTest.Maps;
+using BDTest.Contracts;
 using BDTest.Razor.Reports.Constants;
 using BDTest.Razor.Reports.Extensions;
 using BDTest.Razor.Reports.Helpers;
@@ -7,10 +7,8 @@ using BDTest.Razor.Reports.Implementations;
 using BDTest.Razor.Reports.Interfaces;
 using BDTest.Razor.Reports.Models;
 using BDTest.Razor.Reports.Models.ViewModels;
-using BDTest.Test;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
-using BDTest.Helpers;
 using Microsoft.Extensions.Options;
 
 namespace BDTest.Razor.Reports.Controllers;
@@ -49,7 +47,7 @@ public class BDTestController : Controller
     [HttpPost]
     [Route("data")]
     [ServiceFilter(typeof(ReportUploadFilter))]
-    public async Task<IActionResult> Index([ModelBinder(BinderType = typeof(ReportModelBinder))] BDTestOutputModel bdTestOutputModel)
+    public async Task<IActionResult> Index([ModelBinder(BinderType = typeof(ReportModelBinder))] BDTestReport bdTestOutputModel)
     {
         if (!ModelState.IsValid)
         {
@@ -66,11 +64,11 @@ public class BDTestController : Controller
 
         // Never let an uploader choose a storage key, including after cache expiry.
         var id = Guid.NewGuid().ToString("N");
-        bdTestOutputModel.Id = id;
         var attachmentToken = BDTestAttachmentHelper.GetAttachments(bdTestOutputModel).Any()
             ? AttachmentUploadAuthorization.Create() : null;
         // Ignore any hash supplied by an uploader; only the receipt can authorize writes.
-        bdTestOutputModel.AttachmentUploadTokenHash = attachmentToken == null ? null : AttachmentUploadAuthorization.Hash(attachmentToken);
+        bdTestOutputModel = ReportResults.WithStorageIdentity(bdTestOutputModel, id,
+            attachmentToken == null ? null : AttachmentUploadAuthorization.Hash(attachmentToken));
 
         try
         {
@@ -133,11 +131,11 @@ public class BDTestController : Controller
         var statuses = GetStatusFilter();
 
         // Statuses filter scenarios, as on the Scenarios page; stories only group the result.
-        var scenarios = FilterBySearch(FilterByTag(data.Scenarios ?? Enumerable.Empty<Scenario>()))
+        var scenarios = FilterBySearch(FilterByTag(data.Scenarios ?? Enumerable.Empty<ScenarioResult>()))
             .Where(scenario => statuses == null || statuses.Contains(scenario.Status));
         var scenariosGroupedByStories = OrderScenarioGroups(scenarios)
             .SelectMany(group => group)
-            .GroupBy(scenario => scenario.GetStoryText())
+            .GroupBy(scenario => scenario.StoryText)
             .OrderBy(group => group.GetTotalStatus().GetOrder())
             .ThenBy(group => group.Key)
             .ToArray();
@@ -158,7 +156,7 @@ public class BDTestController : Controller
             
         var statuses = GetStatusFilter();
 
-        var scenarios = FilterBySearch(FilterByTag(data.Scenarios ?? Enumerable.Empty<Scenario>()));
+        var scenarios = FilterBySearch(FilterByTag(data.Scenarios ?? Enumerable.Empty<ScenarioResult>()));
 
         if (statuses != null)
         {
@@ -168,11 +166,11 @@ public class BDTestController : Controller
         return View("AllScenarios", OrderScenarioGroups(scenarios).ToArray());
     }
 
-    private IOrderedEnumerable<IGrouping<string, Scenario>> OrderScenarioGroups(IEnumerable<Scenario> scenarios)
+    private IOrderedEnumerable<IGrouping<string, ScenarioResult>> OrderScenarioGroups(IEnumerable<ScenarioResult> scenarios)
     {
         var orderByQueryParameter = Request.GetQueryParameter(OrderConstants.OrderByQueryParameterName);
             
-        var scenariosGroupedByScenarioTextEnumerable = scenarios.GroupBy(scenario => scenario.GetScenarioText())
+        var scenariosGroupedByScenarioTextEnumerable = scenarios.GroupBy(scenario => scenario.ScenarioText)
             .OrderBy(group => group.GetTotalStatus().GetOrder())
             .ThenBy(group => group.Key);
             
@@ -194,12 +192,12 @@ public class BDTestController : Controller
                 break;
             case OrderConstants.DateAscending:
                 scenariosGroupedByScenarioTextEnumerable = scenariosGroupedByScenarioTextEnumerable.OrderBy(scenarios =>
-                    BDTestUtil.GetTestTimer(scenarios.ToList()).TestsStartedAt);
+                    ReportResults.GetTestTimer(scenarios.ToList()).TestsStartedAt);
                 break;
             case OrderConstants.DateDescending:
                 scenariosGroupedByScenarioTextEnumerable =
                     scenariosGroupedByScenarioTextEnumerable.OrderByDescending(scenarios =>
-                        BDTestUtil.GetTestTimer(scenarios.ToList()).TestsStartedAt);
+                        ReportResults.GetTestTimer(scenarios.ToList()).TestsStartedAt);
                 break;
             case null:
             case "":
@@ -214,19 +212,19 @@ public class BDTestController : Controller
         return scenariosGroupedByScenarioTextEnumerable;
     }
 
-    private IEnumerable<Scenario> FilterByTag(IEnumerable<Scenario> scenarios)
+    private IEnumerable<ScenarioResult> FilterByTag(IEnumerable<ScenarioResult> scenarios)
     {
         var tag = Request.GetQueryParameter(TagConstants.FilterByTagQueryParameterName);
         return scenarios.Where(scenario => scenario != null && (string.IsNullOrEmpty(tag)
             || scenario.Tags.Contains(tag, StringComparer.OrdinalIgnoreCase)));
     }
 
-    private IEnumerable<Scenario> FilterBySearch(IEnumerable<Scenario> scenarios)
+    private IEnumerable<ScenarioResult> FilterBySearch(IEnumerable<ScenarioResult> scenarios)
     {
         var story = Request.GetQueryParameter(ScenarioSearch.StoryQueryParameterName);
         if (!string.IsNullOrEmpty(story))
         {
-            scenarios = scenarios.Where(scenario => string.Equals(scenario.GetStoryText(), story, StringComparison.Ordinal));
+            scenarios = scenarios.Where(scenario => string.Equals(scenario.StoryText, story, StringComparison.Ordinal));
         }
         var search = Request.GetQueryParameter(ScenarioSearch.QueryParameterName)?.Trim();
         return string.IsNullOrEmpty(search) ? scenarios : scenarios.Where(scenario => ScenarioSearch.Matches(scenario, search));
@@ -399,14 +397,14 @@ public class BDTestController : Controller
         && id is not "." and not ".." && id.All(character => char.IsAsciiLetterOrDigit(character)
             || character == '-' || character == '_' || character == '.');
 
-    private async Task<List<BDTestOutputModel>> ReadReports(IEnumerable<string> ids, CancellationToken cancellationToken)
+    private async Task<List<BDTestReport>> ReadReports(IEnumerable<string> ids, CancellationToken cancellationToken)
     {
-        var foundReports = new List<BDTestOutputModel>();
+        var foundReports = new List<BDTestReport>();
         foreach (var batch in ids.Distinct(StringComparer.Ordinal).Chunk(5))
         {
             cancellationToken.ThrowIfCancellationRequested();
             var reports = await Task.WhenAll(batch.Select(id => _dataRepository.GetDataForBulkRead(id, cancellationToken)));
-            foundReports.AddRange(reports.OfType<BDTestOutputModel>());
+            foundReports.AddRange(reports.OfType<BDTestReport>());
         }
 
         return foundReports;
@@ -468,7 +466,7 @@ public class BDTestController : Controller
         ViewData[nameof(ReportLayoutViewModel)] = model?.Summary.Layout;
         // Existing providers can inspect arbitrary report data. Keep it request-local, outside cached projections.
         if (model != null && _hasSidebarProvider)
-            ViewData[nameof(BDTestOutputModel)] = await _dataRepository.GetData(id, cancellationToken);
+            ViewData[nameof(BDTestReport)] = await _dataRepository.GetData(id, cancellationToken);
 
         if (model == null)
         {
@@ -478,12 +476,12 @@ public class BDTestController : Controller
         return viewAction(model);
     }
 
-    private async Task<BDTestOutputModel?> GetData(string id, CancellationToken cancellationToken)
+    private async Task<BDTestReport?> GetData(string id, CancellationToken cancellationToken)
     {
         ViewBag.Id = id;
         var model = await _dataRepository.GetData(id, cancellationToken);
         ViewData[nameof(ReportLayoutViewModel)] = model == null ? null : ReportLayoutViewModel.Create(model);
-        ViewData[nameof(BDTestOutputModel)] = model;
+        ViewData[nameof(BDTestReport)] = model;
         return model;
     }
 }

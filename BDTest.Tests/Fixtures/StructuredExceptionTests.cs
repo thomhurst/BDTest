@@ -76,7 +76,7 @@ public class StructuredExceptionTests
         await Assert.That(wrapper.InnerExceptions).Count().IsEqualTo(2);
         await Assert.That(Required(wrapper.InnerExceptions).All(child => child.TruncationReason == null)).IsTrue();
         await Assert.That(wrapper.GetRootCauses()).Count().IsEqualTo(2);
-        var groups = FailureGroup.Build([FailedScenario(wrapper)], FailureGroup.ByExceptionType);
+        var groups = FailureGroup.Build([(FailedScenario(wrapper)).ToResult()], FailureGroup.ByExceptionType);
         await Assert.That(groups.Single().Scenarios).Count().IsEqualTo(1);
     }
 
@@ -216,7 +216,7 @@ public class StructuredExceptionTests
     {
         var first = new ExceptionWrapper(new TargetInvocationException(new First.Failure("same")));
         var second = new ExceptionWrapper(new AggregateException(new Second.Failure("same"), new First.Failure("different")));
-        var groups = FailureGroup.Build([FailedScenario(first), FailedScenario(second)], FailureGroup.ByExceptionType);
+        var groups = FailureGroup.Build([(FailedScenario(first)).ToResult(), (FailedScenario(second)).ToResult()], FailureGroup.ByExceptionType);
 
         await Assert.That(groups).Count().IsEqualTo(2);
         await Assert.That(groups.Single(group => group.Key == typeof(First.Failure).FullName).Scenarios.Count).IsEqualTo(2);

@@ -1,13 +1,13 @@
 @using BDTest.Razor.Reports.Models.ViewModels
-@using BDTest.Test
-@model IGrouping<string, Scenario>[]
+@using BDTest.Contracts
+@model IGrouping<string, ScenarioResult>[]
 @{
     var run = ViewData[nameof(ReportLayoutViewModel)] as ReportLayoutViewModel
         ?? throw new InvalidOperationException("The report layout model is required for this view.");
     ViewBag.Title = run.Title + " scenarios";
     ViewData["RunTab"] = "scenarios";
     Layout = "_Layout";
-    var scenarios = (ViewData[nameof(BDTest.Maps.BDTestOutputModel)] as BDTest.Maps.BDTestOutputModel)?.Scenarios?.Where(s => s != null).ToList() ?? new List<BDTest.Test.Scenario>();
+    var scenarios = (ViewData[nameof(BDTest.Contracts.BDTestReport)] as BDTest.Contracts.BDTestReport)?.Scenarios?.Where(s => s != null).ToList() ?? new List<BDTest.Contracts.ScenarioResult>();
     var list = ScenarioListBuilder.Build(Model, scenarios, run.Report?.Id, Context.Request, groupFixed: false);
 }
 

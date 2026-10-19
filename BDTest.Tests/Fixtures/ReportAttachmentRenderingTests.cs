@@ -87,7 +87,7 @@ public class ReportAttachmentRenderingTests
         foreach (var (path, model) in new (string, object)[]
         {
             ("/Views/BDTest/Scenario.cshtml", scenario),
-            ("/Views/Shared/_ScenarioPanel.cshtml", new ScenarioModalViewModel { Scenario = scenario })
+            ("/Views/Shared/_ScenarioPanel.cshtml", new ScenarioModalViewModel { Scenario = (scenario).ToResult() })
         })
         {
             var html = await Render(path, model);
@@ -117,5 +117,5 @@ public class ReportAttachmentRenderingTests
 
     private static Task<string> Render(string path, object model) => ReportHandlerEncodingTests.RenderAsync(path, model,
         pathBase: "/host", configureViewData: data => data[nameof(ReportLayoutViewModel)] = ReportLayoutViewModel.Create(
-            ReportJson.DeserializeObject<BDTest.Maps.BDTestOutputModel>($"{{\"Id\":\"{ReportId}\"}}")));
+            (ReportJson.DeserializeObject<BDTest.Maps.BDTestOutputModel>($"{{\"Id\":\"{ReportId}\"}}")).ToReport()));
 }

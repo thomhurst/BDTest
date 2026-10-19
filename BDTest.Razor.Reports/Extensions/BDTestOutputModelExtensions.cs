@@ -1,18 +1,17 @@
-using BDTest.Maps;
-using BDTest.Test;
+using BDTest.Contracts;
 
 namespace BDTest.Razor.Reports.Extensions;
 
 public class OutputMetrics
 {
-    public OutputMetrics(BDTestOutputModel? bdTestOutputModel)
+    public OutputMetrics(BDTestReport? bdTestOutputModel)
     {
         if (bdTestOutputModel == null)
         {
             return;
         }
             
-        foreach (var scenario in bdTestOutputModel.Scenarios ?? Enumerable.Empty<Scenario>())
+        foreach (var scenario in bdTestOutputModel.Scenarios ?? Enumerable.Empty<ScenarioResult>())
         {
             switch (scenario.Status)
             {

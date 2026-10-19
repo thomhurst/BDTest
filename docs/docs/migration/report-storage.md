@@ -23,14 +23,14 @@ builder.Services.AddBDTestReports().BindConfiguration("BDTest");
 
 Registering `builder.Services.AddSingleton<IBDTestDataStore>(existingStore)` performs the same adaptation automatically. See [Report options migration](report-options.md) for the service-registration changes. Legacy operations without cancellation tokens can only be checked before and after they finish. Legacy listing still loads all summaries, and legacy raw downloads still serialize a loaded model. Native implementations remove those limitations.
 
-Hosts implementing `IDataRepository` directly must update `StoreData` to `(string reportId, BDTestOutputModel model, CancellationToken cancellationToken)`, add tokens to history listing and deletion, and implement `GetDataForBulkRead`, `OpenReadAsync` and `ListAsync`. The old default interface implementation for bulk reads is removed. `OpenReadAsync` transfers stream ownership to its caller. HTTP raw downloads transfer ownership to MVC.
+Hosts implementing `IDataRepository` directly must update `StoreData` to `(string reportId, BDTestReport model, CancellationToken cancellationToken)`, add tokens to history listing and deletion, and implement `GetDataForBulkRead`, `OpenReadAsync` and `ListAsync`. The old default interface implementation for bulk reads is removed. `OpenReadAsync` transfers stream ownership to its caller. HTTP raw downloads transfer ownership to MVC.
 
-The report JSON schema and historical JSON reader do not change. Raw downloads now preserve stored JSON exactly, including formatting and historical metadata. Report-list URLs remain unchanged. See [Persistence](../report-server/persistence.md) for contracts and a blob-store example.
+Hosted models now use `BDTest.Contracts`; the reader accepts schema version 1 and historical unversioned JSON. Raw downloads now preserve stored JSON exactly, including formatting and historical metadata. Report-list URLs remain unchanged. See [Persistence](../report-server/persistence.md) for contracts and a blob-store example.
 
 ## Nullable storage results
 
-`IBDTestDataStore.GetTestData` now declares `Task<BDTestOutputModel?>` for missing
-reports. Its `StoreTestData` parameter is `BDTestOutputModel?`: the legacy adapter
+`IBDTestDataStore.GetTestData` now declares `Task<BDTestReport?>` for missing
+reports. Its `StoreTestData` parameter is `BDTestReport?`: the legacy adapter
 continues forwarding a JSON `null` root to the store. `MemoryCacheBdTestDataStore`
 preserves that behavior and reads the null model back as null. Update custom store
 signatures without adding null-forgiving operators at read sites.
@@ -57,6 +57,6 @@ Custom stores must support repeated deletes and return whether anything was dele
 
 Update overrides of `Summary`, `TestTimesSummary`, `TopDefects` and `Warnings`: their `@model` is now `SummaryViewModel`, `TimingsViewModel`, `TopDefectsViewModel` and `WarningsViewModel`, respectively, in `BDTest.Razor.Reports.Models.ViewModels`. `ReportLayoutViewModel.Report` now holds compact metadata, and its `Scenarios` property is replaced by aggregate fields including `ScenarioCount`. Construct layouts with `ReportLayoutViewModel.Create(report)` when rendering full-data views yourself.
 
-Custom `IDataRepository` implementations can keep working through the new `GetReportPages` default implementation; it builds projections without caching. Override that method for caching, and invalidate projections on deletion/replacement. Existing custom sidebar providers still receive the full report through request-local data, without adding it to the shared view models. JSON/storage formats, report URLs and query filters are unchanged.
+Custom `IDataRepository` implementations can keep working through the new `GetReportPages` default implementation; it builds projections without caching. Override that method for caching, and invalidate projections on deletion/replacement. Existing custom sidebar providers still receive the full report through request-local data, without adding it to the shared view models. Report URLs and query filters are unchanged. Model writes use schema version 1; historical stored JSON remains readable.
 
 See the [view-by-view migration table](../report-server/customization.md#overriding-razor-views) and configure the separate positive `ReportPageCacheSizeLimitBytes` budget in [Caching and limits](../report-server/caching-and-limits.md#compact-page-cache).

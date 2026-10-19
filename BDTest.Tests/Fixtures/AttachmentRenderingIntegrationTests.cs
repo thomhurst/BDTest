@@ -12,7 +12,9 @@ namespace BDTest.Tests.Fixtures;
 public partial class ReportUploadTests
 {
     [Test]
-    public async Task Captured_hooks_and_retries_upload_and_render_under_their_owner_with_missing_content()
+    [Arguments(false)]
+    [Arguments(true)]
+    public async Task Captured_hooks_and_retries_upload_and_render_under_their_owner_with_missing_content(bool legacy)
     {
         using var files = new AttachmentDirectory();
         await using var server = await UploadServer.Start(configureServices: services => services.AddSingleton<IBDTestAttachmentStore>(files.Store));
@@ -29,7 +31,10 @@ public partial class ReportUploadTests
             if (attempt == 1) throw new InvalidOperationException("retry");
         }).Then(() => { }).BDTestAsync();
         fixture.Capture("teardown.txt");
-        await BDTest.Tests.Helpers.LegacyHostUpload.SendAsync(Required(server.Client.BaseAddress), null, server.Client, run);
+        if (legacy)
+            await BDTest.Tests.Helpers.LegacyHostUpload.SendAsync(Required(server.Client.BaseAddress), null, server.Client, run);
+        else
+            await BDTestReportServer.SendDataAndGetReportUriAsync(Required(server.Client.BaseAddress), null, server.Client, run);
         var report = server.Store.Received.Single();
         var html = await server.Client.GetStringAsync($"bdtest/report/{report.Id}/scenario/{scenario.Guid}");
         var steps = Regex.Matches(html, "<details class=\"expander step-item\".*?</details>", RegexOptions.Singleline);

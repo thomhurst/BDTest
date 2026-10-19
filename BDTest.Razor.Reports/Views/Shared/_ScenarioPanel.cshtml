@@ -1,6 +1,6 @@
 @using BDTest.Razor.Reports.Helpers
 @using BDTest.Razor.Reports.Models
-@using BDTest.Test
+@using BDTest.Contracts
 @model BDTest.Razor.Reports.Models.ViewModels.ScenarioModalViewModel
 @{
     var scenario = Model.Scenario
@@ -39,9 +39,9 @@
                 <a class="btn ghost sm icon" href="@Model.CloseUrl" aria-label="Close panel">@ReportUi.Icon("i-x")</a>
             }
         </div>
-        <h2 style="font-size: 21px; font-weight: 700; overflow-wrap: anywhere">@scenario.GetScenarioText()</h2>
+        <h2 style="font-size: 21px; font-weight: 700; overflow-wrap: anywhere">@scenario.ScenarioText</h2>
         <div class="meta" style="font-size: 13.5px; gap: 4px 18px">
-            <span>@ReportUi.StoryTitle(scenario.GetStoryText()) story</span>
+            <span>@ReportUi.StoryTitle(scenario.StoryText) story</span>
             <span>@scenario.TimeTaken.ToShortDuration()</span>
             @if (scenario.RetryCount > 0)
             {
@@ -52,7 +52,7 @@
                 <span class="mono" style="font-size: 12.5px">@file</span>
             }
         </div>
-        @if (scenario.Tags.Length > 0)
+        @if (scenario.Tags.Count > 0)
         {
             <div class="cluster" style="gap: 6px">
                 @foreach (var tag in scenario.Tags)

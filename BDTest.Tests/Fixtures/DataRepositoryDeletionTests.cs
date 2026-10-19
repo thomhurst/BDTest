@@ -31,7 +31,7 @@ public class DataRepositoryDeletionTests
         _persistent = new FaultingStore("persistent", _steps);
         _cache = new FaultingStore("cache", _steps);
         _repository = CreateRepository();
-        await _repository.StoreData(Id, new BDTestOutputModel { Id = Id });
+        await _repository.StoreData(Id, (new BDTestOutputModel { Id = Id }).ToReport());
         await _repository.GetAllTestRunRecords();
     }
 
@@ -267,12 +267,12 @@ public class DataRepositoryDeletionTests
             token.ThrowIfCancellationRequested();
             if (Failures.TryGetValue(step, out var failure)) throw failure;
         }
-        public Task<BDTestOutputModel?> GetTestData(string id, CancellationToken token) => _inner.GetTestData(id, token);
-        public Task<BDTestOutputModel?> GetTestDataAndRefreshRetention(string id, CancellationToken token) =>
+        public Task<BDTest.Contracts.BDTestReport?> GetTestData(string id, CancellationToken token) => _inner.GetTestData(id, token);
+        public Task<BDTest.Contracts.BDTestReport?> GetTestDataAndRefreshRetention(string id, CancellationToken token) =>
             ((IMemoryCacheBdTestDataStore)_inner).GetTestDataAndRefreshRetention(id, token);
         public Task<BDTest.Razor.Reports.Models.ViewModels.ReportPageModels?> GetReportPagesAndRefreshRetention(string id, CancellationToken token) =>
             ((IMemoryCacheBdTestDataStore)_inner).GetReportPagesAndRefreshRetention(id, token);
-        public Task StoreTestData(string id, BDTestOutputModel? model) => _inner.StoreTestData(id, model);
+        public Task StoreTestData(string id, BDTest.Contracts.BDTestReport? model) => _inner.StoreTestData(id, model);
         public Task DeleteTestData(string id) => _inner.DeleteTestData(id);
         public Task<IEnumerable<TestRunSummary>> GetAllTestRunRecords() => _inner.GetAllTestRunRecords();
         public Task StoreTestRunRecord(TestRunSummary summary) => _inner.StoreTestRunRecord(summary);

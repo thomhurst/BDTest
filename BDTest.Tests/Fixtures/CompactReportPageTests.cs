@@ -69,19 +69,19 @@ public class CompactReportPageTests
     {
         var report = Report(140);
         var scenarios = Required(report.Scenarios);
-        var pages = ReportPageModels.Create(report);
+        var pages = ReportPageModels.Create((report).ToReport());
         var layout = pages.Summary.Layout;
         await Assert.That(layout.ScenarioCount).IsEqualTo(140);
-        await Assert.That(layout.Status).IsEqualTo(scenarios.GetTotalStatus());
+        await Assert.That(layout.Status).IsEqualTo(scenarios.ToResults().GetTotalStatus());
         foreach (var status in Enum.GetValues<Status>())
             await Assert.That(layout.Counts[status]).IsEqualTo(scenarios.Count(s => s.Status == status));
         foreach (var grouping in new[] { "location", "type", "step", "unknown" })
         {
-            var expected = FailureGroup.Build(scenarios, FailureGroup.Normalize(grouping));
+            var expected = FailureGroup.Build((scenarios).ToResults(), FailureGroup.Normalize(grouping));
             var actual = pages.TopDefects.ForGrouping(grouping);
             await Assert.That(actual.Select(g => (g.Title, g.Location, g.TypeName))).IsEquivalentTo(expected.Select(g => (g.Title, g.Location, g.TypeName)), global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
             for (var i = 0; i < expected.Count; i++)
-                await Assert.That(actual[i].Scenarios.Select(s => s.Guid)).IsEquivalentTo(expected[i].Scenarios.Select(s => s.Guid), global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
+                await Assert.That(actual[i].Scenarios.Select(s => s.Guid)).IsEquivalentTo(expected[i].Scenarios.Select(s => (string?)s.Guid), global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
         }
         var timed = scenarios.Where(s => s.Status is not (Status.Skipped or Status.NotRun)).OrderBy(s => s.TimeTaken).ToList();
         await Assert.That(pages.Timings.Fastest.Select(s => s.Guid)).IsEquivalentTo(timed.Take(10).Select(s => s.Guid), global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
@@ -101,13 +101,16 @@ public class CompactReportPageTests
         var report = Report();
         var scenarios = Required(report.Scenarios);
         foreach (var scenario in scenarios) scenario.Status = Status.Passed;
-        var layout = ReportLayoutViewModel.Create(report);
-
-        // A failure introduced before first access must be included, proving creation did not group.
         scenarios[0].Status = Status.Failed;
+        var layout = ReportLayoutViewModel.Create((report).ToReport());
+
+        var lazy = Required(typeof(ReportLayoutViewModel).GetField("_failureCauses",
+            System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)?.GetValue(layout) as Lazy<int>);
+        await Assert.That(lazy.IsValueCreated).IsFalse().Because("Creating a full-data layout must not group failures.");
         await Assert.That(layout.FailureCauses).IsEqualTo(1);
+        await Assert.That(lazy.IsValueCreated).IsTrue();
         scenarios[0].Status = Status.Passed;
-        await Assert.That(layout.FailureCauses).IsEqualTo(1).Because("The computed count is reused.");
+        await Assert.That(layout.FailureCauses).IsEqualTo(1).Because("The computed count is reused and the published snapshot is isolated.");
     }
 
     [Test]
@@ -116,7 +119,7 @@ public class CompactReportPageTests
         var report = Report();
         var scenarios = Required(report.Scenarios);
         foreach (var scenario in scenarios) scenario.Status = Status.Passed;
-        var pages = ReportPageModels.Create(report);
+        var pages = ReportPageModels.Create((report).ToReport());
         scenarios[0].Status = Status.Failed;
         await Assert.That(pages.Summary.Layout.FailureCauses).IsZero();
     }
@@ -128,6 +131,10 @@ public class CompactReportPageTests
         await Assert.That(value).IsNotAssignableTo<Scenario>();
         await Assert.That(value).IsNotAssignableTo<Step>();
         await Assert.That(value).IsNotAssignableTo<ExceptionWrapper>();
+        await Assert.That(value).IsNotAssignableTo<BDTest.Contracts.BDTestReport>();
+        await Assert.That(value).IsNotAssignableTo<BDTest.Contracts.ScenarioResult>();
+        await Assert.That(value).IsNotAssignableTo<BDTest.Contracts.StepResult>();
+        await Assert.That(value).IsNotAssignableTo<BDTest.Contracts.ExceptionInfo>();
         if (value is IDictionary dictionary)
         {
             foreach (var item in dictionary.Values) await AssertNoSourceGraph(item, seen);
@@ -147,16 +154,16 @@ public class CompactReportPageTests
         using var services = Services();
         var repository = services.GetRequiredService<IDataRepository>();
         var store = services.GetRequiredService<IMemoryCacheBdTestDataStore>();
-        await repository.StoreData("compact", Report());
+        await repository.StoreData("compact", (Report()).ToReport());
         var reads = await Task.WhenAll(Enumerable.Range(0, 20).Select(_ => repository.GetReportPages("compact", default)));
         await Assert.That(reads.All(p => ReferenceEquals(p, reads[0]))).IsTrue();
-        await store.StoreTestData("compact", Report(21));
+        await store.StoreTestData("compact", (Report(21)).ToReport());
         var replaced = Required(await repository.GetReportPages("compact", default));
         await Assert.That(replaced).IsNotSameReferenceAs(reads[0]);
         await Assert.That(replaced.Summary.Layout.ScenarioCount).IsEqualTo(21);
         await repository.DeleteReport("compact");
         await Assert.That(await repository.GetReportPages("compact", default)).IsNull();
-        await repository.StoreData("compact", Report(7));
+        await repository.StoreData("compact", (Report(7)).ToReport());
         await Assert.That(Required(await repository.GetReportPages("compact", default)).Summary.Layout.ScenarioCount).IsEqualTo(7);
     }
 
@@ -180,7 +187,7 @@ public class CompactReportPageTests
     {
         using var services = Services(pageCapacity: 1);
         var repository = services.GetRequiredService<IDataRepository>();
-        await repository.StoreData("compact", Report());
+        await repository.StoreData("compact", (Report()).ToReport());
         var first = Required(await repository.GetReportPages("compact", default));
         var second = Required(await repository.GetReportPages("compact", default));
         await Assert.That(second).IsNotSameReferenceAs(first);
@@ -191,13 +198,13 @@ public class CompactReportPageTests
     [Test]
     public async Task Page_capacity_evicts_projections_without_evicting_full_reports()
     {
-        var size = System.Text.Json.JsonSerializer.SerializeToUtf8Bytes(ReportPageModels.Create(Report()),
+        var size = System.Text.Json.JsonSerializer.SerializeToUtf8Bytes(ReportPageModels.Create((Report()).ToReport()),
             new System.Text.Json.JsonSerializerOptions { Converters = { new System.Text.Json.Serialization.JsonStringEnumConverter<Status>() } }).Length;
         using var services = Services(pageCapacity: size + 100);
         var repository = services.GetRequiredService<IDataRepository>();
-        await repository.StoreData("compact", Report());
+        await repository.StoreData("compact", (Report()).ToReport());
         var first = await repository.GetReportPages("compact", default);
-        await repository.StoreData("another", Report(id: "another"));
+        await repository.StoreData("another", (Report(id: "another")).ToReport());
         var second = await repository.GetReportPages("another", default);
         await Assert.That(await repository.GetReportPages("another", default)).IsSameReferenceAs(second);
         await Assert.That(await repository.GetReportPages("compact", default)).IsNotSameReferenceAs(first);
@@ -207,14 +214,13 @@ public class CompactReportPageTests
     [Test]
     public async Task Full_report_capacity_eviction_also_hides_its_cached_projection()
     {
-        var report = Report();
-        report.TestTimer = new BDTest.Output.TestTimer(); // Match repository normalization before measuring.
+        var report = Report().ToReport();
         var size = Encoding.UTF8.GetByteCount(BDTestJsonHelper.Serialize(report));
         using var services = Services(reportCapacity: size + 100);
         var repository = services.GetRequiredService<IDataRepository>();
         await repository.StoreData("compact", report);
         await Assert.That(await repository.GetReportPages("compact", default)).IsNotNull();
-        await repository.StoreData("another", Report(id: "another"));
+        await repository.StoreData("another", (Report(id: "another")).ToReport());
         await Assert.That(await repository.GetReportPages("compact", default)).IsNull();
         await Assert.That(await repository.GetReportPages("another", default)).IsNotNull();
     }
@@ -227,7 +233,7 @@ public class CompactReportPageTests
         var retention = TimeSpan.FromSeconds(2);
         using var services = Services(retention: retention, reportClock: reportClock, pageClock: pageClock);
         var repository = services.GetRequiredService<IDataRepository>();
-        await repository.StoreData("compact", Report());
+        await repository.StoreData("compact", Report().ToReport());
         var pages = Required(await repository.GetReportPages("compact", default));
         await Assert.That(await repository.GetReportPages("compact", default)).IsSameReferenceAs(pages);
         reportClock.UtcNow += retention - TimeSpan.FromTicks(1);
@@ -247,7 +253,7 @@ public class CompactReportPageTests
         report.NotRun = ReportJson.DeserializeObject<List<ScenarioDefinitionSummary>>("""
             [{ "ScenarioText": "Ångström", "StoryText": "A" }, { "ScenarioText": "Zebra", "StoryText": "A" }]
             """);
-        await repository.StoreData("compact", report);
+        await repository.StoreData("compact", (report).ToReport());
         var original = System.Globalization.CultureInfo.CurrentCulture;
         try
         {
@@ -273,7 +279,7 @@ public class CompactReportPageTests
     {
         using var services = Services();
         var repository = services.GetRequiredService<IDataRepository>();
-        await repository.StoreData("old", new BDTestOutputModel { Id = "old", Scenarios = null, NotRun = null, TestTimer = null });
+        await repository.StoreData("old", (new BDTestOutputModel { Id = "old", Scenarios = null, NotRun = null, TestTimer = null }).ToReport());
         var pages = Required(await repository.GetReportPages("old", default));
         await Assert.That(pages.Summary.Layout.ScenarioCount).IsZero();
         await Assert.That(pages.Timings.Median).IsEqualTo(TimeSpan.Zero);
@@ -296,7 +302,7 @@ public class CompactReportPageTests
     {
         using var services = Services();
         var repository = services.GetRequiredService<IDataRepository>();
-        var report = Report(10_000);
+        var report = Report(10_000).ToReport();
         repository.StoreData("compact", report).GetAwaiter().GetResult();
         var controller = new BDTestController(repository, Options.Create(new BDTestReportOptions()))
         { ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() } };
@@ -312,16 +318,16 @@ public class CompactReportPageTests
             var scenarios = Required(report.Scenarios).Where(s => s != null).ToList();
             GC.KeepAlive(Enum.GetValues<Status>().ToDictionary(status => status, status => scenarios.Count(s => s.Status == status)));
             GC.KeepAlive(scenarios.GetTotalStatus());
-            GC.KeepAlive(BDTestUtil.GetTestTimer(scenarios.ToList(), report));
+            GC.KeepAlive(BDTestUtil.GetTestTimer(scenarios.ToList()));
             GC.KeepAlive(FailureGroup.Build(scenarios, "location"));
             if (page is "summary" or "defects") GC.KeepAlive(FailureGroup.Build(scenarios, "location"));
             if (page == "summary")
             {
-                GC.KeepAlive(scenarios.Where(s => s.Status is not (Status.Passed or Status.Failed)).OrderBy(s => s.Status.GetOrder()).ThenBy(s => s.GetScenarioText()).ToList());
+                GC.KeepAlive(scenarios.Where(s => s.Status is not (Status.Passed or Status.Failed)).OrderBy(s => s.Status.GetOrder()).ThenBy(s => s.ScenarioText).ToList());
                 GC.KeepAlive(scenarios.OrderByDescending(s => s.TimeTaken).Take(5).ToList());
             }
             if (page == "timings") GC.KeepAlive(scenarios.Where(s => s.Status is not (Status.Skipped or Status.NotRun)).OrderBy(s => s.TimeTaken).ToList());
-            if (page == "warnings") GC.KeepAlive(Required(report.NotRun).OrderBy(s => s.GetStoryText()).ThenBy(s => s.GetScenarioText()).ToList());
+            if (page == "warnings") GC.KeepAlive(Required(report.NotRun).OrderBy(s => s.StoryText).ThenBy(s => s.ScenarioText).ToList());
         }
         static long Measure(Action prepare)
         {

@@ -1,5 +1,6 @@
+using BDTest.Contracts;
 using System.Text.Json;
-using BDTest.Helpers;
+using BDTest.Razor.Reports.Helpers;
 using BDTest.Razor.Reports.Extensions;
 using BDTest.Razor.Reports.Interfaces;
 
@@ -17,7 +18,7 @@ public sealed class LegacyDataStoreAdapter(IBDTestDataStore store) : IReportStor
         var stream = new MemoryStream();
         try
         {
-            await JsonSerializer.SerializeAsync(stream, model, BDTestJsonContext.Default.BDTestOutputModel, cancellationToken);
+            await JsonSerializer.SerializeAsync(stream, model, BDTestReportJsonContext.Default.BDTestReport, cancellationToken);
             stream.Position = 0;
             return stream;
         }
@@ -27,7 +28,7 @@ public sealed class LegacyDataStoreAdapter(IBDTestDataStore store) : IReportStor
     public async Task WriteAsync(string reportId, Stream utf8Json, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        var model = await BDTestJsonHelper.DeserializeAsync(utf8Json, cancellationToken);
+        var model = await HostedReportJson.DeserializeAsync(utf8Json, cancellationToken);
         cancellationToken.ThrowIfCancellationRequested();
         await store.StoreTestData(reportId, model);
         cancellationToken.ThrowIfCancellationRequested();

@@ -1,6 +1,6 @@
 using System.Net.Http.Headers;
-using BDTest.Helpers;
-using BDTest.Maps;
+using BDTest.Razor.Reports.Helpers;
+using BDTest.Contracts;
 using BDTest.Razor.Reports.Models;
 using BDTest.Razor.Reports.Storage;
 
@@ -8,7 +8,7 @@ namespace BDTest.Razor.Reports.Implementations;
 
 internal static class AttachmentManifest
 {
-    internal static bool IsValid(BDTestOutputModel report, BDTestReportOptions options, bool hasAttachmentStore, bool enforceUploadLimits = true)
+    internal static bool IsValid(BDTestReport report, BDTestReportOptions options, bool hasAttachmentStore, bool enforceUploadLimits = true)
     {
         var ids = new HashSet<string>(StringComparer.Ordinal);
         long total = 0;

@@ -1,10 +1,10 @@
-using BDTest.Test;
+using BDTest.Contracts;
 
 namespace BDTest.Razor.Reports.Extensions;
 
 public static class ScenarioExtensions
 {
-    public static Status GetTotalStatus(this IEnumerable<Scenario> scenarios)
+    public static Status GetTotalStatus(this IEnumerable<ScenarioResult> scenarios)
     {
         var scenariosList = scenarios.ToList();
         if (scenariosList.Count > 0 && scenariosList.All(scenario => scenario.Status == Status.Skipped))

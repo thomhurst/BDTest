@@ -1,7 +1,7 @@
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
-using BDTest.Helpers;
+using BDTest.Contracts;
 using BDTest.Razor.Reports.Helpers;
 
 namespace BDTest.Reports.Storage.AzureBlob;
@@ -10,7 +10,7 @@ public static class Extensions
 {
     public static Stream AsStream<T>(this T t)
     {
-        var typeInfo = (JsonTypeInfo<T>)(BDTestJsonContext.Default.GetTypeInfo(typeof(T))
+        var typeInfo = (JsonTypeInfo<T>)(BDTestReportJsonContext.Default.GetTypeInfo(typeof(T))
             ?? ReportJsonContext.Default.GetTypeInfo(typeof(T))
             ?? throw new NotSupportedException($"No generated report metadata for {typeof(T)}."));
         var stream = new MemoryStream();

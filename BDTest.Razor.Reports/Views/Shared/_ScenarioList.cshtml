@@ -1,9 +1,9 @@
-﻿@using BDTest.Razor.Reports.Constants
+@using BDTest.Razor.Reports.Constants
 @using BDTest.Razor.Reports.Extensions
 @using BDTest.Razor.Reports.Helpers
 @using BDTest.Razor.Reports.Models
 @using BDTest.Razor.Reports.Models.ViewModels
-@using BDTest.Test
+@using BDTest.Contracts
 @model ScenarioListViewModel
 @{
     const string statusParameter = StatusConstants.FilterByStatusQueryParameterName;
@@ -32,21 +32,21 @@
     }
 
     // Selecting a scenario drops the page so the list opens on the page that contains it.
-    string SelectUrl(Scenario scenario) => Context.GetLocalUrlWith(("scenarioId", scenario.Guid ?? string.Empty), (PagerQueryParameters.Page, null));
+    string SelectUrl(ScenarioResult scenario) => Context.GetLocalUrlWith(("scenarioId", scenario.Guid ?? string.Empty), (PagerQueryParameters.Page, null));
 
     var selected = Model.Selected;
     var selectedIndex = selected == null ? -1 : scenarios.ToList().IndexOf(selected);
 
     // Page over top-level rows (one per scenario name) so large runs render a bounded list.
-    var rows = scenarios.GroupBy(scenario => (Story: scenario.GetStoryText(), Text: scenario.GetScenarioText())).ToArray();
+    var rows = scenarios.GroupBy(scenario => (Story: scenario.StoryText, Text: scenario.ScenarioText)).ToArray();
     var pageQuery = Context.Request.GetQueryParameter(PagerQueryParameters.Page);
-    var pager = new Pager<IGrouping<(string Story, string Text), Scenario>>(rows, Context.GetCurrentPageNumber(), PageSize);
+    var pager = new Pager<IGrouping<(string Story, string Text), ScenarioResult>>(rows, Context.GetCurrentPageNumber(), PageSize);
     if (string.IsNullOrEmpty(pageQuery) && selected != null)
     {
         var selectedPage = pager.GetPageNumberWhere(row => row.Contains(selected));
         if (selectedPage != null)
         {
-            pager = new Pager<IGrouping<(string Story, string Text), Scenario>>(rows, selectedPage.Value.ToString(), PageSize);
+            pager = new Pager<IGrouping<(string Story, string Text), ScenarioResult>>(rows, selectedPage.Value.ToString(), PageSize);
         }
     }
 
@@ -94,9 +94,9 @@ else
         <section aria-label="Scenario list" class="card clip" style="flex: 999 1 560px; min-width: 0">
             @if (Model.GroupBy == ScenarioListViewModel.GroupByStory)
             {
-                foreach (var story in pageScenarios.GroupBy(scenario => scenario.GetStoryText()))
+                foreach (var story in pageScenarios.GroupBy(scenario => scenario.StoryText))
                 {
-                    var storyAll = Model.Unfiltered.Where(scenario => scenario.GetStoryText() == story.Key).ToList();
+                    var storyAll = Model.Unfiltered.Where(scenario => scenario.StoryText == story.Key).ToList();
                     var storyStatus = story.GetTotalStatus();
                     var storyCounts = ReportUi.DisplayOrder
                         .Select(status => (status, count: storyAll.Count(scenario => scenario.Status == status)))
@@ -157,14 +157,14 @@ else
 {
     private const int PageSize = 100;
 
-    private void Rows(IEnumerable<Scenario> scenarios)
+    private void Rows(IEnumerable<ScenarioResult> scenarios)
     {
-        foreach (var group in scenarios.GroupBy(scenario => scenario.GetScenarioText()))
+        foreach (var group in scenarios.GroupBy(scenario => scenario.ScenarioText))
         {
             var items = group.ToList();
             if (items.Count == 1 && !(items[0].IsOutline && items[0].Examples?.Count > 0))
             {
-                Row(items[0], items[0].GetScenarioText(), false);
+                Row(items[0], items[0].ScenarioText, false);
                 continue;
             }
 
@@ -194,7 +194,7 @@ else
         }
     }
 
-    private void Row(Scenario scenario, string title, bool child, Scenario? shown = null)
+    private void Row(ScenarioResult scenario, string title, bool child, ScenarioResult? shown = null)
     {
         shown ??= scenario;
         var isSelected = Model.Selected == scenario;

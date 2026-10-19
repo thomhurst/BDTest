@@ -43,6 +43,7 @@ public class ReportSidebarTests
     public void Reset()
     {
         _repository.ReadTokens.Clear();
+        _repository.ReturnedReports.Clear();
         _repository.Report = new BDTestOutputModel
         {
             Id = "run-632",
@@ -323,7 +324,7 @@ public class ReportSidebarTests
         await Assert.That(_repository.ReadTokens).Count().IsEqualTo(compactPage ? 2 : 1);
         await Assert.That(_repository.ReadTokens.All(token => token.CanBeCanceled)).IsTrue();
         await Assert.That(_links.Reports).Count().IsEqualTo(1);
-        await Assert.That(_links.Reports.Single()).IsSameReferenceAs(_repository.Report);
+        await Assert.That(_links.Reports.Single()).IsSameReferenceAs(_repository.ReturnedReports.Last());
         await Assert.That(html).Contains("/bdtest/report/run-632/summary");
         await Assert.That(html).Contains("/bdtest/report/run-632/raw-json-data");
         await Assert.That(html).Contains("sidebar-environment");
@@ -344,7 +345,7 @@ public class ReportSidebarTests
 
         await Assert.That(_repository.ReadTokens).Count().IsEqualTo(1);
         await Assert.That(html).DoesNotContain("/bdtest/report/missing/raw-json-data");
-        await Assert.That(_links.Reports).IsEquivalentTo(new BDTestOutputModel?[] { null }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(_links.Reports).IsEquivalentTo(new BDTest.Contracts.BDTestReport?[] { null }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 
     [Test]
@@ -357,7 +358,7 @@ public class ReportSidebarTests
 
         await Assert.That(_repository.ReadTokens).IsEmpty();
         await Assert.That(html).DoesNotContain("raw-json-data");
-        await Assert.That(_links.Reports).IsEquivalentTo(new BDTestOutputModel?[] { null }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(_links.Reports).IsEquivalentTo(new BDTest.Contracts.BDTestReport?[] { null }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 
     [Test]
@@ -378,8 +379,8 @@ public class ReportSidebarTests
 
     private sealed class RecordingLinksProvider : IBDTestCustomSidebarLinksProvider
     {
-        public List<BDTestOutputModel?> Reports { get; } = [];
-        public IEnumerable<CustomLinkData> GetCustomLinks(BDTestOutputModel? report)
+        public List<BDTest.Contracts.BDTestReport?> Reports { get; } = [];
+        public IEnumerable<CustomLinkData> GetCustomLinks(BDTest.Contracts.BDTestReport? report)
         {
             Reports.Add(report);
             return [new CustomLinkData("Custom sidebar link", new Uri("https://example.test"))];
@@ -390,7 +391,8 @@ public class ReportSidebarTests
     {
         public BDTestOutputModel? Report { get; set; }
         public List<CancellationToken> ReadTokens { get; } = [];
-        public Task<BDTestOutputModel?> GetData(string id, CancellationToken cancellationToken)
+        public List<BDTest.Contracts.BDTestReport?> ReturnedReports { get; } = [];
+        public Task<BDTest.Contracts.BDTestReport?> GetData(string id, CancellationToken cancellationToken)
         {
             ReadTokens.Add(cancellationToken);
             cancellationToken.ThrowIfCancellationRequested();
@@ -399,11 +401,15 @@ public class ReportSidebarTests
                 var passed = Required(BDTest.Helpers.BDTestJsonHelper.Deserialize(BDTest.Helpers.BDTestJsonHelper.Serialize(Required(Report))));
                 passed.Id = id;
                 Required(passed.Scenarios).Single().Status = Status.Passed;
-                return Task.FromResult<BDTestOutputModel?>(passed);
+                var snapshot = passed.ToReport();
+                ReturnedReports.Add(snapshot);
+                return Task.FromResult<BDTest.Contracts.BDTestReport?>(snapshot);
             }
-            return Task.FromResult(Report);
+            var result = Report?.ToReport();
+            ReturnedReports.Add(result);
+            return Task.FromResult(result);
         }
-        public Task<BDTestOutputModel?> GetDataForBulkRead(string id, CancellationToken cancellationToken) => GetData(id, cancellationToken);
+        public Task<BDTest.Contracts.BDTestReport?> GetDataForBulkRead(string id, CancellationToken cancellationToken) => GetData(id, cancellationToken);
         public async Task<Stream?> OpenReadAsync(string id, CancellationToken cancellationToken)
         {
             var model = await GetData(id, cancellationToken);
@@ -412,7 +418,7 @@ public class ReportSidebarTests
         public Task<BDTest.Razor.Reports.Storage.RunIndexPage> ListAsync(BDTest.Razor.Reports.Storage.RunIndexQuery query, CancellationToken cancellationToken) => throw new NotSupportedException();
 
         public Task<IEnumerable<TestRunSummary>> GetAllTestRunRecords(CancellationToken cancellationToken = default) => Task.FromResult(Enumerable.Empty<TestRunSummary>());
-        public Task StoreData(string id, BDTestOutputModel model, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+        public Task StoreData(string id, BDTest.Contracts.BDTestReport model, CancellationToken cancellationToken = default) => throw new NotSupportedException();
         public Task DeleteReport(string id, CancellationToken cancellationToken = default) => throw new NotSupportedException();
     }
 }

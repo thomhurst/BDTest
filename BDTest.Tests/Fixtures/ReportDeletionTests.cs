@@ -261,7 +261,7 @@ public class ReportDeletionTests(string prefix)
             return Task.CompletedTask;
         }
 
-        public Task<BDTestOutputModel?> GetDataForBulkRead(string id, CancellationToken cancellationToken) => GetData(id, cancellationToken);
+        public Task<BDTest.Contracts.BDTestReport?> GetDataForBulkRead(string id, CancellationToken cancellationToken) => GetData(id, cancellationToken);
         public async Task<Stream?> OpenReadAsync(string id, CancellationToken cancellationToken)
         {
             var model = await GetData(id, cancellationToken);
@@ -276,8 +276,8 @@ public class ReportDeletionTests(string prefix)
             return Task.FromResult<IEnumerable<TestRunSummary>>([record]);
         }
 
-        public Task<BDTestOutputModel?> GetData(string id, CancellationToken cancellationToken) => throw new NotSupportedException();
-        public Task StoreData(string id, BDTestOutputModel model, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+        public Task<BDTest.Contracts.BDTestReport?> GetData(string id, CancellationToken cancellationToken) => throw new NotSupportedException();
+        public Task StoreData(string id, BDTest.Contracts.BDTestReport model, CancellationToken cancellationToken = default) => throw new NotSupportedException();
     }
 }
 

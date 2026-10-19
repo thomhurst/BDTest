@@ -1,4 +1,4 @@
-using BDTest.Test;
+using BDTest.Contracts;
 
 namespace BDTest.Razor.Reports.Models;
 
@@ -8,7 +8,7 @@ public static class ScenarioSearch
     public const string QueryParameterName = "q";
     public const string StoryQueryParameterName = "story";
 
-    public static bool Matches(Scenario? scenario, string? search)
+    public static bool Matches(ScenarioResult? scenario, string? search)
     {
         if (scenario == null)
         {
@@ -22,12 +22,12 @@ public static class ScenarioSearch
 
         bool Has(string? text) => text?.Contains(search, StringComparison.OrdinalIgnoreCase) == true;
 
-        return Has(scenario.GetScenarioText())
-               || Has(scenario.GetStoryText())
+        return Has(scenario.ScenarioText)
+               || Has(scenario.StoryText)
                || scenario.Tags.Any(Has)
                || Has(scenario.Exception?.TypeName)
                || Has(scenario.Exception?.Message)
-               || (scenario.Steps ?? new List<Step>()).Any(step => Has(step.StepText))
-               || (scenario.Examples ?? new List<Scenario>()).Any(example => Matches(example, search));
+               || (scenario.Steps ?? new List<StepResult>()).Any(step => Has(step.StepText))
+               || (scenario.Examples ?? new List<ScenarioResult>()).Any(example => Matches(example, search));
     }
 }

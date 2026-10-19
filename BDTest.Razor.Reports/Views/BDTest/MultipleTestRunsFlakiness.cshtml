@@ -1,10 +1,9 @@
 @using System.Globalization
-@using BDTest.Maps
+@using BDTest.Contracts
 @using BDTest.Razor.Reports.Helpers
 @using BDTest.Razor.Reports.Models
 @using BDTest.Razor.Reports.Models.ViewModels
-@using BDTest.Test
-@model List<BDTestOutputModel>
+@model List<BDTestReport>
 
 @{
     ViewBag.Title = "Flaky tests";
@@ -16,13 +15,13 @@
 
     // One entry per scenario title and story, with its result in each compared run (null when absent).
     var flaky = reports
-        .SelectMany((report, index) => (report.Scenarios ?? new List<Scenario>())
+        .SelectMany((report, index) => (report.Scenarios ?? new List<ScenarioResult>())
             .Where(scenario => scenario != null)
             .Select(scenario => (Index: index, Report: report, Scenario: scenario)))
-        .GroupBy(entry => (Story: entry.Scenario.GetStoryText(), Name: entry.Scenario.GetScenarioText()))
+        .GroupBy(entry => (Story: entry.Scenario.StoryText, Name: entry.Scenario.ScenarioText))
         .Select(group =>
         {
-            var results = new (BDTestOutputModel Report, Scenario Scenario)?[reports.Count];
+            var results = new (BDTestReport Report, ScenarioResult Scenario)?[reports.Count];
             foreach (var entry in group)
             {
                 var current = results[entry.Index];
@@ -50,7 +49,7 @@
         .ThenBy(entry => entry.Item.Name, StringComparer.Ordinal)
         .ToList();
 
-    string? ScenarioUrl(BDTestOutputModel report, Scenario scenario) =>
+    string? ScenarioUrl(BDTestReport report, ScenarioResult scenario) =>
         Url.ReportScenario(report.Id, scenario.Guid);
     string F(double value) => value.ToString("0.##", CultureInfo.InvariantCulture);
     string? Range(IEnumerable<TimeSpan> times)
@@ -129,7 +128,7 @@
                     var latest = item.Present[^1];
                     var lastFailure = item.Failed[^1];
                     var causesByRun = item.Failed.Select(result =>
-                        result.Scenario.Exception?.GetRootCauses().Cast<ExceptionWrapper?>() ?? new ExceptionWrapper?[] { null }).ToList();
+                        result.Scenario.Exception?.GetRootCauses().Cast<ExceptionInfo?>() ?? new ExceptionInfo?[] { null }).ToList();
                     var commonFailure = causesByRun
                         .SelectMany(causes => causes.GroupBy(cause => cause?.TypeName).Select(group => group.First()))
                         .GroupBy(cause => cause?.TypeName ?? "No exception")
@@ -139,7 +138,7 @@
                     var failingRange = Range(item.Failed.Select(result => result.Scenario.TimeTaken));
                     var passingRange = Range(item.Present.Where(result => result.Scenario.Status == Status.Passed).Select(result => result.Scenario.TimeTaken));
                     var exceptions = causesByRun
-                        .SelectMany(causes => causes.OfType<ExceptionWrapper>()
+                        .SelectMany(causes => causes.OfType<ExceptionInfo>()
                             .GroupBy(cause => (cause.TypeName, Message: cause.Message?.Trim()))
                             .Select(group => group.First()))
                         .GroupBy(cause => (cause.TypeName, Message: cause.Message?.Trim()))
@@ -243,9 +242,9 @@
 
 @functions
 {
-    private static DateTime StartedAt(BDTestOutputModel report)
+    private static DateTimeOffset StartedAt(BDTestReport report)
     {
-        var scenarios = report.Scenarios?.Where(scenario => scenario != null).ToList() ?? new List<Scenario>();
+        var scenarios = report.Scenarios?.Where(scenario => scenario != null).ToList() ?? new List<ScenarioResult>();
         var start = scenarios.Select(scenario => scenario.StartTime).Where(time => time != default).DefaultIfEmpty().Min();
         return start != default ? start : report.TestTimer?.TestsStartedAt ?? default;
     }

@@ -337,16 +337,34 @@ public partial class ReportUploadTests
     }
 
     [Test]
-    public async Task Legacy_host_rejects_versioned_production_uploads_until_host_migration()
+    public async Task Host_accepts_versioned_production_uploads_and_renders_them()
     {
         using var run = BDTestRun.Start();
         await using var server = await UploadServer.Start();
         server.Client.DefaultRequestHeaders.Add("X-BDTest-Upload-Key", Key);
         await new VersionedFixture(run).When(() => { }).Then(() => { }).BDTestAsync();
-        var exception = await Assert.That(async () =>
-            await BDTestReportServer.SendDataAndGetReportUriAsync(server.Client.BaseAddress!, null, server.Client, run)).ThrowsExactly<HttpRequestException>();
-        await Assert.That(exception!.StatusCode).IsEqualTo(HttpStatusCode.BadRequest);
+        var uri = await BDTestReportServer.SendDataAndGetReportUriAsync(server.Client.BaseAddress!, null, server.Client, run);
+        var report = server.Store.Received.Single();
+        await Assert.That(report.SchemaVersion).IsEqualTo(1);
+        await Assert.That(report.Scenarios).Count().IsEqualTo(1);
+        await Assert.That(uri.AbsolutePath).Contains(report.Id);
+        await AssertReportPagesRender(server, report.Id);
+    }
+
+    [Test]
+    [Arguments("0")]
+    [Arguments("2")]
+    [Arguments("1.5")]
+    [Arguments("null")]
+    [Arguments("\"1\"")]
+    public async Task Unsupported_schema_uploads_are_rejected_before_storage(string schema)
+    {
+        await using var server = await UploadServer.Start();
+        using var response = await server.Post("{\"schemaVersion\":" + schema
+            + ",\"id\":\"untrusted\",\"producerVersion\":\"future-producer\"}");
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.BadRequest);
         await Assert.That(server.Store.Received).IsEmpty();
+        await Assert.That(server.Store.Data).IsEmpty();
     }
 
     private sealed class VersionedFixture(BDTestRun run) : BDTestBase
@@ -670,7 +688,7 @@ public partial class ReportUploadTests
 
         await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
         await Assert.That(response.Content.Headers.ContentType?.MediaType).IsEqualTo("application/json");
-        var data = ReportJson.DeserializeObject<BDTestOutputModel>(await response.Content.ReadAsStringAsync());
+        var data = ReportJson.DeserializeObject<BDTest.Contracts.BDTestReport>(await response.Content.ReadAsStringAsync());
         await Assert.That(data.Id).IsEqualTo(report.Id);
         await Assert.That(data.Tag).IsEqualTo("uploaded");
     }
@@ -697,13 +715,13 @@ public partial class ReportUploadTests
         foreach (var scenario in Required(report.Scenarios))
         {
             using var response = await server.Client.GetAsync($"bdtest/report/{report.Id}/scenario/{scenario.Guid}");
-            await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK).Because(scenario.GetScenarioText());
+            await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK).Because(scenario.ScenarioText);
             await Assert.That(response.Content.Headers.ContentType?.MediaType).IsEqualTo("text/html");
             // Compare visible text: step keywords are styled separately from the rest of the step.
             var markup = await response.Content.ReadAsStringAsync();
             await Assert.That(markup).DoesNotContain("Retry history");
             var html = HttpUtility.HtmlDecode(System.Text.RegularExpressions.Regex.Replace(markup, "<[^>]+>", string.Empty));
-            await Assert.That(html).Contains(scenario.GetScenarioText());
+            await Assert.That(html).Contains(scenario.ScenarioText);
             foreach (var step in Required(scenario.Steps))
             {
                 await Assert.That(html).Contains(Required(step.StepText));
@@ -732,10 +750,10 @@ public partial class ReportUploadTests
         await Assert.That(upload.StatusCode).IsEqualTo(HttpStatusCode.OK);
         var report = server.Store.Received.Single();
         await Assert.That(report.BranchName).IsEqualTo("branch");
-        await Assert.That(Required(report.Scenarios).Single().GetStoryText()).IsEqualTo("story");
+        await Assert.That(Required(report.Scenarios).Single().StoryText).IsEqualTo("story");
         using var raw = await server.Client.GetAsync($"bdtest/report/{report.Id}/raw-json-data");
         await Assert.That(raw.StatusCode).IsEqualTo(HttpStatusCode.OK);
-        var downloaded = Required(BDTestJsonHelper.Deserialize(await raw.Content.ReadAsStringAsync()));
+        var downloaded = Required(BDTest.Razor.Reports.Serialization.HostedReportJson.Deserialize(await raw.Content.ReadAsStringAsync()));
         await Assert.That(downloaded.BranchName).IsEqualTo("branch");
         await Assert.That(Required(downloaded.Scenarios).Single().FrameworkTestId).IsEqualTo("test");
     }
@@ -796,7 +814,7 @@ public partial class ReportUploadTests
     {
         await using var server = await UploadServer.Start();
         var oldId = suppliedId ?? "old-report";
-        var original = new BDTestOutputModel { Id = oldId, Tag = "original" };
+        var original = new BDTest.Contracts.BDTestReport(1, oldId, "tests", tag: "original");
         server.Store.Data[oldId] = original;
 
         using var first = await server.Post(Report(suppliedId));
@@ -812,7 +830,7 @@ public partial class ReportUploadTests
         {
             await Assert.That(Guid.TryParseExact(report.Id, "N", out _)).IsTrue();
             await Assert.That(report.Id).IsNotEqualTo(suppliedId);
-            await Assert.That(BDTest.Helpers.BDTestJsonHelper.Serialize(server.Store.Data[Required(report.Id)])).IsEqualTo(BDTest.Helpers.BDTestJsonHelper.Serialize(report));
+            await Assert.That(BDTest.Helpers.BDTestJsonHelper.Serialize(Required(server.Store.Data[Required(report.Id)]))).IsEqualTo(BDTest.Helpers.BDTestJsonHelper.Serialize(report));
             await Assert.That(server.Store.Summaries.ContainsKey(report.Id)).IsTrue();
         }
         await Assert.That(server.Store.Received.Count).IsEqualTo(2);
@@ -920,8 +938,8 @@ public partial class ReportUploadTests
         var report = server.Store.Received.Single();
         await Assert.That(report.Scenarios).IsEmpty();
         await Assert.That(report.NotRun).IsEmpty();
-        await Assert.That(Required(report.TestTimer).TestsStartedAt).IsEqualTo(default(DateTime));
-        await Assert.That(Required(report.TestTimer).TestsFinishedAt).IsEqualTo(default(DateTime));
+        await Assert.That(report.TestTimer?.TestsStartedAt ?? default).IsEqualTo(default(DateTimeOffset));
+        await Assert.That(report.TestTimer?.TestsFinishedAt ?? default).IsEqualTo(default(DateTimeOffset));
         var summary = server.Store.Summaries[Required(report.Id)];
         await Assert.That(Required(summary.Counts).Total).IsZero();
         await Assert.That(Required(summary.Counts).NotRun).IsZero();
@@ -932,7 +950,7 @@ public partial class ReportUploadTests
     }
 
     [Test]
-    public async Task Uploads_preserve_explicit_null_nested_collections()
+    public async Task Uploads_normalize_legacy_null_collections_to_immutable_empty_collections()
     {
         await using var server = await UploadServer.Start();
         using var response = await server.Post("""
@@ -942,11 +960,11 @@ public partial class ReportUploadTests
 
         await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
         var scenario = Required(server.Store.Received.Single().Scenarios).Single();
-        await Assert.That(scenario.Steps).IsNull();
-        await Assert.That(scenario.Examples).IsNull();
-        await Assert.That(scenario.ExampleValues).IsNull();
-        await Assert.That(scenario.Attachments).IsNull();
-        await Assert.That(scenario.Attempts).IsNull();
+        await Assert.That(scenario.Steps).IsEmpty();
+        await Assert.That(scenario.Examples).IsEmpty();
+        await Assert.That(scenario.ExampleValues).IsEmpty();
+        await Assert.That(scenario.Attachments).IsEmpty();
+        await Assert.That(scenario.Attempts).IsEmpty();
     }
 
     [Test]
@@ -977,7 +995,7 @@ public partial class ReportUploadTests
     {
         await using var server = await UploadServer.Start();
         // Simulate a legacy report loaded from persistent storage without an upload.
-        server.Store.Data["legacy"] = new BDTestOutputModel { Id = "legacy", Scenarios = null, NotRun = null };
+        server.Store.Data["legacy"] = new BDTest.Contracts.BDTestReport(1, "legacy", "tests");
         if (bulkRead)
         {
             using var response = await server.Client.GetAsync("bdtest/report/test-run-times?reportIds=legacy");
@@ -1021,7 +1039,7 @@ public partial class ReportUploadTests
     [Arguments("{\"Scenarios\":[{\"Status\":\"Failed\",\"Steps\":[]}],\"NotRun\":null}", true, false)]
     public async Task MetricsTreatNullCollectionsAsEmpty(string json, bool failed, bool warnings)
     {
-        var metrics = new OutputMetrics(ReportJson.DeserializeObject<BDTestOutputModel>(json));
+        var metrics = new OutputMetrics((ReportJson.DeserializeObject<BDTestOutputModel>(json)).ToReport());
         await Assert.That(metrics.AnyFailed).IsEqualTo(failed);
         await Assert.That(metrics.AllPassed).IsEqualTo(!failed);
         await Assert.That(metrics.AnyWarnings).IsEqualTo(warnings);
@@ -1145,15 +1163,15 @@ public partial class ReportUploadTests
 
     private sealed class RecordingStore : IBDTestDataStore, IBDTestDataReceiver
     {
-        public ConcurrentDictionary<string, BDTestOutputModel?> Data { get; } = new();
+        public ConcurrentDictionary<string, BDTest.Contracts.BDTestReport?> Data { get; } = new();
         public ConcurrentDictionary<string, TestRunSummary> Summaries { get; } = new();
-        public ConcurrentBag<BDTestOutputModel> Received { get; } = new();
-        public Task<BDTestOutputModel?> GetTestData(string id, CancellationToken cancellationToken) => Task.FromResult(Data.GetValueOrDefault(id));
-        public Task StoreTestData(string id, BDTestOutputModel? data) { Data[id] = data; return Task.CompletedTask; }
+        public ConcurrentBag<BDTest.Contracts.BDTestReport> Received { get; } = new();
+        public Task<BDTest.Contracts.BDTestReport?> GetTestData(string id, CancellationToken cancellationToken) => Task.FromResult(Data.GetValueOrDefault(id));
+        public Task StoreTestData(string id, BDTest.Contracts.BDTestReport? data) { Data[id] = data; return Task.CompletedTask; }
         public Task DeleteTestData(string id) { Data.TryRemove(id, out _); return Task.CompletedTask; }
         public Task<IEnumerable<TestRunSummary>> GetAllTestRunRecords() => Task.FromResult<IEnumerable<TestRunSummary>>(Summaries.Values.ToArray());
         public Task StoreTestRunRecord(TestRunSummary summary) { Summaries[Required(summary.RecordId)] = summary; return Task.CompletedTask; }
         public Task DeleteTestRunRecord(string id) { Summaries.TryRemove(id, out _); return Task.CompletedTask; }
-        public Task OnReceiveTestDataAsync(BDTestOutputModel model) { Received.Add(model); return Task.CompletedTask; }
+        public Task OnReceiveTestDataAsync(BDTest.Contracts.BDTestReport model) { Received.Add(model); return Task.CompletedTask; }
     }
 }

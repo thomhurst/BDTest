@@ -5,8 +5,8 @@ using System.Security.Claims;
 using System.Text;
 using System.Web;
 using Microsoft.AspNetCore.Http;
-using BDTest.Maps;
-using BDTest.Output;
+using BDTest.Contracts;
+
 using BDTest.Razor.Reports.Interfaces;
 using BDTest.Razor.Reports.Models;
 using BDTest.ReportGenerator.RazorServer;
@@ -373,11 +373,7 @@ public class AuthenticationTests
     private Task<HttpResponseMessage> Upload() => _client.PostAsync("/bdtest/data", UploadBody());
 
     private static StringContent UploadBody() => new(
-        ReportJson.SerializeObject(new BDTestOutputModel
-        {
-            Id = "uploaded-report",
-            TestTimer = new TestTimer()
-        }), Encoding.UTF8, "application/json");
+        ReportJson.SerializeObject(new BDTestReport(1, "uploaded-report", "test", testTimer: new ReportTimer(default, default))), Encoding.UTF8, "application/json");
 
     private void SignIn(string name = "Reader") => SignIn(_server, _client, name);
 
@@ -437,7 +433,7 @@ public class AuthenticationTests
         public int ReportReads { get; private set; }
         public int Uploads { get; private set; }
 
-        public Task<BDTestOutputModel?> GetTestData(string id, CancellationToken cancellationToken)
+        public Task<BDTestReport?> GetTestData(string id, CancellationToken cancellationToken)
         {
             ReportReads++;
             if (FailRequests)
@@ -445,10 +441,10 @@ public class AuthenticationTests
                 throw new InvalidOperationException("Test storage failure");
             }
 
-            return Task.FromResult<BDTestOutputModel?>(new BDTestOutputModel { Id = id, TestTimer = new TestTimer() });
+            return Task.FromResult<BDTestReport?>(new BDTestReport(1, id, "test", testTimer: new ReportTimer(default, default)));
         }
 
-        public Task StoreTestData(string id, BDTestOutputModel? data)
+        public Task StoreTestData(string id, BDTestReport? data)
         {
             Uploads++;
             if (FailRequests)

@@ -53,7 +53,7 @@ public class ReportOptionsTests
         var repository = app.Services.GetRequiredService<IDataRepository>();
         var report = new BDTestOutputModel { Id = "memory-store" };
 
-        await repository.StoreData(report.Id, report);
+        await repository.StoreData(report.Id, (report).ToReport());
 
         await Assert.That(Required(await repository.GetData(report.Id, default)).Id).IsEqualTo(report.Id);
         await Assert.That((await repository.ListAsync(new RunIndexQuery(), default)).Entries.Select(entry => entry.RecordId)).Contains(report.Id);
@@ -162,10 +162,10 @@ public class ReportOptionsTests
     {
         public int Received { get; private set; }
         public IEnumerable<CustomLinkData> GetCustomLinks() => [new(marker.Text + " header", null)];
-        public IEnumerable<CustomLinkData> GetCustomLinks(BDTestOutputModel? report) => [new(marker.Text + " sidebar", null)];
+        public IEnumerable<CustomLinkData> GetCustomLinks(BDTest.Contracts.BDTestReport? report) => [new(marker.Text + " sidebar", null)];
         public Uri? GetProfilePictureUri(HttpContext httpContext) => null;
         public string GetNameOfUser(HttpContext httpContext) => marker.Text + " user";
         public List<CustomLinkData> GetLinksForUser(HttpContext httpContext) => [];
-        public Task OnReceiveTestDataAsync(BDTestOutputModel report) { Received++; return Task.CompletedTask; }
+        public Task OnReceiveTestDataAsync(BDTest.Contracts.BDTestReport report) { Received++; return Task.CompletedTask; }
     }
 }

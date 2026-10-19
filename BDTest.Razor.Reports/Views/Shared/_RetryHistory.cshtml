@@ -1,5 +1,5 @@
 @using BDTest.Razor.Reports.Helpers
-@model BDTest.Test.Scenario
+@model BDTest.Contracts.ScenarioResult
 
 @if (Model.RetryCount > 0 && Model.Attempts?.Count > 0)
 {
@@ -21,7 +21,7 @@
                         <td style="min-width: 0">
                             @if (attempt.Exception != null)
                             {
-                                @Html.Raw(BDTest.Helpers.ExceptionHtmlHelper.GetHtml(attempt.Exception))
+                                @Html.Raw(BDTest.Razor.Reports.Helpers.ExceptionHtmlHelper.GetHtml(attempt.Exception))
                             }
                         </td>
                     </tr>

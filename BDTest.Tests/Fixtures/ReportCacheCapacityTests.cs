@@ -41,15 +41,11 @@ public class ReportCacheCapacityTests
     [Test]
     public async Task Duplicated_values_fit_the_plain_JSON_upload_size()
     {
-        var report = Report("shared");
-        var scenario = ReportJson.DeserializeObject<Scenario>(ReportJson.SerializeObject(new
-        {
-            Output = new string('x', 10000),
-            Steps = Array.Empty<Step>()
-        }));
-        report.Scenarios = Enumerable.Repeat(scenario, 100).ToList();
+        var scenario = new BDTest.Contracts.ScenarioResult("scenario", "shared", "story", "scenario", Status.Passed,
+            output: new string('x', 10000));
+        var report = new BDTest.Contracts.BDTestReport(1, "shared", "test", Enumerable.Repeat(scenario, 100).ToArray());
         // Reproduce the object graph restored by the MVC binder from a supported upload.
-        report = ReportJson.DeserializeObject<BDTestOutputModel>(BDTestJsonHelper.Serialize(report));
+        report = BDTest.Contracts.BDTestReportJson.Deserialize(BDTestJsonHelper.Serialize(report));
         await Assert.That(Required(report.Scenarios)[1]).IsNotSameReferenceAs(report.Scenarios[0]);
         using var services = Services(Size(report));
         var repository = services.GetRequiredService<IDataRepository>();
@@ -62,8 +58,7 @@ public class ReportCacheCapacityTests
     [Test]
     public async Task Unicode_reports_use_the_exact_UTF8_byte_budget()
     {
-        var report = Report("unicode");
-        report.Tag = new string('x', 1023) + "😀漢字é";
+        var report = new BDTest.Contracts.BDTestReport(1, "unicode", "test", tag: new string('x', 1023) + "😀漢字é");
         using var exactServices = Services(Size(report));
         var repository = exactServices.GetRequiredService<IDataRepository>();
         await repository.StoreData(Required(report.Id), report);
@@ -188,22 +183,23 @@ public class ReportCacheCapacityTests
     [Test]
     [Arguments(false)]
     [Arguments(true)]
-    public async Task Cached_reads_reuse_the_size_measured_at_admission(bool persistent)
+    public async Task Cached_reads_reuse_the_admitted_snapshot_and_ignore_source_mutation(bool persistent)
     {
-        var report = Report("cached");
+        var source = new BDTestOutputModel { Id = "cached", Tag = "original" };
+        var report = source.ToReport();
         var store = persistent ? new PersistentStore() : null;
         using var services = Services(Size(report), store);
         var repository = services.GetRequiredService<IDataRepository>();
         await repository.StoreData(Required(report.Id), report);
 
-        // A deliberate mutation detects size measurement without relying on serializer internals.
-        // Callers must otherwise treat cached reports as immutable.
-        report.Tag = new string('x', 2000);
+        // Mutation after publication cannot alter the immutable report or its admitted size.
+        source.Tag = new string('x', 2000);
         for (var read = 0; read < 3; read++)
         {
             await Assert.That(await repository.GetData(report.Id, default)).IsSameReferenceAs(report);
         }
         await Assert.That(await repository.GetDataForBulkRead(report.Id, default)).IsSameReferenceAs(report);
+        await Assert.That(report.Tag).IsEqualTo("original");
         if (store != null) await Assert.That(store.Reads).IsZero();
     }
 
@@ -230,12 +226,9 @@ public class ReportCacheCapacityTests
     [Test]
     public async Task Cached_reads_of_10000_scenarios_allocate_less_than_repeated_size_measurement()
     {
-        var report = Report("large-run");
-        report.Scenarios = Enumerable.Range(0, 10000).Select(index => new Scenario
-        {
-            Guid = index.ToString(),
-            Steps = new List<Step>()
-        }).ToList();
+        var report = new BDTest.Contracts.BDTestReport(1, "large-run", "test",
+            Enumerable.Range(0, 10000).Select(index => new BDTest.Contracts.ScenarioResult(
+                index.ToString(), "large-run", "story", "scenario", Status.Passed)).ToArray());
         using var services = Services(Size(report) * 2);
         var repository = services.GetRequiredService<IDataRepository>();
         await repository.StoreData(Required(report.Id), report);
@@ -246,13 +239,22 @@ public class ReportCacheCapacityTests
         // StoreTestData reproduces the full size-measurement/replacement work of the old read path.
         Action baseline = () => baselineCache.StoreTestData(report.Id, report).GetAwaiter().GetResult();
         Action read = () => repository.GetData(report.Id, default).GetAwaiter().GetResult();
+        var small = Report("small-run");
+        await repository.StoreData(small.Id, small);
+        Action smallRead = () => repository.GetData(small.Id, default).GetAwaiter().GetResult();
         baseline();
         read();
+        smallRead();
         var baselineBytes = AllocatedBytesPerCall(baseline);
         var cachedReadBytes = AllocatedBytesPerCall(read);
         Console.Out.WriteLine($"10,000 scenarios: repeated size measurement {baselineBytes:N0} bytes/read; cached read {cachedReadBytes:N0} bytes/read.");
 
-        await Assert.That(cachedReadBytes).IsLessThan(baselineBytes / 10).Because("A cache hit must avoid report-wide serialization allocations.");
+        // Generated serialization of immutable contracts now allocates little even for large graphs.
+        // Check the cache invariant directly instead of depending on the old mutable serializer's ratio.
+        await Assert.That(cachedReadBytes).IsEqualTo(AllocatedBytesPerCall(smallRead))
+            .Because("Cached read allocation must be independent of the number of scenarios.");
+        await Assert.That(cachedReadBytes).IsLessThan(baselineBytes)
+            .Because("A cache hit must avoid the serialization and replacement work.");
     }
 
     private static long AllocatedBytesPerCall(Action action)
@@ -310,14 +312,14 @@ public class ReportCacheCapacityTests
         await Assert.That(Required(exception).Failures).Count().IsEqualTo(2);
     }
 
-    private static async Task AssertWithinCapacity(IDataRepository repository, BDTestOutputModel[] reports,
+    private static async Task AssertWithinCapacity(IDataRepository repository, BDTest.Contracts.BDTestReport[] reports,
         long capacity, PersistentStore? persistentStore = null)
     {
         // Disable fallback so bulk reads reveal only the actual retained reports.
         if (persistentStore != null) persistentStore.HideReports = true;
         try
         {
-            var retained = new List<BDTestOutputModel>();
+            var retained = new List<BDTest.Contracts.BDTestReport>();
             foreach (var report in reports)
             {
                 var cached = await repository.GetDataForBulkRead(Required(report.Id), default);
@@ -346,26 +348,22 @@ public class ReportCacheCapacityTests
         return services.BuildServiceProvider();
     }
 
-    private static BDTestOutputModel Report(string id, int length = 1) => new()
-    {
-        Id = id,
-        Tag = new string('x', length),
-        TestTimer = new BDTest.Output.TestTimer { TestsStartedAt = default, TestsFinishedAt = default }
-    };
+    private static BDTest.Contracts.BDTestReport Report(string id, int length = 1) => new(
+        1, id, "test", tag: new string('x', length), testTimer: new BDTest.Contracts.ReportTimer(default, default));
 
-    private static long Size(BDTestOutputModel report) => Encoding.UTF8.GetByteCount(BDTestJsonHelper.Serialize(report));
+    private static long Size(BDTest.Contracts.BDTestReport report) => Encoding.UTF8.GetByteCount(BDTestJsonHelper.Serialize(report));
 
     private sealed class PersistentStore : IBDTestDataStore
     {
-        public Dictionary<string, BDTestOutputModel?> Reports { get; } = new();
+        public Dictionary<string, BDTest.Contracts.BDTestReport?> Reports { get; } = new();
         public bool HideReports { get; set; }
         public int Reads { get; private set; }
-        public Task<BDTestOutputModel?> GetTestData(string id, CancellationToken cancellationToken)
+        public Task<BDTest.Contracts.BDTestReport?> GetTestData(string id, CancellationToken cancellationToken)
         {
             Reads++;
             return Task.FromResult(HideReports ? null : Reports.GetValueOrDefault(id));
         }
-        public Task StoreTestData(string id, BDTestOutputModel? data) { Reports[id] = data; return Task.CompletedTask; }
+        public Task StoreTestData(string id, BDTest.Contracts.BDTestReport? data) { Reports[id] = data; return Task.CompletedTask; }
         public Task DeleteTestData(string id) { Reports.Remove(id); return Task.CompletedTask; }
         public Task<IEnumerable<TestRunSummary>> GetAllTestRunRecords() => Task.FromResult(Enumerable.Empty<TestRunSummary>());
         public Task StoreTestRunRecord(TestRunSummary summary) => Task.CompletedTask;

@@ -51,8 +51,26 @@ overload pattern and still accepts null. Reflection-based callers should select
 the one-argument overload when omitting formatting; neither two-argument method
 declares an optional default.
 
-Hosted migration is tracked in [#936](https://github.com/thomhurst/BDTest/issues/936).
-The current legacy host cannot consume the new uploads. Export JSON or static HTML
-locally until using a server that explicitly supports schema version 1; keep client
-and server package generations aligned. Renderer extraction remains separate in
-[#851](https://github.com/thomhurst/BDTest/issues/851).
+## Hosted reports
+
+Upgrade hosts and clients together for schema-version-1 uploads. `BDTest.Razor.Reports`
+and `BDTest.Reports.Storage.AzureBlob` reference `BDTest.Contracts`, not execution.
+Existing persisted unversioned reports remain readable without a data migration.
+
+Change `IBDTestDataStore`, `IDataRepository`, `IBDTestDataReceiver` and
+`IBDTestCustomSidebarLinksProvider` implementations from `BDTestOutputModel` to
+`BDTestReport`. Model reads remain nullable. The legacy model-store adapter still
+forwards JSON `null` to `StoreTestData`; modern byte stores retain raw JSON.
+Use `HostedReportJson` for version-dispatched reads and `BDTestReportJson` for writes.
+
+Update copied Razor views to `ScenarioResult`, `StepResult`, `ExceptionInfo` and
+`AttachmentInfo`; use text properties and information strings. Full report data is
+in `ViewData[nameof(BDTestReport)]`. `ReportLayoutViewModel.Timer` is `ReportTimer`.
+The compact summary models and existing summary/index JSON keep their names.
+
+Contract properties are read-only. Construct a new `BDTestReport` when changing
+metadata. The upload controller assigns a fresh storage ID and attachment-token
+hash to a new report, ignoring uploader-supplied identity/credentials, before
+calling storage and receivers. Authorization, attachment limits and URLs are unchanged.
+Renderer extraction remains separate in [#851](https://github.com/thomhurst/BDTest/issues/851).
+

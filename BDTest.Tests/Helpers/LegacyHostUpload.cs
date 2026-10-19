@@ -5,8 +5,7 @@ using BDTest.Maps;
 
 namespace BDTest.Tests.Helpers;
 
-// Legacy host endpoint tests keep using legacy payloads until the hosted migration (#936).
-// Production versioned uploads are covered independently by capture handlers and rejection tests.
+// Explicit legacy upload coverage remains alongside current-schema production uploads.
 internal static class LegacyHostUpload
 {
     internal static async Task<Uri> SendAsync(Uri address, BDTestRunDescriptor? descriptor, HttpClient client, BDTestRun run)

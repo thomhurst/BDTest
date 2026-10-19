@@ -128,7 +128,7 @@ public class CustomHtmlReportTests
         using var writer = new StringWriter();
         var viewData = new ViewDataDictionary(new EmptyModelMetadataProvider(), new ModelStateDictionary())
         {
-            Model = modal ? new ScenarioModalViewModel { Scenario = scenario } : scenario
+            Model = modal ? new ScenarioModalViewModel { Scenario = (scenario).ToResult() } : scenario.ToResult()
         };
         var tempData = new TempDataDictionary(httpContext, scope.ServiceProvider.GetRequiredService<ITempDataProvider>());
         var razorView = Required(view.View);

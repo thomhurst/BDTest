@@ -2,25 +2,25 @@
 @using BDTest.Razor.Reports.Helpers
 @using BDTest.Razor.Reports.Models
 @using BDTest.Razor.Reports.Models.ViewModels
-@using BDTest.Test
-@model Scenario
+@using BDTest.Contracts
+@model ScenarioResult
 
 @{
-    ViewBag.Title = Model.GetScenarioText();
+    ViewBag.Title = Model.ScenarioText;
     Layout = "_Layout";
 
     var run = ViewData[nameof(ReportLayoutViewModel)] as ReportLayoutViewModel;
     var report = run?.Report;
     var reportId = report?.Id ?? Model.ReportId ?? string.Empty;
-    var storyText = Model.GetStoryText();
+    var storyText = Model.StoryText;
     var storyUrl = Url.ReportAction("AllScenarios", new { id = reportId }) + "?story=" + Uri.EscapeDataString(storyText ?? string.Empty);
 
-    var siblings = (ViewData[nameof(BDTest.Maps.BDTestOutputModel)] as BDTest.Maps.BDTestOutputModel)?.Scenarios?.Where(s => s != null).ToList() ?? new List<Scenario>();
+    var siblings = (ViewData[nameof(BDTest.Contracts.BDTestReport)] as BDTest.Contracts.BDTestReport)?.Scenarios?.Where(s => s != null).ToList() ?? new List<ScenarioResult>();
     var index = siblings.FindIndex(scenario => scenario.Guid == Model.Guid);
     var previous = index > 0 ? siblings[index - 1] : null;
     var next = index >= 0 && index < siblings.Count - 1 ? siblings[index + 1] : null;
 
-    var steps = Model.Steps ?? new List<Step>();
+    var steps = Model.Steps ?? new List<StepResult>();
     var exception = Model.Exception;
     var failingStep = FailureGroup.FailingStep(Model);
     var failingNumber = FailureGroup.FailingStepNumber(Model);
@@ -38,7 +38,7 @@
     var file = string.IsNullOrEmpty(Model.FileName) ? null : Model.FileName.Replace('\\', '/');
     var fileName = file?.Split('/')[^1];
 
-    string? ScenarioUrl(Scenario scenario) => Url.ReportScenario(reportId, scenario.Guid);
+    string? ScenarioUrl(ScenarioResult scenario) => Url.ReportScenario(reportId, scenario.Guid);
 }
 
 <section class="page-head padded" aria-label="Scenario">
@@ -62,7 +62,7 @@
         </nav>
         <div class="title-row" style="align-items: flex-start; gap: 12px 20px">
             <div style="flex: 1 1 520px; min-width: 0; display: flex; flex-direction: column; gap: 10px">
-                <h1 style="font-size: 30px">@Model.GetScenarioText()</h1>
+                <h1 style="font-size: 30px">@Model.ScenarioText</h1>
                 <div class="cluster">
                     @Model.Status.Pill()
                     @if (Model.TimedOut)
@@ -137,7 +137,7 @@
                             <button class="btn sm" type="button" aria-pressed="true" data-bdtest-action="toggle-wrap" data-target="@traceId">Wrap</button>
                             <button class="btn sm" type="button" data-bdtest-action="copy-text" data-target="@traceId">Copy</button>
                         </div>
-                        @Html.Raw(BDTest.Helpers.ExceptionHtmlHelper.GetHtml(exception))
+                        @Html.Raw(BDTest.Razor.Reports.Helpers.ExceptionHtmlHelper.GetHtml(exception))
                         <pre class="code" id="@traceId">@(exception.AsString ?? exception.Message)</pre>
                     </div>
                 </section>
@@ -200,8 +200,8 @@
                                         <div class="k">Skip reason</div>
                                         <p>@step.SkipReason</p>
                                     }
-                                    @Html.Raw(BDTest.Helpers.StepArgumentHtmlHelper.GetHtml(step.Arguments))
-                                    @await Html.PartialAsync("_Attachments", step.Attachments ?? new List<Attachment>())
+                                    @Html.Raw(BDTest.Razor.Reports.Helpers.StepArgumentHtmlHelper.GetHtml(step.Arguments))
+                                    @await Html.PartialAsync("_Attachments", step.Attachments ?? new List<AttachmentInfo>())
                                     @if (!string.IsNullOrEmpty(step.Output))
                                     {
                                         <div class="k">Step output</div>
@@ -210,7 +210,7 @@
                                     @if (step.Exception != null && !(isFailing && ReferenceEquals(step.Exception, exception)))
                                     {
                                         <div class="k">Exception</div>
-                                        @Html.Raw(BDTest.Helpers.ExceptionHtmlHelper.GetHtml(step.Exception))
+                                        @Html.Raw(BDTest.Razor.Reports.Helpers.ExceptionHtmlHelper.GetHtml(step.Exception))
                                     }
                                     @if (step.Diagnostics?.Count > 0)
                                     {
@@ -243,9 +243,9 @@
             }
 
             @{
-                var information = Model.CustomTestInformation ?? Array.Empty<BDTest.TestInformationAttribute>();
+                var information = Model.CustomTestInformation ?? Array.Empty<string>();
                 var hasCustom = !string.IsNullOrEmpty(Model.CustomHtmlOutputForReport);
-                var anyOutput = hasCustom || information.Length > 0 || !string.IsNullOrEmpty(Model.TestStartupInformation)
+                var anyOutput = hasCustom || information.Count > 0 || !string.IsNullOrEmpty(Model.TestStartupInformation)
                                 || !string.IsNullOrEmpty(Model.TearDownOutput) || !string.IsNullOrEmpty(Model.Output);
             }
             @if (anyOutput)
@@ -258,14 +258,14 @@
                             <div class="sec-body">@await Html.PartialAsync("_CustomHtmlOutput", Model.CustomHtmlOutputForReport)</div>
                         </details>
                     }
-                    @if (information.Length > 0)
+                    @if (information.Count > 0)
                     {
                         <details class="sec" open data-expandable>
-                            <summary>@ReportUi.Icon("i-chev-r", "chev")Information<span class="cnt">@information.Length</span></summary>
+                            <summary>@ReportUi.Icon("i-chev-r", "chev")Information<span class="cnt">@information.Count</span></summary>
                             <ul class="sec-body" style="margin: 0; padding-left: 46px; gap: 4px; font-size: 14px">
                                 @foreach (var item in information)
                                 {
-                                    <li style="overflow-wrap: anywhere">@item.Information</li>
+                                    <li style="overflow-wrap: anywhere">@item</li>
                                 }
                             </ul>
                         </details>
@@ -306,7 +306,7 @@
                 }
                 @if (run != null)
                 {
-                    var inStory = siblings.Count(scenario => scenario.GetStoryText() == storyText);
+                    var inStory = siblings.Count(scenario => scenario.StoryText == storyText);
                     <a class="lnk" href="@storyUrl">@inStory @(inStory == 1 ? "scenario" : "scenarios") in this story</a>
                 }
             </section>
@@ -358,10 +358,10 @@
 
 @functions
 {
-    private static bool HasExtra(Step step) =>
+    private static bool HasExtra(StepResult step) =>
         !string.IsNullOrEmpty(step.Output) || step.SkipReason != null || step.Exception != null || step.Diagnostics?.Count > 0 || step.Arguments?.Count > 0 || step.Attachments?.Count > 0;
 
-    private static Microsoft.AspNetCore.Html.IHtmlContent Row(string rowClass, Step step, string keyword, string text,
+    private static Microsoft.AspNetCore.Html.IHtmlContent Row(string rowClass, StepResult step, string keyword, string text,
         bool notRun, bool isFailing, double offset, double width)
     {
         var encoder = System.Text.Encodings.Web.HtmlEncoder.Default;

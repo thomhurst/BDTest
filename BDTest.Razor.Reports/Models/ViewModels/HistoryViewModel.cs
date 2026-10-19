@@ -1,4 +1,4 @@
-using BDTest.Maps;
+using BDTest.Contracts;
 
 namespace BDTest.Razor.Reports.Models.ViewModels;
 
@@ -26,5 +26,5 @@ public class HistoryViewModel
     public bool ChosenRuns { get; set; }
 
     /// <summary>Loaded reports for the Flaky and Timing tabs, oldest first.</summary>
-    public IReadOnlyList<BDTestOutputModel> Reports { get; set; } = new List<BDTestOutputModel>();
+    public IReadOnlyList<BDTestReport> Reports { get; set; } = new List<BDTestReport>();
 }

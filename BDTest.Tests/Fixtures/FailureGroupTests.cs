@@ -26,14 +26,14 @@ public class FailureGroupTests
             StackTrace = "   at Framework.Assert(String)\n   at CheckoutSteps.ThenTheStatusIs(Int32 expected) in C:\\src\\Steps\\CheckoutSteps.cs:line 84\n   at Next() in C:\\Next.cs:line 1"
         };
 
-        await Assert.That(FailureGroup.GetLocation(exception)).IsEqualTo("CheckoutSteps.cs:line 84 · CheckoutSteps.ThenTheStatusIs");
+        await Assert.That(FailureGroup.GetLocation((exception).ToResult())).IsEqualTo("CheckoutSteps.cs:line 84 · CheckoutSteps.ThenTheStatusIs");
     }
 
     [Test]
     public async Task Location_falls_back_to_the_first_method_and_ignores_text_that_is_not_a_frame()
     {
-        await Assert.That(FailureGroup.GetLocation(new ExceptionWrapper { StackTrace = "noise\n   at Some.Method()" })).IsEqualTo("Some.Method");
-        await Assert.That(FailureGroup.GetLocation(new ExceptionWrapper { StackTrace = "no frames here" })).IsNull();
+        await Assert.That(FailureGroup.GetLocation((new ExceptionWrapper { StackTrace = "noise\n   at Some.Method()" }).ToResult())).IsEqualTo("Some.Method");
+        await Assert.That(FailureGroup.GetLocation((new ExceptionWrapper { StackTrace = "no frames here" }).ToResult())).IsNull();
         await Assert.That(FailureGroup.GetLocation(null)).IsNull();
     }
 
@@ -41,7 +41,7 @@ public class FailureGroupTests
     public async Task Location_only_reads_the_start_of_very_large_stack_traces()
     {
         var trace = string.Concat(Enumerable.Repeat("   at A.B()\n", 100_000)) + "   at Late.Frame() in Late.cs:line 9";
-        await Assert.That(FailureGroup.GetLocation(new ExceptionWrapper { StackTrace = trace })).IsEqualTo("A.B");
+        await Assert.That(FailureGroup.GetLocation((new ExceptionWrapper { StackTrace = trace }).ToResult())).IsEqualTo("A.B");
     }
 
     [Test]
@@ -56,17 +56,17 @@ public class FailureGroupTests
             Failed("four", "TimeoutException", "Timed out", "   at Client.Send() in Client.cs:line 9")
         };
 
-        var byLocation = FailureGroup.Build(scenarios, FailureGroup.ByExceptionAndLocation);
+        var byLocation = FailureGroup.Build((scenarios).ToResults(), FailureGroup.ByExceptionAndLocation);
         await Assert.That(byLocation.Select(group => group.Scenarios.Count)).IsEquivalentTo(new[] { 2, 1, 1 }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
         await Assert.That(byLocation[0].Title).IsEqualTo("Expected 201");
         await Assert.That(byLocation[0].Location).IsEqualTo("Steps.cs:line 4 · Steps.Then");
 
-        var byType = FailureGroup.Build(scenarios, FailureGroup.ByExceptionType);
+        var byType = FailureGroup.Build((scenarios).ToResults(), FailureGroup.ByExceptionType);
         await Assert.That(byType.Select(group => group.Title)).IsEquivalentTo(new[] { "AssertionException", "TimeoutException" }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
 
-        var byStep = FailureGroup.Build(scenarios, FailureGroup.ByFailingStep);
+        var byStep = FailureGroup.Build((scenarios).ToResults(), FailureGroup.ByFailingStep);
         await Assert.That(byStep.Select(group => group.Title)).IsEquivalentTo(new[] { "Then it works", "Then it is missing" }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
-        await Assert.That(FailureGroup.FailingStepNumber(scenarios[0])).IsEqualTo(2);
+        await Assert.That(FailureGroup.FailingStepNumber((scenarios[0]).ToResult())).IsEqualTo(2);
     }
 
     [Test]
@@ -89,16 +89,16 @@ public class FailureGroupTests
             }
         }));
 
-        await Assert.That(FailureGroup.FailingStep(outline)?.StepText).IsEqualTo("Then row 2 fails");
-        await Assert.That(FailureGroup.FailingStepNumber(outline)).IsEqualTo(2);
-        await Assert.That(FailureGroup.Build(new[] { outline }, FailureGroup.ByFailingStep).Single().Title).IsEqualTo("Then row 2 fails");
+        await Assert.That(FailureGroup.FailingStep((outline).ToResult())?.StepText).IsEqualTo("Then row 2 fails");
+        await Assert.That(FailureGroup.FailingStepNumber((outline).ToResult())).IsEqualTo(2);
+        await Assert.That(FailureGroup.Build((new[] { outline }).ToResults(), FailureGroup.ByFailingStep).Single().Title).IsEqualTo("Then row 2 fails");
     }
 
     [Test]
     public async Task Passed_scenarios_are_not_failures()
     {
         var passed = ReportJson.DeserializeObject<Scenario>("""{ "Guid": "p", "Status": "Passed", "Steps": [] }""");
-        await Assert.That(FailureGroup.Build(new[] { passed }, FailureGroup.ByExceptionAndLocation)).IsEmpty();
+        await Assert.That(FailureGroup.Build((new[] { passed }).ToResults(), FailureGroup.ByExceptionAndLocation)).IsEmpty();
     }
 
     [Test]

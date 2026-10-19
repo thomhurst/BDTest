@@ -21,7 +21,7 @@ public class DataRepositoryHistoryTests
         using var services = Services(store);
         var repository = services.GetRequiredService<IDataRepository>();
 
-        await repository.StoreData("new", Report("new", 2));
+        await repository.StoreData("new", (Report("new", 2)).ToReport());
 
         for (var read = 0; read < 2; read++)
         {
@@ -53,7 +53,7 @@ public class DataRepositoryHistoryTests
             await started.Task.WaitAsync(TimeSpan.FromSeconds(10));
             await Assert.That(store.Loads).IsEqualTo(1);
             await Assert.That(reads.All(read => !read.IsCompleted)).IsTrue();
-            await repository.StoreData("new", Report("new", 2));
+            await repository.StoreData("new", (Report("new", 2)).ToReport());
         }
         finally
         {
@@ -77,7 +77,7 @@ public class DataRepositoryHistoryTests
         store.Records.Add(Summary("old", 1));
         using var services = Services(store);
         var repository = services.GetRequiredService<IDataRepository>();
-        await repository.StoreData("new", Report("new", 3));
+        await repository.StoreData("new", (Report("new", 3)).ToReport());
         store.Records.Add(Summary("new", 0));
 
         var records = (await repository.GetAllTestRunRecords()).ToArray();
@@ -98,7 +98,7 @@ public class DataRepositoryHistoryTests
 
         await Assert.That(await repository.GetAllTestRunRecords()).IsEmpty();
         await Assert.That(await repository.GetAllTestRunRecords()).IsEmpty();
-        await repository.StoreData("new", Report("new", 1));
+        await repository.StoreData("new", (Report("new", 1)).ToReport());
         await Assert.That((await repository.GetAllTestRunRecords()).Single().RecordId).IsEqualTo("new");
         await Assert.That(store.Loads).IsEqualTo(1);
     }
@@ -111,7 +111,7 @@ public class DataRepositoryHistoryTests
         store.Records.Add(Summary("old", 1));
         using var services = Services(store);
         var repository = services.GetRequiredService<IDataRepository>();
-        await repository.StoreData("new", Report("new", 2));
+        await repository.StoreData("new", (Report("new", 2)).ToReport());
 
         var thrown = await Assert.That(async () => { await repository.GetAllTestRunRecords(); }).ThrowsExactly<InvalidOperationException>();
         await Assert.That(thrown).IsSameReferenceAs(failure);
@@ -131,7 +131,7 @@ public class DataRepositoryHistoryTests
         store.Records.Add(Summary("old", 1));
         using var services = Services(store);
         var repository = services.GetRequiredService<IDataRepository>();
-        await repository.StoreData("new", Report("new", 2));
+        await repository.StoreData("new", (Report("new", 2)).ToReport());
         if (loadFirst) await repository.GetAllTestRunRecords();
 
         await repository.DeleteReport("old");
@@ -184,8 +184,8 @@ public class DataRepositoryHistoryTests
         using var services = Services();
         var repository = services.GetRequiredService<IDataRepository>();
         await Assert.That(await repository.GetAllTestRunRecords()).IsEmpty();
-        await repository.StoreData("old", Report("old", 1));
-        await repository.StoreData("new", Report("new", 2));
+        await repository.StoreData("old", (Report("old", 1)).ToReport());
+        await repository.StoreData("new", (Report("new", 2)).ToReport());
         await Assert.That((await repository.GetAllTestRunRecords()).Select(record => record.RecordId)).IsEquivalentTo((new[] { "new", "old" }).Cast<string?>(), global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
 
         await repository.DeleteReport("new");
@@ -264,10 +264,10 @@ public class DataRepositoryHistoryTests
         {
             cancellationToken.ThrowIfCancellationRequested();
             return Task.FromResult<Stream?>(Reports.TryGetValue(reportId, out var report)
-                ? new MemoryStream(System.Text.Encoding.UTF8.GetBytes(BDTestJsonHelper.Serialize(report))) : null);
+                ? new MemoryStream(System.Text.Encoding.UTF8.GetBytes(BDTestJsonHelper.Serialize(Required(report)))) : null);
         }
         public async Task WriteAsync(string reportId, Stream utf8Json, CancellationToken cancellationToken)
-            => Reports[reportId] = Required(await BDTestJsonHelper.DeserializeAsync(utf8Json, cancellationToken));
+            => Reports[reportId] = Required(await BDTest.Razor.Reports.Serialization.HostedReportJson.DeserializeAsync(utf8Json, cancellationToken));
         public async Task<RunIndexPage> ListAsync(RunIndexQuery query, CancellationToken cancellationToken)
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -293,7 +293,7 @@ public class DataRepositoryHistoryTests
         }
 
         public List<TestRunSummary> Records { get; } = [];
-        public ConcurrentDictionary<string, BDTestOutputModel?> Reports { get; } = new();
+        public ConcurrentDictionary<string, BDTest.Contracts.BDTestReport?> Reports { get; } = new();
         public Func<Task<IEnumerable<TestRunSummary>>>? Read { get; set; }
         public int Loads;
 
@@ -303,10 +303,10 @@ public class DataRepositoryHistoryTests
             return Read?.Invoke() ?? Task.FromResult<IEnumerable<TestRunSummary>>(Records.ToArray());
         }
 
-        public Task<BDTestOutputModel?> GetTestData(string id, CancellationToken cancellationToken) =>
+        public Task<BDTest.Contracts.BDTestReport?> GetTestData(string id, CancellationToken cancellationToken) =>
             Task.FromResult(Reports.GetValueOrDefault(id));
 
-        public Task StoreTestData(string id, BDTestOutputModel? data) { Reports[id] = data; return Task.CompletedTask; }
+        public Task StoreTestData(string id, BDTest.Contracts.BDTestReport? data) { Reports[id] = data; return Task.CompletedTask; }
         public Task DeleteTestData(string id) { Reports.TryRemove(id, out _); return Task.CompletedTask; }
         public Task StoreTestRunRecord(TestRunSummary summary) { Records.Add(summary); return Task.CompletedTask; }
         public Task DeleteTestRunRecord(string id) { Records.RemoveAll(record => record.RecordId == id); return Task.CompletedTask; }

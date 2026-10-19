@@ -427,3 +427,17 @@ removals, nullable changes, missing files and wrong-target entries fail, and tha
 intentional baseline updates pass. It also checks excluded projects and the
 generated-code boundary. CI runs it before the ordinary pipeline; logs are saved
 under `artifacts/test-results/public-api/`.
+
+## Independent hosted report consumers (#936)
+
+Razor reports, the Azure Blob store and the sample host consume `BDTest.Contracts`
+without a project or assembly reference to execution. `HostedReportJson` dispatches
+schema version 1 and unversioned historical JSON to immutable results. ReportGenerator
+Tests also have no execution reference and assert the consumer assembly boundary.
+The core suite keeps legacy fixture builders and snapshots them at host boundaries.
+
+The hosted API baselines record contract types and the public schema-aware reader.
+The existing snapshot APIs from #935 are also recorded in core/contracts baselines;
+`Serialize` has explicit one-argument and two-argument overloads for each report model
+so their source call patterns work without overlapping optional-parameter overloads.
+See [host migration](docs/docs/migration/immutable-results.md#hosted-reports).

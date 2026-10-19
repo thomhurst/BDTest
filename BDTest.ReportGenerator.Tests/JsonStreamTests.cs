@@ -1,7 +1,7 @@
 using BDTest.Reports.Storage.AzureBlob;
 using TUnit.Assertions.Enums;
 using System.Text;
-using BDTest.Maps;
+using BDTest.Contracts;
 using BDTest.ReportGenerator.RazorServer;
 using Newtonsoft.Json;
 
@@ -12,11 +12,8 @@ public class JsonStreamTests
     [Test]
     public async Task ReportStreamContainsCompleteUtf8JsonWithoutABom()
     {
-        var model = new BDTestOutputModel
-        {
-            Id = "stream-report",
-            Tag = "Quotes: \" and Unicode: café 日本語 🧪\n" + new string('x', 100_000)
-        };
+        var model = new BDTestReport(1, "stream-report", "test",
+            tag: "Quotes: \" and Unicode: café 日本語 🧪\n" + new string('x', 100_000));
         using var stream = model.AsStream();
 
         await Assert.That(stream.CanRead).IsTrue();

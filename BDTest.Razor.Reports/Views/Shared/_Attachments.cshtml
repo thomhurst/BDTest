@@ -1,8 +1,8 @@
 @using BDTest.Razor.Reports.Models.ViewModels
 @using BDTest.Razor.Reports.Storage
-@using BDTest.Test
+@using BDTest.Contracts
 @using System.Net.Http.Headers
-@model IEnumerable<Attachment>
+@model IEnumerable<AttachmentInfo>
 @{
     // Only the stored report identity is authoritative; captured URIs and scenario ReportIds are not.
     var reportId = (ViewData[nameof(ReportLayoutViewModel)] as ReportLayoutViewModel)?.Report?.Id;

@@ -1,7 +1,7 @@
 using System.Collections.Concurrent;
 using System.Text.Json;
-using BDTest.Helpers;
-using BDTest.Maps;
+using BDTest.Razor.Reports.Helpers;
+using BDTest.Contracts;
 using BDTest.Razor.Reports.Models.ViewModels;
 using BDTest.Razor.Reports.Storage;
 using BDTest.Razor.Reports.Extensions;
@@ -76,14 +76,14 @@ public class MemoryCacheBdTestDataStore : IMemoryCacheBdTestDataStore, IDisposab
         });
     }
 
-    public Task<BDTestOutputModel?> GetTestData(string id, CancellationToken cancellationToken)
+    public Task<BDTestReport?> GetTestData(string id, CancellationToken cancellationToken)
         => GetTestData(id, cancellationToken, refreshRetention: false);
 
-    Task<BDTestOutputModel?> IMemoryCacheBdTestDataStore.GetTestDataAndRefreshRetention(string id,
+    Task<BDTestReport?> IMemoryCacheBdTestDataStore.GetTestDataAndRefreshRetention(string id,
         CancellationToken cancellationToken)
         => GetTestData(id, cancellationToken, refreshRetention: true);
 
-    private async Task<BDTestOutputModel?> GetTestData(string id, CancellationToken cancellationToken, bool refreshRetention)
+    private async Task<BDTestReport?> GetTestData(string id, CancellationToken cancellationToken, bool refreshRetention)
     {
         cancellationToken.ThrowIfCancellationRequested();
         CachedReport? report;
@@ -94,9 +94,9 @@ public class MemoryCacheBdTestDataStore : IMemoryCacheBdTestDataStore, IDisposab
             if (refreshRetention && report != null) SetCacheEntry(cache, id, report);
         }
         var value = report?.Value;
-        if (value is not byte[] bytes) return value as BDTestOutputModel;
+        if (value is not byte[] bytes) return value as BDTestReport;
         using var stream = new MemoryStream(bytes, writable: false);
-        return await BDTestJsonHelper.DeserializeAsync(stream, cancellationToken);
+        return await HostedReportJson.DeserializeAsync(stream, cancellationToken);
     }
 
     async Task<ReportPageModels?> IMemoryCacheBdTestDataStore.GetReportPagesAndRefreshRetention(string id, CancellationToken cancellationToken)
@@ -115,11 +115,11 @@ public class MemoryCacheBdTestDataStore : IMemoryCacheBdTestDataStore, IDisposab
                 return cached.Pages;
             }
         }
-        var model = source.Value as BDTestOutputModel;
+        var model = source.Value as BDTestReport;
         if (source.Value is byte[] bytes)
         {
             using var stream = new MemoryStream(bytes, writable: false);
-            model = await BDTestJsonHelper.DeserializeAsync(stream, cancellationToken);
+            model = await HostedReportJson.DeserializeAsync(stream, cancellationToken);
         }
         if (model == null) return null;
         var pages = ReportPageModels.Create(model);
@@ -174,12 +174,12 @@ public class MemoryCacheBdTestDataStore : IMemoryCacheBdTestDataStore, IDisposab
         return Task.FromResult(Volatile.Read(ref _testRunSummaries).AsEnumerable());
     }
 
-    public Task StoreTestData(string id, BDTestOutputModel? data)
+    public Task StoreTestData(string id, BDTestReport? data)
     {
         long size;
         using (var counter = new ByteCountingStream())
         {
-            JsonSerializer.Serialize(counter, data, BDTestJsonContext.Default.BDTestOutputModel);
+            JsonSerializer.Serialize(counter, data, BDTestReportJsonContext.Default.BDTestReport);
             size = counter.Length;
         }
         CacheReport(id, data, size);
@@ -336,11 +336,11 @@ public class MemoryCacheBdTestDataStore : IMemoryCacheBdTestDataStore, IDisposab
             value = report?.Value;
         }
         if (value is byte[] bytes) return new MemoryStream(bytes, writable: false);
-        if (value is not BDTestOutputModel model) return null;
+        if (value is not BDTestReport model) return null;
         var stream = new MemoryStream();
         try
         {
-            await JsonSerializer.SerializeAsync(stream, model, BDTestJsonContext.Default.BDTestOutputModel, cancellationToken);
+            await JsonSerializer.SerializeAsync(stream, model, BDTestReportJsonContext.Default.BDTestReport, cancellationToken);
             stream.Position = 0;
             return stream;
         }

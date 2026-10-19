@@ -1,11 +1,33 @@
 #nullable enable
+*REMOVED*BDTest.Razor.Reports.Controllers.BDTestController.Index(BDTest.Maps.BDTestOutputModel! bdTestOutputModel) -> System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult!>!
+*REMOVED*BDTest.Razor.Reports.Extensions.OutputMetrics.OutputMetrics(BDTest.Maps.BDTestOutputModel? bdTestOutputModel) -> void
+*REMOVED*BDTest.Razor.Reports.Implementations.MemoryCacheBdTestDataStore.GetTestData(string! id, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<BDTest.Maps.BDTestOutputModel?>!
+*REMOVED*BDTest.Razor.Reports.Implementations.MemoryCacheBdTestDataStore.StoreTestData(string! id, BDTest.Maps.BDTestOutputModel? data) -> System.Threading.Tasks.Task!
+*REMOVED*BDTest.Razor.Reports.Interfaces.IBDTestCustomSidebarLinksProvider.GetCustomLinks(BDTest.Maps.BDTestOutputModel! currentTestReport) -> System.Collections.Generic.IEnumerable<BDTest.Razor.Reports.Models.CustomLinkData!>!
+*REMOVED*BDTest.Razor.Reports.Interfaces.IBDTestDataReceiver.OnReceiveTestDataAsync(BDTest.Maps.BDTestOutputModel! bdTestOutputModel) -> System.Threading.Tasks.Task!
+*REMOVED*BDTest.Razor.Reports.Interfaces.IBDTestDataStore.GetTestData(string! id, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<BDTest.Maps.BDTestOutputModel?>!
+*REMOVED*BDTest.Razor.Reports.Interfaces.IBDTestDataStore.StoreTestData(string! id, BDTest.Maps.BDTestOutputModel? data) -> System.Threading.Tasks.Task!
+*REMOVED*BDTest.Razor.Reports.Interfaces.IDataRepository.GetData(string! reportId, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<BDTest.Maps.BDTestOutputModel?>!
+*REMOVED*BDTest.Razor.Reports.Interfaces.IDataRepository.GetDataForBulkRead(string! reportId, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<BDTest.Maps.BDTestOutputModel?>!
+*REMOVED*BDTest.Razor.Reports.Interfaces.IDataRepository.StoreData(string! reportId, BDTest.Maps.BDTestOutputModel! model, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+*REMOVED*BDTest.Razor.Reports.Models.FailureGroup.Exception.get -> BDTest.Test.ExceptionWrapper?
+*REMOVED*BDTest.Razor.Reports.Models.FailureGroup.Scenarios.get -> System.Collections.Generic.IReadOnlyList<BDTest.Test.Scenario!>!
+*REMOVED*BDTest.Razor.Reports.Models.MultipleTestRunsTimingDifferenceModel.MultipleTestRunsTimingDifferenceModel(System.Linq.IGrouping<BDTest.Razor.Reports.Models.ScenarioGroupKey!, BDTest.Test.Scenario!>! scenarioGroup) -> void
 *REMOVED*BDTest.Razor.Reports.Models.TestRunSummary.Status.get -> BDTest.Test.Status
+*REMOVED*BDTest.Razor.Reports.Models.ViewModels.HistoryViewModel.Reports.get -> System.Collections.Generic.IReadOnlyList<BDTest.Maps.BDTestOutputModel!>!
 *REMOVED*BDTest.Razor.Reports.Models.ViewModels.ReportLayoutViewModel.Counts.get -> System.Collections.Generic.IReadOnlyDictionary<BDTest.Test.Status, int>!
 *REMOVED*BDTest.Razor.Reports.Models.ViewModels.ReportLayoutViewModel.Status.get -> BDTest.Test.Status
+*REMOVED*BDTest.Razor.Reports.Models.ViewModels.ReportLayoutViewModel.Timer.get -> BDTest.Output.TestTimer!
 *REMOVED*BDTest.Razor.Reports.Models.ViewModels.ReportScenarioRow.Deconstruct(out string? Guid, out string! Name, out string! Story, out BDTest.Test.Status Status, out System.TimeSpan TimeTaken, out int RetryCount, out string? FailingStepText, out int FailingStepNumber, out string! Explanation, out string! TimingName) -> void
 *REMOVED*BDTest.Razor.Reports.Models.ViewModels.ReportScenarioRow.ReportScenarioRow(string? Guid, string! Name, string! Story, BDTest.Test.Status Status, System.TimeSpan TimeTaken, int RetryCount, string? FailingStepText, int FailingStepNumber, string! Explanation, string! TimingName) -> void
 *REMOVED*BDTest.Razor.Reports.Models.ViewModels.ReportScenarioRow.Status.get -> BDTest.Test.Status
+*REMOVED*BDTest.Razor.Reports.Models.ViewModels.ScenarioListViewModel.Scenarios.get -> System.Collections.Generic.IReadOnlyList<BDTest.Test.Scenario!>!
+*REMOVED*BDTest.Razor.Reports.Models.ViewModels.ScenarioListViewModel.Selected.get -> BDTest.Test.Scenario?
 *REMOVED*BDTest.Razor.Reports.Models.ViewModels.ScenarioListViewModel.Statuses.get -> System.Collections.Generic.IReadOnlySet<BDTest.Test.Status>?
+*REMOVED*BDTest.Razor.Reports.Models.ViewModels.ScenarioListViewModel.Unfiltered.get -> System.Collections.Generic.IReadOnlyList<BDTest.Test.Scenario!>!
+*REMOVED*BDTest.Razor.Reports.Models.ViewModels.ScenarioModalViewModel.LastScenario.get -> BDTest.Test.Scenario?
+*REMOVED*BDTest.Razor.Reports.Models.ViewModels.ScenarioModalViewModel.NextScenario.get -> BDTest.Test.Scenario?
+*REMOVED*BDTest.Razor.Reports.Models.ViewModels.ScenarioModalViewModel.Scenario.get -> BDTest.Test.Scenario?
 *REMOVED*BDTest.Razor.Reports.Storage.RunIndexEntry.Status.get -> BDTest.Test.Status
 *REMOVED*static BDTest.Razor.Reports.Extensions.ScenarioExtensions.AsString(this BDTest.Test.Status status) -> string!
 *REMOVED*static BDTest.Razor.Reports.Extensions.ScenarioExtensions.GetCssColourValueForStatus(this BDTest.Test.Status status) -> string!
@@ -17,19 +39,49 @@
 *REMOVED*static BDTest.Razor.Reports.Helpers.ReportUi.RunResult(this BDTest.Razor.Reports.Models.TestRunSummary! run) -> BDTest.Test.Status
 *REMOVED*static BDTest.Razor.Reports.Helpers.ReportUi.RunResult(this BDTest.Test.Status runStatus) -> BDTest.Test.Status
 *REMOVED*static BDTest.Razor.Reports.Helpers.ReportUi.StatusIcon(this BDTest.Test.Status status, string? cssClass = null) -> Microsoft.AspNetCore.Html.IHtmlContent!
+*REMOVED*static BDTest.Razor.Reports.Models.FailureGroup.Build(System.Collections.Generic.IEnumerable<BDTest.Test.Scenario!>! scenarios, string? groupBy) -> System.Collections.Generic.IReadOnlyList<BDTest.Razor.Reports.Models.FailureGroup!>!
+*REMOVED*static BDTest.Razor.Reports.Models.FailureGroup.FailingStep(BDTest.Test.Scenario? scenario) -> BDTest.Test.Step?
+*REMOVED*static BDTest.Razor.Reports.Models.FailureGroup.FailingStepNumber(BDTest.Test.Scenario? scenario) -> int
+*REMOVED*static BDTest.Razor.Reports.Models.FailureGroup.GetLocation(BDTest.Test.ExceptionWrapper? exception) -> string?
+*REMOVED*static BDTest.Razor.Reports.Models.ScenarioSearch.Matches(BDTest.Test.Scenario? scenario, string? search) -> bool
+*REMOVED*static BDTest.Razor.Reports.Models.ViewModels.ReportLayoutViewModel.Create(BDTest.Maps.BDTestOutputModel! report) -> BDTest.Razor.Reports.Models.ViewModels.ReportLayoutViewModel!
+*REMOVED*static BDTest.Razor.Reports.Models.ViewModels.ReportPageModels.Create(BDTest.Maps.BDTestOutputModel! report) -> BDTest.Razor.Reports.Models.ViewModels.ReportPageModels!
 *REMOVED*static readonly BDTest.Razor.Reports.Helpers.ReportUi.DisplayOrder -> BDTest.Test.Status[]!
 *REMOVED*~BDTest.Razor.Reports.Helpers.ReportJsonContext.Status.get -> System.Text.Json.Serialization.Metadata.JsonTypeInfo<BDTest.Test.Status>
+BDTest.Razor.Reports.Controllers.BDTestController.Index(BDTest.Contracts.BDTestReport! bdTestOutputModel) -> System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult!>!
+BDTest.Razor.Reports.Extensions.OutputMetrics.OutputMetrics(BDTest.Contracts.BDTestReport? bdTestOutputModel) -> void
+BDTest.Razor.Reports.Implementations.MemoryCacheBdTestDataStore.GetTestData(string! id, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<BDTest.Contracts.BDTestReport?>!
+BDTest.Razor.Reports.Implementations.MemoryCacheBdTestDataStore.StoreTestData(string! id, BDTest.Contracts.BDTestReport? data) -> System.Threading.Tasks.Task!
+BDTest.Razor.Reports.Interfaces.IBDTestCustomSidebarLinksProvider.GetCustomLinks(BDTest.Contracts.BDTestReport! currentTestReport) -> System.Collections.Generic.IEnumerable<BDTest.Razor.Reports.Models.CustomLinkData!>!
+BDTest.Razor.Reports.Interfaces.IBDTestDataReceiver.OnReceiveTestDataAsync(BDTest.Contracts.BDTestReport! bdTestOutputModel) -> System.Threading.Tasks.Task!
+BDTest.Razor.Reports.Interfaces.IBDTestDataStore.GetTestData(string! id, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<BDTest.Contracts.BDTestReport?>!
+BDTest.Razor.Reports.Interfaces.IBDTestDataStore.StoreTestData(string! id, BDTest.Contracts.BDTestReport? data) -> System.Threading.Tasks.Task!
+BDTest.Razor.Reports.Interfaces.IDataRepository.GetData(string! reportId, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<BDTest.Contracts.BDTestReport?>!
+BDTest.Razor.Reports.Interfaces.IDataRepository.GetDataForBulkRead(string! reportId, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<BDTest.Contracts.BDTestReport?>!
+BDTest.Razor.Reports.Interfaces.IDataRepository.StoreData(string! reportId, BDTest.Contracts.BDTestReport! model, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+BDTest.Razor.Reports.Models.FailureGroup.Exception.get -> BDTest.Contracts.ExceptionInfo?
+BDTest.Razor.Reports.Models.FailureGroup.Scenarios.get -> System.Collections.Generic.IReadOnlyList<BDTest.Contracts.ScenarioResult!>!
+BDTest.Razor.Reports.Models.MultipleTestRunsTimingDifferenceModel.MultipleTestRunsTimingDifferenceModel(System.Linq.IGrouping<BDTest.Razor.Reports.Models.ScenarioGroupKey!, BDTest.Contracts.ScenarioResult!>! scenarioGroup) -> void
 BDTest.Razor.Reports.Models.TestRunSummary.Status.get -> BDTest.Contracts.Status
+BDTest.Razor.Reports.Models.ViewModels.HistoryViewModel.Reports.get -> System.Collections.Generic.IReadOnlyList<BDTest.Contracts.BDTestReport!>!
 BDTest.Razor.Reports.Models.ViewModels.ReportLayoutViewModel.Counts.get -> System.Collections.Generic.IReadOnlyDictionary<BDTest.Contracts.Status, int>!
 BDTest.Razor.Reports.Models.ViewModels.ReportLayoutViewModel.Status.get -> BDTest.Contracts.Status
+BDTest.Razor.Reports.Models.ViewModels.ReportLayoutViewModel.Timer.get -> BDTest.Contracts.ReportTimer!
 BDTest.Razor.Reports.Models.ViewModels.ReportScenarioRow.Deconstruct(out string? Guid, out string! Name, out string! Story, out BDTest.Contracts.Status Status, out System.TimeSpan TimeTaken, out int RetryCount, out string? FailingStepText, out int FailingStepNumber, out string! Explanation, out string! TimingName) -> void
 BDTest.Razor.Reports.Models.ViewModels.ReportScenarioRow.ReportScenarioRow(string? Guid, string! Name, string! Story, BDTest.Contracts.Status Status, System.TimeSpan TimeTaken, int RetryCount, string? FailingStepText, int FailingStepNumber, string! Explanation, string! TimingName) -> void
 BDTest.Razor.Reports.Models.ViewModels.ReportScenarioRow.Status.get -> BDTest.Contracts.Status
+BDTest.Razor.Reports.Models.ViewModels.ScenarioListViewModel.Scenarios.get -> System.Collections.Generic.IReadOnlyList<BDTest.Contracts.ScenarioResult!>!
+BDTest.Razor.Reports.Models.ViewModels.ScenarioListViewModel.Selected.get -> BDTest.Contracts.ScenarioResult?
 BDTest.Razor.Reports.Models.ViewModels.ScenarioListViewModel.Statuses.get -> System.Collections.Generic.IReadOnlySet<BDTest.Contracts.Status>?
+BDTest.Razor.Reports.Models.ViewModels.ScenarioListViewModel.Unfiltered.get -> System.Collections.Generic.IReadOnlyList<BDTest.Contracts.ScenarioResult!>!
+BDTest.Razor.Reports.Models.ViewModels.ScenarioModalViewModel.LastScenario.get -> BDTest.Contracts.ScenarioResult?
+BDTest.Razor.Reports.Models.ViewModels.ScenarioModalViewModel.NextScenario.get -> BDTest.Contracts.ScenarioResult?
+BDTest.Razor.Reports.Models.ViewModels.ScenarioModalViewModel.Scenario.get -> BDTest.Contracts.ScenarioResult?
+BDTest.Razor.Reports.Serialization.HostedReportJson
 BDTest.Razor.Reports.Storage.RunIndexEntry.Status.get -> BDTest.Contracts.Status
 static BDTest.Razor.Reports.Extensions.ScenarioExtensions.AsString(this BDTest.Contracts.Status status) -> string!
 static BDTest.Razor.Reports.Extensions.ScenarioExtensions.GetCssColourValueForStatus(this BDTest.Contracts.Status status) -> string!
-static BDTest.Razor.Reports.Extensions.ScenarioExtensions.GetTotalStatus(this System.Collections.Generic.IEnumerable<BDTest.Test.Scenario!>! scenarios) -> BDTest.Contracts.Status
+static BDTest.Razor.Reports.Extensions.ScenarioExtensions.GetTotalStatus(this System.Collections.Generic.IEnumerable<BDTest.Contracts.ScenarioResult!>! scenarios) -> BDTest.Contracts.Status
 static BDTest.Razor.Reports.Helpers.ReportUi.IconId(this BDTest.Contracts.Status status) -> string!
 static BDTest.Razor.Reports.Helpers.ReportUi.Key(this BDTest.Contracts.Status status) -> string!
 static BDTest.Razor.Reports.Helpers.ReportUi.Label(this BDTest.Contracts.Status status) -> string!
@@ -37,5 +89,14 @@ static BDTest.Razor.Reports.Helpers.ReportUi.Pill(this BDTest.Contracts.Status s
 static BDTest.Razor.Reports.Helpers.ReportUi.RunResult(this BDTest.Contracts.Status runStatus) -> BDTest.Contracts.Status
 static BDTest.Razor.Reports.Helpers.ReportUi.RunResult(this BDTest.Razor.Reports.Models.TestRunSummary! run) -> BDTest.Contracts.Status
 static BDTest.Razor.Reports.Helpers.ReportUi.StatusIcon(this BDTest.Contracts.Status status, string? cssClass = null) -> Microsoft.AspNetCore.Html.IHtmlContent!
+static BDTest.Razor.Reports.Models.FailureGroup.Build(System.Collections.Generic.IEnumerable<BDTest.Contracts.ScenarioResult!>! scenarios, string? groupBy) -> System.Collections.Generic.IReadOnlyList<BDTest.Razor.Reports.Models.FailureGroup!>!
+static BDTest.Razor.Reports.Models.FailureGroup.FailingStep(BDTest.Contracts.ScenarioResult? scenario) -> BDTest.Contracts.StepResult?
+static BDTest.Razor.Reports.Models.FailureGroup.FailingStepNumber(BDTest.Contracts.ScenarioResult? scenario) -> int
+static BDTest.Razor.Reports.Models.FailureGroup.GetLocation(BDTest.Contracts.ExceptionInfo? exception) -> string?
+static BDTest.Razor.Reports.Models.ScenarioSearch.Matches(BDTest.Contracts.ScenarioResult? scenario, string? search) -> bool
+static BDTest.Razor.Reports.Models.ViewModels.ReportLayoutViewModel.Create(BDTest.Contracts.BDTestReport! report) -> BDTest.Razor.Reports.Models.ViewModels.ReportLayoutViewModel!
+static BDTest.Razor.Reports.Models.ViewModels.ReportPageModels.Create(BDTest.Contracts.BDTestReport! report) -> BDTest.Razor.Reports.Models.ViewModels.ReportPageModels!
+static BDTest.Razor.Reports.Serialization.HostedReportJson.Deserialize(string! json, long maximumExpandedSize = 104857600) -> BDTest.Contracts.BDTestReport?
+static BDTest.Razor.Reports.Serialization.HostedReportJson.DeserializeAsync(System.IO.Stream! stream, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken), long maximumExpandedSize = 104857600) -> System.Threading.Tasks.Task<BDTest.Contracts.BDTestReport?>!
 static readonly BDTest.Razor.Reports.Helpers.ReportUi.DisplayOrder -> BDTest.Contracts.Status[]!
 ~BDTest.Razor.Reports.Helpers.ReportJsonContext.Status.get -> System.Text.Json.Serialization.Metadata.JsonTypeInfo<BDTest.Contracts.Status>
