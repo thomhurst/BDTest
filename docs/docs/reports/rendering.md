@@ -46,8 +46,10 @@ the same fields from their compact cached projections, without reconstructing a
 report or retaining steps, examples, exceptions or output. A status URL callback
 turns offline filter controls into hosted navigation; a separate URL points to
 tests that were declared but never ran. `RenderNotRun` supplies the same encoded
-warning rows to the offline report and hosted warnings page. Hosted summaries
-preserve timing inferred from scenario timestamps when the report has no run timer.
+warning rows to the offline report and hosted warnings page. Hosted and standalone summaries
+infer timing from scenario timestamps when the report timer is missing or has a
+missing start or finish timestamp. Complete report timers take precedence, and
+reports without scenarios preserve their supplied timer.
 
 Scenario pages and offline reports share the complete scenario detail renderer:
 steps and timings, structured arguments, exceptions, examples, retries, startup

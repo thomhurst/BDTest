@@ -61,7 +61,7 @@ public class SharedRunOverviewTests
     }
 
     [Test]
-    public async Task Compact_layout_prefers_report_timer_and_only_falls_back_when_absent()
+    public async Task Compact_layout_prefers_complete_report_timer()
     {
         var start = new DateTimeOffset(2026, 10, 19, 12, 0, 0, TimeSpan.Zero);
         var scenario = new ScenarioResult("one", "timer", "story", "scenario", Status.Passed,
@@ -86,6 +86,44 @@ public class SharedRunOverviewTests
             configureViewData: data => data[nameof(ReportLayoutViewModel)] = pages.Summary.Layout);
         await Assert.That(hosted).DoesNotContain("No timing recorded");
         await Assert.That(hosted).Contains("2026-10-19 12:00:10 → 12:00:20 UTC");
+    }
+
+    [Test]
+    [Arguments(0, true)]
+    [Arguments(1, true)]
+    [Arguments(2, true)]
+    [Arguments(3, true)]
+    [Arguments(4, true)]
+    [Arguments(1, false)]
+    [Arguments(2, false)]
+    [Arguments(3, false)]
+    [Arguments(4, false)]
+    public async Task Overview_timer_fallback_matches_hosted_layout(int kind, bool hasScenarios)
+    {
+        var start = new DateTimeOffset(2026, 10, 19, 12, 0, 0, TimeSpan.Zero);
+        ReportTimer? timer = kind switch
+        {
+            1 => new(default, default),
+            2 => new(start.AddMinutes(-1), default),
+            3 => new(default, start.AddMinutes(1)),
+            4 => new(start.AddMinutes(-1), start.AddMinutes(1)),
+            _ => null
+        };
+        var scenarios = hasScenarios ? new[] {
+            new ScenarioResult("untimed", "timer", "story", "untimed", Status.Passed),
+            new ScenarioResult("one", "timer", "story", "one", Status.Passed,
+                startTime: start, endTime: start.AddSeconds(10)),
+            new ScenarioResult("two", "timer", "story", "two", Status.Passed,
+                startTime: start.AddSeconds(2), endTime: start.AddSeconds(20))
+        } : Array.Empty<ScenarioResult>();
+        var report = new BDTestReport(1, "timer", "tests", scenarios, testTimer: timer);
+        var expected = hasScenarios && kind != 4 ? new ReportTimer(start, start.AddSeconds(20)) : timer!;
+        var overview = ReportRunOverview.FromReport(report);
+        var layout = ReportPageModels.Create(report).Summary.Layout;
+        await Assert.That(overview.Timer!.TestsStartedAt).IsEqualTo(expected.TestsStartedAt);
+        await Assert.That(overview.Timer.TestsFinishedAt).IsEqualTo(expected.TestsFinishedAt);
+        await Assert.That(layout.Timer.TestsStartedAt).IsEqualTo(expected.TestsStartedAt);
+        await Assert.That(layout.Timer.TestsFinishedAt).IsEqualTo(expected.TestsFinishedAt);
     }
 
     [Test]

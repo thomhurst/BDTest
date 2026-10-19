@@ -56,7 +56,15 @@ public sealed class ReportRunOverview
             counts.TryGetValue(scenario.Status, out var count);
             counts[scenario.Status] = count + 1;
         }
+        var timer = report.TestTimer;
+        if (report.Scenarios.Count > 0 && (timer == null
+            || timer.TestsStartedAt == default || timer.TestsFinishedAt == default))
+        {
+            timer = new ReportTimer(
+                report.Scenarios.Select(scenario => scenario.StartTime).Where(time => time != default).DefaultIfEmpty().Min(),
+                report.Scenarios.Select(scenario => scenario.EndTime).Where(time => time != default).DefaultIfEmpty().Max());
+        }
         return new ReportRunOverview(report.Scenarios.Count, report.NotRun.Count, counts, report.Environment,
-            report.Tag, report.BranchName, report.MachineName, report.ProducerVersion, report.TestTimer, report.CustomProperties);
+            report.Tag, report.BranchName, report.MachineName, report.ProducerVersion, timer, report.CustomProperties);
     }
 }
