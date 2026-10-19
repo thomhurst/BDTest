@@ -11,25 +11,16 @@ namespace BDTest;
 /// <summary>Owns the report, scenario registry, executor, and output buffers for one test run.</summary>
 /// <remarks>
 /// Override BDTestBase.TestRun to select this run in a custom adapter. Dispose only after its tests
-/// and output writers have completed. Explicit runs freeze their configuration at Start; the legacy
-/// default run continues to use BDTestSettings.
+/// and output writers have completed. Runs freeze their configuration at Start.
 /// </remarks>
 public sealed class BDTestRun : IDisposable
 {
-    internal static BDTestRun Default { get; } = new();
     internal TestRunStore Store { get; } = new();
     internal Dictionary<string, StringBuilder> OutputBuffers { get; } = new();
     internal IScenarioExecutor ScenarioExecutor { get; } = new ScenarioExecutor(new ScenarioRetryManager());
     internal RunOptions Options { get; }
     internal DateTime StartedAt { get; }
     internal AttachmentFiles AttachmentFiles { get; }
-
-    private BDTestRun()
-    {
-        Options = RunOptions.Legacy;
-        StartedAt = Options.Clock.UtcNow;
-        AttachmentFiles = new AttachmentFiles(new AttachmentOptions());
-    }
 
     private BDTestRun(BDTestOptions options)
     {

@@ -7,7 +7,7 @@ using NUnit.Framework;
 namespace BDTest.Tests.Fixtures;
 
 [NonParallelizable]
-public class ReportServerRetryTests
+public class ReportServerRetryTests : TestRunOwner
 {
     [TestCase(false)]
     [TestCase(true)]
@@ -47,7 +47,7 @@ public class ReportServerRetryTests
         using var client = new HttpClient(handler);
         client.DefaultRequestHeaders.Add("X-BDTest-Upload-Key", "secret");
 
-        var result = await BDTestReportServer.SendDataAndGetReportUriAsync(new Uri("https://reports.example"), new BDTestRunDescriptor(), client);
+        var result = await BDTestReportServer.SendDataAndGetReportUriAsync(new Uri("https://reports.example"), new BDTestRunDescriptor(), client, TestRun);
 
         Assert.That(result, Is.EqualTo(new Uri("https://reports.example/bdtest/report/server-id")));
         Assert.That(handler.UploadAttempts, Is.EqualTo(2));
@@ -75,7 +75,7 @@ public class ReportServerRetryTests
         });
         using var client = new HttpClient(handler);
 
-        await BDTestReportServer.SendDataAndGetReportUriAsync(new Uri("https://reports.example"), new BDTestRunDescriptor(), client);
+        await BDTestReportServer.SendDataAndGetReportUriAsync(new Uri("https://reports.example"), new BDTestRunDescriptor(), client, TestRun);
 
         Assert.That(handler.UploadAttempts, Is.EqualTo(2));
     }
@@ -92,7 +92,7 @@ public class ReportServerRetryTests
         using var client = new HttpClient(handler);
 
         await Assert.ThrowsAsync<HttpRequestException>(async () =>
-            await BDTestReportServer.SendDataAndGetReportUriAsync(new Uri("https://reports.example"), new BDTestRunDescriptor(), client).WaitAsync(TimeSpan.FromSeconds(5)));
+            await BDTestReportServer.SendDataAndGetReportUriAsync(new Uri("https://reports.example"), new BDTestRunDescriptor(), client, TestRun).WaitAsync(TimeSpan.FromSeconds(5)));
         Assert.That(handler.UploadAttempts, Is.EqualTo(3));
     }
 
@@ -115,7 +115,7 @@ public class ReportServerRetryTests
         using var client = new HttpClient(handler);
 
         await Assert.ThrowsAsync<HttpRequestException>(async () =>
-            await BDTestReportServer.SendDataAndGetReportUriAsync(new Uri("https://reports.example"), new BDTestRunDescriptor(), client));
+            await BDTestReportServer.SendDataAndGetReportUriAsync(new Uri("https://reports.example"), new BDTestRunDescriptor(), client, TestRun));
 
         Assert.That(handler.UploadAttempts, Is.EqualTo(1));
     }
@@ -140,7 +140,7 @@ public class ReportServerRetryTests
         });
         using var client = new HttpClient(handler);
 
-        await BDTestReportServer.SendDataAndGetReportUriAsync(new Uri("https://reports.example"), new BDTestRunDescriptor(), client);
+        await BDTestReportServer.SendDataAndGetReportUriAsync(new Uri("https://reports.example"), new BDTestRunDescriptor(), client, TestRun);
 
         Assert.That(handler.UploadAttempts, Is.EqualTo(3));
     }
@@ -162,7 +162,7 @@ public class ReportServerRetryTests
         });
         using var client = new HttpClient(handler);
 
-        await BDTestReportServer.SendDataAndGetReportUriAsync(new Uri("https://reports.example"), new BDTestRunDescriptor(), client);
+        await BDTestReportServer.SendDataAndGetReportUriAsync(new Uri("https://reports.example"), new BDTestRunDescriptor(), client, TestRun);
 
         Assert.That(handler.UploadAttempts, Is.EqualTo(2));
     }
@@ -174,7 +174,7 @@ public class ReportServerRetryTests
         using var client = new HttpClient(handler);
 
         await Assert.ThrowsAsync<InvalidOperationException>(async () =>
-            await BDTestReportServer.SendDataAndGetReportUriAsync(new Uri("https://reports.example"), new BDTestRunDescriptor(), client));
+            await BDTestReportServer.SendDataAndGetReportUriAsync(new Uri("https://reports.example"), new BDTestRunDescriptor(), client, TestRun));
 
         Assert.That(handler.UploadAttempts, Is.EqualTo(1));
     }
@@ -186,7 +186,7 @@ public class ReportServerRetryTests
     {
         using var handler = new TrackingHandler(status);
         using var client = new HttpClient(handler);
-        var upload = BDTestReportServer.SendDataAndGetReportUriAsync(new Uri("https://reports.example"), new BDTestRunDescriptor(), client);
+        var upload = BDTestReportServer.SendDataAndGetReportUriAsync(new Uri("https://reports.example"), new BDTestRunDescriptor(), client, TestRun);
         if (status == HttpStatusCode.OK) await upload;
         else await Assert.ThrowsAsync<HttpRequestException>(async () => await upload);
 

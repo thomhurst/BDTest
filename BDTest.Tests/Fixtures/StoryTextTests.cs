@@ -11,13 +11,8 @@ namespace BDTest.Tests.Fixtures;
 [Story(AsA = "BDTest developer",
     IWant = "to make sure that BDTest works",
     SoThat = "other developers can use it confidently")]
-public class StoryTextTests : BDTestBase
+public class StoryTextTests : RunTestBase
 {
-    [SetUp]
-    public void Setup()
-    {
-        TestResetHelper.ResetData();
-    }
 
     [Test]
     public async Task CustomStoryText()
@@ -27,7 +22,7 @@ public class StoryTextTests : BDTestBase
             .BDTestAsync();
             
         Assert.That(scenario.GetStoryText(), Is.EqualTo($"As a BDTest developer{Environment.NewLine}I want to make sure that BDTest works{Environment.NewLine}So that other developers can use it confidently{Environment.NewLine}"));
-        Assert.That(Required(JsonHelper.GetTestDynamicJsonObject().SelectToken("$.Scenarios[0].StoryText")).ToString(), Is.EqualTo($"As a BDTest developer{Environment.NewLine}I want to make sure that BDTest works{Environment.NewLine}So that other developers can use it confidently{Environment.NewLine}"));
+        Assert.That(Required(JsonHelper.GetTestDynamicJsonObject(TestRun).SelectToken("$.Scenarios[0].StoryText")).ToString(), Is.EqualTo($"As a BDTest developer{Environment.NewLine}I want to make sure that BDTest works{Environment.NewLine}So that other developers can use it confidently{Environment.NewLine}"));
     }
 
     [Test]
@@ -38,13 +33,8 @@ public class StoryTextTests : BDTestBase
 }
 
 [Parallelizable(ParallelScope.None)]
-public class NoStoryTextTests : BDTestBase
+public class NoStoryTextTests : RunTestBase
 {
-    [SetUp]
-    public void Setup()
-    {
-        TestResetHelper.ResetData();
-    }
         
     [Test]
     public async Task NoStoryText()
@@ -54,6 +44,6 @@ public class NoStoryTextTests : BDTestBase
             .BDTestAsync();
             
         Assert.That(scenario.GetStoryText(), Is.EqualTo(DefaultValues.StoryTextNotDefined));
-        Assert.That(Required(JsonHelper.GetTestDynamicJsonObject().SelectToken("$.Scenarios[0].StoryText")).Type, Is.EqualTo(JTokenType.Null));
+        Assert.That(Required(JsonHelper.GetTestDynamicJsonObject(TestRun).SelectToken("$.Scenarios[0].StoryText")).Type, Is.EqualTo(JTokenType.Null));
     }
 }

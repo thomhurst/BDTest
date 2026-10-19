@@ -330,6 +330,7 @@ public partial class ReportUploadTests
     [NonParallelizable]
     public async Task ReportClientRoundTripsPlainJsonThroughServer(bool injectedClient)
     {
+        using var run = BDTestRun.Start();
         var connectionClosed = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         // Supply authentication in this test host so both client overloads use the real upload endpoint.
         await using var server = await UploadServer.Start(configureApp: app => app.Use((context, next) =>
@@ -341,19 +342,19 @@ public partial class ReportUploadTests
             {"Guid":"upload-round-trip","Status":"Passed","Steps":[{"StepText":"A shared step"}]}
             """);
         Required(scenario.Steps).Add(scenario.Steps[0]);
-        TestHolder.ScenariosByInternalId.TryAdd(Required(scenario.Guid), scenario);
+        run.Store.ScenariosByInternalId.TryAdd(Required(scenario.Guid), scenario);
         var descriptor = new BDTestRunDescriptor { Tag = "round-trip", BranchName = "test-branch", Environment = "test-env" };
         try
         {
-            var helperJson = BDTestJsonHelper.GetTestJsonData(descriptor);
+            var helperJson = BDTestJsonHelper.GetTestJsonData(descriptor, run);
             Assert.That(helperJson, Does.Not.Contain("\"$id\"").And.Not.Contain("\"$ref\""));
             var helperReport = ReportJson.DeserializeObject<BDTestOutputModel>(helperJson);
             var helperScenario = Required(helperReport.Scenarios).Single(item => item.Guid == scenario.Guid);
             Assert.That(Required(helperScenario.Steps)[1], Is.Not.SameAs(helperScenario.Steps[0]));
 
             var uri = injectedClient
-                ? await BDTestReportServer.SendDataAndGetReportUriAsync(Required(server.Client.BaseAddress), descriptor, server.Client)
-                : await BDTestReportServer.SendDataAndGetReportUriAsync(Required(server.Client.BaseAddress), descriptor);
+                ? await BDTestReportServer.SendDataAndGetReportUriAsync(Required(server.Client.BaseAddress), descriptor, server.Client, run)
+                : await BDTestReportServer.SendDataAndGetReportUriAsync(run, Required(server.Client.BaseAddress), descriptor);
 
             var received = server.Store.Received.Single();
             var receivedScenario = Required(received.Scenarios).Single(item => item.Guid == scenario.Guid);
@@ -371,7 +372,7 @@ public partial class ReportUploadTests
         }
         finally
         {
-            TestHolder.ScenariosByInternalId.TryRemove(scenario.Guid, out _);
+            run.Store.ScenariosByInternalId.TryRemove(scenario.Guid, out _);
         }
     }
 
@@ -391,12 +392,13 @@ public partial class ReportUploadTests
     [Test]
     public async Task InternallyOwnedClientClosesConnectionAfterFailedUpload()
     {
+        using var run = BDTestRun.Start();
         var connectionClosed = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         await using var server = await UploadServer.Start(connectionClosed: () => connectionClosed.TrySetResult());
 
         // The convenience overload has no upload key, so the server rejects its request.
         await Assert.ThrowsAsync<HttpRequestException>(async () =>
-            await BDTestReportServer.SendDataAndGetReportUriAsync(Required(server.Client.BaseAddress), new BDTestRunDescriptor()));
+            await BDTestReportServer.SendDataAndGetReportUriAsync(run, Required(server.Client.BaseAddress), new BDTestRunDescriptor()));
 
         await connectionClosed.Task.WaitAsync(TimeSpan.FromSeconds(10));
     }

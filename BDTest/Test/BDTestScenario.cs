@@ -7,11 +7,11 @@ public static class BDTestScenario
 {
     /// <summary>Creates a host whose metadata and retry hooks belong to the supplied test instance.</summary>
     /// <remarks>
-    /// An omitted run uses the legacy default run. The caller owns an explicit run's lifetime.
+    /// The caller owns the supplied run's lifetime.
     /// Call BeginTest synchronously before asynchronous setup, and EndTest in teardown.
     /// </remarks>
-    public static BDTestScenario<TContext> For<TContext>(object testInstance, BDTestRun? run = null)
-        where TContext : class => new(testInstance, run ?? BDTestRun.Default);
+    public static BDTestScenario<TContext> For<TContext>(object testInstance, BDTestRun run)
+        where TContext : class => new(testInstance, run);
 }
 
 /// <summary>Provides context, scenario builders and output helpers through composition.</summary>
@@ -26,6 +26,7 @@ public class BDTestScenario<TContext> : AbstractContextBDTestBase<TContext> wher
     protected internal BDTestScenario(object testInstance, BDTestRun run)
     {
         TestInstance = testInstance ?? throw new ArgumentNullException(nameof(testInstance));
+        if (run == null) throw new ArgumentNullException(nameof(run));
         run.ThrowIfDisposed();
         TestRun = run;
     }

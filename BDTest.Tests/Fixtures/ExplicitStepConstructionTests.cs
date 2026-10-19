@@ -4,7 +4,7 @@ using NUnit.Framework;
 
 namespace BDTest.Tests.Fixtures;
 
-public class ExplicitStepConstructionTests : AbstractContextBDTestBase<MyTestContext>
+public class ExplicitStepConstructionTests : RunContextTestBase<MyTestContext>
 {
     public InjectableStep1 InjectableStep1 => new(Context);
     public InjectableStep2 InjectableStep2 => new(Context);

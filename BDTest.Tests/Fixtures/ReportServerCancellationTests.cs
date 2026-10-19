@@ -11,15 +11,8 @@ public class ReportServerCancellationTests
 {
     private static readonly Uri Server = new("https://reports.example/team/reports/");
 
-    [SetUp]
-    public void SetUp() => TestResetHelper.ResetData();
-
-    [TearDown]
-    public void TearDown() => TestResetHelper.ResetData();
-
-    [TestCase(false)]
-    [TestCase(true)]
-    public async Task Precancelled_upload_sends_no_requests(bool explicitRun)
+    [Test]
+    public async Task Precancelled_upload_sends_no_requests()
     {
         using var run = BDTestRun.Start();
         using var cancellation = new CancellationTokenSource();
@@ -32,36 +25,30 @@ public class ReportServerCancellationTests
         });
         using var client = new HttpClient(handler);
 
-        await Assert.CatchAsync<OperationCanceledException>(() => Upload(run, explicitRun, client, cancellation.Token));
+        await Assert.CatchAsync<OperationCanceledException>(() => Upload(run, client, cancellation.Token));
 
         Assert.That(requests, Is.Zero);
         using var response = await client.GetAsync(Server);
         Assert.That(response.IsSuccessStatusCode, Is.True);
     }
 
-    [TestCase(false)]
-    [TestCase(true)]
-    public async Task Client_owning_overloads_accept_cancellation(bool explicitRun)
+    [Test]
+    public async Task Client_owning_overloads_accept_cancellation()
     {
         using var run = BDTestRun.Start();
         using var cancellation = new CancellationTokenSource();
         cancellation.Cancel();
 
-        await Assert.CatchAsync<OperationCanceledException>(() => explicitRun
-            ? BDTestReportServer.SendDataAndGetReportUriAsync(run, Server, null, cancellation.Token)
-            : BDTestReportServer.SendDataAndGetReportUriAsync(Server, null, cancellation.Token));
+        await Assert.CatchAsync<OperationCanceledException>(() => BDTestReportServer.SendDataAndGetReportUriAsync(run, Server, null, cancellation.Token));
     }
 
-    [TestCase(false, "ping")]
-    [TestCase(true, "ping")]
-    [TestCase(false, "data")]
-    [TestCase(true, "data")]
-    [TestCase(false, "attachment")]
-    [TestCase(true, "attachment")]
-    public async Task Cancellation_interrupts_request_without_starting_later_requests(bool explicitRun, string phase)
+    [TestCase("ping")]
+    [TestCase("data")]
+    [TestCase("attachment")]
+    public async Task Cancellation_interrupts_request_without_starting_later_requests(string phase)
     {
         using var explicitOwner = BDTestRun.Start();
-        var run = explicitRun ? explicitOwner : BDTestRun.Default;
+        var run = explicitOwner;
         var fixture = new AttachmentFixture(run);
         var scenario = await fixture.When(() => fixture.Attachments.Attach("first.txt", new byte[] { 1 }, "text/plain"))
             .Then(() => fixture.Attachments.Attach("second.txt", new byte[] { 2 }, "text/plain")).BDTestAsync();
@@ -85,7 +72,7 @@ public class ReportServerCancellationTests
             return Success();
         });
         using var client = new HttpClient(handler);
-        var upload = Upload(run, explicitRun, client, cancellation.Token);
+        var upload = Upload(run, client, cancellation.Token);
         try
         {
             await started.Task.WaitAsync(TimeSpan.FromSeconds(5));
@@ -110,16 +97,13 @@ public class ReportServerCancellationTests
         }
     }
 
-    [TestCase(false, "ping")]
-    [TestCase(true, "ping")]
-    [TestCase(false, "data")]
-    [TestCase(true, "data")]
-    [TestCase(false, "attachment")]
-    [TestCase(true, "attachment")]
-    public async Task Cancellation_interrupts_response_body_buffering(bool explicitRun, string phase)
+    [TestCase("ping")]
+    [TestCase("data")]
+    [TestCase("attachment")]
+    public async Task Cancellation_interrupts_response_body_buffering(string phase)
     {
         using var explicitOwner = BDTestRun.Start();
-        var run = explicitRun ? explicitOwner : BDTestRun.Default;
+        var run = explicitOwner;
         var fixture = new AttachmentFixture(run);
         await fixture.When(() => fixture.Attachments.Attach("first.txt", new byte[] { 1 }, "text/plain"))
             .Then(() => { }).BDTestAsync();
@@ -135,7 +119,7 @@ public class ReportServerCancellationTests
                 : Success());
         });
         using var client = new HttpClient(handler);
-        var upload = Upload(run, explicitRun, client, cancellation.Token);
+        var upload = Upload(run, client, cancellation.Token);
         try
         {
             await content.Started.Task.WaitAsync(TimeSpan.FromSeconds(5));
@@ -150,9 +134,8 @@ public class ReportServerCancellationTests
         }
     }
 
-    [TestCase(false)]
-    [TestCase(true)]
-    public async Task Response_buffering_timeout_retries_without_cancelling_the_caller(bool explicitRun)
+    [Test]
+    public async Task Response_buffering_timeout_retries_without_cancelling_the_caller()
     {
         using var run = BDTestRun.Start();
         using var content = new BlockingContent();
@@ -163,19 +146,18 @@ public class ReportServerCancellationTests
                 : Success()));
         using var client = new HttpClient(handler) { Timeout = TimeSpan.FromMilliseconds(100) };
 
-        var result = await Upload(run, explicitRun, client, CancellationToken.None).WaitAsync(TimeSpan.FromSeconds(5));
+        var result = await Upload(run, client, CancellationToken.None).WaitAsync(TimeSpan.FromSeconds(5));
 
         Assert.That(result.AbsoluteUri, Is.EqualTo("https://reports.example/report/server-id"));
         Assert.That(attempts, Is.EqualTo(2));
         Assert.That(content.Disposed, Is.True);
     }
 
-    [TestCase(false)]
-    [TestCase(true)]
-    public async Task Cancellation_interrupts_attachment_retry_wait_without_opening_another_capture(bool explicitRun)
+    [Test]
+    public async Task Cancellation_interrupts_attachment_retry_wait_without_opening_another_capture()
     {
         using var explicitOwner = BDTestRun.Start();
-        var run = explicitRun ? explicitOwner : BDTestRun.Default;
+        var run = explicitOwner;
         var fixture = new AttachmentFixture(run);
         await fixture.When(() => fixture.Attachments.Attach("first.txt", new byte[] { 1 }, "text/plain"))
             .Then(() => fixture.Attachments.Attach("second.txt", new byte[] { 2 }, "text/plain")).BDTestAsync();
@@ -190,7 +172,7 @@ public class ReportServerCancellationTests
             return Task.FromResult(response);
         });
         using var client = new HttpClient(handler);
-        var upload = Upload(run, explicitRun, client, cancellation.Token);
+        var upload = Upload(run, client, cancellation.Token);
         Assert.That(requests, Has.Count.EqualTo(3));
         cancellation.Cancel();
         await Assert.CatchAsync<OperationCanceledException>(async () => await upload.WaitAsync(TimeSpan.FromSeconds(5)));
@@ -198,13 +180,10 @@ public class ReportServerCancellationTests
         await Assert.ThrowsAsync<ObjectDisposedException>(async () => await Required(requests.Last().Content).ReadAsByteArrayAsync());
     }
 
-    [TestCase(false, "delta")]
-    [TestCase(true, "delta")]
-    [TestCase(false, "date")]
-    [TestCase(true, "date")]
-    [TestCase(false, "fallback")]
-    [TestCase(true, "fallback")]
-    public async Task Cancellation_interrupts_retry_delay(bool explicitRun, string retryAfter)
+    [TestCase("delta")]
+    [TestCase("date")]
+    [TestCase("fallback")]
+    public async Task Cancellation_interrupts_retry_delay(string retryAfter)
     {
         using var run = BDTestRun.Start();
         using var cancellation = new CancellationTokenSource();
@@ -225,7 +204,7 @@ public class ReportServerCancellationTests
         using var client = new HttpClient(handler);
 
         // The handler completes synchronously: the upload returns at the retry delay's await.
-        var upload = Upload(run, explicitRun, client, cancellation.Token);
+        var upload = Upload(run, client, cancellation.Token);
         Assert.That(attempts, Is.EqualTo(1));
         Assert.That(upload.IsCompleted, Is.False);
         if (content != null) Assert.That(content.Disposed, Is.True);
@@ -234,9 +213,8 @@ public class ReportServerCancellationTests
         Assert.That(attempts, Is.EqualTo(1));
     }
 
-    [TestCase(false)]
-    [TestCase(true)]
-    public async Task Noncancellation_warmup_failure_remains_best_effort(bool explicitRun)
+    [Test]
+    public async Task Noncancellation_warmup_failure_remains_best_effort()
     {
         using var run = BDTestRun.Start();
         using var cancellation = new CancellationTokenSource();
@@ -249,15 +227,14 @@ public class ReportServerCancellationTests
         });
         using var client = new HttpClient(handler);
 
-        var result = await Upload(run, explicitRun, client, cancellation.Token);
+        var result = await Upload(run, client, cancellation.Token);
 
         Assert.That(result.AbsoluteUri, Is.EqualTo("https://reports.example/report/server-id"));
         Assert.That(attempts, Is.EqualTo(1));
     }
 
-    private static Task<Uri> Upload(BDTestRun run, bool explicitRun, HttpClient client, CancellationToken token) => explicitRun
-        ? BDTestReportServer.SendDataAndGetReportUriAsync(Server, null, client, run, token)
-        : BDTestReportServer.SendDataAndGetReportUriAsync(Server, null, client, token);
+    private static Task<Uri> Upload(BDTestRun run, HttpClient client, CancellationToken token) =>
+        BDTestReportServer.SendDataAndGetReportUriAsync(Server, null, client, run, token);
 
     private static HttpResponseMessage Success()
     {

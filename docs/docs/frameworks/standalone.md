@@ -16,8 +16,10 @@ dotnet add package BDTest
 Inherit `BDTestBase` for the `Given` / `When` / `Then` methods without a context:
 
 ```csharp
-public class SmokeTests : BDTestBase
+public class SmokeTests(BDTestRun run) : BDTestBase
 {
+    public override BDTestRun TestRun => run;
+
     public async Task HomePageLoads()
     {
         await When(() => Browser.OpenTheHomePage())
@@ -36,7 +38,8 @@ For a typed context without inheriting a BDTest base class, use the [composition
 `BDTestBuilder` is a `BDTestBase` that you create instead of inheriting. Each builder gets its own execution ID when it is constructed, so output written from async setup or `Task.Run` before the scenario uses the same ID as the scenario. **Create a new builder for each test.**
 
 ```csharp
-var scenario = await new BDTestBuilder()
+using var run = BDTestRun.Start();
+var scenario = await new BDTestBuilder(run)
     .Given(() => Steps.Prepare())
     .When(() => Steps.Act())
     .Then(() => Steps.Verify())
@@ -44,6 +47,8 @@ var scenario = await new BDTestBuilder()
 
 Console.WriteLine(scenario.Status);
 ```
+
+Export reports before disposing the run. Custom adapters must implement `TestRun` with a stable owned run; there is no implicit default store. See [explicit runs](../advanced/explicit-runs.md).
 
 ## Things to know
 

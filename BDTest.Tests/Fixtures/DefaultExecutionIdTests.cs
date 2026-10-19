@@ -3,12 +3,12 @@ using NUnit.Framework;
 
 namespace BDTest.Tests.Fixtures;
 
-public class DefaultExecutionIdTests
+public class DefaultExecutionIdTests : TestRunOwner
 {
     [Test]
     public async Task BuilderKeepsStartupOutputFromAsyncSetup()
     {
-        var builder = new BDTestBuilder();
+        var builder = new BDTestBuilder(TestRun);
         await Task.Run(() => builder.WriteStartupOutput("async startup"));
 
         var scenario = await builder.When(() => NoOp()).Then(() => NoOp()).BDTestAsync();
@@ -19,8 +19,8 @@ public class DefaultExecutionIdTests
     [Test]
     public async Task BuildersHaveIndependentIdsInTheSameFlow()
     {
-        var first = new BDTestBuilder();
-        var second = new BDTestBuilder();
+        var first = new BDTestBuilder(TestRun);
+        var second = new BDTestBuilder(TestRun);
         first.WriteStartupOutput("first startup");
         second.WriteStartupOutput("second startup");
 
@@ -36,7 +36,7 @@ public class DefaultExecutionIdTests
     [TestCase(true)]
     public async Task ExplicitStartKeepsContextAndOutputAcrossAsyncSetup(bool useTaskRun)
     {
-        var fixture = new ContextFixture();
+        using var fixture = new ContextFixture();
         fixture.Start();
         try
         {
@@ -62,7 +62,7 @@ public class DefaultExecutionIdTests
     [TestCase(true)]
     public async Task StartsIsolateConcurrentExecutionsOnSharedFixture(bool useLegacyStart)
     {
-        var fixture = new ContextFixture();
+        using var fixture = new ContextFixture();
         var ready = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
         var count = 0;
         var executions = await Task.WhenAll(Enumerable.Range(0, 8).Select(_ => Task.Run(async () =>
@@ -93,7 +93,7 @@ public class DefaultExecutionIdTests
     [TestCase(true)]
     public void StartAfterCompletionCreatesANewExecution(bool useLegacyStart)
     {
-        var fixture = new ContextFixture();
+        using var fixture = new ContextFixture();
         fixture.Start(useLegacyStart);
         var first = fixture.BDTestContext;
         fixture.Complete();
@@ -114,7 +114,7 @@ public class DefaultExecutionIdTests
     [TestCase(true)]
     public async Task AsyncEntryPointPreservesCallerIdentity(bool fail)
     {
-        var fixture = new ContextFixture();
+        using var fixture = new ContextFixture();
         fixture.Start();
         var callerContext = fixture.BDTestContext;
         var callerOutputId = BDTest.Output.TestOutputData.FrameworkExecutionId;
@@ -138,7 +138,7 @@ public class DefaultExecutionIdTests
         }
     }
 
-    private sealed class ContextFixture : AbstractContextBDTestBase<MyTestContext>
+    private sealed class ContextFixture : RunContextTestBase<MyTestContext>
     {
         public void Start(bool useLegacyStart = false)
         {

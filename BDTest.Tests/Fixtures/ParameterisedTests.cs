@@ -7,7 +7,7 @@ namespace BDTest.Tests.Fixtures;
 [Story(AsA = "BDTest developer",
     IWant = "to make sure that BDTest works with parameterised values",
     SoThat = "tests can be written concisely")]
-public class ParameterisedTests : BDTestBase
+public class ParameterisedTests : RunTestBase
 {
     [TestCase(1)]
     [TestCase(2)]

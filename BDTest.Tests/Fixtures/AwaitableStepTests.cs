@@ -5,7 +5,7 @@ using NUnit.Framework;
 namespace BDTest.Tests.Fixtures;
 
 [NonParallelizable]
-public class AwaitableStepTests : BDTestBase
+public class AwaitableStepTests : RunTestBase
 {
     [TestCase("Task", false)]
     [TestCase("Task", true)]

@@ -7,14 +7,8 @@ using NUnit.Framework;
 namespace BDTest.Tests.Fixtures;
 
 [NonParallelizable]
-public class StepErrorHandlingTests : BDTestBase
+public class StepErrorHandlingTests : RunTestBase
 {
-    [SetUp]
-    public void Setup() => TestResetHelper.ResetData();
-
-    [TearDown]
-    public void Cleanup() => TestResetHelper.ResetData();
-
     [Test]
     public void NullStepNamesThePublicParameter([Values] EntryPoint entryPoint, [Values] bool asyncStep)
     {

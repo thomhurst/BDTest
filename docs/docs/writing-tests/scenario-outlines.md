@@ -73,4 +73,4 @@ All rows run, even when one fails. Afterwards the first exception for the most s
 - Passed rows mixed with skipped rows pass.
 - If every row is skipped, the outline is skipped.
 
-JSON, HTML and report server output contain **one** outline with an example table and per-row results. `BDTestUtil.GetScenarios()` returns the outline scenario: `IsOutline` is `true`, and its `Examples` collection holds the row scenarios with their `ExampleValues`. Each row has an `OutlineId` that points back to its parent.
+JSON, HTML and report server output contain **one** outline with an example table and per-row results. `BDTestUtil.GetScenarios(run)` returns the outline scenario: `IsOutline` is `true`, and its `Examples` collection holds the row scenarios with their `ExampleValues`. Each row has an `OutlineId` that points back to its parent.

@@ -11,7 +11,7 @@ using NUnit.Framework;
 namespace BDTest.Tests.Fixtures;
 
 [NonParallelizable]
-public class ButStepTests : BDTestBase
+public class ButStepTests : RunTestBase
 {
     [TestCase(false)]
     [TestCase(true)]
@@ -74,7 +74,7 @@ public class ButStepTests : BDTestBase
             .But(() => NoOp()).WithStepText(() => "custom assertion")
             .BDTestAsync();
 
-        var report = ReportJson.DeserializeObject<BDTestOutputModel>(BDTestJsonHelper.GetTestJsonData());
+        var report = ReportJson.DeserializeObject<BDTestOutputModel>(BDTestJsonHelper.GetTestJsonData(null, TestRun));
         var restored = Required(report.Scenarios).Single(scenario => scenario.Guid == result.Guid);
         Assert.That(Required(restored.Steps).Select(step => step.StepText), Is.EqualTo(new[]
         {
@@ -87,25 +87,18 @@ public class ButStepTests : BDTestBase
     [Test]
     public async Task But_when_steps_obey_debug_skipping()
     {
-        var previous = BDTestSettings.Debug.ShouldSkipWhenStep;
         var calls = new List<string>();
-        try
-        {
-            BDTestSettings.Debug.ShouldSkipWhenStep = true;
-            var result = await When(() => Record(calls, "when"))
-                .But(() => RecordAsync(calls, "but when"))
-                .Then(() => Record(calls, "then"))
-                .But(() => Record(calls, "but then"))
-                .BDTestAsync();
+        Options.Debug.ShouldSkipWhenStep = true;
+        var result = await When(() => Record(calls, "when"))
+            .But(() => RecordAsync(calls, "but when"))
+            .Then(() => Record(calls, "then"))
+            .But(() => Record(calls, "but then"))
+            .BDTestAsync();
 
-            Assert.That(calls, Is.EqualTo(new[] { "then", "but then" }));
-            Assert.That(Required(result.Steps).Take(2).All(step => step.Status == Status.Skipped), Is.True);
-            Assert.That(result.Steps[1].StepText, Does.StartWith("[Skipped] But "));
-        }
-        finally
-        {
-            BDTestSettings.Debug.ShouldSkipWhenStep = previous;
-        }
+        Assert.That(calls, Is.EqualTo(new[] { "then", "but then" }));
+        Assert.That(Required(result.Steps).Take(2).All(step => step.Status == Status.Skipped), Is.True);
+        Assert.That(result.Steps[1].StepText, Does.StartWith("[Skipped] But "));
+
     }
 
     [TestCase(false)]
@@ -120,7 +113,7 @@ public class ButStepTests : BDTestBase
         var exception = await Assert.ThrowsAsync<InvalidOperationException>(async () => await builder.BDTestAsync());
         Assert.That(Required(exception).Message, Is.EqualTo("But failed"));
 
-        var result = BDTestUtil.GetScenarios().Single(scenario => scenario.Guid == builder.Guid);
+        var result = BDTestUtil.GetScenarios(TestRun).Single(scenario => scenario.Guid == builder.Guid);
         Assert.That(result.Status, Is.EqualTo(Status.Failed));
         Assert.That(Required(result.Steps)[2].Status, Is.EqualTo(Status.Failed));
         Assert.That(Required(result.Steps)[2].StepText, Is.EqualTo(asyncStep ? "But fail async" : "But fail"));

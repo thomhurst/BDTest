@@ -9,7 +9,7 @@ using NUnit.Framework;
 namespace BDTest.Tests.Fixtures;
 
 [FixtureLifeCycle(LifeCycle.InstancePerTestCase)]
-public class FluentBuilderTests : BDTestBase
+public class FluentBuilderTests : RunTestBase
 {
     [SetUp]
     public void BindMetadata() => BeginTest(TestContext.CurrentContext.Test.ID,
@@ -104,9 +104,9 @@ public class FluentBuilderTests : BDTestBase
     {
         var builder = When(() => Value(value)).Then(() => NoOp());
         Assert.That(builder.ParameterNames, Is.EqualTo(new[] { "value" }));
-        var pending = BDTestUtil.GetNotRunScenarios().Single(definition => definition.ScenarioId == builder.ScenarioId);
+        var pending = BDTestUtil.GetNotRunScenarios(TestRun).Single(definition => definition.ScenarioId == builder.ScenarioId);
         Assert.That(pending.ParameterNames, Is.EqualTo(new[] { "value" }));
-        Assert.That(BDTestUtil.CurrentReportId, Is.EqualTo(BDTestRun.Default.ReportId));
+        Assert.That(builder.ReportId, Is.EqualTo(TestRun.ReportId));
         Assert.That(typeof(BDTestUtil).GetProperty("GetCurrentReportId"), Is.Null);
         Assert.That(typeof(BDTestContext).GetProperty("CurrentTestRunnerId"), Is.Null);
         Assert.That(typeof(BuildableTest).GetProperty("Parameters"), Is.Null);

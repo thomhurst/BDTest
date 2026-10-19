@@ -1,6 +1,5 @@
 using BDTest.Maps;
 using BDTest.Output;
-using BDTest.Settings;
 
 namespace BDTest.Helpers;
 
@@ -14,9 +13,9 @@ internal static class BDTestOutputModelBuilder
         var model = new BDTestOutputModel
         {
             Id = run.ReportId,
-            Environment = descriptor?.Environment ?? BDTestSettings.LegacyEnvironment,
-            Tag = descriptor?.Tag ?? BDTestSettings.LegacyTag,
-            BranchName = descriptor?.BranchName ?? BDTestSettings.LegacyBranchName,
+            Environment = descriptor?.Environment,
+            Tag = descriptor?.Tag,
+            BranchName = descriptor?.BranchName,
             MachineName = Environment.MachineName,
             Scenarios = scenarios,
             NotRun = BDTestUtil.GetNotRunScenarios(run),
@@ -26,11 +25,12 @@ internal static class BDTestOutputModelBuilder
                 : BDTestUtil.GetTestTimer(scenarios)
         };
 
-#pragma warning disable CS0612 // Preserve the shipped setting for all report formats until its separate removal.
-        var customProperties = model.CustomProperties ?? throw new InvalidOperationException("The report has no custom properties collection.");
-        foreach (var property in BDTestSettings.CustomProperties)
-            customProperties.Add(property.Key, property.Value);
-#pragma warning restore CS0612
+        if (descriptor != null)
+        {
+            var customProperties = model.CustomProperties ?? throw new InvalidOperationException("The report has no custom properties collection.");
+            foreach (var property in descriptor.CustomProperties)
+                customProperties.Add(property.Key, property.Value);
+        }
 
         return model;
     }

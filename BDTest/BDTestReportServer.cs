@@ -11,35 +11,6 @@ namespace BDTest;
 [SuppressMessage("ReSharper", "UnusedType.Global")]
 public static class BDTestReportServer
 {
-    [Obsolete("SendDataAndGetReportUriAsync(Uri) is obsolete. You should instead use SendDataAndGetReportUriAsync(Uri, BDTestRunDescriptor)")]
-    public static Task<Uri> SendDataAndGetReportUriAsync(Uri serverAddress)
-    {
-        return SendDataAndGetReportUriAsync(serverAddress, new BDTestRunDescriptor());
-    }
-        
-    public static Task<Uri> SendDataAndGetReportUriAsync(Uri serverAddress, BDTestRunDescriptor? bdTestRunDescriptor)
-        => SendDataAndGetReportUriAsync(serverAddress, bdTestRunDescriptor, CancellationToken.None);
-
-    /// <summary>Uploads the default run, allowing cancellation of warm-up, requests and retry waits.</summary>
-    public static async Task<Uri> SendDataAndGetReportUriAsync(Uri serverAddress, BDTestRunDescriptor? bdTestRunDescriptor,
-        CancellationToken cancellationToken)
-    {
-        using var httpClient = new HttpClient
-        {
-            Timeout = TimeSpan.FromMinutes(2)
-        };
-
-        return await SendDataAndGetReportUriAsync(serverAddress, bdTestRunDescriptor, httpClient, cancellationToken).ConfigureAwait(false);
-    }
-        
-    public static Task<Uri> SendDataAndGetReportUriAsync(Uri serverAddress, BDTestRunDescriptor? bdTestRunDescriptor,
-        HttpClient httpClient) => SendDataAndGetReportUriAsync(serverAddress, bdTestRunDescriptor, httpClient, CancellationToken.None);
-
-    /// <summary>Uploads the default run using a caller-owned HTTP client and cancellation token.</summary>
-    public static Task<Uri> SendDataAndGetReportUriAsync(Uri serverAddress, BDTestRunDescriptor? bdTestRunDescriptor,
-        HttpClient httpClient, CancellationToken cancellationToken)
-        => SendDataAndGetReportUriAsync(serverAddress, bdTestRunDescriptor, httpClient, BDTestRun.Default, cancellationToken);
-
     /// <summary>Uploads only the scenarios and pending definitions owned by the supplied run.</summary>
     public static Task<Uri> SendDataAndGetReportUriAsync(BDTestRun run, Uri serverAddress, BDTestRunDescriptor? bdTestRunDescriptor)
         => SendDataAndGetReportUriAsync(run, serverAddress, bdTestRunDescriptor, CancellationToken.None);

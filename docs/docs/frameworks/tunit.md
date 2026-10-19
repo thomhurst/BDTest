@@ -5,7 +5,7 @@ description: Use BDTest with TUnit through composition or TUnitBDTestBase<TConte
 
 # TUnit
 
-The adapter uses a [configured assembly run](../configuration/assembly-runs.md). Configure `BDTestOptions` with `[assembly: BDTestConfiguration(typeof(TestConfiguration))]`; `BDTestSettings` execution settings no longer affect this adapter. Use `TUnitBDTestAssembly.GetRun(typeof(MyTests).Assembly)` for reports and call `TUnitBDTestAssembly.Dispose(assembly)` after all tests and exports finish. Explicit-run overrides remain supported.
+The adapter uses a [configured assembly run](../configuration/assembly-runs.md). Configure `BDTestOptions` with `[assembly: BDTestConfiguration(typeof(TestConfiguration))]`. Use `TUnitBDTestAssembly.GetRun(typeof(MyTests).Assembly)` for reports and call `TUnitBDTestAssembly.Dispose(assembly)` after all tests and exports finish. Explicit-run overrides remain supported.
 
 
 TUnit is the recommended framework for BDTest, and the one used in the examples throughout this documentation.

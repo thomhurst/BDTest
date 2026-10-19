@@ -4,10 +4,9 @@ using NUnit.Framework;
 namespace BDTest.Tests.Fixtures;
 
 [FixtureLifeCycle(LifeCycle.InstancePerTestCase)]
-public class ExecutionSchedulingTests : BDTestBase
+public class ExecutionSchedulingTests : RunTestBase
 {
-    [SetUp]
-    public void BindMetadata() => BeginTest(TestContext.CurrentContext.Test.ID, Required(global::NUnit.Framework.Internal.TestExecutionContext.CurrentContext.CurrentTest.Method).MethodInfo);
+    protected override bool BindCurrentTestMetadata => true;
 
     [TearDown]
     public void FinishExecution() => EndTest();

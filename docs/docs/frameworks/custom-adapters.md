@@ -12,6 +12,7 @@ To integrate without requiring test-class inheritance, create a [composition hos
 ## Start from `AbstractContextBDTestBase<TContext>`
 
 ```csharp
+using BDTest;
 using BDTest.Settings;
 using BDTest.Test;
 
@@ -22,11 +23,13 @@ public abstract class MyRunnerBDTestBase<TContext> : AbstractContextBDTestBase<T
         new FrameworkOutcomeMap(reason => throw new MyRunnerSkipException(reason))
             .Skip<MyRunnerSkipException>();
 
-    static MyRunnerBDTestBase()
-    {
-        // The core deduplicates registrations across generic context types.
-        BDTestSettings.CustomExceptionSettings.RegisterFrameworkOutcomes(RunnerOutcomes);
-    }
+    protected MyRunnerBDTestBase(BDTestRun run) => TestRun = run;
+    public override BDTestRun TestRun { get; }
+
+    // The runner's assembly owner configures and starts the run once:
+    // options.RegisterFrameworkOutcomes(RunnerOutcomes);
+    // run = BDTestRun.Start(options);
+    // Pass run into fixtures; export and dispose after all tests finish.
 
     // Called by the runner before each test, before any async setup starts.
     [MyRunnerBeforeTest]
@@ -47,7 +50,7 @@ public abstract class MyRunnerBDTestBase<TContext> : AbstractContextBDTestBase<T
 | `EndTestAsync()` | Awaits owned context disposal, removes pending output from the owning run and clears matching flow state, even when disposal throws. Calling it again is safe. |
 | `EndTest()` | Synchronous compatibility bridge for cleanup. Prefer awaiting `EndTestAsync()` for async contexts. |
 | `OnScenarioSkipped(string reason)` | Called when a whole scenario is skipped. Throw the runner's skip exception or call its skip API. |
-| `TestRun` | The [`BDTestRun`](../advanced/explicit-runs.md) that stores this test's scenarios. Override it with a stable run to isolate scenarios, output and completion from other runs. Defaults to the shared run. |
+| `TestRun` | The [`BDTestRun`](../advanced/explicit-runs.md) that stores this test's scenarios. Override it with a stable run to isolate scenarios, output and completion from other runs. This abstract property must return an explicitly owned run. |
 
 Adapters no longer need to set `TestOutputData.FrameworkExecutionId` or call `RemoveContext()` themselves.
 
@@ -126,11 +129,8 @@ The repository's framework test projects (`BDTest.Tests`, `BDTest.xUnit.Tests`, 
 
 Declare framework exception classifications and runner notifications with
 [`FrameworkOutcomeMap`](../configuration/exceptions.md#framework-outcome-maps).
-Register the map on `BDTestOptions` before starting an explicit run. For the legacy
-default run, register the declaration through
-`BDTestSettings.CustomExceptionSettings.RegisterFrameworkOutcomes(map)` and invoke
-`map.ReportSkip(reason)` from `OnScenarioSkipped`. Explicit runs use their frozen
-map's skip callback before falling back to that virtual hook.
+Register the map on `BDTestOptions` before starting a run. Runs use their frozen
+map's skip callback before falling back to `OnScenarioSkipped`.
 
 ## Method identity and migration
 

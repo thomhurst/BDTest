@@ -3,8 +3,6 @@ using System.Diagnostics;
 using System.Reflection;
 using System.Threading;
 using BDTest.Attributes;
-using BDTest.Interfaces;
-using BDTest.Settings;
 using BDTest.Test;
 
 namespace BDTest.Helpers;
@@ -12,11 +10,13 @@ namespace BDTest.Helpers;
 public static class StepTextHelper
 {
     /// <summary>Renders a selected step method using explicit, lazy argument readers.</summary>
+    /// <remarks>Supply a run to use its frozen converters. Without a run, only default value formatting applies.</remarks>
     public static string GetStepText(MethodInfo method, IReadOnlyList<Func<object?>>? arguments,
-        bool omitCancellationToken = false, Action<string>? diagnostic = null)
+        bool omitCancellationToken = false, Action<string>? diagnostic = null, BDTestRun? run = null)
     {
         if (method == null) throw new ArgumentNullException(nameof(method));
-        return GetStepText(method, arguments, omitCancellationToken, diagnostic, evaluateArguments: true);
+        run?.ThrowIfDisposed();
+        return GetStepText(method, arguments, omitCancellationToken, diagnostic, evaluateArguments: true, converters: run?.Options.Converters);
     }
 
     internal static string GetStepText(MethodInfo method, IReadOnlyList<Func<object?>>? arguments,
@@ -90,25 +90,6 @@ public static class StepTextHelper
                     if (converter.Matches(argumentValue)) return converter.Convert(argumentValue) ?? "null";
                 }
             }
-            else
-            {
-                foreach (var converter in BDTestSettings.GetCustomStringConvertersSnapshot())
-                {
-                    var converterInterface = converter.GetType().GetInterfaces()
-                        .Where(type => type.IsGenericType && type.GetGenericTypeDefinition() == typeof(IStepTextStringConverter<>))
-                        .Where(type => type.GetGenericArguments()[0].IsInstanceOfType(argumentValue))
-                        .OrderByDescending(type => type.GetGenericArguments()[0] == argumentValue.GetType())
-                        .FirstOrDefault();
-
-                    if (converterInterface != null)
-                    {
-                        // Invoke through the interface to support explicit implementations.
-                        var method = converterInterface.GetMethod(nameof(IStepTextStringConverter<object>.ConvertToString));
-                        return method?.Invoke(converter, new[] { argumentValue }) as string ?? "null";
-                    }
-                }
-            }
-
             // Delegate arguments are values, not callbacks for generating step text.
             if (argumentValue is Delegate || argumentValue is string)
             {

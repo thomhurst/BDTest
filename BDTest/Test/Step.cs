@@ -82,7 +82,8 @@ public class Step
     /// <summary>Captured files from all attempts, distinguished by Attachment.AttemptNumber.</summary>
     [JsonInclude] public List<Attachment>? Attachments { get; internal set; } = new();
 
-    [JsonIgnore] private RunOptions Options { get; } = RunOptions.Legacy;
+    [JsonIgnore] private RunOptions Options => _options ?? throw new InvalidOperationException("A report step cannot be executed.");
+    private readonly RunOptions? _options;
 
     internal List<Attachment> ExecutionAttachments => Attachments ?? throw new InvalidOperationException("The step has no attachment collection.");
     private List<string> ExecutionDiagnostics => Diagnostics ?? throw new InvalidOperationException("The step has no diagnostics collection.");
@@ -91,14 +92,14 @@ public class Step
     private string? _stepTextTemplate;
     private string? _generatedStepText;
 
-    internal Step(Runnable runnable, StepType stepType, string? scenarioId, string? reportId, BDTestRun? run = null)
+    internal Step(Runnable runnable, StepType stepType, string? scenarioId, string? reportId, BDTestRun run)
         : this(runnable, stepType, scenarioId, reportId, run, runnable.Definition.GetText())
     {
     }
 
-    private Step(Runnable runnable, StepType stepType, string? scenarioId, string? reportId, BDTestRun? run, string textTemplate)
+    private Step(Runnable runnable, StepType stepType, string? scenarioId, string? reportId, BDTestRun run, string textTemplate)
     {
-        Options = (run ?? BDTestRun.Default).Options;
+        _options = (run ?? throw new ArgumentNullException(nameof(run))).Options;
         Guid = System.Guid.NewGuid().ToString("N");
         ScenarioId = scenarioId;
         Runnable = runnable;
@@ -209,7 +210,7 @@ public class Step
 
     private StepSkipReason? EvaluateSkipReason()
     {
-        // One registration snapshot per attempt, including on the live legacy path.
+        // The run owns the fixed skip-rule registrations for every attempt.
         var rules = Options.SkipStepRules;
         foreach (var attribute in ExecutionRunnable.Definition.SkipAttributes)
         {

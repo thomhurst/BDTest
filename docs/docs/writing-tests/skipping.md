@@ -5,7 +5,7 @@ description: Skip individual steps with SkipStepAttribute rules, skip whole scen
 
 # Skipping steps and scenarios
 
-For built-in adapters, configure `BDTestOptions` through [assembly configuration](../configuration/assembly-runs.md). Examples using `BDTestSettings` below apply only to the legacy standalone default run; use the corresponding option registrations for adapter-owned runs.
+Configure `BDTestOptions` through [assembly configuration](../configuration/assembly-runs.md), or before starting an [explicit run](../advanced/explicit-runs.md). The examples below belong in that configuration.
 
 
 ## Skipping individual steps
@@ -43,21 +43,19 @@ Register the rules once, during test-run setup:
 ```csharp
 var environment = Environment.GetEnvironmentVariable("TEST_ENVIRONMENT");
 
-BDTestSettings.GlobalSkipStepRules.Add<SkipInProductionAttribute>(_ => environment == "Production");
-BDTestSettings.GlobalSkipStepRules.Add<SkipWhenAttribute>(attribute => attribute.Environment == environment);
+options.SkipStepRules.Add<SkipInProductionAttribute>(_ => environment == "Production");
+options.SkipStepRules.Add<SkipWhenAttribute>(attribute => attribute.Environment == environment);
 ```
 
 A skipped step is not executed and is reported as `Skipped`. The rest of the scenario continues.
 
-Rules are evaluated once per reached step attempt, after all global/run and instance
+Rules are evaluated once per reached step attempt, after all run and instance
 before-step hooks. They see changes made by those hooks. Building or branching a
 chain, refreshing its text, and using `WithStepText` do not evaluate skip rules.
 A retry evaluates conditions again; a previous skip does not carry over. Unreached
 steps and steps whose before hook fails do not evaluate conditions.
 
 Evaluation uses one registration snapshot and stops at the first matching rule.
-The legacy `BDTestSettings.GlobalSkipStepRules` path sees registrations made after
-chain construction, including additions from before hooks. An explicit
 `BDTestRun.Start(options)` freezes registrations at startup; later additions to
 `options.SkipStepRules` do not affect that run. Predicate closures can still read
 changing state.
@@ -74,13 +72,13 @@ A later after-hook failure does not replace the predicate exception.
 
 ## Skipping whole scenarios
 
-`GlobalSkipTestRules` skips a scenario before any of its steps run. The rule receives the `Scenario`, including its test class, story, tags and text:
+`SkipTestRules` skips a scenario before any of its steps run. The rule receives the `Scenario`, including its test class, story, tags and text:
 
 ```csharp
-BDTestSettings.GlobalSkipTestRules.Add(scenario =>
+options.SkipTestRules.Add(scenario =>
     scenario.BdTestBaseClass is PaymentTests && !PaymentProviderIsAvailable());
 
-BDTestSettings.GlobalSkipTestRules.Add(scenario =>
+options.SkipTestRules.Add(scenario =>
     scenario.Tags.Contains("manual"));
 ```
 
@@ -94,7 +92,7 @@ A framework skip exception aborts the scenario without retries. It marks that st
 
 | Situation | Scenario status |
 | --- | --- |
-| A global skip-test rule matches | `Skipped` |
+| A run skip-test rule matches | `Skipped` |
 | Every step is skipped | `Skipped` |
 | Some steps are skipped and every executed step passes | `Passed` |
 | A framework skip exception is thrown | `Skipped` |

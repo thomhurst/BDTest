@@ -5,7 +5,7 @@ description: Publish BDTest HTML reports from GitHub Actions and Azure DevOps, a
 
 # CI integration
 
-For built-in adapters, pass the [configured assembly run](../configuration/assembly-runs.md) to report/utility helpers. Overloads without a run still select the legacy standalone store and do not contain adapter-owned scenarios. Export all reports before disposing through the assembly owner.
+For built-in adapters, pass the [configured assembly run](../configuration/assembly-runs.md) to report/utility helpers. Every export and store utility requires the owning run. Export all reports before disposing through the assembly owner.
 
 
 Write the [HTML report](html-report.md) to a known folder in your assembly-level teardown, then publish that folder as a build artifact. To make results available as a link instead, upload them to a [report server](../report-server/sending-results.md).

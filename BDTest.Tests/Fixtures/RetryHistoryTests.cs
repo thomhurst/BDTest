@@ -9,18 +9,15 @@ using NUnit.Framework;
 namespace BDTest.Tests.Fixtures;
 
 [NonParallelizable]
-public class RetryHistoryTests
+public class RetryHistoryTests : TestRunOwner
 {
-    [SetUp]
-    public void Reset() => TestResetHelper.ResetData();
-
     [TestCase(0)]
     [TestCase(1)]
     [TestCase(2)]
     [TestCase(3)]
     public async Task KeepsEveryAttemptWhenPassingOrExhaustingRetries(int failures)
     {
-        var fixture = new RetryingScenario(failures);
+        var fixture = new RetryingScenario(TestRun, failures);
         try
         {
             if (failures > 2)
@@ -28,7 +25,7 @@ public class RetryHistoryTests
             else
                 await fixture.Run();
 
-            var scenario = BDTestUtil.GetScenarios().Single();
+            var scenario = BDTestUtil.GetScenarios(TestRun).Single();
             var count = Math.Min(failures + 1, 3);
             Assert.That(scenario.Attempts, Has.Count.EqualTo(count));
             Assert.That(scenario.RetryCount, Is.EqualTo(count - 1));
@@ -51,7 +48,7 @@ public class RetryHistoryTests
             Assert.That(scenario.Exception?.Message, Is.EqualTo(failures > 2 ? "<failure 3>" : null));
             Assert.That(scenario.TimeTaken, Is.EqualTo(Required(scenario.Attempts).Last().TimeTaken));
             if (failures == 0)
-                Assert.That(BDTestHtmlHelper.GetTestHtmlReport(), Does.Not.Contain("Retry history"));
+                Assert.That(BDTestHtmlHelper.GetTestHtmlReport(null, TestRun), Does.Not.Contain("Retry history"));
         }
         finally
         {
@@ -62,7 +59,7 @@ public class RetryHistoryTests
     [Test]
     public async Task HistorySurvivesJsonRoundTripAndAppearsInHtml()
     {
-        var fixture = new RetryingScenario(2);
+        var fixture = new RetryingScenario(TestRun, 2);
         try
         {
             var scenario = await fixture.Run();
@@ -73,7 +70,7 @@ public class RetryHistoryTests
             Assert.That(restored.Attempts[1].TimeTaken, Is.EqualTo(Required(scenario.Attempts)[1].TimeTaken));
             Assert.That(restored.Attempts[0].StartTime, Is.EqualTo(scenario.Attempts[0].StartTime));
 
-            var html = BDTestHtmlHelper.GetTestHtmlReport();
+            var html = BDTestHtmlHelper.GetTestHtmlReport(null, TestRun);
             Assert.That(html, Does.Contain("Retry history"));
             Assert.That(html, Does.Contain("Attempt 1 · Failed"));
             Assert.That(html, Does.Contain("Attempt 3 · Passed"));
@@ -96,11 +93,11 @@ public class RetryHistoryTests
     [Test]
     public async Task FailingRetryHookKeepsBothStepAndHookFailuresInHistory()
     {
-        var fixture = new RetryingScenario(2, failHook: true);
+        var fixture = new RetryingScenario(TestRun, 2, failHook: true);
         try
         {
             await Assert.ThrowsAsync<ErrorOccurredDuringRetryActionException>(() => fixture.Run());
-            var scenario = BDTestUtil.GetScenarios().Single();
+            var scenario = BDTestUtil.GetScenarios(TestRun).Single();
             Assert.That(scenario.RetryCount, Is.EqualTo(1));
             Assert.That(scenario.Attempts, Has.Count.EqualTo(2));
             Assert.That(Required(scenario.Attempts)[1].Status, Is.EqualTo(Status.Failed));
@@ -108,7 +105,7 @@ public class RetryHistoryTests
             Assert.That(scenario.Attempts[0].Status, Is.EqualTo(Status.Failed));
             Assert.That(Required(scenario.Attempts[0].Exception).Message, Is.EqualTo("<failure 1>"));
 
-            var html = BDTestHtmlHelper.GetTestHtmlReport();
+            var html = BDTestHtmlHelper.GetTestHtmlReport(null, TestRun);
             Assert.That(html, Does.Contain("Retry history"));
             Assert.That(html, Does.Contain("Attempt 1 · Failed"));
             Assert.That(html, Does.Contain("&lt;failure 1&gt;"));
@@ -127,8 +124,9 @@ public class RetryHistoryTests
     }
 
     [BDTestRetry(2)]
-    private sealed class RetryingScenario(int failures, bool failHook = false) : BDTestBase
+    private sealed class RetryingScenario(BDTestRun run, int failures, bool failHook = false) : BDTestBase
     {
+        public override BDTestRun TestRun => run;
         private readonly string _executionId = Guid.NewGuid().ToString();
         private int _runs;
         protected override string BDTestExecutionId => _executionId;

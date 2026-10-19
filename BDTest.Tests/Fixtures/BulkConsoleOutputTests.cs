@@ -151,7 +151,9 @@ public class BulkConsoleOutputTests
     {
         private readonly string? _previousTestId = TestOutputData.TestId;
         private readonly string? _previousFrameworkId = TestOutputData.FrameworkExecutionId;
-        private readonly TestDetails _details = new();
+        private readonly BDTestRun TestRun = BDTestRun.Start();
+        private readonly BDTestRun? _previousRun = TestOutputData.Run;
+        private readonly TestDetails _details;
         public CountingWriter Original { get; } = new();
         public ConsoleOutputInterceptor Writer { get; }
         private Scenario? _scenario;
@@ -159,6 +161,8 @@ public class BulkConsoleOutputTests
 
         public Capture(bool registerScenario = true)
         {
+            _details = new TestDetails(TestRun);
+            TestOutputData.Run = TestRun;
             Writer = new ConsoleOutputInterceptor(Original) { NewLine = "<nl>" };
             TestOutputData.TestId = _details.Guid;
             TestOutputData.FrameworkExecutionId = _details.TestId;
@@ -174,18 +178,21 @@ public class BulkConsoleOutputTests
         {
             TestOutputData.TestId = _details.Guid;
             TestOutputData.ClearCurrentTaskData();
-            TestHolder.ScenariosByInternalId.TryRemove(Required(_details.Guid), out _);
-            TestHolder.ScenariosByTestFrameworkId.TryRemove(Required(_details.TestId), out _);
+            TestRun.Store.ScenariosByInternalId.TryRemove(Required(_details.Guid), out _);
+            TestRun.Store.ScenariosByTestFrameworkId.TryRemove(Required(_details.TestId), out _);
             TestOutputData.TestId = _previousTestId;
             TestOutputData.FrameworkExecutionId = _previousFrameworkId;
             Original.Dispose();
+            TestRun.Dispose();
+            TestOutputData.Run = _previousRun;
         }
     }
 
     private sealed class TestDetails : BuildableTest
     {
-        public TestDetails()
+        public TestDetails(BDTestRun run)
         {
+            Run = run;
             Guid = System.Guid.NewGuid().ToString();
             TestId = System.Guid.NewGuid().ToString();
         }

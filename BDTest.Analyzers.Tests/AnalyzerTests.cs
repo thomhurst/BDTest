@@ -141,7 +141,7 @@ public class AnalyzerTests
             string.Join(Environment.NewLine, diagnostics));
     }
 
-    internal static string Source(string members) => Prefix + "class Consumer : BDTestBuilder { " + members + " }";
+    internal static string Source(string members) => Prefix + "class Consumer : BDTestBuilder { public Consumer(BDTest.BDTestRun run) : base(run) {} " + members + " }";
     internal const string Prefix = """
         using System;
         using System.Threading;

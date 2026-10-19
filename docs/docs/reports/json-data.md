@@ -5,7 +5,7 @@ description: Export, read and write BDTest report data as JSON with BDTestJsonHe
 
 # JSON data
 
-For built-in adapters, pass the [configured assembly run](../configuration/assembly-runs.md) to report/utility helpers. Overloads without a run still select the legacy standalone store and do not contain adapter-owned scenarios. Export all reports before disposing through the assembly owner.
+For built-in adapters, pass the [configured assembly run](../configuration/assembly-runs.md) to report/utility helpers. Every export and store utility requires the owning run. Export all reports before disposing through the assembly owner.
 
 
 The JSON report is the raw data behind every BDTest report: the same model the report server stores.
@@ -26,8 +26,6 @@ File.WriteAllText("BDTest-Report.json", json);
 
 | Overload | Use |
 | --- | --- |
-| `GetTestJsonData()` | Legacy default run and descriptor. |
-| `GetTestJsonData(BDTestRunDescriptor)` | Label the legacy default run. |
 | `GetTestJsonData(BDTestRunDescriptor, BDTestRun)` | Export an [explicit run](../advanced/explicit-runs.md). |
 
 The output is indented.
@@ -72,7 +70,7 @@ Both readers return a nullable model: the JSON literal `null` produces `null`. H
 | `TestTimer` | `TestTimer?` | Start, finish and elapsed time of the run. |
 | `Scenarios` | `List<Scenario>?` | Every executed scenario, including outlines with their rows. |
 | `NotRun` | `List<ScenarioDefinitionSummary>?` | Tests that were built but not executed. |
-| `CustomProperties` | `Dictionary<string, string>?` | Extra values from the obsolete `BDTestSettings.CustomProperties`. |
+| `CustomProperties` | `Dictionary<string, string>?` | Extra values copied from `BDTestRunDescriptor.CustomProperties`. |
 
 ### Pending scenarios
 

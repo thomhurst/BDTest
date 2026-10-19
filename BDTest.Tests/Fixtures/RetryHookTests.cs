@@ -11,7 +11,7 @@ public class RetryHookTests
     [TestCase(true)]
     public async Task RunsAllInstanceHooksIncludingPrivateBaseMethodsAndDerivedAttributes(bool tearDown)
     {
-        var fixture = new DerivedHooks();
+        using var fixture = new DerivedHooks();
 
         await RunHooks(fixture, tearDown);
 
@@ -23,7 +23,7 @@ public class RetryHookTests
     [TestCase(true)]
     public async Task InheritsAttributesOnOverridesAndInvokesEachVirtualHookOnlyOnce(bool tearDown)
     {
-        var fixture = new OverriddenHooks();
+        using var fixture = new OverriddenHooks();
 
         await RunHooks(fixture, tearDown);
 
@@ -34,7 +34,7 @@ public class RetryHookTests
     [TestCase(true)]
     public async Task AwaitsBaseHookBeforeStartingDerivedHooks(bool tearDown)
     {
-        var fixture = new AsyncDerivedHooks();
+        using var fixture = new AsyncDerivedHooks();
         var running = RunHooks(fixture, tearDown);
         try
         {
@@ -54,7 +54,8 @@ public class RetryHookTests
     [TestCase(true)]
     public async Task NoHooksIsANoOp(bool tearDown)
     {
-        await RunHooks(new NoHooks(), tearDown);
+        using var fixture = new NoHooks();
+        await RunHooks(fixture, tearDown);
     }
 
     [TestCase("setup", false, 1)]
@@ -141,11 +142,12 @@ public class RetryHookTests
     [TestCase(true)]
     public async Task PreservesPublicStaticHooks(bool tearDown)
     {
-        var error = await Assert.ThrowsAsync<InvalidOperationException>(() => RunHooks(new StaticHooks(), tearDown));
+        using var fixture = new StaticHooks();
+        var error = await Assert.ThrowsAsync<InvalidOperationException>(() => RunHooks(fixture, tearDown));
         Assert.That(Required(error).Message, Is.EqualTo("static hook ran"));
     }
 
-    private sealed class StaticHooks : BDTestBase
+    private sealed class StaticHooks : RunTestBase
     {
         [BDTestRetrySetUp, BDTestRetryTearDown]
         public static void Hook() => throw new InvalidOperationException("static hook ran");
@@ -158,7 +160,7 @@ public class RetryHookTests
     private sealed class CustomSetUpAttribute : BDTestRetrySetUpAttribute;
     private sealed class CustomTearDownAttribute : BDTestRetryTearDownAttribute;
 
-    private class BaseHooks : BDTestBase
+    private class BaseHooks : RunTestBase
     {
         public List<string> Calls { get; } = [];
 
@@ -186,7 +188,7 @@ public class RetryHookTests
         public void UnattributedMethod() => Assert.Fail("Only attributed methods are hooks");
     }
 
-    private class VirtualHooks : BDTestBase
+    private class VirtualHooks : RunTestBase
     {
         public List<string> Calls { get; } = [];
 
@@ -205,7 +207,7 @@ public class RetryHookTests
         protected override void AttributedHook() => Calls.Add("attributed-override");
     }
 
-    private class AsyncBaseHooks : BDTestBase
+    private class AsyncBaseHooks : RunTestBase
     {
         public List<string> Calls { get; } = [];
         public TaskCompletionSource Continue { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -225,7 +227,7 @@ public class RetryHookTests
         private void DerivedHook() => Calls.Add("derived");
     }
 
-    private sealed class NoHooks : BDTestBase;
+    private sealed class NoHooks : RunTestBase;
 
     [BDTestRetry(3)]
     private sealed class FailingHooks(BDTestRun run, string hook, bool asynchronous, int failingRetry) : BDTestBase

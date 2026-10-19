@@ -38,10 +38,10 @@ Scenario tags are separate from the run-level `BDTestRunDescriptor.Tag`, which l
 
 ### Using tags in rules
 
-Tags are on the `Scenario`, so a [global skip rule](skipping.md#skipping-whole-scenarios) can use them:
+Tags are on the `Scenario`, so a [run skip rule](skipping.md#skipping-whole-scenarios) can use them:
 
 ```csharp
-BDTestSettings.GlobalSkipTestRules.Add(scenario =>
+options.SkipTestRules.Add(scenario =>
     scenario.Tags.Contains("slow") && Environment.GetEnvironmentVariable("RUN_SLOW_TESTS") != "true");
 ```
 
@@ -81,7 +81,7 @@ public async Task Test1()
 
 The report shows each entry as `AttributeTypeName - Information`. The values are also available on `Scenario.CustomTestInformation`.
 
-Pending summaries returned by `BDTestUtil.GetNotRunScenarios()` are data-only: their `CustomTestInformation` entries are base `TestInformationAttribute` values containing only `Information`. They do not preserve custom attribute types or additional members, and `Print()` uses the base attribute name. Builders and executed scenarios retain the custom attribute types. See [Scenario definitions migration](../migration/scenario-definitions.md).
+Pending summaries returned by `BDTestUtil.GetNotRunScenarios(run)` are data-only: their `CustomTestInformation` entries are base `TestInformationAttribute` values containing only `Information`. They do not preserve custom attribute types or additional members, and `Print()` uses the base attribute name. Builders and executed scenarios retain the custom attribute types. See [Scenario definitions migration](../migration/scenario-definitions.md).
 
 Method tags and test information are read from the exact method supplied by the [adapter lifecycle](../frameworks/custom-adapters.md#method-identity-and-migration), not from helpers on the call stack. Class tags are combined with method tags. Standalone builders need an explicit method identity to use method attributes.
 

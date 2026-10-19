@@ -6,14 +6,11 @@ namespace BDTest.Output;
 internal class TestOutputData : TextWriter
 {
     private static readonly AsyncLocal<BDTestRun?> AsyncLocalRun = new();
-    [System.Diagnostics.CodeAnalysis.AllowNull]
-    internal static BDTestRun Run
+    internal static BDTestRun? Run
     {
-        get => AsyncLocalRun.Value ?? BDTestRun.Default;
+        get => AsyncLocalRun.Value;
         set => AsyncLocalRun.Value = value;
     }
-    private static Dictionary<string, StringBuilder> ThreadAndChars => Run.OutputBuffers;
-    private static object Lock => Run.Store.Gate;
     public static readonly ConsoleOutputInterceptor Instance = new();
     private static TextWriter Console => Instance.One;
 
@@ -80,12 +77,14 @@ internal class TestOutputData : TextWriter
             pending.Write(value, character);
             return;
         }
-        lock (Lock)
+        var run = Run;
+        if (run == null) return;
+        lock (run.Store.Gate)
         {
-            if (Run.Store.IsDisposed) return;
+            if (run.Store.IsDisposed) return;
             // Builders change TestId as a chain grows. Keep construction output
             // in the example's buffer until its final scenario exists.
-            if (ConstructionOutput != null && ConstructionOutput.Run == Run)
+            if (ConstructionOutput != null && ConstructionOutput.Run == run)
             {
                 if (character.HasValue) ConstructionOutput.Text.Append(character.Value);
                 else ConstructionOutput.Text.Append(value);
@@ -100,14 +99,14 @@ internal class TestOutputData : TextWriter
             // NUnit can run teardown in the setup flow, where only the framework
             // ID is present. Resolve the completed scenario before routing output.
             if (TestId == null && FrameworkExecutionId != null &&
-                Run.Store.ScenariosByTestFrameworkId.TryGetValue(FrameworkExecutionId, out var completedScenario) &&
+                run.Store.ScenariosByTestFrameworkId.TryGetValue(FrameworkExecutionId, out var completedScenario) &&
                 completedScenario.EndTime != default)
             {
                 TestId = completedScenario.Guid;
             }
 
             if (TestId == null || string.IsNullOrEmpty(TestId)
-                || !Run.Store.ScenariosByInternalId.TryGetValue(TestId, out var scenario)
+                || !run.Store.ScenariosByInternalId.TryGetValue(TestId, out var scenario)
                 || scenario.Status == Status.NotRun)
             {
                 if (FrameworkExecutionId == null)
@@ -116,11 +115,11 @@ internal class TestOutputData : TextWriter
                 }
                 else if (character.HasValue)
                 {
-                    Run.Store.AppendStartupOutput(FrameworkExecutionId, character.Value);
+                    run.Store.AppendStartupOutput(FrameworkExecutionId, character.Value);
                 }
                 else
                 {
-                    Run.Store.AppendStartupOutput(FrameworkExecutionId, value, appendNewLine: false);
+                    run.Store.AppendStartupOutput(FrameworkExecutionId, value, appendNewLine: false);
                 }
                 return;
             }
@@ -138,10 +137,10 @@ internal class TestOutputData : TextWriter
                 return;
             }
 
-            if (!ThreadAndChars.TryGetValue(TestId, out var existingStringBuilder))
+            if (!run.OutputBuffers.TryGetValue(TestId, out var existingStringBuilder))
             {
                 existingStringBuilder = new StringBuilder();
-                ThreadAndChars.Add(TestId, existingStringBuilder);
+                run.OutputBuffers.Add(TestId, existingStringBuilder);
             }
 
             if (character.HasValue)
@@ -157,14 +156,16 @@ internal class TestOutputData : TextWriter
 
     public override string ToString()
     {
-        lock (Lock)
+        var run = Run;
+        if (run == null) return string.Empty;
+        lock (run.Store.Gate)
         {
             if (TestId == null && FrameworkExecutionId == null)
             {
                 return string.Empty;
             }
 
-            if (TestId == null && FrameworkExecutionId != null && Run.Store.ScenariosByTestFrameworkId.TryGetValue(FrameworkExecutionId, out var scenario))
+            if (TestId == null && FrameworkExecutionId != null && run.Store.ScenariosByTestFrameworkId.TryGetValue(FrameworkExecutionId, out var scenario))
             {
                 TestId = scenario.Guid;
             }
@@ -174,24 +175,24 @@ internal class TestOutputData : TextWriter
                 return string.Empty;
             }
 
-            return ThreadAndChars.TryGetValue(TestId, out var stringBuilder)
+            return run.OutputBuffers.TryGetValue(TestId, out var stringBuilder)
                 ? stringBuilder.ToString()
                 : string.Empty;
         }
     }
 
-    internal static void ClearAllData() => BDTestRun.Default.Clear();
-
     public static void ClearCurrentTaskData()
     {
-        lock (Lock)
+        var run = Run;
+        if (run == null) return;
+        lock (run.Store.Gate)
         {
             if (TestId == null || string.IsNullOrEmpty(TestId))
             {
                 return;
             }
                 
-            ThreadAndChars.Remove(TestId);
+            run.OutputBuffers.Remove(TestId);
         }
     }
 
@@ -205,7 +206,7 @@ internal class TestOutputData : TextWriter
             return;
         }
 
-        run ??= Run;
+        run ??= Run ?? throw new InvalidOperationException("No test run is bound to this execution.");
         run.ThrowIfDisposed();
         appendNewLine = appendNewLine && text.Length > 1;
         var constructionOutput = ConstructionOutput;
@@ -228,7 +229,7 @@ internal class TestOutputData : TextWriter
             return;
         }
 
-        run ??= Run;
+        run ??= Run ?? throw new InvalidOperationException("No test run is bound to this execution.");
         run.ThrowIfDisposed();
         var constructionOutput = ConstructionOutput;
         if (constructionOutput != null && constructionOutput.FrameworkExecutionId == frameworkExecutionId && constructionOutput.Run == run)
@@ -248,7 +249,7 @@ internal class TestOutputData : TextWriter
 
     internal static void WriteCustomHtmlForReport(string testId, string? htmlValue, BDTestRun? run = null)
     {
-        run ??= Run;
+        run ??= Run ?? throw new InvalidOperationException("No test run is bound to this execution.");
         run.ThrowIfDisposed();
         var constructionOutput = ConstructionOutput;
         if (constructionOutput != null && constructionOutput.FrameworkExecutionId == testId && constructionOutput.Run == run)

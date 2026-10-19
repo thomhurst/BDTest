@@ -6,10 +6,9 @@ using NUnit.Framework;
 namespace BDTest.Tests.Fixtures;
 
 [FixtureLifeCycle(LifeCycle.InstancePerTestCase)]
-public class TimeoutTests : BDTestBase
+public class TimeoutTests : RunTestBase
 {
-    [SetUp]
-    public void BindMetadata() => BeginTest(TestContext.CurrentContext.Test.ID, Required(global::NUnit.Framework.Internal.TestExecutionContext.CurrentContext.CurrentTest.Method).MethodInfo);
+    protected override bool BindCurrentTestMetadata => true;
 
     [TearDown]
     public void FinishExecution() => EndTest();
@@ -265,7 +264,7 @@ public class TimeoutTests : BDTestBase
         Assert.Throws<ArgumentOutOfRangeException>(() => builder.WithScenarioTimeout(TimeSpan.FromMilliseconds(milliseconds)));
     }
 
-    private static Scenario Report(BuildableTest builder) => BDTestUtil.GetScenarios().Single(scenario => scenario.Guid == builder.Guid);
+    private Scenario Report(BuildableTest builder) => BDTestUtil.GetScenarios(TestRun).Single(scenario => scenario.Guid == builder.Guid);
     private void Later() => _laterSteps++;
     private Task Complete(CancellationToken token) { _tokens.Add(token); return Task.CompletedTask; }
     private static Task CancelIndependently() => throw new OperationCanceledException("User cancellation");

@@ -15,10 +15,10 @@ public class OutputLifecycleTests
     public void Startup_before_and_after_registration_is_delivered_once_in_order()
     {
         using var fixture = new Capture();
-        TestOutputData.CollectStartupOutput(fixture.Id, "before", false);
+        TestOutputData.CollectStartupOutput(fixture.Id, "before", false, run: fixture.TestRun);
         var scenario = fixture.Register();
-        TestOutputData.CollectStartupOutput(fixture.Id, "x", false);
-        TestOutputData.CollectStartupOutput(fixture.Id, "after", false);
+        TestOutputData.CollectStartupOutput(fixture.Id, "x", false, run: fixture.TestRun);
+        TestOutputData.CollectStartupOutput(fixture.Id, "after", false, run: fixture.TestRun);
 
         Assert.That(scenario.TestStartupInformation,
             Is.EqualTo($"before{Environment.NewLine}xafter{Environment.NewLine}"));
@@ -38,8 +38,8 @@ public class OutputLifecycleTests
                 await start.Task;
                 for (var index = 0; index < 50; index++)
                 {
-                    TestOutputData.CollectStartupOutput(fixture.Id, $"{writer}:{index}", false);
-                    TestHolder.ListenForScenario(fixture.Id, _ => Interlocked.Increment(ref calls));
+                    TestOutputData.CollectStartupOutput(fixture.Id, $"{writer}:{index}", false, run: fixture.TestRun);
+                    fixture.TestRun.Store.ListenForScenario(fixture.Id, _ => Interlocked.Increment(ref calls));
                 }
             })).ToArray();
             var registration = Task.Run(async () =>
@@ -95,7 +95,7 @@ public class OutputLifecycleTests
         scenario.EndTime = DateTime.Now;
         TestOutputData.TestId = scenario.Guid;
         writer.Write("teardown\r\n");
-        TestOutputData.CollectTearDownOutput(fixture.Id, "explicit", false);
+        TestOutputData.CollectTearDownOutput(fixture.Id, "explicit", false, run: fixture.TestRun);
         writer.Write('!');
 
         Assert.That(scenario.TestStartupInformation, Is.EqualTo("setup\r\nx"));
@@ -149,17 +149,18 @@ public class OutputLifecycleTests
     {
         using var fixture = new Capture();
         using var other = new Capture();
-        TestOutputData.CollectStartupOutput(fixture.Id, "discard", false);
-        TestOutputData.CollectStartupOutput(other.Id, "keep", false);
+        TestOutputData.CollectStartupOutput(fixture.Id, "discard", false, run: fixture.TestRun);
+        TestOutputData.CollectStartupOutput(other.Id, "keep", false, run: other.TestRun);
         var calls = 0;
-        TestHolder.ListenForScenario(fixture.Id, _ => calls++);
+        fixture.TestRun.Store.ListenForScenario(fixture.Id, _ => calls++);
 
         fixture.Complete();
 
         // Check retained roots as well as observable delivery: an empty listener entry also leaks IDs.
-        foreach (var field in typeof(TestHolder).GetFields(BindingFlags.Static | BindingFlags.NonPublic))
+        foreach (var field in typeof(BDTest.Maps.TestRunStore).GetFields(BindingFlags.Instance | BindingFlags.NonPublic))
         {
-            if (field.GetValue(null) is IDictionary dictionary)
+            if (field.Name is "ScenarioListeners" or "PendingStartupOutput" &&
+                field.GetValue(fixture.TestRun.Store) is IDictionary dictionary)
             {
                 Assert.That(dictionary.Contains(fixture.Id), Is.False, field.Name);
             }
@@ -178,7 +179,7 @@ public class OutputLifecycleTests
         {
             for (var index = 0; index < 100; index++)
             {
-                TestOutputData.CollectTearDownOutput(fixture.Id, $"{writer}:{index}", false);
+                TestOutputData.CollectTearDownOutput(fixture.Id, $"{writer}:{index}", false, run: fixture.TestRun);
             }
         })));
         fixture.Complete();
@@ -237,13 +238,14 @@ public class OutputLifecycleTests
         return allocated;
     }
 
-    private sealed class Capture : BDTestBase, IDisposable
+    private sealed class Capture : RunTestBase, IDisposable
     {
         public string Id { get; } = Guid.NewGuid().ToString("N");
         private readonly List<Scenario> _scenarios = new();
         protected override string BDTestExecutionId => Id;
         public void Select()
         {
+            TestOutputData.Run = TestRun;
             TestOutputData.TestId = null;
             TestOutputData.FrameworkExecutionId = Id;
         }
@@ -254,11 +256,12 @@ public class OutputLifecycleTests
             return scenario;
         }
         public void Complete() => BDTest.Tests.Helpers.LegacyLifecycle.Complete(this);
-        public void Dispose()
+        public override void Dispose()
         {
             Complete();
-            TestHolder.ScenariosByTestFrameworkId.TryRemove(Id, out _);
-            foreach (var scenario in _scenarios) TestHolder.ScenariosByInternalId.TryRemove(Required(scenario.Guid), out _);
+            TestRun.Store.ScenariosByTestFrameworkId.TryRemove(Id, out _);
+            foreach (var scenario in _scenarios) TestRun.Store.ScenariosByInternalId.TryRemove(Required(scenario.Guid), out _);
+            base.Dispose();
         }
         private static void NoOp() { }
     }

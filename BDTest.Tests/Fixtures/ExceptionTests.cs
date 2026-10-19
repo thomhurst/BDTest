@@ -9,7 +9,7 @@ namespace BDTest.Tests.Fixtures;
 [Story(AsA = "BDTest developer",
     IWant = "to make sure that exceptions are logged properly",
     SoThat = "developers can see why their test failed")]
-public class ExceptionTests : BDTestBase
+public class ExceptionTests : RunTestBase
 {
     [TestCase(typeof(Exception), Status.Failed)]
     [TestCase(typeof(NotImplementedException), Status.NotImplemented)]
@@ -30,8 +30,8 @@ public class ExceptionTests : BDTestBase
         }
         catch
         {
-            var scenario = BDTestUtil.GetScenarios().Single(scenario => scenario.Guid == builder.Guid);
-            var json = Required(JsonHelper.GetTestDynamicJsonObject()["Scenarios"])
+            var scenario = BDTestUtil.GetScenarios(TestRun).Single(scenario => scenario.Guid == builder.Guid);
+            var json = Required(JsonHelper.GetTestDynamicJsonObject(TestRun)["Scenarios"])
                 .Single(item => (string?)item["Guid"] == builder.Guid);
 
             Assert.That(Required(Required(Required(scenario.Steps)[0].Exception).Message).Contains("BDTest Exception!"));
@@ -92,8 +92,8 @@ public class ExceptionTests : BDTestBase
         }
         catch
         {
-            var scenario = BDTestUtil.GetScenarios().Single(scenario => scenario.Guid == builder.Guid);
-            var json = Required(JsonHelper.GetTestDynamicJsonObject()["Scenarios"])
+            var scenario = BDTestUtil.GetScenarios(TestRun).Single(scenario => scenario.Guid == builder.Guid);
+            var json = Required(JsonHelper.GetTestDynamicJsonObject(TestRun)["Scenarios"])
                 .Single(item => (string?)item["Guid"] == builder.Guid);
 
             Assert.That(Required(Required(Required(scenario.Steps)[3].Exception).Message).Contains("BDTest Exception!"));

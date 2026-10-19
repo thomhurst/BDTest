@@ -11,15 +11,15 @@ using NUnit.Framework;
 namespace BDTest.Tests.Fixtures;
 
 [NonParallelizable]
-public class ScenarioRetentionTests
+public class ScenarioRetentionTests : TestRunOwner
 {
-    [OneTimeSetUp]
+    [SetUp]
     public void RegisterOutcomeRulesAndExceptions()
     {
         // Global rules persist for the process lifetime, so never capture a fixture here.
-        BDTestSettings.GlobalSkipTestRules.Add(static scenario => scenario.BdTestBaseClass is Capture { ShouldSkip: true });
-        BDTestSettings.CustomExceptionSettings.InconclusiveExceptionTypes.Add(typeof(InconclusiveOutcomeException));
-        BDTestSettings.CustomExceptionSettings.SuccessExceptionTypes.Add(typeof(SuccessOutcomeException));
+        Options.SkipTestRules.Add(static scenario => scenario.BdTestBaseClass is Capture { ShouldSkip: true });
+        Options.InconclusiveExceptionTypes.Add(typeof(InconclusiveOutcomeException));
+        Options.SuccessExceptionTypes.Add(typeof(SuccessOutcomeException));
     }
 
     [TestCase("passed", Status.Passed)]
@@ -42,7 +42,7 @@ public class ScenarioRetentionTests
         Assert.That(retained.Fixture.IsAlive, Is.False, "Report retained the fixture");
         Assert.That(retained.Context.IsAlive, Is.False, "Report retained the context");
         Assert.That(retained.Text.IsAlive, Is.False, "Report retained the text callback");
-        Assert.That(BDTestUtil.GetScenarios(), Does.Contain(retained.Scenario));
+        Assert.That(BDTestUtil.GetScenarios(TestRun), Does.Contain(retained.Scenario));
         Assert.That(retained.Scenario.Status, Is.EqualTo(status));
         Assert.That(Required(retained.Scenario.Steps).All(step => step.Runnable == null && step.OverriddenStepText == null), Is.True);
         Assert.That(retained.Scenario.BdTestBaseClass, Is.Null);
@@ -57,7 +57,7 @@ public class ScenarioRetentionTests
     [Test]
     public void Completed_scenario_can_still_access_a_live_fixture()
     {
-        var fixture = new Capture("passed");
+        var fixture = new Capture(TestRun, "passed");
         var scenario = fixture.Run(new TextSource());
         Assert.That(scenario.BdTestBaseClass, Is.SameAs(fixture));
         GC.KeepAlive(fixture);
@@ -66,43 +66,44 @@ public class ScenarioRetentionTests
     [Test]
     public void ClearScenarios_discards_all_report_stores_and_pending_capture()
     {
-        var fixture = new Capture("passed");
+        var fixture = new Capture(TestRun, "passed");
         var completed = fixture.Run(new TextSource());
         var pending = fixture.Build(new TextSource());
         var pendingId = Guid.NewGuid().ToString();
         var listenerCalls = 0;
-        TestHolder.AppendStartupOutput(pendingId, "old setup", false);
-        TestHolder.ListenForScenario(pendingId, _ => listenerCalls++);
+        TestRun.Store.AppendStartupOutput(pendingId, "old setup", false);
+        TestRun.Store.ListenForScenario(pendingId, _ => listenerCalls++);
 
         // Leave a step output buffer populated too, as can happen during an aborted run.
         var active = new Scenario(new List<Step>(), fixture.Build(new TextSource()).Definition);
         active.StartTime = DateTime.Now;
         active.Status = Status.Pending;
+        TestOutputData.Run = TestRun;
         TestOutputData.TestId = active.Guid;
         var writer = new TestOutputData();
         writer.Write("old step output");
         Assert.That(writer.ToString(), Is.EqualTo("old step output"));
-        Assert.That(BDTestUtil.GetNotRunScenarios().Select(item => item.ScenarioId), Does.Contain(pending.Guid));
+        Assert.That(BDTestUtil.GetNotRunScenarios(TestRun).Select(item => item.ScenarioId), Does.Contain(pending.Guid));
 
-        BDTestUtil.ClearScenarios();
-        BDTestUtil.ClearScenarios(); // Reset is idempotent.
+        BDTestUtil.ClearScenarios(TestRun);
+        BDTestUtil.ClearScenarios(TestRun); // Reset is idempotent.
 
-        Assert.That(BDTestUtil.GetScenarios(), Is.Empty);
-        Assert.That(BDTestUtil.GetNotRunScenarios(), Is.Empty);
-        Assert.That(TestHolder.ScenariosByTestFrameworkId, Is.Empty);
+        Assert.That(BDTestUtil.GetScenarios(TestRun), Is.Empty);
+        Assert.That(BDTestUtil.GetNotRunScenarios(TestRun), Is.Empty);
+        Assert.That(TestRun.Store.ScenariosByTestFrameworkId, Is.Empty);
         Assert.That(writer.ToString(), Is.Empty);
-        var replacement = new Capture("passed", pendingId).Run(new TextSource());
+        var replacement = new Capture(TestRun, "passed", pendingId).Run(new TextSource());
         Assert.That(replacement.TestStartupInformation, Is.Null.Or.Empty);
         Assert.That(listenerCalls, Is.Zero);
-        Assert.That(BDTestUtil.GetScenarios(), Is.EqualTo(new[] { replacement }));
+        Assert.That(BDTestUtil.GetScenarios(TestRun), Is.EqualTo(new[] { replacement }));
         Assert.That(completed.Status, Is.EqualTo(Status.Passed));
         Assert.That(Required(completed.Steps)[1].StepText, Is.EqualTo("Then retained text"));
     }
 
     [MethodImpl(MethodImplOptions.NoInlining)]
-    private static (Scenario Scenario, WeakReference Fixture, WeakReference Context, WeakReference Text) ExecuteAndRelease(string outcome)
+    private (Scenario Scenario, WeakReference Fixture, WeakReference Context, WeakReference Text) ExecuteAndRelease(string outcome)
     {
-        var fixture = new Capture(outcome);
+        var fixture = new Capture(TestRun, outcome);
         var text = new TextSource();
         var context = fixture.Context;
         try
@@ -115,7 +116,7 @@ public class ScenarioRetentionTests
         {
             Assert.That(outcome, Is.AnyOf("failed", "not-implemented", "inconclusive", "success-exception", "retry-hook-failed"));
         }
-        var scenario = TestHolder.ScenariosByTestFrameworkId[fixture.Id];
+        var scenario = TestRun.Store.ScenariosByTestFrameworkId[fixture.Id];
         return (scenario, new WeakReference(fixture), new WeakReference(context), new WeakReference(text));
     }
 
@@ -126,8 +127,9 @@ public class ScenarioRetentionTests
 
     public sealed class CaptureContext { }
 
-    private sealed class Capture(string outcome, string? id = null) : AbstractContextBDTestBase<CaptureContext>
+    private sealed class Capture(BDTestRun run, string outcome, string? id = null) : AbstractContextBDTestBase<CaptureContext>
     {
+        public override BDTestRun TestRun => run;
         public string Id { get; } = id ?? Guid.NewGuid().ToString();
         public bool ShouldSkip => outcome == "skipped";
         protected override string BDTestExecutionId => Id;

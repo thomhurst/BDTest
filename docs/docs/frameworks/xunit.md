@@ -5,7 +5,7 @@ description: Use BDTest with xUnit v3 through composition or an optional base cl
 
 # xUnit
 
-The adapter uses a [configured assembly run](../configuration/assembly-runs.md). Configure `BDTestOptions` with `[assembly: BDTestConfiguration(typeof(TestConfiguration))]`; `BDTestSettings` execution settings no longer affect this adapter. Use `XUnitBDTestAssembly.GetRun(typeof(MyTests).Assembly)` for reports and call `XUnitBDTestAssembly.Dispose(assembly)` after all tests and exports finish. Explicit-run overrides remain supported.
+The adapter uses a [configured assembly run](../configuration/assembly-runs.md). Configure `BDTestOptions` with `[assembly: BDTestConfiguration(typeof(TestConfiguration))]`. Use `XUnitBDTestAssembly.GetRun(typeof(MyTests).Assembly)` for reports and call `XUnitBDTestAssembly.Dispose(assembly)` after all tests and exports finish. Explicit-run overrides remain supported.
 
 
 ```bash

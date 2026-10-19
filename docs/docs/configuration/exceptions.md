@@ -5,7 +5,7 @@ description: How BDTest maps exceptions to step and scenario statuses, including
 
 # Exception classification
 
-For built-in adapters, configure `BDTestOptions` through [assembly configuration](../configuration/assembly-runs.md). Examples using `BDTestSettings` below apply only to the legacy standalone default run; use the corresponding option registrations for adapter-owned runs.
+Configure `BDTestOptions` through [assembly configuration](../configuration/assembly-runs.md), or before starting an [explicit run](../advanced/explicit-runs.md). The examples below belong in that configuration.
 
 
 Steps, scenarios and scenario outline examples share one exception classifier. When a step throws, BDTest picks a status from the exception:
@@ -49,20 +49,7 @@ public sealed class TestConfiguration : IBDTestConfiguration
 }
 ```
 
-The assembly run freezes these registrations when it is first created. Adapter
-runs do not read `BDTestSettings`.
-
-For the legacy standalone default run only, add types to `BDTestSettings.CustomExceptionSettings`:
-
-```csharp
-using BDTest.Settings;
-
-BDTestSettings.CustomExceptionSettings.SuccessExceptionTypes.Add(typeof(MyPassException));
-BDTestSettings.CustomExceptionSettings.SkipExceptionTypes.Add(typeof(MySkipException));
-BDTestSettings.CustomExceptionSettings.InconclusiveExceptionTypes.Add(typeof(MyInconclusiveException));
-```
-
-These collections are thread-safe `ConcurrentBag<Type>`s and are read live. Register types once, during test-run setup, and check `Contains` first if setup can run more than once.
+The assembly run freezes these registrations when it is first created. Each run owns its exception registrations.
 
 For an [explicit run](../advanced/explicit-runs.md), register types on `BDTestOptions` before starting it:
 
@@ -74,7 +61,7 @@ options.InconclusiveExceptionTypes.Add(typeof(MyInconclusiveException));
 using var run = BDTestRun.Start(options);
 ```
 
-`Start(options)` freezes these registrations; later changes affect only new runs. `Start()` has no registrations, and explicit runs do not read `BDTestSettings`.
+`Start(options)` freezes these registrations; later changes affect only new runs. `Start()` has no registrations.
 
 ## Built-in registrations
 
@@ -131,12 +118,6 @@ explicit run's skip callback after finalizing a wholly skipped scenario or outli
 Framework outcome exceptions thrown inside steps retain their original propagation.
 
 Built-in adapters register their declarations on their assembly run's options.
-For a legacy standalone default run, callers can explicitly use
-`BDTestSettings.CustomExceptionSettings.RegisterFrameworkOutcomes(map)`. That
-registration is thread-safe and idempotent, but does not affect adapter-owned
-assembly runs. The existing exception collections remain supported for legacy
-custom registrations; prefer the registration API for reusable declarations.
-
 ### Runner differences
 
 The shared suite in `TestUtilities/AdapterConformanceTests.cs` runs in all four

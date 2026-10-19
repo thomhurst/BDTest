@@ -4,7 +4,7 @@ using NUnit.Framework;
 
 namespace BDTest.Tests.Fixtures;
 
-public class FrameworkOutcomeMapTests
+public class FrameworkOutcomeMapTests : TestRunOwner
 {
     [Test]
     public void Maps_are_immutable_and_registration_is_idempotent()
@@ -57,7 +57,6 @@ public class FrameworkOutcomeMapTests
     {
         Assert.Throws<ArgumentNullException>(() => new FrameworkOutcomeMap(null!));
         Assert.Throws<ArgumentNullException>(() => new BDTestOptions().RegisterFrameworkOutcomes(null!));
-        Assert.Throws<ArgumentNullException>(() => BDTestSettings.CustomExceptionSettings.RegisterFrameworkOutcomes(null!));
     }
 
     private static void MustNotRun() => throw new InvalidOperationException("Skipped scenario executed");

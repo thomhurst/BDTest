@@ -9,7 +9,7 @@ using NUnit.Framework;
 namespace BDTest.Tests.Fixtures;
 
 [NonParallelizable]
-public class AndWhenTests : BDTestBase
+public class AndWhenTests : RunTestBase
 {
     [Test]
     public async Task And_when_accepts_all_delegate_shapes_and_keeps_execution_order()
@@ -95,23 +95,16 @@ public class AndWhenTests : BDTestBase
     }
 
     [Test]
-    public async Task And_when_obeys_legacy_debug_skipping()
+    public async Task And_when_obeys_run_debug_skipping()
     {
-        var previous = BDTestSettings.Debug.ShouldSkipWhenStep;
-        try
-        {
-            BDTestSettings.Debug.ShouldSkipWhenStep = true;
-            var calls = new List<string>();
-            var scenario = await When(() => calls.Add("when")).And(() => calls.Add("and"))
-                .Then(() => calls.Add("then")).BDTestAsync();
-            Assert.That(calls, Is.EqualTo(new[] { "then" }));
-            Assert.That(Required(scenario.Steps)[1].Status, Is.EqualTo(Status.Skipped));
-            Assert.That(scenario.Steps[1].StepText, Does.StartWith("[Skipped] And "));
-        }
-        finally
-        {
-            BDTestSettings.Debug.ShouldSkipWhenStep = previous;
-        }
+        Options.Debug.ShouldSkipWhenStep = true;
+        var calls = new List<string>();
+        var scenario = await When(() => calls.Add("when")).And(() => calls.Add("and"))
+            .Then(() => calls.Add("then")).BDTestAsync();
+        Assert.That(calls, Is.EqualTo(new[] { "then" }));
+        Assert.That(Required(scenario.Steps)[1].Status, Is.EqualTo(Status.Skipped));
+        Assert.That(scenario.Steps[1].StepText, Does.StartWith("[Skipped] And "));
+
     }
 
     [Test]

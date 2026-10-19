@@ -8,12 +8,12 @@ namespace BDTest.Tests.Fixtures;
 [Story(AsA = "BDTest developer",
     IWant = "to make sure that certain tests can be skipped conditionally",
     SoThat = "tests can be run with different behaviour for different test environments")]
-public class SkipCertainTestsTests : BDTestBase
+public class SkipCertainTestsTests : RunTestBase
 {
-    [OneTimeSetUp]
+    [SetUp]
     public void Setup()
     {
-        BDTestSettings.GlobalSkipTestRules.Add(test => test.BdTestBaseClass?.GetType() == typeof(SkipCertainTestsTests));
+        Options.SkipTestRules.Add(test => test.BdTestBaseClass?.GetType() == typeof(SkipCertainTestsTests));
     }
 
     [Test]

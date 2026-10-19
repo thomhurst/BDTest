@@ -51,6 +51,5 @@ receive normal exception classification, timing, output capture and after hooks.
 
 Attribute instances are cached per definition; predicates should read their values
 without mutating them. Retry conditions are re-evaluated and skip reasons reset.
-Legacy global registrations remain live, while explicit runs keep their startup
-snapshot. See [Skipping steps and scenarios](../writing-tests/skipping.md) for
+All runs keep their startup registration snapshot. See [Skipping steps and scenarios](../writing-tests/skipping.md) for
 registration timing and the optional structured report reason.

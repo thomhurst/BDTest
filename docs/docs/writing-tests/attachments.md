@@ -52,7 +52,7 @@ options.Attachments.MaximumRunBytes = 200 * 1024 * 1024;
 using var run = BDTestRun.Start(options);
 ```
 
-Limits are copied at `Start` and cannot change for that run. Defaults are 10 MiB per attachment and 100 MiB per run, including for the shared default run. Zero permits only empty content; negative limits are rejected at `Start`. Concurrent copies share the run limit. A limit violation throws `IOException` and removes the partial file without consuming quota. Source read/write failures also roll back partial files and quota. Names must be nonempty and MIME types must be concrete, valid types.
+Limits are copied at `Start` and cannot change for that run. Defaults are 10 MiB per attachment and 100 MiB per run, for every run. Zero permits only empty content; negative limits are rejected at `Start`. Concurrent copies share the run limit. A limit violation throws `IOException` and removes the partial file without consuming quota. Source read/write failures also roll back partial files and quota. Names must be nonempty and MIME types must be concrete, valid types.
 
 ## Reading and cleanup
 
@@ -60,7 +60,7 @@ Limits are copied at `Start` and cannot change for that run. Defaults are 10 MiB
 
 Report JSON includes metadata only. Local paths and file content are never serialized. Historical JSON without attachment collections reads as empty collections. `Uri` is initially null.
 
-Keep the run alive until tests, writers and exporters finish. Use `using` or `try/finally` so disposal removes temporary files even when tests or export fail. `BDTestUtil.ClearScenarios(run)` also removes that run's temporary files and resets its quota. For framework adapters using the shared default run, call `BDTestUtil.ClearScenarios()` after exporting all results. Neither operation touches another run's files.
+Keep the run alive until tests, writers and exporters finish. Use `using` or `try/finally` so disposal removes temporary files even when tests or export fail. `BDTestUtil.ClearScenarios(run)` also removes that run's temporary files and resets its quota. For framework adapters, dispose through the assembly owner after exporting all results. Neither operation touches another run's files.
 
 ## Uploading
 
@@ -70,7 +70,7 @@ Configure an [attachment store](../report-server/persistence.md#attachments) on 
 
 Pass a final `CancellationToken` to the upload method to cancel an active attachment request or its retry delay. No later attachment starts once cancellation is observed. Cancellation closes upload streams but retains captures until the run is cleared or disposed, and does not undo report or attachment requests already accepted by the server. See [upload cancellation](../report-server/sending-results.md#cancellation).
 
-The uploader uses bounded stream buffers and reopens each captured file on retry. Permanent HTTP failures stop immediately; transient failures follow the existing retry policy. A failure leaves the report and any completed attachments on the server, with missing content returning 404. Retrying the whole method creates a new report, so delete an incomplete report through the normal report deletion flow when needed. Use `try/finally` to dispose an explicit run or clear the default run after reporting, including failed uploads.
+The uploader uses bounded stream buffers and reopens each captured file on retry. Permanent HTTP failures stop immediately; transient failures follow the existing retry policy. A failure leaves the report and any completed attachments on the server, with missing content returning 404. Retrying the whole method creates a new report, so delete an incomplete report through the normal report deletion flow when needed. Use `try/finally` to dispose the owned run after reporting, including failed uploads.
 
 `GET /bdtest/report/{reportId}/attachments/{attachmentId}` downloads a recorded attachment with its recorded MIME type and a safe filename. All types, including HTML and SVG, use `Content-Disposition: attachment`, `nosniff` and a sandbox CSP. These requests follow the host's report authorization policy. `Uri` remains null; construct the download route from the server-assigned report ID and attachment ID. The server rejects uploader-supplied attachment URIs and local paths.
 

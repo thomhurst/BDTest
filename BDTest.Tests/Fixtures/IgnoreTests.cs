@@ -11,8 +11,9 @@ namespace BDTest.Tests.Fixtures;
     IWant = "to make sure that specific exceptions can be marked as 'skippable'",
     SoThat = "BDTest works well with other frameworks such as NUnit")]
 [Parallelizable(ParallelScope.None)]
-public class IgnoreTests : LegacyNUnitBDTestBase<MyTestContext>
+public class IgnoreTests : RunNUnitTestBase<MyTestContext>
 {
+    public IgnoreTests() => Options.InconclusiveExceptionTypes.Add(typeof(MyCustomIgnoreException));
     [Test]
     public async Task NUNitIgnoreException()
     {
@@ -28,7 +29,7 @@ public class IgnoreTests : LegacyNUnitBDTestBase<MyTestContext>
         }
         catch(IgnoreException)
         {
-            var scenario = BDTestUtil.GetScenarios().Single(scenario => scenario.Guid == builder.Guid);
+            var scenario = BDTestUtil.GetScenarios(TestRun).Single(scenario => scenario.Guid == builder.Guid);
                 
             Assert.That(scenario.Status, Is.EqualTo(Status.Skipped));
         }
@@ -37,8 +38,6 @@ public class IgnoreTests : LegacyNUnitBDTestBase<MyTestContext>
     [Test]
     public async Task CustomIgnoreException()
     {
-        using var registration = new ExceptionRegistration(
-            BDTestSettings.CustomExceptionSettings.InconclusiveExceptionTypes, typeof(MyCustomIgnoreException));
         var builder = Given(() => Console.WriteLine("NUnit throws an ignore exception"))
             .When(() => ThrowException())
             .Then(() => Console.WriteLine("the test is ignored"));
@@ -51,7 +50,7 @@ public class IgnoreTests : LegacyNUnitBDTestBase<MyTestContext>
         }
         catch(MyCustomIgnoreException)
         {
-            var scenario = BDTestUtil.GetScenarios().Single(scenario => scenario.Guid == builder.Guid);
+            var scenario = BDTestUtil.GetScenarios(TestRun).Single(scenario => scenario.Guid == builder.Guid);
                 
             Assert.That(scenario.Status, Is.EqualTo(Status.Inconclusive));
         }

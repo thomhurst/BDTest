@@ -12,7 +12,7 @@ using BDTest.Attributes;
 using BDTest.Test;
 
 [Story(AsA = "engineer", IWant = "to run scenarios", SoThat = "reports explain their purpose")]
-public class ScenarioTests : BDTestBase
+public class ScenarioTests : TUnitBDTestBase<object>
 {
 }
 ```

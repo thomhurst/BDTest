@@ -26,19 +26,17 @@ public class StoryTextLookupTests
             .SetName("Inherited_story_overrides_enclosing_story");
     }
 
-    [SetUp]
-    public void SetUp() => TestResetHelper.ResetData();
-
     [TestCaseSource(nameof(StoryCases))]
     public async Task ScenarioAndReportUseTheSameStoryAsTheTest(BDTestBase test, string role)
     {
+        using var ownedFixture = (IDisposable)test;
         var article = role is "outer" or "inner" ? "an" : "a";
         var expected = role == null
             ? null
             : $"As {article} {role}{Environment.NewLine}I want consistent stories{Environment.NewLine}So that reports match{Environment.NewLine}";
 
         var scenario = await test.When(() => Step()).Then(() => Step()).BDTestAsync();
-        var reportedStory = JsonHelper.GetTestDynamicJsonObject().SelectToken("$.Scenarios[0].StoryText");
+        var reportedStory = JsonHelper.GetTestDynamicJsonObject(test.TestRun).SelectToken("$.Scenarios[0].StoryText");
 
         Assert.Multiple(() =>
         {
@@ -58,31 +56,31 @@ public class StoryTextLookupTests
 
     private static void Step() { }
 
-    private class UnannotatedTest : BDTestBase { }
+    private class UnannotatedTest : RunTestBase { }
 
     [Story(AsA = "direct", IWant = "consistent stories", SoThat = "reports match")]
-    private class DirectStoryTest : BDTestBase { }
+    private class DirectStoryTest : RunTestBase { }
 
     private class InheritedStoryTest : DirectStoryTest { }
 
     [Story(AsA = "outer", IWant = "consistent stories", SoThat = "reports match")]
     private class OuterStory
     {
-        public class NestedTest : BDTestBase { }
+        public class NestedTest : RunTestBase { }
 
         public class UnannotatedMiddle
         {
-            public class NestedTest : BDTestBase { }
+            public class NestedTest : RunTestBase { }
         }
 
         [Story(AsA = "inner", IWant = "consistent stories", SoThat = "reports match")]
         public class InnerStory
         {
-            public class NestedTest : BDTestBase { }
+            public class NestedTest : RunTestBase { }
         }
 
         [Story(AsA = "nested", IWant = "consistent stories", SoThat = "reports match")]
-        public class DirectStoryTest : BDTestBase { }
+        public class DirectStoryTest : RunTestBase { }
 
         public class InheritedStoryTest : StoryTextLookupTests.DirectStoryTest { }
     }

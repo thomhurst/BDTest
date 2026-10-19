@@ -1,11 +1,11 @@
 ---
 title: Retries
-description: Retry failing scenarios with [BDTestRetry] or global retry rules, and reset state between attempts.
+description: Retry failing scenarios with [BDTestRetry] or run retry rules, and reset state between attempts.
 ---
 
 # Retries
 
-For built-in adapters, configure `BDTestOptions` through [assembly configuration](../configuration/assembly-runs.md). Examples using `BDTestSettings` below apply only to the legacy standalone default run; use the corresponding option registrations for adapter-owned runs.
+Configure `BDTestOptions` through [assembly configuration](../configuration/assembly-runs.md), or before starting an [explicit run](../advanced/explicit-runs.md). The examples below belong in that configuration.
 
 
 BDTest can retry a scenario that fails. Retries happen inside one execution: the report keeps one entry per scenario, together with the history of every attempt.
@@ -33,12 +33,12 @@ public async Task CallsAFlakyService()
 
 BDTest looks for the attribute on the scenario method first, then on the step frames, the story class, the calling frame and finally the assembly. The closest attribute wins, so `[BDTestRetry(0)]` on a method turns off a class or assembly default.
 
-## Global retry rules
+## Run retry rules
 
 Retry based on the exception, for example for known transient errors:
 
 ```csharp
-BDTestSettings.GlobalRetryTestRules.Add(
+options.RetryTestRules.Add(
     exception => exception is HttpRequestException,
     retryLimit: 3);
 ```

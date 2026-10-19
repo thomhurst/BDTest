@@ -11,7 +11,7 @@ internal static class ScenarioHookExecutor
     internal static async Task ExecuteAsync(Scenario scenario, Func<Task> execute, Func<Func<Task>, Task> executeInScope)
     {
         var test = scenario.BdTestBaseClass;
-        // Keep the legacy event subscriptions stable throughout this attempt.
+        // Use the owning run's frozen hook registrations for this attempt.
         var beforeHooks = scenario.ExecutionRun.Options.BeforeScenario;
         var afterHooks = scenario.ExecutionRun.Options.AfterScenario;
         var cancellation = new CancellationTokenSource();

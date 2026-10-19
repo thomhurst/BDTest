@@ -5,7 +5,7 @@ description: Control how steps read in reports with the source generator, [StepT
 
 # Step text
 
-For built-in adapters, configure `BDTestOptions` through [assembly configuration](../configuration/assembly-runs.md). Examples using `BDTestSettings` below apply only to the legacy standalone default run; use the corresponding option registrations for adapter-owned runs.
+Configure `BDTestOptions` through [assembly configuration](../configuration/assembly-runs.md), or before starting an [explicit run](../advanced/explicit-runs.md). The examples below belong in that configuration.
 
 
 Every step in a report has a line of text, such as `Given I have an account with a balance of 100`. BDTest builds it from the step type keyword plus either a `[StepText]` template, the humanised method name, or the step's source text.
@@ -163,23 +163,17 @@ public sealed class PersonStringConverter : IStepTextStringConverter<Person>
 }
 ```
 
-Register it during test-run setup:
+Register it in `IBDTestConfiguration.Configure(BDTestOptions options)`, or before starting a standalone run:
 
 ```csharp
-BDTestSettings.RegisterCustomStringConverter(new PersonStringConverter());
+options.RegisterCustomStringConverter<Person>(new PersonStringConverter());
 ```
 
-For an [explicit run](../advanced/explicit-runs.md), register it on `BDTestOptions` instead.
-
-Rules:
-
 - A converter for `T` applies to values assignable to `T`, including derived classes and interface implementations.
-- Converters are checked in registration order. The first converter that matches wins. Within one converter that implements several `IStepTextStringConverter<>` interfaces, an exact type match wins over an assignable match.
-- `RemoveCustomStringConverter(converter)` removes the first equal registration and returns whether one was found. Duplicates are allowed. Both methods reject `null`.
-- Registration and removal are thread-safe. Text is rendered once per executed attempt, so changes apply to later renders, including retries, but do not rewrite completed report text.
-- Converter callbacks can run concurrently. Protect any mutable state inside a converter.
-
-`BDTestSettings.CustomStringConverters` is a legacy `List<object>`. You may use it directly during setup, before tests run concurrently. For concurrent access, hold `lock (BDTestSettings.CustomStringConverters)` for every read and write, or use the registration methods instead.
+- The first matching registration wins. The registered generic `T` selects the interface contract, including explicit implementations; BDTest does not infer a different contract from the converter's runtime type.
+- Registrations are copied when the run starts. Later option changes affect only later runs; retries use the same snapshot.
+- Converter callbacks may run concurrently and must protect mutable state. Null converters are rejected.
+- `StepTextHelper.GetStepText(method, arguments, run: run)` uses that run's converters. Omitting `run` uses default value formatting and no custom converters.
 
 ## Scenario outline placeholders
 

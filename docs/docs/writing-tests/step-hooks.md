@@ -1,41 +1,39 @@
 ---
 title: Step hooks
-description: Run code before and after every step, globally or per test class, for logging, screenshots and diagnostics.
+description: Run code before and after every step, per run or per test class, for logging, screenshots and diagnostics.
 ---
 
 # Step hooks
 
-For built-in adapters, configure `BDTestOptions` through [assembly configuration](../configuration/assembly-runs.md). Examples using `BDTestSettings` below apply only to the legacy standalone default run; use the corresponding option registrations for adapter-owned runs.
+Configure `BDTestOptions` through [assembly configuration](../configuration/assembly-runs.md), or before starting an [explicit run](../advanced/explicit-runs.md). The examples below belong in that configuration.
 
 
 Step hooks run code around every step. Typical uses are logging, taking screenshots on failure and collecting diagnostics.
 
-## Global hooks
+## Run hooks
 
-Subscribe to `BDTestSettings.BeforeStep` and `BDTestSettings.AfterStep` during test-run setup. Both are `Func<Step, Task>` events:
+Register `IStepHook` instances in `IBDTestConfiguration.Configure(BDTestOptions options)`, or on options before starting a standalone run:
 
 ```csharp
-using BDTest.Settings;
-using BDTest.Test;
+options.StepHooks.Add(new StepLogger());
 
-BDTestSettings.BeforeStep += step =>
+public sealed class StepLogger : BDTest.Interfaces.IStepHook
 {
-    Console.WriteLine($"Starting: {step.StepText}");
-    return Task.CompletedTask;
-};
-
-BDTestSettings.AfterStep += async step =>
-{
-    if (step.Status == Status.Failed)
+    public Task BeforeStepAsync(BDTest.Test.Step step)
     {
-        await SaveScreenshotAsync(step.ScenarioId, step.Guid);
+        Console.WriteLine($"Starting: {step.StepText}");
+        return Task.CompletedTask;
     }
-};
+
+    public Task AfterStepAsync(BDTest.Test.Step step)
+    {
+        Console.WriteLine($"Finished: {step.Status}");
+        return Task.CompletedTask;
+    }
+}
 ```
 
-Global handlers can run concurrently for different tests. Keep their shared state thread-safe. Remove a handler with `-=` when you no longer need it.
-
-Tests that use an [explicit run](../advanced/explicit-runs.md#step-hooks-for-a-run) register `IStepHook` instances on `BDTestOptions.StepHooks` instead.
+Hooks can run concurrently for different tests. Keep their shared state thread-safe. Registrations are frozen when the run starts; changing options afterwards affects only later runs.
 
 ## Per-test hooks
 
@@ -60,13 +58,13 @@ public abstract class UiTestBase : TUnitBDTestBase<UiContext>
 
 For each step that is reached, BDTest awaits:
 
-1. global `BeforeStep` handlers, in registration order,
+1. run `BeforeStepAsync` hooks, in registration order,
 2. the test's `OnBeforeStep`,
 3. the step,
 4. the test's `OnAfterStep`,
-5. global `AfterStep` handlers, in registration order.
+5. run `AfterStepAsync` hooks, in registration order.
 
-Subscriptions are captured when the step starts. Changes during a step apply to later steps.
+Hook registrations remain fixed for the lifetime of the run, including retries.
 
 ## Exceptions in hooks
 

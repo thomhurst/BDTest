@@ -6,7 +6,7 @@ using NUnit.Framework;
 namespace BDTest.Tests.Fixtures;
 
 [FixtureLifeCycle(LifeCycle.InstancePerTestCase)]
-public class HtmlWriterTests : BDTestBase
+public class HtmlWriterTests : RunTestBase
 {
     private readonly string _executionId = Guid.NewGuid().ToString();
     protected override string BDTestExecutionId => _executionId;
