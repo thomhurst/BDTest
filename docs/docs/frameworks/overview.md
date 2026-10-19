@@ -5,7 +5,7 @@ description: Compare the BDTest adapters for TUnit, NUnit, xUnit and MSTest, or 
 
 # Choosing a test framework
 
-BDTest does not replace your test runner. It runs inside it. An adapter package gives you a base class that connects BDTest to the runner's test identity, lifecycle and skip/inconclusive exceptions.
+BDTest does not replace your test runner. It runs inside it. An adapter package connects BDTest to the runner's test identity, lifecycle and skip/inconclusive exceptions through framework-native composition or an optional base class.
 
 | Adapter | Base class | Package |
 | --- | --- | --- |
@@ -17,11 +17,11 @@ BDTest does not replace your test runner. It runs inside it. An adapter package 
 
 All adapter base classes take a [context](../writing-tests/test-context.md) type with the constraint `where TContext : class`. The default factory needs a public parameterless constructor; custom factories support constructor dependencies. There are no non-generic adapter base classes. Use an empty context class if you do not need state.
 
-If your test class already has another base class, use [NUnit composition registration](nunit.md#composition-with-an-existing-base-class), [TUnit composition registration](tunit.md#composition-with-an-existing-base-class), or [MSTest composition registration](mstest.md#composition-with-an-unrelated-base-class). The core [composition host](composition.md) also supports manual lifecycle integration for other runners.
+If your test class already has another base class, use [NUnit composition registration](nunit.md#composition-with-an-existing-base-class), [TUnit composition registration](tunit.md#composition-with-an-existing-base-class), [xUnit composition registration](xunit.md#composition-with-an-unrelated-base-class), or [MSTest composition registration](mstest.md#composition-with-an-unrelated-base-class). The core [composition host](composition.md) also supports manual lifecycle integration for other runners.
 
 ## What an adapter does
 
-Adapter base classes derive from `AbstractContextBDTestBase<TContext>`. NUnit, TUnit and MSTest also provide framework-native composition. Each adapter:
+Adapter base classes derive from `AbstractContextBDTestBase<TContext>`. All four adapters also provide framework-native composition. Each adapter:
 
 1. supplies a unique execution ID for each test from the framework's test context, so context and output stay isolated in parallel runs,
 2. declares the framework's success, skip and inconclusive exceptions in one [`FrameworkOutcomeMap`](../configuration/exceptions.md#framework-outcome-maps), registered on its own frozen assembly run,
@@ -37,7 +37,7 @@ Adapter base classes derive from `AbstractContextBDTestBase<TContext>`. NUnit, T
 | Skip exception | `SkipTestException` (`Skip.Test`) | `IgnoreException` (`Assert.Ignore`) | `SkipException` (`Assert.Skip`) | — |
 | Inconclusive exception | `InconclusiveTestException` | `InconclusiveException` | — | `AssertInconclusiveException` |
 | Whole-scenario skip | `SkipTestException` | `Assert.Ignore` | `Assert.Skip` | `Assert.Inconclusive` |
-| Runs with | `dotnet run` / `dotnet test` (Microsoft.Testing.Platform) | `dotnet test` | `dotnet test` | `dotnet test` |
+| Runs with | `dotnet run` / `dotnet test` (Microsoft.Testing.Platform) | `dotnet test` | `dotnet run` (Microsoft.Testing.Platform); `dotnet test` with the [VSTest fallback](xunit.md#vstest-fallback) | `dotnet test` |
 
 The examples in this documentation use TUnit. Swap the base class, test attributes and assertions for your framework.
 
