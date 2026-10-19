@@ -7,8 +7,10 @@ namespace BDTest.Analyzers.Tests;
 
 public class PackageTests
 {
-    [Test]
-    public async Task Packed_analyzers_and_generator_reach_a_NuGet_consumer()
+    [TestCase("BDTest", "netstandard2.0")]
+    [TestCase("BDTest", "net8.0")]
+    [TestCase("BDTest.NUnit", "net8.0")]
+    public async Task Packed_analyzers_and_generator_reach_a_NuGet_consumer(string packageId, string targetFramework)
     {
         var repository = new DirectoryInfo(TestContext.CurrentContext.TestDirectory);
         while (repository != null && !File.Exists(Path.Combine(repository.FullName, "BDTest.sln"))) repository = repository.Parent;
@@ -25,12 +27,20 @@ public class PackageTests
 #else
             const string configuration = "Release";
 #endif
-            foreach (var package in new[] { "BDTest.Contracts", "BDTest", "BDTest.Analyzers", "BDTest.SourceGenerator" })
+            foreach (var package in new[] { "BDTest.Contracts", "BDTest", "BDTest.Analyzers", "BDTest.NUnit" })
             {
                 var packed = await Dotnet(repository.FullName, "pack", package + "/" + package + ".csproj",
                     "-c", configuration, "--no-build", "--no-restore", "-o", feed,
                     "-p:PackageVersion=" + version, "-p:IncludeSymbols=false");
                 Assert.That(packed.ExitCode, Is.Zero, packed.Output);
+            }
+            using (var archive = ZipFile.OpenRead(Path.Combine(feed, "BDTest." + version + ".nupkg")))
+            {
+                Assert.That(archive.Entries.Count(e => e.FullName == "analyzers/dotnet/cs/BDTest.SourceGenerator.dll"), Is.EqualTo(1));
+                Assert.That(archive.Entries.Any(e => e.FullName.StartsWith("lib/") && e.Name == "BDTest.SourceGenerator.dll"), Is.False);
+                Assert.That(archive.Entries.Any(e => e.Name.StartsWith("Microsoft.CodeAnalysis")), Is.False);
+                using var manifest = new StreamReader(archive.GetEntry("BDTest.nuspec")!.Open());
+                Assert.That(await manifest.ReadToEndAsync(), Does.Not.Contain("id=\"BDTest.SourceGenerator\"").And.Not.Contain("id=\"Microsoft.CodeAnalysis"));
             }
             using (var archive = ZipFile.OpenRead(Path.Combine(feed, "BDTest.Analyzers." + version + ".nupkg")))
             {
@@ -43,15 +53,14 @@ public class PackageTests
             await File.WriteAllTextAsync(Path.Combine(temporary, "Consumer.csproj"), $$"""
                 <Project Sdk="Microsoft.NET.Sdk">
                   <PropertyGroup>
-                    <TargetFramework>net10.0</TargetFramework>
+                    <TargetFramework>{{targetFramework}}</TargetFramework>
+                    <LangVersion>latest</LangVersion>
                     <RestoreSources>{{System.Security.SecurityElement.Escape(feed)}};https://api.nuget.org/v3/index.json</RestoreSources>
                     <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
                     <CompilerGeneratedFilesOutputPath>obj/generated</CompilerGeneratedFilesOutputPath>
                   </PropertyGroup>
                   <ItemGroup>
-                    <PackageReference Include="BDTest" Version="{{version}}" />
-                    <PackageReference Include="BDTest.Analyzers" Version="{{version}}" PrivateAssets="all" />
-                    <PackageReference Include="BDTest.SourceGenerator" Version="{{version}}" PrivateAssets="all" />
+                    <PackageReference Include="{{packageId}}" Version="{{version}}" />
                   </ItemGroup>
                 </Project>
                 """);
@@ -65,6 +74,10 @@ public class PackageTests
             Assert.That(valid.Output, Does.Not.Match("BDT00[1-4]|AD0001|CS8032"));
             Assert.That(Directory.EnumerateFiles(Path.Combine(temporary, "obj", "generated"), "BDTest.StepMetadata.g.cs", SearchOption.AllDirectories), Is.Not.Empty);
 
+            var projectFile = Path.Combine(temporary, "Consumer.csproj");
+            var project = await File.ReadAllTextAsync(projectFile);
+            await File.WriteAllTextAsync(projectFile, project.Replace("</ItemGroup>",
+                $"<PackageReference Include=\"BDTest.Analyzers\" Version=\"{version}\" PrivateAssets=\"all\" /></ItemGroup>"));
             await File.WriteAllTextAsync(sourceFile, AnalyzerTests.Prefix + """
                 [Story] class Consumer : BDTestBuilder {
                     public Consumer(BDTest.BDTestRun run) : base(run) {}
@@ -72,7 +85,7 @@ public class PackageTests
                     void Test() { Given((Action)(() => Task.Delay(1))); }
                 }
                 """);
-            var invalid = await Dotnet(temporary, "build", "-c", configuration, "--no-restore", "--nologo");
+            var invalid = await Dotnet(temporary, "build", "-c", configuration, "--nologo");
             Assert.That(invalid.ExitCode, Is.Not.Zero, invalid.Output);
             Assert.That(Regex.Matches(invalid.Output, @"(?:warning|error) (BDT00[1-4]):").Select(m => m.Groups[1].Value).Distinct(),
                 Is.EquivalentTo(new[] { "BDT001", "BDT002", "BDT003", "BDT004" }), invalid.Output);

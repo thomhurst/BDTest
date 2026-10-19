@@ -28,7 +28,6 @@ In a .NET 10 executable test project with implicit usings enabled:
 ```bash
 dotnet add package TUnit
 dotnet add package BDTest.TUnit
-dotnet add package BDTest.SourceGenerator
 ```
 
 TUnit is the recommended runner. NUnit, xUnit v3 and MSTest adapters are also

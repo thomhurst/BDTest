@@ -111,7 +111,9 @@ foreach ($packageFile in $packages) {
                     }
                 }
                 foreach ($reference in $items.ProjectReference) {
-                    $expectedDependencies[[System.IO.Path]::GetFileNameWithoutExtension($reference.Identity.Replace('\', '/'))] = [string] $metadata.version
+                    if ($reference.PrivateAssets -ne 'all') {
+                        $expectedDependencies[[System.IO.Path]::GetFileNameWithoutExtension($reference.Identity.Replace('\', '/'))] = [string] $metadata.version
+                    }
                 }
                 $dependencies = @($group[0].SelectNodes('*[local-name()="dependency"]'))
                 foreach ($expected in $expectedDependencies.GetEnumerator()) {
@@ -137,6 +139,19 @@ foreach ($packageFile in $packages) {
             }
             Write-Host "Verified $packageId $($metadata.version): metadata, dependencies and analyzer-only contents."
             continue
+        }
+
+        if ($packageId -eq 'BDTest') {
+            $generatorPath = 'analyzers/dotnet/cs/BDTest.SourceGenerator.dll'
+            if (@($package.Entries | Where-Object FullName -EQ $generatorPath).Count -ne 1) {
+                throw "Missing or duplicate bundled source generator: $packageId"
+            }
+            if (@($package.Entries | Where-Object {
+                $_.Name -like 'Microsoft.CodeAnalysis*.dll' -or
+                ($_.Name -eq 'BDTest.SourceGenerator.dll' -and $_.FullName -ne $generatorPath)
+            }).Count -ne 0) {
+                throw "Unexpected compiler runtime assembly: $packageId"
+            }
         }
 
         $symbols = [System.IO.Compression.ZipFile]::OpenRead($symbolsPath)

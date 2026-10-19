@@ -1,24 +1,26 @@
 ---
 title: Compiler step metadata
-description: The optional BDTest.SourceGenerator package that records step call-site metadata at compile time.
+description: The source generator bundled in BDTest that records step call-site metadata at compile time.
 sidebar_label: Source generator
 ---
 
 # Compiler step metadata
 
-`BDTest.SourceGenerator` is an optional incremental source generator. It records method identity and lazy argument descriptions for `Given`, `When`, `Then`, `And`, and `But` calls bound to BDTest builders. It targets `netstandard2.0`, uses Roslyn 4.8 APIs, and requires a C# 10 or newer compiler (Roslyn 4.8 or newer; .NET SDK 8 or newer). It does not require preview features, interceptors, or partial test classes. Delegate builders require a C# 13 or newer compiler (.NET SDK 9 or newer) so overload priority selects Task for ordinary async lambdas. The generator itself uses Roslyn 4.8 APIs.
+`BDTest.SourceGenerator` is an incremental source generator bundled in the core `BDTest` NuGet package. It records method identity and lazy argument descriptions for `Given`, `When`, `Then`, `And`, and `But` calls bound to BDTest builders. It targets `netstandard2.0`, uses Roslyn 4.8 APIs, and requires a C# 10 or newer compiler (Roslyn 4.8 or newer; .NET SDK 8 or newer). It does not require preview features, interceptors, or partial test classes. Delegate builders require a C# 13 or newer compiler (.NET SDK 9 or newer) so overload priority selects Task for ordinary async lambdas. The generator itself uses Roslyn 4.8 APIs.
 
 ## Installation
 
-Install matching versions of the core and generator packages directly in each project that contains step call sites:
+Install `BDTest` or any framework adapter in each project containing step calls. NuGet loads the bundled generator automatically, including through an adapter's dependency on core:
 
 ```xml
 <PackageReference Include="BDTest" Version="YOUR_BDTEST_VERSION" />
-<PackageReference Include="BDTest.SourceGenerator" Version="YOUR_BDTEST_VERSION"
-                  PrivateAssets="all" />
 ```
 
-The generator DLL ships under `analyzers/dotnet/cs`. It has no runtime Roslyn dependency. It is intentionally a separate package; adapters do not install it transitively. The metadata contract lives in both core runtime assets, in `BDTest.Metadata`.
+The generator DLL ships in the core package under `analyzers/dotnet/cs`. It has no runtime Roslyn dependency and is not a runtime assembly reference. The metadata contract lives in both core runtime assets, in `BDTest.Metadata`.
+
+When upgrading, remove any explicit `BDTest.SourceGenerator` package reference, including entries in `Directory.Packages.props`. The standalone package is no longer produced; keeping an older copy can load two generator versions. Keep core and adapter versions aligned. `BDTest.Analyzers` remains an optional separate package.
+
+Repository contributors using project references still reference the generator project explicitly as an analyzer in consumer projects: analyzer project references do not flow transitively like NuGet analyzer assets.
 
 Builders consume this metadata while retaining plain delegates for execution. Method identity supplies humanized names, `[StepText]` and skip attributes. Supported arguments are read immediately before a reached step runs, after hooks and skip checks. Retries read current state again. Unreached steps retain placeholders or caller text and never evaluate readers. Rendering errors appear as `<error: ExceptionType>` plus a step diagnostic; they do not change the step outcome. See [delegate migration](../migration/delegate-steps.md) for explicit argument and fallback behavior.
 
@@ -62,4 +64,4 @@ When `BDTest.Analyzers` is installed too, it recognizes the generator's validati
 
 ## Validation
 
-`BDTest.SourceGenerator.Tests` runs the generator with Roslyn 4.8, compiles the generated consumer source, loads it, and verifies runtime method identity, attributes, accessors and fallback behavior. The solution and packaging pipeline discover both new projects through their existing conventions. The generator package contains only its analyzer DLL and normal package metadata; consumers retain the core's `netstandard2.0` compatibility.
+`BDTest.SourceGenerator.Tests` runs the generator with Roslyn 4.8, compiles the generated consumer source, loads it, and verifies runtime method identity, attributes, accessors and fallback behavior. Package-consumer tests verify automatic generation with a direct core reference on both runtime assets and a transitive adapter reference, without a standalone generator package. Consumers retain the core's `netstandard2.0` compatibility.

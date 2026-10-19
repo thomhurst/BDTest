@@ -48,6 +48,6 @@ in `BDTest.Test` for the report compatibility bridge. Report renderer/storage
 namespaces are unchanged.
 
 Package IDs, assembly names, signing and target frameworks are unchanged. Install
-matching versions of the core, adapter, source generator and analyzer packages.
+matching versions of the core, adapter and optional analyzer packages. The source generator now ships inside core; remove old standalone generator references.
 Update reflection strings, fully qualified names and custom compiler tooling that
 refer to the moved types; do not replace package references with namespace names.

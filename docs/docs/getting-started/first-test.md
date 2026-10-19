@@ -14,7 +14,6 @@ Using another framework? The code is the same apart from the base class, the tes
 ```bash
 dotnet add package TUnit
 dotnet add package BDTest.TUnit
-dotnet add package BDTest.SourceGenerator
 ```
 
 `TUnit` brings the test framework, assertions and runner; `BDTest.TUnit` only depends on `TUnit.Core`. The source generator is what turns `Account.CreateAnAccount(100m)` into "I have an account with a balance of 100" in the report. See [Installation](installation.md) for a full project file.

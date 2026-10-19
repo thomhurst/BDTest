@@ -10,15 +10,9 @@ Configure `BDTestOptions` through [assembly configuration](../configuration/asse
 
 Every step in a report has a line of text, such as `Given I have an account with a balance of 100`. BDTest builds it from the step type keyword plus either a `[StepText]` template, the humanised method name, or the step's source text.
 
-## Install the source generator
+## Compiler step metadata
 
-Steps are plain delegates. To know which method a lambda calls, and with which arguments, BDTest uses compile-time metadata from the optional `BDTest.SourceGenerator` package. **Install it in every project that contains steps:**
-
-```xml
-<PackageReference Include="BDTest.SourceGenerator" Version="YOUR_BDTEST_VERSION" PrivateAssets="all" />
-```
-
-Use the same version as your other BDTest packages. Adapters do not install it for you. See [Source generator](../advanced/source-generator.md) for details.
+Steps are plain delegates. To know which method a lambda calls, and with which arguments, BDTest uses compile-time metadata from its bundled source generator. Installing `BDTest` or an adapter enables it automatically; no separate generator package is needed. See [Source generator](../advanced/source-generator.md) for supported expressions and migration from the standalone package.
 
 | Step | With the generator | Without the generator |
 | --- | --- | --- |

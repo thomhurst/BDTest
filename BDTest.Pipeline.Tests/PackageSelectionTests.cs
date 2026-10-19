@@ -36,7 +36,7 @@ public class PackageSelectionTests
         await Assert.That(selected).IsEquivalentTo(new[]
         {
             "BDTest", "BDTest.Reporting", "BDTest.Rendering", "BDTest.Contracts", "BDTest.NUnit", "BDTest.xUnit", "BDTest.MSTest", "BDTest.TUnit",
-            "BDTest.Razor.Reports", "BDTest.Reports.Storage.AzureBlob", "BDTest.Reports.Storage.FileSystem", "BDTest.SourceGenerator", "BDTest.Analyzers"
+            "BDTest.Razor.Reports", "BDTest.Reports.Storage.AzureBlob", "BDTest.Reports.Storage.FileSystem", "BDTest.Analyzers"
         });
     }
 
@@ -83,7 +83,6 @@ public class PackageSelectionTests
     }
 
     [Test]
-    [Arguments("BDTest.SourceGenerator")]
     [Arguments("BDTest.Analyzers")]
     public async Task Compiler_packages_keep_analyzer_assets_and_disable_symbols(string projectName)
     {
