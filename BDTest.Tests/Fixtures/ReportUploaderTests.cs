@@ -215,6 +215,7 @@ public class ReportUploaderTests
     {
         using var run = BDTestRun.Start();
         using var cancellation = new CancellationTokenSource();
+        var deadline = new AttemptDeadline();
         using var blockedBody = new BlockingContent();
         var started = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var attempts = 0;
@@ -229,7 +230,7 @@ public class ReportUploaderTests
             return response;
         });
         using var client = new HttpClient(handler) { Timeout = Timeout.InfiniteTimeSpan };
-        var uploader = new BDTestReportUploader(client, new(Server) { Timeout = cancel ? Timeout.InfiniteTimeSpan : TimeSpan.FromMilliseconds(100) });
+        var uploader = new BDTestReportUploader(client, new(Server) { Timeout = cancel ? Timeout.InfiniteTimeSpan : AttemptDeadline.Duration }, deadline.Schedule);
         var upload = uploader.UploadAsync(run, cancellationToken: cancellation.Token);
         try
         {
@@ -242,6 +243,7 @@ public class ReportUploaderTests
             }
             else
             {
+                deadline.Expire();
                 await Assert.That(await upload.WaitAsync(TimeSpan.FromSeconds(10))).IsEqualTo(ReportUri);
                 await Assert.That(attempts).IsEqualTo(2);
             }
@@ -269,6 +271,7 @@ public class ReportUploaderTests
     {
         using var run = BDTestRun.Start();
         using var cancellation = new CancellationTokenSource();
+        var deadline = new AttemptDeadline();
         using var blocked = new BlockingWriteStream();
         var attempts = 0;
         using var handler = new Handler(async (request, _) =>
@@ -284,20 +287,21 @@ public class ReportUploaderTests
         var uploader = new BDTestReportUploader(client, new(Server)
         {
             UseGzip = gzip,
-            Timeout = cancel ? Timeout.InfiniteTimeSpan : TimeSpan.FromMilliseconds(100)
-        });
+            Timeout = cancel ? Timeout.InfiniteTimeSpan : AttemptDeadline.Duration
+        }, deadline.Schedule);
         var upload = uploader.UploadAsync(run, cancellationToken: cancellation.Token);
         try
         {
+            await blocked.Started.Task.WaitAsync(TimeSpan.FromSeconds(10));
             if (cancel)
             {
-                await blocked.Started.Task.WaitAsync(TimeSpan.FromSeconds(10));
                 cancellation.Cancel();
                 await Assert.That(async () => await upload.WaitAsync(TimeSpan.FromSeconds(10))).Throws<OperationCanceledException>();
                 await Assert.That(attempts).IsEqualTo(1);
             }
             else
             {
+                deadline.Expire();
                 await Assert.That(await upload.WaitAsync(TimeSpan.FromSeconds(10))).IsEqualTo(ReportUri);
                 await Assert.That(attempts).IsEqualTo(2);
             }
@@ -402,6 +406,22 @@ public class ReportUploaderTests
         response.Headers.Add("X-BDTest-Report-Id", new string('a', 32));
         response.Headers.Add("X-BDTest-Attachment-Token", "receipt");
         return response;
+    }
+
+    private sealed class AttemptDeadline
+    {
+        public static readonly TimeSpan Duration = TimeSpan.FromMilliseconds(100);
+        private CancellationTokenSource? source;
+
+        public void Schedule(CancellationTokenSource timeout, TimeSpan duration)
+        {
+            if (duration != Duration) throw new InvalidOperationException("Unexpected attempt timeout.");
+            source = timeout;
+        }
+
+        // Only advance the first attempt once its operation is blocked. Later
+        // attempts keep their own deadline, but no wall-clock timer can fire it.
+        public void Expire() => (source ?? throw new InvalidOperationException("No attempt deadline was scheduled.")).Cancel();
     }
 
     private sealed class Capture(BDTestRun run) : AbstractContextBDTestBase<object>

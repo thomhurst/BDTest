@@ -10,7 +10,7 @@ internal static class ReportUploadTransport
 {
     internal static async Task<BDTestReportUploadResult> UploadAsync(Uri serverAddress, BDTestRunDescriptor? bdTestRunDescriptor,
         HttpClient httpClient, BDTestRun run, CancellationToken cancellationToken,
-        BDTestReportUploadOptions options)
+        BDTestReportUploadOptions options, Action<CancellationTokenSource, TimeSpan>? scheduleAttemptTimeout = null)
     {
         cancellationToken.ThrowIfCancellationRequested();
         var dataOutputModel = BDTestOutputModelBuilder.Build(run, bdTestRunDescriptor);
@@ -47,7 +47,7 @@ internal static class ReportUploadTransport
             attachmentToken = response.Headers.TryGetValues("X-BDTest-Attachment-Token", out var tokens) ? tokens.Single() : null;
             result = ParseResult(await response.Content.ReadAsStringAsync().ConfigureAwait(false), reportId);
             reportId = result.ReportId;
-        }, cancellationToken, options).ConfigureAwait(false);
+        }, cancellationToken, options, scheduleAttemptTimeout).ConfigureAwait(false);
 
         if (attachments.Length > 0)
         {
@@ -67,7 +67,7 @@ internal static class ReportUploadTransport
                     var request = new HttpRequestMessage(HttpMethod.Post, attachmentUri) { Content = content };
                     request.Headers.Add("X-BDTest-Attachment-Token", attachmentToken);
                     return request;
-                }, _ => Task.CompletedTask, cancellationToken, options).ConfigureAwait(false);
+                }, _ => Task.CompletedTask, cancellationToken, options, scheduleAttemptTimeout).ConfigureAwait(false);
             }
         }
         cancellationToken.ThrowIfCancellationRequested();
@@ -111,7 +111,8 @@ internal static class ReportUploadTransport
         ? "/bdtest/" : serverAddress.AbsolutePath.TrimEnd('/') + "/";
 
     private static async Task SendWithRetryAsync(HttpClient httpClient, Func<CancellationToken, HttpRequestMessage> createRequest,
-        Func<HttpResponseMessage, Task> consumeResponse, CancellationToken cancellationToken, BDTestReportUploadOptions options)
+        Func<HttpResponseMessage, Task> consumeResponse, CancellationToken cancellationToken, BDTestReportUploadOptions options,
+        Action<CancellationTokenSource, TimeSpan>? scheduleAttemptTimeout)
     {
         for (var attempt = 1; ; attempt++)
         {
@@ -129,7 +130,13 @@ internal static class ReportUploadTransport
                 if (httpClient.Timeout != Timeout.InfiniteTimeSpan &&
                     (attemptTimeout == Timeout.InfiniteTimeSpan || httpClient.Timeout < attemptTimeout))
                     attemptTimeout = httpClient.Timeout;
-                if (attemptTimeout != Timeout.InfiniteTimeSpan) timeout.CancelAfter(attemptTimeout);
+                if (attemptTimeout != Timeout.InfiniteTimeSpan)
+                {
+                    // Tests can expire an attempt after its blocking operation starts.
+                    // The hook is per upload; production uses the real deadline.
+                    if (scheduleAttemptTimeout == null) timeout.CancelAfter(attemptTimeout);
+                    else scheduleAttemptTimeout(timeout, attemptTimeout);
+                }
                 using var httpRequestMessage = createRequest(timeout.Token);
                 if (options.UploadKey != null) httpRequestMessage.Headers.Add("X-BDTest-Upload-Key", options.UploadKey);
                 using var response = await SendAndBufferAsync(httpClient, httpRequestMessage, timeout.Token).ConfigureAwait(false);
