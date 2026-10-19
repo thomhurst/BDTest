@@ -22,6 +22,39 @@ public class SharedPageRendererTests
     }
 
     [Test]
+    [Arguments(false)]
+    [Arguments(true)]
+    public async Task Outline_errors_outside_examples_remain_visible(bool hasExample)
+    {
+        var row = new ScenarioResult("row", "report", "story", "passed example", Status.Passed);
+        var outline = new ScenarioResult("outline", "report", "story", "outline", Status.Failed,
+            examples: hasExample ? [row] : [], isOutline: true,
+            exception: new ExceptionInfo("System.OperationCanceledException", "outline-cancellation-marker"));
+        var report = new BDTestReport(1, "report", "tests", [outline]);
+        var hosted = await ReportHandlerEncodingTests.RenderAsync("/Views/BDTest/Scenario.cshtml", outline,
+            configureViewData: data => data[nameof(ReportLayoutViewModel)] = ReportLayoutViewModel.Create(report));
+        await Assert.That(hosted).Contains("outline-cancellation-marker");
+        await Assert.That(ReportHtmlRenderer.GenerateHtmlReport(report)).Contains("outline-cancellation-marker");
+    }
+
+    [Test]
+    [Arguments(false)]
+    [Arguments(true)]
+    public async Task Outline_errors_already_shown_in_examples_are_not_duplicated(bool stepFailure)
+    {
+        // Separate values model exceptions read back from a serialized report.
+        var rowFailure = new ExceptionInfo("Failure", "example-failure-marker");
+        var outlineFailure = new ExceptionInfo("Failure", "example-failure-marker");
+        var row = new ScenarioResult("row", "report", "story", "failed example", Status.Failed,
+            steps: stepFailure ? [new StepResult(StepType.Then, "fails", Status.Failed, exception: rowFailure)] : [],
+            exception: rowFailure);
+        var outline = new ScenarioResult("outline", "report", "story", "outline", Status.Failed,
+            examples: [row], isOutline: true, exception: outlineFailure);
+        var html = ReportHtmlRenderer.RenderScenario(outline);
+        await Assert.That(html.Split("example-failure-marker").Length - 1).IsEqualTo(1);
+    }
+
+    [Test]
     public async Task Not_run_sections_use_the_same_compact_rows()
     {
         var report = new BDTestReport(1, "report", "tests", notRun:

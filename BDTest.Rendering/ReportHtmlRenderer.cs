@@ -299,8 +299,11 @@ public static partial class ReportHtmlRenderer
         AppendRetryHistory(html, scenario);
 
         // Errors raised outside a step (setup, skip rules, retry hooks) have no step to show them.
-        var exception = scenario.IsOutline ? null : scenario.Exception;
-        if (exception != null && !scenario.Steps.Any(step => SameException(step.Exception, exception)))
+        var exception = scenario.Exception;
+        if (exception != null && !scenario.Steps.Any(step => SameException(step.Exception, exception))
+            && !(scenario.IsOutline && scenario.Examples.Any(example =>
+                SameException(example.Exception, exception)
+                || example.Steps.Any(step => SameException(step.Exception, exception)))))
         {
             html.AppendLine("<div><h3 class=\"h3\">Error</h3>");
             AppendError(html, exception);

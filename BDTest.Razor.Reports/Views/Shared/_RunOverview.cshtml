@@ -9,7 +9,7 @@
     // Copy only compact scalar display data. Rendering never reloads or retains a report graph.
     var overview = new ReportRunOverview(Model.ScenarioCount, Model.NotRunCount, Model.Counts,
         report.Environment, report.Tag, report.BranchName, report.MachineName, report.Version,
-        report.HasTimer ? Model.Timer : null, report.CustomProperties);
+        Model.Timer, report.CustomProperties);
     var scenariosUrl = Url.ReportAction("AllScenarios", new { id = report.Id ?? string.Empty });
     string? StatusUrl(Status? status) => status.HasValue
         ? scenariosUrl + "?" + StatusConstants.FilterByStatusQueryParameterName + "=" + status.Value

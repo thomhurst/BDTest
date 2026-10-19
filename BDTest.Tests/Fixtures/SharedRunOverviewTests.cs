@@ -76,6 +76,19 @@ public class SharedRunOverviewTests
     }
 
     [Test]
+    public async Task Hosted_summary_preserves_timing_inferred_from_scenarios()
+    {
+        var start = new DateTimeOffset(2026, 10, 19, 12, 0, 10, TimeSpan.Zero);
+        var scenario = new ScenarioResult("one", "timer", "story", "scenario", Status.Passed,
+            startTime: start, endTime: start.AddSeconds(10));
+        var pages = ReportPageModels.Create(new BDTestReport(1, "timer", "tests", [scenario]));
+        var hosted = await ReportHandlerEncodingTests.RenderAsync("/Views/BDTest/Summary.cshtml", pages.Summary,
+            configureViewData: data => data[nameof(ReportLayoutViewModel)] = pages.Summary.Layout);
+        await Assert.That(hosted).DoesNotContain("No timing recorded");
+        await Assert.That(hosted).Contains("2026-10-19 12:00:10 → 12:00:20 UTC");
+    }
+
+    [Test]
     public async Task Projection_copies_mutable_inputs_and_contains_no_scenario_graph()
     {
         var counts = new Dictionary<Status, int> { [Status.Passed] = 1 };

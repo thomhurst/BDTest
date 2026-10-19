@@ -46,12 +46,15 @@ the same fields from their compact cached projections, without reconstructing a
 report or retaining steps, examples, exceptions or output. A status URL callback
 turns offline filter controls into hosted navigation; a separate URL points to
 tests that were declared but never ran. `RenderNotRun` supplies the same encoded
-warning rows to the offline report and hosted warnings page.
+warning rows to the offline report and hosted warnings page. Hosted summaries
+preserve timing inferred from scenario timestamps when the report has no run timer.
 
 Scenario pages and offline reports share the complete scenario detail renderer:
 steps and timings, structured arguments, exceptions, examples, retries, startup
 and teardown output, custom information, attachments and sandboxed custom HTML.
-Hosted routing and standalone filtering wrap the shared sections. Tables retain
+Errors recorded only on an outline, such as cancellation between examples,
+remain visible; exceptions already shown in an example are not repeated at the
+outline level. Hosted routing and standalone filtering wrap the shared sections. Tables retain
 the twenty-row preview, and captured output retains copy and wrap controls. `RenderArguments` and `RenderException` also remain available as smaller
 encoded fragments.
 
