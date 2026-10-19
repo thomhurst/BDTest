@@ -16,54 +16,83 @@ The BDTest framework now includes a built-in HTML report generator that creates 
 
 ## Usage
 
+Every export needs the run that recorded the tests. For NUnit adapter tests, obtain
+that run from `NUnitBDTestAssembly` using a type in the test assembly. Standalone
+hosts instead pass the same `BDTestRun` they supplied to their builders. Export
+all reports before the owner disposes the run.
+
 ### Basic Usage
 
 ```csharp
 using BDTest.Helpers;
+using BDTest.NUnit;
 
-// Generate HTML report with default settings
-var htmlReport = BDTestHtmlHelper.GetTestHtmlReport();
+var run = NUnitBDTestAssembly.GetRun(typeof(MyTests).Assembly);
+var htmlReport = BDTestHtmlHelper.GetTestHtmlReport(null, run);
 File.WriteAllText("test-report.html", htmlReport);
 ```
+
+`MyTests` represents one of your test classes. A null descriptor leaves custom
+report metadata unset.
 
 ### With Custom Run Descriptor
 
 ```csharp
+using BDTest;
 using BDTest.Helpers;
+using BDTest.NUnit;
 
+var run = NUnitBDTestAssembly.GetRun(typeof(MyTests).Assembly);
 var runDescriptor = new BDTestRunDescriptor
 {
     Environment = "Production",
-    Tag = "Release-v1.0", 
+    Tag = "Release-v1.0",
     BranchName = "main"
 };
 
-var htmlReport = BDTestHtmlHelper.GetTestHtmlReport(runDescriptor);
+var htmlReport = BDTestHtmlHelper.GetTestHtmlReport(runDescriptor, run);
 File.WriteAllText("test-report.html", htmlReport);
 ```
 
 ### Integration with Test Framework
 
-Add to your test setup/teardown (e.g., NUnit SetUpFixture):
+Place this NUnit `SetUpFixture` outside any namespace in your test assembly so
+its teardown runs after all fixtures. If you already have assembly teardown,
+combine report exports there and dispose the assembly run only after every export.
 
 ```csharp
+using BDTest.Helpers;
+using BDTest.NUnit;
+using NUnit.Framework;
+
 [SetUpFixture]
 public class TestReportSetup
 {
     [OneTimeTearDown]
     public void GenerateReports()
     {
-        // Generate both JSON and HTML reports
-        var timestamp = DateTime.Now.ToString("yyyyMMdd-HHmmss");
-        
-        var jsonData = BDTestJsonHelper.GetTestJsonData();
-        File.WriteAllText($"BDTest-Report-{timestamp}.json", jsonData);
-        
-        var htmlData = BDTestHtmlHelper.GetTestHtmlReport();
-        File.WriteAllText($"BDTest-Report-{timestamp}.html", htmlData);
+        var assembly = typeof(TestReportSetup).Assembly;
+        try
+        {
+            var run = NUnitBDTestAssembly.GetRun(assembly);
+            var timestamp = DateTime.Now.ToString("yyyyMMdd-HHmmss");
+
+            var jsonData = BDTestJsonHelper.GetTestJsonData(null, run);
+            File.WriteAllText($"BDTest-Report-{timestamp}.json", jsonData);
+
+            var htmlData = BDTestHtmlHelper.GetTestHtmlReport(null, run);
+            File.WriteAllText($"BDTest-Report-{timestamp}.html", htmlData);
+        }
+        finally
+        {
+            NUnitBDTestAssembly.Dispose(assembly);
+        }
     }
 }
 ```
+
+See the [assembly run guide](docs/docs/configuration/assembly-runs.md) for
+configuration and ownership in other test frameworks.
 
 ## Azure DevOps Integration
 
