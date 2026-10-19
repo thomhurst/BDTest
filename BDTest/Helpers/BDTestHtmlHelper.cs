@@ -669,7 +669,7 @@ public static class BDTestHtmlHelper
     // Reports can be generated on a different OS from the one that compiled the tests.
     private static string? GetFileName(string? path) => path?.Split('/', '\\').Last();
 
-    private static string FormatTime(DateTimeOffset time, string format) => time.ToString(format, CultureInfo.InvariantCulture);
+    private static string FormatTime(DateTimeOffset time, string format) => time.ToUniversalTime().ToString(format, CultureInfo.InvariantCulture);
 
     internal static string FormatDuration(TimeSpan duration)
     {

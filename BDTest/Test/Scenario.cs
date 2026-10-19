@@ -100,7 +100,10 @@ public class Scenario
         FileName = RuntimeInformation.CallerFile;
             
         Steps = steps;
-        outline?.ExecutionExamples.Add(this);
+        lock (Run.Store.Gate)
+        {
+            outline?.ExecutionExamples.Add(this);
+        }
         Run.Store.AddScenario(this);
     }
 

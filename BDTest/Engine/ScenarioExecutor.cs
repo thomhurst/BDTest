@@ -201,11 +201,14 @@ internal class ScenarioExecutor : IScenarioExecutor
 
             var endTime = clock.UtcNow;
             var elapsed = timer.Elapsed;
-            scenario.ExecutionAttempts.Add(new ScenarioAttempt(scenario.ExecutionAttempts.Count + 1, scenario.Status,
-                attemptException, scenario.StartTime, endTime, elapsed)
+            lock (scenario.ExecutionRun.Store.Gate)
             {
-                Steps = Array.AsReadOnly(scenario.ExecutionSteps.Select(ResultSnapshot.Create).ToArray())
-            });
+                scenario.ExecutionAttempts.Add(new ScenarioAttempt(scenario.ExecutionAttempts.Count + 1, scenario.Status,
+                    attemptException, scenario.StartTime, endTime, elapsed)
+                {
+                    Steps = Array.AsReadOnly(scenario.ExecutionSteps.Select(ResultSnapshot.Create).ToArray())
+                });
+            }
 
             if (!scenario.ShouldRetry)
             {
