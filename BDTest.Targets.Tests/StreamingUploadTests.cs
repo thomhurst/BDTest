@@ -51,6 +51,36 @@ public class StreamingUploadTests
         finally { cancellation.Cancel(); }
     }
 
+    [TestCase(false)]
+    [TestCase(true)]
+    public async Task Typed_and_legacy_receipts_work_on_each_library_asset(bool typed)
+    {
+        using var run = BDTestRun.Start();
+        using var handler = new ReceiptHandler(typed);
+        using var client = new HttpClient(handler);
+        client.DefaultRequestHeaders.Accept.ParseAdd("application/xml");
+        var result = await new BDTestReportUploader(client, new(new Uri("https://reports.example"))).UploadReportAsync(run);
+        Assert.That(result.ReportUrl.AbsoluteUri, Is.EqualTo("https://reports.example/result"));
+        Assert.That(result.ReportId, Is.EqualTo(new string('a', 32)));
+        Assert.That(client.DefaultRequestHeaders.Accept.Single().MediaType, Is.EqualTo("application/xml"));
+    }
+
+    private sealed class ReceiptHandler(bool typed) : HttpMessageHandler
+    {
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        {
+            Assert.That(request.Headers.GetValues("X-BDTest-Upload-Protocol").Single(), Is.EqualTo("1"));
+            Assert.That(request.Headers.Accept.Single().MediaType, Is.EqualTo("application/json"));
+            var response = new HttpResponseMessage(typed ? HttpStatusCode.Created : HttpStatusCode.OK)
+            {
+                Content = new StringContent(typed
+                    ? "{\"reportUrl\":\"https://reports.example/result\",\"reportId\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}"
+                    : "https://reports.example/result")
+            };
+            response.Headers.Add("X-BDTest-Report-Id", new string('a', 32));
+            return Task.FromResult(response);
+        }
+    }
     private sealed class UploadHandler(Stream destination) : HttpMessageHandler
     {
         public int Attempts { get; private set; }

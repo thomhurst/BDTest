@@ -341,6 +341,61 @@ public class ReportUploaderTests
         await Assert.That(retained.Length).IsEqualTo(2L);
     }
 
+    [Test]
+    [Arguments("typed", true)]
+    [Arguments("text", true)]
+    [Arguments("quoted", true)]
+    [Arguments("text", false)]
+    public async Task Typed_result_negotiates_without_mutating_client_defaults_and_accepts_legacy(string format, bool receipt)
+    {
+        using var run = BDTestRun.Start();
+        var id = new string('a', 32);
+        using var handler = new Handler(async (request, _) =>
+        {
+            await Assert.That(request.Headers.GetValues("X-BDTest-Upload-Protocol").Single()).IsEqualTo("1");
+            await Assert.That(request.Headers.Accept.Single().MediaType).IsEqualTo("application/json");
+            var body = format == "typed" ? "{\"reportUrl\":\"" + ReportUri + "\",\"reportId\":\"" + id + "\"}"
+                : format == "quoted" ? "\"" + ReportUri + "\"" : ReportUri.ToString();
+            var response = new HttpResponseMessage(format == "typed" ? HttpStatusCode.Created : HttpStatusCode.OK)
+                { Content = new StringContent(body) };
+            if (receipt) response.Headers.Add("X-BDTest-Report-Id", id);
+            return response;
+        });
+        using var client = new HttpClient(handler);
+        client.DefaultRequestHeaders.Accept.ParseAdd("text/html");
+        client.DefaultRequestHeaders.Add("X-BDTest-Upload-Protocol", "unsupported-default");
+        var result = await new BDTestReportUploader(client, new(Server)).UploadReportAsync(run);
+        await Assert.That(result.ReportUrl).IsEqualTo(ReportUri);
+        await Assert.That(result.ReportId).IsEqualTo(receipt ? id : null);
+        await Assert.That(client.DefaultRequestHeaders.Accept.Single().MediaType).IsEqualTo("text/html");
+        await Assert.That(client.DefaultRequestHeaders.GetValues("X-BDTest-Upload-Protocol").Single()).IsEqualTo("unsupported-default");
+    }
+
+    [Test]
+    [Arguments("{\"reportUrl\":\"https://reports.example/result\",\"reportId\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\"}")]
+    [Arguments("{\"reportUrl\":\"https://reports.example/result\",\"reportId\":\"invalid\"}")]
+    [Arguments("{\"reportUrl\":\"https://reports.example/result\"}")]
+    [Arguments("{\"reportUrl\":\"/relative\",\"reportId\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}")]
+    [Arguments("ftp://reports.example/result")]
+    [Arguments("not a URI")]
+    public async Task Invalid_results_fail_before_attachment_upload_and_are_not_retried(string body)
+    {
+        using var run = BDTestRun.Start();
+        var fixture = new Capture(run);
+        await fixture.When(() => fixture.Attachments.Attach("log.txt", new byte[] { 1 }, "text/plain")).Then(() => { }).BDTestAsync();
+        var attempts = 0;
+        using var handler = new Handler((_, _) =>
+        {
+            attempts++;
+            var response = Success();
+            response.Content.Dispose();
+            response.Content = new StringContent(body);
+            return Task.FromResult(response);
+        });
+        using var client = new HttpClient(handler);
+        await Assert.That(async () => await new BDTestReportUploader(client, new(Server)).UploadReportAsync(run)).ThrowsExactly<InvalidOperationException>();
+        await Assert.That(attempts).IsEqualTo(1);
+    }
     private static HttpResponseMessage Success()
     {
         var response = new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(ReportUri.AbsoluteUri) };

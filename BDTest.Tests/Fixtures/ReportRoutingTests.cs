@@ -45,6 +45,10 @@ public class ReportRoutingTests
         var scenario = await fixture.When(() => { }).Then(() => { }).BDTestAsync();
         var uri = await BDTest.Tests.Helpers.LegacyHostUpload.SendAsync(
             new Uri(server.Client.BaseAddress!, reportBase), new BDTestRunDescriptor(), server.Client, run);
+        var typed = await new BDTestReportUploader(server.Client,
+            new(new Uri(server.Client.BaseAddress!, reportBase))).UploadReportAsync(run);
+        await Assert.That(typed.ReportUrl.AbsolutePath).StartsWith(reportBase + "/report/");
+        await Assert.That(typed.ReportUrl.AbsolutePath).Contains(typed.ReportId!);
         await Assert.That(uri.AbsolutePath).StartsWith(reportBase + "/report/");
         var id = uri.Segments[^2].TrimEnd('/');
         foreach (var page in new[] { "summary", "all-scenarios", "stories", "top-defects", "timings", "warnings", "scenario/" + scenario.Guid })

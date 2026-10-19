@@ -128,7 +128,7 @@ public class BDTestReports
                 BDTestHtmlHelper.GetTestHtmlReport(descriptor, run));
 
             // Or upload to a report server before disposing the run:
-            // var uri = await BDTestReportServer.SendDataAndGetReportUriAsync(serverUri, descriptor, httpClient, run);
+            // var result = await uploader.UploadReportAsync(run, descriptor);
         }
         finally
         {

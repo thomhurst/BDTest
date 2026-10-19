@@ -12,6 +12,7 @@ BDTest.BDTestReportUploadOptions.UseGzip.set -> void
 BDTest.BDTestReportUploader
 BDTest.BDTestReportUploader.BDTestReportUploader(System.Net.Http.HttpClient! httpClient, BDTest.BDTestReportUploadOptions! options) -> void
 BDTest.BDTestReportUploader.UploadAsync(BDTest.BDTestRun! run, BDTest.BDTestRunDescriptor? descriptor = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<System.Uri!>!
+BDTest.BDTestReportUploader.UploadReportAsync(BDTest.BDTestRun! run, BDTest.BDTestRunDescriptor? descriptor = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<BDTest.Contracts.BDTestReportUploadResult!>!
 BDTest.BDTestRunDescriptor
 BDTest.BDTestRunDescriptor.BDTestRunDescriptor() -> void
 BDTest.BDTestRunDescriptor.BranchName.get -> string?

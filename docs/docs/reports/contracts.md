@@ -69,6 +69,7 @@ metadata strings remain nullable.
 | Type | Contents |
 | --- | --- |
 | `BDTestReport` | Schema/producer versions, report ID, descriptor, timer, scenarios, pending definitions and custom properties. |
+| `BDTestReportUploadResult` | `ReportUrl` (`Uri`) and server-assigned `ReportId` (`string?`). Legacy responses without a receipt ID leave it null. No attachment credentials. See [upload protocol](../report-server/sending-results.md#response-protocol-and-compatibility). |
 | `ScenarioResult` | Text, status, final steps, attempts, outlines/examples, tags, information, exception, outputs, attachments and timing. |
 | `StepResult` | Public `StepType`, text, status, retry flag, exception, output, arguments, diagnostics, attachments and timing. |
 | `ScenarioAttemptResult` | Attempt number, status, exception, timing and optional step snapshots. |

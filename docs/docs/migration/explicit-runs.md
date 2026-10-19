@@ -60,8 +60,9 @@ var descriptor = new BDTestRunDescriptor { Tag = "Nightly", Environment = "Stagi
 descriptor.CustomProperties["Build"] = buildNumber;
 var html = BDTestHtmlHelper.GetTestHtmlReport(descriptor, run);
 var scenarios = BDTestUtil.GetScenarios(run);
-await BDTestReportServer.SendDataAndGetReportUriAsync(
-    serverAddress, descriptor, httpClient, run, cancellationToken);
+var uploader = new BDTestReportUploader(httpClient,
+    new BDTestReportUploadOptions(serverAddress));
+await uploader.UploadReportAsync(run, descriptor, cancellationToken);
 ```
 
 Every export uses only the selected run and supplied descriptor. Missing metadata

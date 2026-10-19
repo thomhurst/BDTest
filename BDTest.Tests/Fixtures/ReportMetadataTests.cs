@@ -98,7 +98,7 @@ public class ReportMetadataTests
             using var handler = new MetadataUploadHandler();
             using var client = new HttpClient(handler);
             // The injected-client overload allows an entirely local upload assertion.
-            await BDTestReportServer.SendDataAndGetReportUriAsync(new Uri("https://reports.example"), descriptor, client, run);
+            await BDTest.Tests.Helpers.CompatibilityReportUpload.SendDataAndGetReportUriAsync(new Uri("https://reports.example"), descriptor, client, run);
             json = Required(handler.UploadJson);
         }
         else
@@ -120,7 +120,7 @@ public class ReportMetadataTests
         {
             if (request.Method == HttpMethod.Post)
             {
-                UploadJson = await Required(request.Content).ReadAsStringAsync(cancellationToken);
+                UploadJson = await BDTest.Tests.Helpers.CompatibilityReportUpload.ReadReportAsync(Required(request.Content), cancellationToken);
             }
 
             return new HttpResponseMessage(HttpStatusCode.OK)

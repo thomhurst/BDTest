@@ -89,7 +89,30 @@ Use `BDTestReportUploadOptions.FromEnvironment(address, "BDTEST_REPORT_UPLOAD_AP
 for explicit secret configuration; environment lookup is never automatic.
 See [sending results](../report-server/sending-results.md#uploader-options).
 
-Existing static upload signatures retain their warm-up, buffered uncompressed JSON
-and caller-configured headers. Neither API yet negotiates a typed response: both
-read the report URI as plain text. Use matching contracts-based host and client
+Use `UploadReportAsync(run, descriptor, token)` when you need both the report URL
+and server-assigned ID. Its `BDTest.Contracts.BDTestReportUploadResult` exposes
+`ReportUrl` and nullable `ReportId`; `UploadAsync` retains its `Task<Uri>` signature.
+Both methods negotiate HTTP 201 with JSON and `Location` through the explicit
+`X-BDTest-Upload-Protocol: 1` header. Older server text and JSON-string responses
+remain readable; `ReportId` is null if no receipt ID was returned. Clients that
+omit the protocol header still receive HTTP 200 with a plain-text URL from the
+new server, independent of Accept.
+
+The four `BDTestReportServer.SendDataAndGetReportUriAsync` signatures remain for
+one release as `[Obsolete]` forwarders. Replace them with a caller-owned client,
+options and an uploader:
+
+```csharp title="Illustrative fragment"
+var options = new BDTestReportUploadOptions(serverAddress) { UploadKey = uploadKey };
+var uploader = new BDTestReportUploader(httpClient, options);
+var result = await uploader.UploadReportAsync(run, descriptor, cancellationToken);
+Console.WriteLine(result.ReportUrl);
+```
+
+The forwarders now stream gzip, negotiate typed responses and skip the former
+warm-up ping. They preserve cancellation, retry behavior and caller-owned client
+lifetime. Configure `UseGzip = false` on uploader options if a deployment requires
+plain JSON. The uploader sets Accept per request without changing the client's
+default headers. Attachment receipt tokens remain internal to the upload and are
+not exposed by the typed result. Use matching contracts-based host and client
 package generations for schema-version-1 uploads.

@@ -256,7 +256,7 @@ public partial class ReportUploadTests
                 : attempts == 1 ? HttpStatusCode.ServiceUnavailable : HttpStatusCode.NoContent);
         });
         using var client = new HttpClient(handler);
-        var upload = BDTestReportServer.SendDataAndGetReportUriAsync(new Uri("https://reports.test" + prefix), null, client, run);
+        var upload = BDTest.Tests.Helpers.CompatibilityReportUpload.SendDataAndGetReportUriAsync(new Uri("https://reports.test" + prefix), null, client, run);
         if (permanentFailure) await Assert.That(async () => await upload).ThrowsExactly<HttpRequestException>();
         else await upload;
         await Assert.That(attempts).IsEqualTo(permanentFailure ? 1 : 2);
@@ -282,7 +282,7 @@ public partial class ReportUploadTests
         });
         using var client = new HttpClient(handler);
         await Assert.That(async () =>
-            await BDTestReportServer.SendDataAndGetReportUriAsync(new Uri("https://reports.test"), null, client, run)).ThrowsExactly<KeyNotFoundException>();
+            await BDTest.Tests.Helpers.CompatibilityReportUpload.SendDataAndGetReportUriAsync(new Uri("https://reports.test"), null, client, run)).ThrowsExactly<KeyNotFoundException>();
     }
 
     [Test]

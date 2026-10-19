@@ -72,7 +72,11 @@ per-attempt timeout; JSON streams with gzip by default. Environment keys are
 loaded only when you explicitly call `BDTestReportUploadOptions.FromEnvironment`.
 See [sending results](https://thomhurst.github.io/BDTest/docs/report-server/sending-results).
 Use matching contracts-based host and client package generations for schema-version-1
-uploads. Existing static upload APIs remain available.
+uploads. Call `UploadReportAsync(run, descriptor, cancellationToken)` for a typed
+result with `ReportUrl` and server-assigned `ReportId`, or `UploadAsync` for just
+the URL. Legacy server responses remain supported; `ReportId` is null if no
+receipt ID is available. Static upload APIs are obsolete forwarders retained for
+one release.
 
 ## Developing BDTest
 

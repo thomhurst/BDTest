@@ -146,7 +146,7 @@ public class BDTestReports
             await File.WriteAllTextAsync("BDTest-Report.html", BDTestHtmlHelper.GetTestHtmlReport(null, run));
         }
         finally { BDTest.MSTestBDTestAssembly.Dispose(assembly); }
-        // or: await BDTestReportServer.SendDataAndGetReportUriAsync(...)
+        // or: await uploader.UploadReportAsync(run, descriptor)
     }
 }
 ```

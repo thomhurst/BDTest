@@ -15,7 +15,7 @@ BDTest collects scenarios in their owning run: stories, scenario text, steps, st
 | Console | Automatic | Reading a single test's result in your IDE or CI log. |
 | [HTML report](html-report.md) | `BDTestHtmlHelper.GetTestHtmlReport(descriptor, run)` | One self-contained file to attach to a build or email. |
 | [JSON data](json-data.md) | `BDTestJsonHelper.GetTestJsonData(descriptor, run)` | Your own tooling, archives, or uploading later. |
-| [Report server](../report-server/overview.md) | `BDTestReportUploader.UploadAsync(...)` | Sharing links, comparing runs, trends and flakiness. |
+| [Report server](../report-server/overview.md) | `BDTestReportUploader.UploadReportAsync(...)` | Sharing links, comparing runs, trends and flakiness. |
 
 Pass the [adapter assembly run](../configuration/assembly-runs.md) to each helper, and call them **after all tests have finished**, typically in an assembly-level teardown. See the "Reports after the run" section of each [framework page](../frameworks/overview.md).
 

@@ -1,37 +1,19 @@
 using System.Diagnostics;
 using System.Net;
-using System.Text;
+using System.Text.Json;
+using BDTest.Contracts;
 using System.Threading;
 
 namespace BDTest.Helpers;
 
 internal static class ReportUploadTransport
 {
-    internal static async Task<Uri> UploadAsync(Uri serverAddress, BDTestRunDescriptor? bdTestRunDescriptor,
+    internal static async Task<BDTestReportUploadResult> UploadAsync(Uri serverAddress, BDTestRunDescriptor? bdTestRunDescriptor,
         HttpClient httpClient, BDTestRun run, CancellationToken cancellationToken,
-        BDTestReportUploadOptions? options = null)
+        BDTestReportUploadOptions options)
     {
         cancellationToken.ThrowIfCancellationRequested();
         var dataOutputModel = BDTestOutputModelBuilder.Build(run, bdTestRunDescriptor);
-        if (options == null)
-        {
-            var pingUri = new UriBuilder(serverAddress)
-            {
-                Path = GetReportBasePath(serverAddress) + "ping"
-            }.Uri;
-
-            try
-            {
-                using var request = new HttpRequestMessage(HttpMethod.Get, pingUri);
-                using var response = await SendAndBufferAsync(httpClient, request, cancellationToken).ConfigureAwait(false);
-            }
-            catch when (!cancellationToken.IsCancellationRequested)
-            {
-                // Result ignored - This is just to make sure the server is warmed up. If not, it'll warm it up!
-            }
-
-            cancellationToken.ThrowIfCancellationRequested();
-        }
         var uploadUri = new UriBuilder(serverAddress)
         {
             Path = GetReportBasePath(serverAddress) + "data"
@@ -46,20 +28,25 @@ internal static class ReportUploadTransport
             if (content.Length != attachment.Length) throw new InvalidDataException("Captured attachment length changed.");
         }
         cancellationToken.ThrowIfCancellationRequested();
-        var stringContent = options == null ? BDTestJsonHelper.Serialize(dataOutputModel) : null;
-        string? responseContent = null;
+        BDTestReportUploadResult? result = null;
         string? reportId = null;
         string? attachmentToken = null;
-        await SendWithRetryAsync(httpClient, token => new HttpRequestMessage(HttpMethod.Post, uploadUri)
+        await SendWithRetryAsync(httpClient, token =>
         {
-            Content = options == null
-                ? new StringContent(stringContent!, Encoding.UTF8, "application/json")
-                : new StreamingReportContent(dataOutputModel, options.UseGzip, token)
+            var request = new HttpRequestMessage(HttpMethod.Post, uploadUri)
+            {
+                Content = new StreamingReportContent(dataOutputModel, options.UseGzip, token)
+            };
+            request.Headers.Add("X-BDTest-Upload-Protocol", "1");
+            // Per-request values prevent caller defaults from selecting a different response format.
+            request.Headers.Accept.ParseAdd("application/json");
+            return request;
         }, async response =>
         {
-            responseContent = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
-            if (response.Headers.TryGetValues("X-BDTest-Report-Id", out var ids)) reportId = ids.Single();
-            if (response.Headers.TryGetValues("X-BDTest-Attachment-Token", out var tokens)) attachmentToken = tokens.Single();
+            reportId = response.Headers.TryGetValues("X-BDTest-Report-Id", out var ids) ? ids.Single() : null;
+            attachmentToken = response.Headers.TryGetValues("X-BDTest-Attachment-Token", out var tokens) ? tokens.Single() : null;
+            result = ParseResult(await response.Content.ReadAsStringAsync().ConfigureAwait(false), reportId);
+            reportId = result.ReportId;
         }, cancellationToken, options).ConfigureAwait(false);
 
         if (attachments.Length > 0)
@@ -84,7 +71,39 @@ internal static class ReportUploadTransport
             }
         }
         cancellationToken.ThrowIfCancellationRequested();
-        return new Uri(responseContent ?? throw new InvalidOperationException("The report server returned no report URI."));
+        return result ?? throw new InvalidOperationException("The report server returned no upload result.");
+    }
+
+    private static BDTestReportUploadResult ParseResult(string content, string? receiptId)
+    {
+        Uri? reportUrl;
+        string? reportId = receiptId;
+        var trimmed = content.TrimStart();
+        if (trimmed.StartsWith("{", StringComparison.Ordinal))
+        {
+            var result = JsonSerializer.Deserialize(content, BDTestReportJsonContext.Default.BDTestReportUploadResult)
+                ?? throw new InvalidOperationException("The report server returned no upload result.");
+            reportUrl = result.ReportUrl;
+            reportId = result.ReportId;
+            if (reportId?.Length != 32 || reportId.Any(character => !Uri.IsHexDigit(character)))
+                throw new InvalidOperationException("The report server returned an invalid report ID.");
+            if (receiptId != null && !string.Equals(receiptId, reportId, StringComparison.Ordinal))
+                throw new InvalidOperationException("The report ID does not match the attachment receipt.");
+        }
+        else
+        {
+            // Older MVC hosts may format the legacy URI as a JSON string for Accept: application/json.
+            if (trimmed.StartsWith("\"", StringComparison.Ordinal))
+            {
+                using var document = JsonDocument.Parse(content);
+                content = document.RootElement.GetString() ?? string.Empty;
+            }
+            Uri.TryCreate(content, UriKind.Absolute, out reportUrl);
+        }
+        if (reportUrl == null || !reportUrl.IsAbsoluteUri ||
+            (reportUrl.Scheme != Uri.UriSchemeHttp && reportUrl.Scheme != Uri.UriSchemeHttps))
+            throw new InvalidOperationException("The report server returned an invalid report URI.");
+        return new BDTestReportUploadResult(reportUrl, reportId);
     }
 
     // A bare origin keeps the default mapping; a supplied path is the full report prefix.
@@ -92,7 +111,7 @@ internal static class ReportUploadTransport
         ? "/bdtest/" : serverAddress.AbsolutePath.TrimEnd('/') + "/";
 
     private static async Task SendWithRetryAsync(HttpClient httpClient, Func<CancellationToken, HttpRequestMessage> createRequest,
-        Func<HttpResponseMessage, Task> consumeResponse, CancellationToken cancellationToken, BDTestReportUploadOptions? options)
+        Func<HttpResponseMessage, Task> consumeResponse, CancellationToken cancellationToken, BDTestReportUploadOptions options)
     {
         for (var attempt = 1; ; attempt++)
         {
@@ -105,14 +124,14 @@ internal static class ReportUploadTransport
             try
             {
                 using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-                var attemptTimeout = options?.Timeout ?? httpClient.Timeout;
+                var attemptTimeout = options.Timeout;
                 // Honor a shorter caller timeout through response buffering too.
                 if (httpClient.Timeout != Timeout.InfiniteTimeSpan &&
                     (attemptTimeout == Timeout.InfiniteTimeSpan || httpClient.Timeout < attemptTimeout))
                     attemptTimeout = httpClient.Timeout;
                 if (attemptTimeout != Timeout.InfiniteTimeSpan) timeout.CancelAfter(attemptTimeout);
                 using var httpRequestMessage = createRequest(timeout.Token);
-                if (options?.UploadKey != null) httpRequestMessage.Headers.Add("X-BDTest-Upload-Key", options.UploadKey);
+                if (options.UploadKey != null) httpRequestMessage.Headers.Add("X-BDTest-Upload-Key", options.UploadKey);
                 using var response = await SendAndBufferAsync(httpClient, httpRequestMessage, timeout.Token).ConfigureAwait(false);
                 retryable = response.IsSuccessStatusCode || IsTransient(response.StatusCode);
                 if (IsTransient(response.StatusCode))

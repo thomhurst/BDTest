@@ -21,7 +21,7 @@ It gives you:
 
 ```text
  test run (NUnit / xUnit / MSTest / TUnit)
-   └─ BDTestReportServer.SendDataAndGetReportUriAsync(...)
+   └─ BDTestReportUploader.UploadReportAsync(...)
          │  POST /bdtest/data   (X-BDTest-Upload-Key)
          ▼
  your ASP.NET Core app

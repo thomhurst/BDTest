@@ -34,7 +34,7 @@ public partial class ReportUploadTests
         if (legacy)
             await BDTest.Tests.Helpers.LegacyHostUpload.SendAsync(Required(server.Client.BaseAddress), null, server.Client, run);
         else
-            await BDTestReportServer.SendDataAndGetReportUriAsync(Required(server.Client.BaseAddress), null, server.Client, run);
+            await BDTest.Tests.Helpers.CompatibilityReportUpload.SendDataAndGetReportUriAsync(Required(server.Client.BaseAddress), null, server.Client, run);
         var report = server.Store.Received.Single();
         var html = await server.Client.GetStringAsync($"bdtest/report/{report.Id}/scenario/{scenario.Guid}");
         var steps = Regex.Matches(html, "<details class=\"expander step-item\".*?</details>", RegexOptions.Singleline);

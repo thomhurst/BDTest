@@ -16,7 +16,7 @@ schema-version-1 reports. The new host also reads persisted legacy reports.
 For built-in adapters, pass the [configured assembly run](../configuration/assembly-runs.md) to report/utility helpers. Every export and store utility requires the owning run. Export all reports before disposing through the assembly owner.
 
 
-At the end of the test run, call `BDTestReportUploader.UploadAsync`. It requires a `BDTestRun`, uploads only that run and returns the report URL from the server's plain-text response. The static `BDTestReportServer.SendDataAndGetReportUriAsync` overloads remain supported with their existing behavior.
+At the end of the test run, call `BDTestReportUploader.UploadReportAsync`. It requires a `BDTestRun`, uploads only that run and returns `BDTest.Contracts.BDTestReportUploadResult`: a `ReportUrl` (`Uri`) and the server-assigned `ReportId` (`string?`). `UploadAsync` remains available and returns just the URL as `Task<Uri>`. Both methods finish uploading attachments before returning.
 
 The snapshot includes scenarios run through BDTest (`Given(...).When(...).Then(...)`) and pending definitions owned by the selected run.
 
@@ -38,7 +38,7 @@ public class SendResultsToReportServer
                 new Uri("https://reports.example.com"), "BDTEST_REPORT_UPLOAD_API_KEY");
             var uploader = new BDTestReportUploader(client, options);
             var run = BDTest.TUnitBDTestAssembly.GetRun(assembly);
-            var reportUri = await uploader.UploadAsync(run,
+            var result = await uploader.UploadReportAsync(run,
                 new BDTestRunDescriptor
                 {
                     Tag = "API acceptance tests",
@@ -46,7 +46,7 @@ public class SendResultsToReportServer
                     Environment = "Pre-production",
                 });
 
-            Console.WriteLine($"BDTest report: {reportUri}");
+            Console.WriteLine($"BDTest report: {result.ReportUrl} (ID: {result.ReportId})");
         }
         finally { BDTest.TUnitBDTestAssembly.Dispose(assembly); }
     }
@@ -80,36 +80,55 @@ The uploader validates and copies options at construction. Later option changes 
 
 JSON streams directly using generated serialization metadata, with gzip enabled by default. Set `UseGzip = false` for plain streamed JSON. Content length is unknown until serialization, so the transport may use chunked requests. No warm-up ping is sent. Attachment bytes stream without gzip and each retry reopens the selected run's capture. Run IDs, pending definitions and empty-run timing use the same snapshot builder as JSON and HTML exports. Export before disposing the run.
 
-This client still reads a plain-text report URI. Typed JSON/201/Location negotiation is future protocol work; these transport options do not make an older server understand schema-versioned reports.
+## Response protocol and compatibility
+
+Both upload methods send `X-BDTest-Upload-Protocol: 1` and a per-request `Accept: application/json`. They override a caller's default Accept header only for the report request and leave `HttpClient.DefaultRequestHeaders` unchanged. The explicit protocol header selects the response; Accept alone does not opt in.
+
+A current server returns HTTP **201 Created**, `Content-Type: application/json`, a `Location` header pointing to the report URL, and this body:
+
+```json
+{
+  "reportUrl": "https://reports.example.com/bdtest/report/0123456789abcdef0123456789abcdef/summary",
+  "reportId": "0123456789abcdef0123456789abcdef"
+}
+```
+
+`ReportId` identifies the stored report, not the selected run's local `ReportId`. The existing `X-BDTest-Report-Id` and `X-BDTest-Attachment-Token` receipt headers continue to support attachment uploads. The public result never exposes the attachment token.
+
+For older clients that omit the protocol header, the current server returns HTTP **200 OK** and the URL as `text/plain`, even when Accept asks for JSON. A new client also accepts an older server's plain-text URL or JSON string response. It obtains `ReportId` from the receipt header when available, or returns null when the older server supplies no ID; it does not infer an ID from the URL. Response compatibility does not make an older server understand schema-versioned reports. Use matching contracts-based host and client package generations.
 
 ## Static overloads
+
+The compatibility methods are named `BDTestReportServer.SendDataAndGetReportUriAsync`.
 
 | Overload | Use |
 | --- | --- |
 | `(BDTestRun run, Uri serverAddress, BDTestRunDescriptor descriptor)` | Upload an [explicit run](../advanced/explicit-runs.md). |
 | `(Uri serverAddress, BDTestRunDescriptor descriptor, HttpClient httpClient, BDTestRun run)` | Explicit run with your own client. |
 
-All return `Task<Uri>`, the summary page of the new report. Each overload also has a version with a final `CancellationToken cancellationToken` parameter. Existing signatures remain available and forward with `CancellationToken.None`.
+All four signatures return `Task<Uri>`, the summary page of the new report. Each overload also has a version with a final `CancellationToken cancellationToken` parameter. They remain for one release as `[Obsolete]` forwarders to `BDTestReportUploader`; migrate now, especially when treating warnings as errors. Overloads without a token forward with `CancellationToken.None`.
+
+The forwarders now use streaming gzip and the negotiated response protocol, with no warm-up request. They preserve caller-owned client lifetime, caller-configured authentication, explicit-run isolation, cancellation and retries. For plain JSON, construct an uploader with `UseGzip = false`; see [migration guidance](../migration/immutable-results.md#configurable-streaming-uploads).
 
 ## Cancellation
 
-Pass a token to stop HTTP requests (including streamed JSON, response buffering and attachments) and retry waits. The static API also cancels its warm-up:
+Pass a token to stop HTTP requests (including streamed JSON, response buffering and attachments) and retry waits:
 
 ```csharp title="Illustrative fragment"
 using var cancellation = new CancellationTokenSource(TimeSpan.FromSeconds(30));
 var reportUri = await uploader.UploadAsync(run, descriptor, cancellation.Token);
 ```
 
-Caller cancellation propagates as `OperationCanceledException`; it is neither swallowed by the best-effort ping nor retried as a transport timeout. A pre-cancelled token sends no requests. An `HttpClient` timeout without caller cancellation retains the existing transient retry behavior. Use the caller token to bound the whole upload, including retry delays; `HttpClient.Timeout` applies to individual requests, including response buffering. Buffering remains cancellable on .NET Framework even when custom response content does not observe the token; cancellation disposes that response. Snapshot creation remains synchronous; cancellation is checked around it. The new uploader streams JSON with the attempt token, including on .NET Framework. Gzip finalization also writes asynchronously and observes that token; on older targets only the final compressed bytes are temporarily buffered. Static API JSON serialization remains synchronous and buffered.
+Caller cancellation propagates as `OperationCanceledException` and is not retried as a transport timeout. A pre-cancelled token sends no requests. An `HttpClient` timeout without caller cancellation retains the existing transient retry behavior. Use the caller token to bound the whole upload, including retry delays; `HttpClient.Timeout` applies to individual requests, including response buffering. Buffering remains cancellable on .NET Framework even when custom response content does not observe the token; cancellation disposes that response. Snapshot creation remains synchronous; cancellation is checked around it. The uploader streams JSON with the attempt token, including on .NET Framework. Gzip finalization also writes asynchronously and observes that token; on older targets only the final compressed bytes are temporarily buffered. The obsolete static forwarders use the same streaming path.
 
 Await the upload before disposing the run. Cancellation releases active upload requests and attachment streams, keeps your supplied `HttpClient` usable, and retains the run's captured files. It may leave a report with incomplete attachments on the server. Retrying the whole method creates a new report; cancellation does not roll back an accepted request.
 
 ## What happens during an upload
 
-1. The static API sends a best-effort `GET /bdtest/ping` to warm up the server. The new uploader skips this step. A bare origin uses `/bdtest`; a supplied path is the full report prefix and is preserved for every request; see [path prefixes](hosting.md#path-prefixes).
+1. The uploader snapshots the selected run. A bare origin uses `/bdtest`; a supplied path is the full report prefix and is preserved for every request; see [path prefixes](hosting.md#path-prefixes). No warm-up request is sent.
 2. The report is posted as JSON to `<report-base>/data` (`POST /bdtest/data` by default).
 3. On HTTP 408, 429, 500, 502, 503 or 504, a network error or an HTTP client timeout (without caller cancellation), the client retries, up to three attempts in total. It honours a `Retry-After` header given in seconds or as an HTTP date.
-4. The server creates a new ID for the report and returns its URL. `X-BDTest-Report-Id` identifies it.
+4. The server creates a new ID and returns its URL and ID using the [negotiated response](#response-protocol-and-compatibility). `X-BDTest-Report-Id` also identifies it.
 5. For reports with attachments, the response also contains `X-BDTest-Attachment-Token`. The client sends that receipt and the upload key to `POST /bdtest/data/{reportId}/attachments/{attachmentId}`, once for each referenced attachment. Files stream from the selected run; each transient retry opens a fresh stream. The method returns only after every attachment succeeds.
 
 The server ignores any client-supplied report ID. Each accepted upload, including a retry after a lost response, creates a separate report.
@@ -117,7 +136,7 @@ The server ignores any client-supplied report ID. Each accepted upload, includin
 ## Server-side limits
 
 - `MaxCompressedUploadBytes` limits request body bytes before decompression; `MaxUploadBytes` limits decompressed JSON and its UTF-8 representation. Both default to 10 MiB, including chunked requests. Exceeding either byte limit returns HTTP 413.
-- `POST /bdtest/data` accepts plain JSON or a single `Content-Encoding: gzip`. The new uploader defaults to gzip; the static API sends plain JSON. Unsupported encodings return 415; malformed gzip or JSON returns 400.
+- `POST /bdtest/data` accepts plain JSON or a single `Content-Encoding: gzip`. The uploader and obsolete static forwarders default to gzip. Unsupported encodings return 415; malformed gzip or JSON returns 400.
 - Content type must be `application/json`, `text/json` or `application/*+json`, in UTF-8 or UTF-16.
 - The rate limit is `UploadsPerMinute` (default 60) authenticated uploads per minute per server instance. Excess requests get HTTP 429 with `Retry-After`.
 - Invalid JSON returns HTTP 400.
