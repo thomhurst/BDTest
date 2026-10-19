@@ -18,7 +18,7 @@ public class HostedReportJsonTests
             [new ExceptionInfo("System.Exception", "inner", truncationReason: "DepthLimit")], true);
         var step = new StepResult(StepType.ButWhen, "But action", Status.Failed, "step", "report", "scenario", true,
             exception, "step output", start, start.Add(duration), duration, TimeSpan.FromSeconds(2), true,
-            ["diagnostic"], [new StepTable(["header"], [new[] { "cell" }]), new StepDocString("body", "text/plain")],
+            ["diagnostic"], [new Contracts.StepTable(["header"], [new[] { "cell" }]), new Contracts.StepDocString("body", "text/plain")],
             [attachment], new StepSkipReason("Rule", "My.SkipAttribute", 3));
         var example = new ScenarioResult("example", "report", "story", "example", Status.Passed,
             exampleValues: new Dictionary<string, string> { ["input"] = "row" }, outlineId: "scenario");
