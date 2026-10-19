@@ -1,0 +1,15 @@
+#nullable enable
+BDTest.Reports.Storage.FileSystem.FileSystemReportStore
+BDTest.Reports.Storage.FileSystem.FileSystemReportStore.FileSystemReportStore(Microsoft.Extensions.Options.IOptions<BDTest.Reports.Storage.FileSystem.FileSystemReportStoreOptions!>! options) -> void
+BDTest.Reports.Storage.FileSystem.FileSystemReportStore.ListAsync(BDTest.Razor.Reports.Storage.RunIndexQuery! query, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<BDTest.Razor.Reports.Storage.RunIndexPage!>!
+BDTest.Reports.Storage.FileSystem.FileSystemReportStore.OpenReadAsync(string! reportId, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<System.IO.Stream?>!
+BDTest.Reports.Storage.FileSystem.FileSystemReportStore.UpsertAsync(BDTest.Razor.Reports.Storage.RunIndexEntry! entry, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task!
+BDTest.Reports.Storage.FileSystem.FileSystemReportStore.WriteAsync(string! reportId, System.IO.Stream! utf8Json, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task!
+BDTest.Reports.Storage.FileSystem.FileSystemReportStoreExtensions
+BDTest.Reports.Storage.FileSystem.FileSystemReportStoreOptions
+BDTest.Reports.Storage.FileSystem.FileSystemReportStoreOptions.DirectoryPath.get -> string!
+BDTest.Reports.Storage.FileSystem.FileSystemReportStoreOptions.DirectoryPath.set -> void
+BDTest.Reports.Storage.FileSystem.FileSystemReportStoreOptions.FileSystemReportStoreOptions() -> void
+BDTest.Reports.Storage.FileSystem.FileSystemReportStoreOptions.Retention.get -> System.TimeSpan
+BDTest.Reports.Storage.FileSystem.FileSystemReportStoreOptions.Retention.set -> void
+static BDTest.Reports.Storage.FileSystem.FileSystemReportStoreExtensions.AddBDTestFileSystemStorage(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, System.Action<BDTest.Reports.Storage.FileSystem.FileSystemReportStoreOptions!>? configure = null) -> Microsoft.Extensions.Options.OptionsBuilder<BDTest.Reports.Storage.FileSystem.FileSystemReportStoreOptions!>!

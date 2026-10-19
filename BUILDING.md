@@ -347,3 +347,67 @@ warnings-as-errors from `Directory.Build.props`. It has no reference to the exec
 `BDTest.Contracts.Tests` runs contract immutability and serialization checks with
 only a project reference to contracts. The package opts into the same metadata,
 strong-name signing, symbols and validation as the other runtime packages.
+
+## Public API baselines (#974)
+
+Every packable runtime project imports `build/PublicApi.targets` through the
+existing package metadata hook. It privately references
+`Microsoft.CodeAnalysis.PublicApiAnalyzers`; compiler extensions
+(`IsRoslynComponent=true`), tests, samples and tooling are excluded. The analyzer
+and repository configuration do not flow to NuGet consumers. This complements
+SDK package validation: ordinary builds now check the reviewed source API, while
+packing still compares compatible target assets.
+
+Each runtime project's `PublicAPI/<TargetFramework>/` directory contains
+`PublicAPI.Shipped.txt` and `PublicAPI.Unshipped.txt`. Both start with
+`#nullable enable`. The initial shipped files snapshot the reviewed main-branch
+surface when enforcement was introduced; they are not a claim that every API in
+the next-major roadmap has already been released on NuGet. Separate files cover
+every existing target, including modern-only `TimeProvider` APIs. A missing file
+fails the build rather than silently disabling analysis. New runtime packages and
+new targets must provide both files before they can build.
+
+Public and protected types/members are tracked, including nullable signatures,
+optional parameter defaults and the documented public JSON metadata contexts.
+Razor's `AspNetCoreGeneratedDocument` namespace is excluded in
+`build/PublicApi.globalconfig`: generated view classes are implementation details,
+not supported consumer APIs. Do not add handwritten supported APIs there.
+The three public JSON context types have a scoped `RS0041` exception because
+System.Text.Json deliberately generates nullable-oblivious `JsonTypeInfo`
+properties. Those signatures remain recorded with the analyzer's `~` marker and
+remain subject to addition/removal checks. Handwritten APIs outside these generated
+context types retain `RS0041` and the existing nullable compiler diagnostics.
+
+For an intentional API change:
+
+1. Review its compatibility and update the matching usage/migration documentation.
+   Baseline edits acknowledge a change; they do not make a breaking change safe.
+2. Build every target of the affected project. `RS0016` reports an unrecorded
+   signature and `RS0017` reports a stale one. Add the exact signature (including
+   `!`, `?`, defaults and modifiers) to the corresponding
+   `PublicAPI.Unshipped.txt`, or use the analyzer's IDE code fix. Check each target:
+   an IDE code fix may operate only on its active framework.
+3. For an approved removal or signature change, keep the original shipped entry
+   and add `*REMOVED*` followed immediately by that exact entry in the unshipped
+   file. Record the replacement as a new entry. If the old entry was itself
+   unshipped, edit/remove that entry instead. Keep entries sorted within each file.
+4. Build the full solution and run relevant consumer tests. Include baseline
+   changes in the same PR as source changes, including future namespace migrations
+   and result-contract work from #935. The initial snapshot already includes the
+   helper internalization from #827/#975. Never regenerate the
+   shipped snapshot to hide an unexplained difference or disable API diagnostics.
+5. When preparing a release, fold reviewed unshipped additions into shipped,
+   remove entries named by `*REMOVED*`, and reset unshipped to `#nullable enable`.
+   Rebuild every target after this deliberate baseline promotion.
+
+```powershell
+dotnet build BDTest.sln -c Release
+pwsh scripts/Test-PublicApiBaselines.ps1
+```
+
+The regression script builds a disposable multi-target fixture using the same
+production imports. It proves that unrecorded public/protected additions, stale
+removals, nullable changes, missing files and wrong-target entries fail, and that
+intentional baseline updates pass. It also checks excluded projects and the
+generated-code boundary. CI runs it before the ordinary pipeline; logs are saved
+under `artifacts/test-results/public-api/`.

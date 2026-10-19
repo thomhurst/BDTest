@@ -1,0 +1,687 @@
+#nullable enable
+BDTest.Attributes.BDTestRetryAttribute
+BDTest.Attributes.BDTestRetryAttribute.BDTestRetryAttribute(int count) -> void
+BDTest.Attributes.BDTestRetryAttribute.Count.get -> int
+BDTest.Attributes.BDTestRetrySetUpAttribute
+BDTest.Attributes.BDTestRetrySetUpAttribute.BDTestRetrySetUpAttribute() -> void
+BDTest.Attributes.BDTestRetryTearDownAttribute
+BDTest.Attributes.BDTestRetryTearDownAttribute.BDTestRetryTearDownAttribute() -> void
+BDTest.Attributes.BDTestTagAttribute
+BDTest.Attributes.BDTestTagAttribute.BDTestTagAttribute(string! tag) -> void
+BDTest.Attributes.BDTestTagAttribute.Tag.get -> string!
+BDTest.Attributes.ScenarioTextAttribute
+BDTest.Attributes.ScenarioTextAttribute.ScenarioTextAttribute(string? stepText) -> void
+BDTest.Attributes.ScenarioTextAttribute.Text.get -> string?
+BDTest.Attributes.SkipStepAttribute
+BDTest.Attributes.SkipStepAttribute.SkipStepAttribute() -> void
+BDTest.Attributes.StepTextAttribute
+BDTest.Attributes.StepTextAttribute.StepTextAttribute(string? stepText) -> void
+BDTest.Attributes.StepTextAttribute.StepTextAttribute(string? stepText, string! parameterOverride) -> void
+BDTest.Attributes.StepTextAttribute.StepTextAttribute(string? stepText, string![]! parameterOverrides) -> void
+BDTest.Attributes.StepTextAttribute.StepTextParameterOverrides.get -> System.Collections.Generic.List<string!>!
+BDTest.Attributes.StepTextAttribute.Text.get -> string?
+BDTest.Attributes.StoryAttribute
+BDTest.Attributes.StoryAttribute.AsA.get -> string?
+BDTest.Attributes.StoryAttribute.AsA.set -> void
+BDTest.Attributes.StoryAttribute.AsAn.get -> string?
+BDTest.Attributes.StoryAttribute.AsAn.set -> void
+BDTest.Attributes.StoryAttribute.GetStoryText() -> string!
+BDTest.Attributes.StoryAttribute.IWant.get -> string?
+BDTest.Attributes.StoryAttribute.IWant.set -> void
+BDTest.Attributes.StoryAttribute.SoThat.get -> string?
+BDTest.Attributes.StoryAttribute.SoThat.set -> void
+BDTest.Attributes.StoryAttribute.StoryAttribute() -> void
+BDTest.Attributes.TestInformationAttribute
+BDTest.Attributes.TestInformationAttribute.Information.get -> string?
+BDTest.Attributes.TestInformationAttribute.Print() -> string!
+BDTest.Attributes.TestInformationAttribute.TestInformationAttribute(string? information) -> void
+BDTest.BDTestAssemblyRuns
+BDTest.BDTestAssemblyRuns.BDTestAssemblyRuns(BDTest.Settings.FrameworkOutcomeMap! outcomes) -> void
+BDTest.BDTestAssemblyRuns.Dispose(System.Reflection.Assembly! assembly) -> void
+BDTest.BDTestAssemblyRuns.GetRun(System.Reflection.Assembly! assembly) -> BDTest.BDTestRun!
+BDTest.BDTestConfigurationAttribute
+BDTest.BDTestConfigurationAttribute.BDTestConfigurationAttribute(System.Type! configurationType) -> void
+BDTest.BDTestConfigurationAttribute.ConfigurationType.get -> System.Type!
+BDTest.BDTestOptions
+BDTest.BDTestOptions.Attachments.get -> BDTest.Settings.AttachmentOptions!
+BDTest.BDTestOptions.BDTestOptions() -> void
+BDTest.BDTestOptions.ContextFactory.get -> BDTest.Test.IBDTestContextFactory?
+BDTest.BDTestOptions.ContextFactory.set -> void
+BDTest.BDTestOptions.Debug.get -> BDTest.Settings.DebugSettings!
+BDTest.BDTestOptions.InconclusiveExceptionTypes.get -> System.Collections.Generic.IList<System.Type!>!
+BDTest.BDTestOptions.RegisterCustomStringConverter<T>(BDTest.Interfaces.IStepTextStringConverter<T>! converter) -> void
+BDTest.BDTestOptions.RegisterFrameworkOutcomes(BDTest.Settings.FrameworkOutcomeMap! map) -> void
+BDTest.BDTestOptions.RetryTestRules.get -> BDTest.Settings.Retry.RetryTestRules!
+BDTest.BDTestOptions.ScenarioHooks.get -> System.Collections.Generic.IList<BDTest.Interfaces.IScenarioHook!>!
+BDTest.BDTestOptions.Services.get -> System.IServiceProvider?
+BDTest.BDTestOptions.Services.set -> void
+BDTest.BDTestOptions.SkipExceptionTypes.get -> System.Collections.Generic.IList<System.Type!>!
+BDTest.BDTestOptions.SkipStepRules.get -> BDTest.Settings.Skip.SkipStepRules!
+BDTest.BDTestOptions.SkipTestRules.get -> BDTest.Settings.Skip.SkipTestRules!
+BDTest.BDTestOptions.StepHooks.get -> System.Collections.Generic.IList<BDTest.Interfaces.IStepHook!>!
+BDTest.BDTestOptions.SuccessExceptionTypes.get -> System.Collections.Generic.IList<System.Type!>!
+BDTest.BDTestOptions.TimeProvider.get -> System.TimeProvider!
+BDTest.BDTestOptions.TimeProvider.set -> void
+BDTest.BDTestReportServer
+BDTest.BDTestRun
+BDTest.BDTestRun.Dispose() -> void
+BDTest.BDTestRun.OpenAttachment(string! attachmentId) -> System.IO.Stream!
+BDTest.BDTestRun.ReportId.get -> string!
+BDTest.BDTestRun.Scenarios.get -> System.Collections.Generic.IReadOnlyCollection<BDTest.Test.Scenario!>!
+BDTest.BDTestRunDescriptor
+BDTest.BDTestRunDescriptor.BDTestRunDescriptor() -> void
+BDTest.BDTestRunDescriptor.BranchName.get -> string?
+BDTest.BDTestRunDescriptor.BranchName.set -> void
+BDTest.BDTestRunDescriptor.CustomProperties.get -> System.Collections.Generic.Dictionary<string!, string!>!
+BDTest.BDTestRunDescriptor.Environment.get -> string?
+BDTest.BDTestRunDescriptor.Environment.set -> void
+BDTest.BDTestRunDescriptor.Tag.get -> string?
+BDTest.BDTestRunDescriptor.Tag.set -> void
+BDTest.BDTestUtil
+BDTest.Exceptions.AlreadyExecutedException
+BDTest.Exceptions.AlreadyExecutedException.AlreadyExecutedException(string! message) -> void
+BDTest.Exceptions.BDTestException
+BDTest.Exceptions.BDTestException.BDTestException() -> void
+BDTest.Exceptions.BDTestException.BDTestException(System.Runtime.Serialization.SerializationInfo! info, System.Runtime.Serialization.StreamingContext context) -> void
+BDTest.Exceptions.BDTestException.BDTestException(string? message) -> void
+BDTest.Exceptions.BDTestException.BDTestException(string? message, System.Exception? innerException) -> void
+BDTest.Exceptions.DuplicateStoryTextArgumentException
+BDTest.Exceptions.DuplicateStoryTextArgumentException.DuplicateStoryTextArgumentException(string! argument1, string! argument2) -> void
+BDTest.Exceptions.ErrorOccurredDuringRetryActionException
+BDTest.Exceptions.ErrorOccurredDuringRetryActionException.ErrorOccurredDuringRetryActionException(System.Exception! exception) -> void
+BDTest.Exceptions.InvalidStepTextParameterException
+BDTest.Exceptions.InvalidStepTextParameterException.InvalidStepTextParameterException(string! message) -> void
+BDTest.Exceptions.MissingStoryTextArgumentException
+BDTest.Exceptions.MissingStoryTextArgumentException.MissingStoryTextArgumentException(string! argument) -> void
+BDTest.Helpers.BDTestAttachmentHelper
+BDTest.Helpers.BDTestHtmlHelper
+BDTest.Helpers.BDTestJsonContext
+BDTest.Helpers.BDTestJsonContext.BDTestJsonContext() -> void
+BDTest.Helpers.BDTestJsonContext.BDTestJsonContext(System.Text.Json.JsonSerializerOptions! options) -> void
+BDTest.Helpers.BDTestJsonHelper
+BDTest.Helpers.ExceptionHtmlHelper
+BDTest.Helpers.HtmlWriter
+BDTest.Helpers.HtmlWriter.Custom(string? html) -> void
+BDTest.Helpers.HtmlWriter.Image(string! url) -> void
+BDTest.Helpers.HtmlWriter.LineBreak() -> void
+BDTest.Helpers.HtmlWriter.Link(System.Func<string?>! body, string! url) -> void
+BDTest.Helpers.HtmlWriter.Link(string? text, string! url) -> void
+BDTest.Helpers.HtmlWriter.Text(string? value) -> void
+BDTest.Helpers.StepArgumentHtmlHelper
+BDTest.IBDTestConfiguration
+BDTest.IBDTestConfiguration.Configure(BDTest.BDTestOptions! options) -> void
+BDTest.Interfaces.IBDTestAttachments
+BDTest.Interfaces.IBDTestAttachments.Attach(string! name, System.IO.Stream! content, string! mimeType) -> void
+BDTest.Interfaces.IBDTestAttachments.Attach(string! name, byte[]! content, string! mimeType) -> void
+BDTest.Interfaces.IBDTestAttachments.AttachFile(string! path, string? mimeType = null) -> void
+BDTest.Interfaces.IScenarioHook
+BDTest.Interfaces.IScenarioHook.AfterScenarioAsync(BDTest.Test.ScenarioHookContext! scenario) -> System.Threading.Tasks.Task!
+BDTest.Interfaces.IScenarioHook.BeforeScenarioAsync(BDTest.Test.ScenarioHookContext! scenario) -> System.Threading.Tasks.Task!
+BDTest.Interfaces.IStepHook
+BDTest.Interfaces.IStepHook.AfterStepAsync(BDTest.Test.Step! step) -> System.Threading.Tasks.Task!
+BDTest.Interfaces.IStepHook.BeforeStepAsync(BDTest.Test.Step! step) -> System.Threading.Tasks.Task!
+BDTest.Interfaces.IStepTextStringConverter<T>
+BDTest.Interfaces.IStepTextStringConverter<T>.ConvertToString(T t) -> string?
+BDTest.Maps.BDTestOutputModel
+BDTest.Maps.BDTestOutputModel.AttachmentUploadTokenHash.get -> string?
+BDTest.Maps.BDTestOutputModel.AttachmentUploadTokenHash.set -> void
+BDTest.Maps.BDTestOutputModel.BDTestOutputModel() -> void
+BDTest.Maps.BDTestOutputModel.BranchName.get -> string?
+BDTest.Maps.BDTestOutputModel.BranchName.set -> void
+BDTest.Maps.BDTestOutputModel.CustomProperties.get -> System.Collections.Generic.Dictionary<string!, string!>?
+BDTest.Maps.BDTestOutputModel.Environment.get -> string?
+BDTest.Maps.BDTestOutputModel.Environment.set -> void
+BDTest.Maps.BDTestOutputModel.Id.get -> string?
+BDTest.Maps.BDTestOutputModel.Id.set -> void
+BDTest.Maps.BDTestOutputModel.MachineName.get -> string?
+BDTest.Maps.BDTestOutputModel.MachineName.set -> void
+BDTest.Maps.BDTestOutputModel.NotRun.get -> System.Collections.Generic.List<BDTest.Test.ScenarioDefinitionSummary!>?
+BDTest.Maps.BDTestOutputModel.NotRun.set -> void
+BDTest.Maps.BDTestOutputModel.Scenarios.get -> System.Collections.Generic.List<BDTest.Test.Scenario!>?
+BDTest.Maps.BDTestOutputModel.Scenarios.set -> void
+BDTest.Maps.BDTestOutputModel.Tag.get -> string?
+BDTest.Maps.BDTestOutputModel.Tag.set -> void
+BDTest.Maps.BDTestOutputModel.TestTimer.get -> BDTest.Output.TestTimer?
+BDTest.Maps.BDTestOutputModel.TestTimer.set -> void
+BDTest.Maps.BDTestOutputModel.Version.get -> string?
+BDTest.Maps.BDTestOutputModel.Version.set -> void
+BDTest.Metadata.IStepMetadataProvider
+BDTest.Metadata.IStepMetadataProvider.Find(string? callerFile, int callerLine, string? argumentExpression) -> BDTest.Metadata.StepCallSiteMetadata?
+BDTest.Metadata.StepArgumentMetadata
+BDTest.Metadata.StepArgumentMetadata.ParameterName.get -> string!
+BDTest.Metadata.StepArgumentMetadata.StepArgumentMetadata(string! parameterName, object? constant) -> void
+BDTest.Metadata.StepArgumentMetadata.StepArgumentMetadata(string! parameterName, params BDTest.Metadata.StepMemberReference![]! members) -> void
+BDTest.Metadata.StepCallSiteMetadata
+BDTest.Metadata.StepCallSiteMetadata.ArgumentExpression.get -> string?
+BDTest.Metadata.StepCallSiteMetadata.CallerFile.get -> string?
+BDTest.Metadata.StepCallSiteMetadata.CallerLine.get -> int
+BDTest.Metadata.StepCallSiteMetadata.Method.get -> BDTest.Metadata.StepMethodMetadata?
+BDTest.Metadata.StepCallSiteMetadata.ParameterNames.get -> System.Collections.Generic.IReadOnlyList<string!>!
+BDTest.Metadata.StepCallSiteMetadata.StepCallSiteMetadata(string? callerFile, int callerLine, string? argumentExpression, BDTest.Metadata.StepMethodMetadata? method, bool supportsArgumentCapture, params BDTest.Metadata.StepArgumentMetadata![]! arguments) -> void
+BDTest.Metadata.StepCallSiteMetadata.SupportsArgumentCapture.get -> bool
+BDTest.Metadata.StepCallSiteMetadata.TryBindArguments(System.Reflection.Assembly! callerAssembly, System.Delegate! step, out System.Collections.Generic.IReadOnlyList<System.Func<object?>!>! accessors) -> bool
+BDTest.Metadata.StepMemberReference
+BDTest.Metadata.StepMemberReference.DeclaringType.get -> BDTest.Metadata.StepTypeReference!
+BDTest.Metadata.StepMemberReference.IsProperty.get -> bool
+BDTest.Metadata.StepMemberReference.IsStatic.get -> bool
+BDTest.Metadata.StepMemberReference.Name.get -> string!
+BDTest.Metadata.StepMemberReference.StepMemberReference(BDTest.Metadata.StepTypeReference! declaringType, string! name, bool isProperty, bool isStatic) -> void
+BDTest.Metadata.StepMetadataCatalog
+BDTest.Metadata.StepMetadataProviderAttribute
+BDTest.Metadata.StepMetadataProviderAttribute.ProviderType.get -> System.Type!
+BDTest.Metadata.StepMetadataProviderAttribute.StepMetadataProviderAttribute(System.Type! providerType) -> void
+BDTest.Metadata.StepMethodMetadata
+BDTest.Metadata.StepMethodMetadata.DeclaringType.get -> BDTest.Metadata.StepTypeReference!
+BDTest.Metadata.StepMethodMetadata.DocumentationId.get -> string!
+BDTest.Metadata.StepMethodMetadata.Name.get -> string!
+BDTest.Metadata.StepMethodMetadata.Resolve(System.Reflection.Assembly! callerAssembly) -> System.Reflection.MethodInfo!
+BDTest.Metadata.StepMethodMetadata.StepMethodMetadata(BDTest.Metadata.StepTypeReference! declaringType, string! name, string! documentationId, string![]! parameterSignatures, params BDTest.Metadata.StepTypeReference![]! genericArguments) -> void
+BDTest.Metadata.StepTypeReference
+BDTest.Metadata.StepTypeReference.AssemblyName.get -> string!
+BDTest.Metadata.StepTypeReference.MetadataName.get -> string!
+BDTest.Metadata.StepTypeReference.Resolve(System.Reflection.Assembly! callerAssembly) -> System.Type!
+BDTest.Metadata.StepTypeReference.StepTypeReference(string! assemblyName, string! metadataName, params BDTest.Metadata.StepTypeReference![]! arguments) -> void
+BDTest.Output.TestTimer
+BDTest.Output.TestTimer.ElapsedTime.get -> System.TimeSpan
+BDTest.Output.TestTimer.TestTimer() -> void
+BDTest.Output.TestTimer.TestsFinishedAt.get -> System.DateTime
+BDTest.Output.TestTimer.TestsFinishedAt.set -> void
+BDTest.Output.TestTimer.TestsStartedAt.get -> System.DateTime
+BDTest.Output.TestTimer.TestsStartedAt.set -> void
+BDTest.Settings.AttachmentOptions
+BDTest.Settings.AttachmentOptions.AttachmentOptions() -> void
+BDTest.Settings.AttachmentOptions.MaximumAttachmentBytes.get -> long
+BDTest.Settings.AttachmentOptions.MaximumAttachmentBytes.set -> void
+BDTest.Settings.AttachmentOptions.MaximumRunBytes.get -> long
+BDTest.Settings.AttachmentOptions.MaximumRunBytes.set -> void
+BDTest.Settings.DebugSettings
+BDTest.Settings.DebugSettings.ShouldSkipWhenStep.get -> bool
+BDTest.Settings.DebugSettings.ShouldSkipWhenStep.set -> void
+BDTest.Settings.FrameworkOutcomeMap
+BDTest.Settings.FrameworkOutcomeMap.FrameworkOutcomeMap(System.Action<string!>! reportSkip, System.Action<string!>? reportInconclusive = null) -> void
+BDTest.Settings.FrameworkOutcomeMap.Inconclusive<TException>() -> BDTest.Settings.FrameworkOutcomeMap!
+BDTest.Settings.FrameworkOutcomeMap.ReportInconclusive(string! reason) -> void
+BDTest.Settings.FrameworkOutcomeMap.ReportSkip(string! reason) -> void
+BDTest.Settings.FrameworkOutcomeMap.Skip<TException>() -> BDTest.Settings.FrameworkOutcomeMap!
+BDTest.Settings.FrameworkOutcomeMap.Success<TException>() -> BDTest.Settings.FrameworkOutcomeMap!
+BDTest.Settings.Retry.RetryTestRule
+BDTest.Settings.Retry.RetryTestRule.RetryLimit.get -> int
+BDTest.Settings.Retry.RetryTestRules
+BDTest.Settings.Retry.RetryTestRules.Add(System.Func<System.Exception!, bool>! condition, int retryLimit) -> void
+BDTest.Settings.Skip.SkipStepRule<T>
+BDTest.Settings.Skip.SkipStepRule<T>.AssociatedSkipAttributeType.get -> System.Type!
+BDTest.Settings.Skip.SkipStepRule<T>.Condition.get -> System.Func<T, bool>!
+BDTest.Settings.Skip.SkipStepRule<T>.SkipStepRule(System.Type! associatedSkipAttributeType, System.Func<T, bool>! condition) -> void
+BDTest.Settings.Skip.SkipStepRules
+BDTest.Settings.Skip.SkipStepRules.Add<T>(System.Func<T!, bool>! condition) -> void
+BDTest.Settings.Skip.SkipTestRules
+BDTest.Settings.Skip.SkipTestRules.Add(System.Func<BDTest.Test.Scenario!, bool>! condition) -> void
+BDTest.Test.AbstractContextBDTestBase<TContext>
+BDTest.Test.AbstractContextBDTestBase<TContext>.AbstractContextBDTestBase() -> void
+BDTest.Test.AbstractContextBDTestBase<TContext>.BDTestContext.get -> BDTest.Test.BDTestContext<TContext!>!
+BDTest.Test.AbstractContextBDTestBase<TContext>.Context.get -> TContext!
+BDTest.Test.AbstractContextBDTestBase<TContext>.InitializeContextAsync() -> System.Threading.Tasks.ValueTask
+BDTest.Test.AbstractContextBDTestBase<TContext>.OverwriteContext(TContext! testContext, bool takeOwnership = false) -> void
+BDTest.Test.AbstractContextBDTestBase<TContext>.OverwriteContextAsync(TContext! testContext, bool takeOwnership = false) -> System.Threading.Tasks.ValueTask
+BDTest.Test.AbstractContextBDTestBase<TContext>.RemoveContext() -> void
+BDTest.Test.AbstractContextBDTestBase<TContext>.RemoveContextAsync() -> System.Threading.Tasks.ValueTask
+BDTest.Test.Attachment
+BDTest.Test.Attachment.Attachment() -> void
+BDTest.Test.Attachment.AttemptNumber.get -> int
+BDTest.Test.Attachment.Id.get -> string?
+BDTest.Test.Attachment.Length.get -> long
+BDTest.Test.Attachment.MimeType.get -> string?
+BDTest.Test.Attachment.Name.get -> string?
+BDTest.Test.Attachment.Uri.get -> string?
+BDTest.Test.BDTestBase
+BDTest.Test.BDTestBase.Attachments.get -> BDTest.Interfaces.IBDTestAttachments!
+BDTest.Test.BDTestBase.BDTestBase() -> void
+BDTest.Test.BDTestBase.BeginTest(string! frameworkTestId) -> void
+BDTest.Test.BDTestBase.BeginTest(string! frameworkTestId, System.Reflection.MethodInfo? testMethod) -> void
+BDTest.Test.BDTestBase.BindStartupOutput() -> void
+BDTest.Test.BDTestBase.CaptureStartupOutput(System.Action! beginExecution) -> void
+BDTest.Test.BDTestBase.CompleteStartupOutput() -> void
+BDTest.Test.BDTestBase.EndTest() -> void
+BDTest.Test.BDTestBase.EndTestAsync() -> System.Threading.Tasks.ValueTask
+BDTest.Test.BDTestBase.GetScenarioText(string? callerMember = null) -> string!
+BDTest.Test.BDTestBase.GetStoryText() -> string?
+BDTest.Test.BDTestBase.Given(System.Action! step, string? callerMember = null, string? callerFile = null, int callerLine = 0, string? argumentExpression = null) -> BDTest.Test.Steps.Given.Given!
+BDTest.Test.BDTestBase.Given(System.Func<System.Threading.CancellationToken, System.Threading.Tasks.Task!>! step, string? callerMember = null, string? callerFile = null, int callerLine = 0, string? argumentExpression = null) -> BDTest.Test.Steps.Given.Given!
+BDTest.Test.BDTestBase.Given(System.Func<System.Threading.CancellationToken, System.Threading.Tasks.ValueTask>! step, string? callerMember = null, string? callerFile = null, int callerLine = 0, string? argumentExpression = null) -> BDTest.Test.Steps.Given.Given!
+BDTest.Test.BDTestBase.Given(System.Func<System.Threading.Tasks.Task!>! step, string? callerMember = null, string? callerFile = null, int callerLine = 0, string? argumentExpression = null) -> BDTest.Test.Steps.Given.Given!
+BDTest.Test.BDTestBase.Given(System.Func<System.Threading.Tasks.ValueTask>! step, string? callerMember = null, string? callerFile = null, int callerLine = 0, string? argumentExpression = null) -> BDTest.Test.Steps.Given.Given!
+BDTest.Test.BDTestBase.Given<T>(System.Func<System.Threading.CancellationToken, System.Threading.Tasks.ValueTask<T>>! step, string? callerMember = null, string? callerFile = null, int callerLine = 0, string? argumentExpression = null) -> BDTest.Test.Steps.Given.Given!
+BDTest.Test.BDTestBase.Given<T>(System.Func<System.Threading.Tasks.ValueTask<T>>! step, string? callerMember = null, string? callerFile = null, int callerLine = 0, string? argumentExpression = null) -> BDTest.Test.Steps.Given.Given!
+BDTest.Test.BDTestBase.MarkTestAsStarted() -> void
+BDTest.Test.BDTestBase.ScenarioHtmlWriter.get -> BDTest.Helpers.HtmlWriter!
+BDTest.Test.BDTestBase.ScenarioOutline<TExample>(string! scenarioText, System.Collections.Generic.IEnumerable<TExample>! examples, System.Func<TExample, BDTest.Test.RunnableStepBuilder!>! scenario, string? callerMember = null, string? callerFile = null) -> BDTest.Test.ScenarioOutlineBuilder<TExample>!
+BDTest.Test.BDTestBase.When(System.Action! step, string? callerMember = null, string? callerFile = null, int callerLine = 0, string? argumentExpression = null) -> BDTest.Test.Steps.When.When!
+BDTest.Test.BDTestBase.When(System.Func<System.Threading.CancellationToken, System.Threading.Tasks.Task!>! step, string? callerMember = null, string? callerFile = null, int callerLine = 0, string? argumentExpression = null) -> BDTest.Test.Steps.When.When!
+BDTest.Test.BDTestBase.When(System.Func<System.Threading.CancellationToken, System.Threading.Tasks.ValueTask>! step, string? callerMember = null, string? callerFile = null, int callerLine = 0, string? argumentExpression = null) -> BDTest.Test.Steps.When.When!
+BDTest.Test.BDTestBase.When(System.Func<System.Threading.Tasks.Task!>! step, string? callerMember = null, string? callerFile = null, int callerLine = 0, string? argumentExpression = null) -> BDTest.Test.Steps.When.When!
+BDTest.Test.BDTestBase.When(System.Func<System.Threading.Tasks.ValueTask>! step, string? callerMember = null, string? callerFile = null, int callerLine = 0, string? argumentExpression = null) -> BDTest.Test.Steps.When.When!
+BDTest.Test.BDTestBase.When<T>(System.Func<System.Threading.CancellationToken, System.Threading.Tasks.ValueTask<T>>! step, string? callerMember = null, string? callerFile = null, int callerLine = 0, string? argumentExpression = null) -> BDTest.Test.Steps.When.When!
+BDTest.Test.BDTestBase.When<T>(System.Func<System.Threading.Tasks.ValueTask<T>>! step, string? callerMember = null, string? callerFile = null, int callerLine = 0, string? argumentExpression = null) -> BDTest.Test.Steps.When.When!
+BDTest.Test.BDTestBase.WriteStartupOutput(string! text) -> void
+BDTest.Test.BDTestBase.WriteTearDownOutput(string! text) -> void
+BDTest.Test.BDTestBuilder
+BDTest.Test.BDTestBuilder.BDTestBuilder(BDTest.BDTestRun! run) -> void
+BDTest.Test.BDTestContext
+BDTest.Test.BDTestContext.Attachments.get -> BDTest.Interfaces.IBDTestAttachments!
+BDTest.Test.BDTestContext.CurrentScenario.get -> BDTest.Test.Scenario?
+BDTest.Test.BDTestContext.CurrentScenarioBDTestExecutionId.get -> string!
+BDTest.Test.BDTestContext.GetScenarioText(string? callerMember = null) -> string!
+BDTest.Test.BDTestContext.GetStoryText() -> string?
+BDTest.Test.BDTestContext.ReportId.get -> string!
+BDTest.Test.BDTestContext.TestBase.get -> BDTest.Test.BDTestBase!
+BDTest.Test.BDTestContext<TTestContext>
+BDTest.Test.BDTestContext<TTestContext>.TestContext.get -> TTestContext
+BDTest.Test.BDTestScenario
+BDTest.Test.BDTestScenario<TContext>
+BDTest.Test.BDTestScenario<TContext>.BDTestScenario(object! testInstance, BDTest.BDTestRun! run) -> void
+BDTest.Test.BDTestScenario<TContext>.BeginTest(string! frameworkTestId) -> void
+BDTest.Test.BDTestScenario<TContext>.BeginTest(string! frameworkTestId, System.Reflection.MethodInfo? testMethod) -> void
+BDTest.Test.BDTestScenario<TContext>.EndTest() -> void
+BDTest.Test.BDTestScenario<TContext>.EndTestAsync() -> System.Threading.Tasks.ValueTask
+BDTest.Test.BuildableTest
+BDTest.Test.BuildableTest.BdTestBase.get -> BDTest.Test.BDTestBase?
+BDTest.Test.BuildableTest.BdTestBase.set -> void
+BDTest.Test.BuildableTest.BuildableTest() -> void
+BDTest.Test.BuildableTest.CallerFile.get -> string?
+BDTest.Test.BuildableTest.CallerFile.set -> void
+BDTest.Test.BuildableTest.CallerMember.get -> string?
+BDTest.Test.BuildableTest.CallerMember.set -> void
+BDTest.Test.BuildableTest.CustomTestInformation.get -> BDTest.Attributes.TestInformationAttribute![]?
+BDTest.Test.BuildableTest.CustomTestInformation.set -> void
+BDTest.Test.BuildableTest.GetScenarioText() -> string!
+BDTest.Test.BuildableTest.GetStoryText() -> string!
+BDTest.Test.BuildableTest.ParameterNames.get -> System.Collections.Generic.IEnumerable<string?>?
+BDTest.Test.BuildableTest.ParameterNames.set -> void
+BDTest.Test.BuildableTest.ReportId.get -> string?
+BDTest.Test.BuildableTest.Run.get -> BDTest.BDTestRun!
+BDTest.Test.BuildableTest.ScenarioId.get -> string?
+BDTest.Test.BuildableTest.Tags.get -> string![]?
+BDTest.Test.BuildableTest.Tags.set -> void
+BDTest.Test.BuildableTest.TestId.get -> string?
+BDTest.Test.BuildableTest.TestId.set -> void
+BDTest.Test.ContextCreation
+BDTest.Test.ContextCreation.Attempt.get -> int
+BDTest.Test.ContextCreation.ExecutionId.get -> string!
+BDTest.Test.ContextCreation.Services.get -> System.IServiceProvider?
+BDTest.Test.ExceptionWrapper
+BDTest.Test.ExceptionWrapper.AsString.get -> string?
+BDTest.Test.ExceptionWrapper.AsString.set -> void
+BDTest.Test.ExceptionWrapper.Data.get -> System.Collections.Generic.IReadOnlyDictionary<string!, string!>?
+BDTest.Test.ExceptionWrapper.Data.set -> void
+BDTest.Test.ExceptionWrapper.ExceptionWrapper(System.Exception! exception) -> void
+BDTest.Test.ExceptionWrapper.GetRootCauses() -> System.Collections.Generic.IReadOnlyList<BDTest.Test.ExceptionWrapper!>!
+BDTest.Test.ExceptionWrapper.HResult.get -> int?
+BDTest.Test.ExceptionWrapper.HResult.set -> void
+BDTest.Test.ExceptionWrapper.InnerExceptions.get -> System.Collections.Generic.IReadOnlyList<BDTest.Test.ExceptionWrapper!>?
+BDTest.Test.ExceptionWrapper.InnerExceptions.set -> void
+BDTest.Test.ExceptionWrapper.IsWrapper.get -> bool
+BDTest.Test.ExceptionWrapper.IsWrapper.set -> void
+BDTest.Test.ExceptionWrapper.Message.get -> string?
+BDTest.Test.ExceptionWrapper.Message.set -> void
+BDTest.Test.ExceptionWrapper.ShortTypeName.get -> string?
+BDTest.Test.ExceptionWrapper.ShortTypeName.set -> void
+BDTest.Test.ExceptionWrapper.Source.get -> string?
+BDTest.Test.ExceptionWrapper.Source.set -> void
+BDTest.Test.ExceptionWrapper.StackTrace.get -> string?
+BDTest.Test.ExceptionWrapper.StackTrace.set -> void
+BDTest.Test.ExceptionWrapper.TruncationReason.get -> string?
+BDTest.Test.ExceptionWrapper.TruncationReason.set -> void
+BDTest.Test.ExceptionWrapper.TypeName.get -> string?
+BDTest.Test.ExceptionWrapper.TypeName.set -> void
+BDTest.Test.IBDTestContextFactory
+BDTest.Test.IBDTestContextFactory.CreateContextAsync(System.Type! contextType, BDTest.Test.ContextCreation! creation) -> System.Threading.Tasks.ValueTask<object!>
+BDTest.Test.IBDTestContextLifetime
+BDTest.Test.IBDTestContextLifetime.InitializeAsync() -> System.Threading.Tasks.ValueTask
+BDTest.Test.RunnableStepBuilder
+BDTest.Test.RunnableStepBuilder.BDTestAsync() -> System.Threading.Tasks.Task<BDTest.Test.Scenario!>!
+BDTest.Test.RunnableStepBuilder.GetAwaiter() -> System.Runtime.CompilerServices.TaskAwaiter<BDTest.Test.Scenario!>
+BDTest.Test.Scenario
+BDTest.Test.Scenario.Attachments.get -> System.Collections.Generic.List<BDTest.Test.Attachment!>?
+BDTest.Test.Scenario.Attempts.get -> System.Collections.Generic.List<BDTest.Test.ScenarioAttempt!>?
+BDTest.Test.Scenario.BdTestBaseClass.get -> BDTest.Test.BDTestBase?
+BDTest.Test.Scenario.CustomHtmlOutputForReport.get -> string?
+BDTest.Test.Scenario.CustomTestInformation.get -> BDTest.Attributes.TestInformationAttribute![]?
+BDTest.Test.Scenario.EndTime.get -> System.DateTime
+BDTest.Test.Scenario.ExampleValues.get -> System.Collections.Generic.Dictionary<string!, string!>?
+BDTest.Test.Scenario.Examples.get -> System.Collections.Generic.List<BDTest.Test.Scenario!>?
+BDTest.Test.Scenario.Exception.get -> BDTest.Test.ExceptionWrapper?
+BDTest.Test.Scenario.FileName.get -> string?
+BDTest.Test.Scenario.FrameworkTestId.get -> string?
+BDTest.Test.Scenario.GetScenarioText() -> string!
+BDTest.Test.Scenario.GetStoryText() -> string!
+BDTest.Test.Scenario.Guid.get -> string?
+BDTest.Test.Scenario.IsOutline.get -> bool
+BDTest.Test.Scenario.OutlineId.get -> string?
+BDTest.Test.Scenario.Output.get -> string?
+BDTest.Test.Scenario.ReportId.get -> string?
+BDTest.Test.Scenario.RetryCount.get -> int
+BDTest.Test.Scenario.Run.get -> BDTest.BDTestRun?
+BDTest.Test.Scenario.StartTime.get -> System.DateTime
+BDTest.Test.Scenario.Status.get -> BDTest.Test.Status
+BDTest.Test.Scenario.Steps.get -> System.Collections.Generic.List<BDTest.Test.Step!>?
+BDTest.Test.Scenario.Tags.get -> string![]!
+BDTest.Test.Scenario.TearDownOutput.get -> string?
+BDTest.Test.Scenario.TestStartupInformation.get -> string?
+BDTest.Test.Scenario.TimeTaken.get -> System.TimeSpan
+BDTest.Test.Scenario.TimedOut.get -> bool
+BDTest.Test.Scenario.Timeout.get -> System.TimeSpan?
+BDTest.Test.ScenarioAttempt
+BDTest.Test.ScenarioAttempt.EndTime.get -> System.DateTime
+BDTest.Test.ScenarioAttempt.Exception.get -> BDTest.Test.ExceptionWrapper?
+BDTest.Test.ScenarioAttempt.Number.get -> int
+BDTest.Test.ScenarioAttempt.StartTime.get -> System.DateTime
+BDTest.Test.ScenarioAttempt.Status.get -> BDTest.Test.Status
+BDTest.Test.ScenarioAttempt.TimeTaken.get -> System.TimeSpan
+BDTest.Test.ScenarioDefinitionSummary
+BDTest.Test.ScenarioDefinitionSummary.CallerFile.get -> string?
+BDTest.Test.ScenarioDefinitionSummary.CallerMember.get -> string?
+BDTest.Test.ScenarioDefinitionSummary.CustomTestInformation.get -> BDTest.Attributes.TestInformationAttribute![]?
+BDTest.Test.ScenarioDefinitionSummary.GetScenarioText() -> string!
+BDTest.Test.ScenarioDefinitionSummary.GetStoryText() -> string!
+BDTest.Test.ScenarioDefinitionSummary.ParameterNames.get -> System.Collections.Generic.IEnumerable<string?>?
+BDTest.Test.ScenarioDefinitionSummary.ReportId.get -> string?
+BDTest.Test.ScenarioDefinitionSummary.ScenarioDefinitionSummary() -> void
+BDTest.Test.ScenarioDefinitionSummary.ScenarioId.get -> string?
+BDTest.Test.ScenarioDefinitionSummary.Steps.get -> System.Collections.Generic.IReadOnlyList<BDTest.Test.StepDefinitionSummary!>?
+BDTest.Test.ScenarioDefinitionSummary.Tags.get -> string![]?
+BDTest.Test.ScenarioDefinitionSummary.TestId.get -> string?
+BDTest.Test.ScenarioDefinitionSummary.Timeout.get -> System.TimeSpan?
+BDTest.Test.ScenarioHookContext
+BDTest.Test.ScenarioHookContext.Attempt.get -> int
+BDTest.Test.ScenarioHookContext.CancellationToken.get -> System.Threading.CancellationToken
+BDTest.Test.ScenarioHookContext.Context.get -> object?
+BDTest.Test.ScenarioHookContext.Scenario.get -> BDTest.Test.Scenario!
+BDTest.Test.ScenarioHookContext<TContext>
+BDTest.Test.ScenarioHookContext<TContext>.Context.get -> TContext
+BDTest.Test.ScenarioOutlineBuilder<TExample>
+BDTest.Test.ScenarioOutlineBuilder<TExample>.BDTestAsync() -> System.Threading.Tasks.Task<BDTest.Test.Scenario!>!
+BDTest.Test.ScenarioOutlineBuilder<TExample>.GetAwaiter() -> System.Runtime.CompilerServices.TaskAwaiter<BDTest.Test.Scenario!>
+BDTest.Test.ScenarioText
+BDTest.Test.ScenarioText.Scenario.get -> string?
+BDTest.Test.ScenarioText.ScenarioText(BDTest.Test.ScenarioText! original) -> void
+BDTest.Test.ScenarioText.ScenarioText(string? scenario) -> void
+BDTest.Test.ServiceProviderContextFactory
+BDTest.Test.ServiceProviderContextFactory.CreateContextAsync(System.Type! contextType, BDTest.Test.ContextCreation! creation) -> System.Threading.Tasks.ValueTask<object!>
+BDTest.Test.ServiceProviderContextFactory.ServiceProviderContextFactory() -> void
+BDTest.Test.Status
+BDTest.Test.Status.Failed = 3 -> BDTest.Test.Status
+BDTest.Test.Status.Inconclusive = 4 -> BDTest.Test.Status
+BDTest.Test.Status.NotImplemented = 5 -> BDTest.Test.Status
+BDTest.Test.Status.NotRun = 0 -> BDTest.Test.Status
+BDTest.Test.Status.Passed = 2 -> BDTest.Test.Status
+BDTest.Test.Status.Pending = 1 -> BDTest.Test.Status
+BDTest.Test.Status.Skipped = 6 -> BDTest.Test.Status
+BDTest.Test.StatusExtensions
+BDTest.Test.Step
+BDTest.Test.Step.Arguments.get -> System.Collections.Generic.IReadOnlyList<BDTest.Test.StepArgument!>!
+BDTest.Test.Step.Attachments.get -> System.Collections.Generic.List<BDTest.Test.Attachment!>?
+BDTest.Test.Step.Diagnostics.get -> System.Collections.Generic.List<string!>?
+BDTest.Test.Step.EndTime.get -> System.DateTime
+BDTest.Test.Step.Exception.get -> BDTest.Test.ExceptionWrapper?
+BDTest.Test.Step.Guid.get -> string?
+BDTest.Test.Step.IsRetry.get -> bool
+BDTest.Test.Step.IsRetry.set -> void
+BDTest.Test.Step.Output.get -> string?
+BDTest.Test.Step.ReportId.get -> string?
+BDTest.Test.Step.ScenarioId.get -> string?
+BDTest.Test.Step.SkipReason.get -> BDTest.Test.StepSkipReason?
+BDTest.Test.Step.StartTime.get -> System.DateTime
+BDTest.Test.Step.Status.get -> BDTest.Test.Status
+BDTest.Test.Step.StepText.get -> string?
+BDTest.Test.Step.TimeTaken.get -> System.TimeSpan
+BDTest.Test.Step.TimedOut.get -> bool
+BDTest.Test.Step.Timeout.get -> System.TimeSpan?
+BDTest.Test.StepArgument
+BDTest.Test.StepDefinitionSummary
+BDTest.Test.StepDefinitionSummary.StepDefinitionSummary() -> void
+BDTest.Test.StepDefinitionSummary.StepText.get -> string?
+BDTest.Test.StepDefinitionSummary.StepType.get -> BDTest.Test.Steps.StepType
+BDTest.Test.StepDefinitionSummary.Timeout.get -> System.TimeSpan?
+BDTest.Test.StepDocString
+BDTest.Test.StepDocString.Content.get -> string!
+BDTest.Test.StepDocString.ContentType.get -> string?
+BDTest.Test.StepDocString.StepDocString(string! content, string? contentType = null) -> void
+BDTest.Test.StepSkipReason
+BDTest.Test.StepSkipReason.AttributeType.get -> string?
+BDTest.Test.StepSkipReason.RuleIndex.get -> int?
+BDTest.Test.StepSkipReason.Setting.get -> string?
+BDTest.Test.StepSkipReason.Source.get -> string!
+BDTest.Test.StepSkipReason.StepSkipReason(string! source, string? attributeType = null, int? ruleIndex = null, string? setting = null) -> void
+BDTest.Test.StepTable
+BDTest.Test.StepTable.Headers.get -> System.Collections.Generic.IReadOnlyList<string!>!
+BDTest.Test.StepTable.Rows.get -> System.Collections.Generic.IReadOnlyList<System.Collections.Generic.IReadOnlyList<string!>!>!
+BDTest.Test.StepTable.StepTable(System.Collections.Generic.IReadOnlyList<string?>! headers, System.Collections.Generic.IReadOnlyList<System.Collections.Generic.IReadOnlyList<string?>!>! rows) -> void
+BDTest.Test.Steps.Given.AndGiven
+BDTest.Test.Steps.Given.AndGiven.WithArgs(params System.Func<object?>![]! arguments) -> BDTest.Test.Steps.Given.AndGiven!
+BDTest.Test.Steps.Given.AndGiven.WithStepText(System.Func<string?>? overridingStepText) -> BDTest.Test.Steps.Given.AndGiven!
+BDTest.Test.Steps.Given.ButGiven
+BDTest.Test.Steps.Given.ButGiven.WithArgs(params System.Func<object?>![]! arguments) -> BDTest.Test.Steps.Given.ButGiven!
+BDTest.Test.Steps.Given.ButGiven.WithStepText(System.Func<string?>? overridingStepText) -> BDTest.Test.Steps.Given.ButGiven!
+BDTest.Test.Steps.Given.Given
+BDTest.Test.Steps.Given.Given.WithArgs(params System.Func<object?>![]! arguments) -> BDTest.Test.Steps.Given.Given!
+BDTest.Test.Steps.Given.Given.WithStepText(System.Func<string?>? overridingStepText) -> BDTest.Test.Steps.Given.Given!
+BDTest.Test.Steps.Given.GivenStepBuilder
+BDTest.Test.Steps.Given.GivenStepBuilder.And(System.Action! step, string? callerFile = null, int callerLine = 0, string? argumentExpression = null) -> BDTest.Test.Steps.Given.AndGiven!
+BDTest.Test.Steps.Given.GivenStepBuilder.And(System.Func<System.Threading.CancellationToken, System.Threading.Tasks.Task!>! step, string? callerFile = null, int callerLine = 0, string? argumentExpression = null) -> BDTest.Test.Steps.Given.AndGiven!
+BDTest.Test.Steps.Given.GivenStepBuilder.And(System.Func<System.Threading.CancellationToken, System.Threading.Tasks.ValueTask>! step, string? callerFile = null, int callerLine = 0, string? argumentExpression = null) -> BDTest.Test.Steps.Given.AndGiven!
+BDTest.Test.Steps.Given.GivenStepBuilder.And(System.Func<System.Threading.Tasks.Task!>! step, string? callerFile = null, int callerLine = 0, string? argumentExpression = null) -> BDTest.Test.Steps.Given.AndGiven!
+BDTest.Test.Steps.Given.GivenStepBuilder.And(System.Func<System.Threading.Tasks.ValueTask>! step, string? callerFile = null, int callerLine = 0, string? argumentExpression = null) -> BDTest.Test.Steps.Given.AndGiven!
+BDTest.Test.Steps.Given.GivenStepBuilder.And<T>(System.Func<System.Threading.CancellationToken, System.Threading.Tasks.ValueTask<T>>! step, string? callerFile = null, int callerLine = 0, string? argumentExpression = null) -> BDTest.Test.Steps.Given.AndGiven!
+BDTest.Test.Steps.Given.GivenStepBuilder.And<T>(System.Func<System.Threading.Tasks.ValueTask<T>>! step, string? callerFile = null, int callerLine = 0, string? argumentExpression = null) -> BDTest.Test.Steps.Given.AndGiven!
+BDTest.Test.Steps.Given.GivenStepBuilder.But(System.Action! step, string? callerFile = null, int callerLine = 0, string? argumentExpression = null) -> BDTest.Test.Steps.Given.ButGiven!
+BDTest.Test.Steps.Given.GivenStepBuilder.But(System.Func<System.Threading.CancellationToken, System.Threading.Tasks.Task!>! step, string? callerFile = null, int callerLine = 0, string? argumentExpression = null) -> BDTest.Test.Steps.Given.ButGiven!
+BDTest.Test.Steps.Given.GivenStepBuilder.But(System.Func<System.Threading.CancellationToken, System.Threading.Tasks.ValueTask>! step, string? callerFile = null, int callerLine = 0, string? argumentExpression = null) -> BDTest.Test.Steps.Given.ButGiven!
+BDTest.Test.Steps.Given.GivenStepBuilder.But(System.Func<System.Threading.Tasks.Task!>! step, string? callerFile = null, int callerLine = 0, string? argumentExpression = null) -> BDTest.Test.Steps.Given.ButGiven!
+BDTest.Test.Steps.Given.GivenStepBuilder.But(System.Func<System.Threading.Tasks.ValueTask>! step, string? callerFile = null, int callerLine = 0, string? argumentExpression = null) -> BDTest.Test.Steps.Given.ButGiven!
+BDTest.Test.Steps.Given.GivenStepBuilder.But<T>(System.Func<System.Threading.CancellationToken, System.Threading.Tasks.ValueTask<T>>! step, string? callerFile = null, int callerLine = 0, string? argumentExpression = null) -> BDTest.Test.Steps.Given.ButGiven!
+BDTest.Test.Steps.Given.GivenStepBuilder.But<T>(System.Func<System.Threading.Tasks.ValueTask<T>>! step, string? callerFile = null, int callerLine = 0, string? argumentExpression = null) -> BDTest.Test.Steps.Given.ButGiven!
+BDTest.Test.Steps.Given.GivenStepBuilder.When(System.Action! step, string? callerFile = null, int callerLine = 0, string? argumentExpression = null) -> BDTest.Test.Steps.When.When!
+BDTest.Test.Steps.Given.GivenStepBuilder.When(System.Func<System.Threading.CancellationToken, System.Threading.Tasks.Task!>! step, string? callerFile = null, int callerLine = 0, string? argumentExpression = null) -> BDTest.Test.Steps.When.When!
+BDTest.Test.Steps.Given.GivenStepBuilder.When(System.Func<System.Threading.CancellationToken, System.Threading.Tasks.ValueTask>! step, string? callerFile = null, int callerLine = 0, string? argumentExpression = null) -> BDTest.Test.Steps.When.When!
+BDTest.Test.Steps.Given.GivenStepBuilder.When(System.Func<System.Threading.Tasks.Task!>! step, string? callerFile = null, int callerLine = 0, string? argumentExpression = null) -> BDTest.Test.Steps.When.When!
+BDTest.Test.Steps.Given.GivenStepBuilder.When(System.Func<System.Threading.Tasks.ValueTask>! step, string? callerFile = null, int callerLine = 0, string? argumentExpression = null) -> BDTest.Test.Steps.When.When!
+BDTest.Test.Steps.Given.GivenStepBuilder.When<T>(System.Func<System.Threading.CancellationToken, System.Threading.Tasks.ValueTask<T>>! step, string? callerFile = null, int callerLine = 0, string? argumentExpression = null) -> BDTest.Test.Steps.When.When!
+BDTest.Test.Steps.Given.GivenStepBuilder.When<T>(System.Func<System.Threading.Tasks.ValueTask<T>>! step, string? callerFile = null, int callerLine = 0, string? argumentExpression = null) -> BDTest.Test.Steps.When.When!
+BDTest.Test.Steps.StepBuilder
+BDTest.Test.Steps.StepType
+BDTest.Test.Steps.StepType.AndGiven = 1 -> BDTest.Test.Steps.StepType
+BDTest.Test.Steps.StepType.AndThen = 4 -> BDTest.Test.Steps.StepType
+BDTest.Test.Steps.StepType.AndWhen = 8 -> BDTest.Test.Steps.StepType
+BDTest.Test.Steps.StepType.ButGiven = 5 -> BDTest.Test.Steps.StepType
+BDTest.Test.Steps.StepType.ButThen = 7 -> BDTest.Test.Steps.StepType
+BDTest.Test.Steps.StepType.ButWhen = 6 -> BDTest.Test.Steps.StepType
+BDTest.Test.Steps.StepType.Given = 0 -> BDTest.Test.Steps.StepType
+BDTest.Test.Steps.StepType.Then = 3 -> BDTest.Test.Steps.StepType
+BDTest.Test.Steps.StepType.When = 2 -> BDTest.Test.Steps.StepType
+BDTest.Test.Steps.StepTypeExtensions
+BDTest.Test.Steps.Then.AndThen
+BDTest.Test.Steps.Then.AndThen.WithArgs(params System.Func<object?>![]! arguments) -> BDTest.Test.Steps.Then.AndThen!
+BDTest.Test.Steps.Then.AndThen.WithScenarioText(string! scenarioText) -> BDTest.Test.Steps.Then.AndThen!
+BDTest.Test.Steps.Then.AndThen.WithStepText(System.Func<string?>? overridingStepText) -> BDTest.Test.Steps.Then.AndThen!
+BDTest.Test.Steps.Then.ButThen
+BDTest.Test.Steps.Then.ButThen.WithArgs(params System.Func<object?>![]! arguments) -> BDTest.Test.Steps.Then.ButThen!
+BDTest.Test.Steps.Then.ButThen.WithScenarioText(string! scenarioText) -> BDTest.Test.Steps.Then.ButThen!
+BDTest.Test.Steps.Then.ButThen.WithStepText(System.Func<string?>? overridingStepText) -> BDTest.Test.Steps.Then.ButThen!
+BDTest.Test.Steps.Then.Then
+BDTest.Test.Steps.Then.Then.WithArgs(params System.Func<object?>![]! arguments) -> BDTest.Test.Steps.Then.Then!
+BDTest.Test.Steps.Then.Then.WithScenarioText(string! scenarioText) -> BDTest.Test.Steps.Then.Then!
+BDTest.Test.Steps.Then.Then.WithStepText(System.Func<string?>? overridingStepText) -> BDTest.Test.Steps.Then.Then!
+BDTest.Test.Steps.Then.ThenStepBuilder
+BDTest.Test.Steps.Then.ThenStepBuilder.And(System.Action! step, string? callerFile = null, int callerLine = 0, string? argumentExpression = null) -> BDTest.Test.Steps.Then.AndThen!
+BDTest.Test.Steps.Then.ThenStepBuilder.And(System.Func<System.Threading.CancellationToken, System.Threading.Tasks.Task!>! step, string? callerFile = null, int callerLine = 0, string? argumentExpression = null) -> BDTest.Test.Steps.Then.AndThen!
+BDTest.Test.Steps.Then.ThenStepBuilder.And(System.Func<System.Threading.CancellationToken, System.Threading.Tasks.ValueTask>! step, string? callerFile = null, int callerLine = 0, string? argumentExpression = null) -> BDTest.Test.Steps.Then.AndThen!
+BDTest.Test.Steps.Then.ThenStepBuilder.And(System.Func<System.Threading.Tasks.Task!>! step, string? callerFile = null, int callerLine = 0, string? argumentExpression = null) -> BDTest.Test.Steps.Then.AndThen!
+BDTest.Test.Steps.Then.ThenStepBuilder.And(System.Func<System.Threading.Tasks.ValueTask>! step, string? callerFile = null, int callerLine = 0, string? argumentExpression = null) -> BDTest.Test.Steps.Then.AndThen!
+BDTest.Test.Steps.Then.ThenStepBuilder.And<T>(System.Func<System.Threading.CancellationToken, System.Threading.Tasks.ValueTask<T>>! step, string? callerFile = null, int callerLine = 0, string? argumentExpression = null) -> BDTest.Test.Steps.Then.AndThen!
+BDTest.Test.Steps.Then.ThenStepBuilder.And<T>(System.Func<System.Threading.Tasks.ValueTask<T>>! step, string? callerFile = null, int callerLine = 0, string? argumentExpression = null) -> BDTest.Test.Steps.Then.AndThen!
+BDTest.Test.Steps.Then.ThenStepBuilder.But(System.Action! step, string? callerFile = null, int callerLine = 0, string? argumentExpression = null) -> BDTest.Test.Steps.Then.ButThen!
+BDTest.Test.Steps.Then.ThenStepBuilder.But(System.Func<System.Threading.CancellationToken, System.Threading.Tasks.Task!>! step, string? callerFile = null, int callerLine = 0, string? argumentExpression = null) -> BDTest.Test.Steps.Then.ButThen!
+BDTest.Test.Steps.Then.ThenStepBuilder.But(System.Func<System.Threading.CancellationToken, System.Threading.Tasks.ValueTask>! step, string? callerFile = null, int callerLine = 0, string? argumentExpression = null) -> BDTest.Test.Steps.Then.ButThen!
+BDTest.Test.Steps.Then.ThenStepBuilder.But(System.Func<System.Threading.Tasks.Task!>! step, string? callerFile = null, int callerLine = 0, string? argumentExpression = null) -> BDTest.Test.Steps.Then.ButThen!
+BDTest.Test.Steps.Then.ThenStepBuilder.But(System.Func<System.Threading.Tasks.ValueTask>! step, string? callerFile = null, int callerLine = 0, string? argumentExpression = null) -> BDTest.Test.Steps.Then.ButThen!
+BDTest.Test.Steps.Then.ThenStepBuilder.But<T>(System.Func<System.Threading.CancellationToken, System.Threading.Tasks.ValueTask<T>>! step, string? callerFile = null, int callerLine = 0, string? argumentExpression = null) -> BDTest.Test.Steps.Then.ButThen!
+BDTest.Test.Steps.Then.ThenStepBuilder.But<T>(System.Func<System.Threading.Tasks.ValueTask<T>>! step, string? callerFile = null, int callerLine = 0, string? argumentExpression = null) -> BDTest.Test.Steps.Then.ButThen!
+BDTest.Test.Steps.When.AndWhen
+BDTest.Test.Steps.When.AndWhen.WithArgs(params System.Func<object?>![]! arguments) -> BDTest.Test.Steps.When.AndWhen!
+BDTest.Test.Steps.When.AndWhen.WithStepText(System.Func<string?>? overridingStepText) -> BDTest.Test.Steps.When.AndWhen!
+BDTest.Test.Steps.When.ButWhen
+BDTest.Test.Steps.When.ButWhen.WithArgs(params System.Func<object?>![]! arguments) -> BDTest.Test.Steps.When.ButWhen!
+BDTest.Test.Steps.When.ButWhen.WithStepText(System.Func<string?>? overridingStepText) -> BDTest.Test.Steps.When.ButWhen!
+BDTest.Test.Steps.When.When
+BDTest.Test.Steps.When.When.WithArgs(params System.Func<object?>![]! arguments) -> BDTest.Test.Steps.When.When!
+BDTest.Test.Steps.When.When.WithStepText(System.Func<string?>? overridingStepText) -> BDTest.Test.Steps.When.When!
+BDTest.Test.Steps.When.WhenStepBuilder
+BDTest.Test.Steps.When.WhenStepBuilder.And(System.Action! step, string? callerFile = null, int callerLine = 0, string? argumentExpression = null) -> BDTest.Test.Steps.When.AndWhen!
+BDTest.Test.Steps.When.WhenStepBuilder.And(System.Func<System.Threading.CancellationToken, System.Threading.Tasks.Task!>! step, string? callerFile = null, int callerLine = 0, string? argumentExpression = null) -> BDTest.Test.Steps.When.AndWhen!
+BDTest.Test.Steps.When.WhenStepBuilder.And(System.Func<System.Threading.CancellationToken, System.Threading.Tasks.ValueTask>! step, string? callerFile = null, int callerLine = 0, string? argumentExpression = null) -> BDTest.Test.Steps.When.AndWhen!
+BDTest.Test.Steps.When.WhenStepBuilder.And(System.Func<System.Threading.Tasks.Task!>! step, string? callerFile = null, int callerLine = 0, string? argumentExpression = null) -> BDTest.Test.Steps.When.AndWhen!
+BDTest.Test.Steps.When.WhenStepBuilder.And(System.Func<System.Threading.Tasks.ValueTask>! step, string? callerFile = null, int callerLine = 0, string? argumentExpression = null) -> BDTest.Test.Steps.When.AndWhen!
+BDTest.Test.Steps.When.WhenStepBuilder.And<T>(System.Func<System.Threading.CancellationToken, System.Threading.Tasks.ValueTask<T>>! step, string? callerFile = null, int callerLine = 0, string? argumentExpression = null) -> BDTest.Test.Steps.When.AndWhen!
+BDTest.Test.Steps.When.WhenStepBuilder.And<T>(System.Func<System.Threading.Tasks.ValueTask<T>>! step, string? callerFile = null, int callerLine = 0, string? argumentExpression = null) -> BDTest.Test.Steps.When.AndWhen!
+BDTest.Test.Steps.When.WhenStepBuilder.But(System.Action! step, string? callerFile = null, int callerLine = 0, string? argumentExpression = null) -> BDTest.Test.Steps.When.ButWhen!
+BDTest.Test.Steps.When.WhenStepBuilder.But(System.Func<System.Threading.CancellationToken, System.Threading.Tasks.Task!>! step, string? callerFile = null, int callerLine = 0, string? argumentExpression = null) -> BDTest.Test.Steps.When.ButWhen!
+BDTest.Test.Steps.When.WhenStepBuilder.But(System.Func<System.Threading.CancellationToken, System.Threading.Tasks.ValueTask>! step, string? callerFile = null, int callerLine = 0, string? argumentExpression = null) -> BDTest.Test.Steps.When.ButWhen!
+BDTest.Test.Steps.When.WhenStepBuilder.But(System.Func<System.Threading.Tasks.Task!>! step, string? callerFile = null, int callerLine = 0, string? argumentExpression = null) -> BDTest.Test.Steps.When.ButWhen!
+BDTest.Test.Steps.When.WhenStepBuilder.But(System.Func<System.Threading.Tasks.ValueTask>! step, string? callerFile = null, int callerLine = 0, string? argumentExpression = null) -> BDTest.Test.Steps.When.ButWhen!
+BDTest.Test.Steps.When.WhenStepBuilder.But<T>(System.Func<System.Threading.CancellationToken, System.Threading.Tasks.ValueTask<T>>! step, string? callerFile = null, int callerLine = 0, string? argumentExpression = null) -> BDTest.Test.Steps.When.ButWhen!
+BDTest.Test.Steps.When.WhenStepBuilder.But<T>(System.Func<System.Threading.Tasks.ValueTask<T>>! step, string? callerFile = null, int callerLine = 0, string? argumentExpression = null) -> BDTest.Test.Steps.When.ButWhen!
+BDTest.Test.Steps.When.WhenStepBuilder.Then(System.Action! step, string? callerFile = null, int callerLine = 0, string? argumentExpression = null) -> BDTest.Test.Steps.Then.Then!
+BDTest.Test.Steps.When.WhenStepBuilder.Then(System.Func<System.Threading.CancellationToken, System.Threading.Tasks.Task!>! step, string? callerFile = null, int callerLine = 0, string? argumentExpression = null) -> BDTest.Test.Steps.Then.Then!
+BDTest.Test.Steps.When.WhenStepBuilder.Then(System.Func<System.Threading.CancellationToken, System.Threading.Tasks.ValueTask>! step, string? callerFile = null, int callerLine = 0, string? argumentExpression = null) -> BDTest.Test.Steps.Then.Then!
+BDTest.Test.Steps.When.WhenStepBuilder.Then(System.Func<System.Threading.Tasks.Task!>! step, string? callerFile = null, int callerLine = 0, string? argumentExpression = null) -> BDTest.Test.Steps.Then.Then!
+BDTest.Test.Steps.When.WhenStepBuilder.Then(System.Func<System.Threading.Tasks.ValueTask>! step, string? callerFile = null, int callerLine = 0, string? argumentExpression = null) -> BDTest.Test.Steps.Then.Then!
+BDTest.Test.Steps.When.WhenStepBuilder.Then<T>(System.Func<System.Threading.CancellationToken, System.Threading.Tasks.ValueTask<T>>! step, string? callerFile = null, int callerLine = 0, string? argumentExpression = null) -> BDTest.Test.Steps.Then.Then!
+BDTest.Test.Steps.When.WhenStepBuilder.Then<T>(System.Func<System.Threading.Tasks.ValueTask<T>>! step, string? callerFile = null, int callerLine = 0, string? argumentExpression = null) -> BDTest.Test.Steps.Then.Then!
+BDTest.Test.StoryText
+BDTest.Test.StoryText.Story.get -> string?
+BDTest.Test.StoryText.StoryText(BDTest.Test.StoryText! original) -> void
+BDTest.Test.StoryText.StoryText(string? story) -> void
+BDTest.Test.StructuredStepArgumentExtensions
+BDTest.Test.TimeoutExtensions
+abstract BDTest.Test.BDTestBase.TestRun.get -> BDTest.BDTestRun!
+override BDTest.Exceptions.AlreadyExecutedException.Message.get -> string!
+override BDTest.Exceptions.DuplicateStoryTextArgumentException.Message.get -> string!
+override BDTest.Exceptions.InvalidStepTextParameterException.Message.get -> string!
+override BDTest.Exceptions.MissingStoryTextArgumentException.Message.get -> string!
+override BDTest.Helpers.BDTestJsonContext.GeneratedSerializerOptions.get -> System.Text.Json.JsonSerializerOptions?
+override BDTest.Helpers.BDTestJsonContext.GetTypeInfo(System.Type! type) -> System.Text.Json.Serialization.Metadata.JsonTypeInfo?
+override BDTest.Test.AbstractContextBDTestBase<TContext>.OnAfterScenario(BDTest.Test.ScenarioHookContext! scenario) -> System.Threading.Tasks.Task!
+override BDTest.Test.AbstractContextBDTestBase<TContext>.OnBeforeScenario(BDTest.Test.ScenarioHookContext! scenario) -> System.Threading.Tasks.Task!
+override BDTest.Test.BDTestBuilder.BDTestExecutionId.get -> string!
+override BDTest.Test.BDTestBuilder.TestRun.get -> BDTest.BDTestRun!
+override BDTest.Test.BDTestScenario<TContext>.TestRun.get -> BDTest.BDTestRun!
+override BDTest.Test.ScenarioText.Equals(object? obj) -> bool
+override BDTest.Test.ScenarioText.GetHashCode() -> int
+override BDTest.Test.ScenarioText.ToString() -> string!
+override BDTest.Test.StepDocString.ToString() -> string!
+override BDTest.Test.StepSkipReason.ToString() -> string!
+override BDTest.Test.StepTable.ToString() -> string!
+override BDTest.Test.StoryText.Equals(object? obj) -> bool
+override BDTest.Test.StoryText.GetHashCode() -> int
+override BDTest.Test.StoryText.ToString() -> string!
+static BDTest.BDTestReportServer.SendDataAndGetReportUriAsync(BDTest.BDTestRun! run, System.Uri! serverAddress, BDTest.BDTestRunDescriptor? bdTestRunDescriptor) -> System.Threading.Tasks.Task<System.Uri!>!
+static BDTest.BDTestReportServer.SendDataAndGetReportUriAsync(BDTest.BDTestRun! run, System.Uri! serverAddress, BDTest.BDTestRunDescriptor? bdTestRunDescriptor, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<System.Uri!>!
+static BDTest.BDTestReportServer.SendDataAndGetReportUriAsync(System.Uri! serverAddress, BDTest.BDTestRunDescriptor? bdTestRunDescriptor, System.Net.Http.HttpClient! httpClient, BDTest.BDTestRun! run) -> System.Threading.Tasks.Task<System.Uri!>!
+static BDTest.BDTestReportServer.SendDataAndGetReportUriAsync(System.Uri! serverAddress, BDTest.BDTestRunDescriptor? bdTestRunDescriptor, System.Net.Http.HttpClient! httpClient, BDTest.BDTestRun! run, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<System.Uri!>!
+static BDTest.BDTestRun.Start() -> BDTest.BDTestRun!
+static BDTest.BDTestRun.Start(BDTest.BDTestOptions! options) -> BDTest.BDTestRun!
+static BDTest.BDTestUtil.ClearScenarios(BDTest.BDTestRun! run) -> void
+static BDTest.BDTestUtil.GetNotRunScenarios(BDTest.BDTestRun! run) -> System.Collections.Generic.List<BDTest.Test.ScenarioDefinitionSummary!>!
+static BDTest.BDTestUtil.GetScenarios(BDTest.BDTestRun! run) -> System.Collections.Generic.List<BDTest.Test.Scenario!>!
+static BDTest.BDTestUtil.GetTestTimer(System.Collections.Generic.IReadOnlyCollection<BDTest.Test.Scenario!>! scenarios) -> BDTest.Output.TestTimer!
+static BDTest.BDTestUtil.GetTestTimer(System.Collections.Generic.IReadOnlyCollection<BDTest.Test.Scenario!>! scenarios, BDTest.Maps.BDTestOutputModel? totalReportData) -> BDTest.Output.TestTimer!
+static BDTest.Helpers.BDTestAttachmentHelper.GetAttachments(BDTest.Maps.BDTestOutputModel! report) -> System.Collections.Generic.IEnumerable<BDTest.Test.Attachment!>!
+static BDTest.Helpers.BDTestHtmlHelper.GetTestHtmlReport(BDTest.BDTestRunDescriptor? bdTestRunDescriptor, BDTest.BDTestRun! run) -> string!
+static BDTest.Helpers.BDTestJsonContext.Default.get -> BDTest.Helpers.BDTestJsonContext!
+static BDTest.Helpers.BDTestJsonHelper.Deserialize(string! json, long maximumExpandedSize = 104857600) -> BDTest.Maps.BDTestOutputModel?
+static BDTest.Helpers.BDTestJsonHelper.DeserializeAsync(System.IO.Stream! stream, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken), long maximumExpandedSize = 104857600) -> System.Threading.Tasks.Task<BDTest.Maps.BDTestOutputModel?>!
+static BDTest.Helpers.BDTestJsonHelper.GetTestJsonData(BDTest.BDTestRunDescriptor? bdTestRunDescriptor, BDTest.BDTestRun! run) -> string!
+static BDTest.Helpers.BDTestJsonHelper.Serialize(BDTest.Maps.BDTestOutputModel? model, bool writeIndented = false) -> string!
+static BDTest.Helpers.ExceptionHtmlHelper.GetHtml(BDTest.Test.ExceptionWrapper? exception) -> string!
+static BDTest.Helpers.StepArgumentHtmlHelper.GetHtml(System.Collections.Generic.IReadOnlyList<BDTest.Test.StepArgument!>? arguments) -> string!
+static BDTest.Metadata.StepMetadataCatalog.Find(System.Reflection.Assembly! callerAssembly, string? callerFile, int callerLine, string? argumentExpression) -> BDTest.Metadata.StepCallSiteMetadata?
+static BDTest.Metadata.StepMetadataCatalog.Find(string? callerFile, int callerLine, string? argumentExpression, out System.Reflection.Assembly? callerAssembly) -> BDTest.Metadata.StepCallSiteMetadata?
+static BDTest.Test.BDTestBase.BeginPendingTestExecution() -> void
+static BDTest.Test.BDTestScenario.For<TContext>(object! testInstance, BDTest.BDTestRun! run) -> BDTest.Test.BDTestScenario<TContext!>!
+static BDTest.Test.ScenarioText.operator !=(BDTest.Test.ScenarioText? left, BDTest.Test.ScenarioText? right) -> bool
+static BDTest.Test.ScenarioText.operator ==(BDTest.Test.ScenarioText? left, BDTest.Test.ScenarioText? right) -> bool
+static BDTest.Test.StatusExtensions.GetOrder(this BDTest.Test.Status status) -> int
+static BDTest.Test.StepTable.From(string?[]! headers, params object?[]![]! rows) -> BDTest.Test.StepTable!
+static BDTest.Test.StepTable.From<T>(System.Collections.Generic.IEnumerable<T>! rows) -> BDTest.Test.StepTable!
+static BDTest.Test.Steps.StepTypeExtensions.GetValue(this BDTest.Test.Steps.StepType stepType) -> string!
+static BDTest.Test.StoryText.operator !=(BDTest.Test.StoryText? left, BDTest.Test.StoryText? right) -> bool
+static BDTest.Test.StoryText.operator ==(BDTest.Test.StoryText? left, BDTest.Test.StoryText? right) -> bool
+static BDTest.Test.StructuredStepArgumentExtensions.WithDocString<T>(this T! builder, BDTest.Test.StepDocString! docString) -> T!
+static BDTest.Test.StructuredStepArgumentExtensions.WithDocString<T>(this T! builder, System.Func<BDTest.Test.StepDocString!>! docString) -> T!
+static BDTest.Test.StructuredStepArgumentExtensions.WithTable<T>(this T! builder, BDTest.Test.StepTable! table) -> T!
+static BDTest.Test.StructuredStepArgumentExtensions.WithTable<T>(this T! builder, System.Func<BDTest.Test.StepTable!>! table) -> T!
+static BDTest.Test.TimeoutExtensions.WithScenarioTimeout<T>(this T! builder, System.TimeSpan timeout) -> T!
+static BDTest.Test.TimeoutExtensions.WithStepTimeout<T>(this T! builder, System.TimeSpan timeout) -> T!
+virtual BDTest.Test.AbstractContextBDTestBase<TContext>.ConfigureContext(BDTest.Test.BDTestContext<TContext!>! context) -> void
+virtual BDTest.Test.AbstractContextBDTestBase<TContext>.CreateContextAsync(BDTest.Test.ContextCreation! creation) -> System.Threading.Tasks.ValueTask<TContext!>
+virtual BDTest.Test.AbstractContextBDTestBase<TContext>.OnAfterScenario(BDTest.Test.ScenarioHookContext<TContext!>! scenario) -> System.Threading.Tasks.Task!
+virtual BDTest.Test.AbstractContextBDTestBase<TContext>.OnBeforeScenario(BDTest.Test.ScenarioHookContext<TContext!>! scenario) -> System.Threading.Tasks.Task!
+virtual BDTest.Test.BDTestBase.BDTestExecutionId.get -> string!
+virtual BDTest.Test.BDTestBase.ExecuteScenarioStepsAsync(System.Func<System.Threading.Tasks.Task!>! executeSteps, System.Action<System.Action!>! registerTerminalFailure) -> System.Threading.Tasks.Task!
+virtual BDTest.Test.BDTestBase.MarkTestAsComplete() -> void
+virtual BDTest.Test.BDTestBase.OnAfterScenario(BDTest.Test.ScenarioHookContext! scenario) -> System.Threading.Tasks.Task!
+virtual BDTest.Test.BDTestBase.OnAfterStep(BDTest.Test.Step! step) -> System.Threading.Tasks.Task!
+virtual BDTest.Test.BDTestBase.OnBeforeRetry() -> System.Threading.Tasks.Task!
+virtual BDTest.Test.BDTestBase.OnBeforeScenario(BDTest.Test.ScenarioHookContext! scenario) -> System.Threading.Tasks.Task!
+virtual BDTest.Test.BDTestBase.OnBeforeStep(BDTest.Test.Step! step) -> System.Threading.Tasks.Task!
+virtual BDTest.Test.BDTestBase.OnScenarioSkipped(string! reason) -> void
+virtual BDTest.Test.ScenarioText.<Clone>$() -> BDTest.Test.ScenarioText!
+virtual BDTest.Test.ScenarioText.EqualityContract.get -> System.Type!
+virtual BDTest.Test.ScenarioText.Equals(BDTest.Test.ScenarioText? other) -> bool
+virtual BDTest.Test.ScenarioText.PrintMembers(System.Text.StringBuilder! builder) -> bool
+virtual BDTest.Test.StoryText.<Clone>$() -> BDTest.Test.StoryText!
+virtual BDTest.Test.StoryText.EqualityContract.get -> System.Type!
+virtual BDTest.Test.StoryText.Equals(BDTest.Test.StoryText? other) -> bool
+virtual BDTest.Test.StoryText.PrintMembers(System.Text.StringBuilder! builder) -> bool
+~BDTest.Helpers.BDTestJsonContext.Attachment.get -> System.Text.Json.Serialization.Metadata.JsonTypeInfo<BDTest.Test.Attachment>
+~BDTest.Helpers.BDTestJsonContext.BDTestOutputModel.get -> System.Text.Json.Serialization.Metadata.JsonTypeInfo<BDTest.Maps.BDTestOutputModel>
+~BDTest.Helpers.BDTestJsonContext.Boolean.get -> System.Text.Json.Serialization.Metadata.JsonTypeInfo<bool>
+~BDTest.Helpers.BDTestJsonContext.DateTime.get -> System.Text.Json.Serialization.Metadata.JsonTypeInfo<System.DateTime>
+~BDTest.Helpers.BDTestJsonContext.DictionaryStringString.get -> System.Text.Json.Serialization.Metadata.JsonTypeInfo<System.Collections.Generic.Dictionary<string, string>>
+~BDTest.Helpers.BDTestJsonContext.ExceptionWrapper.get -> System.Text.Json.Serialization.Metadata.JsonTypeInfo<BDTest.Test.ExceptionWrapper>
+~BDTest.Helpers.BDTestJsonContext.IEnumerableString.get -> System.Text.Json.Serialization.Metadata.JsonTypeInfo<System.Collections.Generic.IEnumerable<string>>
+~BDTest.Helpers.BDTestJsonContext.IReadOnlyDictionaryStringString.get -> System.Text.Json.Serialization.Metadata.JsonTypeInfo<System.Collections.Generic.IReadOnlyDictionary<string, string>>
+~BDTest.Helpers.BDTestJsonContext.IReadOnlyListExceptionWrapper.get -> System.Text.Json.Serialization.Metadata.JsonTypeInfo<System.Collections.Generic.IReadOnlyList<BDTest.Test.ExceptionWrapper>>
+~BDTest.Helpers.BDTestJsonContext.IReadOnlyListIReadOnlyListString.get -> System.Text.Json.Serialization.Metadata.JsonTypeInfo<System.Collections.Generic.IReadOnlyList<System.Collections.Generic.IReadOnlyList<string>>>
+~BDTest.Helpers.BDTestJsonContext.IReadOnlyListStepArgument.get -> System.Text.Json.Serialization.Metadata.JsonTypeInfo<System.Collections.Generic.IReadOnlyList<BDTest.Test.StepArgument>>
+~BDTest.Helpers.BDTestJsonContext.IReadOnlyListStepDefinitionSummary.get -> System.Text.Json.Serialization.Metadata.JsonTypeInfo<System.Collections.Generic.IReadOnlyList<BDTest.Test.StepDefinitionSummary>>
+~BDTest.Helpers.BDTestJsonContext.IReadOnlyListString.get -> System.Text.Json.Serialization.Metadata.JsonTypeInfo<System.Collections.Generic.IReadOnlyList<string>>
+~BDTest.Helpers.BDTestJsonContext.Int32.get -> System.Text.Json.Serialization.Metadata.JsonTypeInfo<int>
+~BDTest.Helpers.BDTestJsonContext.Int64.get -> System.Text.Json.Serialization.Metadata.JsonTypeInfo<long>
+~BDTest.Helpers.BDTestJsonContext.ListAttachment.get -> System.Text.Json.Serialization.Metadata.JsonTypeInfo<System.Collections.Generic.List<BDTest.Test.Attachment>>
+~BDTest.Helpers.BDTestJsonContext.ListScenario.get -> System.Text.Json.Serialization.Metadata.JsonTypeInfo<System.Collections.Generic.List<BDTest.Test.Scenario>>
+~BDTest.Helpers.BDTestJsonContext.ListScenarioAttempt.get -> System.Text.Json.Serialization.Metadata.JsonTypeInfo<System.Collections.Generic.List<BDTest.Test.ScenarioAttempt>>
+~BDTest.Helpers.BDTestJsonContext.ListScenarioDefinitionSummary.get -> System.Text.Json.Serialization.Metadata.JsonTypeInfo<System.Collections.Generic.List<BDTest.Test.ScenarioDefinitionSummary>>
+~BDTest.Helpers.BDTestJsonContext.ListStep.get -> System.Text.Json.Serialization.Metadata.JsonTypeInfo<System.Collections.Generic.List<BDTest.Test.Step>>
+~BDTest.Helpers.BDTestJsonContext.ListString.get -> System.Text.Json.Serialization.Metadata.JsonTypeInfo<System.Collections.Generic.List<string>>
+~BDTest.Helpers.BDTestJsonContext.NullableInt32.get -> System.Text.Json.Serialization.Metadata.JsonTypeInfo<int?>
+~BDTest.Helpers.BDTestJsonContext.NullableTimeSpan.get -> System.Text.Json.Serialization.Metadata.JsonTypeInfo<System.TimeSpan?>
+~BDTest.Helpers.BDTestJsonContext.Scenario.get -> System.Text.Json.Serialization.Metadata.JsonTypeInfo<BDTest.Test.Scenario>
+~BDTest.Helpers.BDTestJsonContext.ScenarioAttempt.get -> System.Text.Json.Serialization.Metadata.JsonTypeInfo<BDTest.Test.ScenarioAttempt>
+~BDTest.Helpers.BDTestJsonContext.ScenarioDefinitionSummary.get -> System.Text.Json.Serialization.Metadata.JsonTypeInfo<BDTest.Test.ScenarioDefinitionSummary>
+~BDTest.Helpers.BDTestJsonContext.ScenarioText.get -> System.Text.Json.Serialization.Metadata.JsonTypeInfo<BDTest.Test.ScenarioText>
+~BDTest.Helpers.BDTestJsonContext.Status.get -> System.Text.Json.Serialization.Metadata.JsonTypeInfo<BDTest.Test.Status>
+~BDTest.Helpers.BDTestJsonContext.Step.get -> System.Text.Json.Serialization.Metadata.JsonTypeInfo<BDTest.Test.Step>
+~BDTest.Helpers.BDTestJsonContext.StepArgument.get -> System.Text.Json.Serialization.Metadata.JsonTypeInfo<BDTest.Test.StepArgument>
+~BDTest.Helpers.BDTestJsonContext.StepDefinitionSummary.get -> System.Text.Json.Serialization.Metadata.JsonTypeInfo<BDTest.Test.StepDefinitionSummary>
+~BDTest.Helpers.BDTestJsonContext.StepDocString.get -> System.Text.Json.Serialization.Metadata.JsonTypeInfo<BDTest.Test.StepDocString>
+~BDTest.Helpers.BDTestJsonContext.StepSkipReason.get -> System.Text.Json.Serialization.Metadata.JsonTypeInfo<BDTest.Test.StepSkipReason>
+~BDTest.Helpers.BDTestJsonContext.StepTable.get -> System.Text.Json.Serialization.Metadata.JsonTypeInfo<BDTest.Test.StepTable>
+~BDTest.Helpers.BDTestJsonContext.StepType.get -> System.Text.Json.Serialization.Metadata.JsonTypeInfo<BDTest.Test.Steps.StepType>
+~BDTest.Helpers.BDTestJsonContext.StoryText.get -> System.Text.Json.Serialization.Metadata.JsonTypeInfo<BDTest.Test.StoryText>
+~BDTest.Helpers.BDTestJsonContext.String.get -> System.Text.Json.Serialization.Metadata.JsonTypeInfo<string>
+~BDTest.Helpers.BDTestJsonContext.StringArray.get -> System.Text.Json.Serialization.Metadata.JsonTypeInfo<string[]>
+~BDTest.Helpers.BDTestJsonContext.TestInformationAttribute.get -> System.Text.Json.Serialization.Metadata.JsonTypeInfo<BDTest.Attributes.TestInformationAttribute>
+~BDTest.Helpers.BDTestJsonContext.TestInformationAttributeArray.get -> System.Text.Json.Serialization.Metadata.JsonTypeInfo<BDTest.Attributes.TestInformationAttribute[]>
+~BDTest.Helpers.BDTestJsonContext.TestTimer.get -> System.Text.Json.Serialization.Metadata.JsonTypeInfo<BDTest.Output.TestTimer>
+~BDTest.Helpers.BDTestJsonContext.TimeSpan.get -> System.Text.Json.Serialization.Metadata.JsonTypeInfo<System.TimeSpan>

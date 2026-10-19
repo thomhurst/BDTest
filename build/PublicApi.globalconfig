@@ -1,0 +1,9 @@
+is_global = true
+
+# Keep additions and removals build-breaking even if warnings-as-errors changes.
+dotnet_diagnostic.RS0016.severity = error
+dotnet_diagnostic.RS0017.severity = error
+
+# Compiled Razor view classes are generator implementation details. Keep public
+# JSON metadata contexts in the baseline: consumers use those APIs directly.
+dotnet_public_api_analyzer.skip_namespaces = AspNetCoreGeneratedDocument

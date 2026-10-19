@@ -24,4 +24,5 @@
  <ItemGroup Condition="'$(IsPackable)' == 'true'">
   <None Include="$(MSBuildThisFileDirectory)../nuget_icon.png" Pack="true" PackagePath="" />
  </ItemGroup>
+ <Import Project="PublicApi.targets" />
 </Project>

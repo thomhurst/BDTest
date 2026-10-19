@@ -1,0 +1,188 @@
+#nullable enable
+BDTest.Contracts.AttachmentInfo
+BDTest.Contracts.AttachmentInfo.AttachmentInfo(string! id, string! name, string! mimeType, long length, int attemptNumber, string? uri = null) -> void
+BDTest.Contracts.AttachmentInfo.AttemptNumber.get -> int
+BDTest.Contracts.AttachmentInfo.Id.get -> string!
+BDTest.Contracts.AttachmentInfo.Length.get -> long
+BDTest.Contracts.AttachmentInfo.MimeType.get -> string!
+BDTest.Contracts.AttachmentInfo.Name.get -> string!
+BDTest.Contracts.AttachmentInfo.Uri.get -> string?
+BDTest.Contracts.BDTestReport
+BDTest.Contracts.BDTestReport.AttachmentUploadTokenHash.get -> string?
+BDTest.Contracts.BDTestReport.BDTestReport(int schemaVersion, string! id, string! producerVersion, System.Collections.Generic.IReadOnlyList<BDTest.Contracts.ScenarioResult!>? scenarios = null, System.Collections.Generic.IReadOnlyList<BDTest.Contracts.ScenarioDefinitionSummary!>? notRun = null, string? environment = null, string? tag = null, string? branchName = null, string? machineName = null, BDTest.Contracts.ReportTimer? testTimer = null, System.Collections.Generic.IReadOnlyDictionary<string!, string!>? customProperties = null, string? attachmentUploadTokenHash = null) -> void
+BDTest.Contracts.BDTestReport.BranchName.get -> string?
+BDTest.Contracts.BDTestReport.CustomProperties.get -> System.Collections.Generic.IReadOnlyDictionary<string!, string!>!
+BDTest.Contracts.BDTestReport.Environment.get -> string?
+BDTest.Contracts.BDTestReport.Id.get -> string!
+BDTest.Contracts.BDTestReport.MachineName.get -> string?
+BDTest.Contracts.BDTestReport.NotRun.get -> System.Collections.Generic.IReadOnlyList<BDTest.Contracts.ScenarioDefinitionSummary!>!
+BDTest.Contracts.BDTestReport.ProducerVersion.get -> string!
+BDTest.Contracts.BDTestReport.Scenarios.get -> System.Collections.Generic.IReadOnlyList<BDTest.Contracts.ScenarioResult!>!
+BDTest.Contracts.BDTestReport.SchemaVersion.get -> int
+BDTest.Contracts.BDTestReport.Tag.get -> string?
+BDTest.Contracts.BDTestReport.TestTimer.get -> BDTest.Contracts.ReportTimer?
+BDTest.Contracts.BDTestReportJson
+BDTest.Contracts.BDTestReportJsonContext
+BDTest.Contracts.BDTestReportJsonContext.BDTestReportJsonContext() -> void
+BDTest.Contracts.BDTestReportJsonContext.BDTestReportJsonContext(System.Text.Json.JsonSerializerOptions! options) -> void
+BDTest.Contracts.ExceptionInfo
+BDTest.Contracts.ExceptionInfo.AsString.get -> string?
+BDTest.Contracts.ExceptionInfo.Data.get -> System.Collections.Generic.IReadOnlyDictionary<string!, string!>!
+BDTest.Contracts.ExceptionInfo.ExceptionInfo(string! typeName, string! message, string? stackTrace = null, string? asString = null, string? shortTypeName = null, System.Collections.Generic.IReadOnlyDictionary<string!, string!>? data = null, int? hResult = null, string? source = null, System.Collections.Generic.IReadOnlyList<BDTest.Contracts.ExceptionInfo!>? innerExceptions = null, bool isWrapper = false, string? truncationReason = null) -> void
+BDTest.Contracts.ExceptionInfo.HResult.get -> int?
+BDTest.Contracts.ExceptionInfo.InnerExceptions.get -> System.Collections.Generic.IReadOnlyList<BDTest.Contracts.ExceptionInfo!>!
+BDTest.Contracts.ExceptionInfo.IsWrapper.get -> bool
+BDTest.Contracts.ExceptionInfo.Message.get -> string!
+BDTest.Contracts.ExceptionInfo.ShortTypeName.get -> string!
+BDTest.Contracts.ExceptionInfo.Source.get -> string?
+BDTest.Contracts.ExceptionInfo.StackTrace.get -> string?
+BDTest.Contracts.ExceptionInfo.TruncationReason.get -> string?
+BDTest.Contracts.ExceptionInfo.TypeName.get -> string!
+BDTest.Contracts.ReportTimer
+BDTest.Contracts.ReportTimer.ElapsedTime.get -> System.TimeSpan
+BDTest.Contracts.ReportTimer.ReportTimer(System.DateTimeOffset testsStartedAt, System.DateTimeOffset testsFinishedAt) -> void
+BDTest.Contracts.ReportTimer.TestsFinishedAt.get -> System.DateTimeOffset
+BDTest.Contracts.ReportTimer.TestsStartedAt.get -> System.DateTimeOffset
+BDTest.Contracts.ScenarioAttemptResult
+BDTest.Contracts.ScenarioAttemptResult.EndTime.get -> System.DateTimeOffset
+BDTest.Contracts.ScenarioAttemptResult.Exception.get -> BDTest.Contracts.ExceptionInfo?
+BDTest.Contracts.ScenarioAttemptResult.Number.get -> int
+BDTest.Contracts.ScenarioAttemptResult.ScenarioAttemptResult(int number, BDTest.Contracts.Status status, BDTest.Contracts.ExceptionInfo? exception = null, System.DateTimeOffset startTime = default(System.DateTimeOffset), System.DateTimeOffset endTime = default(System.DateTimeOffset), System.TimeSpan timeTaken = default(System.TimeSpan), System.Collections.Generic.IReadOnlyList<BDTest.Contracts.StepResult!>? steps = null) -> void
+BDTest.Contracts.ScenarioAttemptResult.StartTime.get -> System.DateTimeOffset
+BDTest.Contracts.ScenarioAttemptResult.Status.get -> BDTest.Contracts.Status
+BDTest.Contracts.ScenarioAttemptResult.Steps.get -> System.Collections.Generic.IReadOnlyList<BDTest.Contracts.StepResult!>!
+BDTest.Contracts.ScenarioAttemptResult.TimeTaken.get -> System.TimeSpan
+BDTest.Contracts.ScenarioDefinitionSummary
+BDTest.Contracts.ScenarioDefinitionSummary.CallerFile.get -> string?
+BDTest.Contracts.ScenarioDefinitionSummary.CallerMember.get -> string?
+BDTest.Contracts.ScenarioDefinitionSummary.CustomTestInformation.get -> System.Collections.Generic.IReadOnlyList<string!>!
+BDTest.Contracts.ScenarioDefinitionSummary.Parameters.get -> System.Collections.Generic.IReadOnlyList<string!>!
+BDTest.Contracts.ScenarioDefinitionSummary.ReportId.get -> string!
+BDTest.Contracts.ScenarioDefinitionSummary.ScenarioDefinitionSummary(string! scenarioId, string! reportId, string! storyText, string! scenarioText, string? testId = null, string? callerMember = null, string? callerFile = null, System.Collections.Generic.IReadOnlyList<string!>? parameters = null, System.Collections.Generic.IReadOnlyList<string!>? tags = null, System.Collections.Generic.IReadOnlyList<string!>? customTestInformation = null, System.TimeSpan? timeout = null) -> void
+BDTest.Contracts.ScenarioDefinitionSummary.ScenarioId.get -> string!
+BDTest.Contracts.ScenarioDefinitionSummary.ScenarioText.get -> string!
+BDTest.Contracts.ScenarioDefinitionSummary.StoryText.get -> string!
+BDTest.Contracts.ScenarioDefinitionSummary.Tags.get -> System.Collections.Generic.IReadOnlyList<string!>!
+BDTest.Contracts.ScenarioDefinitionSummary.TestId.get -> string?
+BDTest.Contracts.ScenarioDefinitionSummary.Timeout.get -> System.TimeSpan?
+BDTest.Contracts.ScenarioResult
+BDTest.Contracts.ScenarioResult.Attachments.get -> System.Collections.Generic.IReadOnlyList<BDTest.Contracts.AttachmentInfo!>!
+BDTest.Contracts.ScenarioResult.Attempts.get -> System.Collections.Generic.IReadOnlyList<BDTest.Contracts.ScenarioAttemptResult!>!
+BDTest.Contracts.ScenarioResult.CustomHtmlOutputForReport.get -> string?
+BDTest.Contracts.ScenarioResult.CustomTestInformation.get -> System.Collections.Generic.IReadOnlyList<string!>!
+BDTest.Contracts.ScenarioResult.EndTime.get -> System.DateTimeOffset
+BDTest.Contracts.ScenarioResult.ExampleValues.get -> System.Collections.Generic.IReadOnlyDictionary<string!, string!>!
+BDTest.Contracts.ScenarioResult.Examples.get -> System.Collections.Generic.IReadOnlyList<BDTest.Contracts.ScenarioResult!>!
+BDTest.Contracts.ScenarioResult.Exception.get -> BDTest.Contracts.ExceptionInfo?
+BDTest.Contracts.ScenarioResult.FileName.get -> string?
+BDTest.Contracts.ScenarioResult.FrameworkTestId.get -> string?
+BDTest.Contracts.ScenarioResult.Guid.get -> string!
+BDTest.Contracts.ScenarioResult.IsOutline.get -> bool
+BDTest.Contracts.ScenarioResult.OutlineId.get -> string?
+BDTest.Contracts.ScenarioResult.Output.get -> string?
+BDTest.Contracts.ScenarioResult.ReportId.get -> string!
+BDTest.Contracts.ScenarioResult.RetryCount.get -> int
+BDTest.Contracts.ScenarioResult.ScenarioResult(string! guid, string! reportId, string! storyText, string! scenarioText, BDTest.Contracts.Status status, System.Collections.Generic.IReadOnlyList<BDTest.Contracts.StepResult!>? steps = null, System.Collections.Generic.IReadOnlyList<BDTest.Contracts.ScenarioAttemptResult!>? attempts = null, System.Collections.Generic.IReadOnlyDictionary<string!, string!>? exampleValues = null, System.Collections.Generic.IReadOnlyList<BDTest.Contracts.ScenarioResult!>? examples = null, System.Collections.Generic.IReadOnlyList<string!>? tags = null, BDTest.Contracts.ExceptionInfo? exception = null, string? frameworkTestId = null, string? fileName = null, string? testStartupInformation = null, string? tearDownOutput = null, string? customHtmlOutputForReport = null, string? output = null, System.DateTimeOffset startTime = default(System.DateTimeOffset), System.DateTimeOffset endTime = default(System.DateTimeOffset), System.TimeSpan timeTaken = default(System.TimeSpan), System.TimeSpan? timeout = null, int retryCount = 0, bool isOutline = false, string? outlineId = null, System.Collections.Generic.IReadOnlyList<BDTest.Contracts.AttachmentInfo!>? attachments = null, System.Collections.Generic.IReadOnlyList<string!>? customTestInformation = null) -> void
+BDTest.Contracts.ScenarioResult.ScenarioText.get -> string!
+BDTest.Contracts.ScenarioResult.StartTime.get -> System.DateTimeOffset
+BDTest.Contracts.ScenarioResult.Status.get -> BDTest.Contracts.Status
+BDTest.Contracts.ScenarioResult.Steps.get -> System.Collections.Generic.IReadOnlyList<BDTest.Contracts.StepResult!>!
+BDTest.Contracts.ScenarioResult.StoryText.get -> string!
+BDTest.Contracts.ScenarioResult.Tags.get -> System.Collections.Generic.IReadOnlyList<string!>!
+BDTest.Contracts.ScenarioResult.TearDownOutput.get -> string?
+BDTest.Contracts.ScenarioResult.TestStartupInformation.get -> string?
+BDTest.Contracts.ScenarioResult.TimeTaken.get -> System.TimeSpan
+BDTest.Contracts.ScenarioResult.TimedOut.get -> bool
+BDTest.Contracts.ScenarioResult.Timeout.get -> System.TimeSpan?
+BDTest.Contracts.Status
+BDTest.Contracts.Status.Failed = 3 -> BDTest.Contracts.Status
+BDTest.Contracts.Status.Inconclusive = 4 -> BDTest.Contracts.Status
+BDTest.Contracts.Status.NotImplemented = 5 -> BDTest.Contracts.Status
+BDTest.Contracts.Status.NotRun = 0 -> BDTest.Contracts.Status
+BDTest.Contracts.Status.Passed = 2 -> BDTest.Contracts.Status
+BDTest.Contracts.Status.Pending = 1 -> BDTest.Contracts.Status
+BDTest.Contracts.Status.Skipped = 6 -> BDTest.Contracts.Status
+BDTest.Contracts.StepArgument
+BDTest.Contracts.StepDocString
+BDTest.Contracts.StepDocString.Content.get -> string!
+BDTest.Contracts.StepDocString.ContentType.get -> string?
+BDTest.Contracts.StepDocString.StepDocString(string! content, string? contentType = null) -> void
+BDTest.Contracts.StepResult
+BDTest.Contracts.StepResult.Arguments.get -> System.Collections.Generic.IReadOnlyList<BDTest.Contracts.StepArgument!>!
+BDTest.Contracts.StepResult.Attachments.get -> System.Collections.Generic.IReadOnlyList<BDTest.Contracts.AttachmentInfo!>!
+BDTest.Contracts.StepResult.Diagnostics.get -> System.Collections.Generic.IReadOnlyList<string!>!
+BDTest.Contracts.StepResult.EndTime.get -> System.DateTimeOffset
+BDTest.Contracts.StepResult.Exception.get -> BDTest.Contracts.ExceptionInfo?
+BDTest.Contracts.StepResult.Guid.get -> string?
+BDTest.Contracts.StepResult.IsRetry.get -> bool
+BDTest.Contracts.StepResult.Output.get -> string?
+BDTest.Contracts.StepResult.ReportId.get -> string?
+BDTest.Contracts.StepResult.ScenarioId.get -> string?
+BDTest.Contracts.StepResult.SkipReason.get -> BDTest.Contracts.StepSkipReason?
+BDTest.Contracts.StepResult.StartTime.get -> System.DateTimeOffset
+BDTest.Contracts.StepResult.Status.get -> BDTest.Contracts.Status
+BDTest.Contracts.StepResult.StepResult(BDTest.Contracts.StepType stepType, string! stepText, BDTest.Contracts.Status status, string? guid = null, string? reportId = null, string? scenarioId = null, bool isRetry = false, BDTest.Contracts.ExceptionInfo? exception = null, string? output = null, System.DateTimeOffset startTime = default(System.DateTimeOffset), System.DateTimeOffset endTime = default(System.DateTimeOffset), System.TimeSpan timeTaken = default(System.TimeSpan), System.TimeSpan? timeout = null, bool timedOut = false, System.Collections.Generic.IReadOnlyList<string!>? diagnostics = null, System.Collections.Generic.IReadOnlyList<BDTest.Contracts.StepArgument!>? arguments = null, System.Collections.Generic.IReadOnlyList<BDTest.Contracts.AttachmentInfo!>? attachments = null, BDTest.Contracts.StepSkipReason? skipReason = null) -> void
+BDTest.Contracts.StepResult.StepText.get -> string!
+BDTest.Contracts.StepResult.StepType.get -> BDTest.Contracts.StepType
+BDTest.Contracts.StepResult.TimeTaken.get -> System.TimeSpan
+BDTest.Contracts.StepResult.TimedOut.get -> bool
+BDTest.Contracts.StepResult.Timeout.get -> System.TimeSpan?
+BDTest.Contracts.StepSkipReason
+BDTest.Contracts.StepSkipReason.AttributeType.get -> string?
+BDTest.Contracts.StepSkipReason.RuleIndex.get -> int?
+BDTest.Contracts.StepSkipReason.Setting.get -> string?
+BDTest.Contracts.StepSkipReason.Source.get -> string!
+BDTest.Contracts.StepSkipReason.StepSkipReason(string! source, string? attributeType = null, int? ruleIndex = null, string? setting = null) -> void
+BDTest.Contracts.StepTable
+BDTest.Contracts.StepTable.Headers.get -> System.Collections.Generic.IReadOnlyList<string!>!
+BDTest.Contracts.StepTable.Rows.get -> System.Collections.Generic.IReadOnlyList<System.Collections.Generic.IReadOnlyList<string!>!>!
+BDTest.Contracts.StepTable.StepTable(System.Collections.Generic.IReadOnlyList<string!>! headers, System.Collections.Generic.IReadOnlyList<System.Collections.Generic.IReadOnlyList<string!>!>! rows) -> void
+BDTest.Contracts.StepType
+BDTest.Contracts.StepType.AndGiven = 1 -> BDTest.Contracts.StepType
+BDTest.Contracts.StepType.AndThen = 4 -> BDTest.Contracts.StepType
+BDTest.Contracts.StepType.AndWhen = 8 -> BDTest.Contracts.StepType
+BDTest.Contracts.StepType.ButGiven = 5 -> BDTest.Contracts.StepType
+BDTest.Contracts.StepType.ButThen = 7 -> BDTest.Contracts.StepType
+BDTest.Contracts.StepType.ButWhen = 6 -> BDTest.Contracts.StepType
+BDTest.Contracts.StepType.Given = 0 -> BDTest.Contracts.StepType
+BDTest.Contracts.StepType.Then = 3 -> BDTest.Contracts.StepType
+BDTest.Contracts.StepType.When = 2 -> BDTest.Contracts.StepType
+const BDTest.Contracts.BDTestReport.CurrentSchemaVersion = 1 -> int
+override BDTest.Contracts.BDTestReportJsonContext.GeneratedSerializerOptions.get -> System.Text.Json.JsonSerializerOptions?
+override BDTest.Contracts.BDTestReportJsonContext.GetTypeInfo(System.Type! type) -> System.Text.Json.Serialization.Metadata.JsonTypeInfo?
+override BDTest.Contracts.StepSkipReason.ToString() -> string!
+static BDTest.Contracts.BDTestReportJson.Deserialize(string! json) -> BDTest.Contracts.BDTestReport!
+static BDTest.Contracts.BDTestReportJson.Serialize(BDTest.Contracts.BDTestReport! report) -> string!
+static BDTest.Contracts.BDTestReportJsonContext.Default.get -> BDTest.Contracts.BDTestReportJsonContext!
+~BDTest.Contracts.BDTestReportJsonContext.AttachmentInfo.get -> System.Text.Json.Serialization.Metadata.JsonTypeInfo<BDTest.Contracts.AttachmentInfo>
+~BDTest.Contracts.BDTestReportJsonContext.BDTestReport.get -> System.Text.Json.Serialization.Metadata.JsonTypeInfo<BDTest.Contracts.BDTestReport>
+~BDTest.Contracts.BDTestReportJsonContext.Boolean.get -> System.Text.Json.Serialization.Metadata.JsonTypeInfo<bool>
+~BDTest.Contracts.BDTestReportJsonContext.DateTimeOffset.get -> System.Text.Json.Serialization.Metadata.JsonTypeInfo<System.DateTimeOffset>
+~BDTest.Contracts.BDTestReportJsonContext.ExceptionInfo.get -> System.Text.Json.Serialization.Metadata.JsonTypeInfo<BDTest.Contracts.ExceptionInfo>
+~BDTest.Contracts.BDTestReportJsonContext.IReadOnlyDictionaryStringString.get -> System.Text.Json.Serialization.Metadata.JsonTypeInfo<System.Collections.Generic.IReadOnlyDictionary<string, string>>
+~BDTest.Contracts.BDTestReportJsonContext.IReadOnlyListAttachmentInfo.get -> System.Text.Json.Serialization.Metadata.JsonTypeInfo<System.Collections.Generic.IReadOnlyList<BDTest.Contracts.AttachmentInfo>>
+~BDTest.Contracts.BDTestReportJsonContext.IReadOnlyListExceptionInfo.get -> System.Text.Json.Serialization.Metadata.JsonTypeInfo<System.Collections.Generic.IReadOnlyList<BDTest.Contracts.ExceptionInfo>>
+~BDTest.Contracts.BDTestReportJsonContext.IReadOnlyListIReadOnlyListString.get -> System.Text.Json.Serialization.Metadata.JsonTypeInfo<System.Collections.Generic.IReadOnlyList<System.Collections.Generic.IReadOnlyList<string>>>
+~BDTest.Contracts.BDTestReportJsonContext.IReadOnlyListScenarioAttemptResult.get -> System.Text.Json.Serialization.Metadata.JsonTypeInfo<System.Collections.Generic.IReadOnlyList<BDTest.Contracts.ScenarioAttemptResult>>
+~BDTest.Contracts.BDTestReportJsonContext.IReadOnlyListScenarioDefinitionSummary.get -> System.Text.Json.Serialization.Metadata.JsonTypeInfo<System.Collections.Generic.IReadOnlyList<BDTest.Contracts.ScenarioDefinitionSummary>>
+~BDTest.Contracts.BDTestReportJsonContext.IReadOnlyListScenarioResult.get -> System.Text.Json.Serialization.Metadata.JsonTypeInfo<System.Collections.Generic.IReadOnlyList<BDTest.Contracts.ScenarioResult>>
+~BDTest.Contracts.BDTestReportJsonContext.IReadOnlyListStepArgument.get -> System.Text.Json.Serialization.Metadata.JsonTypeInfo<System.Collections.Generic.IReadOnlyList<BDTest.Contracts.StepArgument>>
+~BDTest.Contracts.BDTestReportJsonContext.IReadOnlyListStepResult.get -> System.Text.Json.Serialization.Metadata.JsonTypeInfo<System.Collections.Generic.IReadOnlyList<BDTest.Contracts.StepResult>>
+~BDTest.Contracts.BDTestReportJsonContext.IReadOnlyListString.get -> System.Text.Json.Serialization.Metadata.JsonTypeInfo<System.Collections.Generic.IReadOnlyList<string>>
+~BDTest.Contracts.BDTestReportJsonContext.Int32.get -> System.Text.Json.Serialization.Metadata.JsonTypeInfo<int>
+~BDTest.Contracts.BDTestReportJsonContext.Int64.get -> System.Text.Json.Serialization.Metadata.JsonTypeInfo<long>
+~BDTest.Contracts.BDTestReportJsonContext.NullableInt32.get -> System.Text.Json.Serialization.Metadata.JsonTypeInfo<int?>
+~BDTest.Contracts.BDTestReportJsonContext.NullableTimeSpan.get -> System.Text.Json.Serialization.Metadata.JsonTypeInfo<System.TimeSpan?>
+~BDTest.Contracts.BDTestReportJsonContext.ReportTimer.get -> System.Text.Json.Serialization.Metadata.JsonTypeInfo<BDTest.Contracts.ReportTimer>
+~BDTest.Contracts.BDTestReportJsonContext.ScenarioAttemptResult.get -> System.Text.Json.Serialization.Metadata.JsonTypeInfo<BDTest.Contracts.ScenarioAttemptResult>
+~BDTest.Contracts.BDTestReportJsonContext.ScenarioDefinitionSummary.get -> System.Text.Json.Serialization.Metadata.JsonTypeInfo<BDTest.Contracts.ScenarioDefinitionSummary>
+~BDTest.Contracts.BDTestReportJsonContext.ScenarioResult.get -> System.Text.Json.Serialization.Metadata.JsonTypeInfo<BDTest.Contracts.ScenarioResult>
+~BDTest.Contracts.BDTestReportJsonContext.Status.get -> System.Text.Json.Serialization.Metadata.JsonTypeInfo<BDTest.Contracts.Status>
+~BDTest.Contracts.BDTestReportJsonContext.StepArgument.get -> System.Text.Json.Serialization.Metadata.JsonTypeInfo<BDTest.Contracts.StepArgument>
+~BDTest.Contracts.BDTestReportJsonContext.StepDocString.get -> System.Text.Json.Serialization.Metadata.JsonTypeInfo<BDTest.Contracts.StepDocString>
+~BDTest.Contracts.BDTestReportJsonContext.StepResult.get -> System.Text.Json.Serialization.Metadata.JsonTypeInfo<BDTest.Contracts.StepResult>
+~BDTest.Contracts.BDTestReportJsonContext.StepSkipReason.get -> System.Text.Json.Serialization.Metadata.JsonTypeInfo<BDTest.Contracts.StepSkipReason>
+~BDTest.Contracts.BDTestReportJsonContext.StepTable.get -> System.Text.Json.Serialization.Metadata.JsonTypeInfo<BDTest.Contracts.StepTable>
+~BDTest.Contracts.BDTestReportJsonContext.StepType.get -> System.Text.Json.Serialization.Metadata.JsonTypeInfo<BDTest.Contracts.StepType>
+~BDTest.Contracts.BDTestReportJsonContext.String.get -> System.Text.Json.Serialization.Metadata.JsonTypeInfo<string>
+~BDTest.Contracts.BDTestReportJsonContext.TimeSpan.get -> System.Text.Json.Serialization.Metadata.JsonTypeInfo<System.TimeSpan>

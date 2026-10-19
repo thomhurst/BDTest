@@ -1,0 +1,16 @@
+<Project>
+ <!-- Runtime packages only: do not flow repository policy to package consumers. -->
+ <ItemGroup Condition="'$(IsPackable)' == 'true' And '$(IsRoslynComponent)' != 'true'">
+  <PackageReference Include="Microsoft.CodeAnalysis.PublicApiAnalyzers" Version="5.6.0" PrivateAssets="all" />
+  <GlobalAnalyzerConfigFiles Include="$(MSBuildThisFileDirectory)PublicApi.globalconfig" />
+  <AdditionalFiles Include="$(MSBuildProjectDirectory)/PublicAPI/$(TargetFramework)/PublicAPI.Shipped.txt" Condition="'$(TargetFramework)' != ''" />
+  <AdditionalFiles Include="$(MSBuildProjectDirectory)/PublicAPI/$(TargetFramework)/PublicAPI.Unshipped.txt" Condition="'$(TargetFramework)' != ''" />
+ </ItemGroup>
+ <Target Name="ValidatePublicApiFiles" BeforeTargets="CoreCompile"
+         Condition="'$(IsPackable)' == 'true' And '$(IsRoslynComponent)' != 'true' And '$(TargetFramework)' != ''">
+  <Error Condition="!Exists('$(MSBuildProjectDirectory)/PublicAPI/$(TargetFramework)/PublicAPI.Shipped.txt')"
+         Text="Missing PublicAPI/$(TargetFramework)/PublicAPI.Shipped.txt. See BUILDING.md for public API baseline maintenance." />
+  <Error Condition="!Exists('$(MSBuildProjectDirectory)/PublicAPI/$(TargetFramework)/PublicAPI.Unshipped.txt')"
+         Text="Missing PublicAPI/$(TargetFramework)/PublicAPI.Unshipped.txt. See BUILDING.md for public API baseline maintenance." />
+ </Target>
+</Project>
