@@ -1,16 +1,14 @@
 using BDTest.Attributes;
 using BDTest.Exceptions;
 using BDTest.Test;
-using NUnit.Framework;
+using System.Threading.Tasks;
 
 namespace BDTest.Tests.Fixtures;
-
-[FixtureLifeCycle(LifeCycle.InstancePerTestCase)]
 public class RunnableStepBuilderTests : RunTestBase
 {
     protected override bool BindCurrentTestMetadata => true;
 
-    [TearDown]
+    [After(HookType.Test)]
     public void FinishExecution() => EndTest();
 
     private readonly string _executionId = Guid.NewGuid().ToString();
@@ -20,47 +18,50 @@ public class RunnableStepBuilderTests : RunTestBase
     private int _retryHooks;
 
     [Test]
-    public void BuildersExposeOnlyAsyncExecution()
+    public async Task BuildersExposeOnlyAsyncExecution()
     {
-        Assert.That(typeof(RunnableStepBuilder).GetMethod("BDTest"), Is.Null);
-        Assert.That(typeof(ScenarioOutlineBuilder<>).GetMethod("BDTest"), Is.Null);
+        await Assert.That(typeof(RunnableStepBuilder).GetMethod("BDTest")).IsNull();
+        await Assert.That(typeof(ScenarioOutlineBuilder<>).GetMethod("BDTest")).IsNull();
     }
 
     [Test]
+    [MatrixDataSource]
     public async Task RepeatedAndMixedEntryPointsRejectReuse(
-        [Values] EntryPoint first, [Values] EntryPoint second)
+        [Matrix] EntryPoint first, [Matrix] EntryPoint second)
     {
         var builder = Given(() => CountExecution()).When(() => NoOp()).Then(() => NoOp());
         var scenario = await Execute(builder, first);
 
-        var exception = await Assert.ThrowsAsync<AlreadyExecutedException>(async () => await Execute(builder, second));
+        var exception = await Assert.That(async () => await Execute(builder, second)).ThrowsExactly<AlreadyExecutedException>();
 
-        Assert.That(Required(exception).Message, Does.Contain("builder"));
-        Assert.That(_executions, Is.EqualTo(1));
-        AssertReportedOnce(scenario);
+        await Assert.That(Required(exception).Message).Contains("builder");
+        await Assert.That(_executions).IsEqualTo(1);
+        await AssertReportedOnce(scenario);
     }
 
     [Test]
-    public async Task FailedExecutionStillRejectsReuse([Values] EntryPoint first)
+    [MatrixDataSource]
+    public async Task FailedExecutionStillRejectsReuse([Matrix] EntryPoint first)
     {
         var failure = new InvalidOperationException("Original step failure");
         var builder = Given(() => CountAndThrow(failure)).When(() => NoOp()).Then(() => NoOp());
 
-        var exception = await Assert.ThrowsAsync<InvalidOperationException>(async () => await Execute(builder, first));
+        var exception = await Assert.That(async () => await Execute(builder, first)).ThrowsExactly<InvalidOperationException>();
         var scenario = BDTestUtil.GetScenarios(TestRun).Single(x => x.FrameworkTestId == builder.TestId);
         foreach (var entryPoint in Enum.GetValues<EntryPoint>())
         {
-            await Assert.ThrowsAsync<AlreadyExecutedException>(async () => await Execute(builder, entryPoint));
+            await Assert.That(async () => await Execute(builder, entryPoint)).ThrowsExactly<AlreadyExecutedException>();
         }
 
-        Assert.That(exception, Is.SameAs(failure));
-        Assert.That(scenario.Status, Is.EqualTo(Status.Failed));
-        Assert.That(_executions, Is.EqualTo(1));
-        AssertReportedOnce(scenario);
+        await Assert.That(exception).IsSameReferenceAs(failure);
+        await Assert.That(scenario.Status).IsEqualTo(Status.Failed);
+        await Assert.That(_executions).IsEqualTo(1);
+        await AssertReportedOnce(scenario);
     }
 
     [Test]
-    public async Task ConcurrentMixedEntryPointsExecuteOnlyOncePerBuilder([Values] bool useContinuation)
+    [MatrixDataSource]
+    public async Task ConcurrentMixedEntryPointsExecuteOnlyOncePerBuilder([Matrix] bool useContinuation)
     {
         const int callerCount = 12;
         var expectedExecutions = useContinuation ? 2 : 1;
@@ -104,16 +105,19 @@ public class RunnableStepBuilderTests : RunTestBase
 
         var scenarios = await Task.WhenAll(callers);
         var completed = scenarios.OfType<Scenario>().ToArray();
-        Assert.That(rejectionCount, Is.EqualTo(callerCount - expectedExecutions));
-        Assert.That(_executions, Is.EqualTo(expectedExecutions));
-        Assert.That(completed, Has.Length.EqualTo(expectedExecutions));
+        await Assert.That(rejectionCount).IsEqualTo(callerCount - expectedExecutions);
+        await Assert.That(_executions).IsEqualTo(expectedExecutions);
+
+        await Assert.That((completed).Length).IsEqualTo(expectedExecutions);
         var reported = BDTestUtil.GetScenarios(TestRun).Where(x => x.FrameworkTestId == builder.TestId).ToArray();
-        Assert.That(reported, Is.EquivalentTo(completed));
-        Assert.That(completed.Select(x => x.Guid).Distinct().Count(), Is.EqualTo(expectedExecutions));
+
+        await Assert.That(reported).IsEquivalentTo(completed, EqualityComparer<Scenario>.Default, global::TUnit.Assertions.Enums.CollectionOrdering.Any);
+        await Assert.That(completed.Select(x => x.Guid).Distinct().Count()).IsEqualTo(expectedExecutions);
     }
 
     [Test]
-    public async Task ContinuationsExecuteOnceIndependently([Values] bool executeChildFirst)
+    [MatrixDataSource]
+    public async Task ContinuationsExecuteOnceIndependently([Matrix] bool executeChildFirst)
     {
         var parent = Given(() => CountExecution()).When(() => NoOp()).Then(() => NoOp());
         var child = parent.And(() => NoOp());
@@ -122,13 +126,13 @@ public class RunnableStepBuilderTests : RunTestBase
 
         var firstResult = await first;
         var secondResult = await second;
-        await Assert.ThrowsAsync<AlreadyExecutedException>(async () => await first);
-        await Assert.ThrowsAsync<AlreadyExecutedException>(async () => await second);
+        await Assert.That(async () => await first).ThrowsExactly<AlreadyExecutedException>();
+        await Assert.That(async () => await second).ThrowsExactly<AlreadyExecutedException>();
 
-        Assert.That(_executions, Is.EqualTo(2));
-        Assert.That(firstResult.Guid, Is.Not.EqualTo(secondResult.Guid));
-        Assert.That(BDTestUtil.GetScenarios(TestRun).Where(x => x.FrameworkTestId == parent.TestId),
-            Is.EquivalentTo(new[] { firstResult, secondResult }));
+        await Assert.That(_executions).IsEqualTo(2);
+        await Assert.That(firstResult.Guid).IsNotEqualTo(secondResult.Guid);
+
+        await Assert.That(BDTestUtil.GetScenarios(TestRun).Where(x => x.FrameworkTestId == parent.TestId)).IsEquivalentTo(new[] { firstResult, secondResult }, EqualityComparer<Scenario>.Default, global::TUnit.Assertions.Enums.CollectionOrdering.Any);
     }
 
     [Test]
@@ -139,14 +143,14 @@ public class RunnableStepBuilderTests : RunTestBase
         var child = parent.And(() => NoOp());
         var extended = await child;
 
-        await Assert.ThrowsAsync<AlreadyExecutedException>(async () => await parent);
-        await Assert.ThrowsAsync<AlreadyExecutedException>(async () => await child);
-        Assert.That(_executions, Is.EqualTo(2));
-        Assert.That(original.Steps, Has.Count.EqualTo(3));
-        Assert.That(extended.Steps, Has.Count.EqualTo(4));
-        Assert.That(Required(original.Steps).Intersect(Required(extended.Steps)), Is.Empty);
-        Assert.That(BDTestUtil.GetScenarios(TestRun).Where(x => x.FrameworkTestId == parent.TestId),
-            Is.EquivalentTo(new[] { original, extended }));
+        await Assert.That(async () => await parent).ThrowsExactly<AlreadyExecutedException>();
+        await Assert.That(async () => await child).ThrowsExactly<AlreadyExecutedException>();
+        await Assert.That(_executions).IsEqualTo(2);
+        await Assert.That(original.Steps).Count().IsEqualTo(3);
+        await Assert.That(extended.Steps).Count().IsEqualTo(4);
+        await Assert.That(Required(original.Steps).Intersect(Required(extended.Steps))).IsEmpty();
+
+        await Assert.That(BDTestUtil.GetScenarios(TestRun).Where(x => x.FrameworkTestId == parent.TestId)).IsEquivalentTo(new[] { original, extended }, EqualityComparer<Scenario>.Default, global::TUnit.Assertions.Enums.CollectionOrdering.Any);
     }
 
     [Test, BDTestRetry(1)]
@@ -155,14 +159,14 @@ public class RunnableStepBuilderTests : RunTestBase
         var builder = Given(() => FailFirstAttempt()).When(() => NoOp()).Then(() => NoOp());
 
         var scenario = await builder;
-        await Assert.ThrowsAsync<AlreadyExecutedException>(async () => await builder.BDTestAsync());
-        await Assert.ThrowsAsync<AlreadyExecutedException>(async () => await builder);
+        await Assert.That(async () => await builder.BDTestAsync()).ThrowsExactly<AlreadyExecutedException>();
+        await Assert.That(async () => await builder).ThrowsExactly<AlreadyExecutedException>();
 
-        Assert.That(_executions, Is.EqualTo(2));
-        Assert.That(_retryHooks, Is.EqualTo(1));
-        Assert.That(scenario.RetryCount, Is.EqualTo(1));
-        Assert.That(scenario.Status, Is.EqualTo(Status.Passed));
-        AssertReportedOnce(scenario);
+        await Assert.That(_executions).IsEqualTo(2);
+        await Assert.That(_retryHooks).IsEqualTo(1);
+        await Assert.That(scenario.RetryCount).IsEqualTo(1);
+        await Assert.That(scenario.Status).IsEqualTo(Status.Passed);
+        await AssertReportedOnce(scenario);
     }
 
     public override Task OnBeforeRetry()
@@ -181,12 +185,12 @@ public class RunnableStepBuilderTests : RunTestBase
         };
     }
 
-    private void AssertReportedOnce(Scenario scenario)
+    private async Task AssertReportedOnce(Scenario scenario)
     {
         var reported = BDTestUtil.GetScenarios(TestRun).Where(x => x.FrameworkTestId == scenario.FrameworkTestId).ToList();
-        Assert.That(reported, Has.Count.EqualTo(1));
+        await Assert.That(reported).Count().IsEqualTo(1);
         // Re-execution used to overwrite the same report key with a different Scenario.
-        Assert.That(reported[0], Is.SameAs(scenario));
+        await Assert.That(reported[0]).IsSameReferenceAs(scenario);
     }
 
     private void CountExecution() => Interlocked.Increment(ref _executions);

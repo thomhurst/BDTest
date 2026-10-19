@@ -3,15 +3,16 @@ using System.Reflection.Emit;
 using BDTest.Attributes;
 using BDTest.Test;
 using BDTest.Tests.Helpers;
-using NUnit.Framework;
+using System.Threading.Tasks;
 
 namespace BDTest.Tests.Fixtures;
 
-[NonParallelizable]
+[NotInParallel]
 public class AssemblyRetryAttributeTests
 {
-    [TestCase(false)]
-    [TestCase(true)]
+    [Test]
+    [Arguments(false)]
+    [Arguments(true)]
     public async Task AssemblyAttributeRetriesUntilSuccess(bool suspend)
     {
         using var fixture = CreateScenario(typeof(RetryScenario), 2);
@@ -19,36 +20,38 @@ public class AssemblyRetryAttributeTests
 
         var scenario = await fixture.Run(suspend);
 
-        Assert.That(scenario.Status, Is.EqualTo(Status.Passed));
-        Assert.That(scenario.RetryCount, Is.EqualTo(2));
-        Assert.That(fixture.Executions, Is.EqualTo(3));
+        await Assert.That(scenario.Status).IsEqualTo(Status.Passed);
+        await Assert.That(scenario.RetryCount).IsEqualTo(2);
+        await Assert.That(fixture.Executions).IsEqualTo(3);
     }
 
-    [TestCase(null, 0)]
-    [TestCase(0, 0)]
-    [TestCase(2, 2)]
+    [Test]
+    [Arguments(null, 0)]
+    [Arguments(0, 0)]
+    [Arguments(2, 2)]
     public async Task AssemblyAttributeLimitsRetries(int? assemblyRetryCount, int expectedRetries)
     {
         using var fixture = CreateScenario(typeof(RetryScenario), assemblyRetryCount);
         fixture.Failures = 3;
 
-        await Assert.ThrowsAsync<InvalidOperationException>(() => fixture.Run(true));
+        await Assert.That(async () => { await fixture.Run(true); }).ThrowsExactly<InvalidOperationException>();
 
-        Assert.That(BDTestUtil.GetScenarios(fixture.TestRun).Single().RetryCount, Is.EqualTo(expectedRetries));
-        Assert.That(fixture.Executions, Is.EqualTo(expectedRetries + 1));
+        await Assert.That(BDTestUtil.GetScenarios(fixture.TestRun).Single().RetryCount).IsEqualTo(expectedRetries);
+        await Assert.That(fixture.Executions).IsEqualTo(expectedRetries + 1);
     }
 
-    [TestCase(typeof(ClassRetryScenario), 1)]
-    [TestCase(typeof(MethodRetryScenario), 0)]
+    [Test]
+    [Arguments(typeof(ClassRetryScenario), 1)]
+    [Arguments(typeof(MethodRetryScenario), 0)]
     public async Task MoreSpecificAttributesOverrideAssembly(Type fixtureType, int expectedRetries)
     {
         using var fixture = CreateScenario(fixtureType, 2);
         fixture.Failures = 3;
 
-        await Assert.ThrowsAsync<InvalidOperationException>(() => fixture.Run(true));
+        await Assert.That(async () => { await fixture.Run(true); }).ThrowsExactly<InvalidOperationException>();
 
-        Assert.That(BDTestUtil.GetScenarios(fixture.TestRun).Single().RetryCount, Is.EqualTo(expectedRetries));
-        Assert.That(fixture.Executions, Is.EqualTo(expectedRetries + 1));
+        await Assert.That(BDTestUtil.GetScenarios(fixture.TestRun).Single().RetryCount).IsEqualTo(expectedRetries);
+        await Assert.That(fixture.Executions).IsEqualTo(expectedRetries + 1);
     }
 
     private static RetryScenario CreateScenario(Type baseType, int? retryCount)

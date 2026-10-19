@@ -1,14 +1,12 @@
 using BDTest.Test;
-using NUnit.Framework;
+using System.Threading.Tasks;
 
 namespace BDTest.Tests.Fixtures;
-
-[FixtureLifeCycle(LifeCycle.InstancePerTestCase)]
 public class ExecutionSchedulingTests : RunTestBase
 {
     protected override bool BindCurrentTestMetadata => true;
 
-    [TearDown]
+    [After(HookType.Test)]
     public void FinishExecution() => EndTest();
 
     private readonly string _executionId = Guid.NewGuid().ToString();
@@ -18,7 +16,8 @@ public class ExecutionSchedulingTests : RunTestBase
     private int _contextAttempts;
 
     [Test]
-    public async Task CompletedStepsExecuteInline([Values] bool directAwait)
+    [MatrixDataSource]
+    public async Task CompletedStepsExecuteInline([Matrix] bool directAwait)
     {
         var callerThread = Environment.CurrentManagedThreadId;
         var threads = new List<int>();
@@ -28,9 +27,9 @@ public class ExecutionSchedulingTests : RunTestBase
         var task = directAwait ? AwaitBuilder(builder) : builder.BDTestAsync();
         var completedInline = task.IsCompletedSuccessfully;
         var scenario = await task;
-        Assert.That(completedInline, Is.True);
-        Assert.That(scenario.Status, Is.EqualTo(Status.Passed));
-        Assert.That(threads, Is.EqualTo(new[] { callerThread, callerThread, callerThread }));
+        await Assert.That(completedInline).IsTrue();
+        await Assert.That(scenario.Status).IsEqualTo(Status.Passed);
+        await Assert.That(threads).IsEquivalentTo(new[] { callerThread, callerThread, callerThread }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 
     [Test]
@@ -45,8 +44,8 @@ public class ExecutionSchedulingTests : RunTestBase
         try
         {
             await entered.Task.WaitAsync(TimeSpan.FromSeconds(20));
-            Assert.That(task.IsCompleted, Is.False);
-            Assert.That(events, Is.EqualTo(new[] { "started" }));
+            await Assert.That(task.IsCompleted).IsFalse();
+            await Assert.That(events).IsEquivalentTo(new[] { "started" }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
         }
         finally
         {
@@ -54,13 +53,14 @@ public class ExecutionSchedulingTests : RunTestBase
             await task.WaitAsync(TimeSpan.FromSeconds(20));
         }
 
-        Assert.That(events, Is.EqualTo(new[] { "started", "finished", "when", "then" }));
-        Assert.That(Required((await task).Steps).All(step => step.Status == Status.Passed), Is.True);
+        await Assert.That(events).IsEquivalentTo(new[] { "started", "finished", "when", "then" }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(Required((await task).Steps).All(step => step.Status == Status.Passed)).IsTrue();
     }
 
     [Test, BDTest.Attributes.BDTestRetry(1)]
+    [MatrixDataSource]
     public async Task CallerContextSurvivesStepsHooksRetriesAndOutlineRows(
-        [Values] bool directAwait, [Values] bool outline)
+        [Matrix] bool directAwait, [Matrix] bool outline)
     {
         var scenario = await RunOnSingleThreadContext(async () =>
         {
@@ -77,9 +77,9 @@ public class ExecutionSchedulingTests : RunTestBase
             return directAwait ? await chain : await chain.BDTestAsync();
         });
 
-        Assert.That(scenario.Status, Is.EqualTo(Status.Passed));
-        Assert.That(_contextAttempts, Is.EqualTo(outline ? 3 : 2));
-        Assert.That(outline ? Required(scenario.Examples)[0].RetryCount : scenario.RetryCount, Is.EqualTo(1));
+        await Assert.That(scenario.Status).IsEqualTo(Status.Passed);
+        await Assert.That(_contextAttempts).IsEqualTo(outline ? 3 : 2);
+        await Assert.That(outline ? Required(scenario.Examples)[0].RetryCount : scenario.RetryCount).IsEqualTo(1);
     }
 
     [Test]
@@ -88,7 +88,7 @@ public class ExecutionSchedulingTests : RunTestBase
         var scenario = await RunOnSingleThreadContext(async () =>
             await Given(() => OptOutOfCallerContext()).When(() => YieldOnCallerContext())
                 .Then(() => YieldOnCallerContext()));
-        Assert.That(scenario.Status, Is.EqualTo(Status.Passed));
+        await Assert.That(scenario.Status).IsEqualTo(Status.Passed);
     }
 
     public override Task OnBeforeStep(Step step) => CheckHookContext();
@@ -106,8 +106,8 @@ public class ExecutionSchedulingTests : RunTestBase
 
     private void CheckCallerContext()
     {
-        Assert.That(SynchronizationContext.Current, Is.SameAs(_callerContext));
-        Assert.That(Environment.CurrentManagedThreadId, Is.EqualTo(_callerThread));
+        RequireCondition(ReferenceEquals(SynchronizationContext.Current, _callerContext), "The caller synchronization context must be retained");
+        RequireCondition(Environment.CurrentManagedThreadId == _callerThread, "The caller thread must be retained");
     }
 
     private void FailFirstContextAttempt()
@@ -122,8 +122,8 @@ public class ExecutionSchedulingTests : RunTestBase
         var finish = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         Required(SynchronizationContext.Current).Post(_ => finish.SetResult(), null);
         await finish.Task.ConfigureAwait(false);
-        Assert.That(SynchronizationContext.Current, Is.Null);
-        Assert.That(Environment.CurrentManagedThreadId, Is.Not.EqualTo(_callerThread));
+        await Assert.That(SynchronizationContext.Current).IsNull();
+        await Assert.That(Environment.CurrentManagedThreadId).IsNotEqualTo(_callerThread);
     }
 
     private async Task<Scenario> RunOnSingleThreadContext(Func<Task<Scenario>> run)
@@ -146,7 +146,7 @@ public class ExecutionSchedulingTests : RunTestBase
         }) { IsBackground = true };
         thread.Start();
         try { return await completed.Task.WaitAsync(TimeSpan.FromSeconds(30)); }
-        finally { Assert.That(thread.Join(TimeSpan.FromSeconds(30)), Is.True, "Context thread did not exit."); }
+        finally { await Assert.That(thread.Join(TimeSpan.FromSeconds(30))).IsTrue().Because("Context thread did not exit."); }
     }
 
     [Test]
@@ -155,22 +155,23 @@ public class ExecutionSchedulingTests : RunTestBase
         var ambient = new AsyncLocal<string> { Value = "caller" };
         await Given(() => ChangeAmbient(ambient))
             .When(() => CheckAmbient(ambient)).Then(() => CheckAmbient(ambient));
-        Assert.That(ambient.Value, Is.EqualTo("caller"));
+        await Assert.That(ambient.Value).IsEqualTo("caller");
     }
 
     [Test, BDTest.Attributes.BDTestRetry(64)]
-    public async Task SynchronousRetriesDoNotAccumulateStackFrames([Values] bool directAwait)
+    [MatrixDataSource]
+    public async Task SynchronousRetriesDoNotAccumulateStackFrames([Matrix] bool directAwait)
     {
         var depths = new List<int>();
         var builder = Given(() => FailUntilLastAttempt(depths)).When(() => Console.WriteLine("retried"))
             .Then(() => Console.WriteLine("finished"));
         var scenario = directAwait ? await builder : await builder.BDTestAsync();
 
-        Assert.That(scenario.Status, Is.EqualTo(Status.Passed));
-        Assert.That(scenario.RetryCount, Is.EqualTo(64));
-        Assert.That(depths, Has.Count.EqualTo(65));
+        await Assert.That(scenario.Status).IsEqualTo(Status.Passed);
+        await Assert.That(scenario.RetryCount).IsEqualTo(64);
+        await Assert.That(depths).Count().IsEqualTo(65);
         // Allow runtime inlining differences, but not one nested executor per retry.
-        Assert.That(depths.Max() - depths.Min(), Is.LessThan(20));
+        await Assert.That(depths.Max() - depths.Min()).IsLessThan(20);
     }
 
     private static void FailUntilLastAttempt(List<int> depths)
@@ -195,7 +196,7 @@ public class ExecutionSchedulingTests : RunTestBase
     }
 
     private static void ChangeAmbient(AsyncLocal<string> ambient) => ambient.Value = "step";
-    private static void CheckAmbient(AsyncLocal<string> ambient) => Assert.That(ambient.Value, Is.EqualTo("caller"));
+    private static async Task CheckAmbient(AsyncLocal<string> ambient) => await Assert.That(ambient.Value).IsEqualTo("caller");
 
     private sealed class PumpedSynchronizationContext : SynchronizationContext, IDisposable
     {

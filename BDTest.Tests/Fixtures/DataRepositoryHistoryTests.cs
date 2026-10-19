@@ -7,7 +7,7 @@ using BDTest.Razor.Reports.Extensions;
 using BDTest.Razor.Reports.Interfaces;
 using BDTest.Razor.Reports.Models;
 using Microsoft.Extensions.DependencyInjection;
-using NUnit.Framework;
+using System.Threading.Tasks;
 
 namespace BDTest.Tests.Fixtures;
 
@@ -26,9 +26,9 @@ public class DataRepositoryHistoryTests
         for (var read = 0; read < 2; read++)
         {
             var records = await repository.GetAllTestRunRecords();
-            Assert.That(records.Select(record => record.RecordId), Is.EqualTo(new[] { "new", "old" }));
+            await Assert.That(records.Select(record => record.RecordId)).IsEquivalentTo((new[] { "new", "old" }).Cast<string?>(), global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
         }
-        Assert.That(store.Loads, Is.EqualTo(1));
+        await Assert.That(store.Loads).IsEqualTo(1);
     }
 
     [Test]
@@ -51,8 +51,8 @@ public class DataRepositoryHistoryTests
         try
         {
             await started.Task.WaitAsync(TimeSpan.FromSeconds(10));
-            Assert.That(store.Loads, Is.EqualTo(1));
-            Assert.That(reads.All(read => !read.IsCompleted), Is.True);
+            await Assert.That(store.Loads).IsEqualTo(1);
+            await Assert.That(reads.All(read => !read.IsCompleted)).IsTrue();
             await repository.StoreData("new", Report("new", 2));
         }
         finally
@@ -63,9 +63,9 @@ public class DataRepositoryHistoryTests
 
         foreach (var read in reads)
         {
-            Assert.That(read.Result.Select(record => record.RecordId), Is.EqualTo(new[] { "new", "old" }));
+            await Assert.That(read.Result.Select(record => record.RecordId)).IsEquivalentTo((new[] { "new", "old" }).Cast<string?>(), global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
         }
-        Assert.That(store.Loads, Is.EqualTo(1));
+        await Assert.That(store.Loads).IsEqualTo(1);
     }
 
     [Test]
@@ -82,12 +82,13 @@ public class DataRepositoryHistoryTests
 
         var records = (await repository.GetAllTestRunRecords()).ToArray();
 
-        Assert.That(records.Select(record => record.RecordId), Is.EqualTo(new[] { "new", "middle", "old" }));
-        Assert.That(records[0].StartedAtDateTime, Is.EqualTo(Required(Report("new", 3).TestTimer).TestsStartedAt));
+        await Assert.That(records.Select(record => record.RecordId)).IsEquivalentTo((new[] { "new", "middle", "old" }).Cast<string?>(), global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(records[0].StartedAtDateTime).IsEqualTo(Required(Report("new", 3).TestTimer).TestsStartedAt);
     }
 
-    [TestCase(false)]
-    [TestCase(true)]
+    [Test]
+    [Arguments(false)]
+    [Arguments(true)]
     public async Task Empty_or_null_history_is_loaded_only_once(bool returnsNull)
     {
         var store = new PersistentStore();
@@ -95,11 +96,11 @@ public class DataRepositoryHistoryTests
         using var services = Services(store);
         var repository = services.GetRequiredService<IDataRepository>();
 
-        Assert.That(await repository.GetAllTestRunRecords(), Is.Empty);
-        Assert.That(await repository.GetAllTestRunRecords(), Is.Empty);
+        await Assert.That(await repository.GetAllTestRunRecords()).IsEmpty();
+        await Assert.That(await repository.GetAllTestRunRecords()).IsEmpty();
         await repository.StoreData("new", Report("new", 1));
-        Assert.That((await repository.GetAllTestRunRecords()).Single().RecordId, Is.EqualTo("new"));
-        Assert.That(store.Loads, Is.EqualTo(1));
+        await Assert.That((await repository.GetAllTestRunRecords()).Single().RecordId).IsEqualTo("new");
+        await Assert.That(store.Loads).IsEqualTo(1);
     }
 
     [Test]
@@ -112,18 +113,18 @@ public class DataRepositoryHistoryTests
         var repository = services.GetRequiredService<IDataRepository>();
         await repository.StoreData("new", Report("new", 2));
 
-        var thrown = await Assert.ThrowsAsync<InvalidOperationException>(() => repository.GetAllTestRunRecords());
-        Assert.That(thrown, Is.SameAs(failure));
+        var thrown = await Assert.That(async () => { await repository.GetAllTestRunRecords(); }).ThrowsExactly<InvalidOperationException>();
+        await Assert.That(thrown).IsSameReferenceAs(failure);
         store.Read = null;
 
-        Assert.That((await repository.GetAllTestRunRecords()).Select(record => record.RecordId),
-            Is.EqualTo(new[] { "new", "old" }));
+        await Assert.That((await repository.GetAllTestRunRecords()).Select(record => record.RecordId)).IsEquivalentTo((new[] { "new", "old" }).Cast<string?>(), global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
         await repository.GetAllTestRunRecords();
-        Assert.That(store.Loads, Is.EqualTo(2));
+        await Assert.That(store.Loads).IsEqualTo(2);
     }
 
-    [TestCase(false)]
-    [TestCase(true)]
+    [Test]
+    [Arguments(false)]
+    [Arguments(true)]
     public async Task Deletion_removes_cached_and_persisted_history_before_or_after_loading(bool loadFirst)
     {
         var store = new PersistentStore();
@@ -136,11 +137,11 @@ public class DataRepositoryHistoryTests
         await repository.DeleteReport("old");
         await repository.DeleteReport("new");
 
-        Assert.That(await repository.GetAllTestRunRecords(), Is.Empty);
-        Assert.That(await repository.GetData("new", default), Is.Null);
-        Assert.That(store.Records, Is.Empty);
-        Assert.That(store.Reports, Is.Empty);
-        Assert.That(store.Loads, Is.EqualTo(1));
+        await Assert.That(await repository.GetAllTestRunRecords()).IsEmpty();
+        await Assert.That(await repository.GetData("new", default)).IsNull();
+        await Assert.That(store.Records).IsEmpty();
+        await Assert.That(store.Reports).IsEmpty();
+        await Assert.That(store.Loads).IsEqualTo(1);
     }
 
     [Test]
@@ -172,9 +173,9 @@ public class DataRepositoryHistoryTests
             await Task.WhenAll(read, deletion);
         }
 
-        Assert.That(await repository.GetAllTestRunRecords(), Is.Empty);
-        Assert.That(store.Records, Is.Empty);
-        Assert.That(store.Loads, Is.EqualTo(1));
+        await Assert.That(await repository.GetAllTestRunRecords()).IsEmpty();
+        await Assert.That(store.Records).IsEmpty();
+        await Assert.That(store.Loads).IsEqualTo(1);
     }
 
     [Test]
@@ -182,16 +183,15 @@ public class DataRepositoryHistoryTests
     {
         using var services = Services();
         var repository = services.GetRequiredService<IDataRepository>();
-        Assert.That(await repository.GetAllTestRunRecords(), Is.Empty);
+        await Assert.That(await repository.GetAllTestRunRecords()).IsEmpty();
         await repository.StoreData("old", Report("old", 1));
         await repository.StoreData("new", Report("new", 2));
-        Assert.That((await repository.GetAllTestRunRecords()).Select(record => record.RecordId),
-            Is.EqualTo(new[] { "new", "old" }));
+        await Assert.That((await repository.GetAllTestRunRecords()).Select(record => record.RecordId)).IsEquivalentTo((new[] { "new", "old" }).Cast<string?>(), global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
 
         await repository.DeleteReport("new");
 
-        Assert.That((await repository.GetAllTestRunRecords()).Single().RecordId, Is.EqualTo("old"));
-        Assert.That(await repository.GetData("new", default), Is.Null);
+        await Assert.That((await repository.GetAllTestRunRecords()).Single().RecordId).IsEqualTo("old");
+        await Assert.That(await repository.GetData("new", default)).IsNull();
     }
 
     [Test]
@@ -202,10 +202,10 @@ public class DataRepositoryHistoryTests
         using var services = Services(store);
         var repository = services.GetRequiredService<IDataRepository>();
         var records = (await repository.GetAllTestRunRecords()).ToArray();
-        Assert.That(records.Length, Is.EqualTo(1201));
-        Assert.That(records[0].RecordId, Is.EqualTo("1200"));
+        await Assert.That(records.Length).IsEqualTo(1201);
+        await Assert.That(records[0].RecordId).IsEqualTo("1200");
         await repository.GetAllTestRunRecords();
-        Assert.That(store.Loads, Is.EqualTo(3));
+        await Assert.That(store.Loads).IsEqualTo(3);
     }
 
     [Test]
@@ -222,12 +222,12 @@ public class DataRepositoryHistoryTests
         using var waitingCancellation = new CancellationTokenSource();
         var deletion = repository.DeleteReport("old", waitingCancellation.Token);
         waitingCancellation.Cancel();
-        await Assert.CatchAsync<OperationCanceledException>(async () => await deletion);
+        await Assert.That(async () => await deletion).Throws<OperationCanceledException>();
         cancellation.Cancel();
-        await Assert.CatchAsync<OperationCanceledException>(async () => await loading);
+        await Assert.That(async () => await loading).Throws<OperationCanceledException>();
         release.TrySetResult([]);
         store.Read = null;
-        Assert.That(await repository.GetAllTestRunRecords(), Is.Empty);
+        await Assert.That(await repository.GetAllTestRunRecords()).IsEmpty();
         await repository.DeleteReport("old");
     }
 

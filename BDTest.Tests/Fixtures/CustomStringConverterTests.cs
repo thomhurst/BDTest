@@ -2,7 +2,7 @@ using System.Reflection;
 using BDTest.Attributes;
 using BDTest.Helpers;
 using BDTest.Interfaces;
-using NUnit.Framework;
+using System.Threading.Tasks;
 
 namespace BDTest.Tests.Fixtures;
 
@@ -21,20 +21,20 @@ public class CustomStringConverterTests
         options.RegisterCustomStringConverter(new ValueConverter("second"));
         using var second = BDTestRun.Start(options);
         var value = new Value();
-        await Task.WhenAll(Enumerable.Range(0, 8).Select(_ => Task.Run(() =>
+        await Task.WhenAll(Enumerable.Range(0, 8).Select(_ => Task.Run(async () =>
         {
             for (var i = 0; i < 500; i++)
             {
-                Assert.That(StepTextHelper.GetStepText(DisplayMethod, [() => value], run: first), Is.EqualTo("value: first"));
-                Assert.That(StepTextHelper.GetStepText(DisplayMethod, [() => value], run: second), Is.EqualTo("value: first"));
-                Assert.That(StepTextHelper.GetStepText(DisplayMethod, [() => value], run: unconfigured), Is.EqualTo("value: fallback"));
+                await Assert.That(StepTextHelper.GetStepText(DisplayMethod, [() => value], run: first)).IsEqualTo("value: first");
+                await Assert.That(StepTextHelper.GetStepText(DisplayMethod, [() => value], run: second)).IsEqualTo("value: first");
+                await Assert.That(StepTextHelper.GetStepText(DisplayMethod, [() => value], run: unconfigured)).IsEqualTo("value: fallback");
             }
         })));
     }
 
     [Test]
-    public void ConverterRegistrationRejectsNull() =>
-        Assert.Throws<ArgumentNullException>(() => new BDTestOptions().RegisterCustomStringConverter<Value>(null!));
+    public async Task ConverterRegistrationRejectsNull() =>
+        await Assert.That(() => new BDTestOptions().RegisterCustomStringConverter<Value>(null!)).ThrowsExactly<ArgumentNullException>();
 
     [Test]
     public async Task ConfiguringAnotherRunDoesNotBlockAnActiveConverter()
@@ -56,9 +56,9 @@ public class CustomStringConverterTests
             await entered.Task.WaitAsync(TimeSpan.FromSeconds(10));
             options.RegisterCustomStringConverter(new ValueConverter("next"));
             using var another = BDTestRun.Start();
-            Assert.That(StepTextHelper.GetStepText(DisplayMethod, [() => value], run: another), Is.EqualTo("value: fallback"));
+            await Assert.That(StepTextHelper.GetStepText(DisplayMethod, [() => value], run: another)).IsEqualTo("value: fallback");
             resume.Set();
-            Assert.That(await conversion, Is.EqualTo("value: active"));
+            await Assert.That(await conversion).IsEqualTo("value: active");
         }
         finally { resume.Set(); await conversion; }
     }

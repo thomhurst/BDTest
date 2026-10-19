@@ -4,15 +4,15 @@ using BDTest.Maps;
 using BDTest.Output;
 using BDTest.Test;
 using Newtonsoft.Json;
-using NUnit.Framework;
+using System.Threading.Tasks;
 
 namespace BDTest.Tests.Fixtures;
 
-[NonParallelizable]
+[NotInParallel]
 public class OutputLifecycleTests
 {
     [Test]
-    public void Startup_before_and_after_registration_is_delivered_once_in_order()
+    public async Task Startup_before_and_after_registration_is_delivered_once_in_order()
     {
         using var fixture = new Capture();
         TestOutputData.CollectStartupOutput(fixture.Id, "before", false, run: fixture.TestRun);
@@ -20,9 +20,9 @@ public class OutputLifecycleTests
         TestOutputData.CollectStartupOutput(fixture.Id, "x", false, run: fixture.TestRun);
         TestOutputData.CollectStartupOutput(fixture.Id, "after", false, run: fixture.TestRun);
 
-        Assert.That(scenario.TestStartupInformation,
-            Is.EqualTo($"before{Environment.NewLine}xafter{Environment.NewLine}"));
-        Assert.That(fixture.Register().TestStartupInformation, Is.Null.Or.Empty);
+        await Assert.That(scenario.TestStartupInformation).IsEqualTo($"before{Environment.NewLine}xafter{Environment.NewLine}");
+
+        await Assert.That(fixture.Register().TestStartupInformation).IsNullOrEmpty();
     }
 
     [Test]
@@ -52,18 +52,18 @@ public class OutputLifecycleTests
             var scenario = await registration;
 
             var lines = Required(scenario.TestStartupInformation).Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
-            Assert.That(lines, Has.Length.EqualTo(200));
+
+            await Assert.That((lines).Length).IsEqualTo(200);
             for (var writer = 0; writer < 4; writer++)
             {
-                Assert.That(lines.Where(line => line.StartsWith($"{writer}:")),
-                    Is.EqualTo(Enumerable.Range(0, 50).Select(index => $"{writer}:{index}")));
+                await Assert.That(lines.Where(line => line.StartsWith($"{writer}:"))).IsEquivalentTo(Enumerable.Range(0, 50).Select(index => $"{writer}:{index}"), global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
             }
-            Assert.That(calls, Is.EqualTo(200));
+            await Assert.That(calls).IsEqualTo(200);
         }
     }
 
     [Test]
-    public void Status_controls_startup_capture_without_a_timestamp_heuristic()
+    public async Task Status_controls_startup_capture_without_a_timestamp_heuristic()
     {
         using var fixture = new Capture();
         fixture.Select();
@@ -72,17 +72,17 @@ public class OutputLifecycleTests
         TestOutputData.TestId = scenario.Guid;
         scenario.StartTime = DateTime.UtcNow;
         writer.Write("startup");
-        Assert.That(scenario.TestStartupInformation, Is.EqualTo("startup"));
+        await Assert.That(scenario.TestStartupInformation).IsEqualTo("startup");
 
         scenario.Status = Status.Pending;
         scenario.StartTime = default;
         writer.Write("running");
-        Assert.That(writer.ToString(), Is.EqualTo("running"));
-        Assert.That(scenario.TestStartupInformation, Is.EqualTo("startup"));
+        await Assert.That(writer.ToString()).IsEqualTo("running");
+        await Assert.That(scenario.TestStartupInformation).IsEqualTo("startup");
     }
 
     [Test]
-    public void Character_capture_and_explicit_teardown_preserve_newlines_and_json()
+    public async Task Character_capture_and_explicit_teardown_preserve_newlines_and_json()
     {
         using var fixture = new Capture();
         fixture.Select();
@@ -98,15 +98,15 @@ public class OutputLifecycleTests
         TestOutputData.CollectTearDownOutput(fixture.Id, "explicit", false, run: fixture.TestRun);
         writer.Write('!');
 
-        Assert.That(scenario.TestStartupInformation, Is.EqualTo("setup\r\nx"));
-        Assert.That(scenario.TearDownOutput, Is.EqualTo($"teardown\r\nexplicit{Environment.NewLine}!"));
+        await Assert.That(scenario.TestStartupInformation).IsEqualTo("setup\r\nx");
+        await Assert.That(scenario.TearDownOutput).IsEqualTo($"teardown\r\nexplicit{Environment.NewLine}!");
         var restored = ReportJson.DeserializeObject<Scenario>(ReportJson.SerializeObject(scenario));
-        Assert.That(restored.TestStartupInformation, Is.EqualTo(scenario.TestStartupInformation));
-        Assert.That(restored.TearDownOutput, Is.EqualTo(scenario.TearDownOutput));
+        await Assert.That(restored.TestStartupInformation).IsEqualTo(scenario.TestStartupInformation);
+        await Assert.That(restored.TearDownOutput).IsEqualTo(scenario.TearDownOutput);
     }
 
     [Test]
-    public void Framework_id_only_flow_captures_completed_scenario_teardown()
+    public async Task Framework_id_only_flow_captures_completed_scenario_teardown()
     {
         using var fixture = new Capture();
         fixture.Select();
@@ -119,14 +119,15 @@ public class OutputLifecycleTests
         writer.Write("teardown");
         writer.Write('!');
 
-        Assert.That(scenario.TearDownOutput, Is.EqualTo("teardown!"));
-        Assert.That(scenario.TestStartupInformation, Is.Null.Or.Empty);
+        await Assert.That(scenario.TearDownOutput).IsEqualTo("teardown!");
+
+        await Assert.That(scenario.TestStartupInformation).IsNullOrEmpty();
     }
 
     [Test]
     public async Task Parallel_framework_ids_keep_setup_and_teardown_separate()
     {
-        await Task.WhenAll(Enumerable.Range(0, 12).Select(index => Task.Run(() =>
+        await Task.WhenAll(Enumerable.Range(0, 12).Select(index => Task.Run(async () =>
         {
             using var fixture = new Capture();
             fixture.Select();
@@ -139,13 +140,13 @@ public class OutputLifecycleTests
             scenario.EndTime = DateTime.Now;
             TestOutputData.TestId = scenario.Guid;
             writer.Write(text);
-            Assert.That(scenario.TestStartupInformation, Is.EqualTo(text));
-            Assert.That(scenario.TearDownOutput, Is.EqualTo(text));
+            await Assert.That(scenario.TestStartupInformation).IsEqualTo(text);
+            await Assert.That(scenario.TearDownOutput).IsEqualTo(text);
         })));
     }
 
     [Test]
-    public void Completion_without_scenario_discards_pending_output_and_listeners()
+    public async Task Completion_without_scenario_discards_pending_output_and_listeners()
     {
         using var fixture = new Capture();
         using var other = new Capture();
@@ -162,12 +163,13 @@ public class OutputLifecycleTests
             if (field.Name is "ScenarioListeners" or "PendingStartupOutput" &&
                 field.GetValue(fixture.TestRun.Store) is IDictionary dictionary)
             {
-                Assert.That(dictionary.Contains(fixture.Id), Is.False, field.Name);
+                await Assert.That(dictionary.Contains(fixture.Id)).IsFalse().Because(field.Name);
             }
         }
-        Assert.That(fixture.Register().TestStartupInformation, Is.Null.Or.Empty);
-        Assert.That(calls, Is.Zero);
-        Assert.That(other.Register().TestStartupInformation, Is.EqualTo($"keep{Environment.NewLine}"));
+
+        await Assert.That(fixture.Register().TestStartupInformation).IsNullOrEmpty();
+        await Assert.That(calls).IsZero();
+        await Assert.That(other.Register().TestStartupInformation).IsEqualTo($"keep{Environment.NewLine}");
     }
 
     [Test]
@@ -185,41 +187,41 @@ public class OutputLifecycleTests
         fixture.Complete();
 
         var lines = Required(scenario.TearDownOutput).Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
-        Assert.That(lines, Has.Length.EqualTo(400));
+
+        await Assert.That((lines).Length).IsEqualTo(400);
         for (var writer = 0; writer < 4; writer++)
         {
-            Assert.That(lines.Where(line => line.StartsWith($"{writer}:")),
-                Is.EqualTo(Enumerable.Range(0, 100).Select(index => $"{writer}:{index}")));
+            await Assert.That(lines.Where(line => line.StartsWith($"{writer}:"))).IsEquivalentTo(Enumerable.Range(0, 100).Select(index => $"{writer}:{index}"), global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
         }
     }
 
-    [TestCase("")]
-    [TestCase("x")]
-    [TestCase("line")]
-    public void Public_output_methods_keep_existing_newline_rules(string text)
+    [Test]
+    [Arguments("")]
+    [Arguments("x")]
+    [Arguments("line")]
+    public async Task Public_output_methods_keep_existing_newline_rules(string text)
     {
         using var fixture = new Capture();
         var scenario = fixture.Register();
         fixture.WriteStartupOutput(text);
         fixture.WriteTearDownOutput(text);
 
-        Assert.That(scenario.TestStartupInformation,
-            Is.EqualTo(text + (text.Length > 1 ? Environment.NewLine : string.Empty)));
-        Assert.That(scenario.TearDownOutput, Is.EqualTo(text + Environment.NewLine));
+        await Assert.That(scenario.TestStartupInformation).IsEqualTo(text + (text.Length > 1 ? Environment.NewLine : string.Empty));
+        await Assert.That(scenario.TearDownOutput).IsEqualTo(text + Environment.NewLine);
     }
 
     [Test]
-    public void Character_capture_allocation_grows_linearly()
+    public async Task Character_capture_allocation_grows_linearly()
     {
-        MeasureAllocations(100); // Warm up capture and registration paths.
-        var small = MeasureAllocations(2000);
-        var large = MeasureAllocations(8000);
-        Assert.That(large, Is.LessThan(small * 6), $"2,000 chars: {small:N0} bytes; 8,000 chars: {large:N0} bytes");
-        Assert.That(large, Is.LessThan(512_000), "Capture should not allocate callbacks or growing strings per character.");
-        TestContext.WriteLine($"Setup + teardown allocations: 2,000 chars = {small:N0} B; 8,000 chars = {large:N0} B");
+        await MeasureAllocations(100); // Warm up capture and registration paths.
+        var small = await MeasureAllocations(2000);
+        var large = await MeasureAllocations(8000);
+        await Assert.That(large).IsLessThan(small * 6).Because($"2,000 chars: {small:N0} bytes; 8,000 chars: {large:N0} bytes");
+        await Assert.That(large).IsLessThan(512_000).Because("Capture should not allocate callbacks or growing strings per character.");
+        Console.WriteLine($"Setup + teardown allocations: 2,000 chars = {small:N0} B; 8,000 chars = {large:N0} B");
     }
 
-    private static long MeasureAllocations(int count)
+    private static async Task<long> MeasureAllocations(int count)
     {
         using var fixture = new Capture();
         fixture.Select();
@@ -233,8 +235,8 @@ public class OutputLifecycleTests
         scenario.EndTime = DateTime.Now;
         for (var i = 0; i < count; i++) writer.Write('t');
         var allocated = GC.GetAllocatedBytesForCurrentThread() - before;
-        Assert.That(scenario.TestStartupInformation, Is.EqualTo(new string('s', count)));
-        Assert.That(scenario.TearDownOutput, Is.EqualTo(new string('t', count)));
+        await Assert.That(scenario.TestStartupInformation).IsEqualTo(new string('s', count));
+        await Assert.That(scenario.TearDownOutput).IsEqualTo(new string('t', count));
         return allocated;
     }
 

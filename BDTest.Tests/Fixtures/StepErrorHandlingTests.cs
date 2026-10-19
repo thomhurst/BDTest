@@ -2,21 +2,22 @@ using BDTest.Attributes;
 using BDTest.Helpers;
 using BDTest.Test;
 using BDTest.Tests.Helpers;
-using NUnit.Framework;
+using System.Threading.Tasks;
 
 namespace BDTest.Tests.Fixtures;
 
-[NonParallelizable]
+[NotInParallel]
 public class StepErrorHandlingTests : RunTestBase
 {
     [Test]
-    public void NullStepNamesThePublicParameter([Values] EntryPoint entryPoint, [Values] bool asyncStep)
+    [MatrixDataSource]
+    public async Task NullStepNamesThePublicParameter([Matrix] EntryPoint entryPoint, [Matrix] bool asyncStep)
     {
         // Deliberately invalid delegates exercise the runtime null guards.
         Action action = null!;
         Func<Task> task = null!;
 
-        var exception = Assert.Throws<ArgumentNullException>(() =>
+        var exception = await Assert.That(() =>
         {
             BuildableTest builder = entryPoint switch
             {
@@ -31,16 +32,17 @@ public class StepErrorHandlingTests : RunTestBase
                 EntryPoint.AndThenAnd => asyncStep ? When(() => NoOp()).Then(() => NoOp()).And(() => NoOp()).And(task) : When(() => NoOp()).Then(() => NoOp()).And(() => NoOp()).And(action),
                 _ => throw new ArgumentOutOfRangeException(nameof(entryPoint))
             };
-        });
+        }).ThrowsExactly<ArgumentNullException>();
 
-        Assert.That(Required(exception).ParamName, Is.EqualTo("step"));
+        await Assert.That(Required(exception).ParamName).IsEqualTo("step");
     }
 
-    [TestCase(false)]
-    [TestCase(true)]
-    public void InvalidStepTextPreservesTheOriginalException(bool asyncStep)
+    [Test]
+    [Arguments(false)]
+    [Arguments(true)]
+    public async Task InvalidStepTextPreservesTheOriginalException(bool asyncStep)
     {
-        var exception = Assert.Throws<ArgumentException>(() =>
+        var exception = await Assert.That(() =>
         {
             if (asyncStep)
             {
@@ -50,12 +52,12 @@ public class StepErrorHandlingTests : RunTestBase
             {
                 StepTextHelper.GetStepText(Required(typeof(StepErrorHandlingTests).GetMethod(nameof(InvalidText), System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static)), new Func<object>[] { () => "argument" });
             }
-        });
+        }).ThrowsExactly<ArgumentException>();
 
-        Assert.That(Required(exception).Message, Does.Contain("Template is: invalid {1}"));
-        Assert.That(Required(exception).Message, Does.Contain("Arguments are argument"));
-        Assert.That(Required(exception).InnerException, Is.TypeOf<FormatException>());
-        Assert.That(Required(Required(exception).InnerException).StackTrace, Does.Contain(nameof(StepTextHelper)));
+        await Assert.That(Required(exception).Message).Contains("Template is: invalid {1}");
+        await Assert.That(Required(exception).Message).Contains("Arguments are argument");
+        await Assert.That(Required(exception).InnerException).IsTypeOf<FormatException>();
+        await Assert.That(Required(Required(exception).InnerException).StackTrace).Contains(nameof(StepTextHelper));
     }
 
 #pragma warning disable BDT002 // These methods exercise runtime handling of invalid templates.

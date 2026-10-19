@@ -2,7 +2,7 @@ using BDTest.Razor.Reports.Implementations;
 using BDTest.Razor.Reports.Models;
 using Microsoft.Extensions.Caching.Memory;
 using Newtonsoft.Json;
-using NUnit.Framework;
+using System.Threading.Tasks;
 
 namespace BDTest.Tests.Fixtures;
 
@@ -17,7 +17,7 @@ public class MemoryCacheBdTestDataStoreTests
 
         await store.StoreTestRunRecord(record);
 
-        Assert.That(await store.GetAllTestRunRecords(), Is.EqualTo(new[] { record }));
+        await Assert.That(await store.GetAllTestRunRecords()).IsEquivalentTo(new[] { record }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 
     [Test]
@@ -32,8 +32,7 @@ public class MemoryCacheBdTestDataStoreTests
             await store.StoreTestRunRecord(record);
         }
 
-        Assert.That(await store.GetAllTestRunRecords(),
-            Is.EqualTo(records.OrderByDescending(record => record.StartedAtDateTime)));
+        await Assert.That(await store.GetAllTestRunRecords()).IsEquivalentTo(records.OrderByDescending(record => record.StartedAtDateTime), EqualityComparer<TestRunSummary>.Default, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 
     [Test]
@@ -48,7 +47,7 @@ public class MemoryCacheBdTestDataStoreTests
         await store.StoreTestRunRecord(original);
         await store.StoreTestRunRecord(duplicate);
 
-        Assert.That(await store.GetAllTestRunRecords(), Is.EqualTo(new[] { original }));
+        await Assert.That(await store.GetAllTestRunRecords()).IsEquivalentTo(new[] { original }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 
     [Test]
@@ -65,10 +64,10 @@ public class MemoryCacheBdTestDataStoreTests
         await store.DeleteTestRunRecord(Required(first.RecordId));
         await store.DeleteTestRunRecord("missing");
 
-        Assert.That(snapshot, Is.EqualTo(new[] { first }));
-        Assert.That(await store.GetAllTestRunRecords(), Is.EqualTo(new[] { second }));
+        await Assert.That(snapshot).IsEquivalentTo(new[] { first }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(await store.GetAllTestRunRecords()).IsEquivalentTo(new[] { second }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
         await store.DeleteTestRunRecord(Required(second.RecordId));
-        Assert.That(await store.GetAllTestRunRecords(), Is.Empty);
+        await Assert.That(await store.GetAllTestRunRecords()).IsEmpty();
     }
 
     [Test]
@@ -89,12 +88,11 @@ public class MemoryCacheBdTestDataStoreTests
                 await store.StoreTestRunRecord(record);
                 await store.DeleteTestRunRecord(Required(removed[int.Parse(Required(record.RecordId)) - 100].RecordId));
                 var snapshot = (await store.GetAllTestRunRecords()).ToArray();
-                Assert.That(snapshot, Does.Contain(record), "Completed additions must remain visible.");
-                Assert.That(snapshot.Select(item => item.StartedAtDateTime), Is.Ordered.Descending);
+                await Assert.That(snapshot).Contains(record).Because("Completed additions must remain visible.");
+                await Assert.That(snapshot.Select(item => item.StartedAtDateTime)).IsInDescendingOrder();
             });
 
-        Assert.That(await store.GetAllTestRunRecords(),
-            Is.EqualTo(added.OrderByDescending(record => record.StartedAtDateTime)));
+        await Assert.That(await store.GetAllTestRunRecords()).IsEquivalentTo(added.OrderByDescending(record => record.StartedAtDateTime), EqualityComparer<TestRunSummary>.Default, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 
     private static TestRunSummary CreateRecord(int index)

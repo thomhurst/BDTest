@@ -4,12 +4,16 @@ using Microsoft.Extensions.Options;
 
 namespace BDTest.Tests.Helpers;
 
-// Invoked directly by the cross-process regression test, never by the test runner.
+// Dispatch isolated file-store workers before starting the normal test runner.
 internal static class FileSystemStoreWorker
 {
-    public static async Task Main(string[] args)
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("TUnit", "TUnit0034", Justification = "Dispatches isolated file-store workers before the generated TUnit application.")]
+    public static async Task<int> Main(string[] args)
     {
-        if (args.Length != 3 || args[0] != "file-store-worker")
+        if (args.Length == 0 || args[0] != "file-store-worker")
+            return await global::BDTest.Tests.MicrosoftTestingPlatformApplication.RunAsync(args);
+
+        if (args.Length != 3)
             throw new ArgumentException("Expected file-store-worker <writer|contender> <directory>.");
         using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(60));
         var token = timeout.Token;
@@ -49,6 +53,7 @@ internal static class FileSystemStoreWorker
             Console.WriteLine("complete:" + await reader.ReadToEndAsync(token));
         }
         else throw new ArgumentException("Unknown worker mode.");
+        return 0;
     }
 
     private static void RequirePending(Task operation)

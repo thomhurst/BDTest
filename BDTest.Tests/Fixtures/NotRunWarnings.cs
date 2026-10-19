@@ -1,11 +1,11 @@
 using BDTest.Attributes;
 using BDTest.Test;
 using BDTest.Tests.Helpers;
-using NUnit.Framework;
+using System.Threading.Tasks;
 
 namespace BDTest.Tests.Fixtures;
 
-[Parallelizable(ParallelScope.None)]
+[NotInParallel]
 [System.Diagnostics.CodeAnalysis.SuppressMessage("BDTest", "BDT001", Justification = "These tests verify reporting of intentionally unexecuted scenarios.")]
 [Story(AsA = "BDTest developer",
     IWant = "to make sure that BDTest flags tests not executed",
@@ -25,16 +25,16 @@ public class NotRunWarnings : RunTestBase
         NotRunTest3();
 
         var notRunScenarios = BDTestUtil.GetNotRunScenarios(TestRun);
-        Assert.That(notRunScenarios.Count, Is.EqualTo(3));
+        await Assert.That(notRunScenarios.Count).IsEqualTo(3);
 
-        Assert.That(notRunScenarios.Any(scenario => scenario.GetScenarioText() == "Custom NotRunTest1"));
-        Assert.That(notRunScenarios.Any(scenario => scenario.GetScenarioText() == "Custom NotRunTest2"));
-        Assert.That(notRunScenarios.Any(scenario => scenario.GetScenarioText() == "Custom NotRunTest3"));
+        await Assert.That(notRunScenarios.Any(scenario => scenario.GetScenarioText() == "Custom NotRunTest1")).IsTrue();
+        await Assert.That(notRunScenarios.Any(scenario => scenario.GetScenarioText() == "Custom NotRunTest2")).IsTrue();
+        await Assert.That(notRunScenarios.Any(scenario => scenario.GetScenarioText() == "Custom NotRunTest3")).IsTrue();
 
-        Assert.That(notRunScenarios.All(scenario => scenario.GetStoryText() == @"As a BDTest developer
+        await Assert.That(notRunScenarios.All(scenario => scenario.GetStoryText() == @"As a BDTest developer
 I want to make sure that BDTest flags tests not executed
 So that consumers aren't missing any test coverage accidentally
-"));
+")).IsTrue();
     }
 
     private void NotRunTest3()

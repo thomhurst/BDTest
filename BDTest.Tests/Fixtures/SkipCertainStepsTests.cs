@@ -1,7 +1,7 @@
 using BDTest.Attributes;
 using BDTest.Settings;
 using BDTest.Test;
-using NUnit.Framework;
+using System.Threading.Tasks;
 
 namespace BDTest.Tests.Fixtures;
 
@@ -10,7 +10,7 @@ namespace BDTest.Tests.Fixtures;
     SoThat = "tests can be run with different behaviour for different test environments")]
 public class SkipCertainStepsTests : RunTestBase
 {
-    [SetUp]
+    [Before(HookType.Test)]
     public void Setup()
     {
         Options.SkipStepRules.Add<SkipAttribute1>(attr => true);
@@ -62,14 +62,14 @@ public class SkipCertainStepsTests : RunTestBase
                 .And(() => ThrowExceptionShouldSkipFalse())
                 .BDTestAsync();
                 
-            Assert.Fail("The last exception should not be skipped - And should stop us getting here.");
+            Fail.Test("The last exception should not be skipped - And should stop us getting here.");
         }
         catch (Exception e) when(e.Message == "ThrowExceptionShouldSkipFalse")
         {
-            Assert.Pass();
+            return;
         }
             
-        Assert.Fail();
+        Fail.Test("");
     }
         
     [Test]
@@ -86,14 +86,14 @@ public class SkipCertainStepsTests : RunTestBase
                 .And(() => ThrowNotRegisteredSkipException())
                 .BDTestAsync();
                 
-            Assert.Fail("The last exception should not be skipped - And should stop us getting here.");
+            Fail.Test("The last exception should not be skipped - And should stop us getting here.");
         }
         catch (Exception e) when(e.Message == "ThrowNotRegisteredSkipException")
         {
-            Assert.Pass();
+            return;
         }
             
-        Assert.Fail();
+        Fail.Test("");
     }
 
     [NotRegisteredSkip]

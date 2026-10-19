@@ -2,7 +2,7 @@ using System.Diagnostics;
 using BDTest.Interfaces;
 using BDTest.Settings;
 using BDTest.Test;
-using NUnit.Framework;
+using System.Threading.Tasks;
 
 namespace BDTest.Tests.Fixtures;
 
@@ -22,56 +22,58 @@ public class ScenarioHookTests
             After = s => Record("instance after", s)
         };
         var scenario = await test.When(() => calls.Add("when")).Then(() => calls.Add("then")).BDTestAsync();
-        Assert.That(calls, Is.EqualTo(new[] { "first before", "second before", "instance before", "when", "then",
-            "instance after", "first after", "second after" }));
-        Assert.That(scenario.Status, Is.EqualTo(Status.Passed));
+        await Assert.That(calls).IsEquivalentTo(new[] { "first before", "second before", "instance before", "when", "then",
+            "instance after", "first after", "second after" }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(scenario.Status).IsEqualTo(Status.Passed);
 
-        Task Record(string name, ScenarioHookContext s)
+        async Task Record(string name, ScenarioHookContext s)
         {
             calls.Add(name);
-            Assert.That(s.Context, Is.TypeOf<State>());
-            Assert.That(s.Attempt, Is.Zero);
-            Assert.That(s.CancellationToken.CanBeCanceled, Is.True);
-            Assert.That(s.Scenario.Status, Is.EqualTo(name.EndsWith("before") ? Status.Pending : Status.Passed));
-            return Task.CompletedTask;
+            await Assert.That(s.Context).IsTypeOf<State>();
+            await Assert.That(s.Attempt).IsZero();
+            await Assert.That(s.CancellationToken.CanBeCanceled).IsTrue();
+            await Assert.That(s.Scenario.Status).IsEqualTo(name.EndsWith("before") ? Status.Pending : Status.Passed);
+            return;
         }
     }
 
-    [TestCase("before")]
-    [TestCase("step")]
-    [TestCase("after")]
+    [Test]
+    [Arguments("before")]
+    [Arguments("step")]
+    [Arguments("after")]
     public async Task Every_after_hook_runs_and_first_failure_wins(string failureAt)
     {
         var failure = new InvalidOperationException("original");
         var cleanup = new ApplicationException("cleanup");
         var calls = new List<string>();
         var options = new BDTestOptions();
-        options.ScenarioHooks.Add(new Hook(_ => Task.CompletedTask, s =>
+        options.ScenarioHooks.Add(new Hook(_ => Task.CompletedTask, async s =>
         {
             calls.Add("global");
-            Assert.That(s.Scenario.Status, Is.EqualTo(Status.Failed));
-            Assert.That(Required(s.Scenario.Exception).Message, Is.EqualTo("original"));
+            await Assert.That(s.Scenario.Status).IsEqualTo(Status.Failed);
+            await Assert.That(Required(s.Scenario.Exception).Message).IsEqualTo("original");
             throw cleanup;
         }));
         using var run = BDTestRun.Start(options);
         var test = new Fixture(run)
         {
             Before = _ => failureAt == "before" ? throw failure : Task.CompletedTask,
-            After = s =>
+            After = async s =>
             {
                 calls.Add("instance");
                 if (failureAt != "after")
-                    Assert.That(Required(s.Scenario.Exception).Message, Is.EqualTo("original"));
+                    await Assert.That(Required(s.Scenario.Exception).Message).IsEqualTo("original");
                 throw failureAt == "after" ? failure : cleanup;
             }
         };
-        var thrown = await Assert.ThrowsAsync<InvalidOperationException>(async () => await test
-            .When(() => RunStep()).Then(() => calls.Add("then")).BDTestAsync());
-        Assert.That(thrown, Is.SameAs(failure));
-        Assert.That(calls, Does.Contain("instance").And.Contain("global"));
-        if (failureAt != "after") Assert.That(calls, Does.Not.Contain("then"));
-        Assert.That(Required(Required(run.Scenarios.Single().Attempts).Single().Exception).Message, Is.EqualTo("original"));
-        if (failureAt == "before") Assert.That(Required(run.Scenarios.Single().Steps).All(s => s.Status == Status.NotRun), Is.True);
+        var thrown = await Assert.That(async () => await test
+            .When(() => RunStep()).Then(() => calls.Add("then")).BDTestAsync()).ThrowsExactly<InvalidOperationException>();
+        await Assert.That(thrown).IsSameReferenceAs(failure);
+
+        await Assert.That(calls).Contains("instance").And.Contains("global");
+        if (failureAt != "after") await Assert.That(calls).DoesNotContain("then");
+        await Assert.That(Required(Required(run.Scenarios.Single().Attempts).Single().Exception).Message).IsEqualTo("original");
+        if (failureAt == "before") await Assert.That(Required(run.Scenarios.Single().Steps).All(s => s.Status == Status.NotRun)).IsTrue();
 
         void RunStep()
         {
@@ -97,18 +99,19 @@ public class ScenarioHookTests
             {
                 if (test.Context.Attempt == 0) await Task.Delay(Timeout.InfiniteTimeSpan, token);
             }).Then(() => Complete()).WithScenarioTimeout(TimeSpan.FromMilliseconds(100))).BDTestAsync();
-        Assert.That(outline.Status, Is.EqualTo(Status.Passed));
-        Assert.That(before.Select(s => s.Context).Distinct().Count(), Is.EqualTo(4));
-        Assert.That(before.Select(s => s.CancellationToken).Distinct().Count(), Is.EqualTo(4));
-        Assert.That(before.Select(s => s.Attempt), Is.EqualTo(new[] { 0, 1, 0, 1 }));
-        Assert.That(after, Is.EqualTo(new[] { (0, Status.Failed, true), (1, Status.Passed, false),
-            (0, Status.Failed, true), (1, Status.Passed, false) }));
-        Assert.That(before.All(s => Required(s.Scenario.ExampleValues).ContainsKey("Value")), Is.True);
-        Assert.That(Required(outline.Examples).All(s => s.Exception == null), Is.True);
+        await Assert.That(outline.Status).IsEqualTo(Status.Passed);
+        await Assert.That(before.Select(s => s.Context).Distinct().Count()).IsEqualTo(4);
+        await Assert.That(before.Select(s => s.CancellationToken).Distinct().Count()).IsEqualTo(4);
+        await Assert.That(before.Select(s => s.Attempt)).IsEquivalentTo(new[] { 0, 1, 0, 1 }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(after).IsEquivalentTo(new[] { (0, Status.Failed, true), (1, Status.Passed, false),
+            (0, Status.Failed, true), (1, Status.Passed, false) }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(before.All(s => Required(s.Scenario.ExampleValues).ContainsKey("Value"))).IsTrue();
+        await Assert.That(Required(outline.Examples).All(s => s.Exception == null)).IsTrue();
     }
 
-    [TestCase(false)]
-    [TestCase(true)]
+    [Test]
+    [Arguments(false)]
+    [Arguments(true)]
     public async Task Timeout_callbacks_do_not_block_cleanup_and_token_is_cancelled_before_cleanup(bool callbackThrows)
     {
         using var run = BDTestRun.Start();
@@ -153,10 +156,10 @@ public class ScenarioHookTests
         try
         {
             var completed = await Task.WhenAny(execution, Task.Delay(TimeSpan.FromSeconds(10)));
-            Assert.That(completed, Is.SameAs(execution), "Cancellation callbacks must not block cleanup.");
-            Assert.That(await execution, Is.TypeOf<TimeoutException>());
-            Assert.That(cleanupRan, Is.True);
-            Assert.That(cancelledInCleanup, Is.True);
+            await Assert.That(completed).IsSameReferenceAs(execution).Because("Cancellation callbacks must not block cleanup.");
+            await Assert.That(await execution).IsTypeOf<TimeoutException>();
+            await Assert.That(cleanupRan).IsTrue();
+            await Assert.That(cancelledInCleanup).IsTrue();
         }
         finally
         {
@@ -166,11 +169,12 @@ public class ScenarioHookTests
         }
     }
 
-    [TestCase("passed")]
-    [TestCase("skipped")]
-    [TestCase("before failure")]
-    [TestCase("step failure")]
-    [TestCase("after failure")]
+    [Test]
+    [Arguments("passed")]
+    [Arguments("skipped")]
+    [Arguments("before failure")]
+    [Arguments("step failure")]
+    [Arguments("after failure")]
     public async Task Reports_preserve_hook_output_when_steps_run_or_are_bypassed(string outcome)
     {
         var options = new BDTestOptions();
@@ -201,11 +205,12 @@ public class ScenarioHookTests
         catch (InvalidOperationException) when (outcome.EndsWith("failure")) { }
         var output = Required(run.Scenarios.Single().Output);
         foreach (var text in new[] { "run before", "instance before", "instance after", "run after" })
-            Assert.That(output.Split(text).Length - 1, Is.EqualTo(1), $"Expected one occurrence of {text}.");
+            await Assert.That(output.Split(text).Length - 1).IsEqualTo(1).Because($"Expected one occurrence of {text}.");
         if (outcome is "passed" or "step failure" or "after failure")
-            Assert.That(output, Does.Contain("step output"));
+            await Assert.That(output).Contains("step output");
         if (outcome == "after failure")
-            Assert.That(output, Does.Contain("After-scenario hook failed:").And.Contain("cleanup failure"));
+
+            await Assert.That(output).Contains("After-scenario hook failed:").And.Contains("cleanup failure");
 
         static Task Log(string text) => Console.Out.WriteLineAsync(text);
     }
@@ -228,11 +233,11 @@ public class ScenarioHookTests
         using var third = BDTestRun.Start(options);
         await Task.WhenAll(Task.Run(() => new Fixture(first).When(() => Complete()).Then(() => Complete()).BDTestAsync()),
             Task.Run(() => new Fixture(second).When(() => Complete()).Then(() => Complete()).BDTestAsync()));
-        Assert.That(firstCalls, Is.EqualTo(1));
-        Assert.That(secondCalls, Is.EqualTo(1));
-        Assert.That(thirdCalls, Is.Zero);
+        await Assert.That(firstCalls).IsEqualTo(1);
+        await Assert.That(secondCalls).IsEqualTo(1);
+        await Assert.That(thirdCalls).IsZero();
         await new Fixture(third).When(() => Complete()).Then(() => Complete()).BDTestAsync();
-        Assert.That(thirdCalls, Is.EqualTo(1));
+        await Assert.That(thirdCalls).IsEqualTo(1);
 
     }
 
@@ -247,8 +252,8 @@ public class ScenarioHookTests
         using var run = BDTestRun.Start(options);
         var scenario = await new Fixture(run).When(() => throw new Exception("must not run"))
             .Then(() => Complete()).BDTestAsync();
-        Assert.That(calls, Is.EqualTo(new[] { Status.Pending, Status.Skipped }));
-        Assert.That(Required(scenario.Steps).All(s => s.Status == Status.Skipped), Is.True);
+        await Assert.That(calls).IsEquivalentTo(new[] { Status.Pending, Status.Skipped }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(Required(scenario.Steps).All(s => s.Status == Status.Skipped)).IsTrue();
     }
 
     [Test]
@@ -263,10 +268,11 @@ public class ScenarioHookTests
         };
         var scenario = await test.When(() => Complete()).Then(() => Complete())
             .WithScenarioTimeout(TimeSpan.FromMilliseconds(100)).BDTestAsync();
-        Assert.That(hookTimes, Is.All.GreaterThan((scenario.Timeout ?? throw new AssertionException("Expected a scenario timeout."))));
-        Assert.That(scenario.TimeTaken, Is.GreaterThanOrEqualTo(hookTimes[0] + hookTimes[1]));
-        Assert.That(Required(scenario.Attempts).Single().TimeTaken, Is.EqualTo(scenario.TimeTaken));
-        Assert.That(scenario.Status, Is.EqualTo(Status.Passed));
+
+        await Assert.That((hookTimes).All(item => item > (scenario.Timeout ?? throw new AssertionException("Expected a scenario timeout.")))).IsTrue();
+        await Assert.That(scenario.TimeTaken).IsGreaterThanOrEqualTo(hookTimes[0] + hookTimes[1]);
+        await Assert.That(Required(scenario.Attempts).Single().TimeTaken).IsEqualTo(scenario.TimeTaken);
+        await Assert.That(scenario.Status).IsEqualTo(Status.Passed);
 
         async Task MeasureHookTime()
         {
@@ -275,76 +281,6 @@ public class ScenarioHookTests
             stopwatch.Stop();
             hookTimes.Add(stopwatch.Elapsed);
         }
-    }
-
-    [TestCase("before")]
-    [TestCase("after")]
-    public async Task NUnit_hook_assertions_are_isolated_for_retries(string failureAt)
-    {
-        var options = new BDTestOptions();
-        options.RetryTestRules.Add(e => e is AssertionException, 1);
-        using var run = BDTestRun.Start(options);
-        var after = new List<Status>();
-        var fixture = new NUnitFixture(run)
-        {
-            Before = s =>
-            {
-                if (failureAt == "before") Assert.That(s.Attempt, Is.EqualTo(1));
-                return Task.CompletedTask;
-            },
-            After = s =>
-            {
-                after.Add(s.Scenario.Status);
-                if (failureAt == "after") Assert.That(s.Attempt, Is.EqualTo(1));
-                return Task.CompletedTask;
-            }
-        };
-        var scenario = await fixture.When(() => Complete()).Then(() => Complete()).BDTestAsync();
-        Assert.That(scenario.RetryCount, Is.EqualTo(1));
-        Assert.That(scenario.Status, Is.EqualTo(Status.Passed));
-        Assert.That(after, Is.EqualTo(new[] { failureAt == "before" ? Status.Failed : Status.Passed, Status.Passed }));
-    }
-
-    [Test]
-    public async Task NUnit_caught_assertion_is_visible_to_after_scenario_hook()
-    {
-        using var run = BDTestRun.Start();
-        Status? observed = null;
-        var fixture = new NUnitFixture(run)
-        {
-            After = s => { observed = s.Scenario.Status; return Task.CompletedTask; }
-        };
-        await Assert.ThrowsAsync<AssertionException>(async () => await fixture.When(() => CaughtAssertion())
-            .Then(() => Complete()).BDTestAsync());
-        Assert.That(observed, Is.EqualTo(Status.Failed));
-
-        static void CaughtAssertion()
-        {
-            try { Assert.Fail("caught failure"); }
-            catch (AssertionException) { }
-        }
-    }
-
-    [Test]
-    public async Task NUnit_cleanup_diagnostics_do_not_replace_original_failure()
-    {
-        using var run = BDTestRun.Start();
-        var failure = new InvalidOperationException("original step failure");
-        var fixture = new NUnitFixture(run)
-        {
-            After = _ =>
-            {
-                for (var i = 0; i < 2; i++)
-                {
-                    try { Assert.Fail("secondary cleanup assertion"); }
-                    catch (AssertionException) { }
-                }
-                throw new ApplicationException("secondary cleanup exception");
-            }
-        };
-        var thrown = await Assert.ThrowsAsync<InvalidOperationException>(async () => await fixture
-            .When(() => throw failure).Then(() => Complete()).BDTestAsync());
-        Assert.That(thrown, Is.SameAs(failure));
     }
 
     [Test]
@@ -362,15 +298,16 @@ public class ScenarioHookTests
             Before = _ => { calls.Add("instance before"); return Task.CompletedTask; },
             After = _ => { calls.Add("instance after"); return Task.CompletedTask; }
         };
-        await Assert.ThrowsAsync<InvalidOperationException>(async () => await fixture.When(() => Complete())
-            .Then(() => Complete()).BDTestAsync());
-        Assert.That(calls, Is.EqualTo(new[] { "instance after", "first after", "second after" }));
-        Assert.That(Required(run.Scenarios.Single().Steps).All(s => s.Status == Status.NotRun), Is.True);
+        await Assert.That(async () => await fixture.When(() => Complete())
+            .Then(() => Complete()).BDTestAsync()).ThrowsExactly<InvalidOperationException>();
+        await Assert.That(calls).IsEquivalentTo(new[] { "instance after", "first after", "second after" }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(Required(run.Scenarios.Single().Steps).All(s => s.Status == Status.NotRun)).IsTrue();
     }
 
-    [TestCase(Status.Skipped)]
-    [TestCase(Status.Inconclusive)]
-    [TestCase(Status.Passed)]
+    [Test]
+    [Arguments(Status.Skipped)]
+    [Arguments(Status.Inconclusive)]
+    [Arguments(Status.Passed)]
     public async Task Before_hook_exceptions_use_run_outcome_mappings(Status expected)
     {
         var options = new BDTestOptions();
@@ -384,33 +321,25 @@ public class ScenarioHookTests
             Before = _ => throw new InvalidOperationException("classified"),
             After = s => { observed = s.Scenario.Status; return Task.CompletedTask; }
         };
-        await Assert.ThrowsAsync<InvalidOperationException>(async () => await fixture.When(() => Complete())
-            .Then(() => Complete()).BDTestAsync());
-        Assert.That(observed, Is.EqualTo(expected));
-        Assert.That(run.Scenarios.Single().Status, Is.EqualTo(expected));
+        await Assert.That(async () => await fixture.When(() => Complete())
+            .Then(() => Complete()).BDTestAsync()).ThrowsExactly<InvalidOperationException>();
+        await Assert.That(observed).IsEqualTo(expected);
+        await Assert.That(run.Scenarios.Single().Status).IsEqualTo(expected);
     }
 
     [Test]
-    public void Null_scenario_hook_registration_is_rejected() => Assert.Throws<ArgumentException>(() =>
+    public async Task Null_scenario_hook_registration_is_rejected() => await Assert.That(() =>
     {
         var options = new BDTestOptions();
         options.ScenarioHooks.Add(null!);
         using var run = BDTestRun.Start(options);
-    });
+    }).ThrowsExactly<ArgumentException>();
 
     private sealed class State { public int Attempt { get; set; } }
     private sealed class Fixture(BDTestRun run) : AbstractContextBDTestBase<State>
     {
         private readonly string _id = Guid.NewGuid().ToString("N");
         protected override string BDTestExecutionId => _id;
-        public override BDTestRun TestRun => run;
-        public Func<ScenarioHookContext<State>, Task> Before { get; init; } = _ => Task.CompletedTask;
-        public Func<ScenarioHookContext<State>, Task> After { get; init; } = _ => Task.CompletedTask;
-        public override Task OnBeforeScenario(ScenarioHookContext<State> scenario) => Before(scenario);
-        public override Task OnAfterScenario(ScenarioHookContext<State> scenario) => After(scenario);
-    }
-    private sealed class NUnitFixture(BDTestRun run) : BDTest.NUnit.NUnitBDTestBase<State>
-    {
         public override BDTestRun TestRun => run;
         public Func<ScenarioHookContext<State>, Task> Before { get; init; } = _ => Task.CompletedTask;
         public Func<ScenarioHookContext<State>, Task> After { get; init; } = _ => Task.CompletedTask;

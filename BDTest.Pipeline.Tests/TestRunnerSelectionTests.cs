@@ -86,7 +86,7 @@ public class TestRunnerSelectionTests
         }
 
         await Assert.That(selected.OrderBy(name => name).ToArray())
-            .IsEquivalentTo(new[] { "BDTest.Pipeline.Tests", "BDTest.ReportGenerator.Tests", "BDTest.TUnit.Tests" });
+            .IsEquivalentTo(new[] { "BDTest.Pipeline.Tests", "BDTest.ReportGenerator.Tests", "BDTest.Tests", "BDTest.TUnit.Tests" });
     }
 
     private static string CreateTemporaryDirectory()

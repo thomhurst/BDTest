@@ -16,15 +16,15 @@ using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
-using NUnit.Framework;
+using System.Threading.Tasks;
 
 namespace BDTest.Tests.Fixtures;
 
 public class CustomHtmlReportTests
 {
-    private WebApplication _application = null!; // Assigned by NUnit OneTimeSetUp.
+    private WebApplication _application = null!; // Assigned by the per-test setup hook.
 
-    [OneTimeSetUp]
+    [Before(HookType.Test)]
     public async Task CreateApplication()
     {
         var builder = WebApplication.CreateBuilder(new WebApplicationOptions
@@ -39,8 +39,10 @@ public class CustomHtmlReportTests
         await _application.StartAsync();
     }
 
-    [OneTimeTearDown]
+    [After(HookType.Test)]
     public async Task DisposeApplication() => await _application.DisposeAsync();
+
+    public static IEnumerable<string> GetPayloads() => Payloads;
 
     private static readonly string[] Payloads =
     {
@@ -55,50 +57,50 @@ public class CustomHtmlReportTests
     };
 
     [Test]
+    [MatrixDataSource]
     public async Task CustomHtmlIsIsolatedFromTheReport(
-        [ValueSource(nameof(Payloads))] string payload)
+        [MatrixMethod<CustomHtmlReportTests>(nameof(GetPayloads))] string payload)
     {
         var html = await RenderScenario(false, payload);
         var match = Regex.Match(html, @"<iframe\b[^>]*>");
-        Assert.That(match.Success, Is.True, "Custom output must be in an iframe on the scenario page.");
+        await Assert.That(match.Success).IsTrue().Because("Custom output must be in an iframe on the scenario page.");
 
         var frame = XElement.Parse(match.Value + "</iframe>");
-        Assert.That(frame.Attribute("sandbox")?.Value, Is.EqualTo(string.Empty),
-            "No script, same-origin, form, popup, or top-navigation sandbox permissions may be granted.");
-        Assert.That(frame.Attribute("title")?.Value, Is.Not.Empty);
-        Assert.That(frame.Attribute("referrerpolicy")?.Value, Is.EqualTo("no-referrer"));
+        await Assert.That(frame.Attribute("sandbox")?.Value).IsEqualTo(string.Empty).Because("No script, same-origin, form, popup, or top-navigation sandbox permissions may be granted.");
+        await Assert.That(frame.Attribute("title")?.Value).IsNotEmpty();
+        await Assert.That(frame.Attribute("referrerpolicy")?.Value).IsEqualTo("no-referrer");
 
         var document = Required(frame.Attribute("srcdoc")).Value;
-        Assert.That(document, Does.EndWith(payload + "</body></html>"),
-            "Razor must attribute-encode the complete document without losing user formatting.");
+        await Assert.That(document).EndsWith(payload + "</body></html>").Because("Razor must attribute-encode the complete document without losing user formatting.");
         var policy = Regex.Match(document, "<meta http-equiv=\"Content-Security-Policy\" content=\"([^\"]*)\">");
-        Assert.That(policy.Success, Is.True);
-        Assert.That(policy.Index, Is.LessThan(document.IndexOf("<body>", StringComparison.Ordinal)));
-        Assert.That(policy.Groups[1].Value, Does.Contain("default-src 'none'"));
-        Assert.That(policy.Groups[1].Value, Does.Contain("base-uri 'none'"));
-        Assert.That(policy.Groups[1].Value, Does.Contain("form-action 'none'"));
-        Assert.That(policy.Groups[1].Value, Does.Contain("style-src 'unsafe-inline'"));
-        Assert.That(policy.Groups[1].Value, Does.Contain("img-src data: https: http:"));
-        Assert.That(html.Remove(match.Index, match.Length), Does.Not.Contain(payload),
-            "Uploaded HTML must never be emitted into the parent report document.");
+        await Assert.That(policy.Success).IsTrue();
+        await Assert.That(policy.Index).IsLessThan(document.IndexOf("<body>", StringComparison.Ordinal));
+        await Assert.That(policy.Groups[1].Value).Contains("default-src 'none'");
+        await Assert.That(policy.Groups[1].Value).Contains("base-uri 'none'");
+        await Assert.That(policy.Groups[1].Value).Contains("form-action 'none'");
+        await Assert.That(policy.Groups[1].Value).Contains("style-src 'unsafe-inline'");
+        await Assert.That(policy.Groups[1].Value).Contains("img-src data: https: http:");
+        await Assert.That(html.Remove(match.Index, match.Length)).DoesNotContain(payload).Because("Uploaded HTML must never be emitted into the parent report document.");
     }
 
     [Test]
+    [MatrixDataSource]
     public async Task SidePanelNeverEmbedsCustomHtml(
-        [ValueSource(nameof(Payloads))] string payload)
+        [MatrixMethod<CustomHtmlReportTests>(nameof(GetPayloads))] string payload)
     {
         // The Scenarios side panel links to the full page instead of rendering uploaded HTML.
         var html = await RenderScenario(true, payload);
-        Assert.That(html, Does.Not.Contain("<iframe"));
-        Assert.That(html, Does.Not.Contain(payload));
+        await Assert.That(html).DoesNotContain("<iframe");
+        await Assert.That(html).DoesNotContain(payload);
     }
 
     [Test]
+    [MatrixDataSource]
     public async Task EmptyCustomOutputDoesNotCreateAFrame(
-        [Values(false, true)] bool modal,
-        [Values(null, "")] string? payload)
+        [Matrix(false, true)] bool modal,
+        [Matrix(null, "")] string? payload)
     {
-        Assert.That(await RenderScenario(modal, payload), Does.Not.Contain("<iframe"));
+        await Assert.That(await RenderScenario(modal, payload)).DoesNotContain("<iframe");
     }
 
     private async Task<string> RenderScenario(bool modal, string? payload)
@@ -122,7 +124,7 @@ public class CustomHtmlReportTests
         var view = engine.GetView(null, modal
             ? "/Views/Shared/_ScenarioPanel.cshtml"
             : "/Views/BDTest/Scenario.cshtml", false);
-        Assert.That(view.Success, Is.True);
+        await Assert.That(view.Success).IsTrue();
         using var writer = new StringWriter();
         var viewData = new ViewDataDictionary(new EmptyModelMetadataProvider(), new ModelStateDictionary())
         {

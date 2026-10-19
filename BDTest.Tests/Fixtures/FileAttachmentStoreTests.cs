@@ -1,12 +1,14 @@
+using System.IO;
 using BDTest.Razor.Reports.Storage;
-using NUnit.Framework;
+using System.Threading.Tasks;
 
 namespace BDTest.Tests.Fixtures;
 
 public class FileAttachmentStoreTests
 {
-    [TestCase(false)]
-    [TestCase(true)]
+    [Test]
+    [Arguments(false)]
+    [Arguments(true)]
     public async Task Deletion_recovers_all_pending_directories_for_only_the_selected_report(bool currentContentExists)
     {
         var directory = Path.Combine(Path.GetTempPath(), "BDTest-file-tests", Guid.NewGuid().ToString("N"));
@@ -29,15 +31,17 @@ public class FileAttachmentStoreTests
 
             await store.DeleteReportAsync(report);
             var remaining = Directory.GetDirectories(directory);
-            Assert.That(remaining, Has.Length.EqualTo(1));
-            Assert.That(Path.GetFileName(remaining.Single()), Does.StartWith(otherReport + "-"));
-            Assert.That(Directory.GetFiles(remaining.Single()), Has.Length.EqualTo(1));
+
+            await Assert.That((remaining).Length).IsEqualTo(1);
+            await Assert.That(Path.GetFileName(remaining.Single())).StartsWith(otherReport + "-");
+
+            await Assert.That((Directory.GetFiles(remaining.Single())).Length).IsEqualTo(1);
         }
         finally { Directory.Delete(directory, true); }
     }
 
     [Test]
-    [Platform("Win")]
+    [RunOn(global::TUnit.Core.Enums.OS.Windows)]
     public async Task Failed_deletion_is_retried_by_a_new_store_instance()
     {
         var directory = Path.Combine(Path.GetTempPath(), "BDTest-file-tests", Guid.NewGuid().ToString("N"));
@@ -50,16 +54,17 @@ public class FileAttachmentStoreTests
             await store.WriteAsync(report, attachment, input, 1);
             File.SetAttributes(Path.Combine(directory, report, attachment), FileAttributes.ReadOnly);
 
-            await Assert.CatchAsync<UnauthorizedAccessException>(() => store.DeleteReportAsync(report));
-            Assert.That(Directory.Exists(Path.Combine(directory, report)), Is.False);
+            await Assert.That(() => store.DeleteReportAsync(report)).Throws<UnauthorizedAccessException>();
+            await Assert.That(Directory.Exists(Path.Combine(directory, report))).IsFalse();
             var remaining = Directory.GetFiles(directory, "*", SearchOption.AllDirectories);
-            Assert.That(remaining, Has.Length.EqualTo(1));
-            await Assert.CatchAsync<UnauthorizedAccessException>(() =>
-                new FileBDTestAttachmentStore(directory).DeleteReportAsync(report));
+
+            await Assert.That((remaining).Length).IsEqualTo(1);
+            await Assert.That(() =>
+                new FileBDTestAttachmentStore(directory).DeleteReportAsync(report)).Throws<UnauthorizedAccessException>();
             File.SetAttributes(remaining.Single(), FileAttributes.Normal);
 
             await new FileBDTestAttachmentStore(directory).DeleteReportAsync(report);
-            Assert.That(Directory.GetFileSystemEntries(directory), Is.Empty);
+            await Assert.That(Directory.GetFileSystemEntries(directory)).IsEmpty();
         }
         finally
         {
@@ -87,15 +92,16 @@ public class FileAttachmentStoreTests
                 await Task.WhenAll(Enumerable.Range(0, 8).Select(_ => Task.Run(() =>
                     new FileBDTestAttachmentStore(directory).DeleteReportAsync(report))));
                 await store.DeleteReportAsync(report);
-                Assert.That(Directory.Exists(Path.Combine(directory, report)), Is.False);
-                Assert.That(Directory.GetFileSystemEntries(directory), Is.Empty);
+                await Assert.That(Directory.Exists(Path.Combine(directory, report))).IsFalse();
+                await Assert.That(Directory.GetFileSystemEntries(directory)).IsEmpty();
             }
         }
         finally { Directory.Delete(directory, true); }
     }
 
-    [TestCase(1)]
-    [TestCase(3)]
+    [Test]
+    [Arguments(1)]
+    [Arguments(3)]
     public async Task Invalid_length_preserves_previous_content_and_removes_partial_file(int length)
     {
         var directory = Path.Combine(Path.GetTempPath(), "BDTest-file-tests", Guid.NewGuid().ToString("N"));
@@ -107,20 +113,22 @@ public class FileAttachmentStoreTests
             using var original = new MemoryStream(new byte[] { 4, 5 });
             await store.WriteAsync(report, attachment, original, 2);
             using var replacement = new MemoryStream(new byte[] { 7, 8 });
-            await Assert.ThrowsAsync<InvalidDataException>(() => store.WriteAsync(report, attachment, replacement, length));
-            Assert.That(replacement.CanRead, Is.True);
-            Assert.That(original.CanRead, Is.True);
+            await Assert.That(() => store.WriteAsync(report, attachment, replacement, length)).ThrowsExactly<InvalidDataException>();
+            await Assert.That(replacement.CanRead).IsTrue();
+            await Assert.That(original.CanRead).IsTrue();
             using var read = await store.OpenReadAsync(report, attachment);
-            Assert.That(Required(read).ReadByte(), Is.EqualTo(4));
-            Assert.That(Directory.GetFiles(directory, "*", SearchOption.AllDirectories), Has.Length.EqualTo(1));
+            await Assert.That(Required(read).ReadByte()).IsEqualTo(4);
+
+            await Assert.That((Directory.GetFiles(directory, "*", SearchOption.AllDirectories)).Length).IsEqualTo(1);
         }
         finally { if (Directory.Exists(directory)) Directory.Delete(directory, true); }
     }
 
-    [TestCase("../outside")]
-    [TestCase("..")]
-    [TestCase("C:\\outside")]
-    [TestCase("invalid/id")]
+    [Test]
+    [Arguments("../outside")]
+    [Arguments("..")]
+    [Arguments("C:\\outside")]
+    [Arguments("invalid/id")]
     public async Task Invalid_ids_never_create_files(string id)
     {
         var directory = Path.Combine(Path.GetTempPath(), "BDTest-file-tests", Guid.NewGuid().ToString("N"));
@@ -128,15 +136,16 @@ public class FileAttachmentStoreTests
         {
             var store = new FileBDTestAttachmentStore(directory);
             using var input = new MemoryStream(new byte[] { 1 });
-            await Assert.ThrowsAsync<ArgumentException>(() => store.WriteAsync(id, Guid.NewGuid().ToString("N"), input, 1));
-            await Assert.ThrowsAsync<ArgumentException>(() => store.WriteAsync(Guid.NewGuid().ToString("N"), id, input, 1));
-            Assert.That(Directory.GetFiles(directory, "*", SearchOption.AllDirectories), Is.Empty);
+            await Assert.That(() => store.WriteAsync(id, Guid.NewGuid().ToString("N"), input, 1)).ThrowsExactly<ArgumentException>();
+            await Assert.That(() => store.WriteAsync(Guid.NewGuid().ToString("N"), id, input, 1)).ThrowsExactly<ArgumentException>();
+            await Assert.That(Directory.GetFiles(directory, "*", SearchOption.AllDirectories)).IsEmpty();
         }
         finally { Directory.Delete(directory, true); }
     }
 
-    [TestCase(false)]
-    [TestCase(true)]
+    [Test]
+    [Arguments(false)]
+    [Arguments(true)]
     public async Task Failed_or_cancelled_copy_removes_partial_content(bool cancel)
     {
         var directory = Path.Combine(Path.GetTempPath(), "BDTest-file-tests", Guid.NewGuid().ToString("N"));
@@ -148,12 +157,12 @@ public class FileAttachmentStoreTests
             using var cancellation = new CancellationTokenSource();
             using var input = new FailedCopyStream(cancellation, cancel);
             if (cancel)
-                await Assert.CatchAsync<OperationCanceledException>(() => store.WriteAsync(report, attachment, input, 2, cancellation.Token));
+                await Assert.That(() => store.WriteAsync(report, attachment, input, 2, cancellation.Token)).Throws<OperationCanceledException>();
             else
-                await Assert.ThrowsAsync<IOException>(() => store.WriteAsync(report, attachment, input, 2, cancellation.Token));
-            Assert.That(input.CanRead, Is.True);
-            Assert.That(await store.OpenReadAsync(report, attachment), Is.Null);
-            Assert.That(Directory.GetFiles(directory, "*", SearchOption.AllDirectories), Is.Empty);
+                await Assert.That(() => store.WriteAsync(report, attachment, input, 2, cancellation.Token)).ThrowsExactly<IOException>();
+            await Assert.That(input.CanRead).IsTrue();
+            await Assert.That(await store.OpenReadAsync(report, attachment)).IsNull();
+            await Assert.That(Directory.GetFiles(directory, "*", SearchOption.AllDirectories)).IsEmpty();
         }
         finally { Directory.Delete(directory, true); }
     }

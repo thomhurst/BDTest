@@ -2,11 +2,11 @@ using BDTest.Attributes;
 using BDTest.Settings;
 using BDTest.Test;
 using BDTest.Tests.Helpers;
-using NUnit.Framework;
+using System.Threading.Tasks;
 
 namespace BDTest.Tests.Fixtures;
 
-[Parallelizable(ParallelScope.None)]
+[NotInParallel]
 [Story(AsA = "BDTest developer",
     IWant = "to make sure that custom step text attributes work properly",
     SoThat = "tests can be translated to plain English")]
@@ -14,7 +14,7 @@ public class StepTextTests : RunTestBase
 {
     protected override bool BindCurrentTestMetadata => true;
 
-    [TearDown]
+    [After(HookType.Test)]
     public void FinishExecution() => EndTest();
 
     private InnerStepsClass InnerSteps => new();
@@ -28,16 +28,17 @@ public class StepTextTests : RunTestBase
             .Then(() => Action3Custom())
             .BDTestAsync();
             
-        Assert.That(Required(scenario.Steps)[0].StepText, Is.EqualTo("Given I have a custom step 1"));
-        Assert.That(scenario.Steps[1].StepText, Is.EqualTo("When my name is Tom Longhurst"));
-        Assert.That(scenario.Steps[2].StepText, Is.EqualTo("Then I have a custom step 3"));
-            
-        Assert.That(Required(JsonHelper.GetTestDynamicJsonObject(TestRun).SelectToken("$.Scenarios[0].Steps[0].StepText")).ToString(), Is.EqualTo("Given I have a custom step 1"));
-        Assert.That(Required(JsonHelper.GetTestDynamicJsonObject(TestRun).SelectToken("$.Scenarios[0].Steps[1].StepText")).ToString(), Is.EqualTo("When my name is Tom Longhurst"));
-        Assert.That(Required(JsonHelper.GetTestDynamicJsonObject(TestRun).SelectToken("$.Scenarios[0].Steps[2].StepText")).ToString(), Is.EqualTo("Then I have a custom step 3"));
+        await Assert.That(Required(scenario.Steps)[0].StepText).IsEqualTo("Given I have a custom step 1");
+        await Assert.That(scenario.Steps[1].StepText).IsEqualTo("When my name is Tom Longhurst");
+        await Assert.That(scenario.Steps[2].StepText).IsEqualTo("Then I have a custom step 3");
+
+        await Assert.That(Required(JsonHelper.GetTestDynamicJsonObject(TestRun).SelectToken("$.Scenarios[0].Steps[0].StepText")).ToString()).IsEqualTo("Given I have a custom step 1");
+        await Assert.That(Required(JsonHelper.GetTestDynamicJsonObject(TestRun).SelectToken("$.Scenarios[0].Steps[1].StepText")).ToString()).IsEqualTo("When my name is Tom Longhurst");
+        await Assert.That(Required(JsonHelper.GetTestDynamicJsonObject(TestRun).SelectToken("$.Scenarios[0].Steps[2].StepText")).ToString()).IsEqualTo("Then I have a custom step 3");
     }
-        
-    [TestCase("Tom", "Longhurst")]
+
+    [Test]
+    [Arguments("Tom", "Longhurst")]
     public async Task CustomStepTexts_DynamicArgumentValue(string firstName, string lastName)
     {
         var scenario = await Given(() => Action1Custom())
@@ -45,13 +46,13 @@ public class StepTextTests : RunTestBase
             .Then(() => Action3Custom())
             .BDTestAsync();
             
-        Assert.That(Required(scenario.Steps)[0].StepText, Is.EqualTo("Given I have a custom step 1"));
-        Assert.That(scenario.Steps[1].StepText, Is.EqualTo("When my name is Tom Longhurst"));
-        Assert.That(scenario.Steps[2].StepText, Is.EqualTo("Then I have a custom step 3"));
-            
-        Assert.That(Required(JsonHelper.GetTestDynamicJsonObject(TestRun).SelectToken("$.Scenarios[0].Steps[0].StepText")).ToString(), Is.EqualTo("Given I have a custom step 1"));
-        Assert.That(Required(JsonHelper.GetTestDynamicJsonObject(TestRun).SelectToken("$.Scenarios[0].Steps[1].StepText")).ToString(), Is.EqualTo("When my name is Tom Longhurst"));
-        Assert.That(Required(JsonHelper.GetTestDynamicJsonObject(TestRun).SelectToken("$.Scenarios[0].Steps[2].StepText")).ToString(), Is.EqualTo("Then I have a custom step 3"));
+        await Assert.That(Required(scenario.Steps)[0].StepText).IsEqualTo("Given I have a custom step 1");
+        await Assert.That(scenario.Steps[1].StepText).IsEqualTo("When my name is Tom Longhurst");
+        await Assert.That(scenario.Steps[2].StepText).IsEqualTo("Then I have a custom step 3");
+
+        await Assert.That(Required(JsonHelper.GetTestDynamicJsonObject(TestRun).SelectToken("$.Scenarios[0].Steps[0].StepText")).ToString()).IsEqualTo("Given I have a custom step 1");
+        await Assert.That(Required(JsonHelper.GetTestDynamicJsonObject(TestRun).SelectToken("$.Scenarios[0].Steps[1].StepText")).ToString()).IsEqualTo("When my name is Tom Longhurst");
+        await Assert.That(Required(JsonHelper.GetTestDynamicJsonObject(TestRun).SelectToken("$.Scenarios[0].Steps[2].StepText")).ToString()).IsEqualTo("Then I have a custom step 3");
     }
         
     [Test]
@@ -67,15 +68,15 @@ public class StepTextTests : RunTestBase
             .And(() => Action3Custom()).WithStepText(() => text3)
             .BDTestAsync();
             
-        Assert.That(Required(scenario.Steps)[0].StepText, Is.EqualTo("Given " + text1));
-        Assert.That(scenario.Steps[1].StepText, Is.EqualTo("When " + text2));
-        Assert.That(scenario.Steps[2].StepText, Is.EqualTo("Then " + text3));
-        Assert.That(scenario.Steps[3].StepText, Is.EqualTo("And " + text3));
-            
-        Assert.That(Required(JsonHelper.GetTestDynamicJsonObject(TestRun).SelectToken("$.Scenarios[0].Steps[0].StepText")).ToString(), Is.EqualTo("Given " + text1));
-        Assert.That(Required(JsonHelper.GetTestDynamicJsonObject(TestRun).SelectToken("$.Scenarios[0].Steps[1].StepText")).ToString(), Is.EqualTo("When " + text2));
-        Assert.That(Required(JsonHelper.GetTestDynamicJsonObject(TestRun).SelectToken("$.Scenarios[0].Steps[2].StepText")).ToString(), Is.EqualTo("Then " + text3));
-        Assert.That(Required(JsonHelper.GetTestDynamicJsonObject(TestRun).SelectToken("$.Scenarios[0].Steps[3].StepText")).ToString(), Is.EqualTo("And " + text3));
+        await Assert.That(Required(scenario.Steps)[0].StepText).IsEqualTo("Given " + text1);
+        await Assert.That(scenario.Steps[1].StepText).IsEqualTo("When " + text2);
+        await Assert.That(scenario.Steps[2].StepText).IsEqualTo("Then " + text3);
+        await Assert.That(scenario.Steps[3].StepText).IsEqualTo("And " + text3);
+
+        await Assert.That(Required(JsonHelper.GetTestDynamicJsonObject(TestRun).SelectToken("$.Scenarios[0].Steps[0].StepText")).ToString()).IsEqualTo("Given " + text1);
+        await Assert.That(Required(JsonHelper.GetTestDynamicJsonObject(TestRun).SelectToken("$.Scenarios[0].Steps[1].StepText")).ToString()).IsEqualTo("When " + text2);
+        await Assert.That(Required(JsonHelper.GetTestDynamicJsonObject(TestRun).SelectToken("$.Scenarios[0].Steps[2].StepText")).ToString()).IsEqualTo("Then " + text3);
+        await Assert.That(Required(JsonHelper.GetTestDynamicJsonObject(TestRun).SelectToken("$.Scenarios[0].Steps[3].StepText")).ToString()).IsEqualTo("And " + text3);
     }
         
     [Test]
@@ -86,13 +87,13 @@ public class StepTextTests : RunTestBase
             .Then(() => Step_3_Without_A_StepTextAttribute_and_Hyphens())
             .BDTestAsync();
             
-        Assert.That(Required(scenario.Steps)[0].StepText, Is.EqualTo("Given step 1 without a step text attribute"));
-        Assert.That(scenario.Steps[1].StepText, Is.EqualTo("When step 2 without a step text attribute"));
-        Assert.That(scenario.Steps[2].StepText, Is.EqualTo("Then step 3 Without A StepTextAttribute and Hyphens"));
-            
-        Assert.That(Required(JsonHelper.GetTestDynamicJsonObject(TestRun).SelectToken("$.Scenarios[0].Steps[0].StepText")).ToString(), Is.EqualTo("Given step 1 without a step text attribute"));
-        Assert.That(Required(JsonHelper.GetTestDynamicJsonObject(TestRun).SelectToken("$.Scenarios[0].Steps[1].StepText")).ToString(), Is.EqualTo("When step 2 without a step text attribute"));
-        Assert.That(Required(JsonHelper.GetTestDynamicJsonObject(TestRun).SelectToken("$.Scenarios[0].Steps[2].StepText")).ToString(), Is.EqualTo("Then step 3 Without A StepTextAttribute and Hyphens"));
+        await Assert.That(Required(scenario.Steps)[0].StepText).IsEqualTo("Given step 1 without a step text attribute");
+        await Assert.That(scenario.Steps[1].StepText).IsEqualTo("When step 2 without a step text attribute");
+        await Assert.That(scenario.Steps[2].StepText).IsEqualTo("Then step 3 Without A StepTextAttribute and Hyphens");
+
+        await Assert.That(Required(JsonHelper.GetTestDynamicJsonObject(TestRun).SelectToken("$.Scenarios[0].Steps[0].StepText")).ToString()).IsEqualTo("Given step 1 without a step text attribute");
+        await Assert.That(Required(JsonHelper.GetTestDynamicJsonObject(TestRun).SelectToken("$.Scenarios[0].Steps[1].StepText")).ToString()).IsEqualTo("When step 2 without a step text attribute");
+        await Assert.That(Required(JsonHelper.GetTestDynamicJsonObject(TestRun).SelectToken("$.Scenarios[0].Steps[2].StepText")).ToString()).IsEqualTo("Then step 3 Without A StepTextAttribute and Hyphens");
     }
         
     [Test]
@@ -103,7 +104,7 @@ public class StepTextTests : RunTestBase
             .Then(() => Console.WriteLine("the steptext should correctly have the func response"))
             .BDTestAsync();
             
-        Assert.That(Required(scenario.Steps)[1].StepText, Is.EqualTo($"When the func returns: {typeof(Func<string>)}"));
+        await Assert.That(Required(scenario.Steps)[1].StepText).IsEqualTo($"When the func returns: {typeof(Func<string>)}");
     }
         
     [Test]
@@ -114,7 +115,7 @@ public class StepTextTests : RunTestBase
             .Then(() => StepWithListType(new List<string> {"Blah1", "Blah2", "Blah3"})).WithArgs(() => new List<string> {"Blah1", "Blah2", "Blah3"})
             .BDTestAsync();
             
-        Assert.That(Required(scenario.Steps)[2].StepText, Is.EqualTo("Then the step text can display the list Blah1, Blah2, Blah3"));
+        await Assert.That(Required(scenario.Steps)[2].StepText).IsEqualTo("Then the step text can display the list Blah1, Blah2, Blah3");
     }
         
     [Test]
@@ -127,7 +128,7 @@ public class StepTextTests : RunTestBase
             .Then(() => StepWithStrongTypeAndStepText(new CustomClassToStepTextString())).WithArgs(() => new CustomClassToStepTextString())
             .BDTestAsync();
             
-        Assert.That(Required(scenario.Steps)[2].StepText, Is.EqualTo("Then the text is 123..................4....................................5"));
+        await Assert.That(Required(scenario.Steps)[2].StepText).IsEqualTo("Then the text is 123..................4....................................5");
     }
         
     [Test]
@@ -137,7 +138,7 @@ public class StepTextTests : RunTestBase
             .Then(() => StepWithParametersButWithoutStepText("One", "Two"))
             .BDTestAsync();
             
-        Assert.That(Required(scenario.Steps)[1].StepText, Is.EqualTo("Then step with parameters but without step text One Two"));
+        await Assert.That(Required(scenario.Steps)[1].StepText).IsEqualTo("Then step with parameters but without step text One Two");
     }
 
     [Test]
@@ -157,7 +158,7 @@ public class StepTextTests : RunTestBase
 
         var thenStep = Required(scenario.Steps).Last();
             
-        Assert.That(thenStep.StepText, Is.EqualTo("Then the text is Out of the box ToString() called"));
+        await Assert.That(thenStep.StepText).IsEqualTo("Then the text is Out of the box ToString() called");
     }
         
     [Test]
@@ -177,7 +178,7 @@ public class StepTextTests : RunTestBase
 
         var thenStep = Required(scenario.Steps).Last();
             
-        Assert.That(thenStep.StepText, Is.EqualTo("Then the text is Out of the box ToString() called"));
+        await Assert.That(thenStep.StepText).IsEqualTo("Then the text is Out of the box ToString() called");
     }
         
     [Test]
@@ -197,13 +198,14 @@ public class StepTextTests : RunTestBase
 
         var thenStep = Required(scenario.Steps).Last();
             
-        Assert.That(thenStep.StepText, Is.EqualTo("Then step with strong type and no step text Out of the box ToString() called"));
+        await Assert.That(thenStep.StepText).IsEqualTo("Then step with strong type and no step text Out of the box ToString() called");
     }
 
     private int _retryCount;
-    [TestCase(1)]
-    [TestCase(2)]
-    [TestCase(3)]
+    [Test]
+    [Arguments(1)]
+    [Arguments(2)]
+    [Arguments(3)]
     [BDTestRetry(3)]
     public async Task RetrySuccessfully(int throwIfRetryLessThan)
     {
@@ -220,7 +222,7 @@ public class StepTextTests : RunTestBase
             
         var thenStep = Required(scenario.Steps).First();
             
-        Assert.That(thenStep.StepText, Is.EqualTo("Given step with strong type and no step text Out of the box ToString() called"));
+        await Assert.That(thenStep.StepText).IsEqualTo("Given step with strong type and no step text Out of the box ToString() called");
     }
         
     private void ThrowException(int throwIfRetryLessThan)
@@ -232,48 +234,48 @@ public class StepTextTests : RunTestBase
     }
         
     [StepText("the text is {0}")]
-    public void StepWithStrongTypeAndStepText(CustomClassToStepTextString obj)
+    private void StepWithStrongTypeAndStepText(CustomClassToStepTextString obj)
     {
     }
 
     [StepText("the func returns: {0}")]
-    public void FuncReturningStepText(Func<string> func)
+    private void FuncReturningStepText(Func<string> func)
     {
     }
         
     [StepText("the step text can display the list {0}")]
-    public void StepWithListType(IList<string> list)
+    private void StepWithListType(IList<string> list)
     {
     }
 
     [StepText("I have a custom step 1")]
-    public void Action1Custom()
+    private void Action1Custom()
     {
     }
         
     [StepText("my name is {0} {1}")]
-    public void StepThatPrintsMyName(string firstName, string lastName)
+    private void StepThatPrintsMyName(string firstName, string lastName)
     {
     }
         
     [StepText("I have a custom step 3")]
-    public void Action3Custom()
+    private void Action3Custom()
     {
     }
         
-    public void Step1WithoutAStepTextAttribute()
+    private void Step1WithoutAStepTextAttribute()
     {
     }
         
-    public void Step2WithoutAStepTextAttribute()
+    private void Step2WithoutAStepTextAttribute()
     {
     }
         
-    public void Step_3_Without_A_StepTextAttribute_and_Hyphens()
+    private void Step_3_Without_A_StepTextAttribute_and_Hyphens()
     {
     }
 
-    public void StepWithParametersButWithoutStepText(string valueOne, string valueTwo)
+    private void StepWithParametersButWithoutStepText(string valueOne, string valueTwo)
     {
     }
 

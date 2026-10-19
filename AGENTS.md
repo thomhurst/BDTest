@@ -13,12 +13,13 @@ SDK: .NET 10 (CI uses `10.0.402`). Solution: `BDTest.sln`.
 ```bash
 dotnet build BDTest.sln
 
-# NUnit / xUnit test projects (VSTest-based)
-dotnet test BDTest.Tests/BDTest.Tests.csproj
+# NUnit / xUnit / MSTest test projects (VSTest-based)
 dotnet test BDTest.NUnit.Tests/BDTest.NUnit.Tests.csproj
-dotnet test BDTest.Tests/BDTest.Tests.csproj --filter "FullyQualifiedName~SomeTestName"
+dotnet test BDTest.NUnit.Tests/BDTest.NUnit.Tests.csproj --filter "FullyQualifiedName~SomeTestName"
 
 # TUnit suites use Microsoft.Testing.Platform — use dotnet run, not dotnet test
+dotnet run --project BDTest.Tests
+dotnet run --project BDTest.Tests -- --treenode-filter "/*/*/RetryTests/*"
 dotnet run --project BDTest.TUnit.Tests
 dotnet run --project BDTest.Pipeline.Tests
 dotnet run --project BDTest.ReportGenerator.Tests
@@ -57,9 +58,9 @@ Core and Razor reports grant `InternalsVisibleTo` only to `BDTest.Tests`, using 
 - `BDTest.ReportGenerator.RazorServer`: deployable report server using that library, with an Azure Blob data store and Azure AD auth. Not packed.
 
 **Tests / samples**
-- `BDTest.Pipeline.Tests` and `BDTest.ReportGenerator.Tests` use TUnit; the core `BDTest.Tests` suite remains NUnit pending its separate migration.
+- `BDTest.Tests`, `BDTest.Pipeline.Tests` and `BDTest.ReportGenerator.Tests` use TUnit and Microsoft.Testing.Platform.
 - `BDTest.Example`: sample NUnit tests, referenced by `BDTest.NUnit.Tests`.
-- `BDTest.Tests`: core and report behavior coverage, still NUnit until #950. It retains the sole signed test friend grant.
+- `BDTest.Tests`: core and report behavior coverage using TUnit assertions, per-test fixture instances and explicit runs. It retains the sole signed test friend grant and compiler-generator coverage.
 - `BDTest.NUnit.Tests`: unsigned NUnit adapter, lifecycle, runner outcomes, shared conformance and sample integration coverage.
 - `BDTest.xUnit.Tests`, `BDTest.MSTest.Tests`, `BDTest.TUnit.Tests`: coverage on each adapter's native framework, including unique-ID/context isolation under parallel execution.
 

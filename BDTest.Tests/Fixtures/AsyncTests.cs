@@ -1,17 +1,16 @@
 using BDTest.Attributes;
 using BDTest.Test;
-using NUnit.Framework;
+using System.Threading.Tasks;
 
 namespace BDTest.Tests.Fixtures;
-
-[Parallelizable(ParallelScope.All)]
 [Story(AsA = "BDTest developer",
     IWant = "to make sure that BDTest works asynchronously",
     SoThat = "tests run with maximum performance")]
 public class AsyncTests : RunTestBase
 {
-    [TestCase("async")]
-    [TestCase("await-builder")]
+    [Test]
+    [Arguments("async")]
+    [Arguments("await-builder")]
     public async Task StepsWaitForAsyncCompletion(string entryPoint)
     {
         var entered = CreateSignal();
@@ -30,8 +29,8 @@ public class AsyncTests : RunTestBase
         try
         {
             await entered.Task.WaitAsync(TimeSpan.FromSeconds(20));
-            Assert.That(execution.IsCompleted, Is.False);
-            Assert.That(events, Is.EqualTo(new[] { "given started" }));
+            await Assert.That(execution.IsCompleted).IsFalse();
+            await Assert.That(events).IsEquivalentTo(new[] { "given started" }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
         }
         finally
         {
@@ -40,10 +39,11 @@ public class AsyncTests : RunTestBase
         }
 
         var scenario = await execution;
-        Assert.That(events, Is.EqualTo(new[] { "given started", "given finished", "when", "then" }));
-        Assert.That(scenario.Status, Is.EqualTo(Status.Passed));
-        Assert.That(Required(scenario.Steps).Select(step => step.Status), Is.All.EqualTo(Status.Passed));
-        Assert.That(scenario.TimeTaken, Is.GreaterThanOrEqualTo(TimeSpan.Zero));
+        await Assert.That(events).IsEquivalentTo(new[] { "given started", "given finished", "when", "then" }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(scenario.Status).IsEqualTo(Status.Passed);
+
+        await Assert.That((Required(scenario.Steps).Select(step => step.Status)).All(item => Equals(item, Status.Passed))).IsTrue();
+        await Assert.That(scenario.TimeTaken).IsGreaterThanOrEqualTo(TimeSpan.Zero);
     }
 
     private static TaskCompletionSource<bool> CreateSignal() =>

@@ -1,5 +1,5 @@
 using BDTest.Test;
-using NUnit.Framework;
+using System.Threading.Tasks;
 
 namespace BDTest.Tests.Fixtures;
 
@@ -13,7 +13,7 @@ public class DefaultExecutionIdTests : TestRunOwner
 
         var scenario = await builder.When(() => NoOp()).Then(() => NoOp()).BDTestAsync();
 
-        Assert.That(scenario.TestStartupInformation, Does.Contain("async startup"));
+        await Assert.That(scenario.TestStartupInformation).Contains("async startup");
     }
 
     [Test]
@@ -27,13 +27,16 @@ public class DefaultExecutionIdTests : TestRunOwner
         var firstScenario = await first.When(() => NoOp()).Then(() => NoOp()).BDTestAsync();
         var secondScenario = await second.When(() => NoOp()).Then(() => NoOp()).BDTestAsync();
 
-        Assert.That(firstScenario.FrameworkTestId, Is.Not.EqualTo(secondScenario.FrameworkTestId));
-        Assert.That(firstScenario.TestStartupInformation, Does.Contain("first startup").And.Not.Contain("second startup"));
-        Assert.That(secondScenario.TestStartupInformation, Does.Contain("second startup").And.Not.Contain("first startup"));
+        await Assert.That(firstScenario.FrameworkTestId).IsNotEqualTo(secondScenario.FrameworkTestId);
+
+        await Assert.That(firstScenario.TestStartupInformation).Contains("first startup").And.DoesNotContain("second startup");
+
+        await Assert.That(secondScenario.TestStartupInformation).Contains("second startup").And.DoesNotContain("first startup");
     }
 
-    [TestCase(false)]
-    [TestCase(true)]
+    [Test]
+    [Arguments(false)]
+    [Arguments(true)]
     public async Task ExplicitStartKeepsContextAndOutputAcrossAsyncSetup(bool useTaskRun)
     {
         using var fixture = new ContextFixture();
@@ -44,13 +47,12 @@ public class DefaultExecutionIdTests : TestRunOwner
                 ? await Task.Run(fixture.SetupAsync)
                 : await fixture.SetupAsync();
 
-            Assert.That(fixture.Context, Is.SameAs(setupContext.TestContext));
-            Assert.That(fixture.BDTestContext.CurrentScenarioBDTestExecutionId,
-                Is.EqualTo(setupContext.CurrentScenarioBDTestExecutionId));
+            await Assert.That(fixture.Context).IsSameReferenceAs(setupContext.TestContext);
+            await Assert.That(fixture.BDTestContext.CurrentScenarioBDTestExecutionId).IsEqualTo(setupContext.CurrentScenarioBDTestExecutionId);
             var scenario = await fixture.When(() => NoOp()).Then(() => NoOp()).BDTestAsync();
-            Assert.That(scenario.TestStartupInformation, Does.Contain("context startup"));
+            await Assert.That(scenario.TestStartupInformation).Contains("context startup");
             fixture.WriteTearDownOutput("context teardown");
-            Assert.That(scenario.TearDownOutput, Does.Contain("context teardown"));
+            await Assert.That(scenario.TearDownOutput).Contains("context teardown");
         }
         finally
         {
@@ -58,8 +60,9 @@ public class DefaultExecutionIdTests : TestRunOwner
         }
     }
 
-    [TestCase(false)]
-    [TestCase(true)]
+    [Test]
+    [Arguments(false)]
+    [Arguments(true)]
     public async Task StartsIsolateConcurrentExecutionsOnSharedFixture(bool useLegacyStart)
     {
         using var fixture = new ContextFixture();
@@ -76,7 +79,7 @@ public class DefaultExecutionIdTests : TestRunOwner
                     ready.SetResult(true);
                 }
                 await ready.Task.WaitAsync(TimeSpan.FromSeconds(30));
-                Assert.That(fixture.BDTestContext, Is.SameAs(context));
+                await Assert.That(fixture.BDTestContext).IsSameReferenceAs(context);
                 return context;
             }
             finally
@@ -85,13 +88,14 @@ public class DefaultExecutionIdTests : TestRunOwner
             }
         })));
 
-        Assert.That(executions.Select(context => context.CurrentScenarioBDTestExecutionId).Distinct().Count(), Is.EqualTo(8));
-        Assert.That(executions.Select(context => context.TestContext).Distinct().Count(), Is.EqualTo(8));
+        await Assert.That(executions.Select(context => context.CurrentScenarioBDTestExecutionId).Distinct().Count()).IsEqualTo(8);
+        await Assert.That(executions.Select(context => context.TestContext).Distinct().Count()).IsEqualTo(8);
     }
 
-    [TestCase(false)]
-    [TestCase(true)]
-    public void StartAfterCompletionCreatesANewExecution(bool useLegacyStart)
+    [Test]
+    [Arguments(false)]
+    [Arguments(true)]
+    public async Task StartAfterCompletionCreatesANewExecution(bool useLegacyStart)
     {
         using var fixture = new ContextFixture();
         fixture.Start(useLegacyStart);
@@ -100,9 +104,8 @@ public class DefaultExecutionIdTests : TestRunOwner
         fixture.Start(useLegacyStart);
         try
         {
-            Assert.That(fixture.Context, Is.Not.SameAs(first.TestContext));
-            Assert.That(fixture.BDTestContext.CurrentScenarioBDTestExecutionId,
-                Is.Not.EqualTo(first.CurrentScenarioBDTestExecutionId));
+            await Assert.That(fixture.Context).IsNotSameReferenceAs(first.TestContext);
+            await Assert.That(fixture.BDTestContext.CurrentScenarioBDTestExecutionId).IsNotEqualTo(first.CurrentScenarioBDTestExecutionId);
         }
         finally
         {
@@ -110,8 +113,9 @@ public class DefaultExecutionIdTests : TestRunOwner
         }
     }
 
-    [TestCase(false)]
-    [TestCase(true)]
+    [Test]
+    [Arguments(false)]
+    [Arguments(true)]
     public async Task AsyncEntryPointPreservesCallerIdentity(bool fail)
     {
         using var fixture = new ContextFixture();
@@ -123,14 +127,14 @@ public class DefaultExecutionIdTests : TestRunOwner
             try
             {
                 await fixture.RunTestAsync(fail);
-                Assert.That(fail, Is.False);
+                await Assert.That(fail).IsFalse();
             }
             catch (InvalidOperationException) when (fail)
             {
             }
 
-            Assert.That(fixture.BDTestContext, Is.SameAs(callerContext));
-            Assert.That(BDTest.Output.TestOutputData.FrameworkExecutionId, Is.EqualTo(callerOutputId));
+            await Assert.That(fixture.BDTestContext).IsSameReferenceAs(callerContext);
+            await Assert.That(BDTest.Output.TestOutputData.FrameworkExecutionId).IsEqualTo(callerOutputId);
         }
         finally
         {

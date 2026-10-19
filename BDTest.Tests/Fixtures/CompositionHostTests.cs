@@ -5,15 +5,16 @@ using BDTest.Helpers;
 using BDTest.Output;
 using BDTest.Settings;
 using BDTest.Test;
-using NUnit.Framework;
+using System.Threading.Tasks;
 
 namespace BDTest.Tests.Fixtures;
 
 public class CompositionHostTests
 {
-    [TestCase(typeof(RetryOwner), 3)]
-    [TestCase(typeof(ClassRetryOwner), 2)]
-    [TestCase(typeof(MethodRetryOwner), 1)]
+    [Test]
+    [Arguments(typeof(RetryOwner), 3)]
+    [Arguments(typeof(ClassRetryOwner), 2)]
+    [Arguments(typeof(MethodRetryOwner), 1)]
     public async Task Owner_retry_attributes_apply_after_the_owner_method_returns(Type ownerType, int retries)
     {
         // Isolate assembly defaults so other tests do not inherit this retry policy.
@@ -31,12 +32,12 @@ public class CompositionHostTests
         try
         {
             var execution = owner.Run();
-            Assert.That(execution.IsCompleted, Is.False);
+            await Assert.That(execution.IsCompleted).IsFalse();
             owner.Ready.SetResult();
             var scenario = await execution;
-            Assert.That(scenario.Status, Is.EqualTo(Status.Passed));
-            Assert.That(scenario.RetryCount, Is.EqualTo(retries));
-            Assert.That(owner.Executions, Is.EqualTo(retries + 1));
+            await Assert.That(scenario.Status).IsEqualTo(Status.Passed);
+            await Assert.That(scenario.RetryCount).IsEqualTo(retries);
+            await Assert.That(owner.Executions).IsEqualTo(retries + 1);
         }
         finally { owner.Host.EndTest(); }
     }
@@ -53,23 +54,25 @@ public class CompositionHostTests
         {
             var original = owner.Host.Context;
             var scenario = await owner.Pays();
-            Assert.That(scenario.Status, Is.EqualTo(Status.Passed));
-            Assert.That(scenario.RetryCount, Is.EqualTo(1));
-            Assert.That(owner.Host.Context, Is.Not.SameAs(original));
-            Assert.That(owner.Host.Context.Value, Is.EqualTo("paid"));
-            Assert.That(owner.Hooks, Is.EqualTo(new[] { "base teardown", "owner teardown", "base setup", "owner setup" }));
-            Assert.That(scenario.GetStoryText(), Does.Contain("shopper"));
-            Assert.That(scenario.GetScenarioText(), Is.EqualTo("The shopper pays"));
-            Assert.That(scenario.Tags, Is.EquivalentTo(new[] { "checkout", "payment" }));
-            Assert.That(Required(scenario.CustomTestInformation).Single().Information, Is.EqualTo("payment reference"));
-            Assert.That(Required(scenario.RuntimeInformation).CallerMember, Is.EqualTo(nameof(Owner.Pays)));
-            Assert.That(scenario.FileName, Does.EndWith("CompositionHostTests.cs"));
+            await Assert.That(scenario.Status).IsEqualTo(Status.Passed);
+            await Assert.That(scenario.RetryCount).IsEqualTo(1);
+            await Assert.That(owner.Host.Context).IsNotSameReferenceAs(original);
+            await Assert.That(owner.Host.Context.Value).IsEqualTo("paid");
+            await Assert.That(owner.Hooks).IsEquivalentTo(new[] { "base teardown", "owner teardown", "base setup", "owner setup" }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
+            await Assert.That(scenario.GetStoryText()).Contains("shopper");
+            await Assert.That(scenario.GetScenarioText()).IsEqualTo("The shopper pays");
+
+            await Assert.That(scenario.Tags).IsEquivalentTo(new[] { "checkout", "payment" }, global::TUnit.Assertions.Enums.CollectionOrdering.Any);
+            await Assert.That(Required(scenario.CustomTestInformation).Single().Information).IsEqualTo("payment reference");
+            await Assert.That(Required(scenario.RuntimeInformation).CallerMember).IsEqualTo(nameof(Owner.Pays));
+            await Assert.That(scenario.FileName).EndsWith("CompositionHostTests.cs");
         }
         finally { owner.Host.EndTest(); }
     }
 
-    [TestCase(false)]
-    [TestCase(true)]
+    [Test]
+    [Arguments(false)]
+    [Arguments(true)]
     public async Task Explicit_runs_isolate_context_output_reports_and_completion(bool composition)
     {
         using var first = BDTestRun.Start();
@@ -104,7 +107,7 @@ public class CompositionHostTests
                     Console.WriteLine(label + " step");
                     if (Interlocked.Increment(ref entered) == 2) ready.SetResult();
                     await ready.Task.WaitAsync(TimeSpan.FromSeconds(10));
-                    Assert.That(host.Context.Value, Is.EqualTo(label));
+                    await Assert.That(host.Context.Value).IsEqualTo(label);
                 }).Then(() => Complete()).BDTestAsync();
                 Console.WriteLine(label + " teardown");
                 return scenario;
@@ -114,9 +117,9 @@ public class CompositionHostTests
                 var context = host.Context;
                 end();
                 end();
-                Assert.That(host.Context, Is.Not.SameAs(context));
-                Assert.That(run.OutputBuffers, Is.Empty);
-                Assert.That(TestOutputData.FrameworkExecutionId, Is.Null);
+                await Assert.That(host.Context).IsNotSameReferenceAs(context);
+                await Assert.That(run.OutputBuffers).IsEmpty();
+                await Assert.That(TestOutputData.FrameworkExecutionId).IsNull();
             }
         }
 
@@ -124,16 +127,20 @@ public class CompositionHostTests
         foreach (var (run, label, other, index) in new[] { (first, "first", "second", 0), (second, "second", "first", 1) })
         {
             var scenario = scenarios[index];
-            Assert.That(run.Scenarios, Is.EqualTo(new[] { scenario }));
-            Assert.That(scenario.FrameworkTestId, Is.EqualTo("same-id"));
-            Assert.That(scenario.ReportId, Is.EqualTo(run.ReportId));
-            Assert.That(scenario.TestStartupInformation, Does.Contain(label + " setup").And.Not.Contain(other));
-            Assert.That(scenario.Output, Does.Contain(label + " step").And.Not.Contain(other));
-            Assert.That(scenario.TearDownOutput, Does.Contain(label + " teardown").And.Not.Contain(other));
-            Assert.That(scenario.CustomHtmlOutputForReport, Does.Contain(label + " html").And.Not.Contain(other));
+            await Assert.That(run.Scenarios).IsEquivalentTo(new[] { scenario }, EqualityComparer<Scenario>.Default, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
+            await Assert.That(scenario.FrameworkTestId).IsEqualTo("same-id");
+            await Assert.That(scenario.ReportId).IsEqualTo(run.ReportId);
+
+            await Assert.That(scenario.TestStartupInformation).Contains(label + " setup").And.DoesNotContain(other);
+
+            await Assert.That(scenario.Output).Contains(label + " step").And.DoesNotContain(other);
+
+            await Assert.That(scenario.TearDownOutput).Contains(label + " teardown").And.DoesNotContain(other);
+
+            await Assert.That(scenario.CustomHtmlOutputForReport).Contains(label + " html").And.DoesNotContain(other);
             var report = Required(BDTestJsonHelper.Deserialize(BDTestJsonHelper.GetTestJsonData(null, run)));
-            Assert.That(Required(report.Scenarios).Single().ReportId, Is.EqualTo(run.ReportId));
-            Assert.That(report.Scenarios.Single().FrameworkTestId, Is.EqualTo("same-id"));
+            await Assert.That(Required(report.Scenarios).Single().ReportId).IsEqualTo(run.ReportId);
+            await Assert.That(report.Scenarios.Single().FrameworkTestId).IsEqualTo("same-id");
         }
     }
 
@@ -149,8 +156,8 @@ public class CompositionHostTests
         owner.Host.BeginTest("skip");
         try
         {
-            await Assert.ThrowsAsync<SkipException>(async () => await owner.Host.When(() => ThrowSkip()).Then(() => Complete()).BDTestAsync());
-            Assert.That(run.Scenarios.Single().Status, Is.EqualTo(Status.Skipped));
+            await Assert.That(async () => await owner.Host.When(() => ThrowSkip()).Then(() => Complete()).BDTestAsync()).ThrowsExactly<SkipException>();
+            await Assert.That(run.Scenarios.Single().Status).IsEqualTo(Status.Skipped);
         }
         finally { owner.Host.EndTest(); }
         owner.Host.BeginTest("whole-skip");
@@ -158,19 +165,22 @@ public class CompositionHostTests
         {
             var skipped = await owner.Host.When(() => ThrowSkip()).Then(() => Complete())
                 .WithScenarioText("rule skip").BDTestAsync();
-            Assert.That(skipped.Status, Is.EqualTo(Status.Skipped));
-            Assert.That(skipReason, Is.Not.Null.And.Not.Empty);
+            await Assert.That(skipped.Status).IsEqualTo(Status.Skipped);
+
+            await Assert.That(skipReason).IsNotNull().And.IsNotEmpty();
         }
         finally { owner.Host.EndTest(); }
         owner.Host.BeginTest("outline", typeof(Owner).GetMethod(nameof(Owner.Examples)));
         try
         {
             var outline = await owner.Examples();
-            Assert.That(outline.Tags, Is.EquivalentTo(new[] { "checkout", "examples" }));
-            Assert.That(outline.GetStoryText(), Does.Contain("shopper"));
-            Assert.That(Required(outline.Examples).Select(row => row.Status), Is.All.EqualTo(Status.Passed));
-            Assert.That(outline.Examples, Has.Count.EqualTo(2));
-            Assert.That(owner.Contexts.Distinct().Count(), Is.EqualTo(2));
+
+            await Assert.That(outline.Tags).IsEquivalentTo(new[] { "checkout", "examples" }, global::TUnit.Assertions.Enums.CollectionOrdering.Any);
+            await Assert.That(outline.GetStoryText()).Contains("shopper");
+
+            await Assert.That((Required(outline.Examples).Select(row => row.Status)).All(item => Equals(item, Status.Passed))).IsTrue();
+            await Assert.That(outline.Examples).Count().IsEqualTo(2);
+            await Assert.That(owner.Contexts.Distinct().Count()).IsEqualTo(2);
         }
         finally { owner.Host.EndTest(); }
     }
@@ -186,23 +196,22 @@ public class CompositionHostTests
             try
             {
                 var scenario = await owner.Host.When(() => Complete()).Then(() => Complete()).BDTestAsync();
-                Assert.That(scenario.Tags, Is.EqualTo(new[] { "checkout" }));
-                Assert.That(scenario.CustomTestInformation, Is.Empty);
-                Assert.That(scenario.GetScenarioText(),
-                    Is.EqualTo("Without method identity composition uses owner defaults and caller text"));
-                Assert.That(scenario.GetStoryText(), Does.Contain("shopper"));
+                await Assert.That(scenario.Tags).IsEquivalentTo(new[] { "checkout" }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
+                await Assert.That(scenario.CustomTestInformation).IsEmpty();
+                await Assert.That(scenario.GetScenarioText()).IsEqualTo("Without method identity composition uses owner defaults and caller text");
+                await Assert.That(scenario.GetStoryText()).Contains("shopper");
             }
             finally { owner.Host.EndTest(); }
         }
     }
 
     [Test]
-    public void Invalid_owner_and_disposed_run_are_rejected()
+    public async Task Invalid_owner_and_disposed_run_are_rejected()
     {
         using var run = BDTestRun.Start();
-        Assert.Throws<ArgumentNullException>(() => BDTestScenario.For<State>(null!, run));
+        await Assert.That(() => BDTestScenario.For<State>(null!, run)).ThrowsExactly<ArgumentNullException>();
         run.Dispose();
-        Assert.Throws<ObjectDisposedException>(() => BDTestScenario.For<State>(this, run));
+        await Assert.That(() => BDTestScenario.For<State>(this, run)).ThrowsExactly<ObjectDisposedException>();
     }
 
     private static void Complete() { }

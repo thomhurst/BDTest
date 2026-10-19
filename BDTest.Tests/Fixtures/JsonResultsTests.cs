@@ -1,24 +1,24 @@
 using BDTest.Attributes;
 using BDTest.Helpers;
 using BDTest.Maps;
-using BDTest.NUnit;
+using BDTest.TUnit;
 using BDTest.Test;
 using BDTest.Tests.Helpers;
 using BDTest.TestUtilities;
 using KellermanSoftware.CompareNetObjects;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using NUnit.Framework;
+using System.Threading.Tasks;
 
 namespace BDTest.Tests.Fixtures;
 
 [Story(AsA = "BDTest developer",
     IWant = "to make sure that BDTest works",
     SoThat = "other developers can use it confidently")]
-[Parallelizable(ParallelScope.None)]
-public class JsonResultsTests : RunNUnitTestBase<MyTestContext>
+[NotInParallel]
+public class JsonResultsTests : RunTUnitTestBase<MyTestContext>
 {
-    [SetUp, TearDown]
+    [Before(HookType.Test), After(HookType.Test)]
     public void ResetScenarioData()
     { 
 
@@ -40,13 +40,13 @@ public class JsonResultsTests : RunNUnitTestBase<MyTestContext>
 
         var scenarios = ReportJson.DeserializeObject<List<Scenario>>(Required(jObject.GetValue("Scenarios")).ToString());
             
-        Assert.That(scenarios, Is.Not.Null);
-        Assert.That(scenarios.Count, Is.EqualTo(1));
+        await Assert.That(scenarios).IsNotNull();
+        await Assert.That(scenarios.Count).IsEqualTo(1);
 
         var deserializedScenario = scenarios.First();
             
-        Assert.That(Required(deserializedScenario.Steps)[0].StepText, Is.EqualTo("When I write custom when step text"));
-        Assert.That(deserializedScenario.Steps[1].StepText, Is.EqualTo("Then 1 2"));
+        await Assert.That(Required(deserializedScenario.Steps)[0].StepText).IsEqualTo("When I write custom when step text");
+        await Assert.That(deserializedScenario.Steps[1].StepText).IsEqualTo("Then 1 2");
 
         var compareLogic = new CompareLogic
         {
@@ -64,7 +64,7 @@ public class JsonResultsTests : RunNUnitTestBase<MyTestContext>
 
         var comparisonResult = compareLogic.Compare(inMemoryScenario, deserializedScenario);
             
-        Assert.That(comparisonResult.AreEqual, Is.True, comparisonResult.DifferencesString);
+        await Assert.That(comparisonResult.AreEqual).IsTrue().Because(comparisonResult.DifferencesString);
     }
         
     [Test]

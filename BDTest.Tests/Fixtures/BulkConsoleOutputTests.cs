@@ -1,51 +1,53 @@
 using BDTest.Maps;
 using BDTest.Output;
 using BDTest.Test;
-using NUnit.Framework;
+using System.Threading.Tasks;
 
 namespace BDTest.Tests.Fixtures;
 
-[NonParallelizable]
+[NotInParallel]
 public class BulkConsoleOutputTests
 {
-    [TestCase("string")]
-    [TestCase("array")]
-    [TestCase("slice")]
-    [TestCase("line")]
-    [TestCase("array-line")]
-    [TestCase("slice-line")]
-    [TestCase("character-line")]
-    [TestCase("empty-line")]
-    public void Bulk_writes_preserve_text_and_forward_without_character_calls(string form)
+    [Test]
+    [Arguments("string")]
+    [Arguments("array")]
+    [Arguments("slice")]
+    [Arguments("line")]
+    [Arguments("array-line")]
+    [Arguments("slice-line")]
+    [Arguments("character-line")]
+    [Arguments("empty-line")]
+    public async Task Bulk_writes_preserve_text_and_forward_without_character_calls(string form)
     {
         using var capture = new Capture();
         var expected = WriteForm(capture.Writer, form);
 
-        Assert.That(capture.Writer.ToString(), Is.EqualTo(expected));
-        Assert.That(capture.Original.ToString(), Is.EqualTo(expected));
-        Assert.That(capture.Original.CharacterWrites, Is.Zero);
-        Assert.That(capture.Original.BulkWrites, Is.EqualTo(1));
+        await Assert.That(capture.Writer.ToString()).IsEqualTo(expected);
+        await Assert.That(capture.Original.ToString()).IsEqualTo(expected);
+        await Assert.That(capture.Original.CharacterWrites).IsZero();
+        await Assert.That(capture.Original.BulkWrites).IsEqualTo(1);
     }
 
-    [TestCase("string")]
-    [TestCase("array")]
-    [TestCase("slice")]
-    [TestCase("line")]
-    [TestCase("array-line")]
-    [TestCase("slice-line")]
-    [TestCase("character-line")]
-    [TestCase("empty-line")]
-    public void Capture_writer_accepts_bulk_writes_directly(string form)
+    [Test]
+    [Arguments("string")]
+    [Arguments("array")]
+    [Arguments("slice")]
+    [Arguments("line")]
+    [Arguments("array-line")]
+    [Arguments("slice-line")]
+    [Arguments("character-line")]
+    [Arguments("empty-line")]
+    public async Task Capture_writer_accepts_bulk_writes_directly(string form)
     {
         using var capture = new Capture();
         capture.Writer.Two.NewLine = "<capture-nl>";
         var expected = WriteForm(capture.Writer.Two, form);
-        Assert.That(capture.Writer.ToString(), Is.EqualTo(expected));
-        Assert.That(capture.Original.ToString(), Is.Empty);
+        await Assert.That(capture.Writer.ToString()).IsEqualTo(expected);
+        await Assert.That(capture.Original.ToString()).IsEmpty();
     }
 
     [Test]
-    public void Character_null_empty_and_mixed_writes_preserve_order()
+    public async Task Character_null_empty_and_mixed_writes_preserve_order()
     {
         using var capture = new Capture();
         capture.Writer.Write('a');
@@ -59,50 +61,50 @@ public class BulkConsoleOutputTests
         capture.Writer.WriteLine((char[]?)null);
         capture.Writer.WriteLine("f");
         var expected = "abcde<nl><nl>f<nl>";
-        Assert.That(capture.Writer.ToString(), Is.EqualTo(expected));
-        Assert.That(capture.Original.ToString(), Is.EqualTo(expected));
-        Assert.That(capture.Original.CharacterWrites, Is.EqualTo(1));
+        await Assert.That(capture.Writer.ToString()).IsEqualTo(expected);
+        await Assert.That(capture.Original.ToString()).IsEqualTo(expected);
+        await Assert.That(capture.Original.CharacterWrites).IsEqualTo(1);
     }
 
     [Test]
-    public void Invalid_slices_do_not_capture_or_forward_any_text()
+    public async Task Invalid_slices_do_not_capture_or_forward_any_text()
     {
         using var capture = new Capture();
-        Assert.Throws<ArgumentNullException>(() => capture.Writer.Write(null!, 0, 0));
-        Assert.Throws<ArgumentOutOfRangeException>(() => capture.Writer.Write(new char[2], -1, 1));
-        Assert.Throws<ArgumentOutOfRangeException>(() => capture.Writer.Write(new char[2], 0, -1));
-        Assert.Catch<ArgumentException>(() => capture.Writer.Write(new char[2], 1, 2));
-        Assert.Catch<ArgumentException>(() => capture.Writer.WriteLine(new char[2], 1, 2));
-        Assert.That(capture.Writer.ToString(), Is.Empty);
-        Assert.That(capture.Original.ToString(), Is.Empty);
+        await Assert.That(() => capture.Writer.Write(null!, 0, 0)).ThrowsExactly<ArgumentNullException>();
+        await Assert.That(() => capture.Writer.Write(new char[2], -1, 1)).ThrowsExactly<ArgumentOutOfRangeException>();
+        await Assert.That(() => capture.Writer.Write(new char[2], 0, -1)).ThrowsExactly<ArgumentOutOfRangeException>();
+        await Assert.That(() => capture.Writer.Write(new char[2], 1, 2)).Throws<ArgumentException>();
+        await Assert.That(() => capture.Writer.WriteLine(new char[2], 1, 2)).Throws<ArgumentException>();
+        await Assert.That(capture.Writer.ToString()).IsEmpty();
+        await Assert.That(capture.Original.ToString()).IsEmpty();
     }
 
     [Test]
-    public void Startup_and_teardown_capture_raw_chunks_without_extra_newlines()
+    public async Task Startup_and_teardown_capture_raw_chunks_without_extra_newlines()
     {
         using var capture = new Capture(registerScenario: false);
         capture.Writer.Write("startup");
         capture.Writer.Write(new[] { '-', 's', 'l', 'i', 'c', 'e', '-' }, 1, 5);
         capture.Writer.WriteLine("line");
         capture.RegisterScenario();
-        Assert.That(capture.Scenario.TestStartupInformation, Is.EqualTo("startupsliceline<nl>"));
+        await Assert.That(capture.Scenario.TestStartupInformation).IsEqualTo("startupsliceline<nl>");
 
         capture.Scenario.EndTime = DateTime.UtcNow;
         capture.Writer.Write("teardown");
         capture.Writer.WriteLine(new[] { 'x', 'y' });
-        Assert.That(capture.Scenario.TearDownOutput, Is.EqualTo("teardownxy<nl>"));
-        Assert.That(capture.Original.ToString(), Is.EqualTo("startupsliceline<nl>teardownxy<nl>"));
+        await Assert.That(capture.Scenario.TearDownOutput).IsEqualTo("teardownxy<nl>");
+        await Assert.That(capture.Original.ToString()).IsEqualTo("startupsliceline<nl>teardownxy<nl>");
     }
 
     [Test]
-    public void Output_without_an_identity_is_only_forwarded()
+    public async Task Output_without_an_identity_is_only_forwarded()
     {
         using var capture = new Capture();
         TestOutputData.TestId = null;
         TestOutputData.FrameworkExecutionId = null;
         capture.Writer.WriteLine("outside");
-        Assert.That(capture.Writer.ToString(), Is.Empty);
-        Assert.That(capture.Original.ToString(), Is.EqualTo("outside<nl>"));
+        await Assert.That(capture.Writer.ToString()).IsEmpty();
+        await Assert.That(capture.Original.ToString()).IsEqualTo("outside<nl>");
     }
 
     [Test]
@@ -124,8 +126,8 @@ public class BulkConsoleOutputTests
                 expected.Append(text).Append(text).Append(text).Append("<nl>!");
                 await Task.Yield();
             }
-            Assert.That(capture.Writer.ToString(), Is.EqualTo(expected.ToString()));
-            Assert.That(capture.Original.ToString(), Is.EqualTo(expected.ToString()));
+            await Assert.That(capture.Writer.ToString()).IsEqualTo(expected.ToString());
+            await Assert.That(capture.Original.ToString()).IsEqualTo(expected.ToString());
         })).ToArray();
         start.SetResult();
         await Task.WhenAll(tasks);

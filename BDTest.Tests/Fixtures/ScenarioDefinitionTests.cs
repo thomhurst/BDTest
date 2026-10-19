@@ -3,10 +3,11 @@ using BDTest.Attributes;
 using BDTest.Helpers;
 using BDTest.Test;
 using BDTest.Test.Steps;
-using NUnit.Framework;
+using System.Threading.Tasks;
 
 namespace BDTest.Tests.Fixtures;
 
+[NotInParallel]
 public class ScenarioDefinitionTests
 {
     [Test]
@@ -17,20 +18,21 @@ public class ScenarioDefinitionTests
         var builder = fixture.When(NoOp).WithStepTimeout(TimeSpan.FromSeconds(3))
             .Then(NoOp).WithScenarioTimeout(TimeSpan.FromSeconds(5));
         var definition = builder.Definition;
-        Assert.That(definition.Steps.Select(step => step.GetType()), Is.All.EqualTo(typeof(StepDefinition)));
+
+        await Assert.That((definition.Steps.Select(step => step.GetType())).All(item => Equals(item, typeof(StepDefinition)))).IsTrue();
         var result = await builder;
         result.Tags[0] = "changed result";
-        Assert.That(definition.Tags, Is.EqualTo(new[] { "definition" }));
-        Assert.That(definition.Steps[0].Timeout, Is.EqualTo(TimeSpan.FromSeconds(3)));
-        Assert.That(definition.ScenarioTimeout, Is.EqualTo(TimeSpan.FromSeconds(5)));
-        Assert.That(definition.Steps[0].Runnable, Is.Not.Null);
-        Assert.That(Required(result.Steps)[0].Runnable, Is.Null);
+        await Assert.That(definition.Tags).IsEquivalentTo(new[] { "definition" }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(definition.Steps[0].Timeout).IsEqualTo(TimeSpan.FromSeconds(3));
+        await Assert.That(definition.ScenarioTimeout).IsEqualTo(TimeSpan.FromSeconds(5));
+        await Assert.That(definition.Steps[0].Runnable).IsNotNull();
+        await Assert.That(Required(result.Steps)[0].Runnable).IsNull();
         var extended = builder.And(NoOp);
-        Assert.That((await extended).Status, Is.EqualTo(Status.Passed));
+        await Assert.That((await extended).Status).IsEqualTo(Status.Passed);
     }
 
     [Test]
-    public void Pending_reports_contain_only_summaries_and_never_evaluate_delegates()
+    public async Task Pending_reports_contain_only_summaries_and_never_evaluate_delegates()
     {
         using var run = BDTestRun.Start();
         var reads = 0;
@@ -40,20 +42,21 @@ public class ScenarioDefinitionTests
             .WithDocString(() => { reads++; return new StepDocString("text"); })
             .WithScenarioText("pending definition");
         var pending = BDTestUtil.GetNotRunScenarios(run).Single();
-        Assert.That(pending, Is.TypeOf<ScenarioDefinitionSummary>());
-        Assert.That(pending.ScenarioId, Is.EqualTo(builder.ScenarioId));
+        await Assert.That(pending).IsTypeOf<ScenarioDefinitionSummary>();
+        await Assert.That(pending.ScenarioId).IsEqualTo(builder.ScenarioId);
         Required(pending.Tags)[0] = "changed summary";
-        Assert.That(builder.Tags, Is.EqualTo(new[] { "definition" }));
-        Assert.That(run.Store.NotRun.Single().Value, Is.SameAs(builder.Definition));
+        await Assert.That(builder.Tags).IsEquivalentTo(new[] { "definition" }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(run.Store.NotRun.Single().Value).IsSameReferenceAs(builder.Definition);
         var json = BDTestJsonHelper.GetTestJsonData(new BDTestRunDescriptor(), run);
         var restored = Required(Required(BDTestJsonHelper.Deserialize(json)).NotRun).Single();
-        Assert.That(restored.GetScenarioText(), Is.EqualTo("pending definition"));
-        Assert.That(restored.Steps, Has.Count.EqualTo(2));
-        Assert.That(json, Does.Not.Contain("\"Runnable\"").And.Not.Contain("\"BdTestBase\"").And.Not.Contain("\"Definition\""));
-        Assert.That(reads, Is.Zero);
-        builder.WithScenarioText("changed definition");
-        Assert.That(pending.GetScenarioText(), Is.EqualTo("pending definition"));
-        Assert.That(BDTestUtil.GetNotRunScenarios(run).Single().GetScenarioText(), Is.EqualTo("changed definition"));
+        await Assert.That(restored.GetScenarioText()).IsEqualTo("pending definition");
+        await Assert.That(restored.Steps).Count().IsEqualTo(2);
+
+        await Assert.That(json).DoesNotContain("\"Runnable\"").And.DoesNotContain("\"BdTestBase\"").And.DoesNotContain("\"Definition\"");
+        await Assert.That(reads).IsZero();
+        _ = builder.WithScenarioText("changed definition");
+        await Assert.That(pending.GetScenarioText()).IsEqualTo("pending definition");
+        await Assert.That(BDTestUtil.GetNotRunScenarios(run).Single().GetScenarioText()).IsEqualTo("changed definition");
     }
 
     [Test]
@@ -76,23 +79,24 @@ public class ScenarioDefinitionTests
             resume.TrySetResult();
         }
         var result = await execution;
-        Assert.That(Required(result.Steps)[1].StepText, Is.EqualTo("Then original"));
-        Assert.That(Required(result.Steps)[1].Timeout, Is.EqualTo(TimeSpan.FromSeconds(3)));
-        Assert.That(builder.Definition.Steps[1].Timeout, Is.EqualTo(TimeSpan.FromSeconds(4)));
+        await Assert.That(Required(result.Steps)[1].StepText).IsEqualTo("Then original");
+        await Assert.That(Required(result.Steps)[1].Timeout).IsEqualTo(TimeSpan.FromSeconds(3));
+        await Assert.That(builder.Definition.Steps[1].Timeout).IsEqualTo(TimeSpan.FromSeconds(4));
     }
 
     [Test]
-    public void Builders_are_absent_from_generated_report_metadata()
+    public async Task Builders_are_absent_from_generated_report_metadata()
     {
-        Assert.That(BDTestJsonContext.Default.GetTypeInfo(typeof(BuildableTest)), Is.Null);
-        Assert.That(typeof(StepDefinition).GetProperties(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
-            .Select(property => property.Name),
-            Does.Not.Contain("Status").And.Not.Contain("StartTime").And.Not.Contain("Exception"));
+        await Assert.That(BDTestJsonContext.Default.GetTypeInfo(typeof(BuildableTest))).IsNull();
+
+        await Assert.That(typeof(StepDefinition).GetProperties(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
+            .Select(property => property.Name)).DoesNotContain("Status").And.DoesNotContain("StartTime").And.DoesNotContain("Exception");
     }
 
-    [TestCase(false)]
-    [TestCase(true)]
-    public void Pending_reports_do_not_reconstruct_step_text_attributes(bool configureArguments)
+    [Test]
+    [Arguments(false)]
+    [Arguments(true)]
+    public async Task Pending_reports_do_not_reconstruct_step_text_attributes(bool configureArguments)
     {
         using var run = BDTestRun.Start();
         CountingStepTextAttribute.Constructions = 0;
@@ -100,19 +104,20 @@ public class ScenarioDefinitionTests
         if (configureArguments) prefix.WithArgs(Array.Empty<Func<object?>>());
         var builder = prefix.Then(NoOp);
         var constructions = CountingStepTextAttribute.Constructions;
-        Assert.That(constructions, Is.GreaterThan(0));
+        await Assert.That(constructions).IsGreaterThan(0);
 
         var pending = BDTestUtil.GetNotRunScenarios(run).Single();
-        Assert.That(Required(pending.Steps)[0].StepText, Is.EqualTo("When cached text"));
+        await Assert.That(Required(pending.Steps)[0].StepText).IsEqualTo("When cached text");
         _ = BDTestUtil.GetNotRunScenarios(run);
         _ = BDTestJsonHelper.GetTestJsonData(new BDTestRunDescriptor(), run);
         var branch = builder.And(NoOp);
-        Assert.That(BDTestUtil.GetNotRunScenarios(run).Single().ScenarioId, Is.EqualTo(branch.ScenarioId));
-        Assert.That(CountingStepTextAttribute.Constructions, Is.EqualTo(constructions));
+        await Assert.That(BDTestUtil.GetNotRunScenarios(run).Single().ScenarioId).IsEqualTo(branch.ScenarioId);
+        await Assert.That(CountingStepTextAttribute.Constructions).IsEqualTo(constructions);
     }
 
-    [TestCase(false)]
-    [TestCase(true)]
+    [Test]
+    [Arguments(false)]
+    [Arguments(true)]
     public async Task Execution_uses_cached_templates_before_running_overridden_steps(bool configureArguments)
     {
         using var run = BDTestRun.Start();
@@ -128,18 +133,18 @@ public class ScenarioDefinitionTests
         {
             var definition = builder.Definition.Steps[0];
             var step = new Step(definition, builder.ScenarioId, "report", run);
-            Assert.That(step.StepText, Is.EqualTo("When cached text"));
-            Assert.That(overrideReads, Is.Zero);
+            await Assert.That(step.StepText).IsEqualTo("When cached text");
+            await Assert.That(overrideReads).IsZero();
             if (configureArguments)
             {
-                Assert.That(step.ExplicitArguments, Has.Count.EqualTo(1));
-                Assert.That(step.ExplicitArguments, Is.Not.SameAs(definition.ExplicitArguments));
+                await Assert.That(step.ExplicitArguments).Count().IsEqualTo(1);
+                await Assert.That(step.ExplicitArguments).IsNotSameReferenceAs(definition.ExplicitArguments);
             }
             var result = await builder;
-            Assert.That(result.Status, Is.EqualTo(Status.Passed));
-            Assert.That(Required(result.Steps)[0].StepText, Is.EqualTo("When override"));
-            Assert.That(overrideReads, Is.EqualTo(1));
-            Assert.That(argumentReads, Is.Zero);
+            await Assert.That(result.Status).IsEqualTo(Status.Passed);
+            await Assert.That(Required(result.Steps)[0].StepText).IsEqualTo("When override");
+            await Assert.That(overrideReads).IsEqualTo(1);
+            await Assert.That(argumentReads).IsZero();
         }
         finally
         {
@@ -169,16 +174,15 @@ public class ScenarioDefinitionTests
 
         var summary = BDTestUtil.GetNotRunScenarios(run).Single();
         var projected = Required(summary.CustomTestInformation).Single();
-        Assert.That(projected, Is.TypeOf<TestInformationAttribute>());
-        Assert.That(projected.Information, Is.EqualTo("bug 123"));
-        Assert.That(projected.Print(), Is.EqualTo("TestInformationAttribute - bug 123"));
+        await Assert.That(projected).IsTypeOf<TestInformationAttribute>();
+        await Assert.That(projected.Information).IsEqualTo("bug 123");
+        await Assert.That(projected.Print()).IsEqualTo("TestInformationAttribute - bug 123");
         summary.CustomTestInformation[0] = new TestInformationAttribute("changed");
-        Assert.That(Required(builder.CustomTestInformation).Single(), Is.SameAs(information));
-        Assert.That(Required(BDTestUtil.GetNotRunScenarios(run).Single().CustomTestInformation).Single().Information,
-            Is.EqualTo("bug 123"));
+        await Assert.That(Required(builder.CustomTestInformation).Single()).IsSameReferenceAs(information);
+        await Assert.That(Required(BDTestUtil.GetNotRunScenarios(run).Single().CustomTestInformation).Single().Information).IsEqualTo("bug 123");
         var result = await builder;
-        Assert.That(Required(result.CustomTestInformation).Single(), Is.SameAs(information));
-        Assert.That(information.Details, Is.EqualTo(new[] { "custom" }));
+        await Assert.That(Required(result.CustomTestInformation).Single()).IsSameReferenceAs(information);
+        await Assert.That(information.Details).IsEquivalentTo(new[] { "custom" }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 
     [CountingStepText]

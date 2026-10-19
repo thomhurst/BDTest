@@ -1,14 +1,15 @@
 using BDTest.Test;
 using BDTest.Output;
-using NUnit.Framework;
+using System.Threading.Tasks;
 
 namespace BDTest.Tests.Fixtures;
 
 public class ContextFactoryLifetimeTests
 {
-    [TestCase("async")]
-    [TestCase("sync")]
-    [TestCase("legacy")]
+    [Test]
+    [Arguments("async")]
+    [Arguments("sync")]
+    [Arguments("legacy")]
     public async Task CompletionClearsTheCallingFlowsCaptureEvenWhenDisposalThrows(string mode)
     {
         using var run = BDTestRun.Start(new BDTestOptions { ContextFactory = new Factory(_ =>
@@ -31,15 +32,16 @@ public class ContextFactoryLifetimeTests
             else fixture.CompleteLegacy();
         }
         catch (Exception exception) { error = exception; }
-        Assert.That(error?.Message, Is.EqualTo("cleanup"));
-        Assert.That(TestOutputData.FrameworkExecutionId, Is.Null);
-        Assert.That(TestOutputData.TestId, Is.Null);
-        Assert.That(run.OutputBuffers, Is.Empty);
+        await Assert.That(error?.Message).IsEqualTo("cleanup");
+        await Assert.That(TestOutputData.FrameworkExecutionId).IsNull();
+        await Assert.That(TestOutputData.TestId).IsNull();
+        await Assert.That(run.OutputBuffers).IsEmpty();
     }
 
-    [TestCase("initialize")]
-    [TestCase("overwrite")]
-    [TestCase("overwrite async")]
+    [Test]
+    [Arguments("initialize")]
+    [Arguments("overwrite")]
+    [Arguments("overwrite async")]
     public async Task StandalonePreparationSeedsIdentityInTheCallingFlow(string operation)
     {
         var calls = 0;
@@ -58,11 +60,11 @@ public class ContextFactoryLifetimeTests
         else await fixture.OverwriteContextAsync(replacement);
         var context = fixture.Context;
         await fixture.Run();
-        Assert.That(fixture.Context, Is.SameAs(context));
-        Assert.That(calls, Is.EqualTo(operation == "initialize" ? 1 : 0));
-        if (operation != "initialize") Assert.That(context, Is.SameAs(replacement));
+        await Assert.That(fixture.Context).IsSameReferenceAs(context);
+        await Assert.That(calls).IsEqualTo(operation == "initialize" ? 1 : 0);
+        if (operation != "initialize") await Assert.That(context).IsSameReferenceAs(replacement);
         fixture.CompleteLegacy();
-        Assert.That(context.Disposals, Is.EqualTo(operation == "initialize" ? 1 : 0));
+        await Assert.That(context.Disposals).IsEqualTo(operation == "initialize" ? 1 : 0);
         if (operation != "initialize") await replacement.DisposeAsync();
     }
 
@@ -89,17 +91,17 @@ public class ContextFactoryLifetimeTests
         {
             // Synchronous setup access constructs/configures, but does not run async initialization.
             var context = fixture.Context;
-            Assert.That(context.Dependency, Is.SameAs(dependency));
-            Assert.That(events, Is.EqualTo(new[] { "created", "configured" }));
+            await Assert.That(context.Dependency).IsSameReferenceAs(dependency);
+            await Assert.That(events).IsEquivalentTo(new[] { "created", "configured" }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
             await fixture.Run();
             await fixture.InitializeContextAsync();
-            Assert.That(events, Is.EqualTo(new[] { "created", "configured", "initialized", "step" }));
-            Assert.That(creations.Single().ExecutionId, Is.EqualTo(fixture.ExecutionId));
-            Assert.That(creations.Single().Attempt, Is.Zero);
-            Assert.That(creations.Single().Services, Is.SameAs(provider));
+            await Assert.That(events).IsEquivalentTo(new[] { "created", "configured", "initialized", "step" }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
+            await Assert.That(creations.Single().ExecutionId).IsEqualTo(fixture.ExecutionId);
+            await Assert.That(creations.Single().Attempt).IsZero();
+            await Assert.That(creations.Single().Services).IsSameReferenceAs(provider);
         }
         finally { await fixture.Finish(); }
-        Assert.That(events.Last(), Is.EqualTo("disposed"));
+        await Assert.That(events.Last()).IsEqualTo("disposed");
     }
 
     [Test]
@@ -114,10 +116,10 @@ public class ContextFactoryLifetimeTests
         fixture.Start();
         await fixture.InitializeContextAsync();
         var context = fixture.Context;
-        Assert.That(context.Dependency, Is.SameAs(dependency));
+        await Assert.That(context.Dependency).IsSameReferenceAs(dependency);
         await fixture.Finish();
-        Assert.That(context.Disposals, Is.EqualTo(1));
-        Assert.That(dependency.Disposals, Is.Zero);
+        await Assert.That(context.Disposals).IsEqualTo(1);
+        await Assert.That(dependency.Disposals).IsZero();
     }
 
     [Test]
@@ -128,13 +130,13 @@ public class ContextFactoryLifetimeTests
         var contexts = new List<ResourceContext>();
         var options = new BDTestOptions();
         options.RetryTestRules.Add(e => e is TransientException, 1);
-        options.ContextFactory = new Factory(creation =>
+        options.ContextFactory = new Factory(async creation =>
         {
             attempts.Add(creation.Attempt);
-            if (contexts.Count > 0) Assert.That(contexts.Last().Disposals, Is.EqualTo(1));
+            if (contexts.Count > 0) await Assert.That(contexts.Last().Disposals).IsEqualTo(1);
             var context = new ResourceContext(events, new Dependency());
             contexts.Add(context);
-            return new ValueTask<object>(context);
+            return context;
         });
         using var run = BDTestRun.Start(options);
         var fixture = new Fixture(run) { FailOnce = true };
@@ -142,14 +144,14 @@ public class ContextFactoryLifetimeTests
         try
         {
             var scenario = await fixture.Run();
-            Assert.That(scenario.RetryCount, Is.EqualTo(1));
-            Assert.That(attempts, Is.EqualTo(new[] { 0, 1 }));
-            Assert.That(contexts.Select(c => c.Initializations), Is.EqualTo(new[] { 1, 1 }));
-            Assert.That(contexts.Select(c => c.Disposals), Is.EqualTo(new[] { 1, 0 }));
+            await Assert.That(scenario.RetryCount).IsEqualTo(1);
+            await Assert.That(attempts).IsEquivalentTo(new[] { 0, 1 }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
+            await Assert.That(contexts.Select(c => c.Initializations)).IsEquivalentTo(new[] { 1, 1 }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
+            await Assert.That(contexts.Select(c => c.Disposals)).IsEquivalentTo(new[] { 1, 0 }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
         }
         finally { await fixture.Finish(); }
         await fixture.Finish();
-        Assert.That(contexts.Select(c => c.Disposals), Is.EqualTo(new[] { 1, 1 }));
+        await Assert.That(contexts.Select(c => c.Disposals)).IsEquivalentTo(new[] { 1, 1 }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 
     [Test]
@@ -157,13 +159,13 @@ public class ContextFactoryLifetimeTests
     {
         var events = new List<string>();
         var contexts = new List<ResourceContext>();
-        using var run = BDTestRun.Start(new BDTestOptions { ContextFactory = new Factory(creation =>
+        using var run = BDTestRun.Start(new BDTestOptions { ContextFactory = new Factory(async creation =>
         {
-            Assert.That(creation.Attempt, Is.Zero);
-            if (contexts.Count > 0) Assert.That(contexts.Last().Disposals, Is.EqualTo(1));
+            await Assert.That(creation.Attempt).IsZero();
+            if (contexts.Count > 0) await Assert.That(contexts.Last().Disposals).IsEqualTo(1);
             var context = new ResourceContext(events, new Dependency());
             contexts.Add(context);
-            return new ValueTask<object>(context);
+            return context;
         }) });
         var fixture = new Fixture(run);
         fixture.Start();
@@ -171,16 +173,17 @@ public class ContextFactoryLifetimeTests
         {
             var outline = await fixture.ScenarioOutline("Contexts", new[] { new { Id = 1 }, new { Id = 2 } },
                 _ => fixture.When(() => fixture.VerifyInitialized()).Then(() => fixture.VerifyInitialized()));
-            Assert.That(outline.Examples, Has.Count.EqualTo(2));
-            Assert.That(contexts.Select(c => c.Initializations), Is.EqualTo(new[] { 1, 1 }));
+            await Assert.That(outline.Examples).Count().IsEqualTo(2);
+            await Assert.That(contexts.Select(c => c.Initializations)).IsEquivalentTo(new[] { 1, 1 }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
         }
         finally { await fixture.Finish(); }
-        Assert.That(contexts.Select(c => c.Disposals), Is.EqualTo(new[] { 1, 1 }));
+        await Assert.That(contexts.Select(c => c.Disposals)).IsEquivalentTo(new[] { 1, 1 }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 
-    [TestCase("factory")]
-    [TestCase("configure")]
-    [TestCase("initialize")]
+    [Test]
+    [Arguments("factory")]
+    [Arguments("configure")]
+    [Arguments("initialize")]
     public async Task FailedPreparationDetachesAndDisposesContext(string failure)
     {
         var events = new List<string>();
@@ -201,23 +204,24 @@ public class ContextFactoryLifetimeTests
         fixture.Start();
         try
         {
-            Assert.That(await Assert.ThrowsAsync<InvalidOperationException>(async () => await fixture.Run()), Is.SameAs(expected));
-            Assert.That(run.Scenarios.Single().Status, Is.EqualTo(Status.Failed));
-            Assert.That(run.Scenarios.Single().Exception?.Message, Is.EqualTo(failure));
-            Assert.That(run.Scenarios.Single().ExecutionException?.TypeName, Is.EqualTo(typeof(InvalidOperationException).FullName));
-            Assert.That(run.Scenarios.Single().ExecutionException?.ShortTypeName, Is.EqualTo(nameof(InvalidOperationException)));
-            Assert.That(events, Does.Not.Contain("step"));
-            if (contexts.Count > 0) Assert.That(contexts[0].Disposals, Is.EqualTo(1));
+            await Assert.That(await Assert.That(async () => await fixture.Run()).ThrowsExactly<InvalidOperationException>()).IsSameReferenceAs(expected);
+            await Assert.That(run.Scenarios.Single().Status).IsEqualTo(Status.Failed);
+            await Assert.That(run.Scenarios.Single().Exception?.Message).IsEqualTo(failure);
+            await Assert.That(run.Scenarios.Single().ExecutionException?.TypeName).IsEqualTo(typeof(InvalidOperationException).FullName);
+            await Assert.That(run.Scenarios.Single().ExecutionException?.ShortTypeName).IsEqualTo(nameof(InvalidOperationException));
+            await Assert.That(events).DoesNotContain("step");
+            if (contexts.Count > 0) await Assert.That(contexts[0].Disposals).IsEqualTo(1);
             await fixture.InitializeContextAsync();
-            Assert.That(fixture.Context.Initializations, Is.EqualTo(1));
-            Assert.That(calls, Is.EqualTo(2));
+            await Assert.That(fixture.Context.Initializations).IsEqualTo(1);
+            await Assert.That(calls).IsEqualTo(2);
         }
         finally { await fixture.Finish(); }
-        Assert.That(contexts.All(c => c.Disposals == 1), Is.True);
+        await Assert.That(contexts.All(c => c.Disposals == 1)).IsTrue();
     }
 
-    [TestCase(false)]
-    [TestCase(true)]
+    [Test]
+    [Arguments(false)]
+    [Arguments(true)]
     public async Task ThrowingDisposalDetachesContextAndAlwaysCompletesExecution(bool failedStep)
     {
         var context = new ResourceContext(new List<string>(), new Dependency())
@@ -225,12 +229,12 @@ public class ContextFactoryLifetimeTests
         using var run = BDTestRun.Start(new BDTestOptions { ContextFactory = new Factory(_ => new ValueTask<object>(context)) });
         var fixture = new Fixture(run) { AlwaysFail = failedStep };
         fixture.Start();
-        if (failedStep) await Assert.ThrowsAsync<TransientException>(async () => await fixture.Run());
+        if (failedStep) await Assert.That(async () => await fixture.Run()).ThrowsExactly<TransientException>();
         else await fixture.Run();
-        Assert.That(Required(await Assert.ThrowsAsync<InvalidOperationException>(async () => await fixture.Finish())).Message, Is.EqualTo("dispose"));
+        await Assert.That(Required(await Assert.That(async () => await fixture.Finish()).ThrowsExactly<InvalidOperationException>()).Message).IsEqualTo("dispose");
         await fixture.Finish();
-        Assert.That(context.Disposals, Is.EqualTo(1));
-        Assert.That(run.OutputBuffers, Is.Empty);
+        await Assert.That(context.Disposals).IsEqualTo(1);
+        await Assert.That(run.OutputBuffers).IsEmpty();
     }
 
     [Test]
@@ -244,15 +248,16 @@ public class ContextFactoryLifetimeTests
         using var run = BDTestRun.Start(options);
         var fixture = new Fixture(run) { AlwaysFail = true };
         fixture.Start();
-        var error = await Assert.ThrowsAsync<BDTest.Exceptions.ErrorOccurredDuringRetryActionException>(async () => await fixture.Run());
-        Assert.That(Required(error).InnerException, Is.SameAs(context.DisposalError));
+        var error = await Assert.That(async () => await fixture.Run()).ThrowsExactly<BDTest.Exceptions.ErrorOccurredDuringRetryActionException>();
+        await Assert.That(Required(error).InnerException).IsSameReferenceAs(context.DisposalError);
         await fixture.Finish();
-        Assert.That(context.Disposals, Is.EqualTo(1));
-        Assert.That(calls, Is.EqualTo(1));
+        await Assert.That(context.Disposals).IsEqualTo(1);
+        await Assert.That(calls).IsEqualTo(1);
     }
 
-    [TestCase(false)]
-    [TestCase(true)]
+    [Test]
+    [Arguments(false)]
+    [Arguments(true)]
     public async Task ReplacementDisposesOldOwnedContextAndHonorsTransferredOwnership(bool takeOwnership)
     {
         var original = new ResourceContext(new List<string>(), new Dependency());
@@ -262,11 +267,11 @@ public class ContextFactoryLifetimeTests
         fixture.Start();
         await fixture.InitializeContextAsync();
         await fixture.OverwriteContextAsync(replacement, takeOwnership);
-        Assert.That(original.Disposals, Is.EqualTo(1));
+        await Assert.That(original.Disposals).IsEqualTo(1);
         await fixture.Run();
-        Assert.That(replacement.Initializations, Is.EqualTo(1));
+        await Assert.That(replacement.Initializations).IsEqualTo(1);
         await fixture.Finish();
-        Assert.That(replacement.Disposals, Is.EqualTo(takeOwnership ? 1 : 0));
+        await Assert.That(replacement.Disposals).IsEqualTo(takeOwnership ? 1 : 0);
         if (!takeOwnership) await replacement.DisposeAsync();
     }
 
@@ -283,13 +288,14 @@ public class ContextFactoryLifetimeTests
         var fixture = new Fixture(run);
         fixture.Start();
         await Task.WhenAll(Enumerable.Range(0, 32).Select(_ => Task.Run(async () => await fixture.InitializeContextAsync())));
-        Assert.That(calls, Is.EqualTo(1));
-        Assert.That(fixture.Context.Initializations, Is.EqualTo(1));
+        await Assert.That(calls).IsEqualTo(1);
+        await Assert.That(fixture.Context.Initializations).IsEqualTo(1);
         await fixture.Finish();
     }
 
-    [TestCase(false)]
-    [TestCase(true)]
+    [Test]
+    [Arguments(false)]
+    [Arguments(true)]
     public async Task ReplacementFromConfigurationFailsWithoutDeadlock(bool asynchronous)
     {
         using var run = BDTestRun.Start(new BDTestOptions { ContextFactory = new Factory(_ =>
@@ -305,9 +311,9 @@ public class ContextFactoryLifetimeTests
         var preparation = Task.Run(async () => await fixture.InitializeContextAsync());
         try
         {
-            var error = await Assert.ThrowsAsync<InvalidOperationException>(async () =>
-                await preparation.WaitAsync(TimeSpan.FromSeconds(5)));
-            Assert.That(Required(error).Message, Does.Contain("ConfigureContext"));
+            var error = await Assert.That(async () =>
+                await preparation.WaitAsync(TimeSpan.FromSeconds(5))).ThrowsExactly<InvalidOperationException>();
+            await Assert.That(Required(error).Message).Contains("ConfigureContext");
         }
         finally
         {
@@ -344,23 +350,24 @@ public class ContextFactoryLifetimeTests
         var initialization = fixture.InitializeContextAsync().AsTask();
         try
         {
-            Assert.That(initialization.IsCompleted, Is.False);
-            Assert.That(attempts, Is.EqualTo(new[] { 0 }), "No factory may run while the old context is disposing");
+            await Assert.That(initialization.IsCompleted).IsFalse();
+            await Assert.That(attempts).IsEquivalentTo(new[] { 0 }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching).Because("No factory may run while the old context is disposing");
         }
         finally { release.TrySetResult(); }
         try
         {
             await Task.WhenAll(execution, initialization).WaitAsync(TimeSpan.FromSeconds(5));
-            Assert.That(attempts, Is.EqualTo(new[] { 0, 1 }));
-            Assert.That(contexts[0].Disposals, Is.EqualTo(1));
-            Assert.That(fixture.Context, Is.SameAs(contexts[1]));
+            await Assert.That(attempts).IsEquivalentTo(new[] { 0, 1 }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
+            await Assert.That(contexts[0].Disposals).IsEqualTo(1);
+            await Assert.That(fixture.Context).IsSameReferenceAs(contexts[1]);
         }
         finally { await fixture.Finish(); }
     }
 
-    [TestCase("factory")]
-    [TestCase("configure")]
-    [TestCase("initialize")]
+    [Test]
+    [Arguments("factory")]
+    [Arguments("configure")]
+    [Arguments("initialize")]
     public async Task NotImplementedPreparationRetainsReportException(string failure)
     {
         var expected = new NotImplementedException(failure);
@@ -377,13 +384,13 @@ public class ContextFactoryLifetimeTests
         fixture.Start();
         try
         {
-            Assert.That(await Assert.ThrowsAsync<NotImplementedException>(async () => await fixture.Run()), Is.SameAs(expected));
+            await Assert.That(await Assert.That(async () => await fixture.Run()).ThrowsExactly<NotImplementedException>()).IsSameReferenceAs(expected);
             var scenario = run.Scenarios.Single();
-            Assert.That(scenario.Status, Is.EqualTo(Status.NotImplemented));
-            Assert.That(scenario.Exception?.Message, Is.EqualTo(expected.Message));
-            Assert.That(scenario.ExecutionException, Is.Not.Null);
-            Assert.That(Required(scenario.Attempts).Single().Exception?.Message, Is.EqualTo(expected.Message));
-            Assert.That(Required(scenario.Steps).All(step => step.Status == Status.NotRun), Is.True);
+            await Assert.That(scenario.Status).IsEqualTo(Status.NotImplemented);
+            await Assert.That(scenario.Exception?.Message).IsEqualTo(expected.Message);
+            await Assert.That(scenario.ExecutionException).IsNotNull();
+            await Assert.That(Required(scenario.Attempts).Single().Exception?.Message).IsEqualTo(expected.Message);
+            await Assert.That(Required(scenario.Steps).All(step => step.Status == Status.NotRun)).IsTrue();
         }
         finally { await fixture.Finish(); }
     }
@@ -402,15 +409,16 @@ public class ContextFactoryLifetimeTests
         try
         {
             await fixture.Run();
-            Assert.That(hook.Calls, Is.EqualTo(new[] { "before", "after" }));
-            Assert.That(hook.Contexts.All(context => ReferenceEquals(context, fixture.Context)), Is.True);
+            await Assert.That(hook.Calls).IsEquivalentTo(new[] { "before", "after" }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
+            await Assert.That(hook.Contexts.All(context => ReferenceEquals(context, fixture.Context))).IsTrue();
         }
         finally { await fixture.Finish(); }
     }
 
-    [TestCase("factory")]
-    [TestCase("configure")]
-    [TestCase("initialize")]
+    [Test]
+    [Arguments("factory")]
+    [Arguments("configure")]
+    [Arguments("initialize")]
     public async Task FailedPreparationDoesNotRunScenarioHooks(string failure)
     {
         var hook = new ContextHook();
@@ -429,9 +437,9 @@ public class ContextFactoryLifetimeTests
         fixture.Start();
         try
         {
-            await Assert.ThrowsAsync<InvalidOperationException>(async () => await fixture.Run());
-            Assert.That(hook.Calls, Is.Empty);
-            Assert.That(run.Scenarios.Single().Exception?.Message, Is.EqualTo(failure));
+            await Assert.That(async () => await fixture.Run()).ThrowsExactly<InvalidOperationException>();
+            await Assert.That(hook.Calls).IsEmpty();
+            await Assert.That(run.Scenarios.Single().Exception?.Message).IsEqualTo(failure);
         }
         finally { await fixture.Finish(); }
     }
@@ -442,18 +450,18 @@ public class ContextFactoryLifetimeTests
         public List<object> Contexts { get; } = new();
         public Task BeforeScenarioAsync(ScenarioHookContext scenario) => Record("before", scenario);
         public Task AfterScenarioAsync(ScenarioHookContext scenario) => Record("after", scenario);
-        private Task Record(string name, ScenarioHookContext scenario)
+        private async Task Record(string name, ScenarioHookContext scenario)
         {
             Calls.Add(name);
             Contexts.Add(Required(scenario.Context));
-            Assert.That(((ResourceContext)scenario.Context).Initializations, Is.EqualTo(1));
-            return Task.CompletedTask;
+            await Assert.That(((ResourceContext)scenario.Context).Initializations).IsEqualTo(1);
         }
     }
 
-    [TestCase("factory")]
-    [TestCase("configure")]
-    [TestCase("initialize")]
+    [Test]
+    [Arguments("factory")]
+    [Arguments("configure")]
+    [Arguments("initialize")]
     public async Task SuccessfulPreparationRetryDoesNotRetainTerminalError(string failure)
     {
         var calls = 0;
@@ -473,23 +481,24 @@ public class ContextFactoryLifetimeTests
         try
         {
             var scenario = await fixture.Run();
-            Assert.That(scenario.Status, Is.EqualTo(Status.Passed));
-            Assert.That(scenario.RetryCount, Is.EqualTo(1));
-            Assert.That(scenario.Exception, Is.Null);
-            Assert.That(scenario.ExecutionException, Is.Null);
-            Assert.That(Required(scenario.Attempts)[0].Exception, Is.Not.Null);
+            await Assert.That(scenario.Status).IsEqualTo(Status.Passed);
+            await Assert.That(scenario.RetryCount).IsEqualTo(1);
+            await Assert.That(scenario.Exception).IsNull();
+            await Assert.That(scenario.ExecutionException).IsNull();
+            await Assert.That(Required(scenario.Attempts)[0].Exception).IsNotNull();
         }
         finally { await fixture.Finish(); }
     }
 
-    [TestCase("teardown", false)]
-    [TestCase("teardown", true)]
-    [TestCase("retry", false)]
-    [TestCase("retry", true)]
-    [TestCase("replacement", false)]
-    [TestCase("replacement", true)]
-    [TestCase("preparation", false)]
-    [TestCase("preparation", true)]
+    [Test]
+    [Arguments("teardown", false)]
+    [Arguments("teardown", true)]
+    [Arguments("retry", false)]
+    [Arguments("retry", true)]
+    [Arguments("replacement", false)]
+    [Arguments("replacement", true)]
+    [Arguments("preparation", false)]
+    [Arguments("preparation", true)]
     public async Task CleanupReentryFailsWithoutDeadlock(string operation, bool asynchronous)
     {
         using var run = BDTestRun.Start();
@@ -516,7 +525,7 @@ public class ContextFactoryLifetimeTests
         {
             if (operation == "preparation")
             {
-                await Assert.ThrowsAsync<InvalidOperationException>(async () => await fixture.InitializeContextAsync());
+                await Assert.That(async () => await fixture.InitializeContextAsync()).ThrowsExactly<InvalidOperationException>();
                 return;
             }
             await fixture.InitializeContextAsync();
@@ -527,8 +536,8 @@ public class ContextFactoryLifetimeTests
         try
         {
             await execution.WaitAsync(TimeSpan.FromSeconds(5));
-            Assert.That(errors, Has.Count.EqualTo(5));
-            Assert.That(errors.All(error => error is InvalidOperationException && error.Message.Contains("cleanup")), Is.True);
+            await Assert.That(errors).Count().IsEqualTo(5);
+            await Assert.That(errors.All(error => error is InvalidOperationException && error.Message.Contains("cleanup"))).IsTrue();
         }
         finally
         {
@@ -576,7 +585,7 @@ public class ContextFactoryLifetimeTests
         private int _steps;
         protected override void ConfigureContext(BDTestContext<ResourceContext> context)
         {
-            Assert.That(Context, Is.SameAs(context.TestContext));
+            if (!ReferenceEquals(Context, context.TestContext)) throw new AssertionException("ConfigureContext must observe the current context.");
             Configure?.Invoke(context);
             context.TestContext.Events.Add("configured");
         }
@@ -586,9 +595,9 @@ public class ContextFactoryLifetimeTests
         // A delegate preserves the original cleanup exception without a reflection wrapper.
         public void CompleteLegacy() => BDTest.Tests.Helpers.LegacyLifecycle.Complete(this);
         public Task<Scenario> Run() => When(() => VerifyInitialized()).Then(() => Complete()).BDTestAsync();
-        public void VerifyInitialized()
+        public async Task VerifyInitialized()
         {
-            Assert.That(Context.Initializations, Is.EqualTo(1));
+            await Assert.That(Context.Initializations).IsEqualTo(1);
             Context.Events.Add("step");
             if (AlwaysFail || FailOnce && ++_steps == 1) throw new TransientException();
         }

@@ -1,6 +1,6 @@
 using BDTest.Output;
 using BDTest.Test;
-using NUnit.Framework;
+using System.Threading.Tasks;
 
 namespace BDTest.Tests.Fixtures;
 
@@ -23,23 +23,26 @@ public class CoreLifecycleTests : TestRunOwner
 
         firstFixture.Finish();
         firstFixture.Finish();
-        Assert.That(TestOutputData.Run, Is.SameAs(second));
-        Assert.That(TestOutputData.FrameworkExecutionId, Is.EqualTo("same-id"));
+        await Assert.That(TestOutputData.Run).IsSameReferenceAs(second);
+        await Assert.That(TestOutputData.FrameworkExecutionId).IsEqualTo("same-id");
         var scenario = await secondFixture.When(() => NoOp()).Then(() => NoOp()).BDTestAsync();
-        Assert.That(scenario.TestStartupInformation, Does.Contain("second startup").And.Not.Contain("first"));
-        Assert.That(scenario.CustomHtmlOutputForReport, Does.Contain("second pending html"));
+
+        await Assert.That(scenario.TestStartupInformation).Contains("second startup").And.DoesNotContain("first");
+        await Assert.That(scenario.CustomHtmlOutputForReport).Contains("second pending html");
         secondFixture.Finish();
         secondFixture.Finish();
-        Assert.That(TestOutputData.FrameworkExecutionId, Is.Null);
-        Assert.That(TestOutputData.TestId, Is.Null);
-        Assert.That(TestOutputData.ConstructionOutput, Is.Null);
-        Assert.That(TestOutputData.Run, Is.Null);
+        await Assert.That(TestOutputData.FrameworkExecutionId).IsNull();
+        await Assert.That(TestOutputData.TestId).IsNull();
+        await Assert.That(TestOutputData.ConstructionOutput).IsNull();
+        await Assert.That(TestOutputData.Run).IsNull();
 
         firstFixture.Start("same-id");
-        Assert.That(firstFixture.Context, Is.Not.SameAs(original));
+        await Assert.That(firstFixture.Context).IsNotSameReferenceAs(original);
         var next = await firstFixture.When(() => NoOp()).Then(() => NoOp()).BDTestAsync();
-        Assert.That(next.TestStartupInformation, Is.Null.Or.Empty);
-        Assert.That(next.CustomHtmlOutputForReport, Is.Null.Or.Empty);
+
+        await Assert.That(next.TestStartupInformation).IsNullOrEmpty();
+
+        await Assert.That(next.CustomHtmlOutputForReport).IsNullOrEmpty();
         firstFixture.Finish();
     }
 
@@ -58,9 +61,9 @@ public class CoreLifecycleTests : TestRunOwner
             fixture.WriteStartupOutput("second pending");
             started.SetResult();
             await completed.Task.WaitAsync(TimeSpan.FromSeconds(10));
-            Assert.That(fixture.Context, Is.SameAs(context));
+            await Assert.That(fixture.Context).IsSameReferenceAs(context);
             var scenario = await fixture.When(() => NoOp()).Then(() => NoOp()).BDTestAsync();
-            Assert.That(scenario.TestStartupInformation, Does.Contain("second pending"));
+            await Assert.That(scenario.TestStartupInformation).Contains("second pending");
             fixture.Finish();
         });
         await started.Task.WaitAsync(TimeSpan.FromSeconds(10));
@@ -70,21 +73,23 @@ public class CoreLifecycleTests : TestRunOwner
         await other;
     }
 
-    [TestCase(null)]
-    [TestCase("")]
-    [TestCase(" ")]
-    public void InvalidIdsAreRejectedBeforeChangingCapture(string id)
+    [Test]
+    [Arguments(null)]
+    [Arguments("")]
+    [Arguments(" ")]
+    public async Task InvalidIdsAreRejectedBeforeChangingCapture(string? id)
     {
         using var run = BDTestRun.Start();
         var fixture = new Probe(run);
         fixture.Start("valid");
-        Assert.Throws<ArgumentException>(() => fixture.Start(id));
-        Assert.That(TestOutputData.FrameworkExecutionId, Is.EqualTo("valid"));
+        await Assert.That(() => fixture.Start(id!)).ThrowsExactly<ArgumentException>();
+        await Assert.That(TestOutputData.FrameworkExecutionId).IsEqualTo("valid");
         fixture.Finish();
     }
 
-    [TestCase(false)]
-    [TestCase(true)]
+    [Test]
+    [Arguments(false)]
+    [Arguments(true)]
     public async Task CrossFlowDisposalCapturesOnlyItsRunAndPreservesCallerOutput(bool failDisposal)
     {
         using var first = BDTestRun.Start();
@@ -104,22 +109,25 @@ public class CoreLifecycleTests : TestRunOwner
         {
             if (failDisposal)
             {
-                var error = await Assert.ThrowsAsync<InvalidOperationException>(async () => await fixture.EndTestAsync());
-                Assert.That(error!.Message, Is.EqualTo("disposal failure"));
+                var error = await Assert.That(async () => await fixture.EndTestAsync()).ThrowsExactly<InvalidOperationException>();
+                await Assert.That(error!.Message).IsEqualTo("disposal failure");
             }
             else
             {
                 await fixture.EndTestAsync();
             }
-            Assert.That(TestOutputData.Run, Is.SameAs(second));
-            Assert.That(TestOutputData.FrameworkExecutionId, Is.EqualTo("same-id"));
-            Assert.That(TestOutputData.TestId, Is.EqualTo(secondScenario.Guid));
+            await Assert.That(TestOutputData.Run).IsSameReferenceAs(second);
+            await Assert.That(TestOutputData.FrameworkExecutionId).IsEqualTo("same-id");
+            await Assert.That(TestOutputData.TestId).IsEqualTo(secondScenario.Guid);
             Console.WriteLine("caller output");
-            Assert.That(firstScenario.TearDownOutput, Does.Contain("disposal output").And.Not.Contain("caller output"));
-            Assert.That(secondScenario.TearDownOutput, Does.Contain("caller output").And.Not.Contain("disposal output"));
-            Assert.That(first.OutputBuffers, Is.Empty);
+
+            await Assert.That(firstScenario.TearDownOutput).Contains("disposal output").And.DoesNotContain("caller output");
+
+            await Assert.That(secondScenario.TearDownOutput).Contains("caller output").And.DoesNotContain("disposal output");
+            await Assert.That(first.OutputBuffers).IsEmpty();
             await fixture.EndTestAsync();
-            Assert.That(Required(firstScenario.TearDownOutput).Split("disposal output"), Has.Length.EqualTo(2));
+
+            await Assert.That((Required(firstScenario.TearDownOutput).Split("disposal output")).Length).IsEqualTo(2);
         }
         finally { await caller.EndTestAsync(); }
     }
@@ -153,8 +161,8 @@ public class CoreLifecycleTests : TestRunOwner
         fixture.Start();
         Console.WriteLine("legacy second startup");
         var scenario = await fixture.When(() => NoOp()).Then(() => NoOp()).BDTestAsync();
-        Assert.That(scenario.FrameworkTestId, Is.EqualTo("legacy-id"));
-        Assert.That(scenario.TestStartupInformation, Does.Contain("legacy second startup"));
+        await Assert.That(scenario.FrameworkTestId).IsEqualTo("legacy-id");
+        await Assert.That(scenario.TestStartupInformation).Contains("legacy second startup");
         fixture.Finish();
     }
 
@@ -168,8 +176,8 @@ public class CoreLifecycleTests : TestRunOwner
             fixture.Start(id);
             Console.WriteLine("decorated startup");
             var scenario = await fixture.When(() => NoOp()).Then(() => NoOp()).BDTestAsync();
-            Assert.That(scenario.FrameworkTestId, Is.EqualTo("prefix-" + id));
-            Assert.That(scenario.TestStartupInformation, Does.Contain("decorated startup"));
+            await Assert.That(scenario.FrameworkTestId).IsEqualTo("prefix-" + id);
+            await Assert.That(scenario.TestStartupInformation).Contains("decorated startup");
             fixture.Finish();
         }
     }

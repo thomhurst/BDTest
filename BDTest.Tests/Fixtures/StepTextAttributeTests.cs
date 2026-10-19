@@ -1,72 +1,76 @@
 using BDTest.Attributes;
 using BDTest.Exceptions;
-using NUnit.Framework;
+using System.Threading.Tasks;
 
 namespace BDTest.Tests.Fixtures;
 
 public class StepTextAttributeTests
 {
-    [TestCase("0:foo")]
-    [TestCase("12:foo:bar")]
-    [TestCase("0:")]
-    [TestCase("")]
-    [TestCase(null)]
-    public void SingleOverride_AcceptsValidOrEmptyValues(string parameterOverride)
+    [Test]
+    [Arguments("0:foo")]
+    [Arguments("12:foo:bar")]
+    [Arguments("0:")]
+    [Arguments("")]
+    [Arguments(null)]
+    public async Task SingleOverride_AcceptsValidOrEmptyValues(string? parameterOverride)
     {
-        var attribute = new StepTextAttribute("Step {0}", parameterOverride);
+        var attribute = new StepTextAttribute("Step {0}", parameterOverride!);
 
-        Assert.That(attribute.Text, Is.EqualTo("Step {0}"));
-        Assert.That(attribute.StepTextParameterOverrides, Is.EqualTo(new[] { parameterOverride }));
+        await Assert.That(attribute.Text).IsEqualTo("Step {0}");
+        await Assert.That(attribute.StepTextParameterOverrides).IsEquivalentTo(new[] { parameterOverride }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 
-    [TestCase("foo")]
-    [TestCase(":foo")]
-    [TestCase("0foo")]
-    [TestCase("-1:foo")]
-    [TestCase("foo0:bar")]
-    public void SingleOverride_RejectsMissingIndexOrColon(string parameterOverride)
+    [Test]
+    [Arguments("foo")]
+    [Arguments(":foo")]
+    [Arguments("0foo")]
+    [Arguments("-1:foo")]
+    [Arguments("foo0:bar")]
+    public async Task SingleOverride_RejectsMissingIndexOrColon(string parameterOverride)
     {
-        Assert.Throws<InvalidStepTextParameterException>(() => new StepTextAttribute("Step {0}", parameterOverride));
+        await Assert.That(() => new StepTextAttribute("Step {0}", parameterOverride)).ThrowsExactly<InvalidStepTextParameterException>();
     }
 
-    [TestCase("0:foo")]
-    [TestCase("12:foo:bar")]
-    [TestCase("0:")]
-    [TestCase("")]
-    [TestCase(null)]
-    public void ArrayOverrides_AcceptsValidOrEmptyValues(string parameterOverride)
+    [Test]
+    [Arguments("0:foo")]
+    [Arguments("12:foo:bar")]
+    [Arguments("0:")]
+    [Arguments("")]
+    [Arguments(null)]
+    public async Task ArrayOverrides_AcceptsValidOrEmptyValues(string? parameterOverride)
     {
-        var overrides = new[] { "1:bar", parameterOverride };
+        var overrides = new[] { "1:bar", parameterOverride! };
 
         var attribute = new StepTextAttribute("Step {0} {1}", overrides);
 
-        Assert.That(attribute.Text, Is.EqualTo("Step {0} {1}"));
-        Assert.That(attribute.StepTextParameterOverrides, Is.EqualTo(overrides));
-    }
-
-    [TestCase("foo")]
-    [TestCase(":foo")]
-    [TestCase("0foo")]
-    [TestCase("-1:foo")]
-    [TestCase("foo0:bar")]
-    public void ArrayOverrides_RejectsMissingIndexOrColon(string parameterOverride)
-    {
-        Assert.Throws<InvalidStepTextParameterException>(() =>
-            new StepTextAttribute("Step {0}", new[] { parameterOverride }));
+        await Assert.That(attribute.Text).IsEqualTo("Step {0} {1}");
+        await Assert.That(attribute.StepTextParameterOverrides).IsEquivalentTo(overrides, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 
     [Test]
-    public void ArrayOverrides_RejectsInvalidValueAfterValidValue()
+    [Arguments("foo")]
+    [Arguments(":foo")]
+    [Arguments("0foo")]
+    [Arguments("-1:foo")]
+    [Arguments("foo0:bar")]
+    public async Task ArrayOverrides_RejectsMissingIndexOrColon(string parameterOverride)
     {
-        Assert.Throws<InvalidStepTextParameterException>(() =>
-            new StepTextAttribute("Step {0} {1}", new[] { "0:foo", "invalid" }));
+        await Assert.That(() =>
+            new StepTextAttribute("Step {0}", new[] { parameterOverride })).ThrowsExactly<InvalidStepTextParameterException>();
     }
 
     [Test]
-    public void ArrayOverrides_AcceptsEmptyArray()
+    public async Task ArrayOverrides_RejectsInvalidValueAfterValidValue()
+    {
+        await Assert.That(() =>
+            new StepTextAttribute("Step {0} {1}", new[] { "0:foo", "invalid" })).ThrowsExactly<InvalidStepTextParameterException>();
+    }
+
+    [Test]
+    public async Task ArrayOverrides_AcceptsEmptyArray()
     {
         var attribute = new StepTextAttribute("Step", Array.Empty<string>());
 
-        Assert.That(attribute.StepTextParameterOverrides, Is.Empty);
+        await Assert.That(attribute.StepTextParameterOverrides).IsEmpty();
     }
 }

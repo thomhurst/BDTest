@@ -5,19 +5,18 @@ using BDTest.Razor.Reports.Interfaces;
 using BDTest.Razor.Reports.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
-using NUnit.Framework;
+using System.Threading.Tasks;
 
 namespace BDTest.Tests.Fixtures;
-
-[TestFixture(false)]
-[TestFixture(true)]
+[Arguments(false)]
+[Arguments(true)]
 public class BulkReportTests(bool flakiness)
 {
-    private ServiceProvider _services = null!; // Assigned by NUnit SetUp.
-    private RecordingDataStore _store = null!; // Assigned by NUnit SetUp.
-    private BDTestController _controller = null!; // Assigned by NUnit SetUp.
+    private ServiceProvider _services = null!; // Assigned by the per-test setup hook.
+    private RecordingDataStore _store = null!; // Assigned by the per-test setup hook.
+    private BDTestController _controller = null!; // Assigned by the per-test setup hook.
 
-    [SetUp]
+    [Before(HookType.Test)]
     public void SetUp()
     {
         _store = new RecordingDataStore();
@@ -30,70 +29,75 @@ public class BulkReportTests(bool flakiness)
         _controller = ActivatorUtilities.CreateInstance<BDTestController>(_services);
     }
 
-    [TearDown]
+    [After(HookType.Test)]
     public void TearDown()
     {
         _services.Dispose();
     }
 
-    [TestCase(null)]
-    [TestCase("")]
+    [Test]
+    [Arguments(null)]
+    [Arguments("")]
     public async Task No_selection_redirects_without_reading_storage(string? ids)
     {
-        Assert.That(await Read(ids), Is.TypeOf<RedirectToActionResult>());
-        Assert.That(_store.ReadIds, Is.Empty);
+        await Assert.That(await Read(ids)).IsTypeOf<RedirectToActionResult>();
+        await Assert.That(_store.ReadIds).IsEmpty();
     }
 
-    [TestCase(" ")]
-    [TestCase(",")]
-    [TestCase("good,")]
-    [TestCase("good,,another")]
-    [TestCase("good,../report")]
-    [TestCase("good,report/name")]
-    [TestCase("good,report\\name")]
-    [TestCase("good,report?name")]
-    [TestCase("good,report name")]
-    [TestCase("good,.")]
-    [TestCase("good,..")]
-    [TestCase("good,report\n")]
+    [Test]
+    [Arguments(" ")]
+    [Arguments(",")]
+    [Arguments("good,")]
+    [Arguments("good,,another")]
+    [Arguments("good,../report")]
+    [Arguments("good,report/name")]
+    [Arguments("good,report\\name")]
+    [Arguments("good,report?name")]
+    [Arguments("good,report name")]
+    [Arguments("good,.")]
+    [Arguments("good,..")]
+    [Arguments("good,report\n")]
     public async Task Invalid_selection_is_rejected_before_any_read(string ids)
     {
-        Assert.That(await Read(ids), Is.TypeOf<BadRequestObjectResult>());
-        Assert.That(_store.ReadIds, Is.Empty);
+        await Assert.That(await Read(ids)).IsTypeOf<BadRequestObjectResult>();
+        await Assert.That(_store.ReadIds).IsEmpty();
     }
 
-    [TestCase(129)]
-    [TestCase(6450)]
+    [Test]
+    [Arguments(129)]
+    [Arguments(6450)]
     public async Task Overlong_id_is_rejected_before_any_read(int length)
     {
-        Assert.That(await Read("good," + new string('a', length)), Is.TypeOf<BadRequestObjectResult>());
-        Assert.That(_store.ReadIds, Is.Empty);
+        await Assert.That(await Read("good," + new string('a', length))).IsTypeOf<BadRequestObjectResult>();
+        await Assert.That(_store.ReadIds).IsEmpty();
     }
 
-    [TestCase(false)]
-    [TestCase(true)]
+    [Test]
+    [Arguments(false)]
+    [Arguments(true)]
     public async Task More_than_50_entries_are_rejected_even_when_duplicated(bool duplicate)
     {
         var ids = Enumerable.Range(0, 51).Select(i => duplicate ? "same" : $"run-{i}");
-        Assert.That(await Read(string.Join(",", ids)), Is.TypeOf<BadRequestObjectResult>());
-        Assert.That(_store.ReadIds, Is.Empty);
+        await Assert.That(await Read(string.Join(",", ids))).IsTypeOf<BadRequestObjectResult>();
+        await Assert.That(_store.ReadIds).IsEmpty();
     }
 
-    [TestCase(false)]
-    [TestCase(true)]
+    [Test]
+    [Arguments(false)]
+    [Arguments(true)]
     public async Task Fifty_reports_are_returned_without_populating_the_cache(bool maximumLength)
     {
         var ids = Enumerable.Range(0, 50).Select(i => maximumLength ? $"run-{i}".PadRight(128, 'a') : $"run-{i}").ToArray();
         var result = (ViewResult)await Read(string.Join(",", ids));
-        Assert.That(result.ViewName, Is.EqualTo(flakiness ? "MultipleTestRunsFlakiness" : "MultipleTestRunsTimes"));
-        Assert.That(((IEnumerable<BDTestOutputModel>)Required(result.Model)).Select(x => x.Id), Is.EqualTo(ids));
-        Assert.That(_store.ReadIds, Is.EquivalentTo(ids));
+        await Assert.That(result.ViewName).IsEqualTo(flakiness ? "MultipleTestRunsFlakiness" : "MultipleTestRunsTimes");
+        await Assert.That(((IEnumerable<BDTestOutputModel>)Required(result.Model)).Select(x => x.Id)).IsEquivalentTo((ids).Cast<string?>(), global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
+
+        await Assert.That(_store.ReadIds).IsEquivalentTo(ids, global::TUnit.Assertions.Enums.CollectionOrdering.Any);
         var repository = _services.GetRequiredService<IDataRepository>();
         _store.MissingIds.UnionWith(ids);
         foreach (var id in ids)
         {
-            Assert.That(await repository.GetDataForBulkRead(id, default), Is.Null,
-                "Bulk reads must leave every report uncached.");
+            await Assert.That(await repository.GetDataForBulkRead(id, default)).IsNull().Because("Bulk reads must leave every report uncached.");
         }
     }
 
@@ -102,8 +106,9 @@ public class BulkReportTests(bool flakiness)
     {
         var ids = new[] { Guid.NewGuid().ToString("N"), Guid.NewGuid().ToString("D"), "build_1.2-Release", new string('a', 128) };
         var result = (ViewResult)await Read(string.Join(",", ids.Concat(ids)));
-        Assert.That(((IEnumerable<BDTestOutputModel>)Required(result.Model)).Select(x => x.Id), Is.EqualTo(ids));
-        Assert.That(_store.ReadIds, Is.EquivalentTo(ids));
+        await Assert.That(((IEnumerable<BDTestOutputModel>)Required(result.Model)).Select(x => x.Id)).IsEquivalentTo((ids).Cast<string?>(), global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
+
+        await Assert.That(_store.ReadIds).IsEquivalentTo(ids, global::TUnit.Assertions.Enums.CollectionOrdering.Any);
     }
 
     [Test]
@@ -111,8 +116,8 @@ public class BulkReportTests(bool flakiness)
     {
         _store.MissingIds.Add("missing");
         var result = (ViewResult)await Read("missing,found");
-        Assert.That(((IEnumerable<BDTestOutputModel>)Required(result.Model)).Select(x => x.Id), Is.EqualTo(new[] { "found" }));
-        Assert.That(((ViewResult)await Read("missing")).ViewName, Is.EqualTo("NotFoundMultiple"));
+        await Assert.That(((IEnumerable<BDTestOutputModel>)Required(result.Model)).Select(x => x.Id)).IsEquivalentTo((new[] { "found" }).Cast<string?>(), global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(((ViewResult)await Read("missing")).ViewName).IsEqualTo("NotFoundMultiple");
     }
 
     [Test]
@@ -125,9 +130,9 @@ public class BulkReportTests(bool flakiness)
         for (var iteration = 0; iteration < 2; iteration++)
         {
             var result = (ViewResult)await Read("cached");
-            Assert.That(((IEnumerable<BDTestOutputModel>)Required(result.Model)).Single(), Is.SameAs(cached));
+            await Assert.That(((IEnumerable<BDTestOutputModel>)Required(result.Model)).Single()).IsSameReferenceAs(cached);
         }
-        Assert.That(_store.ReadIds, Has.Count.EqualTo(1));
+        await Assert.That(_store.ReadIds).Count().IsEqualTo(1);
     }
 
     [Test]
@@ -135,8 +140,8 @@ public class BulkReportTests(bool flakiness)
     {
         var repository = _services.GetRequiredService<IDataRepository>();
         var report = await repository.GetData("single", CancellationToken.None);
-        Assert.That(await repository.GetData("single", default), Is.SameAs(report));
-        Assert.That(_store.ReadIds, Has.Count.EqualTo(1));
+        await Assert.That(await repository.GetData("single", default)).IsSameReferenceAs(report);
+        await Assert.That(_store.ReadIds).Count().IsEqualTo(1);
     }
 
     [Test]
@@ -144,12 +149,13 @@ public class BulkReportTests(bool flakiness)
     {
         using var cancellation = new CancellationTokenSource();
         cancellation.Cancel();
-        await Assert.ThrowsAsync<OperationCanceledException>(async () => await Read("run", cancellation.Token));
-        Assert.That(_store.ReadIds, Is.Empty);
+        await Assert.That(async () => await Read("run", cancellation.Token)).ThrowsExactly<OperationCanceledException>();
+        await Assert.That(_store.ReadIds).IsEmpty();
     }
 
-    [TestCase(false)]
-    [TestCase(true)]
+    [Test]
+    [Arguments(false)]
+    [Arguments(true)]
     public async Task Storage_reads_are_limited_to_five_and_receive_request_cancellation(bool cancel)
     {
         using var cancellation = new CancellationTokenSource();
@@ -157,7 +163,7 @@ public class BulkReportTests(bool flakiness)
         var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         _store.Read = async (id, token) =>
         {
-            Assert.That(token, Is.EqualTo(cancellation.Token));
+            await Assert.That(token).IsEqualTo(cancellation.Token);
             if (_store.ReadIds.Count == 5)
             {
                 firstBatchStarted.TrySetResult();
@@ -170,18 +176,18 @@ public class BulkReportTests(bool flakiness)
         try
         {
             await firstBatchStarted.Task.WaitAsync(TimeSpan.FromSeconds(10));
-            Assert.That(_store.ReadIds.Count, Is.EqualTo(5));
+            await Assert.That(_store.ReadIds.Count).IsEqualTo(5);
             if (cancel)
             {
                 cancellation.Cancel();
-                await Assert.CatchAsync<OperationCanceledException>(async () => await read);
-                Assert.That(_store.ReadIds.Count, Is.EqualTo(5));
+                await Assert.That(async () => await read).Throws<OperationCanceledException>();
+                await Assert.That(_store.ReadIds.Count).IsEqualTo(5);
             }
             else
             {
                 release.SetResult();
                 var result = (ViewResult)await read;
-                Assert.That((IEnumerable<BDTestOutputModel>)Required(result.Model), Has.Count.EqualTo(12));
+                await Assert.That((IEnumerable<BDTestOutputModel>)Required(result.Model)).Count().IsEqualTo(12);
             }
         }
         finally

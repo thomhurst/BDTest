@@ -1,3 +1,4 @@
+using System.IO;
 using System.Net;
 using System.Text;
 using BDTest.Helpers;
@@ -6,9 +7,9 @@ using BDTest.Razor.Reports.Implementations;
 using BDTest.Razor.Reports.Storage;
 using BDTest.Test;
 using Microsoft.AspNetCore.Builder;
-using NUnit.Framework;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.DependencyInjection;
+using System.Threading.Tasks;
 
 namespace BDTest.Tests.Fixtures;
 
@@ -41,13 +42,13 @@ public partial class ReportUploadTests
             using var other = await PostAttachment(server, secondId, attachmentId,
                 second.Headers.GetValues("X-BDTest-Attachment-Token").Single(), new byte[] { 3, 4 })
                 .WaitAsync(TimeSpan.FromSeconds(10));
-            Assert.That(other.StatusCode, Is.EqualTo(HttpStatusCode.NoContent));
+            await Assert.That(other.StatusCode).IsEqualTo(HttpStatusCode.NoContent);
             await server.Repository.DeleteReport(firstId).WaitAsync(TimeSpan.FromSeconds(10));
         }
         finally { body.Continue.TrySetResult(); }
         using var rejected = await stalled;
-        Assert.That(rejected.StatusCode, Is.EqualTo(HttpStatusCode.NotFound));
-        Assert.That(await files.Store.OpenReadAsync(firstId, attachmentId), Is.Null);
+        await Assert.That(rejected.StatusCode).IsEqualTo(HttpStatusCode.NotFound);
+        await Assert.That(await files.Store.OpenReadAsync(firstId, attachmentId)).IsNull();
     }
 
     [Test]
@@ -70,18 +71,19 @@ public partial class ReportUploadTests
             using var other = await PostAttachment(server, secondId, attachmentId,
                 second.Headers.GetValues("X-BDTest-Attachment-Token").Single(), new byte[] { 3, 4 })
                 .WaitAsync(TimeSpan.FromSeconds(10));
-            Assert.That(other.StatusCode, Is.EqualTo(HttpStatusCode.NoContent));
+            await Assert.That(other.StatusCode).IsEqualTo(HttpStatusCode.NoContent);
             await server.Repository.DeleteReport(secondId).WaitAsync(TimeSpan.FromSeconds(10));
-            Assert.That(await files.Store.OpenReadAsync(secondId, attachmentId), Is.Null);
+            await Assert.That(await files.Store.OpenReadAsync(secondId, attachmentId)).IsNull();
         }
         finally { blocking.Continue.TrySetResult(); }
         using var completed = await upload;
-        Assert.That(completed.StatusCode, Is.EqualTo(HttpStatusCode.NoContent));
+        await Assert.That(completed.StatusCode).IsEqualTo(HttpStatusCode.NoContent);
     }
 
-    [TestCase("file")]
-    [TestCase("report")]
-    [TestCase("count")]
+    [Test]
+    [Arguments("file")]
+    [Arguments("report")]
+    [Arguments("count")]
     public async Task Lower_upload_limits_preserve_existing_downloads(string limit)
     {
         using var files = new AttachmentDirectory();
@@ -91,7 +93,7 @@ public partial class ReportUploadTests
         var reportId = receipt.Headers.GetValues("X-BDTest-Report-Id").Single();
         using var upload = await PostAttachment(first, reportId, attachmentId,
             receipt.Headers.GetValues("X-BDTest-Attachment-Token").Single(), new byte[] { 1, 2 });
-        Assert.That(upload.StatusCode, Is.EqualTo(HttpStatusCode.NoContent));
+        await Assert.That(upload.StatusCode).IsEqualTo(HttpStatusCode.NoContent);
         await using var second = await UploadServer.Start(options =>
         {
             if (limit == "file") options.MaximumAttachmentBytes = 0;
@@ -103,15 +105,16 @@ public partial class ReportUploadTests
             services.AddSingleton<IBDTestAttachmentStore>(files.Store);
         });
         using var download = await second.Client.GetAsync($"bdtest/report/{reportId}/attachments/{attachmentId}");
-        Assert.That(download.StatusCode, Is.EqualTo(HttpStatusCode.OK));
-        Assert.That(await download.Content.ReadAsByteArrayAsync(), Is.EqualTo(new byte[] { 1, 2 }));
+        await Assert.That(download.StatusCode).IsEqualTo(HttpStatusCode.OK);
+        await Assert.That(await download.Content.ReadAsByteArrayAsync()).IsEquivalentTo(new byte[] { 1, 2 }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
         using var rejected = await second.Post(AttachmentReport(Guid.NewGuid().ToString("N")));
-        Assert.That(rejected.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
+        await Assert.That(rejected.StatusCode).IsEqualTo(HttpStatusCode.BadRequest);
     }
 
-    [TestCase(null)]
-    [TestCase("wrong")]
-    public async Task Attachment_upload_rejects_missing_or_wrong_api_key_even_with_valid_receipt(string key)
+    [Test]
+    [Arguments(null)]
+    [Arguments("wrong")]
+    public async Task Attachment_upload_rejects_missing_or_wrong_api_key_even_with_valid_receipt(string? key)
     {
         using var files = new AttachmentDirectory();
         await using var server = await UploadServer.Start(configureServices: services => services.AddSingleton<IBDTestAttachmentStore>(files.Store));
@@ -123,8 +126,8 @@ public partial class ReportUploadTests
         if (key != null) request.Headers.Add("X-BDTest-Upload-Key", key);
         request.Headers.Add("X-BDTest-Attachment-Token", receipt.Headers.GetValues("X-BDTest-Attachment-Token").Single());
         using var response = await server.Client.SendAsync(request);
-        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.Unauthorized));
-        Assert.That(Directory.GetFiles(files.Path, "*", SearchOption.AllDirectories), Is.Empty);
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.Unauthorized);
+        await Assert.That(Directory.GetFiles(files.Path, "*", SearchOption.AllDirectories)).IsEmpty();
     }
 
     [Test]
@@ -150,13 +153,14 @@ public partial class ReportUploadTests
         await BDTestReportServer.SendDataAndGetReportUriAsync(Required(server.Client.BaseAddress), null, server.Client, run);
         var report = server.Store.Received.Single();
         var attachments = BDTestAttachmentHelper.GetAttachments(report).ToArray();
-        Assert.That(attachments, Has.Length.EqualTo(5));
-        Assert.That(attachments.Count(file => file.AttemptNumber == 2), Is.EqualTo(2));
+
+        await Assert.That((attachments).Length).IsEqualTo(5);
+        await Assert.That(attachments.Count(file => file.AttemptNumber == 2)).IsEqualTo(2);
         foreach (var attachment in attachments)
         {
             using var content = await files.Store.OpenReadAsync(Required(report.Id), Required(attachment.Id));
-            Assert.That(content, Is.Not.Null);
-            Assert.That(Required(content).Length, Is.EqualTo(attachment.Length));
+            await Assert.That(content).IsNotNull();
+            await Assert.That(Required(content).Length).IsEqualTo(attachment.Length);
         }
     }
 
@@ -175,20 +179,21 @@ public partial class ReportUploadTests
         {
             await blocking.Writing.Task.WaitAsync(TimeSpan.FromSeconds(10));
             var deletion = server.Repository.DeleteReport(reportId);
-            Assert.That(blocking.Deleting, Is.False);
+            await Assert.That(blocking.Deleting).IsFalse();
             blocking.Continue.TrySetResult();
             using var response = await upload;
             await deletion;
-            Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.NoContent));
-            Assert.That(await files.Store.OpenReadAsync(reportId, attachmentId), Is.Null);
+            await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.NoContent);
+            await Assert.That(await files.Store.OpenReadAsync(reportId, attachmentId)).IsNull();
         }
         finally { blocking.Continue.TrySetResult(); }
     }
 
-    [TestCase("no store")]
-    [TestCase("duplicate")]
-    [TestCase("count")]
-    [TestCase("total")]
+    [Test]
+    [Arguments("no store")]
+    [Arguments("duplicate")]
+    [Arguments("count")]
+    [Arguments("total")]
     public async Task Manifest_rejects_unconfigured_storage_duplicate_ids_and_report_limits(string reason)
     {
         using var files = new AttachmentDirectory();
@@ -209,13 +214,14 @@ public partial class ReportUploadTests
             json = BDTestJsonHelper.Serialize(model);
         }
         using var response = await server.Post(json);
-        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
-        Assert.That(server.Store.Received, Is.Empty);
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.BadRequest);
+        await Assert.That(server.Store.Received).IsEmpty();
     }
 
-    [TestCase(false, "")]
-    [TestCase(true, "")]
-    [TestCase(false, "/proxy/team/reports/")]
+    [Test]
+    [Arguments(false, "")]
+    [Arguments(true, "")]
+    [Arguments(false, "/proxy/team/reports/")]
     public async Task Attachment_retries_reopen_streams_and_failure_preserves_capture(bool permanentFailure, string prefix)
     {
         using var run = BDTestRun.Start();
@@ -228,10 +234,10 @@ public partial class ReportUploadTests
         using var handler = new AttachmentHttpHandler(async request =>
         {
             var basePath = string.IsNullOrEmpty(prefix) ? "/bdtest" : prefix.TrimEnd('/');
-            Assert.That(request.RequestUri!.AbsolutePath, Does.StartWith(basePath + "/"));
+            await Assert.That(request.RequestUri!.AbsolutePath).StartsWith(basePath + "/");
             if (request.Method == HttpMethod.Get)
             {
-                Assert.That(request.RequestUri.AbsolutePath, Is.EqualTo(basePath + "/ping"));
+                await Assert.That(request.RequestUri.AbsolutePath).IsEqualTo(basePath + "/ping");
                 return new HttpResponseMessage(HttpStatusCode.OK);
             }
             if (request.RequestUri.AbsolutePath == basePath + "/data")
@@ -242,20 +248,20 @@ public partial class ReportUploadTests
                 response.Headers.Add("X-BDTest-Attachment-Token", new string('a', 64));
                 return response;
             }
-            Assert.That(reports, Is.EqualTo(1));
-            Assert.That(request.Content, Is.TypeOf<StreamContent>());
-            Assert.That(await Required(request.Content).ReadAsByteArrayAsync(), Is.EqualTo(new byte[] { 1, 2, 3 }));
+            await Assert.That(reports).IsEqualTo(1);
+            await Assert.That(request.Content).IsTypeOf<StreamContent>();
+            await Assert.That(await Required(request.Content).ReadAsByteArrayAsync()).IsEquivalentTo(new byte[] { 1, 2, 3 }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
             attempts++;
             return new HttpResponseMessage(permanentFailure ? HttpStatusCode.Forbidden
                 : attempts == 1 ? HttpStatusCode.ServiceUnavailable : HttpStatusCode.NoContent);
         });
         using var client = new HttpClient(handler);
         var upload = BDTestReportServer.SendDataAndGetReportUriAsync(new Uri("https://reports.test" + prefix), null, client, run);
-        if (permanentFailure) await Assert.ThrowsAsync<HttpRequestException>(async () => await upload);
+        if (permanentFailure) await Assert.That(async () => await upload).ThrowsExactly<HttpRequestException>();
         else await upload;
-        Assert.That(attempts, Is.EqualTo(permanentFailure ? 1 : 2));
+        await Assert.That(attempts).IsEqualTo(permanentFailure ? 1 : 2);
         using var content = run.OpenAttachment(Required(Required(Required(scenario.Steps)[0].Attachments).Single().Id));
-        Assert.That(content.Length, Is.EqualTo(3));
+        await Assert.That(content.Length).IsEqualTo(3);
     }
 
     [Test]
@@ -269,20 +275,23 @@ public partial class ReportUploadTests
         var foreignScenario = await foreign.When(() => foreign.Attachments.Attach("other", new byte[] { 1 }, "text/plain"))
             .Then(() => { }).BDTestAsync();
         Required(scenario.Attachments).Add(Required(Required(foreignScenario.Steps)[0].Attachments).Single());
-        using var handler = new AttachmentHttpHandler(request =>
+        using var handler = new AttachmentHttpHandler(async request =>
         {
-            Assert.That(request.Method, Is.EqualTo(HttpMethod.Get));
-            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK));
+            await Assert.That(request.Method).IsEqualTo(HttpMethod.Get);
+            return new HttpResponseMessage(HttpStatusCode.OK);
         });
         using var client = new HttpClient(handler);
-        await Assert.ThrowsAsync<KeyNotFoundException>(async () =>
-            await BDTestReportServer.SendDataAndGetReportUriAsync(new Uri("https://reports.test"), null, client, run));
+        await Assert.That(async () =>
+            await BDTestReportServer.SendDataAndGetReportUriAsync(new Uri("https://reports.test"), null, client, run)).ThrowsExactly<KeyNotFoundException>();
     }
 
-    [TestCase(false, false)]
-    [TestCase(false, true)]
-    [TestCase(true, false)]
-    [TestCase(true, true)]
+    [Test]
+    [Arguments(false, false)]
+    [Arguments(false, true)]
+    [Arguments(true, false)]
+    [Arguments(true, true)]
+    // Wall-clock eviction checks need a quiet runner; other host tests remain parallel.
+    [NotInParallel]
     public async Task Memory_storage_reads_keep_attachments_until_report_expiry(bool shared, bool legacy)
     {
         using var files = new AttachmentDirectory();
@@ -313,25 +322,27 @@ public partial class ReportUploadTests
         var reportId = receipt.Headers.GetValues("X-BDTest-Report-Id").Single();
         using var upload = await PostAttachment(server, reportId, attachmentId,
             receipt.Headers.GetValues("X-BDTest-Attachment-Token").Single(), new byte[] { 1, 2 });
-        Assert.That(upload.StatusCode, Is.EqualTo(HttpStatusCode.NoContent));
+        await Assert.That(upload.StatusCode).IsEqualTo(HttpStatusCode.NoContent);
 
         await Task.Delay(1200);
-        Assert.That(await server.Repository.GetData(reportId, default), Is.Not.Null);
+        await Assert.That(await server.Repository.GetData(reportId, default)).IsNotNull();
         await Task.Delay(1200);
         // A repository read must refresh the authoritative memory entry, not a separate front cache.
-        Assert.That(await Required(backing).GetTestData(reportId, default), Is.Not.Null);
+        await Assert.That(await Required(backing).GetTestData(reportId, default)).IsNotNull();
         using var download = await server.Client.GetAsync($"bdtest/report/{reportId}/attachments/{attachmentId}");
-        Assert.That(download.StatusCode, Is.EqualTo(HttpStatusCode.OK));
-        Assert.That(await download.Content.ReadAsByteArrayAsync(), Is.EqualTo(new byte[] { 1, 2 }));
-        Assert.That(observing.Deleted.Task.IsCompleted, Is.False);
+        await Assert.That(download.StatusCode).IsEqualTo(HttpStatusCode.OK);
+        await Assert.That(await download.Content.ReadAsByteArrayAsync()).IsEquivalentTo(new byte[] { 1, 2 }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(observing.Deleted.Task.IsCompleted).IsFalse();
 
         await Task.Delay(2200);
-        Assert.That(await server.Repository.GetDataForBulkRead(reportId, default), Is.Null);
-        Assert.That(await observing.Deleted.Task.WaitAsync(TimeSpan.FromSeconds(10)), Is.EqualTo(reportId));
-        Assert.That(Directory.GetFiles(files.Path, "*", SearchOption.AllDirectories), Is.Empty);
+        await Assert.That(await server.Repository.GetDataForBulkRead(reportId, default)).IsNull();
+        await Assert.That(await observing.Deleted.Task.WaitAsync(TimeSpan.FromSeconds(10))).IsEqualTo(reportId);
+        await Assert.That(Directory.GetFiles(files.Path, "*", SearchOption.AllDirectories)).IsEmpty();
     }
 
     [Test]
+    // Preserve the wall-clock probe's budget independently of unrelated parallel work.
+    [NotInParallel]
     public async Task Cache_only_expiry_removes_owned_files()
     {
         using var files = new AttachmentDirectory();
@@ -349,11 +360,11 @@ public partial class ReportUploadTests
         var reportId = receipt.Headers.GetValues("X-BDTest-Report-Id").Single();
         using var upload = await PostAttachment(server, reportId, attachmentId,
             receipt.Headers.GetValues("X-BDTest-Attachment-Token").Single(), new byte[] { 1, 2 });
-        Assert.That(upload.StatusCode, Is.EqualTo(HttpStatusCode.NoContent));
+        await Assert.That(upload.StatusCode).IsEqualTo(HttpStatusCode.NoContent);
         await Task.Delay(700);
-        Assert.That(await server.Repository.GetDataForBulkRead(reportId, default), Is.Null);
-        Assert.That(await observing.Deleted.Task.WaitAsync(TimeSpan.FromSeconds(10)), Is.EqualTo(reportId));
-        Assert.That(Directory.GetFiles(files.Path, "*", SearchOption.AllDirectories), Is.Empty);
+        await Assert.That(await server.Repository.GetDataForBulkRead(reportId, default)).IsNull();
+        await Assert.That(await observing.Deleted.Task.WaitAsync(TimeSpan.FromSeconds(10))).IsEqualTo(reportId);
+        await Assert.That(Directory.GetFiles(files.Path, "*", SearchOption.AllDirectories)).IsEmpty();
     }
 
     [Test]
@@ -366,16 +377,16 @@ public partial class ReportUploadTests
         var reportId = receipt.Headers.GetValues("X-BDTest-Report-Id").Single();
         var token = receipt.Headers.GetValues("X-BDTest-Attachment-Token").Single();
         var restored = Required(BDTestJsonHelper.Deserialize(BDTestJsonHelper.Serialize(firstServer.Store.Received.Single())));
-        Assert.That(BDTestJsonHelper.Serialize(restored), Does.Not.Contain(token));
+        await Assert.That(BDTestJsonHelper.Serialize(restored)).DoesNotContain(token);
         await using var secondServer = await UploadServer.Start(configureServices: services =>
         {
             services.AddSingleton<IBDTestDataStore>(firstServer.Store);
             services.AddSingleton<IBDTestAttachmentStore>(files.Store);
         });
         using var rejected = await PostAttachment(secondServer, reportId, attachmentId, restored.AttachmentUploadTokenHash, new byte[] { 1, 2 });
-        Assert.That(rejected.StatusCode, Is.EqualTo(HttpStatusCode.Unauthorized));
+        await Assert.That(rejected.StatusCode).IsEqualTo(HttpStatusCode.Unauthorized);
         using var accepted = await PostAttachment(secondServer, reportId, attachmentId, token, new byte[] { 1, 2 });
-        Assert.That(accepted.StatusCode, Is.EqualTo(HttpStatusCode.NoContent));
+        await Assert.That(accepted.StatusCode).IsEqualTo(HttpStatusCode.NoContent);
     }
 
     [Test]
@@ -392,8 +403,9 @@ public partial class ReportUploadTests
         request.Headers.TransferEncodingChunked = true;
         request.Content = new ByteArrayContent(new byte[] { 1, 2, 3 });
         using var response = await server.Client.SendAsync(request);
-        Assert.That(response.StatusCode, Is.AnyOf(HttpStatusCode.BadRequest, HttpStatusCode.RequestEntityTooLarge));
-        Assert.That(Directory.GetFiles(files.Path, "*", SearchOption.AllDirectories), Is.Empty);
+
+        await Assert.That(new[] { HttpStatusCode.BadRequest, HttpStatusCode.RequestEntityTooLarge }).Contains(response.StatusCode);
+        await Assert.That(Directory.GetFiles(files.Path, "*", SearchOption.AllDirectories)).IsEmpty();
     }
 
     [Test]
@@ -414,15 +426,16 @@ public partial class ReportUploadTests
         var report = server.Store.Received.Single();
         var attachment = Required(Required(Required(report.Scenarios).Single().Steps)[0].Attachments).Single();
         using var response = await server.Client.GetAsync($"bdtest/report/{report.Id}/attachments/{attachment.Id}");
-        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
-        Assert.That(await response.Content.ReadAsStringAsync(), Is.EqualTo("<svg/>"));
-        Assert.That(response.Content.Headers.ContentType!.MediaType, Is.EqualTo("image/svg+xml"));
-        Assert.That(response.Content.Headers.ContentDisposition!.DispositionType, Is.EqualTo("attachment"));
-        Assert.That(response.Headers.GetValues("X-Content-Type-Options"), Does.Contain("nosniff"));
-        Assert.That(uri.AbsolutePath, Does.Contain(report.Id));
-        Assert.That(Directory.GetFiles(files.Path, "*", SearchOption.AllDirectories), Has.Length.EqualTo(1));
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
+        await Assert.That(await response.Content.ReadAsStringAsync()).IsEqualTo("<svg/>");
+        await Assert.That(response.Content.Headers.ContentType!.MediaType).IsEqualTo("image/svg+xml");
+        await Assert.That(response.Content.Headers.ContentDisposition!.DispositionType).IsEqualTo("attachment");
+        await Assert.That(response.Headers.GetValues("X-Content-Type-Options")).Contains("nosniff");
+        await Assert.That(uri.AbsolutePath).Contains(Required(report.Id));
+
+        await Assert.That((Directory.GetFiles(files.Path, "*", SearchOption.AllDirectories)).Length).IsEqualTo(1);
         using var captured = run.OpenAttachment(Required(Required(Required(scenario.Steps)[0].Attachments).Single().Id));
-        Assert.That(captured.Length, Is.EqualTo(6));
+        await Assert.That(captured.Length).IsEqualTo(6);
     }
 
     [Test]
@@ -441,30 +454,31 @@ public partial class ReportUploadTests
         using var unknown = await PostAttachment(server, firstId, Guid.NewGuid().ToString("N"), token, new byte[] { 1, 2 });
         using var shortBody = await PostAttachment(server, firstId, attachmentId, token, new byte[] { 1 });
         using var longBody = await PostAttachment(server, firstId, attachmentId, token, new byte[] { 1, 2, 3 });
-        Assert.That(noToken.StatusCode, Is.EqualTo(HttpStatusCode.Unauthorized));
-        Assert.That(wrongReport.StatusCode, Is.EqualTo(HttpStatusCode.Unauthorized));
-        Assert.That(unknown.StatusCode, Is.EqualTo(HttpStatusCode.NotFound));
-        Assert.That(shortBody.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
-        Assert.That(longBody.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
-        Assert.That(Directory.GetFiles(files.Path, "*", SearchOption.AllDirectories), Is.Empty);
+        await Assert.That(noToken.StatusCode).IsEqualTo(HttpStatusCode.Unauthorized);
+        await Assert.That(wrongReport.StatusCode).IsEqualTo(HttpStatusCode.Unauthorized);
+        await Assert.That(unknown.StatusCode).IsEqualTo(HttpStatusCode.NotFound);
+        await Assert.That(shortBody.StatusCode).IsEqualTo(HttpStatusCode.BadRequest);
+        await Assert.That(longBody.StatusCode).IsEqualTo(HttpStatusCode.BadRequest);
+        await Assert.That(Directory.GetFiles(files.Path, "*", SearchOption.AllDirectories)).IsEmpty();
         using var missing = await server.Client.GetAsync($"bdtest/report/{firstId}/attachments/{attachmentId}");
-        Assert.That(missing.StatusCode, Is.EqualTo(HttpStatusCode.NotFound));
+        await Assert.That(missing.StatusCode).IsEqualTo(HttpStatusCode.NotFound);
         using var success = await PostAttachment(server, firstId, attachmentId, token, new byte[] { 1, 2 });
-        Assert.That(success.StatusCode, Is.EqualTo(HttpStatusCode.NoContent));
+        await Assert.That(success.StatusCode).IsEqualTo(HttpStatusCode.NoContent);
     }
 
-    [TestCase("../outside", "text/plain", 2)]
-    [TestCase("00112233445566778899aabbccddeeff", "text/plain\r\nX-Test:bad", 2)]
-    [TestCase("00112233445566778899aabbccddeeff", "text/*", 2)]
-    [TestCase("00112233445566778899aabbccddeeff", "text/plain", -1)]
-    [TestCase("00112233445566778899aabbccddeeff", "text/plain", 10485761)]
+    [Test]
+    [Arguments("../outside", "text/plain", 2)]
+    [Arguments("00112233445566778899aabbccddeeff", "text/plain\r\nX-Test:bad", 2)]
+    [Arguments("00112233445566778899aabbccddeeff", "text/*", 2)]
+    [Arguments("00112233445566778899aabbccddeeff", "text/plain", -1)]
+    [Arguments("00112233445566778899aabbccddeeff", "text/plain", 10485761)]
     public async Task Invalid_attachment_manifest_is_rejected_before_storing_report(string id, string mime, long length)
     {
         using var files = new AttachmentDirectory();
         await using var server = await UploadServer.Start(configureServices: services => services.AddSingleton<IBDTestAttachmentStore>(files.Store));
         using var response = await server.Post(AttachmentReport(id, mime, length));
-        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
-        Assert.That(server.Store.Received, Is.Empty);
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.BadRequest);
+        await Assert.That(server.Store.Received).IsEmpty();
     }
 
     [Test]
@@ -484,10 +498,10 @@ public partial class ReportUploadTests
         await server.Repository.DeleteReport(firstId);
         using var missing = await files.Store.OpenReadAsync(firstId, attachmentId);
         using var remaining = await files.Store.OpenReadAsync(secondId, attachmentId);
-        Assert.That(missing, Is.Null);
-        Assert.That(remaining, Is.Not.Null);
+        await Assert.That(missing).IsNull();
+        await Assert.That(remaining).IsNotNull();
         using var late = await PostAttachment(server, firstId, attachmentId, token, new byte[] { 1, 2 });
-        Assert.That(late.StatusCode, Is.EqualTo(HttpStatusCode.NotFound));
+        await Assert.That(late.StatusCode).IsEqualTo(HttpStatusCode.NotFound);
     }
 
     private static string AttachmentReport(string id, string mime = "text/plain", long length = 2) =>

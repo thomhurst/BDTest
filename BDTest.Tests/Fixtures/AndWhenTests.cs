@@ -4,11 +4,11 @@ using BDTest.Settings;
 using BDTest.Test;
 using BDTest.Test.Steps;
 using BDTest.Test.Steps.When;
-using NUnit.Framework;
+using System.Threading.Tasks;
 
 namespace BDTest.Tests.Fixtures;
 
-[NonParallelizable]
+[NotInParallel]
 public class AndWhenTests : RunTestBase
 {
     [Test]
@@ -19,21 +19,21 @@ public class AndWhenTests : RunTestBase
         Func<Task> task = async () => { await Task.Yield(); calls.Add("task"); };
         Func<CancellationToken, Task> tokenTask = async token =>
         {
-            Assert.That(token.CanBeCanceled, Is.True);
+            await Assert.That(token.CanBeCanceled).IsTrue();
             await Task.Yield();
             calls.Add("token task");
         };
         Func<ValueTask> valueTask = async () => { await Task.Yield(); calls.Add("value task"); };
         Func<CancellationToken, ValueTask> tokenValueTask = async token =>
         {
-            Assert.That(token.CanBeCanceled, Is.True);
+            await Assert.That(token.CanBeCanceled).IsTrue();
             await Task.Yield();
             calls.Add("token value task");
         };
         Func<ValueTask<int>> result = async () => { await Task.Yield(); calls.Add("result"); return 42; };
         Func<CancellationToken, ValueTask<int>> tokenResult = async token =>
         {
-            Assert.That(token.CanBeCanceled, Is.True);
+            await Assert.That(token.CanBeCanceled).IsTrue();
             await Task.Yield();
             calls.Add("token result");
             return 42;
@@ -46,13 +46,13 @@ public class AndWhenTests : RunTestBase
             .And(async token => { await Task.Yield(); calls.Add("async token lambda"); })
             .Then(() => calls.Add("then")).BDTestAsync();
 
-        Assert.That(calls, Is.EqualTo(new[]
+        await Assert.That(calls).IsEquivalentTo(new[]
         {
             "action", "task", "token task", "value task", "token value task", "result", "token result",
             "async lambda", "async token lambda", "then"
-        }));
-        Assert.That(Required(scenario.Steps).All(step => step.Status == Status.Passed), Is.True);
-        Assert.That(scenario.Steps.Count(step => step.StepType == StepType.AndWhen), Is.EqualTo(9));
+        }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(Required(scenario.Steps).All(step => step.Status == Status.Passed)).IsTrue();
+        await Assert.That(scenario.Steps.Count(step => step.StepType == StepType.AndWhen)).IsEqualTo(9);
     }
 
     [Test]
@@ -64,16 +64,16 @@ public class AndWhenTests : RunTestBase
         AndWhen generated = when.And(() => NamedStep("generated"));
         AndWhen arguments = generated.And(() => NamedStep(value)).WithArgs(() => { reads++; return value; });
         AndWhen overridden = arguments.And(() => NoOp()).WithStepText(() => "custom action");
-        Assert.That(reads, Is.Zero);
+        await Assert.That(reads).IsZero();
         value = "executed";
 
         var scenario = await overridden.Then(() => NoOp()).BDTestAsync();
 
-        Assert.That(reads, Is.EqualTo(1));
-        Assert.That(Required(scenario.Steps).Select(step => step.StepText), Is.EqualTo(new[]
+        await Assert.That(reads).IsEqualTo(1);
+        await Assert.That(Required(scenario.Steps).Select(step => step.StepText)).IsEquivalentTo((new[]
         {
             "When no op", "And named generated", "And named executed", "And custom action", "Then no op"
-        }));
+        }).Cast<string?>(), global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 
     [Test]
@@ -86,12 +86,12 @@ public class AndWhenTests : RunTestBase
         var firstScenario = await first.BDTestAsync();
         var secondScenario = await second.BDTestAsync();
 
-        Assert.That(calls, Is.EqualTo(new[] { "when", "first", "when", "second" }));
-        Assert.That(firstScenario.Guid, Is.Not.EqualTo(secondScenario.Guid));
-        Assert.That(firstScenario.Steps, Has.Count.EqualTo(3));
-        Assert.That(secondScenario.Steps, Has.Count.EqualTo(3));
-        Assert.That(Required(firstScenario.Steps)[1].StepText, Is.EqualTo("And first action"));
-        Assert.That(Required(secondScenario.Steps)[1].StepText, Is.EqualTo("And second action"));
+        await Assert.That(calls).IsEquivalentTo(new[] { "when", "first", "when", "second" }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(firstScenario.Guid).IsNotEqualTo(secondScenario.Guid);
+        await Assert.That(firstScenario.Steps).Count().IsEqualTo(3);
+        await Assert.That(secondScenario.Steps).Count().IsEqualTo(3);
+        await Assert.That(Required(firstScenario.Steps)[1].StepText).IsEqualTo("And first action");
+        await Assert.That(Required(secondScenario.Steps)[1].StepText).IsEqualTo("And second action");
     }
 
     [Test]
@@ -101,9 +101,9 @@ public class AndWhenTests : RunTestBase
         var calls = new List<string>();
         var scenario = await When(() => calls.Add("when")).And(() => calls.Add("and"))
             .Then(() => calls.Add("then")).BDTestAsync();
-        Assert.That(calls, Is.EqualTo(new[] { "then" }));
-        Assert.That(Required(scenario.Steps)[1].Status, Is.EqualTo(Status.Skipped));
-        Assert.That(scenario.Steps[1].StepText, Does.StartWith("[Skipped] And "));
+        await Assert.That(calls).IsEquivalentTo(new[] { "then" }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(Required(scenario.Steps)[1].Status).IsEqualTo(Status.Skipped);
+        await Assert.That(scenario.Steps[1].StepText).StartsWith("[Skipped] And ");
 
     }
 
@@ -121,9 +121,9 @@ public class AndWhenTests : RunTestBase
         var second = await new Capture(plain).When(() => NoOp()).And(() => calls.Add("plain"))
             .Then(() => NoOp()).BDTestAsync();
 
-        Assert.That(calls, Is.EqualTo(new[] { "plain" }));
-        Assert.That(Required(first.Steps)[1].Status, Is.EqualTo(Status.Skipped));
-        Assert.That(Required(second.Steps)[1].Status, Is.EqualTo(Status.Passed));
+        await Assert.That(calls).IsEquivalentTo(new[] { "plain" }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(Required(first.Steps)[1].Status).IsEqualTo(Status.Skipped);
+        await Assert.That(Required(second.Steps)[1].Status).IsEqualTo(Status.Passed);
     }
 
     [Test]
@@ -133,11 +133,10 @@ public class AndWhenTests : RunTestBase
         var scenario = await new Capture(run).When(() => NoOp()).And(() => NamedStep("report"))
             .Then(() => NoOp()).BDTestAsync();
         var restored = Required(Required(BDTestJsonHelper.Deserialize(BDTestJsonHelper.GetTestJsonData(null, run))).Scenarios).Single();
-        Assert.That(Required(restored.Steps)[1].StepType, Is.EqualTo(StepType.AndWhen));
-        Assert.That(restored.Steps[1].StepText, Is.EqualTo("And named report"));
-        Assert.That(BDTestHtmlHelper.GetTestHtmlReport(null, run), Does.Contain("<span class=\"kw\">And</span><span class=\"step-text\">named report</span>"));
-        Assert.That(await ReportHandlerEncodingTests.RenderAsync("/Views/BDTest/Scenario.cshtml", restored),
-            Does.Contain("<b>And</b> named report"));
+        await Assert.That(Required(restored.Steps)[1].StepType).IsEqualTo(StepType.AndWhen);
+        await Assert.That(restored.Steps[1].StepText).IsEqualTo("And named report");
+        await Assert.That(BDTestHtmlHelper.GetTestHtmlReport(null, run)).Contains("<span class=\"kw\">And</span><span class=\"step-text\">named report</span>");
+        await Assert.That(await ReportHandlerEncodingTests.RenderAsync("/Views/BDTest/Scenario.cshtml", restored)).Contains("<b>And</b> named report");
     }
 
     private static void NoOp() { }

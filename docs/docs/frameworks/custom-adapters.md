@@ -125,7 +125,7 @@ public async Task RunTestAsync(string frameworkTestId, System.Reflection.MethodI
 
 ## Testing your adapter
 
-The repository's framework test projects (`BDTest.Tests`, `BDTest.xUnit.Tests`, `BDTest.MSTest.Tests`, `BDTest.TUnit.Tests`) focus on unique IDs and context isolation under parallel execution. Use them as a template. `scripts/Test-SkipOutcomes.ps1` checks runner skip outcomes against BDTest's scenario and step statuses. The shared `TestUtilities/AdapterConformanceTests.cs` suite covers all outcome categories and concurrent explicit runs. `scripts/Test-AdapterConformance.ps1` verifies its actual TRX outcomes in CI.
+The repository's framework test projects (`BDTest.NUnit.Tests`, `BDTest.xUnit.Tests`, `BDTest.MSTest.Tests`, `BDTest.TUnit.Tests`) focus on unique IDs and context isolation under parallel execution. Use them as a template. `scripts/Test-SkipOutcomes.ps1` checks runner skip outcomes against BDTest's scenario and step statuses. The shared `TestUtilities/AdapterConformanceTests.cs` suite covers all outcome categories and concurrent explicit runs. `scripts/Test-AdapterConformance.ps1` verifies its actual TRX outcomes in CI.
 
 Declare framework exception classifications and runner notifications with
 [`FrameworkOutcomeMap`](../configuration/exceptions.md#framework-outcome-maps).

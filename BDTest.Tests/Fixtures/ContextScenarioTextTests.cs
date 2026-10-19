@@ -1,22 +1,24 @@
 using System.Runtime.CompilerServices;
 using BDTest.Attributes;
-using BDTest.NUnit;
-using NUnit.Framework;
+using BDTest.TUnit;
+using System.Threading.Tasks;
 
 namespace BDTest.Tests.Fixtures;
 
-public class ContextScenarioTextTests : NUnitBDTestBase<MyTestContext>
+public class ContextScenarioTextTests : TUnitBDTestBase<MyTestContext>
 {
-    [TestCase(false)]
-    [TestCase(true)]
+    [Test]
+    [Arguments(false)]
+    [Arguments(true)]
     [MethodImpl(MethodImplOptions.NoInlining)]
     public async Task MissingAttributeReturnsHumanizedTestName(bool readBeforeExecution)
     {
         await AssertContextScenarioText("Missing attribute returns humanized test name", readBeforeExecution);
     }
 
-    [TestCase(false)]
-    [TestCase(true)]
+    [Test]
+    [Arguments(false)]
+    [Arguments(true)]
     [ScenarioText(null)]
     [MethodImpl(MethodImplOptions.NoInlining)]
     public async Task NullAttributeTextReturnsHumanizedTestName(bool readBeforeExecution)
@@ -24,8 +26,9 @@ public class ContextScenarioTextTests : NUnitBDTestBase<MyTestContext>
         await AssertContextScenarioText("Null attribute text returns humanized test name", readBeforeExecution);
     }
 
-    [TestCase(false)]
-    [TestCase(true)]
+    [Test]
+    [Arguments(false)]
+    [Arguments(true)]
     [ScenarioText("")]
     [MethodImpl(MethodImplOptions.NoInlining)]
     public async Task EmptyAttributeTextRemainsEmpty(bool readBeforeExecution)
@@ -33,8 +36,9 @@ public class ContextScenarioTextTests : NUnitBDTestBase<MyTestContext>
         await AssertContextScenarioText("", readBeforeExecution);
     }
 
-    [TestCase(false)]
-    [TestCase(true)]
+    [Test]
+    [Arguments(false)]
+    [Arguments(true)]
     [ScenarioText("Custom scenario text")]
     [MethodImpl(MethodImplOptions.NoInlining)]
     public async Task AttributeTextIsPreserved(bool readBeforeExecution)
@@ -45,20 +49,20 @@ public class ContextScenarioTextTests : NUnitBDTestBase<MyTestContext>
     private async Task AssertContextScenarioText(string expected, bool readBeforeExecution)
     {
         var context = BDTestContext;
-        Assert.That(context.CurrentScenario, Is.Null);
-        Assert.That(context.TestBase.GetScenarioText(), Is.EqualTo(expected));
+        await Assert.That(context.CurrentScenario).IsNull();
+        await Assert.That(context.TestBase.GetScenarioText()).IsEqualTo(expected);
         if (readBeforeExecution)
         {
-            Assert.That(context.GetScenarioText(), Is.EqualTo(expected));
+            await Assert.That(context.GetScenarioText()).IsEqualTo(expected);
         }
 
         var scenario = await When(() => NoOp()).Then(() => NoOp())
             .WithScenarioText("Fluent scenario text")
             .BDTestAsync();
 
-        Assert.That(context.CurrentScenario, Is.SameAs(scenario));
-        Assert.That(scenario.GetScenarioText(), Is.EqualTo("Fluent scenario text"));
-        Assert.That(context.GetScenarioText(), Is.EqualTo(expected));
+        await Assert.That(context.CurrentScenario).IsSameReferenceAs(scenario);
+        await Assert.That(scenario.GetScenarioText()).IsEqualTo("Fluent scenario text");
+        await Assert.That(context.GetScenarioText()).IsEqualTo(expected);
     }
 
     private static void NoOp()

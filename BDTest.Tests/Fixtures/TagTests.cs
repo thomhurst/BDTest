@@ -4,18 +4,18 @@ using BDTest.Maps;
 using BDTest.Test;
 using BDTest.Tests.Helpers;
 using Newtonsoft.Json;
-using NUnit.Framework;
+using System.Threading.Tasks;
 
 namespace BDTest.Tests.Fixtures;
 
-[NonParallelizable]
+[NotInParallel]
 [BDTestTag("story")]
 [BDTestTag(" shared ")]
 public class TagTests : TaggedStoryBase
 {
     protected override bool BindCurrentTestMetadata => true;
 
-    [TearDown]
+    [After(HookType.Test)]
     public void FinishExecution() => EndTest();
 
     [Test]
@@ -25,50 +25,55 @@ public class TagTests : TaggedStoryBase
     {
         await Task.Yield();
         var builder = Given(() => NoOp()).When(() => NoOp()).Then(() => NoOp());
-        Assert.That(builder.Tags, Is.EquivalentTo(new[] { "inherited", "story", "shared", "smoke" }));
+
+        await Assert.That(builder.Tags).IsEquivalentTo(new[] { "inherited", "story", "shared", "smoke" }, global::TUnit.Assertions.Enums.CollectionOrdering.Any);
 
         var scenario = await builder.BDTestAsync();
-        Assert.That(scenario.Tags, Is.EqualTo(builder.Tags));
+        await Assert.That(scenario.Tags).IsEquivalentTo(Required(builder.Tags), global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
 
         var report = ReportJson.DeserializeObject<BDTestOutputModel>(BDTestJsonHelper.GetTestJsonData(null, TestRun));
-        Assert.That(Required(report.Scenarios).Single(item => item.Guid == scenario.Guid).Tags, Is.EqualTo(scenario.Tags));
+        await Assert.That(Required(report.Scenarios).Single(item => item.Guid == scenario.Guid).Tags).IsEquivalentTo(Required(scenario.Tags), global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 
-    [TestCase(1)]
+    [Test]
+    [Arguments(1)]
     [BDTestTag("integer")]
     public async Task Overloaded_scenario_keeps_its_tags(int value)
     {
         await Task.Yield();
         var scenario = await When(() => NoOp()).Then(() => NoOp()).BDTestAsync();
-        Assert.That(scenario.Tags, Does.Contain("integer").And.Not.Contain("string"));
+
+        await Assert.That(scenario.Tags).Contains("integer").And.DoesNotContain("string");
     }
 
-    [TestCase("value")]
+    [Test]
+    [Arguments("value")]
     [BDTestTag("string")]
     public async Task Overloaded_scenario_keeps_its_tags(string value)
     {
         await Task.Yield();
         var scenario = await When(() => NoOp()).Then(() => NoOp()).BDTestAsync();
-        Assert.That(scenario.Tags, Does.Contain("string").And.Not.Contain("integer"));
+
+        await Assert.That(scenario.Tags).Contains("string").And.DoesNotContain("integer");
     }
 
     [Test]
     public async Task Untagged_scenarios_and_old_json_have_empty_tags()
     {
         var scenario = await new BDTestBuilder(TestRun).When(() => NoOp()).Then(() => NoOp()).BDTestAsync();
-        Assert.That(scenario.Tags, Is.Empty);
-        Assert.That(ReportJson.DeserializeObject<Scenario>("{}").Tags, Is.Empty);
-        Assert.That(ReportJson.DeserializeObject<Scenario>("{\"Tags\":null}").Tags, Is.Empty);
+        await Assert.That(scenario.Tags).IsEmpty();
+        await Assert.That(ReportJson.DeserializeObject<Scenario>("{}").Tags).IsEmpty();
+        await Assert.That(ReportJson.DeserializeObject<Scenario>("{\"Tags\":null}").Tags).IsEmpty();
     }
 
     [Test]
     [BDTestTag("not-run")]
-    public void Unexecuted_scenarios_include_tags_in_json()
+    public async Task Unexecuted_scenarios_include_tags_in_json()
     {
         var builder = When(() => NoOp()).Then(() => NoOp());
         var report = ReportJson.DeserializeObject<BDTestOutputModel>(BDTestJsonHelper.GetTestJsonData(null, TestRun));
-        Assert.That(Required(report.NotRun).Single().Tags, Is.EqualTo(builder.Tags));
-        Assert.That(report.NotRun.Single().Tags, Does.Contain("not-run"));
+        await Assert.That(Required(report.NotRun).Single().Tags).IsEquivalentTo(Required(builder.Tags), global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(report.NotRun.Single().Tags).Contains("not-run");
     }
 
     [Test]
@@ -76,14 +81,16 @@ public class TagTests : TaggedStoryBase
     public override async Task Inherited_method_tags_combine_with_override_tags()
     {
         var scenario = await When(() => NoOp()).Then(() => NoOp()).BDTestAsync();
-        Assert.That(scenario.Tags, Does.Contain("base-method").And.Contain("override").And.Contain("inherited"));
+
+        await Assert.That(scenario.Tags).Contains("base-method").And.Contains("override").And.Contains("inherited");
     }
 
-    [TestCase(null)]
-    [TestCase("")]
-    [TestCase(" \t")]
-    public void Empty_tags_are_rejected(string tag) =>
-        Assert.Throws<ArgumentException>(() => new BDTestTagAttribute(tag));
+    [Test]
+    [Arguments(null)]
+    [Arguments("")]
+    [Arguments(" \t")]
+    public async Task Empty_tags_are_rejected(string? tag) =>
+        await Assert.That(() => new BDTestTagAttribute(tag!)).ThrowsExactly<ArgumentException>();
 
     private static void NoOp() { }
 }

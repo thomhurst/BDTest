@@ -1,13 +1,13 @@
 using BDTest.Settings;
 using BDTest.Test;
-using NUnit.Framework;
+using System.Threading.Tasks;
 
 namespace BDTest.Tests.Fixtures;
 
 public class FrameworkOutcomeMapTests : TestRunOwner
 {
     [Test]
-    public void Maps_are_immutable_and_registration_is_idempotent()
+    public async Task Maps_are_immutable_and_registration_is_idempotent()
     {
         var original = new FrameworkOutcomeMap(_ => { }).Skip<ArgumentException>();
         var changed = original.Success<InvalidOperationException>().Inconclusive<ApplicationException>();
@@ -16,15 +16,15 @@ public class FrameworkOutcomeMapTests : TestRunOwner
         first.RegisterFrameworkOutcomes(original.Skip<ArgumentException>());
         var second = new BDTestOptions();
         second.RegisterFrameworkOutcomes(changed);
-        Assert.That(first.SkipExceptionTypes, Is.EqualTo(new[] { typeof(ArgumentException) }));
-        Assert.That(first.SuccessExceptionTypes, Is.Empty);
-        Assert.That(first.InconclusiveExceptionTypes, Is.Empty);
-        Assert.That(second.SuccessExceptionTypes, Is.EqualTo(new[] { typeof(InvalidOperationException) }));
-        Assert.That(second.InconclusiveExceptionTypes, Is.EqualTo(new[] { typeof(ApplicationException) }));
+        await Assert.That(first.SkipExceptionTypes).IsEquivalentTo(new[] { typeof(ArgumentException) }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(first.SuccessExceptionTypes).IsEmpty();
+        await Assert.That(first.InconclusiveExceptionTypes).IsEmpty();
+        await Assert.That(second.SuccessExceptionTypes).IsEquivalentTo(new[] { typeof(InvalidOperationException) }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(second.InconclusiveExceptionTypes).IsEquivalentTo(new[] { typeof(ApplicationException) }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 
     [Test]
-    public void Inconclusive_notification_falls_back_to_skip_only_when_unspecified()
+    public async Task Inconclusive_notification_falls_back_to_skip_only_when_unspecified()
     {
         var calls = new List<string>();
         var fallback = new FrameworkOutcomeMap(reason => calls.Add("skip " + reason));
@@ -32,7 +32,7 @@ public class FrameworkOutcomeMapTests : TestRunOwner
         var distinct = new FrameworkOutcomeMap(reason => calls.Add("skip " + reason),
             reason => calls.Add("inconclusive " + reason));
         distinct.ReportInconclusive("distinct");
-        Assert.That(calls, Is.EqualTo(new[] { "skip fallback", "inconclusive distinct" }));
+        await Assert.That(calls).IsEquivalentTo(new[] { "skip fallback", "inconclusive distinct" }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 
     [Test]
@@ -47,16 +47,16 @@ public class FrameworkOutcomeMapTests : TestRunOwner
         using var second = BDTestRun.Start(options);
         await new Capture(first).When(() => MustNotRun()).Then(() => MustNotRun()).BDTestAsync();
         await new Capture(second).When(() => MustNotRun()).Then(() => MustNotRun()).BDTestAsync();
-        Assert.That(calls, Is.EqualTo(new[] { "first", "second" }));
-        Assert.That(first.Scenarios.Single().Status, Is.EqualTo(Status.Skipped));
-        Assert.That(second.Scenarios.Single().Status, Is.EqualTo(Status.Skipped));
+        await Assert.That(calls).IsEquivalentTo(new[] { "first", "second" }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(first.Scenarios.Single().Status).IsEqualTo(Status.Skipped);
+        await Assert.That(second.Scenarios.Single().Status).IsEqualTo(Status.Skipped);
     }
 
     [Test]
-    public void Null_maps_and_null_skip_callbacks_are_rejected()
+    public async Task Null_maps_and_null_skip_callbacks_are_rejected()
     {
-        Assert.Throws<ArgumentNullException>(() => new FrameworkOutcomeMap(null!));
-        Assert.Throws<ArgumentNullException>(() => new BDTestOptions().RegisterFrameworkOutcomes(null!));
+        await Assert.That(() => new FrameworkOutcomeMap(null!)).ThrowsExactly<ArgumentNullException>();
+        await Assert.That(() => new BDTestOptions().RegisterFrameworkOutcomes(null!)).ThrowsExactly<ArgumentNullException>();
     }
 
     private static void MustNotRun() => throw new InvalidOperationException("Skipped scenario executed");

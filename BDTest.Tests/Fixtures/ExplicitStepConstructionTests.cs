@@ -1,6 +1,6 @@
 using System.Collections.Concurrent;
 using BDTest.Test;
-using NUnit.Framework;
+using System.Threading.Tasks;
 
 namespace BDTest.Tests.Fixtures;
 
@@ -20,11 +20,11 @@ public class ExplicitStepConstructionTests : RunContextTestBase<MyTestContext>
             .Then(() => InjectableStep3.Print())
             .BDTestAsync();
         
-        Assert.That(Required(scenario.Steps)[0].Output, Does.StartWith("1:"));
-        Assert.That(scenario.Steps[1].Output, Does.StartWith("2:"));
-        Assert.That(scenario.Steps[2].Output, Does.StartWith("3."));
-        
-        Assert.That(_usedIds, Does.Not.Contain(scenario.Steps[0].Output));
+        await Assert.That(Required(scenario.Steps)[0].Output).StartsWith("1:");
+        await Assert.That(scenario.Steps[1].Output).StartsWith("2:");
+        await Assert.That(scenario.Steps[2].Output).StartsWith("3.");
+
+        await Assert.That(_usedIds).DoesNotContain(Required(scenario.Steps[0].Output));
         _usedIds.Add(Required(scenario.Steps[0].Output));
     }
     
@@ -36,11 +36,11 @@ public class ExplicitStepConstructionTests : RunContextTestBase<MyTestContext>
             .Then(() => InjectableStep3.Print())
             .BDTestAsync();
         
-        Assert.That(Required(scenario.Steps)[0].Output, Does.StartWith("1:"));
-        Assert.That(scenario.Steps[1].Output, Does.StartWith("2:"));
-        Assert.That(scenario.Steps[2].Output, Does.StartWith("3."));
-        
-        Assert.That(_usedIds, Does.Not.Contain(scenario.Steps[0].Output));
+        await Assert.That(Required(scenario.Steps)[0].Output).StartsWith("1:");
+        await Assert.That(scenario.Steps[1].Output).StartsWith("2:");
+        await Assert.That(scenario.Steps[2].Output).StartsWith("3.");
+
+        await Assert.That(_usedIds).DoesNotContain(Required(scenario.Steps[0].Output));
         _usedIds.Add(Required(scenario.Steps[0].Output));
     }
     
@@ -52,11 +52,11 @@ public class ExplicitStepConstructionTests : RunContextTestBase<MyTestContext>
             .Then(() => InjectableStep3.Print())
             .BDTestAsync();
         
-        Assert.That(Required(scenario.Steps)[0].Output, Does.StartWith("1:"));
-        Assert.That(scenario.Steps[1].Output, Does.StartWith("2:"));
-        Assert.That(scenario.Steps[2].Output, Does.StartWith("3."));
-        
-        Assert.That(_usedIds, Does.Not.Contain(scenario.Steps[0].Output));
+        await Assert.That(Required(scenario.Steps)[0].Output).StartsWith("1:");
+        await Assert.That(scenario.Steps[1].Output).StartsWith("2:");
+        await Assert.That(scenario.Steps[2].Output).StartsWith("3.");
+
+        await Assert.That(_usedIds).DoesNotContain(Required(scenario.Steps[0].Output));
         _usedIds.Add(Required(scenario.Steps[0].Output));
     }
 }

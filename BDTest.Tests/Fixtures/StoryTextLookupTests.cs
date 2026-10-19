@@ -3,31 +3,28 @@ using BDTest.Constants;
 using BDTest.Test;
 using BDTest.Tests.Helpers;
 using Newtonsoft.Json.Linq;
-using NUnit.Framework;
+using System.Threading.Tasks;
 
 namespace BDTest.Tests.Fixtures;
 
-[NonParallelizable]
+[NotInParallel]
 public class StoryTextLookupTests
 {
-    private static IEnumerable<TestCaseData> StoryCases()
+    public static IEnumerable<(BDTestBase test, string? role)> StoryCases()
     {
-        yield return new TestCaseData(new UnannotatedTest(), null).SetName("No_story_attribute");
-        yield return new TestCaseData(new DirectStoryTest(), "direct").SetName("Direct_story_attribute");
-        yield return new TestCaseData(new InheritedStoryTest(), "direct").SetName("Inherited_story_attribute");
-        yield return new TestCaseData(new OuterStory.NestedTest(), "outer").SetName("Enclosing_story_attribute");
-        yield return new TestCaseData(new OuterStory.UnannotatedMiddle.NestedTest(), "outer")
-            .SetName("Story_attribute_on_distant_enclosing_type");
-        yield return new TestCaseData(new OuterStory.InnerStory.NestedTest(), "inner")
-            .SetName("Nearest_enclosing_story_wins");
-        yield return new TestCaseData(new OuterStory.DirectStoryTest(), "nested")
-            .SetName("Direct_story_overrides_enclosing_story");
-        yield return new TestCaseData(new OuterStory.InheritedStoryTest(), "direct")
-            .SetName("Inherited_story_overrides_enclosing_story");
+        yield return (new UnannotatedTest(), null);
+        yield return (new DirectStoryTest(), "direct");
+        yield return (new InheritedStoryTest(), "direct");
+        yield return (new OuterStory.NestedTest(), "outer");
+        yield return (new OuterStory.UnannotatedMiddle.NestedTest(), "outer");
+        yield return (new OuterStory.InnerStory.NestedTest(), "inner");
+        yield return (new OuterStory.DirectStoryTest(), "nested");
+        yield return (new OuterStory.InheritedStoryTest(), "direct");
     }
 
-    [TestCaseSource(nameof(StoryCases))]
-    public async Task ScenarioAndReportUseTheSameStoryAsTheTest(BDTestBase test, string role)
+    [Test]
+    [MethodDataSource(nameof(StoryCases))]
+    public async Task ScenarioAndReportUseTheSameStoryAsTheTest(BDTestBase test, string? role)
     {
         using var ownedFixture = (IDisposable)test;
         var article = role is "outer" or "inner" ? "an" : "a";
@@ -38,20 +35,21 @@ public class StoryTextLookupTests
         var scenario = await test.When(() => Step()).Then(() => Step()).BDTestAsync();
         var reportedStory = JsonHelper.GetTestDynamicJsonObject(test.TestRun).SelectToken("$.Scenarios[0].StoryText");
 
-        Assert.Multiple(() =>
+        using (Assert.Multiple())
         {
-            Assert.That(test.GetStoryText(), Is.EqualTo(expected));
-            Assert.That(scenario.GetStoryText(), Is.EqualTo(expected ?? DefaultValues.StoryTextNotDefined));
-            Assert.That(reportedStory, Is.Not.Null);
+            await Assert.That(test.GetStoryText()).IsEqualTo(expected);
+            await Assert.That(scenario.GetStoryText()).IsEqualTo(expected ?? DefaultValues.StoryTextNotDefined);
+            await Assert.That(reportedStory).IsNotNull();
             if (expected == null)
             {
-                Assert.That(Required(reportedStory).Type, Is.EqualTo(JTokenType.Null));
+                await Assert.That(Required(reportedStory).Type).IsEqualTo(JTokenType.Null);
             }
             else
             {
-                Assert.That(Required(reportedStory).ToString(), Is.EqualTo(expected));
+                await Assert.That(Required(reportedStory).ToString()).IsEqualTo(expected);
             }
-        });
+
+        }
     }
 
     private static void Step() { }

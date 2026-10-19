@@ -33,7 +33,7 @@ jobs:
           dotnet-version: 10.0.402
       # Exercise Darwin's native lock-contention error, including separate processes.
       - name: Verify file-system storage on macOS
-        run: dotnet test BDTest.Tests/BDTest.Tests.csproj -c Release --filter FullyQualifiedName~FileSystemReportStoreTests
+        run: dotnet run --project BDTest.Tests/BDTest.Tests.csproj -c Release -- --treenode-filter "/*/*/FileSystemReportStoreTests/*"
 
   modularpipeline:
     environment: ${{ github.ref == 'refs/heads/main' && 'Production' || 'Pull Requests' }}

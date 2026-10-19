@@ -5,16 +5,14 @@ using BDTest.Helpers;
 using BDTest.Settings;
 using BDTest.Razor.Reports.Models.ViewModels;
 using BDTest.Test;
-using NUnit.Framework;
+using System.Threading.Tasks;
 
 namespace BDTest.Tests.Fixtures;
-
-[FixtureLifeCycle(LifeCycle.InstancePerTestCase)]
 public class ScenarioOutlineTests : RunContextTestBase<ScenarioOutlineTests.RowContext>
 {
     protected override bool BindCurrentTestMetadata => true;
 
-    [TearDown]
+    [After(HookType.Test)]
     public void FinishExecution() => EndTest();
     private Action<BDTestContext<RowContext>>? Configure { get; set; }
     protected override void ConfigureContext(BDTestContext<RowContext> context) => Configure?.Invoke(context);
@@ -50,48 +48,51 @@ public class ScenarioOutlineTests : RunContextTestBase<ScenarioOutlineTests.RowC
     }
 
     [BDTestRetrySetUp]
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "TUnit0014", Justification = "BDTest discovers public attributed retry hooks by reflection.")]
     public void RetrySetup()
     {
         if (_retryHook == "setup") throw Required(_retryHookFailure);
     }
 
     [BDTestRetryTearDown]
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "TUnit0014", Justification = "BDTest discovers public attributed retry hooks by reflection.")]
     public void RetryTeardown()
     {
         if (_retryHook == "teardown") throw Required(_retryHookFailure);
     }
 
-    [TestCase("before", false), TestCase("setup", false), TestCase("teardown", false)]
-    [TestCase("before", true), TestCase("setup", true), TestCase("teardown", true), BDTestRetry(1)]
+    [Test]
+    [Arguments("before", false), Arguments("setup", false), Arguments("teardown", false)]
+    [Arguments("before", true), Arguments("setup", true), Arguments("teardown", true), BDTestRetry(1)]
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "TUnit0018", Justification = "TUnit creates a fresh fixture for each case; these fields configure that case's outline context and retry hooks.")]
     public async Task Retry_hook_failures_fail_the_row_and_keep_diagnostics(string hook, bool nestedCause)
     {
         _retryHook = hook;
         _retryHookFailure = new InvalidOperationException("<retry hook failed>",
             nestedCause ? new Exception("nested cause") : null);
-        await Assert.ThrowsAsync<ErrorOccurredDuringRetryActionException>(async () => await ScenarioOutline("Retry hook error",
+        await Assert.That(async () => await ScenarioOutline("Retry hook error",
             new[] { new { Value = 1 }, new { Value = 2 } },
-            row => Given(() => RetryRow(row.Value)).When(() => NoOp()).Then(() => NoOp())));
+            row => Given(() => RetryRow(row.Value)).When(() => NoOp()).Then(() => NoOp()))).ThrowsExactly<ErrorOccurredDuringRetryActionException>();
         var outline = BDTestUtil.GetScenarios(TestRun).Single(x => x.FrameworkTestId == _executionId);
-        Assert.That(outline.Status, Is.EqualTo(Status.Failed));
-        Assert.That(Required(outline.Examples).Select(row => row.Status), Is.EqualTo(new[] { Status.Failed, Status.Passed }));
-        Assert.That(outline.Examples[0].RetryCount, Is.EqualTo(1));
+        await Assert.That(outline.Status).IsEqualTo(Status.Failed);
+        await Assert.That(Required(outline.Examples).Select(row => row.Status)).IsEquivalentTo(new[] { Status.Failed, Status.Passed }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(outline.Examples[0].RetryCount).IsEqualTo(1);
         foreach (var result in new[] { outline, ReportJson.DeserializeObject<Scenario>(ReportJson.SerializeObject(outline)) })
         {
             var failedRow = Required(result.Examples)[0];
-            Assert.That(failedRow.Attempts, Has.Count.EqualTo(2));
-            Assert.That(Required(Required(failedRow.Attempts).Last().Exception).Message, Is.EqualTo("<retry hook failed>"));
-            Assert.That(Required(failedRow.Attempts.Last().Exception).AsString, Is.EqualTo(_retryHookFailure.ToString()));
-            Assert.That(Required(failedRow.Exception).Message, Is.EqualTo(_retryHookFailure.Message));
-            Assert.That(Required(failedRow.Exception).AsString, Is.EqualTo(_retryHookFailure.ToString()));
-            Assert.That(failedRow.EndTime, Is.EqualTo(failedRow.Attempts.Last().EndTime));
-            Assert.That(failedRow.TimeTaken, Is.GreaterThan(TimeSpan.Zero));
-            Assert.That(failedRow.TimeTaken, Is.EqualTo(failedRow.Attempts.Last().TimeTaken));
+            await Assert.That(failedRow.Attempts).Count().IsEqualTo(2);
+            await Assert.That(Required(Required(failedRow.Attempts).Last().Exception).Message).IsEqualTo("<retry hook failed>");
+            await Assert.That(Required(failedRow.Attempts.Last().Exception).AsString).IsEqualTo(_retryHookFailure.ToString());
+            await Assert.That(Required(failedRow.Exception).Message).IsEqualTo(_retryHookFailure.Message);
+            await Assert.That(Required(failedRow.Exception).AsString).IsEqualTo(_retryHookFailure.ToString());
+            await Assert.That(failedRow.EndTime).IsEqualTo(failedRow.Attempts.Last().EndTime);
+            await Assert.That(failedRow.TimeTaken).IsGreaterThan(TimeSpan.Zero);
+            await Assert.That(failedRow.TimeTaken).IsEqualTo(failedRow.Attempts.Last().TimeTaken);
             var razor = await ReportHandlerEncodingTests.RenderAsync("/Views/Shared/_ScenarioExamples.cshtml", result);
-            Assert.That(razor, Does.Contain($"title=\"{failedRow.TimeTaken}\""));
+            await Assert.That(razor).Contains($"title=\"{failedRow.TimeTaken}\"");
         }
-        Assert.That(BDTestHtmlHelper.GetTestHtmlReport(null, TestRun),
-            Does.Contain($"title=\"{outline.Examples[0].TimeTaken}\">"));
-        Assert.That(_visited, Is.EqualTo(new[] { 1, 2 }));
+        await Assert.That(BDTestHtmlHelper.GetTestHtmlReport(null, TestRun)).Contains($"title=\"{outline.Examples[0].TimeTaken}\">");
+        await Assert.That(_visited).IsEquivalentTo(new[] { 1, 2 }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
         await AssertRowErrorReported(outline, "&lt;retry hook failed&gt;");
         if (nestedCause)
             await AssertRowErrorReported(outline, "nested cause");
@@ -100,13 +101,13 @@ public class ScenarioOutlineTests : RunContextTestBase<ScenarioOutlineTests.RowC
     [Test]
     public async Task Skip_rule_errors_with_unexecuted_steps_are_reported()
     {
-        await Assert.ThrowsAsync<InvalidOperationException>(async () => await ScenarioOutline("Skip rule error",
+        await Assert.That(async () => await ScenarioOutline("Skip rule error",
             new[] { new { Value = 1, ThrowSkipRule = true }, new { Value = 2, ThrowSkipRule = false } },
-            row => Given(() => Record(row.Value)).When(() => NoOp()).Then(() => NoOp())));
+            row => Given(() => Record(row.Value)).When(() => NoOp()).Then(() => NoOp()))).ThrowsExactly<InvalidOperationException>();
         var outline = BDTestUtil.GetScenarios(TestRun).Single(x => x.FrameworkTestId == _executionId);
-        Assert.That(Required(outline.Examples).Select(row => row.Status), Is.EqualTo(new[] { Status.Failed, Status.Passed }));
-        Assert.That(Required(outline.Examples[0].Steps).All(step => step.Exception == null), Is.True);
-        Assert.That(_visited, Is.EqualTo(new[] { 2 }));
+        await Assert.That(Required(outline.Examples).Select(row => row.Status)).IsEquivalentTo(new[] { Status.Failed, Status.Passed }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(Required(outline.Examples[0].Steps).All(step => step.Exception == null)).IsTrue();
+        await Assert.That(_visited).IsEquivalentTo(new[] { 2 }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
         await AssertRowErrorReported(outline, "&lt;skip rule failed&gt;");
     }
 
@@ -114,18 +115,19 @@ public class ScenarioOutlineTests : RunContextTestBase<ScenarioOutlineTests.RowC
     {
         foreach (var result in new[] { outline, ReportJson.DeserializeObject<Scenario>(ReportJson.SerializeObject(outline)) })
         {
-            Assert.That(Required(result.Examples)[0].Exception, Is.Not.Null);
+            await Assert.That(Required(result.Examples)[0].Exception).IsNotNull();
             var razor = await ReportHandlerEncodingTests.RenderAsync("/Views/Shared/_ScenarioExamples.cshtml", result);
-            Assert.That(razor, Does.Contain(encodedError));
+            await Assert.That(razor).Contains(encodedError);
         }
         var standalone = System.Text.RegularExpressions.Regex.Match(BDTestHtmlHelper.GetTestHtmlReport(null, TestRun),
             $"<table class=\"examples\" id=\"examples-{outline.Guid}\">.*?</table>",
             System.Text.RegularExpressions.RegexOptions.Singleline).Value;
-        Assert.That(standalone, Does.Contain(encodedError));
+        await Assert.That(standalone).Contains(encodedError);
     }
 
-    [TestCase("success"), TestCase("skip"), TestCase("inconclusive")]
-    [NonParallelizable]
+    [Test]
+    [Arguments("success"), Arguments("skip"), Arguments("inconclusive")]
+    [NotInParallel]
     public async Task Timeouts_fail_examples_even_when_timeout_exceptions_have_custom_outcomes(string outcome)
     {
         var settings = Options;
@@ -136,16 +138,16 @@ public class ScenarioOutlineTests : RunContextTestBase<ScenarioOutlineTests.RowC
             _ => settings.InconclusiveExceptionTypes
         };
         exceptionTypes.Add(typeof(TimeoutException));
-        await Assert.ThrowsAsync<TimeoutException>(async () => await ScenarioOutline("Timeout outcomes",
+        await Assert.That(async () => await ScenarioOutline("Timeout outcomes",
             new[] { new { Value = 1 }, new { Value = 2 } },
             row => Given(token => TimeoutRow(row.Value, token)).WithStepTimeout(TimeSpan.FromMilliseconds(150))
-                .When(() => NoOp()).Then(() => NoOp())).BDTestAsync().WaitAsync(TimeSpan.FromSeconds(10)));
+                .When(() => NoOp()).Then(() => NoOp())).BDTestAsync().WaitAsync(TimeSpan.FromSeconds(10))).ThrowsExactly<TimeoutException>();
         var outline = BDTestUtil.GetScenarios(TestRun).Single(x => x.FrameworkTestId == _executionId);
-        Assert.That(outline.Status, Is.EqualTo(Status.Failed));
-        Assert.That(Required(outline.Examples).Select(row => row.Status), Is.EqualTo(new[] { Status.Failed, Status.Passed }));
-        Assert.That(outline.Examples[0].TimedOut, Is.True);
-        Assert.That(Required(outline.Examples[0].Steps)[0].Status, Is.EqualTo(Status.Failed));
-        Assert.That(_visited, Is.EqualTo(new[] { 1, 2 }));
+        await Assert.That(outline.Status).IsEqualTo(Status.Failed);
+        await Assert.That(Required(outline.Examples).Select(row => row.Status)).IsEquivalentTo(new[] { Status.Failed, Status.Passed }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(outline.Examples[0].TimedOut).IsTrue();
+        await Assert.That(Required(outline.Examples[0].Steps)[0].Status).IsEqualTo(Status.Failed);
+        await Assert.That(_visited).IsEquivalentTo(new[] { 1, 2 }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
         await AssertRowErrorReported(outline, "timed out");
 
     }
@@ -163,25 +165,27 @@ public class ScenarioOutlineTests : RunContextTestBase<ScenarioOutlineTests.RowC
             row => Given(() => Record(row.Value)).WithStepText(() => "value <Value>")
                 .When(() => NoOp()).Then(() => NoOp()));
 
-        Assert.That(outline.Status, Is.EqualTo(Status.Passed));
-        Assert.That(outline.Tags, Does.Contain("outline"));
-        Assert.That(Required(outline.Examples).All(row => row.Tags.SequenceEqual(outline.Tags)), Is.True);
-        Assert.That(outline.Examples, Has.Count.EqualTo(2));
-        Assert.That(outline.Examples.Select(row => Required(row.Steps)[0].StepText), Is.EqualTo(new[] { "Given value 1", "Given value 2" }));
-        Assert.That(Required(outline.Examples[1].ExampleValues)["Value"], Is.EqualTo("2"));
-        Assert.That(_visited, Is.EqualTo(new[] { 1, 2 }));
-        Assert.That(_contexts.Distinct().Count(), Is.EqualTo(2));
-        Assert.That(outline.Examples[0].Output, Does.Contain("row output 1").And.Not.Contain("row output 2"));
-        Assert.That(outline.Examples[1].Output, Does.Contain("row output 2").And.Not.Contain("row output 1"));
-        Assert.That(outline.Examples.All(row => Required(row.Steps).All(step => step.ScenarioId == row.Guid)), Is.True);
-        Assert.That(BDTestUtil.GetScenarios(TestRun).Where(x => x.FrameworkTestId == _executionId), Is.EqualTo(new[] { outline }));
-        Assert.That(BDTestUtil.GetNotRunScenarios(TestRun).Where(x => x.TestId == _executionId), Is.Empty);
+        await Assert.That(outline.Status).IsEqualTo(Status.Passed);
+        await Assert.That(outline.Tags).Contains("outline");
+        await Assert.That(Required(outline.Examples).All(row => row.Tags.SequenceEqual(outline.Tags))).IsTrue();
+        await Assert.That(outline.Examples).Count().IsEqualTo(2);
+        await Assert.That(outline.Examples.Select(row => Required(row.Steps)[0].StepText)).IsEquivalentTo(new string?[] { "Given value 1", "Given value 2" }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(Required(outline.Examples[1].ExampleValues)["Value"]).IsEqualTo("2");
+        await Assert.That(_visited).IsEquivalentTo(new[] { 1, 2 }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(_contexts.Distinct().Count()).IsEqualTo(2);
+
+        await Assert.That(outline.Examples[0].Output).Contains("row output 1").And.DoesNotContain("row output 2");
+
+        await Assert.That(outline.Examples[1].Output).Contains("row output 2").And.DoesNotContain("row output 1");
+        await Assert.That(outline.Examples.All(row => Required(row.Steps).All(step => step.ScenarioId == row.Guid))).IsTrue();
+        await Assert.That(BDTestUtil.GetScenarios(TestRun).Where(x => x.FrameworkTestId == _executionId)).IsEquivalentTo(new[] { outline }, EqualityComparer<Scenario>.Default, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(BDTestUtil.GetNotRunScenarios(TestRun).Where(x => x.TestId == _executionId)).IsEmpty();
         var restored = ReportJson.DeserializeObject<BDTestOutputModel>(BDTestJsonHelper.GetTestJsonData(null, TestRun));
         var restoredOutline = Required(restored.Scenarios).Single(scenario => scenario.FrameworkTestId == _executionId);
-        Assert.That(restoredOutline.Tags, Is.EqualTo(outline.Tags));
-        Assert.That(Required(restoredOutline.Examples).All(row => row.Tags.SequenceEqual(outline.Tags)), Is.True);
-        Assert.That(Required(restoredOutline.Examples[1].Steps)[0].StepText, Is.EqualTo("Given value 2"));
-        Assert.That(restored.Scenarios.Any(scenario => scenario.OutlineId == outline.Guid), Is.False);
+        await Assert.That(Required(restoredOutline.Tags)).IsEquivalentTo(Required(outline.Tags), global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(Required(restoredOutline.Examples).All(row => row.Tags.SequenceEqual(outline.Tags))).IsTrue();
+        await Assert.That(Required(restoredOutline.Examples[1].Steps)[0].StepText).IsEqualTo("Given value 2");
+        await Assert.That(restored.Scenarios.Any(scenario => scenario.OutlineId == outline.Guid)).IsFalse();
     }
 
     [Test]
@@ -190,33 +194,34 @@ public class ScenarioOutlineTests : RunContextTestBase<ScenarioOutlineTests.RowC
         var builder = ScenarioOutline("Failures", new[] { new { Value = 1 }, new { Value = 2 } },
             row => Given(() => RecordAndFail(row.Value)).When(() => NoOp()).Then(() => NoOp()));
 
-        await Assert.ThrowsAsync<InvalidOperationException>(async () => await builder);
+        await Assert.That(async () => await builder).ThrowsExactly<InvalidOperationException>();
         var outline = BDTestUtil.GetScenarios(TestRun).Single(x => x.FrameworkTestId == _executionId);
-        Assert.That(_visited, Is.EqualTo(new[] { 1, 2 }));
-        Assert.That(Required(outline.Examples).Select(row => row.Status), Is.EqualTo(new[] { Status.Failed, Status.Passed }));
-        Assert.That(outline.Status, Is.EqualTo(Status.Failed));
-        Assert.That(outline.Exception, Is.Not.Null);
-        Assert.That(outline.EndTime, Is.GreaterThanOrEqualTo(outline.StartTime));
+        await Assert.That(_visited).IsEquivalentTo(new[] { 1, 2 }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(Required(outline.Examples).Select(row => row.Status)).IsEquivalentTo(new[] { Status.Failed, Status.Passed }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(outline.Status).IsEqualTo(Status.Failed);
+        await Assert.That(outline.Exception).IsNotNull();
+        await Assert.That(outline.EndTime).IsGreaterThanOrEqualTo(outline.StartTime);
         var failedRow = outline.Examples[0];
-        Assert.That(failedRow.EndTime, Is.EqualTo(Required(failedRow.Attempts).Single().EndTime));
-        Assert.That(failedRow.TimeTaken, Is.EqualTo(failedRow.Attempts.Single().TimeTaken));
-        await Assert.ThrowsAsync<AlreadyExecutedException>(async () => await builder.BDTestAsync());
+        await Assert.That(failedRow.EndTime).IsEqualTo(Required(failedRow.Attempts).Single().EndTime);
+        await Assert.That(failedRow.TimeTaken).IsEqualTo(failedRow.Attempts.Single().TimeTaken);
+        await Assert.That(async () => await builder.BDTestAsync()).ThrowsExactly<AlreadyExecutedException>();
     }
 
     [Test]
     [System.Diagnostics.CodeAnalysis.SuppressMessage("BDTest", "BDT001", Justification = "An empty outline must throw during construction.")]
-    public void Empty_examples_are_rejected_before_execution()
+    public async Task Empty_examples_are_rejected_before_execution()
     {
-        Assert.Throws<ArgumentException>(() => ScenarioOutline("Empty", Array.Empty<object>(),
-            row => Given(() => NoOp()).When(() => NoOp()).Then(() => NoOp())));
+        await Assert.That(() => ScenarioOutline("Empty", Array.Empty<object>(),
+            row => Given(() => NoOp()).When(() => NoOp()).Then(() => NoOp()))).ThrowsExactly<ArgumentException>();
     }
 
-    [TestCase("passed", "skipped", Status.Passed)]
-    [TestCase("skipped", "skipped", Status.Skipped)]
-    [TestCase("success", "passed", Status.Passed)]
-    [TestCase("inconclusive", "passed", Status.Inconclusive)]
-    [TestCase("not-implemented", "passed", Status.NotImplemented)]
-    [TestCase("skipped", "failed", Status.Failed)]
+    [Test]
+    [Arguments("passed", "skipped", Status.Passed)]
+    [Arguments("skipped", "skipped", Status.Skipped)]
+    [Arguments("success", "passed", Status.Passed)]
+    [Arguments("inconclusive", "passed", Status.Inconclusive)]
+    [Arguments("not-implemented", "passed", Status.NotImplemented)]
+    [Arguments("skipped", "failed", Status.Failed)]
     public async Task Row_outcomes_determine_the_runner_result(string first, string second, Status expected)
     {
         var builder = ScenarioOutline("Outcomes", new[] { new { Outcome = first }, new { Outcome = second } },
@@ -225,41 +230,44 @@ public class ScenarioOutlineTests : RunContextTestBase<ScenarioOutlineTests.RowC
         try { await builder; }
         catch (Exception exception) { thrown = exception; }
         var outline = BDTestUtil.GetScenarios(TestRun).Single(x => x.FrameworkTestId == _executionId);
-        Assert.That(outline.Status, Is.EqualTo(expected));
-        Assert.That(outline.Examples, Has.Count.EqualTo(2));
-        if (expected == Status.Passed) Assert.That(thrown, Is.Null);
-        else Assert.That(thrown, Is.Not.Null);
+        await Assert.That(outline.Status).IsEqualTo(expected);
+        await Assert.That(outline.Examples).Count().IsEqualTo(2);
+        if (expected == Status.Passed) await Assert.That(thrown).IsNull();
+        else await Assert.That(thrown).IsNotNull();
     }
 
     [Test, BDTestRetry(1)]
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "TUnit0018", Justification = "TUnit creates a fresh fixture for each case; these fields configure that case's outline context and retry hooks.")]
     public async Task Retries_are_per_example_and_reset_its_context()
     {
         var amendmentScenarios = new List<Scenario?>();
         Configure = context => amendmentScenarios.Add(context.CurrentScenario);
         var outline = await ScenarioOutline("Retries", new[] { new { Value = 1 }, new { Value = 2 } },
             row => Given(() => RetryRow(row.Value)).When(() => NoOp()).Then(() => NoOp()));
-        Assert.That(Required(outline.Examples).Select(row => row.RetryCount), Is.EqualTo(new[] { 1, 0 }));
-        Assert.That(outline.Examples.All(row => row.Status == Status.Passed), Is.True);
-        Assert.That(_contexts.Distinct().Count(), Is.EqualTo(3));
-        Assert.That(amendmentScenarios, Is.EqualTo(new Scenario?[] { null, outline.Examples[0], null }));
+        await Assert.That(Required(outline.Examples).Select(row => row.RetryCount)).IsEquivalentTo(new[] { 1, 0 }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(outline.Examples.All(row => row.Status == Status.Passed)).IsTrue();
+        await Assert.That(_contexts.Distinct().Count()).IsEqualTo(3);
+        await Assert.That(amendmentScenarios).IsEquivalentTo(new Scenario?[] { null, outline.Examples[0], null }, EqualityComparer<Scenario?>.Default, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
         var html = BDTestHtmlHelper.GetTestHtmlReport(null, TestRun);
         var table = System.Text.RegularExpressions.Regex.Match(html,
             $"<table class=\"examples\" id=\"examples-{outline.Guid}\">.*?</table>",
             System.Text.RegularExpressions.RegexOptions.Singleline).Value;
-        Assert.That(table, Does.Contain("<th>Retries</th>"));
-        Assert.That(table, Does.Contain(">Passed</span></td><td class=\"mono\">1</td>"));
-        Assert.That(table, Does.Contain(">Passed</span></td><td class=\"mono\">0</td>"));
+        await Assert.That(table).Contains("<th>Retries</th>");
+        await Assert.That(table).Contains(">Passed</span></td><td class=\"mono\">1</td>");
+        await Assert.That(table).Contains(">Passed</span></td><td class=\"mono\">0</td>");
         foreach (var result in new[] { outline, ReportJson.DeserializeObject<Scenario>(ReportJson.SerializeObject(outline)) })
         {
             var razor = await ReportHandlerEncodingTests.RenderAsync("/Views/Shared/_ScenarioExamples.cshtml", result);
-            Assert.That(razor, Does.Contain("Retry history"));
-            Assert.That(razor, Does.Contain("retry first example"));
-            Assert.That(System.Net.WebUtility.HtmlDecode(razor), Does.Contain(Required(Required(Required(result.Examples)[0].Attempts)[0].Exception).StackTrace));
-            Assert.That(System.Text.RegularExpressions.Regex.Matches(razor, "aria-label=\"Retry history\"").Count, Is.EqualTo(1));
+            await Assert.That(razor).Contains("Retry history");
+            await Assert.That(razor).Contains("retry first example");
+            await Assert.That(System.Net.WebUtility.HtmlDecode(razor)).Contains(Required(Required(Required(Required(result.Examples)[0].Attempts)[0].Exception).StackTrace));
+            await Assert.That(System.Text.RegularExpressions.Regex.Matches(razor, "aria-label=\"Retry history\"").Count).IsEqualTo(1);
         }
     }
 
-    [TestCase(false, false), TestCase(false, true), TestCase(true, false), TestCase(true, true)]
+    [Test]
+    [Arguments(false, false), Arguments(false, true), Arguments(true, false), Arguments(true, true)]
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "TUnit0018", Justification = "TUnit creates a fresh fixture for each case; these fields configure that case's outline context and retry hooks.")]
     public async Task Explicit_construction_output_stays_with_its_example(bool duringContext, bool fail)
     {
         var contextCount = 0;
@@ -278,31 +286,38 @@ public class ScenarioOutlineTests : RunContextTestBase<ScenarioOutlineTests.RowC
             });
         }
         catch (Exception exception) { thrown = exception; }
-        Assert.That(thrown, fail ? Is.TypeOf<InvalidOperationException>() : Is.Null);
+
+        if (fail) await Assert.That(thrown).IsTypeOf<InvalidOperationException>();
+        else await Assert.That(thrown).IsNull();
         var outline = BDTestUtil.GetScenarios(TestRun).Single(x => x.FrameworkTestId == _executionId);
         foreach (var result in new[] { outline, ReportJson.DeserializeObject<Scenario>(ReportJson.SerializeObject(outline)) })
         {
-            Assert.That(result.TestStartupInformation, Is.Null.Or.Empty);
-            Assert.That(result.TearDownOutput, Is.Null.Or.Empty);
+
+            await Assert.That(result.TestStartupInformation).IsNullOrEmpty();
+
+            await Assert.That(result.TearDownOutput).IsNullOrEmpty();
             for (var index = 0; index < Required(result.Examples).Count; index++)
             {
                 var row = result.Examples[index];
-                Assert.That(row.TestStartupInformation, Is.EqualTo($"<startup {index + 1}>{Environment.NewLine}"));
-                Assert.That(row.TearDownOutput, Is.EqualTo($"<teardown {index + 1}>{Environment.NewLine}"));
-                Assert.That(row.Output, Does.Not.Contain("<startup").And.Not.Contain("<teardown"));
-                Assert.That(row.Status, Is.EqualTo(fail && index == 1 ? Status.Failed : Status.Passed));
+                await Assert.That(row.TestStartupInformation).IsEqualTo($"<startup {index + 1}>{Environment.NewLine}");
+                await Assert.That(row.TearDownOutput).IsEqualTo($"<teardown {index + 1}>{Environment.NewLine}");
+
+                await Assert.That(row.Output).DoesNotContain("<startup").And.DoesNotContain("<teardown");
+                await Assert.That(row.Status).IsEqualTo(fail && index == 1 ? Status.Failed : Status.Passed);
             }
             var razor = await ReportHandlerEncodingTests.RenderAsync("/Views/Shared/_ScenarioExamples.cshtml", result);
             foreach (var value in Enumerable.Range(1, 3))
             {
-                Assert.That(razor, Does.Contain($"&lt;startup {value}&gt;").And.Contain($"&lt;teardown {value}&gt;"));
+
+                await Assert.That(razor).Contains($"&lt;startup {value}&gt;").And.Contains($"&lt;teardown {value}&gt;");
             }
         }
         var standalone = System.Text.RegularExpressions.Regex.Match(BDTestHtmlHelper.GetTestHtmlReport(null, TestRun),
             $"<table class=\"examples\" id=\"examples-{outline.Guid}\">.*?</table>",
             System.Text.RegularExpressions.RegexOptions.Singleline).Value;
         foreach (var value in Enumerable.Range(1, 3))
-            Assert.That(standalone, Does.Contain($"&lt;startup {value}&gt;").And.Contain($"&lt;teardown {value}&gt;"));
+
+            await Assert.That(standalone).Contains($"&lt;startup {value}&gt;").And.Contains($"&lt;teardown {value}&gt;");
     }
 
     private void WriteConstructionOutput(int value, bool fail)
@@ -315,31 +330,32 @@ public class ScenarioOutlineTests : RunContextTestBase<ScenarioOutlineTests.RowC
     [Test, BDTestTag("factory-outline")]
     public async Task Factory_failure_is_reported_and_later_examples_still_run()
     {
-        await Assert.ThrowsAsync<InvalidOperationException>(async () => await ScenarioOutline("Factory error",
-            new[] { new { Value = 1 }, new { Value = 2 } }, row => BuildRow(row.Value)));
+        await Assert.That(async () => await ScenarioOutline("Factory error",
+            new[] { new { Value = 1 }, new { Value = 2 } }, row => BuildRow(row.Value))).ThrowsExactly<InvalidOperationException>();
         var outline = BDTestUtil.GetScenarios(TestRun).Single(x => x.FrameworkTestId == _executionId);
-        Assert.That(Required(outline.Examples).Select(row => row.Status), Is.EqualTo(new[] { Status.Failed, Status.Passed }));
-        Assert.That(Required(outline.Examples[0].Exception).Message, Is.EqualTo("factory failed"));
-        Assert.That(outline.Tags, Does.Contain("factory-outline"));
-        Assert.That(outline.Examples.All(row => row.Tags.SequenceEqual(outline.Tags)), Is.True);
-        Assert.That(outline.Examples.Select(row => row.Guid).Distinct().Count(), Is.EqualTo(2));
-        Assert.That(BDTestUtil.GetNotRunScenarios(TestRun).Where(x => x.TestId == _executionId), Is.Empty);
+        await Assert.That(Required(outline.Examples).Select(row => row.Status)).IsEquivalentTo(new[] { Status.Failed, Status.Passed }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(Required(outline.Examples[0].Exception).Message).IsEqualTo("factory failed");
+        await Assert.That(outline.Tags).Contains("factory-outline");
+        await Assert.That(outline.Examples.All(row => row.Tags.SequenceEqual(outline.Tags))).IsTrue();
+        await Assert.That(outline.Examples.Select(row => row.Guid).Distinct().Count()).IsEqualTo(2);
+        await Assert.That(BDTestUtil.GetNotRunScenarios(TestRun).Where(x => x.TestId == _executionId)).IsEmpty();
     }
 
     [Test]
     public async Task Factory_failure_keeps_inner_exception_details_in_the_html_report()
     {
-        await Assert.ThrowsAsync<TypeInitializationException>(async () => await ScenarioOutline("Nested factory error",
+        await Assert.That(async () => await ScenarioOutline("Nested factory error",
             new[] { new { Value = 1 } }, row =>
             {
                 throw new TypeInitializationException("ExampleFactory", new InvalidOperationException("<inner factory failure>"));
-            }));
+            })).ThrowsExactly<TypeInitializationException>();
         var outline = BDTestUtil.GetScenarios(TestRun).Single(x => x.FrameworkTestId == _executionId);
         var error = Required(outline.Examples).Single().Exception;
         var html = BDTestHtmlHelper.GetTestHtmlReport(null, TestRun);
 
-        Assert.That(html, Does.Contain(System.Net.WebUtility.HtmlEncode(Required(error).AsString)));
-        Assert.That(html, Does.Contain("&lt;inner factory failure&gt;").And.Not.Contain("<inner factory failure>"));
+        await Assert.That(html).Contains(Required(System.Net.WebUtility.HtmlEncode(Required(error).AsString)));
+
+        await Assert.That(html).Contains("&lt;inner factory failure&gt;").And.DoesNotContain("<inner factory failure>");
     }
 
     [Test]
@@ -350,18 +366,18 @@ public class ScenarioOutlineTests : RunContextTestBase<ScenarioOutlineTests.RowC
         RunnableStepBuilder? rejected = null;
         try
         {
-            var exception = await Assert.ThrowsAsync<InvalidOperationException>(async () => await ScenarioOutline("Foreign builder",
+            var exception = await Assert.That(async () => await ScenarioOutline("Foreign builder",
                 new[] { new { Value = 1 }, new { Value = 2 } }, row => row.Value == 1
                     ? rejected = foreign.Given(() => NoOp()).When(() => NoOp()).Then(() => NoOp())
-                    : Given(() => Record(row.Value)).When(() => NoOp()).Then(() => NoOp())));
+                    : Given(() => Record(row.Value)).When(() => NoOp()).Then(() => NoOp()))).ThrowsExactly<InvalidOperationException>();
 
-            Assert.That(Required(exception).Message, Is.EqualTo("Example scenarios must be built by the outline's test instance."));
+            await Assert.That(Required(exception).Message).IsEqualTo("Example scenarios must be built by the outline's test instance.");
             var outline = BDTestUtil.GetScenarios(TestRun).Single(x => x.FrameworkTestId == _executionId);
-            Assert.That(Required(outline.Examples).Select(row => row.Status), Is.EqualTo(new[] { Status.Failed, Status.Passed }));
-            Assert.That(_visited, Is.EqualTo(new[] { 2 }));
+            await Assert.That(Required(outline.Examples).Select(row => row.Status)).IsEquivalentTo(new[] { Status.Failed, Status.Passed }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
+            await Assert.That(_visited).IsEquivalentTo(new[] { 2 }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
             var pending = BDTestUtil.GetNotRunScenarios(TestRun).Select(item => item.ScenarioId).ToArray();
-            Assert.That(pending, Does.Not.Contain(rejected?.Guid));
-            Assert.That(pending, Does.Contain(unrelated.Guid));
+            await Assert.That(pending).DoesNotContain(rejected?.Guid);
+            await Assert.That(pending).Contains(unrelated.Guid);
         }
         finally
         {
@@ -370,14 +386,16 @@ public class ScenarioOutlineTests : RunContextTestBase<ScenarioOutlineTests.RowC
         }
     }
 
-    [TestCase("success", Status.Passed, false)]
-    [TestCase("skipped", Status.Skipped, false)]
-    [TestCase("inconclusive", Status.Inconclusive, false)]
-    [TestCase("not-implemented", Status.NotImplemented, false)]
-    [TestCase("success", Status.Passed, true)]
-    [TestCase("skipped", Status.Skipped, true)]
-    [TestCase("inconclusive", Status.Inconclusive, true)]
-    [TestCase("not-implemented", Status.NotImplemented, true)]
+    [Test]
+    [Arguments("success", Status.Passed, false)]
+    [Arguments("skipped", Status.Skipped, false)]
+    [Arguments("inconclusive", Status.Inconclusive, false)]
+    [Arguments("not-implemented", Status.NotImplemented, false)]
+    [Arguments("success", Status.Passed, true)]
+    [Arguments("skipped", Status.Skipped, true)]
+    [Arguments("inconclusive", Status.Inconclusive, true)]
+    [Arguments("not-implemented", Status.NotImplemented, true)]
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "TUnit0018", Justification = "TUnit creates a fresh fixture for each case; these fields configure that case's outline context and retry hooks.")]
     public async Task Factory_and_context_outcomes_preserve_framework_classification(string outcome, Status rowStatus, bool duringContext)
     {
         var contextCount = 0;
@@ -395,25 +413,27 @@ public class ScenarioOutlineTests : RunContextTestBase<ScenarioOutlineTests.RowC
         catch (Exception exception) { thrown = exception; }
 
         var outline = BDTestUtil.GetScenarios(TestRun).Single(x => x.FrameworkTestId == _executionId);
-        Assert.That(Required(outline.Examples).Select(row => row.Status), Is.EqualTo(new[] { rowStatus, Status.Passed }));
-        Assert.That(_visited, Is.EqualTo(new[] { 2 }));
+        await Assert.That(Required(outline.Examples).Select(row => row.Status)).IsEquivalentTo(new[] { rowStatus, Status.Passed }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(_visited).IsEquivalentTo(new[] { 2 }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
         var expected = rowStatus == Status.Skipped ? Status.Passed : rowStatus;
-        Assert.That(outline.Status, Is.EqualTo(expected));
-        if (expected == Status.Passed) Assert.That(thrown, Is.Null);
-        else Assert.That(thrown, Is.Not.Null);
+        await Assert.That(outline.Status).IsEqualTo(expected);
+        if (expected == Status.Passed) await Assert.That(thrown).IsNull();
+        else await Assert.That(thrown).IsNotNull();
         var row = outline.Examples[0];
         if (rowStatus is Status.Passed or Status.Skipped or Status.Inconclusive)
         {
-            Assert.That(row.Exception, Is.Null);
-            Assert.That(outline.Exception, Is.Null);
+            await Assert.That(row.Exception).IsNull();
+            await Assert.That(outline.Exception).IsNull();
             var restored = ReportJson.DeserializeObject<Scenario>(ReportJson.SerializeObject(outline));
-            Assert.That(Required(restored.Examples)[0].Exception, Is.Null);
-            Assert.That(restored.Exception, Is.Null);
+            await Assert.That(Required(restored.Examples)[0].Exception).IsNull();
+            await Assert.That(restored.Exception).IsNull();
         }
     }
 
-    [TestCase(false)]
-    [TestCase(true)]
+    [Test]
+    [Arguments(false)]
+    [Arguments(true)]
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "TUnit0018", Justification = "TUnit creates a fresh fixture for each case; these fields configure that case's outline context and retry hooks.")]
     public async Task Construction_does_not_expose_an_outline_or_previous_example(bool fail)
     {
         var amendmentScenarios = new List<Scenario?>();
@@ -432,20 +452,26 @@ public class ScenarioOutlineTests : RunContextTestBase<ScenarioOutlineTests.RowC
         }
         catch (Exception exception) { thrown = exception; }
 
-        Assert.That(thrown, fail ? Is.TypeOf<InvalidOperationException>() : Is.Null);
-        Assert.That(amendmentScenarios, Has.Count.EqualTo(3));
-        Assert.That(amendmentScenarios, Is.All.Null);
-        Assert.That(factoryScenarios, Has.Count.EqualTo(3));
-        Assert.That(factoryScenarios, Is.All.Null);
+
+        if (fail) await Assert.That(thrown).IsTypeOf<InvalidOperationException>();
+        else await Assert.That(thrown).IsNull();
+        await Assert.That(amendmentScenarios).Count().IsEqualTo(3);
+
+        await Assert.That((amendmentScenarios).All(item => item is null)).IsTrue();
+        await Assert.That(factoryScenarios).Count().IsEqualTo(3);
+
+        await Assert.That((factoryScenarios).All(item => item is null)).IsTrue();
         var outline = BDTestUtil.GetScenarios(TestRun).Single(x => x.FrameworkTestId == _executionId);
-        Assert.That(stepScenarios, Is.EqualTo(Required(outline.Examples).Where(row => row.Status == Status.Passed)));
-        Assert.That(BDTestContext.CurrentScenario, Is.SameAs(outline));
+        await Assert.That(stepScenarios).IsEquivalentTo(Required(outline.Examples).Where(row => row.Status == Status.Passed).Cast<Scenario?>(), EqualityComparer<Scenario?>.Default, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(BDTestContext.CurrentScenario).IsSameReferenceAs(outline);
     }
 
-    [TestCase(false, false)]
-    [TestCase(false, true)]
-    [TestCase(true, false)]
-    [TestCase(true, true)]
+    [Test]
+    [Arguments(false, false)]
+    [Arguments(false, true)]
+    [Arguments(true, false)]
+    [Arguments(true, true)]
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "TUnit0018", Justification = "TUnit creates a fresh fixture for each case; these fields configure that case's outline context and retry hooks.")]
     public async Task Construction_output_belongs_to_its_example_even_when_construction_fails(bool duringContext, bool fail)
     {
         var contextCount = 0;
@@ -472,46 +498,53 @@ public class ScenarioOutlineTests : RunContextTestBase<ScenarioOutlineTests.RowC
         }
         catch (Exception exception) { thrown = exception; }
 
-        Assert.That(thrown, fail ? Is.TypeOf<InvalidOperationException>() : Is.Null);
+
+        if (fail) await Assert.That(thrown).IsTypeOf<InvalidOperationException>();
+        else await Assert.That(thrown).IsNull();
         var outline = BDTestUtil.GetScenarios(TestRun).Single(x => x.FrameworkTestId == _executionId);
         var restored = ReportJson.DeserializeObject<Scenario>(ReportJson.SerializeObject(outline));
         foreach (var result in new[] { outline, restored })
         {
-            Assert.That(result.Examples, Has.Count.EqualTo(3));
+            await Assert.That(result.Examples).Count().IsEqualTo(3);
             for (var index = 0; index < Required(result.Examples).Count; index++)
             {
                 var row = result.Examples[index];
                 var value = index + 1;
-                Assert.That(row.Output, Does.Contain($"context output {value}"));
-                Assert.That(row.CustomHtmlOutputForReport, Does.StartWith($"<span>context markup {value}</span><br>"));
+                await Assert.That(row.Output).Contains($"context output {value}");
+                await Assert.That(row.CustomHtmlOutputForReport).StartsWith($"<span>context markup {value}</span><br>");
                 if (!(duringContext && fail && value == 2))
                 {
-                    Assert.That(row.Output, Does.Contain($"factory output {value}"));
-                    Assert.That(row.Output, Does.Contain($"built output {value}"));
-                    Assert.That(row.CustomHtmlOutputForReport, Does.Contain($"<span>factory markup {value}</span><br><span>built markup {value}</span><br>"));
+                    await Assert.That(row.Output).Contains($"factory output {value}");
+                    await Assert.That(row.Output).Contains($"built output {value}");
+                    await Assert.That(row.CustomHtmlOutputForReport).Contains($"<span>factory markup {value}</span><br><span>built markup {value}</span><br>");
                 }
                 foreach (var other in Enumerable.Range(1, 3).Where(other => other != value))
                 {
-                    Assert.That(row.Output, Does.Not.Contain($"output {other}"));
-                    Assert.That(row.CustomHtmlOutputForReport, Does.Not.Contain($"markup {other}"));
+                    await Assert.That(row.Output).DoesNotContain($"output {other}");
+                    await Assert.That(row.CustomHtmlOutputForReport).DoesNotContain($"markup {other}");
                 }
                 if (!fail || value != 2)
-                    Assert.That(row.CustomHtmlOutputForReport, Does.EndWith($"<span>step markup {value}</span><br>"));
-                Assert.That(row.TestStartupInformation, Is.Null.Or.Empty);
-                Assert.That(row.TearDownOutput, Is.Null.Or.Empty);
+                    await Assert.That(row.CustomHtmlOutputForReport).EndsWith($"<span>step markup {value}</span><br>");
+
+                await Assert.That(row.TestStartupInformation).IsNullOrEmpty();
+
+                await Assert.That(row.TearDownOutput).IsNullOrEmpty();
             }
-            Assert.That(result.CustomHtmlOutputForReport, Is.Null.Or.Empty);
-            Assert.That(result.Output, Does.Contain("context output 1").And.Contain("context output 2").And.Contain("context output 3"));
+
+            await Assert.That(result.CustomHtmlOutputForReport).IsNullOrEmpty();
+
+            await Assert.That(result.Output).Contains("context output 1").And.Contains("context output 2").And.Contains("context output 3");
         }
         var razor = await ReportHandlerEncodingTests.RenderAsync("/Views/Shared/_ScenarioExamples.cshtml", restored);
         var fullStandalone = BDTestHtmlHelper.GetTestHtmlReport(null, TestRun);
         foreach (var value in Enumerable.Range(1, 3))
-            Assert.That(System.Text.RegularExpressions.Regex.Matches(fullStandalone, $"context output {value} {_executionId}").Count, Is.EqualTo(1));
+            await Assert.That(System.Text.RegularExpressions.Regex.Matches(fullStandalone, $"context output {value} {_executionId}").Count).IsEqualTo(1);
         var standalone = System.Text.RegularExpressions.Regex.Match(fullStandalone,
             $"<table class=\"examples\" id=\"examples-{outline.Guid}\">.*?</table>",
             System.Text.RegularExpressions.RegexOptions.Singleline).Value;
         foreach (var html in new[] { razor, standalone })
-            Assert.That(html, Does.Contain("context output 1").And.Contain("context output 2").And.Contain("context output 3"));
+
+            await Assert.That(html).Contains("context output 1").And.Contains("context output 2").And.Contains("context output 3");
     }
 
     private RunnableStepBuilder BuildRow(int value)
@@ -521,16 +554,17 @@ public class ScenarioOutlineTests : RunContextTestBase<ScenarioOutlineTests.RowC
         return builder;
     }
 
-    [TestCase(false, Status.Passed, 0)]
-    [TestCase(true, Status.Skipped, 1)]
+    [Test]
+    [Arguments(false, Status.Passed, 0)]
+    [Arguments(true, Status.Skipped, 1)]
     public async Task Rule_skips_substitute_row_text_and_notify_the_adapter_once(bool skipBoth, Status status, int notifications)
     {
         var capture = new SkipCapture(TestRun);
         var outline = await capture.ScenarioOutline("Rule skips", new[] { new { Skip = true }, new { Skip = skipBoth } },
             row => capture.Given(() => NoOp()).WithStepText(() => "skip <Skip>").When(() => NoOp()).Then(() => NoOp()));
-        Assert.That(outline.Status, Is.EqualTo(status));
-        Assert.That(Required(Required(outline.Examples)[0].Steps)[0].StepText, Is.EqualTo("Given skip True"));
-        Assert.That(capture.Notifications, Is.EqualTo(notifications));
+        await Assert.That(outline.Status).IsEqualTo(status);
+        await Assert.That(Required(Required(outline.Examples)[0].Steps)[0].StepText).IsEqualTo("Given skip True");
+        await Assert.That(capture.Notifications).IsEqualTo(notifications);
     }
 
     [Test]
@@ -544,26 +578,28 @@ public class ScenarioOutlineTests : RunContextTestBase<ScenarioOutlineTests.RowC
         try
         {
             await entered.Task.WaitAsync(TimeSpan.FromSeconds(20));
-            await Assert.ThrowsAsync<AlreadyExecutedException>(async () => await builder.BDTestAsync());
-            await Assert.ThrowsAsync<AlreadyExecutedException>(async () => await builder);
+            await Assert.That(async () => await builder.BDTestAsync()).ThrowsExactly<AlreadyExecutedException>();
+            await Assert.That(async () => await builder).ThrowsExactly<AlreadyExecutedException>();
         }
         finally { finish.TrySetResult(); }
-        Assert.That((await execution).Examples, Has.Count.EqualTo(1));
+        await Assert.That((await execution).Examples).Count().IsEqualTo(1);
     }
 
-    [TestCase(false)]
-    [TestCase(true)]
+    [Test]
+    [Arguments(false)]
+    [Arguments(true)]
     public async Task All_entry_points_share_a_single_execution_guard(bool directAwait)
     {
         var builder = ScenarioOutline("Once", new[] { new { Value = 1 } },
             row => Given(() => Record(row.Value)).When(() => NoOp()).Then(() => NoOp()));
         var outline = directAwait ? await builder : await builder.BDTestAsync();
-        await Assert.ThrowsAsync<AlreadyExecutedException>(async () => await builder.BDTestAsync());
-        await Assert.ThrowsAsync<AlreadyExecutedException>(async () => await builder);
-        Assert.That(outline.Examples, Has.Count.EqualTo(1));
+        await Assert.That(async () => await builder.BDTestAsync()).ThrowsExactly<AlreadyExecutedException>();
+        await Assert.That(async () => await builder).ThrowsExactly<AlreadyExecutedException>();
+        await Assert.That(outline.Examples).Count().IsEqualTo(1);
         WriteTearDownOutput("outline teardown");
-        Assert.That(outline.TearDownOutput, Does.Contain("outline teardown"));
-        Assert.That(Required(outline.Examples)[0].TearDownOutput, Is.Null.Or.Empty);
+        await Assert.That(outline.TearDownOutput).Contains("outline teardown");
+
+        await Assert.That(Required(outline.Examples)[0].TearDownOutput).IsNullOrEmpty();
     }
 
     [Test]
@@ -575,7 +611,7 @@ public class ScenarioOutlineTests : RunContextTestBase<ScenarioOutlineTests.RowC
             System.Globalization.CultureInfo.CurrentCulture = new System.Globalization.CultureInfo("fr-FR");
             var outline = await ScenarioOutline("Text", new[] { new { Number = 1.5m, Text = "<Number>", Empty = (string?)null } },
                 row => Given(() => Template()).When(() => NoOp()).Then(() => NoOp()));
-            Assert.That(Required(Required(outline.Examples)[0].Steps)[0].StepText, Is.EqualTo("Given 1.5 <Number> null <Unknown>"));
+            await Assert.That(Required(Required(outline.Examples)[0].Steps)[0].StepText).IsEqualTo("Given 1.5 <Number> null <Unknown>");
         }
         finally { System.Globalization.CultureInfo.CurrentCulture = culture; }
     }
@@ -589,7 +625,7 @@ public class ScenarioOutlineTests : RunContextTestBase<ScenarioOutlineTests.RowC
         var standalone = BDTestHtmlHelper.GetTestHtmlReport(null, TestRun);
         var exampleTable = System.Text.RegularExpressions.Regex.Match(standalone,
             $"<table class=\"examples\" id=\"examples-{outline.Guid}\">.*?</table>", System.Text.RegularExpressions.RegexOptions.Singleline).Value;
-        Assert.That(exampleTable, Is.Not.Empty);
+        await Assert.That(exampleTable).IsNotEmpty();
         foreach (var html in new[]
         {
             "Examples" + exampleTable,
@@ -598,21 +634,21 @@ public class ScenarioOutlineTests : RunContextTestBase<ScenarioOutlineTests.RowC
             await ReportHandlerEncodingTests.RenderAsync("/Views/BDTest/Scenario.cshtml", restored)
         })
         {
-            Assert.That(html, Does.Contain("Examples"));
-            Assert.That(html, Does.Contain("&lt;script&gt;row&lt;/script&gt;"));
-            Assert.That(html, Does.Not.Contain("<script>row</script>"));
-            Assert.That(System.Text.RegularExpressions.Regex.Matches(html, "class=\"example-row\"").Count, Is.EqualTo(2));
+            await Assert.That(html).Contains("Examples");
+            await Assert.That(html).Contains("&lt;script&gt;row&lt;/script&gt;");
+            await Assert.That(html).DoesNotContain("<script>row</script>");
+            await Assert.That(System.Text.RegularExpressions.Regex.Matches(html, "class=\"example-row\"").Count).IsEqualTo(2);
             // The standalone report shows the step keyword in its own column.
             var text = System.Text.RegularExpressions.Regex.Replace(System.Text.RegularExpressions.Regex.Replace(html, "<[^>]*>", " "), @"\s+", " ");
-            Assert.That(text, Does.Contain("Given value"));
+            await Assert.That(text).Contains("Given value");
         }
     }
 
     private void Record(int value)
     {
-        Assert.That(Context.Value, Is.Zero);
+        RequireCondition(Context.Value == 0, "Each outline row must start with a fresh context.");
         Context.Value = value;
-        Assert.That(Required(BDTestContext.CurrentScenario).OutlineId, Is.Not.Null);
+        RequireCondition(Required(BDTestContext.CurrentScenario).OutlineId != null, "Each row must retain its outline identity.");
         _contexts.Add(Context);
         _visited.Add(value);
         Console.WriteLine($"row output {value}");

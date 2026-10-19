@@ -1,44 +1,25 @@
 using BDTest.Attributes;
-using BDTest.NUnit;
+using BDTest.TUnit;
 using BDTest.Settings;
 using BDTest.Test;
 using BDTest.Tests.Helpers;
-using NUnit.Framework;
+using System.Threading.Tasks;
 
 namespace BDTest.Tests.Fixtures;
 
-[Parallelizable(ParallelScope.None)]
+[NotInParallel]
 [Story(AsA = "BDTest developer",
     IWant = "to make sure that specific exceptions can be registered as 'passable'",
-    SoThat = "BDTest works well with other frameworks such as NUnit")]
-public class CustomPassExceptionsTests : RunNUnitTestBase<MyTestContext>
+    SoThat = "BDTest classifies registered success exceptions")]
+public class CustomPassExceptionsTests : RunTUnitTestBase<MyTestContext>
 {
     public CustomPassExceptionsTests() => Options.SuccessExceptionTypes.Add(typeof(MyAllowedException));
-    [Test]
-    public async Task NUNitSuccessException()
-    {
-        var builder = Given(() => Console.WriteLine("NUnit throws a success exception"))
-            .When(() => Assert.Pass())
-            .Then(() => Console.WriteLine("the test has passed"));
-
-        try
-        {
-            await builder.BDTestAsync();
-
-            Assert.Fail("An exception should be thrown to stop us getting here!");
-        }
-        catch (SuccessException)
-        {
-            var scenario = BDTestUtil.GetScenarios(TestRun).Single(scenario => scenario.Guid == builder.Guid);
-            Assert.That(scenario.Status, Is.EqualTo(Status.Passed));
-        }
-    }
 
     [Test]
     public async Task CustomException()
     {
 
-        var builder = Given(() => Console.WriteLine("NUnit throws a success exception"))
+        var builder = Given(() => Console.WriteLine("A custom exception signals success"))
             .When(() => ThrowException())
             .Then(() => Console.WriteLine("the test has passed"));
 
@@ -46,12 +27,12 @@ public class CustomPassExceptionsTests : RunNUnitTestBase<MyTestContext>
         {
             await builder.BDTestAsync();
 
-            Assert.Fail("An exception should be thrown to stop us getting here!");
+            Fail.Test("An exception should be thrown to stop us getting here!");
         }
         catch (MyAllowedException)
         {
             var scenario = BDTestUtil.GetScenarios(TestRun).Single(scenario => scenario.Guid == builder.Guid);
-            Assert.That(scenario.Status, Is.EqualTo(Status.Passed));
+            await Assert.That(scenario.Status).IsEqualTo(Status.Passed);
         }
     }
 

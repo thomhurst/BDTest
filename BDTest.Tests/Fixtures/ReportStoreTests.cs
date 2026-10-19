@@ -12,15 +12,16 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
-using NUnit.Framework;
 using Microsoft.Extensions.Options;
+using System.Threading.Tasks;
 
 namespace BDTest.Tests.Fixtures;
 
 public class ReportStoreTests
 {
-    [TestCase(false)]
-    [TestCase(true)]
+    [Test]
+    [Arguments(false)]
+    [Arguments(true)]
     public async Task Oversized_memory_store_writes_fail_without_removing_existing_reports(bool hasPersistentStorage)
     {
         using var hostCache = new MemoryCache(new MemoryCacheOptions());
@@ -33,19 +34,22 @@ public class ReportStoreTests
         foreach (var id in new[] { "new", "run" })
         {
             using var oversized = Bytes(new string('x', 81921));
-            await Assert.CatchAsync<InvalidOperationException>(async () =>
-                await store.WriteAsync(id, oversized, default));
-            Assert.That(oversized.CanRead, Is.True);
+            await Assert.That(async () =>
+                await store.WriteAsync(id, oversized, default)).Throws<InvalidOperationException>();
+            await Assert.That(oversized.CanRead).IsTrue();
         }
 
-        Assert.That(await store.OpenReadAsync("new", default), Is.Null);
+        await Assert.That(await store.OpenReadAsync("new", default)).IsNull();
         await using var retained = await store.OpenReadAsync("run", default);
         using var reader = new StreamReader(Required(retained));
-        Assert.That(await reader.ReadToEndAsync(), Is.EqualTo("original"));
+        await Assert.That(await reader.ReadToEndAsync()).IsEqualTo("original");
     }
 
-    [TestCase(false)]
-    [TestCase(true)]
+    [Test]
+    [Arguments(false)]
+    [Arguments(true)]
+    // Preserve the wall-clock probe's budget independently of unrelated parallel work.
+    [NotInParallel]
     public async Task Raw_memory_reads_extend_retention_for_models_and_bytes(bool bytes)
     {
         using var hostCache = new MemoryCache(new MemoryCacheOptions());
@@ -64,11 +68,11 @@ public class ReportStoreTests
 
         await Task.Delay(1200);
         await using (var download = await store.OpenReadAsync("active", default))
-            Assert.That(download, Is.Not.Null);
+            await Assert.That(download).IsNotNull();
         await Task.Delay(1200);
 
-        Assert.That(await store.GetTestData("active", default), Is.Not.Null);
-        Assert.That(await store.GetTestData("idle", default), Is.Null);
+        await Assert.That(await store.GetTestData("active", default)).IsNotNull();
+        await Assert.That(await store.GetTestData("idle", default)).IsNull();
     }
 
     [Test]
@@ -80,17 +84,17 @@ public class ReportStoreTests
         const string json = "  { \"unknown\": true } ";
         using var input = Bytes(json);
         await store.WriteAsync("run", input, default);
-        Assert.That(input.CanRead, Is.True);
+        await Assert.That(input.CanRead).IsTrue();
         await using var first = await store.OpenReadAsync("run", default);
         using var reader = new StreamReader(Required(first));
-        Assert.That(await reader.ReadToEndAsync(), Is.EqualTo(json));
+        await Assert.That(await reader.ReadToEndAsync()).IsEqualTo(json);
         using var replacement = Bytes("replacement");
         await store.WriteAsync("run", replacement, default);
         await using var second = await store.OpenReadAsync("run", default);
         using var secondReader = new StreamReader(Required(second));
-        Assert.That(await secondReader.ReadToEndAsync(), Is.EqualTo("replacement"));
-        Assert.That(await ((IReportStore)store).DeleteAsync("run", default), Is.True);
-        Assert.That(await ((IReportStore)store).DeleteAsync("run", default), Is.False);
+        await Assert.That(await secondReader.ReadToEndAsync()).IsEqualTo("replacement");
+        await Assert.That(await ((IReportStore)store).DeleteAsync("run", default)).IsTrue();
+        await Assert.That(await ((IReportStore)store).DeleteAsync("run", default)).IsFalse();
     }
 
     [Test]
@@ -102,24 +106,24 @@ public class ReportStoreTests
             await store.UpsertAsync(Entry(id), default);
         await store.UpsertAsync(new RunIndexEntry { RecordId = "other", BranchName = "other" }, default);
         var first = await store.ListAsync(Query(), default);
-        Assert.That(first.Entries.Select(entry => entry.RecordId), Is.EqualTo(new[] { "a", "b" }));
+        await Assert.That(first.Entries.Select(entry => entry.RecordId)).IsEquivalentTo((new[] { "a", "b" }).Cast<string?>(), global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
         // Inserting an earlier key and removing the cursor must not skip the next page.
         await store.UpsertAsync(Entry("0"), default);
         await ((IRunIndexStore)store).DeleteAsync("b", default);
         var second = await store.ListAsync(Query(first.ContinuationToken), default);
-        Assert.That(second.Entries.Select(entry => entry.RecordId), Is.EqualTo(new[] { "c", "d" }));
-        Assert.That(second.ContinuationToken, Is.Null);
+        await Assert.That(second.Entries.Select(entry => entry.RecordId)).IsEquivalentTo((new[] { "c", "d" }).Cast<string?>(), global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(second.ContinuationToken).IsNull();
         await store.UpsertAsync(new RunIndexEntry { RecordId = "a", BranchName = "other" }, default);
-        Assert.That((await store.ListAsync(Query(), default)).Entries.Select(entry => entry.RecordId),
-            Is.EqualTo(new[] { "0", "c" }));
-        Assert.Throws<ArgumentException>(() => RunIndexPaging.Apply([], new RunIndexQuery
-            { BranchName = "other", ContinuationToken = first.ContinuationToken }));
-        Assert.Throws<ArgumentException>(() => RunIndexPaging.Apply([], Query("bad-token")));
-        Assert.Throws<ArgumentOutOfRangeException>(() => RunIndexPaging.Apply([], new RunIndexQuery { PageSize = 0 }));
+        await Assert.That((await store.ListAsync(Query(), default)).Entries.Select(entry => entry.RecordId)).IsEquivalentTo((new[] { "0", "c" }).Cast<string?>(), global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(() => RunIndexPaging.Apply([], new RunIndexQuery
+            { BranchName = "other", ContinuationToken = first.ContinuationToken })).ThrowsExactly<ArgumentException>();
+        await Assert.That(() => RunIndexPaging.Apply([], Query("bad-token"))).ThrowsExactly<ArgumentException>();
+        await Assert.That(() => RunIndexPaging.Apply([], new RunIndexQuery { PageSize = 0 })).ThrowsExactly<ArgumentOutOfRangeException>();
     }
 
-    [TestCase(false)]
-    [TestCase(true)]
+    [Test]
+    [Arguments(false)]
+    [Arguments(true)]
     public async Task Store_operations_reject_cancellation_before_mutating(bool legacy)
     {
         using var hostCache = new MemoryCache(new MemoryCacheOptions());
@@ -130,14 +134,14 @@ public class ReportStoreTests
         IRunIndexStore index = legacy ? adapter : memory;
         var token = new CancellationToken(canceled: true);
         using var input = Bytes("{}");
-        await Assert.CatchAsync<OperationCanceledException>(async () => await reports.OpenReadAsync("run", token));
-        await Assert.CatchAsync<OperationCanceledException>(async () => await reports.WriteAsync("run", input, token));
-        await Assert.CatchAsync<OperationCanceledException>(async () => await reports.DeleteAsync("run", token));
-        await Assert.CatchAsync<OperationCanceledException>(async () => await index.ListAsync(new RunIndexQuery(), token));
-        await Assert.CatchAsync<OperationCanceledException>(async () => await index.UpsertAsync(Entry("run"), token));
-        await Assert.CatchAsync<OperationCanceledException>(async () => await index.DeleteAsync("run", token));
-        Assert.That(old.Calls, Is.Zero);
-        Assert.That(input.CanRead, Is.True);
+        await Assert.That(async () => await reports.OpenReadAsync("run", token)).Throws<OperationCanceledException>();
+        await Assert.That(async () => await reports.WriteAsync("run", input, token)).Throws<OperationCanceledException>();
+        await Assert.That(async () => await reports.DeleteAsync("run", token)).Throws<OperationCanceledException>();
+        await Assert.That(async () => await index.ListAsync(new RunIndexQuery(), token)).Throws<OperationCanceledException>();
+        await Assert.That(async () => await index.UpsertAsync(Entry("run"), token)).Throws<OperationCanceledException>();
+        await Assert.That(async () => await index.DeleteAsync("run", token)).Throws<OperationCanceledException>();
+        await Assert.That(old.Calls).IsZero();
+        await Assert.That(input.CanRead).IsTrue();
     }
 
     [Test]
@@ -147,35 +151,35 @@ public class ReportStoreTests
         var adapter = new LegacyDataStoreAdapter(store);
         using var input = Bytes("{\"Id\":\"run\",\"Tag\":\"legacy\"}");
         await adapter.WriteAsync("run", input, default);
-        Assert.That(input.CanRead, Is.True);
+        await Assert.That(input.CanRead).IsTrue();
         await using var output = await adapter.OpenReadAsync("run", default);
-        Assert.That(Required(await BDTestJsonHelper.DeserializeAsync(Required(output))).Tag, Is.EqualTo("legacy"));
+        await Assert.That(Required(await BDTestJsonHelper.DeserializeAsync(Required(output))).Tag).IsEqualTo("legacy");
         foreach (var id in new[] { "d", "c", "b", "a" }) await adapter.UpsertAsync(Entry(id), default);
         var first = await adapter.ListAsync(Query(), default);
         var second = await adapter.ListAsync(Query(first.ContinuationToken), default);
-        Assert.That(first.Entries.Concat(second.Entries).Select(entry => entry.RecordId), Is.EqualTo(new[] { "a", "b", "c", "d" }));
+        await Assert.That(first.Entries.Concat(second.Entries).Select(entry => entry.RecordId)).IsEquivalentTo((new[] { "a", "b", "c", "d" }).Cast<string?>(), global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
         await adapter.UpsertAsync(new RunIndexEntry { RecordId = "a", BranchName = "other" }, default);
-        Assert.That((await adapter.ListAsync(Query(), default)).Entries.Select(entry => entry.RecordId),
-            Is.EqualTo(new[] { "b", "c" }));
-        Assert.That(await ((IReportStore)adapter).DeleteAsync("run", default), Is.True);
-        Assert.That(await adapter.OpenReadAsync("missing", default), Is.Null);
-        Assert.That(await ((IRunIndexStore)adapter).DeleteAsync("a", default), Is.True);
-        Assert.That(await ((IRunIndexStore)adapter).DeleteAsync("a", default), Is.False);
+        await Assert.That((await adapter.ListAsync(Query(), default)).Entries.Select(entry => entry.RecordId)).IsEquivalentTo((new[] { "b", "c" }).Cast<string?>(), global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(await ((IReportStore)adapter).DeleteAsync("run", default)).IsTrue();
+        await Assert.That(await adapter.OpenReadAsync("missing", default)).IsNull();
+        await Assert.That(await ((IRunIndexStore)adapter).DeleteAsync("a", default)).IsTrue();
+        await Assert.That(await ((IRunIndexStore)adapter).DeleteAsync("a", default)).IsFalse();
     }
 
-    [TestCase(false)]
-    [TestCase(true)]
+    [Test]
+    [Arguments(false)]
+    [Arguments(true)]
     public async Task Legacy_adapter_does_not_delete_if_cancelled_during_existence_read(bool index)
     {
         using var cancellation = new CancellationTokenSource();
         var store = new LegacyStore { OnRead = cancellation.Cancel };
         var adapter = new LegacyDataStoreAdapter(store);
-        await Assert.CatchAsync<OperationCanceledException>(async () =>
+        await Assert.That(async () =>
         {
             if (index) await ((IRunIndexStore)adapter).DeleteAsync("run", cancellation.Token);
             else await ((IReportStore)adapter).DeleteAsync("run", cancellation.Token);
-        });
-        Assert.That(store.Deletes, Is.Zero);
+        }).Throws<OperationCanceledException>();
+        await Assert.That(store.Deletes).IsZero();
     }
 
     [Test]
@@ -196,26 +200,27 @@ public class ReportStoreTests
         await app.StartAsync();
         using var client = new HttpClient { BaseAddress = new Uri(app.Urls.Single()) };
         using var response = await client.GetAsync("bdtest/report/run/raw-json-data");
-        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
-        Assert.That(await response.Content.ReadAsStringAsync(), Is.EqualTo(json));
-        Assert.That(Required(response.Content.Headers.ContentType).MediaType, Is.EqualTo("application/json"));
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
+        await Assert.That(await response.Content.ReadAsStringAsync()).IsEqualTo(json);
+        await Assert.That(Required(response.Content.Headers.ContentType).MediaType).IsEqualTo("application/json");
         await Required(store.LastRead).Disposed.Task.WaitAsync(TimeSpan.FromSeconds(10));
         using var missing = await client.GetAsync("bdtest/report/missing/raw-json-data");
-        Assert.That(missing.StatusCode, Is.EqualTo(HttpStatusCode.NotFound));
-        Assert.That(store.Lists, Is.Zero);
+        await Assert.That(missing.StatusCode).IsEqualTo(HttpStatusCode.NotFound);
+        await Assert.That(store.Lists).IsZero();
     }
 
-    [TestCase("{\"$id\":\"1\",\"Id\":\"run\",\"Tag\":\"old\",\"Scenarios\":{\"$values\":[]}}", false)]
-    [TestCase("invalid-json", true)]
+    [Test]
+    [Arguments("{\"$id\":\"1\",\"Id\":\"run\",\"Tag\":\"old\",\"Scenarios\":{\"$values\":[]}}", false)]
+    [Arguments("invalid-json", true)]
     public async Task Repository_disposes_storage_stream_after_model_read(string json, bool fails)
     {
         var store = new ByteStore();
         store.Reports["run"] = Encoding.UTF8.GetBytes(json);
         using var services = Services(store);
         var repository = services.GetRequiredService<IDataRepository>();
-        if (fails) await Assert.CatchAsync<System.Text.Json.JsonException>(async () => await repository.GetData("run", default));
-        else Assert.That(Required(await repository.GetData("run", default)).Tag, Is.EqualTo("old"));
-        Assert.That(Required(store.LastRead).Disposed.Task.IsCompleted, Is.True);
+        if (fails) await Assert.That(async () => await repository.GetData("run", default)).Throws<System.Text.Json.JsonException>();
+        else await Assert.That(Required(await repository.GetData("run", default)).Tag).IsEqualTo("old");
+        await Assert.That(Required(store.LastRead).Disposed.Task.IsCompleted).IsTrue();
     }
 
     [Test]
@@ -226,8 +231,8 @@ public class ReportStoreTests
         store.Reports["run"] = Encoding.UTF8.GetBytes("{}");
         using var services = Services(store);
         var repository = services.GetRequiredService<IDataRepository>();
-        await Assert.CatchAsync<OperationCanceledException>(async () => await repository.GetData("run", cancellation.Token));
-        Assert.That(Required(store.LastRead).Disposed.Task.IsCompleted, Is.True);
+        await Assert.That(async () => await repository.GetData("run", cancellation.Token)).Throws<OperationCanceledException>();
+        await Assert.That(Required(store.LastRead).Disposed.Task.IsCompleted).IsTrue();
     }
 
     [Test]
@@ -239,17 +244,17 @@ public class ReportStoreTests
         using var cancellation = new CancellationTokenSource();
         var token = cancellation.Token;
         await repository.StoreData("run", new BDTestOutputModel { Id = "run" }, token);
-        Assert.That(store.Tokens.All(actual => actual == token), Is.True);
-        Assert.That(store.Tokens.Count, Is.EqualTo(2));
+        await Assert.That(store.Tokens.All(actual => actual == token)).IsTrue();
+        await Assert.That(store.Tokens.Count).IsEqualTo(2);
         await repository.GetAllTestRunRecords(token);
-        Assert.That(store.Tokens.Last(), Is.EqualTo(token));
+        await Assert.That(store.Tokens.Last()).IsEqualTo(token);
         await repository.DeleteReport("run", token);
-        Assert.That(store.Reports, Is.Empty);
-        Assert.That(store.Entries, Is.Empty);
-        Assert.That(store.Tokens.All(actual => actual == token), Is.True);
+        await Assert.That(store.Reports).IsEmpty();
+        await Assert.That(store.Entries).IsEmpty();
+        await Assert.That(store.Tokens.All(actual => actual == token)).IsTrue();
         cancellation.Cancel();
-        await Assert.CatchAsync<OperationCanceledException>(async () => await repository.StoreData("cancelled", new(), token));
-        Assert.That(store.Reports, Is.Empty);
+        await Assert.That(async () => await repository.StoreData("cancelled", new(), token)).Throws<OperationCanceledException>();
+        await Assert.That(store.Reports).IsEmpty();
     }
 
     private static MemoryStream Bytes(string text) => new(Encoding.UTF8.GetBytes(text));

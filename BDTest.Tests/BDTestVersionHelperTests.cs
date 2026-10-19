@@ -1,17 +1,17 @@
 using System.Reflection;
 using BDTest.Helpers;
-using NUnit.Framework;
+using System.Threading.Tasks;
 
 namespace BDTest.Tests;
 
 public class BDTestVersionHelperTests
 {
     [Test]
-    public void Report_version_uses_the_full_release_version()
+    public async Task Report_version_uses_the_full_release_version()
     {
         var version = typeof(BDTestVersionHelper).Assembly
             .GetCustomAttribute<AssemblyInformationalVersionAttribute>()!.InformationalVersion;
 
-        Assert.That(BDTestVersionHelper.CurrentVersion, Is.EqualTo(version));
+        await Assert.That(BDTestVersionHelper.CurrentVersion).IsEqualTo(version);
     }
 }

@@ -1,31 +1,30 @@
 using System.Xml.Linq;
 using BDTest.Helpers;
 using BDTest.Test;
-using NUnit.Framework;
+using System.Threading.Tasks;
 
 namespace BDTest.Tests.Fixtures;
-
-[FixtureLifeCycle(LifeCycle.InstancePerTestCase)]
 public class HtmlWriterTests : RunTestBase
 {
     private readonly string _executionId = Guid.NewGuid().ToString();
     protected override string BDTestExecutionId => _executionId;
 
-    [SetUp]
+    [Before(HookType.Test)]
     public void BeginExecution() => BeginTest(_executionId);
 
-    [TearDown]
+    [After(HookType.Test)]
     public void CompleteTest() => EndTest();
 
     [Test]
     public async Task TextIsEncoded()
     {
         var html = await Render(writer => writer.Text("<script>\"A&B\" 'quoted'</script> &lt;"));
-        Assert.That(html, Is.EqualTo("<span>&lt;script&gt;&quot;A&amp;B&quot; &#39;quoted&#39;&lt;/script&gt; &amp;lt;</span><br>"));
+        await Assert.That(html).IsEqualTo("<span>&lt;script&gt;&quot;A&amp;B&quot; &#39;quoted&#39;&lt;/script&gt; &amp;lt;</span><br>");
     }
 
     [Test]
-    public async Task LinkTextAndUrlAreEncoded([Values] bool useDelegate)
+    [MatrixDataSource]
+    public async Task LinkTextAndUrlAreEncoded([Matrix] bool useDelegate)
     {
         const string text = "<b>\"A&B\" 'quoted'</b> &lt;";
         const string url = "https://example.com/?a=\"><img src=x onerror=alert(1)>&b='quoted'&c=&quot;";
@@ -42,13 +41,13 @@ public class HtmlWriterTests : RunTestBase
             }
         });
         var link = ParseElement(html);
-        Assert.That(link.Name.LocalName, Is.EqualTo("a"));
-        Assert.That(link.Value, Is.EqualTo(text));
-        Assert.That(link.Elements(), Is.Empty);
-        Assert.That(link.Attributes().Select(attribute => attribute.Name.LocalName), Is.EqualTo(new[] { "href", "target" }));
-        Assert.That(link.Attribute("href")!.Value, Is.EqualTo(url));
-        Assert.That(link.Attribute("target")!.Value, Is.EqualTo("_blank"));
-        Assert.That(calls, Is.EqualTo(useDelegate ? 1 : 0));
+        await Assert.That(link.Name.LocalName).IsEqualTo("a");
+        await Assert.That(link.Value).IsEqualTo(text);
+        await Assert.That(link.Elements()).IsEmpty();
+        await Assert.That(link.Attributes().Select(attribute => attribute.Name.LocalName)).IsEquivalentTo(new[] { "href", "target" }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(link.Attribute("href")!.Value).IsEqualTo(url);
+        await Assert.That(link.Attribute("target")!.Value).IsEqualTo("_blank");
+        await Assert.That(calls).IsEqualTo(useDelegate ? 1 : 0);
     }
 
     [Test]
@@ -56,11 +55,15 @@ public class HtmlWriterTests : RunTestBase
     {
         const string url = "images/a\" onerror=\"alert(1)<>&'&quot;.png";
         var image = ParseElement(await Render(writer => writer.Image(url)));
-        Assert.That(image.Name.LocalName, Is.EqualTo("img"));
-        Assert.That(image.Attributes().Select(attribute => attribute.Name.LocalName), Is.EqualTo(new[] { "src", "loading" }));
-        Assert.That(image.Attribute("src")!.Value, Is.EqualTo(url));
-        Assert.That(image.Attribute("loading")!.Value, Is.EqualTo("lazy"));
+        await Assert.That(image.Name.LocalName).IsEqualTo("img");
+        await Assert.That(image.Attributes().Select(attribute => attribute.Name.LocalName)).IsEquivalentTo(new[] { "src", "loading" }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(image.Attribute("src")!.Value).IsEqualTo(url);
+        await Assert.That(image.Attribute("loading")!.Value).IsEqualTo("lazy");
     }
+
+    public static IEnumerable<string> GetRejectedUrls() => RejectedUrls;
+
+    public static IEnumerable<string> GetAllowedUrls() => AllowedUrls;
 
     private static readonly string[] AllowedUrls =
     {
@@ -72,19 +75,21 @@ public class HtmlWriterTests : RunTestBase
     };
 
     [Test]
+    [MatrixDataSource]
     public async Task OrdinaryUrlsArePreserved(
-        [ValueSource(nameof(AllowedUrls))] string url, [Values("link", "delegate", "image")] string kind)
+        [MatrixMethod<HtmlWriterTests>(nameof(GetAllowedUrls))] string url, [Matrix("link", "delegate", "image")] string kind)
     {
         var element = ParseElement(await Render(writer => WriteUrl(writer, kind, url)));
-        Assert.That(element.Attribute(kind == "image" ? "src" : "href")!.Value, Is.EqualTo(url));
+        await Assert.That(element.Attribute(kind == "image" ? "src" : "href")!.Value).IsEqualTo(url);
     }
 
     [Test]
-    public async Task MailtoIsAllowedForLinks([Values] bool useDelegate)
+    [MatrixDataSource]
+    public async Task MailtoIsAllowedForLinks([Matrix] bool useDelegate)
     {
         const string url = "mailto:team@example.com?subject=Report&body=Results";
         var element = ParseElement(await Render(writer => WriteUrl(writer, useDelegate ? "delegate" : "link", url)));
-        Assert.That(element.Attribute("href")!.Value, Is.EqualTo(url));
+        await Assert.That(element.Attribute("href")!.Value).IsEqualTo(url);
     }
 
     private static readonly string[] RejectedUrls =
@@ -98,27 +103,29 @@ public class HtmlWriterTests : RunTestBase
     };
 
     [Test]
+    [MatrixDataSource]
     public async Task UnsafeUrlsAreRejectedWithoutWritingOutput(
-        [ValueSource(nameof(RejectedUrls))] string url, [Values("link", "delegate", "image")] string kind)
+        [MatrixMethod<HtmlWriterTests>(nameof(GetRejectedUrls))] string url, [Matrix("link", "delegate", "image")] string kind)
     {
         var scenario = await EmptyScenario();
         ScenarioHtmlWriter.Text("before");
-        var exception = Assert.Throws<ArgumentException>(() => WriteUrl(ScenarioHtmlWriter, kind, url));
-        Assert.That(exception!.ParamName, Is.EqualTo("url"));
-        Assert.That(scenario.CustomHtmlOutputForReport, Is.EqualTo("<span>before</span><br>"));
+        var exception = await Assert.That(() => WriteUrl(ScenarioHtmlWriter, kind, url)).ThrowsExactly<ArgumentException>();
+        await Assert.That(exception!.ParamName).IsEqualTo("url");
+        await Assert.That(scenario.CustomHtmlOutputForReport).IsEqualTo("<span>before</span><br>");
     }
 
     [Test]
-    public void NullUrlsAreRejected([Values("link", "delegate", "image")] string kind)
+    [MatrixDataSource]
+    public async Task NullUrlsAreRejected([Matrix("link", "delegate", "image")] string kind)
     {
-        Assert.That(Assert.Throws<ArgumentNullException>(() => WriteUrl(ScenarioHtmlWriter, kind, null!))!.ParamName,
-            Is.EqualTo("url"));
+        var exception = await Assert.That(() => WriteUrl(ScenarioHtmlWriter, kind, null!)).ThrowsExactly<ArgumentNullException>();
+        await Assert.That(Required(exception).ParamName).IsEqualTo("url");
     }
 
     [Test]
-    public void MailtoIsRejectedForImages()
+    public async Task MailtoIsRejectedForImages()
     {
-        Assert.Throws<ArgumentException>(() => ScenarioHtmlWriter.Image("mailto:team@example.com"));
+        await Assert.That(() => ScenarioHtmlWriter.Image("mailto:team@example.com")).ThrowsExactly<ArgumentException>();
     }
 
     [Test]
@@ -126,7 +133,7 @@ public class HtmlWriterTests : RunTestBase
     {
         const string rawHtml = "<b>A &amp; B</b><script>alert(1)</script>";
         var html = await Render(writer => { writer.Custom(rawHtml); writer.LineBreak(); });
-        Assert.That(html, Is.EqualTo(rawHtml + "<br>"));
+        await Assert.That(html).IsEqualTo(rawHtml + "<br>");
     }
 
     private async Task<string> Render(Action<HtmlWriter> write)

@@ -3,11 +3,11 @@ using BDTest.Constants;
 using BDTest.Test;
 using BDTest.Tests.Helpers;
 using Newtonsoft.Json.Linq;
-using NUnit.Framework;
+using System.Threading.Tasks;
 
 namespace BDTest.Tests.Fixtures;
 
-[Parallelizable(ParallelScope.None)]
+[NotInParallel]
 [Story(AsA = "BDTest developer",
     IWant = "to make sure that BDTest works",
     SoThat = "other developers can use it confidently")]
@@ -21,18 +21,18 @@ public class StoryTextTests : RunTestBase
             .Then(() => Console.WriteLine("the attribute should be serialized to the json output"))
             .BDTestAsync();
             
-        Assert.That(scenario.GetStoryText(), Is.EqualTo($"As a BDTest developer{Environment.NewLine}I want to make sure that BDTest works{Environment.NewLine}So that other developers can use it confidently{Environment.NewLine}"));
-        Assert.That(Required(JsonHelper.GetTestDynamicJsonObject(TestRun).SelectToken("$.Scenarios[0].StoryText")).ToString(), Is.EqualTo($"As a BDTest developer{Environment.NewLine}I want to make sure that BDTest works{Environment.NewLine}So that other developers can use it confidently{Environment.NewLine}"));
+        await Assert.That(scenario.GetStoryText()).IsEqualTo($"As a BDTest developer{Environment.NewLine}I want to make sure that BDTest works{Environment.NewLine}So that other developers can use it confidently{Environment.NewLine}");
+        await Assert.That(Required(JsonHelper.GetTestDynamicJsonObject(TestRun).SelectToken("$.Scenarios[0].StoryText")).ToString()).IsEqualTo($"As a BDTest developer{Environment.NewLine}I want to make sure that BDTest works{Environment.NewLine}So that other developers can use it confidently{Environment.NewLine}");
     }
 
     [Test]
-    public void GetStoryTextFromBaseClassObject()
+    public async Task GetStoryTextFromBaseClassObject()
     {
-        Assert.That(GetStoryText(), Is.EqualTo($"As a BDTest developer{Environment.NewLine}I want to make sure that BDTest works{Environment.NewLine}So that other developers can use it confidently{Environment.NewLine}"));
+        await Assert.That(GetStoryText()).IsEqualTo($"As a BDTest developer{Environment.NewLine}I want to make sure that BDTest works{Environment.NewLine}So that other developers can use it confidently{Environment.NewLine}");
     }
 }
 
-[Parallelizable(ParallelScope.None)]
+[NotInParallel]
 public class NoStoryTextTests : RunTestBase
 {
         
@@ -43,7 +43,7 @@ public class NoStoryTextTests : RunTestBase
             .Then(() => Console.WriteLine("the scenario text should be null"))
             .BDTestAsync();
             
-        Assert.That(scenario.GetStoryText(), Is.EqualTo(DefaultValues.StoryTextNotDefined));
-        Assert.That(Required(JsonHelper.GetTestDynamicJsonObject(TestRun).SelectToken("$.Scenarios[0].StoryText")).Type, Is.EqualTo(JTokenType.Null));
+        await Assert.That(scenario.GetStoryText()).IsEqualTo(DefaultValues.StoryTextNotDefined);
+        await Assert.That(Required(JsonHelper.GetTestDynamicJsonObject(TestRun).SelectToken("$.Scenarios[0].StoryText")).Type).IsEqualTo(JTokenType.Null);
     }
 }

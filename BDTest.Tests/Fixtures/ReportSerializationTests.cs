@@ -11,14 +11,14 @@ using BDTest.Test.Steps;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
-using NUnit.Framework;
+using System.Threading.Tasks;
 
 namespace BDTest.Tests.Fixtures;
 
 public class ReportSerializationTests
 {
     [Test]
-    public void Generated_metadata_round_trips_all_report_types_without_references()
+    public async Task Generated_metadata_round_trips_all_report_types_without_references()
     {
         var started = new DateTime(2026, 10, 18, 12, 0, 0, DateTimeKind.Utc);
         var duration = TimeSpan.FromTicks(12345678);
@@ -58,36 +58,39 @@ public class ReportSerializationTests
         var json = BDTestJsonHelper.Serialize(report);
         var restored = Required(JsonSerializer.Deserialize(json, BDTestJsonContext.Default.BDTestOutputModel));
 
-        Assert.That(json, Does.Not.Contain("\"$id\"").And.Not.Contain("\"$ref\""));
-        Assert.That(json, Does.Contain("\"Status\":\"Failed\"").And.Contain("0.00:00:01:2345678"));
-        Assert.That(json, Does.Contain("\"Parameters\":[\"parameter\"]").And.Not.Contain("\"ParameterNames\""));
-        Assert.That(BDTestJsonHelper.Serialize(restored), Is.EqualTo(json));
+
+        await Assert.That(json).DoesNotContain("\"$id\"").And.DoesNotContain("\"$ref\"");
+
+        await Assert.That(json).Contains("\"Status\":\"Failed\"").And.Contains("0.00:00:01:2345678");
+
+        await Assert.That(json).Contains("\"Parameters\":[\"parameter\"]").And.DoesNotContain("\"ParameterNames\"");
+        await Assert.That(BDTestJsonHelper.Serialize(restored)).IsEqualTo(json);
         var actual = Required(restored.Scenarios).Single();
-        Assert.That(actual.GetStoryText(), Is.EqualTo("story"));
-        Assert.That(actual.GetScenarioText(), Is.EqualTo("scenario"));
-        Assert.That(Required(actual.ExecutionException).Message, Is.EqualTo("execution failure"));
-        Assert.That(Required(actual.Steps).Select(step => step.StepType), Is.EqualTo(Enum.GetValues<StepType>()));
-        Assert.That(actual.Steps.All(step => step.TimeTaken == duration && step.TimedOut), Is.True);
-        Assert.That(actual.Steps.All(step => Required(step.Diagnostics).SequenceEqual(new[] { "render warning" })), Is.True);
-        Assert.That(Required(Required(actual.Attempts).Single().Exception).Message, Is.EqualTo("attempt failure"));
-        Assert.That(Required(actual.Examples).Single().OutlineId, Is.EqualTo(actual.Guid));
-        Assert.That(Required(actual.Examples.Single().CustomTestInformation).Single().Information, Is.EqualTo("information"));
-        Assert.That(Required(restored.NotRun).Single().GetStoryText(), Is.EqualTo("unrun story"));
-        Assert.That(restored.NotRun.Single().ParameterNames, Is.EqualTo(new[] { "parameter" }));
-        Assert.That(Required(restored.CustomProperties)["property"], Is.EqualTo("value"));
+        await Assert.That(actual.GetStoryText()).IsEqualTo("story");
+        await Assert.That(actual.GetScenarioText()).IsEqualTo("scenario");
+        await Assert.That(Required(actual.ExecutionException).Message).IsEqualTo("execution failure");
+        await Assert.That(Required(actual.Steps).Select(step => step.StepType)).IsEquivalentTo(Enum.GetValues<StepType>(), global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(actual.Steps.All(step => step.TimeTaken == duration && step.TimedOut)).IsTrue();
+        await Assert.That(actual.Steps.All(step => Required(step.Diagnostics).SequenceEqual(new[] { "render warning" }))).IsTrue();
+        await Assert.That(Required(Required(actual.Attempts).Single().Exception).Message).IsEqualTo("attempt failure");
+        await Assert.That(Required(actual.Examples).Single().OutlineId).IsEqualTo(actual.Guid);
+        await Assert.That(Required(actual.Examples.Single().CustomTestInformation).Single().Information).IsEqualTo("information");
+        await Assert.That(Required(restored.NotRun).Single().GetStoryText()).IsEqualTo("unrun story");
+        await Assert.That(restored.NotRun.Single().ParameterNames).IsEquivalentTo((new[] { "parameter" }).Cast<string?>(), global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(Required(restored.CustomProperties)["property"]).IsEqualTo("value");
 
         var summary = JsonSerializer.Deserialize("""
             {"RecordId":"report","Counts":{"Total":1,"Failed":1},"Status":1,"Tag":"tag"}
             """, ReportJsonContext.Default.TestRunSummary);
         var summaryJson = JsonSerializer.Serialize(summary, ReportJsonContext.Default.TestRunSummary);
         var restoredSummary = Required(JsonSerializer.Deserialize(summaryJson, ReportJsonContext.Default.TestRunSummary));
-        Assert.That(restoredSummary.RecordId, Is.EqualTo("report"));
-        Assert.That(Required(restoredSummary.Counts).Failed, Is.EqualTo(1));
-        Assert.That(JsonSerializer.Serialize(restoredSummary, ReportJsonContext.Default.TestRunSummary), Is.EqualTo(summaryJson));
+        await Assert.That(restoredSummary.RecordId).IsEqualTo("report");
+        await Assert.That(Required(restoredSummary.Counts).Failed).IsEqualTo(1);
+        await Assert.That(JsonSerializer.Serialize(restoredSummary, ReportJsonContext.Default.TestRunSummary)).IsEqualTo(summaryJson);
     }
 
     [Test]
-    public void Legacy_references_and_collection_wrappers_become_plain_values()
+    public async Task Legacy_references_and_collection_wrappers_become_plain_values()
     {
         var report = Required(BDTestJsonHelper.Deserialize("""
             {"$id":"report","id":"legacy","Scenarios":{"$id":"scenarios","$values":[
@@ -96,18 +99,20 @@ public class ReportSerializationTests
               {"$ref":"scenario"}]},"NotRun":[]}
             """));
 
-        Assert.That(report.Scenarios, Has.Count.EqualTo(2));
-        Assert.That(Required(report.Scenarios)[1].GetStoryText(), Is.EqualTo("story"));
-        Assert.That(Required(report.Scenarios[1].Steps)[1].StepType, Is.EqualTo(StepType.ButWhen));
-        Assert.That(Required(report.Scenarios[1].Steps)[1].Timeout, Is.EqualTo(TimeSpan.FromSeconds(3)));
-        Assert.That(Required(report.Scenarios[1].Steps)[1].TimeTaken.Ticks, Is.EqualTo(12345678));
-        Assert.That(BDTestJsonHelper.Serialize(report), Does.Not.Contain("\"$id\"").And.Not.Contain("\"$ref\""));
+        await Assert.That(report.Scenarios).Count().IsEqualTo(2);
+        await Assert.That(Required(report.Scenarios)[1].GetStoryText()).IsEqualTo("story");
+        await Assert.That(Required(report.Scenarios[1].Steps)[1].StepType).IsEqualTo(StepType.ButWhen);
+        await Assert.That(Required(report.Scenarios[1].Steps)[1].Timeout).IsEqualTo(TimeSpan.FromSeconds(3));
+        await Assert.That(Required(report.Scenarios[1].Steps)[1].TimeTaken.Ticks).IsEqualTo(12345678);
+
+        await Assert.That(BDTestJsonHelper.Serialize(report)).DoesNotContain("\"$id\"").And.DoesNotContain("\"$ref\"");
     }
 
-    [TestCase("\"$values\":\"custom value\"")]
-    [TestCase("\"$ref\":\"custom reference\"")]
-    [TestCase("\"$values\":\"custom value\",\"$ref\":\"custom reference\",\"ordinary\":\"retained\"")]
-    public void Legacy_metadata_named_dictionary_keys_are_preserved(string properties)
+    [Test]
+    [Arguments("\"$values\":\"custom value\"")]
+    [Arguments("\"$ref\":\"custom reference\"")]
+    [Arguments("\"$values\":\"custom value\",\"$ref\":\"custom reference\",\"ordinary\":\"retained\"")]
+    public async Task Legacy_metadata_named_dictionary_keys_are_preserved(string properties)
     {
         var report = Required(BDTestJsonHelper.Deserialize($$$"""
             {"$id":"report","CustomProperties":{"$id":"properties",{{{properties}}}},
@@ -115,44 +120,49 @@ public class ReportSerializationTests
             """));
 
         var expected = JsonSerializer.Deserialize<Dictionary<string, string>>("{" + properties + "}");
-        Assert.That(report.CustomProperties, Is.EquivalentTo(Required(expected)));
-        Assert.That(Required(report.Scenarios).Single().ExampleValues, Is.EquivalentTo(Required(expected)));
+
+        await Assert.That(report.CustomProperties).IsEquivalentTo(Required(expected), global::TUnit.Assertions.Enums.CollectionOrdering.Any);
+
+        await Assert.That(Required(report.Scenarios).Single().ExampleValues).IsEquivalentTo(Required(expected), global::TUnit.Assertions.Enums.CollectionOrdering.Any);
     }
 
-    [TestCase(0, Status.Passed)]
-    [TestCase(1, Status.Failed)]
-    [TestCase(2, Status.Inconclusive)]
-    [TestCase(3, Status.NotImplemented)]
-    [TestCase(4, Status.Skipped)]
-    public void Legacy_numeric_statuses_keep_their_meaning_in_scenarios_steps_and_attempts(int value, Status expected)
+    [Test]
+    [Arguments(0, Status.Passed)]
+    [Arguments(1, Status.Failed)]
+    [Arguments(2, Status.Inconclusive)]
+    [Arguments(3, Status.NotImplemented)]
+    [Arguments(4, Status.Skipped)]
+    public async Task Legacy_numeric_statuses_keep_their_meaning_in_scenarios_steps_and_attempts(int value, Status expected)
     {
         var report = Required(BDTestJsonHelper.Deserialize($$"""
             {"$id":"report","Scenarios":[{"Status":{{value}},"Steps":[{"Status":{{value}}}],"Attempts":[{"Status":{{value}}}]}]}
             """));
 
         var scenario = Required(report.Scenarios).Single();
-        Assert.That(scenario.Status, Is.EqualTo(expected));
-        Assert.That(Required(scenario.Steps).Single().Status, Is.EqualTo(expected));
-        Assert.That(Required(scenario.Attempts).Single().Status, Is.EqualTo(expected));
-        Assert.That(BDTestJsonHelper.Serialize(report), Does.Contain($"\"Status\":\"{expected}\""));
+        await Assert.That(scenario.Status).IsEqualTo(expected);
+        await Assert.That(Required(scenario.Steps).Single().Status).IsEqualTo(expected);
+        await Assert.That(Required(scenario.Attempts).Single().Status).IsEqualTo(expected);
+        await Assert.That(BDTestJsonHelper.Serialize(report)).Contains($"\"Status\":\"{expected}\"");
     }
 
-    [TestCase("5")]
-    [TestCase("1.5")]
-    [TestCase("1e1000")]
-    public void Invalid_numeric_statuses_fail_with_a_JSON_error(string value)
+    [Test]
+    [Arguments("5")]
+    [Arguments("1.5")]
+    [Arguments("1e1000")]
+    public async Task Invalid_numeric_statuses_fail_with_a_JSON_error(string value)
     {
-        Assert.Throws<JsonException>(() => BDTestJsonHelper.Deserialize($$"""
+        await Assert.That(() => BDTestJsonHelper.Deserialize($$"""
             {"Scenarios":[{"Status":{{value}}}]}
-            """));
+            """)).ThrowsExactly<JsonException>();
     }
 
-    [TestCase("{\"$id\":\"report\",\"Scenarios\":[{\"$ref\":\"missing\"}]}")]
-    [TestCase("{\"$id\":\"report\",\"Scenarios\":[{\"$ref\":\"report\"}]}")]
-    [TestCase("{\"$id\":\"report\",\"Scenarios\":[{\"$id\":\"report\"}]}")]
-    public void Invalid_legacy_references_fail_with_a_JSON_error(string json)
+    [Test]
+    [Arguments("{\"$id\":\"report\",\"Scenarios\":[{\"$ref\":\"missing\"}]}")]
+    [Arguments("{\"$id\":\"report\",\"Scenarios\":[{\"$ref\":\"report\"}]}")]
+    [Arguments("{\"$id\":\"report\",\"Scenarios\":[{\"$id\":\"report\"}]}")]
+    public async Task Invalid_legacy_references_fail_with_a_JSON_error(string json)
     {
-        Assert.Throws<JsonException>(() => BDTestJsonHelper.Deserialize(json));
+        await Assert.That(() => BDTestJsonHelper.Deserialize(json)).ThrowsExactly<JsonException>();
     }
 
     [Test]
@@ -162,27 +172,28 @@ public class ReportSerializationTests
             {"$id":"report","Scenarios":[{"$id":"scenario","Output":"{{new string('x', 512)}}"},{"$ref":"scenario"},{"$ref":"scenario"}]}
             """;
         var bytes = System.Text.Encoding.UTF8.GetBytes(json);
-        Assert.Throws<JsonException>(() => BDTestJsonHelper.Deserialize(json, maximumExpandedSize: bytes.Length + 100));
+        await Assert.That(() => BDTestJsonHelper.Deserialize(json, maximumExpandedSize: bytes.Length + 100)).ThrowsExactly<JsonException>();
         using var stream = new MemoryStream(bytes);
-        await Assert.CatchAsync<JsonException>(async () =>
-            await BDTestJsonHelper.DeserializeAsync(stream, maximumExpandedSize: bytes.Length + 100));
-        Assert.That(stream.CanRead, Is.True, "The caller owns the input stream.");
+        await Assert.That(async () =>
+            await BDTestJsonHelper.DeserializeAsync(stream, maximumExpandedSize: bytes.Length + 100)).Throws<JsonException>();
+        await Assert.That(stream.CanRead).IsTrue().Because("The caller owns the input stream.");
     }
 
     [Test]
-    public void Legacy_expansion_has_a_finite_default_budget()
+    public async Task Legacy_expansion_has_a_finite_default_budget()
     {
         var references = string.Join(",", Enumerable.Repeat("{\"$ref\":\"scenario\"}", 100));
         var json = $$"""
             {"$id":"report","Scenarios":[{"$id":"scenario","Output":"{{new string('x', 1024 * 1024)}}"},{{references}}]}
             """;
 
-        Assert.Throws<JsonException>(() => BDTestJsonHelper.Deserialize(json));
+        await Assert.That(() => BDTestJsonHelper.Deserialize(json)).ThrowsExactly<JsonException>();
     }
 
-    [TestCase(false)]
-    [TestCase(true)]
-    public void Registration_preserves_host_MVC_formatters_and_JSON_options(bool useLegacyRegistration)
+    [Test]
+    [Arguments(false)]
+    [Arguments(true)]
+    public async Task Registration_preserves_host_MVC_formatters_and_JSON_options(bool useLegacyRegistration)
     {
         var services = new ServiceCollection();
         services.AddLogging();
@@ -197,25 +208,21 @@ public class ReportSerializationTests
         {
             var register = Required(typeof(BDTestExtensions).GetMethod("AddBdTestReportControllersAndViews"))
                 .CreateDelegate<Func<IMvcBuilder, IMvcBuilder>>();
-            Assert.That(register(mvc), Is.SameAs(mvc));
+            await Assert.That(register(mvc)).IsSameReferenceAs(mvc);
         }
         else
         {
             services.AddBDTestReports();
         }
         using var after = services.BuildServiceProvider();
-        Assert.That(after.GetRequiredService<BDTest.Razor.Reports.Interfaces.IDataRepository>(),
-            Is.TypeOf<BDTest.Razor.Reports.Implementations.DataRepository>());
-        Assert.That(mvc.PartManager.ApplicationParts.Select(part => part.Name),
-            Does.Contain(typeof(BDTest.Razor.Reports.Controllers.BDTestController).Assembly.GetName().Name));
+        await Assert.That(after.GetRequiredService<BDTest.Razor.Reports.Interfaces.IDataRepository>()).IsTypeOf<BDTest.Razor.Reports.Implementations.DataRepository>();
+        await Assert.That(mvc.PartManager.ApplicationParts.Select(part => part.Name)).Contains(Required(typeof(BDTest.Razor.Reports.Controllers.BDTestController).Assembly.GetName().Name));
         var actual = after.GetRequiredService<IOptions<MvcOptions>>().Value;
 
-        Assert.That(actual.InputFormatters.Select(formatter => formatter.GetType()),
-            Is.EqualTo(expected.InputFormatters.Select(formatter => formatter.GetType())));
-        Assert.That(actual.OutputFormatters.Select(formatter => formatter.GetType()),
-            Is.EqualTo(expected.OutputFormatters.Select(formatter => formatter.GetType())));
+        await Assert.That(actual.InputFormatters.Select(formatter => formatter.GetType())).IsEquivalentTo(expected.InputFormatters.Select(formatter => formatter.GetType()), global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(actual.OutputFormatters.Select(formatter => formatter.GetType())).IsEquivalentTo(expected.OutputFormatters.Select(formatter => formatter.GetType()), global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
         var options = after.GetRequiredService<IOptions<JsonOptions>>().Value.JsonSerializerOptions;
-        Assert.That(options.PropertyNamingPolicy, Is.SameAs(JsonNamingPolicy.SnakeCaseLower));
-        Assert.That(options.WriteIndented, Is.True);
+        await Assert.That(options.PropertyNamingPolicy).IsSameReferenceAs(JsonNamingPolicy.SnakeCaseLower);
+        await Assert.That(options.WriteIndented).IsTrue();
     }
 }

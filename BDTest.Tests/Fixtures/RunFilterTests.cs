@@ -2,7 +2,7 @@ using BDTest.Razor.Reports.Models;
 using BDTest.Test;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Primitives;
-using NUnit.Framework;
+using System.Threading.Tasks;
 
 namespace BDTest.Tests.Fixtures;
 
@@ -23,9 +23,10 @@ public class RunFilterTests
     private static RunFilter Parse(string query) =>
         RunFilter.FromQuery(new QueryCollection(Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(query)));
 
-    [TestCase("Passed", new[] { "passed", "not-implemented", "skipped" })]
-    [TestCase("Failed", new[] { "failed" })]
-    public void Status_filter_matches_the_result_shown_for_each_run(string status, string[] expected)
+    [Test]
+    [Arguments("Passed", new[] { "passed", "not-implemented", "skipped" })]
+    [Arguments("Failed", new[] { "failed" })]
+    public async Task Status_filter_matches_the_result_shown_for_each_run(string status, string[] expected)
     {
         var runs = new[]
         {
@@ -36,11 +37,12 @@ public class RunFilterTests
 
         var matched = Parse("?status=" + status).Apply(runs, Now).Select(run => run.RecordId);
 
-        Assert.That(matched, Is.EquivalentTo(expected));
+
+        await Assert.That(matched).IsEquivalentTo((expected).Cast<string?>(), global::TUnit.Assertions.Enums.CollectionOrdering.Any);
     }
 
     [Test]
-    public void Mixed_incomplete_runs_never_match_Passed_even_when_the_aggregate_is_NotImplemented()
+    public async Task Mixed_incomplete_runs_never_match_Passed_even_when_the_aggregate_is_NotImplemented()
     {
         var runs = new[]
         {
@@ -55,34 +57,33 @@ public class RunFilterTests
         Required(runs[2].Counts).NotRun = 1;
         Required(runs[3].Counts).Failed = 1;
 
-        Assert.That(Parse("?status=Passed").Apply(runs, Now).Select(run => run.RecordId),
-            Is.EqualTo(new[] { "complete" }));
-        Assert.That(Parse("?status=Failed").Apply(runs, Now).Select(run => run.RecordId),
-            Is.EqualTo(new[] { "failed" }));
+        await Assert.That(Parse("?status=Passed").Apply(runs, Now).Select(run => run.RecordId)).IsEquivalentTo((new[] { "complete" }).Cast<string?>(), global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(Parse("?status=Failed").Apply(runs, Now).Select(run => run.RecordId)).IsEquivalentTo((new[] { "failed" }).Cast<string?>(), global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 
     [Test]
-    public void Values_that_start_with_All_are_real_filters_but_old_placeholders_are_ignored()
+    public async Task Values_that_start_with_All_are_real_filters_but_old_placeholders_are_ignored()
     {
         var runs = new[] { Run("browsers", Status.Passed, "All browsers"), Run("other", Status.Passed, "other") };
 
-        Assert.That(Parse("?tag=All%20browsers&q=All%20b").Apply(runs, Now).Select(run => run.RecordId), Is.EqualTo(new[] { "browsers" }));
-        Assert.That(Parse("?tag=All%20Tags").Apply(runs, Now), Has.Exactly(2).Items);
+        await Assert.That(Parse("?tag=All%20browsers&q=All%20b").Apply(runs, Now).Select(run => run.RecordId)).IsEquivalentTo((new[] { "browsers" }).Cast<string?>(), global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(Parse("?tag=All%20Tags").Apply(runs, Now)).Count().IsEqualTo(2);
     }
 
     [Test]
-    public void Custom_dates_are_kept_until_another_range_is_chosen()
+    public async Task Custom_dates_are_kept_until_another_range_is_chosen()
     {
         const string dates = "2026-10-01T00:00:00.0000000Z..2026-10-10T00:00:00.0000000Z";
 
         var legacy = Parse("?datetimerange=" + dates);
-        Assert.That(legacy.CustomRange, Is.Not.Null);
-        Assert.That(legacy.ToQuery().ToDictionary(pair => pair.Key, pair => pair.Value), Does.ContainKey("datetimerange").And.ContainValue(RunFilter.Custom));
+        await Assert.That(legacy.CustomRange).IsNotNull();
 
-        Assert.That(Parse("?range=custom&tag=nightly&datetimerange=" + dates).CustomRange, Is.Not.Null);
+        await Assert.That(legacy.ToQuery().ToDictionary(pair => pair.Key, pair => pair.Value)).ContainsKey("datetimerange").And.ContainsValue(RunFilter.Custom);
+
+        await Assert.That(Parse("?range=custom&tag=nightly&datetimerange=" + dates).CustomRange).IsNotNull();
 
         var replaced = Parse("?range=7d&datetimerange=" + dates);
-        Assert.That(replaced.CustomRange, Is.Null);
-        Assert.That(replaced.Range, Is.EqualTo(RunFilter.Last7Days));
+        await Assert.That(replaced.CustomRange).IsNull();
+        await Assert.That(replaced.Range).IsEqualTo(RunFilter.Last7Days);
     }
 }

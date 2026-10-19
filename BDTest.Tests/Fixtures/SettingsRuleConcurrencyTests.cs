@@ -1,15 +1,16 @@
 using BDTest.Attributes;
 using BDTest.Settings.Retry;
 using BDTest.Settings.Skip;
-using NUnit.Framework;
+using System.Threading.Tasks;
 
 namespace BDTest.Tests.Fixtures;
 
 public class SettingsRuleConcurrencyTests
 {
-    [TestCase("retry")]
-    [TestCase("skip-step")]
-    [TestCase("skip-test")]
+    [Test]
+    [Arguments("retry")]
+    [Arguments("skip-step")]
+    [Arguments("skip-test")]
     public async Task RegistrationDuringEvaluationUsesAStableSnapshot(string kind)
     {
         var (add, read) = CreateRules(kind);
@@ -31,7 +32,7 @@ public class SettingsRuleConcurrencyTests
         var evaluation = Task.Run(() => read().Any(condition => condition()));
         try
         {
-            Assert.That(entered.Wait(TimeSpan.FromSeconds(20)), Is.True);
+            await Assert.That(entered.Wait(TimeSpan.FromSeconds(20))).IsTrue();
             // Registration must finish while a user predicate is still running.
             await Task.Run(() => add(() => { calls.Add(3); return true; }))
                 .WaitAsync(TimeSpan.FromSeconds(20));
@@ -42,17 +43,18 @@ public class SettingsRuleConcurrencyTests
             await evaluation.WaitAsync(TimeSpan.FromSeconds(20));
         }
 
-        Assert.That(await evaluation, Is.False);
-        Assert.That(calls, Is.EqualTo(new[] { 1, 2 }));
+        await Assert.That(await evaluation).IsFalse();
+        await Assert.That(calls).IsEquivalentTo(new[] { 1, 2 }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
         calls.Clear();
-        Assert.That(read().Any(condition => condition()), Is.True);
-        Assert.That(calls, Is.EqualTo(new[] { 1, 2, 3 }));
+        await Assert.That(read().Any(condition => condition())).IsTrue();
+        await Assert.That(calls).IsEquivalentTo(new[] { 1, 2, 3 }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 
-    [TestCase("retry")]
-    [TestCase("skip-step")]
-    [TestCase("skip-test")]
-    public void PredicateCanRegisterARuleForTheNextEvaluation(string kind)
+    [Test]
+    [Arguments("retry")]
+    [Arguments("skip-step")]
+    [Arguments("skip-test")]
+    public async Task PredicateCanRegisterARuleForTheNextEvaluation(string kind)
     {
         var (add, read) = CreateRules(kind);
         var registered = false;
@@ -66,13 +68,14 @@ public class SettingsRuleConcurrencyTests
             return false;
         });
 
-        Assert.That(read().Any(condition => condition()), Is.False);
-        Assert.That(read().Any(condition => condition()), Is.True);
+        await Assert.That(read().Any(condition => condition())).IsFalse();
+        await Assert.That(read().Any(condition => condition())).IsTrue();
     }
 
-    [TestCase("retry")]
-    [TestCase("skip-step")]
-    [TestCase("skip-test")]
+    [Test]
+    [Arguments("retry")]
+    [Arguments("skip-step")]
+    [Arguments("skip-test")]
     public async Task ConcurrentRegistrationsRetainEveryRule(string kind)
     {
         var (add, read) = CreateRules(kind);
@@ -92,12 +95,12 @@ public class SettingsRuleConcurrencyTests
 
         start.SetResult(true);
         await Task.WhenAll(writers).WaitAsync(TimeSpan.FromSeconds(20));
-        Assert.That(read().Any(condition => condition()), Is.False);
-        Assert.That(calls, Is.EquivalentTo(Enumerable.Range(0, writerCount * rulesPerWriter)));
+        await Assert.That(read().Any(condition => condition())).IsFalse();
+
+        await Assert.That(calls).IsEquivalentTo(Enumerable.Range(0, writerCount * rulesPerWriter), global::TUnit.Assertions.Enums.CollectionOrdering.Any);
         for (var writer = 0; writer < writerCount; writer++)
         {
-            Assert.That(calls.Where(id => id / rulesPerWriter == writer),
-                Is.EqualTo(Enumerable.Range(writer * rulesPerWriter, rulesPerWriter)));
+            await Assert.That(calls.Where(id => id / rulesPerWriter == writer)).IsEquivalentTo(Enumerable.Range(writer * rulesPerWriter, rulesPerWriter), global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
         }
     }
 

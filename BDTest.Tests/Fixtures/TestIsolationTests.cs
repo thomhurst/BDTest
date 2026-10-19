@@ -1,26 +1,25 @@
+using System.IO;
 using System.Collections.Concurrent;
-using BDTest.NUnit;
+using BDTest.TUnit;
 using BDTest.Settings;
 using BDTest.Test;
 using BDTest.Tests.Helpers;
-using NUnit.Framework;
+using System.Threading.Tasks;
 
 namespace BDTest.Tests.Fixtures;
 
-[NonParallelizable]
+[NotInParallel]
 public class TestIsolationTests
 {
-    [Test, Repeat(3)]
+    [Test, Repeat(2)]
     public async Task ExceptionAssertionsUseIsolatedRunsAndPreserveOtherRuns()
     {
         using var retainedFixture = new RetainedScenario();
         var retained = await retainedFixture.Run();
-        using var nunitPass = new CustomPassExceptionsTests();
-        await nunitPass.NUNitSuccessException();
         using var customPass = new CustomPassExceptionsTests();
         await customPass.CustomException();
-        using var nunitIgnore = new IgnoreTests();
-        await nunitIgnore.NUNitIgnoreException();
+        using var tunitSkip = new IgnoreTests();
+        await tunitSkip.TUnitSkipException();
         using var customIgnore = new IgnoreTests();
         await customIgnore.CustomIgnoreException();
         foreach (var (exception, status) in new[]
@@ -35,13 +34,13 @@ public class TestIsolationTests
             await then.ThrowsExceptionOnThen(exception, status);
         }
 
-        Assert.That(retainedFixture.TestRun.Scenarios, Does.Contain(retained));
+        await Assert.That(retainedFixture.TestRun.Scenarios).Contains(retained);
     }
 
 
 
-    [Test, Repeat(3)]
-    public void JsonLookupRejectsAmbiguousOutput()
+    [Test, Repeat(2)]
+    public async Task JsonLookupRejectsAmbiguousOutput()
     {
         var folder = FileHelpers.GetUniqueTestOutputFolder();
         var stale = Path.Combine(folder, "stale.json");
@@ -50,11 +49,11 @@ public class TestIsolationTests
         {
             File.WriteAllText(stale, "stale");
             File.WriteAllText(current, "current");
-            Assert.Throws<InvalidOperationException>(() => FileHelpers.GetUniqueTestJsonFilePath());
+            await Assert.That(() => FileHelpers.GetUniqueTestJsonFilePath()).ThrowsExactly<InvalidOperationException>();
             File.Delete(stale);
-            Assert.That(FileHelpers.GetUniqueTestJsonFilePath(), Is.EqualTo(current));
+            await Assert.That(FileHelpers.GetUniqueTestJsonFilePath()).IsEqualTo(current);
             File.Delete(current);
-            Assert.Throws<InvalidOperationException>(() => FileHelpers.GetUniqueTestJsonFilePath());
+            await Assert.That(() => FileHelpers.GetUniqueTestJsonFilePath()).ThrowsExactly<InvalidOperationException>();
         }
         finally
         {

@@ -4,18 +4,18 @@ using BDTest.Attributes;
 using BDTest.Helpers;
 using BDTest.Test;
 using BDTest.Tests.Helpers;
-using NUnit.Framework;
+using System.Threading.Tasks;
 
 namespace BDTest.Tests.Fixtures;
 
-[NonParallelizable]
+[NotInParallel]
 public class DelegateStepMetadataTests : RunTestBase
 {
     private int _value;
     private int _reads;
     private int Value { get { _reads++; return _value; } }
 
-    [SetUp]
+    [Before(HookType.Test)]
     public void Setup()
     {
 
@@ -23,71 +23,73 @@ public class DelegateStepMetadataTests : RunTestBase
         _reads = 0;
     }
 
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("TUnit", "TUnit0018", Justification = "Each TUnit case owns this fixture; scenario callbacks and teardown intentionally observe its state.")]
     [Test]
-    public void GeneratedMemberReadersRemainLazyAndReadCurrentState()
+    public async Task GeneratedMemberReadersRemainLazyAndReadCurrentState()
     {
         var builder = When(() => Display(Value));
         var definition = Required(builder.ExistingSteps[0].Runnable).Definition;
-        Assert.That(Required(definition.Method).Name, Is.EqualTo(nameof(Display)));
-        Assert.That(definition.GetText(), Is.EqualTo("value: {value}"));
-        Assert.That(_reads, Is.Zero);
+        await Assert.That(Required(definition.Method).Name).IsEqualTo(nameof(Display));
+        await Assert.That(definition.GetText()).IsEqualTo("value: {value}");
+        await Assert.That(_reads).IsZero();
 
         _value = 42;
-        Assert.That(definition.GetText(true), Is.EqualTo("value: 42"));
-        Assert.That(_reads, Is.EqualTo(1));
+        await Assert.That(definition.GetText(true)).IsEqualTo("value: 42");
+        await Assert.That(_reads).IsEqualTo(1);
     }
 
     [Test]
-    public void UnsupportedCapturedLocalUsesCallerTextUntilExplicitArgumentsAreProvided()
+    public async Task UnsupportedCapturedLocalUsesCallerTextUntilExplicitArgumentsAreProvided()
     {
         var value = 42;
         var builder = When(() => Display(value));
         var definition = Required(builder.ExistingSteps[0].Runnable).Definition;
-        Assert.That(Required(definition.Method).Name, Is.EqualTo(nameof(Display)));
-        Assert.That(definition.GetText(), Is.EqualTo("() => Display(value)"));
-        Assert.That(definition.GetText(true), Is.EqualTo("() => Display(value)"));
-        Assert.That(definition.GetText(explicitArguments: [() => value]), Is.EqualTo("value: {value}"));
-        Assert.That(definition.GetText(true, explicitArguments: [() => value]), Is.EqualTo("value: 42"));
+        await Assert.That(Required(definition.Method).Name).IsEqualTo(nameof(Display));
+        await Assert.That(definition.GetText()).IsEqualTo("() => Display(value)");
+        await Assert.That(definition.GetText(true)).IsEqualTo("() => Display(value)");
+        await Assert.That(definition.GetText(explicitArguments: [() => value])).IsEqualTo("value: {value}");
+        await Assert.That(definition.GetText(true, explicitArguments: [() => value])).IsEqualTo("value: 42");
     }
 
     [Test]
-    public void StatementBodyUsesMeaningfulCallerTextWithoutRunningTheDelegate()
+    public async Task StatementBodyUsesMeaningfulCallerTextWithoutRunningTheDelegate()
     {
         var calls = 0;
         var builder = When(() => { calls++; Display(calls); });
         var definition = Required(builder.ExistingSteps[0].Runnable).Definition;
-        Assert.That(definition.Method, Is.Null);
-        Assert.That(definition.GetText(), Does.Contain("calls++").And.Contain("Display(calls)"));
-        Assert.That(definition.GetText(true), Does.Contain("calls++"));
-        Assert.That(calls, Is.Zero);
-        Assert.That(definition.GetText(true, explicitArguments: [() => 42]), Does.EndWith(" 42"));
+        await Assert.That(definition.Method).IsNull();
+
+        await Assert.That(definition.GetText()).Contains("calls++").And.Contains("Display(calls)");
+        await Assert.That(definition.GetText(true)).Contains("calls++");
+        await Assert.That(calls).IsZero();
+        await Assert.That(definition.GetText(true, explicitArguments: [() => 42])).EndsWith(" 42");
     }
 
     [Test]
-    public void MethodGroupRetainsMethodTextWithoutGeneratedMetadata()
+    public async Task MethodGroupRetainsMethodTextWithoutGeneratedMetadata()
     {
         var definition = new StepTextDefinition((Action)SimpleMethodGroup, nameof(SimpleMethodGroup), "missing.cs", 1);
-        Assert.That(Required(definition.Method).Name, Is.EqualTo(nameof(SimpleMethodGroup)));
-        Assert.That(definition.GetText(), Is.EqualTo("simple method group"));
-        Assert.That(definition.GetText(true), Is.EqualTo("simple method group"));
+        await Assert.That(Required(definition.Method).Name).IsEqualTo(nameof(SimpleMethodGroup));
+        await Assert.That(definition.GetText()).IsEqualTo("simple method group");
+        await Assert.That(definition.GetText(true)).IsEqualTo("simple method group");
     }
 
     [Test]
-    public void CancellationTokenReadersAreOmittedWithEitherExplicitArgumentShape()
+    public async Task CancellationTokenReadersAreOmittedWithEitherExplicitArgumentShape()
     {
         var method = Required(typeof(DelegateStepMetadataTests).GetMethod(nameof(Cancellable), BindingFlags.Static | BindingFlags.NonPublic));
-        Assert.That(StepTextHelper.GetStepText(method, [() => 42], omitCancellationToken: true), Is.EqualTo("value: 42"));
-        Assert.That(StepTextHelper.GetStepText(method, [() => 42, () => throw new Exception("Token must not be rendered")],
-            omitCancellationToken: true), Is.EqualTo("value: 42"));
+        await Assert.That(StepTextHelper.GetStepText(method, [() => 42], omitCancellationToken: true)).IsEqualTo("value: 42");
+        await Assert.That(StepTextHelper.GetStepText(method, [() => 42, () => throw new Exception("Token must not be rendered")],
+            omitCancellationToken: true)).IsEqualTo("value: 42");
     }
 
     [Test]
-    public void ExplicitArgumentCountMismatchIsReported()
+    public async Task ExplicitArgumentCountMismatchIsReported()
     {
         var method = Required(typeof(DelegateStepMetadataTests).GetMethod(nameof(Display), BindingFlags.Static | BindingFlags.NonPublic));
-        var exception = Assert.Throws<ArgumentException>(() => StepTextHelper.GetStepText(method, []));
-        Assert.That(Required(exception).ParamName, Is.EqualTo("arguments"));
-        Assert.That(Required(exception).Message, Does.Contain("Expected 1 step text argument readers, but received 0"));
+        var exception = await Assert.That(() => StepTextHelper.GetStepText(method, [])).ThrowsExactly<ArgumentException>();
+        await Assert.That(Required(exception).ParamName).IsEqualTo("arguments");
+        await Assert.That(Required(exception).Message).Contains("Expected 1 step text argument readers, but received 0");
     }
 
     [StepText("value: {0}")]
