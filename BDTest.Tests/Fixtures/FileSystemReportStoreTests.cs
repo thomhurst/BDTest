@@ -1,4 +1,5 @@
 using System.Text;
+using System.Diagnostics;
 using BDTest.Razor.Reports.Storage;
 using BDTest.Reports.Storage.FileSystem;
 using Microsoft.Extensions.DependencyInjection;
@@ -177,6 +178,69 @@ public class FileSystemReportStoreTests
         using var oldReader = new StreamReader(Required(reader));
         Assert.That(await oldReader.ReadToEndAsync(), Is.EqualTo("original"));
         Assert.That(Directory.GetFiles(_directory, "*.tmp"), Is.Empty);
+    }
+
+    [Test]
+    public async Task Separate_processes_wait_without_pruning_active_writes_and_can_cancel()
+    {
+        using var writer = StartWorker("writer");
+        Process? contender = null;
+        try
+        {
+            await Expect(writer, "holding");
+            var temporary = Directory.GetFiles(_directory, "*.tmp").Single();
+            contender = StartWorker("contender");
+            await Expect(contender, "waiting-to-cancel");
+            Assert.That(File.Exists(temporary), Is.True);
+            await contender.StandardInput.WriteLineAsync("cancel");
+            await Expect(contender, "cancelled");
+            Assert.That(File.Exists(temporary), Is.True);
+            await Expect(contender, "waiting-to-read");
+            await writer.StandardInput.WriteLineAsync("release");
+            await Expect(writer, "written");
+            await Expect(contender, "complete:partial-complete");
+            await writer.WaitForExitAsync().WaitAsync(TimeSpan.FromSeconds(30));
+            await contender.WaitForExitAsync().WaitAsync(TimeSpan.FromSeconds(30));
+            Assert.That(writer.ExitCode, Is.Zero, await writer.StandardError.ReadToEndAsync());
+            Assert.That(contender.ExitCode, Is.Zero, await contender.StandardError.ReadToEndAsync());
+            Assert.That(Directory.GetFiles(_directory, "*.tmp"), Is.Empty);
+        }
+        finally
+        {
+            await StopWorker(writer);
+            if (contender != null)
+            {
+                await StopWorker(contender);
+                contender.Dispose();
+            }
+        }
+    }
+
+    private Process StartWorker(string mode)
+    {
+        var start = new ProcessStartInfo("dotnet")
+        {
+            UseShellExecute = false, RedirectStandardInput = true,
+            RedirectStandardOutput = true, RedirectStandardError = true,
+            CreateNoWindow = true
+        };
+        start.ArgumentList.Add(typeof(FileSystemReportStoreTests).Assembly.Location);
+        start.ArgumentList.Add("file-store-worker");
+        start.ArgumentList.Add(mode);
+        start.ArgumentList.Add(_directory);
+        return Process.Start(start) ?? throw new InvalidOperationException("Could not start storage worker.");
+    }
+
+    private static async Task Expect(Process process, string expected)
+    {
+        var actual = await process.StandardOutput.ReadLineAsync().WaitAsync(TimeSpan.FromSeconds(30));
+        Assert.That(actual, Is.EqualTo(expected), actual == null ? await process.StandardError.ReadToEndAsync() : null);
+    }
+
+    private static async Task StopWorker(Process process)
+    {
+        if (!process.HasExited) process.Kill(entireProcessTree: true);
+        await process.WaitForExitAsync().WaitAsync(TimeSpan.FromSeconds(30));
     }
 
     [Test]
