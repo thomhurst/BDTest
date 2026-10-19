@@ -10,6 +10,7 @@ using BDTest.Razor.Reports.Models;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Internal;
 
 namespace BDTest.Razor.Reports.Implementations;
 
@@ -50,6 +51,15 @@ public class MemoryCacheBdTestDataStore : IMemoryCacheBdTestDataStore, IDisposab
     public MemoryCacheBdTestDataStore(IMemoryCache testRecordCache, IOptions<BDTestReportOptions> options,
         ReportAttachmentGate? attachmentGate = null, IBDTestAttachmentStore? attachmentStore = null,
         ILogger<MemoryCacheBdTestDataStore>? logger = null, bool hasPersistentStorage = false)
+        : this(testRecordCache, options, attachmentGate, attachmentStore, logger, hasPersistentStorage, null, null)
+    {
+    }
+
+    // Separate clocks let tests expire the source while its projection remains cached.
+    internal MemoryCacheBdTestDataStore(IMemoryCache testRecordCache, IOptions<BDTestReportOptions> options,
+        ReportAttachmentGate? attachmentGate, IBDTestAttachmentStore? attachmentStore,
+        ILogger<MemoryCacheBdTestDataStore>? logger, bool hasPersistentStorage,
+        ISystemClock? reportClock, ISystemClock? pageClock)
     {
         _options = options.Value;
         _attachmentGate = attachmentGate ?? new ReportAttachmentGate();
@@ -57,11 +67,12 @@ public class MemoryCacheBdTestDataStore : IMemoryCacheBdTestDataStore, IDisposab
         _logger = logger;
         _hasPersistentStorage = hasPersistentStorage;
         _reportCacheCapacity = _options.ReportCacheSizeLimitBytes;
-        _pageCache = new MemoryCache(new MemoryCacheOptions { SizeLimit = _options.ReportPageCacheSizeLimitBytes, TrackStatistics = true });
+        _pageCache = new MemoryCache(new MemoryCacheOptions { SizeLimit = _options.ReportPageCacheSizeLimitBytes, TrackStatistics = true, Clock = pageClock });
         _testRecordCache = new MemoryCache(new MemoryCacheOptions
         {
             SizeLimit = _reportCacheCapacity,
-            TrackStatistics = true
+            TrackStatistics = true,
+            Clock = reportClock
         });
     }
 

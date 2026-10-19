@@ -1,4 +1,4 @@
-using System.Diagnostics;
+using Microsoft.Extensions.Time.Testing;
 using BDTest.Interfaces;
 using BDTest.Settings;
 using BDTest.Test;
@@ -130,19 +130,28 @@ public class ScenarioHookTests
     {
         var before = new List<ScenarioHookContext<State>>();
         var after = new List<(int Attempt, Status Status, bool Cancelled)>();
-        var options = new BDTestOptions();
+        var clock = new TimerClock();
+        var timeout = TimeSpan.FromMilliseconds(100);
+        var options = new BDTestOptions { TimeProvider = clock };
         options.RetryTestRules.Add(e => e is TimeoutException, 1);
         using var run = BDTestRun.Start(options);
         var test = new Fixture(run)
         {
-            Before = s => { before.Add(s); s.Context.Attempt = s.Attempt; return Task.CompletedTask; },
+            Before = s => { clock.ResetTimerSignal(); before.Add(s); s.Context.Attempt = s.Attempt; return Task.CompletedTask; },
             After = s => { after.Add((s.Attempt, s.Scenario.Status, s.CancellationToken.IsCancellationRequested)); return Task.CompletedTask; }
         };
         var outline = await test.ScenarioOutline("row <Value>", new[] { new { Value = 1 }, new { Value = 2 } },
             row => test.When(async token =>
             {
-                if (test.Context.Attempt == 0) await Task.Delay(Timeout.InfiniteTimeSpan, token);
-            }).Then(() => Complete()).WithScenarioTimeout(TimeSpan.FromMilliseconds(100))).BDTestAsync();
+                if (test.Context.Attempt == 0)
+                {
+                    // Wait until WaitAsync has armed the timeout before advancing virtual time.
+                    await clock.TimerCreated.Task;
+                    clock.Fake.Advance(timeout);
+                    await Task.Delay(Timeout.InfiniteTimeSpan, token);
+                }
+            }).Then(() => Complete()).WithScenarioTimeout(timeout)).BDTestAsync()
+            .WaitAsync(TimeSpan.FromSeconds(30)); // Deadlock guard only; scenario time is entirely virtual.
         await Assert.That(outline.Status).IsEqualTo(Status.Passed);
         await Assert.That(before.Select(s => s.Context).Distinct().Count()).IsEqualTo(4);
         await Assert.That(before.Select(s => s.CancellationToken).Distinct().Count()).IsEqualTo(4);
@@ -303,27 +312,29 @@ public class ScenarioHookTests
     [Test]
     public async Task Scenario_hook_time_is_included_in_attempt_time_but_excluded_from_step_budget()
     {
-        using var run = BDTestRun.Start();
-        var hookTimes = new List<TimeSpan>();
+        var clock = new FakeTimeProvider();
+        using var run = BDTestRun.Start(new BDTestOptions { TimeProvider = clock });
+        var hookDuration = TimeSpan.FromMilliseconds(150);
+        var stepDuration = TimeSpan.FromMilliseconds(10);
         var test = new Fixture(run)
         {
-            Before = _ => MeasureHookTime(),
-            After = _ => MeasureHookTime()
+            Before = _ => AdvanceHookTime(),
+            After = _ => AdvanceHookTime()
         };
-        var scenario = await test.When(() => Complete()).Then(() => Complete())
+        var scenario = await test.When(() => clock.Advance(stepDuration)).Then(() => clock.Advance(stepDuration))
             .WithScenarioTimeout(TimeSpan.FromMilliseconds(100)).BDTestAsync();
 
-        await Assert.That((hookTimes).All(item => item > (scenario.Timeout ?? throw new AssertionException("Expected a scenario timeout.")))).IsTrue();
-        await Assert.That(scenario.TimeTaken).IsGreaterThanOrEqualTo(hookTimes[0] + hookTimes[1]);
+        await Assert.That(hookDuration).IsGreaterThan(scenario.Timeout ?? throw new AssertionException("Expected a scenario timeout."));
+        await Assert.That(scenario.TimeTaken).IsEqualTo(hookDuration * 2 + stepDuration * 2);
         await Assert.That(Required(scenario.Attempts).Single().TimeTaken).IsEqualTo(scenario.TimeTaken);
+        foreach (var step in Required(scenario.Steps))
+            await Assert.That(step.TimeTaken).IsEqualTo(stepDuration);
         await Assert.That(scenario.Status).IsEqualTo(Status.Passed);
 
-        async Task MeasureHookTime()
+        Task AdvanceHookTime()
         {
-            var stopwatch = Stopwatch.StartNew();
-            await Task.Delay(150);
-            stopwatch.Stop();
-            hookTimes.Add(stopwatch.Elapsed);
+            clock.Advance(hookDuration);
+            return Task.CompletedTask;
         }
     }
 
@@ -378,6 +389,22 @@ public class ScenarioHookTests
         options.ScenarioHooks.Add(null!);
         using var run = BDTestRun.Start(options);
     }).ThrowsExactly<ArgumentException>();
+
+    private sealed class TimerClock : TimeProvider
+    {
+        internal FakeTimeProvider Fake { get; } = new();
+        internal TaskCompletionSource TimerCreated { get; private set; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        internal void ResetTimerSignal() => TimerCreated = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        public override DateTimeOffset GetUtcNow() => Fake.GetUtcNow();
+        public override long GetTimestamp() => Fake.GetTimestamp();
+        public override long TimestampFrequency => Fake.TimestampFrequency;
+        public override ITimer CreateTimer(TimerCallback callback, object? state, TimeSpan dueTime, TimeSpan period)
+        {
+            var timer = Fake.CreateTimer(callback, state, dueTime, period);
+            TimerCreated.TrySetResult();
+            return timer;
+        }
+    }
 
     private sealed class State { public int Attempt { get; set; } }
     private sealed class Fixture(BDTestRun run) : AbstractContextBDTestBase<State>
