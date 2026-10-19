@@ -9,7 +9,7 @@ description: Use context, scenarios, and output helpers without inheriting a BDT
 
 Derive from `BDTestScenario<TContext>` and call its protected constructor with the test instance and run to customize scenario hooks or context creation. Contexts need no parameterless constructor when the run supplies a context factory. Without a factory or a `CreateContextAsync` override, the host creates contexts through their public parameterless constructor.
 
-```csharp
+```csharp title="Illustrative fragment"
 using BDTest;
 using BDTest.Test;
 using System.Reflection;

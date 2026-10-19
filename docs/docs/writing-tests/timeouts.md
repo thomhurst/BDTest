@@ -7,7 +7,7 @@ description: Bound individual steps and whole scenarios with WithStepTimeout and
 
 Import `BDTest.Test` to use the timeout extensions. Async steps can accept a `CancellationToken` in every `Given`, `When`, `Then`, `And` and `But` position:
 
-```csharp
+```csharp title="Illustrative fragment"
 using BDTest.Test;
 
 var scenario = await Given(token => Orders.PrepareAsync(token))

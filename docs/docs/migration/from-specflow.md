@@ -42,7 +42,7 @@ Feature: Withdrawals
 
 becomes:
 
-```csharp
+```csharp title="Illustrative fragment"
 [Story(AsAn = "account holder", IWant = "to withdraw money", SoThat = "I can use my savings")]
 public class WithdrawalTests : TUnitBDTestBase<AccountContext>
 {
@@ -62,7 +62,7 @@ public class WithdrawalTests : TUnitBDTestBase<AccountContext>
 
 The step definitions become methods with `[StepText]`:
 
-```csharp
+```csharp title="Illustrative fragment"
 public class AccountSteps(AccountContext context)
 {
     [StepText("I have an account with a balance of {0}")]

@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <AssemblyName>BDTest.Documentation.MSTest</AssemblyName>
+    <TargetFramework>net10.0</TargetFramework>
+    <OutputType>Library</OutputType>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../../BDTest.MSTest/BDTest.MSTest.csproj" />
+    <ProjectReference Include="../../../BDTest.SourceGenerator/BDTest.SourceGenerator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+    <Compile Include="obj/Examples/*.cs" />
+  </ItemGroup>
+</Project>

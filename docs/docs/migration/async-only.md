@@ -11,7 +11,7 @@ The next major release removes `RunnableStepBuilder.BDTest()` and `ScenarioOutli
 
 Change `void` to `async Task`, add `await`, and remove `.BDTest()`:
 
-```csharp
+```csharp title="Illustrative fragment"
 // Before
 [Test]
 public void Login() => Given(() => User()).When(() => LogIn()).Then(() => LoggedIn()).BDTest();
@@ -30,7 +30,7 @@ NUnit, xUnit, MSTest and TUnit all support `Task` test methods. Step methods may
 
 ## Outlines and context helpers
 
-```csharp
+```csharp title="Illustrative fragment"
 [Test]
 public async Task Logins() => await ScenarioOutline("Login",
     new[] { new { Name = "Alice" }, new { Name = "Bob" } },

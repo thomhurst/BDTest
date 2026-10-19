@@ -7,7 +7,7 @@ description: Capture screenshots, logs and files with run-owned temporary storag
 
 `Attachments` on the test base and `BDTestContext.Attachments` implement `BDTest.Interfaces.IBDTestAttachments`:
 
-```csharp
+```csharp title="Illustrative fragment"
 Attachments.Attach("response.json", responseBytes, "application/json");
 
 using var log = File.OpenRead("test.log");
@@ -24,7 +24,7 @@ Names must contain 1–255 characters without control characters or path separat
 
 Capture inside a step, `OnBeforeStep`, or `OnAfterStep` adds metadata to that `Step.Attachments` collection. For example:
 
-```csharp
+```csharp title="Illustrative fragment"
 public override async Task OnAfterStep(Step step)
 {
     if (step.Status == Status.Failed)
@@ -45,7 +45,7 @@ Parallel tests and explicit runs keep independent ownership, even when separate 
 
 Configure an [explicit run](../advanced/explicit-runs.md) before starting it:
 
-```csharp
+```csharp title="Illustrative fragment"
 var options = new BDTestOptions();
 options.Attachments.MaximumAttachmentBytes = 20 * 1024 * 1024;
 options.Attachments.MaximumRunBytes = 200 * 1024 * 1024;

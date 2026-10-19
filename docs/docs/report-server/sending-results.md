@@ -14,7 +14,7 @@ Only scenarios run through BDTest (`Given(...).When(...).Then(...)`) are sent.
 
 ## Example with TUnit
 
-```csharp
+```csharp sample="TUnit/Upload.cs" title="Compiled example"
 using BDTest;
 
 public class SendResultsToReportServer
@@ -71,7 +71,7 @@ All return `Task<Uri>`, the summary page of the new report. Each overload also h
 
 Pass a token to stop warm-up, HTTP requests (including response buffering and attachments), and retry waits:
 
-```csharp
+```csharp title="Illustrative fragment"
 using var cancellation = new CancellationTokenSource(TimeSpan.FromSeconds(30));
 var reportUri = await BDTestReportServer.SendDataAndGetReportUriAsync(
     serverAddress, descriptor, httpClient, run, cancellation.Token);

@@ -20,24 +20,24 @@ dotnet add package BDTest.TUnit
 
 Implement `IBDTestTUnitTest` and return a stable host created for the actual test instance. No attribute, manual lifecycle calls, or separate hook registration is needed. The adapter registers global TUnit hooks for both composition and inheritance.
 
-```csharp
+```csharp sample="TUnit/Composition.cs" title="Compiled example"
 using BDTest;
 using BDTest.Settings;
 using BDTest.Test;
 using BDTest.TUnit;
 using TUnit.Core;
 
-public class BasketTests : CompanyTestBase, IBDTestTUnitTest
+public class ComposedBasketTests : CompanyTestBase, IBDTestTUnitTest
 {
-    private readonly BDTestRun _run;
+    internal readonly BDTestRun Run;
     private readonly BDTestScenario<BasketContext> _bdt;
 
-    public BasketTests()
+    public ComposedBasketTests()
     {
         var options = new BDTestOptions();
         options.RegisterFrameworkOutcomes(TUnitBDTestLifecycle.OutcomeMap);
-        _run = BDTestRun.Start(options);
-        _bdt = BDTestScenario.For<BasketContext>(this, _run);
+        Run = BDTestRun.Start(options);
+        _bdt = BDTestScenario.For<BasketContext>(this, Run);
     }
 
     public BDTestBase BDTestHost => _bdt;
@@ -57,20 +57,23 @@ public class BasketTests : CompanyTestBase, IBDTestTUnitTest
             .Then(() => _bdt.Context.VerifyTotal(12.50m))
             .BDTestAsync();
     }
+}
 
+public class ComposedBasketReports
+{
     // Runs after the adapter's global completion hook. This example owns one run
     // per test instance; write its report and dispose it only after completion.
     [AfterEvery(HookType.Test, Order = int.MaxValue)]
     public static async Task SaveReport(TestContext context)
     {
-        if (context.Metadata.TestDetails.ClassInstance is BasketTests test)
+        if (context.Metadata.TestDetails.ClassInstance is ComposedBasketTests test)
         {
             try
             {
-                await File.WriteAllTextAsync($"{test._run.ReportId}.html",
-                    BDTest.Helpers.BDTestHtmlHelper.GetTestHtmlReport(new BDTestRunDescriptor(), test._run));
+                await File.WriteAllTextAsync($"{test.Run.ReportId}.html",
+                    BDTest.Helpers.BDTestHtmlHelper.GetTestHtmlReport(new BDTestRunDescriptor(), test.Run));
             }
-            finally { test._run.Dispose(); }
+            finally { test.Run.Dispose(); }
         }
     }
 }
@@ -84,7 +87,7 @@ TUnit supplies the actual test method and its unique execution ID, including dat
 
 Inherit from `TUnitBDTestBase<TContext>`:
 
-```csharp
+```csharp sample="TUnit/Inheritance.cs" title="Compiled example"
 using BDTest.Attributes;
 using BDTest.TUnit;
 
@@ -135,7 +138,7 @@ To migrate from manual composition, implement `IBDTestTUnitTest`, return your ex
 
 Use an assembly-level `[After]` hook:
 
-```csharp
+```csharp sample="TUnit/AssemblyReport.cs" title="Compiled example"
 using BDTest.Helpers;
 
 public class BDTestReports

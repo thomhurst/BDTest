@@ -20,7 +20,7 @@ Pass the [adapter assembly run](../configuration/assembly-runs.md) to each helpe
 
 A `BDTestRunDescriptor` labels a whole test run. Every report helper accepts one:
 
-```csharp
+```csharp title="Illustrative fragment"
 var descriptor = new BDTestRunDescriptor
 {
     Environment = "Staging",

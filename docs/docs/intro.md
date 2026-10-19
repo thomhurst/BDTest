@@ -9,7 +9,7 @@ sidebar_label: Introduction
 
 BDTest is a testing and reporting framework for .NET built around behaviour-driven testing. You write scenarios as `Given` / `When` / `Then` chains in plain C#. BDTest runs them inside your normal test runner and turns the results into reports that non-developers can read.
 
-```csharp
+```csharp title="Illustrative fragment"
 [Story(AsA = "account holder", IWant = "to withdraw money", SoThat = "I can use my savings")]
 public class WithdrawalTests : TUnitBDTestBase<AccountContext>
 {

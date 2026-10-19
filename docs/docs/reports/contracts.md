@@ -22,7 +22,7 @@ Do not submit the new JSON shape to an existing report server yet.
 
 ## Creating and reading a report
 
-```csharp
+```csharp sample="Contracts/Program.cs" title="Compiled example"
 using BDTest.Contracts;
 
 var step = new StepResult(StepType.Given, "Given an account", Status.Passed);

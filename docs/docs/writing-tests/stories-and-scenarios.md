@@ -11,7 +11,7 @@ Reports group scenarios by **story**. A story explains who benefits from a featu
 
 Put `[Story]` on a test class. Set `AsA` (or `AsAn`), `IWant` and `SoThat`:
 
-```csharp
+```csharp title="Illustrative fragment"
 [Story(AsA = "registered customer",
     IWant = "to reset my password",
     SoThat = "I can sign in again if I forget it")]
@@ -43,7 +43,7 @@ Classes without `[Story]` are grouped without story text.
 
 Put `[ScenarioText]` on a test method to name the scenario:
 
-```csharp
+```csharp title="Illustrative fragment"
 [Test]
 [ScenarioText("A reset link is emailed to a registered address")]
 public async Task ResetLinkIsEmailed()

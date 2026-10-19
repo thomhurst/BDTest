@@ -7,7 +7,7 @@ description: Isolate scenario storage and reporting with BDTestRun in custom ada
 
 Built-in adapters use [isolated assembly runs](../configuration/assembly-runs.md). Custom adapters and long-lived hosts explicitly own a `BDTestRun` to keep their scenarios, options and reports separate. There is no implicit process-wide default run.
 
-```csharp
+```csharp title="Illustrative fragment"
 using var run = BDTestRun.Start();
 
 var tests = new MyTests(run);
@@ -43,7 +43,7 @@ Dispose a run only after its tests, output writers and attachment exporters fini
 
 Pass `BDTestOptions` to `BDTestRun.Start` to configure an explicit run:
 
-```csharp
+```csharp title="Illustrative fragment"
 var options = new BDTestOptions();
 options.SuccessExceptionTypes.Add(typeof(MySuccessException));
 options.SkipExceptionTypes.Add(typeof(MySkipException));
@@ -69,7 +69,7 @@ See the [options reference](../configuration/settings.md) for all registrations.
 
 Implement `BDTest.Interfaces.IStepHook`:
 
-```csharp
+```csharp title="Illustrative fragment"
 public sealed class TimingHook : IStepHook
 {
     public Task BeforeStepAsync(Step step) => Task.CompletedTask;
@@ -92,7 +92,7 @@ Register `BDTest.Interfaces.IScenarioHook` instances on `ScenarioHooks`. Hooks r
 
 The modern core build accepts a thread-safe `TimeProvider` on run options:
 
-```csharp
+```csharp title="Illustrative fragment"
 var options = new BDTestOptions { TimeProvider = TimeProvider.System };
 using var run = BDTestRun.Start(options);
 ```

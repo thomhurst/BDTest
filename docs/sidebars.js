@@ -100,6 +100,7 @@ const sidebars = {
       type: 'category',
       label: 'Migration',
       items: [
+        'migration/next-major',
         'migration/target-frameworks',
         'migration/explicit-runs',
         'migration/delegate-steps',

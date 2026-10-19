@@ -38,7 +38,7 @@ Projects that use Microsoft.Testing.Platform instead can reference `xunit.v3` an
 Register the native lifecycle fixture once per assembly, then create a host in your
 constructor. Supply the actual test instance and an explicit, caller-owned run:
 
-```csharp
+```csharp sample="XUnit/Composition.cs" title="Compiled example"
 using BDTest;
 using BDTest.Helpers;
 using BDTest.Test;
@@ -136,7 +136,7 @@ target frameworks and xUnit v3 runner requirements remain unchanged.
 
 Inherit from `XUnitBDTestBase<TContext>`. The base class has a parameterless constructor:
 
-```csharp
+```csharp sample="XUnit/Inheritance.cs" title="Compiled example"
 using BDTest.Attributes;
 using BDTest.xUnit;
 using Xunit;
@@ -182,7 +182,7 @@ Console output from constructors is buffered until the initialization hook runs.
 
 For async setup, override `InitializeAsync()`. You do not need to call the base method; capture is already active when your override starts. Prefer this override to reimplementing `IAsyncLifetime`.
 
-```csharp
+```csharp title="Illustrative fragment"
 public override async ValueTask InitializeAsync()
 {
     await Context.OpenAsync();
@@ -195,7 +195,7 @@ Fixtures that reimplement `IAsyncLifetime.InitializeAsync()` still work: their c
 
 xUnit v3 calls `DisposeAsync()` instead of `Dispose()` for test classes that implement `IAsyncDisposable` or `IAsyncLifetime`. Override the adapter's virtual `DisposeAsync()` for asynchronous teardown, and always await the base method in a `finally` block so BDTest cleanup still runs when your teardown fails:
 
-```csharp
+```csharp title="Illustrative fragment"
 public override async ValueTask DisposeAsync()
 {
     try
@@ -217,7 +217,7 @@ Existing overrides of the obsolete `MarkTestAsComplete()` and reimplementations 
 
 Use an xUnit v3 assembly fixture. xUnit disposes it after every test in the assembly has finished:
 
-```csharp
+```csharp sample="XUnit/AssemblyReport.cs" title="Compiled example"
 using BDTest.Helpers;
 using Xunit;
 

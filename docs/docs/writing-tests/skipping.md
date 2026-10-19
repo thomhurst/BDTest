@@ -12,7 +12,7 @@ Configure `BDTestOptions` through [assembly configuration](../configuration/asse
 
 Create an attribute that derives from `SkipStepAttribute`, put it on step methods, and register a rule that decides when those steps are skipped:
 
-```csharp
+```csharp title="Illustrative fragment"
 using BDTest.Attributes;
 
 public class SkipInProductionAttribute : SkipStepAttribute
@@ -26,7 +26,7 @@ public class SkipWhenAttribute : SkipStepAttribute
 }
 ```
 
-```csharp
+```csharp title="Illustrative fragment"
 public class DataSteps
 {
     [SkipInProduction]
@@ -40,7 +40,7 @@ public class DataSteps
 
 Register the rules once, during test-run setup:
 
-```csharp
+```csharp title="Illustrative fragment"
 var environment = Environment.GetEnvironmentVariable("TEST_ENVIRONMENT");
 
 options.SkipStepRules.Add<SkipInProductionAttribute>(_ => environment == "Production");
@@ -74,7 +74,7 @@ A later after-hook failure does not replace the predicate exception.
 
 `SkipTestRules` skips a scenario before any of its steps run. The rule receives the `Scenario`, including its test class, story, tags and text:
 
-```csharp
+```csharp title="Illustrative fragment"
 options.SkipTestRules.Add(scenario =>
     scenario.BdTestBaseClass is PaymentTests && !PaymentProviderIsAvailable());
 

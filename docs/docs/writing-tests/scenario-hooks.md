@@ -14,7 +14,7 @@ Scenario hooks surround one attempt, including its [step hooks](step-hooks.md). 
 
 Override the typed hooks on any context-based test base:
 
-```csharp
+```csharp title="Illustrative fragment"
 using BDTest.NUnit;
 using BDTest.Test;
 
@@ -53,7 +53,7 @@ public abstract class InstrumentedTests : NUnitBDTestBase<ScenarioState>
 
 For an [explicit run](../advanced/explicit-runs.md), implement `BDTest.Interfaces.IScenarioHook` and register it before starting the run:
 
-```csharp
+```csharp title="Illustrative fragment"
 using BDTest;
 using BDTest.Interfaces;
 using BDTest.Test;

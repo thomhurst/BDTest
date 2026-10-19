@@ -9,7 +9,7 @@ description: Tag scenarios for filtering with [BDTestTag] and attach extra detai
 
 Use `[BDTestTag]` from `BDTest.Attributes` on a scenario method or a story class. Apply it several times for several tags.
 
-```csharp
+```csharp title="Illustrative fragment"
 [BDTestTag("checkout")]
 public class CheckoutTests : TUnitBDTestBase<CheckoutContext>
 {
@@ -40,7 +40,7 @@ Scenario tags are separate from the run-level `BDTestRunDescriptor.Tag`, which l
 
 Tags are on the `Scenario`, so a [run skip rule](skipping.md#skipping-whole-scenarios) can use them:
 
-```csharp
+```csharp title="Illustrative fragment"
 options.SkipTestRules.Add(scenario =>
     scenario.Tags.Contains("slow") && Environment.GetEnvironmentVariable("RUN_SLOW_TESTS") != "true");
 ```
@@ -49,7 +49,7 @@ options.SkipTestRules.Add(scenario =>
 
 `[TestInformation]` attaches extra text to a scenario in the report, for example a bug reference or a link to a requirement. You can apply it several times.
 
-```csharp
+```csharp title="Illustrative fragment"
 [Test]
 [TestInformation("Regression test for bug #12345")]
 public async Task Test1()
@@ -62,7 +62,7 @@ public async Task Test1()
 
 Subclass `TestInformationAttribute` to build reusable attributes:
 
-```csharp
+```csharp title="Illustrative fragment"
 public class BugInformationAttribute : TestInformationAttribute
 {
     public BugInformationAttribute(string bugNumber)

@@ -25,7 +25,7 @@ Use an executable test project (`<OutputType>Exe</OutputType>`) with implicit us
 
 A context holds the state for one test. BDTest creates a new instance for each test, so tests never share state.
 
-```csharp title="AccountContext.cs"
+```csharp sample="FirstTest/AccountContext.cs" title="Compiled example: AccountContext.cs"
 public class AccountContext
 {
     public decimal Balance { get; set; }
@@ -38,7 +38,7 @@ The context class needs a public parameterless constructor. See [Test context](.
 
 Steps are ordinary methods. Group them into classes that receive the context in their constructor. `[StepText]` controls how each step appears in the report; `{0}` is replaced by the first argument.
 
-```csharp title="AccountSteps.cs"
+```csharp sample="FirstTest/AccountSteps.cs" title="Compiled example: AccountSteps.cs"
 using BDTest.Attributes;
 
 public class AccountSteps
@@ -72,7 +72,7 @@ TUnit assertions are awaited, so the assertion step returns `Task`. BDTest accep
 
 Inherit from `TUnitBDTestBase<TContext>`. Expose step classes as **properties**, not fields, so that each test gets steps bound to its own `Context`.
 
-```csharp title="WithdrawalTests.cs"
+```csharp sample="FirstTest/WithdrawalTests.cs" title="Compiled example: WithdrawalTests.cs"
 using BDTest.Attributes;
 using BDTest.TUnit;
 
@@ -112,22 +112,27 @@ BDTest records the scenario, its steps, their status and any console output. If 
 
 Add an assembly-level hook that writes an HTML report after all tests have run:
 
-```csharp title="BDTestReports.cs"
+```csharp sample="FirstTest/AccountReports.cs" title="Compiled example: AccountReports.cs"
 using BDTest;
 using BDTest.Helpers;
 
-public class BDTestReports
+public class AccountReports
 {
     [After(HookType.Assembly)]
     public static async Task WriteReport()
     {
-        var html = BDTestHtmlHelper.GetTestHtmlReport(new BDTestRunDescriptor
+        var assembly = typeof(AccountReports).Assembly;
+        try
         {
-            Environment = "Local",
-            Tag = "Acceptance tests",
-        });
-
-        await File.WriteAllTextAsync(Path.Combine(AppContext.BaseDirectory, "BDTest-Report.html"), html);
+            var run = BDTest.TUnit.TUnitBDTestAssembly.GetRun(assembly);
+            var html = BDTestHtmlHelper.GetTestHtmlReport(new BDTestRunDescriptor
+            {
+                Environment = "Local",
+                Tag = "Acceptance tests",
+            }, run);
+            await File.WriteAllTextAsync(Path.Combine(AppContext.BaseDirectory, "BDTest-Report.html"), html);
+        }
+        finally { BDTest.TUnit.TUnitBDTestAssembly.Dispose(assembly); }
     }
 }
 ```

@@ -9,7 +9,7 @@ This is a major-version API change. `Given`, `When`, `Then`, `And`, and `But` no
 
 The core targets `netstandard2.0;net8.0`. Its .NET Standard build supplies internal compiler attribute polyfills and references `System.Threading.Tasks.Extensions` for `ValueTask`; the modern build uses runtime APIs where available. Consumers need C# 13 or newer (.NET SDK 9 or newer) for overload priorities. Ordinary async lambdas select `Func<Task>` or `Func<CancellationToken, Task>`; typed `ValueTask` delegates select their own overloads. `ValueTask<T>` and cancellation-aware `ValueTask<T>` results are awaited and their result values are ignored. Each returned ValueTask is consumed once. No step definition or argument reader is compiled from an expression tree, including on retries and outline rows.
 
-```csharp
+```csharp title="Illustrative fragment"
 Given(() => Initialize())
     .When(async token => await SubmitAsync(token))
     .Then(() =>
@@ -29,7 +29,7 @@ Install the optional [BDTest.SourceGenerator package](../advanced/source-generat
 
 Automatic argument capture supports constants and field/property paths rooted in `this` or static state. Captured locals, method calls, allocations, and other unsupported argument expressions need explicit readers:
 
-```csharp
+```csharp title="Illustrative fragment"
 var order = GetOrder();
 When(() => Submit(order)).WithArgs(() => order)
     .Then(() => Verify(Context.OrderId));

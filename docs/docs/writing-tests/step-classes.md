@@ -7,7 +7,7 @@ description: Organise steps into reusable classes that operate on the test conte
 
 Put steps into classes grouped by area, for example `AccountSteps`, `PaymentSteps` and `HttpAssertions`. Each class takes the [test context](test-context.md) in its constructor so its steps can read and change the state of the current test.
 
-```csharp
+```csharp title="Illustrative fragment"
 public class AccountSteps
 {
     private readonly MyTestContext _context;
@@ -33,7 +33,7 @@ public class AccountSteps
 
 Define step classes as **properties** that create a new instance in the getter. Every access then binds the steps to the context of the test that is running.
 
-```csharp
+```csharp title="Illustrative fragment"
 public abstract class MyTestBase : TUnitBDTestBase<MyTestContext>
 {
     // Properties, not fields: each access uses the current test's Context.
@@ -51,7 +51,7 @@ Construct helpers explicitly as above, or resolve them through your service prov
 
 ## Using steps in tests
 
-```csharp
+```csharp title="Illustrative fragment"
 public class AccountTests : MyTestBase
 {
     [Test]

@@ -11,7 +11,7 @@ Configure report read authorization as shown in [Security](security.md#requiring
 
 The report server keeps recently used full reports in a dedicated bounded cache, separate from the host's `IMemoryCache`. Configure it at startup, before the server handles requests:
 
-```csharp
+```csharp title="Illustrative fragment"
 builder.Services.AddBDTestReports(options =>
 {
     options.ReportCacheSizeLimitBytes = 64L * 1024 * 1024; // Default: 64 MiB
@@ -27,6 +27,12 @@ Both values must be positive; invalid options fail host startup with `OptionsVal
 - The total of those sizes never exceeds the budget.
 - This is an estimate of retained report size, not a limit on process memory. Object overhead, temporary allocations, in-flight responses and run summaries are outside the budget.
 - Treat uploaded and cached models as immutable.
+
+Accounting uses compact JSON with the report serializer's fixed settings and
+preserves shared references; host serializer settings do not change the budget.
+The measured size stays with the entry. Ordinary reads refresh expiry without
+serializing again; explicit replacement through the cache store measures the
+replacement model.
 
 ### Retention and eviction
 
@@ -59,7 +65,7 @@ Exceeding a request or decompressed JSON byte limit returns HTTP 413. Unsupporte
 
 Raise the limits at startup when accepting larger reports:
 
-```csharp
+```csharp title="Illustrative fragment"
 builder.Services.AddBDTestReports(options =>
 {
     options.UploadApiKey = configuration["BDTest:UploadApiKey"];

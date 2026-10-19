@@ -14,7 +14,7 @@ Step hooks run code around every step. Typical uses are logging, taking screensh
 
 Register `IStepHook` instances in `IBDTestConfiguration.Configure(BDTestOptions options)`, or on options before starting a standalone run:
 
-```csharp
+```csharp title="Illustrative fragment"
 options.StepHooks.Add(new StepLogger());
 
 public sealed class StepLogger : BDTest.Interfaces.IStepHook
@@ -39,7 +39,7 @@ Hooks can run concurrently for different tests. Keep their shared state thread-s
 
 Override `OnBeforeStep(Step step)` and `OnAfterStep(Step step)` on your test class or base class. They return `Task` and can use the test's `Context`:
 
-```csharp
+```csharp title="Illustrative fragment"
 public abstract class UiTestBase : TUnitBDTestBase<UiContext>
 {
     public override async Task OnAfterStep(Step step)

@@ -9,7 +9,7 @@ The next major report-server API configures services before the host is built. `
 
 ## Register options before building the host
 
-```csharp
+```csharp sample="ServerMigration/Program.cs" title="Compiled example"
 using BDTest.Razor.Reports.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -53,7 +53,7 @@ Options contain only configuration values. Replace assignments of service instan
 
 For example, one implementation can provide both persistent storage contracts without creating two instances:
 
-```csharp
+```csharp title="Illustrative fragment"
 builder.Services.AddSingleton<MyReportStore>();
 builder.Services.AddSingleton<IReportStore>(services =>
     services.GetRequiredService<MyReportStore>());

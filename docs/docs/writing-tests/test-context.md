@@ -7,7 +7,7 @@ description: Create, initialize and dispose per-test state with factories and de
 
 A context holds the state of one test. All four framework adapters derive from `AbstractContextBDTestBase<TContext>` and expose `Context` and `BDTestContext`. Each execution has its own context, including parallel tests.
 
-```csharp
+```csharp title="Illustrative fragment"
 public class AccountTests : TUnitBDTestBase<AccountContext>
 {
     [Test]
@@ -26,7 +26,7 @@ By default, BDTest uses a public parameterless constructor. A custom factory all
 
 Override `CreateContextAsync` for a test base:
 
-```csharp
+```csharp title="Illustrative fragment"
 protected override ValueTask<AccountContext> CreateContextAsync(ContextCreation creation)
 {
     return new ValueTask<AccountContext>(new AccountContext(client));
@@ -39,7 +39,7 @@ protected override ValueTask<AccountContext> CreateContextAsync(ContextCreation 
 
 For a shared registration, implement `IBDTestContextFactory` in `BDTest.Test` and set `BDTestOptions.ContextFactory` before starting an [explicit run](../advanced/explicit-runs.md). Its method is `ValueTask<object> CreateContextAsync(Type contextType, ContextCreation creation)`. Return a new context assignable to `contextType`. The default protected factory delegates to this registration. Override `TestRun` on the adapter to select the run.
 
-```csharp
+```csharp title="Illustrative fragment"
 var options = new BDTestOptions
 {
     ContextFactory = new ServiceProviderContextFactory(),
@@ -56,7 +56,7 @@ Factory and service-provider registrations are frozen when the run starts. Repla
 
 Override the synchronous `ConfigureContext` hook to set defaults after construction:
 
-```csharp
+```csharp title="Illustrative fragment"
 protected override void ConfigureContext(BDTestContext<AccountContext> context)
 {
     context.TestContext.Request = new HttpRequestMessage();
@@ -69,7 +69,7 @@ The wrapper exposes `TestContext`, story text, scenario text and the current sce
 
 Implement `IBDTestContextLifetime` to initialize the context asynchronously:
 
-```csharp
+```csharp title="Illustrative fragment"
 public sealed class AccountContext : IBDTestContextLifetime, IAsyncDisposable
 {
     public async ValueTask InitializeAsync()
@@ -114,7 +114,7 @@ Cleanup must use the context object being disposed. Reading the fixture's `Conte
 
 Create the context explicitly when you do not need the adapter-managed lifetime:
 
-```csharp
+```csharp title="Illustrative fragment"
 var context = new MyContext();
 await Given(() => Prepare(context))
     .When(() => Act(context))

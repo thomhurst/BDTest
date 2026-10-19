@@ -7,13 +7,19 @@ description: Implement cancellable report byte storage and a paged run index.
 
 Register `IReportStore` and `IRunIndexStore` from `BDTest.Razor.Reports.Storage` to keep reports across restarts. One class or separate services can implement them. Register both before building the host:
 
-```csharp
+```csharp title="Illustrative fragment"
 builder.Services.AddSingleton<IReportStore>(reportStore);
 builder.Services.AddSingleton<IRunIndexStore>(runIndexStore);
 builder.Services.AddBDTestReports().BindConfiguration("BDTest");
 ```
 
 The repository owns deserialization, normalization, caching and conversion to `TestRunSummary` view models. Stores move UTF-8 JSON bytes and `RunIndexEntry` metadata. Storage contracts do not reference Razor view models.
+
+If you replace `IDataRepository` itself, implement its current raw-read, paging
+and bulk-read operations, including `GetDataForBulkRead`. `StoreData` takes the
+report ID first, and repository operations accept cancellation tokens. Bulk reads
+should reuse cached reports without adding entries or extending retention; see
+[bulk comparisons](caching-and-limits.md#bulk-report-comparisons).
 
 Configure report read authorization as shown in [Security](security.md#requiring-sign-in) before using these option snippets.
 
@@ -26,7 +32,7 @@ same version as `BDTest.Razor.Reports`:
 dotnet add package BDTest.Reports.Storage.FileSystem
 ```
 
-```csharp
+```csharp title="Illustrative fragment"
 using BDTest.Reports.Storage.FileSystem;
 
 builder.Services.AddBDTestFileSystemStorage(options =>
@@ -73,7 +79,7 @@ cached by the host, and this package does not store or clean up attachments.
 
 ## Report bytes
 
-```csharp
+```csharp title="Illustrative fragment"
 public interface IReportStore
 {
     Task<Stream?> OpenReadAsync(string reportId, CancellationToken cancellationToken);
@@ -86,7 +92,7 @@ public interface IReportStore
 
 For example, a blob implementation moves bytes without knowing the report schema:
 
-```csharp
+```csharp title="Illustrative fragment"
 public sealed class BlobReportStore(BlobContainerClient container) : IReportStore
 {
     public async Task<Stream?> OpenReadAsync(string reportId, CancellationToken cancellationToken)
@@ -125,7 +131,7 @@ This example uses `Azure`, `Azure.Storage.Blobs` and `Azure.Storage.Blobs.Specia
 
 ## Run index
 
-```csharp
+```csharp title="Illustrative fragment"
 public interface IRunIndexStore
 {
     Task<RunIndexPage> ListAsync(RunIndexQuery query, CancellationToken cancellationToken);
@@ -150,7 +156,7 @@ The sample server's [`AzureStorageDataStore.cs`](https://github.com/thomhurst/BD
 
 To share one memory store across both storage interfaces, register its concrete type and forward each interface to that singleton:
 
-```csharp
+```csharp title="Illustrative fragment"
 builder.Services.AddBDTestReports();
 builder.Services.AddSingleton<MemoryCacheBdTestDataStore>();
 builder.Services.AddSingleton<IReportStore>(services =>
@@ -177,7 +183,7 @@ Custom `IDataRepository` implementations must implement every method, including 
 
 Attachments use the independent `BDTest.Razor.Reports.Interfaces.IBDTestAttachmentStore` contract. Existing report stores require no changes. Register the attachment store before building the host; report uploads containing attachments return 400 if no store is configured.
 
-```csharp
+```csharp title="Illustrative fragment"
 using BDTest.Razor.Reports.Storage;
 using BDTest.Razor.Reports.Interfaces;
 
@@ -194,7 +200,7 @@ builder.Services.AddBDTestReports(options =>
 
 The file store creates its root if needed. Give only the host filesystem access, keep this directory outside static-file roots, and manage its lifetime and backups with the report store. Untrusted filesystem writers must not be able to create symlinks or replace directories. Only lowercase 32-character hexadecimal report/attachment IDs form storage keys; names and MIME types never form paths. Each write stages content in a random temporary file and publishes it atomically after validating the exact length. Failed or cancelled writes remove partial files and preserve previously completed content. Deletion first renames a report directory to a report-scoped `.deleting` directory. If removal fails, a later `DeleteReportAsync` call discovers and removes the remaining content, including after a server restart; failures continue to propagate until cleanup succeeds.
 
-```csharp
+```csharp title="Illustrative fragment"
 public interface IBDTestAttachmentStore
 {
     Task<Stream?> OpenReadAsync(string reportId, string attachmentId,

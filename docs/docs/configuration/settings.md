@@ -28,7 +28,7 @@ Put report labels and custom properties on `BDTestRunDescriptor`, passed to [rep
 
 ## Debugging tests
 
-```csharp
+```csharp title="Illustrative fragment"
 // Inside IBDTestConfiguration.Configure(BDTestOptions options):
 options.Debug.ShouldSkipWhenStep = true;
 ```

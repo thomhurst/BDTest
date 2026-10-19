@@ -13,7 +13,7 @@ Configure report read authorization as shown in [Security](security.md#requiring
 
 Implement `IBDTestCustomHeaderLinksProvider` to add links or text to the **Links** menu in the page header, under **Team links**:
 
-```csharp
+```csharp title="Illustrative fragment"
 public class CustomHeaderLinksProvider : IBDTestCustomHeaderLinksProvider
 {
     public IEnumerable<CustomLinkData> GetCustomLinks() => new List<CustomLinkData>
@@ -30,7 +30,7 @@ builder.Services.AddSingleton<IBDTestCustomHeaderLinksProvider, CustomHeaderLink
 
 Implement `IBDTestCustomSidebarLinksProvider` to add links for the current page to the **Links** menu in the page header. On a run's pages they appear under **This run**. Links open in a new tab.
 
-```csharp
+```csharp title="Illustrative fragment"
 public class CustomSidebarLinksProvider : IBDTestCustomSidebarLinksProvider
 {
     public IEnumerable<CustomLinkData> GetCustomLinks([AllowNull] BDTestOutputModel currentTestReport)
@@ -54,7 +54,7 @@ Use the current report to build links relevant to it, for example to the build, 
 
 Implement `IUserPersonalizer` to show the signed-in user's name, picture and personal links. This works with any authentication; the example reads Entra ID claims:
 
-```csharp
+```csharp title="Illustrative fragment"
 public class UserPersonalizer : IUserPersonalizer
 {
     public Uri? GetProfilePictureUri(HttpContext httpContext) => null;
@@ -79,7 +79,7 @@ Generate the delete URL with `Url.ReportAction("DeleteReport", new { id })` (fro
 
 Implement `IBDTestDataReceiver` to run code each time a report is accepted, for example to notify a chat channel about failures on the main branch:
 
-```csharp
+```csharp title="Illustrative fragment"
 public class FailureNotifier : IBDTestDataReceiver
 {
     private readonly HttpClient _httpClient = new();
@@ -106,7 +106,7 @@ Report tables and chart labels use the current request culture's short date patt
 
 To use each viewer's browser language, configure request localization before routing and the report endpoints:
 
-```csharp
+```csharp title="Illustrative fragment"
 var reportCultures = new[] { "en-GB", "en-US", "de-DE" };
 app.UseRequestLocalization(new RequestLocalizationOptions()
     .SetDefaultCulture("en-GB")

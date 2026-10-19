@@ -7,7 +7,7 @@ description: Build Given / When / Then chains, the rules for which steps can fol
 
 A scenario is a chain of steps that starts with `Given` or `When` and ends with `Then`. You run it by awaiting the chain or by calling `BDTestAsync()`.
 
-```csharp
+```csharp title="Illustrative fragment"
 await Given(() => Account.CreateAnAccount(100m))
     .And(() => Account.AddPayee("Alice"))
     .When(() => Account.Transfer(25m, "Alice"))
@@ -22,7 +22,7 @@ Each step is a delegate, usually a lambda that calls one method. BDTest runs the
 
 **Inherit a base class** (recommended). Use a [framework adapter](../frameworks/overview.md) such as `TUnitBDTestBase<TContext>`. A standalone `BDTestBase` has no runner method identity; it uses caller text and does not discover method attributes:
 
-```csharp
+```csharp title="Illustrative fragment"
 public class MyTests : TUnitBDTestBase<object>
 {
     [Test]
@@ -38,7 +38,7 @@ public class MyTests : TUnitBDTestBase<object>
 
 **Use a builder object.** `BDTestBuilder` is a `BDTestBase` with its own execution ID. Create a new one for each test:
 
-```csharp
+```csharp title="Illustrative fragment"
 public class MyTests
 {
     [Test]
@@ -75,7 +75,7 @@ BDTest enforces a clear structure through its types. The compiler rejects a chai
 
 Use `.And(...)` after `When` to add another action. It remains in the `When` phase and renders as `And` in step text and reports:
 
-```csharp
+```csharp title="Illustrative fragment"
 await Given(() => AccountExists())
     .When(() => SignInAsync())
     .And(() => UpdateProfileAsync())
@@ -91,7 +91,7 @@ await Given(() => AccountExists())
 
 Use `.But(...)` to express a contrast. It keeps the current phase of the chain and renders the `But` keyword in step text and reports:
 
-```csharp
+```csharp title="Illustrative fragment"
 await Given(() => AccountExists())
     .But(() => AccountIsLocked())
     .When(() => SignInAsync())
@@ -123,7 +123,7 @@ Delegate builders need a C# 13 or newer compiler (.NET SDK 9 or newer), so overl
 
 `BDTestAsync()` returns `Task<Scenario>`. The builder is also awaitable, so these are equivalent:
 
-```csharp
+```csharp title="Illustrative fragment"
 Scenario scenario = await Given(...).When(...).Then(...).BDTestAsync();
 Scenario scenario = await Given(...).When(...).Then(...);
 ```
@@ -146,7 +146,7 @@ Each continuation (for example `Then(...).And(...)`) creates an independent buil
 
 `[ScenarioText]` on the test method is the usual way to name a scenario (see [Stories and scenarios](stories-and-scenarios.md)). You can also set it on the chain:
 
-```csharp
+```csharp title="Illustrative fragment"
 await When(() => Action())
     .Then(() => Check())
     .WithScenarioText("Checking works")

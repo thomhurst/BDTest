@@ -23,7 +23,7 @@ Use `var` or the specific step kind when retaining a chain for further customiza
 
 Each concrete builder's `WithStepText` and `WithArgs` returns that same concrete type. `Then`, `AndThen` and `ButThen` also return themselves from `WithScenarioText`, so naming a scenario no longer ends the fluent chain:
 
-```csharp
+```csharp title="Illustrative fragment"
 await When(() => Submit())
     .Then(() => CheckResult())
     .WithScenarioText("Successful submission")
@@ -36,7 +36,7 @@ Caller metadata, lazy argument evaluation, independent branches and single execu
 
 Both `BDTestBase.WithContext<T>(...)` overloads are removed. Construct an inline context explicitly:
 
-```csharp
+```csharp title="Illustrative fragment"
 var context = new MyContext();
 await Given(() => Prepare(context))
     .When(() => Act(context))
