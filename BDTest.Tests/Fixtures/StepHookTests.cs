@@ -83,7 +83,7 @@ public class StepHookTests : TestRunOwner
         await Assert.That(thrown).IsSameReferenceAs(original);
         await Assert.That(observedStatus).IsEqualTo(Status.Failed);
         await Assert.That(observedException).IsEqualTo(original.Message);
-        await Assert.That(Required(Required(observed).Exception).Message).IsEqualTo(original.Message);
+        await Assert.That(Required(GetStep(Required(observed)).Exception).Message).IsEqualTo(original.Message);
         await Assert.That(calls).IsEquivalentTo(new[] { "test after failed", "run after failed", "last after" }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
         await Assert.That(GetScenario(Required(observed)).Status).IsEqualTo(Status.Failed);
         await Assert.That(Required(GetScenario(Required(observed)).Steps)[1].Status).IsEqualTo(Status.NotRun);
@@ -142,10 +142,11 @@ public class StepHookTests : TestRunOwner
         await Assert.That(thrown).IsSameReferenceAs(exception);
         await Assert.That(afterCalls).IsEqualTo(1);
         await Assert.That(observedStatus).IsEqualTo(phase == "after" ? Status.Passed : expected);
-        await Assert.That(Required(observed).Status).IsEqualTo(expected);
+        await Assert.That(Required(observed).Status).IsEqualTo(observedStatus);
+        await Assert.That(GetStep(Required(observed)).Status).IsEqualTo(expected);
         await Assert.That(GetScenario(Required(observed)).Status).IsEqualTo(expected);
         await Assert.That(stepCalls).IsEquivalentTo(phase == "before" ? Array.Empty<string>() : new[] { "step" }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
-        await Assert.That(Required(observed).Exception?.Message).IsEqualTo(expected is Status.Failed or Status.NotImplemented ? Required(exception).Message : null);
+        await Assert.That(GetStep(Required(observed)).Exception?.Message).IsEqualTo(expected is Status.Failed or Status.NotImplemented ? Required(exception).Message : null);
     }
 
     [Test]
@@ -182,8 +183,8 @@ public class StepHookTests : TestRunOwner
             await test.When(() => calls.Add("body")).Then(() => calls.Add("unreached")).BDTestAsync()).ThrowsExactly<InvalidOperationException>();
         await Assert.That(thrown).IsSameReferenceAs(exception);
         await Assert.That(calls).IsEquivalentTo(new[] { "body", "last" }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
-        await Assert.That(Required(observed).Status).IsEqualTo(Status.Failed);
-        await Assert.That(Required(Required(observed).Exception).Message).IsEqualTo(Required(exception).Message);
+        await Assert.That(GetStep(Required(observed)).Status).IsEqualTo(Status.Failed);
+        await Assert.That(Required(GetStep(Required(observed)).Exception).Message).IsEqualTo(Required(exception).Message);
 
     }
 
@@ -277,7 +278,7 @@ public class StepHookTests : TestRunOwner
                 }
             };
             var scenario = await test.When(() => NoOp()).Then(() => NoOp()).BDTestAsync();
-            await Assert.That(steps).IsEquivalentTo(Required(scenario.Steps), EqualityComparer<Step>.Default, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
+            await Assert.That(steps.Select(s => s.Guid)).IsEquivalentTo(Required(scenario.Steps.Select(s => s.Guid)), global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
             await Assert.That(steps.All(step => step.ScenarioId == scenario.Guid)).IsTrue();
             return scenario;
         });
@@ -327,7 +328,7 @@ public class StepHookTests : TestRunOwner
         var exception = await Assert.That(async () =>
             await builder.BDTestAsync().WaitAsync(TimeSpan.FromSeconds(10))).ThrowsExactly<TimeoutException>();
 
-        await Assert.That(Required(Required(observed).Exception).Message).IsEqualTo(Required(exception).Message);
+        await Assert.That(Required(GetStep(Required(observed)).Exception).Message).IsEqualTo(Required(exception).Message);
         await Assert.That(GetScenario(Required(observed)).Status).IsEqualTo(Status.Failed);
         await Assert.That(Required(GetScenario(Required(observed)).Steps)[1].Status).IsEqualTo(Status.NotRun);
     }
@@ -351,6 +352,7 @@ public class StepHookTests : TestRunOwner
         await Assert.That(Required(exception).Message).StartsWith("Scenario");
         await Assert.That(calls).IsEquivalentTo(new[] { "after" }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
         await Assert.That(Required(observed).TimedOut).IsTrue();
+        await Assert.That(GetStep(Required(observed)).TimedOut).IsTrue();
         await Assert.That(GetScenario(Required(observed)).Status).IsEqualTo(Status.Failed);
     }
 
@@ -399,8 +401,9 @@ public class StepHookTests : TestRunOwner
         await Assert.That(Required(exception).Message).StartsWith("Scenario");
         await Assert.That(calls).IsEquivalentTo(new[] { "after" }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
         await Assert.That(Required(observed).TimedOut).IsTrue();
-        await Assert.That(Required(observed).Status).IsEqualTo(Status.Failed);
-        await Assert.That(Required(Required(observed).Exception).Message).IsEqualTo(Required(exception).Message);
+        await Assert.That(GetStep(Required(observed)).TimedOut).IsTrue();
+        await Assert.That(GetStep(Required(observed)).Status).IsEqualTo(Status.Failed);
+        await Assert.That(Required(GetStep(Required(observed)).Exception).Message).IsEqualTo(Required(exception).Message);
         await Assert.That(GetScenario(Required(observed)).TimedOut).IsTrue();
         await Assert.That(GetScenario(Required(observed)).Status).IsEqualTo(Status.Failed);
         await Assert.That(Required(GetScenario(Required(observed)).Steps)[1].Status).IsEqualTo(Status.NotRun);
@@ -427,7 +430,7 @@ public class StepHookTests : TestRunOwner
 
         await Assert.That(thrown).IsSameReferenceAs(failure);
         await Assert.That(Required(observed).TimedOut).IsFalse();
-        await Assert.That(Required(Required(observed).Exception).Message).IsEqualTo(failure.Message);
+        await Assert.That(Required(GetStep(Required(observed)).Exception).Message).IsEqualTo(failure.Message);
         await Assert.That(GetScenario(Required(observed)).TimedOut).IsFalse();
         await Assert.That(GetScenario(Required(observed)).Status).IsEqualTo(Status.Failed);
 
@@ -476,9 +479,10 @@ public class StepHookTests : TestRunOwner
 
         await Assert.That(Required(exception).Message).StartsWith("Scenario");
         await Assert.That(calls).IsEquivalentTo(new[] { "body", "after" }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
-        await Assert.That(Required(observed).TimedOut).IsTrue();
-        await Assert.That(Required(observed).Status).IsEqualTo(Status.Failed);
-        await Assert.That(Required(Required(observed).Exception).Message).IsEqualTo(Required(exception).Message);
+        await Assert.That(Required(observed).TimedOut).IsFalse();
+        await Assert.That(GetStep(Required(observed)).TimedOut).IsTrue();
+        await Assert.That(GetStep(Required(observed)).Status).IsEqualTo(Status.Failed);
+        await Assert.That(Required(GetStep(Required(observed)).Exception).Message).IsEqualTo(Required(exception).Message);
         await Assert.That(GetScenario(Required(observed)).TimedOut).IsTrue();
         await Assert.That(GetScenario(Required(observed)).Status).IsEqualTo(Status.Failed);
         if (!finalStep)

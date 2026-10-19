@@ -38,11 +38,11 @@ public class StoryTextLookupTests
         using (Assert.Multiple())
         {
             await Assert.That(test.GetStoryText()).IsEqualTo(expected);
-            await Assert.That(scenario.GetStoryText()).IsEqualTo(expected ?? DefaultValues.StoryTextNotDefined);
+            await Assert.That(scenario.StoryText).IsEqualTo(expected ?? DefaultValues.StoryTextNotDefined);
             await Assert.That(reportedStory).IsNotNull();
             if (expected == null)
             {
-                await Assert.That(Required(reportedStory).Type).IsEqualTo(JTokenType.Null);
+                await Assert.That(Required(reportedStory).ToString()).IsEqualTo(DefaultValues.StoryTextNotDefined);
             }
             else
             {

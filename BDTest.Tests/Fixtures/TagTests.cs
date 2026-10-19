@@ -31,7 +31,7 @@ public class TagTests : TaggedStoryBase
         var scenario = await builder.BDTestAsync();
         await Assert.That(scenario.Tags).IsEquivalentTo(Required(builder.Tags), global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
 
-        var report = ReportJson.DeserializeObject<BDTestOutputModel>(BDTestJsonHelper.GetTestJsonData(null, TestRun));
+        var report = BDTestJsonHelper.DeserializeReport(BDTestJsonHelper.GetTestJsonData(null, TestRun));
         await Assert.That(Required(report.Scenarios).Single(item => item.Guid == scenario.Guid).Tags).IsEquivalentTo(Required(scenario.Tags), global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 
@@ -71,7 +71,7 @@ public class TagTests : TaggedStoryBase
     public async Task Unexecuted_scenarios_include_tags_in_json()
     {
         var builder = When(() => NoOp()).Then(() => NoOp());
-        var report = ReportJson.DeserializeObject<BDTestOutputModel>(BDTestJsonHelper.GetTestJsonData(null, TestRun));
+        var report = BDTestJsonHelper.DeserializeReport(BDTestJsonHelper.GetTestJsonData(null, TestRun));
         await Assert.That(Required(report.NotRun).Single().Tags).IsEquivalentTo(Required(builder.Tags), global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
         await Assert.That(report.NotRun.Single().Tags).Contains("not-run");
     }

@@ -12,7 +12,7 @@ public class NullableContractTests
     [Test]
     public async Task Json_null_has_a_nullable_result_for_both_readers()
     {
-        await Assert.That(BDTestJsonHelper.Serialize(null)).IsEqualTo("null");
+        await Assert.That(BDTestJsonHelper.Serialize((BDTest.Maps.BDTestOutputModel?)null)).IsEqualTo("null");
         await Assert.That(BDTestJsonHelper.Deserialize("null")).IsNull();
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes("null"));
         await Assert.That(await BDTestJsonHelper.DeserializeAsync(stream)).IsNull();

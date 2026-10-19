@@ -2,7 +2,6 @@ using BDTest.Engine;
 using BDTest.Helpers;
 using BDTest.Test;
 using BDTest.Contracts;
-using NUnit.Framework;
 
 namespace BDTest.Tests.Fixtures;
 
@@ -32,7 +31,7 @@ public class SnapshotPublicationTests
         int countWhileReading;
         try
         {
-            Assert.That(cleanupReached.Wait(TimeSpan.FromSeconds(10)), Is.True);
+            await Assert.That(cleanupReached.Wait(TimeSpan.FromSeconds(10))).IsTrue();
             lock (run.Store.Gate)
             {
                 finishCleanup.Set();
@@ -42,9 +41,9 @@ public class SnapshotPublicationTests
         }
         finally { finishCleanup.Set(); }
         await execute.WaitAsync(TimeSpan.FromSeconds(10));
-        Assert.That(completedWhileReading, Is.False);
-        Assert.That(countWhileReading, Is.Zero);
-        Assert.That(run.Scenarios.Single().Attempts, Has.Count.EqualTo(1));
+        await Assert.That(completedWhileReading).IsFalse();
+        await Assert.That(countWhileReading).IsEqualTo(0);
+        await Assert.That(run.Scenarios.Single().Attempts).Count().IsEqualTo(1);
     }
 
     [Test]
@@ -63,18 +62,19 @@ public class SnapshotPublicationTests
                 started.Set();
                 return new Scenario(new(), definition, outline);
             }, CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Default);
-            Assert.That(started.Wait(TimeSpan.FromSeconds(10)), Is.True);
+            RequireCondition(started.Wait(TimeSpan.FromSeconds(10)), "The background operation did not start.");
             publish.Wait(TimeSpan.FromMilliseconds(200));
             countWhileReading = outline.ExecutionExamples.Count;
         }
         var example = await publish.WaitAsync(TimeSpan.FromSeconds(10));
-        Assert.That(countWhileReading, Is.Zero);
-        Assert.That(ResultSnapshot.Create(outline).Examples.Single().Guid, Is.EqualTo(example.Guid));
+        await Assert.That(countWhileReading).IsEqualTo(0);
+        await Assert.That(ResultSnapshot.Create(outline).Examples.Single().Guid).IsEqualTo(example.Guid);
     }
 
-    [TestCase("inline")]
-    [TestCase("attached")]
-    [TestCase("reset")]
+    [Test]
+    [Arguments("inline")]
+    [Arguments("attached")]
+    [Arguments("reset")]
     public async Task Diagnostic_publication_waits_for_snapshot_readers(string operation)
     {
         using var run = BDTestRun.Start();
@@ -101,24 +101,25 @@ public class SnapshotPublicationTests
                 if (operation == "reset") step.ResetData();
                 else step.SetStepText(evaluateArguments: true);
             }, CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Default);
-            Assert.That(started.Wait(TimeSpan.FromSeconds(10)), Is.True);
+            RequireCondition(started.Wait(TimeSpan.FromSeconds(10)), "The background operation did not start.");
             completedWhileReading = publish.Wait(TimeSpan.FromMilliseconds(200));
             countWhileReading = ResultSnapshot.Create(step).Diagnostics.Count;
         }
         await publish.WaitAsync(TimeSpan.FromSeconds(10));
-        Assert.That(completedWhileReading, Is.False);
-        Assert.That(countWhileReading, Is.EqualTo(operation == "reset" ? 1 : 0));
-        Assert.That(ResultSnapshot.Create(step).Diagnostics, Has.Count.EqualTo(operation == "reset" ? 0 : 1));
-        Assert.That(before.Diagnostics, Has.Count.EqualTo(operation == "reset" ? 1 : 0));
-        Assert.That(readerHeldGate, Is.False, "User argument readers must run outside the snapshot gate.");
+        await Assert.That(completedWhileReading).IsFalse();
+        await Assert.That(countWhileReading).IsEqualTo(operation == "reset" ? 1 : 0);
+        await Assert.That(ResultSnapshot.Create(step).Diagnostics).Count().IsEqualTo(operation == "reset" ? 0 : 1);
+        await Assert.That(before.Diagnostics).Count().IsEqualTo(operation == "reset" ? 1 : 0);
+        await Assert.That(readerHeldGate).IsFalse().Because("User argument readers must run outside the snapshot gate.");
     }
 
     [BDTest.Attributes.StepText("value: {0}")]
     private static void DiagnosticStep(string value) { }
 
-    [TestCase(1)]
-    [TestCase(-5)]
-    public void Saved_report_displays_offset_timestamps_in_utc(int offsetHours)
+    [Test]
+    [Arguments(1)]
+    [Arguments(-5)]
+    public async Task Saved_report_displays_offset_timestamps_in_utc(int offsetHours)
     {
         var start = new DateTimeOffset(2026, 10, 19, 12, 0, 0, TimeSpan.FromHours(offsetHours));
         var scenario = new ScenarioResult("scenario", "report", "story", "scenario", Status.Passed,
@@ -128,9 +129,9 @@ public class SnapshotPublicationTests
         var restored = BDTestJsonHelper.DeserializeReport(BDTestJsonHelper.Serialize(report));
         var html = BDTestHtmlHelper.GenerateHtmlReport(restored);
         var utc = start.ToUniversalTime();
-        Assert.That(html, Does.Contain($"{utc:yyyy-MM-dd HH:mm:ss} → {utc.AddMinutes(1):HH:mm:ss} UTC"));
-        Assert.That(html, Does.Contain($"{utc:yyyy-MM-dd HH:mm:ss.fff} UTC"));
-        Assert.That(restored.Scenarios.Single().StartTime.Offset, Is.EqualTo(start.Offset));
+        await Assert.That(html).Contains($"{utc:yyyy-MM-dd HH:mm:ss} → {utc.AddMinutes(1):HH:mm:ss} UTC");
+        await Assert.That(html).Contains($"{utc:yyyy-MM-dd HH:mm:ss.fff} UTC");
+        await Assert.That(restored.Scenarios.Single().StartTime.Offset).IsEqualTo(start.Offset);
     }
 }
 

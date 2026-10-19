@@ -59,7 +59,7 @@ public class SkippedScenarioTests : RunTestBase
         await Assert.That(Required(scenario.Steps).Select(s => s.Status)).IsEquivalentTo(new[] { Status.Passed, Status.Skipped, Status.Skipped }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
         await Assert.That(scenario.RetryCount).IsZero();
         await Assert.That(scenario.Exception).IsNull();
-        await Assert.That(Required(scenario.Steps).All(s => s.Runnable == null)).IsTrue();
+        await Assert.That(TestRun.Store.ScenariosByInternalId[scenario.Guid].ExecutionSteps.All(s => s.Runnable == null)).IsTrue();
     }
 
     [Test]
@@ -78,7 +78,7 @@ public class SkippedScenarioTests : RunTestBase
 
         await Assert.That((Required(scenario.Steps).Skip(2).Select(s => s.Status)).All(item => Equals(item, Status.Skipped))).IsTrue();
         await Assert.That(formatted).IsEqualTo(2);
-        await Assert.That(Required(scenario.Steps).All(s => s.Runnable == null && s.OverriddenStepText == null)).IsTrue();
+        await Assert.That(TestRun.Store.ScenariosByInternalId[scenario.Guid].ExecutionSteps.All(s => s.Runnable == null && s.OverriddenStepText == null)).IsTrue();
     }
 
     private static void ThrowSkip() => throw new ProbeSkipException();

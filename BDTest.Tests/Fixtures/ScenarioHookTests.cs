@@ -8,12 +8,13 @@ namespace BDTest.Tests.Fixtures;
 
 public class ScenarioHookTests
 {
-    [TestCase(false, "before")]
-    [TestCase(true, "before")]
-    [TestCase(false, "step")]
-    [TestCase(true, "step")]
-    [TestCase(false, "after")]
-    [TestCase(true, "after")]
+    [Test]
+    [Arguments(false, "before")]
+    [Arguments(true, "before")]
+    [Arguments(false, "step")]
+    [Arguments(true, "step")]
+    [Arguments(false, "after")]
+    [Arguments(true, "after")]
     public async Task Hooks_keep_the_original_context_when_it_is_replaced_or_removed(bool remove, string boundary)
     {
         var contexts = new List<ScenarioHookContext>();
@@ -37,11 +38,11 @@ public class ScenarioHookTests
             }
         };
         await fixture.When(() => ChangeDuringStep()).Then(() => Complete());
-        Assert.That(contexts, Has.Count.EqualTo(4));
-        Assert.That(contexts.Select(s => s.Context), Is.All.SameAs(contexts[0].Context));
-        Assert.That(contexts.Take(2).Select(s => s.Scenario.Status), Is.All.EqualTo(Status.Pending));
-        Assert.That(contexts.Skip(2).Select(s => s.Scenario.Status), Is.All.EqualTo(Status.Passed));
-        Assert.That(fixture.CreatedContexts, Is.EqualTo(1), "Reading a hook must not create a replacement context.");
+        await Assert.That(contexts).Count().IsEqualTo(4);
+        foreach (var context in contexts) await Assert.That(context.Context).IsSameReferenceAs(contexts[0].Context);
+        foreach (var context in contexts.Take(2)) await Assert.That(context.Scenario.Status).IsEqualTo(Status.Pending);
+        foreach (var context in contexts.Skip(2)) await Assert.That(context.Scenario.Status).IsEqualTo(Status.Passed);
+        await Assert.That(fixture.CreatedContexts).IsEqualTo(1).Because("Reading a hook must not create a replacement context.");
 
         void ChangeDuringStep() { if (boundary == "step") ChangeContext(); }
         void ChangeContext()

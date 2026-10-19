@@ -36,7 +36,7 @@ public class TimeoutTests : RunTestBase
         await Assert.That(scenario.Steps[0].EndTime).IsGreaterThan(scenario.Steps[0].StartTime);
         await Assert.That(scenario.Steps[1].Status).IsEqualTo(Status.NotRun);
         await Assert.That(_laterSteps).IsZero();
-        var restored = ReportJson.DeserializeObject<Scenario>(ReportJson.SerializeObject(scenario));
+        var restored = ReportJson.DeserializeObject<BDTest.Contracts.ScenarioResult>(ReportJson.SerializeObject(scenario));
         await Assert.That(restored.TimedOut).IsTrue();
         await Assert.That(Required(restored.Steps)[0].TimedOut).IsTrue();
     }

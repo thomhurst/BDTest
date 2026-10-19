@@ -337,10 +337,28 @@ public partial class ReportUploadTests
     }
 
     [Test]
+    public async Task Legacy_host_rejects_versioned_production_uploads_until_host_migration()
+    {
+        using var run = BDTestRun.Start();
+        await using var server = await UploadServer.Start();
+        server.Client.DefaultRequestHeaders.Add("X-BDTest-Upload-Key", Key);
+        await new VersionedFixture(run).When(() => { }).Then(() => { }).BDTestAsync();
+        var exception = await Assert.That(async () =>
+            await BDTestReportServer.SendDataAndGetReportUriAsync(server.Client.BaseAddress!, null, server.Client, run)).ThrowsExactly<HttpRequestException>();
+        await Assert.That(exception!.StatusCode).IsEqualTo(HttpStatusCode.BadRequest);
+        await Assert.That(server.Store.Received).IsEmpty();
+    }
+
+    private sealed class VersionedFixture(BDTestRun run) : BDTestBase
+    {
+        public override BDTestRun TestRun => run;
+    }
+
+    [Test]
     [Arguments(false)]
     [Arguments(true)]
     [NotInParallel]
-    public async Task ReportClientRoundTripsPlainJsonThroughServer(bool injectedClient)
+    public async Task LegacyPayloadRoundTripsThroughServer(bool injectedClient)
     {
         using var run = BDTestRun.Start();
         var connectionClosed = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -361,7 +379,7 @@ public partial class ReportUploadTests
             var helperJson = BDTestJsonHelper.GetTestJsonData(descriptor, run);
 
             await Assert.That(helperJson).DoesNotContain("\"$id\"").And.DoesNotContain("\"$ref\"");
-            var helperReport = ReportJson.DeserializeObject<BDTestOutputModel>(helperJson);
+            var helperReport = BDTestJsonHelper.DeserializeReport(helperJson);
             var helperScenario = Required(helperReport.Scenarios).Single(item => item.Guid == scenario.Guid);
             await Assert.That(Required(helperScenario.Steps)[1]).IsNotSameReferenceAs(helperScenario.Steps[0]);
 

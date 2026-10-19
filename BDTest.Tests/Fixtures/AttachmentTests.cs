@@ -26,7 +26,7 @@ public class AttachmentTests
         await Assert.That(new StreamReader(content).ReadToEnd()).IsEqualTo("step.txt");
         await Assert.That(attachment.Length).IsEqualTo(8);
         await Assert.That(attachment.AttemptNumber).IsEqualTo(1);
-        var restoredScenario = Required(Required(BDTestJsonHelper.Deserialize(BDTestJsonHelper.GetTestJsonData(null, run))).Scenarios).Single();
+        var restoredScenario = Required(Required(BDTestJsonHelper.DeserializeReport(BDTestJsonHelper.GetTestJsonData(null, run))).Scenarios).Single();
         await Assert.That(Required(restoredScenario.Attachments).Select(file => file.Name)).IsEquivalentTo((new[] { "setup.txt", "teardown.txt" }).Cast<string?>(), global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 
@@ -60,7 +60,7 @@ public class AttachmentTests
         var fixture = new Capture(run, "test");
         await fixture.When(() => fixture.Attach("private-file-content")).Then(() => Done()).BDTestAsync();
         var json = BDTestJsonHelper.GetTestJsonData(null, run);
-        var restored = Required(Required(Required(Required(BDTestJsonHelper.Deserialize(json)).Scenarios).Single().Steps)[0].Attachments).Single();
+        var restored = Required(Required(Required(Required(BDTestJsonHelper.DeserializeReport(json)).Scenarios).Single().Steps)[0].Attachments).Single();
         await Assert.That(restored.Name).IsEqualTo("private-file-content");
         await Assert.That(restored.MimeType).IsEqualTo("text/plain");
         await Assert.That(restored.AttemptNumber).IsEqualTo(1);
@@ -345,7 +345,7 @@ public class AttachmentTests
         var secondFixture = new Capture(second, "same-id");
         var secondScenario = await secondFixture.When(() => saved.Attach("saved", new byte[] { 1 }, "text/plain"))
             .Then(() => Done()).BDTestAsync();
-        await Assert.That(Required(firstScenario.Attachments).Single().Name).IsEqualTo("saved");
+        await Assert.That(Required(first.Scenarios.Single().Attachments).Single().Name).IsEqualTo("saved");
         await Assert.That(secondScenario.Attachments).IsEmpty();
         await Assert.That(Required(secondScenario.Steps).SelectMany(step => Required(step.Attachments))).IsEmpty();
     }

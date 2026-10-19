@@ -32,9 +32,9 @@ public class StepTextTests : RunTestBase
         await Assert.That(scenario.Steps[1].StepText).IsEqualTo("When my name is Tom Longhurst");
         await Assert.That(scenario.Steps[2].StepText).IsEqualTo("Then I have a custom step 3");
 
-        await Assert.That(Required(JsonHelper.GetTestDynamicJsonObject(TestRun).SelectToken("$.Scenarios[0].Steps[0].StepText")).ToString()).IsEqualTo("Given I have a custom step 1");
-        await Assert.That(Required(JsonHelper.GetTestDynamicJsonObject(TestRun).SelectToken("$.Scenarios[0].Steps[1].StepText")).ToString()).IsEqualTo("When my name is Tom Longhurst");
-        await Assert.That(Required(JsonHelper.GetTestDynamicJsonObject(TestRun).SelectToken("$.Scenarios[0].Steps[2].StepText")).ToString()).IsEqualTo("Then I have a custom step 3");
+        await Assert.That(Required(JsonHelper.GetTestDynamicJsonObject(TestRun).SelectToken("$.scenarios[0].steps[0].stepText")).ToString()).IsEqualTo("Given I have a custom step 1");
+        await Assert.That(Required(JsonHelper.GetTestDynamicJsonObject(TestRun).SelectToken("$.scenarios[0].steps[1].stepText")).ToString()).IsEqualTo("When my name is Tom Longhurst");
+        await Assert.That(Required(JsonHelper.GetTestDynamicJsonObject(TestRun).SelectToken("$.scenarios[0].steps[2].stepText")).ToString()).IsEqualTo("Then I have a custom step 3");
     }
 
     [Test]
@@ -50,9 +50,9 @@ public class StepTextTests : RunTestBase
         await Assert.That(scenario.Steps[1].StepText).IsEqualTo("When my name is Tom Longhurst");
         await Assert.That(scenario.Steps[2].StepText).IsEqualTo("Then I have a custom step 3");
 
-        await Assert.That(Required(JsonHelper.GetTestDynamicJsonObject(TestRun).SelectToken("$.Scenarios[0].Steps[0].StepText")).ToString()).IsEqualTo("Given I have a custom step 1");
-        await Assert.That(Required(JsonHelper.GetTestDynamicJsonObject(TestRun).SelectToken("$.Scenarios[0].Steps[1].StepText")).ToString()).IsEqualTo("When my name is Tom Longhurst");
-        await Assert.That(Required(JsonHelper.GetTestDynamicJsonObject(TestRun).SelectToken("$.Scenarios[0].Steps[2].StepText")).ToString()).IsEqualTo("Then I have a custom step 3");
+        await Assert.That(Required(JsonHelper.GetTestDynamicJsonObject(TestRun).SelectToken("$.scenarios[0].steps[0].stepText")).ToString()).IsEqualTo("Given I have a custom step 1");
+        await Assert.That(Required(JsonHelper.GetTestDynamicJsonObject(TestRun).SelectToken("$.scenarios[0].steps[1].stepText")).ToString()).IsEqualTo("When my name is Tom Longhurst");
+        await Assert.That(Required(JsonHelper.GetTestDynamicJsonObject(TestRun).SelectToken("$.scenarios[0].steps[2].stepText")).ToString()).IsEqualTo("Then I have a custom step 3");
     }
         
     [Test]
@@ -73,10 +73,10 @@ public class StepTextTests : RunTestBase
         await Assert.That(scenario.Steps[2].StepText).IsEqualTo("Then " + text3);
         await Assert.That(scenario.Steps[3].StepText).IsEqualTo("And " + text3);
 
-        await Assert.That(Required(JsonHelper.GetTestDynamicJsonObject(TestRun).SelectToken("$.Scenarios[0].Steps[0].StepText")).ToString()).IsEqualTo("Given " + text1);
-        await Assert.That(Required(JsonHelper.GetTestDynamicJsonObject(TestRun).SelectToken("$.Scenarios[0].Steps[1].StepText")).ToString()).IsEqualTo("When " + text2);
-        await Assert.That(Required(JsonHelper.GetTestDynamicJsonObject(TestRun).SelectToken("$.Scenarios[0].Steps[2].StepText")).ToString()).IsEqualTo("Then " + text3);
-        await Assert.That(Required(JsonHelper.GetTestDynamicJsonObject(TestRun).SelectToken("$.Scenarios[0].Steps[3].StepText")).ToString()).IsEqualTo("And " + text3);
+        await Assert.That(Required(JsonHelper.GetTestDynamicJsonObject(TestRun).SelectToken("$.scenarios[0].steps[0].stepText")).ToString()).IsEqualTo("Given " + text1);
+        await Assert.That(Required(JsonHelper.GetTestDynamicJsonObject(TestRun).SelectToken("$.scenarios[0].steps[1].stepText")).ToString()).IsEqualTo("When " + text2);
+        await Assert.That(Required(JsonHelper.GetTestDynamicJsonObject(TestRun).SelectToken("$.scenarios[0].steps[2].stepText")).ToString()).IsEqualTo("Then " + text3);
+        await Assert.That(Required(JsonHelper.GetTestDynamicJsonObject(TestRun).SelectToken("$.scenarios[0].steps[3].stepText")).ToString()).IsEqualTo("And " + text3);
     }
         
     [Test]
@@ -91,9 +91,9 @@ public class StepTextTests : RunTestBase
         await Assert.That(scenario.Steps[1].StepText).IsEqualTo("When step 2 without a step text attribute");
         await Assert.That(scenario.Steps[2].StepText).IsEqualTo("Then step 3 Without A StepTextAttribute and Hyphens");
 
-        await Assert.That(Required(JsonHelper.GetTestDynamicJsonObject(TestRun).SelectToken("$.Scenarios[0].Steps[0].StepText")).ToString()).IsEqualTo("Given step 1 without a step text attribute");
-        await Assert.That(Required(JsonHelper.GetTestDynamicJsonObject(TestRun).SelectToken("$.Scenarios[0].Steps[1].StepText")).ToString()).IsEqualTo("When step 2 without a step text attribute");
-        await Assert.That(Required(JsonHelper.GetTestDynamicJsonObject(TestRun).SelectToken("$.Scenarios[0].Steps[2].StepText")).ToString()).IsEqualTo("Then step 3 Without A StepTextAttribute and Hyphens");
+        await Assert.That(Required(JsonHelper.GetTestDynamicJsonObject(TestRun).SelectToken("$.scenarios[0].steps[0].stepText")).ToString()).IsEqualTo("Given step 1 without a step text attribute");
+        await Assert.That(Required(JsonHelper.GetTestDynamicJsonObject(TestRun).SelectToken("$.scenarios[0].steps[1].stepText")).ToString()).IsEqualTo("When step 2 without a step text attribute");
+        await Assert.That(Required(JsonHelper.GetTestDynamicJsonObject(TestRun).SelectToken("$.scenarios[0].steps[2].stepText")).ToString()).IsEqualTo("Then step 3 Without A StepTextAttribute and Hyphens");
     }
         
     [Test]

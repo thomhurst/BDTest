@@ -274,7 +274,7 @@ public partial class ReportUploadTests
         var foreign = new AttachmentFixture(other);
         var foreignScenario = await foreign.When(() => foreign.Attachments.Attach("other", new byte[] { 1 }, "text/plain"))
             .Then(() => { }).BDTestAsync();
-        Required(scenario.Attachments).Add(Required(Required(foreignScenario.Steps)[0].Attachments).Single());
+        run.Store.ScenariosByInternalId[scenario.Guid].ExecutionAttachments.Add(other.Store.ScenariosByInternalId[foreignScenario.Guid].ExecutionSteps[0].Attachments!.Single());
         using var handler = new AttachmentHttpHandler(async request =>
         {
             await Assert.That(request.Method).IsEqualTo(HttpMethod.Get);

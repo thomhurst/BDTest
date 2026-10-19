@@ -77,7 +77,7 @@ public class ScenarioOutlineTests : RunContextTestBase<ScenarioOutlineTests.RowC
         await Assert.That(outline.Status).IsEqualTo(Status.Failed);
         await Assert.That(Required(outline.Examples).Select(row => row.Status)).IsEquivalentTo(new[] { Status.Failed, Status.Passed }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
         await Assert.That(outline.Examples[0].RetryCount).IsEqualTo(1);
-        foreach (var result in new[] { outline, ReportJson.DeserializeObject<Scenario>(ReportJson.SerializeObject(outline)) })
+        foreach (var result in new[] { outline, ReportJson.DeserializeObject<BDTest.Contracts.ScenarioResult>(ReportJson.SerializeObject(outline)) })
         {
             var failedRow = Required(result.Examples)[0];
             await Assert.That(failedRow.Attempts).Count().IsEqualTo(2);
@@ -88,7 +88,7 @@ public class ScenarioOutlineTests : RunContextTestBase<ScenarioOutlineTests.RowC
             await Assert.That(failedRow.EndTime).IsEqualTo(failedRow.Attempts.Last().EndTime);
             await Assert.That(failedRow.TimeTaken).IsGreaterThan(TimeSpan.Zero);
             await Assert.That(failedRow.TimeTaken).IsEqualTo(failedRow.Attempts.Last().TimeTaken);
-            var razor = await ReportHandlerEncodingTests.RenderAsync("/Views/Shared/_ScenarioExamples.cshtml", result);
+            var razor = await ReportHandlerEncodingTests.RenderAsync("/Views/Shared/_ScenarioExamples.cshtml", TestRun.Store.ScenariosByInternalId[result.Guid]);
             await Assert.That(razor).Contains($"title=\"{failedRow.TimeTaken}\"");
         }
         await Assert.That(BDTestHtmlHelper.GetTestHtmlReport(null, TestRun)).Contains($"title=\"{outline.Examples[0].TimeTaken}\">");
@@ -116,7 +116,7 @@ public class ScenarioOutlineTests : RunContextTestBase<ScenarioOutlineTests.RowC
         foreach (var result in new[] { outline, ReportJson.DeserializeObject<BDTest.Contracts.ScenarioResult>(ReportJson.SerializeObject(outline)) })
         {
             await Assert.That(Required(result.Examples)[0].Exception).IsNotNull();
-            var razor = await ReportHandlerEncodingTests.RenderAsync("/Views/Shared/_ScenarioExamples.cshtml", result);
+            var razor = await ReportHandlerEncodingTests.RenderAsync("/Views/Shared/_ScenarioExamples.cshtml", TestRun.Store.ScenariosByInternalId[result.Guid]);
             await Assert.That(razor).Contains(encodedError);
         }
         var standalone = System.Text.RegularExpressions.Regex.Match(BDTestHtmlHelper.GetTestHtmlReport(null, TestRun),
@@ -178,9 +178,9 @@ public class ScenarioOutlineTests : RunContextTestBase<ScenarioOutlineTests.RowC
 
         await Assert.That(outline.Examples[1].Output).Contains("row output 2").And.DoesNotContain("row output 1");
         await Assert.That(outline.Examples.All(row => Required(row.Steps).All(step => step.ScenarioId == row.Guid))).IsTrue();
-        await Assert.That(BDTestUtil.GetScenarios(TestRun).Where(x => x.FrameworkTestId == _executionId)).IsEquivalentTo(new[] { outline }, EqualityComparer<Scenario>.Default, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(BDTestUtil.GetScenarios(TestRun).Where(x => x.FrameworkTestId == _executionId)).IsEquivalentTo(new[] { outline }, EqualityComparer<BDTest.Contracts.ScenarioResult>.Create((left, right) => new KellermanSoftware.CompareNetObjects.CompareLogic().Compare(left, right).AreEqual, _ => 0), global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
         await Assert.That(BDTestUtil.GetNotRunScenarios(TestRun).Where(x => x.TestId == _executionId)).IsEmpty();
-        var restored = ReportJson.DeserializeObject<BDTestOutputModel>(BDTestJsonHelper.GetTestJsonData(null, TestRun));
+        var restored = BDTestJsonHelper.DeserializeReport(BDTestJsonHelper.GetTestJsonData(null, TestRun));
         var restoredOutline = Required(restored.Scenarios).Single(scenario => scenario.FrameworkTestId == _executionId);
         await Assert.That(Required(restoredOutline.Tags)).IsEquivalentTo(Required(outline.Tags), global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
         await Assert.That(Required(restoredOutline.Examples).All(row => row.Tags.SequenceEqual(outline.Tags))).IsTrue();
@@ -247,7 +247,7 @@ public class ScenarioOutlineTests : RunContextTestBase<ScenarioOutlineTests.RowC
         await Assert.That(Required(outline.Examples).Select(row => row.RetryCount)).IsEquivalentTo(new[] { 1, 0 }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
         await Assert.That(outline.Examples.All(row => row.Status == Status.Passed)).IsTrue();
         await Assert.That(_contexts.Distinct().Count()).IsEqualTo(3);
-        await Assert.That(amendmentScenarios).IsEquivalentTo(new Scenario?[] { null, outline.Examples[0], null }, EqualityComparer<Scenario?>.Default, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(amendmentScenarios).IsEquivalentTo(new Scenario?[] { null, TestRun.Store.ScenariosByInternalId[outline.Examples[0].Guid], null }, EqualityComparer<Scenario?>.Default, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
         var html = BDTestHtmlHelper.GetTestHtmlReport(null, TestRun);
         var table = System.Text.RegularExpressions.Regex.Match(html,
             $"<table class=\"examples\" id=\"examples-{outline.Guid}\">.*?</table>",
@@ -255,9 +255,9 @@ public class ScenarioOutlineTests : RunContextTestBase<ScenarioOutlineTests.RowC
         await Assert.That(table).Contains("<th>Retries</th>");
         await Assert.That(table).Contains(">Passed</span></td><td class=\"mono\">1</td>");
         await Assert.That(table).Contains(">Passed</span></td><td class=\"mono\">0</td>");
-        foreach (var result in new[] { outline, ReportJson.DeserializeObject<Scenario>(ReportJson.SerializeObject(outline)) })
+        foreach (var result in new[] { outline, ReportJson.DeserializeObject<BDTest.Contracts.ScenarioResult>(ReportJson.SerializeObject(outline)) })
         {
-            var razor = await ReportHandlerEncodingTests.RenderAsync("/Views/Shared/_ScenarioExamples.cshtml", result);
+            var razor = await ReportHandlerEncodingTests.RenderAsync("/Views/Shared/_ScenarioExamples.cshtml", TestRun.Store.ScenariosByInternalId[result.Guid]);
             await Assert.That(razor).Contains("Retry history");
             await Assert.That(razor).Contains("retry first example");
             await Assert.That(System.Net.WebUtility.HtmlDecode(razor)).Contains(Required(Required(Required(Required(result.Examples)[0].Attempts)[0].Exception).StackTrace));
@@ -376,8 +376,8 @@ public class ScenarioOutlineTests : RunContextTestBase<ScenarioOutlineTests.RowC
             await Assert.That(Required(outline.Examples).Select(row => row.Status)).IsEquivalentTo(new[] { Status.Failed, Status.Passed }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
             await Assert.That(_visited).IsEquivalentTo(new[] { 2 }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
             var pending = BDTestUtil.GetNotRunScenarios(TestRun).Select(item => item.ScenarioId).ToArray();
-            await Assert.That(pending).DoesNotContain(rejected?.Guid);
-            await Assert.That(pending).Contains(unrelated.Guid);
+            await Assert.That(pending).DoesNotContain(Required(rejected?.Guid));
+            await Assert.That(pending).Contains(Required(unrelated.Guid));
         }
         finally
         {
@@ -424,7 +424,7 @@ public class ScenarioOutlineTests : RunContextTestBase<ScenarioOutlineTests.RowC
         {
             await Assert.That(row.Exception).IsNull();
             await Assert.That(outline.Exception).IsNull();
-            var restored = ReportJson.DeserializeObject<Scenario>(ReportJson.SerializeObject(outline));
+            var restored = ReportJson.DeserializeObject<BDTest.Contracts.ScenarioResult>(ReportJson.SerializeObject(outline));
             await Assert.That(Required(restored.Examples)[0].Exception).IsNull();
             await Assert.That(restored.Exception).IsNull();
         }
@@ -462,8 +462,8 @@ public class ScenarioOutlineTests : RunContextTestBase<ScenarioOutlineTests.RowC
 
         await Assert.That((factoryScenarios).All(item => item is null)).IsTrue();
         var outline = BDTestUtil.GetScenarios(TestRun).Single(x => x.FrameworkTestId == _executionId);
-        await Assert.That(stepScenarios).IsEquivalentTo(Required(outline.Examples).Where(row => row.Status == Status.Passed).Cast<Scenario?>(), EqualityComparer<Scenario?>.Default, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
-        await Assert.That(BDTestContext.CurrentScenario).IsSameReferenceAs(outline);
+        await Assert.That(stepScenarios.Select(s => Required(Required(s).Guid))).IsEquivalentTo(Required(outline.Examples).Where(row => row.Status == Status.Passed).Select(s => s.Guid), global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(BDTestContext.CurrentScenario?.Guid).IsEqualTo(outline.Guid);
     }
 
     [Test]
@@ -597,7 +597,7 @@ public class ScenarioOutlineTests : RunContextTestBase<ScenarioOutlineTests.RowC
         await Assert.That(async () => await builder).ThrowsExactly<AlreadyExecutedException>();
         await Assert.That(outline.Examples).Count().IsEqualTo(1);
         WriteTearDownOutput("outline teardown");
-        await Assert.That(outline.TearDownOutput).Contains("outline teardown");
+        await Assert.That(TestRun.Scenarios.Single(s => s.Guid == outline.Guid).TearDownOutput).Contains("outline teardown");
 
         await Assert.That(Required(outline.Examples)[0].TearDownOutput).IsNullOrEmpty();
     }

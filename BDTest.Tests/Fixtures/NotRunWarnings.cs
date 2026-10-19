@@ -27,11 +27,11 @@ public class NotRunWarnings : RunTestBase
         var notRunScenarios = BDTestUtil.GetNotRunScenarios(TestRun);
         await Assert.That(notRunScenarios.Count).IsEqualTo(3);
 
-        await Assert.That(notRunScenarios.Any(scenario => scenario.GetScenarioText() == "Custom NotRunTest1")).IsTrue();
-        await Assert.That(notRunScenarios.Any(scenario => scenario.GetScenarioText() == "Custom NotRunTest2")).IsTrue();
-        await Assert.That(notRunScenarios.Any(scenario => scenario.GetScenarioText() == "Custom NotRunTest3")).IsTrue();
+        await Assert.That(notRunScenarios.Any(scenario => scenario.ScenarioText == "Custom NotRunTest1")).IsTrue();
+        await Assert.That(notRunScenarios.Any(scenario => scenario.ScenarioText == "Custom NotRunTest2")).IsTrue();
+        await Assert.That(notRunScenarios.Any(scenario => scenario.ScenarioText == "Custom NotRunTest3")).IsTrue();
 
-        await Assert.That(notRunScenarios.All(scenario => scenario.GetStoryText() == @"As a BDTest developer
+        await Assert.That(notRunScenarios.All(scenario => scenario.StoryText == @"As a BDTest developer
 I want to make sure that BDTest flags tests not executed
 So that consumers aren't missing any test coverage accidentally
 ")).IsTrue();

@@ -56,7 +56,7 @@ public class StructuredStepArgumentTests : BDTestBase
         var result = await builder;
         await Assert.That(_reads).IsEqualTo(2).Because("One report read and the actual delegate invocation.");
         await Assert.That(Required(result.Steps)[0].StepText).Contains("(table: 1 rows)");
-        await Assert.That(((StepTable)result.Steps[0].Arguments.Single()).Rows[0][0]).IsEqualTo("1");
+        await Assert.That(((BDTest.Contracts.StepTable)result.Steps[0].Arguments.Single()).Rows[0][0]).IsEqualTo("1");
     }
 
     [System.Diagnostics.CodeAnalysis.SuppressMessage("TUnit", "TUnit0018", Justification = "Each TUnit case owns this fixture; scenario callbacks and teardown intentionally observe its state.")]
@@ -69,7 +69,7 @@ public class StructuredStepArgumentTests : BDTestBase
         _ = BDTestHtmlHelper.GetTestHtmlReport(new BDTestRunDescriptor(), TestRun);
         await Assert.That(_reads).IsZero();
         var result = await builder;
-        await Assert.That(((StepTable)Required(result.Steps)[0].Arguments[0]).Rows[0][0]).IsEqualTo("11");
+        await Assert.That(((BDTest.Contracts.StepTable)Required(result.Steps)[0].Arguments[0]).Rows[0][0]).IsEqualTo("11");
     }
 
     public override Task OnBeforeStep(BDTest.Contracts.StepResult step)
@@ -95,7 +95,7 @@ public class StructuredStepArgumentTests : BDTestBase
             .WithDocString(new StepDocString("retained")).Then(NoOp);
         await Assert.That(result.Status).IsEqualTo(Status.Passed);
         await Assert.That(Required(Required(result.Steps)[0].Diagnostics).Single()).Contains("bad table");
-        await Assert.That(result.Steps[0].Arguments.Single()).IsTypeOf<StepDocString>();
+        await Assert.That(result.Steps[0].Arguments.Single()).IsTypeOf<BDTest.Contracts.StepDocString>();
     }
 
     [Test]
@@ -107,7 +107,7 @@ public class StructuredStepArgumentTests : BDTestBase
             .When(() => Accept(doc)).WithArgs(() => doc).Then(NoOp);
         await Assert.That(Required(result.Steps)[0].StepText).Contains("(table: 1 rows)");
         await Assert.That(result.Steps[1].StepText).Contains("(application/json)");
-        await Assert.That(result.Steps.SelectMany(step => step.Arguments)).IsEquivalentTo(new StepArgument[] { table, doc }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(result.Steps.SelectMany(step => step.Arguments)).IsEquivalentTo(new BDTest.Contracts.StepArgument[] { ResultSnapshot.Create(table), ResultSnapshot.Create(doc) }, EqualityComparer<BDTest.Contracts.StepArgument>.Create((left, right) => new KellermanSoftware.CompareNetObjects.CompareLogic().Compare(left, right).AreEqual, _ => 0), global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 
     [Test, BDTestRetry(1)]
@@ -120,13 +120,13 @@ public class StructuredStepArgumentTests : BDTestBase
         var result = await first;
         await Assert.That(result.RetryCount).IsEqualTo(1);
         await Assert.That(Required(result.Steps)[0].Arguments).Count().IsEqualTo(1);
-        await Assert.That(((StepTable)result.Steps[0].Arguments[0]).Rows[0][0]).IsEqualTo("2");
+        await Assert.That(((BDTest.Contracts.StepTable)result.Steps[0].Arguments[0]).Rows[0][0]).IsEqualTo("2");
         var other = await sibling;
-        await Assert.That(((StepTable)Required(other.Steps)[0].Arguments[0]).Rows[0][0]).IsEqualTo("3");
+        await Assert.That(((BDTest.Contracts.StepTable)Required(other.Steps)[0].Arguments[0]).Rows[0][0]).IsEqualTo("3");
         await Assert.That(other.Steps[2].Arguments).Count().IsEqualTo(1);
         await Assert.That(result.Steps[2].Arguments).IsEmpty();
-        var restored = ReportJson.DeserializeObject<Scenario>(ReportJson.SerializeObject(result));
-        await Assert.That(((StepTable)Required(restored.Steps)[0].Arguments[0]).Rows[0][0]).IsEqualTo("2");
+        var restored = ReportJson.DeserializeObject<BDTest.Contracts.ScenarioResult>(ReportJson.SerializeObject(result));
+        await Assert.That(((BDTest.Contracts.StepTable)Required(restored.Steps)[0].Arguments[0]).Rows[0][0]).IsEqualTo("2");
     }
 
     [Test]
@@ -135,10 +135,10 @@ public class StructuredStepArgumentTests : BDTestBase
         var outline = await ScenarioOutline("payloads", new[] { "first", "second" },
             row => Given(NoOp).WithDocString(() => new StepDocString(row))
                 .When(NoOp).Then(NoOp));
-        await Assert.That(Required(outline.Examples).Select(row => ((StepDocString)Required(row.Steps)[0].Arguments.Single()).Content)).IsEquivalentTo(new[] { "first", "second" }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
-        var restored = ReportJson.DeserializeObject<Scenario>(ReportJson.SerializeObject(outline));
-        await Assert.That(Required(restored.Examples).Select(row => ((StepDocString)Required(row.Steps)[0].Arguments.Single()).Content)).IsEquivalentTo(new[] { "first", "second" }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
-        var html = await ReportHandlerEncodingTests.RenderAsync("/Views/Shared/_ScenarioExamples.cshtml", restored);
+        await Assert.That(Required(outline.Examples).Select(row => ((BDTest.Contracts.StepDocString)Required(row.Steps)[0].Arguments.Single()).Content)).IsEquivalentTo(new[] { "first", "second" }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        var restored = ReportJson.DeserializeObject<BDTest.Contracts.ScenarioResult>(ReportJson.SerializeObject(outline));
+        await Assert.That(Required(restored.Examples).Select(row => ((BDTest.Contracts.StepDocString)Required(row.Steps)[0].Arguments.Single()).Content)).IsEquivalentTo(new[] { "first", "second" }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        var html = await ReportHandlerEncodingTests.RenderAsync("/Views/Shared/_ScenarioExamples.cshtml", TestRun.Store.ScenariosByInternalId[restored.Guid]);
 
         await Assert.That(html).Contains("first</code></pre>").And.Contains("second</code></pre>");
     }
@@ -156,10 +156,10 @@ public class StructuredStepArgumentTests : BDTestBase
         await BDTestReportServer.SendDataAndGetReportUriAsync(new Uri("https://reports.example"), new BDTestRunDescriptor(), client, TestRun);
         var restored = Required(BDTestJsonHelper.DeserializeReport(Required(handler.Json)));
         var step = Required(Required(restored.Scenarios).Single().Steps)[0];
-        await Assert.That(((StepTable)step.Arguments[0]).Rows).Count().IsEqualTo(1000);
-        await Assert.That(((StepDocString)step.Arguments[1]).Content).IsEqualTo(doc.Content);
-        await Assert.That(((StepDocString)step.Arguments[1]).ContentType).IsEqualTo(unsafeText);
-        var razor = await ReportHandlerEncodingTests.RenderAsync("/Views/BDTest/Scenario.cshtml", restored.Scenarios.Single());
+        await Assert.That(((BDTest.Contracts.StepTable)step.Arguments[0]).Rows).Count().IsEqualTo(1000);
+        await Assert.That(((BDTest.Contracts.StepDocString)step.Arguments[1]).Content).IsEqualTo(doc.Content);
+        await Assert.That(((BDTest.Contracts.StepDocString)step.Arguments[1]).ContentType).IsEqualTo(unsafeText);
+        var razor = await ReportHandlerEncodingTests.RenderAsync("/Views/BDTest/Scenario.cshtml", TestRun.Store.ScenariosByInternalId[restored.Scenarios.Single().Guid]);
         foreach (var html in new[] { razor, BDTestHtmlHelper.GetTestHtmlReport(new BDTestRunDescriptor(), TestRun) })
         {
 

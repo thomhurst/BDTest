@@ -205,7 +205,7 @@ public class StepTextGenerationTests : RunContextTestBase<StepTextGenerationTest
         await Assert.That(step.StepText).IsEqualTo("When value: <error: NullReferenceException>");
 
         await Assert.That(Required(step.Diagnostics).Single()).Contains("value").And.Contains("NullReferenceException").And.Contains("not ready");
-        var restored = ReportJson.DeserializeObject<Scenario>(ReportJson.SerializeObject(scenario));
+        var restored = ReportJson.DeserializeObject<BDTest.Contracts.ScenarioResult>(ReportJson.SerializeObject(scenario));
         await Assert.That(Required(restored.Steps)[0].Diagnostics).IsEquivalentTo(step.Diagnostics, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 

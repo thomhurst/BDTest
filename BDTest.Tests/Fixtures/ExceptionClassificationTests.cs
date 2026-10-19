@@ -196,7 +196,7 @@ public class ExceptionClassificationTests : BDTestBase
 
     private sealed class ExplicitFixture(BDTestRun run) : BDTestBase { public override BDTestRun TestRun => run; }
 
-    private static async Task AssertScenario(Scenario scenario, Status status)
+    private static async Task AssertScenario(BDTest.Contracts.ScenarioResult scenario, Status status)
     {
         await Assert.That(scenario.Status).IsEqualTo(status);
         await Assert.That(Required(scenario.Attempts).Single().Status).IsEqualTo(status);

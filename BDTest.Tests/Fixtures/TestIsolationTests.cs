@@ -34,7 +34,7 @@ public class TestIsolationTests
             await then.ThrowsExceptionOnThen(exception, status);
         }
 
-        await Assert.That(retainedFixture.TestRun.Scenarios).Contains(retained);
+        await Assert.That(retainedFixture.TestRun.Scenarios.Select(s => s.Guid)).Contains(retained.Guid);
     }
 
 

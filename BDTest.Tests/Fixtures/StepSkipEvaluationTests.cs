@@ -59,7 +59,7 @@ public class StepSkipEvaluationTests
         await Assert.That(afterCalls).IsEqualTo(1);
         await Assert.That(Required(observed).StartTime).IsNotEqualTo(default(DateTime));
         await Assert.That(Required(observed).EndTime).IsGreaterThanOrEqualTo(Required(observed).StartTime);
-        await Assert.That(Required(observed).Output).Contains("After-step hook failed");
+        await Assert.That(run.Scenarios.Single().Steps[0].Output).Contains("After-step hook failed");
         var scenario = run.Scenarios.Single();
         await Assert.That(scenario.Status).IsEqualTo(Status.Failed);
         await Assert.That(Required(scenario.Steps)[0].Status).IsEqualTo(Status.Failed);
@@ -193,7 +193,7 @@ public class StepSkipEvaluationTests
         var step = run.Store.ScenariosByInternalId[scenario.Guid].ExecutionSteps[0];
         // A report may come from an untrusted producer.
         step.SkipReason = new StepSkipReason("Rule", "<script>unsafe</script>", 0);
-        var restored = Required(Required(BDTestJsonHelper.Deserialize(BDTestJsonHelper.GetTestJsonData(null, run))).Scenarios).Single();
+        var restored = Required(Required(BDTestJsonHelper.DeserializeReport(BDTestJsonHelper.GetTestJsonData(null, run))).Scenarios).Single();
         await Assert.That(Required(Required(restored.Steps)[0].SkipReason).AttributeType).IsEqualTo("<script>unsafe</script>");
         foreach (var html in new[]
         {
@@ -253,7 +253,7 @@ public class StepSkipEvaluationTests
         var steps = new InheritedSteps();
         var builder = generatedMetadata ? fixture.When(() => steps.Conditional()) : fixture.When(steps.Conditional);
         var scenario = await builder.Then(NoOp).BDTestAsync();
-        var step = Required(scenario.Steps)[0];
+        var step = run.Store.ScenariosByInternalId[scenario.Guid].ExecutionSteps[0];
         await Assert.That(step.Status).IsEqualTo(Status.Skipped);
         await Assert.That(Required(step.SkipReason).AttributeType).IsEqualTo(typeof(SkipStepIfAttribute).FullName);
     }

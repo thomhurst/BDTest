@@ -64,7 +64,7 @@ public class RetryHistoryTests : TestRunOwner
         try
         {
             var scenario = await fixture.Run();
-            var restored = ReportJson.DeserializeObject<Scenario>(ReportJson.SerializeObject(scenario));
+            var restored = ReportJson.DeserializeObject<BDTest.Contracts.ScenarioResult>(ReportJson.SerializeObject(scenario));
             await Assert.That(Required(restored.Attempts).Select(attempt => attempt.Status)).IsEquivalentTo(new[] { Status.Failed, Status.Failed, Status.Passed }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
             await Assert.That(Required(restored.Attempts[0].Exception).AsString).Contains("<failure 1>");
             await Assert.That(restored.Attempts[1].TimeTaken).IsEqualTo(Required(scenario.Attempts)[1].TimeTaken);
@@ -111,7 +111,7 @@ public class RetryHistoryTests : TestRunOwner
             await Assert.That(html).Contains("&lt;failure 1&gt;");
             await Assert.That(html).Contains("Attempt 2 · Failed");
             await Assert.That(html).Contains("hook failed");
-            var restored = ReportJson.DeserializeObject<Scenario>(ReportJson.SerializeObject(scenario));
+            var restored = ReportJson.DeserializeObject<BDTest.Contracts.ScenarioResult>(ReportJson.SerializeObject(scenario));
             await Assert.That(Required(restored.Exception).Message).IsEqualTo("hook failed");
             await Assert.That(Required(restored.Attempts).Select(attempt => Required(attempt.Exception).Message)).IsEquivalentTo((new[] { "<failure 1>", "hook failed" }).Cast<string?>(), global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
             await Assert.That(html).DoesNotContain("<failure 1>");

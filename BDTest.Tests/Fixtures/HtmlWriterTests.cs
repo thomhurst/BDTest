@@ -111,7 +111,7 @@ public class HtmlWriterTests : RunTestBase
         ScenarioHtmlWriter.Text("before");
         var exception = await Assert.That(() => WriteUrl(ScenarioHtmlWriter, kind, url)).ThrowsExactly<ArgumentException>();
         await Assert.That(exception!.ParamName).IsEqualTo("url");
-        await Assert.That(scenario.CustomHtmlOutputForReport).IsEqualTo("<span>before</span><br>");
+        await Assert.That(BDTestUtil.GetScenarios(TestRun).Single(s => s.Guid == scenario.Guid).CustomHtmlOutputForReport).IsEqualTo("<span>before</span><br>");
     }
 
     [Test]

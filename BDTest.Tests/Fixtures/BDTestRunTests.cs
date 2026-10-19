@@ -49,7 +49,7 @@ public class BDTestRunTests
         await Assert.That(TestOutputData.FrameworkExecutionId).IsEqualTo("same-id");
         Console.WriteLine("second teardown after rejected execution");
 
-        await Assert.That(secondScenario.TearDownOutput ?? "").Contains("second teardown after rejected execution");
+        await Assert.That(second.Scenarios.Single().TearDownOutput ?? "").Contains("second teardown after rejected execution");
         await Assert.That(firstScenario.TearDownOutput ?? "").DoesNotContain("second teardown after rejected execution");
     }
 
@@ -62,7 +62,7 @@ public class BDTestRunTests
         var builder = fixture.Build();
 
         await Assert.That(first.ReportId).IsNotEqualTo(second.ReportId);
-        await Assert.That(BDTestUtil.GetNotRunScenarios(first).Select(item => item.ScenarioId)).Contains(builder.Guid);
+        await Assert.That(BDTestUtil.GetNotRunScenarios(first).Select(item => item.ScenarioId)).Contains(Required(builder.Guid));
         await Assert.That(BDTestUtil.GetNotRunScenarios(second)).IsEmpty();
         await Assert.That(second.Scenarios).IsEmpty();
     }
@@ -94,7 +94,7 @@ public class BDTestRunTests
         {
             var scenario = run.Scenarios.Single(s => s.Guid == results[index].Guid);
             var other = index == 0 ? "second" : "first";
-            await Assert.That(run.Scenarios).IsEquivalentTo(new[] { scenario }, EqualityComparer<Scenario>.Default, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
+            await Assert.That(run.Scenarios.Select(s => s.Guid)).IsEquivalentTo(new[] { scenario.Guid }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
             await Assert.That(scenario.ReportId).IsEqualTo(run.ReportId);
             await Assert.That(Required(scenario.Steps).All(step => step.ReportId == run.ReportId)).IsTrue();
 
@@ -121,8 +121,8 @@ public class BDTestRunTests
             row => fixture.When(() => Keep(row.Value)).Then(() => Complete())).BDTestAsync();
 
 
-        await Assert.That(first.Scenarios).IsEquivalentTo(new[] { scenario, outline }, EqualityComparer<Scenario>.Default, global::TUnit.Assertions.Enums.CollectionOrdering.Any);
-        await Assert.That(second.Scenarios).IsEquivalentTo(new[] { other }, EqualityComparer<Scenario>.Default, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(first.Scenarios).IsEquivalentTo(new[] { scenario, outline }, EqualityComparer<BDTest.Contracts.ScenarioResult>.Create((left, right) => new KellermanSoftware.CompareNetObjects.CompareLogic().Compare(left, right).AreEqual, _ => 0), global::TUnit.Assertions.Enums.CollectionOrdering.Any);
+        await Assert.That(second.Scenarios.Select(s => s.Guid)).IsEquivalentTo(new[] { other.Guid }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
         await Assert.That(Required(outline.Examples).All(row => row.ReportId == first.ReportId)).IsTrue();
         await Assert.That(BDTestUtil.GetNotRunScenarios(first)).IsEmpty();
     }
@@ -149,7 +149,7 @@ public class BDTestRunTests
 
         await Assert.That(first.Scenarios).IsEmpty();
         await Assert.That(BDTestUtil.GetNotRunScenarios(first)).IsEmpty();
-        await Assert.That(second.Scenarios).IsEquivalentTo(new[] { secondScenario }, EqualityComparer<Scenario>.Default, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(second.Scenarios).IsEquivalentTo(new[] { secondScenario }, EqualityComparer<BDTest.Contracts.ScenarioResult>.Create((left, right) => new KellermanSoftware.CompareNetObjects.CompareLogic().Compare(left, right).AreEqual, _ => 0), global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
         await Assert.That(() => firstFixture.Build()).ThrowsExactly<ObjectDisposedException>();
     }
 
@@ -169,14 +169,14 @@ public class BDTestRunTests
         var secondScenario = await secondFixture.Build().BDTestAsync();
         firstHtml.Text("first saved writer");
 
-        await Assert.That(firstFixture.BDTestContext.CurrentScenario).IsSameReferenceAs(firstScenario);
-        await Assert.That(secondFixture.BDTestContext.CurrentScenario).IsSameReferenceAs(secondScenario);
+        await Assert.That(firstFixture.BDTestContext.CurrentScenario?.Guid).IsEqualTo(firstScenario.Guid);
+        await Assert.That(secondFixture.BDTestContext.CurrentScenario?.Guid).IsEqualTo(secondScenario.Guid);
         await Assert.That(firstFixture.BDTestContext.ReportId).IsEqualTo(first.ReportId);
 
         await Assert.That(firstScenario.TestStartupInformation).Contains("first startup").And.DoesNotContain("second startup");
 
         await Assert.That(secondScenario.TestStartupInformation).Contains("second startup").And.DoesNotContain("first startup");
-        await Assert.That(firstScenario.CustomHtmlOutputForReport).Contains("first saved writer");
+        await Assert.That(first.Scenarios.Single().CustomHtmlOutputForReport).Contains("first saved writer");
 
         await Assert.That(secondScenario.CustomHtmlOutputForReport).IsNullOrEmpty();
         firstFixture.Finish();
@@ -201,17 +201,17 @@ public class BDTestRunTests
 
         foreach (var payload in new[] { json, handler.Payload })
         {
-            var report = Required(BDTestJsonHelper.Deserialize(payload));
+            var report = Required(BDTestJsonHelper.DeserializeReport(payload));
             await Assert.That(report.Id).IsEqualTo(first.ReportId);
             await Assert.That(report.Tag).IsEqualTo(descriptor.Tag);
             await Assert.That(Required(report.Scenarios).Select(item => item.Guid)).IsEquivalentTo(new[] { scenario.Guid }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
-            await Assert.That(Required(report.NotRun).Select(item => item.GetScenarioText())).IsEquivalentTo(new[] { "first pending" }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
-            await Assert.That(report.Scenarios[0].Run).IsNull().Because("Run ownership must not be serialized");
+            await Assert.That(Required(report.NotRun).Select(item => item.ScenarioText)).IsEquivalentTo(new[] { "first pending" }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
+            await Assert.That(typeof(BDTest.Contracts.ScenarioResult).GetProperty("Run")).IsNull();
             await Assert.That(Required(report.TestTimer).TestsStartedAt).IsEqualTo(scenario.StartTime);
             await Assert.That(Required(report.TestTimer).TestsFinishedAt).IsEqualTo(scenario.EndTime);
             using var document = JsonDocument.Parse(payload);
-            await Assert.That(document.RootElement.GetProperty("Scenarios")[0].TryGetProperty("Run", out _)).IsFalse();
-            await Assert.That(document.RootElement.GetProperty("NotRun")[0].TryGetProperty("Run", out _)).IsFalse();
+            await Assert.That(document.RootElement.GetProperty("scenarios")[0].TryGetProperty("run", out _)).IsFalse();
+            await Assert.That(document.RootElement.GetProperty("notRun")[0].TryGetProperty("run", out _)).IsFalse();
         }
 
         await Assert.That(html).Contains("first scenario").And.Contains("first pending").And.DoesNotContain("second scenario");
@@ -227,9 +227,9 @@ public class BDTestRunTests
 
         await Assert.That(report.Id).IsEqualTo(run.ReportId);
         await Assert.That(report.Scenarios).IsEmpty();
-        await Assert.That(Required(report.TestTimer).TestsStartedAt).IsEqualTo(run.StartedAt);
+        await Assert.That(Required(report.TestTimer).TestsStartedAt).IsEqualTo(new DateTimeOffset(run.StartedAt));
 
-        await Assert.That(Required(report.TestTimer).TestsFinishedAt).IsGreaterThanOrEqualTo(beforeReport).And.IsLessThanOrEqualTo(DateTime.UtcNow);
+        await Assert.That(Required(report.TestTimer).TestsFinishedAt).IsGreaterThanOrEqualTo(new DateTimeOffset(beforeReport)).And.IsLessThanOrEqualTo(DateTimeOffset.UtcNow);
     }
 
     [Test]
