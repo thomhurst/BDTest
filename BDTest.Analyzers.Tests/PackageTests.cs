@@ -5,6 +5,7 @@ using NUnit.Framework;
 
 namespace BDTest.Analyzers.Tests;
 
+[NonParallelizable]
 public class PackageTests
 {
     private static string RepositoryRoot
@@ -120,7 +121,19 @@ public class PackageTests
         }
         finally
         {
-            Directory.Delete(temporary, recursive: true);
+            try
+            {
+                if (packTarget != null)
+                {
+                    // Single-target restores replace shared assets; restore all TFMs even when a case fails.
+                    var restored = await Dotnet(repository, "restore", "BDTest/BDTest.csproj", "--no-dependencies");
+                    Assert.That(restored.ExitCode, Is.Zero, restored.Output);
+                }
+            }
+            finally
+            {
+                Directory.Delete(temporary, recursive: true);
+            }
         }
     }
 
