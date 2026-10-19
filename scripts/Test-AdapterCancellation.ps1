@@ -23,6 +23,9 @@ try {
         if ($project -eq 'BDTest.TUnit.Tests') {
             & dotnet run --project $projectPath -c $Configuration -- --treenode-filter '/*/*/AdapterConformanceTests/NativeFrameworkCancellation*' --report-trx --report-trx-filename cancellation.trx --results-directory $evidencePath *> $logPath
         }
+        elseif ($project -eq 'BDTest.xUnit.Tests') {
+            & dotnet run --project $projectPath -c $Configuration -- --filter-method '*NativeFrameworkCancellation*' --report-trx --report-trx-filename cancellation.trx --results-directory $evidencePath *> $logPath
+        }
         else {
             & dotnet test $projectPath -c $Configuration --filter 'FullyQualifiedName~NativeFrameworkCancellation' --logger 'trx;LogFileName=cancellation.trx' --results-directory $evidencePath *> $logPath
         }
