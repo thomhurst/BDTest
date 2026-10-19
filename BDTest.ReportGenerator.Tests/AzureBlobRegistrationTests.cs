@@ -3,6 +3,8 @@ using BDTest.Razor.Reports.Extensions;
 using BDTest.Razor.Reports.Interfaces;
 using BDTest.Razor.Reports.Storage;
 using BDTest.Reports.Storage.AzureBlob;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -92,7 +94,12 @@ public class AzureBlobRegistrationTests
     [Arguments("long-container")]
     public async Task Invalid_options_fail_host_startup_before_storage_access(string invalid)
     {
-        var builder = Host.CreateApplicationBuilder();
+        // Exercise MVC registration with the same dependency validation used in CI.
+        var builder = WebApplication.CreateBuilder(new WebApplicationOptions
+        {
+            EnvironmentName = Environments.Development
+        });
+        builder.WebHost.UseTestServer();
         builder.Services.AddBDTestReports();
         builder.Services.AddAzureBlobReportStore(options =>
         {
