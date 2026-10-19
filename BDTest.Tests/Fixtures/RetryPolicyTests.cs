@@ -107,7 +107,7 @@ public class RetryPolicyTests
         await Assert.That(executions).IsEqualTo(3);
     }
 
-    private static async Task<Exception?> Capture(Func<Task<Scenario>> execute)
+    private static async Task<Exception?> Capture(Func<Task<BDTest.Contracts.ScenarioResult>> execute)
     {
         try { await execute(); return null; }
         catch (Exception exception) { return exception; }
@@ -122,7 +122,7 @@ public class RetryPolicyTests
             return Task.CompletedTask;
         }
         public void Start(MethodInfo? method = null) => BeginTest(Guid.NewGuid().ToString("N"), method);
-        public async Task<Scenario> Run(Action step)
+        public async Task<BDTest.Contracts.ScenarioResult> Run(Action step)
         {
             await Task.Yield();
             return await When(step).Then(() => { }).BDTestAsync();
@@ -134,4 +134,3 @@ public class RetryPolicyTests
         private async Task Annotated(int value) => await Task.Yield();
     }
 }
-
