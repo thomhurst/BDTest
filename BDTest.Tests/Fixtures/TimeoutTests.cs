@@ -23,7 +23,9 @@ public class TimeoutTests : RunTestBase
     [Test]
     public async Task Step_timeout_cancels_token_and_records_failure()
     {
-        var builder = When(token => WaitForCancellation(token)).WithStepTimeout(Timeout).Then(() => Later());
+        var clock = new TimeoutClock();
+        Options.TimeProvider = clock;
+        var builder = When(token => WaitForCancellationAtDeadline(token, clock)).WithStepTimeout(Timeout).Then(() => Later());
         var exception = await Assert.That(async () => await builder.BDTestAsync().WaitAsync(TimeSpan.FromSeconds(10))).ThrowsExactly<TimeoutException>();
         await _cancelled.Task.WaitAsync(TimeSpan.FromSeconds(10));
         var scenario = Report(builder);
@@ -247,8 +249,10 @@ public class TimeoutTests : RunTestBase
     [Arguments(true)]
     public async Task Late_completion_does_not_change_timeout_results(bool throws)
     {
+        var clock = new TimeoutClock();
+        Options.TimeProvider = clock;
         var completed = NewSignal();
-        var builder = When(() => FinishLate(completed, throws)).WithStepTimeout(Timeout).Then(() => Later());
+        var builder = When(() => FinishLate(completed, throws, clock)).WithStepTimeout(Timeout).Then(() => Later());
         try
         {
             await Assert.That(async () => await builder.BDTestAsync().WaitAsync(TimeSpan.FromSeconds(10))).ThrowsExactly<TimeoutException>();
@@ -331,6 +335,13 @@ public class TimeoutTests : RunTestBase
             return timer;
         }
     }
+    private async Task WaitForCancellationAtDeadline(CancellationToken token, TimeoutClock clock)
+    {
+        // Freeze the budget through setup; expire only once this delegate and its timer exist.
+        await clock.TimerCreated.Task;
+        clock.Fake.Advance(Timeout);
+        await WaitForCancellation(token);
+    }
     private async Task WaitForCancellation(CancellationToken token)
     {
         try { await Task.Delay(System.Threading.Timeout.Infinite, token); }
@@ -346,10 +357,13 @@ public class TimeoutTests : RunTestBase
         });
         await Task.Delay(System.Threading.Timeout.Infinite, token);
     }
-    private async Task FinishLate(TaskCompletionSource<bool> completed, bool throws)
+    private async Task FinishLate(TaskCompletionSource<bool> completed, bool throws, TimeoutClock clock)
     {
         try
         {
+            // Expire from inside the delegate so a timeout cannot bypass its completion signal.
+            await clock.TimerCreated.Task;
+            clock.Fake.Advance(Timeout);
             await _finish.Task;
             if (throws) { throw new InvalidOperationException("Late failure"); }
         }
