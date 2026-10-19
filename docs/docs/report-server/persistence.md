@@ -57,7 +57,8 @@ previous version and remove their temporary file. Cancellation after publication
 does not undo a committed write. Inputs remain open; callers dispose read streams.
 
 A persistent `store.lock` file serializes cooperating store instances/processes,
-including retention scans. Lock waits and asynchronous I/O honor cancellation.
+including retention scans. Lock waits retry native contention errors on Windows,
+Linux and macOS. Lock waits and asynchronous I/O honor cancellation.
 Do not delete that file while a host is running. Report bytes and index entries
 remain separate operations, so a report write and its metadata update are not a
 transaction. Listing scans index metadata only and applies the standard filtering,

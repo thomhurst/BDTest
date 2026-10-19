@@ -14,7 +14,17 @@ public class FileSystemReportStoreTests
     private string _directory = null!; // Set before each test.
 
     [SetUp]
-    public void SetUp() => _directory = Path.Combine(Path.GetTempPath(), "BDTest-file-store", Guid.NewGuid().ToString("N"));
+    public void SetUp() => _directory = Path.Combine(
+        ResolvePhysicalDirectory(new DirectoryInfo(Path.GetTempPath())), "BDTest-file-store", Guid.NewGuid().ToString("N"));
+
+    private static string ResolvePhysicalDirectory(DirectoryInfo directory)
+    {
+        // A system temp root may contain links (for example /var -> /private/var on macOS).
+        // Resolve those only for the fixture; the store must still reject linked storage paths.
+        if (directory.Parent == null) return directory.FullName;
+        var physical = new DirectoryInfo(Path.Combine(ResolvePhysicalDirectory(directory.Parent), directory.Name));
+        return physical.ResolveLinkTarget(returnFinalTarget: true)?.FullName ?? physical.FullName;
+    }
 
     [TearDown]
     public void TearDown()

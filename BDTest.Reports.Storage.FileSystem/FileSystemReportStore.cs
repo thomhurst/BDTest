@@ -141,7 +141,11 @@ public sealed class FileSystemReportStore : IReportStore, IRunIndexStore
                 // Keep this file after closing: deleting it would let two processes lock different files.
                 return new FileStream(path, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None);
             }
-            catch (IOException exception) when ((exception.HResult & 0xffff) is 11 or 32 or 33)
+            // Windows uses HRESULT sharing/lock violations; Unix preserves the native errno.
+            // EWOULDBLOCK/EAGAIN is 35 on Darwin/FreeBSD and 11 on Linux.
+            catch (IOException exception) when (OperatingSystem.IsWindows()
+                ? (exception.HResult & 0xffff) is 32 or 33
+                : exception.HResult == (OperatingSystem.IsMacOS() || OperatingSystem.IsFreeBSD() ? 35 : 11))
             {
                 await Task.Delay(25, cancellationToken).ConfigureAwait(false);
             }

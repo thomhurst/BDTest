@@ -21,6 +21,20 @@ concurrency:
   cancel-in-progress: ${{ !inputs.publish-packages }}
 
 jobs:
+  filesystem-storage-macos:
+    runs-on: macos-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-dotnet@v6.0.0
+        with:
+          dotnet-version: 10.0.402
+      # Exercise Darwin's native lock-contention error, including separate processes.
+      - name: Verify file-system storage on macOS
+        run: dotnet test BDTest.Tests/BDTest.Tests.csproj -c Release --filter FullyQualifiedName~FileSystemReportStoreTests
+
   modularpipeline:
     environment: ${{ github.ref == 'refs/heads/main' && 'Production' || 'Pull Requests' }}
     runs-on: ubuntu-latest

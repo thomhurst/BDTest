@@ -37,7 +37,8 @@ on an old version can finish. Interrupted copies leave the previous file intact.
 Cancellation after publication does not roll back a committed write.
 
 A persistent `store.lock` file coordinates cooperating instances and processes;
-waiting for it is cancellable. Do not delete this file while a host is running.
+waiting for it retries native lock contention on Windows, Linux and macOS and
+is cancellable. Do not delete this file while a host is running.
 Report and index writes/deletes are separate operations, not a transaction.
 Index listing scans metadata files, uses the standard BDTest filters and keyset
 paging, and never reads report payloads. This store suits modest local histories.
