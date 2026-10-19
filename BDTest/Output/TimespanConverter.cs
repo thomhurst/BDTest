@@ -4,7 +4,7 @@ using System.Text.Json.Serialization;
 
 namespace BDTest.Output;
 
-public class TimespanConverter : JsonConverter<TimeSpan>
+internal class TimespanConverter : JsonConverter<TimeSpan>
 {
     /// <summary>The historical report duration format, including seven fractional second digits.</summary>
     public static string TimeSpanFormatString { get; } = @"d\.hh\:mm\:ss\:fffffff";

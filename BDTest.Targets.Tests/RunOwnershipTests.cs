@@ -8,7 +8,7 @@ namespace BDTest.Targets.Tests;
 public class RunOwnershipTests
 {
     [Test]
-    public void Converter_uses_the_registered_generic_contract_for_each_run()
+    public async Task Converter_uses_the_registered_generic_contract_for_each_run()
     {
         var converter = new MultipleContracts();
         var objectOptions = new BDTestOptions();
@@ -17,12 +17,17 @@ public class RunOwnershipTests
         stringOptions.RegisterCustomStringConverter<string>(converter);
         using var objectRun = BDTestRun.Start(objectOptions);
         using var stringRun = BDTestRun.Start(stringOptions);
-        var method = typeof(RunOwnershipTests).GetMethod(nameof(Display))!;
-        Assert.That(StepTextHelper.GetStepText(method, [() => "value"], run: objectRun),
-            Is.EqualTo("display object contract"));
-        Assert.That(StepTextHelper.GetStepText(method, [() => "value"], run: stringRun),
-            Is.EqualTo("display string contract"));
-        Assert.That(StepTextHelper.GetStepText(method, [() => "value"]), Is.EqualTo("display value"));
+        using var defaultRun = BDTestRun.Start();
+        Assert.That(await Render(objectRun), Is.EqualTo("Given display object contract"));
+        Assert.That(await Render(stringRun), Is.EqualTo("Given display string contract"));
+        Assert.That(await Render(defaultRun), Is.EqualTo("Given display value"));
+    }
+
+    private static async Task<string?> Render(BDTestRun run)
+    {
+        var scenario = await new BDTestBuilder(run).Given(() => Display("value"))
+            .WithArgs(() => "value").When(() => { }).Then(() => { }).BDTestAsync();
+        return scenario.Steps![0].StepText;
     }
 
     public static void Display(object value) { }

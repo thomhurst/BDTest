@@ -58,9 +58,9 @@ public class StatusLifecycleTests : TestRunOwner
     [Arguments(Status.Inconclusive)]
     public async Task StatusNamesSurviveJsonRoundTrip(Status status)
     {
-        var json = ReportJson.SerializeObject(status);
+        var json = System.Text.Json.JsonSerializer.Serialize(status, BDTestJsonContext.Default.Status);
         await Assert.That(json).IsEqualTo($"\"{status}\"");
-        await Assert.That(ReportJson.DeserializeObject<Status>(json)).IsEqualTo(status);
+        await Assert.That(System.Text.Json.JsonSerializer.Deserialize(json, BDTestJsonContext.Default.Status)).IsEqualTo(status);
         var scenario = ReportJson.DeserializeObject<Scenario>($"{{\"Status\":{json},\"Steps\":[{{\"Status\":{json}}}]}}");
         var restored = JObject.Parse(ReportJson.SerializeObject(scenario));
         await Assert.That((string?)restored["Status"]).IsEqualTo(status.ToString());

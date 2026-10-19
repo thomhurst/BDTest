@@ -90,3 +90,10 @@ Treat `BdTestBaseClass` as a best-effort runtime reference, not retained report 
 | `CurrentScenarioBDTestExecutionId` | The execution ID. |
 | `ReportId` | The report ID of the test's run. |
 | `GetStoryText()`, `GetScenarioText()` | Story and scenario text. |
+
+## Implementation helpers
+
+Text-generation helpers, version lookup, default constants and report JSON
+converters are internal. Use the public result APIs above and `BDTestJsonHelper`
+or `BDTestJsonContext` for serialization. The [migration guide](../migration/internal-helpers.md)
+lists replacements for former direct helper calls.

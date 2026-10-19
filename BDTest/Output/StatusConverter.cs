@@ -5,7 +5,7 @@ using System.Text.Json.Serialization;
 namespace BDTest.Output;
 
 /// <summary>Writes status names and reads numeric values using the historical report status mapping.</summary>
-public sealed class StatusConverter : JsonConverter<Status>
+internal sealed class StatusConverter : JsonConverter<Status>
 {
     private static readonly JsonConverter<Status> NamedConverter = (JsonConverter<Status>)(
         new JsonStringEnumConverter<Status>(allowIntegerValues: false).CreateConverter(typeof(Status), new JsonSerializerOptions())

@@ -4,7 +4,7 @@ using BDTest.Test;
 
 namespace BDTest.Helpers.JsonConverters;
 
-public class ScenarioTextConverter : JsonConverter<ScenarioText>
+internal class ScenarioTextConverter : JsonConverter<ScenarioText>
 {
     public override void Write(Utf8JsonWriter writer, ScenarioText value, JsonSerializerOptions options)
     {

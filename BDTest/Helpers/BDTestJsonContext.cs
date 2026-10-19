@@ -7,7 +7,7 @@ using BDTest.Test;
 namespace BDTest.Helpers;
 
 /// <summary>Generated metadata for the report wire format, independent of host JSON options.</summary>
-[JsonSourceGenerationOptions(PropertyNameCaseInsensitive = true)]
+[JsonSourceGenerationOptions(PropertyNameCaseInsensitive = true, Converters = new[] { typeof(StatusConverter) })]
 [JsonSerializable(typeof(BDTestOutputModel))]
 [JsonSerializable(typeof(List<Scenario>))]
 [JsonSerializable(typeof(StoryText))]

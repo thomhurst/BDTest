@@ -143,3 +143,8 @@ The public `StackFramesHelper` and `TestInformationAttributeHelper` have been re
 ### Custom harnesses without a runner
 
 `BeginTest(id)` remains available when no `MethodInfo` exists. You may also use `BDTestBase` or `BDTestBuilder` directly. Scenario builders use `CallerMemberName` for humanized scenario text and `CallerFilePath` for the source file. They do not guess method attributes from a name or walk the stack. Class tags and class/assembly retry defaults still apply. Set `.WithScenarioText("...")` after `Then` when the caller name is not the desired scenario title. To use method attributes, call `BeginTest(id, methodInfo)` explicitly before construction.
+
+Implementation text helpers and report converters are internal. Custom adapters
+continue to use the protected lifecycle, constructor-output, pending-execution and
+assertion-scope methods documented above; they do not need friend access or the
+repository signing key. See [helper API migration](../migration/internal-helpers.md).

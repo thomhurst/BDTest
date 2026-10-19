@@ -9,5 +9,6 @@
     <PackageReference Include="NUnit" Version="5.0.0" />
     <PackageReference Include="NUnit3TestAdapter" Version="6.3.1" />
     <ProjectReference Include="../BDTest/BDTest.csproj" />
+    <ProjectReference Include="../BDTest.SourceGenerator/BDTest.SourceGenerator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
   </ItemGroup>
 </Project>

@@ -18,6 +18,7 @@ public class ReportLayoutViewModel
     public ReportMetadataViewModel? Report { get; init; }
     public int ScenarioCount { get; init; }
     public IReadOnlyDictionary<Status, int> Counts { get; init; } = Enum.GetValues<Status>().ToDictionary(status => status, _ => 0);
+    [System.Text.Json.Serialization.JsonConverter(typeof(BDTest.Razor.Reports.Helpers.ReportStatusConverter))]
     public Status Status { get; init; } = Status.NotRun;
     public TestTimer Timer { get; init; } = new() { TestsStartedAt = default, TestsFinishedAt = default };
     public string Title => string.IsNullOrWhiteSpace(Report?.Tag) ? "Test run" : Report.Tag;

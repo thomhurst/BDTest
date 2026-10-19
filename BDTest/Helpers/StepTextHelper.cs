@@ -7,7 +7,7 @@ using BDTest.Test;
 
 namespace BDTest.Helpers;
 
-public static class StepTextHelper
+internal static class StepTextHelper
 {
     /// <summary>Renders a selected step method using explicit, lazy argument readers.</summary>
     /// <remarks>Supply a run to use its frozen converters. Without a run, only default value formatting applies.</remarks>

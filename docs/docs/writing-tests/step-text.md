@@ -173,7 +173,7 @@ options.RegisterCustomStringConverter<Person>(new PersonStringConverter());
 - The first matching registration wins. The registered generic `T` selects the interface contract, including explicit implementations; BDTest does not infer a different contract from the converter's runtime type.
 - Registrations are copied when the run starts. Later option changes affect only later runs; retries use the same snapshot.
 - Converter callbacks may run concurrently and must protect mutable state. Null converters are rejected.
-- `StepTextHelper.GetStepText(method, arguments, run: run)` uses that run's converters. Omitting `run` uses default value formatting and no custom converters.
+- Executed fluent steps use their run's converters. Read the resolved text from `Scenario.Steps` after execution; `StepTextHelper` is internal. Use `WithArgs` to supply lazy argument readers or `WithStepText` to override text.
 
 ## Scenario outline placeholders
 

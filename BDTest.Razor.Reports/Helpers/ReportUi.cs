@@ -144,7 +144,7 @@ public static class ReportUi
             : story.Split('\n').Select(line => line.Trim()).Where(line => line.Length > 0).ToList();
 
     public static bool IsMissingStory([NotNullWhen(false)] string? story) =>
-        string.IsNullOrWhiteSpace(story) || story == BDTest.Constants.DefaultValues.StoryTextNotDefined;
+        string.IsNullOrWhiteSpace(story) || story == LegacyReportDefaults.StoryTextNotDefined;
 
     /// <summary>A short name for a story. "I want to buy items" becomes "Buy items"; other stories use their first line.</summary>
     public static string StoryTitle(string? story)

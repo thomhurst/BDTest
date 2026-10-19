@@ -71,6 +71,7 @@ public class TestRunSummary
     [JsonInclude]
     public DateTime FinishedAtDateTime { get; set; }
     [JsonInclude]
+    [System.Text.Json.Serialization.JsonConverter(typeof(BDTest.Razor.Reports.Helpers.ReportStatusConverter))]
     public Status Status { get; set; }
     [JsonInclude]
     public Counts? Counts { get; set; } = new();

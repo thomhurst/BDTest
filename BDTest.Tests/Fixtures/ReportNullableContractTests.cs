@@ -19,6 +19,29 @@ namespace BDTest.Tests.Fixtures;
 public class ReportNullableContractTests
 {
     [Test]
+    [Arguments(0, Status.Passed)]
+    [Arguments(1, Status.Failed)]
+    [Arguments(2, Status.Inconclusive)]
+    [Arguments(3, Status.NotImplemented)]
+    [Arguments(4, Status.Skipped)]
+    public async Task Summary_status_uses_core_historical_mapping_without_friend_access(int legacy, Status expected)
+    {
+        var context = new ReportJsonContext(new JsonSerializerOptions
+        {
+            TypeInfoResolver = System.Text.Json.Serialization.Metadata.JsonTypeInfoResolver.Combine()
+        });
+        var json = "{\"Status\":" + legacy + "}";
+        var summary = Required(JsonSerializer.Deserialize(json, context.TestRunSummary));
+        var index = Required(JsonSerializer.Deserialize(json, context.RunIndexEntry));
+        await Assert.That(summary.Status).IsEqualTo(expected);
+        await Assert.That(index.Status).IsEqualTo(expected);
+        await Assert.That(JsonSerializer.Serialize(summary, context.TestRunSummary))
+            .Contains("\"Status\":\"" + expected + "\"");
+        await Assert.That(JsonSerializer.Serialize(index, context.RunIndexEntry))
+            .Contains("\"Status\":\"" + expected + "\"");
+    }
+
+    [Test]
     public async Task Stored_summary_defaults_and_explicit_nulls_are_preserved()
     {
         var empty = Required(JsonSerializer.Deserialize("{}", ReportJsonContext.Default.TestRunSummary));
