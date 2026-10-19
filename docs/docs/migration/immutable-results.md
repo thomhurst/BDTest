@@ -79,3 +79,17 @@ hash to a new report, ignoring uploader-supplied identity/credentials, before
 calling storage and receivers. Authorization, attachment limits and URLs are unchanged.
 Renderer extraction remains separate in [#851](https://github.com/thomhurst/BDTest/issues/851).
 
+## Configurable streaming uploads
+
+`BDTestReportUploader` is an additive client API: pass a caller-owned `HttpClient`
+and `BDTestReportUploadOptions`, then call `UploadAsync(run, descriptor, token)`.
+It streams schema-versioned JSON with gzip by default, skips warm-up, and supports
+an explicit upload key and per-attempt timeout without changing the client.
+Use `BDTestReportUploadOptions.FromEnvironment(address, "BDTEST_REPORT_UPLOAD_API_KEY")`
+for explicit secret configuration; environment lookup is never automatic.
+See [sending results](../report-server/sending-results.md#uploader-options).
+
+Existing static upload signatures retain their warm-up, buffered uncompressed JSON
+and caller-configured headers. Neither API yet negotiates a typed response: both
+read the report URI as plain text. Use matching contracts-based host and client
+package generations for schema-version-1 uploads.

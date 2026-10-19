@@ -13,9 +13,9 @@ schema-version-1 reports. The new host also reads persisted legacy reports.
 For built-in adapters, pass the [configured assembly run](../configuration/assembly-runs.md) to report/utility helpers. Every export and store utility requires the owning run. Export all reports before disposing through the assembly owner.
 
 
-At the end of the test run, call `BDTestReportServer.SendDataAndGetReportUriAsync`. Every overload requires a `BDTestRun` and uploads only that run. It returns the URL of the new report.
+At the end of the test run, call `BDTestReportUploader.UploadAsync`. It requires a `BDTestRun`, uploads only that run and returns the report URL from the server's plain-text response. The static `BDTestReportServer.SendDataAndGetReportUriAsync` overloads remain supported with their existing behavior.
 
-Only scenarios run through BDTest (`Given(...).When(...).Then(...)`) are sent.
+The snapshot includes scenarios run through BDTest (`Given(...).When(...).Then(...)`) and pending definitions owned by the selected run.
 
 ## Example with TUnit
 
@@ -28,23 +28,20 @@ public class SendResultsToReportServer
     public static async Task AfterAllTests()
     {
         using var client = new HttpClient();
-        client.DefaultRequestHeaders.Add(
-            "X-BDTest-Upload-Key",
-            Environment.GetEnvironmentVariable("BDTEST_REPORT_UPLOAD_API_KEY"));
-
         var assembly = typeof(SendResultsToReportServer).Assembly;
         try
         {
+            var options = BDTestReportUploadOptions.FromEnvironment(
+                new Uri("https://reports.example.com"), "BDTEST_REPORT_UPLOAD_API_KEY");
+            var uploader = new BDTestReportUploader(client, options);
             var run = BDTest.TUnitBDTestAssembly.GetRun(assembly);
-            var reportUri = await BDTestReportServer.SendDataAndGetReportUriAsync(
-                new Uri("https://reports.example.com"),
+            var reportUri = await uploader.UploadAsync(run,
                 new BDTestRunDescriptor
                 {
                     Tag = "API acceptance tests",
                     BranchName = Environment.GetEnvironmentVariable("BRANCH_NAME"),
                     Environment = "Pre-production",
-                },
-                client, run);
+                });
 
             Console.WriteLine($"BDTest report: {reportUri}");
         }
@@ -57,13 +54,32 @@ For other frameworks, put the same code in the framework's after-all hook. See [
 
 ## The upload key
 
-The report server requires the `X-BDTest-Upload-Key` header on every upload. `SendDataAndGetReportUriAsync` does **not** add the header itself, so pass an `HttpClient` with the header set, as above.
+The report server requires the `X-BDTest-Upload-Key` header on every upload. Set `BDTestReportUploadOptions.UploadKey` or explicitly call `FromEnvironment`. The uploader adds the key to report and attachment requests. `FromEnvironment` defaults to `BDTEST_UPLOAD_KEY`; the example explicitly selects `BDTEST_REPORT_UPLOAD_API_KEY`. Missing or blank environment values fail immediately; no environment variables are read implicitly. A null `UploadKey` leaves authentication to the caller's client. A configured key overrides that client's default upload-key header for these requests. The static API still requires the caller to set the header.
 
 - Keep the key in a CI secret and pass it as an environment variable.
 - Use HTTPS.
 - A missing, wrong or duplicated key returns HTTP 401. So does a server with no key configured.
 
-## Overloads
+## Uploader options
+
+```csharp title="Illustrative fragment"
+var options = new BDTestReportUploadOptions(new Uri("https://reports.example.com/team/reports"))
+{
+    UploadKey = uploadKey,
+    Timeout = TimeSpan.FromSeconds(30),
+    UseGzip = true,
+};
+var uploader = new BDTestReportUploader(httpClient, options);
+var reportUri = await uploader.UploadAsync(run, descriptor, cancellationToken);
+```
+
+The uploader validates and copies options at construction. Later option changes do not affect it. The server address must be absolute HTTP(S), with no user credentials, query or fragment. A bare origin uses `/bdtest`; a supplied path is the complete external report prefix. Keys must be nonblank with no control characters when specified. `Timeout` defaults to two minutes per attempt and accepts a positive duration up to `Int32.MaxValue` milliseconds, or `Timeout.InfiniteTimeSpan`. A shorter caller `HttpClient.Timeout` still applies, including response body reading. The uploader never changes or disposes the supplied client; reuse and dispose it in your own application lifecycle.
+
+JSON streams directly using generated serialization metadata, with gzip enabled by default. Set `UseGzip = false` for plain streamed JSON. Content length is unknown until serialization, so the transport may use chunked requests. No warm-up ping is sent. Attachment bytes stream without gzip and each retry reopens the selected run's capture. Run IDs, pending definitions and empty-run timing use the same snapshot builder as JSON and HTML exports. Export before disposing the run.
+
+This client still reads a plain-text report URI. Typed JSON/201/Location negotiation is future protocol work; these transport options do not make an older server understand schema-versioned reports.
+
+## Static overloads
 
 | Overload | Use |
 | --- | --- |
@@ -74,21 +90,20 @@ All return `Task<Uri>`, the summary page of the new report. Each overload also h
 
 ## Cancellation
 
-Pass a token to stop warm-up, HTTP requests (including response buffering and attachments), and retry waits:
+Pass a token to stop HTTP requests (including streamed JSON, response buffering and attachments) and retry waits. The static API also cancels its warm-up:
 
 ```csharp title="Illustrative fragment"
 using var cancellation = new CancellationTokenSource(TimeSpan.FromSeconds(30));
-var reportUri = await BDTestReportServer.SendDataAndGetReportUriAsync(
-    serverAddress, descriptor, httpClient, run, cancellation.Token);
+var reportUri = await uploader.UploadAsync(run, descriptor, cancellation.Token);
 ```
 
-Caller cancellation propagates as `OperationCanceledException`; it is neither swallowed by the best-effort ping nor retried as a transport timeout. A pre-cancelled token sends no requests. An `HttpClient` timeout without caller cancellation retains the existing transient retry behavior. Use the caller token to bound the whole upload, including retry delays; `HttpClient.Timeout` applies to individual requests, including response buffering. Buffering remains cancellable on .NET Framework even when custom response content does not observe the token; cancellation disposes that response. Report snapshot creation and JSON serialization are synchronous: cancellation is checked around this work, but cannot interrupt it mid-operation.
+Caller cancellation propagates as `OperationCanceledException`; it is neither swallowed by the best-effort ping nor retried as a transport timeout. A pre-cancelled token sends no requests. An `HttpClient` timeout without caller cancellation retains the existing transient retry behavior. Use the caller token to bound the whole upload, including retry delays; `HttpClient.Timeout` applies to individual requests, including response buffering. Buffering remains cancellable on .NET Framework even when custom response content does not observe the token; cancellation disposes that response. Snapshot creation remains synchronous; cancellation is checked around it. The new uploader streams JSON with the attempt token, including on .NET Framework. Static API JSON serialization remains synchronous and buffered.
 
 Await the upload before disposing the run. Cancellation releases active upload requests and attachment streams, keeps your supplied `HttpClient` usable, and retains the run's captured files. It may leave a report with incomplete attachments on the server. Retrying the whole method creates a new report; cancellation does not roll back an accepted request.
 
 ## What happens during an upload
 
-1. A best-effort `GET /bdtest/ping` warms up the server. A bare origin uses `/bdtest`; a supplied path is the full report prefix and is preserved for every request; see [path prefixes](hosting.md#path-prefixes).
+1. The static API sends a best-effort `GET /bdtest/ping` to warm up the server. The new uploader skips this step. A bare origin uses `/bdtest`; a supplied path is the full report prefix and is preserved for every request; see [path prefixes](hosting.md#path-prefixes).
 2. The report is posted as JSON to `<report-base>/data` (`POST /bdtest/data` by default).
 3. On HTTP 408, 429, 500, 502, 503 or 504, a network error or an HTTP client timeout (without caller cancellation), the client retries, up to three attempts in total. It honours a `Retry-After` header given in seconds or as an HTTP date.
 4. The server creates a new ID for the report and returns its URL. `X-BDTest-Report-Id` identifies it.
@@ -99,7 +114,7 @@ The server ignores any client-supplied report ID. Each accepted upload, includin
 ## Server-side limits
 
 - `MaxCompressedUploadBytes` limits request body bytes before decompression; `MaxUploadBytes` limits decompressed JSON and its UTF-8 representation. Both default to 10 MiB, including chunked requests. Exceeding either byte limit returns HTTP 413.
-- `POST /bdtest/data` accepts plain JSON or a single `Content-Encoding: gzip`. The existing uploader sends plain JSON; a custom uploader can gzip its body while keeping a JSON content type. Unsupported encodings return 415; malformed gzip or JSON returns 400.
+- `POST /bdtest/data` accepts plain JSON or a single `Content-Encoding: gzip`. The new uploader defaults to gzip; the static API sends plain JSON. Unsupported encodings return 415; malformed gzip or JSON returns 400.
 - Content type must be `application/json`, `text/json` or `application/*+json`, in UTF-8 or UTF-16.
 - The rate limit is `UploadsPerMinute` (default 60) authenticated uploads per minute per server instance. Excess requests get HTTP 429 with `Retry-After`.
 - Invalid JSON returns HTTP 400.

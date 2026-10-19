@@ -59,6 +59,16 @@ The [first-test walkthrough](https://thomhurst.github.io/BDTest/docs/getting-sta
 adds reusable steps, readable step text and an HTML report. CI compiles this exact
 README example against the current source APIs.
 
+## Upload reports
+
+`BDTestReportUploader` uploads an explicit run using a caller-owned `HttpClient`.
+Configure `BDTestReportUploadOptions` with the report address, upload key and
+per-attempt timeout; JSON streams with gzip by default. Environment keys are
+loaded only when you explicitly call `BDTestReportUploadOptions.FromEnvironment`.
+See [sending results](https://thomhurst.github.io/BDTest/docs/report-server/sending-results).
+Use matching contracts-based host and client package generations for schema-version-1
+uploads. Existing static upload APIs remain available.
+
 ## Developing BDTest
 
 Run the core behavior and reporting suite with TUnit:
