@@ -246,3 +246,21 @@ public sealed class BDTestReports : IAsyncDisposable
 4. Remove workarounds for runtime skips: BDTest skip rules now produce skipped xUnit results instead of throwing `NotSupportedException`.
 
 The adapter supplies the runner's exact test method to `BeginTest(id, methodInfo)`. Scenario text, information, tags and retry attributes use cached method metadata, including when a helper constructs the scenario after an await. See [custom adapter migration](custom-adapters.md#method-identity-and-migration).
+
+## Cancellation
+
+The inherited base and the framework-specific composition factory automatically forward
+`Xunit.TestContext.Current.CancellationToken` to scenario and outline execution, token-aware steps, and hooks, even when no
+BDTest timeout is configured. This API is verified against xUnit v3 4.0.2. Use
+`Xunit.TestContext.Current.CancelCurrentTest()` or runner cancellation to signal the framework token.
+
+`BDTestAsync(callerToken)` combines your token with the framework token; passing a caller
+token does not disable runner cancellation. Either source stops execution before unreached
+steps or retries start. BDTest records `Failed` with an `OperationCanceledException` and a
+cancellation reason; framework cancellation alone does not set BDTest's `TimedOut` flag.
+The enclosing framework may also report its own timeout or cancellation outcome.
+
+Use the framework-specific factory for automatic forwarding. A core-only
+`BDTestScenario.For<TContext>(this, run)` host has no framework token; pass the runner token
+to `BDTestAsync(token)` explicitly when retaining that host. Steps must observe their token;
+BDTest cannot interrupt arbitrary synchronous code. See [timeouts](../writing-tests/timeouts.md).

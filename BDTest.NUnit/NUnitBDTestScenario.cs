@@ -32,6 +32,9 @@ public static class NUnitBDTestScenario
 public class NUnitBDTestScenario<TContext> : BDTestScenario<TContext>, INUnitBDTestLifecycle
     where TContext : class
 {
+    /// <summary>The cancellation token supplied by the current NUnit test.</summary>
+    protected override CancellationToken FrameworkCancellationToken => NUnit.Framework.TestContext.CurrentContext.CancellationToken;
+
     protected internal NUnitBDTestScenario(object testInstance, BDTestRun run) : base(testInstance, run)
     {
         _testInstance = testInstance;

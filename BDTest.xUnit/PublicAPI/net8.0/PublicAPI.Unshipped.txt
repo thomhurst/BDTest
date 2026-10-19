@@ -33,6 +33,7 @@ BDTest.XUnitBDTestLifecycle.OnTestStartingAsync(Xunit.v3.IXunitTest! test) -> Sy
 BDTest.XUnitBDTestLifecycle.XUnitBDTestLifecycle() -> void
 BDTest.XUnitBDTestScenario
 override BDTest.XUnitBDTestBase<TContext>.BDTestExecutionId.get -> string!
+override BDTest.XUnitBDTestBase<TContext>.FrameworkCancellationToken.get -> System.Threading.CancellationToken
 override BDTest.XUnitBDTestBase<TContext>.OnScenarioSkipped(string! reason) -> void
 override BDTest.XUnitBDTestBase<TContext>.TestRun.get -> BDTest.BDTestRun!
 static BDTest.XUnitBDTestAssembly.Dispose(System.Reflection.Assembly! assembly) -> void

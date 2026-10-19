@@ -11,6 +11,9 @@ namespace BDTest;
 public abstract class XUnitBDTestBase<TContext> : AbstractContextBDTestBase<TContext>, IDisposable, IAsyncLifetime
     where TContext : class
 {
+    /// <summary>The cancellation token supplied by the current framework test.</summary>
+    protected override CancellationToken FrameworkCancellationToken => TestContext.Current.CancellationToken;
+
     private BDTestRun? _assemblyRun;
 
     /// <summary>The configured run owned by this fixture's assembly, or an explicit override.</summary>

@@ -95,7 +95,7 @@ protected override CancellationToken FrameworkCancellationToken =>
     MyRunner.CurrentTest.CancellationToken;
 ```
 
-Read the token for the current execution, including each parallel test or data row. The core combines it with the token passed to `BDTestAsync(cancellationToken)` and active step/scenario limits. This property defaults to `CancellationToken.None`; adding this core extension does not itself connect the built-in adapters to runner cancellation.
+Read the token for the current execution, including each parallel test or data row. The core combines it with the token passed to `BDTestAsync(cancellationToken)` and active step/scenario limits. This property defaults to `CancellationToken.None`. The official adapter bases and framework-specific composition factories override it to supply their current runner token; core-only composition hosts require an explicit token.
 
 Execution cancellation records `Failed` with an `OperationCanceledException`, leaves `TimedOut` false and stops retries and subsequent outline rows. `IStepHook` methods receive the effective token as their second argument; scenario hooks read `ScenarioHookContext.CancellationToken`. See [Timeouts and cancellation](../writing-tests/timeouts.md) for bounded cleanup and the limits of cancelling synchronous code.
 

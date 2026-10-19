@@ -33,11 +33,18 @@ public static class XUnitBDTestScenario
         var currentInstance = TestContext.Current.TestClassInstance;
         if (currentInstance != null && !ReferenceEquals(currentInstance, testInstance))
             throw new ArgumentException("Pass the running xUnit test instance.", nameof(testInstance));
-        var host = BDTestScenario.For<TContext>(testInstance, run);
+        var host = new FrameworkScenario<TContext>(testInstance, run);
         var execution = new XUnitTestExecution(testInstance,
             () => host.BeginTest(test.UniqueID, test.TestMethod.Method),
             host.EndTestAsync, compositionRun: run);
         execution.Begin();
         return host;
+    }
+
+    // Resolve at execution time: factories can run before the runner installs its test token.
+    private sealed class FrameworkScenario<TContext>(object testInstance, BDTestRun run)
+        : BDTestScenario<TContext>(testInstance, run) where TContext : class
+    {
+        protected override CancellationToken FrameworkCancellationToken => TestContext.Current.CancellationToken;
     }
 }

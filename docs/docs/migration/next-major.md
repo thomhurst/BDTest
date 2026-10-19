@@ -33,6 +33,20 @@ packages retain their signing key. Starting with 3.x, assembly versions remain
 `Major.0.0.0` across minor and patch releases; package and informational versions
 still identify the exact release. This does not permit mixing package versions.
 
+## Automatic framework cancellation
+
+Official NUnit, xUnit v3, MSTest, and TUnit bases now forward runner cancellation
+to scenarios, outlines, token-aware steps, and hooks without requiring a BDTest
+timeout. `BDTestAsync(callerToken)` combines both tokens. Cancellation prevents
+unreached steps and retries and records a cancellation reason as `Failed`; the
+framework may independently report a timeout or cancellation.
+
+For composition, use the framework-specific factory (for example,
+`MSTestBDTestScenario.For<TContext>(this, run)` or
+`TUnitBDTestScenario.For<TContext>(this, run)`) with the existing lifecycle wiring.
+Core-only `BDTestScenario.For` hosts still require an explicit runner token.
+See the [framework guides](../frameworks/overview.md) for the installed APIs.
+
 ## Test code and execution
 
 | Existing usage | Upgrade action |
