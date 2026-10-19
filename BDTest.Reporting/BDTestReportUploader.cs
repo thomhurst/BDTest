@@ -10,9 +10,17 @@ public sealed class BDTestReportUploader
 {
     private readonly HttpClient client;
     private readonly BDTestReportUploadOptions options;
+    private readonly Action<CancellationTokenSource, TimeSpan>? scheduleAttemptTimeout;
 
     public BDTestReportUploader(HttpClient httpClient, BDTestReportUploadOptions options)
+        : this(httpClient, options, null)
     {
+    }
+
+    internal BDTestReportUploader(HttpClient httpClient, BDTestReportUploadOptions options,
+        Action<CancellationTokenSource, TimeSpan>? scheduleAttemptTimeout)
+    {
+        this.scheduleAttemptTimeout = scheduleAttemptTimeout;
         client = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
         this.options = (options ?? throw new ArgumentNullException(nameof(options))).ValidatedCopy();
     }
@@ -25,5 +33,5 @@ public sealed class BDTestReportUploader
     /// <summary>Uploads a run and its attachments, returning the report URI and server-assigned ID.</summary>
     /// <remarks>Legacy servers without receipt headers return a null report ID. Cancellation may leave a partial report.</remarks>
     public Task<BDTestReportUploadResult> UploadReportAsync(BDTestRun run, BDTestRunDescriptor? descriptor = null, CancellationToken cancellationToken = default)
-        => ReportUploadTransport.UploadAsync(options.ServerAddress, descriptor, client, run, cancellationToken, options);
+        => ReportUploadTransport.UploadAsync(options.ServerAddress, descriptor, client, run, cancellationToken, options, scheduleAttemptTimeout);
 }
