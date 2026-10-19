@@ -37,7 +37,7 @@ Timeouts always produce `Failed`, even when `TimeoutException` is registered.
 For built-in adapters, add custom types in `IBDTestConfiguration.Configure` for
 [the test assembly](assembly-runs.md):
 
-```csharp
+```csharp title="Illustrative fragment"
 public sealed class TestConfiguration : IBDTestConfiguration
 {
     public void Configure(BDTestOptions options)
@@ -53,7 +53,7 @@ The assembly run freezes these registrations when it is first created. Each run 
 
 For an [explicit run](../advanced/explicit-runs.md), register types on `BDTestOptions` before starting it:
 
-```csharp
+```csharp title="Illustrative fragment"
 var options = new BDTestOptions();
 options.SuccessExceptionTypes.Add(typeof(MySuccessException));
 options.SkipExceptionTypes.Add(typeof(MySkipException));
@@ -86,7 +86,7 @@ Each built-in adapter exposes an immutable `OutcomeMap` of type
 `BDTest.Settings.FrameworkOutcomeMap`. Register that declaration when selecting
 an explicit run, so classification and runner notifications belong to that run:
 
-```csharp
+```csharp title="Illustrative fragment"
 var options = new BDTestOptions();
 options.RegisterFrameworkOutcomes(NUnitBDTestBase<object>.OutcomeMap);
 using var run = BDTestRun.Start(options);
@@ -101,7 +101,7 @@ from global settings. `Start()` still starts with no mappings.
 
 For a custom adapter, declare a map once:
 
-```csharp
+```csharp title="Illustrative fragment"
 var map = new FrameworkOutcomeMap(
         reason => Runner.Skip(reason),
         reason => Runner.Inconclusive(reason))

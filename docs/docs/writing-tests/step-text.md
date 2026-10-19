@@ -32,7 +32,7 @@ Without generated metadata, BDTest falls back to the lambda's source text (from 
 
 For a simple method call without `[StepText]`, BDTest humanises the method name, lowercases its first letter and appends the argument values separated by spaces:
 
-```csharp
+```csharp title="Illustrative fragment"
 public void CreateAnAccount(decimal balance) { ... }
 public void the_user_is_logged_in() { ... }
 
@@ -56,7 +56,7 @@ The next major version removes the Humanizer dependency. See [generated name tex
 
 Use `[StepText]` on the step method to write the text yourself. `{0}`, `{1}` and so on are replaced with the argument values, using `string.Format` placeholders:
 
-```csharp
+```csharp title="Illustrative fragment"
 [StepText("my name is {0} {1}")]
 public void SetName(string firstName, string lastName) { ... }
 
@@ -71,7 +71,7 @@ await Given(() => SetName("Tom", "Longhurst"))  // "Given my name is Tom Longhur
 
 Replace a placeholder with fixed text, for example to hide a secret. Each override has the form `"index:replacement"`:
 
-```csharp
+```csharp title="Illustrative fragment"
 [StepText("I sign in as {0} with password {1}", "1:********")]
 public Task SignIn(string user, string password) { ... }
 
@@ -88,7 +88,7 @@ The generator captures arguments when the lambda's body is a single method call 
 - a compile-time constant (except enum constants), or
 - a field or property path rooted in `this` or a static member, such as `Context.OrderId` or `Current.Order.Id`. Private members are fine.
 
-```csharp
+```csharp title="Illustrative fragment"
 Given(() => Submit(Context.OrderId)); // read just before the step runs
 When(() => Check(42, "ready"));       // constants
 Then(() => Check(Current.Order.Id));  // static property, read just before the step runs
@@ -100,7 +100,7 @@ Everything else needs explicit arguments: captured local variables and parameter
 
 Call `.WithArgs(...)` after a step to supply argument readers, in the method's parameter order:
 
-```csharp
+```csharp title="Illustrative fragment"
 var order = GetOrder();
 
 await When(() => Orders.Submit(order))
@@ -126,7 +126,7 @@ Generated and explicit argument readers run **once per executed attempt**, immed
 
 Call `.WithStepText(() => "...")` after a step to replace its text in that scenario only. Use it for a custom sentence, or when arguments do not convert to readable text:
 
-```csharp
+```csharp title="Illustrative fragment"
 await When(() => UpdateSteps.UpdateTheField(request => request.EmailAddress, newEmailAddress))
     .WithStepText(() => $"I update the customer's email address to '{newEmailAddress}'")
     .Then(() => HttpAssertions.TheStatusCodeIs(HttpStatusCode.OK))
@@ -154,7 +154,7 @@ A registered [custom converter](#custom-converters) takes precedence over all of
 
 Implement `IStepTextStringConverter<T>` to control how a type appears in step text:
 
-```csharp
+```csharp title="Illustrative fragment"
 using BDTest.Interfaces;
 
 public sealed class PersonStringConverter : IStepTextStringConverter<Person>
@@ -165,7 +165,7 @@ public sealed class PersonStringConverter : IStepTextStringConverter<Person>
 
 Register it in `IBDTestConfiguration.Configure(BDTestOptions options)`, or before starting a standalone run:
 
-```csharp
+```csharp title="Illustrative fragment"
 options.RegisterCustomStringConverter<Person>(new PersonStringConverter());
 ```
 
@@ -183,7 +183,7 @@ In a [scenario outline](scenario-outlines.md), `<Name>` placeholders in step tex
 
 Use `StepTable` and `StepDocString` from `BDTest.Test` for structured step arguments. Both the hosted Razor report and the standalone HTML report show tables and multiline code blocks with HTML-encoded values.
 
-```csharp
+```csharp title="Illustrative fragment"
 using BDTest.Test;
 
 private StepTable Users => StepTable.From(new[]
@@ -206,7 +206,7 @@ Automatic capture follows the [generator's argument rules](#which-arguments-are-
 
 To keep an existing step method signature, attach report values to the most recent step:
 
-```csharp
+```csharp title="Illustrative fragment"
 await Given(() => TheseUsersExist(users))
     .WithTable(() => StepTable.From(users))
     .When(() => Post(json))

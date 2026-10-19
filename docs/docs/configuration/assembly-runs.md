@@ -11,7 +11,7 @@ The NUnit, xUnit, MSTest and TUnit adapters share one `BDTestRun` per concrete t
 
 Add one assembly attribute selecting a public configuration class with a public parameterless constructor:
 
-```csharp
+```csharp sample="TUnit/Configuration.cs" title="Compiled example"
 using BDTest;
 
 [assembly: BDTestConfiguration(typeof(TestConfiguration))]
@@ -45,7 +45,7 @@ Base-class adapters resolve the assembly of the actual derived fixture. Framewor
 
 Always pass the selected run to report and utility helpers:
 
-```csharp
+```csharp title="Illustrative fragment"
 var assembly = typeof(MyTests).Assembly;
 var run = NUnitBDTestAssembly.GetRun(assembly);
 var descriptor = new BDTestRunDescriptor { Environment = "CI", Tag = "Acceptance" };
@@ -61,7 +61,7 @@ The assembly host owns cleanup. After **all tests, teardown, background output w
 
 For NUnit, put this fixture outside any namespace so cleanup covers the whole assembly:
 
-```csharp
+```csharp title="Illustrative fragment"
 [SetUpFixture]
 public sealed class Reports
 {

@@ -10,7 +10,7 @@ For built-in adapters, pass the [configured assembly run](../configuration/assem
 
 `BDTestHtmlHelper` builds one self-contained HTML page. CSS, JavaScript and data are all embedded, so the file works offline and can be shared by email or attached to a build.
 
-```csharp
+```csharp title="Illustrative fragment"
 using BDTest;
 using BDTest.Helpers;
 
@@ -35,7 +35,7 @@ The method returns a string; you decide where to write it.
 
 TUnit example:
 
-```csharp
+```csharp title="Illustrative fragment"
 public class TestReportSetup
 {
     [After(HookType.Assembly)]

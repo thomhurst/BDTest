@@ -11,7 +11,7 @@ To integrate without requiring test-class inheritance, create a [composition hos
 
 ## Start from `AbstractContextBDTestBase<TContext>`
 
-```csharp
+```csharp title="Illustrative fragment"
 using BDTest;
 using BDTest.Settings;
 using BDTest.Test;
@@ -101,7 +101,7 @@ The built-in adapters use:
 
 Call `BeginTest` **synchronously** in the flow that runs setup and the test body, before any async work starts, and await `EndTestAsync()` in teardown. Keep both calls in the same async entry method:
 
-```csharp
+```csharp title="Illustrative fragment"
 public async Task RunTestAsync(string frameworkTestId, System.Reflection.MethodInfo testMethod)
 {
     BeginTest(frameworkTestId, testMethod);

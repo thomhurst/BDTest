@@ -13,7 +13,7 @@ In the next major version, fluent construction and pending report data use separ
 
 Read `GetStoryText()`, `GetScenarioText()`, `ParameterNames`, tags and caller details as before. The summary adds `Timeout` and `Steps`, where each step has `StepType`, template `StepText` and `Timeout`. `ScenarioId` identifies the pending definition and matches the fluent builder's `ScenarioId`. Compare this ID rather than comparing a summary with a builder instance. Summaries have no `BdTestBase` or `Run` reference and cannot be executed or extended.
 
-```csharp
+```csharp title="Illustrative fragment"
 using BDTest;
 using BDTest.Test;
 

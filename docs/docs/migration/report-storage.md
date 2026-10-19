@@ -14,7 +14,7 @@ The next major report-server API separates report bytes from the run index. Exis
 
 For a staged migration:
 
-```csharp
+```csharp title="Illustrative fragment"
 var adapter = new LegacyDataStoreAdapter(existingStore);
 builder.Services.AddSingleton<IReportStore>(adapter);
 builder.Services.AddSingleton<IRunIndexStore>(adapter);

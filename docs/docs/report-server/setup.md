@@ -24,7 +24,7 @@ package. If your app uses that package, add a direct package reference to it.
 
 ## 2. Register the services
 
-```csharp title="Program.cs"
+```csharp sample="Server/Program.cs" title="Compiled example"
 using BDTest.Razor.Reports.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -52,7 +52,7 @@ Install `BDTest.Reports.Storage.FileSystem` to keep report bytes and run metadat
 in a directory. Add `using BDTest.Reports.Storage.FileSystem;`, then register it
 alongside `AddBDTestReports` before building the host:
 
-```csharp
+```csharp title="Illustrative fragment"
 builder.Services.AddBDTestFileSystemStorage()
     .BindConfiguration("BDTestFileSystem");
 ```
@@ -80,7 +80,7 @@ concurrency and filesystem requirements.
 
 `app.MapBDTestReports(string prefix = "/bdtest")` maps the report controllers and their CSS, JavaScript and favicon. Call it once, before `MapControllers`, `MapControllerRoute`, or resolving MVC action descriptors. `MapControllers` alone no longer exposes reports. `MapBDTestReports` publishes only report endpoints; call `MapControllers` or `MapControllerRoute` separately to expose the host's controllers. Report conventions do not apply to those host endpoints. The prefix must be a non-root literal path containing letters, digits, slashes, hyphens or underscores; a trailing slash is accepted.
 
-```csharp
+```csharp title="Illustrative fragment"
 app.MapBDTestReports("/team/reports")
     .RequireAuthorization("Reports");
 ```
@@ -122,7 +122,7 @@ Without persistent stores, reports are kept only in a bounded memory cache. A re
 
 `BDTestReportOptions` (namespace `BDTest.Razor.Reports.Models`) contains configuration values only. Configure it during service registration, before building the host:
 
-```csharp
+```csharp title="Illustrative fragment"
 builder.Services.AddBDTestReports(options =>
 {
     options.ReportCacheSizeLimitBytes = 128L * 1024 * 1024;

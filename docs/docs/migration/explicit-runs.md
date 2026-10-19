@@ -15,7 +15,7 @@ For NUnit, xUnit, MSTest and TUnit, use the existing
 [assembly configuration](../configuration/assembly-runs.md) and assembly owner.
 Standalone callers and custom adapters create their own run:
 
-```csharp
+```csharp title="Illustrative fragment"
 var options = new BDTestOptions();
 options.RetryTestRules.Add(error => error is IOException, retryLimit: 2);
 options.SkipExceptionTypes.Add(typeof(MySkipException));
@@ -55,7 +55,7 @@ and [options](../configuration/settings.md).
 
 ## Export and dispose
 
-```csharp
+```csharp title="Illustrative fragment"
 var descriptor = new BDTestRunDescriptor { Tag = "Nightly", Environment = "Staging" };
 descriptor.CustomProperties["Build"] = buildNumber;
 var html = BDTestHtmlHelper.GetTestHtmlReport(descriptor, run);

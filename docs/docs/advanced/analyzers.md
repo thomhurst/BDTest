@@ -30,7 +30,7 @@ The package contains a `netstandard2.0` Roslyn component under `analyzers/dotnet
 
 Execute each scenario and observe its completion:
 
-```csharp
+```csharp title="Illustrative fragment"
 await Given(() => SetUpAccount())
     .When(() => SubmitOrder())
     .Then(() => AssertOrder())
@@ -47,7 +47,7 @@ The fix adds `await` to a discarded expression statement inside an existing asyn
 
 StepText uses zero-based positional placeholders, including composite formatting alignment and format components:
 
-```csharp
+```csharp title="Illustrative fragment"
 [StepText("account {0}, balance {1,10:N2}")]
 void Account(string name, decimal balance) { }
 ```
@@ -62,7 +62,7 @@ Invalid composite syntax is an error. User formatters, runtime converters and ar
 
 Supply exactly one nonempty role plus both goal and benefit:
 
-```csharp
+```csharp title="Illustrative fragment"
 [Story(AsA = "customer", IWant = "to submit an order", SoThat = "I receive my purchase")]
 class OrderTests { }
 ```
@@ -73,7 +73,7 @@ Use either `AsA` or `AsAn`. Setting both is a warning. Missing or empty role, `I
 
 A step bound to `Action` must not be `async void` or discard an awaitable. For example, a statement lambda can accidentally select Action:
 
-```csharp
+```csharp title="Illustrative fragment"
 // Error: Action finishes before SaveAsync completes.
 Given(() => { SaveAsync(); });
 
@@ -98,7 +98,7 @@ dotnet_diagnostic.BDT003.severity = none
 
 For deliberate invalid-input or unexecuted-scenario tests, suppress only the relevant code and explain why:
 
-```csharp
+```csharp title="Illustrative fragment"
 #pragma warning disable BDT002 // Verify runtime rejection of an invalid template.
 [StepText("{1}")]
 void InvalidTemplate(string onlyParameter) { }

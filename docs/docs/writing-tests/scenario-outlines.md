@@ -7,7 +7,7 @@ description: Run one scenario over a table of typed example rows.
 
 A scenario outline runs the same scenario once per example row. It is the BDTest equivalent of a Gherkin `Scenario Outline` with an `Examples` table, written with typed C# objects.
 
-```csharp
+```csharp title="Illustrative fragment"
 [Test]
 public async Task AddingNumbers()
 {
@@ -37,7 +37,7 @@ Await the outline directly or call `BDTestAsync()`. Like a normal chain, an outl
 
 Public property names of the example type become the columns of the example table. `<Name>` placeholders in step text, including `[StepText]` and `.WithStepText(...)`, are replaced with that row's values:
 
-```csharp
+```csharp title="Illustrative fragment"
 [StepText("I log in as <Name> with role <Role>")]
 public Task LogIn(string name, string role) { ... }
 

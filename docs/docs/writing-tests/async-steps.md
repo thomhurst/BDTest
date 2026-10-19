@@ -7,7 +7,7 @@ description: Use async steps, await scenarios, and understand how BDTest treats 
 
 Any `Given`, `When`, `Then`, `And` or `But` accepts a synchronous call or a call that returns `Task`. Mix them freely:
 
-```csharp
+```csharp title="Illustrative fragment"
 [Test]
 public async Task CreateAndFetchAccount()
 {
@@ -21,7 +21,7 @@ public async Task CreateAndFetchAccount()
 
 Test methods return `Task` and await the scenario, either with `BDTestAsync()` or by awaiting the chain directly:
 
-```csharp
+```csharp title="Illustrative fragment"
 [Test]
 public async Task CreateAccount() => await When(() => Accounts.CreateAccountAsync())
     .Then(() => Assertions.TheAccountIsActive());
@@ -35,7 +35,7 @@ Do not call `.Result`, `.Wait()` or `.GetAwaiter().GetResult()` on a scenario. B
 
 Step delegates can return `Task`, `Task<T>`, `ValueTask` or `ValueTask<T>`. BDTest awaits each result once before the next step starts, and reports asynchronous exceptions. Return the operation directly; no `.AsTask()` is needed:
 
-```csharp
+```csharp title="Illustrative fragment"
 await When(() => Repository.SaveAsync())   // Task or ValueTask
     .Then(() => Assertions.TheItemWasSaved())
     .BDTestAsync();

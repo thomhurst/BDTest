@@ -19,7 +19,7 @@ The xUnit adapter does not write to `ITestOutputHelper`. BDTest captures output 
 
 Output written outside the steps, for example in setup and teardown hooks, is not attached to a step. To include it in the report, use the base class methods:
 
-```csharp
+```csharp title="Illustrative fragment"
 public class OrderTests : TUnitBDTestBase<OrderContext>
 {
     [Before(HookType.Test)]
@@ -44,7 +44,7 @@ For binary content such as screenshots, logs and HAR files, use [attachments](at
 
 `ScenarioHtmlWriter` on the base class adds content to the current scenario's report entry. Each access returns a new writer for the current test:
 
-```csharp
+```csharp title="Illustrative fragment"
 [Test]
 public async Task CreatesAnOrder()
 {

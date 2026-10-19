@@ -40,7 +40,7 @@ The generator supplies unevaluated metadata; core builders own rendering, retrie
 
 The lambda must have a single expression body calling an ordinary method. The generator supports compiler constants (except enum constants) and field/non-indexed-property paths rooted in captured `this` or a static member. For example:
 
-```csharp
+```csharp title="Illustrative fragment"
 Given(() => Submit(Context.OrderId)); // this.Context.OrderId, evaluated by an accessor later
 When(() => Check(42, "ready"));       // constants
 Then(() => Check(Current.Order.Id));  // a static Current property is read later

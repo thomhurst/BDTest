@@ -21,7 +21,7 @@ There are three separate controls:
 
 Register an authentication provider and a named read policy that requires an authenticated user. For example, with Microsoft Entra ID through `Microsoft.Identity.Web` and `Microsoft.Identity.Web.UI`:
 
-```csharp
+```csharp title="Illustrative fragment"
 using BDTest.Razor.Reports.Extensions;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.Identity.Web;
@@ -48,7 +48,7 @@ builder.Services.AddRazorPages();
 
 The pipeline must select the endpoint before checking its authorization:
 
-```csharp
+```csharp title="Illustrative fragment"
 app.UseBDTestReportServer();
 
 app.UseHttpsRedirection();
@@ -90,7 +90,7 @@ The example above explicitly makes upload actions, ping, errors and report asset
 
 Uploads require a shared secret in the `X-BDTest-Upload-Key` header:
 
-```csharp
+```csharp title="Illustrative fragment"
 builder.Services.AddBDTestReports(options =>
 {
     options.UploadApiKey = builder.Configuration["BDTest:UploadApiKey"];
@@ -119,7 +119,7 @@ This major-version change removes `IAdminAuthorizer`, `NoOpAdminAuthorizer` and 
 
 Existing private hosts must set `ReportsAuthorizationPolicy` or apply explicit endpoint authorization. A global fallback policy alone does not configure report access. For an intentionally public host, explicitly opt in:
 
-```csharp
+```csharp title="Illustrative fragment"
 builder.Services.AddBDTestReports(options =>
 {
     options.AllowAnonymousReports = true;
@@ -147,7 +147,7 @@ Inline styles stay allowed for Bootstrap, charts and custom output. Google Fonts
 
 If `IUserPersonalizer.GetProfilePictureUri` or a custom view uses a plain-HTTP image URL, switch it to HTTPS or explicitly allow its origin:
 
-```csharp
+```csharp title="Illustrative fragment"
 builder.Services.AddBDTestReports(options =>
 {
     options.AdditionalImageSources = new[] { "http://images.internal.example:8080" };

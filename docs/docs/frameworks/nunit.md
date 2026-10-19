@@ -18,18 +18,18 @@ dotnet add package BDTest.NUnit
 
 Use `[BDTestFixture]` and implement `INUnitBDTest`. Create one stable NUnit host for the actual fixture instance using its assembly run (or pass an explicitly owned run):
 
-```csharp
+```csharp sample="NUnit/Composition.cs" title="Compiled example"
 using BDTest;
 using BDTest.NUnit;
 using BDTest.Test;
 using NUnit.Framework;
 
 [BDTestFixture]
-public class BasketTests : CompanyTestBase, INUnitBDTest
+public class ComposedBasketTests : CompanyTestBase, INUnitBDTest
 {
     private readonly NUnitBDTestScenario<BasketContext> _bdt;
 
-    public BasketTests()
+    public ComposedBasketTests()
     {
         _bdt = NUnitBDTestScenario.For<BasketContext>(this);
     }
@@ -65,7 +65,7 @@ NUnit selects method-level setup/teardown wrappers before class-level wrappers. 
 
 Optionally, inherit from `NUnitBDTestBase<TContext>`:
 
-```csharp
+```csharp sample="NUnit/Inheritance.cs" title="Compiled example"
 using BDTest.Attributes;
 using BDTest.NUnit;
 using NUnit.Framework;
@@ -107,7 +107,7 @@ Inheritance and the no-run composition overload share `NUnitBDTestAssembly.GetRu
 
 Use an NUnit `[SetUpFixture]` with no namespace so it covers the entire test assembly to run code after all tests:
 
-```csharp
+```csharp sample="NUnit/AssemblyReport.cs" title="Compiled example"
 using BDTest;
 using BDTest.Helpers;
 using NUnit.Framework;
@@ -124,7 +124,7 @@ public class BDTestReports
 
         try
         {
-            File.WriteAllText("BDTest-Report.html",
+            await File.WriteAllTextAsync("BDTest-Report.html",
                 BDTestHtmlHelper.GetTestHtmlReport(descriptor, run));
 
             // Or upload to a report server before disposing the run:

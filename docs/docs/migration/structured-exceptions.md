@@ -7,7 +7,7 @@ description: Full exception identities, nested diagnostics and root-cause groupi
 
 `ExceptionWrapper.TypeName` now contains the full type name, such as `System.InvalidOperationException`. Use `ShortTypeName` for a compact display name. Update code that compares `TypeName` to a short string:
 
-```csharp
+```csharp title="Illustrative fragment"
 // Identity checks distinguish types in different namespaces.
 bool isInvalidOperation = exception.TypeName == typeof(InvalidOperationException).FullName;
 

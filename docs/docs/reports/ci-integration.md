@@ -28,7 +28,7 @@ Use `succeededOrFailed()` / `if: always()` so the report is published when tests
     path: bdtest-report/
 ```
 
-```csharp
+```csharp title="Illustrative fragment"
 var run = BDTest.TUnit.TUnitBDTestAssembly.GetRun(typeof(MyTests).Assembly);
 var directory = Environment.GetEnvironmentVariable("BDTEST_REPORT_DIR") ?? AppContext.BaseDirectory;
 Directory.CreateDirectory(directory);

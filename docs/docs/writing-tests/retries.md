@@ -16,7 +16,7 @@ Only failures are retried. Passed, skipped and inconclusive results, and excepti
 
 Apply `[BDTestRetry(count)]` to a test method, a test class or the whole assembly. `count` is the number of retries after the first attempt.
 
-```csharp
+```csharp title="Illustrative fragment"
 [Test]
 [BDTestRetry(2)] // up to 3 attempts in total
 public async Task CallsAFlakyService()
@@ -27,7 +27,7 @@ public async Task CallsAFlakyService()
 }
 ```
 
-```csharp
+```csharp title="Illustrative fragment"
 [assembly: BDTest.Attributes.BDTestRetry(1)]
 ```
 
@@ -37,7 +37,7 @@ BDTest looks for the attribute on the scenario method first, then on the step fr
 
 Retry based on the exception, for example for known transient errors:
 
-```csharp
+```csharp title="Illustrative fragment"
 options.RetryTestRules.Add(
     exception => exception is HttpRequestException,
     retryLimit: 3);
@@ -56,7 +56,7 @@ Before each retry, BDTest:
 5. runs methods marked `[BDTestRetrySetUp]`,
 6. runs the steps again.
 
-```csharp
+```csharp title="Illustrative fragment"
 public class OrderTests : TUnitBDTestBase<OrderContext>
 {
     [BDTestRetryTearDown]

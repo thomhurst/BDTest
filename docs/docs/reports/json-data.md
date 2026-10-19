@@ -16,7 +16,7 @@ legacy model described here until their migrations land.
 
 ## Exporting
 
-```csharp
+```csharp title="Illustrative fragment"
 using BDTest.Helpers;
 
 var run = BDTest.NUnit.NUnitBDTestAssembly.GetRun(typeof(MyTests).Assembly);
@@ -34,7 +34,7 @@ The output is indented.
 
 Use the serializer methods to work with `BDTestOutputModel` directly:
 
-```csharp
+```csharp title="Illustrative fragment"
 using BDTest.Helpers;
 using BDTest.Maps;
 
@@ -94,7 +94,7 @@ Report collections use empty defaults, but historical or custom JSON can explici
 
 `ExceptionWrapper.Message`, `StackTrace`, `TypeName`, `ShortTypeName`, `Source`, `AsString` and `TruncationReason` are nullable. For example, an exception that has not been thrown has no stack trace, and an older report may not include structured exception fields. Custom report code must check optional values before using string members:
 
-```csharp
+```csharp title="Illustrative fragment"
 var title = step.StepText ?? "Unnamed step";
 if (step.Exception?.StackTrace is { } stackTrace)
 {

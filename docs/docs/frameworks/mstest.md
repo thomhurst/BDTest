@@ -18,7 +18,7 @@ dotnet add package BDTest.MSTest
 
 Use `[BDTestClass]`, implement `IBDTestMSTestTest`, and forward MSTest's public `TestContext` setter to `MSTestBDTestLifecycle.Initialize`. The property needs both a public getter and setter for MSTest discovery. Return the same host throughout each test invocation.
 
-```csharp
+```csharp sample="MSTest/Composition.cs" title="Compiled example"
 using BDTest;
 using BDTest.MSTest;
 using BDTest.Settings;
@@ -26,12 +26,12 @@ using BDTest.Test;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 [BDTestClass]
-public class BasketTests : CompanyTestBase, IBDTestMSTestTest
+public class ComposedBasketTests : CompanyTestBase, IBDTestMSTestTest
 {
-    private readonly BDTestScenario<BasketContext> _bdd;
+    private readonly BDTestScenario<ComposedBasketContext> _bdd;
     private TestContext _testContext = null!;
 
-    public BasketTests() => _bdd = BDTestScenario.For<BasketContext>(this, TestRuns.Baskets);
+    public ComposedBasketTests() => _bdd = BDTestScenario.For<ComposedBasketContext>(this, TestRuns.Baskets);
 
     public BDTestBase BDTestHost => _bdd;
 
@@ -62,7 +62,7 @@ public class BasketTests : CompanyTestBase, IBDTestMSTestTest
     }
 }
 
-public sealed class BasketContext
+public sealed class ComposedBasketContext
 {
     public List<string> Items { get; } = new();
 }
@@ -90,7 +90,7 @@ Method metadata, class story/tags, and attributed retry hooks come from the owni
 
 Inherit from `MSTestBDTestBase<TContext>` and mark the class with `[BDTestClass]`:
 
-```csharp
+```csharp sample="MSTest/Inheritance.cs" title="Compiled example"
 using BDTest.Attributes;
 using BDTest.MSTest;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -128,7 +128,11 @@ The adapter exposes the runner-injected `TestContext` as `TestContext?`. It is a
 
 Use `[AssemblyCleanup]` on a static method in a `[TestClass]`:
 
-```csharp
+```csharp sample="MSTest/AssemblyReport.cs" title="Compiled example"
+using BDTest;
+using BDTest.Helpers;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+
 [TestClass]
 public class BDTestReports
 {
@@ -139,7 +143,7 @@ public class BDTestReports
         try
         {
             var run = BDTest.MSTest.MSTestBDTestAssembly.GetRun(assembly);
-            File.WriteAllText("BDTest-Report.html", BDTestHtmlHelper.GetTestHtmlReport(null, run));
+            await File.WriteAllTextAsync("BDTest-Report.html", BDTestHtmlHelper.GetTestHtmlReport(null, run));
         }
         finally { BDTest.MSTest.MSTestBDTestAssembly.Dispose(assembly); }
         // or: await BDTestReportServer.SendDataAndGetReportUriAsync(...)
@@ -149,7 +153,11 @@ public class BDTestReports
 
 For the explicit run above, export and dispose that run in `[AssemblyCleanup]`:
 
-```csharp
+```csharp sample="MSTest/ExplicitReport.cs" title="Compiled example"
+using BDTest;
+using BDTest.Helpers;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+
 [TestClass]
 public class BasketReports
 {

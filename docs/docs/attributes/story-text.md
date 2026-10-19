@@ -7,7 +7,7 @@ description: Format story roles, goals, and benefits with StoryAttribute.
 
 Apply `[Story]` to a test class to describe its role, goal, and benefit:
 
-```csharp
+```csharp title="Illustrative fragment"
 using BDTest.Attributes;
 using BDTest.Test;
 
