@@ -12,7 +12,7 @@ The repository contains a small sample in [`BDTest.Example`](https://github.com/
 | `MyTestBase.cs` | A shared base class deriving from `NUnitBDTestBase<MyTestContext>`. Step classes are exposed as getter properties: `Steps => new(Context)`. |
 | `Context/MyTestContext.cs`, `Context/MyApiContext.cs` | A context object graph that wraps an `HttpClient`, the request and the response. |
 | `Steps/MyStepClass.cs` | Action steps that take the context in their constructor. |
-| `Steps/Assertions/MyAssertionStepClass.cs` | Assertion steps, for example `[StepText("the HTTP status code is {0}")]`. |
+| `Steps/Assertions/MyAssertionStepClass.cs` | Assertion steps, for example `[StepText("the HTTP status code is {httpStatusCode}")]`. |
 | `ExampleTest.cs` | `[Story]`, `[ScenarioText]`, a `When(...).Then(...)` chain and a custom `[BugInformation]` attribute. |
 | `BugInformationAttribute.cs` | A `TestInformationAttribute` subclass that adds a bug link to the report. |
 | `DifferentReportScenarioTests.cs` | Passed, failed, ignored and inconclusive outcomes, setup and teardown output, `[StepText]` on private methods, and `ScenarioHtmlWriter.Link(...)`. |

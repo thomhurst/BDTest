@@ -85,7 +85,7 @@ public class JsonResultsTests : RunTUnitTestBase<MyTestContext>
         HistoricalReportFixture.AssertCompatible(restored);
     }
 
-    [StepText("{0} {1}")]
+    [StepText("{one} {two}")]
     private static void CustomStep(string one, string two)
     {
         var result = int.Parse(one) + int.Parse(two);

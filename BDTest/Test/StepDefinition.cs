@@ -15,19 +15,24 @@ internal sealed class StepDefinition
         get => _explicitArguments;
         set
         {
-            var template = Runnable.Definition.GetText(explicitArguments: value);
+            var diagnostics = new List<string>();
+            var template = Runnable.Definition.GetText(explicitArguments: value, diagnostic: diagnostics.Add);
             _explicitArguments = value;
             TextTemplate = template;
+            TemplateDiagnostics = diagnostics.ToArray();
         }
     }
     internal List<Func<StepArgument>> AttachedArguments { get; private set; } = new();
     internal string TextTemplate { get; private set; }
+    internal IReadOnlyList<string> TemplateDiagnostics { get; private set; }
 
     internal StepDefinition(Runnable runnable, StepType stepType)
     {
         Runnable = runnable;
         StepType = stepType;
-        TextTemplate = runnable.Definition.GetText();
+        var diagnostics = new List<string>();
+        TextTemplate = runnable.Definition.GetText(diagnostic: diagnostics.Add);
+        TemplateDiagnostics = diagnostics.ToArray();
     }
 
     internal StepDefinition Snapshot()

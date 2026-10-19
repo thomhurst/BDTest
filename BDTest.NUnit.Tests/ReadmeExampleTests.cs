@@ -38,13 +38,13 @@ public class AccountSteps
         _context = context;
     }
 
-    [StepText("I have an account with a balance of {0}")]
+    [StepText("I have an account with a balance of {openingBalance}")]
     public void CreateAnAccount(decimal openingBalance)
     {
         _context.Balance = openingBalance;
     }
 
-    [StepText("I withdraw {0}")]
+    [StepText("I withdraw {amount}")]
     public void Withdraw(decimal amount)
     {
         _context.Balance -= amount;
@@ -60,7 +60,7 @@ public class AccountAssertionsSteps
         _context = context;
     }
 
-    [StepText("the account balance is {0}")]
+    [StepText("the account balance is {expectedBalance}")]
     public void TheBalanceIs(decimal expectedBalance)
     {
         Assert.That(_context.Balance, Is.EqualTo(expectedBalance));

@@ -63,7 +63,7 @@ public class CustomStringConverterTests
         finally { resume.Set(); await conversion; }
     }
 
-    [StepText("value: {0}")]
+    [StepText("value: {value}")]
     private static void Display(Value value) { }
     private sealed class Value { public override string ToString() => "fallback"; }
     private sealed class CallbackConverter(Func<string> callback) : IStepTextStringConverter<Value>

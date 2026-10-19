@@ -16,6 +16,7 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.8.0" PrivateAssets="all" />
     <Compile Include="../BDTest.SourceGenerator/BDTestSymbols.cs" Link="BDTestSymbols.cs" />
+    <Compile Include="../BDTest.CompilerShared/*.cs" Link="CompilerShared/%(Filename)%(Extension)" />
     <AdditionalFiles Include="AnalyzerReleases.Shipped.md" />
     <AdditionalFiles Include="AnalyzerReleases.Unshipped.md" />
     <None Include="$(OutputPath)$(AssemblyName).dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />

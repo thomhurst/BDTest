@@ -233,17 +233,17 @@ public class StepTextTests : RunTestBase
         }
     }
         
-    [StepText("the text is {0}")]
+    [StepText("the text is {obj}")]
     private void StepWithStrongTypeAndStepText(CustomClassToStepTextString obj)
     {
     }
 
-    [StepText("the func returns: {0}")]
+    [StepText("the func returns: {func}")]
     private void FuncReturningStepText(Func<string> func)
     {
     }
         
-    [StepText("the step text can display the list {0}")]
+    [StepText("the step text can display the list {list}")]
     private void StepWithListType(IList<string> list)
     {
     }
@@ -253,7 +253,7 @@ public class StepTextTests : RunTestBase
     {
     }
         
-    [StepText("my name is {0} {1}")]
+    [StepText("my name is {firstName} {lastName}")]
     private void StepThatPrintsMyName(string firstName, string lastName)
     {
     }
@@ -281,7 +281,7 @@ public class StepTextTests : RunTestBase
 
     private class InnerStepsClass
     {
-        [StepText("the text is {0}")]
+        [StepText("the text is {obj}")]
         public void StepWithStrongTypeAndStepText(CustomClassToStepTextString obj)
         {
         }

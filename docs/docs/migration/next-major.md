@@ -39,6 +39,7 @@ still identify the exact release. This does not permit mixing package versions.
 | --- | --- |
 | Nested builder, base or attribute namespaces | Replace test-authoring imports with `using BDTest;`; see [consumer namespaces](consumer-namespaces.md). Rebuild consumers and update reflection names. |
 | Expression-tree step signatures | Use [delegate steps](delegate-steps.md). Install `BDTest.SourceGenerator` in projects containing steps to preserve method metadata, attributes and supported argument capture. Use `WithArgs` for unsupported expressions. |
+| Positional `[StepText]` placeholders and overrides | Use [parameter names](named-step-text.md): `{amount}` instead of `{0}`, and `"user=an administrator"` instead of `"1:an administrator"`. |
 | Synchronous `BDTest()` | Return `Task` from the test and use `await` or `BDTestAsync()`; see [async-only execution](async-only.md). |
 | Global execution settings in adapters | `BDTestSettings` has been removed. Move settings into `IBDTestConfiguration` selected by the assembly's `BDTestConfiguration` attribute. Built-in adapters use a frozen [assembly run](../configuration/assembly-runs.md). |
 | Reports without an explicit run | Obtain the adapter's assembly run and pass it to report helpers. Export after tests and teardown, then dispose through the assembly owner. Overloads without a run and the legacy default run have been removed. Standalone callers must own an explicit `BDTestRun`; follow [explicit run migration](explicit-runs.md). |

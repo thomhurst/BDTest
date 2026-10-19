@@ -147,7 +147,7 @@ public class SnapshotPublicationTests
         else await Assert.That(after.SkipReason!.Setting).IsEqualTo("replacement");
         await Assert.That(before.SkipReason!.Source).IsEqualTo("Rule");
     }
-    [BDTest.StepText("value: {0}")]
+    [BDTest.StepText("value: {value}")]
     private static void DiagnosticStep(string value) { }
 
     [Test]

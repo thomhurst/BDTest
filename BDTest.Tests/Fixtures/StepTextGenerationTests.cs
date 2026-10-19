@@ -262,7 +262,7 @@ public class StepTextGenerationTests : RunContextTestBase<StepTextGenerationTest
         await Assert.That(step.Diagnostics).IsEmpty();
     }
 
-    [SkipTextStep, StepText("value: {0}")]
+    [SkipTextStep, StepText("value: {value}")]
     private static void SkippedDisplay(object value) => throw new Exception("Skipped step must not run");
     private sealed class SkipTextStepAttribute : SkipStepAttribute { }
     private static void FailOnSecondAttempt(Func<int> nextAttempt)
@@ -297,13 +297,13 @@ public class StepTextGenerationTests : RunContextTestBase<StepTextGenerationTest
         public string ConvertToString(UnformattableValue value) => throw new InvalidOperationException("conversion failed");
     }
 
-    [StepText("value: {0}")]
+    [StepText("value: {value}")]
     public static void Display(object value) { }
 
-    [StepText("number: {0}")]
+    [StepText("number: {value}")]
     public static void DisplayNumber(int value) { }
 
-    [StepText("value: {0}")]
+    [StepText("value: {value}")]
     public static Task DisplayAsync(object value) => Task.CompletedTask;
 
     private static void Fail() => throw new InvalidOperationException("Expected failure");
@@ -318,7 +318,7 @@ public class StepTextGenerationTests : RunContextTestBase<StepTextGenerationTest
         private int _attempts;
         public int GetValue() => ++Calls;
 
-        [StepText("value: {0}")]
+        [StepText("value: {value}")]
         public void FailOnce(int value)
         {
             if (_attempts++ == 0)

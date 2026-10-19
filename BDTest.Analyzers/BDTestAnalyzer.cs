@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Globalization;
 using System.Linq;
 using BDTest.Compiler;
 using Microsoft.CodeAnalysis;
@@ -20,8 +19,7 @@ public sealed class BDTestAnalyzer : DiagnosticAnalyzer
 
     public static readonly DiagnosticDescriptor Execution = Rule("BDT001", "Execute and observe the BDTest scenario",
         "{0}", DiagnosticSeverity.Warning);
-    public static readonly DiagnosticDescriptor StepText = Rule("BDT002", "Use valid StepText parameters",
-        "{0}", DiagnosticSeverity.Error);
+    public static readonly DiagnosticDescriptor StepText = StepTextValidation.Rule;
     public static readonly DiagnosticDescriptor Story = Rule("BDT003", "Supply a complete Story",
         "Story requires exactly one of AsA/AsAn, plus IWant and SoThat", DiagnosticSeverity.Warning);
     public static readonly DiagnosticDescriptor AsyncStep = Rule("BDT004", "Do not discard asynchronous step work",
@@ -160,22 +158,9 @@ public sealed class BDTestAnalyzer : DiagnosticAnalyzer
                 context.ReportDiagnostic(Diagnostic.Create(AsyncStep, argument.Syntax.GetLocation(), "is async void"));
         }
 
-        // Cancellation parameters are hidden only for cancellation-aware step overloads.
-        if (!invoke.Parameters.Any(p => IsCancellation(p.Type))) return;
-        IMethodSymbol? stepMethod = target is IMethodReferenceOperation reference ? reference.Method : null;
-        if (target?.Syntax is LambdaExpressionSyntax syntax)
-        {
-            var body = syntax.Body is AwaitExpressionSyntax awaited ? awaited.Expression : syntax.Body;
-            if (body is ExpressionSyntax && model.GetOperation(body) is IInvocationOperation call)
-                stepMethod = call.TargetMethod;
-        }
-        if (stepMethod == null || !stepMethod.Parameters.Any(p => IsCancellation(p.Type))) return;
-        var attribute = GetStepText(stepMethod);
-        if (attribute == null) return;
-        var total = stepMethod.Parameters.Length;
-        if (ValidateStepText(attribute, total) != null) return; // Already reported at the declaration.
-        var message = ValidateStepText(attribute, stepMethod.Parameters.Count(p => !IsCancellation(p.Type)));
-        if (message != null) context.ReportDiagnostic(Diagnostic.Create(StepText, argument.Syntax.GetLocation(), message));
+        if (context.Compilation.Assembly.GetTypeByMetadataName("BDTest.Generated.StepTextValidationMarker") == null)
+            foreach (var diagnostic in StepTextValidation.ValidateReferencedStep(invocation))
+                context.ReportDiagnostic(diagnostic);
     }
 
     private static bool IsAsyncVoid(IMethodSymbol method) => method.ReturnsVoid && (method.IsAsync ||
@@ -219,18 +204,6 @@ public sealed class BDTestAnalyzer : DiagnosticAnalyzer
         return false;
     }
 
-    private static bool IsCancellation(ITypeSymbol type) => type.ToDisplayString() == "System.Threading.CancellationToken";
-
-    private static AttributeData? GetStepText(IMethodSymbol method)
-    {
-        for (IMethodSymbol? current = method; current != null; current = current.OverriddenMethod)
-        {
-            var attribute = current.GetAttributes().FirstOrDefault(a => IsType(a.AttributeClass, "BDTest.StepTextAttribute"));
-            if (attribute != null) return attribute;
-        }
-        return null;
-    }
-
     private static void AnalyzeAttributes(SymbolAnalysisContext context)
     {
         foreach (var attribute in context.Symbol.GetAttributes())
@@ -239,8 +212,9 @@ public sealed class BDTestAnalyzer : DiagnosticAnalyzer
             if (location == null) continue;
             if (context.Symbol is IMethodSymbol method && IsType(attribute.AttributeClass, "BDTest.StepTextAttribute"))
             {
-                var message = ValidateStepText(attribute, method.Parameters.Length);
-                if (message != null) context.ReportDiagnostic(Diagnostic.Create(StepText, location, message));
+                if (context.Compilation.Assembly.GetTypeByMetadataName("BDTest.Generated.StepTextValidationMarker") != null) continue;
+                foreach (var message in StepTextValidation.Validate(attribute, method))
+                    context.ReportDiagnostic(Diagnostic.Create(StepText, location, message));
             }
             else if (IsType(attribute.AttributeClass, "BDTest.StoryAttribute"))
             {
@@ -252,27 +226,4 @@ public sealed class BDTestAnalyzer : DiagnosticAnalyzer
         }
     }
 
-    private static string? ValidateStepText(AttributeData attribute, int count)
-    {
-        if (attribute.ConstructorArguments.Length == 0 || attribute.ConstructorArguments[0].Value is not string template) return null;
-        if (attribute.ConstructorArguments.Length > 1)
-        {
-            var value = attribute.ConstructorArguments[1];
-            if (value.Kind == TypedConstantKind.Error) return null;
-            if (value.Kind == TypedConstantKind.Array && value.IsNull) return "StepText overrides must not be a null array";
-            var overrides = value.Kind == TypedConstantKind.Array ? value.Values : ImmutableArray.Create(value);
-            foreach (var item in overrides)
-            {
-                if (item.Kind == TypedConstantKind.Error) return null;
-                if (item.Value is not string text) return "StepText overrides must contain an index and a colon";
-                var colon = text.IndexOf(':');
-                if (colon <= 0 || text.Substring(0, colon).Any(c => c < '0' || c > '9') ||
-                    !int.TryParse(text.Substring(0, colon), NumberStyles.None, CultureInfo.InvariantCulture, out var index) || index >= count)
-                    return "StepText override refers to a nonexistent visible parameter; use a zero-based index followed by a colon";
-                template = template.Replace("{" + text.Substring(0, colon) + "}", text.Substring(colon + 1));
-            }
-        }
-        return CompositeTemplate.IsValid(template, count) ? null :
-            "StepText contains an invalid composite format or a placeholder outside the visible parameter count (" + count + ")";
-    }
 }

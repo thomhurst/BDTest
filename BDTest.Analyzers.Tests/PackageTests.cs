@@ -57,7 +57,7 @@ public class PackageTests
                 """);
             var sourceFile = Path.Combine(temporary, "Consumer.cs");
             await File.WriteAllTextAsync(sourceFile, AnalyzerTests.Source("""
-                [StepText("value {0}")] void Step(int value) {}
+                [StepText("value {value}")] void Step(int value) {}
                 Task Test() => Given(() => Step(1)).When(() => Step(2)).Then(() => Step(3)).BDTestAsync();
                 """));
             var valid = await Dotnet(temporary, "build", "-c", configuration, "--nologo");

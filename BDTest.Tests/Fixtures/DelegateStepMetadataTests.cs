@@ -92,10 +92,10 @@ public class DelegateStepMetadataTests : RunTestBase
         await Assert.That(Required(exception).Message).Contains("Expected 1 step text argument readers, but received 0");
     }
 
-    [StepText("value: {0}")]
+    [StepText("value: {value}")]
     private static void Display(int value) { }
 
-    [StepText("value: {0}")]
+    [StepText("value: {value}")]
     private static Task Cancellable(int value, CancellationToken cancellationToken) => Task.CompletedTask;
 
     private static void SimpleMethodGroup() { }

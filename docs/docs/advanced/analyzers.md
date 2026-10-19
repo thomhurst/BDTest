@@ -17,7 +17,7 @@ Keep the package version aligned with your other BDTest packages. Mark the refer
 <PackageReference Include="BDTest.Analyzers" Version="*" PrivateAssets="all" />
 ```
 
-The package contains a `netstandard2.0` Roslyn component under `analyzers/dotnet/cs`. NuGet loads it automatically; no DLL reference is needed. It requires Roslyn 4.8 or newer (.NET SDK 8 or newer). BDTest step overload selection requires a C# 13 or newer compiler, as described in [Installation](../getting-started/installation.md). The analyzer works alongside [BDTest.SourceGenerator](source-generator.md), which supplies report metadata and does not emit these diagnostics.
+The package contains a `netstandard2.0` Roslyn component under `analyzers/dotnet/cs`. NuGet loads it automatically; no DLL reference is needed. It requires Roslyn 4.8 or newer (.NET SDK 8 or newer). BDTest step overload selection requires a C# 13 or newer compiler, as described in [Installation](../getting-started/installation.md). The analyzer works alongside [BDTest.SourceGenerator](source-generator.md), which supplies report metadata and also validates named step templates. When both packages are installed, template diagnostics are emitted once by the generator.
 
 | Rule | Default severity | Meaning | Code fix |
 | --- | --- | --- | --- |
@@ -45,18 +45,16 @@ The fix adds `await` to a discarded expression statement inside an existing asyn
 
 ## BDT002
 
-StepText uses zero-based positional placeholders, including composite formatting alignment and format components:
+StepText placeholders use the method's case-sensitive parameter names, with an optional format:
 
 ```csharp title="Illustrative fragment"
-[StepText("account {0}, balance {1,10:N2}")]
+[StepText("account {name}, balance {balance:N2}", "name=the current account")]
 void Account(string name, decimal balance) { }
 ```
 
-Use `{{` and `}}` for literal braces. Overrides use numeric indices, such as `"0:the current account"`; named overrides and named placeholders are not supported by the current runtime. An override must refer to an existing visible parameter. An explicitly null override array is invalid. Overrides replace exact `{index}` occurrences in order before composite formatting, just as at runtime. A replacement containing a placeholder is validated too.
+Use `{{` and `}}` for literal braces. Other brace text, such as JSON, malformed placeholders and unmatched braces, remains literal. Overrides use `"parameterName=text"`; replacement text is literal, including any braces or equals signs. Empty replacement text is valid. Positional placeholders (`{0}`) and positional overrides (`"0:text"`) are obsolete and produce errors. Unknown placeholder or override names, null override arrays and malformed overrides are also errors.
 
-CancellationToken parameters remain visible for ordinary step delegates. A cancellation-aware overload hides those parameters. The analyzer checks the selected overload when a method group or an expression lambda identifies the step method. It does not guess visibility for a method that has not been bound to a step, or for an opaque delegate supplied dynamically.
-
-Invalid composite syntax is an error. User formatters, runtime converters and argument values are not executed by the analyzer.
+`CancellationToken` parameters are always excluded from visible parameter names, including ordinary delegates and methods that have not yet been bound to a step. Referencing a token in a template or override is an error. User formatters, runtime converters and argument values are never executed by compiler validation. The same validation runs at runtime when neither compiler package is installed.
 
 ## BDT003
 
@@ -100,7 +98,7 @@ For deliberate invalid-input or unexecuted-scenario tests, suppress only the rel
 
 ```csharp title="Illustrative fragment"
 #pragma warning disable BDT002 // Verify runtime rejection of an invalid template.
-[StepText("{1}")]
+[StepText("{missing}")]
 void InvalidTemplate(string onlyParameter) { }
 #pragma warning restore BDT002
 ```

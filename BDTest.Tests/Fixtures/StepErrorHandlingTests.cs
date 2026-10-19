@@ -40,24 +40,14 @@ public class StepErrorHandlingTests : RunTestBase
     [Test]
     [Arguments(false)]
     [Arguments(true)]
-    public async Task InvalidStepTextPreservesTheOriginalException(bool asyncStep)
+    public async Task InvalidStepTextIsDiagnosedWithoutThrowing(bool asyncStep)
     {
-        var exception = await Assert.That(() =>
-        {
-            if (asyncStep)
-            {
-                StepTextHelper.GetStepText(Required(typeof(StepErrorHandlingTests).GetMethod(nameof(InvalidTextAsync), System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static)), new Func<object>[] { () => "argument" });
-            }
-            else
-            {
-                StepTextHelper.GetStepText(Required(typeof(StepErrorHandlingTests).GetMethod(nameof(InvalidText), System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static)), new Func<object>[] { () => "argument" });
-            }
-        }).ThrowsExactly<ArgumentException>();
-
-        await Assert.That(Required(exception).Message).Contains("Template is: invalid {1}");
-        await Assert.That(Required(exception).Message).Contains("Arguments are argument");
-        await Assert.That(Required(exception).InnerException).IsTypeOf<FormatException>();
-        await Assert.That(Required(Required(exception).InnerException).StackTrace).Contains(nameof(StepTextHelper));
+        var name = asyncStep ? nameof(InvalidTextAsync) : nameof(InvalidText);
+        var method = Required(typeof(StepErrorHandlingTests).GetMethod(name, System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static));
+        var diagnostics = new List<string>();
+        var text = StepTextHelper.GetStepText(method, [() => "argument"], diagnostic: diagnostics.Add);
+        await Assert.That(text).IsEqualTo("invalid {1}");
+        await Assert.That(diagnostics.Single()).Contains("positional");
     }
 
 #pragma warning disable BDT002 // These methods exercise runtime handling of invalid templates.

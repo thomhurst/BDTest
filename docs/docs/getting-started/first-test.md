@@ -36,7 +36,7 @@ The context class needs a public parameterless constructor. See [Test context](.
 
 ## 2. Write step classes
 
-Steps are ordinary methods. Group them into classes that receive the context in their constructor. `[StepText]` controls how each step appears in the report; `{0}` is replaced by the first argument.
+Steps are ordinary methods. Group them into classes that receive the context in their constructor. `[StepText]` controls how each step appears in the report; `{openingBalance}` is replaced by the argument for that parameter.
 
 ```csharp sample="FirstTest/AccountSteps.cs" title="Compiled example: AccountSteps.cs"
 using BDTest;
@@ -47,10 +47,10 @@ public class AccountSteps
 
     public AccountSteps(AccountContext context) => _context = context;
 
-    [StepText("I have an account with a balance of {0}")]
+    [StepText("I have an account with a balance of {openingBalance}")]
     public void CreateAnAccount(decimal openingBalance) => _context.Balance = openingBalance;
 
-    [StepText("I withdraw {0}")]
+    [StepText("I withdraw {amount}")]
     public void Withdraw(decimal amount) => _context.Balance -= amount;
 }
 
@@ -60,7 +60,7 @@ public class AccountAssertionsSteps
 
     public AccountAssertionsSteps(AccountContext context) => _context = context;
 
-    [StepText("the account balance is {0}")]
+    [StepText("the account balance is {expectedBalance}")]
     public async Task TheBalanceIs(decimal expectedBalance) =>
         await Assert.That(_context.Balance).IsEqualTo(expectedBalance);
 }

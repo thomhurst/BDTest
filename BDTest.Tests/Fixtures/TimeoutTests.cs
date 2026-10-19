@@ -254,10 +254,10 @@ public class TimeoutTests : RunTestBase
     }
 
     [Test]
-    public async Task Existing_parameterless_expressions_keep_cancellation_arguments_in_step_text()
+    public async Task Parameterless_delegates_also_omit_cancellation_arguments()
     {
         var scenario = await When(() => ExplicitTokenText(CancellationToken.None)).Then(() => Later()).BDTestAsync();
-        await Assert.That(Required(scenario.Steps)[0].StepText).IsEqualTo("When token System.Threading.CancellationToken");
+        await Assert.That(Required(scenario.Steps)[0].StepText).IsEqualTo("When token ");
     }
 
     [Test]
@@ -312,10 +312,12 @@ public class TimeoutTests : RunTestBase
         }
         finally { completed.TrySetResult(true); }
     }
-    [StepText("token {0}")]
+    #pragma warning disable BDT002 // Token placeholders exercise runtime omission.
+    [StepText("token {token}")]
     private static Task ExplicitTokenText(CancellationToken token) => Task.CompletedTask;
+#pragma warning restore BDT002
 
-    [StepText("writes {0}")]
+    [StepText("writes {value}")]
     private static Task WriteOutput(string value, CancellationToken token)
     {
         Console.WriteLine("step output");

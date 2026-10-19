@@ -110,7 +110,7 @@ public class FluentBuilderTests : RunTestBase
         await builder;
     }
 
-    [StepText("value {0}")]
+    [StepText("value {value}")]
     private static void Value(int value) { }
     private static void NoOp() { }
 }

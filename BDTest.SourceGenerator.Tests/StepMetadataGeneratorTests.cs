@@ -19,7 +19,7 @@ public class StepMetadataGeneratorTests
             public sealed class Consumer : BDTest.Probe
             {
                 private int Value = 3;
-                [BDTest.StepText("number {0}", "0:override")]
+                [BDTest.StepText("number {value}", "value=override")]
                 [SkipStepIf("private overload")]
                 private void Step(int value) { }
                 private void Step(string value) { }
@@ -56,8 +56,8 @@ public class StepMetadataGeneratorTests
         Assert.That(methods[1].GetGenericArguments(), Is.EqualTo(new[] { typeof(int) }));
         Assert.That(methods[2].GetParameters()[0].ParameterType, Is.EqualTo(typeof(string)));
         var text = methods[0].GetCustomAttribute<StepTextAttribute>() ?? throw new InvalidOperationException("Missing step text attribute");
-        Assert.That(text.Text, Is.EqualTo("number {0}"));
-        Assert.That(text.StepTextParameterOverrides, Is.EqualTo(new[] { "0:override" }));
+        Assert.That(text.Text, Is.EqualTo("number {value}"));
+        Assert.That(text.ParameterOverrides, Is.EqualTo(new[] { "value=override" }));
         var skip = methods[0].GetCustomAttributes<SkipStepAttribute>().Single();
         Assert.That(skip.GetType().GetProperty("Reason")!.GetValue(skip), Is.EqualTo("private overload"));
         Assert.That(Read(sites[0], consumer), Is.EqualTo(new object[] { 19 }));
@@ -269,7 +269,7 @@ public class StepMetadataGeneratorTests
     {
         var compilation = CreateCompilation(namespaceDeclaration + "class Unrelated { void Given(System.Action step) { } void Test() { Given(() => { }); } }");
         var driver = RunGenerator(compilation, out _);
-        Assert.That(driver.GetRunResult().GeneratedTrees, Is.Empty);
+        Assert.That(driver.GetRunResult().GeneratedTrees.Any(t => t.FilePath.EndsWith("BDTest.StepMetadata.g.cs")), Is.False);
     }
 
     [Test]
@@ -442,6 +442,36 @@ public class StepMetadataGeneratorTests
         var site = Run(consumer).Single();
         Assert.That((site.Metadata.Method ?? throw new AssertionException("Expected step method metadata.")).Resolve(consumer).Name, Is.EqualTo("Step"));
         Assert.That(Read(site, consumer), Is.EqualTo(new object[] { 42 }));
+    }
+
+    [TestCase("{value}", null, 0)]
+    [TestCase("{value:N2}", null, 0)]
+    [TestCase("{value}", "value={missing}", 0)]
+    [TestCase("{value}", "missing=text", 1)]
+    [TestCase("{value}", "0:legacy", 1)]
+    [TestCase("{missing}", null, 1)]
+    [TestCase("{0}", null, 1)]
+    [TestCase("{0,10:N2}", null, 1)]
+    [TestCase("{0,garbage}", null, 0)]
+    [TestCase("{0, -10:N2}", null, 1)]
+    [TestCase("{token}", null, 1)]
+    [TestCase("{{unknown}} {{{value}}}", null, 0)]
+    [TestCase("{ not a placeholder } and unmatched {", null, 0)]
+    [TestCase("{\"name\": 1}", null, 0)]
+    public void Step_templates_are_validated_without_executing_user_code(string template, string? parameterOverride, int count)
+    {
+        var attribute = "[BDTest.StepText(" + Microsoft.CodeAnalysis.CSharp.SymbolDisplay.FormatLiteral(template, true) +
+            (parameterOverride == null ? "" : ", " + Microsoft.CodeAnalysis.CSharp.SymbolDisplay.FormatLiteral(parameterOverride, true)) + ")]";
+        var compilation = CreateCompilation("class Consumer { " + attribute +
+            " void Step(decimal value, System.Threading.CancellationToken token) { throw new System.Exception(); } }");
+        GeneratorDriver driver = CSharpGeneratorDriver.Create(
+            generators: new[] { new StepMetadataGenerator().AsSourceGenerator() },
+            parseOptions: (CSharpParseOptions)compilation.SyntaxTrees.First().Options);
+        driver.RunGeneratorsAndUpdateCompilation(compilation, out _, out var diagnostics);
+        Assert.That(diagnostics.Select(d => d.Id), Is.EqualTo(Enumerable.Repeat("BDT002", count)),
+            string.Join(Environment.NewLine, diagnostics));
+        Assert.That(diagnostics.All(d => d.Location.SourceSpan == compilation.SyntaxTrees.Single().GetRoot()
+            .DescendantNodes().OfType<Microsoft.CodeAnalysis.CSharp.Syntax.AttributeSyntax>().Single().Span), Is.True);
     }
 
     private static Assembly Compile(string consumer, SourceReferenceResolver? resolver = null, string sourcePath = "consumer.cs")

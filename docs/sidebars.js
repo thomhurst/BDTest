@@ -104,6 +104,7 @@ const sidebars = {
         'migration/target-frameworks',
         'migration/explicit-runs',
         'migration/delegate-steps',
+        'migration/named-step-text',
         'migration/scenario-definitions',
         'migration/immutable-results',
         'migration/async-only',

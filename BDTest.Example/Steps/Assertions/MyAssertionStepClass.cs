@@ -14,7 +14,7 @@ public class MyAssertionStepClass
         _context = context;
     }
 
-    [StepText("the HTTP status code is {0}")]
+    [StepText("the HTTP status code is {httpStatusCode}")]
     public void TheHttpStatusCodeIs(HttpStatusCode httpStatusCode)
     {
         var response = _context.ApiContext.ResponseMessage
