@@ -127,8 +127,12 @@ internal sealed class ExecutionCancellation : IDisposable
             ? Task.Run(invoke) : InvokeAsync(invoke);
         try
         {
-            var winner = await Task.WhenAny(execution, _signalled.Task, delay);
-            if (winner == execution && !_signalled.Task.IsCompleted)
+            // A user callback on the parent's token can block before our registration runs.
+            // Observe its private signal independently of token callback dispatch.
+            var winner = _parent == null
+                ? await Task.WhenAny(execution, _signalled.Task, delay)
+                : await Task.WhenAny(execution, _signalled.Task, _parent._signalled.Task, delay);
+            if (winner == execution && !_signalled.Task.IsCompleted && _parent?._signalled.Task.IsCompleted != true)
             {
                 await execution;
                 // When both tasks completed before WhenAny observes them, the first argument wins.

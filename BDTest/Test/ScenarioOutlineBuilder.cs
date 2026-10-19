@@ -181,6 +181,15 @@ public sealed class ScenarioOutlineBuilder<TExample> : BuildableTest
                 outline.Status = Status.Passed;
             var failure = failures.FirstOrDefault(item => item.Status == outline.Status);
             failure.Exception?.Throw();
+            // Cancellation between successful rows must not turn a partial run into a pass.
+            // Preserve completed row outcomes while recording the outline's terminal failure.
+            try { cancellation.ThrowIfCancelled(); }
+            catch (OperationCanceledException exception)
+            {
+                outline.Status = Status.Failed;
+                outline.ExecutionException = new ExceptionWrapper(exception);
+                throw;
+            }
             if (outline.Status == Status.Skipped) testBase.NotifyScenarioSkipped("All scenario outline examples were skipped.");
             return outline;
         }

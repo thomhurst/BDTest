@@ -12,6 +12,84 @@ public class ExecutionCancellationTests
     private static TaskCompletionSource<bool> Signal() => new(TaskCreationOptions.RunContinuationsAsynchronously);
 
     [Test]
+    [Arguments(false)]
+    [Arguments(true)]
+    public async Task Blocking_scenario_token_callback_cannot_prevent_step_cancellation(bool framework)
+    {
+        using var source = new CancellationTokenSource();
+        using var release = new ManualResetEventSlim();
+        var options = new BDTestOptions();
+        options.RetryTestRules.Add(_ => true, 2);
+        using var run = BDTestRun.Start(options);
+        var scenarioToken = CancellationToken.None;
+        var test = new Host(run, framework ? source.Token : default)
+        {
+            BeforeScenario = token => { scenarioToken = token; return Task.CompletedTask; }
+        };
+        var entered = Signal();
+        var callbackEntered = Signal();
+        var stepFinished = Signal();
+        var later = false;
+        CancellationTokenRegistration registration = default;
+        try
+        {
+            var execution = test.When(async token =>
+            {
+                // This newer registration runs before the step's parent-token registration.
+                registration = scenarioToken.Register(() =>
+                {
+                    callbackEntered.TrySetResult(true);
+                    release.Wait();
+                });
+                entered.TrySetResult(true);
+                try { await Task.Delay(Timeout.Infinite, token); }
+                finally { stepFinished.TrySetResult(true); }
+            }).Then(() => later = true).BDTestAsync(framework ? default : source.Token);
+            await entered.Task.WaitAsync(TimeSpan.FromSeconds(10));
+            source.Cancel();
+            await callbackEntered.Task.WaitAsync(TimeSpan.FromSeconds(10));
+            await Assert.That(async () => await execution.WaitAsync(TimeSpan.FromSeconds(10))).Throws<OperationCanceledException>();
+            await stepFinished.Task.WaitAsync(TimeSpan.FromSeconds(10));
+            await Assert.That(later).IsFalse();
+            await Assert.That(test.ContextCreations).IsEqualTo(1);
+            await Assert.That(run.Scenarios.Single().Status).IsEqualTo(Status.Failed);
+            await Assert.That(run.Scenarios.Single().RetryCount).IsZero();
+        }
+        finally { release.Set(); registration.Dispose(); }
+    }
+
+    [Test]
+    [Arguments(false)]
+    [Arguments(true)]
+    public async Task Cancellation_after_a_successful_outline_row_cannot_return_a_passing_partial_outline(bool framework)
+    {
+        using var source = new CancellationTokenSource();
+        var clock = new CallbackClock();
+        var options = new BDTestOptions { TimeProvider = clock };
+        options.SuccessExceptionTypes.Add(typeof(OperationCanceledException));
+        using var run = BDTestRun.Start(options);
+        var test = new Host(run, framework ? source.Token : default)
+        {
+            // The next wall-clock read finalizes the row after all its callbacks succeeded.
+            AfterScenario = _ => { clock.OnNextUtcRead = source.Cancel; return Task.CompletedTask; }
+        };
+        var factories = 0;
+        var execution = test.ScenarioOutline("row <Value>", new[] { new { Value = 1 }, new { Value = 2 } }, _ =>
+        {
+            factories++;
+            return test.When(() => { }).Then(() => { });
+        }).BDTestAsync(framework ? default : source.Token);
+        await Assert.That(async () => await execution.WaitAsync(TimeSpan.FromSeconds(10))).Throws<OperationCanceledException>();
+        await Assert.That(factories).IsEqualTo(1);
+        await Assert.That(test.ContextCreations).IsEqualTo(1);
+        var outline = run.Scenarios.Single();
+        await Assert.That(outline.Status).IsEqualTo(Status.Failed);
+        await Assert.That(outline.TimedOut).IsFalse();
+        await Assert.That(Required(outline.Exception).TypeName).IsEqualTo(typeof(OperationCanceledException).FullName);
+        await Assert.That(outline.Examples.Single().Status).IsEqualTo(Status.Passed);
+    }
+
+    [Test]
     public async Task Late_argument_reader_cannot_publish_arguments_or_start_the_step_body()
     {
         var clock = new FakeTimeProvider();
@@ -315,6 +393,16 @@ public class ExecutionCancellationTests
             BDTest.Output.TestOutputData.CollectStartupOutput(_id, "late abandoned startup", false, run: run);
             BDTest.Output.TestOutputData.CollectTearDownOutput(_id, "late abandoned teardown", false, run);
             BDTest.Output.TestOutputData.WriteCustomHtmlForReport(_id, "late abandoned html", run);
+        }
+    }
+
+    private sealed class CallbackClock : TimeProvider
+    {
+        internal Action? OnNextUtcRead;
+        public override DateTimeOffset GetUtcNow()
+        {
+            Interlocked.Exchange(ref OnNextUtcRead, null)?.Invoke();
+            return base.GetUtcNow();
         }
     }
 

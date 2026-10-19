@@ -67,7 +67,11 @@ await ScenarioOutline("Users can sign in", new[]
 
 ## Results
 
-Ordinary failures do not stop later rows. Explicit or adapter cancellation stops subsequent rows. So does work or a cancellation callback that remains unfinished after the [cancellation grace period](timeouts.md#cooperative-cancellation), to avoid racing a replacement context. Afterwards the first exception for the most severe outcome is rethrown to the test runner:
+Ordinary failures do not stop later rows. Explicit or adapter cancellation stops subsequent rows. So does work or a cancellation callback that remains unfinished after the [cancellation grace period](timeouts.md#cooperative-cancellation), to avoid racing a replacement context.
+
+Cancellation between rows fails the outline with an `OperationCanceledException`, even if every completed row passed. Completed rows keep their recorded outcomes; the unstarted rows do not run or replace the context.
+
+Otherwise, the first exception for the most severe outcome is rethrown to the test runner:
 
 - Failure, not-implemented and inconclusive rows take priority, in that order.
 - Passed rows mixed with skipped rows pass.

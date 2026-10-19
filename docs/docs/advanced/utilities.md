@@ -69,10 +69,11 @@ Timestamps use UTC `DateTimeOffset`; see [the result contract](../reports/contra
 | `Output` | Console output written during the step and its hooks. |
 | `StartTime`, `EndTime`, `TimeTaken` | Timing. |
 | `Timeout`, `TimedOut` | Timeout data. |
-| `CancellationToken` | Effective execution token for step hooks and delegates; see [cancellation](../writing-tests/timeouts.md). Runtime-only, excluded from report JSON. |
 | `IsRetry` | Whether the step ran in a retry. |
 | `Diagnostics` | Messages about step text generation. |
 | `Guid`, `ScenarioId`, `ReportId` | Identifiers. |
+
+Step hooks receive the effective `CancellationToken` as a separate argument; it is not a member of `StepResult`. See [cancellation](../writing-tests/timeouts.md) and [step hooks](../writing-tests/step-hooks.md).
 
 `StepType` values are `Given`, `AndGiven`, `ButGiven`, `When`, `AndWhen`, `ButWhen`, `Then`, `AndThen` and `ButThen`. `AndWhen` is appended as numeric value `8`; existing numeric values are unchanged. It renders as `And` in reports.
 
