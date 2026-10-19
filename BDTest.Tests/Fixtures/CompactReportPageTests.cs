@@ -14,14 +14,21 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Internal;
 using System.Threading.Tasks;
 
 namespace BDTest.Tests.Fixtures;
 
 public class CompactReportPageTests
 {
+    private sealed class CacheClock : ISystemClock
+    {
+        public DateTimeOffset UtcNow { get; set; } = new(2026, 1, 1, 0, 0, 0, TimeSpan.Zero);
+    }
+
     private static ServiceProvider Services(long pageCapacity = 64 * 1024 * 1024, TimeSpan? retention = null,
-        long reportCapacity = 64 * 1024 * 1024)
+        long reportCapacity = 64 * 1024 * 1024, ISystemClock? reportClock = null, ISystemClock? pageClock = null)
     {
         var services = new ServiceCollection();
         services.AddLogging();
@@ -31,6 +38,10 @@ public class CompactReportPageTests
             options.ReportCacheSizeLimitBytes = reportCapacity;
             options.ReportCacheRetention = retention ?? TimeSpan.FromHours(8);
         });
+        if (reportClock != null || pageClock != null)
+            services.AddSingleton<IMemoryCacheBdTestDataStore>(provider => new MemoryCacheBdTestDataStore(
+                provider.GetRequiredService<IMemoryCache>(), provider.GetRequiredService<IOptions<BDTestReportOptions>>(),
+                null, null, null, false, reportClock, pageClock));
         return services.BuildServiceProvider();
     }
 
@@ -211,12 +222,20 @@ public class CompactReportPageTests
     [Test]
     public async Task Expired_reports_do_not_survive_in_the_projection_cache()
     {
-        using var services = Services(retention: TimeSpan.FromSeconds(2));
+        var reportClock = new CacheClock();
+        var pageClock = new CacheClock();
+        var retention = TimeSpan.FromSeconds(2);
+        using var services = Services(retention: retention, reportClock: reportClock, pageClock: pageClock);
         var repository = services.GetRequiredService<IDataRepository>();
         await repository.StoreData("compact", Report());
-        await Assert.That(await repository.GetReportPages("compact", default)).IsNotNull();
-        await Task.Delay(2100);
+        var pages = Required(await repository.GetReportPages("compact", default));
+        await Assert.That(await repository.GetReportPages("compact", default)).IsSameReferenceAs(pages);
+        reportClock.UtcNow += retention - TimeSpan.FromTicks(1);
+        await Assert.That(await repository.GetDataForBulkRead("compact", default)).IsNotNull();
+        reportClock.UtcNow += TimeSpan.FromTicks(1);
+        // The page clock has not advanced: an unexpired projection must not resurrect its source.
         await Assert.That(await repository.GetReportPages("compact", default)).IsNull();
+        await Assert.That(await repository.GetDataForBulkRead("compact", default)).IsNull();
     }
 
     [Test]
