@@ -236,6 +236,56 @@ public class ReportServerCancellationTests
         await Assert.That(warmups).IsZero();
     }
 
+    [Test]
+    public async Task Static_forwarder_rejects_a_null_client()
+    {
+        using var run = BDTestRun.Start();
+        await Assert.That(async () => { await Upload(run, null!, CancellationToken.None); }).ThrowsExactly<ArgumentNullException>();
+    }
+
+    [Test]
+    public async Task Static_forwarder_preserves_long_and_infinite_client_timeouts()
+    {
+        // Exercise the former two-minute cap with real requests. Run all combinations
+        // together so report/attachment and finite/infinite coverage cost one wait.
+        using var guard = new CancellationTokenSource(TimeSpan.FromMinutes(5));
+        await Task.WhenAll(
+            CheckTimeout(TimeSpan.FromMinutes(4), "data"),
+            CheckTimeout(TimeSpan.FromMinutes(4), "attachment"),
+            CheckTimeout(Timeout.InfiniteTimeSpan, "data"),
+            CheckTimeout(Timeout.InfiniteTimeSpan, "attachment"));
+
+        async Task CheckTimeout(TimeSpan timeout, string phase)
+        {
+            using var run = BDTestRun.Start();
+            var fixture = new AttachmentFixture(run);
+            await fixture.When(() => fixture.Attachments.Attach("timeout.txt", new byte[] { 1 }, "text/plain"))
+                .Then(() => { }).BDTestAsync();
+            var requests = 0;
+            using var handler = new Handler(async (request, token) =>
+            {
+                requests++;
+                var isAttachment = Required(request.RequestUri).AbsolutePath.Contains("/attachments/");
+                if (isAttachment == (phase == "attachment"))
+                {
+                    try { await Task.Delay(TimeSpan.FromSeconds(125), token); }
+                    catch (OperationCanceledException) when (!guard.IsCancellationRequested)
+                    {
+                        throw new InvalidOperationException($"The {phase} request was cancelled before the caller's {timeout} timeout.");
+                    }
+                }
+                return Success();
+            });
+            using var client = new HttpClient(handler) { Timeout = timeout };
+
+            var result = await Upload(run, client, guard.Token);
+
+            await Assert.That(result.AbsoluteUri).IsEqualTo("https://reports.example/report/server-id");
+            await Assert.That(requests).IsEqualTo(2);
+            await Assert.That(client.Timeout).IsEqualTo(timeout);
+        }
+    }
+
     private static Task<Uri> Upload(BDTestRun run, HttpClient client, CancellationToken token) =>
         BDTest.Tests.Helpers.CompatibilityReportUpload.SendDataAndGetReportUriAsync(Server, null, client, run, token);
 

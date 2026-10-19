@@ -32,5 +32,9 @@ public static class BDTestReportServer
     [Obsolete("Use BDTestReportUploader with BDTestReportUploadOptions. These compatibility overloads will be removed in the next release.")]
     public static Task<Uri> SendDataAndGetReportUriAsync(Uri serverAddress, BDTestRunDescriptor? bdTestRunDescriptor,
         HttpClient httpClient, BDTestRun run, CancellationToken cancellationToken)
-        => new BDTestReportUploader(httpClient, new BDTestReportUploadOptions(serverAddress)).UploadAsync(run, bdTestRunDescriptor, cancellationToken);
+    {
+        if (httpClient == null) throw new ArgumentNullException(nameof(httpClient));
+        return new BDTestReportUploader(httpClient, new BDTestReportUploadOptions(serverAddress) { Timeout = httpClient.Timeout })
+            .UploadAsync(run, bdTestRunDescriptor, cancellationToken);
+    }
 }
