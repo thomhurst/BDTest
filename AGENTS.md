@@ -78,3 +78,11 @@ Core and Razor reports grant `InternalsVisibleTo` only to `BDTest.Tests`, using 
 - Package metadata comes from csproj properties and `PackageReference`s. `Directory.Build.props` imports `build/PackageMetadata.targets` through `BeforeMicrosoftNETSdkTargets`; that file applies shared metadata, the packed icon, and SourceLink/symbol settings to evaluated packable projects. Each package supplies its ID, title, description, and tags. Preserve each project's actual `TargetFramework`/`TargetFrameworks`; see [contributor packaging guidance](docs/docs/contributing.md#repository-layout) and [supported targets](docs/docs/getting-started/installation.md#supported-targets).
 - Keep the docs in sync with the library. Any change to how BDTest is used (public API, attributes, settings, adapter behavior, report formats, report server options or endpoints, package names or targets) must update the matching pages in `docs/docs/` in the same PR. Add new pages to `docs/sidebars.js`. Run `npm run build` in `docs/` to check links. `.github/workflows/docs.yml` builds the site on PRs and deploys it to GitHub Pages from `main`.
 - Dependency updates arrive via Renovate/Dependabot PRs and are auto-merged by workflow.
+
+## Autonomous self-improvement
+
+Treat every problem you notice as work to act on, whether you find it while testing, developing, reading code, reviewing, or doing anything else. Examples include bugs, flaky or failing tests, incorrect docs, misleading comments, broken tooling, and gaps in these instructions.
+
+- If the fix is trivial and low-risk, fix it as part of the current work and mention it in the PR description.
+- If the fix is out of scope for the current work, raise a GitHub issue at the point you discover it so it can be fixed later. Include what you saw, where you saw it (file and line, command, or CI run), how to reproduce it, and the expected behavior. Search existing issues first, and add to a matching issue instead of opening a duplicate.
+- Do not ignore a problem because it existed before your change or is unrelated to it.
