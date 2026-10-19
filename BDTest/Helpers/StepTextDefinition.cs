@@ -47,8 +47,7 @@ internal sealed class StepTextDefinition
         {
             // Method groups retain their method identity without a generated catalog.
             Method = step.Method;
-            if (Method.GetParameters().All(parameter => omitCancellationToken &&
-                    parameter.ParameterType == typeof(CancellationToken)))
+            if (Method.GetParameters().All(parameter => parameter.ParameterType == typeof(CancellationToken)))
             {
                 _arguments = Array.Empty<Func<object?>>();
             }
@@ -76,6 +75,7 @@ internal sealed class StepTextDefinition
 
         if (!evaluateArguments || explicitArguments == null || explicitArguments.Count == 0)
         {
+            if (Method != null) StepTextHelper.DiagnoseTemplate(Method, diagnostic);
             return _argumentExpression;
         }
 

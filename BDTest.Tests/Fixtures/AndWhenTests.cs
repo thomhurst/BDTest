@@ -139,7 +139,7 @@ public class AndWhenTests : RunTestBase
 
     private static void NoOp() { }
 
-    [StepText("named {0}")]
+    [StepText("named {value}")]
     private static void NamedStep(string value) { }
 
     private sealed class Capture(BDTestRun run) : BDTestBase

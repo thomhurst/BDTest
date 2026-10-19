@@ -54,10 +54,10 @@ The next major version removes the Humanizer dependency. See [generated name tex
 
 ## `[StepText]`
 
-Use `[StepText]` on the step method to write the text yourself. `{0}`, `{1}` and so on are replaced with the argument values, using `string.Format` placeholders:
+Use `[StepText]` on the step method to write the text yourself. `{parameterName}` placeholders are replaced with the corresponding argument values. Names are case-sensitive and stay attached to the same parameter when its position changes:
 
 ```csharp title="Illustrative fragment"
-[StepText("my name is {0} {1}")]
+[StepText("my name is {firstName} {lastName}")]
 public void SetName(string firstName, string lastName) { ... }
 
 await Given(() => SetName("Tom", "Longhurst"))  // "Given my name is Tom Longhurst"
@@ -69,17 +69,27 @@ await Given(() => SetName("Tom", "Longhurst"))  // "Given my name is Tom Longhur
 
 ### Parameter overrides
 
-Replace a placeholder with fixed text, for example to hide a secret. Each override has the form `"index:replacement"`:
+Replace a placeholder with fixed text, for example to hide a secret. Each override has the form `"parameterName=replacement"`:
 
 ```csharp title="Illustrative fragment"
-[StepText("I sign in as {0} with password {1}", "1:********")]
+[StepText("I sign in as {user} with password {password}", "password=********")]
 public Task SignIn(string user, string password) { ... }
 
-[StepText("I transfer {0} from {1} to {2}", new[] { "1:my current account", "2:my savings account" })]
+[StepText("I transfer {amount} from {from} to {to}", new[] { "from=my current account", "to=my savings account" })]
 public Task Transfer(decimal amount, string from, string to) { ... }
 ```
 
-An override that does not start with an index and a colon throws `InvalidStepTextParameterException`.
+Override text is inserted exactly as written, including braces and equals signs, and also replaces formatted occurrences such as `{amount:C}`. Repeated overrides for the same name use the last value. Overrides affect display only; argument readers still run once per executed attempt.
+
+### Formats, braces and diagnostics
+
+Use `{amount:F2}`, `{amount:C}` or `{date:yyyy-MM-dd}` for .NET `IFormattable` formats. Formatting uses invariant culture, including when the current thread uses another culture. Custom converters and structured arguments take precedence over format specifiers; their text is used verbatim.
+
+Use `{{` and `}}` for escaped braces: `{{{amount:F2}}}` renders `{12.50}` for 12.5. Other text that is not a placeholder, including JSON such as `{"active": true}`, malformed blocks and unmatched braces, stays literal. Replacement values are never reparsed. Names match parameter metadata exactly, including Unicode letters, letter numbers, combining marks, connector punctuation and supplementary characters. A name starts with a letter, letter number or underscore; digits and formatting characters are also accepted after the first character. Use the metadata name for escaped identifiers (for example, `{class}` for `@class`); C# removes formatting characters from parameter metadata. Alignment fields such as `{amount,10}` are literal text; use a converter for alignment.
+
+Unknown names, positional placeholders and invalid overrides produce `BDT002` with the generator or analyzer. At runtime an invalid placeholder stays visible and invalid overrides are ignored, with a diagnostic recorded once per step attempt. CancellationToken placeholders are diagnosed and omitted. An invalid format produces `<error: FormatException>` and a diagnostic. These errors never fail the test, including during construction, skip/unreached rendering or report refresh.
+
+See [named step text migration](../migration/named-step-text.md) to update positional templates and overrides.
 
 ## Which arguments are captured automatically
 
@@ -110,7 +120,7 @@ await When(() => Orders.Submit(order))
 ```
 
 - Explicit readers replace automatic ones.
-- For cancellation-aware steps, leave out `CancellationToken` parameters. Supplying the full list also works; token readers are never evaluated.
+- For all steps, leave out `CancellationToken` parameters. Supplying the full list also works; token readers are never evaluated.
 - When the step has method metadata, `WithArgs` restores the `[StepText]` template or humanised name. Without metadata, the values are appended to the source text.
 
 ## When arguments are read
@@ -145,10 +155,11 @@ The delegate runs when the step executes, and again on each retry, so it can sho
 | `IDictionary` | `key=value` pairs joined by `,` |
 | Other `IEnumerable` | elements joined by `, ` |
 | `CancellationToken` | left out of the text and of `[StepText]` placeholders |
+| Other `IFormattable` values | Invariant `ToString(format, provider)` |
 | Anything else | `ToString()` |
 | Reading throws | `<error: ExceptionType>` |
 
-A registered [custom converter](#custom-converters) takes precedence over all of these.
+A registered [custom converter](#custom-converters) takes precedence over ordinary value formatting. Cancellation tokens are always excluded, and structured arguments retain their dedicated rendering.
 
 ## Custom converters
 

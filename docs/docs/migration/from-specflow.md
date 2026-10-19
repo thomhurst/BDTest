@@ -15,7 +15,7 @@ SpecFlow (and Reqnroll) bind Gherkin text to C# methods with regular expressions
 | `Feature:` with "As a / I want / So that" | `[Story(AsA = ..., IWant = ..., SoThat = ...)]` on the class |
 | `Scenario:` | A test method with `[ScenarioText("...")]` |
 | `Given` / `When` / `Then` / `And` / `But` lines | `Given(...)`, `When(...)`, `Then(...)`, `.And(...)`, `.But(...)` |
-| `[Binding]` step definitions with regex | Ordinary methods, optionally with `[StepText("... {0} ...")]` |
+| `[Binding]` step definitions with regex | Ordinary methods, optionally with `[StepText("... {parameterName} ...")]` |
 | Step argument transformations | Typed arguments, plus [`IStepTextStringConverter<T>`](../writing-tests/step-text.md#custom-converters) for display |
 | `ScenarioContext` / context injection | The per-test [`Context`](../writing-tests/test-context.md) object |
 | `Scenario Outline:` + `Examples:` | [`ScenarioOutline(...)`](../writing-tests/scenario-outlines.md) with typed rows |
@@ -65,13 +65,13 @@ The step definitions become methods with `[StepText]`:
 ```csharp title="Illustrative fragment"
 public class AccountSteps(AccountContext context)
 {
-    [StepText("I have an account with a balance of {0}")]
+    [StepText("I have an account with a balance of {balance}")]
     public void CreateAnAccount(decimal balance) => context.Balance = balance;
 
-    [StepText("I withdraw {0}")]
+    [StepText("I withdraw {amount}")]
     public void Withdraw(decimal amount) => context.Balance -= amount;
 
-    [StepText("the account balance is {0}")]
+    [StepText("the account balance is {expected}")]
     public async Task TheBalanceIs(decimal expected) => await Assert.That(context.Balance).IsEqualTo(expected);
 }
 ```

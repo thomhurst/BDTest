@@ -136,7 +136,7 @@ public class DelegateStepTests : RunTestBase
 
     private static void Accept(int value) { }
 
-    [StepText("received {0}")]
+    [StepText("received {value}")]
     private static ValueTask AcceptToken(int value, CancellationToken token) => default;
 
     private sealed class SingleUseSource : IValueTaskSource<int>

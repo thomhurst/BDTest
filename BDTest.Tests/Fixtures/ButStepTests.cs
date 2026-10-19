@@ -148,7 +148,7 @@ public class ButStepTests : RunTestBase
 
     private static void NoOp() { }
 
-    [StepText("named {0}")]
+    [StepText("named {value}")]
     private static Task NamedStepAsync(string value) => Task.CompletedTask;
 
     private static void Fail() => throw new InvalidOperationException("But failed");

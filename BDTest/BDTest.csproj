@@ -34,6 +34,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Include="..\BDTest.CompilerShared\NamedStepTemplate.cs" Link="Helpers\NamedStepTemplate.cs" />
     <ProjectReference Include="..\BDTest.Contracts\BDTest.Contracts.csproj" />
     <InternalsVisibleTo Include="BDTest.Tests" Key="$(BDTestPublicKey)" />
   </ItemGroup>

@@ -71,27 +71,30 @@ public class AnalyzerTests
     public async Task Async_steps_respect_bound_delegate(string members, int count) =>
         await AssertRule(members, "BDT004", count);
 
-    [TestCase("[StepText(\"{1}\")] void Step(int value) {}", 1)]
-    [TestCase("[StepText(\"{0}\", \"1:missing\")] void Step(int value) {}", 1)]
-    [TestCase("[StepText(\"{0}\", \"value:missing\")] void Step(int value) {}", 1)]
-    [TestCase("[StepText(\"{0}\", new[] { \"0:ready\", \"2:missing\" })] void Step(int value) {}", 1)]
-    [TestCase("[StepText(\"{0}\", \"\")] void Step(int value) {}", 1)]
-    [TestCase("[StepText(\"{0,10:N2}\")] void Step(int value) {}", 0)]
-    [TestCase("[StepText(\"{0,9999999}\")] void Step(int value) {}", 0)]
-    [TestCase("[StepText(\"{0,99999999}\")] void Step(int value) {}", 1)]
-    [TestCase("[StepText(\"{{1}} and {0,-10}\")] void Step(int value) {}", 0)]
-    [TestCase("[StepText(\"{{{0}}}\")] void Step(int value) {}", 0)]
-    [TestCase("[StepText(\"no parameters\")] void Step() {}", 0)]
-    [TestCase("[StepText(\"{0}\", \"0:{1}\")] void Step(int value) {}", 1)]
-    [TestCase("[StepText(\"{0}\", new[] { \"0:{1}\", \"1:ready\" })] void Step(int first, int second) {}", 0)]
-    [TestCase("[StepText(\"{1}\")] Task Step(int value, CancellationToken token) => Task.CompletedTask; void Test() { var step = Given(token => Step(1, token)); }", 1)]
-    [TestCase("[StepText(\"{0}\")] Task Step(CancellationToken token) => Task.CompletedTask; void Test() { var step = Given(Step); }", 1)]
-    [TestCase("[StepText(\"{0}\")] Task Step(int value, CancellationToken token) => Task.CompletedTask; void Test() { var step = Given(token => Step(1, token)); }", 0)]
-    [TestCase("[StepText(\"{1}\")] Task Step(int value, CancellationToken token) => Task.CompletedTask; void Test() { var step = Given(() => Step(1, CancellationToken.None)); }", 0)]
-    [TestCase("[StepText(\"{1}\")] Task Step(int value, CancellationToken token) => Task.CompletedTask;", 0)]
-    [TestCase("[StepText(\"{0}\", (string[])null)] void Step(int value) {}", 1)]
-    [TestCase("[StepText(\"{0}\", new string[0])] void Step(int value) {}", 0)]
-    public async Task Step_text_matches_composite_format_and_visible_parameters(string members, int count) =>
+    [TestCase("[StepText(\"{value}\")] void Step(int value) {}", 0)]
+    [TestCase("[StepText(\"{missing}\")] void Step(int value) {}", 1)]
+    [TestCase("[StepText(\"{Value}\")] void Step(int value) {}", 1)]
+    [TestCase("[StepText(\"{value:N2}\")] void Step(decimal value) {}", 0)]
+    [TestCase("[StepText(\"{0}\")] void Step(int value) {}", 1)]
+    [TestCase("[StepText(\"{0,10:N2}\")] void Step(int value) {}", 1)]
+    [TestCase("[StepText(\"{value}\", \"0:old\")] void Step(int value) {}", 1)]
+    [TestCase("[StepText(\"{value}\", \"missing=text\")] void Step(int value) {}", 1)]
+    [TestCase("[StepText(\"{value}\", \"value:old\")] void Step(int value) {}", 1)]
+    [TestCase("[StepText(\"{value}\", \"value={unknown}\")] void Step(int value) {}", 0)]
+    [TestCase("[StepText(\"{value}\", \"value=\")] void Step(int value) {}", 0)]
+    [TestCase("[StepText(\"{value}\", \"value=one=two\")] void Step(int value) {}", 0)]
+    [TestCase("[StepText(\"{{unknown}} {{{value}}}\")] void Step(int value) {}", 0)]
+    [TestCase("[StepText(\"unmatched { brace and } }\")] void Step() {}", 0)]
+    [TestCase("[StepText(\"{not a placeholder}\")] void Step() {}", 0)]
+    [TestCase("[StepText(\"{\\\"name\\\": \\\"value\\\"}\")] void Step() {}", 0)]
+    [TestCase("[StepText(\"{value}\", (string[])null)] void Step(int value) {}", 1)]
+    [TestCase("[StepText(\"{value}\", new string[] { null })] void Step(int value) {}", 1)]
+    [TestCase("[StepText(\"{value}\", new string[0])] void Step(int value) {}", 0)]
+    [TestCase("[StepText(\"{token}\")] Task Step(CancellationToken token) => Task.CompletedTask;", 1)]
+    [TestCase("[StepText(\"{value}\")] Task Step(int value, CancellationToken token) => Task.CompletedTask; void Test() { var step = Given(() => Step(1, CancellationToken.None)); }", 0)]
+    [TestCase("[StepText(\"{token}\")] Task Step(int value, CancellationToken token) => Task.CompletedTask; void Test() { var step = Given(() => Step(1, CancellationToken.None)); }", 1)]
+    [TestCase("[StepText(\"{value}\", \"token=hidden\")] Task Step(int value, CancellationToken token) => Task.CompletedTask;", 1)]
+    public async Task Step_text_matches_named_templates_and_visible_parameters(string members, int count) =>
         await AssertRule(members, "BDT002", count);
 
     [TestCase("", 1)]
@@ -130,6 +133,113 @@ public class AnalyzerTests
         Assert.That(generatorDiagnostics, Is.Empty);
         var diagnostics = await Analyze(generated);
         Assert.That(diagnostics.Select(d => d.Id), Is.EqualTo(new[] { "BDT001" }));
+    }
+
+    [Test]
+    public async Task Generator_and_analyzer_report_invalid_template_once()
+    {
+        var compilation = CreateCompilation(Source("[StepText(\"{missing}\")] void Step(int value) {}"));
+        GeneratorDriver driver = CSharpGeneratorDriver.Create(new StepMetadataGenerator());
+        driver.RunGeneratorsAndUpdateCompilation(compilation, out var generated, out var generatorDiagnostics);
+        Assert.That(generatorDiagnostics.Select(d => d.Id), Is.EqualTo(new[] { "BDT002" }));
+        Assert.That(await Analyze(generated), Is.Empty);
+    }
+
+    [TestCase(false)]
+    [TestCase(true)]
+    public async Task Inherited_templates_validate_selected_method_parameter_names(bool withGenerator)
+    {
+        var source = Prefix + """
+            class Parent : BDTestBuilder {
+                public Parent(BDTest.BDTestRun run) : base(run) {}
+                [StepText("{original}")] protected virtual void Step(int original) {}
+            }
+            class Consumer : Parent {
+                public Consumer(BDTest.BDTestRun run) : base(run) {}
+                protected override void Step(int renamed) {}
+                void Test() { var builder = Given(() => Step(1)); }
+            }
+            """;
+        Compilation compilation = CreateCompilation(source);
+        AssertCompiles(compilation);
+        var diagnostics = ImmutableArray<Diagnostic>.Empty;
+        if (withGenerator)
+        {
+            GeneratorDriver driver = CSharpGeneratorDriver.Create(new StepMetadataGenerator());
+            driver.RunGeneratorsAndUpdateCompilation(compilation, out compilation, out diagnostics);
+        }
+        diagnostics = diagnostics.AddRange(await Analyze(compilation));
+        Assert.That(diagnostics.Select(d => d.Id), Is.EqualTo(new[] { "BDT002" }));
+        Assert.That(diagnostics.Single().GetMessage(), Does.Contain("original"));
+    }
+
+    [TestCase(false)]
+    [TestCase(true)]
+    public async Task Imported_templates_are_validated_at_step_binding(bool withGenerator)
+    {
+        var library = CreateCompilation(Prefix + """
+            public static class Library {
+                [StepText("{missing}")] public static void Step(int value) {}
+            }
+            """).WithAssemblyName("ExternalSteps");
+        using var image = new MemoryStream();
+        var emit = library.Emit(image);
+        Assert.That(emit.Success, Is.True, string.Join(Environment.NewLine, emit.Diagnostics));
+        Compilation compilation = CreateCompilation(Source("void Test() { var step = Given(() => Library.Step(1)); }"))
+            .AddReferences(MetadataReference.CreateFromImage(image.ToArray()));
+        AssertCompiles(compilation);
+        var diagnostics = ImmutableArray<Diagnostic>.Empty;
+        if (withGenerator)
+        {
+            GeneratorDriver driver = CSharpGeneratorDriver.Create(new StepMetadataGenerator());
+            driver.RunGeneratorsAndUpdateCompilation(compilation, out compilation, out diagnostics);
+        }
+        diagnostics = diagnostics.AddRange(await Analyze(compilation));
+        Assert.That(diagnostics.Select(d => d.Id), Is.EqualTo(new[] { "BDT002" }));
+        Assert.That(diagnostics.Single().GetMessage(), Does.Contain("missing"));
+    }
+
+    [TestCase(false)]
+    [TestCase(true)]
+    public async Task Unicode_parameter_names_are_validated(bool withGenerator)
+    {
+        Compilation compilation = CreateCompilation(Source("""
+            [StepText("{a\u0301} {\u2160} {a\u203F}", "a\u203F=override")]
+            void Valid(int a\u0301, int \u2160, int a\u203F) {}
+            [StepText("{missing\u0301} {missing\U00010400} {missing\u200C}")]
+            void Invalid() {}
+            """));
+        AssertCompiles(compilation);
+        var diagnostics = ImmutableArray<Diagnostic>.Empty;
+        if (withGenerator)
+        {
+            GeneratorDriver driver = CSharpGeneratorDriver.Create(new StepMetadataGenerator());
+            driver.RunGeneratorsAndUpdateCompilation(compilation, out compilation, out diagnostics);
+        }
+        diagnostics = diagnostics.AddRange(await Analyze(compilation));
+        Assert.That(diagnostics.Select(d => d.Id), Is.EqualTo(new[] { "BDT002", "BDT002", "BDT002" }));
+        Assert.That(diagnostics.All(d => d.GetMessage().Contains("does not name a visible parameter")), Is.True);
+    }
+
+    [TestCase(false, "(string)null", "must use 'parameterName=text'")]
+    [TestCase(true, "(string)null", "must use 'parameterName=text'")]
+    [TestCase(false, "new string[] { null }", "must use 'parameterName=text'")]
+    [TestCase(true, "new string[] { null }", "must use 'parameterName=text'")]
+    [TestCase(false, "(string[])null", "must not be a null array")]
+    [TestCase(true, "(string[])null", "must not be a null array")]
+    public async Task Null_override_diagnostics_distinguish_strings_from_arrays(bool withGenerator, string argument, string message)
+    {
+        Compilation compilation = CreateCompilation(Source("[StepText(\"{value}\", " + argument + ")] void Step(int value) {}"));
+        AssertCompiles(compilation);
+        var diagnostics = ImmutableArray<Diagnostic>.Empty;
+        if (withGenerator)
+        {
+            GeneratorDriver driver = CSharpGeneratorDriver.Create(new StepMetadataGenerator());
+            driver.RunGeneratorsAndUpdateCompilation(compilation, out compilation, out diagnostics);
+        }
+        diagnostics = diagnostics.AddRange(await Analyze(compilation));
+        Assert.That(diagnostics.Select(d => d.Id), Is.EqualTo(new[] { "BDT002" }));
+        Assert.That(diagnostics.Single().GetMessage(), Does.Contain(message));
     }
 
     private static async Task AssertRule(string members, string id, int count)

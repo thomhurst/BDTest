@@ -54,6 +54,12 @@ Open generic declarations whose selected declaring type or method type arguments
 
 These restrictions are explicit: a source generator can add source files, but cannot rewrite caller-local expressions into new closures. This implementation avoids depending on undocumented compiler closure layouts. See the [Roslyn incremental generator design](https://github.com/dotnet/roslyn/blob/main/docs/features/incremental-generators.md).
 
+## Step template diagnostics
+
+The generator validates `[StepText]` attributes at compile time, even when a step has no generated call-site metadata. Diagnostic `BDT002` rejects unknown parameter names, references to hidden `CancellationToken` parameters, positional placeholders and invalid overrides. Templates use `{parameterName}` or `{parameterName:format}`, and overrides use `"parameterName=text"`. Literal JSON and unmatched braces remain text, and `{{` / `}}` escape braces. Override values are never interpreted as templates. See [BDT002](analyzers.md#bdt002) for examples and suppression.
+
+When `BDTest.Analyzers` is installed too, it recognizes the generator's validation marker and does not duplicate these diagnostics. Neither compiler tool executes argument readers, converters or user formatters. Runtime rendering uses the same grammar and records invalid templates as diagnostics without changing the step outcome.
+
 ## Validation
 
 `BDTest.SourceGenerator.Tests` runs the generator with Roslyn 4.8, compiles the generated consumer source, loads it, and verifies runtime method identity, attributes, accessors and fallback behavior. The solution and packaging pipeline discover both new projects through their existing conventions. The generator package contains only its analyzer DLL and normal package metadata; consumers retain the core's `netstandard2.0` compatibility.

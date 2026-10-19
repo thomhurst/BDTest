@@ -144,7 +144,7 @@ public class AssemblyRunContract : Adapter
 
     private static void ThrowConfiguredException() => throw new ConfiguredSuccessException();
 
-    [StepText("assembly argument {0}")]
+    [StepText("assembly argument {argument}")]
     private static void ReadArgument(AssemblyArgument argument) => GC.KeepAlive(argument);
 
     [AssemblySkip]

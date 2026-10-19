@@ -105,13 +105,15 @@ public class Step
 
     private string? _stepTextTemplate;
     private string? _generatedStepText;
+    private IReadOnlyList<string> _templateDiagnostics = Array.Empty<string>();
 
     internal Step(Runnable runnable, StepType stepType, string? scenarioId, string? reportId, BDTestRun run)
-        : this(runnable, stepType, scenarioId, reportId, run, runnable.Definition.GetText())
+        : this(new StepDefinition(runnable, stepType), scenarioId, reportId, run)
     {
     }
 
-    private Step(Runnable runnable, StepType stepType, string? scenarioId, string? reportId, BDTestRun run, string textTemplate)
+    private Step(Runnable runnable, StepType stepType, string? scenarioId, string? reportId, BDTestRun run, string textTemplate,
+        IReadOnlyList<string> templateDiagnostics)
     {
         _options = (run ?? throw new ArgumentNullException(nameof(run))).Options;
         SnapshotGate = run.Store.Gate;
@@ -123,11 +125,13 @@ public class Step
         // Construction and reporting retain placeholders without running user argument expressions.
         _stepTextTemplate = textTemplate;
         _generatedStepText = _stepTextTemplate;
+        _templateDiagnostics = templateDiagnostics;
+        foreach (var diagnostic in _templateDiagnostics) AddDiagnostic(diagnostic);
         SetStepText();
     }
 
     internal Step(StepDefinition definition, string? scenarioId, string? reportId, BDTestRun run)
-        : this(definition.Runnable, definition.StepType, scenarioId, reportId, run, definition.TextTemplate)
+        : this(definition.Runnable, definition.StepType, scenarioId, reportId, run, definition.TextTemplate, definition.TemplateDiagnostics)
     {
         OverriddenStepText = definition.OverriddenStepText;
         Timeout = definition.Timeout;
@@ -157,7 +161,10 @@ public class Step
         {
             _explicitArguments = value;
             if (Runnable == null) return;
-            _stepTextTemplate = Runnable.Definition.GetText(explicitArguments: value);
+            var diagnostics = new List<string>();
+            _stepTextTemplate = Runnable.Definition.GetText(explicitArguments: value, diagnostic: diagnostics.Add);
+            _templateDiagnostics = diagnostics.ToArray();
+            foreach (var diagnostic in _templateDiagnostics) AddDiagnostic(diagnostic);
             _generatedStepText = _stepTextTemplate;
             StepText = $"{StepPrefix} {_stepTextTemplate}";
         }
@@ -185,6 +192,7 @@ public class Step
         StepText = SubstituteExampleValues($"{StepPrefix} {_stepTextTemplate}");
         lock (SnapshotGate ?? this)
             ExecutionDiagnostics.Clear();
+        foreach (var diagnostic in _templateDiagnostics) AddDiagnostic(diagnostic);
         Arguments = Array.Empty<StepArgument>();
         TimedOut = false;
         SkipReason = null;
@@ -228,7 +236,7 @@ public class Step
     {
         // Match snapshot reads without holding the gate while user readers or converters execute.
         lock (SnapshotGate ?? this)
-            ExecutionDiagnostics.Add(diagnostic);
+            if (!ExecutionDiagnostics.Contains(diagnostic)) ExecutionDiagnostics.Add(diagnostic);
     }
 
     private StepSkipReason? EvaluateSkipReason()
