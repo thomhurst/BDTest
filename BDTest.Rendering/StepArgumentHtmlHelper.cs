@@ -2,14 +2,14 @@ using System.Net;
 using System.Text;
 using BDTest.Contracts;
 
-namespace BDTest.Razor.Reports.Helpers;
+namespace BDTest.Rendering;
 
 /// <summary>Shared, HTML-encoded structured argument markup for hosted and standalone reports.</summary>
 internal static class StepArgumentHtmlHelper
 {
     private const int PreviewRows = 20;
 
-    public static string GetHtml(IReadOnlyList<StepArgument>? arguments)
+    public static string GetHtml(IReadOnlyList<Contracts.StepArgument>? arguments)
     {
         if (arguments == null || arguments.Count == 0) return string.Empty;
         var html = new StringBuilder();
@@ -18,7 +18,7 @@ internal static class StepArgumentHtmlHelper
             html.Append("<div class=\"step-argument\" style=\"overflow-x:auto\">");
             switch (argument)
             {
-                case StepTable table:
+                case Contracts.StepTable table:
                     AppendTable(html, table, table.Rows.Take(PreviewRows));
                     if (table.Rows.Count > PreviewRows)
                     {
@@ -27,7 +27,7 @@ internal static class StepArgumentHtmlHelper
                         html.Append("</details>");
                     }
                     break;
-                case StepDocString docString:
+                case Contracts.StepDocString docString:
                     html.Append($"<pre><code data-content-type=\"{Encode(docString.ContentType)}\">{Encode(docString.Content)}</code></pre>");
                     break;
             }
@@ -36,7 +36,7 @@ internal static class StepArgumentHtmlHelper
         return html.ToString();
     }
 
-    private static void AppendTable(StringBuilder html, StepTable table, IEnumerable<IReadOnlyList<string>> rows)
+    private static void AppendTable(StringBuilder html, Contracts.StepTable table, IEnumerable<IReadOnlyList<string>> rows)
     {
         html.Append("<table class=\"table step-argument-table\"><thead><tr>");
         foreach (var header in table.Headers)

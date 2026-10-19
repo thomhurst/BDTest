@@ -65,6 +65,7 @@ const sidebars = {
       items: [
         'reports/overview',
         'reports/html-report',
+        'reports/rendering',
         'reports/html-report-security',
         'reports/json-data',
         'reports/contracts',

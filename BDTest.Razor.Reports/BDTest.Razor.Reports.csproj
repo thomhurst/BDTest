@@ -21,6 +21,7 @@
     </ItemGroup>
     
     <ItemGroup>
+      <ProjectReference Include="..\BDTest.Rendering\BDTest.Rendering.csproj" />
       <ProjectReference Include="..\BDTest.Contracts\BDTest.Contracts.csproj" />
     </ItemGroup>
 

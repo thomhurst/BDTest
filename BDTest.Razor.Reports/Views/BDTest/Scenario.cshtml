@@ -137,7 +137,7 @@
                             <button class="btn sm" type="button" aria-pressed="true" data-bdtest-action="toggle-wrap" data-target="@traceId">Wrap</button>
                             <button class="btn sm" type="button" data-bdtest-action="copy-text" data-target="@traceId">Copy</button>
                         </div>
-                        @Html.Raw(BDTest.Razor.Reports.Helpers.ExceptionHtmlHelper.GetHtml(exception))
+                        @Html.Raw(BDTest.Rendering.ReportHtmlRenderer.RenderException(exception))
                         <pre class="code" id="@traceId">@(exception.AsString ?? exception.Message)</pre>
                     </div>
                 </section>
@@ -200,7 +200,7 @@
                                         <div class="k">Skip reason</div>
                                         <p>@step.SkipReason</p>
                                     }
-                                    @Html.Raw(BDTest.Razor.Reports.Helpers.StepArgumentHtmlHelper.GetHtml(step.Arguments))
+                                    @Html.Raw(BDTest.Rendering.ReportHtmlRenderer.RenderArguments(step.Arguments))
                                     @await Html.PartialAsync("_Attachments", step.Attachments ?? new List<AttachmentInfo>())
                                     @if (!string.IsNullOrEmpty(step.Output))
                                     {
@@ -210,7 +210,7 @@
                                     @if (step.Exception != null && !(isFailing && ExceptionHtmlHelper.HasSameDetails(step.Exception, exception)))
                                     {
                                         <div class="k">Exception</div>
-                                        @Html.Raw(BDTest.Razor.Reports.Helpers.ExceptionHtmlHelper.GetHtml(step.Exception))
+                                        @Html.Raw(BDTest.Rendering.ReportHtmlRenderer.RenderException(step.Exception))
                                     }
                                     @if (step.Diagnostics?.Count > 0)
                                     {

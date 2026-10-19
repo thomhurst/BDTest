@@ -16,7 +16,9 @@ File.WriteAllText("report.html", html);
 The next major release moves these APIs from the core assembly while retaining
 namespaces and method signatures. Add the package reference and rebuild callers.
 Core does not reference reporting. Run snapshots and attachment capture remain
-in core; this package owns export metadata, rendering, serialization and upload.
+in core; this package owns export metadata, serialization and upload. HTML
+helpers delegate to the transitive BDTest.Rendering package, which depends only
+on immutable contracts and can be used directly by tools without execution.
 
 See https://thomhurst.github.io/BDTest/docs/reports/overview for run lifecycle,
 JSON compatibility and report-server upload configuration.

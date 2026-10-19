@@ -35,6 +35,11 @@ File.WriteAllText("BDTest-Report.html", html);
 
 Both methods return a string; you decide where to write it. JSON export and HTML rendering use the same immutable contract snapshots. Rendering a saved report does not require an active run. Timestamps with a non-zero offset in saved reports are converted to UTC for display; the original contract values are preserved.
 
+For tools that consume saved immutable reports without execution, use
+`BDTest.Rendering.ReportHtmlRenderer.GenerateHtmlReport(report)` from the
+[shared rendering package](rendering.md). The existing helper delegates to the
+same implementation.
+
 ## Generating it after all tests
 
 TUnit example:
