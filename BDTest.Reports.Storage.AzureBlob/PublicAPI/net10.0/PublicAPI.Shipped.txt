@@ -1,0 +1,41 @@
+#nullable enable
+BDTest.Reports.Storage.AzureBlob.AzureBlobReportStoreExtensions
+BDTest.Reports.Storage.AzureBlob.AzureStorageConfig
+BDTest.Reports.Storage.AzureBlob.AzureStorageConfig.AzureStorageConfig() -> void
+BDTest.Reports.Storage.AzureBlob.AzureStorageConfig.ConnectionString.get -> string?
+BDTest.Reports.Storage.AzureBlob.AzureStorageConfig.ConnectionString.set -> void
+BDTest.Reports.Storage.AzureBlob.AzureStorageConfig.Credential.get -> Azure.Core.TokenCredential?
+BDTest.Reports.Storage.AzureBlob.AzureStorageConfig.Credential.set -> void
+BDTest.Reports.Storage.AzureBlob.AzureStorageConfig.ReportsContainerName.get -> string!
+BDTest.Reports.Storage.AzureBlob.AzureStorageConfig.ReportsContainerName.set -> void
+BDTest.Reports.Storage.AzureBlob.AzureStorageConfig.ServiceUri.get -> System.Uri?
+BDTest.Reports.Storage.AzureBlob.AzureStorageConfig.ServiceUri.set -> void
+BDTest.Reports.Storage.AzureBlob.AzureStorageConfig.SummariesContainerName.get -> string!
+BDTest.Reports.Storage.AzureBlob.AzureStorageConfig.SummariesContainerName.set -> void
+BDTest.Reports.Storage.AzureBlob.AzureStorageDataStore
+BDTest.Reports.Storage.AzureBlob.AzureStorageDataStore.AzureStorageDataStore(Azure.Storage.Blobs.BlobContainerClient! testRunSummariesContainer, Azure.Storage.Blobs.BlobContainerClient! testDataContainer) -> void
+BDTest.Reports.Storage.AzureBlob.AzureStorageDataStore.AzureStorageDataStore(BDTest.Reports.Storage.AzureBlob.AzureStorageConfig! azureStorageConfig) -> void
+BDTest.Reports.Storage.AzureBlob.AzureStorageDataStore.DeleteReportAsync(string! reportId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+BDTest.Reports.Storage.AzureBlob.AzureStorageDataStore.DeleteTestData(string! id) -> System.Threading.Tasks.Task!
+BDTest.Reports.Storage.AzureBlob.AzureStorageDataStore.DeleteTestRunRecord(string! id) -> System.Threading.Tasks.Task!
+BDTest.Reports.Storage.AzureBlob.AzureStorageDataStore.GetAllTestRunRecords() -> System.Threading.Tasks.Task<System.Collections.Generic.IEnumerable<BDTest.Razor.Reports.Models.TestRunSummary!>!>!
+BDTest.Reports.Storage.AzureBlob.AzureStorageDataStore.GetTestData(string! id, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<BDTest.Maps.BDTestOutputModel?>!
+BDTest.Reports.Storage.AzureBlob.AzureStorageDataStore.InitializeAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+BDTest.Reports.Storage.AzureBlob.AzureStorageDataStore.ListAsync(BDTest.Razor.Reports.Storage.RunIndexQuery! query, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<BDTest.Razor.Reports.Storage.RunIndexPage!>!
+BDTest.Reports.Storage.AzureBlob.AzureStorageDataStore.OpenReadAsync(string! reportId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<System.IO.Stream?>!
+BDTest.Reports.Storage.AzureBlob.AzureStorageDataStore.OpenReadAsync(string! reportId, string! attachmentId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<System.IO.Stream?>!
+BDTest.Reports.Storage.AzureBlob.AzureStorageDataStore.StoreTestData(string! id, BDTest.Maps.BDTestOutputModel? data) -> System.Threading.Tasks.Task!
+BDTest.Reports.Storage.AzureBlob.AzureStorageDataStore.StoreTestRunRecord(BDTest.Razor.Reports.Models.TestRunSummary! testRunSummary) -> System.Threading.Tasks.Task!
+BDTest.Reports.Storage.AzureBlob.AzureStorageDataStore.UpsertAsync(BDTest.Razor.Reports.Storage.RunIndexEntry! entry, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+BDTest.Reports.Storage.AzureBlob.AzureStorageDataStore.WriteAsync(string! reportId, System.IO.Stream! utf8Json, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+BDTest.Reports.Storage.AzureBlob.AzureStorageDataStore.WriteAsync(string! reportId, string! attachmentId, System.IO.Stream! content, long length, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+BDTest.Reports.Storage.AzureBlob.Extensions
+BDTest.Reports.Storage.AzureBlob.IAsyncDataStoreInitializer
+BDTest.Reports.Storage.AzureBlob.IAsyncDataStoreInitializer.InitializeAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+BDTest.Reports.Storage.AzureBlob.ReportStorageStartupService
+BDTest.Reports.Storage.AzureBlob.ReportStorageStartupService.ReportStorageStartupService(System.IServiceProvider! services, Microsoft.Extensions.Logging.ILogger<BDTest.Reports.Storage.AzureBlob.ReportStorageStartupService!>! logger) -> void
+BDTest.Reports.Storage.AzureBlob.ReportStorageStartupService.StartAsync(System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task!
+BDTest.Reports.Storage.AzureBlob.ReportStorageStartupService.StopAsync(System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task!
+static BDTest.Reports.Storage.AzureBlob.AzureBlobReportStoreExtensions.AddAzureBlobReportStore(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, System.Action<BDTest.Reports.Storage.AzureBlob.AzureStorageConfig!>? configure = null) -> Microsoft.Extensions.Options.OptionsBuilder<BDTest.Reports.Storage.AzureBlob.AzureStorageConfig!>!
+static BDTest.Reports.Storage.AzureBlob.Extensions.AsStream(this string? value) -> System.IO.Stream!
+static BDTest.Reports.Storage.AzureBlob.Extensions.AsStream<T>(this T t) -> System.IO.Stream!

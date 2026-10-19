@@ -8,6 +8,7 @@ namespace BDTest.Razor.Reports.Helpers;
 [JsonSourceGenerationOptions(Converters = new[] { typeof(ReportStatusConverter) })]
 [JsonSerializable(typeof(TestRunSummary))]
 [JsonSerializable(typeof(RunIndexEntry))]
+[System.Diagnostics.CodeAnalysis.SuppressMessage("ApiDesign", "RS0041", Justification = "System.Text.Json generates nullable-oblivious JsonTypeInfo properties; their signatures remain checked by the public API baseline.")]
 public partial class ReportJsonContext : JsonSerializerContext
 {
 }

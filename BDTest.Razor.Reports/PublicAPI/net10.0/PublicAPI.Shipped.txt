@@ -1,0 +1,752 @@
+#nullable enable
+BDTest.Razor.Reports.Constants.OrderConstants
+BDTest.Razor.Reports.Constants.PagerQueryParameters
+BDTest.Razor.Reports.Constants.StatusConstants
+BDTest.Razor.Reports.Controllers.AttachmentsController
+BDTest.Razor.Reports.Controllers.AttachmentsController.AttachmentsController(BDTest.Razor.Reports.Interfaces.IDataRepository! repository, Microsoft.Extensions.Options.IOptions<BDTest.Razor.Reports.Models.BDTestReportOptions!>! configuredOptions, BDTest.Razor.Reports.Implementations.ReportAttachmentGate! attachmentGate, BDTest.Razor.Reports.Interfaces.IBDTestAttachmentStore? attachmentStore = null) -> void
+BDTest.Razor.Reports.Controllers.AttachmentsController.Download(string! reportId, string! attachmentId, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult!>!
+BDTest.Razor.Reports.Controllers.AttachmentsController.Upload(string! reportId, string! attachmentId, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult!>!
+BDTest.Razor.Reports.Controllers.BDTestController
+BDTest.Razor.Reports.Controllers.BDTestController.AllScenarios(string! id, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult!>!
+BDTest.Razor.Reports.Controllers.BDTestController.BDTestController(BDTest.Razor.Reports.Interfaces.IDataRepository! dataRepository, Microsoft.Extensions.Options.IOptions<BDTest.Razor.Reports.Models.BDTestReportOptions!>! options, BDTest.Razor.Reports.Interfaces.IBDTestDataReceiver? dataReceiver = null, BDTest.Razor.Reports.Interfaces.IBDTestAttachmentStore? attachmentStore = null, Microsoft.Extensions.Logging.ILogger<BDTest.Razor.Reports.Controllers.BDTestController!>? logger = null, System.Collections.Generic.IEnumerable<BDTest.Razor.Reports.Interfaces.IBDTestCustomSidebarLinksProvider!>? sidebarProviders = null) -> void
+BDTest.Razor.Reports.Controllers.BDTestController.DeleteReport(string! id) -> System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult!>!
+BDTest.Razor.Reports.Controllers.BDTestController.Error() -> Microsoft.AspNetCore.Mvc.IActionResult!
+BDTest.Razor.Reports.Controllers.BDTestController.GetReport(string! id) -> Microsoft.AspNetCore.Mvc.IActionResult!
+BDTest.Razor.Reports.Controllers.BDTestController.Index(BDTest.Maps.BDTestOutputModel! bdTestOutputModel) -> System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult!>!
+BDTest.Razor.Reports.Controllers.BDTestController.Ping() -> Microsoft.AspNetCore.Mvc.IActionResult!
+BDTest.Razor.Reports.Controllers.BDTestController.RawJsonData(string! id, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult!>!
+BDTest.Razor.Reports.Controllers.BDTestController.Redirect() -> Microsoft.AspNetCore.Mvc.IActionResult!
+BDTest.Razor.Reports.Controllers.BDTestController.SpecificScenario(string! reportId, string! scenarioId, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult!>!
+BDTest.Razor.Reports.Controllers.BDTestController.Stories(string! id, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult!>!
+BDTest.Razor.Reports.Controllers.BDTestController.Summary(string! id, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult!>!
+BDTest.Razor.Reports.Controllers.BDTestController.TestRunFlakiness(System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult!>!
+BDTest.Razor.Reports.Controllers.BDTestController.TestRunFlakiness(string? reportIds, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult!>!
+BDTest.Razor.Reports.Controllers.BDTestController.TestRunTimes(string? reportIds, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult!>!
+BDTest.Razor.Reports.Controllers.BDTestController.TestRuns() -> System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult!>!
+BDTest.Razor.Reports.Controllers.BDTestController.TimingVariance(System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult!>!
+BDTest.Razor.Reports.Controllers.BDTestController.Timings(string! id, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult!>!
+BDTest.Razor.Reports.Controllers.BDTestController.TopDefects(string! id, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult!>!
+BDTest.Razor.Reports.Controllers.BDTestController.Trends() -> System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult!>!
+BDTest.Razor.Reports.Controllers.BDTestController.Warnings(string! id, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult!>!
+BDTest.Razor.Reports.Extensions.BDTestExtensions
+BDTest.Razor.Reports.Extensions.MiscExtensions
+BDTest.Razor.Reports.Extensions.OutputMetrics
+BDTest.Razor.Reports.Extensions.OutputMetrics.AllPassed.get -> bool
+BDTest.Razor.Reports.Extensions.OutputMetrics.AnyExceptions.get -> bool
+BDTest.Razor.Reports.Extensions.OutputMetrics.AnyFailed.get -> bool
+BDTest.Razor.Reports.Extensions.OutputMetrics.AnyInconclusive.get -> bool
+BDTest.Razor.Reports.Extensions.OutputMetrics.AnyNotImplemented.get -> bool
+BDTest.Razor.Reports.Extensions.OutputMetrics.AnyNotRun.get -> bool
+BDTest.Razor.Reports.Extensions.OutputMetrics.AnyPassed.get -> bool
+BDTest.Razor.Reports.Extensions.OutputMetrics.AnyPending.get -> bool
+BDTest.Razor.Reports.Extensions.OutputMetrics.AnySkipped.get -> bool
+BDTest.Razor.Reports.Extensions.OutputMetrics.AnyWarnings.get -> bool
+BDTest.Razor.Reports.Extensions.OutputMetrics.OutputMetrics(BDTest.Maps.BDTestOutputModel? bdTestOutputModel) -> void
+BDTest.Razor.Reports.Extensions.PagerExtensions
+BDTest.Razor.Reports.Extensions.RunIndexExtensions
+BDTest.Razor.Reports.Extensions.ScenarioExtensions
+BDTest.Razor.Reports.Extensions.SemaphoreSlimExtension
+BDTest.Razor.Reports.Extensions.UriExtensions
+BDTest.Razor.Reports.Helpers.HttpHelper
+BDTest.Razor.Reports.Helpers.QueryUrl
+BDTest.Razor.Reports.Helpers.ReportJsonContext
+BDTest.Razor.Reports.Helpers.ReportJsonContext.ReportJsonContext() -> void
+BDTest.Razor.Reports.Helpers.ReportJsonContext.ReportJsonContext(System.Text.Json.JsonSerializerOptions! options) -> void
+BDTest.Razor.Reports.Helpers.ReportLinks
+BDTest.Razor.Reports.Helpers.ReportUi
+BDTest.Razor.Reports.Implementations.MemoryCacheBdTestDataStore
+BDTest.Razor.Reports.Implementations.MemoryCacheBdTestDataStore.DeleteTestData(string! id) -> System.Threading.Tasks.Task!
+BDTest.Razor.Reports.Implementations.MemoryCacheBdTestDataStore.DeleteTestRunRecord(string! id) -> System.Threading.Tasks.Task!
+BDTest.Razor.Reports.Implementations.MemoryCacheBdTestDataStore.Dispose() -> void
+BDTest.Razor.Reports.Implementations.MemoryCacheBdTestDataStore.GetAllTestRunRecords() -> System.Threading.Tasks.Task<System.Collections.Generic.IEnumerable<BDTest.Razor.Reports.Models.TestRunSummary!>!>!
+BDTest.Razor.Reports.Implementations.MemoryCacheBdTestDataStore.GetTestData(string! id, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<BDTest.Maps.BDTestOutputModel?>!
+BDTest.Razor.Reports.Implementations.MemoryCacheBdTestDataStore.ListAsync(BDTest.Razor.Reports.Storage.RunIndexQuery! query, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<BDTest.Razor.Reports.Storage.RunIndexPage!>!
+BDTest.Razor.Reports.Implementations.MemoryCacheBdTestDataStore.MemoryCacheBdTestDataStore(Microsoft.Extensions.Caching.Memory.IMemoryCache! testRecordCache) -> void
+BDTest.Razor.Reports.Implementations.MemoryCacheBdTestDataStore.MemoryCacheBdTestDataStore(Microsoft.Extensions.Caching.Memory.IMemoryCache! testRecordCache, Microsoft.Extensions.Options.IOptions<BDTest.Razor.Reports.Models.BDTestReportOptions!>! options, BDTest.Razor.Reports.Implementations.ReportAttachmentGate? attachmentGate = null, BDTest.Razor.Reports.Interfaces.IBDTestAttachmentStore? attachmentStore = null, Microsoft.Extensions.Logging.ILogger<BDTest.Razor.Reports.Implementations.MemoryCacheBdTestDataStore!>? logger = null, bool hasPersistentStorage = false) -> void
+BDTest.Razor.Reports.Implementations.MemoryCacheBdTestDataStore.OpenReadAsync(string! reportId, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<System.IO.Stream?>!
+BDTest.Razor.Reports.Implementations.MemoryCacheBdTestDataStore.StoreTestData(string! id, BDTest.Maps.BDTestOutputModel? data) -> System.Threading.Tasks.Task!
+BDTest.Razor.Reports.Implementations.MemoryCacheBdTestDataStore.StoreTestRunRecord(BDTest.Razor.Reports.Models.TestRunSummary! testRunSummary) -> System.Threading.Tasks.Task!
+BDTest.Razor.Reports.Implementations.MemoryCacheBdTestDataStore.UpsertAsync(BDTest.Razor.Reports.Storage.RunIndexEntry! entry, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task!
+BDTest.Razor.Reports.Implementations.MemoryCacheBdTestDataStore.WriteAsync(string! reportId, System.IO.Stream! utf8Json, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task!
+BDTest.Razor.Reports.Implementations.ReportAttachmentGate
+BDTest.Razor.Reports.Implementations.ReportAttachmentGate.ReportAttachmentGate() -> void
+BDTest.Razor.Reports.Implementations.ReportAuthorizationFilter
+BDTest.Razor.Reports.Implementations.ReportAuthorizationFilter.OnAuthorizationAsync(Microsoft.AspNetCore.Mvc.Filters.AuthorizationFilterContext! context) -> System.Threading.Tasks.Task!
+BDTest.Razor.Reports.Implementations.ReportAuthorizationFilter.ReportAuthorizationFilter(bool requireAdmin, Microsoft.Extensions.Options.IOptions<BDTest.Razor.Reports.Models.BDTestReportOptions!>! configuredOptions, Microsoft.AspNetCore.Authorization.IAuthorizationPolicyProvider! policyProvider, Microsoft.AspNetCore.Authorization.Policy.IPolicyEvaluator! policyEvaluator, Microsoft.Extensions.Logging.ILogger<BDTest.Razor.Reports.Implementations.ReportAuthorizationFilter!>! logger) -> void
+BDTest.Razor.Reports.Interfaces.IBDTestAttachmentStore
+BDTest.Razor.Reports.Interfaces.IBDTestAttachmentStore.DeleteReportAsync(string! reportId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+BDTest.Razor.Reports.Interfaces.IBDTestAttachmentStore.OpenReadAsync(string! reportId, string! attachmentId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<System.IO.Stream?>!
+BDTest.Razor.Reports.Interfaces.IBDTestAttachmentStore.WriteAsync(string! reportId, string! attachmentId, System.IO.Stream! content, long length, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+BDTest.Razor.Reports.Interfaces.IBDTestCustomHeaderLinksProvider
+BDTest.Razor.Reports.Interfaces.IBDTestCustomHeaderLinksProvider.GetCustomLinks() -> System.Collections.Generic.IEnumerable<BDTest.Razor.Reports.Models.CustomLinkData!>!
+BDTest.Razor.Reports.Interfaces.IBDTestCustomSidebarLinksProvider
+BDTest.Razor.Reports.Interfaces.IBDTestCustomSidebarLinksProvider.GetCustomLinks(BDTest.Maps.BDTestOutputModel! currentTestReport) -> System.Collections.Generic.IEnumerable<BDTest.Razor.Reports.Models.CustomLinkData!>!
+BDTest.Razor.Reports.Interfaces.IBDTestDataReceiver
+BDTest.Razor.Reports.Interfaces.IBDTestDataReceiver.OnReceiveTestDataAsync(BDTest.Maps.BDTestOutputModel! bdTestOutputModel) -> System.Threading.Tasks.Task!
+BDTest.Razor.Reports.Interfaces.IBDTestDataStore
+BDTest.Razor.Reports.Interfaces.IBDTestDataStore.DeleteTestData(string! id) -> System.Threading.Tasks.Task!
+BDTest.Razor.Reports.Interfaces.IBDTestDataStore.DeleteTestRunRecord(string! id) -> System.Threading.Tasks.Task!
+BDTest.Razor.Reports.Interfaces.IBDTestDataStore.GetAllTestRunRecords() -> System.Threading.Tasks.Task<System.Collections.Generic.IEnumerable<BDTest.Razor.Reports.Models.TestRunSummary!>!>!
+BDTest.Razor.Reports.Interfaces.IBDTestDataStore.GetTestData(string! id, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<BDTest.Maps.BDTestOutputModel?>!
+BDTest.Razor.Reports.Interfaces.IBDTestDataStore.StoreTestData(string! id, BDTest.Maps.BDTestOutputModel? data) -> System.Threading.Tasks.Task!
+BDTest.Razor.Reports.Interfaces.IBDTestDataStore.StoreTestRunRecord(BDTest.Razor.Reports.Models.TestRunSummary! testRunSummary) -> System.Threading.Tasks.Task!
+BDTest.Razor.Reports.Interfaces.IDataRepository
+BDTest.Razor.Reports.Interfaces.IDataRepository.DeleteReport(string! reportId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+BDTest.Razor.Reports.Interfaces.IDataRepository.GetAllTestRunRecords(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<System.Collections.Generic.IEnumerable<BDTest.Razor.Reports.Models.TestRunSummary!>!>!
+BDTest.Razor.Reports.Interfaces.IDataRepository.GetData(string! reportId, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<BDTest.Maps.BDTestOutputModel?>!
+BDTest.Razor.Reports.Interfaces.IDataRepository.GetDataForBulkRead(string! reportId, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<BDTest.Maps.BDTestOutputModel?>!
+BDTest.Razor.Reports.Interfaces.IDataRepository.GetReportPages(string! reportId, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<BDTest.Razor.Reports.Models.ViewModels.ReportPageModels?>!
+BDTest.Razor.Reports.Interfaces.IDataRepository.ListAsync(BDTest.Razor.Reports.Storage.RunIndexQuery! query, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<BDTest.Razor.Reports.Storage.RunIndexPage!>!
+BDTest.Razor.Reports.Interfaces.IDataRepository.OpenReadAsync(string! reportId, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<System.IO.Stream?>!
+BDTest.Razor.Reports.Interfaces.IDataRepository.StoreData(string! reportId, BDTest.Maps.BDTestOutputModel! model, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+BDTest.Razor.Reports.Interfaces.IUserPersonalizer
+BDTest.Razor.Reports.Interfaces.IUserPersonalizer.GetLinksForUser(Microsoft.AspNetCore.Http.HttpContext! httpContext) -> System.Collections.Generic.List<BDTest.Razor.Reports.Models.CustomLinkData!>!
+BDTest.Razor.Reports.Interfaces.IUserPersonalizer.GetNameOfUser(Microsoft.AspNetCore.Http.HttpContext! httpContext) -> string?
+BDTest.Razor.Reports.Interfaces.IUserPersonalizer.GetProfilePictureUri(Microsoft.AspNetCore.Http.HttpContext! httpContext) -> System.Uri?
+BDTest.Razor.Reports.Models.BDTestReportOptions
+BDTest.Razor.Reports.Models.BDTestReportOptions.AdditionalImageSources.get -> System.Collections.Generic.IReadOnlyList<string!>!
+BDTest.Razor.Reports.Models.BDTestReportOptions.AdditionalImageSources.set -> void
+BDTest.Razor.Reports.Models.BDTestReportOptions.AdminAuthorizationPolicy.get -> string?
+BDTest.Razor.Reports.Models.BDTestReportOptions.AdminAuthorizationPolicy.set -> void
+BDTest.Razor.Reports.Models.BDTestReportOptions.AllowAnonymousReports.get -> bool
+BDTest.Razor.Reports.Models.BDTestReportOptions.AllowAnonymousReports.set -> void
+BDTest.Razor.Reports.Models.BDTestReportOptions.BDTestReportOptions() -> void
+BDTest.Razor.Reports.Models.BDTestReportOptions.EnableSecurityHeaders.get -> bool
+BDTest.Razor.Reports.Models.BDTestReportOptions.EnableSecurityHeaders.set -> void
+BDTest.Razor.Reports.Models.BDTestReportOptions.MaxCompressedUploadBytes.get -> long
+BDTest.Razor.Reports.Models.BDTestReportOptions.MaxCompressedUploadBytes.set -> void
+BDTest.Razor.Reports.Models.BDTestReportOptions.MaxUploadBytes.get -> long
+BDTest.Razor.Reports.Models.BDTestReportOptions.MaxUploadBytes.set -> void
+BDTest.Razor.Reports.Models.BDTestReportOptions.MaximumAttachmentBytes.get -> long
+BDTest.Razor.Reports.Models.BDTestReportOptions.MaximumAttachmentBytes.set -> void
+BDTest.Razor.Reports.Models.BDTestReportOptions.MaximumAttachmentsPerReport.get -> int
+BDTest.Razor.Reports.Models.BDTestReportOptions.MaximumAttachmentsPerReport.set -> void
+BDTest.Razor.Reports.Models.BDTestReportOptions.MaximumReportAttachmentBytes.get -> long
+BDTest.Razor.Reports.Models.BDTestReportOptions.MaximumReportAttachmentBytes.set -> void
+BDTest.Razor.Reports.Models.BDTestReportOptions.ReportCacheRetention.get -> System.TimeSpan
+BDTest.Razor.Reports.Models.BDTestReportOptions.ReportCacheRetention.set -> void
+BDTest.Razor.Reports.Models.BDTestReportOptions.ReportCacheSizeLimitBytes.get -> long
+BDTest.Razor.Reports.Models.BDTestReportOptions.ReportCacheSizeLimitBytes.set -> void
+BDTest.Razor.Reports.Models.BDTestReportOptions.ReportPageCacheSizeLimitBytes.get -> long
+BDTest.Razor.Reports.Models.BDTestReportOptions.ReportPageCacheSizeLimitBytes.set -> void
+BDTest.Razor.Reports.Models.BDTestReportOptions.ReportsAuthorizationPolicy.get -> string?
+BDTest.Razor.Reports.Models.BDTestReportOptions.ReportsAuthorizationPolicy.set -> void
+BDTest.Razor.Reports.Models.BDTestReportOptions.UploadApiKey.get -> string?
+BDTest.Razor.Reports.Models.BDTestReportOptions.UploadApiKey.set -> void
+BDTest.Razor.Reports.Models.BDTestReportOptions.UploadsPerMinute.get -> int
+BDTest.Razor.Reports.Models.BDTestReportOptions.UploadsPerMinute.set -> void
+BDTest.Razor.Reports.Models.Counts
+BDTest.Razor.Reports.Models.Counts.Counts() -> void
+BDTest.Razor.Reports.Models.Counts.Failed.get -> int
+BDTest.Razor.Reports.Models.Counts.Failed.set -> void
+BDTest.Razor.Reports.Models.Counts.Inconclusive.get -> int
+BDTest.Razor.Reports.Models.Counts.Inconclusive.set -> void
+BDTest.Razor.Reports.Models.Counts.NotImplemented.get -> int
+BDTest.Razor.Reports.Models.Counts.NotImplemented.set -> void
+BDTest.Razor.Reports.Models.Counts.NotRun.get -> int
+BDTest.Razor.Reports.Models.Counts.NotRun.set -> void
+BDTest.Razor.Reports.Models.Counts.Passed.get -> int
+BDTest.Razor.Reports.Models.Counts.Passed.set -> void
+BDTest.Razor.Reports.Models.Counts.Pending.get -> int
+BDTest.Razor.Reports.Models.Counts.Pending.set -> void
+BDTest.Razor.Reports.Models.Counts.Skipped.get -> int
+BDTest.Razor.Reports.Models.Counts.Skipped.set -> void
+BDTest.Razor.Reports.Models.Counts.Total.get -> int
+BDTest.Razor.Reports.Models.Counts.Total.set -> void
+BDTest.Razor.Reports.Models.CustomLinkData
+BDTest.Razor.Reports.Models.CustomLinkData.CustomLinkData(string? text, System.Uri? url) -> void
+BDTest.Razor.Reports.Models.CustomLinkData.Text.get -> string?
+BDTest.Razor.Reports.Models.CustomLinkData.Url.get -> string?
+BDTest.Razor.Reports.Models.FailureGroup
+BDTest.Razor.Reports.Models.FailureGroup.Exception.get -> BDTest.Test.ExceptionWrapper?
+BDTest.Razor.Reports.Models.FailureGroup.FailureGroup() -> void
+BDTest.Razor.Reports.Models.FailureGroup.Key.get -> string!
+BDTest.Razor.Reports.Models.FailureGroup.Location.get -> string?
+BDTest.Razor.Reports.Models.FailureGroup.Scenarios.get -> System.Collections.Generic.IReadOnlyList<BDTest.Test.Scenario!>!
+BDTest.Razor.Reports.Models.FailureGroup.Title.get -> string!
+BDTest.Razor.Reports.Models.FailureGroup.TypeName.get -> string!
+BDTest.Razor.Reports.Models.MultipleTestRunsTimingDifferenceModel
+BDTest.Razor.Reports.Models.MultipleTestRunsTimingDifferenceModel.Average.get -> System.TimeSpan
+BDTest.Razor.Reports.Models.MultipleTestRunsTimingDifferenceModel.Average.set -> void
+BDTest.Razor.Reports.Models.MultipleTestRunsTimingDifferenceModel.Difference.get -> System.TimeSpan
+BDTest.Razor.Reports.Models.MultipleTestRunsTimingDifferenceModel.Difference.set -> void
+BDTest.Razor.Reports.Models.MultipleTestRunsTimingDifferenceModel.Fastest.get -> System.TimeSpan
+BDTest.Razor.Reports.Models.MultipleTestRunsTimingDifferenceModel.Fastest.set -> void
+BDTest.Razor.Reports.Models.MultipleTestRunsTimingDifferenceModel.MultipleTestRunsTimingDifferenceModel(System.Linq.IGrouping<BDTest.Razor.Reports.Models.ScenarioGroupKey!, BDTest.Test.Scenario!>! scenarioGroup) -> void
+BDTest.Razor.Reports.Models.MultipleTestRunsTimingDifferenceModel.ScenarioCount.get -> int
+BDTest.Razor.Reports.Models.MultipleTestRunsTimingDifferenceModel.ScenarioCount.set -> void
+BDTest.Razor.Reports.Models.MultipleTestRunsTimingDifferenceModel.ScenarioName.get -> string?
+BDTest.Razor.Reports.Models.MultipleTestRunsTimingDifferenceModel.ScenarioName.set -> void
+BDTest.Razor.Reports.Models.MultipleTestRunsTimingDifferenceModel.Slowest.get -> System.TimeSpan
+BDTest.Razor.Reports.Models.MultipleTestRunsTimingDifferenceModel.Slowest.set -> void
+BDTest.Razor.Reports.Models.Pager<T>
+BDTest.Razor.Reports.Models.Pager<T>.AllItems.get -> T[]!
+BDTest.Razor.Reports.Models.Pager<T>.CurrentPage.get -> int
+BDTest.Razor.Reports.Models.Pager<T>.EndIndex.get -> int
+BDTest.Razor.Reports.Models.Pager<T>.EndPage.get -> int
+BDTest.Razor.Reports.Models.Pager<T>.GetPaginationInformation() -> BDTest.Razor.Reports.Models.PaginationInformation!
+BDTest.Razor.Reports.Models.Pager<T>.ItemsForCurrentPage.get -> System.Collections.Generic.IEnumerable<T>!
+BDTest.Razor.Reports.Models.Pager<T>.PageSize.get -> int
+BDTest.Razor.Reports.Models.Pager<T>.Pager(T[]! allItems, string? currentPageString) -> void
+BDTest.Razor.Reports.Models.Pager<T>.Pager(T[]! allItems, string? currentPageString, int pageSize) -> void
+BDTest.Razor.Reports.Models.Pager<T>.Pager(T[]! allItems, string? currentPageString, int pageSize, int maxPages) -> void
+BDTest.Razor.Reports.Models.Pager<T>.Pages.get -> System.Collections.Generic.IEnumerable<int>!
+BDTest.Razor.Reports.Models.Pager<T>.StartIndex.get -> int
+BDTest.Razor.Reports.Models.Pager<T>.StartPage.get -> int
+BDTest.Razor.Reports.Models.Pager<T>.TotalItems.get -> int
+BDTest.Razor.Reports.Models.Pager<T>.TotalPages.get -> int
+BDTest.Razor.Reports.Models.PaginationInformation
+BDTest.Razor.Reports.Models.PaginationInformation.CurrentPage.get -> int
+BDTest.Razor.Reports.Models.PaginationInformation.CurrentPage.set -> void
+BDTest.Razor.Reports.Models.PaginationInformation.EndIndex.get -> int
+BDTest.Razor.Reports.Models.PaginationInformation.EndIndex.set -> void
+BDTest.Razor.Reports.Models.PaginationInformation.EndPage.get -> int
+BDTest.Razor.Reports.Models.PaginationInformation.EndPage.set -> void
+BDTest.Razor.Reports.Models.PaginationInformation.ItemName.get -> string!
+BDTest.Razor.Reports.Models.PaginationInformation.ItemName.set -> void
+BDTest.Razor.Reports.Models.PaginationInformation.NextText.get -> string!
+BDTest.Razor.Reports.Models.PaginationInformation.NextText.set -> void
+BDTest.Razor.Reports.Models.PaginationInformation.PageSize.get -> int
+BDTest.Razor.Reports.Models.PaginationInformation.PageSize.set -> void
+BDTest.Razor.Reports.Models.PaginationInformation.PageSizeOptions.get -> int[]!
+BDTest.Razor.Reports.Models.PaginationInformation.PageSizeOptions.set -> void
+BDTest.Razor.Reports.Models.PaginationInformation.PaginationInformation() -> void
+BDTest.Razor.Reports.Models.PaginationInformation.PreviousText.get -> string!
+BDTest.Razor.Reports.Models.PaginationInformation.PreviousText.set -> void
+BDTest.Razor.Reports.Models.PaginationInformation.StartIndex.get -> int
+BDTest.Razor.Reports.Models.PaginationInformation.StartIndex.set -> void
+BDTest.Razor.Reports.Models.PaginationInformation.StartPage.get -> int
+BDTest.Razor.Reports.Models.PaginationInformation.StartPage.set -> void
+BDTest.Razor.Reports.Models.PaginationInformation.TotalItems.get -> int
+BDTest.Razor.Reports.Models.PaginationInformation.TotalItems.set -> void
+BDTest.Razor.Reports.Models.PaginationInformation.TotalPages.get -> int
+BDTest.Razor.Reports.Models.PaginationInformation.TotalPages.set -> void
+BDTest.Razor.Reports.Models.RunFilter
+BDTest.Razor.Reports.Models.RunFilter.Apply(System.Collections.Generic.IEnumerable<BDTest.Razor.Reports.Models.TestRunSummary!>! records, System.DateTime? now = null) -> System.Collections.Generic.IEnumerable<BDTest.Razor.Reports.Models.TestRunSummary!>!
+BDTest.Razor.Reports.Models.RunFilter.Branch.get -> string?
+BDTest.Razor.Reports.Models.RunFilter.Branch.set -> void
+BDTest.Razor.Reports.Models.RunFilter.CustomRange.get -> (System.DateTime Start, System.DateTime End)?
+BDTest.Razor.Reports.Models.RunFilter.CustomRange.set -> void
+BDTest.Razor.Reports.Models.RunFilter.CustomRangeValue.get -> string?
+BDTest.Razor.Reports.Models.RunFilter.Environment.get -> string?
+BDTest.Razor.Reports.Models.RunFilter.Environment.set -> void
+BDTest.Razor.Reports.Models.RunFilter.GetDates(System.DateTime now) -> (System.DateTime? From, System.DateTime? To)
+BDTest.Razor.Reports.Models.RunFilter.Machine.get -> string?
+BDTest.Razor.Reports.Models.RunFilter.Machine.set -> void
+BDTest.Razor.Reports.Models.RunFilter.Range.get -> string!
+BDTest.Razor.Reports.Models.RunFilter.Range.set -> void
+BDTest.Razor.Reports.Models.RunFilter.RunFilter() -> void
+BDTest.Razor.Reports.Models.RunFilter.Search.get -> string?
+BDTest.Razor.Reports.Models.RunFilter.Search.set -> void
+BDTest.Razor.Reports.Models.RunFilter.Status.get -> string?
+BDTest.Razor.Reports.Models.RunFilter.Status.set -> void
+BDTest.Razor.Reports.Models.RunFilter.Tag.get -> string?
+BDTest.Razor.Reports.Models.RunFilter.Tag.set -> void
+BDTest.Razor.Reports.Models.RunFilter.ToQuery(bool includeSearchAndStatus = true) -> System.Collections.Generic.IEnumerable<System.Collections.Generic.KeyValuePair<string!, string!>>!
+BDTest.Razor.Reports.Models.ScenarioGroupKey
+BDTest.Razor.Reports.Models.ScenarioGroupKey.ScenarioGroupKey() -> void
+BDTest.Razor.Reports.Models.ScenarioGroupKey.ScenarioGroupKey(BDTest.Razor.Reports.Models.ScenarioGroupKey! original) -> void
+BDTest.Razor.Reports.Models.ScenarioGroupKey.ScenarioText.get -> string?
+BDTest.Razor.Reports.Models.ScenarioGroupKey.ScenarioText.set -> void
+BDTest.Razor.Reports.Models.ScenarioGroupKey.StoryText.get -> string?
+BDTest.Razor.Reports.Models.ScenarioGroupKey.StoryText.set -> void
+BDTest.Razor.Reports.Models.ScenarioSearch
+BDTest.Razor.Reports.Models.TestRunSummary
+BDTest.Razor.Reports.Models.TestRunSummary.BranchName.get -> string?
+BDTest.Razor.Reports.Models.TestRunSummary.BranchName.set -> void
+BDTest.Razor.Reports.Models.TestRunSummary.Counts.get -> BDTest.Razor.Reports.Models.Counts?
+BDTest.Razor.Reports.Models.TestRunSummary.Counts.set -> void
+BDTest.Razor.Reports.Models.TestRunSummary.Environment.get -> string?
+BDTest.Razor.Reports.Models.TestRunSummary.Environment.set -> void
+BDTest.Razor.Reports.Models.TestRunSummary.FinishedAtDateTime.get -> System.DateTime
+BDTest.Razor.Reports.Models.TestRunSummary.FinishedAtDateTime.set -> void
+BDTest.Razor.Reports.Models.TestRunSummary.MachineName.get -> string?
+BDTest.Razor.Reports.Models.TestRunSummary.MachineName.set -> void
+BDTest.Razor.Reports.Models.TestRunSummary.RecordId.get -> string?
+BDTest.Razor.Reports.Models.TestRunSummary.RecordId.set -> void
+BDTest.Razor.Reports.Models.TestRunSummary.StartedAtDateTime.get -> System.DateTime
+BDTest.Razor.Reports.Models.TestRunSummary.StartedAtDateTime.set -> void
+BDTest.Razor.Reports.Models.TestRunSummary.Status.get -> BDTest.Test.Status
+BDTest.Razor.Reports.Models.TestRunSummary.Status.set -> void
+BDTest.Razor.Reports.Models.TestRunSummary.Tag.get -> string?
+BDTest.Razor.Reports.Models.TestRunSummary.Tag.set -> void
+BDTest.Razor.Reports.Models.TestRunSummary.Version.get -> string?
+BDTest.Razor.Reports.Models.TestRunSummary.Version.set -> void
+BDTest.Razor.Reports.Models.ViewModels.ErrorViewModel
+BDTest.Razor.Reports.Models.ViewModels.ErrorViewModel.ErrorViewModel() -> void
+BDTest.Razor.Reports.Models.ViewModels.ErrorViewModel.RequestId.get -> string?
+BDTest.Razor.Reports.Models.ViewModels.ErrorViewModel.RequestId.set -> void
+BDTest.Razor.Reports.Models.ViewModels.ErrorViewModel.ShowRequestId.get -> bool
+BDTest.Razor.Reports.Models.ViewModels.HistoryViewModel
+BDTest.Razor.Reports.Models.ViewModels.HistoryViewModel.AllRuns.get -> System.Collections.Generic.IReadOnlyList<BDTest.Razor.Reports.Models.TestRunSummary!>!
+BDTest.Razor.Reports.Models.ViewModels.HistoryViewModel.AllRuns.set -> void
+BDTest.Razor.Reports.Models.ViewModels.HistoryViewModel.ChosenRuns.get -> bool
+BDTest.Razor.Reports.Models.ViewModels.HistoryViewModel.ChosenRuns.set -> void
+BDTest.Razor.Reports.Models.ViewModels.HistoryViewModel.Compare.get -> int
+BDTest.Razor.Reports.Models.ViewModels.HistoryViewModel.Compare.set -> void
+BDTest.Razor.Reports.Models.ViewModels.HistoryViewModel.Filter.get -> BDTest.Razor.Reports.Models.RunFilter!
+BDTest.Razor.Reports.Models.ViewModels.HistoryViewModel.Filter.set -> void
+BDTest.Razor.Reports.Models.ViewModels.HistoryViewModel.HistoryViewModel() -> void
+BDTest.Razor.Reports.Models.ViewModels.HistoryViewModel.Reports.get -> System.Collections.Generic.IReadOnlyList<BDTest.Maps.BDTestOutputModel!>!
+BDTest.Razor.Reports.Models.ViewModels.HistoryViewModel.Reports.set -> void
+BDTest.Razor.Reports.Models.ViewModels.HistoryViewModel.Runs.get -> System.Collections.Generic.IReadOnlyList<BDTest.Razor.Reports.Models.TestRunSummary!>!
+BDTest.Razor.Reports.Models.ViewModels.HistoryViewModel.Runs.set -> void
+BDTest.Razor.Reports.Models.ViewModels.HistoryViewModel.Tab.get -> string!
+BDTest.Razor.Reports.Models.ViewModels.HistoryViewModel.Tab.set -> void
+BDTest.Razor.Reports.Models.ViewModels.ReportFailureGroup
+BDTest.Razor.Reports.Models.ViewModels.ReportFailureGroup.<Clone>$() -> BDTest.Razor.Reports.Models.ViewModels.ReportFailureGroup!
+BDTest.Razor.Reports.Models.ViewModels.ReportFailureGroup.Deconstruct(out string! TypeName, out string! Title, out string? Location, out string? Trace, out bool SameStep, out bool Retried, out int ScenarioCount, out System.Collections.Generic.IReadOnlyList<BDTest.Razor.Reports.Models.ViewModels.ReportScenarioRow!>! Scenarios) -> void
+BDTest.Razor.Reports.Models.ViewModels.ReportFailureGroup.Equals(BDTest.Razor.Reports.Models.ViewModels.ReportFailureGroup? other) -> bool
+BDTest.Razor.Reports.Models.ViewModels.ReportFailureGroup.Location.get -> string?
+BDTest.Razor.Reports.Models.ViewModels.ReportFailureGroup.Location.init -> void
+BDTest.Razor.Reports.Models.ViewModels.ReportFailureGroup.ReportFailureGroup(string! TypeName, string! Title, string? Location, string? Trace, bool SameStep, bool Retried, int ScenarioCount, System.Collections.Generic.IReadOnlyList<BDTest.Razor.Reports.Models.ViewModels.ReportScenarioRow!>! Scenarios) -> void
+BDTest.Razor.Reports.Models.ViewModels.ReportFailureGroup.Retried.get -> bool
+BDTest.Razor.Reports.Models.ViewModels.ReportFailureGroup.Retried.init -> void
+BDTest.Razor.Reports.Models.ViewModels.ReportFailureGroup.SameStep.get -> bool
+BDTest.Razor.Reports.Models.ViewModels.ReportFailureGroup.SameStep.init -> void
+BDTest.Razor.Reports.Models.ViewModels.ReportFailureGroup.ScenarioCount.get -> int
+BDTest.Razor.Reports.Models.ViewModels.ReportFailureGroup.ScenarioCount.init -> void
+BDTest.Razor.Reports.Models.ViewModels.ReportFailureGroup.Scenarios.get -> System.Collections.Generic.IReadOnlyList<BDTest.Razor.Reports.Models.ViewModels.ReportScenarioRow!>!
+BDTest.Razor.Reports.Models.ViewModels.ReportFailureGroup.Scenarios.init -> void
+BDTest.Razor.Reports.Models.ViewModels.ReportFailureGroup.Title.get -> string!
+BDTest.Razor.Reports.Models.ViewModels.ReportFailureGroup.Title.init -> void
+BDTest.Razor.Reports.Models.ViewModels.ReportFailureGroup.Trace.get -> string?
+BDTest.Razor.Reports.Models.ViewModels.ReportFailureGroup.Trace.init -> void
+BDTest.Razor.Reports.Models.ViewModels.ReportFailureGroup.TypeName.get -> string!
+BDTest.Razor.Reports.Models.ViewModels.ReportFailureGroup.TypeName.init -> void
+BDTest.Razor.Reports.Models.ViewModels.ReportLayoutViewModel
+BDTest.Razor.Reports.Models.ViewModels.ReportLayoutViewModel.Counts.get -> System.Collections.Generic.IReadOnlyDictionary<BDTest.Test.Status, int>!
+BDTest.Razor.Reports.Models.ViewModels.ReportLayoutViewModel.Counts.init -> void
+BDTest.Razor.Reports.Models.ViewModels.ReportLayoutViewModel.FailureCauses.get -> int
+BDTest.Razor.Reports.Models.ViewModels.ReportLayoutViewModel.FailureCauses.init -> void
+BDTest.Razor.Reports.Models.ViewModels.ReportLayoutViewModel.NotRunCount.get -> int
+BDTest.Razor.Reports.Models.ViewModels.ReportLayoutViewModel.NotRunCount.init -> void
+BDTest.Razor.Reports.Models.ViewModels.ReportLayoutViewModel.Report.get -> BDTest.Razor.Reports.Models.ViewModels.ReportMetadataViewModel?
+BDTest.Razor.Reports.Models.ViewModels.ReportLayoutViewModel.Report.init -> void
+BDTest.Razor.Reports.Models.ViewModels.ReportLayoutViewModel.ReportLayoutViewModel() -> void
+BDTest.Razor.Reports.Models.ViewModels.ReportLayoutViewModel.ScenarioCount.get -> int
+BDTest.Razor.Reports.Models.ViewModels.ReportLayoutViewModel.ScenarioCount.init -> void
+BDTest.Razor.Reports.Models.ViewModels.ReportLayoutViewModel.Status.get -> BDTest.Test.Status
+BDTest.Razor.Reports.Models.ViewModels.ReportLayoutViewModel.Status.init -> void
+BDTest.Razor.Reports.Models.ViewModels.ReportLayoutViewModel.Timer.get -> BDTest.Output.TestTimer!
+BDTest.Razor.Reports.Models.ViewModels.ReportLayoutViewModel.Timer.init -> void
+BDTest.Razor.Reports.Models.ViewModels.ReportLayoutViewModel.Title.get -> string!
+BDTest.Razor.Reports.Models.ViewModels.ReportMetadataViewModel
+BDTest.Razor.Reports.Models.ViewModels.ReportMetadataViewModel.<Clone>$() -> BDTest.Razor.Reports.Models.ViewModels.ReportMetadataViewModel!
+BDTest.Razor.Reports.Models.ViewModels.ReportMetadataViewModel.BranchName.get -> string?
+BDTest.Razor.Reports.Models.ViewModels.ReportMetadataViewModel.BranchName.init -> void
+BDTest.Razor.Reports.Models.ViewModels.ReportMetadataViewModel.CustomProperties.get -> System.Collections.Generic.IReadOnlyDictionary<string!, string!>!
+BDTest.Razor.Reports.Models.ViewModels.ReportMetadataViewModel.CustomProperties.init -> void
+BDTest.Razor.Reports.Models.ViewModels.ReportMetadataViewModel.Deconstruct(out string? Id, out string? Tag, out string? Environment, out string? BranchName, out string? MachineName, out string? Version, out System.Collections.Generic.IReadOnlyDictionary<string!, string!>! CustomProperties, out bool HasTimer) -> void
+BDTest.Razor.Reports.Models.ViewModels.ReportMetadataViewModel.Environment.get -> string?
+BDTest.Razor.Reports.Models.ViewModels.ReportMetadataViewModel.Environment.init -> void
+BDTest.Razor.Reports.Models.ViewModels.ReportMetadataViewModel.Equals(BDTest.Razor.Reports.Models.ViewModels.ReportMetadataViewModel? other) -> bool
+BDTest.Razor.Reports.Models.ViewModels.ReportMetadataViewModel.HasTimer.get -> bool
+BDTest.Razor.Reports.Models.ViewModels.ReportMetadataViewModel.HasTimer.init -> void
+BDTest.Razor.Reports.Models.ViewModels.ReportMetadataViewModel.Id.get -> string?
+BDTest.Razor.Reports.Models.ViewModels.ReportMetadataViewModel.Id.init -> void
+BDTest.Razor.Reports.Models.ViewModels.ReportMetadataViewModel.MachineName.get -> string?
+BDTest.Razor.Reports.Models.ViewModels.ReportMetadataViewModel.MachineName.init -> void
+BDTest.Razor.Reports.Models.ViewModels.ReportMetadataViewModel.ReportMetadataViewModel(string? Id, string? Tag, string? Environment, string? BranchName, string? MachineName, string? Version, System.Collections.Generic.IReadOnlyDictionary<string!, string!>! CustomProperties, bool HasTimer) -> void
+BDTest.Razor.Reports.Models.ViewModels.ReportMetadataViewModel.Tag.get -> string?
+BDTest.Razor.Reports.Models.ViewModels.ReportMetadataViewModel.Tag.init -> void
+BDTest.Razor.Reports.Models.ViewModels.ReportMetadataViewModel.Version.get -> string?
+BDTest.Razor.Reports.Models.ViewModels.ReportMetadataViewModel.Version.init -> void
+BDTest.Razor.Reports.Models.ViewModels.ReportPageModels
+BDTest.Razor.Reports.Models.ViewModels.ReportPageModels.<Clone>$() -> BDTest.Razor.Reports.Models.ViewModels.ReportPageModels!
+BDTest.Razor.Reports.Models.ViewModels.ReportPageModels.Deconstruct(out BDTest.Razor.Reports.Models.ViewModels.SummaryViewModel! Summary, out BDTest.Razor.Reports.Models.ViewModels.TimingsViewModel! Timings, out BDTest.Razor.Reports.Models.ViewModels.TopDefectsViewModel! TopDefects, out BDTest.Razor.Reports.Models.ViewModels.WarningsViewModel! Warnings) -> void
+BDTest.Razor.Reports.Models.ViewModels.ReportPageModels.Equals(BDTest.Razor.Reports.Models.ViewModels.ReportPageModels? other) -> bool
+BDTest.Razor.Reports.Models.ViewModels.ReportPageModels.ReportPageModels(BDTest.Razor.Reports.Models.ViewModels.SummaryViewModel! Summary, BDTest.Razor.Reports.Models.ViewModels.TimingsViewModel! Timings, BDTest.Razor.Reports.Models.ViewModels.TopDefectsViewModel! TopDefects, BDTest.Razor.Reports.Models.ViewModels.WarningsViewModel! Warnings) -> void
+BDTest.Razor.Reports.Models.ViewModels.ReportPageModels.Summary.get -> BDTest.Razor.Reports.Models.ViewModels.SummaryViewModel!
+BDTest.Razor.Reports.Models.ViewModels.ReportPageModels.Summary.init -> void
+BDTest.Razor.Reports.Models.ViewModels.ReportPageModels.Timings.get -> BDTest.Razor.Reports.Models.ViewModels.TimingsViewModel!
+BDTest.Razor.Reports.Models.ViewModels.ReportPageModels.Timings.init -> void
+BDTest.Razor.Reports.Models.ViewModels.ReportPageModels.TopDefects.get -> BDTest.Razor.Reports.Models.ViewModels.TopDefectsViewModel!
+BDTest.Razor.Reports.Models.ViewModels.ReportPageModels.TopDefects.init -> void
+BDTest.Razor.Reports.Models.ViewModels.ReportPageModels.Warnings.get -> BDTest.Razor.Reports.Models.ViewModels.WarningsViewModel!
+BDTest.Razor.Reports.Models.ViewModels.ReportPageModels.Warnings.init -> void
+BDTest.Razor.Reports.Models.ViewModels.ReportScenarioRow
+BDTest.Razor.Reports.Models.ViewModels.ReportScenarioRow.<Clone>$() -> BDTest.Razor.Reports.Models.ViewModels.ReportScenarioRow!
+BDTest.Razor.Reports.Models.ViewModels.ReportScenarioRow.Deconstruct(out string? Guid, out string! Name, out string! Story, out BDTest.Test.Status Status, out System.TimeSpan TimeTaken, out int RetryCount, out string? FailingStepText, out int FailingStepNumber, out string! Explanation, out string! TimingName) -> void
+BDTest.Razor.Reports.Models.ViewModels.ReportScenarioRow.Equals(BDTest.Razor.Reports.Models.ViewModels.ReportScenarioRow? other) -> bool
+BDTest.Razor.Reports.Models.ViewModels.ReportScenarioRow.Explanation.get -> string!
+BDTest.Razor.Reports.Models.ViewModels.ReportScenarioRow.Explanation.init -> void
+BDTest.Razor.Reports.Models.ViewModels.ReportScenarioRow.FailingStepNumber.get -> int
+BDTest.Razor.Reports.Models.ViewModels.ReportScenarioRow.FailingStepNumber.init -> void
+BDTest.Razor.Reports.Models.ViewModels.ReportScenarioRow.FailingStepText.get -> string?
+BDTest.Razor.Reports.Models.ViewModels.ReportScenarioRow.FailingStepText.init -> void
+BDTest.Razor.Reports.Models.ViewModels.ReportScenarioRow.Guid.get -> string?
+BDTest.Razor.Reports.Models.ViewModels.ReportScenarioRow.Guid.init -> void
+BDTest.Razor.Reports.Models.ViewModels.ReportScenarioRow.Name.get -> string!
+BDTest.Razor.Reports.Models.ViewModels.ReportScenarioRow.Name.init -> void
+BDTest.Razor.Reports.Models.ViewModels.ReportScenarioRow.ReportScenarioRow(string? Guid, string! Name, string! Story, BDTest.Test.Status Status, System.TimeSpan TimeTaken, int RetryCount, string? FailingStepText, int FailingStepNumber, string! Explanation, string! TimingName) -> void
+BDTest.Razor.Reports.Models.ViewModels.ReportScenarioRow.RetryCount.get -> int
+BDTest.Razor.Reports.Models.ViewModels.ReportScenarioRow.RetryCount.init -> void
+BDTest.Razor.Reports.Models.ViewModels.ReportScenarioRow.Status.get -> BDTest.Test.Status
+BDTest.Razor.Reports.Models.ViewModels.ReportScenarioRow.Status.init -> void
+BDTest.Razor.Reports.Models.ViewModels.ReportScenarioRow.Story.get -> string!
+BDTest.Razor.Reports.Models.ViewModels.ReportScenarioRow.Story.init -> void
+BDTest.Razor.Reports.Models.ViewModels.ReportScenarioRow.TimeTaken.get -> System.TimeSpan
+BDTest.Razor.Reports.Models.ViewModels.ReportScenarioRow.TimeTaken.init -> void
+BDTest.Razor.Reports.Models.ViewModels.ReportScenarioRow.TimingName.get -> string!
+BDTest.Razor.Reports.Models.ViewModels.ReportScenarioRow.TimingName.init -> void
+BDTest.Razor.Reports.Models.ViewModels.ReportWarningRow
+BDTest.Razor.Reports.Models.ViewModels.ReportWarningRow.<Clone>$() -> BDTest.Razor.Reports.Models.ViewModels.ReportWarningRow!
+BDTest.Razor.Reports.Models.ViewModels.ReportWarningRow.CallerFile.get -> string?
+BDTest.Razor.Reports.Models.ViewModels.ReportWarningRow.CallerFile.init -> void
+BDTest.Razor.Reports.Models.ViewModels.ReportWarningRow.CallerMember.get -> string?
+BDTest.Razor.Reports.Models.ViewModels.ReportWarningRow.CallerMember.init -> void
+BDTest.Razor.Reports.Models.ViewModels.ReportWarningRow.Deconstruct(out string! Scenario, out string! Story, out string? CallerFile, out string? CallerMember) -> void
+BDTest.Razor.Reports.Models.ViewModels.ReportWarningRow.Equals(BDTest.Razor.Reports.Models.ViewModels.ReportWarningRow? other) -> bool
+BDTest.Razor.Reports.Models.ViewModels.ReportWarningRow.ReportWarningRow(string! Scenario, string! Story, string? CallerFile, string? CallerMember) -> void
+BDTest.Razor.Reports.Models.ViewModels.ReportWarningRow.Scenario.get -> string!
+BDTest.Razor.Reports.Models.ViewModels.ReportWarningRow.Scenario.init -> void
+BDTest.Razor.Reports.Models.ViewModels.ReportWarningRow.Story.get -> string!
+BDTest.Razor.Reports.Models.ViewModels.ReportWarningRow.Story.init -> void
+BDTest.Razor.Reports.Models.ViewModels.ScenarioListViewModel
+BDTest.Razor.Reports.Models.ViewModels.ScenarioListViewModel.GroupBy.get -> string!
+BDTest.Razor.Reports.Models.ViewModels.ScenarioListViewModel.GroupBy.set -> void
+BDTest.Razor.Reports.Models.ViewModels.ScenarioListViewModel.GroupFixed.get -> bool
+BDTest.Razor.Reports.Models.ViewModels.ScenarioListViewModel.GroupFixed.set -> void
+BDTest.Razor.Reports.Models.ViewModels.ScenarioListViewModel.ReportId.get -> string?
+BDTest.Razor.Reports.Models.ViewModels.ScenarioListViewModel.ReportId.set -> void
+BDTest.Razor.Reports.Models.ViewModels.ScenarioListViewModel.ScenarioListViewModel() -> void
+BDTest.Razor.Reports.Models.ViewModels.ScenarioListViewModel.Scenarios.get -> System.Collections.Generic.IReadOnlyList<BDTest.Test.Scenario!>!
+BDTest.Razor.Reports.Models.ViewModels.ScenarioListViewModel.Scenarios.set -> void
+BDTest.Razor.Reports.Models.ViewModels.ScenarioListViewModel.Selected.get -> BDTest.Test.Scenario?
+BDTest.Razor.Reports.Models.ViewModels.ScenarioListViewModel.Selected.set -> void
+BDTest.Razor.Reports.Models.ViewModels.ScenarioListViewModel.Statuses.get -> System.Collections.Generic.IReadOnlySet<BDTest.Test.Status>?
+BDTest.Razor.Reports.Models.ViewModels.ScenarioListViewModel.Statuses.set -> void
+BDTest.Razor.Reports.Models.ViewModels.ScenarioListViewModel.Tags.get -> System.Collections.Generic.IReadOnlyList<string!>!
+BDTest.Razor.Reports.Models.ViewModels.ScenarioListViewModel.Tags.set -> void
+BDTest.Razor.Reports.Models.ViewModels.ScenarioListViewModel.Total.get -> int
+BDTest.Razor.Reports.Models.ViewModels.ScenarioListViewModel.Total.set -> void
+BDTest.Razor.Reports.Models.ViewModels.ScenarioListViewModel.Unfiltered.get -> System.Collections.Generic.IReadOnlyList<BDTest.Test.Scenario!>!
+BDTest.Razor.Reports.Models.ViewModels.ScenarioListViewModel.Unfiltered.set -> void
+BDTest.Razor.Reports.Models.ViewModels.ScenarioModalViewModel
+BDTest.Razor.Reports.Models.ViewModels.ScenarioModalViewModel.CloseUrl.get -> string?
+BDTest.Razor.Reports.Models.ViewModels.ScenarioModalViewModel.CloseUrl.set -> void
+BDTest.Razor.Reports.Models.ViewModels.ScenarioModalViewModel.Count.get -> int
+BDTest.Razor.Reports.Models.ViewModels.ScenarioModalViewModel.Count.set -> void
+BDTest.Razor.Reports.Models.ViewModels.ScenarioModalViewModel.FullPageUrl.get -> string?
+BDTest.Razor.Reports.Models.ViewModels.ScenarioModalViewModel.FullPageUrl.set -> void
+BDTest.Razor.Reports.Models.ViewModels.ScenarioModalViewModel.LastScenario.get -> BDTest.Test.Scenario?
+BDTest.Razor.Reports.Models.ViewModels.ScenarioModalViewModel.LastScenario.set -> void
+BDTest.Razor.Reports.Models.ViewModels.ScenarioModalViewModel.NextScenario.get -> BDTest.Test.Scenario?
+BDTest.Razor.Reports.Models.ViewModels.ScenarioModalViewModel.NextScenario.set -> void
+BDTest.Razor.Reports.Models.ViewModels.ScenarioModalViewModel.NextUrl.get -> string?
+BDTest.Razor.Reports.Models.ViewModels.ScenarioModalViewModel.NextUrl.set -> void
+BDTest.Razor.Reports.Models.ViewModels.ScenarioModalViewModel.Position.get -> int
+BDTest.Razor.Reports.Models.ViewModels.ScenarioModalViewModel.Position.set -> void
+BDTest.Razor.Reports.Models.ViewModels.ScenarioModalViewModel.PreviousUrl.get -> string?
+BDTest.Razor.Reports.Models.ViewModels.ScenarioModalViewModel.PreviousUrl.set -> void
+BDTest.Razor.Reports.Models.ViewModels.ScenarioModalViewModel.Scenario.get -> BDTest.Test.Scenario?
+BDTest.Razor.Reports.Models.ViewModels.ScenarioModalViewModel.Scenario.set -> void
+BDTest.Razor.Reports.Models.ViewModels.ScenarioModalViewModel.ScenarioModalViewModel() -> void
+BDTest.Razor.Reports.Models.ViewModels.ScenarioToolbarViewModel
+BDTest.Razor.Reports.Models.ViewModels.ScenarioToolbarViewModel.GroupBy.get -> string!
+BDTest.Razor.Reports.Models.ViewModels.ScenarioToolbarViewModel.GroupBy.set -> void
+BDTest.Razor.Reports.Models.ViewModels.ScenarioToolbarViewModel.GroupFixed.get -> bool
+BDTest.Razor.Reports.Models.ViewModels.ScenarioToolbarViewModel.GroupFixed.set -> void
+BDTest.Razor.Reports.Models.ViewModels.ScenarioToolbarViewModel.ScenarioToolbarViewModel() -> void
+BDTest.Razor.Reports.Models.ViewModels.ScenarioToolbarViewModel.Tags.get -> System.Collections.Generic.IEnumerable<string!>!
+BDTest.Razor.Reports.Models.ViewModels.ScenarioToolbarViewModel.Tags.set -> void
+BDTest.Razor.Reports.Models.ViewModels.SummaryViewModel
+BDTest.Razor.Reports.Models.ViewModels.SummaryViewModel.<Clone>$() -> BDTest.Razor.Reports.Models.ViewModels.SummaryViewModel!
+BDTest.Razor.Reports.Models.ViewModels.SummaryViewModel.Deconstruct(out BDTest.Razor.Reports.Models.ViewModels.ReportLayoutViewModel! Layout, out System.Collections.Generic.IReadOnlyList<BDTest.Razor.Reports.Models.ViewModels.ReportFailureGroup!>! Failures, out int OtherCount, out string! OtherStatuses, out System.Collections.Generic.IReadOnlyList<BDTest.Razor.Reports.Models.ViewModels.ReportScenarioRow!>! Others, out System.Collections.Generic.IReadOnlyList<BDTest.Razor.Reports.Models.ViewModels.ReportScenarioRow!>! Slowest) -> void
+BDTest.Razor.Reports.Models.ViewModels.SummaryViewModel.Equals(BDTest.Razor.Reports.Models.ViewModels.SummaryViewModel? other) -> bool
+BDTest.Razor.Reports.Models.ViewModels.SummaryViewModel.Failures.get -> System.Collections.Generic.IReadOnlyList<BDTest.Razor.Reports.Models.ViewModels.ReportFailureGroup!>!
+BDTest.Razor.Reports.Models.ViewModels.SummaryViewModel.Failures.init -> void
+BDTest.Razor.Reports.Models.ViewModels.SummaryViewModel.Layout.get -> BDTest.Razor.Reports.Models.ViewModels.ReportLayoutViewModel!
+BDTest.Razor.Reports.Models.ViewModels.SummaryViewModel.Layout.init -> void
+BDTest.Razor.Reports.Models.ViewModels.SummaryViewModel.OtherCount.get -> int
+BDTest.Razor.Reports.Models.ViewModels.SummaryViewModel.OtherCount.init -> void
+BDTest.Razor.Reports.Models.ViewModels.SummaryViewModel.OtherStatuses.get -> string!
+BDTest.Razor.Reports.Models.ViewModels.SummaryViewModel.OtherStatuses.init -> void
+BDTest.Razor.Reports.Models.ViewModels.SummaryViewModel.Others.get -> System.Collections.Generic.IReadOnlyList<BDTest.Razor.Reports.Models.ViewModels.ReportScenarioRow!>!
+BDTest.Razor.Reports.Models.ViewModels.SummaryViewModel.Others.init -> void
+BDTest.Razor.Reports.Models.ViewModels.SummaryViewModel.Slowest.get -> System.Collections.Generic.IReadOnlyList<BDTest.Razor.Reports.Models.ViewModels.ReportScenarioRow!>!
+BDTest.Razor.Reports.Models.ViewModels.SummaryViewModel.Slowest.init -> void
+BDTest.Razor.Reports.Models.ViewModels.SummaryViewModel.SummaryViewModel(BDTest.Razor.Reports.Models.ViewModels.ReportLayoutViewModel! Layout, System.Collections.Generic.IReadOnlyList<BDTest.Razor.Reports.Models.ViewModels.ReportFailureGroup!>! Failures, int OtherCount, string! OtherStatuses, System.Collections.Generic.IReadOnlyList<BDTest.Razor.Reports.Models.ViewModels.ReportScenarioRow!>! Others, System.Collections.Generic.IReadOnlyList<BDTest.Razor.Reports.Models.ViewModels.ReportScenarioRow!>! Slowest) -> void
+BDTest.Razor.Reports.Models.ViewModels.TimingsViewModel
+BDTest.Razor.Reports.Models.ViewModels.TimingsViewModel.<Clone>$() -> BDTest.Razor.Reports.Models.ViewModels.TimingsViewModel!
+BDTest.Razor.Reports.Models.ViewModels.TimingsViewModel.Deconstruct(out BDTest.Razor.Reports.Models.ViewModels.ReportLayoutViewModel! Layout, out int TimedScenarioCount, out System.TimeSpan Median, out System.TimeSpan Percentile95, out double SlowestFiveShare, out System.Collections.Generic.IReadOnlyList<BDTest.Razor.Reports.Models.ViewModels.ReportScenarioRow!>! Slowest, out System.Collections.Generic.IReadOnlyList<BDTest.Razor.Reports.Models.ViewModels.ReportScenarioRow!>! Fastest) -> void
+BDTest.Razor.Reports.Models.ViewModels.TimingsViewModel.Equals(BDTest.Razor.Reports.Models.ViewModels.TimingsViewModel? other) -> bool
+BDTest.Razor.Reports.Models.ViewModels.TimingsViewModel.Fastest.get -> System.Collections.Generic.IReadOnlyList<BDTest.Razor.Reports.Models.ViewModels.ReportScenarioRow!>!
+BDTest.Razor.Reports.Models.ViewModels.TimingsViewModel.Fastest.init -> void
+BDTest.Razor.Reports.Models.ViewModels.TimingsViewModel.Layout.get -> BDTest.Razor.Reports.Models.ViewModels.ReportLayoutViewModel!
+BDTest.Razor.Reports.Models.ViewModels.TimingsViewModel.Layout.init -> void
+BDTest.Razor.Reports.Models.ViewModels.TimingsViewModel.Median.get -> System.TimeSpan
+BDTest.Razor.Reports.Models.ViewModels.TimingsViewModel.Median.init -> void
+BDTest.Razor.Reports.Models.ViewModels.TimingsViewModel.Percentile95.get -> System.TimeSpan
+BDTest.Razor.Reports.Models.ViewModels.TimingsViewModel.Percentile95.init -> void
+BDTest.Razor.Reports.Models.ViewModels.TimingsViewModel.Slowest.get -> System.Collections.Generic.IReadOnlyList<BDTest.Razor.Reports.Models.ViewModels.ReportScenarioRow!>!
+BDTest.Razor.Reports.Models.ViewModels.TimingsViewModel.Slowest.init -> void
+BDTest.Razor.Reports.Models.ViewModels.TimingsViewModel.SlowestFiveShare.get -> double
+BDTest.Razor.Reports.Models.ViewModels.TimingsViewModel.SlowestFiveShare.init -> void
+BDTest.Razor.Reports.Models.ViewModels.TimingsViewModel.TimedScenarioCount.get -> int
+BDTest.Razor.Reports.Models.ViewModels.TimingsViewModel.TimedScenarioCount.init -> void
+BDTest.Razor.Reports.Models.ViewModels.TimingsViewModel.TimingsViewModel(BDTest.Razor.Reports.Models.ViewModels.ReportLayoutViewModel! Layout, int TimedScenarioCount, System.TimeSpan Median, System.TimeSpan Percentile95, double SlowestFiveShare, System.Collections.Generic.IReadOnlyList<BDTest.Razor.Reports.Models.ViewModels.ReportScenarioRow!>! Slowest, System.Collections.Generic.IReadOnlyList<BDTest.Razor.Reports.Models.ViewModels.ReportScenarioRow!>! Fastest) -> void
+BDTest.Razor.Reports.Models.ViewModels.TopDefectsViewModel
+BDTest.Razor.Reports.Models.ViewModels.TopDefectsViewModel.<Clone>$() -> BDTest.Razor.Reports.Models.ViewModels.TopDefectsViewModel!
+BDTest.Razor.Reports.Models.ViewModels.TopDefectsViewModel.Deconstruct(out BDTest.Razor.Reports.Models.ViewModels.ReportLayoutViewModel! Layout, out System.Collections.Generic.IReadOnlyDictionary<string!, System.Collections.Generic.IReadOnlyList<BDTest.Razor.Reports.Models.ViewModels.ReportFailureGroup!>!>! Groups) -> void
+BDTest.Razor.Reports.Models.ViewModels.TopDefectsViewModel.Equals(BDTest.Razor.Reports.Models.ViewModels.TopDefectsViewModel? other) -> bool
+BDTest.Razor.Reports.Models.ViewModels.TopDefectsViewModel.ForGrouping(string? groupBy) -> System.Collections.Generic.IReadOnlyList<BDTest.Razor.Reports.Models.ViewModels.ReportFailureGroup!>!
+BDTest.Razor.Reports.Models.ViewModels.TopDefectsViewModel.Groups.get -> System.Collections.Generic.IReadOnlyDictionary<string!, System.Collections.Generic.IReadOnlyList<BDTest.Razor.Reports.Models.ViewModels.ReportFailureGroup!>!>!
+BDTest.Razor.Reports.Models.ViewModels.TopDefectsViewModel.Groups.init -> void
+BDTest.Razor.Reports.Models.ViewModels.TopDefectsViewModel.Layout.get -> BDTest.Razor.Reports.Models.ViewModels.ReportLayoutViewModel!
+BDTest.Razor.Reports.Models.ViewModels.TopDefectsViewModel.Layout.init -> void
+BDTest.Razor.Reports.Models.ViewModels.TopDefectsViewModel.TopDefectsViewModel(BDTest.Razor.Reports.Models.ViewModels.ReportLayoutViewModel! Layout, System.Collections.Generic.IReadOnlyDictionary<string!, System.Collections.Generic.IReadOnlyList<BDTest.Razor.Reports.Models.ViewModels.ReportFailureGroup!>!>! Groups) -> void
+BDTest.Razor.Reports.Models.ViewModels.WarningsViewModel
+BDTest.Razor.Reports.Models.ViewModels.WarningsViewModel.<Clone>$() -> BDTest.Razor.Reports.Models.ViewModels.WarningsViewModel!
+BDTest.Razor.Reports.Models.ViewModels.WarningsViewModel.Deconstruct(out BDTest.Razor.Reports.Models.ViewModels.ReportLayoutViewModel! Layout, out System.Collections.Generic.IReadOnlyList<BDTest.Razor.Reports.Models.ViewModels.ReportWarningRow!>! NotRun) -> void
+BDTest.Razor.Reports.Models.ViewModels.WarningsViewModel.Equals(BDTest.Razor.Reports.Models.ViewModels.WarningsViewModel? other) -> bool
+BDTest.Razor.Reports.Models.ViewModels.WarningsViewModel.Layout.get -> BDTest.Razor.Reports.Models.ViewModels.ReportLayoutViewModel!
+BDTest.Razor.Reports.Models.ViewModels.WarningsViewModel.Layout.init -> void
+BDTest.Razor.Reports.Models.ViewModels.WarningsViewModel.NotRun.get -> System.Collections.Generic.IReadOnlyList<BDTest.Razor.Reports.Models.ViewModels.ReportWarningRow!>!
+BDTest.Razor.Reports.Models.ViewModels.WarningsViewModel.NotRun.init -> void
+BDTest.Razor.Reports.Models.ViewModels.WarningsViewModel.WarningsViewModel(BDTest.Razor.Reports.Models.ViewModels.ReportLayoutViewModel! Layout, System.Collections.Generic.IReadOnlyList<BDTest.Razor.Reports.Models.ViewModels.ReportWarningRow!>! NotRun) -> void
+BDTest.Razor.Reports.Security.ReportScriptNonceTagHelper
+BDTest.Razor.Reports.Security.ReportScriptNonceTagHelper.ReportScriptNonceTagHelper() -> void
+BDTest.Razor.Reports.Security.ReportScriptNonceTagHelper.ViewContext.get -> Microsoft.AspNetCore.Mvc.Rendering.ViewContext?
+BDTest.Razor.Reports.Security.ReportScriptNonceTagHelper.ViewContext.set -> void
+BDTest.Razor.Reports.Storage.AttachmentStorage
+BDTest.Razor.Reports.Storage.FileBDTestAttachmentStore
+BDTest.Razor.Reports.Storage.FileBDTestAttachmentStore.DeleteReportAsync(string! reportId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+BDTest.Razor.Reports.Storage.FileBDTestAttachmentStore.FileBDTestAttachmentStore(string! directory) -> void
+BDTest.Razor.Reports.Storage.FileBDTestAttachmentStore.OpenReadAsync(string! reportId, string! attachmentId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<System.IO.Stream?>!
+BDTest.Razor.Reports.Storage.FileBDTestAttachmentStore.WriteAsync(string! reportId, string! attachmentId, System.IO.Stream! content, long length, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+BDTest.Razor.Reports.Storage.IReportStore
+BDTest.Razor.Reports.Storage.IReportStore.DeleteAsync(string! reportId, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<bool>!
+BDTest.Razor.Reports.Storage.IReportStore.OpenReadAsync(string! reportId, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<System.IO.Stream?>!
+BDTest.Razor.Reports.Storage.IReportStore.WriteAsync(string! reportId, System.IO.Stream! utf8Json, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task!
+BDTest.Razor.Reports.Storage.IRunIndexStore
+BDTest.Razor.Reports.Storage.IRunIndexStore.DeleteAsync(string! reportId, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<bool>!
+BDTest.Razor.Reports.Storage.IRunIndexStore.ListAsync(BDTest.Razor.Reports.Storage.RunIndexQuery! query, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<BDTest.Razor.Reports.Storage.RunIndexPage!>!
+BDTest.Razor.Reports.Storage.IRunIndexStore.UpsertAsync(BDTest.Razor.Reports.Storage.RunIndexEntry! entry, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task!
+BDTest.Razor.Reports.Storage.LegacyDataStoreAdapter
+BDTest.Razor.Reports.Storage.LegacyDataStoreAdapter.LegacyDataStoreAdapter(BDTest.Razor.Reports.Interfaces.IBDTestDataStore! store) -> void
+BDTest.Razor.Reports.Storage.LegacyDataStoreAdapter.ListAsync(BDTest.Razor.Reports.Storage.RunIndexQuery! query, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<BDTest.Razor.Reports.Storage.RunIndexPage!>!
+BDTest.Razor.Reports.Storage.LegacyDataStoreAdapter.OpenReadAsync(string! reportId, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<System.IO.Stream?>!
+BDTest.Razor.Reports.Storage.LegacyDataStoreAdapter.UpsertAsync(BDTest.Razor.Reports.Storage.RunIndexEntry! entry, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task!
+BDTest.Razor.Reports.Storage.LegacyDataStoreAdapter.WriteAsync(string! reportId, System.IO.Stream! utf8Json, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task!
+BDTest.Razor.Reports.Storage.RunIndexCounts
+BDTest.Razor.Reports.Storage.RunIndexCounts.Failed.get -> int
+BDTest.Razor.Reports.Storage.RunIndexCounts.Failed.set -> void
+BDTest.Razor.Reports.Storage.RunIndexCounts.Inconclusive.get -> int
+BDTest.Razor.Reports.Storage.RunIndexCounts.Inconclusive.set -> void
+BDTest.Razor.Reports.Storage.RunIndexCounts.NotImplemented.get -> int
+BDTest.Razor.Reports.Storage.RunIndexCounts.NotImplemented.set -> void
+BDTest.Razor.Reports.Storage.RunIndexCounts.NotRun.get -> int
+BDTest.Razor.Reports.Storage.RunIndexCounts.NotRun.set -> void
+BDTest.Razor.Reports.Storage.RunIndexCounts.Passed.get -> int
+BDTest.Razor.Reports.Storage.RunIndexCounts.Passed.set -> void
+BDTest.Razor.Reports.Storage.RunIndexCounts.Pending.get -> int
+BDTest.Razor.Reports.Storage.RunIndexCounts.Pending.set -> void
+BDTest.Razor.Reports.Storage.RunIndexCounts.RunIndexCounts() -> void
+BDTest.Razor.Reports.Storage.RunIndexCounts.Skipped.get -> int
+BDTest.Razor.Reports.Storage.RunIndexCounts.Skipped.set -> void
+BDTest.Razor.Reports.Storage.RunIndexCounts.Total.get -> int
+BDTest.Razor.Reports.Storage.RunIndexCounts.Total.set -> void
+BDTest.Razor.Reports.Storage.RunIndexEntry
+BDTest.Razor.Reports.Storage.RunIndexEntry.BranchName.get -> string?
+BDTest.Razor.Reports.Storage.RunIndexEntry.BranchName.set -> void
+BDTest.Razor.Reports.Storage.RunIndexEntry.Counts.get -> BDTest.Razor.Reports.Storage.RunIndexCounts?
+BDTest.Razor.Reports.Storage.RunIndexEntry.Counts.set -> void
+BDTest.Razor.Reports.Storage.RunIndexEntry.Environment.get -> string?
+BDTest.Razor.Reports.Storage.RunIndexEntry.Environment.set -> void
+BDTest.Razor.Reports.Storage.RunIndexEntry.FinishedAtDateTime.get -> System.DateTime
+BDTest.Razor.Reports.Storage.RunIndexEntry.FinishedAtDateTime.set -> void
+BDTest.Razor.Reports.Storage.RunIndexEntry.MachineName.get -> string?
+BDTest.Razor.Reports.Storage.RunIndexEntry.MachineName.set -> void
+BDTest.Razor.Reports.Storage.RunIndexEntry.RecordId.get -> string?
+BDTest.Razor.Reports.Storage.RunIndexEntry.RecordId.set -> void
+BDTest.Razor.Reports.Storage.RunIndexEntry.RunIndexEntry() -> void
+BDTest.Razor.Reports.Storage.RunIndexEntry.StartedAtDateTime.get -> System.DateTime
+BDTest.Razor.Reports.Storage.RunIndexEntry.StartedAtDateTime.set -> void
+BDTest.Razor.Reports.Storage.RunIndexEntry.Status.get -> BDTest.Test.Status
+BDTest.Razor.Reports.Storage.RunIndexEntry.Status.set -> void
+BDTest.Razor.Reports.Storage.RunIndexEntry.Tag.get -> string?
+BDTest.Razor.Reports.Storage.RunIndexEntry.Tag.set -> void
+BDTest.Razor.Reports.Storage.RunIndexEntry.Version.get -> string?
+BDTest.Razor.Reports.Storage.RunIndexEntry.Version.set -> void
+BDTest.Razor.Reports.Storage.RunIndexPage
+BDTest.Razor.Reports.Storage.RunIndexPage.ContinuationToken.get -> string?
+BDTest.Razor.Reports.Storage.RunIndexPage.ContinuationToken.init -> void
+BDTest.Razor.Reports.Storage.RunIndexPage.Entries.get -> System.Collections.Generic.IReadOnlyList<BDTest.Razor.Reports.Storage.RunIndexEntry!>!
+BDTest.Razor.Reports.Storage.RunIndexPage.Entries.init -> void
+BDTest.Razor.Reports.Storage.RunIndexPage.RunIndexPage() -> void
+BDTest.Razor.Reports.Storage.RunIndexPaging
+BDTest.Razor.Reports.Storage.RunIndexQuery
+BDTest.Razor.Reports.Storage.RunIndexQuery.BranchName.get -> string?
+BDTest.Razor.Reports.Storage.RunIndexQuery.BranchName.init -> void
+BDTest.Razor.Reports.Storage.RunIndexQuery.ContinuationToken.get -> string?
+BDTest.Razor.Reports.Storage.RunIndexQuery.ContinuationToken.init -> void
+BDTest.Razor.Reports.Storage.RunIndexQuery.Environment.get -> string?
+BDTest.Razor.Reports.Storage.RunIndexQuery.Environment.init -> void
+BDTest.Razor.Reports.Storage.RunIndexQuery.PageSize.get -> int
+BDTest.Razor.Reports.Storage.RunIndexQuery.PageSize.init -> void
+BDTest.Razor.Reports.Storage.RunIndexQuery.RunIndexQuery() -> void
+BDTest.Razor.Reports.Storage.RunIndexQuery.Tag.get -> string?
+BDTest.Razor.Reports.Storage.RunIndexQuery.Tag.init -> void
+const BDTest.Razor.Reports.Constants.OrderConstants.DateAscending = "dateAscending" -> string!
+const BDTest.Razor.Reports.Constants.OrderConstants.DateDescending = "dateDescending" -> string!
+const BDTest.Razor.Reports.Constants.OrderConstants.DurationAscending = "durationAscending" -> string!
+const BDTest.Razor.Reports.Constants.OrderConstants.DurationDescending = "durationDescending" -> string!
+const BDTest.Razor.Reports.Constants.OrderConstants.Name = "name" -> string!
+const BDTest.Razor.Reports.Constants.OrderConstants.OrderByQueryParameterName = "order" -> string!
+const BDTest.Razor.Reports.Constants.OrderConstants.Status = "status" -> string!
+const BDTest.Razor.Reports.Constants.PagerQueryParameters.All = "all" -> string!
+const BDTest.Razor.Reports.Constants.PagerQueryParameters.Page = "page" -> string!
+const BDTest.Razor.Reports.Constants.StatusConstants.All = "all" -> string!
+const BDTest.Razor.Reports.Constants.StatusConstants.FilterByStatusQueryParameterName = "filterByStatus" -> string!
+const BDTest.Razor.Reports.Models.FailureGroup.ByExceptionAndLocation = "location" -> string!
+const BDTest.Razor.Reports.Models.FailureGroup.ByExceptionType = "type" -> string!
+const BDTest.Razor.Reports.Models.FailureGroup.ByFailingStep = "step" -> string!
+const BDTest.Razor.Reports.Models.RunFilter.AnyTime = "all" -> string!
+const BDTest.Razor.Reports.Models.RunFilter.Custom = "custom" -> string!
+const BDTest.Razor.Reports.Models.RunFilter.Last30Days = "30d" -> string!
+const BDTest.Razor.Reports.Models.RunFilter.Last7Days = "7d" -> string!
+const BDTest.Razor.Reports.Models.RunFilter.ThisMonth = "month" -> string!
+const BDTest.Razor.Reports.Models.RunFilter.Today = "today" -> string!
+const BDTest.Razor.Reports.Models.ScenarioSearch.QueryParameterName = "q" -> string!
+const BDTest.Razor.Reports.Models.ScenarioSearch.StoryQueryParameterName = "story" -> string!
+const BDTest.Razor.Reports.Models.ViewModels.HistoryViewModel.Flaky = "flaky" -> string!
+const BDTest.Razor.Reports.Models.ViewModels.HistoryViewModel.Timing = "timing" -> string!
+const BDTest.Razor.Reports.Models.ViewModels.HistoryViewModel.Trends = "trends" -> string!
+const BDTest.Razor.Reports.Models.ViewModels.ScenarioListViewModel.GroupByNone = "none" -> string!
+const BDTest.Razor.Reports.Models.ViewModels.ScenarioListViewModel.GroupByStory = "story" -> string!
+override BDTest.Razor.Reports.Helpers.ReportJsonContext.GeneratedSerializerOptions.get -> System.Text.Json.JsonSerializerOptions?
+override BDTest.Razor.Reports.Helpers.ReportJsonContext.GetTypeInfo(System.Type! type) -> System.Text.Json.Serialization.Metadata.JsonTypeInfo?
+override BDTest.Razor.Reports.Models.ScenarioGroupKey.Equals(object? obj) -> bool
+override BDTest.Razor.Reports.Models.ScenarioGroupKey.GetHashCode() -> int
+override BDTest.Razor.Reports.Models.ScenarioGroupKey.ToString() -> string!
+override BDTest.Razor.Reports.Models.ViewModels.ReportFailureGroup.Equals(object? obj) -> bool
+override BDTest.Razor.Reports.Models.ViewModels.ReportFailureGroup.GetHashCode() -> int
+override BDTest.Razor.Reports.Models.ViewModels.ReportFailureGroup.ToString() -> string!
+override BDTest.Razor.Reports.Models.ViewModels.ReportMetadataViewModel.Equals(object? obj) -> bool
+override BDTest.Razor.Reports.Models.ViewModels.ReportMetadataViewModel.GetHashCode() -> int
+override BDTest.Razor.Reports.Models.ViewModels.ReportMetadataViewModel.ToString() -> string!
+override BDTest.Razor.Reports.Models.ViewModels.ReportPageModels.Equals(object? obj) -> bool
+override BDTest.Razor.Reports.Models.ViewModels.ReportPageModels.GetHashCode() -> int
+override BDTest.Razor.Reports.Models.ViewModels.ReportPageModels.ToString() -> string!
+override BDTest.Razor.Reports.Models.ViewModels.ReportScenarioRow.Equals(object? obj) -> bool
+override BDTest.Razor.Reports.Models.ViewModels.ReportScenarioRow.GetHashCode() -> int
+override BDTest.Razor.Reports.Models.ViewModels.ReportScenarioRow.ToString() -> string!
+override BDTest.Razor.Reports.Models.ViewModels.ReportWarningRow.Equals(object? obj) -> bool
+override BDTest.Razor.Reports.Models.ViewModels.ReportWarningRow.GetHashCode() -> int
+override BDTest.Razor.Reports.Models.ViewModels.ReportWarningRow.ToString() -> string!
+override BDTest.Razor.Reports.Models.ViewModels.SummaryViewModel.Equals(object? obj) -> bool
+override BDTest.Razor.Reports.Models.ViewModels.SummaryViewModel.GetHashCode() -> int
+override BDTest.Razor.Reports.Models.ViewModels.SummaryViewModel.ToString() -> string!
+override BDTest.Razor.Reports.Models.ViewModels.TimingsViewModel.Equals(object? obj) -> bool
+override BDTest.Razor.Reports.Models.ViewModels.TimingsViewModel.GetHashCode() -> int
+override BDTest.Razor.Reports.Models.ViewModels.TimingsViewModel.ToString() -> string!
+override BDTest.Razor.Reports.Models.ViewModels.TopDefectsViewModel.Equals(object? obj) -> bool
+override BDTest.Razor.Reports.Models.ViewModels.TopDefectsViewModel.GetHashCode() -> int
+override BDTest.Razor.Reports.Models.ViewModels.TopDefectsViewModel.ToString() -> string!
+override BDTest.Razor.Reports.Models.ViewModels.WarningsViewModel.Equals(object? obj) -> bool
+override BDTest.Razor.Reports.Models.ViewModels.WarningsViewModel.GetHashCode() -> int
+override BDTest.Razor.Reports.Models.ViewModels.WarningsViewModel.ToString() -> string!
+override BDTest.Razor.Reports.Security.ReportScriptNonceTagHelper.Process(Microsoft.AspNetCore.Razor.TagHelpers.TagHelperContext! context, Microsoft.AspNetCore.Razor.TagHelpers.TagHelperOutput! output) -> void
+static BDTest.Razor.Reports.Extensions.BDTestExtensions.AddBDTestReports(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, System.Action<BDTest.Razor.Reports.Models.BDTestReportOptions!>? configure = null) -> Microsoft.Extensions.Options.OptionsBuilder<BDTest.Razor.Reports.Models.BDTestReportOptions!>!
+static BDTest.Razor.Reports.Extensions.BDTestExtensions.AddBdTestReportControllersAndViews(this Microsoft.Extensions.DependencyInjection.IMvcBuilder! mvcBuilder) -> Microsoft.Extensions.DependencyInjection.IMvcBuilder!
+static BDTest.Razor.Reports.Extensions.BDTestExtensions.MapBDTestReports(this Microsoft.AspNetCore.Routing.IEndpointRouteBuilder! endpoints, string! prefix = "/bdtest") -> Microsoft.AspNetCore.Builder.IEndpointConventionBuilder!
+static BDTest.Razor.Reports.Extensions.BDTestExtensions.UseBDTestReportServer(this Microsoft.AspNetCore.Builder.IApplicationBuilder! applicationBuilder) -> void
+static BDTest.Razor.Reports.Extensions.MiscExtensions.DistinctBy<TSource, TKey>(this System.Collections.Generic.IEnumerable<TSource>! source, System.Func<TSource, TKey>! keySelector) -> System.Collections.Generic.IEnumerable<TSource>!
+static BDTest.Razor.Reports.Extensions.MiscExtensions.SplitOnNewLines(this string! text) -> System.Collections.Generic.IEnumerable<string!>!
+static BDTest.Razor.Reports.Extensions.MiscExtensions.ToPrettyFormat(this System.TimeSpan span) -> string!
+static BDTest.Razor.Reports.Extensions.MiscExtensions.ToStringForReport(this System.DateTime dateTime) -> string!
+static BDTest.Razor.Reports.Extensions.MiscExtensions.ToStringForReport(this System.DateTime dateTime, bool includeLineBreak) -> string!
+static BDTest.Razor.Reports.Extensions.PagerExtensions.GetPageNumberOfItem<T>(this BDTest.Razor.Reports.Models.Pager<T>! pager, T item) -> int?
+static BDTest.Razor.Reports.Extensions.PagerExtensions.GetPageNumberWhere<T>(this BDTest.Razor.Reports.Models.Pager<T>! pager, System.Func<T, bool>! predicate) -> int?
+static BDTest.Razor.Reports.Extensions.RunIndexExtensions.ToRunIndexEntry(this BDTest.Razor.Reports.Models.TestRunSummary! entry) -> BDTest.Razor.Reports.Storage.RunIndexEntry!
+static BDTest.Razor.Reports.Extensions.RunIndexExtensions.ToTestRunSummary(this BDTest.Razor.Reports.Storage.RunIndexEntry! entry) -> BDTest.Razor.Reports.Models.TestRunSummary!
+static BDTest.Razor.Reports.Extensions.ScenarioExtensions.AsString(this BDTest.Test.Status status) -> string!
+static BDTest.Razor.Reports.Extensions.ScenarioExtensions.GetCssColourValueForStatus(this BDTest.Test.Status status) -> string!
+static BDTest.Razor.Reports.Extensions.ScenarioExtensions.GetTotalStatus(this System.Collections.Generic.IEnumerable<BDTest.Test.Scenario!>! scenarios) -> BDTest.Test.Status
+static BDTest.Razor.Reports.Extensions.SemaphoreSlimExtension.RunAndReturnAsync<T>(this System.Threading.SemaphoreSlim! semaphore, System.Func<System.Threading.Tasks.Task<T>!>! action, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<T>!
+static BDTest.Razor.Reports.Extensions.SemaphoreSlimExtension.RunAsync(this System.Threading.SemaphoreSlim! semaphore, System.Func<System.Threading.Tasks.Task!>! action, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task!
+static BDTest.Razor.Reports.Extensions.UriExtensions.WithPath(this System.Uri! uri, string? path) -> System.Uri!
+static BDTest.Razor.Reports.Extensions.UriExtensions.WithQueryParameter(this System.Uri! uri, string! parameterName, string? value) -> System.Uri!
+static BDTest.Razor.Reports.Helpers.HttpHelper.GetBaseUrl(this Microsoft.AspNetCore.Http.HttpContext! httpContext) -> string!
+static BDTest.Razor.Reports.Helpers.HttpHelper.GetCurrentPageNumber(this Microsoft.AspNetCore.Http.HttpContext! httpContext) -> string!
+static BDTest.Razor.Reports.Helpers.HttpHelper.GetCurrentUrl(this Microsoft.AspNetCore.Http.HttpContext! httpContext) -> System.Uri!
+static BDTest.Razor.Reports.Helpers.HttpHelper.GetLocalUrl(this Microsoft.AspNetCore.Http.HttpContext! httpContext, string? path = null) -> string!
+static BDTest.Razor.Reports.Helpers.HttpHelper.GetLocalUrlWithQueryParameter(this Microsoft.AspNetCore.Http.HttpContext! httpContext, string! name, string? value, string? path = null) -> string!
+static BDTest.Razor.Reports.Helpers.HttpHelper.GetQueryParameter(this Microsoft.AspNetCore.Http.HttpRequest! httpRequest, string! queryParameterName) -> string?
+static BDTest.Razor.Reports.Helpers.HttpHelper.GetUrlForPageNumber(this Microsoft.AspNetCore.Http.HttpContext! httpContext, int pageNumber) -> string!
+static BDTest.Razor.Reports.Helpers.QueryUrl.GetLocalUrlWith(this Microsoft.AspNetCore.Http.HttpContext! httpContext, params (string! Name, string? Value)[]! changes) -> string!
+static BDTest.Razor.Reports.Helpers.QueryUrl.GetLocalUrlWith(this Microsoft.AspNetCore.Http.HttpContext! httpContext, string? path, params (string! Name, string? Value)[]! changes) -> string!
+static BDTest.Razor.Reports.Helpers.ReportJsonContext.Default.get -> BDTest.Razor.Reports.Helpers.ReportJsonContext!
+static BDTest.Razor.Reports.Helpers.ReportLinks.ReportAction(this Microsoft.AspNetCore.Mvc.IUrlHelper! url, string! action, object? values = null) -> string!
+static BDTest.Razor.Reports.Helpers.ReportLinks.ReportAsset(this Microsoft.AspNetCore.Mvc.IUrlHelper! url, string! path) -> string!
+static BDTest.Razor.Reports.Helpers.ReportLinks.ReportScenario(this Microsoft.AspNetCore.Mvc.IUrlHelper! url, string? reportId, string? scenarioId) -> string?
+static BDTest.Razor.Reports.Helpers.ReportUi.Icon(string! id, string? cssClass = null) -> Microsoft.AspNetCore.Html.IHtmlContent!
+static BDTest.Razor.Reports.Helpers.ReportUi.IconId(this BDTest.Test.Status status) -> string!
+static BDTest.Razor.Reports.Helpers.ReportUi.Initials(string? name) -> string!
+static BDTest.Razor.Reports.Helpers.ReportUi.IsMissingStory(string? story) -> bool
+static BDTest.Razor.Reports.Helpers.ReportUi.Key(this BDTest.Test.Status status) -> string!
+static BDTest.Razor.Reports.Helpers.ReportUi.Label(this BDTest.Test.Status status) -> string!
+static BDTest.Razor.Reports.Helpers.ReportUi.Percent(double part, double total) -> string!
+static BDTest.Razor.Reports.Helpers.ReportUi.Pill(this BDTest.Test.Status status, string? text = null) -> Microsoft.AspNetCore.Html.IHtmlContent!
+static BDTest.Razor.Reports.Helpers.ReportUi.RunResult(this BDTest.Razor.Reports.Models.TestRunSummary! run) -> BDTest.Test.Status
+static BDTest.Razor.Reports.Helpers.ReportUi.RunResult(this BDTest.Test.Status runStatus) -> BDTest.Test.Status
+static BDTest.Razor.Reports.Helpers.ReportUi.SplitStepText(string? stepText) -> (string! Keyword, string! Text)
+static BDTest.Razor.Reports.Helpers.ReportUi.StatusIcon(this BDTest.Test.Status status, string? cssClass = null) -> Microsoft.AspNetCore.Html.IHtmlContent!
+static BDTest.Razor.Reports.Helpers.ReportUi.StoryLines(string? story) -> System.Collections.Generic.IReadOnlyList<string!>!
+static BDTest.Razor.Reports.Helpers.ReportUi.StorySentence(string? story) -> string!
+static BDTest.Razor.Reports.Helpers.ReportUi.StoryTitle(string? story) -> string!
+static BDTest.Razor.Reports.Helpers.ReportUi.ToClock(this System.DateTime dateTime, bool milliseconds = false) -> string!
+static BDTest.Razor.Reports.Helpers.ReportUi.ToDay(this System.DateTime dateTime) -> string!
+static BDTest.Razor.Reports.Helpers.ReportUi.ToRunDate(this System.DateTime dateTime, bool includeYear = true, bool withSeconds = false) -> string!
+static BDTest.Razor.Reports.Helpers.ReportUi.ToShortDuration(this System.TimeSpan span) -> string!
+static BDTest.Razor.Reports.Models.FailureGroup.Build(System.Collections.Generic.IEnumerable<BDTest.Test.Scenario!>! scenarios, string? groupBy) -> System.Collections.Generic.IReadOnlyList<BDTest.Razor.Reports.Models.FailureGroup!>!
+static BDTest.Razor.Reports.Models.FailureGroup.FailingStep(BDTest.Test.Scenario? scenario) -> BDTest.Test.Step?
+static BDTest.Razor.Reports.Models.FailureGroup.FailingStepNumber(BDTest.Test.Scenario? scenario) -> int
+static BDTest.Razor.Reports.Models.FailureGroup.GetLocation(BDTest.Test.ExceptionWrapper? exception) -> string?
+static BDTest.Razor.Reports.Models.FailureGroup.Normalize(string? groupBy) -> string!
+static BDTest.Razor.Reports.Models.RunFilter.AllRanges.get -> System.Collections.Generic.IEnumerable<string!>!
+static BDTest.Razor.Reports.Models.RunFilter.FromQuery(Microsoft.AspNetCore.Http.IQueryCollection! query, string! defaultRange = "all") -> BDTest.Razor.Reports.Models.RunFilter!
+static BDTest.Razor.Reports.Models.RunFilter.RangeLabel(string? range) -> string!
+static BDTest.Razor.Reports.Models.RunFilter.ToQueryString(System.Collections.Generic.IEnumerable<System.Collections.Generic.KeyValuePair<string!, string!>>! values) -> string!
+static BDTest.Razor.Reports.Models.ScenarioGroupKey.operator !=(BDTest.Razor.Reports.Models.ScenarioGroupKey? left, BDTest.Razor.Reports.Models.ScenarioGroupKey? right) -> bool
+static BDTest.Razor.Reports.Models.ScenarioGroupKey.operator ==(BDTest.Razor.Reports.Models.ScenarioGroupKey? left, BDTest.Razor.Reports.Models.ScenarioGroupKey? right) -> bool
+static BDTest.Razor.Reports.Models.ScenarioSearch.Matches(BDTest.Test.Scenario? scenario, string? search) -> bool
+static BDTest.Razor.Reports.Models.ViewModels.ReportFailureGroup.operator !=(BDTest.Razor.Reports.Models.ViewModels.ReportFailureGroup? left, BDTest.Razor.Reports.Models.ViewModels.ReportFailureGroup? right) -> bool
+static BDTest.Razor.Reports.Models.ViewModels.ReportFailureGroup.operator ==(BDTest.Razor.Reports.Models.ViewModels.ReportFailureGroup? left, BDTest.Razor.Reports.Models.ViewModels.ReportFailureGroup? right) -> bool
+static BDTest.Razor.Reports.Models.ViewModels.ReportLayoutViewModel.Create(BDTest.Maps.BDTestOutputModel! report) -> BDTest.Razor.Reports.Models.ViewModels.ReportLayoutViewModel!
+static BDTest.Razor.Reports.Models.ViewModels.ReportMetadataViewModel.operator !=(BDTest.Razor.Reports.Models.ViewModels.ReportMetadataViewModel? left, BDTest.Razor.Reports.Models.ViewModels.ReportMetadataViewModel? right) -> bool
+static BDTest.Razor.Reports.Models.ViewModels.ReportMetadataViewModel.operator ==(BDTest.Razor.Reports.Models.ViewModels.ReportMetadataViewModel? left, BDTest.Razor.Reports.Models.ViewModels.ReportMetadataViewModel? right) -> bool
+static BDTest.Razor.Reports.Models.ViewModels.ReportPageModels.Create(BDTest.Maps.BDTestOutputModel! report) -> BDTest.Razor.Reports.Models.ViewModels.ReportPageModels!
+static BDTest.Razor.Reports.Models.ViewModels.ReportPageModels.operator !=(BDTest.Razor.Reports.Models.ViewModels.ReportPageModels? left, BDTest.Razor.Reports.Models.ViewModels.ReportPageModels? right) -> bool
+static BDTest.Razor.Reports.Models.ViewModels.ReportPageModels.operator ==(BDTest.Razor.Reports.Models.ViewModels.ReportPageModels? left, BDTest.Razor.Reports.Models.ViewModels.ReportPageModels? right) -> bool
+static BDTest.Razor.Reports.Models.ViewModels.ReportScenarioRow.operator !=(BDTest.Razor.Reports.Models.ViewModels.ReportScenarioRow? left, BDTest.Razor.Reports.Models.ViewModels.ReportScenarioRow? right) -> bool
+static BDTest.Razor.Reports.Models.ViewModels.ReportScenarioRow.operator ==(BDTest.Razor.Reports.Models.ViewModels.ReportScenarioRow? left, BDTest.Razor.Reports.Models.ViewModels.ReportScenarioRow? right) -> bool
+static BDTest.Razor.Reports.Models.ViewModels.ReportWarningRow.operator !=(BDTest.Razor.Reports.Models.ViewModels.ReportWarningRow? left, BDTest.Razor.Reports.Models.ViewModels.ReportWarningRow? right) -> bool
+static BDTest.Razor.Reports.Models.ViewModels.ReportWarningRow.operator ==(BDTest.Razor.Reports.Models.ViewModels.ReportWarningRow? left, BDTest.Razor.Reports.Models.ViewModels.ReportWarningRow? right) -> bool
+static BDTest.Razor.Reports.Models.ViewModels.SummaryViewModel.operator !=(BDTest.Razor.Reports.Models.ViewModels.SummaryViewModel? left, BDTest.Razor.Reports.Models.ViewModels.SummaryViewModel? right) -> bool
+static BDTest.Razor.Reports.Models.ViewModels.SummaryViewModel.operator ==(BDTest.Razor.Reports.Models.ViewModels.SummaryViewModel? left, BDTest.Razor.Reports.Models.ViewModels.SummaryViewModel? right) -> bool
+static BDTest.Razor.Reports.Models.ViewModels.TimingsViewModel.operator !=(BDTest.Razor.Reports.Models.ViewModels.TimingsViewModel? left, BDTest.Razor.Reports.Models.ViewModels.TimingsViewModel? right) -> bool
+static BDTest.Razor.Reports.Models.ViewModels.TimingsViewModel.operator ==(BDTest.Razor.Reports.Models.ViewModels.TimingsViewModel? left, BDTest.Razor.Reports.Models.ViewModels.TimingsViewModel? right) -> bool
+static BDTest.Razor.Reports.Models.ViewModels.TopDefectsViewModel.operator !=(BDTest.Razor.Reports.Models.ViewModels.TopDefectsViewModel? left, BDTest.Razor.Reports.Models.ViewModels.TopDefectsViewModel? right) -> bool
+static BDTest.Razor.Reports.Models.ViewModels.TopDefectsViewModel.operator ==(BDTest.Razor.Reports.Models.ViewModels.TopDefectsViewModel? left, BDTest.Razor.Reports.Models.ViewModels.TopDefectsViewModel? right) -> bool
+static BDTest.Razor.Reports.Models.ViewModels.WarningsViewModel.operator !=(BDTest.Razor.Reports.Models.ViewModels.WarningsViewModel? left, BDTest.Razor.Reports.Models.ViewModels.WarningsViewModel? right) -> bool
+static BDTest.Razor.Reports.Models.ViewModels.WarningsViewModel.operator ==(BDTest.Razor.Reports.Models.ViewModels.WarningsViewModel? left, BDTest.Razor.Reports.Models.ViewModels.WarningsViewModel? right) -> bool
+static BDTest.Razor.Reports.Storage.AttachmentStorage.CopyExactlyAsync(System.IO.Stream! source, System.IO.Stream! destination, long length, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+static BDTest.Razor.Reports.Storage.AttachmentStorage.IsValidId(string? id) -> bool
+static BDTest.Razor.Reports.Storage.AttachmentStorage.ValidateIds(string! reportId, string? attachmentId = null) -> void
+static BDTest.Razor.Reports.Storage.RunIndexPaging.Apply(System.Collections.Generic.IEnumerable<BDTest.Razor.Reports.Storage.RunIndexEntry!>! entries, BDTest.Razor.Reports.Storage.RunIndexQuery! query) -> BDTest.Razor.Reports.Storage.RunIndexPage!
+static readonly BDTest.Razor.Reports.Helpers.ReportUi.DisplayOrder -> BDTest.Test.Status[]!
+virtual BDTest.Razor.Reports.Models.ScenarioGroupKey.<Clone>$() -> BDTest.Razor.Reports.Models.ScenarioGroupKey!
+virtual BDTest.Razor.Reports.Models.ScenarioGroupKey.EqualityContract.get -> System.Type!
+virtual BDTest.Razor.Reports.Models.ScenarioGroupKey.Equals(BDTest.Razor.Reports.Models.ScenarioGroupKey? other) -> bool
+virtual BDTest.Razor.Reports.Models.ScenarioGroupKey.PrintMembers(System.Text.StringBuilder! builder) -> bool
+~BDTest.Razor.Reports.Helpers.ReportJsonContext.Counts.get -> System.Text.Json.Serialization.Metadata.JsonTypeInfo<BDTest.Razor.Reports.Models.Counts>
+~BDTest.Razor.Reports.Helpers.ReportJsonContext.DateTime.get -> System.Text.Json.Serialization.Metadata.JsonTypeInfo<System.DateTime>
+~BDTest.Razor.Reports.Helpers.ReportJsonContext.Int32.get -> System.Text.Json.Serialization.Metadata.JsonTypeInfo<int>
+~BDTest.Razor.Reports.Helpers.ReportJsonContext.RunIndexCounts.get -> System.Text.Json.Serialization.Metadata.JsonTypeInfo<BDTest.Razor.Reports.Storage.RunIndexCounts>
+~BDTest.Razor.Reports.Helpers.ReportJsonContext.RunIndexEntry.get -> System.Text.Json.Serialization.Metadata.JsonTypeInfo<BDTest.Razor.Reports.Storage.RunIndexEntry>
+~BDTest.Razor.Reports.Helpers.ReportJsonContext.Status.get -> System.Text.Json.Serialization.Metadata.JsonTypeInfo<BDTest.Test.Status>
+~BDTest.Razor.Reports.Helpers.ReportJsonContext.String.get -> System.Text.Json.Serialization.Metadata.JsonTypeInfo<string>
+~BDTest.Razor.Reports.Helpers.ReportJsonContext.TestRunSummary.get -> System.Text.Json.Serialization.Metadata.JsonTypeInfo<BDTest.Razor.Reports.Models.TestRunSummary>

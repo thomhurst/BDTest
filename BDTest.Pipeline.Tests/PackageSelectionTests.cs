@@ -49,7 +49,10 @@ public class PackageSelectionTests
         {
             File.Copy(Path.Combine(RepositoryRoot, "Directory.Build.props"), Path.Combine(root, "Directory.Build.props"));
             Directory.CreateDirectory(Path.Combine(root, "build"));
-            File.Copy(Path.Combine(RepositoryRoot, "build", "PackageMetadata.targets"), Path.Combine(root, "build", "PackageMetadata.targets"));
+            foreach (var buildFile in new[] { "PackageMetadata.targets", "PublicApi.targets", "PublicApi.globalconfig" })
+            {
+                File.Copy(Path.Combine(RepositoryRoot, "build", buildFile), Path.Combine(root, "build", buildFile));
+            }
             await File.WriteAllTextAsync(Path.Combine(root, "Shipping.props"),
                 "<Project><PropertyGroup><IsPackable>true</IsPackable></PropertyGroup></Project>");
             var shippingProject = Path.Combine(root, "Example.Tests.ReportGenerator.csproj");

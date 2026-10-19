@@ -154,6 +154,34 @@ Describe merged behavior separately from pending roadmap work.
 
 ## Runtime target validation
 
+### Public API baselines
+
+Ordinary builds enforce checked-in public/protected API signatures for every
+runtime package. Each target has `PublicAPI/<TargetFramework>/PublicAPI.Shipped.txt`
+and `PublicAPI.Unshipped.txt`, both with nullable tracking enabled. `RS0016` fails
+for an unrecorded addition; `RS0017` fails for a stale signature after removal or
+change. Missing baseline files also fail the build.
+
+Include intentional API changes and their baselines in the same PR. Add new
+signatures to the target's unshipped file. For an approved removal, retain the
+shipped entry and copy it into unshipped with an immediate `*REMOVED*` prefix;
+record a replacement signature separately. Rebuild every affected target, because
+APIs such as `TimeProvider` exist only on modern assets. An IDE code fix may update
+only its active target. Update usage and migration documentation alongside the
+source; a baseline edit does not establish compatibility.
+
+Compiler extensions and non-packable projects are excluded. Generated Razor view
+classes are implementation details; the documented JSON metadata contexts remain
+tracked. Only those JSON context types have an exception for the generator's
+nullable-oblivious properties, without disabling API addition/removal checks.
+
+Run `pwsh scripts/Test-PublicApiBaselines.ps1` to verify the build enforcement.
+See [BUILDING.md](https://github.com/thomhurst/BDTest/blob/main/BUILDING.md#public-api-baselines-974)
+for the full update and release-promotion procedure. Keep the baselines current
+in subsequent helper, namespace and result-contract migration PRs.
+
+### Cross-target package validation
+
 Runtime packages enable SDK package validation during `dotnet pack`, including the pipeline's `PackProjectsModule`. It compares compatible target assets for API consistency. Artifact verification evaluates dependencies independently for each target, including conditional references. Compiler extension packages contain analyzer DLLs, so runtime API validation does not apply to them.
 
 `BDTest.Targets.Tests` exercises the modern core asset on .NET 8 and .NET 10. `BDTest.Legacy.Tests` links the same runtime contract tests but explicitly selects the .NET Standard asset on .NET 8. Both projects run in the normal test pipeline. The tests check consumer module initializers, timeout classification and cancellation, timestamps, and elapsed durations. Modern-only tests use a fake `TimeProvider` to drive timers without waiting for real time.

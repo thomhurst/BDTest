@@ -1,0 +1,27 @@
+#nullable enable
+BDTest.NUnit.BDTestFixtureAttribute
+BDTest.NUnit.BDTestFixtureAttribute.BDTestFixtureAttribute() -> void
+BDTest.NUnit.BDTestFixtureAttribute.Wrap(NUnit.Framework.Internal.Commands.TestCommand! command) -> NUnit.Framework.Internal.Commands.TestCommand!
+BDTest.NUnit.INUnitBDTest
+BDTest.NUnit.INUnitBDTest.BDTestHost.get -> BDTest.Test.BDTestBase!
+BDTest.NUnit.NUnitBDTestAssembly
+BDTest.NUnit.NUnitBDTestBase<TContext>
+BDTest.NUnit.NUnitBDTestBase<TContext>.BDTestNUnitTearDown() -> System.Threading.Tasks.Task!
+BDTest.NUnit.NUnitBDTestBase<TContext>.NUnitBDTestBase() -> void
+BDTest.NUnit.NUnitBDTestBase<TContext>.PruneContext() -> void
+BDTest.NUnit.NUnitBDTestBase<TContext>.Setup() -> void
+BDTest.NUnit.NUnitBDTestScenario
+BDTest.NUnit.NUnitBDTestScenario<TContext>
+BDTest.NUnit.NUnitBDTestScenario<TContext>.NUnitBDTestScenario(object! testInstance, BDTest.BDTestRun! run) -> void
+override BDTest.NUnit.NUnitBDTestBase<TContext>.ExecuteScenarioStepsAsync(System.Func<System.Threading.Tasks.Task!>! executeSteps, System.Action<System.Action!>! registerTerminalFailure) -> System.Threading.Tasks.Task!
+override BDTest.NUnit.NUnitBDTestBase<TContext>.MarkTestAsComplete() -> void
+override BDTest.NUnit.NUnitBDTestBase<TContext>.OnScenarioSkipped(string! reason) -> void
+override BDTest.NUnit.NUnitBDTestBase<TContext>.TestRun.get -> BDTest.BDTestRun!
+override BDTest.NUnit.NUnitBDTestScenario<TContext>.ExecuteScenarioStepsAsync(System.Func<System.Threading.Tasks.Task!>! executeSteps, System.Action<System.Action!>! registerTerminalFailure) -> System.Threading.Tasks.Task!
+override BDTest.NUnit.NUnitBDTestScenario<TContext>.OnScenarioSkipped(string! reason) -> void
+static BDTest.NUnit.NUnitBDTestAssembly.Dispose(System.Reflection.Assembly! assembly) -> void
+static BDTest.NUnit.NUnitBDTestAssembly.GetRun(System.Reflection.Assembly! assembly) -> BDTest.BDTestRun!
+static BDTest.NUnit.NUnitBDTestBase<TContext>.OutcomeMap.get -> BDTest.Settings.FrameworkOutcomeMap!
+static BDTest.NUnit.NUnitBDTestScenario.For<TContext>(object! testInstance) -> BDTest.NUnit.NUnitBDTestScenario<TContext!>!
+static BDTest.NUnit.NUnitBDTestScenario.For<TContext>(object! testInstance, BDTest.BDTestRun! run) -> BDTest.NUnit.NUnitBDTestScenario<TContext!>!
+static BDTest.NUnit.NUnitBDTestScenario.OutcomeMap.get -> BDTest.Settings.FrameworkOutcomeMap!

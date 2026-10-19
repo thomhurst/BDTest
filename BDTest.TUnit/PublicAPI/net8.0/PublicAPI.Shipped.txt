@@ -1,0 +1,23 @@
+#nullable enable
+BDTest.TUnit.IBDTestTUnitTest
+BDTest.TUnit.IBDTestTUnitTest.BDTestHost.get -> BDTest.Test.BDTestBase!
+BDTest.TUnit.TUnitBDTestAssembly
+BDTest.TUnit.TUnitBDTestBase<TContext>
+BDTest.TUnit.TUnitBDTestBase<TContext>.BDTestTUnitSetup() -> void
+BDTest.TUnit.TUnitBDTestBase<TContext>.BDTestTUnitTearDown() -> System.Threading.Tasks.Task!
+BDTest.TUnit.TUnitBDTestBase<TContext>.Setup() -> void
+BDTest.TUnit.TUnitBDTestBase<TContext>.TUnitBDTestBase() -> void
+BDTest.TUnit.TUnitBDTestBase<TContext>.TearDown() -> void
+BDTest.TUnit.TUnitBDTestLifecycle
+BDTest.TUnit.TUnitBDTestScenario
+override BDTest.TUnit.TUnitBDTestBase<TContext>.OnScenarioSkipped(string! reason) -> void
+override BDTest.TUnit.TUnitBDTestBase<TContext>.TestRun.get -> BDTest.BDTestRun!
+static BDTest.TUnit.TUnitBDTestAssembly.Dispose(System.Reflection.Assembly! assembly) -> void
+static BDTest.TUnit.TUnitBDTestAssembly.GetRun(System.Reflection.Assembly! assembly) -> BDTest.BDTestRun!
+static BDTest.TUnit.TUnitBDTestBase<TContext>.OutcomeMap.get -> BDTest.Settings.FrameworkOutcomeMap!
+static BDTest.TUnit.TUnitBDTestLifecycle.AfterTest(TUnit.Core.TestContext! context) -> System.Threading.Tasks.Task!
+static BDTest.TUnit.TUnitBDTestLifecycle.BeforeTest(TUnit.Core.TestContext! context) -> void
+static BDTest.TUnit.TUnitBDTestLifecycle.OutcomeMap.get -> BDTest.Settings.FrameworkOutcomeMap!
+static BDTest.TUnit.TUnitBDTestScenario.For<TContext>(object! testInstance) -> BDTest.Test.BDTestScenario<TContext!>!
+static BDTest.TUnit.TUnitBDTestScenario.For<TContext>(object! testInstance, BDTest.BDTestRun! run) -> BDTest.Test.BDTestScenario<TContext!>!
+static BDTest.TUnit.TUnitBDTestScenario.OutcomeMap.get -> BDTest.Settings.FrameworkOutcomeMap!

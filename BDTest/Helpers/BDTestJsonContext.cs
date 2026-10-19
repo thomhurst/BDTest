@@ -19,6 +19,7 @@ namespace BDTest.Helpers;
 [JsonSerializable(typeof(StepDocString))]
 [JsonSerializable(typeof(Attachment))]
 [JsonSerializable(typeof(ExceptionWrapper))]
+[System.Diagnostics.CodeAnalysis.SuppressMessage("ApiDesign", "RS0041", Justification = "System.Text.Json generates nullable-oblivious JsonTypeInfo properties; their signatures remain checked by the public API baseline.")]
 public partial class BDTestJsonContext : JsonSerializerContext
 {
 }

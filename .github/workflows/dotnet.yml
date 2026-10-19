@@ -55,6 +55,9 @@ jobs:
       - name: Verify dependency merge safeguards
         shell: pwsh
         run: ./scripts/Test-DependencyAutomerge.ps1
+      - name: Verify public API baseline enforcement
+        shell: pwsh
+        run: ./scripts/Test-PublicApiBaselines.ps1
       - name: Verify report controls
         run: |
           node scripts/Test-HtmlReportControls.cjs
