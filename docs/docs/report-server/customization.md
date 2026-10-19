@@ -115,3 +115,24 @@ app.UseRequestLocalization(new RequestLocalizationOptions()
 ```
 
 The default providers check the `culture` query parameter, then the culture cookie, then the `Accept-Language` header, and fall back to the default culture. You can also set `DateTimeFormat.ShortDatePattern` on the `CultureInfo` instances you register. Without request localization, the host's current culture decides the format.
+
+## Overriding Razor views
+
+The next major version changes these compiled Razor model contracts. Update host copies of the views at the same time as the package:
+
+| View | New model in `BDTest.Razor.Reports.Models.ViewModels` |
+| --- | --- |
+| `Summary.cshtml` | `SummaryViewModel` |
+| `TestTimesSummary.cshtml` | `TimingsViewModel` |
+| `TopDefects.cshtml` | `TopDefectsViewModel` |
+| `Warnings.cshtml` | `WarningsViewModel` |
+
+Layouts created with `ReportLayoutViewModel.Create(report)` compute `FailureCauses` on first access and reuse the count. These request-scoped layouts retain scenarios until that computation; cached compact page layouts use a precomputed count and retain no scenario graph.
+
+Each model exposes `Layout`. The controller also places it in `ViewData[nameof(ReportLayoutViewModel)]` for shared layouts. `Layout.Report` is now `ReportMetadataViewModel` (ID, tag, environment, branch, machine, version, custom properties and `HasTimer`), not `BDTestOutputModel`. Use `Layout.ScenarioCount`, `Counts`, `Status`, `Timer`, `FailureCauses` and `NotRunCount` instead of enumerating `Layout.Scenarios`, which has been removed.
+
+Use `SummaryViewModel.OtherCount`/`OtherStatuses` and each failure group's `ScenarioCount` for totals: summary rows are limited to those displayed. `TopDefectsViewModel.ForGrouping(groupBy)` selects the cached location/type/step grouping with the same fallback for unknown values. Display rows expose `Name`, `Story`, `Guid`, status, duration and failing-step fields; they do not expose execution objects. Timings exposes `Median`, `Percentile95`, `SlowestFiveShare`, `Fastest` and `Slowest`. Warnings exposes sorted `NotRun` display rows.
+
+Full-data pages (Scenarios, Stories and scenario detail) still receive their existing models. Their complete source report is request-local in `ViewData[nameof(BDTestOutputModel)]`. Compact pages only populate that key when a custom sidebar provider is registered. `IBDTestCustomSidebarLinksProvider.GetCustomLinks` still receives the full report (or null for a missing/global page); provider results are evaluated per request and never cached. This compatibility path requires an additional full-report read for compact pages.
+
+Hosts implementing `IDataRepository` directly inherit an uncached `GetReportPages(reportId, cancellationToken)` fallback using `ReportPageModels.Create(report)`. Override it to provide bounded caching and invalidation equivalent to the built-in repository. Do not mutate shared projection models or their timer. See [cache policy](caching-and-limits.md#compact-page-cache) and [migration guidance](../migration/report-storage.md#compact-razor-page-models).

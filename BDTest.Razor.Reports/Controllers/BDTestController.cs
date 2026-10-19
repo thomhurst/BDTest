@@ -20,6 +20,7 @@ namespace BDTest.Razor.Reports.Controllers;
 public class BDTestController : Controller
 {
     private readonly IDataRepository _dataRepository;
+    private readonly bool _hasSidebarProvider;
     private readonly BDTestReportOptions _options;
     private readonly IBDTestDataReceiver? _dataReceiver;
     private readonly IBDTestAttachmentStore? _attachmentStore;
@@ -27,9 +28,11 @@ public class BDTestController : Controller
 
     public BDTestController(IDataRepository dataRepository, IOptions<BDTestReportOptions> options,
         IBDTestDataReceiver? dataReceiver = null,
-        IBDTestAttachmentStore? attachmentStore = null, ILogger<BDTestController>? logger = null)
+        IBDTestAttachmentStore? attachmentStore = null, ILogger<BDTestController>? logger = null,
+        IEnumerable<IBDTestCustomSidebarLinksProvider>? sidebarProviders = null)
     {
         _dataRepository = dataRepository;
+        _hasSidebarProvider = sidebarProviders?.Any() == true;
         _options = options.Value;
         _dataReceiver = dataReceiver;
         _attachmentStore = attachmentStore;
@@ -113,7 +116,7 @@ public class BDTestController : Controller
     [Route("report/{id}/summary")]
     public Task<IActionResult> Summary([FromRoute] string id, CancellationToken cancellationToken)
     {
-        return GetView(id, model => View("Summary", model), cancellationToken);
+        return GetView(id, model => View("Summary", model.Summary), cancellationToken);
     }
 
     [HttpGet]
@@ -271,7 +274,7 @@ public class BDTestController : Controller
     [Route("report/{id}/timings")]
     public Task<IActionResult> Timings([FromRoute] string id, CancellationToken cancellationToken)
     {
-        return GetView(id, model => View("TestTimesSummary", model), cancellationToken);
+        return GetView(id, model => View("TestTimesSummary", model.Timings), cancellationToken);
     }
         
     [HttpGet]
@@ -279,7 +282,7 @@ public class BDTestController : Controller
     [Route("report/{id}/failures")]
     public Task<IActionResult> TopDefects([FromRoute] string id, CancellationToken cancellationToken)
     {
-        return GetView(id, model => View("TopDefects", model), cancellationToken);
+        return GetView(id, model => View("TopDefects", model.TopDefects), cancellationToken);
     }
         
     [HttpGet]
@@ -287,7 +290,7 @@ public class BDTestController : Controller
     [Route("report/{id}/not-run")]
     public Task<IActionResult> Warnings([FromRoute] string id, CancellationToken cancellationToken)
     {
-        return GetView(id, model => View("Warnings", model), cancellationToken);
+        return GetView(id, model => View("Warnings", model.Warnings), cancellationToken);
     }
 
     [HttpGet]
@@ -458,9 +461,14 @@ public class BDTestController : Controller
         return View(new ErrorViewModel {RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier});
     }
 
-    private async Task<IActionResult> GetView(string id, Func<BDTestOutputModel, IActionResult> viewAction, CancellationToken cancellationToken)
+    private async Task<IActionResult> GetView(string id, Func<ReportPageModels, IActionResult> viewAction, CancellationToken cancellationToken)
     {
-        var model = await GetData(id, cancellationToken);
+        ViewBag.Id = id;
+        var model = await _dataRepository.GetReportPages(id, cancellationToken);
+        ViewData[nameof(ReportLayoutViewModel)] = model?.Summary.Layout;
+        // Existing providers can inspect arbitrary report data. Keep it request-local, outside cached projections.
+        if (model != null && _hasSidebarProvider)
+            ViewData[nameof(BDTestOutputModel)] = await _dataRepository.GetData(id, cancellationToken);
 
         if (model == null)
         {
@@ -474,7 +482,8 @@ public class BDTestController : Controller
     {
         ViewBag.Id = id;
         var model = await _dataRepository.GetData(id, cancellationToken);
-        ViewData[nameof(ReportLayoutViewModel)] = new ReportLayoutViewModel { Report = model };
+        ViewData[nameof(ReportLayoutViewModel)] = model == null ? null : ReportLayoutViewModel.Create(model);
+        ViewData[nameof(BDTestOutputModel)] = model;
         return model;
     }
 }

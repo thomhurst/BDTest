@@ -49,6 +49,26 @@ replacement model.
 
 When using `MemoryCacheBdTestDataStore` through `IReportStore`, `WriteAsync` rejects reports larger than the cache budget with `InvalidOperationException`, even when other stores are configured. A rejected write preserves any existing report with the same ID.
 
+## Compact page cache
+
+Overview (`Summary`), Timings (`TestTimesSummary`), Failures (`TopDefects`) and Not run (`Warnings`) use cached display models. The first request builds status counts, failure groupings, timing percentiles and fastest/slowest lists, and ordered warning rows. Repeated requests reuse them without traversing the full scenario graph. Culture-specific ordering has separate entries within the same budget.
+
+```csharp title="Illustrative fragment"
+builder.Services.AddBDTestReports(options =>
+{
+    options.ReportPageCacheSizeLimitBytes = 64L * 1024 * 1024; // Default: 64 MiB, separate from full reports
+    options.ReportCacheRetention = TimeSpan.FromHours(8);    // Applies to both caches
+});
+```
+
+`ReportPageCacheSizeLimitBytes` must be positive. Each entry is charged its serialized UTF-8 projection size, measured once without retaining serialized bytes. Shared rows/metadata may be counted more than once, so this is a conservative accounting estimate, not a process-memory limit. Entries contain display fields, never full scenarios, steps, output, attachments or exception graphs. Summary lists are capped at the rows displayed; failure and warning pages retain every displayed row.
+
+Single-report page reads refresh retention. Capacity pressure evicts least recently used projections independently of full reports; the next request rebuilds an evicted projection. An oversized projection is returned without being cached. A full report that bypasses its cache also bypasses projection retention. Deletion and replacement invalidate every culture variant, and an expired or evicted full report cannot be served from stale projections. Treat cached data as immutable and use storage/repository operations for changes; changing persistent storage externally is not a cache invalidation signal.
+
+History strips, previous/next links and recent-run medians still read the live run index, so uploads and deletions appear without rebuilding report projections. Bulk comparisons neither populate nor refresh either cache. Hosts registering `IBDTestCustomSidebarLinksProvider` also load the full report for that request to preserve its existing contract; it is not retained by the compact models.
+
+**Breaking change for view overrides:** the four views no longer accept `BDTestOutputModel`, and `ReportLayoutViewModel` no longer exposes full scenarios. See [custom view migration](customization.md#overriding-razor-views) before upgrading.
+
 ## Upload limits
 
 | Limit | Value |

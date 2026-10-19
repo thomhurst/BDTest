@@ -27,9 +27,12 @@ public class BDTestReportOptions
     public long MaxUploadBytes { get; set; } = 10 * 1024 * 1024;
 
     /// <summary>
-    /// Positive full-report cache budget, measured in serialized UTF-8 bytes (default 64 MiB).
+    /// Positive compact-page cache budget, measured in serialized UTF-8 bytes (default 64 MiB).
     /// This is a size estimate, not a limit on process memory. Configure before serving requests.
     /// </summary>
+    public long ReportPageCacheSizeLimitBytes { get; set; } = 64 * 1024 * 1024;
+
+    /// <summary>Positive full-report cache budget in serialized UTF-8 bytes (default 64 MiB).</summary>
     public long ReportCacheSizeLimitBytes { get; set; } = 64 * 1024 * 1024;
 
     /// <summary>

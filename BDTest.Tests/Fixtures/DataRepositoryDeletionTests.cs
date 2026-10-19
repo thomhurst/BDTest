@@ -172,6 +172,38 @@ public class DataRepositoryDeletionTests
         Assert.That(await _repository.GetData(Id, default), Is.Null);
     }
 
+    [Test]
+    public async Task Overlapping_page_reads_share_one_projection_and_persistent_read()
+    {
+        await ((IReportStore)_cache).DeleteAsync(Id, default);
+        var started = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var opens = 0;
+        _persistent.AfterOpen = async () =>
+        {
+            Interlocked.Increment(ref opens);
+            started.TrySetResult();
+            await release.Task;
+        };
+        var first = _repository.GetReportPages(Id, default);
+        var second = first;
+        try
+        {
+            await started.Task.WaitAsync(TimeSpan.FromSeconds(10));
+            second = _repository.GetReportPages(Id, default);
+            Assert.That(first.IsCompleted, Is.False);
+            Assert.That(second.IsCompleted, Is.False);
+        }
+        finally
+        {
+            release.TrySetResult();
+            await Task.WhenAll(first, second).WaitAsync(TimeSpan.FromSeconds(10));
+        }
+        Assert.That(await first, Is.Not.Null);
+        Assert.That(await second, Is.SameAs(await first));
+        Assert.That(opens, Is.EqualTo(1));
+    }
+
     private sealed class RecordingLogger : ILogger<DataRepository>
     {
         public string? Message { get; private set; }
@@ -233,6 +265,8 @@ public class DataRepositoryDeletionTests
         public Task<BDTestOutputModel?> GetTestData(string id, CancellationToken token) => _inner.GetTestData(id, token);
         public Task<BDTestOutputModel?> GetTestDataAndRefreshRetention(string id, CancellationToken token) =>
             ((IMemoryCacheBdTestDataStore)_inner).GetTestDataAndRefreshRetention(id, token);
+        public Task<BDTest.Razor.Reports.Models.ViewModels.ReportPageModels?> GetReportPagesAndRefreshRetention(string id, CancellationToken token) =>
+            ((IMemoryCacheBdTestDataStore)_inner).GetReportPagesAndRefreshRetention(id, token);
         public Task StoreTestData(string id, BDTestOutputModel? model) => _inner.StoreTestData(id, model);
         public Task DeleteTestData(string id) => _inner.DeleteTestData(id);
         public Task<IEnumerable<TestRunSummary>> GetAllTestRunRecords() => _inner.GetAllTestRunRecords();

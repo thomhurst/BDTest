@@ -3,48 +3,40 @@
 @using BDTest.Razor.Reports.Models
 @using BDTest.Razor.Reports.Models.ViewModels
 @using BDTest.Test
-@model BDTest.Maps.BDTestOutputModel
+@model TimingsViewModel
 @inject IDataRepository DataRepository
 @{
-    var run = ViewData[nameof(ReportLayoutViewModel)] as ReportLayoutViewModel
-        ?? throw new InvalidOperationException("The report layout model is required for this view.");
+    var run = Model.Layout;
+    var report = run.Report ?? throw new InvalidOperationException("Report metadata is required for this view.");
     ViewBag.Title = run.Title + " timings";
     ViewData["RunTab"] = "timings";
     Layout = "_Layout";
 
-    var reportId = Model.Id ?? string.Empty;
-    // Skipped and unstarted scenarios did no work, so they would only crowd the fastest list.
-    var ordered = run.Scenarios.Where(scenario => scenario.Status is not (Status.Skipped or Status.NotRun)).OrderBy(scenario => scenario.TimeTaken).ToList();
-    var slowest = ordered.AsEnumerable().Reverse().Take(10).ToList();
-    var fastest = ordered.Take(10).ToList();
+    var reportId = report.Id ?? string.Empty;
+    var slowest = Model.Slowest;
+    var fastest = Model.Fastest;
     var scale = slowest.FirstOrDefault()?.TimeTaken.Ticks ?? 0;
-
-    TimeSpan Percentile(double fraction) => ordered.Count == 0
-        ? TimeSpan.Zero
-        : ordered[Math.Clamp((int)Math.Ceiling(fraction * ordered.Count) - 1, 0, ordered.Count - 1)].TimeTaken;
-
-    var totalTicks = ordered.Sum(scenario => scenario.TimeTaken.Ticks);
-    var slowestFiveShare = totalTicks == 0 ? 0 : (double)slowest.Take(5).Sum(scenario => scenario.TimeTaken.Ticks) / totalTicks * 100;
+    var slowestFiveShare = Model.SlowestFiveShare;
 
     // The median wall clock of recent runs with the same tag, ending with this run.
     var series = (await DataRepository.GetAllTestRunRecords(Context.RequestAborted) ?? Enumerable.Empty<TestRunSummary>())
-        .Where(record => record != null && string.Equals(record.Tag, Model.Tag, StringComparison.Ordinal))
+        .Where(record => record != null && string.Equals(record.Tag, report.Tag, StringComparison.Ordinal))
         .OrderBy(record => record.StartedAtDateTime)
         .ToList();
-    var position = series.FindIndex(record => record.RecordId == Model.Id);
+    var position = series.FindIndex(record => record.RecordId == report.Id);
     var recent = (position < 0 ? series : series.Take(position + 1)).TakeLast(20)
         .Select(record => record.FinishedAtDateTime - record.StartedAtDateTime)
         .Where(duration => duration > TimeSpan.Zero)
         .OrderBy(duration => duration)
         .ToList();
 
-    var historyUrl = Url.ReportAction("TimingVariance") + (string.IsNullOrEmpty(Model.Tag) ? string.Empty : "?tag=" + Uri.EscapeDataString(Model.Tag));
+    var historyUrl = Url.ReportAction("TimingVariance") + (string.IsNullOrEmpty(report.Tag) ? string.Empty : "?tag=" + Uri.EscapeDataString(report.Tag));
 }
 
 @await Html.PartialAsync("_RunHeader", run)
 
 <main class="wrap page">
-    @if (ordered.Count == 0)
+    @if (Model.TimedScenarioCount == 0)
     {
         <section class="card empty">
             <span class="mark">@ReportUi.Icon("i-clock", "xl")</span>
@@ -63,8 +55,8 @@
                     <span class="small muted">@($"median of last {recent.Count}: {recent[recent.Count / 2].ToShortDuration()}")</span>
                 }
             </div>
-            <div class="stat"><span class="k">Median scenario</span><b>@Percentile(0.5).ToShortDuration()</b></div>
-            <div class="stat"><span class="k">95th percentile</span><b>@Percentile(0.95).ToShortDuration()</b></div>
+            <div class="stat"><span class="k">Median scenario</span><b>@Model.Median.ToShortDuration()</b></div>
+            <div class="stat"><span class="k">95th percentile</span><b>@Model.Percentile95.ToShortDuration()</b></div>
             <div class="stat">
                 <span class="k">Slowest 5 share</span>
                 <b>@($"{slowestFiveShare:0}%")</b>
@@ -96,15 +88,11 @@
 
 @functions
 {
-    private Microsoft.AspNetCore.Html.IHtmlContent BarRow(Scenario scenario, string reportId, long scale)
+    private Microsoft.AspNetCore.Html.IHtmlContent BarRow(ReportScenarioRow scenario, string reportId, long scale)
     {
         var encoder = System.Text.Encodings.Web.HtmlEncoder.Default;
         var url = Url.ReportScenario(reportId, scenario.Guid);
-        var name = scenario.GetScenarioText();
-        if (scenario.ExampleValues?.Count > 0)
-        {
-            name += " (" + string.Join(", ", scenario.ExampleValues.Values) + ")";
-        }
+        var name = scenario.TimingName;
 
         var href = url == null ? string.Empty : $" href=\"{encoder.Encode(url)}\"";
         var html = $"<a class=\"bar-row\"{href}>{scenario.Status.StatusIcon()}"

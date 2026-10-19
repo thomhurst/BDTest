@@ -4,32 +4,30 @@
 @using BDTest.Razor.Reports.Models
 @using BDTest.Razor.Reports.Models.ViewModels
 @using BDTest.Test
-@model BDTest.Maps.BDTestOutputModel
+@model SummaryViewModel
 @inject IDataRepository DataRepository
 @{
-    var run = ViewData[nameof(ReportLayoutViewModel)] as ReportLayoutViewModel
-        ?? throw new InvalidOperationException("The report layout model is required for this view.");
+    var run = Model.Layout;
+    var report = run.Report ?? throw new InvalidOperationException("Report metadata is required for this view.");
     ViewBag.Title = run.Title + " overview";
     ViewData["RunTab"] = "overview";
     Layout = "_Layout";
 
-    var reportId = Model.Id ?? string.Empty;
-    var scenarios = run.Scenarios;
-    var total = scenarios.Count;
+    var reportId = report.Id ?? string.Empty;
+    var total = run.ScenarioCount;
     var counts = run.Counts;
     var failed = counts[Status.Failed];
-    var failures = FailureGroup.Build(scenarios, FailureGroup.ByExceptionAndLocation);
-    var others = scenarios.Where(scenario => scenario.Status is not (Status.Passed or Status.Failed))
-        .OrderBy(scenario => scenario.Status.GetOrder()).ThenBy(scenario => scenario.GetScenarioText()).ToList();
-    var slowest = scenarios.OrderByDescending(scenario => scenario.TimeTaken).Take(5).ToList();
+    var failures = Model.Failures;
+    var others = Model.Others;
+    var slowest = Model.Slowest;
     var slowestTime = slowest.FirstOrDefault()?.TimeTaken ?? TimeSpan.Zero;
 
     // The last runs with the same tag, oldest first, ending with this run.
     var series = (await DataRepository.GetAllTestRunRecords(Context.RequestAborted) ?? Enumerable.Empty<TestRunSummary>())
-        .Where(record => record != null && string.Equals(record.Tag, Model.Tag, StringComparison.Ordinal))
+        .Where(record => record != null && string.Equals(record.Tag, report.Tag, StringComparison.Ordinal))
         .OrderBy(record => record.StartedAtDateTime)
         .ToList();
-    var position = series.FindIndex(record => record.RecordId == Model.Id);
+    var position = series.FindIndex(record => record.RecordId == report.Id);
     var recent = (position < 0 ? series : series.Take(position + 1)).TakeLast(20).ToList();
     var recentTotal = recent.Sum(record => (record.Counts?.Total ?? 0));
     var recentPassRate = recentTotal == 0 ? null : (double?)recent.Sum(record => (record.Counts?.Passed ?? 0)) / recentTotal * 100;
@@ -37,7 +35,7 @@
         .Where(duration => duration > TimeSpan.Zero).OrderBy(duration => duration).ToList();
     var medianDuration = durations.Count == 0 ? (TimeSpan?)null : durations[durations.Count / 2];
 
-    string? ScenarioUrl(Scenario scenario) => Url.ReportScenario(reportId, scenario.Guid);
+    string? ScenarioUrl(ReportScenarioRow scenario) => Url.ReportScenario(reportId, scenario.Guid);
     string StatusUrl(Status status) => Url.ReportAction("AllScenarios", new { id = reportId }) + "?" + StatusConstants.FilterByStatusQueryParameterName + "=" + status;
 
     string? Headline()
@@ -45,15 +43,6 @@
         if (failed > 0) return null;
         if (counts[Status.Passed] == total) return total == 1 ? "The scenario passed" : $"All {total} scenarios passed";
         return $"{counts[Status.Passed]} of {total} scenarios passed";
-    }
-
-    string Explanation(Scenario scenario)
-    {
-        var label = scenario.Status.Label();
-        var step = scenario.Status == Status.Skipped ? null : scenario.Steps?.FirstOrDefault(s => s.Status == scenario.Status);
-        var detail = scenario.Exception?.Message?.Trim().Split('\n')[0].Trim();
-        if (!string.IsNullOrEmpty(detail)) return label + " · " + detail;
-        return step == null ? label : $"{label} · step “{step.StepText}”";
     }
 }
 
@@ -139,7 +128,7 @@
                             <article class="card clip">
                                 <div style="padding: 18px 20px; display: flex; flex-direction: column; gap: 6px">
                                     <div class="cluster" style="gap: 8px 10px">
-                                        @Status.Failed.Pill(group.Scenarios.Count == 1 ? "1 scenario" : $"{group.Scenarios.Count} scenarios")
+                                        @Status.Failed.Pill(group.ScenarioCount == 1 ? "1 scenario" : $"{group.ScenarioCount} scenarios")
                                         @if (!string.IsNullOrEmpty(group.TypeName))
                                         {
                                             <span class="mono" style="font-weight: 500; overflow-wrap: anywhere">@group.TypeName</span>
@@ -153,20 +142,20 @@
                                 </div>
                                 @foreach (var scenario in group.Scenarios.Take(5))
                                 {
-                                    var step = FailureGroup.FailingStep(scenario);
+                                    var step = scenario.FailingStepText;
                                     <a class="row" href="@ScenarioUrl(scenario)">
                                         @scenario.Status.StatusIcon()
                                         <div class="grow">
-                                            <div class="row-title">@scenario.GetScenarioText()</div>
+                                            <div class="row-title">@scenario.Name</div>
                                             <div class="row-sub">
-                                                @ReportUi.StoryTitle(scenario.GetStoryText())
+                                                @ReportUi.StoryTitle(scenario.Story)
                                                 @if (scenario.RetryCount > 0)
                                                 {
                                                     @($" · failed after {scenario.RetryCount} {(scenario.RetryCount == 1 ? "retry" : "retries")}")
                                                 }
-                                                @if (step != null)
+                                                @if (scenario.FailingStepNumber > 0)
                                                 {
-                                                    @($" · failed at “{step.StepText}”")
+                                                    @($" · failed at “{step}”")
                                                 }
                                             </div>
                                         </div>
@@ -174,15 +163,15 @@
                                         @ReportUi.Icon("i-chev-r", "muted")
                                     </a>
                                 }
-                                @if (group.Scenarios.Count > 5)
+                                @if (group.ScenarioCount > 5)
                                 {
-                                    <a class="row lnk" href="@(Url.ReportAction("TopDefects", new { id = reportId }))">@($"{group.Scenarios.Count - 5} more")</a>
+                                    <a class="row lnk" href="@(Url.ReportAction("TopDefects", new { id = reportId }))">@($"{group.ScenarioCount - 5} more")</a>
                                 }
                             </article>
                         }
-                        @if (failures.Count > 3)
+                        @if (run.FailureCauses > 3)
                         {
-                            <a class="lnk" href="@(Url.ReportAction("TopDefects", new { id = reportId }))">@($"{failures.Count - 3} more cause{(failures.Count - 3 == 1 ? "" : "s")}")</a>
+                            <a class="lnk" href="@(Url.ReportAction("TopDefects", new { id = reportId }))">@($"{run.FailureCauses - 3} more cause{(run.FailureCauses - 3 == 1 ? "" : "s")}")</a>
                         }
                     </section>
                 }
@@ -192,22 +181,22 @@
                     <section class="card clip" aria-labelledby="other">
                         <div class="card-head">
                             <h2 id="other" style="font-size: 17px">Didn’t pass, didn’t fail</h2>
-                            <a class="lnk" href="@(Url.ReportAction("AllScenarios", new { id = reportId }))?@StatusConstants.FilterByStatusQueryParameterName=@string.Join(",", others.Select(s => s.Status).Distinct())">Show in Scenarios</a>
+                            <a class="lnk" href="@(Url.ReportAction("AllScenarios", new { id = reportId }))?@StatusConstants.FilterByStatusQueryParameterName=@Model.OtherStatuses">Show in Scenarios</a>
                         </div>
                         @foreach (var scenario in others.Take(10))
                         {
                             <a class="row" href="@ScenarioUrl(scenario)">
                                 @scenario.Status.StatusIcon()
                                 <div class="grow">
-                                    <div class="row-title">@scenario.GetScenarioText()</div>
-                                    <div class="row-sub">@Explanation(scenario)</div>
+                                    <div class="row-title">@scenario.Name</div>
+                                    <div class="row-sub">@scenario.Explanation</div>
                                 </div>
                                 <span class="dur">@(scenario.Status == Status.Skipped ? "—" : scenario.TimeTaken.ToShortDuration())</span>
                             </a>
                         }
-                        @if (others.Count > 10)
+                        @if (Model.OtherCount > 10)
                         {
-                            <a class="row lnk" href="@(Url.ReportAction("AllScenarios", new { id = reportId }))?@StatusConstants.FilterByStatusQueryParameterName=@string.Join(",", others.Select(s => s.Status).Distinct())">@($"{others.Count - 10} more")</a>
+                            <a class="row lnk" href="@(Url.ReportAction("AllScenarios", new { id = reportId }))?@StatusConstants.FilterByStatusQueryParameterName=@Model.OtherStatuses">@($"{Model.OtherCount - 10} more")</a>
                         }
                     </section>
                 }
@@ -228,9 +217,9 @@
             <aside class="side-col">
                 @if (recent.Count > 1)
                 {
-                    var tagName = string.IsNullOrEmpty(Model.Tag) ? "" : Model.Tag + " ";
+                    var tagName = string.IsNullOrEmpty(report.Tag) ? "" : report.Tag + " ";
                     <section class="card card-pad" aria-labelledby="hist">
-                        <div class="spread"><h2 id="hist">@($"Last {recent.Count} {tagName}runs")</h2><a class="lnk" href="@(Url.ReportAction("Trends") + (string.IsNullOrEmpty(Model.Tag) ? "" : "?tag=" + Uri.EscapeDataString(Model.Tag)))">History</a></div>
+                        <div class="spread"><h2 id="hist">@($"Last {recent.Count} {tagName}runs")</h2><a class="lnk" href="@(Url.ReportAction("Trends") + (string.IsNullOrEmpty(report.Tag) ? "" : "?tag=" + Uri.EscapeDataString(report.Tag)))">History</a></div>
                         @{
                             var failedRuns = recent.Count(record => record.Status == Status.Failed);
                         }
@@ -238,7 +227,7 @@
                             @foreach (var record in recent)
                             {
                                 var key = record.RunResult().Key();
-                                <a class="bg-@key @(record.RecordId == Model.Id ? "cur" : "")" href="@Url.ReportAction("Summary", new { id = record.RecordId ?? "" })" title="@record.StartedAtDateTime.ToRunDate() · @record.RunResult().Label()" aria-label="@record.StartedAtDateTime.ToRunDate(): @record.RunResult().Label()"></a>
+                                <a class="bg-@key @(record.RecordId == report.Id ? "cur" : "")" href="@Url.ReportAction("Summary", new { id = record.RecordId ?? "" })" title="@record.StartedAtDateTime.ToRunDate() · @record.RunResult().Label()" aria-label="@record.StartedAtDateTime.ToRunDate(): @record.RunResult().Label()"></a>
                             }
                         </div>
                         <div class="strip-axis"><span>@recent[0].StartedAtDateTime.ToDay()</span><span>This run</span></div>
@@ -260,7 +249,7 @@
                     @foreach (var scenario in slowest)
                     {
                         <a href="@ScenarioUrl(scenario)" style="display: flex; flex-direction: column; gap: 4px; text-decoration: none; color: var(--ink)">
-                            <span class="spread" style="font-size: 14px; flex-wrap: nowrap"><span class="grow">@scenario.GetScenarioText()</span><span class="mono muted">@scenario.TimeTaken.ToShortDuration()</span></span>
+                            <span class="spread" style="font-size: 14px; flex-wrap: nowrap"><span class="grow">@scenario.Name</span><span class="mono muted">@scenario.TimeTaken.ToShortDuration()</span></span>
                             <span class="meter"><span style="width: @ReportUi.Percent(scenario.TimeTaken.Ticks, slowestTime.Ticks)%"></span></span>
                         </a>
                     }
@@ -269,20 +258,20 @@
                 <section class="card card-pad" aria-labelledby="det">
                     <h2 id="det">Run details</h2>
                     <dl class="dl">
-                        @Detail("Tag", Model.Tag)
-                        @Detail("Environment", Model.Environment)
-                        @Detail("Branch", Model.BranchName)
-                        @Detail("Machine", Model.MachineName)
-                        @Detail("BDTest", Model.Version)
+                        @Detail("Tag", report.Tag)
+                        @Detail("Environment", report.Environment)
+                        @Detail("Branch", report.BranchName)
+                        @Detail("Machine", report.MachineName)
+                        @Detail("BDTest", report.Version)
                         @Detail("Started", run.Timer.TestsStartedAt.ToRunDate(withSeconds: true))
                         @Detail("Finished", run.Timer.TestsFinishedAt.ToClock())
-                        <dt>Run ID</dt><dd class="mono">@Model.Id</dd>
+                        <dt>Run ID</dt><dd class="mono">@report.Id</dd>
                     </dl>
-                    @if (Model.CustomProperties?.Count > 0)
+                    @if (report.CustomProperties?.Count > 0)
                     {
                         <div class="k" style="margin-top: 4px">Custom properties</div>
                         <dl class="dl">
-                            @foreach (var property in Model.CustomProperties)
+                            @foreach (var property in report.CustomProperties)
                             {
                                 <dt>@property.Key</dt><dd>@property.Value</dd>
                             }

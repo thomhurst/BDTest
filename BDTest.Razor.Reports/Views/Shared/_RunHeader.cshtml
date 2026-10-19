@@ -9,7 +9,7 @@
     var report = Model.Report
         ?? throw new InvalidOperationException("A report is required for the run header.");
     var activeTab = ViewData["RunTab"] as string ?? "overview";
-    var total = Model.Scenarios.Count;
+    var total = Model.ScenarioCount;
     var failed = Model.Counts[Status.Failed];
     var status = Model.Status;
     var statusText = total == 0
@@ -34,7 +34,7 @@
         .Select(pair => pair.Key + "=" + Uri.EscapeDataString(pair.Value ?? string.Empty));
     var historyUrl = Url.ReportAction("Trends") + (historyQuery.Any() ? "?" + string.Join("&", historyQuery) : string.Empty);
     var started = Model.Timer.TestsStartedAt;
-    var hasTimes = total > 0 || report.TestTimer != null;
+    var hasTimes = total > 0 || report.HasTimer;
 }
 
 <section class="page-head" aria-label="Run">
@@ -88,7 +88,7 @@
             {
                 <span>Branch <b>@report.BranchName</b></span>
             }
-            @foreach (var property in (report.CustomProperties ?? new Dictionary<string, string>()).Take(3))
+            @foreach (var property in report.CustomProperties.Take(3))
             {
                 <span>@property.Key <b>@property.Value</b></span>
             }

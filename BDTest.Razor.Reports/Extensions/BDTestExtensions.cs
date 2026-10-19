@@ -59,6 +59,7 @@ public static class BDTestExtensions
         var options = services.AddOptions<BDTestReportOptions>();
         if (configure != null) options.Configure(configure);
         return options
+            .Validate(value => value.ReportPageCacheSizeLimitBytes > 0, "ReportPageCacheSizeLimitBytes must be positive.")
             .Validate(value => value.ReportCacheSizeLimitBytes > 0, "ReportCacheSizeLimitBytes must be positive.")
             .Validate(value => value.ReportCacheRetention > TimeSpan.Zero, "ReportCacheRetention must be positive.")
             .Validate(value => value.MaxUploadBytes > 0, "MaxUploadBytes must be positive.")

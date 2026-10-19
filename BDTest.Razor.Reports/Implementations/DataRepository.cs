@@ -2,6 +2,7 @@ using System.Runtime.ExceptionServices;
 using System.Text.Json;
 using BDTest.Helpers;
 using BDTest.Maps;
+using BDTest.Razor.Reports.Models.ViewModels;
 using BDTest.Output;
 using BDTest.Razor.Reports.Extensions;
 using BDTest.Razor.Reports.Interfaces;
@@ -35,6 +36,17 @@ internal class DataRepository : IDataRepository
         var legacy = dataStore == null ? null : new LegacyDataStoreAdapter(dataStore);
         _reportStore = reportStore ?? dataStore as IReportStore ?? legacy;
         _runIndexStore = runIndexStore ?? dataStore as IRunIndexStore ?? legacy;
+    }
+
+    public async Task<ReportPageModels?> GetReportPages(string reportId, CancellationToken cancellationToken)
+    {
+        using var lease = await _attachmentGate.EnterAsync(reportId, cancellationToken);
+        var pages = await _memoryCacheBdTestDataStore.GetReportPagesAndRefreshRetention(reportId, cancellationToken);
+        if (pages != null) return pages;
+        var model = await GetData(reportId, cancellationToken, cacheResult: true);
+        if (model == null) return null;
+        return await _memoryCacheBdTestDataStore.GetReportPagesAndRefreshRetention(reportId, cancellationToken)
+            ?? ReportPageModels.Create(model); // Oversized persistent reports bypass both caches.
     }
 
     public async Task<BDTestOutputModel?> GetData(string reportId, CancellationToken cancellationToken)
