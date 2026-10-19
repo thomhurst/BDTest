@@ -62,7 +62,7 @@ public sealed class ScenarioOutlineBuilder<TExample> : BuildableTest
         if (Interlocked.Exchange(ref _executionStarted, 1) != 0)
             throw new AlreadyExecutedException("This scenario outline has already started execution. Create a new outline to run more examples.");
         TestOutputData.Run = Run;
-        Console.SetOut(TestOutputData.Instance);
+        Console.SetOut(TestOutputData.Instance.SynchronizedWriter);
         TestOutputData.TestId = Guid;
         TestOutputData.FrameworkExecutionId = TestId;
         var outline = new Scenario(new List<Step>(), Definition.Snapshot()) { IsOutline = true };

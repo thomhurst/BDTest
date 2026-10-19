@@ -12,7 +12,6 @@ internal class TestOutputData : TextWriter
         set => AsyncLocalRun.Value = value;
     }
     public static readonly ConsoleOutputInterceptor Instance = new();
-    private static TextWriter Console => Instance.One;
 
     private static readonly AsyncLocal<string?> AsyncLocalTestId = new();
     internal static string? TestId {
@@ -112,7 +111,7 @@ internal class TestOutputData : TextWriter
             {
                 if (FrameworkExecutionId == null)
                 {
-                    Console.WriteLine("Attempting to write test startup output but no unique test ID has been set in the base class");
+                    Instance.WriteLineToConsoleOnly("Attempting to write test startup output but no unique test ID has been set in the base class");
                 }
                 else if (character.HasValue)
                 {
@@ -203,7 +202,7 @@ internal class TestOutputData : TextWriter
     {
         if (frameworkExecutionId == null)
         {
-            Console.WriteLine("Attempting to write test startup output but no unique test ID has been set in the base class");
+            Instance.WriteLineToConsoleOnly("Attempting to write test startup output but no unique test ID has been set in the base class");
             return;
         }
 
@@ -223,7 +222,7 @@ internal class TestOutputData : TextWriter
 
         if (shouldWriteToConsole)
         {
-            Console.WriteLine(Environment.NewLine + text + (appendNewLine ? Environment.NewLine : string.Empty));
+            Instance.WriteLineToConsoleOnly(Environment.NewLine + text + (appendNewLine ? Environment.NewLine : string.Empty));
         }
     }
 
@@ -231,7 +230,7 @@ internal class TestOutputData : TextWriter
     {
         if (frameworkExecutionId == null)
         {
-            Console.WriteLine("Attempting to write tear down output but no unique test ID has been set in the base class");
+            Instance.WriteLineToConsoleOnly("Attempting to write tear down output but no unique test ID has been set in the base class");
             return;
         }
 
@@ -254,7 +253,7 @@ internal class TestOutputData : TextWriter
 
         if (shouldWriteToConsole)
         {
-            Console.WriteLine(Environment.NewLine + text);
+            Instance.WriteLineToConsoleOnly(Environment.NewLine + text);
         }
     }
 

@@ -8,8 +8,11 @@ public class LifecycleTests : XUnitBDTestBase<XUnitContext>
 {
     private static readonly ConcurrentDictionary<string, byte> Ids = new();
 
+    private readonly TextWriter _constructorWriter;
+
     public LifecycleTests()
     {
+        _constructorWriter = Console.Out;
         Console.WriteLine("startup:" + BDTestExecutionId);
     }
 
@@ -29,6 +32,15 @@ public class LifecycleTests : XUnitBDTestBase<XUnitContext>
         var scenario = await When(() => GC.KeepAlive(row)).Then(() => NoOp()).BDTestAsync(global::Xunit.TestContext.Current.CancellationToken);
         Assert.Equal(id, scenario.FrameworkTestId);
         Assert.Contains("startup:" + id, scenario.TestStartupInformation);
+    }
+
+    [Fact]
+    public async Task Constructor_setup_and_scenarios_share_one_console_writer()
+    {
+        Assert.Same(_constructorWriter, Console.Out);
+        await When(() => Console.WriteLine("stable console writer"))
+            .Then(() => NoOp()).BDTestAsync(global::Xunit.TestContext.Current.CancellationToken);
+        Assert.Same(_constructorWriter, Console.Out);
     }
 
     private static void NoOp() { }

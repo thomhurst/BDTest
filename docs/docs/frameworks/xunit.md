@@ -41,6 +41,8 @@ dotnet run --project MyApp.AcceptanceTests -c Release -- --filter-class '*MyTest
 
 `Microsoft.Testing.Extensions.TrxReport` supplies `--report-trx`; omit it if you do not need TRX reports. MTP projects do not need `Microsoft.NET.Test.Sdk`, `xunit.runner.visualstudio` or `coverlet.collector`. For coverage, use an MTP extension such as `Microsoft.Testing.Extensions.CodeCoverage`. See [xUnit's runner configuration](https://xunit.net/docs/getting-started/v3/microsoft-testing-platform).
 
+BDTest preserves console capture from constructors through scenario execution during parallel MTP runs, including on Linux. Console-only summaries remain outside captured scenario output.
+
 ### VSTest fallback
 
 If your tooling requires VSTest, keep `<OutputType>Exe</OutputType>`, remove `UseMicrosoftTestingPlatformRunner` and the MTP reporting extension, and replace `xunit.v3` with these references:
