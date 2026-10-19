@@ -1,6 +1,7 @@
 using System.Net;
 using System.Text;
 using System.Text.RegularExpressions;
+using BDTest.Contracts;
 using BDTest.Helpers;
 using BDTest.Razor.Reports.Interfaces;
 using BDTest.Test;
@@ -28,7 +29,7 @@ public partial class ReportUploadTests
             if (attempt == 1) throw new InvalidOperationException("retry");
         }).Then(() => { }).BDTestAsync();
         fixture.Capture("teardown.txt");
-        await BDTestReportServer.SendDataAndGetReportUriAsync(Required(server.Client.BaseAddress), null, server.Client, run);
+        await BDTest.Tests.Helpers.LegacyHostUpload.SendAsync(Required(server.Client.BaseAddress), null, server.Client, run);
         var report = server.Store.Received.Single();
         var html = await server.Client.GetStringAsync($"bdtest/report/{report.Id}/scenario/{scenario.Guid}");
         var steps = Regex.Matches(html, "<details class=\"expander step-item\".*?</details>", RegexOptions.Singleline);
@@ -69,7 +70,7 @@ public partial class ReportUploadTests
         public override BDTestRun TestRun => run;
         protected override string BDTestExecutionId => "attachment-rendering";
         public void Capture(string name) => Attachments.Attach(name, Encoding.UTF8.GetBytes(name), "text/plain");
-        public override Task OnBeforeStep(Step step) { Capture("before.txt"); return Task.CompletedTask; }
-        public override Task OnAfterStep(Step step) { Capture("after.txt"); return Task.CompletedTask; }
+        public override Task OnBeforeStep(StepResult step) { Capture("before.txt"); return Task.CompletedTask; }
+        public override Task OnAfterStep(StepResult step) { Capture("after.txt"); return Task.CompletedTask; }
     }
 }
