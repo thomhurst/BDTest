@@ -22,6 +22,14 @@
 @await Html.PartialAsync("_SvgIcons")
 @await Html.PartialAsync("_NavBarHeader", layoutModel)
 @RenderBody()
+<dialog id="attachment-lightbox" class="attachment-lightbox" aria-labelledby="attachment-caption">
+    <div class="spread">
+        <h2 id="attachment-caption"></h2>
+        <button class="btn sm" type="button" data-bdtest-action="close-attachment" autofocus>Close preview</button>
+    </div>
+    <img data-attachment-image alt="" />
+    <p class="muted" data-attachment-unavailable hidden>Preview unavailable. Try downloading the attachment.</p>
+</dialog>
 <div id="snackbar" role="status" aria-live="polite"></div>
 </body>
 </html>

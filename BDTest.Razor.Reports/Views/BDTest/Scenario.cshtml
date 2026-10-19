@@ -201,6 +201,7 @@
                                         <p>@step.SkipReason</p>
                                     }
                                     @Html.Raw(BDTest.Helpers.StepArgumentHtmlHelper.GetHtml(step.Arguments))
+                                    @await Html.PartialAsync("_Attachments", step.Attachments ?? new List<Attachment>())
                                     @if (!string.IsNullOrEmpty(step.Output))
                                     {
                                         <div class="k">Step output</div>
@@ -224,6 +225,13 @@
                             <div class="@rowClass">@stepRow</div>
                         }
                     }
+                </section>
+            }
+
+            @if (Model.Attachments?.Count > 0)
+            {
+                <section class="card card-pad" aria-label="Scenario attachments">
+                    @await Html.PartialAsync("_Attachments", Model.Attachments)
                 </section>
             }
 
@@ -351,7 +359,7 @@
 @functions
 {
     private static bool HasExtra(Step step) =>
-        !string.IsNullOrEmpty(step.Output) || step.SkipReason != null || step.Exception != null || step.Diagnostics?.Count > 0 || step.Arguments?.Count > 0;
+        !string.IsNullOrEmpty(step.Output) || step.SkipReason != null || step.Exception != null || step.Diagnostics?.Count > 0 || step.Arguments?.Count > 0 || step.Attachments?.Count > 0;
 
     private static Microsoft.AspNetCore.Html.IHtmlContent Row(string rowClass, Step step, string keyword, string text,
         bool notRun, bool isFailing, double offset, double width)

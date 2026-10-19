@@ -56,11 +56,13 @@
                             <p class="small muted">@step.SkipReason</p>
                         }
                         @Html.Raw(BDTest.Helpers.StepArgumentHtmlHelper.GetHtml(step.Arguments))
+                        @await Html.PartialAsync("_Attachments", step.Attachments ?? new List<Attachment>())
                         @if (step.Exception != null)
                         {
                             @Html.Raw(BDTest.Helpers.ExceptionHtmlHelper.GetHtml(step.Exception))
                         }
                     }
+                    @await Html.PartialAsync("_Attachments", row.Attachments ?? new List<Attachment>())
                     @if (!string.IsNullOrEmpty(row.Output))
                     {
                         <div class="k" style="padding-top: 8px">Output</div>

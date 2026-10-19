@@ -103,9 +103,22 @@
                             }
                         </span>
                         <span class="dur">@(notRun ? "—" : step.TimeTaken.ToShortDuration())</span>
+                        @if (step.Attachments?.Count > 0)
+                        {
+                            <div class="compact-step-attachments">
+                                @await Html.PartialAsync("_Attachments", step.Attachments)
+                            </div>
+                        }
                     </li>
                 }
             </ol>
+        </div>
+    }
+
+    @if (scenario.Attachments?.Count > 0)
+    {
+        <div class="card-pad" aria-label="Scenario attachments">
+            @await Html.PartialAsync("_Attachments", scenario.Attachments)
         </div>
     }
 
