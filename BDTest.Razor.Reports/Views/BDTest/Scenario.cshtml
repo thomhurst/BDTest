@@ -15,8 +15,8 @@
     var storyText = Model.GetStoryText();
     var storyUrl = Url.ReportAction("AllScenarios", new { id = reportId }) + "?story=" + Uri.EscapeDataString(storyText ?? string.Empty);
 
-    var siblings = run?.Scenarios ?? (IReadOnlyList<Scenario>)new List<Scenario>();
-    var index = siblings.ToList().FindIndex(scenario => scenario.Guid == Model.Guid);
+    var siblings = (ViewData[nameof(BDTest.Maps.BDTestOutputModel)] as BDTest.Maps.BDTestOutputModel)?.Scenarios?.Where(s => s != null).ToList() ?? new List<Scenario>();
+    var index = siblings.FindIndex(scenario => scenario.Guid == Model.Guid);
     var previous = index > 0 ? siblings[index - 1] : null;
     var next = index >= 0 && index < siblings.Count - 1 ? siblings[index + 1] : null;
 
@@ -50,7 +50,7 @@
                 var started = run.Timer.TestsStartedAt;
                 <a class="lnk" href="@(Url.ReportAction("Summary", new { id = reportId }))">@run.Title@(started == default ? "" : " · " + started.ToRunDate(includeYear: false))</a><span aria-hidden="true">/</span>
                 <a class="lnk" href="@storyUrl">@ReportUi.StoryTitle(storyText)</a>
-                var total = run.Scenarios.Count;
+                var total = run.ScenarioCount;
                 var failed = run.Counts[Status.Failed];
                 <span aria-hidden="true">/</span>
                 @run.Status.Pill(run.Status == Status.Failed ? $"Run failed · {failed} of {total}" : "Run " + run.Status.Label().ToLowerInvariant())
@@ -298,7 +298,7 @@
                 }
                 @if (run != null)
                 {
-                    var inStory = run.Scenarios.Count(scenario => scenario.GetStoryText() == storyText);
+                    var inStory = siblings.Count(scenario => scenario.GetStoryText() == storyText);
                     <a class="lnk" href="@storyUrl">@inStory @(inStory == 1 ? "scenario" : "scenarios") in this story</a>
                 }
             </section>

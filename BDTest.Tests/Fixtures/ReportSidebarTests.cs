@@ -304,8 +304,9 @@ public class ReportSidebarTests
     {
         var html = await _client.GetStringAsync("/bdtest/report/run-632/" + page);
 
-        Assert.That(_repository.ReadTokens, Has.Count.EqualTo(1));
-        Assert.That(_repository.ReadTokens.Single().CanBeCanceled, Is.True);
+        var compactPage = page is "summary" or "timings" or "top-defects" or "warnings";
+        Assert.That(_repository.ReadTokens, Has.Count.EqualTo(compactPage ? 2 : 1));
+        Assert.That(_repository.ReadTokens.All(token => token.CanBeCanceled), Is.True);
         Assert.That(_links.Reports, Has.Count.EqualTo(1));
         Assert.That(_links.Reports.Single(), Is.SameAs(_repository.Report));
         Assert.That(html, Does.Contain("/bdtest/report/run-632/summary"));

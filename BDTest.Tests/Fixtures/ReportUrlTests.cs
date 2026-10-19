@@ -70,9 +70,9 @@ public class ReportUrlTests
                 ]
                 """)
         };
-        var html = await ReportHandlerEncodingTests.RenderAsync("/Views/BDTest/Summary.cshtml", report,
+        var html = await ReportHandlerEncodingTests.RenderAsync("/Views/BDTest/Summary.cshtml", ReportPageModels.Create(report).Summary,
             pathBase: "/reports", host: "attacker.example", requestPath: "/bdtest/report/O'Brien/summary",
-            configureViewData: viewData => viewData[nameof(ReportLayoutViewModel)] = new ReportLayoutViewModel { Report = report });
+            configureViewData: viewData => viewData[nameof(ReportLayoutViewModel)] = ReportLayoutViewModel.Create(report));
         var urls = Regex.Matches(html, "<a class=\"chip\" href=\"([^\"]+)\"")
             .Select(m => HttpUtility.HtmlDecode(m.Groups[1].Value)).ToArray();
         Assert.That(urls, Is.EquivalentTo(new[]

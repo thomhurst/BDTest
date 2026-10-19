@@ -1,4 +1,5 @@
 using BDTest.Maps;
+using BDTest.Razor.Reports.Models.ViewModels;
 using BDTest.Razor.Reports.Models;
 using BDTest.Razor.Reports.Storage;
 
@@ -6,6 +7,13 @@ namespace BDTest.Razor.Reports.Interfaces;
 
 public interface IDataRepository
 {
+    /// <summary>Compact report pages. Custom repositories may override this uncached fallback.</summary>
+    async Task<ReportPageModels?> GetReportPages(string reportId, CancellationToken cancellationToken)
+    {
+        var report = await GetData(reportId, cancellationToken);
+        return report == null ? null : ReportPageModels.Create(report);
+    }
+
     Task<BDTestOutputModel?> GetData(string reportId, CancellationToken cancellationToken);
     /// <summary>Reads without adding or refreshing full reports in the cache.</summary>
     Task<BDTestOutputModel?> GetDataForBulkRead(string reportId, CancellationToken cancellationToken);

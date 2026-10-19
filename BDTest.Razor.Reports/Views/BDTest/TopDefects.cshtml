@@ -2,17 +2,17 @@
 @using BDTest.Razor.Reports.Models
 @using BDTest.Razor.Reports.Models.ViewModels
 @using BDTest.Test
-@model BDTest.Maps.BDTestOutputModel
+@model TopDefectsViewModel
 @{
-    var run = ViewData[nameof(ReportLayoutViewModel)] as ReportLayoutViewModel
-        ?? throw new InvalidOperationException("The report layout model is required for this view.");
+    var run = Model.Layout;
+    var report = run.Report ?? throw new InvalidOperationException("Report metadata is required for this view.");
     ViewBag.Title = run.Title + " failures";
     ViewData["RunTab"] = "failures";
     Layout = "_Layout";
 
-    var reportId = Model.Id ?? string.Empty;
+    var reportId = report.Id ?? string.Empty;
     var groupBy = FailureGroup.Normalize(Context.Request.Query["groupBy"].ToString());
-    var groups = FailureGroup.Build(run.Scenarios, groupBy);
+    var groups = Model.ForGrouping(groupBy);
     var failed = run.Counts[Status.Failed];
     var index = 0;
 
@@ -29,13 +29,13 @@
             <span class="mark p">@ReportUi.Icon("i-pass", "xl")</span>
             <h2>Nothing failed in this run</h2>
             <p>
-                @if (run.Scenarios.Count == 0)
+                @if (run.ScenarioCount == 0)
                 {
                     @("This run recorded no scenarios.")
                 }
                 else
                 {
-                    @($"All {run.Scenarios.Count} scenarios passed or ended without a failure. The tab stays in place so links to it keep working.")
+                    @($"All {run.ScenarioCount} scenarios passed or ended without a failure. The tab stays in place so links to it keep working.")
                 }
             </p>
             <a class="lnk" href="@(Url.ReportAction("AllScenarios", new { id = reportId }))">See all scenarios</a>
@@ -60,9 +60,8 @@
             index++;
             var traceId = "trace-" + index;
             var first = group.Scenarios[0];
-            var firstStep = FailureGroup.FailingStep(first);
-            var sameStep = group.Scenarios.Count > 1 && group.Scenarios.All(scenario => FailureGroup.FailingStep(scenario)?.StepText == firstStep?.StepText);
-            var trace = group.Exception?.AsString ?? group.Exception?.StackTrace;
+            var sameStep = group.SameStep;
+            var trace = group.Trace;
             <article class="card clip">
                 <div class="cause">
                     <div class="cause-main">
@@ -80,15 +79,15 @@
                         }
                     </div>
                     <div class="cause-side">
-                        @if (firstStep != null)
+                        @if (first.FailingStepNumber > 0)
                         {
-                            <span>@($"Failed at step {FailureGroup.FailingStepNumber(first)}")</span>
+                            <span>@($"Failed at step {first.FailingStepNumber}")</span>
                         }
                         @if (sameStep)
                         {
                             <span>Same failing step in every scenario</span>
                         }
-                        @if (group.Scenarios.Any(scenario => scenario.RetryCount > 0))
+                        @if (group.Retried)
                         {
                             <span>Retried before failing</span>
                         }
@@ -113,11 +112,11 @@
                 <div class="k band">Affected scenarios</div>
                 @foreach (var scenario in group.Scenarios)
                 {
-                    var step = FailureGroup.FailingStep(scenario);
-                    var detail = ReportUi.StoryTitle(scenario.GetStoryText());
-                    if (step != null)
+                    var step = scenario.FailingStepText;
+                    var detail = ReportUi.StoryTitle(scenario.Story);
+                    if (scenario.FailingStepNumber > 0)
                     {
-                        detail += $" · step {FailureGroup.FailingStepNumber(scenario)}, “{step.StepText}”";
+                        detail += $" · step {scenario.FailingStepNumber}, “{step}”";
                     }
                     if (scenario.RetryCount > 0)
                     {
@@ -126,7 +125,7 @@
                     <a class="row" href="@(Url.ReportScenario(reportId, scenario.Guid))">
                         @scenario.Status.StatusIcon()
                         <div class="grow">
-                            <div class="row-title">@scenario.GetScenarioText()</div>
+                            <div class="row-title">@scenario.Name</div>
                             <div class="row-sub">@detail</div>
                         </div>
                         <span class="dur">@scenario.TimeTaken.ToShortDuration()</span>

@@ -62,6 +62,8 @@ public class ReportOptionsTests
         Assert.That(await reader.ReadToEndAsync(), Does.Contain(report.Id));
     }
 
+    [TestCase(nameof(BDTestReportOptions.ReportPageCacheSizeLimitBytes), "0")]
+    [TestCase(nameof(BDTestReportOptions.ReportPageCacheSizeLimitBytes), "-1")]
     [TestCase(nameof(BDTestReportOptions.ReportCacheSizeLimitBytes), "0")]
     [TestCase(nameof(BDTestReportOptions.ReportCacheSizeLimitBytes), "-1")]
     [TestCase(nameof(BDTestReportOptions.ReportCacheRetention), "00:00:00")]

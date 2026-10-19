@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using System.Text.Json;
 using BDTest.Helpers;
 using BDTest.Maps;
+using BDTest.Razor.Reports.Models.ViewModels;
 using BDTest.Razor.Reports.Storage;
 using BDTest.Razor.Reports.Extensions;
 using BDTest.Razor.Reports.Interfaces;
@@ -14,7 +15,13 @@ namespace BDTest.Razor.Reports.Implementations;
 
 public class MemoryCacheBdTestDataStore : IMemoryCacheBdTestDataStore, IDisposable
 {
+    private static readonly JsonSerializerOptions PageSizeOptions = new()
+    {
+        Converters = { new System.Text.Json.Serialization.JsonStringEnumConverter<BDTest.Test.Status>() }
+    };
     private readonly MemoryCache _testRecordCache;
+    private readonly MemoryCache _pageCache;
+    private bool _disposed;
     private readonly BDTestReportOptions _options;
     private readonly object _reportCacheLock = new();
     private readonly long _reportCacheCapacity;
@@ -50,6 +57,7 @@ public class MemoryCacheBdTestDataStore : IMemoryCacheBdTestDataStore, IDisposab
         _logger = logger;
         _hasPersistentStorage = hasPersistentStorage;
         _reportCacheCapacity = _options.ReportCacheSizeLimitBytes;
+        _pageCache = new MemoryCache(new MemoryCacheOptions { SizeLimit = _options.ReportPageCacheSizeLimitBytes, TrackStatistics = true });
         _testRecordCache = new MemoryCache(new MemoryCacheOptions
         {
             SizeLimit = _reportCacheCapacity,
@@ -80,11 +88,72 @@ public class MemoryCacheBdTestDataStore : IMemoryCacheBdTestDataStore, IDisposab
         return await BDTestJsonHelper.DeserializeAsync(stream, cancellationToken);
     }
 
+    async Task<ReportPageModels?> IMemoryCacheBdTestDataStore.GetReportPagesAndRefreshRetention(string id, CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        var key = new PageCacheKey(id, System.Globalization.CultureInfo.CurrentCulture.Name);
+        CachedReport? source;
+        lock (_reportCacheLock)
+        {
+            source = _testRecordCache.Get<CachedReport>(id);
+            if (source == null) { RemovePages(id); return null; }
+            SetCacheEntry(_testRecordCache, id, source);
+            if (_pageCache.Get<CachedPages>(key) is { } cached && cached.Generation == source.Generation)
+            {
+                SetPages(key, cached);
+                return cached.Pages;
+            }
+        }
+        var model = source.Value as BDTestOutputModel;
+        if (source.Value is byte[] bytes)
+        {
+            using var stream = new MemoryStream(bytes, writable: false);
+            model = await BDTestJsonHelper.DeserializeAsync(stream, cancellationToken);
+        }
+        if (model == null) return null;
+        var pages = ReportPageModels.Create(model);
+        long size;
+        using (var counter = new ByteCountingStream())
+        {
+            JsonSerializer.Serialize(counter, pages, PageSizeOptions);
+            size = counter.Length;
+        }
+        cancellationToken.ThrowIfCancellationRequested();
+        lock (_reportCacheLock)
+        {
+            // Replacement/deletion while projecting must never repopulate stale data.
+            if (!ReferenceEquals(_testRecordCache.Get<CachedReport>(id), source)) return null;
+            if (size <= _options.ReportPageCacheSizeLimitBytes)
+            {
+                while (_pageCache.GetCurrentStatistics()!.CurrentEstimatedSize > _options.ReportPageCacheSizeLimitBytes - size)
+                    _pageCache.Compact(Math.Min(1, Math.Max(0.25, 2.0 / _pageCache.Count)));
+                SetPages(key, new CachedPages(source.Generation, pages, size));
+            }
+        }
+        return pages;
+    }
+
+    private void SetPages(PageCacheKey key, CachedPages pages) => _pageCache.Set(key, pages,
+        new MemoryCacheEntryOptions { Size = pages.Size, AbsoluteExpirationRelativeToNow = _options.ReportCacheRetention });
+
+    private readonly record struct PageCacheKey(string ReportId, string Culture);
+
+    // Enumerate only the bounded page cache: no unbounded report-to-variant index is retained.
+    private void RemovePages(string id, Guid? generation = null)
+    {
+        foreach (var key in _pageCache.Keys.OfType<PageCacheKey>().Where(key => key.ReportId == id))
+            if (generation == null || _pageCache.Get<CachedPages>(key)?.Generation == generation)
+                _pageCache.Remove(key);
+    }
+
+    private sealed record CachedPages(Guid Generation, ReportPageModels Pages, long Size);
+
     public Task DeleteTestData(string id)
     {
         lock (_reportCacheLock)
         {
             _testRecordCache.Remove(id);
+            RemovePages(id);
         }
         return Task.CompletedTask;
     }
@@ -120,10 +189,12 @@ public class MemoryCacheBdTestDataStore : IMemoryCacheBdTestDataStore, IDisposab
 
                 // Persistent storage remains authoritative for reports that do not fit in memory.
                 cache.Remove(id);
+                RemovePages(id);
                 return;
             }
 
             cache.Remove(id);
+            RemovePages(id);
             while ((cache.GetCurrentStatistics() ?? throw new InvalidOperationException("Report cache statistics must be enabled.")).CurrentEstimatedSize > _reportCacheCapacity - size)
             {
                 // Free least-recently-used entries in batches; always remove at least one entry.
@@ -142,6 +213,12 @@ public class MemoryCacheBdTestDataStore : IMemoryCacheBdTestDataStore, IDisposab
             AbsoluteExpirationRelativeToNow = _options.ReportCacheRetention
         }.RegisterPostEvictionCallback((key, value, reason, state) =>
         {
+            lock (_reportCacheLock)
+            {
+                if (_disposed) return;
+                if (value is CachedReport evicted && !ReferenceEquals(_testRecordCache.Get<CachedReport>(key), evicted))
+                    RemovePages((string)key, evicted.Generation);
+            }
             if (reason is EvictionReason.Expired or EvictionReason.Capacity
                 && !_hasPersistentStorage && _attachmentStore != null
                 && AttachmentStorage.IsValidId((string)key))
@@ -166,7 +243,10 @@ public class MemoryCacheBdTestDataStore : IMemoryCacheBdTestDataStore, IDisposab
         }
     }
 
-    private sealed record CachedReport(object? Value, long Size);
+    private sealed record CachedReport(object? Value, long Size)
+    {
+        public Guid Generation { get; } = Guid.NewGuid();
+    }
 
     // Serialize UTF-8 incrementally; retain only the byte count, never the JSON payload.
     private sealed class ByteCountingStream : Stream
@@ -190,7 +270,15 @@ public class MemoryCacheBdTestDataStore : IMemoryCacheBdTestDataStore, IDisposab
         public override void SetLength(long value) => throw new NotSupportedException();
     }
 
-    public void Dispose() => _testRecordCache.Dispose();
+    public void Dispose()
+    {
+        lock (_reportCacheLock)
+        {
+            _disposed = true;
+            _testRecordCache.Dispose();
+            _pageCache.Dispose();
+        }
+    }
 
     public Task StoreTestRunRecord(TestRunSummary testRunSummary)
     {
@@ -274,6 +362,7 @@ public class MemoryCacheBdTestDataStore : IMemoryCacheBdTestDataStore, IDisposab
         {
             var exists = _testRecordCache.TryGetValue(reportId, out _);
             _testRecordCache.Remove(reportId);
+            RemovePages(reportId);
             return Task.FromResult(exists);
         }
     }

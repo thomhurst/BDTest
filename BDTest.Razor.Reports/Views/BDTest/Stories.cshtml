@@ -8,7 +8,8 @@
     ViewBag.Title = run.Title + " stories";
     ViewData["RunTab"] = "scenarios";
     Layout = "_Layout";
-    var list = ScenarioListBuilder.Build(Model, run.Scenarios, run.Report?.Id, Context.Request, groupFixed: true);
+    var scenarios = (ViewData[nameof(BDTest.Maps.BDTestOutputModel)] as BDTest.Maps.BDTestOutputModel)?.Scenarios?.Where(s => s != null).ToList() ?? new List<BDTest.Test.Scenario>();
+    var list = ScenarioListBuilder.Build(Model, scenarios, run.Report?.Id, Context.Request, groupFixed: true);
 }
 
 @await Html.PartialAsync("_RunHeader", run)

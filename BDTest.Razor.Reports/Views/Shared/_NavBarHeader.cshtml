@@ -13,7 +13,7 @@
     var isRuns = !isHistory;
 
     var headerLinks = HeaderLinksProviders.LastOrDefault()?.GetCustomLinks()?.ToList() ?? new List<CustomLinkData>();
-    var reportLinks = SidebarLinksProviders.LastOrDefault()?.GetCustomLinks(Model?.Report)?.ToList() ?? new List<CustomLinkData>();
+    var reportLinks = SidebarLinksProviders.LastOrDefault()?.GetCustomLinks(ViewData[nameof(BDTest.Maps.BDTestOutputModel)] as BDTest.Maps.BDTestOutputModel)?.ToList() ?? new List<CustomLinkData>();
 
     var personalizer = Personalizers.LastOrDefault();
     var pictureUri = personalizer?.GetProfilePictureUri(Context);
