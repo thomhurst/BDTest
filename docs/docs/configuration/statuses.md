@@ -5,7 +5,7 @@ description: The Status values for steps and scenarios, how a scenario's status 
 
 # Statuses
 
-Steps, scenarios, outline rows and whole test runs all use `BDTest.Test.Status`.
+Steps, scenarios, outline rows and whole test runs all use `BDTest.Contracts.Status`.
 
 | Status | Meaning |
 | --- | --- |

@@ -37,7 +37,7 @@ protected override ValueTask<AccountContext> CreateContextAsync(ContextCreation 
 
 `BDTestOptions.ContextFactory` and `Services` are nullable optional registrations. `ContextCreation.Services` is also nullable when no provider is configured. Check it in custom factories before resolving services. Factory methods return a non-null context; BDTest rejects a null result rather than exposing it through `Context`.
 
-For a shared registration, implement `IBDTestContextFactory` in `BDTest.Test` and set `BDTestOptions.ContextFactory` before starting an [explicit run](../advanced/explicit-runs.md). Its method is `ValueTask<object> CreateContextAsync(Type contextType, ContextCreation creation)`. Return a new context assignable to `contextType`. The default protected factory delegates to this registration. Override `TestRun` on the adapter to select the run.
+For a shared registration, implement `BDTest.IBDTestContextFactory` and set `BDTestOptions.ContextFactory` before starting an [explicit run](../advanced/explicit-runs.md). Its method is `ValueTask<object> CreateContextAsync(Type contextType, ContextCreation creation)`. Return a new context assignable to `contextType`. The default protected factory delegates to this registration. Override `TestRun` on the adapter to select the run.
 
 ```csharp title="Illustrative fragment"
 var options = new BDTestOptions
