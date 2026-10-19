@@ -16,14 +16,15 @@ Steps, scenarios and scenario outline examples share one exception classifier. W
 | A registered **success** type | `Passed` | No |
 | A registered **skip** type | `Skipped`; remaining unexecuted steps are also `Skipped` | No |
 | A registered **inconclusive** type | `Inconclusive` | No |
-| A [timeout](../writing-tests/timeouts.md) | `Failed`, with `TimedOut = true` | Yes, if configured |
+| A [timeout](../writing-tests/timeouts.md) | `Failed`, with `TimedOut = true` | If configured and cancelled work settles |
+| Explicit or adapter cancellation | `Failed`, with an `OperationCanceledException` and `TimedOut = false` | No |
 | Anything else | `Failed` | Yes, if configured |
 
-The rows are checked in this order. Only failed outcomes are eligible for [retries](../writing-tests/retries.md). A skip keeps the statuses of steps that already ran.
+Execution cancellation and timeouts take precedence over registered exception types. For ordinary exceptions, the other rows are checked in the order shown. Only failed outcomes are eligible for [retries](../writing-tests/retries.md). A skip keeps the statuses of steps that already ran.
 
 In every case BDTest records the classification and rethrows the original exception, so your test runner applies its own outcome rules. For example, TUnit's `Skip.Test(...)` throws `SkipTestException`: BDTest records `Skipped` and TUnit reports a skipped test. NUnit's `Assert.Pass()` throws `SuccessException`: BDTest records `Passed` and NUnit reports a pass.
 
-Timeouts always produce `Failed`, even when `TimeoutException` is registered.
+Timeouts and explicit or adapter cancellation always produce `Failed`, even when their exception types are registered. An unrelated user-thrown `OperationCanceledException` follows the ordinary classification rules.
 
 ## Inheritance and wrappers
 

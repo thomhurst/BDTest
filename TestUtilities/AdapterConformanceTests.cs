@@ -1,4 +1,5 @@
 using BDTest;
+using Microsoft.Extensions.Time.Testing;
 using BDTest.Interfaces;
 using BDTest.Settings;
 using BDTest.Test;
@@ -37,6 +38,7 @@ public class AdapterConformanceTests : Adapter
 {
     private readonly List<(string Name, int Attempt, object Context, CancellationToken Token, Status Status)> _hooks = new();
     private readonly BDTestRun _run;
+    private readonly FakeTimeProvider _clock = new();
 #if BDTEST_NUNIT
     private AbstractContextBDTestBase<object>? _nunitHost;
 #endif
@@ -72,6 +74,14 @@ public class AdapterConformanceTests : Adapter
 #endif
     public override BDTestRun TestRun => _run;
 
+    protected static CancellationToken ExecutionToken =>
+#if BDTEST_XUNIT
+        Xunit.TestContext.Current.CancellationToken;
+#else
+        CancellationToken.None;
+#endif
+
+
 #if BDTEST_NUNIT
     internal void UseHost(AbstractContextBDTestBase<object> host) => _nunitHost = host;
 #endif
@@ -84,7 +94,7 @@ public class AdapterConformanceTests : Adapter
 
     private BDTestRun CreateRun()
     {
-        var options = new BDTestOptions();
+        var options = new BDTestOptions { TimeProvider = _clock };
         options.RegisterFrameworkOutcomes(OutcomeMap);
         options.RegisterFrameworkOutcomes(OutcomeMap);
         options.SkipStepRules.Add<SkippedAttribute>(_ => true);
@@ -119,30 +129,30 @@ public class AdapterConformanceTests : Adapter
     {
         Require(typeof(Adapter).Namespace == "BDTest", "adapter bases must be usable with using BDTest");
         return Check(() => ScenarioHost.Given(() => Complete()).When(() => Complete())
-            .Then(() => Complete()).BDTestAsync(), Status.Passed, 0, Status.Passed, Status.Passed, Status.Passed);
+            .Then(() => Complete()).BDTestAsync(ExecutionToken), Status.Passed, 0, Status.Passed, Status.Passed, Status.Passed);
     }
 
     [Test]
     public Task Fail() => CheckFailure(() => Check(() => ScenarioHost.Given(() => Complete()).When(() => FailStep())
-        .Then(() => MustNotRun()).BDTestAsync(), Status.Failed, 0, Status.Passed, Status.Failed, Status.NotRun),
+        .Then(() => MustNotRun()).BDTestAsync(ExecutionToken), Status.Failed, 0, Status.Passed, Status.Failed, Status.NotRun),
         "conformance failure");
 
     [Test]
     public Task NotImplemented() => CheckFailure(() => Check(() => ScenarioHost.Given(() => Complete()).When(() => NotImplementedStep())
-        .Then(() => MustNotRun()).BDTestAsync(), Status.NotImplemented, 0,
+        .Then(() => MustNotRun()).BDTestAsync(ExecutionToken), Status.NotImplemented, 0,
         Status.Passed, Status.NotImplemented, Status.NotRun), "conformance not implemented");
 
     [Test]
     public Task SingleStepSkipped() => Check(() => ScenarioHost.Given(() => Complete()).When(() => SkippedStep())
-        .Then(() => Complete()).BDTestAsync(), Status.Passed, 0, Status.Passed, Status.Skipped, Status.Passed);
+        .Then(() => Complete()).BDTestAsync(ExecutionToken), Status.Passed, 0, Status.Passed, Status.Skipped, Status.Passed);
 
     [Test]
     public Task AllStepsSkipped() => Check(() => ScenarioHost.Given(() => SkippedStep()).When(() => SkippedStep())
-        .Then(() => SkippedStep()).BDTestAsync(), Status.Skipped, 0, Status.Skipped, Status.Skipped, Status.Skipped);
+        .Then(() => SkippedStep()).BDTestAsync(ExecutionToken), Status.Skipped, 0, Status.Skipped, Status.Skipped, Status.Skipped);
 
     [Test, ScenarioText("Conformance global skip")]
     public Task GlobalRuleSkips() => Check(() => ScenarioHost.Given(() => MustNotRun()).When(() => MustNotRun())
-        .Then(() => MustNotRun()).BDTestAsync(), Status.Skipped, 0, Status.Skipped, Status.Skipped, Status.Skipped);
+        .Then(() => MustNotRun()).BDTestAsync(ExecutionToken), Status.Skipped, 0, Status.Skipped, Status.Skipped, Status.Skipped);
 
     [Test, ScenarioText("Conformance global skip")]
     public Task GlobalRuleSkipsWithDirectAwait() => Check(async () => await ScenarioHost.Given(() => MustNotRun()).When(() => MustNotRun())
@@ -150,7 +160,7 @@ public class AdapterConformanceTests : Adapter
 
     [Test]
     public Task FrameworkSkip() => Check(() => ScenarioHost.Given(() => Complete()).When(() => OutcomeMap.ReportSkip("conformance skip"))
-        .Then(() => MustNotRun()).BDTestAsync(), FrameworkSkipStatus, 0,
+        .Then(() => MustNotRun()).BDTestAsync(ExecutionToken), FrameworkSkipStatus, 0,
         Status.Passed, FrameworkSkipStatus, FrameworkSkipStatus == Status.Skipped ? Status.Skipped : Status.NotRun);
 
     [Test]
@@ -158,7 +168,7 @@ public class AdapterConformanceTests : Adapter
     {
         Task Execute() => Check(() => ScenarioHost.Given(() => Complete())
             .When(() => OutcomeMap.ReportInconclusive("conformance inconclusive"))
-            .Then(() => MustNotRun()).BDTestAsync(), FrameworkInconclusiveStatus, 0,
+            .Then(() => MustNotRun()).BDTestAsync(ExecutionToken), FrameworkInconclusiveStatus, 0,
             Status.Passed, FrameworkInconclusiveStatus, FrameworkInconclusiveStatus == Status.Skipped ? Status.Skipped : Status.NotRun);
 #if BDTEST_TUNIT
         // TUnit 1.75.0 reports its InconclusiveTestException as Failed in TRX.
@@ -170,7 +180,7 @@ public class AdapterConformanceTests : Adapter
 
     [Test]
     public Task FrameworkSuccess() => Check(() => ScenarioHost.Given(() => Complete()).When(() => ReportSuccess())
-        .Then(() => Complete()).BDTestAsync(), Status.Passed, 0,
+        .Then(() => Complete()).BDTestAsync(ExecutionToken), Status.Passed, 0,
         Status.Passed, Status.Passed, HasSuccessException ? Status.NotRun : Status.Passed);
 
     [Test]
@@ -178,7 +188,7 @@ public class AdapterConformanceTests : Adapter
     {
         var attempts = 0;
         void FailOnce() { if (++attempts == 1) throw new TransientException(); }
-        return Check(() => ScenarioHost.Given(() => Complete()).When(() => FailOnce()).Then(() => Complete()).BDTestAsync(),
+        return Check(() => ScenarioHost.Given(() => Complete()).When(() => FailOnce()).Then(() => Complete()).BDTestAsync(ExecutionToken),
             Status.Passed, 1, Status.Passed, Status.Passed, Status.Passed);
     }
 
@@ -187,8 +197,13 @@ public class AdapterConformanceTests : Adapter
     {
         try
         {
-            await Check(() => ScenarioHost.When(async token => await Task.Delay(Timeout.InfiniteTimeSpan, token))
-                .Then(() => MustNotRun()).WithScenarioTimeout(TimeSpan.FromMilliseconds(100)).BDTestAsync(),
+            await Check(() => ScenarioHost.When(async token =>
+            {
+                // The timeout is armed before invocation; advance only after reaching the body.
+                _clock.Advance(TimeSpan.FromMilliseconds(100));
+                await Task.Delay(Timeout.InfiniteTimeSpan, token);
+            })
+                .Then(() => MustNotRun()).WithScenarioTimeout(TimeSpan.FromMilliseconds(100)).BDTestAsync(ExecutionToken),
                 Status.Failed, 0, Status.Failed, Status.NotRun);
         }
         catch (TimeoutException)
@@ -208,7 +223,7 @@ public class AdapterConformanceTests : Adapter
             var calls = 0;
             void FailOnce() { if (++calls == 1) throw new TransientException(); }
             return ScenarioHost.When(() => FailOnce()).Then(() => Complete());
-        }).BDTestAsync();
+        }).BDTestAsync(ExecutionToken);
         var examples = outline.Examples ?? throw new InvalidOperationException("Expected outline examples.");
         Require(examples.All(s => s.Status == Status.Passed && s.RetryCount == 1), "outline retry mismatch");
         Require(_hooks.Count == (IncludesInstanceHooks ? 16 : 8), "hooks must run for each row attempt, not the outline container");
@@ -230,7 +245,7 @@ public class AdapterConformanceTests : Adapter
         Require(context.Attempt == 0, "factory did not receive the zero-based initial attempt");
         Require(context.InitializationCalls == 1, "explicit context initialization was not awaited");
         await fixture.Host.When(() => Require(context.InitializationCalls == 1, "step ran before initialization"))
-            .Then(() => Complete()).BDTestAsync();
+            .Then(() => Complete()).BDTestAsync(ExecutionToken);
         Require(context.InitializationCalls == 1, "scenario initialized the context more than once");
 
         var returned = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -271,7 +286,7 @@ public class AdapterConformanceTests : Adapter
 
         try
         {
-            var scenario = await fixture.Host.When(() => RetryOnce()).Then(() => Complete()).BDTestAsync();
+            var scenario = await fixture.Host.When(() => RetryOnce()).Then(() => Complete()).BDTestAsync(ExecutionToken);
             Require(scenario.Status == Status.Passed && scenario.RetryCount == 1, "retry did not pass on its second attempt");
             Require(fixture.Contexts.Count == 2, "retry did not create exactly one context per attempt");
             Require(fixture.Contexts[0].DisposalCalls == 1, "previous attempt was not disposed exactly once");
@@ -291,7 +306,7 @@ public class AdapterConformanceTests : Adapter
     {
         using var fixture = CreateLifetimeProbe(gateDisposal: false, failDisposal: true);
         await fixture.StartAsync();
-        await fixture.Host.When(() => Complete()).Then(() => Complete()).BDTestAsync();
+        await fixture.Host.When(() => Complete()).Then(() => Complete()).BDTestAsync(ExecutionToken);
         var context = fixture.Context;
         try
         {
@@ -329,7 +344,7 @@ public class AdapterConformanceTests : Adapter
         async Task Execute(BDTestRun run)
         {
             var fixture = new Standalone(run);
-            try { await fixture.When(() => ThrowTogether()).Then(() => Complete()).BDTestAsync(); }
+            try { await fixture.When(() => ThrowTogether()).Then(() => Complete()).BDTestAsync(ExecutionToken); }
             catch (SharedOutcomeException) { }
         }
 #if BDTEST_XUNIT
@@ -377,7 +392,7 @@ public class AdapterConformanceTests : Adapter
                     if (Interlocked.Increment(ref entered) == 2) ready.SetResult();
                     await ready.Task.WaitAsync(TimeSpan.FromSeconds(10));
                     Require(ReferenceEquals(context, host.Context), "parallel runs changed context");
-                }).Then(() => Complete()).BDTestAsync();
+                }).Then(() => Complete()).BDTestAsync(ExecutionToken);
                 Console.WriteLine(label + " teardown");
                 return scenario;
             }
@@ -443,7 +458,7 @@ public class AdapterConformanceTests : Adapter
         {
             async Task Execute(AbstractContextBDTestBase<IsolationContext> host, string output) =>
                 await host.When(async () => { await Task.Yield(); Console.WriteLine(output); })
-                    .Then(() => Complete()).BDTestAsync();
+                    .Then(() => Complete()).BDTestAsync(ExecutionToken);
             var runnerToken = Xunit.TestContext.Current.CancellationToken;
             await Task.WhenAll(Task.Run(() => Execute(one.Host, "first step"), runnerToken),
                 Task.Run(() => Execute(two.Host, "second step"), runnerToken));

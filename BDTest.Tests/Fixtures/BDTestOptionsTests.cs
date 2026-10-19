@@ -228,8 +228,8 @@ public class BDTestOptionsTests
     }
     private sealed class Hook(string name, List<string> calls, bool failAfter = false) : IStepHook
     {
-        public async Task BeforeStepAsync(BDTest.Contracts.StepResult step) { await Task.Yield(); calls.Add(name + " before"); }
-        public async Task AfterStepAsync(BDTest.Contracts.StepResult step)
+        public async Task BeforeStepAsync(BDTest.Contracts.StepResult step, System.Threading.CancellationToken cancellationToken) { await Task.Yield(); calls.Add(name + " before"); }
+        public async Task AfterStepAsync(BDTest.Contracts.StepResult step, System.Threading.CancellationToken cancellationToken)
         {
             await Task.Yield();
             calls.Add(name + " after " + step.Status);

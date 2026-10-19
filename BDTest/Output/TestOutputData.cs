@@ -71,6 +71,7 @@ internal class TestOutputData : TextWriter
 
     private static void WriteCore(string? value, char? character = null)
     {
+        if (ExecutionOutputScope.IsDetached) return;
         var pending = PendingStartupOutput;
         if (pending != null)
         {
@@ -81,7 +82,7 @@ internal class TestOutputData : TextWriter
         if (run == null) return;
         lock (run.Store.Gate)
         {
-            if (run.Store.IsDisposed) return;
+            if (run.Store.IsDisposed || ExecutionOutputScope.IsDetached) return;
             // Builders change TestId as a chain grows. Keep construction output
             // in the example's buffer until its final scenario exists.
             if (ConstructionOutput != null && ConstructionOutput.Run == run)
@@ -206,14 +207,19 @@ internal class TestOutputData : TextWriter
             return;
         }
 
+        if (ExecutionOutputScope.IsDetached) return;
         run ??= Run ?? throw new InvalidOperationException("No test run is bound to this execution.");
-        run.ThrowIfDisposed();
-        appendNewLine = appendNewLine && text.Length > 1;
-        var constructionOutput = ConstructionOutput;
-        if (constructionOutput != null && constructionOutput.FrameworkExecutionId == frameworkExecutionId && constructionOutput.Run == run)
-            constructionOutput.Startup.Append(text, appendNewLine);
-        else
-            run.Store.AppendStartupOutput(frameworkExecutionId, text, appendNewLine);
+        lock (run.Store.Gate)
+        {
+            if (ExecutionOutputScope.IsDetached) return;
+            run.ThrowIfDisposed();
+            appendNewLine = appendNewLine && text.Length > 1;
+            var constructionOutput = ConstructionOutput;
+            if (constructionOutput != null && constructionOutput.FrameworkExecutionId == frameworkExecutionId && constructionOutput.Run == run)
+                constructionOutput.Startup.Append(text, appendNewLine);
+            else
+                run.Store.AppendStartupOutput(frameworkExecutionId, text, appendNewLine);
+        }
 
         if (shouldWriteToConsole)
         {
@@ -229,16 +235,21 @@ internal class TestOutputData : TextWriter
             return;
         }
 
+        if (ExecutionOutputScope.IsDetached) return;
         run ??= Run ?? throw new InvalidOperationException("No test run is bound to this execution.");
-        run.ThrowIfDisposed();
-        var constructionOutput = ConstructionOutput;
-        if (constructionOutput != null && constructionOutput.FrameworkExecutionId == frameworkExecutionId && constructionOutput.Run == run)
+        lock (run.Store.Gate)
         {
-            constructionOutput.Teardown.Append(text, appendNewLine: true);
-        }
-        else if (run.Store.ScenariosByTestFrameworkId.TryGetValue(frameworkExecutionId, out var foundScenario))
-        {
-            foundScenario.TeardownOutputBuffer.Append(text, appendNewLine: true);
+            if (ExecutionOutputScope.IsDetached) return;
+            run.ThrowIfDisposed();
+            var constructionOutput = ConstructionOutput;
+            if (constructionOutput != null && constructionOutput.FrameworkExecutionId == frameworkExecutionId && constructionOutput.Run == run)
+            {
+                constructionOutput.Teardown.Append(text, appendNewLine: true);
+            }
+            else if (run.Store.ScenariosByTestFrameworkId.TryGetValue(frameworkExecutionId, out var foundScenario))
+            {
+                foundScenario.TeardownOutputBuffer.Append(text, appendNewLine: true);
+            }
         }
 
         if (shouldWriteToConsole)
@@ -249,15 +260,20 @@ internal class TestOutputData : TextWriter
 
     internal static void WriteCustomHtmlForReport(string testId, string? htmlValue, BDTestRun? run = null)
     {
+        if (ExecutionOutputScope.IsDetached) return;
         run ??= Run ?? throw new InvalidOperationException("No test run is bound to this execution.");
-        run.ThrowIfDisposed();
-        var constructionOutput = ConstructionOutput;
-        if (constructionOutput != null && constructionOutput.FrameworkExecutionId == testId && constructionOutput.Run == run)
+        lock (run.Store.Gate)
         {
-            constructionOutput.Html.Append(htmlValue);
-            return;
-        }
+            if (ExecutionOutputScope.IsDetached) return;
+            run.ThrowIfDisposed();
+            var constructionOutput = ConstructionOutput;
+            if (constructionOutput != null && constructionOutput.FrameworkExecutionId == testId && constructionOutput.Run == run)
+            {
+                constructionOutput.Html.Append(htmlValue);
+                return;
+            }
 
-        run.Store.ListenForScenario(testId, scenario => scenario.CustomHtmlOutputForReport += htmlValue);
+            run.Store.ListenForScenario(testId, scenario => scenario.CustomHtmlOutputForReport += htmlValue);
+        }
     }
 }

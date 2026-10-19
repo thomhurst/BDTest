@@ -1,5 +1,6 @@
 using System.Runtime.ExceptionServices;
 using BDTest;
+using System.Threading;
 using BDTest.Exceptions;
 using BDTest.Helpers;
 using BDTest.Interfaces.Internal;
@@ -18,7 +19,7 @@ internal class ScenarioExecutor : IScenarioExecutor
         _scenarioRetryManager = scenarioRetryManager;
     }
 
-    public async Task ExecuteAsync(Scenario scenario)
+    public async Task ExecuteAsync(Scenario scenario, CancellationToken cancellationToken = default)
     {
         try
         {
@@ -35,7 +36,7 @@ internal class ScenarioExecutor : IScenarioExecutor
             // Capture the caller's synchronization context for subsequent steps and retries.
             do
             {
-                await ExecuteAttemptAsync(scenario, retryPolicy, skip, skipPredicateException);
+                await ExecuteAttemptAsync(scenario, retryPolicy, skip, skipPredicateException, cancellationToken);
             } while (scenario.ShouldRetry);
 
             // Notify after finalizing the scenario, outside retry/exception classification.
@@ -53,7 +54,7 @@ internal class ScenarioExecutor : IScenarioExecutor
         }
     }
 
-    private async Task ExecuteAttemptAsync(Scenario scenario, ScenarioRetryPolicy retryPolicy, bool skip, Exception? skipPredicateException)
+    private async Task ExecuteAttemptAsync(Scenario scenario, ScenarioRetryPolicy retryPolicy, bool skip, Exception? skipPredicateException, CancellationToken cancellationToken)
     {
         var clock = scenario.ExecutionRun.Options.Clock;
         var timer = clock.StartTimer();
@@ -64,13 +65,17 @@ internal class ScenarioExecutor : IScenarioExecutor
         try
         {
             scenario.StartTime = clock.UtcNow;
+            scenario.AttemptTimedOut = false;
+            scenario.ExecutionCancelled = false;
+            scenario.ExecutionException = null;
             if (preparingRetry)
             {
-                await _scenarioRetryManager.CheckIfAlreadyExecuted(scenario);
+                using var retryCancellation = new ExecutionCancellation(scenario, cancellationToken,
+                    scenario.BdTestBaseClass?.ExecutionCancellationToken ?? default, useTimeout: false);
+                await _scenarioRetryManager.CheckIfAlreadyExecuted(scenario, retryCancellation);
                 preparingRetry = false;
             }
             scenario.Status = Status.Pending;
-            scenario.ExecutionException = null;
 
             TestOutputData.ClearCurrentTaskData();
 
@@ -87,7 +92,9 @@ internal class ScenarioExecutor : IScenarioExecutor
                 ExceptionDispatchInfo.Capture(skipPredicateException).Throw();
             }
 
-            await ScenarioHookExecutor.ExecuteAsync(scenario, ExecuteScenarioAsync, ExecuteInScopeAsync);
+            using var cancellation = new ExecutionCancellation(scenario, cancellationToken,
+                scenario.BdTestBaseClass?.ExecutionCancellationToken ?? default);
+            await ScenarioHookExecutor.ExecuteAsync(scenario, ExecuteScenarioAsync, ExecuteInScopeAsync, cancellation);
 
             async Task ExecuteInScopeAsync(Func<Task> execute)
             {
@@ -121,10 +128,10 @@ internal class ScenarioExecutor : IScenarioExecutor
                     return;
                 }
 
-                var stepBudget = scenario.Timeout.HasValue ? clock.StartTimer() : (ExecutionTimer?)null;
                 foreach (var step in scenario.ExecutionSteps)
                 {
-                    await step.Execute(scenario.BdTestBaseClass, scenario.Timeout, scenario.Timeout - stepBudget?.Elapsed, scenario);
+                    cancellation.ThrowIfCancelled();
+                    await step.Execute(scenario.BdTestBaseClass, scenario, cancellation);
                 }
 
                 scenario.Status = scenario.ExecutionSteps.Count > 0 && scenario.ExecutionSteps.All(step => step.Status == Status.Skipped)
@@ -148,7 +155,7 @@ internal class ScenarioExecutor : IScenarioExecutor
             attemptException = e;
             scenario.Status = skipPredicateException != null
                 ? Status.Failed
-                : ExceptionOutcomeClassifier.Classify(e, scenario.ExecutionRun.Options, scenario.TimedOut);
+                : ExceptionOutcomeClassifier.Classify(e, scenario.ExecutionRun.Options, scenario.TimedOut || scenario.ExecutionCancelled);
             if (scenario.Status is Status.Failed or Status.NotImplemented)
                 scenario.ExecutionException ??= new ExceptionWrapper(e);
             if (scenario.Status == Status.Skipped)
@@ -160,6 +167,13 @@ internal class ScenarioExecutor : IScenarioExecutor
                 }
             }
             if (scenario.Status != Status.Failed) throw;
+
+            if (scenario.UncooperativeExecution || cancellationToken.IsCancellationRequested ||
+                scenario.BdTestBaseClass?.ExecutionCancellationToken.IsCancellationRequested == true || scenario.ExecutionCancelled)
+            {
+                scenario.ShouldRetry = false;
+                throw;
+            }
 
             scenario.ShouldRetry = false;
             if (skipPredicateException == null)

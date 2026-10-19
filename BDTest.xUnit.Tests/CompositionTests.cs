@@ -81,7 +81,7 @@ public class CompositionTests : CompanyTestBase, IAsyncLifetime
             Console.WriteLine("composition step:" + _id);
             if (++calls == 1) throw new InvalidOperationException("retry");
             Assert.NotSame(firstContext, _host.Context);
-        }).Then(() => GC.KeepAlive(row)).BDTestAsync();
+        }).Then(() => GC.KeepAlive(row)).BDTestAsync(global::Xunit.TestContext.Current.CancellationToken);
         Assert.Equal(1, RetryCalls);
         Assert.Equal(1, scenario.RetryCount);
         Assert.Equal(_id, scenario.FrameworkTestId);
@@ -101,7 +101,7 @@ public class CompositionTests : CompanyTestBase, IAsyncLifetime
         using var run = BDTestRun.Start(new BDTestOptions { ContextFactory = factory });
         var host = XUnitBDTestScenario.For<FactoryContext>(this, run);
         var scenario = await host.When(() => Assert.Equal("factory value", host.Context.Value))
-            .Then(() => Assert.Same(factory.Context, host.Context)).BDTestAsync();
+            .Then(() => Assert.Same(factory.Context, host.Context)).BDTestAsync(global::Xunit.TestContext.Current.CancellationToken);
         var context = host.Context;
         await host.EndTestAsync();
 
@@ -120,7 +120,7 @@ public class CompositionTests : CompanyTestBase, IAsyncLifetime
         Assert.Throws<ArgumentNullException>(() => XUnitBDTestScenario.For<object>(null!, run));
 
         var host = XUnitBDTestScenario.For<object>(this, run);
-        var scenario = await host.When(() => GC.KeepAlive(this)).Then(() => GC.KeepAlive(this)).BDTestAsync();
+        var scenario = await host.When(() => GC.KeepAlive(this)).Then(() => GC.KeepAlive(this)).BDTestAsync(global::Xunit.TestContext.Current.CancellationToken);
         await host.EndTestAsync();
         Assert.Equal(_id, scenario.FrameworkTestId);
         Assert.Equal(scenario.Guid, Assert.Single(run.Scenarios).Guid);
@@ -156,7 +156,7 @@ public class CompositionTests : CompanyTestBase, IAsyncLifetime
         Assert.False(context.Disposed);
 
         var scenario = await _host.When(() => Console.WriteLine("original host step"))
-            .Then(() => GC.KeepAlive(this)).BDTestAsync();
+            .Then(() => GC.KeepAlive(this)).BDTestAsync(global::Xunit.TestContext.Current.CancellationToken);
         _host.WriteTearDownOutput("original host teardown");
         attachments.Attach("original.txt", new byte[] { 1 }, "text/plain");
         Assert.NotNull(scenario.Steps);
@@ -174,7 +174,7 @@ public class CompositionTests : CompanyTestBase, IAsyncLifetime
         using var run = StartRun();
         var host = XUnitBDTestScenario.For<object>(this, run);
         var attachments = host.Attachments;
-        var scenario = await host.When(() => GC.KeepAlive(this)).Then(() => GC.KeepAlive(this)).BDTestAsync();
+        var scenario = await host.When(() => GC.KeepAlive(this)).Then(() => GC.KeepAlive(this)).BDTestAsync(global::Xunit.TestContext.Current.CancellationToken);
         await host.EndTestAsync();
 
         Assert.Throws<InvalidOperationException>(() => XUnitBDTestScenario.For<object>(this, run));
@@ -192,11 +192,11 @@ public class CompositionTests : CompanyTestBase, IAsyncLifetime
         Console.WriteLine("second startup");
         var secondContext = second.Context;
         secondContext.Value = "second";
-        var secondScenario = await second.When(() => Console.WriteLine("second step")).Then(() => GC.KeepAlive(this)).BDTestAsync();
+        var secondScenario = await second.When(() => Console.WriteLine("second step")).Then(() => GC.KeepAlive(this)).BDTestAsync(global::Xunit.TestContext.Current.CancellationToken);
         await second.EndTestAsync();
         _host.WriteStartupOutput("first startup");
         var firstScenario = await _host.When(() => Assert.Same(firstContext, _host.Context))
-            .Then(() => Assert.Equal("setup:" + _id, _host.Context.Value)).BDTestAsync();
+            .Then(() => Assert.Equal("setup:" + _id, _host.Context.Value)).BDTestAsync(global::Xunit.TestContext.Current.CancellationToken);
         Assert.Equal(firstScenario.FrameworkTestId, secondScenario.FrameworkTestId);
         Assert.NotSame(firstContext, secondContext);
         Assert.True(secondContext.Disposed);

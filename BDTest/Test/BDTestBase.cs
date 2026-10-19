@@ -19,6 +19,11 @@ public abstract class BDTestBase
     /// <remarks>Custom adapters should override this property with a stable, explicitly owned run.</remarks>
     public abstract BDTestRun TestRun { get; }
 
+    /// <summary>Override to supply the current test framework cancellation token.</summary>
+    protected virtual CancellationToken FrameworkCancellationToken => default;
+
+    internal CancellationToken ExecutionCancellationToken => FrameworkCancellationToken;
+
     private static readonly AsyncLocal<string?> AsyncLocalBDTestExecutionId = new();
     private readonly AsyncLocal<TestExecution?> _execution = new();
     // Some runners invoke setup and the body in separate execution contexts.
@@ -247,6 +252,9 @@ public abstract class BDTestBase
     /// <summary>Runs before each reached step, after the run before hooks.</summary>
     public virtual Task OnBeforeStep(BDTest.Contracts.StepResult step) => Task.CompletedTask;
 
+    /// <summary>Runs before a step with its effective cancellation token.</summary>
+    public virtual Task OnBeforeStep(StepResult step, CancellationToken cancellationToken) => OnBeforeStep(step);
+
     /// <summary>Runs after each reached step, before the run after hooks.</summary>
     /// <remarks>
     /// The step contains its status, exception, output and timing. This hook runs even when the
@@ -255,6 +263,9 @@ public abstract class BDTestBase
     /// over an after-hook exception; otherwise a hook exception determines the step result.
     /// </remarks>
     public virtual Task OnAfterStep(StepResult step) => Task.CompletedTask;
+
+    /// <summary>Runs cleanup with the step token, which may already be cancelled.</summary>
+    public virtual Task OnAfterStep(StepResult step, CancellationToken cancellationToken) => OnAfterStep(step);
 
     /// <summary>Runs once per scenario attempt, after the run's before hooks and before skip checks.</summary>
     public virtual Task OnBeforeScenario(ScenarioHookContext scenario) => Task.CompletedTask;
@@ -265,6 +276,9 @@ public abstract class BDTestBase
 
     internal virtual ScenarioHookContext CreateScenarioHookContext(Scenario scenario, CancellationToken token) =>
         new(scenario, null, token);
+
+    /// <summary>Runs before Context replacement with caller/framework cancellation.</summary>
+    public virtual Task OnBeforeRetry(CancellationToken cancellationToken) => OnBeforeRetry();
 
     public virtual Task OnBeforeRetry()
     {
@@ -338,7 +352,7 @@ public abstract class BDTestBase
         finally { ClearCompletedExecution(execution); }
     }
 
-    /// <summary>Awaits context disposal and clears execution state even when disposal fails. Safe to repeat.</summary>
+    /// <summary>Clears execution state and awaits context disposal unless abandoned work requires deferred cleanup. Safe to repeat.</summary>
     public ValueTask EndTestAsync()
     {
         var execution = CurrentExecution;
@@ -393,6 +407,8 @@ public abstract class BDTestBase
     }
 
     internal virtual ValueTask RemoveExecutionContextAsync(string executionId) => default;
+
+    internal virtual void DeferContextCleanup(Task outstanding) { }
     internal virtual ValueTask InitializeExecutionContextAsync() => default;
 
     private static void ClearExecutionFlow()
@@ -458,24 +474,33 @@ public abstract class BDTestBase
         return ScenarioTextHelper.GetScenarioText(TestMetadata, callerMember);
     }
 
-    internal async Task RunMethodWithAttribute<TAttribute>()
+    internal async Task RunMethodWithAttribute<TAttribute>(CancellationToken cancellationToken = default, Func<Func<Task>, Task>? execute = null)
     {
         foreach (var method in GetMethodsWithAttribute<TAttribute>())
         {
-            object? result;
-            try
+            if (execute == null)
             {
-                result = method.Invoke(TestInstance, Array.Empty<object>());
+                cancellationToken.ThrowIfCancellationRequested();
+                await Invoke();
             }
-            catch (TargetInvocationException exception) when (exception.InnerException != null)
-            {
-                ExceptionDispatchInfo.Capture(exception.InnerException).Throw();
-                throw;
-            }
+            else await execute(Invoke);
 
-            if (result is Task invokedMethodTask)
+            async Task Invoke()
             {
-                await invokedMethodTask;
+                object? result;
+                try
+                {
+                    var parameters = method.GetParameters();
+                    var arguments = parameters.Length == 1 && parameters[0].ParameterType == typeof(CancellationToken)
+                        ? new object[] { cancellationToken } : Array.Empty<object>();
+                    result = method.Invoke(TestInstance, arguments);
+                }
+                catch (TargetInvocationException exception) when (exception.InnerException != null)
+                {
+                    ExceptionDispatchInfo.Capture(exception.InnerException).Throw();
+                    throw;
+                }
+                if (result is Task invokedMethodTask) await invokedMethodTask;
             }
         }
     }

@@ -17,7 +17,7 @@ The modern build also uses the runtime's `CallerArgumentExpressionAttribute`; le
 
 ## Execution and reports
 
-The modern build uses `Task.WaitAsync` for timeouts and `TimeProvider.System` for UTC timestamps, monotonic elapsed timing, and timeout timers. Explicit runs can configure a [TimeProvider](../advanced/explicit-runs.md#execution-clock-net-8). The .NET Standard asset keeps the existing system-clock implementation. User exceptions, cancellation, retries, and late completion retain their behavior on both assets.
+The modern build uses `TimeProvider.System` for UTC timestamps, monotonic elapsed timing, and timeout timers. Explicit runs can configure a [TimeProvider](../advanced/explicit-runs.md#execution-clock-net-8). The .NET Standard asset keeps the existing system-clock implementation. User exceptions, cancellation, retries, and late completion retain their behavior on both assets.
 
 Both assets retain the source-generated `System.Text.Json` serialization paths and the same JSON package version. Historical report support is unchanged.
 

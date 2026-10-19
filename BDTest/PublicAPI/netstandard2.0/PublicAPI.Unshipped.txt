@@ -477,10 +477,11 @@ BDTest.IBDTestContextLifetime
 BDTest.IBDTestContextLifetime.InitializeAsync() -> System.Threading.Tasks.ValueTask
 BDTest.Interfaces.IScenarioHook.AfterScenarioAsync(BDTest.ScenarioHookContext! scenario) -> System.Threading.Tasks.Task!
 BDTest.Interfaces.IScenarioHook.BeforeScenarioAsync(BDTest.ScenarioHookContext! scenario) -> System.Threading.Tasks.Task!
-BDTest.Interfaces.IStepHook.AfterStepAsync(BDTest.Contracts.StepResult! step) -> System.Threading.Tasks.Task!
-BDTest.Interfaces.IStepHook.BeforeStepAsync(BDTest.Contracts.StepResult! step) -> System.Threading.Tasks.Task!
+BDTest.Interfaces.IStepHook.AfterStepAsync(BDTest.Contracts.StepResult! step, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task!
+BDTest.Interfaces.IStepHook.BeforeStepAsync(BDTest.Contracts.StepResult! step, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task!
 BDTest.RunnableStepBuilder
 BDTest.RunnableStepBuilder.BDTestAsync() -> System.Threading.Tasks.Task<BDTest.Contracts.ScenarioResult!>!
+BDTest.RunnableStepBuilder.BDTestAsync(System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<BDTest.Contracts.ScenarioResult!>!
 BDTest.RunnableStepBuilder.GetAwaiter() -> System.Runtime.CompilerServices.TaskAwaiter<BDTest.Contracts.ScenarioResult!>
 BDTest.ScenarioHookContext
 BDTest.ScenarioHookContext.Attempt.get -> int
@@ -491,6 +492,7 @@ BDTest.ScenarioHookContext<TContext>
 BDTest.ScenarioHookContext<TContext>.Context.get -> TContext
 BDTest.ScenarioOutlineBuilder<TExample>
 BDTest.ScenarioOutlineBuilder<TExample>.BDTestAsync() -> System.Threading.Tasks.Task<BDTest.Contracts.ScenarioResult!>!
+BDTest.ScenarioOutlineBuilder<TExample>.BDTestAsync(System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<BDTest.Contracts.ScenarioResult!>!
 BDTest.ScenarioOutlineBuilder<TExample>.GetAwaiter() -> System.Runtime.CompilerServices.TaskAwaiter<BDTest.Contracts.ScenarioResult!>
 BDTest.ScenarioTextAttribute
 BDTest.ScenarioTextAttribute.ScenarioTextAttribute(string? stepText) -> void
@@ -626,12 +628,16 @@ virtual BDTest.AbstractContextBDTestBase<TContext>.OnAfterScenario(BDTest.Scenar
 virtual BDTest.AbstractContextBDTestBase<TContext>.OnBeforeScenario(BDTest.ScenarioHookContext<TContext!>! scenario) -> System.Threading.Tasks.Task!
 virtual BDTest.BDTestBase.BDTestExecutionId.get -> string!
 virtual BDTest.BDTestBase.ExecuteScenarioStepsAsync(System.Func<System.Threading.Tasks.Task!>! executeSteps, System.Action<System.Action!>! registerTerminalFailure) -> System.Threading.Tasks.Task!
+virtual BDTest.BDTestBase.FrameworkCancellationToken.get -> System.Threading.CancellationToken
 virtual BDTest.BDTestBase.MarkTestAsComplete() -> void
 virtual BDTest.BDTestBase.OnAfterScenario(BDTest.ScenarioHookContext! scenario) -> System.Threading.Tasks.Task!
 virtual BDTest.BDTestBase.OnAfterStep(BDTest.Contracts.StepResult! step) -> System.Threading.Tasks.Task!
+virtual BDTest.BDTestBase.OnAfterStep(BDTest.Contracts.StepResult! step, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task!
 virtual BDTest.BDTestBase.OnBeforeRetry() -> System.Threading.Tasks.Task!
+virtual BDTest.BDTestBase.OnBeforeRetry(System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task!
 virtual BDTest.BDTestBase.OnBeforeScenario(BDTest.ScenarioHookContext! scenario) -> System.Threading.Tasks.Task!
 virtual BDTest.BDTestBase.OnBeforeStep(BDTest.Contracts.StepResult! step) -> System.Threading.Tasks.Task!
+virtual BDTest.BDTestBase.OnBeforeStep(BDTest.Contracts.StepResult! step, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task!
 virtual BDTest.BDTestBase.OnScenarioSkipped(string! reason) -> void
 ~BDTest.Helpers.BDTestJsonContext.IReadOnlyListStepArgument.get -> System.Text.Json.Serialization.Metadata.JsonTypeInfo<System.Collections.Generic.IReadOnlyList<BDTest.StepArgument>>
 ~BDTest.Helpers.BDTestJsonContext.Status.get -> System.Text.Json.Serialization.Metadata.JsonTypeInfo<BDTest.Contracts.Status>

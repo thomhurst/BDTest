@@ -38,7 +38,7 @@ public class NativeCompositionFailureTests : CompanyTestBase, IAsyncLifetime
     [Fact] public Task ContextDisposalFailure() => Execute();
 
     private Task Execute() => _host.When(() => FailAt(nameof(BodyFailure)))
-        .Then(() => GC.KeepAlive(this)).BDTestAsync();
+        .Then(() => GC.KeepAlive(this)).BDTestAsync(global::Xunit.TestContext.Current.CancellationToken);
 
     public async ValueTask DisposeAsync()
     {
@@ -78,7 +78,7 @@ public class NativeInheritanceFailureTests : XUnitBDTestBase<CompositionContext>
     [Fact] public Task TeardownFailure() => Execute();
 
     private Task Execute() => When(() => FailAt(nameof(BodyFailure)))
-        .Then(() => GC.KeepAlive(this)).BDTestAsync();
+        .Then(() => GC.KeepAlive(this)).BDTestAsync(global::Xunit.TestContext.Current.CancellationToken);
 
     public override async ValueTask DisposeAsync()
     {

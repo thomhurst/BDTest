@@ -33,7 +33,7 @@ public class XUnitTheoryTestsUniqueId : XUnitBDTestBase<XUnitContext>
 
         var scenario = await When(() => Yield())
             .Then(() => AssertContext(id, context))
-            .BDTestAsync();
+            .BDTestAsync(global::Xunit.TestContext.Current.CancellationToken);
 
         Assert.Equal(id, scenario.FrameworkTestId);
         Assert.Equal(Status.Passed, scenario.Status);

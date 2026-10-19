@@ -12,7 +12,7 @@ Steps, scenarios, outline rows and whole test runs all use `BDTest.Contracts.Sta
 | `NotRun` | Not executed. This is the default value. New steps start here, and steps after a failure stay here. |
 | `Pending` | Currently running. Before-step hooks see this status. |
 | `Passed` | Completed successfully, or a registered success exception was thrown. |
-| `Failed` | An exception was thrown, or a timeout expired. |
+| `Failed` | An exception was thrown, a timeout expired, or execution was cancelled. |
 | `Inconclusive` | A registered inconclusive exception was thrown. |
 | `NotImplemented` | A `NotImplementedException` was thrown. |
 | `Skipped` | Intentionally not executed: a skip rule, a skip exception or a debug skip. |

@@ -38,13 +38,16 @@ public class TimeProviderTests
         var clock = new TimerClock();
         using var run = BDTestRun.Start(new BDTestOptions { TimeProvider = clock });
         var cancelled = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var entered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var step = new TestHost(run).When(async token =>
         {
+            entered.TrySetResult();
             try { await Task.Delay(Timeout.Infinite, token); }
             finally { cancelled.TrySetResult(); }
         });
         var configured = scenarioTimeout ? step.WithScenarioTimeout(TimeSpan.FromHours(1)) : step.WithStepTimeout(TimeSpan.FromHours(1));
         var execution = configured.Then(() => { }).BDTestAsync();
+        await entered.Task.WaitAsync(TimeSpan.FromSeconds(10));
         await clock.TimerCreated.Task.WaitAsync(TimeSpan.FromSeconds(10));
         clock.Fake.Advance(TimeSpan.FromHours(1));
         await Assert.ThrowsAsync<TimeoutException>(async () => await execution.WaitAsync(TimeSpan.FromSeconds(10)));

@@ -27,7 +27,7 @@ public abstract class RunnableStepBuilder : StepBuilder
     }
 
     internal Task<Scenario> Invoke(BuildableTest testDetails,
-        Scenario? outline = null, Dictionary<string, string>? exampleValues = null)
+        Scenario? outline = null, Dictionary<string, string>? exampleValues = null, CancellationToken cancellationToken = default)
     {
         testDetails.Run.ThrowIfDisposed();
         if (Interlocked.Exchange(ref _executionStarted, 1) != 0)
@@ -49,12 +49,12 @@ public abstract class RunnableStepBuilder : StepBuilder
         {
             step.ExampleValues = exampleValues;
         }
-        return ExecuteAsync(scenario);
+        return ExecuteAsync(scenario, cancellationToken);
     }
 
-    private static async Task<Scenario> ExecuteAsync(Scenario scenario)
+    private static async Task<Scenario> ExecuteAsync(Scenario scenario, CancellationToken cancellationToken)
     {
-        await scenario.ExecutionRun.ScenarioExecutor.ExecuteAsync(scenario);
+        await scenario.ExecutionRun.ScenarioExecutor.ExecuteAsync(scenario, cancellationToken);
         return scenario;
     }
 
@@ -63,6 +63,9 @@ public abstract class RunnableStepBuilder : StepBuilder
     {
         return SnapshotAsync(Invoke(this));
     }
+
+    /// <summary>Executes the scenario with caller and framework cancellation.</summary>
+    public Task<ScenarioResult> BDTestAsync(CancellationToken cancellationToken) => SnapshotAsync(Invoke(this, cancellationToken: cancellationToken));
 
     /// <exception cref="AlreadyExecutedException">Execution has already started on this builder.</exception>
     private static async Task<ScenarioResult> SnapshotAsync(Task<Scenario> execution) =>

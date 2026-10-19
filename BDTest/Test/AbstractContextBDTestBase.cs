@@ -1,4 +1,5 @@
 using BDTest.Test;
+using BDTest.Output;
 using System.Runtime.CompilerServices;
 using System.Threading;
 
@@ -21,6 +22,8 @@ public abstract class AbstractContextBDTestBase<TContext> : BDTestBase where TCo
         internal bool Initialized;
         internal bool Retired;
         internal volatile bool Configured;
+        internal Task Outstanding = Task.CompletedTask;
+        internal bool CleanupDeferred;
     }
 
     public TContext Context => BDTestContext.TestContext;
@@ -189,6 +192,12 @@ public abstract class AbstractContextBDTestBase<TContext> : BDTestBase where TCo
     }
     protected ValueTask RemoveContextAsync() => RemoveExecutionContextAsync(BDTestExecutionId);
 
+    internal override void DeferContextCleanup(Task outstanding)
+    {
+        var entry = GetEntry(BDTestExecutionId);
+        lock (_contextLock) entry.Outstanding = Task.WhenAll(entry.Outstanding, outstanding);
+    }
+
     internal override async ValueTask RemoveExecutionContextAsync(string executionId)
     {
         ContextEntry? entry;
@@ -199,6 +208,36 @@ public abstract class AbstractContextBDTestBase<TContext> : BDTestBase where TCo
             if (entry == null) return;
         }
         ThrowIfDisposing(entry);
+        lock (_contextLock)
+        {
+            if (entry.CleanupDeferred) return;
+            if (!entry.Outstanding.IsCompleted)
+            {
+                entry.CleanupDeferred = true;
+                // Preserve the context for abandoned callbacks until all of them settle.
+                // The detached scope prevents background disposal from publishing late output.
+                using var output = new ExecutionOutputScope(TestRun);
+                output.Detach();
+                _ = Task.Run(() => RemoveDeferredContextAsync(executionId, entry));
+                return;
+            }
+        }
+        await RemoveContextEntryAsync(executionId, entry).ConfigureAwait(false);
+    }
+
+    private async Task RemoveDeferredContextAsync(string executionId, ContextEntry entry)
+    {
+        try
+        {
+            try { await entry.Outstanding.ConfigureAwait(false); }
+            catch (Exception) { /* The scenario already records the execution failure. */ }
+            await RemoveContextEntryAsync(executionId, entry).ConfigureAwait(false);
+        }
+        catch (Exception) { /* Teardown returned; observe deferred disposal failures. */ }
+    }
+
+    private async Task RemoveContextEntryAsync(string executionId, ContextEntry entry)
+    {
         await entry.Gate.WaitAsync().ConfigureAwait(false);
         try
         {

@@ -310,7 +310,7 @@ public class ScenarioHookTests
     }
 
     [Test]
-    public async Task Scenario_hook_time_is_included_in_attempt_time_but_excluded_from_step_budget()
+    public async Task Scenario_hook_time_consumes_the_attempt_budget()
     {
         var clock = new FakeTimeProvider();
         using var run = BDTestRun.Start(new BDTestOptions { TimeProvider = clock });
@@ -321,15 +321,14 @@ public class ScenarioHookTests
             Before = _ => AdvanceHookTime(),
             After = _ => AdvanceHookTime()
         };
-        var scenario = await test.When(() => clock.Advance(stepDuration)).Then(() => clock.Advance(stepDuration))
-            .WithScenarioTimeout(TimeSpan.FromMilliseconds(100)).BDTestAsync();
-
-        await Assert.That(hookDuration).IsGreaterThan(scenario.Timeout ?? throw new AssertionException("Expected a scenario timeout."));
-        await Assert.That(scenario.TimeTaken).IsEqualTo(hookDuration * 2 + stepDuration * 2);
+        await Assert.That(async () => await test.When(() => clock.Advance(stepDuration)).Then(() => clock.Advance(stepDuration))
+            .WithScenarioTimeout(TimeSpan.FromMilliseconds(100)).BDTestAsync()).Throws<TimeoutException>();
+        var scenario = run.Scenarios.Single();
+        await Assert.That(scenario.TimeTaken).IsEqualTo(hookDuration * 2);
         await Assert.That(Required(scenario.Attempts).Single().TimeTaken).IsEqualTo(scenario.TimeTaken);
-        foreach (var step in Required(scenario.Steps))
-            await Assert.That(step.TimeTaken).IsEqualTo(stepDuration);
-        await Assert.That(scenario.Status).IsEqualTo(Status.Passed);
+        await Assert.That(scenario.TimedOut).IsTrue();
+        await Assert.That(scenario.Steps.All(step => step.Status == Status.NotRun)).IsTrue();
+        await Assert.That(scenario.Status).IsEqualTo(Status.Failed);
 
         Task AdvanceHookTime()
         {

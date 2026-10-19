@@ -10,6 +10,14 @@ namespace BDTest.Tests.Fixtures;
 [NotInParallel]
 public class StepSkipEvaluationTests
 {
+    private static async Task ExecuteStep(Step step, BDTestRun run)
+    {
+        var scenario = new Scenario(new List<Step> { step }, new BuildableTest { Run = run,
+            Guid = Guid.NewGuid().ToString("N"), TestId = Guid.NewGuid().ToString("N") }.Definition.Snapshot());
+        using var cancellation = new BDTest.Engine.ExecutionCancellation(scenario, CancellationToken.None, CancellationToken.None);
+        await step.Execute(null, scenario, cancellation);
+    }
+
     [Test]
     [Arguments(false)]
     [Arguments(true)]
@@ -146,9 +154,9 @@ public class StepSkipEvaluationTests
         var runnable = new Runnable((Action)CachedAttribute);
         var step = new Step(runnable, StepType.When, "scenario", "report", run);
         await Assert.That(CountingSkipAttribute.Constructions).IsZero();
-        await step.Execute(null);
+        await ExecuteStep(step, run);
         step.ResetData();
-        await step.Execute(null);
+        await ExecuteStep(step, run);
         await Assert.That(CountingSkipAttribute.Constructions).IsEqualTo(1);
         await Assert.That(step.Status).IsEqualTo(Status.Skipped);
     }
@@ -165,7 +173,7 @@ public class StepSkipEvaluationTests
         options.Debug.ShouldSkipWhenStep = true;
         using var run = BDTestRun.Start(options);
         var step = new Step(new Runnable((Action)NoOp), type, "scenario", "report", run);
-        await step.Execute(null);
+        await ExecuteStep(step, run);
         await Assert.That(step.Status).IsEqualTo(skipped ? Status.Skipped : Status.Passed);
         await Assert.That(step.SkipReason?.Source).IsEqualTo(skipped ? "DebugSetting" : null);
         await Assert.That(step.SkipReason?.Setting).IsEqualTo(skipped ? "Debug.ShouldSkipWhenStep" : null);
@@ -292,8 +300,8 @@ public class StepSkipEvaluationTests
     {
         public Func<BDTest.Contracts.StepResult, Task> Before { get; init; } = _ => Task.CompletedTask;
         public Func<BDTest.Contracts.StepResult, Task> After { get; init; } = _ => Task.CompletedTask;
-        public Task BeforeStepAsync(BDTest.Contracts.StepResult step) => Before(step);
-        public Task AfterStepAsync(BDTest.Contracts.StepResult step) => After(step);
+        public Task BeforeStepAsync(BDTest.Contracts.StepResult step, System.Threading.CancellationToken cancellationToken) => Before(step);
+        public Task AfterStepAsync(BDTest.Contracts.StepResult step, System.Threading.CancellationToken cancellationToken) => After(step);
     }
 
     private sealed class Fixture(BDTestRun run) : BDTestBase

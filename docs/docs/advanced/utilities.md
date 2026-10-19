@@ -73,6 +73,8 @@ Timestamps use UTC `DateTimeOffset`; see [the result contract](../reports/contra
 | `Diagnostics` | Messages about step text generation. |
 | `Guid`, `ScenarioId`, `ReportId` | Identifiers. |
 
+Step hooks receive the effective `CancellationToken` as a separate argument; it is not a member of `StepResult`. See [cancellation](../writing-tests/timeouts.md) and [step hooks](../writing-tests/step-hooks.md).
+
 `StepType` values are `Given`, `AndGiven`, `ButGiven`, `When`, `AndWhen`, `ButWhen`, `Then`, `AndThen` and `ButThen`. `AndWhen` is appended as numeric value `8`; existing numeric values are unchanged. It renders as `And` in reports.
 
 ## `BDTestContext`

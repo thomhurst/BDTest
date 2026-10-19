@@ -10,7 +10,7 @@ Configure `BDTestOptions` through [assembly configuration](../configuration/asse
 
 BDTest can retry a scenario that fails. Retries happen inside one execution: the report keeps one entry per scenario, together with the history of every attempt.
 
-Only failures are retried. Passed, skipped and inconclusive results, and exceptions registered as success, are never retried.
+Only eligible failures are retried. Passed, skipped and inconclusive results, and exceptions registered as success, are never retried. Explicit or adapter cancellation stops retries. A timeout can retry only when cancelled work and callbacks settle within the [cancellation grace period](timeouts.md#cooperative-cancellation); unfinished work also stops remaining outline rows to avoid racing a replacement context.
 
 ## `[BDTestRetry]`
 
@@ -92,3 +92,5 @@ JSON reports include the history, and older reports load with an empty history. 
 With NUnit, each attempt's steps and step hooks run with isolated assertion state through NUnit's public exception constraint API. A final passing attempt lets NUnit report a pass, including after `Assert.That` or `Assert.Multiple` failed earlier. A failure outside the scenario still fails the test; warnings from scenario attempts remain visible. If the final attempt throws after recording other assertion failures, NUnit reports both; earlier attempts discard those assertion diagnostics. Retry conditions receive the original exception. No teardown result override is used. TUnit's own `[Retry]` attribute retries the whole test method instead; use either, not both.
 
 Each attempt retains its own immutable `Steps`, including arguments, exception diagnostics and attachments, even after retry resets the runtime steps.
+
+`OnBeforeRetry(CancellationToken)` forwards to the existing parameterless override by default. Override the token overload to cancel asynchronous retry preparation. Methods marked `[BDTestRetrySetUp]` or `[BDTestRetryTearDown]` may accept one `CancellationToken` parameter. These hooks receive caller/framework cancellation; the new scenario timeout starts after retry preparation. Cancellation prevents subsequent retry hooks and Context replacement from starting, and uncooperative retry preparation is subject to the same cancellation grace period and output isolation as steps.

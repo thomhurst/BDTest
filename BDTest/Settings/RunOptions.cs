@@ -16,8 +16,8 @@ internal sealed class RunOptions
     private readonly Func<Scenario, bool>[] _skipTestRules = Array.Empty<Func<Scenario, bool>>();
     private readonly SkipStepRule<object>[] _skipStepRules = Array.Empty<SkipStepRule<object>>();
     private readonly bool _skipWhen;
-    private readonly Func<StepResult, Task>? _beforeStep;
-    private readonly Func<StepResult, Task>? _afterStep;
+    private readonly Func<StepResult, System.Threading.CancellationToken, Task>? _beforeStep;
+    private readonly Func<StepResult, System.Threading.CancellationToken, Task>? _afterStep;
     private readonly Func<ScenarioHookContext, Task>? _beforeScenario;
     private readonly Func<ScenarioHookContext, Task>? _afterScenario;
 
@@ -64,8 +64,8 @@ internal sealed class RunOptions
     internal IReadOnlyList<Func<Scenario, bool>> SkipTestRules => _skipTestRules;
     internal IReadOnlyList<SkipStepRule<object>> SkipStepRules => _skipStepRules;
     internal bool ShouldSkipWhenStep => _skipWhen;
-    internal Func<BDTest.Contracts.StepResult, Task>? BeforeStep => _beforeStep;
-    internal Func<BDTest.Contracts.StepResult, Task>? AfterStep => _afterStep;
+    internal Func<BDTest.Contracts.StepResult, System.Threading.CancellationToken, Task>? BeforeStep => _beforeStep;
+    internal Func<BDTest.Contracts.StepResult, System.Threading.CancellationToken, Task>? AfterStep => _afterStep;
     internal Func<ScenarioHookContext, Task>? BeforeScenario => _beforeScenario;
     internal Func<ScenarioHookContext, Task>? AfterScenario => _afterScenario;
     internal IReadOnlyList<StepTextConverterRegistration> Converters { get; }

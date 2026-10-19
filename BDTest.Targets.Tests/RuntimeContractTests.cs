@@ -14,6 +14,28 @@ public class RuntimeContractTests
 
     private static bool _initialized;
 
+    [Test]
+    public async Task Caller_cancellation_without_a_timeout_reaches_steps_on_each_core_asset()
+    {
+        using var run = BDTestRun.Start();
+        using var cancellation = new CancellationTokenSource();
+        var entered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var later = false;
+        var execution = new TestHost(run).When(async token =>
+        {
+            entered.TrySetResult();
+            await Task.Delay(Timeout.Infinite, token);
+        }).Then(() => later = true).BDTestAsync(cancellation.Token);
+        await entered.Task.WaitAsync(TimeSpan.FromSeconds(10));
+        cancellation.Cancel();
+        await Assert.ThrowsAsync<OperationCanceledException>(async () => await execution.WaitAsync(TimeSpan.FromSeconds(10)));
+        var scenario = run.Scenarios.Single();
+        Assert.That(later, Is.False);
+        Assert.That(scenario.Status, Is.EqualTo(Status.Failed));
+        Assert.That(scenario.TimedOut, Is.False);
+        Assert.That(Required(scenario.Exception).Message, Does.Contain("cancelled"));
+    }
+
     [ModuleInitializer]
     public static void Initialize() => _initialized = true;
 

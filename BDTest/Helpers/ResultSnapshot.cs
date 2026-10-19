@@ -30,7 +30,7 @@ internal static class ResultSnapshot
             scenario.TestStartupInformation, scenario.TearDownOutput, scenario.CustomHtmlOutputForReport, scenario.Output,
             Utc(scenario.StartTime), Utc(scenario.EndTime), scenario.TimeTaken, scenario.Timeout, scenario.RetryCount,
             scenario.IsOutline, scenario.OutlineId, scenario.Attachments?.Select(Create).ToArray(),
-            scenario.CustomTestInformation?.Select(item => item.Information ?? "").ToArray());
+            scenario.CustomTestInformation?.Select(item => item.Information ?? "").ToArray(), scenario.AttemptTimedOut);
     }
 
     internal static StepResult Create(Step step)

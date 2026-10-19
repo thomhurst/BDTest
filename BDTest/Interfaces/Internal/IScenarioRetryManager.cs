@@ -4,5 +4,5 @@ namespace BDTest.Interfaces.Internal;
 
 internal interface IScenarioRetryManager
 {
-    Task CheckIfAlreadyExecuted(Scenario scenario);
+    Task CheckIfAlreadyExecuted(Scenario scenario, BDTest.Engine.ExecutionCancellation? cancellation = null);
 }

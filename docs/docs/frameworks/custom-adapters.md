@@ -46,9 +46,10 @@ public abstract class MyRunnerBDTestBase<TContext> : AbstractContextBDTestBase<T
 | Member | Purpose |
 | --- | --- |
 | `BeginTest(string frameworkTestId, MethodInfo testMethod)` | Starts one test execution. Records the execution ID, exact method metadata and the owning `TestRun`, installs console capture and clears stale capture state. |
-| `EndTestAsync()` | Awaits owned context disposal, removes pending output from the owning run and clears matching flow state, even when disposal throws. Calling it again is safe. |
+| `EndTestAsync()` | Normally awaits owned context disposal, removes pending output from the owning run and clears matching flow state, even when disposal throws. After abandoned execution, disposal waits in the background until the unfinished work settles. Calling it again is safe. |
 | `EndTest()` | Synchronous compatibility bridge for cleanup. Prefer awaiting `EndTestAsync()` for async contexts. |
 | `OnScenarioSkipped(string reason)` | Called when a whole scenario is skipped. Throw the runner's skip exception or call its skip API. |
+| `FrameworkCancellationToken` | Protected virtual token that the core combines with the explicit execution token and timeouts. Defaults to `CancellationToken.None`. |
 | `TestRun` | The [`BDTestRun`](../advanced/explicit-runs.md) that stores this test's scenarios. Override it with a stable run to isolate scenarios, output and completion from other runs. This abstract property must return an explicitly owned run. |
 
 Adapters no longer need to set `TestOutputData.FrameworkExecutionId` or call `RemoveContext()` themselves.
@@ -84,6 +85,19 @@ retry rules see it. Optional diagnostics registered through
 a terminal failed attempt. Preserve warnings and failures outside the scenario.
 Do not overwrite the runner's overall result. NUnit uses this hook with NUnit's
 public exception constraints, including multiple-assert retry handling.
+
+## Runner cancellation
+
+Override the protected `FrameworkCancellationToken` property to expose the current test's runner token:
+
+```csharp title="Illustrative fragment"
+protected override CancellationToken FrameworkCancellationToken =>
+    MyRunner.CurrentTest.CancellationToken;
+```
+
+Read the token for the current execution, including each parallel test or data row. The core combines it with the token passed to `BDTestAsync(cancellationToken)` and active step/scenario limits. This property defaults to `CancellationToken.None`; adding this core extension does not itself connect the built-in adapters to runner cancellation.
+
+Execution cancellation records `Failed` with an `OperationCanceledException`, leaves `TimedOut` false and stops retries and subsequent outline rows. `IStepHook` methods receive the effective token as their second argument; scenario hooks read `ScenarioHookContext.CancellationToken`. See [Timeouts and cancellation](../writing-tests/timeouts.md) for bounded cleanup and the limits of cancelling synchronous code.
 
 ## Execution identity
 

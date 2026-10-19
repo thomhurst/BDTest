@@ -87,6 +87,8 @@ public sealed class AccountContext : IBDTestContextLifetime, IAsyncDisposable
 
 BDTest awaits initialization once before scenario hooks and the first step of each attempt. It also initializes fresh contexts before retry setup hooks. For [outline rows](scenario-outlines.md), construction and configuration happen before the row factory, but asynchronous initialization happens afterward, following the once-only scenario skip decision. Row factories must not use resources created by `InitializeAsync`; use those resources in scenario hooks or steps. A throwing skip predicate prevents initialization; a matching skip still initializes the context for scenario hooks. Initialization failures stop the attempt before any steps run, remove the stored context, and dispose it. Terminal construction, configuration and initialization errors are retained in the scenario exception for reporting, even when no step ran, including preparation that throws `NotImplementedException`. A successful retry keeps earlier errors only in its attempt history. A failure during cleanup is propagated; if initialization or configuration also failed, both exceptions are retained in an `AggregateException`.
 
+A [scenario timeout](timeouts.md) covers context preparation performed during the attempt. Existing factory and lifetime interfaces remain unchanged. Explicit execution cancellation can bound asynchronous preparation, including preparation before an outline row factory. If cancelled preparation does not settle within the grace period, retries and subsequent rows stop so they cannot replace a context still in use.
+
 Setup-time synchronous `Context` access remains supported: it constructs and configures the context through a worker-thread bridge, which also supports async factories without blocking their synchronization context. It does **not** run `InitializeAsync`. Prefer `await InitializeContextAsync()` in async setup if setup needs initialized resources or an asynchronous factory. Subsequent synchronous access returns the configured context. Do not capture a context or a context-dependent step object across retries; read `Context` inside each step.
 
 ## Ownership and disposal
@@ -99,6 +101,8 @@ BDTest disposes each framework-owned context exactly once:
 - at adapter teardown, including when steps throw.
 
 `IAsyncDisposable` takes precedence over `IDisposable` when both are implemented. Normal adapter teardown awaits async disposal. Synchronous compatibility entry points bridge async disposal; custom adapters should await `EndTestAsync()` in teardown. A disposal exception propagates to the runner, but the context is detached and execution bookkeeping is still completed. A failure disposing a retry context stops that retry before another context is created.
+
+After [abandoned execution](timeouts.md), teardown returns while the context remains available to the unfinished work. Disposal is deferred until that work and its cancellation callbacks settle, including abandoned context preparation. Deferred disposal errors are observed in the background and cannot change the completed result; work that never settles prevents safe disposal.
 
 Cleanup must use the context object being disposed. Reading the fixture's `Context` or `BDTestContext`, initializing, replacing or removing that context from its cleanup callback throws `InvalidOperationException` immediately. This prevents cleanup from waiting on its own execution gate. Concurrent initialization from another flow still waits until cleanup completes.
 

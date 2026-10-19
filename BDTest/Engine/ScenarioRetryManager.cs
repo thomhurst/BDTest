@@ -8,11 +8,11 @@ namespace BDTest.Engine;
 
 internal class ScenarioRetryManager : IScenarioRetryManager
 {
-    public async Task CheckIfAlreadyExecuted(Scenario scenario)
+    public async Task CheckIfAlreadyExecuted(Scenario scenario, ExecutionCancellation? cancellation = null)
     {
         if (scenario.ShouldRetry)
         {
-            await ResetData(scenario);
+            await ResetData(scenario, cancellation);
             return;
         }
             
@@ -24,7 +24,7 @@ internal class ScenarioRetryManager : IScenarioRetryManager
         scenario.AlreadyExecuted = true;
     }
         
-    private async Task ResetData(Scenario scenario)
+    private async Task ResetData(Scenario scenario, ExecutionCancellation? cancellation)
     {
         SetRetryData(scenario);
 
@@ -32,32 +32,34 @@ internal class ScenarioRetryManager : IScenarioRetryManager
 
         scenario.Status = Status.NotRun;
 
-        await RunRetryTestHooks(scenario);
+        await RunRetryTestHooks(scenario, cancellation);
 
         await ConsoleReporter.WriteLine($"{Environment.NewLine}Retrying test...{Environment.NewLine}");
     }
 
-    private async Task RunRetryTestHooks(Scenario scenario)
+    private async Task RunRetryTestHooks(Scenario scenario, ExecutionCancellation? cancellation)
     {
         try
         {
             var bdTestBase = scenario.BdTestBaseClass ?? throw new InvalidOperationException("The scenario has no test instance.");
 
             // Run TearDown Attributed Method
-            await bdTestBase.RunMethodWithAttribute<BDTestRetryTearDownAttribute>();
+            await bdTestBase.RunMethodWithAttribute<BDTestRetryTearDownAttribute>(cancellation?.Token ?? default, Invoke);
 
             // Run Custom Test Hook In Base Class
-            await bdTestBase.OnBeforeRetry();
+            await Invoke(() => bdTestBase.OnBeforeRetry(cancellation?.Token ?? default));
 
-            await bdTestBase.RecreateContextOnRetryAsync(scenario.RetryCount);
+            await Invoke(() => bdTestBase.RecreateContextOnRetryAsync(scenario.RetryCount).AsTask());
 
             // Run SetUp Attributed Method
-            await bdTestBase.RunMethodWithAttribute<BDTestRetrySetUpAttribute>();
+            await bdTestBase.RunMethodWithAttribute<BDTestRetrySetUpAttribute>(cancellation?.Token ?? default, Invoke);
         }
-        catch (Exception e)
+        catch (Exception e) when (!(e is OperationCanceledException && scenario.ExecutionCancelled))
         {
             throw new ErrorOccurredDuringRetryActionException(e);
         }
+
+        Task Invoke(Func<Task> action) => cancellation?.RunAsync(action) ?? action();
     }
 
     private static void ResetStepData(Scenario scenario)

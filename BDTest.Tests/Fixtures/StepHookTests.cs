@@ -454,11 +454,12 @@ public class StepHookTests : TestRunOwner
         Step? observed = null;
         using var test = new HookTest(() => TestRun)
         {
-            After = async step =>
+            AfterWithToken = async (step, token) =>
             {
                 if (calls.Count == 0) { return; }
                 observed = step;
-                await Task.Delay(1500);
+                try { await Task.Delay(Timeout.Infinite, token); }
+                catch (OperationCanceledException) { }
                 calls.Add("after");
                 switch (kind)
                 {
@@ -533,6 +534,8 @@ public class StepHookTests : TestRunOwner
         public Func<BDTest.Contracts.StepResult, Task> Before { get; init; } = _ => Task.CompletedTask;
         public Func<BDTest.Contracts.StepResult, Task> After { get; init; } = _ => Task.CompletedTask;
         public override Task OnBeforeStep(BDTest.Contracts.StepResult step) => Before(step);
-        public override Task OnAfterStep(BDTest.Contracts.StepResult step) => After(step);
+        public Func<Step, CancellationToken, Task>? AfterWithToken { get; init; }
+        public override Task OnAfterStep(Step step, CancellationToken cancellationToken) =>
+            AfterWithToken?.Invoke(step, cancellationToken) ?? After(step);
     }
 }

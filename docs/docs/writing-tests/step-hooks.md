@@ -19,13 +19,13 @@ options.StepHooks.Add(new StepLogger());
 
 public sealed class StepLogger : BDTest.Interfaces.IStepHook
 {
-    public Task BeforeStepAsync(BDTest.Contracts.StepResult step)
+    public Task BeforeStepAsync(BDTest.Contracts.StepResult step, System.Threading.CancellationToken cancellationToken)
     {
         Console.WriteLine($"Starting: {step.StepText}");
         return Task.CompletedTask;
     }
 
-    public Task AfterStepAsync(BDTest.Contracts.StepResult step)
+    public Task AfterStepAsync(BDTest.Contracts.StepResult step, System.Threading.CancellationToken cancellationToken)
     {
         Console.WriteLine($"Finished: {step.Status}");
         return Task.CompletedTask;
@@ -37,17 +37,17 @@ Hooks can run concurrently for different tests. Keep their shared state thread-s
 
 ## Per-test hooks
 
-Override `OnBeforeStep(BDTest.Contracts.StepResult step)` and `OnAfterStep(BDTest.Contracts.StepResult step)` on your test class or base class. They return `Task` and can use the test's `Context`:
+Override `OnBeforeStep(BDTest.Contracts.StepResult step, CancellationToken cancellationToken)` and `OnAfterStep(BDTest.Contracts.StepResult step, CancellationToken cancellationToken)` on your test class or base class. They return `Task` and can use the test's `Context`:
 
 ```csharp title="Illustrative fragment"
 public abstract class UiTestBase : TUnitBDTestBase<UiContext>
 {
-    public override async Task OnAfterStep(BDTest.Contracts.StepResult step)
+    public override async Task OnAfterStep(BDTest.Contracts.StepResult step, CancellationToken cancellationToken)
     {
         if (step.Status == Status.Failed)
         {
             // Your own helper that saves a screenshot and returns an http(s) URL.
-            var screenshotUrl = await Context.Screenshots.CaptureAndUploadAsync();
+            var screenshotUrl = await Context.Screenshots.CaptureAndUploadAsync(cancellationToken);
             ScenarioHtmlWriter.Image(screenshotUrl);
         }
     }
@@ -69,7 +69,7 @@ Hook registrations remain fixed for the lifetime of the run, including retries.
 ## Exceptions in hooks
 
 - Before hooks stop at the first exception.
-- Every after hook still runs if a before hook, the step or another after hook throws.
+- Every after hook is still attempted if a before hook, the step or another after hook throws or is cancelled.
 - The original execution exception takes precedence. Secondary after-hook exceptions are logged.
 - Otherwise the first after-hook exception decides the step result, using the usual [exception classification](../configuration/exceptions.md) and [retry](retries.md) rules.
 
@@ -98,3 +98,9 @@ After hooks receive the step's `Status`, `Exception`, `Output`, `StartTime`, `En
 | Each retry attempt | Yes |
 | Step not reached because an earlier step failed | No |
 | Whole scenario skipped before execution | No |
+
+## Cancellation and migration
+
+`IStepHook.BeforeStepAsync` and `AfterStepAsync` now take a `CancellationToken` after the immutable `StepResult`. Add that parameter to existing implementations and pass it to cancellable operations. The result remains report data only; it does not hold a live token. The token-aware base overrides forward to their existing single-argument overrides by default, preserving those overrides.
+
+Both step and scenario [timeouts](timeouts.md) cover before hooks, the body and after hooks. After cancellation, cleanup receives a cancelled token and each operation has a 250 millisecond grace period. Unfinished work prevents retries and later outline rows, and its late captured output is suppressed. Cleanup exceptions do not replace an existing execution failure.
