@@ -5,7 +5,7 @@ namespace BDTest.Compiler;
 // Shared by the metadata generator and analyzers; always inspect the bound method.
 internal static class BDTestSymbols
 {
-    internal static bool IsStepName(string? name) => name is "Given" or "When" or "Then" or "And" or "But";
+    internal static bool IsStepName(string? name) => name is "Given" or "When" or "Then" or "And" or "But" or "Step";
 
     internal static bool IsBuilderMethod(IMethodSymbol method)
     {

@@ -69,6 +69,69 @@ public abstract class BDTestBase
         ReferenceEquals(AsyncLocalBDTestExecutionId.Value, executionId);
 
     [OverloadResolutionPriority(-1)]
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("ApiDesign", "RS0026", Justification = "Caller information and delegate overloads follow the existing step entry points.")]
+    public GenericStep Step(Action step, [CallerMemberName] string? callerMember = null,
+        [CallerFilePath] string? callerFile = null,
+        [CallerLineNumber] int callerLine = 0, [CallerArgumentExpression(nameof(step))] string? argumentExpression = null)
+    {
+        return new GenericStep(new Runnable(step, argumentExpression, callerFile, callerLine), callerMember, callerFile, BDTestExecutionId, TestRun.ReportId, this);
+    }
+
+    [OverloadResolutionPriority(1)]
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("ApiDesign", "RS0026", Justification = "Caller information and delegate overloads follow the existing step entry points.")]
+    public GenericStep Step(Func<Task> step, [CallerMemberName] string? callerMember = null,
+        [CallerFilePath] string? callerFile = null,
+        [CallerLineNumber] int callerLine = 0, [CallerArgumentExpression(nameof(step))] string? argumentExpression = null)
+    {
+        return new GenericStep(new Runnable(step, argumentExpression, callerFile, callerLine), callerMember, callerFile, BDTestExecutionId, TestRun.ReportId, this);
+    }
+
+    [OverloadResolutionPriority(1)]
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("ApiDesign", "RS0026", Justification = "Caller information and delegate overloads follow the existing step entry points.")]
+    public GenericStep Step(Func<CancellationToken, Task> step, [CallerMemberName] string? callerMember = null,
+        [CallerFilePath] string? callerFile = null,
+        [CallerLineNumber] int callerLine = 0, [CallerArgumentExpression(nameof(step))] string? argumentExpression = null)
+    {
+        return new GenericStep(new Runnable(step, argumentExpression, callerFile, callerLine), callerMember, callerFile, BDTestExecutionId, TestRun.ReportId, this);
+    }
+
+    [OverloadResolutionPriority(0)]
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("ApiDesign", "RS0026", Justification = "Caller information and delegate overloads follow the existing step entry points.")]
+    public GenericStep Step(Func<ValueTask> step, [CallerMemberName] string? callerMember = null,
+        [CallerFilePath] string? callerFile = null,
+        [CallerLineNumber] int callerLine = 0, [CallerArgumentExpression(nameof(step))] string? argumentExpression = null)
+    {
+        return new GenericStep(new Runnable(step, argumentExpression, callerFile, callerLine), callerMember, callerFile, BDTestExecutionId, TestRun.ReportId, this);
+    }
+
+    [OverloadResolutionPriority(0)]
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("ApiDesign", "RS0026", Justification = "Caller information and delegate overloads follow the existing step entry points.")]
+    public GenericStep Step(Func<CancellationToken, ValueTask> step, [CallerMemberName] string? callerMember = null,
+        [CallerFilePath] string? callerFile = null,
+        [CallerLineNumber] int callerLine = 0, [CallerArgumentExpression(nameof(step))] string? argumentExpression = null)
+    {
+        return new GenericStep(new Runnable(step, argumentExpression, callerFile, callerLine), callerMember, callerFile, BDTestExecutionId, TestRun.ReportId, this);
+    }
+
+    [OverloadResolutionPriority(0)]
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("ApiDesign", "RS0026", Justification = "Caller information and delegate overloads follow the existing step entry points.")]
+    public GenericStep Step<T>(Func<ValueTask<T>> step, [CallerMemberName] string? callerMember = null,
+        [CallerFilePath] string? callerFile = null,
+        [CallerLineNumber] int callerLine = 0, [CallerArgumentExpression(nameof(step))] string? argumentExpression = null)
+    {
+        return new GenericStep(Runnable.FromResult(step, argumentExpression, callerFile, callerLine), callerMember, callerFile, BDTestExecutionId, TestRun.ReportId, this);
+    }
+
+    [OverloadResolutionPriority(0)]
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("ApiDesign", "RS0026", Justification = "Caller information and delegate overloads follow the existing step entry points.")]
+    public GenericStep Step<T>(Func<CancellationToken, ValueTask<T>> step, [CallerMemberName] string? callerMember = null,
+        [CallerFilePath] string? callerFile = null,
+        [CallerLineNumber] int callerLine = 0, [CallerArgumentExpression(nameof(step))] string? argumentExpression = null)
+    {
+        return new GenericStep(Runnable.FromResult(step, argumentExpression, callerFile, callerLine), callerMember, callerFile, BDTestExecutionId, TestRun.ReportId, this);
+    }
+
+    [OverloadResolutionPriority(-1)]
     [System.Diagnostics.CodeAnalysis.SuppressMessage("ApiDesign", "RS0026", Justification = "Existing caller-info overload preserved by the next-major namespace migration; no overload or optional parameter was added.")]
     public Given Given(Action step, [CallerMemberName] string? callerMember = null,
         [CallerFilePath] string? callerFile = null,

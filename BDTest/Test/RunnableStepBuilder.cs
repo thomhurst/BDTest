@@ -21,6 +21,11 @@ public abstract class RunnableStepBuilder : StepBuilder
     {
     }
 
+    internal RunnableStepBuilder(Runnable runnable, string? callerMember, string? callerFile, string testId, string reportId, StepType stepType, BDTestBase bdTestBase)
+        : base(runnable, callerMember, callerFile, testId, reportId, stepType, bdTestBase)
+    {
+    }
+
     protected void SetScenarioText(string scenarioText)
     {
         ScenarioText = new ScenarioText(scenarioText);

@@ -658,3 +658,22 @@ virtual BDTest.BDTestBase.OnScenarioSkipped(string! reason) -> void
 ~BDTest.Helpers.BDTestJsonContext.StepType.get -> System.Text.Json.Serialization.Metadata.JsonTypeInfo<BDTest.Contracts.StepType>
 ~BDTest.Helpers.BDTestJsonContext.TestInformationAttribute.get -> System.Text.Json.Serialization.Metadata.JsonTypeInfo<BDTest.TestInformationAttribute>
 ~BDTest.Helpers.BDTestJsonContext.TestInformationAttributeArray.get -> System.Text.Json.Serialization.Metadata.JsonTypeInfo<BDTest.TestInformationAttribute[]>
+
+BDTest.BDTestBase.Step(System.Action! step, string? callerMember = null, string? callerFile = null, int callerLine = 0, string? argumentExpression = null) -> BDTest.GenericStep!
+BDTest.BDTestBase.Step(System.Func<System.Threading.CancellationToken, System.Threading.Tasks.Task!>! step, string? callerMember = null, string? callerFile = null, int callerLine = 0, string? argumentExpression = null) -> BDTest.GenericStep!
+BDTest.BDTestBase.Step(System.Func<System.Threading.CancellationToken, System.Threading.Tasks.ValueTask>! step, string? callerMember = null, string? callerFile = null, int callerLine = 0, string? argumentExpression = null) -> BDTest.GenericStep!
+BDTest.BDTestBase.Step(System.Func<System.Threading.Tasks.Task!>! step, string? callerMember = null, string? callerFile = null, int callerLine = 0, string? argumentExpression = null) -> BDTest.GenericStep!
+BDTest.BDTestBase.Step(System.Func<System.Threading.Tasks.ValueTask>! step, string? callerMember = null, string? callerFile = null, int callerLine = 0, string? argumentExpression = null) -> BDTest.GenericStep!
+BDTest.BDTestBase.Step<T>(System.Func<System.Threading.CancellationToken, System.Threading.Tasks.ValueTask<T>>! step, string? callerMember = null, string? callerFile = null, int callerLine = 0, string? argumentExpression = null) -> BDTest.GenericStep!
+BDTest.BDTestBase.Step<T>(System.Func<System.Threading.Tasks.ValueTask<T>>! step, string? callerMember = null, string? callerFile = null, int callerLine = 0, string? argumentExpression = null) -> BDTest.GenericStep!
+BDTest.GenericStep.Step(System.Action! step, string? callerFile = null, int callerLine = 0, string? argumentExpression = null) -> BDTest.GenericStep!
+BDTest.GenericStep.Step(System.Func<System.Threading.CancellationToken, System.Threading.Tasks.Task!>! step, string? callerFile = null, int callerLine = 0, string? argumentExpression = null) -> BDTest.GenericStep!
+BDTest.GenericStep.Step(System.Func<System.Threading.CancellationToken, System.Threading.Tasks.ValueTask>! step, string? callerFile = null, int callerLine = 0, string? argumentExpression = null) -> BDTest.GenericStep!
+BDTest.GenericStep.Step(System.Func<System.Threading.Tasks.Task!>! step, string? callerFile = null, int callerLine = 0, string? argumentExpression = null) -> BDTest.GenericStep!
+BDTest.GenericStep.Step(System.Func<System.Threading.Tasks.ValueTask>! step, string? callerFile = null, int callerLine = 0, string? argumentExpression = null) -> BDTest.GenericStep!
+BDTest.GenericStep.Step<T>(System.Func<System.Threading.CancellationToken, System.Threading.Tasks.ValueTask<T>>! step, string? callerFile = null, int callerLine = 0, string? argumentExpression = null) -> BDTest.GenericStep!
+BDTest.GenericStep.Step<T>(System.Func<System.Threading.Tasks.ValueTask<T>>! step, string? callerFile = null, int callerLine = 0, string? argumentExpression = null) -> BDTest.GenericStep!
+BDTest.GenericStep
+BDTest.GenericStep.WithArgs(params System.Func<object?>![]! arguments) -> BDTest.GenericStep!
+BDTest.GenericStep.WithStepText(System.Func<string?>? text) -> BDTest.GenericStep!
+BDTest.GenericStep.WithScenarioText(string! text) -> BDTest.GenericStep!

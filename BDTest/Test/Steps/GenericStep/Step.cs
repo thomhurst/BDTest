@@ -1,46 +1,90 @@
-using System.Linq.Expressions;
+using System.Runtime.CompilerServices;
+using System.Threading;
 
-namespace BDTest.Test.Steps.GenericStep;
+namespace BDTest;
 
-public class GenericStep : RunnableStepBuilder
+/// <summary>A runnable chain of generic steps without Given/When/Then ordering.</summary>
+public sealed class GenericStep : RunnableStepBuilder
 {
-    protected override StepType StepType { get; } = StepType.Step;
+    protected override StepType StepType => StepType.Step;
 
-    internal GenericStep(Runnable runnable, string callerMember, string callerFile, string testId, string reportId, BDTestBase bdTestBase) 
-        : base(new List<Test.Step>(), runnable, new TestStepBuilder(runnable, callerMember, callerFile, testId, reportId, StepType.Step, bdTestBase))
+    internal GenericStep(Runnable runnable, string? callerMember, string? callerFile, string testId, string reportId, BDTestBase bdTestBase)
+        : base(runnable, callerMember, callerFile, testId, reportId, StepType.Step, bdTestBase) { }
+
+    internal GenericStep(Runnable runnable, BuildableTest previous) : base(runnable, previous) { }
+
+    public GenericStep WithArgs(params Func<object?>[] arguments)
     {
+        SetArguments(arguments);
+        return this;
     }
 
-    internal GenericStep(List<Test.Step> previousSteps, Runnable runnable, BuildableTest previousPartiallyBuiltTest) 
-        : base(previousSteps, runnable, previousPartiallyBuiltTest)
+    public GenericStep WithStepText(Func<string?>? text)
     {
+        SetStepText(text);
+        return this;
     }
 
-    public GenericStep WithStepText(Func<string> overridingStepText)
+    public GenericStep WithScenarioText(string text)
     {
-        return WithStepText<GenericStep>(overridingStepText);
+        SetScenarioText(text);
+        return this;
     }
 
-    // Actions
-    public GenericStep Step(Expression<Action> step)
+    [OverloadResolutionPriority(-1)]
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("ApiDesign", "RS0026", Justification = "Caller information and delegate overloads follow the existing step continuations.")]
+    public GenericStep Step(Action step, [CallerFilePath] string? callerFile = null,
+        [CallerLineNumber] int callerLine = 0, [CallerArgumentExpression(nameof(step))] string? argumentExpression = null)
     {
-        return new GenericStep(ExistingSteps, new Runnable(step), this);
+        return new GenericStep(new Runnable(step, argumentExpression, callerFile, callerLine), this);
     }
 
-    // Tasks
-    public GenericStep Step(Expression<Func<Task>> step)
+    [OverloadResolutionPriority(1)]
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("ApiDesign", "RS0026", Justification = "Caller information and delegate overloads follow the existing step continuations.")]
+    public GenericStep Step(Func<Task> step, [CallerFilePath] string? callerFile = null,
+        [CallerLineNumber] int callerLine = 0, [CallerArgumentExpression(nameof(step))] string? argumentExpression = null)
     {
-        return new GenericStep(ExistingSteps, new Runnable(step), this);
+        return new GenericStep(new Runnable(step, argumentExpression, callerFile, callerLine), this);
     }
 
-    // Internal helper class to properly initialize the first step
-    private class TestStepBuilder : StepBuilder
+    [OverloadResolutionPriority(1)]
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("ApiDesign", "RS0026", Justification = "Caller information and delegate overloads follow the existing step continuations.")]
+    public GenericStep Step(Func<CancellationToken, Task> step, [CallerFilePath] string? callerFile = null,
+        [CallerLineNumber] int callerLine = 0, [CallerArgumentExpression(nameof(step))] string? argumentExpression = null)
     {
-        protected override StepType StepType { get; } = StepType.Step;
-
-        internal TestStepBuilder(Runnable runnable, string callerMember, string callerFile, string testId, string reportId, StepType stepType, BDTestBase bdTestBase)
-            : base(runnable, callerMember, callerFile, testId, reportId, stepType, bdTestBase)
-        {
-        }
+        return new GenericStep(new Runnable(step, argumentExpression, callerFile, callerLine), this);
     }
+
+    [OverloadResolutionPriority(0)]
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("ApiDesign", "RS0026", Justification = "Caller information and delegate overloads follow the existing step continuations.")]
+    public GenericStep Step(Func<ValueTask> step, [CallerFilePath] string? callerFile = null,
+        [CallerLineNumber] int callerLine = 0, [CallerArgumentExpression(nameof(step))] string? argumentExpression = null)
+    {
+        return new GenericStep(new Runnable(step, argumentExpression, callerFile, callerLine), this);
+    }
+
+    [OverloadResolutionPriority(0)]
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("ApiDesign", "RS0026", Justification = "Caller information and delegate overloads follow the existing step continuations.")]
+    public GenericStep Step(Func<CancellationToken, ValueTask> step, [CallerFilePath] string? callerFile = null,
+        [CallerLineNumber] int callerLine = 0, [CallerArgumentExpression(nameof(step))] string? argumentExpression = null)
+    {
+        return new GenericStep(new Runnable(step, argumentExpression, callerFile, callerLine), this);
+    }
+
+    [OverloadResolutionPriority(0)]
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("ApiDesign", "RS0026", Justification = "Caller information and delegate overloads follow the existing step continuations.")]
+    public GenericStep Step<T>(Func<ValueTask<T>> step, [CallerFilePath] string? callerFile = null,
+        [CallerLineNumber] int callerLine = 0, [CallerArgumentExpression(nameof(step))] string? argumentExpression = null)
+    {
+        return new GenericStep(Runnable.FromResult(step, argumentExpression, callerFile, callerLine), this);
+    }
+
+    [OverloadResolutionPriority(0)]
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("ApiDesign", "RS0026", Justification = "Caller information and delegate overloads follow the existing step continuations.")]
+    public GenericStep Step<T>(Func<CancellationToken, ValueTask<T>> step, [CallerFilePath] string? callerFile = null,
+        [CallerLineNumber] int callerLine = 0, [CallerArgumentExpression(nameof(step))] string? argumentExpression = null)
+    {
+        return new GenericStep(Runnable.FromResult(step, argumentExpression, callerFile, callerLine), this);
+    }
+
 }
