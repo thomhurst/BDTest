@@ -152,6 +152,7 @@ internal sealed class ExecutionCancellation : IDisposable
             {
                 _scenario.UncooperativeExecution = true;
                 _outstanding.Add(settled);
+                _scenario.BdTestBaseClass?.DeferContextCleanup(settled);
                 var diagnostic = "Cancellation was ignored beyond the 250 ms grace period; output capture detached and retries disabled.";
                 _step?.Diagnostics?.Add(diagnostic);
                 failure = failure is TimeoutException

@@ -27,9 +27,14 @@ internal sealed class ExecutionOutputScope : IDisposable
         }
     }
 
-    public void Dispose()
+    internal void Detach()
     {
         lock (_run.Store.Gate) Interlocked.Exchange(ref _closed, 1);
+    }
+
+    public void Dispose()
+    {
+        Detach();
         Current.Value = _previous;
     }
 }

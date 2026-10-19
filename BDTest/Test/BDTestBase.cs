@@ -352,7 +352,7 @@ public abstract class BDTestBase
         finally { ClearCompletedExecution(execution); }
     }
 
-    /// <summary>Awaits context disposal and clears execution state even when disposal fails. Safe to repeat.</summary>
+    /// <summary>Clears execution state and awaits context disposal unless abandoned work requires deferred cleanup. Safe to repeat.</summary>
     public ValueTask EndTestAsync()
     {
         var execution = CurrentExecution;
@@ -407,6 +407,8 @@ public abstract class BDTestBase
     }
 
     internal virtual ValueTask RemoveExecutionContextAsync(string executionId) => default;
+
+    internal virtual void DeferContextCleanup(Task outstanding) { }
     internal virtual ValueTask InitializeExecutionContextAsync() => default;
 
     private static void ClearExecutionFlow()
@@ -476,8 +478,11 @@ public abstract class BDTestBase
     {
         foreach (var method in GetMethodsWithAttribute<TAttribute>())
         {
-            cancellationToken.ThrowIfCancellationRequested();
-            if (execute == null) await Invoke();
+            if (execute == null)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                await Invoke();
+            }
             else await execute(Invoke);
 
             async Task Invoke()

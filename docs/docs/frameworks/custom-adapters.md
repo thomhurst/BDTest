@@ -46,7 +46,7 @@ public abstract class MyRunnerBDTestBase<TContext> : AbstractContextBDTestBase<T
 | Member | Purpose |
 | --- | --- |
 | `BeginTest(string frameworkTestId, MethodInfo testMethod)` | Starts one test execution. Records the execution ID, exact method metadata and the owning `TestRun`, installs console capture and clears stale capture state. |
-| `EndTestAsync()` | Awaits owned context disposal, removes pending output from the owning run and clears matching flow state, even when disposal throws. Calling it again is safe. |
+| `EndTestAsync()` | Normally awaits owned context disposal, removes pending output from the owning run and clears matching flow state, even when disposal throws. After abandoned execution, disposal waits in the background until the unfinished work settles. Calling it again is safe. |
 | `EndTest()` | Synchronous compatibility bridge for cleanup. Prefer awaiting `EndTestAsync()` for async contexts. |
 | `OnScenarioSkipped(string reason)` | Called when a whole scenario is skipped. Throw the runner's skip exception or call its skip API. |
 | `FrameworkCancellationToken` | Protected virtual token that the core combines with the explicit execution token and timeouts. Defaults to `CancellationToken.None`. |

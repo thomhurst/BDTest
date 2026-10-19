@@ -48,6 +48,8 @@ The scenario budget includes preparation performed during the attempt, before an
 
 After hooks are still attempted after cancellation or timeout, with a cancelled token. Each cleanup operation has the same bounded 250 millisecond grace period. Already-cancelled cleanup runs on the thread pool so synchronous cleanup cannot block execution indefinitely. Keep cleanup brief and do not assume a fresh timeout budget. A cleanup failure is secondary when execution has already failed.
 
+When work remains abandoned after the grace period, adapter teardown returns without waiting for it. Its context remains alive until that work and its cancellation callbacks finish; owned context disposal then runs in the background. This also applies to abandoned context creation or initialization. If the work never finishes, its context cannot safely be disposed. Background disposal cannot publish output or change the completed result, and any disposal exception is observed without replacing the original failure.
+
 Framework setup, retry teardown/setup hooks, `OnBeforeRetry`, and context recreation before the next attempt begins are outside the scenario timeout budget. Context work before an outline row's chain exists also cannot use that chain's scenario timeout. Use an explicit execution token for outline preparation and a suitable limit for framework setup or retry hooks. Outline factories are invoked directly, so a cancellation token cannot interrupt their synchronous work.
 
 ## Runtime implementation
