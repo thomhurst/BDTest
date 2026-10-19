@@ -41,6 +41,21 @@ Directly awaiting a runnable builder is also valid. Returning `BDTestAsync()` fr
 
 The rule proves direct discards, including void expression bodies and async Task/ValueTask expression bodies that omit `await`. It does not track local variables through control flow. Returning a builder, storing it for later, passing it to a helper, and configuring an existing builder do not prove that execution is missing. Those cases are not diagnosed.
 
+Explicit discards in expression-bodied methods and lambdas are diagnosed too:
+
+```csharp title="Illustrative fragment"
+// Warning: the chain is discarded without execution.
+void DefineScenario() => _ = Given(() => SetUpAccount());
+
+// Warning: the execution task is discarded without awaiting completion.
+async Task Test() => _ = Given(() => SetUpAccount())
+    .When(() => SubmitOrder())
+    .Then(() => AssertOrder())
+    .BDTestAsync();
+```
+
+This applies when `_` is a discard; assigning to a real variable or parameter named `_` is an ordinary assignment and is not diagnosed. Expression-bodied discards require a manual edit to execute or await the scenario.
+
 The fix adds `await` to a discarded expression statement inside an existing async function that does not return void. It is available only for runnable builders or execution tasks. An incomplete Given chain needs a When and Then before it can execute. The fix never introduces `async void` or changes a method signature.
 
 ## BDT002
