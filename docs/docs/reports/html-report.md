@@ -86,3 +86,11 @@ The report follows the browser's light or dark colour scheme, prints cleanly and
 Custom HTML from `ScenarioHtmlWriter` renders in a sandboxed frame with scripts disabled, and the report has a strict Content Security Policy; see [HTML report security](html-report-security.md). Links open in new tabs that keep the sandbox restrictions. Relative screenshot paths work when the report is opened from disk next to the images.
 
 To publish the file from CI, see [CI integration](ci-integration.md).
+
+## Creating HTML from a framework context
+
+Use `context.CreateHtmlReport(run, adapter)` with `using BDTest.Helpers;` to map
+framework or hook metadata into a descriptor and render the selected run. The
+[context adapter guide](overview.md#framework-context-adapters) explains the typed
+mapping, framework examples and completion-hook timing. The method returns HTML;
+the caller saves it and remains responsible for the run's lifetime.
