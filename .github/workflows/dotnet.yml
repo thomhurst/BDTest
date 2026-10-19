@@ -69,6 +69,9 @@ jobs:
       - name: Verify adapter conformance from test runners
         shell: pwsh
         run: ./scripts/Test-AdapterConformance.ps1 -ResultsDirectory artifacts/test-results/adapter-conformance
+      - name: Verify framework cancellation from test runners
+        shell: pwsh
+        run: ./scripts/Test-AdapterCancellation.ps1 -ResultsDirectory artifacts/test-results/adapter-cancellation
       - name: Run Pipeline
         run: dotnet run -c Release
         working-directory: "BDTest.Pipeline"

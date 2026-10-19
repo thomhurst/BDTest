@@ -28,6 +28,9 @@ public static class MSTestBDTestLifecycle
     internal sealed class Invocation(MethodInfo method)
     {
         private BDTestBase? _host;
+        private TestContext? _context;
+
+        internal CancellationToken CancellationToken => _context?.CancellationToken ?? default;
 
         internal void Initialize(BDTestBase host, TestContext context)
         {
@@ -40,6 +43,7 @@ public static class MSTestBDTestLifecycle
             }
             // Display names include data rows; the suffix distinguishes repeats with identical data.
             host.BeginTest($"{context.FullyQualifiedTestClassName}.{context.TestDisplayName ?? context.TestName}_{Guid.NewGuid():N}", method);
+            _context = context;
             _host = host;
         }
 

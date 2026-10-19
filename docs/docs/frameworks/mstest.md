@@ -29,7 +29,7 @@ public class ComposedBasketTests : CompanyTestBase, IBDTestMSTestTest
     private readonly BDTestScenario<ComposedBasketContext> _bdd;
     private TestContext _testContext = null!;
 
-    public ComposedBasketTests() => _bdd = BDTestScenario.For<ComposedBasketContext>(this, TestRuns.Baskets);
+    public ComposedBasketTests() => _bdd = MSTestBDTestScenario.For<ComposedBasketContext>(this, TestRuns.Baskets);
 
     public BDTestBase BDTestHost => _bdd;
 
@@ -180,6 +180,24 @@ Context disposal runs in the owning BDTest run and execution, including when MST
 
 Replace `[TestClass]` with `[BDTestClass]` on each concrete class that uses BDTest. MSTest does not inherit class attributes from the adapter base. `BDTestClassAttribute` preserves the original `TestMethodAttribute.ExecuteAsync` and supplies `ITestMethod.MethodInfo` before initialization, including data rows and overloads. A plain `[TestClass]` on a BDTest fixture produces a migration error during context injection.
 
-Existing inherited tests keep their builders and `Context`. To migrate to composition, keep `[BDTestClass]`, select an explicit run, create one `BDTestScenario.For<TContext>(this, run)` host, implement the interface and context setter above, and call builders/context on that host. Do not call `BeginTest` or `EndTest` yourself with this integration. The base class's `InitializeBDTest`, `BDTestMSTestTearDown`, and synchronous `TearDown` methods remain compatibility entry points for manual callers; they are no longer MSTest setup/cleanup hooks.
+Existing inherited tests keep their builders and `Context`. To migrate to composition, keep `[BDTestClass]`, select an explicit run, create one `MSTestBDTestScenario.For<TContext>(this, run)` host, implement the interface and context setter above, and call builders/context on that host. Do not call `BeginTest` or `EndTest` yourself with this integration. The base class's `InitializeBDTest`, `BDTestMSTestTearDown`, and synchronous `TearDown` methods remain compatibility entry points for manual callers; they are no longer MSTest setup/cleanup hooks.
 
 If you already derive your own class attribute from `TestClassAttribute`, delegate its `GetTestMethodAttribute` result to `new BDTestClassAttribute().GetTestMethodAttribute(original)` so both execution wrappers run.
+
+## Cancellation
+
+The inherited base and the framework-specific composition factory automatically forward
+`TestContext.CancellationToken` (the current runner context for composition) to scenario and outline execution, token-aware steps, and hooks, even when no
+BDTest timeout is configured. This API is verified against MSTest 4.5.1. Use
+`[Timeout(..., CooperativeCancellation = true)]` or runner cancellation to signal the framework token.
+
+`BDTestAsync(callerToken)` combines your token with the framework token; passing a caller
+token does not disable runner cancellation. Either source stops execution before unreached
+steps or retries start. BDTest records `Failed` with an `OperationCanceledException` and a
+cancellation reason; framework cancellation alone does not set BDTest's `TimedOut` flag.
+The enclosing framework may also report its own timeout or cancellation outcome.
+
+Use the framework-specific factory for automatic forwarding. A core-only
+`BDTestScenario.For<TContext>(this, run)` host has no framework token; pass the runner token
+to `BDTestAsync(token)` explicitly when retaining that host. Steps must observe their token;
+BDTest cannot interrupt arbitrary synchronous code. See [timeouts](../writing-tests/timeouts.md).

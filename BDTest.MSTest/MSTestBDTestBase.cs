@@ -8,6 +8,9 @@ namespace BDTest;
 public abstract class MSTestBDTestBase<TContext> : AbstractContextBDTestBase<TContext>, IBDTestMSTestTest
     where TContext : class
 {
+    /// <summary>The cancellation token supplied by the current framework test.</summary>
+    protected override CancellationToken FrameworkCancellationToken => TestContext?.CancellationToken ?? default;
+
     private BDTestRun? _assemblyRun;
 
     /// <summary>The configured run owned by this fixture's assembly, or an explicit override.</summary>

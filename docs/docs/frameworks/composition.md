@@ -62,3 +62,17 @@ Preserve the execution flow across setup, test body, and teardown. A fixture ins
 Pass an [explicit run](../advanced/explicit-runs.md) to isolate scenarios, contexts, and captured output. Different runs can use the same framework execution ID. The host does not dispose the run: dispose it after all tests, teardown, and output writers finish. Creating a host for a disposed run throws. The core `BDTestScenario.For` requires a run. The framework-specific `NUnitBDTestScenario`, `XUnitBDTestScenario`, `MSTestBDTestScenario` and `TUnitBDTestScenario` factories instead select the [configured assembly run](../configuration/assembly-runs.md).
 
 Register the adapter's `OutcomeMap` on `BDTestOptions` before starting an explicit run to classify framework exceptions and notify the runner about whole-scenario skips. Without an outcome map, the standalone host returns skipped scenarios for the caller to inspect. See [exception classification](../configuration/exceptions.md) and [custom adapters](custom-adapters.md).
+
+## Framework cancellation
+
+`NUnitBDTestScenario`, `XUnitBDTestScenario`, `MSTestBDTestScenario`, and
+`TUnitBDTestScenario` forward the current test's cancellation token automatically,
+including when no BDTest timeout is set. This applies to their explicit-run and
+assembly-run overloads. Tokens are read at execution time, so constructing a host
+before test setup does not capture a stale token. Keep the lifecycle registration
+shown on each framework page.
+
+The core `BDTestScenario.For` factory remains framework-independent. To retain it,
+pass your framework's token to `BDTestAsync(token)`; to enable automatic forwarding,
+replace the factory with the corresponding framework factory. An explicit caller
+token passed to a framework host is combined with its runner token.

@@ -40,10 +40,12 @@ BDTest.NUnitBDTestScenario
 BDTest.NUnitBDTestScenario<TContext>
 BDTest.NUnitBDTestScenario<TContext>.NUnitBDTestScenario(object! testInstance, BDTest.BDTestRun! run) -> void
 override BDTest.NUnitBDTestBase<TContext>.ExecuteScenarioStepsAsync(System.Func<System.Threading.Tasks.Task!>! executeSteps, System.Action<System.Action!>! registerTerminalFailure) -> System.Threading.Tasks.Task!
+override BDTest.NUnitBDTestBase<TContext>.FrameworkCancellationToken.get -> System.Threading.CancellationToken
 override BDTest.NUnitBDTestBase<TContext>.MarkTestAsComplete() -> void
 override BDTest.NUnitBDTestBase<TContext>.OnScenarioSkipped(string! reason) -> void
 override BDTest.NUnitBDTestBase<TContext>.TestRun.get -> BDTest.BDTestRun!
 override BDTest.NUnitBDTestScenario<TContext>.ExecuteScenarioStepsAsync(System.Func<System.Threading.Tasks.Task!>! executeSteps, System.Action<System.Action!>! registerTerminalFailure) -> System.Threading.Tasks.Task!
+override BDTest.NUnitBDTestScenario<TContext>.FrameworkCancellationToken.get -> System.Threading.CancellationToken
 override BDTest.NUnitBDTestScenario<TContext>.OnScenarioSkipped(string! reason) -> void
 static BDTest.NUnitBDTestAssembly.Dispose(System.Reflection.Assembly! assembly) -> void
 static BDTest.NUnitBDTestAssembly.GetRun(System.Reflection.Assembly! assembly) -> BDTest.BDTestRun!

@@ -50,6 +50,9 @@ try {
         # ReportSkip uses inconclusive; xUnit v3 falls back to skip for inconclusive.
         # Only NUnit has a success exception; other adapters use normal completion.
         $expected = @{
+            ExplicitCancellationWithoutTimeout = 'Passed'
+            NativeFrameworkCancellationWithoutTimeout = 'Passed'
+            NativeFrameworkCancellationWithExplicitToken = 'Passed'
             Pass = 'Passed'
             Fail = 'Failed'
             NotImplemented = 'Failed'

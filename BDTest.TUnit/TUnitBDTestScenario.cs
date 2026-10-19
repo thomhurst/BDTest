@@ -17,5 +17,12 @@ public static class TUnitBDTestScenario
 
     /// <summary>Creates a host with a caller-owned run. Register this framework's outcomes before starting it.</summary>
     public static BDTestScenario<TContext> For<TContext>(object testInstance, BDTestRun run) where TContext : class =>
-        BDTestScenario.For<TContext>(testInstance, run ?? throw new ArgumentNullException(nameof(run)));
+        new FrameworkScenario<TContext>(testInstance, run ?? throw new ArgumentNullException(nameof(run)));
+
+    // Resolve at execution time: factories can run before the runner installs its test token.
+    private sealed class FrameworkScenario<TContext>(object testInstance, BDTestRun run)
+        : BDTestScenario<TContext>(testInstance, run) where TContext : class
+    {
+        protected override CancellationToken FrameworkCancellationToken => TUnit.Core.TestContext.Current?.Execution.CancellationToken ?? default;
+    }
 }

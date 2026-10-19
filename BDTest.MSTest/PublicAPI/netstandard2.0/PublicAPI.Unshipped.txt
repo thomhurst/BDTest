@@ -39,6 +39,7 @@ BDTest.MSTestBDTestBase<TContext>.TestContext.set -> void
 BDTest.MSTestBDTestLifecycle
 BDTest.MSTestBDTestScenario
 override BDTest.BDTestClassAttribute.GetTestMethodAttribute(Microsoft.VisualStudio.TestTools.UnitTesting.TestMethodAttribute! testMethodAttribute) -> Microsoft.VisualStudio.TestTools.UnitTesting.TestMethodAttribute!
+override BDTest.MSTestBDTestBase<TContext>.FrameworkCancellationToken.get -> System.Threading.CancellationToken
 override BDTest.MSTestBDTestBase<TContext>.OnScenarioSkipped(string! reason) -> void
 override BDTest.MSTestBDTestBase<TContext>.TestRun.get -> BDTest.BDTestRun!
 static BDTest.MSTestBDTestAssembly.Dispose(System.Reflection.Assembly! assembly) -> void

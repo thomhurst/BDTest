@@ -35,7 +35,7 @@ public class ComposedBasketTests : CompanyTestBase, IBDTestTUnitTest
         var options = new BDTestOptions();
         options.RegisterFrameworkOutcomes(TUnitBDTestLifecycle.OutcomeMap);
         Run = BDTestRun.Start(options);
-        _bdt = BDTestScenario.For<BasketContext>(this, Run);
+        _bdt = TUnitBDTestScenario.For<BasketContext>(this, Run);
     }
 
     public BDTestBase BDTestHost => _bdt;
@@ -162,3 +162,21 @@ while BDTest records Inconclusive. This difference is covered by the
 [adapter conformance suite](../configuration/exceptions.md#runner-differences).
 
 The adapter supplies the runner's exact test method to `BeginTest(id, methodInfo)`. Scenario text, information, tags and retry attributes use cached method metadata, including when a helper constructs the scenario after an await. See [custom adapter migration](custom-adapters.md#method-identity-and-migration).
+
+## Cancellation
+
+The inherited base and the framework-specific composition factory automatically forward
+`TUnit.Core.TestContext.Current.Execution.CancellationToken` to scenario and outline execution, token-aware steps, and hooks, even when no
+BDTest timeout is configured. This API is verified against TUnit 1.75.0. Use
+`TestContext.Current.Execution.Cancel()`, framework timeouts, or runner cancellation to signal the framework token.
+
+`BDTestAsync(callerToken)` combines your token with the framework token; passing a caller
+token does not disable runner cancellation. Either source stops execution before unreached
+steps or retries start. BDTest records `Failed` with an `OperationCanceledException` and a
+cancellation reason; framework cancellation alone does not set BDTest's `TimedOut` flag.
+The enclosing framework may also report its own timeout or cancellation outcome.
+
+Use the framework-specific factory for automatic forwarding. A core-only
+`BDTestScenario.For<TContext>(this, run)` host has no framework token; pass the runner token
+to `BDTestAsync(token)` explicitly when retaining that host. Steps must observe their token;
+BDTest cannot interrupt arbitrary synchronous code. See [timeouts](../writing-tests/timeouts.md).

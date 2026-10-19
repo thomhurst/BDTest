@@ -471,3 +471,23 @@ Public API baselines record moved types as removals from core and additions to
 reporting; namespaces and signatures stay the same. This is an authorized
 next-major assembly move, requiring a package reference and consumer rebuild.
 See [consumer migration](docs/docs/migration/reporting-package.md).
+
+## Adapter cancellation (#945)
+
+`pwsh scripts/Test-AdapterCancellation.ps1` exercises real framework cancellation
+on all four adapters, through inherited fixtures and framework composition hosts,
+with and without an explicit token and without a BDTest timeout. NUnit uses
+`CancelAfter`; MSTest uses cooperative `Timeout`; xUnit and TUnit invoke their
+native cancellation APIs after the step starts. The shared probes verify the
+step token, cancellation reason, unreached steps, retry prevention and context
+identity. A fresh evidence directory prevents stale or missing probes from passing.
+TUnit reports native cancellation as a failed outer test even after the assertions
+pass; the script checks both runner outcomes and all four evidence files. CI runs
+this separately from the ordinary suite and `Test-AdapterConformance.ps1`.
+
+The adapters use APIs verified in NUnit 5.0.0, MSTest.TestFramework 4.5.1,
+xunit.v3.extensibility.core 4.0.2 and TUnit.Core 1.75.0. MSTest composition reads
+the injected context via the lifecycle invocation, avoiding the experimental
+`TestContext.Current` API. Other adapters read the current context when scenario
+execution starts. Framework-specific factories supply tokens; core-only hosts
+remain framework-independent and accept explicit tokens.

@@ -51,7 +51,7 @@ public class AdapterConformanceTests : Adapter
     public AdapterConformanceTests(bool composition)
     {
         _run = CreateRun();
-        if (composition) _tunitHost = BDTestScenario.For<object>(this, _run);
+        if (composition) _tunitHost = TUnitBDTestScenario.For<object>(this, _run);
     }
 #else
 #if BDTEST_NUNIT
@@ -68,7 +68,7 @@ public class AdapterConformanceTests : Adapter
         _run = CreateRun();
 #if BDTEST_MSTEST
         if (this is MSTestCompositionAdapterConformanceTests)
-            _mstestHost = BDTestScenario.For<object>(this, _run);
+            _mstestHost = MSTestBDTestScenario.For<object>(this, _run);
 #endif
     }
 #endif
@@ -99,7 +99,7 @@ public class AdapterConformanceTests : Adapter
         options.RegisterFrameworkOutcomes(OutcomeMap);
         options.SkipStepRules.Add<SkippedAttribute>(_ => true);
         options.SkipTestRules.Add(s => s.GetScenarioText() == "Conformance global skip");
-        options.RetryTestRules.Add(e => e is TransientException, 1);
+        options.RetryTestRules.Add(e => e is TransientException or OperationCanceledException, 1);
         options.ScenarioHooks.Add(new ScenarioHook(this));
         return BDTestRun.Start(options);
     }
@@ -122,6 +122,87 @@ public class AdapterConformanceTests : Adapter
             owner.Record("run before", scenario);
         public Task AfterScenarioAsync(ScenarioHookContext scenario) =>
             owner.Record("run after", scenario);
+    }
+
+    [Test]
+    public Task ExplicitCancellationWithoutTimeout() => CheckCancellation(framework: false, explicitToken: true);
+
+    [Test]
+#if BDTEST_NUNIT
+    [global::NUnit.Framework.CancelAfter(1500)]
+#elif BDTEST_MSTEST
+    [Microsoft.VisualStudio.TestTools.UnitTesting.Timeout(1500, CooperativeCancellation = true)]
+#endif
+    public Task NativeFrameworkCancellationWithoutTimeout() => CheckNativeCancellation(explicitToken: false);
+
+    [Test]
+#if BDTEST_NUNIT
+    [global::NUnit.Framework.CancelAfter(1500)]
+#elif BDTEST_MSTEST
+    [Microsoft.VisualStudio.TestTools.UnitTesting.Timeout(1500, CooperativeCancellation = true)]
+#endif
+    public Task NativeFrameworkCancellationWithExplicitToken() => CheckNativeCancellation(explicitToken: true);
+
+    private Task CheckNativeCancellation(bool explicitToken) =>
+        // Native cancellation can fail the enclosing runner test even when our checks pass.
+        // The dedicated script checks evidence from every host and both entry points.
+        Environment.GetEnvironmentVariable("BDTEST_CANCELLATION_RESULTS") == null
+            ? Task.CompletedTask : CheckCancellation(framework: true, explicitToken);
+
+    private async Task CheckCancellation(bool framework, bool explicitToken)
+    {
+        using var caller = new CancellationTokenSource();
+        var entered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var stopped = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var calls = 0;
+        var later = false;
+        var observed = CancellationToken.None;
+        var context = ScenarioHost.Context;
+        var execution = ScenarioHost.When(async token =>
+        {
+            calls++;
+            observed = token;
+            entered.TrySetResult();
+            try { await Task.Delay(Timeout.Infinite, token); }
+            finally { stopped.TrySetResult(); }
+        }).Then(() => later = true);
+        // A configured retry must not turn cancellation into a new attempt.
+        var task = explicitToken ? execution.BDTestAsync(caller.Token) : execution.BDTestAsync();
+        try
+        {
+            await entered.Task.WaitAsync(TimeSpan.FromSeconds(10));
+            if (!framework) caller.Cancel();
+#if BDTEST_XUNIT
+            else Xunit.TestContext.Current.CancelCurrentTest();
+#elif BDTEST_TUNIT
+            else global::TUnit.Core.TestContext.Current!.Execution.Cancel();
+#endif
+            // NUnit CancelAfter and MSTest's cooperative Timeout signal the real runner token.
+            Exception? failure = null;
+            try { await task.WaitAsync(TimeSpan.FromSeconds(10)); }
+            catch (OperationCanceledException error) { failure = error; }
+            Require(failure != null, "cancellation did not escape scenario execution");
+            await stopped.Task.WaitAsync(TimeSpan.FromSeconds(10));
+            Require(observed.IsCancellationRequested, "the running step did not receive cancellation");
+            Require(!later && calls == 1, "cancellation started an unreached step or retry");
+            Require(ReferenceEquals(context, ScenarioHost.Context), "cancellation replaced the attempt context");
+            var result = TestRun.Scenarios.Single();
+            Require(result.Status == Status.Failed && !result.TimedOut && result.RetryCount == 0,
+                "framework/caller cancellation must be a failed, non-timeout attempt without retries");
+            Require(result.Exception?.Message.Contains("cancelled") == true, "result lost the cancellation reason");
+            Require(result.Steps![1].Status == Status.NotRun, "unreached step must remain NotRun");
+            if (framework)
+            {
+                Require(!caller.IsCancellationRequested, "explicit caller token was cancelled by the framework");
+                var directory = Environment.GetEnvironmentVariable("BDTEST_CANCELLATION_RESULTS")!;
+                var style = ReferenceEquals(ScenarioHost, this) ? "inheritance" : "composition";
+                System.IO.File.WriteAllText(System.IO.Path.Combine(directory, $"{style}-{explicitToken}.txt"), "verified");
+            }
+        }
+        finally
+        {
+            caller.Cancel();
+        }
     }
 
     [Test]
@@ -749,6 +830,11 @@ public class CompositionAdapterConformanceTests : CompositionConformanceFixtureB
             owner.Cases.Record("instance after", scenario);
     }
 
+    [Test] public Task ExplicitCancellationWithoutTimeout() => Cases.ExplicitCancellationWithoutTimeout();
+    [Test, global::NUnit.Framework.CancelAfter(1500)]
+    public Task NativeFrameworkCancellationWithoutTimeout() => Cases.NativeFrameworkCancellationWithoutTimeout();
+    [Test, global::NUnit.Framework.CancelAfter(1500)]
+    public Task NativeFrameworkCancellationWithExplicitToken() => Cases.NativeFrameworkCancellationWithExplicitToken();
     [Test] public Task Pass() => Cases.Pass();
     [Test] public Task Fail() => Cases.Fail();
     [Test] public Task NotImplemented() => Cases.NotImplemented();

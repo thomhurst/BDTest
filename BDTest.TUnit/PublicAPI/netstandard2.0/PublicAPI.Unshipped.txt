@@ -32,6 +32,7 @@ BDTest.TUnitBDTestBase<TContext>.TUnitBDTestBase() -> void
 BDTest.TUnitBDTestBase<TContext>.TearDown() -> void
 BDTest.TUnitBDTestLifecycle
 BDTest.TUnitBDTestScenario
+override BDTest.TUnitBDTestBase<TContext>.FrameworkCancellationToken.get -> System.Threading.CancellationToken
 override BDTest.TUnitBDTestBase<TContext>.OnScenarioSkipped(string! reason) -> void
 override BDTest.TUnitBDTestBase<TContext>.TestRun.get -> BDTest.BDTestRun!
 static BDTest.TUnitBDTestAssembly.Dispose(System.Reflection.Assembly! assembly) -> void

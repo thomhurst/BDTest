@@ -151,3 +151,21 @@ The adapter supplies the runner's exact test method to `BeginTest(id, methodInfo
 5. Generate reports from the explicit run, then dispose it after assembly teardown.
 
 Existing `NUnitBDTestBase<TContext>` fixtures need no migration. To use an explicit run with inheritance, override `TestRun` with the same stable run owner.
+
+## Cancellation
+
+The inherited base and the framework-specific composition factory automatically forward
+`NUnit.Framework.TestContext.CurrentContext.CancellationToken` to scenario and outline execution, token-aware steps, and hooks, even when no
+BDTest timeout is configured. This API is verified against NUnit 5.0.0. Use
+`[CancelAfter(...)]` or runner cancellation to signal the framework token.
+
+`BDTestAsync(callerToken)` combines your token with the framework token; passing a caller
+token does not disable runner cancellation. Either source stops execution before unreached
+steps or retries start. BDTest records `Failed` with an `OperationCanceledException` and a
+cancellation reason; framework cancellation alone does not set BDTest's `TimedOut` flag.
+The enclosing framework may also report its own timeout or cancellation outcome.
+
+Use the framework-specific factory for automatic forwarding. A core-only
+`BDTestScenario.For<TContext>(this, run)` host has no framework token; pass the runner token
+to `BDTestAsync(token)` explicitly when retaining that host. Steps must observe their token;
+BDTest cannot interrupt arbitrary synchronous code. See [timeouts](../writing-tests/timeouts.md).
