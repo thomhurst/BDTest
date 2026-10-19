@@ -381,6 +381,18 @@ BDTest.BDTestContext.TestBase.get -> BDTest.BDTestBase!
 BDTest.BDTestContext<TTestContext>
 BDTest.BDTestContext<TTestContext>.TestContext.get -> TTestContext
 BDTest.BDTestOptions.ContextFactory.get -> BDTest.IBDTestContextFactory?
+BDTest.BDTestReportUploadOptions
+BDTest.BDTestReportUploadOptions.BDTestReportUploadOptions(System.Uri! serverAddress) -> void
+BDTest.BDTestReportUploadOptions.ServerAddress.get -> System.Uri!
+BDTest.BDTestReportUploadOptions.Timeout.get -> System.TimeSpan
+BDTest.BDTestReportUploadOptions.Timeout.set -> void
+BDTest.BDTestReportUploadOptions.UploadKey.get -> string?
+BDTest.BDTestReportUploadOptions.UploadKey.set -> void
+BDTest.BDTestReportUploadOptions.UseGzip.get -> bool
+BDTest.BDTestReportUploadOptions.UseGzip.set -> void
+BDTest.BDTestReportUploader
+BDTest.BDTestReportUploader.BDTestReportUploader(System.Net.Http.HttpClient! httpClient, BDTest.BDTestReportUploadOptions! options) -> void
+BDTest.BDTestReportUploader.UploadAsync(BDTest.BDTestRun! run, BDTest.BDTestRunDescriptor? descriptor = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<System.Uri!>!
 BDTest.BDTestRetryAttribute
 BDTest.BDTestRetryAttribute.BDTestRetryAttribute(int count) -> void
 BDTest.BDTestRetryAttribute.Count.get -> int
@@ -583,6 +595,7 @@ override BDTest.BDTestScenario<TContext>.TestRun.get -> BDTest.BDTestRun!
 override BDTest.StepDocString.ToString() -> string!
 override BDTest.StepTable.ToString() -> string!
 static BDTest.BDTestBase.BeginPendingTestExecution() -> void
+static BDTest.BDTestReportUploadOptions.FromEnvironment(System.Uri! serverAddress, string! variableName = "BDTEST_UPLOAD_KEY") -> BDTest.BDTestReportUploadOptions!
 static BDTest.BDTestScenario.For<TContext>(object! testInstance, BDTest.BDTestRun! run) -> BDTest.BDTestScenario<TContext!>!
 static BDTest.BDTestUtil.GetNotRunScenarios(BDTest.BDTestRun! run) -> System.Collections.Generic.IReadOnlyList<BDTest.Contracts.ScenarioDefinitionSummary!>!
 static BDTest.BDTestUtil.GetScenarios(BDTest.BDTestRun! run) -> System.Collections.Generic.IReadOnlyList<BDTest.Contracts.ScenarioResult!>!

@@ -41,7 +41,7 @@ A reverse proxy can add another path base such as `/team`:
 
 Include the path base in your identity provider's redirect URI, for example `https://reports.example.com/team/signin-oidc`.
 
-Upload clients pass the full external report base address: `https://reports.example.com/team/reports` in this example. The client appends `ping`, `data` and attachment upload paths to that address. Trailing slashes are optional. A bare origin such as `https://reports.example.com` keeps the default `/bdtest` mapping; any non-root path replaces that default, so include `/bdtest` yourself when using `UsePathBase` with the default mapping (for example `https://reports.example.com/team/bdtest`).
+Upload clients pass the full external report base address: `https://reports.example.com/team/reports` in this example. The uploader appends `data` and attachment upload paths to that address. The static API also appends `ping` for its warm-up request. Trailing slashes are optional. A bare origin such as `https://reports.example.com` keeps the default `/bdtest` mapping; any non-root path replaces that default, so include `/bdtest` yourself when using `UsePathBase` with the default mapping (for example `https://reports.example.com/team/bdtest`).
 
 ### Trust
 
