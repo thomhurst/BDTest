@@ -1,45 +1,51 @@
 using BDTest.Attributes;
 using BDTest.Exceptions;
 using BDTest.Test;
-using NUnit.Framework;
+using System.Threading.Tasks;
 
 namespace BDTest.Tests.Fixtures;
 
 public class RetryHookTests
 {
-    [TestCase(false)]
-    [TestCase(true)]
+    [Test]
+    [Arguments(false)]
+    [Arguments(true)]
     public async Task RunsAllInstanceHooksIncludingPrivateBaseMethodsAndDerivedAttributes(bool tearDown)
     {
         using var fixture = new DerivedHooks();
 
         await RunHooks(fixture, tearDown);
 
-        Assert.That(fixture.Calls.Take(3), Is.EquivalentTo(new[] { "base-private", "base-protected", "base-public" }));
-        Assert.That(fixture.Calls.Skip(3), Is.EquivalentTo(new[] { "derived-private", "derived-public" }));
+
+        await Assert.That(fixture.Calls.Take(3)).IsEquivalentTo(new[] { "base-private", "base-protected", "base-public" }, global::TUnit.Assertions.Enums.CollectionOrdering.Any);
+
+        await Assert.That(fixture.Calls.Skip(3)).IsEquivalentTo(new[] { "derived-private", "derived-public" }, global::TUnit.Assertions.Enums.CollectionOrdering.Any);
     }
 
-    [TestCase(false)]
-    [TestCase(true)]
+    [Test]
+    [Arguments(false)]
+    [Arguments(true)]
     public async Task InheritsAttributesOnOverridesAndInvokesEachVirtualHookOnlyOnce(bool tearDown)
     {
         using var fixture = new OverriddenHooks();
 
         await RunHooks(fixture, tearDown);
 
-        Assert.That(fixture.Calls, Is.EquivalentTo(new[] { "inherited-override", "attributed-override" }));
+
+        await Assert.That(fixture.Calls).IsEquivalentTo(new[] { "inherited-override", "attributed-override" }, global::TUnit.Assertions.Enums.CollectionOrdering.Any);
     }
 
-    [TestCase(false)]
-    [TestCase(true)]
+    [Test]
+    [Arguments(false)]
+    [Arguments(true)]
     public async Task AwaitsBaseHookBeforeStartingDerivedHooks(bool tearDown)
     {
         using var fixture = new AsyncDerivedHooks();
         var running = RunHooks(fixture, tearDown);
         try
         {
-            Assert.That(fixture.Calls, Is.EqualTo(new[] { "base-start" }));
-            Assert.That(running.IsCompleted, Is.False);
+            await Assert.That(fixture.Calls).IsEquivalentTo(new[] { "base-start" }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
+            await Assert.That(running.IsCompleted).IsFalse();
         }
         finally
         {
@@ -47,29 +53,31 @@ public class RetryHookTests
             await running.WaitAsync(TimeSpan.FromSeconds(10));
         }
 
-        Assert.That(fixture.Calls, Is.EqualTo(new[] { "base-start", "base-end", "derived" }));
+        await Assert.That(fixture.Calls).IsEquivalentTo(new[] { "base-start", "base-end", "derived" }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 
-    [TestCase(false)]
-    [TestCase(true)]
+    [Test]
+    [Arguments(false)]
+    [Arguments(true)]
     public async Task NoHooksIsANoOp(bool tearDown)
     {
         using var fixture = new NoHooks();
         await RunHooks(fixture, tearDown);
     }
 
-    [TestCase("setup", false, 1)]
-    [TestCase("setup", true, 1)]
-    [TestCase("teardown", false, 1)]
-    [TestCase("teardown", true, 1)]
-    [TestCase("before", false, 1)]
-    [TestCase("before", true, 1)]
-    [TestCase("setup", false, 2)]
-    [TestCase("setup", true, 2)]
-    [TestCase("teardown", false, 2)]
-    [TestCase("teardown", true, 2)]
-    [TestCase("before", false, 2)]
-    [TestCase("before", true, 2)]
+    [Test]
+    [Arguments("setup", false, 1)]
+    [Arguments("setup", true, 1)]
+    [Arguments("teardown", false, 1)]
+    [Arguments("teardown", true, 1)]
+    [Arguments("before", false, 1)]
+    [Arguments("before", true, 1)]
+    [Arguments("setup", false, 2)]
+    [Arguments("setup", true, 2)]
+    [Arguments("teardown", false, 2)]
+    [Arguments("teardown", true, 2)]
+    [Arguments("before", false, 2)]
+    [Arguments("before", true, 2)]
     public async Task RetryFailureRecordsFailedAttemptAndExposesOriginalHookException(
         string hook, bool asynchronous, int failingRetry)
     {
@@ -78,45 +86,46 @@ public class RetryHookTests
         var fixture = new FailingHooks(run, hook, asynchronous, failingRetry);
         try
         {
-            var error = await Assert.ThrowsAsync<ErrorOccurredDuringRetryActionException>(() => fixture.RunScenario());
+            var error = await Assert.That(async () => { await fixture.RunScenario(); }).ThrowsExactly<ErrorOccurredDuringRetryActionException>();
 
-            Assert.That(error, Is.InstanceOf<BDTestException>());
-            Assert.That(Required(error).InnerException, Is.SameAs(fixture.Failure));
-            Assert.That(Required(error).Message, Does.Contain("retry action").And.Contain(fixture.Failure.Message));
-            Assert.That(Required(error).ToString(), Does.Contain(fixture.Failure.ToString()));
-            Assert.That(Required(error).GetBaseException(), Is.SameAs(fixture.Failure));
-            Assert.That(Required(error).GetBaseException().StackTrace, Does.Contain(nameof(FailingHooks.ThrowHookFailure)));
-            Assert.That(fixture.Attempts, Is.EqualTo(failingRetry), "A failing retry hook must stop the retry");
+            await Assert.That(error).IsAssignableTo<BDTestException>();
+            await Assert.That(Required(error).InnerException).IsSameReferenceAs(fixture.Failure);
+
+            await Assert.That(Required(error).Message).Contains("retry action").And.Contains(fixture.Failure.Message);
+            await Assert.That(Required(error).ToString()).Contains(fixture.Failure.ToString());
+            await Assert.That(Required(error).GetBaseException()).IsSameReferenceAs(fixture.Failure);
+            await Assert.That(Required(error).GetBaseException().StackTrace).Contains(nameof(FailingHooks.ThrowHookFailure));
+            await Assert.That(fixture.Attempts).IsEqualTo(failingRetry).Because("A failing retry hook must stop the retry");
 
             var scenario = run.Scenarios.Single();
-            Assert.That(scenario.Run, Is.SameAs(run));
-            Assert.That(scenario.ReportId, Is.EqualTo(run.ReportId));
-            Assert.That(otherRun.Scenarios, Is.Empty);
-            Assert.That(scenario.Status, Is.EqualTo(Status.Failed));
-            Assert.That(scenario.Exception?.Message, Is.EqualTo(fixture.Failure.Message));
-            Assert.That(Required(scenario.Exception).StackTrace, Does.Contain(nameof(FailingHooks.ThrowHookFailure)));
-            Assert.That(scenario.Output, Is.Not.Null);
-            Assert.That(scenario.RetryCount, Is.EqualTo(failingRetry));
-            Assert.That(scenario.Attempts, Has.Count.EqualTo(failingRetry + 1));
+            await Assert.That(scenario.Run).IsSameReferenceAs(run);
+            await Assert.That(scenario.ReportId).IsEqualTo(run.ReportId);
+            await Assert.That(otherRun.Scenarios).IsEmpty();
+            await Assert.That(scenario.Status).IsEqualTo(Status.Failed);
+            await Assert.That(scenario.Exception?.Message).IsEqualTo(fixture.Failure.Message);
+            await Assert.That(Required(scenario.Exception).StackTrace).Contains(nameof(FailingHooks.ThrowHookFailure));
+            await Assert.That(scenario.Output).IsNotNull();
+            await Assert.That(scenario.RetryCount).IsEqualTo(failingRetry);
+            await Assert.That(scenario.Attempts).Count().IsEqualTo(failingRetry + 1);
             for (var index = 0; index < failingRetry; index++)
             {
                 var attempt = Required(scenario.Attempts)[index];
-                Assert.That(attempt.Number, Is.EqualTo(index + 1));
-                Assert.That(attempt.Status, Is.EqualTo(Status.Failed));
-                Assert.That(Required(attempt.Exception).Message, Is.EqualTo("retry the scenario"));
-                Assert.That(Required(attempt.Exception).StackTrace, Does.Contain(nameof(FailingHooks.FailStep)));
+                await Assert.That(attempt.Number).IsEqualTo(index + 1);
+                await Assert.That(attempt.Status).IsEqualTo(Status.Failed);
+                await Assert.That(Required(attempt.Exception).Message).IsEqualTo("retry the scenario");
+                await Assert.That(Required(attempt.Exception).StackTrace).Contains(nameof(FailingHooks.FailStep));
             }
             var failedRetry = Required(scenario.Attempts).Last();
-            Assert.That(failedRetry.Number, Is.EqualTo(failingRetry + 1));
-            Assert.That(failedRetry.Status, Is.EqualTo(Status.Failed));
-            Assert.That(Required(failedRetry.Exception).Message, Is.EqualTo(fixture.Failure.Message));
-            Assert.That(Required(failedRetry.Exception).StackTrace, Does.Contain(nameof(FailingHooks.ThrowHookFailure)));
-            Assert.That(failedRetry.StartTime, Is.GreaterThanOrEqualTo(scenario.Attempts[^2].EndTime));
-            Assert.That(failedRetry.EndTime, Is.GreaterThanOrEqualTo(failedRetry.StartTime));
-            Assert.That(failedRetry.TimeTaken, Is.GreaterThan(TimeSpan.Zero));
-            Assert.That(scenario.StartTime, Is.EqualTo(failedRetry.StartTime));
-            Assert.That(scenario.EndTime, Is.EqualTo(failedRetry.EndTime));
-            Assert.That(scenario.TimeTaken, Is.EqualTo(failedRetry.TimeTaken));
+            await Assert.That(failedRetry.Number).IsEqualTo(failingRetry + 1);
+            await Assert.That(failedRetry.Status).IsEqualTo(Status.Failed);
+            await Assert.That(Required(failedRetry.Exception).Message).IsEqualTo(fixture.Failure.Message);
+            await Assert.That(Required(failedRetry.Exception).StackTrace).Contains(nameof(FailingHooks.ThrowHookFailure));
+            await Assert.That(failedRetry.StartTime).IsGreaterThanOrEqualTo(scenario.Attempts[^2].EndTime);
+            await Assert.That(failedRetry.EndTime).IsGreaterThanOrEqualTo(failedRetry.StartTime);
+            await Assert.That(failedRetry.TimeTaken).IsGreaterThan(TimeSpan.Zero);
+            await Assert.That(scenario.StartTime).IsEqualTo(failedRetry.StartTime);
+            await Assert.That(scenario.EndTime).IsEqualTo(failedRetry.EndTime);
+            await Assert.That(scenario.TimeTaken).IsEqualTo(failedRetry.TimeTaken);
         }
         finally
         {
@@ -125,26 +134,27 @@ public class RetryHookTests
     }
 
     [Test]
-    public void RetryFailureUsesTheStandardInnerExceptionChain()
+    public async Task RetryFailureUsesTheStandardInnerExceptionChain()
     {
         var cause = new InvalidOperationException("root cause");
         var hookFailure = new Exception("retry hook failed", cause);
 
         var error = new ErrorOccurredDuringRetryActionException(hookFailure);
 
-        Assert.That(Required(error).InnerException, Is.SameAs(hookFailure));
-        Assert.That(Required(error).GetBaseException(), Is.SameAs(cause));
-        Assert.That(Required(error).Message, Does.Contain(hookFailure.Message));
-        Assert.That(Required(error).ToString(), Does.Contain(hookFailure.ToString()));
+        await Assert.That(Required(error).InnerException).IsSameReferenceAs(hookFailure);
+        await Assert.That(Required(error).GetBaseException()).IsSameReferenceAs(cause);
+        await Assert.That(Required(error).Message).Contains(hookFailure.Message);
+        await Assert.That(Required(error).ToString()).Contains(hookFailure.ToString());
     }
 
-    [TestCase(false)]
-    [TestCase(true)]
+    [Test]
+    [Arguments(false)]
+    [Arguments(true)]
     public async Task PreservesPublicStaticHooks(bool tearDown)
     {
         using var fixture = new StaticHooks();
-        var error = await Assert.ThrowsAsync<InvalidOperationException>(() => RunHooks(fixture, tearDown));
-        Assert.That(Required(error).Message, Is.EqualTo("static hook ran"));
+        var error = await Assert.That(() => RunHooks(fixture, tearDown)).ThrowsExactly<InvalidOperationException>();
+        await Assert.That(Required(error).Message).IsEqualTo("static hook ran");
     }
 
     private sealed class StaticHooks : RunTestBase
@@ -183,9 +193,9 @@ public class RetryHookTests
         public new void PublicHook() => Calls.Add("derived-public");
 
         [BDTestRetrySetUp, BDTestRetryTearDown]
-        private static void StaticHook() => Assert.Fail("Non-public static methods are not retry hooks");
+        private static void StaticHook() => Fail.Test("Non-public static methods are not retry hooks");
 
-        public void UnattributedMethod() => Assert.Fail("Only attributed methods are hooks");
+        public void UnattributedMethod() => Fail.Test("Only attributed methods are hooks");
     }
 
     private class VirtualHooks : RunTestBase
@@ -193,10 +203,10 @@ public class RetryHookTests
         public List<string> Calls { get; } = [];
 
         [BDTestRetrySetUp, BDTestRetryTearDown]
-        protected virtual void InheritedHook() => Assert.Fail("Use the override");
+        protected virtual void InheritedHook() => Fail.Test("Use the override");
 
         [BDTestRetrySetUp, BDTestRetryTearDown]
-        protected virtual void AttributedHook() => Assert.Fail("Use the override");
+        protected virtual void AttributedHook() => Fail.Test("Use the override");
     }
 
     private sealed class OverriddenHooks : VirtualHooks

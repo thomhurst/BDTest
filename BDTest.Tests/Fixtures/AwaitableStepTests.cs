@@ -1,20 +1,21 @@
 using System.Runtime.CompilerServices;
 using BDTest.Test;
-using NUnit.Framework;
+using System.Threading.Tasks;
 
 namespace BDTest.Tests.Fixtures;
 
-[NonParallelizable]
+[NotInParallel]
 public class AwaitableStepTests : RunTestBase
 {
-    [TestCase("Task", false)]
-    [TestCase("Task", true)]
-    [TestCase("Task<T>", false)]
-    [TestCase("Task<T>", true)]
-    [TestCase("ValueTask", false)]
-    [TestCase("ValueTask", true)]
-    [TestCase("ValueTask<T>", false)]
-    [TestCase("ValueTask<T>", true)]
+    [Test]
+    [Arguments("Task", false)]
+    [Arguments("Task", true)]
+    [Arguments("Task<T>", false)]
+    [Arguments("Task<T>", true)]
+    [Arguments("ValueTask", false)]
+    [Arguments("ValueTask", true)]
+    [Arguments("ValueTask<T>", false)]
+    [Arguments("ValueTask<T>", true)]
     public async Task Task_steps_wait_for_completion_and_propagate_asynchronous_exceptions(string kind, bool fail)
     {
         var work = new DelayedWork();
@@ -30,24 +31,24 @@ public class AwaitableStepTests : RunTestBase
         try
         {
             await work.Started.Task.WaitAsync(TimeSpan.FromSeconds(10));
-            Assert.That(execution.IsCompleted, Is.False);
-            Assert.That(laterSteps, Is.Empty);
+            await Assert.That(execution.IsCompleted).IsFalse();
+            await Assert.That(laterSteps).IsEmpty();
             if (fail)
             {
                 work.Finish.TrySetException(new InvalidOperationException("delayed failure"));
-                var exception = await Assert.ThrowsAsync<InvalidOperationException>(async () =>
-                    await execution.WaitAsync(TimeSpan.FromSeconds(10)));
-                Assert.That(Required(exception).Message, Is.EqualTo("delayed failure"));
-                Assert.That(laterSteps, Is.Empty);
+                var exception = await Assert.That(async () =>
+                    await execution.WaitAsync(TimeSpan.FromSeconds(10))).ThrowsExactly<InvalidOperationException>();
+                await Assert.That(Required(exception).Message).IsEqualTo("delayed failure");
+                await Assert.That(laterSteps).IsEmpty();
             }
             else
             {
                 work.Finish.TrySetResult();
                 var scenario = await execution.WaitAsync(TimeSpan.FromSeconds(10));
-                Assert.That(scenario.Status, Is.EqualTo(Status.Passed));
-                Assert.That(laterSteps, Is.EqualTo(new[] { "then" }));
+                await Assert.That(scenario.Status).IsEqualTo(Status.Passed);
+                await Assert.That(laterSteps).IsEquivalentTo(new[] { "then" }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
             }
-            Assert.That(work.Invocations, Is.EqualTo(1));
+            await Assert.That(work.Invocations).IsEqualTo(1);
         }
         finally
         {
@@ -67,8 +68,8 @@ public class AwaitableStepTests : RunTestBase
             .Then(() => calls.Add("then"))
             .BDTestAsync();
 
-        Assert.That(calls, Is.EqualTo(new[] { "then" }));
-        Assert.That(scenario.Status, Is.EqualTo(Status.Passed));
+        await Assert.That(calls).IsEquivalentTo(new[] { "then" }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(scenario.Status).IsEqualTo(Status.Passed);
     }
 
     private static void NoOp() { }

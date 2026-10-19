@@ -1,12 +1,12 @@
 using BDTest.Test;
-using NUnit.Framework;
+using System.Threading.Tasks;
 
 namespace BDTest.Tests.Fixtures;
 
 public class BaseContextCompletionTests
 {
     [Test]
-    public void CompletionRemovesContextBeforeResettingExecutionId()
+    public async Task CompletionRemovesContextBeforeResettingExecutionId()
     {
         using var fixture = new TestFixture();
         var executionId = fixture.ExecutionId;
@@ -14,14 +14,14 @@ public class BaseContextCompletionTests
 
         fixture.Complete();
 
-        Assert.That(fixture.ExecutionId, Is.Not.EqualTo(executionId));
+        await Assert.That(fixture.ExecutionId).IsNotEqualTo(executionId);
         fixture.SelectedExecutionId = executionId;
-        Assert.That(fixture.Context, Is.Not.SameAs(original));
+        await Assert.That(fixture.Context).IsNotSameReferenceAs(original);
         fixture.Complete();
     }
 
     [Test]
-    public void CompletionPreservesOtherExecutionContexts()
+    public async Task CompletionPreservesOtherExecutionContexts()
     {
         using var fixture = new TestFixture { SelectedExecutionId = "first" };
         var first = fixture.Context;
@@ -31,9 +31,9 @@ public class BaseContextCompletionTests
         fixture.Complete();
 
         fixture.SelectedExecutionId = "first";
-        Assert.That(fixture.Context, Is.SameAs(first));
+        await Assert.That(fixture.Context).IsSameReferenceAs(first);
         fixture.SelectedExecutionId = "second";
-        Assert.That(fixture.Context, Is.Not.SameAs(second));
+        await Assert.That(fixture.Context).IsNotSameReferenceAs(second);
         fixture.Complete();
     }
 

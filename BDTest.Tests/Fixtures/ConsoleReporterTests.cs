@@ -1,16 +1,17 @@
+using System.IO;
 using System.Reflection.Metadata;
 using System.Reflection.PortableExecutable;
 using BDTest.Reporters;
 using BDTest.Test;
-using NUnit.Framework;
+using System.Threading.Tasks;
 
 namespace BDTest.Tests.Fixtures;
 
-[NonParallelizable]
+[NotInParallel]
 public class ConsoleReporterTests : TestRunOwner
 {
     [Test]
-    public void Core_has_no_references_to_process_wide_console_colour_mutations()
+    public async Task Core_has_no_references_to_process_wide_console_colour_mutations()
     {
         // Inspect compiled metadata, including async state machines. A temporary
         // colour change followed by ResetColor must fail even on a redirected console.
@@ -29,7 +30,7 @@ public class ConsoleReporterTests : TestRunOwner
             .Where(name => name is "set_ForegroundColor" or "set_BackgroundColor" or "ResetColor")
             .ToArray();
 
-        Assert.That(mutations, Is.Empty, "Reporting must never change process-wide console colours.");
+        await Assert.That(mutations).IsEmpty().Because("Reporting must never change process-wide console colours.");
     }
 
     [Test]
@@ -65,12 +66,12 @@ public class ConsoleReporterTests : TestRunOwner
             var expected = string.Join(Environment.NewLine,
                 Enumerable.Range(0, lineCount).Select(line => $"scenario-{id}: line-{line}"));
             var scenario = scenarios[id];
-            Assert.That(scenario.Status, Is.EqualTo(Status.Passed));
-            Assert.That(Required(scenario.Steps)[0].Output, Is.EqualTo(expected));
-            Assert.That(Required(scenario.Steps)[1].Output, Is.EqualTo($"done-{id}"));
-            Assert.That(scenario.Output, Is.EqualTo(expected + Environment.NewLine + $"done-{id}"));
+            await Assert.That(scenario.Status).IsEqualTo(Status.Passed);
+            await Assert.That(Required(scenario.Steps)[0].Output).IsEqualTo(expected);
+            await Assert.That(Required(scenario.Steps)[1].Output).IsEqualTo($"done-{id}");
+            await Assert.That(scenario.Output).IsEqualTo(expected + Environment.NewLine + $"done-{id}");
         }
-        Assert.That(run.Scenarios.Count, Is.EqualTo(scenarioCount));
+        await Assert.That(run.Scenarios.Count).IsEqualTo(scenarioCount);
     }
 
     private sealed class Fixture(BDTestRun run) : BDTestBuilder(run);

@@ -17,14 +17,14 @@ using Microsoft.AspNetCore.Mvc.Routing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using NUnit.Framework;
+using System.Threading.Tasks;
 
 namespace BDTest.Tests.Fixtures;
 
 public class ReportAuthorizationTests
 {
     // Enumerate every report route, including aliases and POST-based comparisons.
-    private static IEnumerable<TestCaseData> ReadRoutes()
+    public static IEnumerable<(string method, string path, string prefix)> ReadRoutes()
     {
         foreach (var controller in new[] { typeof(BDTestController), typeof(AttachmentsController) })
         foreach (var action in controller.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly))
@@ -40,29 +40,29 @@ public class ReportAuthorizationTests
                 path = System.Text.RegularExpressions.Regex.Replace(path, "\\{[^}]+\\}", "missing");
                 foreach (var prefix in new[] { "/bdtest", "/team/reports" })
                 foreach (var method in methods)
-                    yield return new TestCaseData(method, path.Replace("/bdtest/", prefix + "/"), prefix)
-                        .SetName($"Report_read_denied_{method}_{prefix}_{path}");
+                    yield return (method, path.Replace("/bdtest/", prefix + "/"), prefix);
             }
         }
     }
 
-    [TestCaseSource(nameof(ReadRoutes))]
+    [Test]
+    [MethodDataSource(nameof(ReadRoutes))]
     public async Task Every_read_route_fails_closed_and_enforces_custom_policy(string method, string path, string prefix)
     {
         await using var host = await ReportHost.Start(prefix: prefix);
         using var request = new HttpRequestMessage(new HttpMethod(method), path);
         using var denied = await host.Client.SendAsync(request);
-        Assert.That(denied.StatusCode, Is.EqualTo(HttpStatusCode.Forbidden));
-        Assert.That(host.Logs.Messages.Any(message => message.Contains("ReportsAuthorizationPolicy")), Is.True);
+        await Assert.That(denied.StatusCode).IsEqualTo(HttpStatusCode.Forbidden);
+        await Assert.That(host.Logs.Messages.Any(message => message.Contains("ReportsAuthorizationPolicy"))).IsTrue();
 
         host.Options.ReportsAuthorizationPolicy = "Readers";
         using var anonymousRequest = new HttpRequestMessage(new HttpMethod(method), path);
         using var anonymous = await host.Client.SendAsync(anonymousRequest);
-        Assert.That(anonymous.StatusCode, Is.EqualTo(HttpStatusCode.Unauthorized));
+        await Assert.That(anonymous.StatusCode).IsEqualTo(HttpStatusCode.Unauthorized);
         host.Client.DefaultRequestHeaders.Add("X-Test-Role", "Other");
         using var otherRequest = new HttpRequestMessage(new HttpMethod(method), path);
         using var other = await host.Client.SendAsync(otherRequest);
-        Assert.That(other.StatusCode, Is.EqualTo(HttpStatusCode.Forbidden));
+        await Assert.That(other.StatusCode).IsEqualTo(HttpStatusCode.Forbidden);
     }
 
     [Test]
@@ -70,8 +70,8 @@ public class ReportAuthorizationTests
     {
         await using var host = await ReportHost.Start(useOptionsMiddleware: false, addAuthentication: false);
         using var response = await host.Client.GetAsync("/bdtest/report/test-runs");
-        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.Forbidden));
-        Assert.That(host.Logs.Messages.Any(message => message.Contains("ReportsAuthorizationPolicy")), Is.True);
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.Forbidden);
+        await Assert.That(host.Logs.Messages.Any(message => message.Contains("ReportsAuthorizationPolicy"))).IsTrue();
     }
 
     [Test]
@@ -79,7 +79,7 @@ public class ReportAuthorizationTests
     {
         await using var host = await ReportHost.Start(options => options.ReportsAuthorizationPolicy = "PublicReports");
         using var response = await host.Client.GetAsync("/bdtest/report/test-runs");
-        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
     }
 
     [Test]
@@ -92,7 +92,7 @@ public class ReportAuthorizationTests
         });
         host.Client.DefaultRequestHeaders.Add("Cookie", "admin=true");
         using var response = await host.Client.DeleteAsync("/bdtest/reports/missing");
-        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.Unauthorized));
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.Unauthorized);
     }
 
     [Test]
@@ -100,9 +100,9 @@ public class ReportAuthorizationTests
     {
         await using var host = await ReportHost.Start(options => options.AllowAnonymousReports = true);
         using var page = await host.Client.GetAsync("/bdtest/report/test-runs");
-        Assert.That(page.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        await Assert.That(page.StatusCode).IsEqualTo(HttpStatusCode.OK);
         using var delete = await host.Client.DeleteAsync("/bdtest/reports/missing");
-        Assert.That(delete.StatusCode, Is.EqualTo(HttpStatusCode.Forbidden));
+        await Assert.That(delete.StatusCode).IsEqualTo(HttpStatusCode.Forbidden);
     }
 
     [Test]
@@ -111,9 +111,9 @@ public class ReportAuthorizationTests
         await using var host = await ReportHost.Start(options => options.ReportsAuthorizationPolicy = "Readers",
             allowAnonymousEndpoints: true);
         using var page = await host.Client.GetAsync("/bdtest/report/test-runs");
-        Assert.That(page.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        await Assert.That(page.StatusCode).IsEqualTo(HttpStatusCode.OK);
         using var delete = await host.Client.DeleteAsync("/bdtest/reports/missing");
-        Assert.That(delete.StatusCode, Is.EqualTo(HttpStatusCode.Forbidden));
+        await Assert.That(delete.StatusCode).IsEqualTo(HttpStatusCode.Forbidden);
     }
 
     [Test]
@@ -125,12 +125,12 @@ public class ReportAuthorizationTests
             options.ReportsAuthorizationPolicy = "Readers";
         });
         using var denied = await host.Client.GetAsync("/bdtest/report/test-runs");
-        Assert.That(denied.StatusCode, Is.EqualTo(HttpStatusCode.Unauthorized));
+        await Assert.That(denied.StatusCode).IsEqualTo(HttpStatusCode.Unauthorized);
         host.Client.DefaultRequestHeaders.Add("X-Test-Role", "Reader");
         using var allowed = await host.Client.GetAsync("/bdtest/report/test-runs");
-        Assert.That(allowed.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        await Assert.That(allowed.StatusCode).IsEqualTo(HttpStatusCode.OK);
         using var raw = await host.Client.GetAsync("/bdtest/report/missing/raw-json-data");
-        Assert.That(raw.StatusCode, Is.EqualTo(HttpStatusCode.NotFound));
+        await Assert.That(raw.StatusCode).IsEqualTo(HttpStatusCode.NotFound);
     }
 
     [Test]
@@ -139,7 +139,7 @@ public class ReportAuthorizationTests
         await using var host = await ReportHost.Start(options => options.ReportsAuthorizationPolicy = "SchemeReaders");
         host.Client.DefaultRequestHeaders.Add("X-Test-Role", "Reader");
         using var page = await host.Client.GetAsync("/bdtest/report/test-runs");
-        Assert.That(page.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        await Assert.That(page.StatusCode).IsEqualTo(HttpStatusCode.OK);
     }
 
     [Test]
@@ -147,8 +147,8 @@ public class ReportAuthorizationTests
     {
         await using var host = await ReportHost.Start(options => options.ReportsAuthorizationPolicy = "MissingPolicy");
         using var response = await host.Client.GetAsync("/bdtest/report/test-runs");
-        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.Forbidden));
-        Assert.That(host.Logs.Messages.Any(message => message.Contains("MissingPolicy")), Is.True);
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.Forbidden);
+        await Assert.That(host.Logs.Messages.Any(message => message.Contains("MissingPolicy"))).IsTrue();
     }
 
     [Test]
@@ -156,10 +156,10 @@ public class ReportAuthorizationTests
     {
         await using var host = await ReportHost.Start(requireEndpointPolicy: true);
         using var denied = await host.Client.GetAsync("/bdtest/report/test-runs");
-        Assert.That(denied.StatusCode, Is.EqualTo(HttpStatusCode.Unauthorized));
+        await Assert.That(denied.StatusCode).IsEqualTo(HttpStatusCode.Unauthorized);
         host.Client.DefaultRequestHeaders.Add("X-Test-Role", "Reader");
         using var allowed = await host.Client.GetAsync("/bdtest/report/test-runs");
-        Assert.That(allowed.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        await Assert.That(allowed.StatusCode).IsEqualTo(HttpStatusCode.OK);
     }
 
     [Test]
@@ -167,7 +167,7 @@ public class ReportAuthorizationTests
     {
         await using var host = await ReportHost.Start(options => options.AllowAnonymousReports = true, requireEndpointPolicy: true);
         using var response = await host.Client.GetAsync("/bdtest/report/test-runs");
-        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.Unauthorized));
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.Unauthorized);
     }
 
     [Test]
@@ -179,17 +179,17 @@ public class ReportAuthorizationTests
             options.UploadApiKey = "test-secret";
         }, requireEndpointPolicy: true);
         using var ping = await host.Client.GetAsync("/bdtest/ping");
-        Assert.That(ping.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        await Assert.That(ping.StatusCode).IsEqualTo(HttpStatusCode.OK);
         using var missingKey = await host.Client.PostAsync("/bdtest/data", new StringContent("{}", Encoding.UTF8, "application/json"));
-        Assert.That(missingKey.StatusCode, Is.EqualTo(HttpStatusCode.Unauthorized));
+        await Assert.That(missingKey.StatusCode).IsEqualTo(HttpStatusCode.Unauthorized);
         host.Client.DefaultRequestHeaders.Add("X-BDTest-Upload-Key", "test-secret");
         using var upload = await host.Client.PostAsync("/bdtest/data", new StringContent("{\"Scenarios\":[]}", Encoding.UTF8, "application/json"));
-        Assert.That(upload.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        await Assert.That(upload.StatusCode).IsEqualTo(HttpStatusCode.OK);
         host.Client.DefaultRequestHeaders.Add("X-BDTest-Attachment-Token", new string('a', 64));
         using var attachment = await host.Client.PostAsync("/bdtest/data/" + new string('a', 32) + "/attachments/" + new string('b', 32), new ByteArrayContent([]));
-        Assert.That(attachment.StatusCode, Is.EqualTo(HttpStatusCode.NotFound));
+        await Assert.That(attachment.StatusCode).IsEqualTo(HttpStatusCode.NotFound);
         using var read = await host.Client.GetAsync("/bdtest/report/test-runs");
-        Assert.That(read.StatusCode, Is.EqualTo(HttpStatusCode.Unauthorized));
+        await Assert.That(read.StatusCode).IsEqualTo(HttpStatusCode.Unauthorized);
     }
 
     private sealed class ReportHost(WebApplication app, HttpClient client, RecordingLogger logs) : IAsyncDisposable

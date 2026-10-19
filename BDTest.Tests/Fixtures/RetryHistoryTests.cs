@@ -4,51 +4,52 @@ using BDTest.Helpers;
 using BDTest.Test;
 using BDTest.Tests.Helpers;
 using Newtonsoft.Json;
-using NUnit.Framework;
+using System.Threading.Tasks;
 
 namespace BDTest.Tests.Fixtures;
 
-[NonParallelizable]
+[NotInParallel]
 public class RetryHistoryTests : TestRunOwner
 {
-    [TestCase(0)]
-    [TestCase(1)]
-    [TestCase(2)]
-    [TestCase(3)]
+    [Test]
+    [Arguments(0)]
+    [Arguments(1)]
+    [Arguments(2)]
+    [Arguments(3)]
     public async Task KeepsEveryAttemptWhenPassingOrExhaustingRetries(int failures)
     {
         var fixture = new RetryingScenario(TestRun, failures);
         try
         {
             if (failures > 2)
-                await Assert.ThrowsAsync<InvalidOperationException>(() => fixture.Run());
+                await Assert.That(async () => { await fixture.Run(); }).ThrowsExactly<InvalidOperationException>();
             else
                 await fixture.Run();
 
             var scenario = BDTestUtil.GetScenarios(TestRun).Single();
             var count = Math.Min(failures + 1, 3);
-            Assert.That(scenario.Attempts, Has.Count.EqualTo(count));
-            Assert.That(scenario.RetryCount, Is.EqualTo(count - 1));
-            Assert.That(scenario.Status, Is.EqualTo(failures > 2 ? Status.Failed : Status.Passed));
+            await Assert.That(scenario.Attempts).Count().IsEqualTo(count);
+            await Assert.That(scenario.RetryCount).IsEqualTo(count - 1);
+            await Assert.That(scenario.Status).IsEqualTo(failures > 2 ? Status.Failed : Status.Passed);
             for (var index = 0; index < count; index++)
             {
                 var attempt = Required(scenario.Attempts)[index];
-                Assert.That(attempt.Number, Is.EqualTo(index + 1));
-                Assert.That(attempt.Status, Is.EqualTo(index < failures ? Status.Failed : Status.Passed));
-                Assert.That(attempt.EndTime, Is.GreaterThanOrEqualTo(attempt.StartTime));
-                Assert.That(attempt.TimeTaken, Is.GreaterThan(TimeSpan.Zero));
+                await Assert.That(attempt.Number).IsEqualTo(index + 1);
+                await Assert.That(attempt.Status).IsEqualTo(index < failures ? Status.Failed : Status.Passed);
+                await Assert.That(attempt.EndTime).IsGreaterThanOrEqualTo(attempt.StartTime);
+                await Assert.That(attempt.TimeTaken).IsGreaterThan(TimeSpan.Zero);
                 if (index < failures)
                 {
-                    Assert.That(Required(attempt.Exception).Message, Is.EqualTo($"<failure {index + 1}>"));
-                    Assert.That(Required(attempt.Exception).StackTrace, Does.Contain(nameof(RetryingScenario.Step)));
+                    await Assert.That(Required(attempt.Exception).Message).IsEqualTo($"<failure {index + 1}>");
+                    await Assert.That(Required(attempt.Exception).StackTrace).Contains(nameof(RetryingScenario.Step));
                 }
                 else
-                    Assert.That(attempt.Exception, Is.Null);
+                    await Assert.That(attempt.Exception).IsNull();
             }
-            Assert.That(scenario.Exception?.Message, Is.EqualTo(failures > 2 ? "<failure 3>" : null));
-            Assert.That(scenario.TimeTaken, Is.EqualTo(Required(scenario.Attempts).Last().TimeTaken));
+            await Assert.That(scenario.Exception?.Message).IsEqualTo(failures > 2 ? "<failure 3>" : null);
+            await Assert.That(scenario.TimeTaken).IsEqualTo(Required(scenario.Attempts).Last().TimeTaken);
             if (failures == 0)
-                Assert.That(BDTestHtmlHelper.GetTestHtmlReport(null, TestRun), Does.Not.Contain("Retry history"));
+                await Assert.That(BDTestHtmlHelper.GetTestHtmlReport(null, TestRun)).DoesNotContain("Retry history");
         }
         finally
         {
@@ -64,18 +65,17 @@ public class RetryHistoryTests : TestRunOwner
         {
             var scenario = await fixture.Run();
             var restored = ReportJson.DeserializeObject<Scenario>(ReportJson.SerializeObject(scenario));
-            Assert.That(Required(restored.Attempts).Select(attempt => attempt.Status),
-                Is.EqualTo(new[] { Status.Failed, Status.Failed, Status.Passed }));
-            Assert.That(Required(restored.Attempts[0].Exception).AsString, Does.Contain("<failure 1>"));
-            Assert.That(restored.Attempts[1].TimeTaken, Is.EqualTo(Required(scenario.Attempts)[1].TimeTaken));
-            Assert.That(restored.Attempts[0].StartTime, Is.EqualTo(scenario.Attempts[0].StartTime));
+            await Assert.That(Required(restored.Attempts).Select(attempt => attempt.Status)).IsEquivalentTo(new[] { Status.Failed, Status.Failed, Status.Passed }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
+            await Assert.That(Required(restored.Attempts[0].Exception).AsString).Contains("<failure 1>");
+            await Assert.That(restored.Attempts[1].TimeTaken).IsEqualTo(Required(scenario.Attempts)[1].TimeTaken);
+            await Assert.That(restored.Attempts[0].StartTime).IsEqualTo(scenario.Attempts[0].StartTime);
 
             var html = BDTestHtmlHelper.GetTestHtmlReport(null, TestRun);
-            Assert.That(html, Does.Contain("Retry history"));
-            Assert.That(html, Does.Contain("Attempt 1 · Failed"));
-            Assert.That(html, Does.Contain("Attempt 3 · Passed"));
-            Assert.That(html, Does.Contain("&lt;failure 1&gt;"));
-            Assert.That(html, Does.Not.Contain("<failure 1>"));
+            await Assert.That(html).Contains("Retry history");
+            await Assert.That(html).Contains("Attempt 1 · Failed");
+            await Assert.That(html).Contains("Attempt 3 · Passed");
+            await Assert.That(html).Contains("&lt;failure 1&gt;");
+            await Assert.That(html).DoesNotContain("<failure 1>");
         }
         finally
         {
@@ -84,10 +84,10 @@ public class RetryHistoryTests : TestRunOwner
     }
 
     [Test]
-    public void OldReportsHaveEmptyHistory()
+    public async Task OldReportsHaveEmptyHistory()
     {
         var scenario = ReportJson.DeserializeObject<Scenario>("{\"RetryCount\":2}");
-        Assert.That(scenario.Attempts, Is.Empty);
+        await Assert.That(scenario.Attempts).IsEmpty();
     }
 
     [Test]
@@ -96,26 +96,25 @@ public class RetryHistoryTests : TestRunOwner
         var fixture = new RetryingScenario(TestRun, 2, failHook: true);
         try
         {
-            await Assert.ThrowsAsync<ErrorOccurredDuringRetryActionException>(() => fixture.Run());
+            await Assert.That(async () => { await fixture.Run(); }).ThrowsExactly<ErrorOccurredDuringRetryActionException>();
             var scenario = BDTestUtil.GetScenarios(TestRun).Single();
-            Assert.That(scenario.RetryCount, Is.EqualTo(1));
-            Assert.That(scenario.Attempts, Has.Count.EqualTo(2));
-            Assert.That(Required(scenario.Attempts)[1].Status, Is.EqualTo(Status.Failed));
-            Assert.That(Required(scenario.Attempts[1].Exception).Message, Is.EqualTo("hook failed"));
-            Assert.That(scenario.Attempts[0].Status, Is.EqualTo(Status.Failed));
-            Assert.That(Required(scenario.Attempts[0].Exception).Message, Is.EqualTo("<failure 1>"));
+            await Assert.That(scenario.RetryCount).IsEqualTo(1);
+            await Assert.That(scenario.Attempts).Count().IsEqualTo(2);
+            await Assert.That(Required(scenario.Attempts)[1].Status).IsEqualTo(Status.Failed);
+            await Assert.That(Required(scenario.Attempts[1].Exception).Message).IsEqualTo("hook failed");
+            await Assert.That(scenario.Attempts[0].Status).IsEqualTo(Status.Failed);
+            await Assert.That(Required(scenario.Attempts[0].Exception).Message).IsEqualTo("<failure 1>");
 
             var html = BDTestHtmlHelper.GetTestHtmlReport(null, TestRun);
-            Assert.That(html, Does.Contain("Retry history"));
-            Assert.That(html, Does.Contain("Attempt 1 · Failed"));
-            Assert.That(html, Does.Contain("&lt;failure 1&gt;"));
-            Assert.That(html, Does.Contain("Attempt 2 · Failed"));
-            Assert.That(html, Does.Contain("hook failed"));
+            await Assert.That(html).Contains("Retry history");
+            await Assert.That(html).Contains("Attempt 1 · Failed");
+            await Assert.That(html).Contains("&lt;failure 1&gt;");
+            await Assert.That(html).Contains("Attempt 2 · Failed");
+            await Assert.That(html).Contains("hook failed");
             var restored = ReportJson.DeserializeObject<Scenario>(ReportJson.SerializeObject(scenario));
-            Assert.That(Required(restored.Exception).Message, Is.EqualTo("hook failed"));
-            Assert.That(Required(restored.Attempts).Select(attempt => Required(attempt.Exception).Message),
-                Is.EqualTo(new[] { "<failure 1>", "hook failed" }));
-            Assert.That(html, Does.Not.Contain("<failure 1>"));
+            await Assert.That(Required(restored.Exception).Message).IsEqualTo("hook failed");
+            await Assert.That(Required(restored.Attempts).Select(attempt => Required(attempt.Exception).Message)).IsEquivalentTo((new[] { "<failure 1>", "hook failed" }).Cast<string?>(), global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
+            await Assert.That(html).DoesNotContain("<failure 1>");
         }
         finally
         {

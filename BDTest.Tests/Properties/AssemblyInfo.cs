@@ -1,3 +1,3 @@
-using NUnit.Framework;
+global using global::TUnit.Assertions.Exceptions;
 
-[assembly: Parallelizable(ParallelScope.None)]
+global using TUnit.Core.Extensions;

@@ -1,21 +1,19 @@
 using BDTest.Attributes;
 using BDTest.Test;
-using NUnit.Framework;
 
 namespace BDTest.Tests.Fixtures;
 
 public class RetryAttributeTests
 {
-    [FixtureLifeCycle(LifeCycle.SingleInstance)]
     public class RetryOnScenarioTests : RunTestBase
     {
-        [SetUp]
-        public void BindMetadata() => BeginTest(TestContext.CurrentContext.Test.ID, Required(global::NUnit.Framework.Internal.TestExecutionContext.CurrentContext.CurrentTest.Method).MethodInfo);
-        [TearDown]
+        [Before(HookType.Test)]
+        public void BindMetadata() => BeginTest(Required(TestContext.Current).Id, Required(TestContext.Current).Metadata.TestDetails.MethodMetadata.GetReflectionInfo());
+        [After(HookType.Test)]
         public void FinishExecution() => EndTest();
         private int _counter;
 
-        [SetUp, BDTestRetrySetUp]
+        [Before(HookType.Test), BDTestRetrySetUp]
         public void Setup()
         {
             _counter++;
@@ -28,11 +26,13 @@ public class RetryAttributeTests
             await Given(() => Console.WriteLine("I run a test with a retry attribute"))
                 .And(() => IncrementCount(ref _testRetryCount))
                 .When(() => ThrowIfLessThan(_testRetryCount))
-                .Then(() => Assert.That(_counter, Is.EqualTo(_testRetryCount)))
-                .And(() => Assert.That(_counter, Is.Positive))
-                .And(() => Assert.That(_testRetryCount, Is.Positive))
+                .Then(() => AssertCounters())
                 .And(() => Console.WriteLine($"Counter: {_counter} | TestRetryCount: {_testRetryCount}"))
                 .BDTestAsync();
+
+            var scenarios = BDTestUtil.GetScenarios(TestRun).ToList();
+            await Assert.That(scenarios.Count).IsEqualTo(1);
+            await Assert.That(scenarios[0].Status).IsEqualTo(Status.Passed);
         }
 
         private void ThrowIfLessThan(int i)
@@ -43,12 +43,11 @@ public class RetryAttributeTests
             }
         }
 
-        [OneTimeTearDown]
-        public void OneTimeTearDown()
+        private async Task AssertCounters()
         {
-            var scenarios = BDTestUtil.GetScenarios(TestRun).Where(x => x.GetScenarioText() == "RetryOnScenarioTests").ToList();
-            Assert.That(scenarios.Count, Is.EqualTo(1));
-            Assert.That(scenarios.First().Status, Is.EqualTo(Status.Passed));
+            await Assert.That(_counter).IsEqualTo(_testRetryCount);
+            await Assert.That(_counter).IsGreaterThan(0);
+            await Assert.That(_testRetryCount).IsGreaterThan(0);
         }
 
         private void IncrementCount(ref int i)
@@ -58,16 +57,15 @@ public class RetryAttributeTests
     }
         
     [BDTestRetry(3)]
-    [FixtureLifeCycle(LifeCycle.SingleInstance)]
     public class RetryOnStoryTests : RunTestBase
     {
-        [SetUp]
-        public void BindMetadata() => BeginTest(TestContext.CurrentContext.Test.ID, Required(global::NUnit.Framework.Internal.TestExecutionContext.CurrentContext.CurrentTest.Method).MethodInfo);
-        [TearDown]
+        [Before(HookType.Test)]
+        public void BindMetadata() => BeginTest(Required(TestContext.Current).Id, Required(TestContext.Current).Metadata.TestDetails.MethodMetadata.GetReflectionInfo());
+        [After(HookType.Test)]
         public void FinishExecution() => EndTest();
         private int _counter;
 
-        [SetUp, BDTestRetrySetUp]
+        [Before(HookType.Test), BDTestRetrySetUp]
         public void Setup()
         {
             _counter++;
@@ -80,11 +78,13 @@ public class RetryAttributeTests
             await Given(() => Console.WriteLine("I run a test with a retry attribute"))
                 .And(() => IncrementCount(ref _testRetryCount))
                 .When(() => ThrowIfLessThan(_testRetryCount))
-                .Then(() => Assert.That(_counter, Is.EqualTo(_testRetryCount)))
-                .And(() => Assert.That(_counter, Is.Positive))
-                .And(() => Assert.That(_testRetryCount, Is.Positive))
+                .Then(() => AssertCounters())
                 .And(() => Console.WriteLine($"Counter: {_counter} | TestRetryCount: {_testRetryCount}"))
                 .BDTestAsync();
+
+            var scenarios = BDTestUtil.GetScenarios(TestRun).ToList();
+            await Assert.That(scenarios.Count).IsEqualTo(1);
+            await Assert.That(scenarios[0].Status).IsEqualTo(Status.Passed);
         }
 
         private void ThrowIfLessThan(int i)
@@ -95,12 +95,11 @@ public class RetryAttributeTests
             }
         }
 
-        [OneTimeTearDown]
-        public void OneTimeTearDown()
+        private async Task AssertCounters()
         {
-            var scenarios = BDTestUtil.GetScenarios(TestRun).Where(x => x.GetScenarioText() == "RetryOnStoryTests").ToList();
-            Assert.That(scenarios.Count, Is.EqualTo(1));
-            Assert.That(scenarios.First().Status, Is.EqualTo(Status.Passed));
+            await Assert.That(_counter).IsEqualTo(_testRetryCount);
+            await Assert.That(_counter).IsGreaterThan(0);
+            await Assert.That(_testRetryCount).IsGreaterThan(0);
         }
 
         private void IncrementCount(ref int i)

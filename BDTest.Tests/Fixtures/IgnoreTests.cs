@@ -1,44 +1,44 @@
 using BDTest.Attributes;
-using BDTest.NUnit;
+using BDTest.TUnit;
 using BDTest.Settings;
 using BDTest.Test;
 using BDTest.Tests.Helpers;
-using NUnit.Framework;
+using System.Threading.Tasks;
 
 namespace BDTest.Tests.Fixtures;
 
 [Story(AsA = "BDTest developer",
     IWant = "to make sure that specific exceptions can be marked as 'skippable'",
-    SoThat = "BDTest works well with other frameworks such as NUnit")]
-[Parallelizable(ParallelScope.None)]
-public class IgnoreTests : RunNUnitTestBase<MyTestContext>
+    SoThat = "BDTest classifies skip and inconclusive exceptions")]
+[NotInParallel]
+public class IgnoreTests : RunTUnitTestBase<MyTestContext>
 {
     public IgnoreTests() => Options.InconclusiveExceptionTypes.Add(typeof(MyCustomIgnoreException));
     [Test]
-    public async Task NUNitIgnoreException()
+    public async Task TUnitSkipException()
     {
-        var builder = Given(() => Console.WriteLine("NUnit throws an ignore exception"))
-            .When(() => Assert.Ignore())
+        var builder = Given(() => Console.WriteLine("A framework or custom exception signals an ignored outcome"))
+            .When(() => Skip.Test("Ignored"))
             .Then(() => Console.WriteLine("the test is ignored"));
 
         try
         {
             await builder.BDTestAsync();
                 
-            Assert.Fail("An exception should be thrown to stop us getting here!");
+            Fail.Test("An exception should be thrown to stop us getting here!");
         }
-        catch(IgnoreException)
+        catch(global::TUnit.Core.Exceptions.SkipTestException)
         {
             var scenario = BDTestUtil.GetScenarios(TestRun).Single(scenario => scenario.Guid == builder.Guid);
                 
-            Assert.That(scenario.Status, Is.EqualTo(Status.Skipped));
+            await Assert.That(scenario.Status).IsEqualTo(Status.Skipped);
         }
     }
         
     [Test]
     public async Task CustomIgnoreException()
     {
-        var builder = Given(() => Console.WriteLine("NUnit throws an ignore exception"))
+        var builder = Given(() => Console.WriteLine("A framework or custom exception signals an ignored outcome"))
             .When(() => ThrowException())
             .Then(() => Console.WriteLine("the test is ignored"));
 
@@ -46,13 +46,13 @@ public class IgnoreTests : RunNUnitTestBase<MyTestContext>
         {
             await builder.BDTestAsync();
                 
-            Assert.Fail("An exception should be thrown to stop us getting here!");
+            Fail.Test("An exception should be thrown to stop us getting here!");
         }
         catch(MyCustomIgnoreException)
         {
             var scenario = BDTestUtil.GetScenarios(TestRun).Single(scenario => scenario.Guid == builder.Guid);
                 
-            Assert.That(scenario.Status, Is.EqualTo(Status.Inconclusive));
+            await Assert.That(scenario.Status).IsEqualTo(Status.Inconclusive);
         }
     }
 

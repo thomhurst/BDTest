@@ -1,165 +1,112 @@
-using System.Collections.Concurrent;
 using BDTest.Attributes;
 using BDTest.Test;
-using NUnit.Framework;
 
 namespace BDTest.Tests.Fixtures;
 
 [Story(AsA = "BDTest developer",
     IWant = "to make sure that test contexts are different for each test",
     SoThat = "tests don't share state")]
-[TestFixture]
 public class UniqueContextTests
 {
-    [Parallelizable(ParallelScope.Fixtures)]
-    [FixtureLifeCycle(LifeCycle.SingleInstance)]
-    public class AsyncNonNUnitContextTests : RunContextTestBase<MyTestContext>
+    public class AsyncNonNUnitContextTests
     {
-        private MyTestContext? _context1;
-        private MyTestContext? _context2;
+        [Test]
+        public Task TestWithContext1() => AssertSequentialContextsAsync();
 
         [Test]
-        public async Task TestWithContext1()
-        {
-            await Task.Run(() => _context1 = Context);
-        }
+        public Task TestWithContext2() => AssertSequentialContextsAsync();
 
-        [Test]
-        public async Task TestWithContext2()
+        private static async Task AssertSequentialContextsAsync()
         {
-            await Task.Run(() => _context2 = Context);
-        }
-
-        [OneTimeTearDown]
-        public void EnsureContextsAreUnique()
-        {
-            // Filtered runs may omit either context capture test.
-            if (_context1 is null || _context2 is null) return;
-            Assert.That(_context1.Id, Is.Not.EqualTo(_context2.Id));
-        }
-
-        [TearDown]
-        public void CompleteExecution()
-        {
-            BDTest.Tests.Helpers.LegacyLifecycle.Complete(this);
+            using var fixture = new StandaloneContext();
+            var first = await Task.Run(() => CaptureAndComplete(fixture));
+            var second = await Task.Run(() => CaptureAndComplete(fixture));
+            await Assert.That(first.Id).IsNotEqualTo(second.Id);
         }
     }
 
-    [Parallelizable(ParallelScope.Fixtures)]
-    [FixtureLifeCycle(LifeCycle.SingleInstance)]
-    public class NonNUnitContextTests : RunContextTestBase<MyTestContext>
+    public class NonNUnitContextTests
     {
-        private MyTestContext? _context1;
-        private MyTestContext? _context2;
+        [Test]
+        public Task TestWithContext1() => AssertSequentialContexts();
 
         [Test]
-        public void TestWithContext1()
-        {
-            _context1 = Context;
-        }
+        public Task TestWithContext2() => AssertSequentialContexts();
 
-        [Test]
-        public void TestWithContext2()
+        private static async Task AssertSequentialContexts()
         {
-            _context2 = Context;
-        }
-
-        [OneTimeTearDown]
-        public void EnsureContextsAreUnique()
-        {
-            // Filtered runs may omit either context capture test.
-            if (_context1 is null || _context2 is null) return;
-            Assert.That(_context1.Id, Is.Not.EqualTo(_context2.Id));
-        }
-
-        [TearDown]
-        public void CompleteExecution()
-        {
-            BDTest.Tests.Helpers.LegacyLifecycle.Complete(this);
+            using var fixture = new StandaloneContext();
+            var first = CaptureAndComplete(fixture);
+            var second = CaptureAndComplete(fixture);
+            await Assert.That(first.Id).IsNotEqualTo(second.Id);
         }
     }
 
-    [Parallelizable(ParallelScope.Children)]
-    [FixtureLifeCycle(LifeCycle.SingleInstance)]
-    public class NonNUnitParallelContextTests : RunContextTestBase<MyTestContext>
+    public class NonNUnitParallelContextTests
     {
-        private readonly ConcurrentBag<MyTestContext> _contexts = new();
-        private readonly TaskCompletionSource<bool> _completionSource = new();
-        private readonly object _lock = new();
-
+        // Preserve the eight capture cases, but give each case its own shared harness.
+        // Filtered tests no longer need other runner cases to execute first.
         [Test]
-        public void Test1()
+        [Arguments(0)]
+        [Arguments(1)]
+        [Arguments(2)]
+        [Arguments(3)]
+        [Arguments(4)]
+        [Arguments(5)]
+        [Arguments(6)]
+        [Arguments(7)]
+        public async Task ContextIsIndependentOfOtherFlows(int index)
         {
-            AddContext();
+            var contexts = await CaptureParallelContexts();
+            await Assert.That(contexts.Where((_, position) => position != index)
+                .All(context => context.Id != contexts[index].Id)).IsTrue();
         }
 
         [Test]
-        public void Test2()
+        public async Task EnsureContextsAreUnique()
         {
-            AddContext();
+            var contexts = await CaptureParallelContexts();
+            await Assert.That(contexts.Select(context => context.Id).Distinct().Count()).IsEqualTo(8);
         }
 
-        [Test]
-        public void Test3()
+        private static async Task<MyTestContext[]> CaptureParallelContexts()
         {
-            AddContext();
-        }
-
-        [Test]
-        public void Test4()
-        {
-            AddContext();
-        }
-
-        [Test]
-        public void Test5()
-        {
-            AddContext();
-        }
-
-        [Test]
-        public void Test6()
-        {
-            AddContext();
-        }
-
-        [Test]
-        public void Test7()
-        {
-            AddContext();
-        }
-
-        [Test]
-        public void Test8()
-        {
-            AddContext();
-        }
-
-        public void AddContext()
-        {
-            _contexts.Add(Context);
-
-            if (_contexts.Count == 8)
+            using var fixture = new StandaloneContext();
+            Task<MyTestContext>[] tasks;
+            // Model independent standalone callers without carrying the runner's ambient identity.
+            using (ExecutionContext.SuppressFlow())
             {
-                _completionSource.TrySetResult(true);
+                tasks = Enumerable.Range(0, 8).Select(_ => Task.Run(async () =>
+                {
+                    try
+                    {
+                        var context = fixture.Context;
+                        await Task.Yield();
+                        await Assert.That(fixture.Context).IsSameReferenceAs(context);
+                        return context;
+                    }
+                    finally
+                    {
+                        LegacyLifecycle.Complete(fixture);
+                    }
+                })).ToArray();
             }
-        }
-
-        [Test]
-        public void ZZZ_EnsureContextsAreUnique()
-        {
-            Assert.That(_completionSource.Task.Wait(TimeSpan.FromSeconds(30)), Is.True, "Timed out waiting for other tests to complete");
-                
-            var distinctContexts = _contexts.Select(x => x.Id).Distinct().ToList();
-
-            var distinctContextCount = distinctContexts.Count;
-            Assert.That(distinctContextCount, Is.EqualTo(8));
-        }
-
-        [TearDown]
-        public void CompleteExecution()
-        {
-            BDTest.Tests.Helpers.LegacyLifecycle.Complete(this);
+            return await Task.WhenAll(tasks);
         }
     }
+
+    private static MyTestContext CaptureAndComplete(StandaloneContext fixture)
+    {
+        try
+        {
+            return fixture.Context;
+        }
+        finally
+        {
+            // Exercise completion without a preceding BeginTest.
+            LegacyLifecycle.Complete(fixture);
+        }
+    }
+
+    private sealed class StandaloneContext : RunContextTestBase<MyTestContext>;
 }

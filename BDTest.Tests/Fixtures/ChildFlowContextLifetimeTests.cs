@@ -1,14 +1,15 @@
 using System.Runtime.CompilerServices;
 using BDTest.Test;
-using NUnit.Framework;
+using System.Threading.Tasks;
 
 namespace BDTest.Tests.Fixtures;
 
 public class ChildFlowContextLifetimeTests
 {
-    [TestCase(false)]
-    [TestCase(true)]
-    public void CompletedChildFlowDoesNotRetainContext(bool overwrite)
+    [Test]
+    [Arguments(false)]
+    [Arguments(true)]
+    public async Task CompletedChildFlowDoesNotRetainContext(bool overwrite)
     {
         using var fixture = new TestFixture();
         fixture.Complete(); // Ensure the child creates its own execution ID.
@@ -19,7 +20,7 @@ public class ChildFlowContextLifetimeTests
         GC.WaitForPendingFinalizers();
         GC.Collect();
 
-        Assert.That(context.IsAlive, Is.False);
+        await Assert.That(context.IsAlive).IsFalse();
         GC.KeepAlive(fixture);
     }
 
@@ -35,7 +36,7 @@ public class ChildFlowContextLifetimeTests
 
             var original = fixture.Context;
             GC.Collect();
-            Assert.That(fixture.Context, Is.SameAs(original), "An active flow must retain its context");
+            RequireCondition(ReferenceEquals(fixture.Context, original), "An active flow must retain its context");
             return new WeakReference(original);
         }).GetAwaiter().GetResult();
     }

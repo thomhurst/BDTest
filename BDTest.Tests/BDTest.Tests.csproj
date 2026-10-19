@@ -4,23 +4,22 @@
         <TargetFramework>net10.0</TargetFramework>
         <!-- The executable entry point hosts isolated file-store test workers. -->
         <OutputType>Exe</OutputType>
-        <GenerateProgramFile>false</GenerateProgramFile>
+        <GenerateTestingPlatformEntryPoint>false</GenerateTestingPlatformEntryPoint>
+        <GenerateTestingPlatformApplicationHelper>true</GenerateTestingPlatformApplicationHelper>
         
         <IsPackable>false</IsPackable>
     </PropertyGroup>
 
     <ItemGroup>
         <PackageReference Include="CompareNETObjects" Version="4.84.0" />
-        <PackageReference Include="nunit" Version="5.0.0" />
-        <PackageReference Include="NUnit3TestAdapter" Version="6.3.1" />
+        <PackageReference Include="TUnit" Version="1.75.0" />
         <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
-        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.11.0" />
         <!-- The Identity token cache's Xml dependency is not pruned in test projects. -->
         <PackageReference Include="System.Security.Cryptography.Xml" Version="10.0.13" />
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\BDTest.NUnit\BDTest.NUnit.csproj" />
+      <ProjectReference Include="..\BDTest.TUnit\BDTest.TUnit.csproj" />
       <ProjectReference Include="..\BDTest.Razor.Reports\BDTest.Razor.Reports.csproj" />
       <ProjectReference Include="..\BDTest.ReportGenerator.RazorServer\BDTest.ReportGenerator.RazorServer.csproj" />
     </ItemGroup>
@@ -31,8 +30,6 @@
 
     <ItemGroup>
         <Compile Include="..\TestUtilities\MyTestContext.cs" Link="MyTestContext.cs" />
-        <Compile Include="..\TestUtilities\NUnitTestValue.cs" Link="Helpers\TestValue.cs" />
-        <Compile Include="..\TestUtilities\NUnitFileHelpers.cs" Link="Helpers\FileHelpers.cs" />
         <Compile Include="..\TestUtilities\HistoricalReportFixture.cs" Link="Helpers\HistoricalReportFixture.cs" />
         <None Update="Data\JsonData-v2.0.60.json" CopyToOutputDirectory="PreserveNewest" />
     </ItemGroup>

@@ -4,14 +4,15 @@ using BDTest.Exceptions;
 using BDTest.Helpers;
 using BDTest.Output;
 using BDTest.Test;
-using NUnit.Framework;
+using System.Threading.Tasks;
 
 namespace BDTest.Tests.Fixtures;
 
 public class BDTestRunTests
 {
-    [TestCase(false)]
-    [TestCase(true)]
+    [Test]
+    [Arguments(false)]
+    [Arguments(true)]
     public async Task Rejected_repeat_execution_preserves_the_current_run_and_teardown_output(bool useOutline)
     {
         using var first = BDTestRun.Start();
@@ -32,28 +33,28 @@ public class BDTestRunTests
 
         var firstScenario = await execute();
         var secondScenario = await new Capture(second, "same-id").Build().BDTestAsync();
-        Assert.Throws<AlreadyExecutedException>(() => execute());
-        Assert.That(TestOutputData.Run, Is.SameAs(second));
-        Assert.That(TestOutputData.TestId, Is.EqualTo(secondScenario.Guid));
-        Assert.That(TestOutputData.FrameworkExecutionId, Is.EqualTo("same-id"));
+        await Assert.That(async () => { await execute(); }).ThrowsExactly<AlreadyExecutedException>();
+        await Assert.That(TestOutputData.Run).IsSameReferenceAs(second);
+        await Assert.That(TestOutputData.TestId).IsEqualTo(secondScenario.Guid);
+        await Assert.That(TestOutputData.FrameworkExecutionId).IsEqualTo("same-id");
         Console.WriteLine("second teardown after rejected execution");
 
-        Assert.That(secondScenario.TearDownOutput ?? "", Does.Contain("second teardown after rejected execution"));
-        Assert.That(firstScenario.TearDownOutput ?? "", Does.Not.Contain("second teardown after rejected execution"));
+        await Assert.That(secondScenario.TearDownOutput ?? "").Contains("second teardown after rejected execution");
+        await Assert.That(firstScenario.TearDownOutput ?? "").DoesNotContain("second teardown after rejected execution");
     }
 
     [Test]
-    public void Starting_a_run_creates_a_fresh_report_and_empty_stores()
+    public async Task Starting_a_run_creates_a_fresh_report_and_empty_stores()
     {
         using var first = BDTestRun.Start();
         using var second = BDTestRun.Start();
         var fixture = new Capture(first, "same-id");
         var builder = fixture.Build();
 
-        Assert.That(first.ReportId, Is.Not.EqualTo(second.ReportId));
-        Assert.That(BDTestUtil.GetNotRunScenarios(first).Select(item => item.ScenarioId), Does.Contain(builder.Guid));
-        Assert.That(BDTestUtil.GetNotRunScenarios(second), Is.Empty);
-        Assert.That(second.Scenarios, Is.Empty);
+        await Assert.That(first.ReportId).IsNotEqualTo(second.ReportId);
+        await Assert.That(BDTestUtil.GetNotRunScenarios(first).Select(item => item.ScenarioId)).Contains(builder.Guid);
+        await Assert.That(BDTestUtil.GetNotRunScenarios(second)).IsEmpty();
+        await Assert.That(second.Scenarios).IsEmpty();
     }
 
     [Test]
@@ -83,13 +84,17 @@ public class BDTestRunTests
         {
             var scenario = results[index];
             var other = index == 0 ? "second" : "first";
-            Assert.That(run.Scenarios, Is.EqualTo(new[] { scenario }));
-            Assert.That(scenario.ReportId, Is.EqualTo(run.ReportId));
-            Assert.That(Required(scenario.Steps).All(step => step.ReportId == run.ReportId), Is.True);
-            Assert.That(scenario.TestStartupInformation, Does.Contain(text + " setup").And.Not.Contain(other));
-            Assert.That(scenario.Output, Does.Contain(text + " before").And.Contain(text + " after").And.Not.Contain(other));
-            Assert.That(scenario.TearDownOutput, Does.Contain(text + " teardown").And.Not.Contain(other));
-            Assert.That(scenario.CustomHtmlOutputForReport, Does.Contain(text + " html").And.Not.Contain(other));
+            await Assert.That(run.Scenarios).IsEquivalentTo(new[] { scenario }, EqualityComparer<Scenario>.Default, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
+            await Assert.That(scenario.ReportId).IsEqualTo(run.ReportId);
+            await Assert.That(Required(scenario.Steps).All(step => step.ReportId == run.ReportId)).IsTrue();
+
+            await Assert.That(scenario.TestStartupInformation).Contains(text + " setup").And.DoesNotContain(other);
+
+            await Assert.That(scenario.Output).Contains(text + " before").And.Contains(text + " after").And.DoesNotContain(other);
+
+            await Assert.That(scenario.TearDownOutput).Contains(text + " teardown").And.DoesNotContain(other);
+
+            await Assert.That(scenario.CustomHtmlOutputForReport).Contains(text + " html").And.DoesNotContain(other);
         }
     }
 
@@ -105,10 +110,11 @@ public class BDTestRunTests
         var outline = await fixture.ScenarioOutline("example <Value>", new[] { new { Value = 1 }, new { Value = 2 } },
             row => fixture.When(() => Keep(row.Value)).Then(() => Complete())).BDTestAsync();
 
-        Assert.That(first.Scenarios, Is.EquivalentTo(new[] { scenario, outline }));
-        Assert.That(second.Scenarios, Is.EqualTo(new[] { other }));
-        Assert.That(Required(outline.Examples).All(row => row.ReportId == first.ReportId), Is.True);
-        Assert.That(BDTestUtil.GetNotRunScenarios(first), Is.Empty);
+
+        await Assert.That(first.Scenarios).IsEquivalentTo(new[] { scenario, outline }, EqualityComparer<Scenario>.Default, global::TUnit.Assertions.Enums.CollectionOrdering.Any);
+        await Assert.That(second.Scenarios).IsEquivalentTo(new[] { other }, EqualityComparer<Scenario>.Default, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(Required(outline.Examples).All(row => row.ReportId == first.ReportId)).IsTrue();
+        await Assert.That(BDTestUtil.GetNotRunScenarios(first)).IsEmpty();
     }
 
     [Test]
@@ -123,16 +129,18 @@ public class BDTestRunTests
         _ = firstFixture.Build();
         BDTestUtil.ClearScenarios(first);
         var scenario = await firstFixture.Build().BDTestAsync();
-        Assert.That(scenario.TestStartupInformation, Is.Null.Or.Empty);
-        Assert.That(scenario.CustomHtmlOutputForReport, Is.Null.Or.Empty);
+
+        await Assert.That(scenario.TestStartupInformation).IsNullOrEmpty();
+
+        await Assert.That(scenario.CustomHtmlOutputForReport).IsNullOrEmpty();
         _ = firstFixture.Build();
         first.Dispose();
         first.Dispose();
 
-        Assert.That(first.Scenarios, Is.Empty);
-        Assert.That(BDTestUtil.GetNotRunScenarios(first), Is.Empty);
-        Assert.That(second.Scenarios, Is.EqualTo(new[] { secondScenario }));
-        Assert.Throws<ObjectDisposedException>(() => firstFixture.Build());
+        await Assert.That(first.Scenarios).IsEmpty();
+        await Assert.That(BDTestUtil.GetNotRunScenarios(first)).IsEmpty();
+        await Assert.That(second.Scenarios).IsEquivalentTo(new[] { secondScenario }, EqualityComparer<Scenario>.Default, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(() => firstFixture.Build()).ThrowsExactly<ObjectDisposedException>();
     }
 
     [Test]
@@ -151,13 +159,16 @@ public class BDTestRunTests
         var secondScenario = await secondFixture.Build().BDTestAsync();
         firstHtml.Text("first saved writer");
 
-        Assert.That(firstFixture.BDTestContext.CurrentScenario, Is.SameAs(firstScenario));
-        Assert.That(secondFixture.BDTestContext.CurrentScenario, Is.SameAs(secondScenario));
-        Assert.That(firstFixture.BDTestContext.ReportId, Is.EqualTo(first.ReportId));
-        Assert.That(firstScenario.TestStartupInformation, Does.Contain("first startup").And.Not.Contain("second startup"));
-        Assert.That(secondScenario.TestStartupInformation, Does.Contain("second startup").And.Not.Contain("first startup"));
-        Assert.That(firstScenario.CustomHtmlOutputForReport, Does.Contain("first saved writer"));
-        Assert.That(secondScenario.CustomHtmlOutputForReport, Is.Null.Or.Empty);
+        await Assert.That(firstFixture.BDTestContext.CurrentScenario).IsSameReferenceAs(firstScenario);
+        await Assert.That(secondFixture.BDTestContext.CurrentScenario).IsSameReferenceAs(secondScenario);
+        await Assert.That(firstFixture.BDTestContext.ReportId).IsEqualTo(first.ReportId);
+
+        await Assert.That(firstScenario.TestStartupInformation).Contains("first startup").And.DoesNotContain("second startup");
+
+        await Assert.That(secondScenario.TestStartupInformation).Contains("second startup").And.DoesNotContain("first startup");
+        await Assert.That(firstScenario.CustomHtmlOutputForReport).Contains("first saved writer");
+
+        await Assert.That(secondScenario.CustomHtmlOutputForReport).IsNullOrEmpty();
         firstFixture.Finish();
         secondFixture.Finish();
     }
@@ -181,32 +192,34 @@ public class BDTestRunTests
         foreach (var payload in new[] { json, handler.Payload })
         {
             var report = Required(BDTestJsonHelper.Deserialize(payload));
-            Assert.That(report.Id, Is.EqualTo(first.ReportId));
-            Assert.That(report.Tag, Is.EqualTo(descriptor.Tag));
-            Assert.That(Required(report.Scenarios).Select(item => item.Guid), Is.EqualTo(new[] { scenario.Guid }));
-            Assert.That(Required(report.NotRun).Select(item => item.GetScenarioText()), Is.EqualTo(new[] { "first pending" }));
-            Assert.That(report.Scenarios[0].Run, Is.Null, "Run ownership must not be serialized");
-            Assert.That(Required(report.TestTimer).TestsStartedAt, Is.EqualTo(scenario.StartTime));
-            Assert.That(Required(report.TestTimer).TestsFinishedAt, Is.EqualTo(scenario.EndTime));
+            await Assert.That(report.Id).IsEqualTo(first.ReportId);
+            await Assert.That(report.Tag).IsEqualTo(descriptor.Tag);
+            await Assert.That(Required(report.Scenarios).Select(item => item.Guid)).IsEquivalentTo(new[] { scenario.Guid }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
+            await Assert.That(Required(report.NotRun).Select(item => item.GetScenarioText())).IsEquivalentTo(new[] { "first pending" }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
+            await Assert.That(report.Scenarios[0].Run).IsNull().Because("Run ownership must not be serialized");
+            await Assert.That(Required(report.TestTimer).TestsStartedAt).IsEqualTo(scenario.StartTime);
+            await Assert.That(Required(report.TestTimer).TestsFinishedAt).IsEqualTo(scenario.EndTime);
             using var document = JsonDocument.Parse(payload);
-            Assert.That(document.RootElement.GetProperty("Scenarios")[0].TryGetProperty("Run", out _), Is.False);
-            Assert.That(document.RootElement.GetProperty("NotRun")[0].TryGetProperty("Run", out _), Is.False);
+            await Assert.That(document.RootElement.GetProperty("Scenarios")[0].TryGetProperty("Run", out _)).IsFalse();
+            await Assert.That(document.RootElement.GetProperty("NotRun")[0].TryGetProperty("Run", out _)).IsFalse();
         }
-        Assert.That(html, Does.Contain("first scenario").And.Contain("first pending").And.Not.Contain("second scenario"));
+
+        await Assert.That(html).Contains("first scenario").And.Contains("first pending").And.DoesNotContain("second scenario");
     }
 
     [Test]
-    public void Empty_report_uses_the_selected_run_start_time()
+    public async Task Empty_report_uses_the_selected_run_start_time()
     {
         using var run = BDTestRun.Start();
         var beforeReport = DateTime.UtcNow;
 
         var report = Required(BDTestJsonHelper.Deserialize(BDTestJsonHelper.GetTestJsonData(null, run)));
 
-        Assert.That(report.Id, Is.EqualTo(run.ReportId));
-        Assert.That(report.Scenarios, Is.Empty);
-        Assert.That(Required(report.TestTimer).TestsStartedAt, Is.EqualTo(run.StartedAt));
-        Assert.That(Required(report.TestTimer).TestsFinishedAt, Is.InRange(beforeReport, DateTime.UtcNow));
+        await Assert.That(report.Id).IsEqualTo(run.ReportId);
+        await Assert.That(report.Scenarios).IsEmpty();
+        await Assert.That(Required(report.TestTimer).TestsStartedAt).IsEqualTo(run.StartedAt);
+
+        await Assert.That(Required(report.TestTimer).TestsFinishedAt).IsGreaterThanOrEqualTo(beforeReport).And.IsLessThanOrEqualTo(DateTime.UtcNow);
     }
 
     [Test]
@@ -222,15 +235,16 @@ public class BDTestRunTests
         run.OutputBuffers.Add("pending", new System.Text.StringBuilder("step output"));
         run.Dispose();
 
-        Assert.That(run.OutputBuffers, Is.Empty);
-        Assert.That(run.Store.ScenariosByTestFrameworkId, Is.Empty);
-        Assert.That(BDTestUtil.GetNotRunScenarios(run), Is.Empty);
-        Assert.Throws<ObjectDisposedException>(() => builder.BDTestAsync());
-        Assert.Throws<ObjectDisposedException>(() => fixture.ScenarioHtmlWriter.Text("late output"));
+        await Assert.That(run.OutputBuffers).IsEmpty();
+        await Assert.That(run.Store.ScenariosByTestFrameworkId).IsEmpty();
+        await Assert.That(BDTestUtil.GetNotRunScenarios(run)).IsEmpty();
+        await Assert.That(async () => { await builder.BDTestAsync(); }).ThrowsExactly<ObjectDisposedException>();
+        await Assert.That(() => fixture.ScenarioHtmlWriter.Text("late output")).ThrowsExactly<ObjectDisposedException>();
         using var fresh = BDTestRun.Start();
         var scenario = await new Capture(fresh, "pending").Build().BDTestAsync();
-        Assert.That(scenario.TestStartupInformation, Is.Null.Or.Empty);
-        Assert.That(listenerCalls, Is.Zero);
+
+        await Assert.That(scenario.TestStartupInformation).IsNullOrEmpty();
+        await Assert.That(listenerCalls).IsZero();
     }
 
     private static void Complete() { }

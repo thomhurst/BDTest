@@ -6,14 +6,14 @@ using BDTest.Output;
 using BDTest.Settings;
 using BDTest.Test;
 using Newtonsoft.Json;
-using NUnit.Framework;
+using System.Threading.Tasks;
 
 namespace BDTest.Tests.Fixtures;
 
-[NonParallelizable]
+[NotInParallel]
 public class ScenarioRetentionTests : TestRunOwner
 {
-    [SetUp]
+    [Before(HookType.Test)]
     public void RegisterOutcomeRulesAndExceptions()
     {
         // Global rules persist for the process lifetime, so never capture a fixture here.
@@ -22,15 +22,16 @@ public class ScenarioRetentionTests : TestRunOwner
         Options.SuccessExceptionTypes.Add(typeof(SuccessOutcomeException));
     }
 
-    [TestCase("passed", Status.Passed)]
-    [TestCase("failed", Status.Failed)]
-    [TestCase("not-implemented", Status.NotImplemented)]
-    [TestCase("inconclusive", Status.Inconclusive)]
-    [TestCase("success-exception", Status.Passed)]
-    [TestCase("skipped", Status.Skipped)]
-    [TestCase("retry", Status.Passed)]
-    [TestCase("retry-hook-failed", Status.Failed)]
-    public void Completed_report_does_not_keep_fixture_context_or_text_closures_alive(string outcome, Status status)
+    [Test]
+    [Arguments("passed", Status.Passed)]
+    [Arguments("failed", Status.Failed)]
+    [Arguments("not-implemented", Status.NotImplemented)]
+    [Arguments("inconclusive", Status.Inconclusive)]
+    [Arguments("success-exception", Status.Passed)]
+    [Arguments("skipped", Status.Skipped)]
+    [Arguments("retry", Status.Passed)]
+    [Arguments("retry-hook-failed", Status.Failed)]
+    public async Task Completed_report_does_not_keep_fixture_context_or_text_closures_alive(string outcome, Status status)
     {
         var retained = ExecuteAndRelease(outcome);
         var json = ReportJson.SerializeObject(retained.Scenario);
@@ -39,32 +40,32 @@ public class ScenarioRetentionTests : TestRunOwner
         GC.WaitForPendingFinalizers();
         GC.Collect();
 
-        Assert.That(retained.Fixture.IsAlive, Is.False, "Report retained the fixture");
-        Assert.That(retained.Context.IsAlive, Is.False, "Report retained the context");
-        Assert.That(retained.Text.IsAlive, Is.False, "Report retained the text callback");
-        Assert.That(BDTestUtil.GetScenarios(TestRun), Does.Contain(retained.Scenario));
-        Assert.That(retained.Scenario.Status, Is.EqualTo(status));
-        Assert.That(Required(retained.Scenario.Steps).All(step => step.Runnable == null && step.OverriddenStepText == null), Is.True);
-        Assert.That(retained.Scenario.BdTestBaseClass, Is.Null);
-        Assert.That(ReportJson.SerializeObject(retained.Scenario), Is.EqualTo(json));
+        await Assert.That(retained.Fixture.IsAlive).IsFalse().Because("Report retained the fixture");
+        await Assert.That(retained.Context.IsAlive).IsFalse().Because("Report retained the context");
+        await Assert.That(retained.Text.IsAlive).IsFalse().Because("Report retained the text callback");
+        await Assert.That(BDTestUtil.GetScenarios(TestRun)).Contains(retained.Scenario);
+        await Assert.That(retained.Scenario.Status).IsEqualTo(status);
+        await Assert.That(Required(retained.Scenario.Steps).All(step => step.Runnable == null && step.OverriddenStepText == null)).IsTrue();
+        await Assert.That(retained.Scenario.BdTestBaseClass).IsNull();
+        await Assert.That(ReportJson.SerializeObject(retained.Scenario)).IsEqualTo(json);
         if (outcome == "retry")
         {
-            Assert.That(retained.Scenario.RetryCount, Is.EqualTo(1));
-            Assert.That(retained.Scenario.Output, Does.Contain("step output"));
+            await Assert.That(retained.Scenario.RetryCount).IsEqualTo(1);
+            await Assert.That(retained.Scenario.Output).Contains("step output");
         }
     }
 
     [Test]
-    public void Completed_scenario_can_still_access_a_live_fixture()
+    public async Task Completed_scenario_can_still_access_a_live_fixture()
     {
         var fixture = new Capture(TestRun, "passed");
         var scenario = fixture.Run(new TextSource());
-        Assert.That(scenario.BdTestBaseClass, Is.SameAs(fixture));
+        await Assert.That(scenario.BdTestBaseClass).IsSameReferenceAs(fixture);
         GC.KeepAlive(fixture);
     }
 
     [Test]
-    public void ClearScenarios_discards_all_report_stores_and_pending_capture()
+    public async Task ClearScenarios_discards_all_report_stores_and_pending_capture()
     {
         var fixture = new Capture(TestRun, "passed");
         var completed = fixture.Run(new TextSource());
@@ -82,22 +83,23 @@ public class ScenarioRetentionTests : TestRunOwner
         TestOutputData.TestId = active.Guid;
         var writer = new TestOutputData();
         writer.Write("old step output");
-        Assert.That(writer.ToString(), Is.EqualTo("old step output"));
-        Assert.That(BDTestUtil.GetNotRunScenarios(TestRun).Select(item => item.ScenarioId), Does.Contain(pending.Guid));
+        await Assert.That(writer.ToString()).IsEqualTo("old step output");
+        await Assert.That(BDTestUtil.GetNotRunScenarios(TestRun).Select(item => item.ScenarioId)).Contains(pending.Guid);
 
         BDTestUtil.ClearScenarios(TestRun);
         BDTestUtil.ClearScenarios(TestRun); // Reset is idempotent.
 
-        Assert.That(BDTestUtil.GetScenarios(TestRun), Is.Empty);
-        Assert.That(BDTestUtil.GetNotRunScenarios(TestRun), Is.Empty);
-        Assert.That(TestRun.Store.ScenariosByTestFrameworkId, Is.Empty);
-        Assert.That(writer.ToString(), Is.Empty);
+        await Assert.That(BDTestUtil.GetScenarios(TestRun)).IsEmpty();
+        await Assert.That(BDTestUtil.GetNotRunScenarios(TestRun)).IsEmpty();
+        await Assert.That(TestRun.Store.ScenariosByTestFrameworkId).IsEmpty();
+        await Assert.That(writer.ToString()).IsEmpty();
         var replacement = new Capture(TestRun, "passed", pendingId).Run(new TextSource());
-        Assert.That(replacement.TestStartupInformation, Is.Null.Or.Empty);
-        Assert.That(listenerCalls, Is.Zero);
-        Assert.That(BDTestUtil.GetScenarios(TestRun), Is.EqualTo(new[] { replacement }));
-        Assert.That(completed.Status, Is.EqualTo(Status.Passed));
-        Assert.That(Required(completed.Steps)[1].StepText, Is.EqualTo("Then retained text"));
+
+        await Assert.That(replacement.TestStartupInformation).IsNullOrEmpty();
+        await Assert.That(listenerCalls).IsZero();
+        await Assert.That(BDTestUtil.GetScenarios(TestRun)).IsEquivalentTo(new[] { replacement }, EqualityComparer<Scenario>.Default, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(completed.Status).IsEqualTo(Status.Passed);
+        await Assert.That(Required(completed.Steps)[1].StepText).IsEqualTo("Then retained text");
     }
 
     [MethodImpl(MethodImplOptions.NoInlining)]
@@ -109,12 +111,14 @@ public class ScenarioRetentionTests : TestRunOwner
         try
         {
             fixture.Run(text);
-            Assert.That(outcome, Is.AnyOf("passed", "skipped", "retry"));
+
+            RequireCondition(new[] { "passed", "skipped", "retry" }.Contains(outcome), "Expected an exceptional outcome");
         }
         catch (Exception exception) when (exception is InvalidOperationException or NotImplementedException
             or InconclusiveOutcomeException or SuccessOutcomeException or ErrorOccurredDuringRetryActionException)
         {
-            Assert.That(outcome, Is.AnyOf("failed", "not-implemented", "inconclusive", "success-exception", "retry-hook-failed"));
+
+            RequireCondition(new[] { "failed", "not-implemented", "inconclusive", "success-exception", "retry-hook-failed" }.Contains(outcome), "Unexpected exceptional outcome");
         }
         var scenario = TestRun.Store.ScenariosByTestFrameworkId[fixture.Id];
         return (scenario, new WeakReference(fixture), new WeakReference(context), new WeakReference(text));

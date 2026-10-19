@@ -1,14 +1,11 @@
 global using BDTest.Tests.Helpers;
 
 using BDTest.Interfaces;
-using BDTest.NUnit;
+using BDTest.TUnit;
 using BDTest.Test;
-using NUnit.Framework;
 
 namespace BDTest.Tests.Helpers;
-
 // Each fixture owns its registrations and starts its run only after configuration.
-[FixtureLifeCycle(LifeCycle.InstancePerTestCase)]
 public class TestRunOwner : IDisposable
 {
     private BDTestRun? _run;
@@ -17,8 +14,6 @@ public class TestRunOwner : IDisposable
     public BDTestRun TestRun { get { lock (_gate) return _run ??= BDTestRun.Start(Options); } }
     public void Dispose() => _run?.Dispose();
 }
-
-[FixtureLifeCycle(LifeCycle.InstancePerTestCase)]
 public abstract class RunTestBase : BDTestBase, IDisposable
 {
     private readonly TestRunOwner _owner = new();
@@ -33,7 +28,7 @@ public abstract class RunTestBase : BDTestBase, IDisposable
             if (BindCurrentTestMetadata && !_bound)
             {
                 _bound = true;
-                BeginTest(BDTestExecutionId, global::NUnit.Framework.Internal.TestExecutionContext.CurrentContext.CurrentTest?.Method?.MethodInfo);
+                BeginTest(BDTestExecutionId, TestContext.Current?.Metadata.TestDetails.MethodMetadata.GetReflectionInfo());
             }
             return run;
         }
@@ -44,8 +39,6 @@ public abstract class RunTestBase : BDTestBase, IDisposable
         finally { _owner.Dispose(); }
     }
 }
-
-[FixtureLifeCycle(LifeCycle.InstancePerTestCase)]
 public abstract class RunContextTestBase<TContext> : AbstractContextBDTestBase<TContext>, IDisposable where TContext : class
 {
     private readonly TestRunOwner _owner = new();
@@ -60,7 +53,7 @@ public abstract class RunContextTestBase<TContext> : AbstractContextBDTestBase<T
             if (BindCurrentTestMetadata && !_bound)
             {
                 _bound = true;
-                BeginTest(BDTestExecutionId, global::NUnit.Framework.Internal.TestExecutionContext.CurrentContext.CurrentTest?.Method?.MethodInfo);
+                BeginTest(BDTestExecutionId, TestContext.Current?.Metadata.TestDetails.MethodMetadata.GetReflectionInfo());
             }
             return run;
         }
@@ -71,12 +64,10 @@ public abstract class RunContextTestBase<TContext> : AbstractContextBDTestBase<T
         finally { _owner.Dispose(); }
     }
 }
-
-[FixtureLifeCycle(LifeCycle.InstancePerTestCase)]
-public abstract class RunNUnitTestBase<TContext> : NUnitBDTestBase<TContext>, IDisposable where TContext : class
+public abstract class RunTUnitTestBase<TContext> : TUnitBDTestBase<TContext>, IDisposable where TContext : class
 {
     private readonly TestRunOwner _owner = new();
-    protected RunNUnitTestBase() => Options.RegisterFrameworkOutcomes(OutcomeMap);
+    protected RunTUnitTestBase() => Options.RegisterFrameworkOutcomes(OutcomeMap);
     public BDTestOptions Options => _owner.Options;
     public override BDTestRun TestRun => _owner.TestRun;
     public virtual void Dispose()

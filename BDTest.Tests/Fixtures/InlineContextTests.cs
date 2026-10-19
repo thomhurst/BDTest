@@ -1,43 +1,28 @@
 using BDTest.Attributes;
 using BDTest.Test;
-using NUnit.Framework;
 
 namespace BDTest.Tests.Fixtures;
 
 [Story(AsA = "BDTest developer",
     IWant = "to make sure that test contexts are different for each test",
     SoThat = "tests don't share state")]
-[FixtureLifeCycle(LifeCycle.SingleInstance)]
 public class InlineContextTests : RunTestBase
 {
-    private MyTestContext? _context1;
-    private MyTestContext? _context2;
+    [Test]
+    public Task TestWithInlineContext1() => EnsureContextsAreUnique();
 
     [Test]
-    public async Task TestWithInlineContext1()
+    public Task TestWithInlineContext2() => EnsureContextsAreUnique();
+
+    private async Task EnsureContextsAreUnique()
     {
-        var context = new MyTestContext();
-        _context1 = context;
-        await When(() => Console.WriteLine())
-            .Then(() => Console.WriteLine())
+        var first = new MyTestContext();
+        var second = new MyTestContext();
+        await When(() => RecordContext(first))
+            .Then(() => RecordContext(second))
             .BDTestAsync();
+        await Assert.That(first.Id).IsNotEqualTo(second.Id);
     }
-        
-    [Test]
-    public async Task TestWithInlineContext2()
-    {
-        var context = new MyTestContext();
-        _context2 = context;
-        await When(() => Console.WriteLine())
-            .Then(() => Console.WriteLine())
-            .BDTestAsync();
-    }
-        
-    [OneTimeTearDown]
-    public void EnsureContextsAreUnique()
-    {
-        // Filtered runs may omit either context capture test.
-        if (_context1 is null || _context2 is null) return;
-        Assert.That(_context1.Id, Is.Not.EqualTo(_context2.Id));
-    }
+
+    private static void RecordContext(MyTestContext context) => Console.WriteLine(context.Id);
 }

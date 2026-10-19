@@ -7,20 +7,20 @@ using BDTest.Razor.Reports.Storage;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using NUnit.Framework;
+using System.Threading.Tasks;
 
 namespace BDTest.Tests.Fixtures;
 
 public class DataRepositoryDeletionTests
 {
     private const string Id = "00112233445566778899aabbccddeeff";
-    private ServiceProvider _services = null!; // Assigned by NUnit SetUp.
-    private FaultingStore _persistent = null!; // Assigned by NUnit SetUp.
-    private FaultingStore _cache = null!; // Assigned by NUnit SetUp.
-    private IDataRepository _repository = null!; // Assigned by NUnit SetUp.
+    private ServiceProvider _services = null!; // Assigned by the per-test setup hook.
+    private FaultingStore _persistent = null!; // Assigned by the per-test setup hook.
+    private FaultingStore _cache = null!; // Assigned by the per-test setup hook.
+    private IDataRepository _repository = null!; // Assigned by the per-test setup hook.
     private readonly List<string> _steps = [];
 
-    [SetUp]
+    [Before(HookType.Test)]
     public async Task SetUp()
     {
         _steps.Clear();
@@ -39,7 +39,7 @@ public class DataRepositoryDeletionTests
         new(_cache, _services.GetRequiredService<ReportAttachmentGate>(),
             reportStore: _persistent, runIndexStore: _persistent, attachmentStore: attachments, logger: logger);
 
-    [TearDown]
+    [After(HookType.Test)]
     public void TearDown()
     {
         _cache.Dispose();
@@ -52,19 +52,21 @@ public class DataRepositoryDeletionTests
     {
         await _repository.DeleteReport(Id);
         await _repository.DeleteReport(Id);
-        Assert.That(_steps, Is.EqualTo(Enumerable.Repeat(new[]
+        await Assert.That(_steps).IsEquivalentTo(Enumerable.Repeat(new[]
         {
             "persistent-index", "persistent-report", "cache-index", "cache-report"
-        }, 2).SelectMany(steps => steps)));
-        Assert.That(await _repository.GetData(Id, default), Is.Null);
-        Assert.That(await _repository.GetAllTestRunRecords(), Is.Empty);
-        Assert.That(await _persistent.GetAllTestRunRecords(), Is.Empty);
+        }, 2).SelectMany(steps => steps), global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(await _repository.GetData(Id, default)).IsNull();
+        await Assert.That(await _repository.GetAllTestRunRecords()).IsEmpty();
+        await Assert.That(await _persistent.GetAllTestRunRecords()).IsEmpty();
     }
 
-    [TestCase("missing", "missing")]
-    [TestCase("missing\rforged", "missing\\rforged")]
-    [TestCase("missing\nforged", "missing\\nforged")]
-    [TestCase("missing\r\nforged", "missing\\r\\nforged")]
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("TUnit", "TUnit0018", Justification = "Each TUnit case owns this fixture; scenario callbacks and teardown intentionally observe its state.")]
+    [Test]
+    [Arguments("missing", "missing")]
+    [Arguments("missing\rforged", "missing\\rforged")]
+    [Arguments("missing\nforged", "missing\\nforged")]
+    [Arguments("missing\r\nforged", "missing\\r\\nforged")]
     public async Task Missing_report_log_escapes_line_breaks(string id, string loggedId)
     {
         var logger = new RecordingLogger();
@@ -72,57 +74,60 @@ public class DataRepositoryDeletionTests
 
         await _repository.DeleteReport(id);
 
-        Assert.That(logger.Message, Is.EqualTo($"Report {loggedId} did not exist during deletion."));
-        Assert.That(logger.Message, Does.Not.Contain("\r").And.Not.Contain("\n"));
+        await Assert.That(logger.Message).IsEqualTo($"Report {loggedId} did not exist during deletion.");
+
+        await Assert.That(logger.Message).DoesNotContain("\r").And.DoesNotContain("\n");
     }
 
-    [TestCase("persistent-index")]
-    [TestCase("persistent-report")]
-    [TestCase("cache-index")]
-    [TestCase("cache-report")]
+    [Test]
+    [Arguments("persistent-index")]
+    [Arguments("persistent-report")]
+    [Arguments("cache-index")]
+    [Arguments("cache-report")]
     public async Task Every_failure_attempts_both_cache_invalidations_and_can_retry(string step)
     {
         var failure = new IOException(step);
         var failingStore = step.StartsWith("persistent") ? _persistent : _cache;
         failingStore.Failures[step] = failure;
-        var thrown = await Assert.ThrowsAsync<IOException>(() => _repository.DeleteReport(Id));
-        Assert.That(thrown, Is.SameAs(failure));
-        Assert.That(_steps.TakeLast(2), Is.EqualTo(new[] { "cache-index", "cache-report" }));
+        var thrown = await Assert.That(() => _repository.DeleteReport(Id)).ThrowsExactly<IOException>();
+        await Assert.That(thrown).IsSameReferenceAs(failure);
+        await Assert.That(_steps.TakeLast(2)).IsEquivalentTo(new[] { "cache-index", "cache-report" }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
         if (step == "persistent-index")
         {
-            Assert.That(_steps, Does.Not.Contain("persistent-report"));
-            Assert.That(await _persistent.GetTestData(Id, default), Is.Not.Null);
-            Assert.That(await _persistent.GetAllTestRunRecords(), Has.Count.EqualTo(1));
+            await Assert.That(_steps).DoesNotContain("persistent-report");
+            await Assert.That(await _persistent.GetTestData(Id, default)).IsNotNull();
+            await Assert.That(await _persistent.GetAllTestRunRecords()).Count().IsEqualTo(1);
         }
         else
         {
-            Assert.That(await _persistent.GetAllTestRunRecords(), Is.Empty);
+            await Assert.That(await _persistent.GetAllTestRunRecords()).IsEmpty();
         }
-        if (step != "cache-index") Assert.That(await _cache.GetAllTestRunRecords(), Is.Empty);
-        if (step != "cache-report") Assert.That(await _cache.GetTestData(Id, default), Is.Null);
-        if (step == "persistent-report") Assert.That(await _persistent.GetTestData(Id, default), Is.Not.Null);
+        if (step != "cache-index") await Assert.That(await _cache.GetAllTestRunRecords()).IsEmpty();
+        if (step != "cache-report") await Assert.That(await _cache.GetTestData(Id, default)).IsNull();
+        if (step == "persistent-report") await Assert.That(await _persistent.GetTestData(Id, default)).IsNotNull();
 
         failingStore.Failures.Clear();
         await _repository.DeleteReport(Id);
-        Assert.That(await _repository.GetData(Id, default), Is.Null);
-        Assert.That(await _repository.GetAllTestRunRecords(), Is.Empty);
+        await Assert.That(await _repository.GetData(Id, default)).IsNull();
+        await Assert.That(await _repository.GetAllTestRunRecords()).IsEmpty();
     }
 
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("TUnit", "TUnit0018", Justification = "Each TUnit case owns this fixture; scenario callbacks and teardown intentionally observe its state.")]
     [Test]
     public async Task Attachment_failure_keeps_report_data_and_retries_cleanup()
     {
         var failure = new IOException("attachments unavailable");
         var attachments = new FailingAttachments { Failure = failure };
         _repository = CreateRepository(attachments);
-        Assert.That(await Assert.ThrowsAsync<IOException>(() => _repository.DeleteReport(Id)), Is.SameAs(failure));
-        Assert.That(_steps, Is.EqualTo(new[] { "persistent-index", "cache-index", "cache-report" }));
-        Assert.That(await _persistent.GetAllTestRunRecords(), Is.Empty);
-        Assert.That(await _persistent.GetTestData(Id, default), Is.Not.Null);
-        Assert.That(await _cache.GetTestData(Id, default), Is.Null);
+        await Assert.That(await Assert.That(() => _repository.DeleteReport(Id)).ThrowsExactly<IOException>()).IsSameReferenceAs(failure);
+        await Assert.That(_steps).IsEquivalentTo(new[] { "persistent-index", "cache-index", "cache-report" }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(await _persistent.GetAllTestRunRecords()).IsEmpty();
+        await Assert.That(await _persistent.GetTestData(Id, default)).IsNotNull();
+        await Assert.That(await _cache.GetTestData(Id, default)).IsNull();
         attachments.Failure = null;
         await _repository.DeleteReport(Id);
-        Assert.That(attachments.Attempts, Is.EqualTo(2));
-        Assert.That(await _repository.GetData(Id, default), Is.Null);
+        await Assert.That(attachments.Attempts).IsEqualTo(2);
+        await Assert.That(await _repository.GetData(Id, default)).IsNull();
     }
 
     [Test]
@@ -132,8 +137,8 @@ public class DataRepositoryDeletionTests
         _persistent.Failures["persistent-index"] = original;
         _cache.Failures["cache-index"] = new InvalidOperationException("cache index unavailable");
         _cache.Failures["cache-report"] = new InvalidOperationException("cache report unavailable");
-        Assert.That(await Assert.ThrowsAsync<IOException>(() => _repository.DeleteReport(Id)), Is.SameAs(original));
-        Assert.That(_steps, Is.EqualTo(new[] { "persistent-index", "cache-index", "cache-report" }));
+        await Assert.That(await Assert.That(() => _repository.DeleteReport(Id)).ThrowsExactly<IOException>()).IsSameReferenceAs(original);
+        await Assert.That(_steps).IsEquivalentTo(new[] { "persistent-index", "cache-index", "cache-report" }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 
     [Test]
@@ -141,10 +146,10 @@ public class DataRepositoryDeletionTests
     {
         using var cancellation = new CancellationTokenSource();
         _persistent.BeforeDelete = () => cancellation.Cancel();
-        await Assert.CatchAsync<OperationCanceledException>(() => _repository.DeleteReport(Id, cancellation.Token));
-        Assert.That(_steps, Is.EqualTo(new[] { "persistent-index", "cache-index", "cache-report" }));
-        Assert.That(await _cache.GetAllTestRunRecords(), Is.Empty);
-        Assert.That(await _cache.GetTestData(Id, default), Is.Null);
+        await Assert.That(() => _repository.DeleteReport(Id, cancellation.Token)).Throws<OperationCanceledException>();
+        await Assert.That(_steps).IsEquivalentTo(new[] { "persistent-index", "cache-index", "cache-report" }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(await _cache.GetAllTestRunRecords()).IsEmpty();
+        await Assert.That(await _cache.GetTestData(Id, default)).IsNull();
     }
 
     [Test]
@@ -161,15 +166,15 @@ public class DataRepositoryDeletionTests
         {
             await started.Task.WaitAsync(TimeSpan.FromSeconds(10));
             deletion = _repository.DeleteReport(Id);
-            Assert.That(deletion.IsCompleted, Is.False);
+            await Assert.That(deletion.IsCompleted).IsFalse();
         }
         finally
         {
             release.TrySetResult();
             await Task.WhenAll(read, deletion).WaitAsync(TimeSpan.FromSeconds(10));
         }
-        Assert.That(await _cache.GetTestData(Id, default), Is.Null);
-        Assert.That(await _repository.GetData(Id, default), Is.Null);
+        await Assert.That(await _cache.GetTestData(Id, default)).IsNull();
+        await Assert.That(await _repository.GetData(Id, default)).IsNull();
     }
 
     [Test]
@@ -191,17 +196,17 @@ public class DataRepositoryDeletionTests
         {
             await started.Task.WaitAsync(TimeSpan.FromSeconds(10));
             second = _repository.GetReportPages(Id, default);
-            Assert.That(first.IsCompleted, Is.False);
-            Assert.That(second.IsCompleted, Is.False);
+            await Assert.That(first.IsCompleted).IsFalse();
+            await Assert.That(second.IsCompleted).IsFalse();
         }
         finally
         {
             release.TrySetResult();
             await Task.WhenAll(first, second).WaitAsync(TimeSpan.FromSeconds(10));
         }
-        Assert.That(await first, Is.Not.Null);
-        Assert.That(await second, Is.SameAs(await first));
-        Assert.That(opens, Is.EqualTo(1));
+        await Assert.That(await first).IsNotNull();
+        await Assert.That(await second).IsSameReferenceAs(await first);
+        await Assert.That(opens).IsEqualTo(1);
     }
 
     private sealed class RecordingLogger : ILogger<DataRepository>

@@ -4,22 +4,23 @@ using BDTest.Settings;
 using BDTest.Test;
 using BDTest.Test.Steps;
 using BDTest.Test.Steps.When;
-using NUnit.Framework;
+using System.Threading.Tasks;
 
 namespace BDTest.Tests.Fixtures;
 
-[NonParallelizable]
+[NotInParallel]
 public class RunnableDelegateTests : TestRunOwner
 {
-    [TestCase("Action")]
-    [TestCase("Task")]
-    [TestCase("CancellableTask")]
+    [Test]
+    [Arguments("Action")]
+    [Arguments("Task")]
+    [Arguments("CancellableTask")]
     public async Task Repeated_execution_reuses_the_delegate_and_reads_current_state(string kind)
     {
         using var probe = new Probe();
         var runnable = probe.CreateRunnable(kind);
         var original = runnable.StepDelegate;
-        Assert.That(probe.Values, Is.Empty);
+        await Assert.That(probe.Values).IsEmpty();
 
         using var firstCancellation = new CancellationTokenSource();
         using var secondCancellation = new CancellationTokenSource();
@@ -28,48 +29,51 @@ public class RunnableDelegateTests : TestRunOwner
         probe.Value = 20;
         await runnable.Run(secondCancellation.Token);
 
-        Assert.That(runnable.StepDelegate, Is.SameAs(original));
-        Assert.That(probe.Values, Is.EqualTo(new[] { 10, 20 }));
+        await Assert.That(runnable.StepDelegate).IsSameReferenceAs(original);
+        await Assert.That(probe.Values).IsEquivalentTo(new[] { 10, 20 }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
         if (kind == "CancellableTask")
-            Assert.That(probe.Tokens, Is.EqualTo(new[] { firstCancellation.Token, secondCancellation.Token }));
+            await Assert.That(probe.Tokens).IsEquivalentTo(new[] { firstCancellation.Token, secondCancellation.Token }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 
-    [TestCase("Action")]
-    [TestCase("Task")]
-    [TestCase("CancellableTask")]
+    [Test]
+    [Arguments("Action")]
+    [Arguments("Task")]
+    [Arguments("CancellableTask")]
     public async Task A_step_failure_does_not_replace_the_delegate(string kind)
     {
         using var probe = new Probe { FailuresRemaining = 1 };
         var runnable = probe.CreateRunnable(kind);
-        var error = await Assert.ThrowsAsync<InvalidOperationException>(() => runnable.Run());
-        Assert.That(Required(error).Message, Is.EqualTo("step failure"));
+        var error = await Assert.That(() => runnable.Run()).ThrowsExactly<InvalidOperationException>();
+        await Assert.That(Required(error).Message).IsEqualTo("step failure");
 
         await runnable.Run();
 
-        Assert.That(probe.Values, Has.Count.EqualTo(2));
+        await Assert.That(probe.Values).Count().IsEqualTo(2);
     }
 
-    [TestCase("Action")]
-    [TestCase("Task")]
-    [TestCase("CancellableTask")]
+    [Test]
+    [Arguments("Action")]
+    [Arguments("Task")]
+    [Arguments("CancellableTask")]
     public async Task A_scenario_retry_reuses_the_delegate_and_reads_recreated_context(string kind)
     {
         using var probe = new Probe { FailuresRemaining = 1 };
         var builder = probe.CreateScenario(kind).Then(() => Console.WriteLine("done"));
         var original = builder.ExistingSteps[0].Runnable;
         var scenario = await builder.BDTestAsync();
-        Assert.That(builder.ExistingSteps[0].Runnable, Is.SameAs(original));
+        await Assert.That(builder.ExistingSteps[0].Runnable).IsSameReferenceAs(original);
 
-        Assert.That(scenario.Status, Is.EqualTo(Status.Passed));
-        Assert.That(scenario.RetryCount, Is.EqualTo(1));
-        Assert.That(probe.Contexts, Has.Count.EqualTo(2));
-        Assert.That(probe.Contexts[0], Is.Not.SameAs(probe.Contexts[1]));
-        Assert.That(probe.Contexts.Select(context => context.Calls), Is.EqualTo(new[] { 1, 1 }));
+        await Assert.That(scenario.Status).IsEqualTo(Status.Passed);
+        await Assert.That(scenario.RetryCount).IsEqualTo(1);
+        await Assert.That(probe.Contexts).Count().IsEqualTo(2);
+        await Assert.That(probe.Contexts[0]).IsNotSameReferenceAs(probe.Contexts[1]);
+        await Assert.That(probe.Contexts.Select(context => context.Calls)).IsEquivalentTo(new[] { 1, 1 }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 
-    [TestCase("Action")]
-    [TestCase("Task")]
-    [TestCase("CancellableTask")]
+    [Test]
+    [Arguments("Action")]
+    [Arguments("Task")]
+    [Arguments("CancellableTask")]
     public async Task Skipped_steps_never_invoke_the_delegate(string kind)
     {
         using var probe = new Probe();
@@ -78,8 +82,8 @@ public class RunnableDelegateTests : TestRunOwner
         Options.Debug.ShouldSkipWhenStep = true;
         await step.Execute(null);
 
-        Assert.That(step.Status, Is.EqualTo(Status.Skipped));
-        Assert.That(probe.Values, Is.Empty);
+        await Assert.That(step.Status).IsEqualTo(Status.Skipped);
+        await Assert.That(probe.Values).IsEmpty();
 
     }
 
@@ -90,8 +94,8 @@ public class RunnableDelegateTests : TestRunOwner
         var runnable = new Runnable(() => calls.Add(1));
         var original = runnable.StepDelegate;
         await Task.WhenAll(Enumerable.Range(0, 16).Select(_ => Task.Run(() => runnable.Run())));
-        Assert.That(calls, Has.Count.EqualTo(16));
-        Assert.That(runnable.StepDelegate, Is.SameAs(original));
+        await Assert.That(calls).Count().IsEqualTo(16);
+        await Assert.That(runnable.StepDelegate).IsSameReferenceAs(original);
     }
 
     public sealed class ProbeContext

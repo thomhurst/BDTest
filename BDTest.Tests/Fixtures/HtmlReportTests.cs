@@ -8,64 +8,66 @@ using BDTest.Helpers;
 using BDTest.Settings;
 using BDTest.Test;
 using BDTest.Tests.Helpers;
-using NUnit.Framework;
+using System.Threading.Tasks;
 
 namespace BDTest.Tests.Fixtures;
 
-[NonParallelizable]
+[NotInParallel]
 public class HtmlReportTests : RunTestBase
 {
     protected override bool BindCurrentTestMetadata => true;
 
-    [TearDown]
+    [After(HookType.Test)]
     public void FinishExecution() => EndTest();
 
     [Test]
-    public void EmptyReportIsSelfContained()
+    public async Task EmptyReportIsSelfContained()
     {
         var html = BDTestHtmlHelper.GetTestHtmlReport(null, TestRun);
 
-        Assert.That(html, Does.StartWith("<!DOCTYPE html>"));
-        Assert.That(html, Does.Contain("<span class=\"label\">Total</span></span><span class=\"tile-n\">0</span>"));
-        Assert.That(html, Does.Contain("No scenarios ran"));
-        Assert.That(html, Does.Contain("<style>"));
-        Assert.That(html, Does.Contain("<script>"));
-        Assert.That(html, Does.Not.Contain("<script src="));
-        Assert.That(html, Does.Not.Contain("<link "));
+        await Assert.That(html).StartsWith("<!DOCTYPE html>");
+        await Assert.That(html).Contains("<span class=\"label\">Total</span></span><span class=\"tile-n\">0</span>");
+        await Assert.That(html).Contains("No scenarios ran");
+        await Assert.That(html).Contains("<style>");
+        await Assert.That(html).Contains("<script>");
+        await Assert.That(html).DoesNotContain("<script src=");
+        await Assert.That(html).DoesNotContain("<link ");
     }
 
-    [TestCase("\n")]
-    [TestCase("\r\n")]
-    public void ParentPolicyAllowsOnlyTheReportScript(string newline)
+    [Test]
+    [Arguments("\n")]
+    [Arguments("\r\n")]
+    public async Task ParentPolicyAllowsOnlyTheReportScript(string newline)
     {
         var html = BDTestHtmlHelper.GetTestHtmlReport(null, TestRun).Replace("\r\n", "\n").Replace("\n", newline);
         var policy = Regex.Match(html, "<meta http-equiv=\"Content-Security-Policy\" content=\"([^\"]*)\">");
-        Assert.That(policy.Success, Is.True);
-        Assert.That(policy.Index, Is.LessThan(html.IndexOf("<style>", StringComparison.Ordinal)));
+        await Assert.That(policy.Success).IsTrue();
+        await Assert.That(policy.Index).IsLessThan(html.IndexOf("<style>", StringComparison.Ordinal));
 
         var directives = WebUtility.HtmlDecode(policy.Groups[1].Value).Split(';', StringSplitOptions.RemoveEmptyEntries)
             .Select(value => value.Trim().Split(' ', 2)).ToDictionary(parts => parts[0], parts => parts[1]);
         var scripts = Regex.Matches(html, "<script>(.*?)</script>", RegexOptions.Singleline);
-        Assert.That(scripts.Count, Is.EqualTo(1));
+        await Assert.That(scripts.Count).IsEqualTo(1);
         // HTML parsers normalize line endings before checking inline script hashes.
         var script = scripts[0].Groups[1].Value.Replace("\r\n", "\n").Replace("\r", "\n");
         var hash = Convert.ToBase64String(SHA256.HashData(Encoding.UTF8.GetBytes(script)));
-        Assert.That(directives["script-src"], Is.EqualTo($"'sha256-{hash}'"));
-        Assert.That(directives["script-src-attr"], Is.EqualTo("'none'"));
-        Assert.That(directives["default-src"], Is.EqualTo("'none'"));
-        Assert.That(directives["base-uri"], Is.EqualTo("'none'"));
-        Assert.That(directives["form-action"], Is.EqualTo("'none'"));
-        Assert.That(directives["frame-src"], Is.EqualTo("'self'"));
-        Assert.That(directives["style-src"], Is.EqualTo("'unsafe-inline'"));
-        Assert.That(directives["img-src"], Is.EqualTo("data: https: http: file:"));
+        await Assert.That(directives["script-src"]).IsEqualTo($"'sha256-{hash}'");
+        await Assert.That(directives["script-src-attr"]).IsEqualTo("'none'");
+        await Assert.That(directives["default-src"]).IsEqualTo("'none'");
+        await Assert.That(directives["base-uri"]).IsEqualTo("'none'");
+        await Assert.That(directives["form-action"]).IsEqualTo("'none'");
+        await Assert.That(directives["frame-src"]).IsEqualTo("'self'");
+        await Assert.That(directives["style-src"]).IsEqualTo("'unsafe-inline'");
+        await Assert.That(directives["img-src"]).IsEqualTo("data: https: http: file:");
     }
 
-    [TestCase(false)]
-    [TestCase(true)]
-    public void MissingDescriptorValuesAreNotSpecified(bool nullDescriptor)
+    [Test]
+    [Arguments(false)]
+    [Arguments(true)]
+    public async Task MissingDescriptorValuesAreNotSpecified(bool nullDescriptor)
     {
         var html = BDTestHtmlHelper.GetTestHtmlReport(nullDescriptor ? null : new BDTestRunDescriptor(), TestRun);
-        Assert.That(html, Does.Contain("Not Specified"));
+        await Assert.That(html).Contains("Not Specified");
     }
 
     [Test]
@@ -83,41 +85,41 @@ public class HtmlReportTests : RunTestBase
             BranchName = "Explicit branch"
         }, TestRun);
 
-        Assert.That(html, Does.Not.Contain(unsafeText));
-        Assert.That(html, Does.Contain($"<dt>Environment</dt><dd>{encodedText}</dd>"));
-        Assert.That(html, Does.Contain($"class=\"scenario-title\">{encodedText}"));
-        Assert.That(html, Does.Contain("<dt>Tag</dt><dd>Explicit tag</dd>"));
-        Assert.That(html, Does.Contain("<dt>Branch</dt><dd class=\"mono\">Explicit branch</dd>"));
-        Assert.That(html, Does.Contain($"id=\"details-{scenario.Guid}\""));
+        await Assert.That(html).DoesNotContain(unsafeText);
+        await Assert.That(html).Contains($"<dt>Environment</dt><dd>{encodedText}</dd>");
+        await Assert.That(html).Contains($"class=\"scenario-title\">{encodedText}");
+        await Assert.That(html).Contains("<dt>Tag</dt><dd>Explicit tag</dd>");
+        await Assert.That(html).Contains("<dt>Branch</dt><dd class=\"mono\">Explicit branch</dd>");
+        await Assert.That(html).Contains($"id=\"details-{scenario.Guid}\"");
     }
 
     [Test]
     public async Task NotImplementedScenarioMatchesItsFilter()
     {
-        await Assert.CatchAsync(async () => await When(() => NotImplemented()).Then(() => DoNothing()).BDTestAsync());
-        Assert.That(BDTestUtil.GetScenarios(TestRun).Single().Status, Is.EqualTo(Status.NotImplemented));
+        await Assert.That(async () => await When(() => NotImplemented()).Then(() => DoNothing()).BDTestAsync()).Throws<Exception>();
+        await Assert.That(BDTestUtil.GetScenarios(TestRun).Single().Status).IsEqualTo(Status.NotImplemented);
         var html = BDTestHtmlHelper.GetTestHtmlReport(null, TestRun);
         var scenarioStatus = Regex.Match(html, "class=\"scn\" id=\"[^\"]+\" data-status=\"([^\"]+)\"").Groups[1].Value;
         var filterStatus = Regex.Match(html, "class=\"seg-btn\" type=\"button\" data-filter=\"([^\"]+)\" aria-pressed=\"false\"><span>Not implemented</span>").Groups[1].Value;
 
-        Assert.That(filterStatus, Is.Not.Empty);
-        Assert.That(filterStatus, Is.EqualTo(scenarioStatus));
-        Assert.That(html, Does.Contain("<span class=\"label\">Not implemented</span></span><span class=\"tile-n\">1</span>"));
+        await Assert.That(filterStatus).IsNotEmpty();
+        await Assert.That(filterStatus).IsEqualTo(scenarioStatus);
+        await Assert.That(html).Contains("<span class=\"label\">Not implemented</span></span><span class=\"tile-n\">1</span>");
     }
 
     [Test]
     public async Task StepsAfterFailureAreNotReportedAsPassed()
     {
-        await Assert.CatchAsync(async () => await When(() => Fail()).Then(() => DoNothing()).BDTestAsync());
+        await Assert.That(async () => await When(() => Fail()).Then(() => DoNothing()).BDTestAsync()).Throws<Exception>();
         var scenario = BDTestUtil.GetScenarios(TestRun).Single();
-        Assert.That(Required(scenario.Steps).Select(step => step.Status), Is.EqualTo(new[] { Status.Failed, Status.NotRun }));
+        await Assert.That(Required(scenario.Steps).Select(step => step.Status)).IsEquivalentTo(new[] { Status.Failed, Status.NotRun }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
         var html = BDTestHtmlHelper.GetTestHtmlReport(null, TestRun);
         var stepStatuses = Regex.Matches(html, "class=\"step\" data-status=\"([^\"]+)\"")
             .Select(match => match.Groups[1].Value).ToArray();
 
-        Assert.That(stepStatuses, Is.EqualTo(new[] { "failed", "notrun" }));
-        Assert.That(html, Does.Contain("&lt;failure&gt;"));
-        Assert.That(html, Does.Not.Contain("<failure>"));
+        await Assert.That(stepStatuses).IsEquivalentTo(new[] { "failed", "notrun" }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(html).Contains("&lt;failure&gt;");
+        await Assert.That(html).DoesNotContain("<failure>");
     }
 
     [Test]
@@ -129,41 +131,42 @@ public class HtmlReportTests : RunTestBase
         var html = BDTestHtmlHelper.GetTestHtmlReport(null, TestRun);
         var frame = Regex.Match(html, "<iframe class=\"custom-body\"[^>]*>");
 
-        Assert.That(frame.Success, Is.True);
-        Assert.That(frame.Value, Does.Contain("sandbox=\"allow-popups\""));
-        Assert.That(frame.Value, Does.Contain("Content-Security-Policy"));
-        Assert.That(html, Does.Not.Contain(payload));
+        await Assert.That(frame.Success).IsTrue();
+        await Assert.That(frame.Value).Contains("sandbox=\"allow-popups\"");
+        await Assert.That(frame.Value).Contains("Content-Security-Policy");
+        await Assert.That(html).DoesNotContain(payload);
     }
 
-    [TestCase("<script>parent.document.body.innerHTML = 'compromised';</script>")]
-    [TestCase("<img src=x onerror=alert(document.cookie)>")]
-    [TestCase("</div></section></main><div id=\"escaped\">outside</div>")]
-    [TestCase("\"></iframe><script>alert('escaped')</script><iframe srcdoc=\"")]
-    [TestCase("<p style=\"color: red\"><b>Formatted</b></p><table><tr><td>Result</td></tr></table><img src=\"evidence/screenshot.png\">")]
+    [Test]
+    [Arguments("<script>parent.document.body.innerHTML = 'compromised';</script>")]
+    [Arguments("<img src=x onerror=alert(document.cookie)>")]
+    [Arguments("</div></section></main><div id=\"escaped\">outside</div>")]
+    [Arguments("\"></iframe><script>alert('escaped')</script><iframe srcdoc=\"")]
+    [Arguments("<p style=\"color: red\"><b>Formatted</b></p><table><tr><td>Result</td></tr></table><img src=\"evidence/screenshot.png\">")]
     public async Task CustomHtmlCannotEscapeOrChangeReportStructure(string payload)
     {
         var first = await When(() => WriteCustomHtml(payload)).Then(() => DoNothing()).WithScenarioText("First").BDTestAsync();
         var second = await When(() => DoNothing()).Then(() => DoNothing()).WithScenarioText("Second").BDTestAsync();
         var html = BDTestHtmlHelper.GetTestHtmlReport(null, TestRun);
         var frames = Regex.Matches(html, "<iframe\\b[^>]*></iframe>");
-        Assert.That(frames.Count, Is.EqualTo(1));
+        await Assert.That(frames.Count).IsEqualTo(1);
         var frame = XElement.Parse(frames[0].Value);
         var document = frame.Attribute("srcdoc")?.Value;
-        Assert.That(document, Does.EndWith(payload + "</body></html>"));
-        Assert.That(document, Does.Contain("default-src 'none'"));
-        Assert.That(frame.Attribute("sandbox")?.Value, Is.EqualTo("allow-popups"));
-        Assert.That(frame.Attribute("referrerpolicy")?.Value, Is.EqualTo("no-referrer"));
+        await Assert.That(document).EndsWith(payload + "</body></html>");
+        await Assert.That(document).Contains("default-src 'none'");
+        await Assert.That(frame.Attribute("sandbox")?.Value).IsEqualTo("allow-popups");
+        await Assert.That(frame.Attribute("referrerpolicy")?.Value).IsEqualTo("no-referrer");
 
         var parent = html.Remove(frames[0].Index, frames[0].Length);
-        Assert.That(parent, Does.Not.Contain(payload));
-        Assert.That(Regex.Matches(parent, "<script>").Count, Is.EqualTo(1));
-        Assert.That(Regex.Matches(parent, "<div class=\"scn\"").Count, Is.EqualTo(2));
-        Assert.That(Regex.Matches(parent, "<main>").Count, Is.EqualTo(1));
-        Assert.That(Regex.Matches(parent, "</main>").Count, Is.EqualTo(1));
-        Assert.That(parent, Does.Contain($"id=\"details-{first.Guid}\""));
-        Assert.That(parent, Does.Contain($"id=\"details-{second.Guid}\""));
-        Assert.That(parent, Does.Contain("<span class=\"label\">Total</span></span><span class=\"tile-n\">2</span>"));
-        Assert.That(Regex.IsMatch(parent, @"<[^>]+\son\w+\s*=", RegexOptions.IgnoreCase), Is.False);
+        await Assert.That(parent).DoesNotContain(payload);
+        await Assert.That(Regex.Matches(parent, "<script>").Count).IsEqualTo(1);
+        await Assert.That(Regex.Matches(parent, "<div class=\"scn\"").Count).IsEqualTo(2);
+        await Assert.That(Regex.Matches(parent, "<main>").Count).IsEqualTo(1);
+        await Assert.That(Regex.Matches(parent, "</main>").Count).IsEqualTo(1);
+        await Assert.That(parent).Contains($"id=\"details-{first.Guid}\"");
+        await Assert.That(parent).Contains($"id=\"details-{second.Guid}\"");
+        await Assert.That(parent).Contains("<span class=\"label\">Total</span></span><span class=\"tile-n\">2</span>");
+        await Assert.That(Regex.IsMatch(parent, @"<[^>]+\son\w+\s*=", RegexOptions.IgnoreCase)).IsFalse();
     }
 
     [Test]
@@ -175,42 +178,44 @@ public class HtmlReportTests : RunTestBase
         var frame = Regex.Match(html, "<iframe class=\"custom-body\"[^>]*>");
         var document = WebUtility.HtmlDecode(Regex.Match(frame.Value, "srcdoc=\"([^\"]*)\"").Groups[1].Value);
 
-        Assert.That(document, Does.Contain("href=\"evidence/report.html\" target=\"_blank\""));
-        Assert.That(document, Does.Contain("src=\"evidence/screenshot.png\""));
-        Assert.That(document, Does.Contain("img-src data: https: http: file:"));
-        Assert.That(html, Does.Not.Contain("allow-scripts").And.Not.Contain("allow-popups-to-escape-sandbox"));
+        await Assert.That(document).Contains("href=\"evidence/report.html\" target=\"_blank\"");
+        await Assert.That(document).Contains("src=\"evidence/screenshot.png\"");
+        await Assert.That(document).Contains("img-src data: https: http: file:");
+
+        await Assert.That(html).DoesNotContain("allow-scripts").And.DoesNotContain("allow-popups-to-escape-sandbox");
     }
 
     [Test]
     public async Task FailuresWithTheSameErrorAreGroupedIntoOneCause()
     {
-        await Assert.CatchAsync(async () => await When(() => Fail()).Then(() => DoNothing()).WithScenarioText("First").BDTestAsync());
-        await Assert.CatchAsync(async () => await When(() => Fail()).Then(() => DoNothing()).WithScenarioText("Second").BDTestAsync());
+        await Assert.That(async () => await When(() => Fail()).Then(() => DoNothing()).WithScenarioText("First").BDTestAsync()).Throws<Exception>();
+        await Assert.That(async () => await When(() => Fail()).Then(() => DoNothing()).WithScenarioText("Second").BDTestAsync()).Throws<Exception>();
 
         var html = BDTestHtmlHelper.GetTestHtmlReport(null, TestRun);
 
-        Assert.That(html, Does.Contain("Needs attention"));
-        Assert.That(Regex.Matches(html, "<article class=\"cause\">").Count, Is.EqualTo(1));
-        Assert.That(html, Does.Contain("<span class=\"cause-n\">2 scenarios</span>"));
-        Assert.That(html, Does.Contain("<span class=\"v-word\">2 failed</span>"));
+        await Assert.That(html).Contains("Needs attention");
+        await Assert.That(Regex.Matches(html, "<article class=\"cause\">").Count).IsEqualTo(1);
+        await Assert.That(html).Contains("<span class=\"cause-n\">2 scenarios</span>");
+        await Assert.That(html).Contains("<span class=\"v-word\">2 failed</span>");
     }
 
-    [TestCase(false)]
-    [TestCase(true)]
+    [Test]
+    [Arguments(false)]
+    [Arguments(true)]
     public async Task OutlineFailureCausesCountDistinctScenariosAndRetainExampleLinks(bool includeOrdinaryScenario)
     {
-        await Assert.CatchAsync(async () => await ScenarioOutline("Failing outline", new[] { 1, 2 },
-            row => When(() => Fail()).Then(() => DoNothing())));
+        await Assert.That(async () => await ScenarioOutline("Failing outline", new[] { 1, 2 },
+            row => When(() => Fail()).Then(() => DoNothing()))).Throws<Exception>();
         var outline = BDTestUtil.GetScenarios(TestRun).Single();
         if (includeOrdinaryScenario)
-            await Assert.CatchAsync(async () => await When(() => Fail()).Then(() => DoNothing()).BDTestAsync());
+            await Assert.That(async () => await When(() => Fail()).Then(() => DoNothing()).BDTestAsync()).Throws<Exception>();
 
         var html = BDTestHtmlHelper.GetTestHtmlReport(null, TestRun);
         var count = includeOrdinaryScenario ? 2 : 1;
-        Assert.That(html, Does.Contain($"<span class=\"cause-n\">{count} {(count == 1 ? "scenario" : "scenarios")}</span>"));
-        Assert.That(html, Does.Contain($"<span class=\"v-word\">{count} failed</span>"));
-        Assert.That(html, Does.Contain($"data-go=\"{outline.Guid}\">Failing outline · example 1</button>"));
-        Assert.That(html, Does.Contain($"data-go=\"{outline.Guid}\">Failing outline · example 2</button>"));
+        await Assert.That(html).Contains($"<span class=\"cause-n\">{count} {(count == 1 ? "scenario" : "scenarios")}</span>");
+        await Assert.That(html).Contains($"<span class=\"v-word\">{count} failed</span>");
+        await Assert.That(html).Contains($"data-go=\"{outline.Guid}\">Failing outline · example 1</button>");
+        await Assert.That(html).Contains($"data-go=\"{outline.Guid}\">Failing outline · example 2</button>");
     }
 
     [Test]
@@ -218,19 +223,21 @@ public class HtmlReportTests : RunTestBase
     {
         var exception = new System.Reflection.TargetInvocationException(new AggregateException(
             new InvalidOperationException("<first cause>"), new ArgumentException("<second cause>")));
-        await Assert.CatchAsync(async () => await When(() => ThrowStructuredFailure(exception)).Then(() => DoNothing()).BDTestAsync());
+        await Assert.That(async () => await When(() => ThrowStructuredFailure(exception)).Then(() => DoNothing()).BDTestAsync()).Throws<Exception>();
 
         var html = BDTestHtmlHelper.GetTestHtmlReport(null, TestRun);
 
-        Assert.That(Regex.Matches(html, "<article class=\"cause\">").Count, Is.EqualTo(2));
-        Assert.That(html, Does.Contain("<span class=\"err-type\">System.InvalidOperationException</span>"));
-        Assert.That(html, Does.Contain("<span class=\"err-type\">System.ArgumentException</span>"));
-        Assert.That(html, Does.Contain("<details class=\"exception-tree\" open>"));
+        await Assert.That(Regex.Matches(html, "<article class=\"cause\">").Count).IsEqualTo(2);
+        await Assert.That(html).Contains("<span class=\"err-type\">System.InvalidOperationException</span>");
+        await Assert.That(html).Contains("<span class=\"err-type\">System.ArgumentException</span>");
+        await Assert.That(html).Contains("<details class=\"exception-tree\" open>");
         var originalText = Regex.Match(html, "<summary>Original exception text</summary>(.*?)</details>", RegexOptions.Singleline).Groups[1].Value;
-        Assert.That(originalText, Does.Contain("data-wrap aria-pressed=\"false\">Wrap</button>"));
-        Assert.That(originalText, Does.Contain("data-copy>Copy</button>"));
-        Assert.That(html, Does.Contain("&lt;first cause&gt;").And.Contain("&lt;second cause&gt;"));
-        Assert.That(html, Does.Not.Contain("<first cause>").And.Not.Contain("<second cause>"));
+        await Assert.That(originalText).Contains("data-wrap aria-pressed=\"false\">Wrap</button>");
+        await Assert.That(originalText).Contains("data-copy>Copy</button>");
+
+        await Assert.That(html).Contains("&lt;first cause&gt;").And.Contains("&lt;second cause&gt;");
+
+        await Assert.That(html).DoesNotContain("<first cause>").And.DoesNotContain("<second cause>");
     }
 
     private static void ThrowStructuredFailure(Exception exception) => throw exception;
@@ -243,22 +250,23 @@ public class HtmlReportTests : RunTestBase
         var html = BDTestHtmlHelper.GetTestHtmlReport(null, TestRun);
         var attribute = Regex.Match(html, "data-tags=\"([^\"]*)\"").Groups[1].Value;
 
-        Assert.That(attribute, Is.Not.Empty);
+        await Assert.That(attribute).IsNotEmpty();
         var json = WebUtility.HtmlDecode(attribute);
-        Assert.That(json.Any(char.IsControl), Is.False, "JSON must escape literal control characters.");
-        Assert.That(ReportJson.DeserializeObject<string[]>(json), Is.EqualTo(scenario.Tags));
+        await Assert.That(json.Any(char.IsControl)).IsFalse().Because("JSON must escape literal control characters.");
+        await Assert.That(ReportJson.DeserializeObject<string[]>(json)).IsEquivalentTo(Required(scenario.Tags), global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
         var option = Regex.Match(html, "<option value=\"([^\"]+)\">@").Groups[1].Value;
         var button = Regex.Match(html, "data-tag=\"([^\"]+)\"").Groups[1].Value;
         foreach (var value in new[] { option, button })
         {
-            Assert.That(value, Is.Not.Empty);
-            Assert.That(value.Any(char.IsControl), Is.False, "Tag controls must not contain parser-normalized characters.");
-            Assert.That(ReportJson.DeserializeObject<string>(WebUtility.HtmlDecode(value)), Is.EqualTo(scenario.Tags.Single()));
+            await Assert.That(value).IsNotEmpty();
+            await Assert.That(value.Any(char.IsControl)).IsFalse().Because("Tag controls must not contain parser-normalized characters.");
+            await Assert.That(ReportJson.DeserializeObject<string>(WebUtility.HtmlDecode(value))).IsEqualTo(scenario.Tags.Single());
         }
     }
 
-    [TestCase(false)]
-    [TestCase(true)]
+    [Test]
+    [Arguments(false)]
+    [Arguments(true)]
     [System.Diagnostics.CodeAnalysis.SuppressMessage("BDTest", "BDT001", Justification = "The report must include an intentionally unexecuted scenario.")]
     public async Task UnexecutedDefinitionsAppearInSummaryAndPreventAllPassed(bool includePassingScenario)
     {
@@ -268,13 +276,13 @@ public class HtmlReportTests : RunTestBase
 
         var html = BDTestHtmlHelper.GetTestHtmlReport(null, TestRun);
 
-        Assert.That(html, Does.Not.Contain("<span class=\"v-word\">All passed</span>"));
+        await Assert.That(html).DoesNotContain("<span class=\"v-word\">All passed</span>");
         var total = includePassingScenario ? 2 : 1;
-        Assert.That(html, Does.Contain($"<span class=\"label\">Total</span></span><span class=\"tile-n\">{total}</span>"));
+        await Assert.That(html).Contains($"<span class=\"label\">Total</span></span><span class=\"tile-n\">{total}</span>");
         var summary = Regex.Match(html, "<section class=\"wrap\" aria-label=\"Test summary\">.*?</section>", RegexOptions.Singleline).Value;
-        Assert.That(summary, Does.Contain("href=\"#not-run\""));
-        Assert.That(summary, Does.Contain("<span class=\"label\">Built but never run</span></span><span class=\"tile-n\">1</span>"));
-        Assert.That(html, Does.Contain("Unexecuted definition"));
+        await Assert.That(summary).Contains("href=\"#not-run\"");
+        await Assert.That(summary).Contains("<span class=\"label\">Built but never run</span></span><span class=\"tile-n\">1</span>");
+        await Assert.That(html).Contains("Unexecuted definition");
     }
 
     [Test]
@@ -284,18 +292,19 @@ public class HtmlReportTests : RunTestBase
 
         var html = BDTestHtmlHelper.GetTestHtmlReport(null, TestRun);
 
-        Assert.That(html, Does.Not.Contain("Needs attention"));
-        Assert.That(html, Does.Contain("<span class=\"v-word\">All passed</span>"));
+        await Assert.That(html).DoesNotContain("Needs attention");
+        await Assert.That(html).Contains("<span class=\"v-word\">All passed</span>");
     }
 
-    [TestCase(0, "—")]
-    [TestCase(412, "412 ms")]
-    [TestCase(1840, "1.84 s")]
-    [TestCase(252_000, "4 m 12 s")]
-    [TestCase(3_720_000, "1 h 02 m")]
-    public void DurationsAreReadable(int milliseconds, string expected)
+    [Test]
+    [Arguments(0, "—")]
+    [Arguments(412, "412 ms")]
+    [Arguments(1840, "1.84 s")]
+    [Arguments(252_000, "4 m 12 s")]
+    [Arguments(3_720_000, "1 h 02 m")]
+    public async Task DurationsAreReadable(int milliseconds, string expected)
     {
-        Assert.That(BDTestHtmlHelper.FormatDuration(TimeSpan.FromMilliseconds(milliseconds)), Is.EqualTo(expected));
+        await Assert.That(BDTestHtmlHelper.FormatDuration(TimeSpan.FromMilliseconds(milliseconds))).IsEqualTo(expected);
     }
 
     private void WriteCustomHtml(string html) => ScenarioHtmlWriter.Custom(html);

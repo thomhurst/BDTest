@@ -20,12 +20,16 @@ using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
-using NUnit.Framework;
+using System.Threading.Tasks;
 
 namespace BDTest.Tests.Fixtures;
 
 public class ReportHandlerEncodingTests
 {
+    public static IEnumerable<string> GetUrlQueries() => UrlQueries;
+
+    public static IEnumerable<string?> GetValues() => Values;
+
     private static readonly string?[] Values =
     [
         "release-1.2",
@@ -41,8 +45,9 @@ public class ReportHandlerEncodingTests
     ];
 
     [Test]
+    [MatrixDataSource]
     public async Task Delete_values_are_data_and_never_executable_handler_source(
-        [ValueSource(nameof(Values))] string? value)
+        [MatrixMethod<ReportHandlerEncodingTests>(nameof(GetValues))] string? value)
     {
         var record = ReportJson.DeserializeObject<TestRunSummary>("{}");
         record.RecordId = value;
@@ -55,26 +60,27 @@ public class ReportHandlerEncodingTests
         var html = await RenderAsync("/Views/BDTest/TestRunList.cshtml", new[] { record }, isAdmin: true);
         if (string.IsNullOrEmpty(value))
         {
-            Assert.That(html, Does.Not.Contain("data-bdtest-action=\"delete\""));
+            await Assert.That(html).DoesNotContain("data-bdtest-action=\"delete\"");
             return;
         }
-        var form = ReadElement(html, "<form[^>]*data-bdtest-delete[^>]*>.*?</form>");
+        var form = await ReadElement(html, "<form[^>]*data-bdtest-delete[^>]*>.*?</form>");
         var action = (string?)form.Attribute("action");
-        Assert.That(action, Does.StartWith("/bdtest/reports/"));
-        Assert.That(Uri.UnescapeDataString(Required(action)["/bdtest/reports/".Length..]), Is.EqualTo(record.RecordId));
-        Assert.That((string?)form.Attribute("method"), Is.EqualTo("post"));
-        var button = ReadElement(html, "<button[^>]*>Delete</button>");
-        Assert.That((string?)button.Attribute("type"), Is.EqualTo("submit"));
-        Assert.That((string?)button.Attribute("data-bdtest-action"), Is.EqualTo("delete"));
-        Assert.That((string?)button.Attribute("data-test-id"), Is.EqualTo(record.RecordId ?? ""));
-        Assert.That((string?)button.Attribute("data-tag"), Is.EqualTo(value ?? ""));
-        Assert.That((string?)button.Attribute("data-environment"), Is.EqualTo(value ?? ""));
-        Assert.That((string?)button.Attribute("data-branch"), Is.EqualTo(value ?? ""));
-        Assert.That((string?)button.Attribute("data-date"), Is.EqualTo(record.StartedAtDateTime.ToString()));
-        Assert.That(button.Attributes().Select(x => x.Name.LocalName), Is.EquivalentTo(new[]
+        await Assert.That(action).StartsWith("/bdtest/reports/");
+        await Assert.That(Uri.UnescapeDataString(Required(action)["/bdtest/reports/".Length..])).IsEqualTo(record.RecordId);
+        await Assert.That((string?)form.Attribute("method")).IsEqualTo("post");
+        var button = await ReadElement(html, "<button[^>]*>Delete</button>");
+        await Assert.That((string?)button.Attribute("type")).IsEqualTo("submit");
+        await Assert.That((string?)button.Attribute("data-bdtest-action")).IsEqualTo("delete");
+        await Assert.That((string?)button.Attribute("data-test-id")).IsEqualTo(record.RecordId ?? "");
+        await Assert.That((string?)button.Attribute("data-tag")).IsEqualTo(value ?? "");
+        await Assert.That((string?)button.Attribute("data-environment")).IsEqualTo(value ?? "");
+        await Assert.That((string?)button.Attribute("data-branch")).IsEqualTo(value ?? "");
+        await Assert.That((string?)button.Attribute("data-date")).IsEqualTo(record.StartedAtDateTime.ToString());
+
+        await Assert.That(button.Attributes().Select(x => x.Name.LocalName)).IsEquivalentTo(new[]
         {
             "type", "class", "data-bdtest-action", "data-test-id", "data-tag", "data-environment", "data-branch", "data-date"
-        }));
+        }, global::TUnit.Assertions.Enums.CollectionOrdering.Any);
     }
 
     [Test]
@@ -83,7 +89,7 @@ public class ReportHandlerEncodingTests
         var record = ReportJson.DeserializeObject<TestRunSummary>("{}");
         record.RecordId = "test-run-123";
         var html = await RenderAsync("/Views/BDTest/TestRunList.cshtml", new[] { record });
-        Assert.That(Regex.IsMatch(html, "<button[^>]*>Delete</button>"), Is.False);
+        await Assert.That(Regex.IsMatch(html, "<button[^>]*>Delete</button>")).IsFalse();
     }
 
     private static readonly string[] UrlQueries =
@@ -98,21 +104,22 @@ public class ReportHandlerEncodingTests
     ];
 
     [Test]
+    [MatrixDataSource]
     public async Task Copy_link_url_is_data_and_never_executable_handler_source(
-        [ValueSource(nameof(UrlQueries))] string query)
+        [MatrixMethod<ReportHandlerEncodingTests>(nameof(GetUrlQueries))] string query)
     {
         var html = await RenderAsync<object>("/Views/Shared/_CopyLinkButton.cshtml", null, query: query);
-        var button = ReadElement(html, "<button[^>]*>.*?Copy link</button>");
-        Assert.That((string?)button.Attribute("data-bdtest-action"), Is.EqualTo("copy-url"));
-        Assert.That((string?)button.Attribute("data-url"),
-            Is.EqualTo("/bdtest/report/O'Brien/test-runs" + query));
-        Assert.That(button.Attributes().Select(x => x.Name.LocalName),
-            Is.EquivalentTo(new[] { "type", "class", "data-bdtest-action", "data-url" }));
+        var button = await ReadElement(html, "<button[^>]*>.*?Copy link</button>");
+        await Assert.That((string?)button.Attribute("data-bdtest-action")).IsEqualTo("copy-url");
+        await Assert.That((string?)button.Attribute("data-url")).IsEqualTo("/bdtest/report/O'Brien/test-runs" + query);
+
+        await Assert.That(button.Attributes().Select(x => x.Name.LocalName)).IsEquivalentTo(new[] { "type", "class", "data-bdtest-action", "data-url" }, global::TUnit.Assertions.Enums.CollectionOrdering.Any);
     }
 
     [Test]
+    [MatrixDataSource]
     public async Task Scenario_copy_url_is_data_and_preserves_the_selected_scenario(
-        [ValueSource(nameof(UrlQueries))] string query)
+        [MatrixMethod<ReportHandlerEncodingTests>(nameof(GetUrlQueries))] string query)
     {
         var scenario = ReportJson.DeserializeObject<Scenario>(ReportJson.SerializeObject(new
         {
@@ -122,30 +129,30 @@ public class ReportHandlerEncodingTests
         }));
         var html = await RenderAsync("/Views/Shared/_ScenarioPanel.cshtml",
             new ScenarioModalViewModel { Scenario = scenario }, query: query);
-        var button = ReadElement(html, "<button[^>]*data-bdtest-action=\"copy-url\"[^>]*>.*?</button>");
-        Assert.That((string?)button.Attribute("type"), Is.EqualTo("button"));
-        Assert.That(button.Attributes().Select(x => x.Name.LocalName),
-            Is.EquivalentTo(new[] { "class", "type", "data-bdtest-action", "data-url", "aria-label" }));
+        var button = await ReadElement(html, "<button[^>]*data-bdtest-action=\"copy-url\"[^>]*>.*?</button>");
+        await Assert.That((string?)button.Attribute("type")).IsEqualTo("button");
+
+        await Assert.That(button.Attributes().Select(x => x.Name.LocalName)).IsEquivalentTo(new[] { "class", "type", "data-bdtest-action", "data-url", "aria-label" }, global::TUnit.Assertions.Enums.CollectionOrdering.Any);
 
         var localUrl = (string?)button.Attribute("data-url");
-        Assert.That(localUrl, Does.StartWith("/bdtest/"));
+        await Assert.That(localUrl).StartsWith("/bdtest/");
         var url = new Uri(new Uri("https://reports.example.test"), localUrl);
-        Assert.That(url.GetLeftPart(UriPartial.Path),
-            Is.EqualTo("https://reports.example.test/bdtest/report/O'Brien/test-runs"));
+        await Assert.That(url.GetLeftPart(UriPartial.Path)).IsEqualTo("https://reports.example.test/bdtest/report/O'Brien/test-runs");
         var actualQuery = HttpUtility.ParseQueryString(url.Query);
         var expectedQuery = HttpUtility.ParseQueryString(query);
         expectedQuery["scenarioId"] = scenario.Guid;
-        Assert.That(actualQuery.AllKeys, Is.EquivalentTo(expectedQuery.AllKeys));
+
+        await Assert.That(actualQuery.AllKeys).IsEquivalentTo(expectedQuery.AllKeys, global::TUnit.Assertions.Enums.CollectionOrdering.Any);
         foreach (var key in expectedQuery.AllKeys)
         {
-            Assert.That(actualQuery.GetValues(key), Is.EqualTo(expectedQuery.GetValues(key)));
+            await Assert.That(Required(actualQuery.GetValues(key))).IsEquivalentTo(Required(expectedQuery.GetValues(key)), global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
         }
     }
 
-    private static XElement ReadElement(string html, string pattern)
+    private static async Task<XElement> ReadElement(string html, string pattern)
     {
         var match = Regex.Match(html, pattern, RegexOptions.Singleline);
-        Assert.That(match.Success, Is.True, "The expected report control was not rendered.");
+        await Assert.That(match.Success).IsTrue().Because("The expected report control was not rendered.");
         return XElement.Parse(match.Value, LoadOptions.PreserveWhitespace);
     }
 
@@ -172,7 +179,7 @@ public class ReportHandlerEncodingTests
         httpContext.Request.QueryString = new QueryString(query);
         var actionContext = new ActionContext(httpContext, new RouteData(), new ActionDescriptor());
         var view = services.GetRequiredService<ICompositeViewEngine>().GetView(null, path, isMainPage: false);
-        Assert.That(view.Success, Is.True, $"Razor view not found: {path}");
+        await Assert.That(view.Success).IsTrue().Because($"Razor view not found: {path}");
         using var writer = new StringWriter();
         var viewData = new ViewDataDictionary<T?>(new EmptyModelMetadataProvider(), new ModelStateDictionary()) { Model = model };
         configureViewData?.Invoke(viewData);

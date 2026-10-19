@@ -7,20 +7,21 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using NUnit.Framework;
+using System.Threading.Tasks;
 
 namespace BDTest.Tests.Fixtures;
 
 public class SampleAdminPolicyTests
 {
-    [TestCase(null, null, null, false)]
-    [TestCase(null, null, "admin=true", false)]
-    [TestCase(null, "BDTest.Admin", null, false)]
-    [TestCase("Cookies", null, null, false)]
-    [TestCase("Cookies", "Reader", "admin=true", false)]
-    [TestCase("Cookies", "BDTest.Admin", null, true)]
+    [Test]
+    [Arguments(null, null, null, false)]
+    [Arguments(null, null, "admin=true", false)]
+    [Arguments(null, "BDTest.Admin", null, false)]
+    [Arguments("Cookies", null, null, false)]
+    [Arguments("Cookies", "Reader", "admin=true", false)]
+    [Arguments("Cookies", "BDTest.Admin", null, true)]
     public async Task Only_authenticated_administrators_are_authorized(
-        string authenticationType, string role, string cookie, bool expected)
+        string? authenticationType, string? role, string? cookie, bool expected)
     {
         await using var app = CreateApp();
         await using var scope = app.Services.CreateAsyncScope();
@@ -41,11 +42,12 @@ public class SampleAdminPolicyTests
         }
 
         var authorization = scope.ServiceProvider.GetRequiredService<IAuthorizationService>();
-        Assert.That((await authorization.AuthorizeAsync(context.User, context, "BDTestReports.Admin")).Succeeded, Is.EqualTo(expected));
+        await Assert.That((await authorization.AuthorizeAsync(context.User, context, "BDTestReports.Admin")).Succeeded).IsEqualTo(expected);
     }
 
-    [TestCase(false)]
-    [TestCase(true)]
+    [Test]
+    [Arguments(false)]
+    [Arguments(true)]
     public async Task Authentication_middleware_accepts_only_a_protected_admin_session(bool tampered)
     {
         await using var app = CreateApp();
@@ -81,7 +83,7 @@ public class SampleAdminPolicyTests
         pipeline.Run(async context =>
         {
             var authorization = context.RequestServices.GetRequiredService<IAuthorizationService>();
-            Assert.That((await authorization.AuthorizeAsync(context.User, context, "BDTestReports.Admin")).Succeeded, Is.EqualTo(!tampered));
+            await Assert.That((await authorization.AuthorizeAsync(context.User, context, "BDTestReports.Admin")).Succeeded).IsEqualTo(!tampered);
         });
 
         await pipeline.Build()(request);

@@ -4,23 +4,23 @@ using BDTest.Test;
 using BDTest.Test.Steps;
 using BDTest.Tests.Helpers;
 using Newtonsoft.Json.Linq;
-using NUnit.Framework;
+using System.Threading.Tasks;
 
 namespace BDTest.Tests.Fixtures;
 
-[NonParallelizable]
+[NotInParallel]
 public class StatusLifecycleTests : TestRunOwner
 {
     [Test]
-    public void NewResultsAndResetStepsAreNotRun()
+    public async Task NewResultsAndResetStepsAreNotRun()
     {
         var step = new Step(new Runnable(() => NoOp()), StepType.Given, "scenario", "report", TestRun);
-        Assert.That(default(Status), Is.EqualTo(Status.NotRun));
-        Assert.That(step.Status, Is.EqualTo(Status.NotRun));
-        Assert.That(ReportJson.DeserializeObject<Scenario>("{}").Status, Is.EqualTo(Status.NotRun));
+        RequireCondition(default(Status) == Status.NotRun, "The default status must represent a test that has not run.");
+        await Assert.That(step.Status).IsEqualTo(Status.NotRun);
+        await Assert.That(ReportJson.DeserializeObject<Scenario>("{}").Status).IsEqualTo(Status.NotRun);
         step.Status = Status.Failed;
         step.ResetData();
-        Assert.That(step.Status, Is.EqualTo(Status.NotRun));
+        await Assert.That(step.Status).IsEqualTo(Status.NotRun);
     }
 
     [Test]
@@ -30,54 +30,57 @@ public class StatusLifecycleTests : TestRunOwner
         try
         {
             var scenario = await fixture.Run();
-            Assert.That(fixture.RunningStatuses, Is.EqualTo(new[]
+            await Assert.That(fixture.RunningStatuses).IsEquivalentTo(new[]
             {
                 (Status.Pending, Status.Pending, Status.NotRun),
                 (Status.Pending, Status.Pending, Status.NotRun)
-            }));
-            Assert.That(fixture.ResetStatuses, Is.EqualTo(new[] { Status.NotRun, Status.NotRun, Status.NotRun }));
-            Assert.That(scenario.Status, Is.EqualTo(Status.Passed));
+            }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
+            await Assert.That(fixture.ResetStatuses).IsEquivalentTo(new[] { Status.NotRun, Status.NotRun, Status.NotRun }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
+            await Assert.That(scenario.Status).IsEqualTo(Status.Passed);
         }
         finally { fixture.Complete(); }
     }
 
-    [TestCase(Status.NotRun, 5)]
-    [TestCase(Status.Pending, 6)]
-    [TestCase(Status.Passed, 7)]
-    [TestCase(Status.Failed, 1)]
-    [TestCase(Status.Inconclusive, 3)]
-    [TestCase(Status.NotImplemented, 2)]
-    [TestCase(Status.Skipped, 4)]
-    [TestCase((Status)12345, int.MaxValue)]
-    public void SeverityOrderIsStable(Status status, int expected) => Assert.That(status.GetOrder(), Is.EqualTo(expected));
+    [Test]
+    [Arguments(Status.NotRun, 5)]
+    [Arguments(Status.Pending, 6)]
+    [Arguments(Status.Passed, 7)]
+    [Arguments(Status.Failed, 1)]
+    [Arguments(Status.Inconclusive, 3)]
+    [Arguments(Status.NotImplemented, 2)]
+    [Arguments(Status.Skipped, 4)]
+    [Arguments((Status)12345, int.MaxValue)]
+    public async Task SeverityOrderIsStable(Status status, int expected) => await Assert.That(status.GetOrder()).IsEqualTo(expected);
 
-    [TestCase(Status.NotRun)]
-    [TestCase(Status.Pending)]
-    [TestCase(Status.Inconclusive)]
-    public void StatusNamesSurviveJsonRoundTrip(Status status)
+    [Test]
+    [Arguments(Status.NotRun)]
+    [Arguments(Status.Pending)]
+    [Arguments(Status.Inconclusive)]
+    public async Task StatusNamesSurviveJsonRoundTrip(Status status)
     {
         var json = ReportJson.SerializeObject(status);
-        Assert.That(json, Is.EqualTo($"\"{status}\""));
-        Assert.That(ReportJson.DeserializeObject<Status>(json), Is.EqualTo(status));
+        await Assert.That(json).IsEqualTo($"\"{status}\"");
+        await Assert.That(ReportJson.DeserializeObject<Status>(json)).IsEqualTo(status);
         var scenario = ReportJson.DeserializeObject<Scenario>($"{{\"Status\":{json},\"Steps\":[{{\"Status\":{json}}}]}}");
         var restored = JObject.Parse(ReportJson.SerializeObject(scenario));
-        Assert.That((string?)restored["Status"], Is.EqualTo(status.ToString()));
-        Assert.That((string?)Required(Required(restored["Steps"])[0])["Status"], Is.EqualTo(status.ToString()));
+        await Assert.That((string?)restored["Status"]).IsEqualTo(status.ToString());
+        await Assert.That((string?)Required(Required(restored["Steps"])[0])["Status"]).IsEqualTo(status.ToString());
     }
 
-    [TestCase(Status.NotRun, "Not run")]
-    [TestCase(Status.Pending, "Pending")]
-    [TestCase(Status.Inconclusive, "Inconclusive")]
-    public void HtmlCountsAndLabelsScenarioStatuses(Status status, string label)
+    [Test]
+    [Arguments(Status.NotRun, "Not run")]
+    [Arguments(Status.Pending, "Pending")]
+    [Arguments(Status.Inconclusive, "Inconclusive")]
+    public async Task HtmlCountsAndLabelsScenarioStatuses(Status status, string label)
     {
         var scenario = ReportJson.DeserializeObject<Scenario>($"{{\"Guid\":\"unfinished\",\"FrameworkTestId\":\"unfinished-test\",\"Status\":\"{status}\",\"Steps\":[{{\"Status\":\"{status}\"}}]}}");
         TestRun.Store.AddScenario(scenario);
         var html = BDTestHtmlHelper.GetTestHtmlReport(null, TestRun);
         var key = status.ToString().ToLowerInvariant();
-        Assert.That(html, Does.Contain($"<span class=\"label\">{label}</span></span><span class=\"tile-n\">1</span>"));
-        Assert.That(html, Does.Contain($"data-filter=\"{key}\" aria-pressed=\"false\"><span>{label}</span><span class=\"n\">1</span>"));
-        Assert.That(html, Does.Contain($"class=\"step\" data-status=\"{key}\""));
-        Assert.That(html, Does.Contain($"class=\"step-status\">{label}</span>"));
+        await Assert.That(html).Contains($"<span class=\"label\">{label}</span></span><span class=\"tile-n\">1</span>");
+        await Assert.That(html).Contains($"data-filter=\"{key}\" aria-pressed=\"false\"><span>{label}</span><span class=\"n\">1</span>");
+        await Assert.That(html).Contains($"class=\"step\" data-status=\"{key}\"");
+        await Assert.That(html).Contains($"class=\"step-status\">{label}</span>");
     }
 
     private static void NoOp() { }

@@ -1,15 +1,16 @@
 using BDTest.Attributes;
 using BDTest.Exceptions;
 using BDTest.Test;
-using NUnit.Framework;
+using System.Threading.Tasks;
 
 namespace BDTest.Tests.Fixtures;
 
 public class ConfigureContextTests
 {
-    [TestCase(false)]
-    [TestCase(true)]
-    public void ConfigurationCanReadTheContextBeingInitialized(bool frameworkId)
+    [Test]
+    [Arguments(false)]
+    [Arguments(true)]
+    public async Task ConfigurationCanReadTheContextBeingInitialized(bool frameworkId)
     {
         using var fixture = new ContextFixture(frameworkId);
         var calls = 0;
@@ -17,18 +18,18 @@ public class ConfigureContextTests
         fixture.Configure = context =>
         {
             // Fail safely on the old implementation instead of overflowing the test host's stack.
-            Assert.That(++calls, Is.EqualTo(1), "The configuration must not recurse");
+            RequireCondition(++calls == 1, "The configuration must not recurse");
             configured = context;
-            Assert.That(fixture.BDTestContext, Is.SameAs(context));
-            Assert.That(fixture.Context, Is.SameAs(context.TestContext));
+            RequireCondition(ReferenceEquals(fixture.BDTestContext, context), "Configuration must see the current BDTest context");
+            RequireCondition(ReferenceEquals(fixture.Context, context.TestContext), "Configuration must see the current test context");
         };
 
         try
         {
             var initialized = fixture.BDTestContext;
-            Assert.That(initialized, Is.SameAs(configured));
-            Assert.That(fixture.Context, Is.SameAs(Required(configured).TestContext));
-            Assert.That(calls, Is.EqualTo(1));
+            await Assert.That(initialized).IsSameReferenceAs(configured);
+            await Assert.That(fixture.Context).IsSameReferenceAs(Required(configured).TestContext);
+            await Assert.That(calls).IsEqualTo(1);
         }
         finally
         {
@@ -36,9 +37,10 @@ public class ConfigureContextTests
         }
     }
 
-    [TestCase(false)]
-    [TestCase(true)]
-    public void FailedConfigurationIsRethrownAndNextAccessCreatesFreshContext(bool frameworkId)
+    [Test]
+    [Arguments(false)]
+    [Arguments(true)]
+    public async Task FailedConfigurationIsRethrownAndNextAccessCreatesFreshContext(bool frameworkId)
     {
         using var fixture = new ContextFixture(frameworkId);
         var expected = new InvalidOperationException("configuration failed");
@@ -54,13 +56,13 @@ public class ConfigureContextTests
 
         try
         {
-            Assert.That(Assert.Throws<InvalidOperationException>(() => _ = fixture.Context), Is.SameAs(expected));
+            await Assert.That(await Assert.That(() => _ = fixture.Context).ThrowsExactly<InvalidOperationException>()).IsSameReferenceAs(expected);
             var recovered = fixture.BDTestContext;
-            Assert.That(attempts.Count, Is.EqualTo(2));
-            Assert.That(recovered, Is.SameAs(attempts[1]));
-            Assert.That(recovered, Is.Not.SameAs(attempts[0]));
-            Assert.That(recovered.TestContext, Is.Not.SameAs(attempts[0].TestContext));
-            Assert.That(fixture.BDTestContext, Is.SameAs(recovered));
+            await Assert.That(attempts.Count).IsEqualTo(2);
+            await Assert.That(recovered).IsSameReferenceAs(attempts[1]);
+            await Assert.That(recovered).IsNotSameReferenceAs(attempts[0]);
+            await Assert.That(recovered.TestContext).IsNotSameReferenceAs(attempts[0].TestContext);
+            await Assert.That(fixture.BDTestContext).IsSameReferenceAs(recovered);
         }
         finally
         {
@@ -68,8 +70,9 @@ public class ConfigureContextTests
         }
     }
 
-    [TestCase(false)]
-    [TestCase(true)]
+    [Test]
+    [Arguments(false)]
+    [Arguments(true)]
     public async Task RetryCreatesAndConfiguresANewContextOnce(bool frameworkId)
     {
         using var fixture = new ContextFixture(frameworkId);
@@ -77,20 +80,20 @@ public class ConfigureContextTests
         fixture.Configure = context =>
         {
             attempts.Add(context);
-            Assert.That(attempts.Count, Is.LessThanOrEqualTo(2), "The configuration must not recurse");
-            Assert.That(fixture.BDTestContext, Is.SameAs(context));
-            Assert.That(fixture.Context, Is.SameAs(context.TestContext));
+            RequireCondition(attempts.Count <= 2, "The configuration must not recurse");
+            RequireCondition(ReferenceEquals(fixture.BDTestContext, context), "Configuration must see the current BDTest context");
+            RequireCondition(ReferenceEquals(fixture.Context, context.TestContext), "Configuration must see the current test context");
         };
 
         try
         {
             var original = fixture.BDTestContext;
             var scenario = await fixture.RunRetriedScenario();
-            Assert.That(scenario.RetryCount, Is.EqualTo(1));
-            Assert.That(scenario.Status, Is.EqualTo(Status.Passed));
-            Assert.That(attempts.Count, Is.EqualTo(2));
-            Assert.That(fixture.BDTestContext, Is.SameAs(attempts[1]));
-            Assert.That(fixture.Context, Is.Not.SameAs(original.TestContext));
+            await Assert.That(scenario.RetryCount).IsEqualTo(1);
+            await Assert.That(scenario.Status).IsEqualTo(Status.Passed);
+            await Assert.That(attempts.Count).IsEqualTo(2);
+            await Assert.That(fixture.BDTestContext).IsSameReferenceAs(attempts[1]);
+            await Assert.That(fixture.Context).IsNotSameReferenceAs(original.TestContext);
         }
         finally
         {
@@ -98,8 +101,9 @@ public class ConfigureContextTests
         }
     }
 
-    [TestCase(false)]
-    [TestCase(true)]
+    [Test]
+    [Arguments(false)]
+    [Arguments(true)]
     public async Task FailedRetryConfigurationDoesNotRetainPartiallyInitializedContext(bool frameworkId)
     {
         using var fixture = new ContextFixture(frameworkId);
@@ -117,13 +121,13 @@ public class ConfigureContextTests
         try
         {
             var original = fixture.BDTestContext;
-            var error = await Assert.ThrowsAsync<ErrorOccurredDuringRetryActionException>(async () => await fixture.RunRetriedScenario());
-            Assert.That(Required(error).GetBaseException(), Is.SameAs(expected));
+            var error = await Assert.That(async () => await fixture.RunRetriedScenario()).ThrowsExactly<ErrorOccurredDuringRetryActionException>();
+            await Assert.That(Required(error).GetBaseException()).IsSameReferenceAs(expected);
             var recovered = fixture.BDTestContext;
-            Assert.That(attempts.Count, Is.EqualTo(3));
-            Assert.That(recovered, Is.SameAs(attempts[2]));
-            Assert.That(recovered.TestContext, Is.Not.SameAs(original.TestContext));
-            Assert.That(recovered.TestContext, Is.Not.SameAs(attempts[1].TestContext));
+            await Assert.That(attempts.Count).IsEqualTo(3);
+            await Assert.That(recovered).IsSameReferenceAs(attempts[2]);
+            await Assert.That(recovered.TestContext).IsNotSameReferenceAs(original.TestContext);
+            await Assert.That(recovered.TestContext).IsNotSameReferenceAs(attempts[1].TestContext);
         }
         finally
         {

@@ -3,21 +3,21 @@ using BDTest.Attributes;
 using BDTest.Settings;
 using BDTest.Tests.Helpers;
 using BDTest.Test;
-using NUnit.Framework;
+using System.Threading.Tasks;
 
 namespace BDTest.Tests.Fixtures;
 
-[NonParallelizable]
+[NotInParallel]
 public class ExceptionClassificationTests : BDTestBase
 {
-    private BDTestOptions _options = null!; // Assigned by NUnit SetUp.
+    private BDTestOptions _options = null!; // Assigned by the per-test setup hook.
     private BDTestRun? _run;
     public override BDTestRun TestRun => _run ??= BDTestRun.Start(_options);
 
-    [SetUp]
+    [Before(HookType.Test)]
     public void ConfigureRun() => _options = new BDTestOptions();
 
-    [TearDown]
+    [After(HookType.Test)]
     public void DisposeRun()
     {
         EndTest();
@@ -26,9 +26,10 @@ public class ExceptionClassificationTests : BDTestBase
     }
 
     [Test]
+    [MatrixDataSource]
     public async Task Steps_and_scenarios_share_classification(
-        [Values(Status.NotImplemented, Status.Passed, Status.Skipped, Status.Inconclusive, Status.Failed)] Status status,
-        [Values] bool subclass, [Values] Wrapper wrapper)
+        [Matrix(Status.NotImplemented, Status.Passed, Status.Skipped, Status.Inconclusive, Status.Failed)] Status status,
+        [Matrix] bool subclass, [Matrix] Wrapper wrapper)
     {
         _options.SuccessExceptionTypes.Add(typeof(SuccessSignal));
         _options.SkipExceptionTypes.Add(typeof(SkipSignal));
@@ -38,14 +39,15 @@ public class ExceptionClassificationTests : BDTestBase
 
         var thrown = await Capture(builder.BDTestAsync);
 
-        Assert.That(thrown, Is.SameAs(exception), "Classification must preserve the original thrown exception.");
-        AssertScenario(TestRun.Scenarios.Single(), status);
+        await Assert.That(thrown).IsSameReferenceAs(exception).Because("Classification must preserve the original thrown exception.");
+        await AssertScenario(TestRun.Scenarios.Single(), status);
     }
 
     [Test]
+    [MatrixDataSource]
     public async Task Outline_rows_share_classification(
-        [Values(Status.NotImplemented, Status.Passed, Status.Skipped, Status.Inconclusive, Status.Failed)] Status status,
-        [Values] Wrapper wrapper, [Values] bool duringConstruction)
+        [Matrix(Status.NotImplemented, Status.Passed, Status.Skipped, Status.Inconclusive, Status.Failed)] Status status,
+        [Matrix] Wrapper wrapper, [Matrix] bool duringConstruction)
     {
         _options.SuccessExceptionTypes.Add(typeof(SuccessSignal));
         _options.SkipExceptionTypes.Add(typeof(SkipSignal));
@@ -59,16 +61,18 @@ public class ExceptionClassificationTests : BDTestBase
 
         var thrown = await Capture(builder.BDTestAsync);
 
-        Assert.That(thrown, status == Status.Passed ? Is.Null : Is.SameAs(exception));
+
+        await Assert.That(thrown).IsSameReferenceAs(status == Status.Passed ? null : exception);
         var outline = TestRun.Scenarios.Single();
-        Assert.That(outline.Status, Is.EqualTo(status));
+        await Assert.That(outline.Status).IsEqualTo(status);
         var row = Required(outline.Examples).Single();
-        if (duringConstruction) Assert.That(row.Status, Is.EqualTo(status));
-        else AssertScenario(row, status);
+        if (duringConstruction) await Assert.That(row.Status).IsEqualTo(status);
+        else await AssertScenario(row, status);
     }
 
     [Test]
-    public async Task Empty_and_multi_inner_aggregates_do_not_hide_failures([Values] bool empty, [Values] bool nested)
+    [MatrixDataSource]
+    public async Task Empty_and_multi_inner_aggregates_do_not_hide_failures([Matrix] bool empty, [Matrix] bool nested)
     {
         _options.SkipExceptionTypes.Add(typeof(SkipSignal));
         Exception exception = empty
@@ -77,14 +81,15 @@ public class ExceptionClassificationTests : BDTestBase
         if (nested) exception = Wrap(exception, Wrapper.Nested);
         var builder = When(() => Throw(exception)).Then(() => NoOp());
 
-        Assert.That(await Capture(builder.BDTestAsync), Is.SameAs(exception));
+        await Assert.That(await Capture(builder.BDTestAsync)).IsSameReferenceAs(exception);
         var scenario = TestRun.Scenarios.Single();
-        Assert.That(scenario.Status, Is.EqualTo(Status.Failed));
-        Assert.That(Required(scenario.Steps)[0].Status, Is.EqualTo(Status.Failed));
+        await Assert.That(scenario.Status).IsEqualTo(Status.Failed);
+        await Assert.That(Required(scenario.Steps)[0].Status).IsEqualTo(Status.Failed);
     }
 
     [Test]
-    public async Task Empty_and_multi_inner_aggregates_can_be_explicitly_registered([Values] bool empty)
+    [MatrixDataSource]
+    public async Task Empty_and_multi_inner_aggregates_can_be_explicitly_registered([Matrix] bool empty)
     {
         _options.SkipExceptionTypes.Add(typeof(AggregateException));
         var exception = empty
@@ -92,37 +97,39 @@ public class ExceptionClassificationTests : BDTestBase
             : new AggregateException(new FailureSignal(), new FailureSignal());
         var builder = When(() => Throw(exception)).Then(() => NoOp());
 
-        Assert.That(await Capture(builder.BDTestAsync), Is.SameAs(exception));
+        await Assert.That(await Capture(builder.BDTestAsync)).IsSameReferenceAs(exception);
         var scenario = TestRun.Scenarios.Single();
-        Assert.That(scenario.Status, Is.EqualTo(Status.Skipped));
-        Assert.That(Required(scenario.Steps).All(step => step.Status == Status.Skipped), Is.True);
+        await Assert.That(scenario.Status).IsEqualTo(Status.Skipped);
+        await Assert.That(Required(scenario.Steps).All(step => step.Status == Status.Skipped)).IsTrue();
     }
 
-    [TestCase(Status.NotImplemented)]
-    [TestCase(Status.Passed)]
-    [TestCase(Status.Skipped)]
-    [TestCase(Status.Inconclusive)]
-    [TestCase(Status.Failed)]
+    [Test]
+    [Arguments(Status.NotImplemented)]
+    [Arguments(Status.Passed)]
+    [Arguments(Status.Skipped)]
+    [Arguments(Status.Inconclusive)]
+    [Arguments(Status.Failed)]
     [BDTestRetry(1)]
     public async Task Only_failed_outcomes_retry(Status status)
     {
         _options.SuccessExceptionTypes.Add(typeof(SuccessSignal));
         _options.SkipExceptionTypes.Add(typeof(SkipSignal));
         _options.InconclusiveExceptionTypes.Add(typeof(InconclusiveSignal));
-        BeginTest(TestContext.CurrentContext.Test.ID, Required(global::NUnit.Framework.Internal.TestExecutionContext.CurrentContext.CurrentTest.Method).MethodInfo);
+        BeginTest(Required(TestContext.Current).Id, Required(TestContext.Current).Metadata.TestDetails.MethodMetadata.GetReflectionInfo());
         var exception = Wrap(CreateException(status, subclass: true), Wrapper.Nested);
         var builder = When(() => Throw(exception)).Then(() => NoOp());
 
         await Capture(builder.BDTestAsync);
 
         var scenario = TestRun.Scenarios.Single();
-        Assert.That(scenario.Status, Is.EqualTo(status));
-        Assert.That(scenario.RetryCount, Is.EqualTo(status == Status.Failed ? 1 : 0));
+        await Assert.That(scenario.Status).IsEqualTo(status);
+        await Assert.That(scenario.RetryCount).IsEqualTo(status == Status.Failed ? 1 : 0);
     }
 
-    [TestCase(Status.NotImplemented)]
-    [TestCase(Status.Passed)]
-    [TestCase(Status.Skipped)]
+    [Test]
+    [Arguments(Status.NotImplemented)]
+    [Arguments(Status.Passed)]
+    [Arguments(Status.Skipped)]
     public async Task Classification_preserves_precedence(Status expected)
     {
         _options.SuccessExceptionTypes.Add(expected == Status.Skipped ? typeof(SuccessSignal) : typeof(Exception));
@@ -133,12 +140,13 @@ public class ExceptionClassificationTests : BDTestBase
 
         await Capture(builder.BDTestAsync);
 
-        AssertScenario(TestRun.Scenarios.Single(), expected);
+        await AssertScenario(TestRun.Scenarios.Single(), expected);
     }
 
-    [TestCase(Status.Passed)]
-    [TestCase(Status.Skipped)]
-    [TestCase(Status.Inconclusive)]
+    [Test]
+    [Arguments(Status.Passed)]
+    [Arguments(Status.Skipped)]
+    [Arguments(Status.Inconclusive)]
     public async Task Timeouts_always_fail_even_when_registered(Status registeredStatus)
     {
         var settings = _options;
@@ -151,17 +159,18 @@ public class ExceptionClassificationTests : BDTestBase
         types.Add(typeof(TimeoutException));
         var builder = When(() => NoOp()).Then(() => NoOp()).WithScenarioTimeout(TimeSpan.FromTicks(1));
 
-        Assert.That(await Capture(builder.BDTestAsync), Is.TypeOf<TimeoutException>());
+        await Assert.That(await Capture(builder.BDTestAsync)).IsTypeOf<TimeoutException>();
 
         var scenario = TestRun.Scenarios.Single();
-        Assert.That(scenario.TimedOut, Is.True);
-        Assert.That(scenario.Status, Is.EqualTo(Status.Failed));
-        Assert.That(Required(scenario.Steps)[0].Status, Is.EqualTo(Status.Failed));
+        await Assert.That(scenario.TimedOut).IsTrue();
+        await Assert.That(scenario.Status).IsEqualTo(Status.Failed);
+        await Assert.That(Required(scenario.Steps)[0].Status).IsEqualTo(Status.Failed);
     }
 
-    [TestCase(Status.Passed)]
-    [TestCase(Status.Skipped)]
-    [TestCase(Status.Inconclusive)]
+    [Test]
+    [Arguments(Status.Passed)]
+    [Arguments(Status.Skipped)]
+    [Arguments(Status.Inconclusive)]
     public async Task Exception_registrations_are_isolated_between_explicit_runs(Status status)
     {
         var exception = Wrap(new DerivedFailureSignal(), Wrapper.Nested);
@@ -176,25 +185,26 @@ public class ExceptionClassificationTests : BDTestBase
         types.Add(typeof(FailureSignal));
         using var customRun = BDTestRun.Start(settings);
         var configuredBuilder = new ExplicitFixture(customRun).When(() => Throw(exception)).Then(() => NoOp());
-        Assert.That(await Capture(explicitBuilder.BDTestAsync), Is.SameAs(exception));
-        Assert.That(await Capture(configuredBuilder.BDTestAsync), Is.SameAs(exception));
-        Assert.That(TestRun.Scenarios.Single().Status, Is.EqualTo(Status.Failed));
+        await Assert.That(await Capture(explicitBuilder.BDTestAsync)).IsSameReferenceAs(exception);
+        await Assert.That(await Capture(configuredBuilder.BDTestAsync)).IsSameReferenceAs(exception);
+        await Assert.That(TestRun.Scenarios.Single().Status).IsEqualTo(Status.Failed);
         var configured = customRun.Scenarios.Single(scenario => scenario.Guid == configuredBuilder.Guid);
-        Assert.That(configured.Status, Is.EqualTo(status));
-        Assert.That(Required(configured.Steps)[0].Status, Is.EqualTo(status));
+        await Assert.That(configured.Status).IsEqualTo(status);
+        await Assert.That(Required(configured.Steps)[0].Status).IsEqualTo(status);
 
     }
 
     private sealed class ExplicitFixture(BDTestRun run) : BDTestBase { public override BDTestRun TestRun => run; }
 
-    private static void AssertScenario(Scenario scenario, Status status)
+    private static async Task AssertScenario(Scenario scenario, Status status)
     {
-        Assert.That(scenario.Status, Is.EqualTo(status));
-        Assert.That(Required(scenario.Attempts).Single().Status, Is.EqualTo(status));
-        Assert.That(Required(scenario.Steps)[0].Status, Is.EqualTo(Status.Passed));
-        Assert.That(scenario.Steps[1].Status, Is.EqualTo(status));
-        Assert.That(scenario.Steps[1].Exception, status is Status.Failed or Status.NotImplemented ? Is.Not.Null : Is.Null);
-        Assert.That(scenario.Steps[2].Status, Is.EqualTo(status == Status.Skipped ? Status.Skipped : Status.NotRun));
+        await Assert.That(scenario.Status).IsEqualTo(status);
+        await Assert.That(Required(scenario.Attempts).Single().Status).IsEqualTo(status);
+        await Assert.That(Required(scenario.Steps)[0].Status).IsEqualTo(Status.Passed);
+        await Assert.That(scenario.Steps[1].Status).IsEqualTo(status);
+
+        await Assert.That(scenario.Steps[1].Exception is not null).IsEqualTo(status is Status.Failed or Status.NotImplemented);
+        await Assert.That(scenario.Steps[2].Status).IsEqualTo(status == Status.Skipped ? Status.Skipped : Status.NotRun);
     }
 
     private static async Task<Exception?> Capture(Func<Task<Scenario>> execute)

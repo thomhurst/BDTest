@@ -14,7 +14,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
-using NUnit.Framework;
+using System.Threading.Tasks;
 
 namespace BDTest.Tests.Fixtures;
 
@@ -54,38 +54,38 @@ public class CompactReportPageTests
     };
 
     [Test]
-    public void Projections_preserve_statuses_groupings_order_timings_and_warnings()
+    public async Task Projections_preserve_statuses_groupings_order_timings_and_warnings()
     {
         var report = Report(140);
         var scenarios = Required(report.Scenarios);
         var pages = ReportPageModels.Create(report);
         var layout = pages.Summary.Layout;
-        Assert.That(layout.ScenarioCount, Is.EqualTo(140));
-        Assert.That(layout.Status, Is.EqualTo(scenarios.GetTotalStatus()));
+        await Assert.That(layout.ScenarioCount).IsEqualTo(140);
+        await Assert.That(layout.Status).IsEqualTo(scenarios.GetTotalStatus());
         foreach (var status in Enum.GetValues<Status>())
-            Assert.That(layout.Counts[status], Is.EqualTo(scenarios.Count(s => s.Status == status)));
+            await Assert.That(layout.Counts[status]).IsEqualTo(scenarios.Count(s => s.Status == status));
         foreach (var grouping in new[] { "location", "type", "step", "unknown" })
         {
             var expected = FailureGroup.Build(scenarios, FailureGroup.Normalize(grouping));
             var actual = pages.TopDefects.ForGrouping(grouping);
-            Assert.That(actual.Select(g => (g.Title, g.Location, g.TypeName)), Is.EqualTo(expected.Select(g => (g.Title, g.Location, g.TypeName))));
+            await Assert.That(actual.Select(g => (g.Title, g.Location, g.TypeName))).IsEquivalentTo(expected.Select(g => (g.Title, g.Location, g.TypeName)), global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
             for (var i = 0; i < expected.Count; i++)
-                Assert.That(actual[i].Scenarios.Select(s => s.Guid), Is.EqualTo(expected[i].Scenarios.Select(s => s.Guid)));
+                await Assert.That(actual[i].Scenarios.Select(s => s.Guid)).IsEquivalentTo(expected[i].Scenarios.Select(s => s.Guid), global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
         }
         var timed = scenarios.Where(s => s.Status is not (Status.Skipped or Status.NotRun)).OrderBy(s => s.TimeTaken).ToList();
-        Assert.That(pages.Timings.Fastest.Select(s => s.Guid), Is.EqualTo(timed.Take(10).Select(s => s.Guid)));
-        Assert.That(pages.Timings.Slowest.Select(s => s.Guid), Is.EqualTo(timed.AsEnumerable().Reverse().Take(10).Select(s => s.Guid)));
-        Assert.That(pages.Timings.Median, Is.EqualTo(timed[(int)Math.Ceiling(timed.Count * .5) - 1].TimeTaken));
-        Assert.That(pages.Timings.Percentile95, Is.EqualTo(timed[(int)Math.Ceiling(timed.Count * .95) - 1].TimeTaken));
-        Assert.That(pages.Summary.Others, Has.Count.EqualTo(10));
-        Assert.That(pages.Summary.OtherCount, Is.EqualTo(scenarios.Count(s => s.Status is not (Status.Passed or Status.Failed))));
-        Assert.That(pages.Summary.Failures.All(g => g.Scenarios.Count <= 5 && g.Trace == null), Is.True);
-        Assert.That(pages.Warnings.NotRun.Select(row => row.Scenario), Is.EqualTo(new[] { "Alpha", "Zebra" }));
-        AssertNoSourceGraph(pages, new HashSet<object>(ReferenceEqualityComparer.Instance));
+        await Assert.That(pages.Timings.Fastest.Select(s => s.Guid)).IsEquivalentTo(timed.Take(10).Select(s => s.Guid), global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(pages.Timings.Slowest.Select(s => s.Guid)).IsEquivalentTo(timed.AsEnumerable().Reverse().Take(10).Select(s => s.Guid), global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(pages.Timings.Median).IsEqualTo(timed[(int)Math.Ceiling(timed.Count * .5) - 1].TimeTaken);
+        await Assert.That(pages.Timings.Percentile95).IsEqualTo(timed[(int)Math.Ceiling(timed.Count * .95) - 1].TimeTaken);
+        await Assert.That(pages.Summary.Others).Count().IsEqualTo(10);
+        await Assert.That(pages.Summary.OtherCount).IsEqualTo(scenarios.Count(s => s.Status is not (Status.Passed or Status.Failed)));
+        await Assert.That(pages.Summary.Failures.All(g => g.Scenarios.Count <= 5 && g.Trace == null)).IsTrue();
+        await Assert.That(pages.Warnings.NotRun.Select(row => row.Scenario)).IsEquivalentTo(new[] { "Alpha", "Zebra" }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await AssertNoSourceGraph(pages, new HashSet<object>(ReferenceEqualityComparer.Instance));
     }
 
     [Test]
-    public void Full_data_layout_groups_failures_only_on_first_access()
+    public async Task Full_data_layout_groups_failures_only_on_first_access()
     {
         var report = Report();
         var scenarios = Required(report.Scenarios);
@@ -94,40 +94,40 @@ public class CompactReportPageTests
 
         // A failure introduced before first access must be included, proving creation did not group.
         scenarios[0].Status = Status.Failed;
-        Assert.That(layout.FailureCauses, Is.EqualTo(1));
+        await Assert.That(layout.FailureCauses).IsEqualTo(1);
         scenarios[0].Status = Status.Passed;
-        Assert.That(layout.FailureCauses, Is.EqualTo(1), "The computed count is reused.");
+        await Assert.That(layout.FailureCauses).IsEqualTo(1).Because("The computed count is reused.");
     }
 
     [Test]
-    public void Cached_layout_keeps_its_precomputed_zero_failure_count()
+    public async Task Cached_layout_keeps_its_precomputed_zero_failure_count()
     {
         var report = Report();
         var scenarios = Required(report.Scenarios);
         foreach (var scenario in scenarios) scenario.Status = Status.Passed;
         var pages = ReportPageModels.Create(report);
         scenarios[0].Status = Status.Failed;
-        Assert.That(pages.Summary.Layout.FailureCauses, Is.Zero);
+        await Assert.That(pages.Summary.Layout.FailureCauses).IsZero();
     }
 
-    private static void AssertNoSourceGraph(object? value, HashSet<object> seen)
+    private static async Task AssertNoSourceGraph(object? value, HashSet<object> seen)
     {
         if (value == null || value is string || value.GetType().IsValueType || !seen.Add(value)) return;
-        Assert.That(value, Is.Not.InstanceOf<BDTestOutputModel>());
-        Assert.That(value, Is.Not.InstanceOf<Scenario>());
-        Assert.That(value, Is.Not.InstanceOf<Step>());
-        Assert.That(value, Is.Not.InstanceOf<ExceptionWrapper>());
+        await Assert.That(value).IsNotAssignableTo<BDTestOutputModel>();
+        await Assert.That(value).IsNotAssignableTo<Scenario>();
+        await Assert.That(value).IsNotAssignableTo<Step>();
+        await Assert.That(value).IsNotAssignableTo<ExceptionWrapper>();
         if (value is IDictionary dictionary)
         {
-            foreach (var item in dictionary.Values) AssertNoSourceGraph(item, seen);
+            foreach (var item in dictionary.Values) await AssertNoSourceGraph(item, seen);
         }
         else if (value is IEnumerable items)
         {
-            foreach (var item in items) AssertNoSourceGraph(item, seen);
+            foreach (var item in items) await AssertNoSourceGraph(item, seen);
         }
         else
             foreach (var property in value.GetType().GetProperties().Where(p => p.GetIndexParameters().Length == 0))
-                AssertNoSourceGraph(property.GetValue(value), seen);
+                await AssertNoSourceGraph(property.GetValue(value), seen);
     }
 
     [Test]
@@ -138,15 +138,15 @@ public class CompactReportPageTests
         var store = services.GetRequiredService<IMemoryCacheBdTestDataStore>();
         await repository.StoreData("compact", Report());
         var reads = await Task.WhenAll(Enumerable.Range(0, 20).Select(_ => repository.GetReportPages("compact", default)));
-        Assert.That(reads.All(p => ReferenceEquals(p, reads[0])), Is.True);
+        await Assert.That(reads.All(p => ReferenceEquals(p, reads[0]))).IsTrue();
         await store.StoreTestData("compact", Report(21));
         var replaced = Required(await repository.GetReportPages("compact", default));
-        Assert.That(replaced, Is.Not.SameAs(reads[0]));
-        Assert.That(replaced.Summary.Layout.ScenarioCount, Is.EqualTo(21));
+        await Assert.That(replaced).IsNotSameReferenceAs(reads[0]);
+        await Assert.That(replaced.Summary.Layout.ScenarioCount).IsEqualTo(21);
         await repository.DeleteReport("compact");
-        Assert.That(await repository.GetReportPages("compact", default), Is.Null);
+        await Assert.That(await repository.GetReportPages("compact", default)).IsNull();
         await repository.StoreData("compact", Report(7));
-        Assert.That(Required(await repository.GetReportPages("compact", default)).Summary.Layout.ScenarioCount, Is.EqualTo(7));
+        await Assert.That(Required(await repository.GetReportPages("compact", default)).Summary.Layout.ScenarioCount).IsEqualTo(7);
     }
 
     [Test]
@@ -158,10 +158,10 @@ public class CompactReportPageTests
         await store.WriteAsync("compact", bytes, default);
         var repository = services.GetRequiredService<IDataRepository>();
         var pages = await repository.GetReportPages("compact", default);
-        Assert.That(await repository.GetReportPages("compact", default), Is.SameAs(pages));
+        await Assert.That(await repository.GetReportPages("compact", default)).IsSameReferenceAs(pages);
         using var replacement = new MemoryStream(Encoding.UTF8.GetBytes(BDTestJsonHelper.Serialize(Report(28))));
         await store.WriteAsync("compact", replacement, default);
-        Assert.That(Required(await repository.GetReportPages("compact", default)).Summary.Layout.ScenarioCount, Is.EqualTo(28));
+        await Assert.That(Required(await repository.GetReportPages("compact", default)).Summary.Layout.ScenarioCount).IsEqualTo(28);
     }
 
     [Test]
@@ -172,9 +172,9 @@ public class CompactReportPageTests
         await repository.StoreData("compact", Report());
         var first = Required(await repository.GetReportPages("compact", default));
         var second = Required(await repository.GetReportPages("compact", default));
-        Assert.That(second, Is.Not.SameAs(first));
-        Assert.That(second.Summary.Layout.ScenarioCount, Is.EqualTo(first.Summary.Layout.ScenarioCount));
-        Assert.That(await repository.GetData("compact", default), Is.Not.Null);
+        await Assert.That(second).IsNotSameReferenceAs(first);
+        await Assert.That(second.Summary.Layout.ScenarioCount).IsEqualTo(first.Summary.Layout.ScenarioCount);
+        await Assert.That(await repository.GetData("compact", default)).IsNotNull();
     }
 
     [Test]
@@ -188,9 +188,9 @@ public class CompactReportPageTests
         var first = await repository.GetReportPages("compact", default);
         await repository.StoreData("another", Report(id: "another"));
         var second = await repository.GetReportPages("another", default);
-        Assert.That(await repository.GetReportPages("another", default), Is.SameAs(second));
-        Assert.That(await repository.GetReportPages("compact", default), Is.Not.SameAs(first));
-        Assert.That(await repository.GetData("another", default), Is.Not.Null);
+        await Assert.That(await repository.GetReportPages("another", default)).IsSameReferenceAs(second);
+        await Assert.That(await repository.GetReportPages("compact", default)).IsNotSameReferenceAs(first);
+        await Assert.That(await repository.GetData("another", default)).IsNotNull();
     }
 
     [Test]
@@ -202,10 +202,10 @@ public class CompactReportPageTests
         using var services = Services(reportCapacity: size + 100);
         var repository = services.GetRequiredService<IDataRepository>();
         await repository.StoreData("compact", report);
-        Assert.That(await repository.GetReportPages("compact", default), Is.Not.Null);
+        await Assert.That(await repository.GetReportPages("compact", default)).IsNotNull();
         await repository.StoreData("another", Report(id: "another"));
-        Assert.That(await repository.GetReportPages("compact", default), Is.Null);
-        Assert.That(await repository.GetReportPages("another", default), Is.Not.Null);
+        await Assert.That(await repository.GetReportPages("compact", default)).IsNull();
+        await Assert.That(await repository.GetReportPages("another", default)).IsNotNull();
     }
 
     [Test]
@@ -214,9 +214,9 @@ public class CompactReportPageTests
         using var services = Services(retention: TimeSpan.FromSeconds(2));
         var repository = services.GetRequiredService<IDataRepository>();
         await repository.StoreData("compact", Report());
-        Assert.That(await repository.GetReportPages("compact", default), Is.Not.Null);
+        await Assert.That(await repository.GetReportPages("compact", default)).IsNotNull();
         await Task.Delay(2100);
-        Assert.That(await repository.GetReportPages("compact", default), Is.Null);
+        await Assert.That(await repository.GetReportPages("compact", default)).IsNull();
     }
 
     [Test]
@@ -237,15 +237,14 @@ public class CompactReportPageTests
             {
                 System.Globalization.CultureInfo.CurrentCulture = new(culture);
                 var pages = Required(await repository.GetReportPages("compact", default));
-                Assert.That(pages.Warnings.NotRun.Select(row => row.Scenario),
-                    Is.EqualTo(report.NotRun.OrderBy(row => row.GetScenarioText()).Select(row => row.GetScenarioText())));
-                Assert.That(await repository.GetReportPages("compact", default), Is.SameAs(pages));
+                await Assert.That(pages.Warnings.NotRun.Select(row => row.Scenario)).IsEquivalentTo(report.NotRun.OrderBy(row => row.GetScenarioText()).Select(row => row.GetScenarioText()), global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
+                await Assert.That(await repository.GetReportPages("compact", default)).IsSameReferenceAs(pages);
                 if (english == null) english = pages;
-                else Assert.That(pages, Is.Not.SameAs(english));
+                else await Assert.That(pages).IsNotSameReferenceAs(english);
             }
             await repository.DeleteReport("compact");
             System.Globalization.CultureInfo.CurrentCulture = new("en-US");
-            Assert.That(await repository.GetReportPages("compact", default), Is.Null);
+            await Assert.That(await repository.GetReportPages("compact", default)).IsNull();
         }
         finally { System.Globalization.CultureInfo.CurrentCulture = original; }
     }
@@ -257,23 +256,24 @@ public class CompactReportPageTests
         var repository = services.GetRequiredService<IDataRepository>();
         await repository.StoreData("old", new BDTestOutputModel { Id = "old", Scenarios = null, NotRun = null, TestTimer = null });
         var pages = Required(await repository.GetReportPages("old", default));
-        Assert.That(pages.Summary.Layout.ScenarioCount, Is.Zero);
-        Assert.That(pages.Timings.Median, Is.EqualTo(TimeSpan.Zero));
-        Assert.That(pages.Warnings.NotRun, Is.Empty);
+        await Assert.That(pages.Summary.Layout.ScenarioCount).IsZero();
+        await Assert.That(pages.Timings.Median).IsEqualTo(TimeSpan.Zero);
+        await Assert.That(pages.Warnings.NotRun).IsEmpty();
         var controller = new BDTestController(repository, Options.Create(new BDTestReportOptions()))
         { ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() } };
         foreach (var action in new Func<string, CancellationToken, Task<IActionResult>>[] { controller.Summary, controller.Timings, controller.TopDefects, controller.Warnings })
         {
-            Assert.That(((ViewResult)await action("missing", default)).ViewName, Is.EqualTo("NotFoundSingle"));
-            await Assert.CatchAsync<OperationCanceledException>(async () => await action("old", new CancellationToken(true)));
+            await Assert.That(((ViewResult)await action("missing", default)).ViewName).IsEqualTo("NotFoundSingle");
+            await Assert.ThrowsAsync<OperationCanceledException>(async () => { await action("old", new CancellationToken(true)); });
         }
     }
 
-    [TestCase("summary")]
-    [TestCase("timings")]
-    [TestCase("defects")]
-    [TestCase("warnings")]
-    public void Ten_thousand_scenarios_allocate_less_on_repeated_page_preparation(string page)
+    [Test]
+    [Arguments("summary")]
+    [Arguments("timings")]
+    [Arguments("defects")]
+    [Arguments("warnings")]
+    public async Task Ten_thousand_scenarios_allocate_less_on_repeated_page_preparation(string page)
     {
         using var services = Services();
         var repository = services.GetRequiredService<IDataRepository>();
@@ -313,7 +313,7 @@ public class CompactReportPageTests
         }
         var prior = Measure(Prior);
         var cached = Measure(Cached);
-        TestContext.Out.WriteLine($"{page}: prior {prior:N0} bytes/view; cached {cached:N0} bytes/view (10,000 scenarios; preparation only, excluding HTML rendering/history)");
-        Assert.That(cached, Is.LessThan(prior / 10));
+        Console.Out.WriteLine($"{page}: prior {prior:N0} bytes/view; cached {cached:N0} bytes/view (10,000 scenarios; preparation only, excluding HTML rendering/history)");
+        await Assert.That(cached).IsLessThan(prior / 10);
     }
 }

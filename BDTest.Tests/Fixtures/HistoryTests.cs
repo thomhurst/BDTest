@@ -12,12 +12,14 @@ using BDTest.Test;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
-using NUnit.Framework;
+using System.Threading.Tasks;
 
 namespace BDTest.Tests.Fixtures;
 
 public class HistoryTests
 {
+    public static IEnumerable<string> GetValues() => Values;
+
     private static readonly DateTime Start = new(2026, 10, 1, 2, 0, 0, DateTimeKind.Utc);
 
     private static readonly string[] Values =
@@ -32,7 +34,8 @@ public class HistoryTests
     ];
 
     [Test]
-    public async Task Filter_options_are_encoded_data([ValueSource(nameof(Values))] string value)
+    [MatrixDataSource]
+    public async Task Filter_options_are_encoded_data([MatrixMethod<HistoryTests>(nameof(GetValues))] string value)
     {
         var run = Run("run", value, Start, failed: 0);
         run.Environment = value;
@@ -45,12 +48,14 @@ public class HistoryTests
             .Select(match => XElement.Parse(match.Value.Replace(" selected>", " selected=\"selected\">")))
             .Where(option => Required(option.Attribute("value")).Value != "" && !RunFilter.AllRanges.Contains(Required(option.Attribute("value")).Value))
             .ToList();
-        Assert.That(options, Has.Count.EqualTo(4), "Tag, environment, branch and machine each offer the value once.");
-        Assert.That(options.Select(option => Required(option.Attribute("value")).Value), Has.All.EqualTo(value));
-        Assert.That(options.Select(option => option.Value), Has.All.EqualTo(value));
-        Assert.That(options.Count(option => option.Attribute("selected") != null), Is.EqualTo(1));
-        Assert.That(html, Does.Not.Contain("<script>alert(1)"));
-        Assert.That(html, Does.Not.Contain("onmouseover=\"alert"));
+        await Assert.That(options).Count().IsEqualTo(4).Because("Tag, environment, branch and machine each offer the value once.");
+
+        await Assert.That((options.Select(option => Required(option.Attribute("value")).Value)).All(item => Equals(item, value))).IsTrue();
+
+        await Assert.That((options.Select(option => option.Value)).All(item => Equals(item, value))).IsTrue();
+        await Assert.That(options.Count(option => option.Attribute("selected") != null)).IsEqualTo(1);
+        await Assert.That(html).DoesNotContain("<script>alert(1)");
+        await Assert.That(html).DoesNotContain("onmouseover=\"alert");
     }
 
     [Test]
@@ -61,9 +66,10 @@ public class HistoryTests
 
         var tabs = Regex.Matches(html, "<a class=\"tab[^\"]*\" href=\"([^\"]+)\"")
             .Select(match => System.Web.HttpUtility.HtmlDecode(match.Groups[1].Value)).ToList();
-        Assert.That(tabs.Single(href => href.Contains("/history/timing")), Does.Contain("compare=50").And.Contain("tag=nightly"));
-        Assert.That(tabs.Single(href => href.Contains("/history/flaky")), Does.Contain("compare=50"));
-        Assert.That(tabs.Single(href => !href.Contains("/history/")), Does.Not.Contain("compare="));
+
+        await Assert.That(tabs.Single(href => href.Contains("/history/timing"))).Contains("compare=50").And.Contains("tag=nightly");
+        await Assert.That(tabs.Single(href => href.Contains("/history/flaky"))).Contains("compare=50");
+        await Assert.That(tabs.Single(href => !href.Contains("/history/"))).DoesNotContain("compare=");
     }
 
     [Test]
@@ -86,13 +92,15 @@ public class HistoryTests
                 new HistoryViewModel { AllRuns = runs, Runs = runs }, pathBase: "/team's reports", host: "attacker.example",
                 requestPath: "/bdtest/report/history");
 
-            Assert.That(html, Does.Contain("&quot;&#x96EA;&quot; &lt;tag&gt;").Or.Contain("&quot;雪&quot; &lt;tag&gt;"));
-            Assert.That(html, Does.Not.Contain("<tag>"));
+
+            await Assert.That(html).Contains("&quot;&#x96EA;&quot; &lt;tag&gt;").Or.Contains("&quot;雪&quot; &lt;tag&gt;");
+            await Assert.That(html).DoesNotContain("<tag>");
             var links = Regex.Matches(html, "href=\"([^\"]*/summary)\"").Select(match => HttpUtility.HtmlDecode(match.Groups[1].Value)).ToList();
             // Each run is linked from the results chart, the duration chart and the table.
-            Assert.That(links.Count(link => link == "/team's%20reports/bdtest/report/O%27Brien/summary"), Is.EqualTo(3));
-            Assert.That(links, Has.All.StartsWith("/team's%20reports/bdtest/report/"));
-            Assert.That(html, Does.Not.Contain("attacker.example"));
+            await Assert.That(links.Count(link => link == "/team's%20reports/bdtest/report/O%27Brien/summary")).IsEqualTo(3);
+
+            await Assert.That((links).All(item => item.StartsWith("/team's%20reports/bdtest/report/"))).IsTrue();
+            await Assert.That(html).DoesNotContain("attacker.example");
         }
         finally
         {
@@ -100,12 +108,13 @@ public class HistoryTests
         }
     }
 
-    [TestCase(0, 0)]
-    [TestCase(0, 4)]
-    [TestCase(1, 0)]
-    [TestCase(1, 4)]
-    [TestCase(3, 0)]
-    [TestCase(3, 4)]
+    [Test]
+    [Arguments(0, 0)]
+    [Arguments(0, 4)]
+    [Arguments(1, 0)]
+    [Arguments(1, 4)]
+    [Arguments(3, 0)]
+    [Arguments(3, 4)]
     public async Task Trends_include_unfinished_scenarios_but_exclude_declared_tests(int unfinished, int declared)
     {
         var run = Run("unfinished", "nightly", Start, failed: 2);
@@ -123,16 +132,15 @@ public class HistoryTests
         var heights = segments.Select(segment => double.Parse(
             Regex.Match(Required(segment.Attribute("style")).Value, @"height: ([\d.]+)%").Groups[1].Value,
             CultureInfo.InvariantCulture)).ToList();
-        Assert.That(heights.Sum(), Is.EqualTo(100).Within(0.05), "All scenario results fill the chart, without declared tests.");
-        Assert.That(heights[0], Is.EqualTo(100.0 / Required(run.Counts).Total).Within(0.01));
-        Assert.That(segments.Count(segment => (string?)segment.Attribute("class") == "bg-r"),
-            Is.EqualTo(unfinished > 0 ? 2 : 1), "Pending and unfinished scenarios each have a segment.");
+        await Assert.That(heights.Sum()).IsEqualTo(100).Within(0.05).Because("All scenario results fill the chart, without declared tests.");
+        await Assert.That(heights[0]).IsEqualTo(100.0 / Required(run.Counts).Total).Within(0.01);
+        await Assert.That(segments.Count(segment => (string?)segment.Attribute("class") == "bg-r")).IsEqualTo(unfinished > 0 ? 2 : 1).Because("Pending and unfinished scenarios each have a segment.");
 
         var table = XElement.Parse(Regex.Match(html, "<tbody>(.*?)</tbody>", RegexOptions.Singleline).Value);
         var cells = table.Descendants("td").Select(cell => cell.Value).ToList();
-        Assert.That(cells[2], Is.EqualTo("2"));
-        Assert.That(cells[3], Is.EqualTo((18 + unfinished).ToString(CultureInfo.InvariantCulture)));
-        Assert.That(cells[4], Is.EqualTo("1"));
+        await Assert.That(cells[2]).IsEqualTo("2");
+        await Assert.That(cells[3]).IsEqualTo((18 + unfinished).ToString(CultureInfo.InvariantCulture));
+        await Assert.That(cells[4]).IsEqualTo("1");
     }
 
     [Test]
@@ -147,15 +155,15 @@ public class HistoryTests
         var html = await ReportHandlerEncodingTests.RenderAsync("/Views/BDTest/MultipleTestRunsFlakiness.cshtml", reports,
             pathBase: "/team's reports", host: "attacker.example", requestPath: "/bdtest/report/history/flaky");
 
-        Assert.That(html, Does.Contain("1 scenario both passed and failed"));
-        Assert.That(html, Does.Contain("&lt;flaky&gt; scenario"));
+        await Assert.That(html).Contains("1 scenario both passed and failed");
+        await Assert.That(html).Contains("&lt;flaky&gt; scenario");
         var links = Regex.Matches(html, "href=\"([^\"]+)\"").Select(match => HttpUtility.HtmlDecode(match.Groups[1].Value))
             .Where(link => link.Contains("/report/"))
             .ToList();
-        Assert.That(links, Does.Contain("/team's%20reports/bdtest/report/O%27Brien/scenario/scenario-O%27Brien"));
-        Assert.That(links, Does.Contain("/team's%20reports/bdtest/report/O%27Brien/failures"));
-        Assert.That(links, Does.Contain("/team's%20reports/bdtest/report/second/scenario/scenario-second"));
-        Assert.That(html, Does.Not.Contain("attacker.example"));
+        await Assert.That(links).Contains("/team's%20reports/bdtest/report/O%27Brien/scenario/scenario-O%27Brien");
+        await Assert.That(links).Contains("/team's%20reports/bdtest/report/O%27Brien/failures");
+        await Assert.That(links).Contains("/team's%20reports/bdtest/report/second/scenario/scenario-second");
+        await Assert.That(html).DoesNotContain("attacker.example");
     }
 
     [Test]
@@ -174,13 +182,13 @@ public class HistoryTests
 
         var result = (ViewResult)await controller.TestRunFlakiness(CancellationToken.None);
 
-        Assert.That(result.ViewName, Is.EqualTo("MultipleTestRunsFlakiness"));
-        Assert.That(repository.ReadIds, Is.EqualTo(new[] { "nightly-3", "nightly-4" }));
-        Assert.That(((IEnumerable<BDTestOutputModel>)Required(result.Model)).Select(report => report.Id), Is.EqualTo(new[] { "nightly-3", "nightly-4" }));
+        await Assert.That(result.ViewName).IsEqualTo("MultipleTestRunsFlakiness");
+        await Assert.That(repository.ReadIds).IsEquivalentTo(new[] { "nightly-3", "nightly-4" }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(((IEnumerable<BDTestOutputModel>)Required(result.Model)).Select(report => report.Id)).IsEquivalentTo((new[] { "nightly-3", "nightly-4" }).Cast<string?>(), global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
         var history = (HistoryViewModel)Required(result.ViewData[nameof(HistoryViewModel)]);
-        Assert.That(history.Tab, Is.EqualTo(HistoryViewModel.Flaky));
-        Assert.That(history.Runs, Has.Count.EqualTo(5));
-        Assert.That(history.ChosenRuns, Is.False);
+        await Assert.That(history.Tab).IsEqualTo(HistoryViewModel.Flaky);
+        await Assert.That(history.Runs).Count().IsEqualTo(5);
+        await Assert.That(history.ChosenRuns).IsFalse();
     }
 
     private static TestRunSummary Run(string id, string tag, DateTime started, int failed)

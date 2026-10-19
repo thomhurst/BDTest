@@ -1,13 +1,13 @@
-using BDTest.NUnit;
+using BDTest.TUnit;
 using BDTest.Helpers;
 using Newtonsoft.Json.Linq;
 using BDTest.Test;
 using BDTest.Tests.Helpers;
-using NUnit.Framework;
+using System.Threading.Tasks;
 
 namespace BDTest.Tests.Fixtures;
 
-public class SetupTeardownInfo : NUnitBDTestBase<MyTestContext>
+public class SetupTeardownInfo : TUnitBDTestBase<MyTestContext>
 {
     private Scenario? _scenario;
 
@@ -15,22 +15,23 @@ public class SetupTeardownInfo : NUnitBDTestBase<MyTestContext>
         BDTestJsonHelper.GetTestJsonData(null, TestRun))["Scenarios"])
         .Single(scenario => (string?)scenario["Guid"] == Required(_scenario).Guid);
 
-    [SetUp]
+    [Before(HookType.Test)]
     public void WriteStartupInformation()
     {
         Console.Out.WriteLine("Some startup info!");
     }
         
-    [TearDown]
-    public void TearDown()
+    [After(HookType.Test)]
+    public async Task VerifyTeardownOutput()
     {
         Console.Out.WriteLine("Some teardown info!");
             
-        Assert.That(Required(Required(_scenario).TearDownOutput).Trim(), Is.EqualTo("Some teardown info!"));
-            
-        Assert.That(Required(ScenarioJson()["TearDownOutput"]).ToString().Trim(), Is.EqualTo("Some teardown info!"));
+        await Assert.That(Required(Required(_scenario).TearDownOutput).Trim()).IsEqualTo("Some teardown info!");
+
+        await Assert.That(Required(ScenarioJson()["TearDownOutput"]).ToString().Trim()).IsEqualTo("Some teardown info!");
     }
         
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("TUnit", "TUnit0018", Justification = "Each TUnit case owns this fixture; scenario callbacks and teardown intentionally observe its state.")]
     [Test]
     public async Task Test()
     {
@@ -38,13 +39,14 @@ public class SetupTeardownInfo : NUnitBDTestBase<MyTestContext>
             .Then(() => Console.WriteLine("the results should have set up and tear down information added"))
             .BDTestAsync();
             
-        Assert.That(Required(_scenario.TestStartupInformation).Trim(), Is.EqualTo("Some startup info!"));
-        Assert.That(Required(_scenario.Steps)[0].Output, Is.EqualTo("run a test"));
-        Assert.That(_scenario.Steps[1].Output, Is.EqualTo("the results should have set up and tear down information added"));
-            
-        Assert.That(Required(ScenarioJson()["TestStartupInformation"]).ToString().Trim(), Is.EqualTo("Some startup info!"));
+        await Assert.That(Required(_scenario.TestStartupInformation).Trim()).IsEqualTo("Some startup info!");
+        await Assert.That(Required(_scenario.Steps)[0].Output).IsEqualTo("run a test");
+        await Assert.That(_scenario.Steps[1].Output).IsEqualTo("the results should have set up and tear down information added");
+
+        await Assert.That(Required(ScenarioJson()["TestStartupInformation"]).ToString().Trim()).IsEqualTo("Some startup info!");
     }
     
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("TUnit", "TUnit0018", Justification = "Each TUnit case owns this fixture; scenario callbacks and teardown intentionally observe its state.")]
     [Test]
     public async Task Test2()
     {
@@ -52,8 +54,8 @@ public class SetupTeardownInfo : NUnitBDTestBase<MyTestContext>
             .Then(() => Console.WriteLine("the results should have set up and tear down information added2"))
             .BDTestAsync();
             
-        Assert.That(Required(_scenario.TestStartupInformation).Trim(), Is.EqualTo("Some startup info!"));
-        Assert.That(Required(_scenario.Steps)[0].Output, Is.EqualTo("run a test2"));
-        Assert.That(_scenario.Steps[1].Output, Is.EqualTo("the results should have set up and tear down information added2"));
+        await Assert.That(Required(_scenario.TestStartupInformation).Trim()).IsEqualTo("Some startup info!");
+        await Assert.That(Required(_scenario.Steps)[0].Output).IsEqualTo("run a test2");
+        await Assert.That(_scenario.Steps[1].Output).IsEqualTo("the results should have set up and tear down information added2");
     }
 }

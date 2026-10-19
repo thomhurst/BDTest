@@ -1,7 +1,7 @@
 using BDTest.Attributes;
 using BDTest.Settings;
 using BDTest.Test;
-using NUnit.Framework;
+using System.Threading.Tasks;
 
 namespace BDTest.Tests.Fixtures;
 
@@ -10,7 +10,7 @@ namespace BDTest.Tests.Fixtures;
     SoThat = "tests can be run with different behaviour for different test environments")]
 public class SkipCertainTestsTests : RunTestBase
 {
-    [SetUp]
+    [Before(HookType.Test)]
     public void Setup()
     {
         Options.SkipTestRules.Add(test => test.BdTestBaseClass?.GetType() == typeof(SkipCertainTestsTests));
@@ -25,7 +25,7 @@ public class SkipCertainTestsTests : RunTestBase
             .And(() => ThrowException1())
             .BDTestAsync();
             
-        Assert.That(test.Status, Is.EqualTo(Status.Skipped));
+        await Assert.That(test.Status).IsEqualTo(Status.Skipped);
     }
         
     [Test]
@@ -39,7 +39,7 @@ public class SkipCertainTestsTests : RunTestBase
             .And(() => ThrowException1())
             .BDTestAsync();
             
-        Assert.That(test.Status, Is.EqualTo(Status.Skipped));
+        await Assert.That(test.Status).IsEqualTo(Status.Skipped);
     }
 
     [Test]
@@ -51,7 +51,7 @@ public class SkipCertainTestsTests : RunTestBase
             .And(() => ThrowException1())
             .BDTestAsync();
             
-        Assert.That(test.Status, Is.EqualTo(Status.Skipped));
+        await Assert.That(test.Status).IsEqualTo(Status.Skipped);
     }
 
     private void ThrowException1()

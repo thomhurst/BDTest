@@ -2,11 +2,11 @@ using System.Net;
 using System.Net.Http.Headers;
 using BDTest.Test;
 using BDTest.Tests.Helpers;
-using NUnit.Framework;
+using System.Threading.Tasks;
 
 namespace BDTest.Tests.Fixtures;
 
-[NonParallelizable]
+[NotInParallel]
 public class ReportServerCancellationTests
 {
     private static readonly Uri Server = new("https://reports.example/team/reports/");
@@ -25,11 +25,11 @@ public class ReportServerCancellationTests
         });
         using var client = new HttpClient(handler);
 
-        await Assert.CatchAsync<OperationCanceledException>(() => Upload(run, client, cancellation.Token));
+        await Assert.That(async () => { await Upload(run, client, cancellation.Token); }).Throws<OperationCanceledException>();
 
-        Assert.That(requests, Is.Zero);
+        await Assert.That(requests).IsZero();
         using var response = await client.GetAsync(Server);
-        Assert.That(response.IsSuccessStatusCode, Is.True);
+        await Assert.That(response.IsSuccessStatusCode).IsTrue();
     }
 
     [Test]
@@ -39,12 +39,13 @@ public class ReportServerCancellationTests
         using var cancellation = new CancellationTokenSource();
         cancellation.Cancel();
 
-        await Assert.CatchAsync<OperationCanceledException>(() => BDTestReportServer.SendDataAndGetReportUriAsync(run, Server, null, cancellation.Token));
+        await Assert.That(async () => { await BDTestReportServer.SendDataAndGetReportUriAsync(run, Server, null, cancellation.Token); }).Throws<OperationCanceledException>();
     }
 
-    [TestCase("ping")]
-    [TestCase("data")]
-    [TestCase("attachment")]
+    [Test]
+    [Arguments("ping")]
+    [Arguments("data")]
+    [Arguments("attachment")]
     public async Task Cancellation_interrupts_request_without_starting_later_requests(string phase)
     {
         using var explicitOwner = BDTestRun.Start();
@@ -61,11 +62,11 @@ public class ReportServerCancellationTests
             if (recovering) return Success();
             requests.Add(request);
             var path = Required(request.RequestUri).AbsolutePath;
-            Assert.That(path, Does.StartWith("/team/reports/"));
+            await Assert.That(path).StartsWith("/team/reports/");
             var currentPhase = path.Contains("/attachments/") ? "attachment" : path.Split('/').Last();
             if (currentPhase == phase)
             {
-                Assert.That(token.CanBeCanceled, Is.True);
+                await Assert.That(token.CanBeCanceled).IsTrue();
                 started.SetResult();
                 await Task.Delay(Timeout.Infinite, token);
             }
@@ -77,19 +78,19 @@ public class ReportServerCancellationTests
         {
             await started.Task.WaitAsync(TimeSpan.FromSeconds(5));
             cancellation.Cancel();
-            await Assert.CatchAsync<OperationCanceledException>(async () => await upload.WaitAsync(TimeSpan.FromSeconds(5)));
-            Assert.That(requests, Has.Count.EqualTo(phase == "ping" ? 1 : phase == "data" ? 2 : 3));
+            await Assert.That(async () => await upload.WaitAsync(TimeSpan.FromSeconds(5))).Throws<OperationCanceledException>();
+            await Assert.That(requests).Count().IsEqualTo(phase == "ping" ? 1 : phase == "data" ? 2 : 3);
             foreach (var request in requests.Where(request => request.Method == HttpMethod.Post))
             {
-                Assert.Throws<ObjectDisposedException>(() => request.Method = HttpMethod.Post);
-                await Assert.ThrowsAsync<ObjectDisposedException>(async () => await Required(request.Content).ReadAsByteArrayAsync());
+                await Assert.That(() => request.Method = HttpMethod.Post).ThrowsExactly<ObjectDisposedException>();
+                await Assert.That(async () => await Required(request.Content).ReadAsByteArrayAsync()).ThrowsExactly<ObjectDisposedException>();
             }
             // Cancellation releases upload streams, but does not remove captures or dispose the injected client.
             using var capture = run.OpenAttachment(Required(Required(Required(scenario.Steps)[0].Attachments).Single().Id));
-            Assert.That(capture.ReadByte(), Is.EqualTo(1));
+            await Assert.That(capture.ReadByte()).IsEqualTo(1);
             recovering = true;
             using var response = await client.GetAsync(Server);
-            Assert.That(response.IsSuccessStatusCode, Is.True);
+            await Assert.That(response.IsSuccessStatusCode).IsTrue();
         }
         finally
         {
@@ -97,9 +98,10 @@ public class ReportServerCancellationTests
         }
     }
 
-    [TestCase("ping")]
-    [TestCase("data")]
-    [TestCase("attachment")]
+    [Test]
+    [Arguments("ping")]
+    [Arguments("data")]
+    [Arguments("attachment")]
     public async Task Cancellation_interrupts_response_body_buffering(string phase)
     {
         using var explicitOwner = BDTestRun.Start();
@@ -124,9 +126,9 @@ public class ReportServerCancellationTests
         {
             await content.Started.Task.WaitAsync(TimeSpan.FromSeconds(5));
             cancellation.Cancel();
-            await Assert.CatchAsync<OperationCanceledException>(async () => await upload.WaitAsync(TimeSpan.FromSeconds(5)));
-            Assert.That(requests, Is.EqualTo(phase == "ping" ? 1 : phase == "data" ? 2 : 3));
-            Assert.That(content.Disposed, Is.True);
+            await Assert.That(async () => await upload.WaitAsync(TimeSpan.FromSeconds(5))).Throws<OperationCanceledException>();
+            await Assert.That(requests).IsEqualTo(phase == "ping" ? 1 : phase == "data" ? 2 : 3);
+            await Assert.That(content.Disposed).IsTrue();
         }
         finally
         {
@@ -148,9 +150,9 @@ public class ReportServerCancellationTests
 
         var result = await Upload(run, client, CancellationToken.None).WaitAsync(TimeSpan.FromSeconds(5));
 
-        Assert.That(result.AbsoluteUri, Is.EqualTo("https://reports.example/report/server-id"));
-        Assert.That(attempts, Is.EqualTo(2));
-        Assert.That(content.Disposed, Is.True);
+        await Assert.That(result.AbsoluteUri).IsEqualTo("https://reports.example/report/server-id");
+        await Assert.That(attempts).IsEqualTo(2);
+        await Assert.That(content.Disposed).IsTrue();
     }
 
     [Test]
@@ -173,16 +175,17 @@ public class ReportServerCancellationTests
         });
         using var client = new HttpClient(handler);
         var upload = Upload(run, client, cancellation.Token);
-        Assert.That(requests, Has.Count.EqualTo(3));
+        await Assert.That(requests).Count().IsEqualTo(3);
         cancellation.Cancel();
-        await Assert.CatchAsync<OperationCanceledException>(async () => await upload.WaitAsync(TimeSpan.FromSeconds(5)));
-        Assert.That(requests, Has.Count.EqualTo(3));
-        await Assert.ThrowsAsync<ObjectDisposedException>(async () => await Required(requests.Last().Content).ReadAsByteArrayAsync());
+        await Assert.That(async () => await upload.WaitAsync(TimeSpan.FromSeconds(5))).Throws<OperationCanceledException>();
+        await Assert.That(requests).Count().IsEqualTo(3);
+        await Assert.That(async () => await Required(requests.Last().Content).ReadAsByteArrayAsync()).ThrowsExactly<ObjectDisposedException>();
     }
 
-    [TestCase("delta")]
-    [TestCase("date")]
-    [TestCase("fallback")]
+    [Test]
+    [Arguments("delta")]
+    [Arguments("date")]
+    [Arguments("fallback")]
     public async Task Cancellation_interrupts_retry_delay(string retryAfter)
     {
         using var run = BDTestRun.Start();
@@ -205,12 +208,12 @@ public class ReportServerCancellationTests
 
         // The handler completes synchronously: the upload returns at the retry delay's await.
         var upload = Upload(run, client, cancellation.Token);
-        Assert.That(attempts, Is.EqualTo(1));
-        Assert.That(upload.IsCompleted, Is.False);
-        if (content != null) Assert.That(content.Disposed, Is.True);
+        await Assert.That(attempts).IsEqualTo(1);
+        await Assert.That(upload.IsCompleted).IsFalse();
+        if (content != null) await Assert.That(content.Disposed).IsTrue();
         cancellation.Cancel();
-        await Assert.CatchAsync<OperationCanceledException>(async () => await upload.WaitAsync(TimeSpan.FromSeconds(5)));
-        Assert.That(attempts, Is.EqualTo(1));
+        await Assert.That(async () => await upload.WaitAsync(TimeSpan.FromSeconds(5))).Throws<OperationCanceledException>();
+        await Assert.That(attempts).IsEqualTo(1);
     }
 
     [Test]
@@ -229,8 +232,8 @@ public class ReportServerCancellationTests
 
         var result = await Upload(run, client, cancellation.Token);
 
-        Assert.That(result.AbsoluteUri, Is.EqualTo("https://reports.example/report/server-id"));
-        Assert.That(attempts, Is.EqualTo(1));
+        await Assert.That(result.AbsoluteUri).IsEqualTo("https://reports.example/report/server-id");
+        await Assert.That(attempts).IsEqualTo(1);
     }
 
     private static Task<Uri> Upload(BDTestRun run, HttpClient client, CancellationToken token) =>

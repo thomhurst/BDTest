@@ -12,22 +12,22 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
-using NUnit.Framework;
+using System.Threading.Tasks;
 
 namespace BDTest.Tests.Fixtures;
 
 public class ReportNullableContractTests
 {
     [Test]
-    public void Stored_summary_defaults_and_explicit_nulls_are_preserved()
+    public async Task Stored_summary_defaults_and_explicit_nulls_are_preserved()
     {
         var empty = Required(JsonSerializer.Deserialize("{}", ReportJsonContext.Default.TestRunSummary));
-        Assert.That(empty.RecordId, Is.Null);
-        Assert.That(empty.Tag, Is.Null);
-        Assert.That(empty.Counts, Is.Not.Null);
+        await Assert.That(empty.RecordId).IsNull();
+        await Assert.That(empty.Tag).IsNull();
+        await Assert.That(empty.Counts).IsNotNull();
         var emptyIndex = Required(JsonSerializer.Deserialize("{}", ReportJsonContext.Default.RunIndexEntry));
-        Assert.That(emptyIndex.RecordId, Is.Empty);
-        Assert.That(emptyIndex.Counts, Is.Not.Null);
+        await Assert.That(emptyIndex.RecordId).IsEmpty();
+        await Assert.That(emptyIndex.Counts).IsNotNull();
 
         const string json = """
             {"RecordId":null,"Counts":null,"Tag":null,"Environment":null,
@@ -35,13 +35,13 @@ public class ReportNullableContractTests
             """;
         var summary = Required(JsonSerializer.Deserialize(json, ReportJsonContext.Default.TestRunSummary));
         var index = Required(JsonSerializer.Deserialize(json, ReportJsonContext.Default.RunIndexEntry));
-        Assert.That(summary.Counts, Is.Null);
-        Assert.That(index.Counts, Is.Null);
-        Assert.That(index.RecordId, Is.Null);
-        Assert.That(summary.ToRunIndexEntry().RecordId, Is.Null);
-        Assert.That(index.ToTestRunSummary().RecordId, Is.Null);
-        Assert.That(Required(summary.ToRunIndexEntry().Counts).Total, Is.Zero);
-        Assert.That(Required(index.ToTestRunSummary().Counts).Total, Is.Zero);
+        await Assert.That(summary.Counts).IsNull();
+        await Assert.That(index.Counts).IsNull();
+        await Assert.That(index.RecordId).IsNull();
+        await Assert.That(summary.ToRunIndexEntry().RecordId).IsNull();
+        await Assert.That(index.ToTestRunSummary().RecordId).IsNull();
+        await Assert.That(Required(summary.ToRunIndexEntry().Counts).Total).IsZero();
+        await Assert.That(Required(index.ToTestRunSummary().Counts).Total).IsZero();
         foreach (var serialized in new[]
         {
             JsonSerializer.Serialize(summary, ReportJsonContext.Default.TestRunSummary),
@@ -50,7 +50,7 @@ public class ReportNullableContractTests
         {
             using var document = JsonDocument.Parse(serialized);
             foreach (var name in new[] { "RecordId", "Counts", "Tag", "Environment", "BranchName", "MachineName", "Version" })
-                Assert.That(document.RootElement.GetProperty(name).ValueKind, Is.EqualTo(JsonValueKind.Null), name);
+                await Assert.That(document.RootElement.GetProperty(name).ValueKind).IsEqualTo(JsonValueKind.Null).Because(name);
         }
     }
 
@@ -62,14 +62,14 @@ public class ReportNullableContractTests
         services.AddBDTestReports(configure: null);
         await using var provider = services.BuildServiceProvider();
         var options = provider.GetRequiredService<IOptions<BDTestReportOptions>>().Value;
-        Assert.That(options.UploadApiKey, Is.Null);
-        Assert.That(options.ReportsAuthorizationPolicy, Is.Null);
-        Assert.That(options.AdminAuthorizationPolicy, Is.Null);
+        await Assert.That(options.UploadApiKey).IsNull();
+        await Assert.That(options.ReportsAuthorizationPolicy).IsNull();
+        await Assert.That(options.AdminAuthorizationPolicy).IsNull();
         var repository = provider.GetRequiredService<IDataRepository>();
-        Assert.That(await repository.GetData("missing", default), Is.Null);
-        Assert.That(await repository.GetDataForBulkRead("missing", default), Is.Null);
-        Assert.That(await repository.OpenReadAsync("missing", default), Is.Null);
-        Assert.That(await repository.GetAllTestRunRecords(), Is.Empty);
+        await Assert.That(await repository.GetData("missing", default)).IsNull();
+        await Assert.That(await repository.GetDataForBulkRead("missing", default)).IsNull();
+        await Assert.That(await repository.OpenReadAsync("missing", default)).IsNull();
+        await Assert.That(await repository.GetAllTestRunRecords()).IsEmpty();
     }
 
     [Test]
@@ -80,25 +80,25 @@ public class ReportNullableContractTests
         var bridge = new LegacyDataStoreAdapter(store);
         using var input = new MemoryStream(Encoding.UTF8.GetBytes("null"));
         await bridge.WriteAsync("null-report", input, default);
-        Assert.That(input.CanRead, Is.True);
-        Assert.That(await store.GetTestData("null-report", default), Is.Null);
-        Assert.That(await bridge.OpenReadAsync("null-report", default), Is.Null);
+        await Assert.That(input.CanRead).IsTrue();
+        await Assert.That(await store.GetTestData("null-report", default)).IsNull();
+        await Assert.That(await bridge.OpenReadAsync("null-report", default)).IsNull();
     }
 
     [Test]
-    public void Missing_query_values_and_optional_links_keep_their_null_semantics()
+    public async Task Missing_query_values_and_optional_links_keep_their_null_semantics()
     {
         var context = new DefaultHttpContext();
         context.Request.Path = "/reports";
         context.Request.QueryString = new QueryString("?tag=old&page=2");
-        Assert.That(context.Request.GetQueryParameter("missing"), Is.Null);
-        Assert.That(context.GetLocalUrlWith(null, ("tag", null)), Is.EqualTo("/reports?page=2"));
+        await Assert.That(context.Request.GetQueryParameter("missing")).IsNull();
+        await Assert.That(context.GetLocalUrlWith(null, ("tag", null))).IsEqualTo("/reports?page=2");
         var link = new CustomLinkData(null, null);
-        Assert.That(link.Text, Is.Null);
-        Assert.That(link.Url, Is.Null);
-        Assert.That(ScenarioSearch.Matches(null, null), Is.False);
-        Assert.That(new Pager<int>([1, 2], null).ItemsForCurrentPage, Is.EqualTo(new[] { 1, 2 }));
-        Assert.That(new OutputMetrics(null).AnyWarnings, Is.False);
+        await Assert.That(link.Text).IsNull();
+        await Assert.That(link.Url).IsNull();
+        await Assert.That(ScenarioSearch.Matches(null, null)).IsFalse();
+        await Assert.That(new Pager<int>([1, 2], null).ItemsForCurrentPage).IsEquivalentTo(new[] { 1, 2 }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(new OutputMetrics(null).AnyWarnings).IsFalse();
     }
 
     [Test]
@@ -108,9 +108,10 @@ public class ReportNullableContractTests
             {"IsOutline":true,"Examples":[{"Steps":null,"ExampleValues":null,"Status":"Passed"}]}
             """);
         var html = await ReportHandlerEncodingTests.RenderAsync("/Views/Shared/_ScenarioExamples.cshtml", scenario);
-        Assert.That(html, Does.Contain("Example 1").And.Contain("1 of 1 passed"));
-        Assert.That(Required(scenario.Examples)[0].Steps, Is.Null);
-        Assert.That(scenario.Examples[0].ExampleValues, Is.Null);
+
+        await Assert.That(html).Contains("Example 1").And.Contains("1 of 1 passed");
+        await Assert.That(Required(scenario.Examples)[0].Steps).IsNull();
+        await Assert.That(scenario.Examples[0].ExampleValues).IsNull();
     }
 
     [Test]
@@ -121,7 +122,7 @@ public class ReportNullableContractTests
             """, ReportJsonContext.Default.TestRunSummary));
         var html = await ReportHandlerEncodingTests.RenderAsync("/Views/BDTest/Trends.cshtml",
             new HistoryViewModel { AllRuns = [summary], Runs = [summary] });
-        Assert.That(html, Does.Contain("/bdtest/report/legacy/summary"));
-        Assert.That(summary.Counts, Is.Null);
+        await Assert.That(html).Contains("/bdtest/report/legacy/summary");
+        await Assert.That(summary.Counts).IsNull();
     }
 }

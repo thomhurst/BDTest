@@ -2,11 +2,11 @@ using System.Threading.Tasks.Sources;
 using BDTest.Attributes;
 using BDTest.Test;
 using BDTest.Tests.Helpers;
-using NUnit.Framework;
+using System.Threading.Tasks;
 
 namespace BDTest.Tests.Fixtures;
 
-[NonParallelizable]
+[NotInParallel]
 public class DelegateStepTests : RunTestBase
 {
     [Test]
@@ -24,12 +24,12 @@ public class DelegateStepTests : RunTestBase
         var scenario = await Given(valueTask).And(result).But(tokenResult).And(task)
             .But(tokenTask).When(tokenValueTask).But(result).Then(tokenResult)
             .And(valueTask).But(tokenValueTask).And(action).BDTestAsync();
-        Assert.That(calls, Is.EqualTo(11));
-        Assert.That(scenario.Status, Is.EqualTo(Status.Passed));
+        await Assert.That(calls).IsEqualTo(11);
+        await Assert.That(scenario.Status).IsEqualTo(Status.Passed);
 
         await Given(tokenResult).When(result).Then(valueTask).BDTestAsync();
         await When(result).Then(tokenValueTask).And(result).BDTestAsync();
-        Assert.That(calls, Is.EqualTo(17));
+        await Assert.That(calls).IsEqualTo(17);
     }
 
     [Test]
@@ -39,10 +39,10 @@ public class DelegateStepTests : RunTestBase
         var given = await Given<int>(() => SkippedValueTask()).When(() => Accept(42)).Then(() => Accept(42)).BDTestAsync();
         var when = await When<int>(() => SkippedValueTask()).Then(() => Accept(42)).BDTestAsync();
         var then = await When(() => Accept(42)).Then<int>(() => SkippedValueTask()).BDTestAsync();
-        Assert.That(Required(given.Steps)[0].StepText, Is.EqualTo("[Skipped] Given explicit generic step"));
-        Assert.That(Required(when.Steps)[0].StepText, Is.EqualTo("[Skipped] When explicit generic step"));
-        Assert.That(Required(then.Steps)[1].StepText, Is.EqualTo("[Skipped] Then explicit generic step"));
-        Assert.That(new[] { given.Steps[0], when.Steps[0], then.Steps[1] }.All(step => step.Status == Status.Skipped), Is.True);
+        await Assert.That(Required(given.Steps)[0].StepText).IsEqualTo("[Skipped] Given explicit generic step");
+        await Assert.That(Required(when.Steps)[0].StepText).IsEqualTo("[Skipped] When explicit generic step");
+        await Assert.That(Required(then.Steps)[1].StepText).IsEqualTo("[Skipped] Then explicit generic step");
+        await Assert.That(new[] { given.Steps[0], when.Steps[0], then.Steps[1] }.All(step => step.Status == Status.Skipped)).IsTrue();
     }
 
     [Test]
@@ -55,7 +55,7 @@ public class DelegateStepTests : RunTestBase
             .But(async token => { await Task.Yield(); calls.Add(4); })
             .Then(async () => { await Task.Yield(); calls.Add(5); })
             .And(async token => { await Task.Yield(); calls.Add(6); }).BDTestAsync();
-        Assert.That(calls, Is.EqualTo(Enumerable.Range(1, 6)));
+        await Assert.That(calls).IsEquivalentTo(Enumerable.Range(1, 6), global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 
     [Test]
@@ -64,10 +64,10 @@ public class DelegateStepTests : RunTestBase
         List<int>? values = null;
         var scenario = await Given(() => { values = new List<int>(); })
             .When(() => values?.Add(42))
-            .Then(() => { Assert.That(values is { Count: > 0 }, Is.True); }).BDTestAsync();
-        Assert.That(Required(scenario.Steps)[0].StepText, Does.Contain("values = new List<int>()"));
-        Assert.That(scenario.Steps[1].StepText, Does.Contain("values?.Add(42)"));
-        Assert.That(scenario.Steps[2].StepText, Does.Contain("Count: > 0"));
+            .Then(async () => { await Assert.That(values is { Count: > 0 }).IsTrue(); }).BDTestAsync();
+        await Assert.That(Required(scenario.Steps)[0].StepText).Contains("values = new List<int>()");
+        await Assert.That(scenario.Steps[1].StepText).Contains("values?.Add(42)");
+        await Assert.That(scenario.Steps[2].StepText).Contains("Count: > 0");
     }
 
     [Test]
@@ -78,10 +78,10 @@ public class DelegateStepTests : RunTestBase
         var builder = When(() => { value = 42; }, callerFile: "no-catalog.cs", callerLine: 1)
             .Then(() => Accept(value), callerFile: "no-catalog.cs", callerLine: 2)
             .WithArgs(() => { reads++; return value; });
-        Assert.That(reads, Is.Zero);
+        await Assert.That(reads).IsZero();
         var scenario = await builder.BDTestAsync();
-        Assert.That(reads, Is.EqualTo(1));
-        Assert.That(Required(scenario.Steps)[1].StepText, Is.EqualTo("Then () => Accept(value) 42"));
+        await Assert.That(reads).IsEqualTo(1);
+        await Assert.That(Required(scenario.Steps)[1].StepText).IsEqualTo("Then () => Accept(value) 42");
     }
 
     [Test]
@@ -89,13 +89,14 @@ public class DelegateStepTests : RunTestBase
     {
         var source = new SingleUseSource();
         var execution = When(() => source.Create()).Then(() => Accept(42)).BDTestAsync();
-        Assert.That(execution.IsCompleted, Is.False);
+        await Assert.That(execution.IsCompleted).IsFalse();
         source.Complete();
         await execution.WaitAsync(TimeSpan.FromSeconds(10));
-        Assert.That(source.ResultsRead, Is.EqualTo(1));
+        await Assert.That(source.ResultsRead).IsEqualTo(1);
     }
 
-    [TestCase(false), TestCase(true)]
+    [Test]
+    [Arguments(false), Arguments(true)]
     public async Task Cancellation_aware_ValueTask_steps_receive_and_observe_timeout_token(bool generic)
     {
         var cancelled = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -107,7 +108,7 @@ public class DelegateStepTests : RunTestBase
         async ValueTask<int> WaitResult(CancellationToken token) { await Wait(token); return 42; }
         var builder = (generic ? When(token => WaitResult(token)) : When(token => Wait(token)))
             .WithStepTimeout(TimeSpan.FromMilliseconds(150)).Then(() => Accept(42));
-        await Assert.ThrowsAsync<TimeoutException>(async () => await builder.BDTestAsync());
+        await Assert.That(async () => await builder.BDTestAsync()).ThrowsExactly<TimeoutException>();
         await cancelled.Task.WaitAsync(TimeSpan.FromSeconds(10));
     }
 
@@ -115,16 +116,17 @@ public class DelegateStepTests : RunTestBase
     public async Task Cancellation_aware_generated_metadata_omits_token_and_renders_other_arguments()
     {
         var scenario = await When(token => AcceptToken(42, token)).Then(() => Accept(42)).BDTestAsync();
-        Assert.That(Required(scenario.Steps)[0].StepText, Is.EqualTo("When received 42"));
+        await Assert.That(Required(scenario.Steps)[0].StepText).IsEqualTo("When received 42");
     }
 
     [Test]
-    public void Failure_output_names_the_failing_statement_delegate()
+    public async Task Failure_output_names_the_failing_statement_delegate()
     {
         var builder = When(() => { throw new InvalidOperationException("delegate failure"); }).Then(() => Accept(42));
-        Assert.ThrowsAsync<InvalidOperationException>(async () => await builder.BDTestAsync());
+        await Assert.That(async () => await builder.BDTestAsync()).ThrowsExactly<InvalidOperationException>();
         var step = Required(BDTestUtil.GetScenarios(TestRun).Single().Steps)[0];
-        Assert.That(step.Output, Does.Contain("delegate failure").And.Contain("executing").And.Contain("When"));
+
+        await Assert.That(step.Output).Contains("delegate failure").And.Contains("executing").And.Contains("When");
     }
 
     private sealed class SkipDelegateStepAttribute : SkipStepAttribute { }

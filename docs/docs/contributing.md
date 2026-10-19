@@ -19,21 +19,24 @@ dotnet build BDTest.sln
 
 ```bash
 # NUnit, xUnit and MSTest projects use VSTest
-dotnet test BDTest.Tests/BDTest.Tests.csproj
 dotnet test BDTest.NUnit.Tests/BDTest.NUnit.Tests.csproj
-dotnet test BDTest.Tests/BDTest.Tests.csproj --filter "FullyQualifiedName~SomeTestName"
+dotnet test BDTest.NUnit.Tests/BDTest.NUnit.Tests.csproj --filter "FullyQualifiedName~SomeTestName"
 
-# TUnit adapter, pipeline and report-generator suites use Microsoft.Testing.Platform
+# Core, TUnit adapter, pipeline and report-generator suites use Microsoft.Testing.Platform
+dotnet run --project BDTest.Tests
+dotnet run --project BDTest.Tests -- --treenode-filter "/*/*/RetryTests/*"
 dotnet run --project BDTest.TUnit.Tests
 dotnet run --project BDTest.Pipeline.Tests
 dotnet run --project BDTest.ReportGenerator.Tests
 dotnet run --project BDTest.TUnit.Tests -- --treenode-filter "/*/*/TUnitScenarioTests/*"
 ```
 
-The core `BDTest.Tests` suite still uses NUnit pending its TUnit conversion.
+The core `BDTest.Tests` suite uses TUnit with awaited assertions, per-test fixture
+instances and explicit `BDTestRun` ownership. Its source-generator and analyzer
+references remain active; it is the sole signed test friend assembly.
 `BDTest.NUnit.Tests` owns NUnit adapter lifecycle, execution IDs, runner outcomes,
 shared conformance and sample integration; `BDTest.Example` remains an NUnit sample.
-The new suite is unsigned and has no friend access to core or Razor reports. CI evaluates
+`BDTest.NUnit.Tests` is unsigned and has no friend access to core or Razor reports. CI evaluates
 Release `PackageReference` items to choose the TUnit runner; filenames and
 `OutputType=Exe` do not decide the runner. xUnit v3 keeps its VSTest invocation.
 Both paths save TRX results under `artifacts/test-results/<project>`.
@@ -57,7 +60,7 @@ Use `Development` locally. `Production` can publish packages to NuGet.
 | `BDTest.ReportGenerator.RazorServer` | Sample report host (not packed). |
 | `BDTest.SourceGenerator` | Optional compile-time step metadata. |
 | `BDTest.Example` | Sample NUnit tests. |
-| `BDTest.Tests` | Core and reporting tests (currently NUnit; signed friend assembly). |
+| `BDTest.Tests` | Core and reporting tests (TUnit; signed friend assembly). |
 | `BDTest.NUnit.Tests` | NUnit adapter and sample integration tests (unsigned). |
 | `*.Tests` | Other framework, compiler, contract and tooling suites. |
 | `BDTest.Pipeline` | CI pipeline. |

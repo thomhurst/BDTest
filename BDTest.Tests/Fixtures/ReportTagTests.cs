@@ -11,22 +11,23 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
-using NUnit.Framework;
+using System.Threading.Tasks;
 
 namespace BDTest.Tests.Fixtures;
 
 public class ReportTagTests
 {
-    [TestCase(false, "?filterByTag=SMOKE", new[] { "smoke-passed", "smoke-failed" })]
-    [TestCase(false, "?filterByTag=smoke&filterByStatus=Passed", new[] { "smoke-passed" })]
-    [TestCase(false, "?filterByTag=missing", new string[0])]
-    [TestCase(false, "?filterByTag=", new[] { "smoke-passed", "smoke-failed", "other", "legacy" })]
-    [TestCase(true, "?filterByTag=SMOKE", new[] { "smoke-passed", "smoke-failed" })]
-    [TestCase(true, "?filterByTag=smoke&filterByStatus=Failed", new[] { "smoke-failed" })]
-    [TestCase(true, "?filterByTag=smoke&filterByStatus=Passed", new[] { "smoke-passed" })]
-    [TestCase(true, "?filterByTag=smoke&filterByStatus=Passed,Failed", new[] { "smoke-passed", "smoke-failed" })]
-    [TestCase(true, "?filterByTag=missing", new string[0])]
-    [TestCase(true, "", new[] { "smoke-passed", "smoke-failed", "other", "legacy" })]
+    [Test]
+    [Arguments(false, "?filterByTag=SMOKE", new[] { "smoke-passed", "smoke-failed" })]
+    [Arguments(false, "?filterByTag=smoke&filterByStatus=Passed", new[] { "smoke-passed" })]
+    [Arguments(false, "?filterByTag=missing", new string[0])]
+    [Arguments(false, "?filterByTag=", new[] { "smoke-passed", "smoke-failed", "other", "legacy" })]
+    [Arguments(true, "?filterByTag=SMOKE", new[] { "smoke-passed", "smoke-failed" })]
+    [Arguments(true, "?filterByTag=smoke&filterByStatus=Failed", new[] { "smoke-failed" })]
+    [Arguments(true, "?filterByTag=smoke&filterByStatus=Passed", new[] { "smoke-passed" })]
+    [Arguments(true, "?filterByTag=smoke&filterByStatus=Passed,Failed", new[] { "smoke-passed", "smoke-failed" })]
+    [Arguments(true, "?filterByTag=missing", new string[0])]
+    [Arguments(true, "", new[] { "smoke-passed", "smoke-failed", "other", "legacy" })]
     public async Task Tag_filter_runs_before_grouping_and_combines_with_status(bool stories, string query, string[] expected)
     {
         var repository = new Repository();
@@ -43,8 +44,9 @@ public class ReportTagTests
             : await controller.AllScenarios("run", CancellationToken.None));
         var groups = (IGrouping<string, Scenario>[])Required(result.Model);
 
-        Assert.That(groups.SelectMany(group => group).Select(scenario => scenario.Guid), Is.EquivalentTo(expected));
-        Assert.That(ReportJson.SerializeObject(repository.Report), Is.EqualTo(original), "Filtering must not mutate cached reports.");
+
+        await Assert.That(groups.SelectMany(group => group).Select(scenario => scenario.Guid)).IsEquivalentTo((expected).Cast<string?>(), global::TUnit.Assertions.Enums.CollectionOrdering.Any);
+        await Assert.That(ReportJson.SerializeObject(repository.Report)).IsEqualTo(original).Because("Filtering must not mutate cached reports.");
     }
 
     [Test]
@@ -55,15 +57,16 @@ public class ReportTagTests
             new ScenarioToolbarViewModel { Tags = new[] { tag, "other" } }, query: "?filterByTag=" + Uri.EscapeDataString(tag) + "&filterByStatus=Passed&orderBy=Name&page=5",
             pathBase: "/reports", host: "attacker.example");
 
-        Assert.That(html, Does.Contain("name=\"filterByTag\""));
-        Assert.That(html, Does.Contain("name=\"filterByStatus\" value=\"Passed\""));
-        Assert.That(html, Does.Contain("name=\"orderBy\" value=\"Name\""));
-        Assert.That(html, Does.Not.Contain("name=\"page\""));
-        Assert.That(html, Does.Contain("action=\"/reports/bdtest/"));
-        Assert.That(html, Does.Not.Contain("attacker.example").And.Not.Contain("<smoke>"));
+        await Assert.That(html).Contains("name=\"filterByTag\"");
+        await Assert.That(html).Contains("name=\"filterByStatus\" value=\"Passed\"");
+        await Assert.That(html).Contains("name=\"orderBy\" value=\"Name\"");
+        await Assert.That(html).DoesNotContain("name=\"page\"");
+        await Assert.That(html).Contains("action=\"/reports/bdtest/");
+
+        await Assert.That(html).DoesNotContain("attacker.example").And.DoesNotContain("<smoke>");
         var selected = Regex.Match(html, "<option[^>]*value=\"([^\"]+)\"[^>]*selected[^>]*>");
-        Assert.That(selected.Success, Is.True);
-        Assert.That(HttpUtility.HtmlDecode(selected.Groups[1].Value), Is.EqualTo(tag));
+        await Assert.That(selected.Success).IsTrue();
+        await Assert.That(HttpUtility.HtmlDecode(selected.Groups[1].Value)).IsEqualTo(tag);
     }
 
     [Test]
@@ -75,8 +78,8 @@ public class ReportTagTests
         }));
         var html = await ReportHandlerEncodingTests.RenderAsync("/Views/Shared/_ScenarioPanel.cshtml",
             new ScenarioModalViewModel { Scenario = scenario });
-        Assert.That(html, Does.Not.Contain("<script>"));
-        Assert.That(HttpUtility.HtmlDecode(html), Does.Contain("<span class=\"tag\"><script>alert(1)</script></span>"));
+        await Assert.That(html).DoesNotContain("<script>");
+        await Assert.That(HttpUtility.HtmlDecode(html)).Contains("<span class=\"tag\"><script>alert(1)</script></span>");
     }
 
     private sealed class Repository : IDataRepository

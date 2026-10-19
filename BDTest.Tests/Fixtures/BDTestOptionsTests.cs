@@ -3,15 +3,16 @@ using BDTest.Attributes;
 using BDTest.Interfaces;
 using BDTest.Test;
 using BDTest.Test.Steps.Then;
-using NUnit.Framework;
+using System.Threading.Tasks;
 
 namespace BDTest.Tests.Fixtures;
 
 public class BDTestOptionsTests
 {
     [Test]
+    [MatrixDataSource]
     public async Task Concurrent_runs_classify_step_and_outline_factory_exceptions_independently(
-        [Values(Status.Passed, Status.Skipped, Status.Inconclusive)] Status status, [Values] bool wrapped)
+        [Matrix(Status.Passed, Status.Skipped, Status.Inconclusive)] Status status, [Matrix] bool wrapped)
     {
         var options = new BDTestOptions();
         var types = status == Status.Passed ? options.SuccessExceptionTypes
@@ -43,10 +44,10 @@ public class BDTestOptionsTests
             catch (Exception exception) when (exception is RegisteredException or TargetInvocationException) { }
         }
         await Task.WhenAll(Task.Run(() => Execute(configured)), Task.Run(() => Execute(plain)));
-        Assert.That(configured.Scenarios.All(scenario => scenario.Status == status), Is.True);
-        Assert.That(plain.Scenarios.All(scenario => scenario.Status == Status.Failed), Is.True);
-        Assert.That(Required(configured.Scenarios.Single(scenario => !scenario.IsOutline).Steps)[0].Status, Is.EqualTo(status));
-        Assert.That(Required(configured.Scenarios.Single(scenario => scenario.IsOutline).Examples)[0].Status, Is.EqualTo(status));
+        await Assert.That(configured.Scenarios.All(scenario => scenario.Status == status)).IsTrue();
+        await Assert.That(plain.Scenarios.All(scenario => scenario.Status == Status.Failed)).IsTrue();
+        await Assert.That(Required(configured.Scenarios.Single(scenario => !scenario.IsOutline).Steps)[0].Status).IsEqualTo(status);
+        await Assert.That(Required(configured.Scenarios.Single(scenario => scenario.IsOutline).Examples)[0].Status).IsEqualTo(status);
     }
 
     [Test]
@@ -70,20 +71,20 @@ public class BDTestOptionsTests
         var scenario = await fixture.When(() => steps.FailOnce(new Value()))
             .WithArgs(() => new Value())
             .Then(() => Skipped()).BDTestAsync();
-        Assert.That(scenario.Status, Is.EqualTo(Status.Passed));
-        Assert.That(scenario.RetryCount, Is.EqualTo(1));
-        Assert.That(steps.Attempts, Is.EqualTo(2));
-        Assert.That(Required(scenario.Steps)[0].StepText, Does.Contain("frozen").And.Not.Contain("late"));
-        Assert.That(scenario.Steps[1].Status, Is.EqualTo(Status.Skipped));
-        Assert.That(calls, Is.EqualTo(new[]
+        await Assert.That(scenario.Status).IsEqualTo(Status.Passed);
+        await Assert.That(scenario.RetryCount).IsEqualTo(1);
+        await Assert.That(steps.Attempts).IsEqualTo(2);
+
+        await Assert.That(Required(scenario.Steps)[0].StepText).Contains("frozen").And.DoesNotContain("late");
+        await Assert.That(scenario.Steps[1].Status).IsEqualTo(Status.Skipped);
+        await Assert.That(calls).IsEquivalentTo(new[]
         {
             "first before", "second before", "first after Failed", "second after Failed",
             "first before", "second before", "first after Passed", "second after Passed",
             "first before", "second before", "first after Skipped", "second after Skipped"
-        }));
+        }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
         using var late = BDTestRun.Start(options);
-        Assert.That((await new Capture(late).When(() => Complete()).Then(() => Complete()).BDTestAsync()).Status,
-            Is.EqualTo(Status.Skipped));
+        await Assert.That((await new Capture(late).When(() => Complete()).Then(() => Complete()).BDTestAsync()).Status).IsEqualTo(Status.Skipped);
     }
 
     [Test]
@@ -97,8 +98,8 @@ public class BDTestOptionsTests
         options.Debug.ShouldSkipWhenStep = false;
         var first = await new Capture(skipped).When(() => Complete()).Then(() => Skipped()).BDTestAsync();
         var second = await new Capture(plain).When(() => Complete()).Then(() => Skipped()).BDTestAsync();
-        Assert.That(Required(first.Steps).All(step => step.Status == Status.Skipped), Is.True);
-        Assert.That(Required(second.Steps).All(step => step.Status == Status.Passed), Is.True);
+        await Assert.That(Required(first.Steps).All(step => step.Status == Status.Skipped)).IsTrue();
+        await Assert.That(Required(second.Steps).All(step => step.Status == Status.Passed)).IsTrue();
     }
 
     [Test]
@@ -114,8 +115,10 @@ public class BDTestOptionsTests
         var results = await Task.WhenAll(
             Task.Run(() => new Capture(first).When(() => Keep(new Value())).WithArgs(() => new Value()).Then(() => Complete()).BDTestAsync()),
             Task.Run(() => new Capture(other).When(() => Keep(new Value())).WithArgs(() => new Value()).Then(() => Complete()).BDTestAsync()));
-        Assert.That(Required(results[0].Steps)[0].StepText, Does.Contain("first").And.Not.Contain("second").And.Not.Contain("other"));
-        Assert.That(Required(results[1].Steps)[0].StepText, Does.Contain("other").And.Not.Contain("first"));
+
+        await Assert.That(Required(results[0].Steps)[0].StepText).Contains("first").And.DoesNotContain("second").And.DoesNotContain("other");
+
+        await Assert.That(Required(results[1].Steps)[0].StepText).Contains("other").And.DoesNotContain("first");
     }
 
     [Test]
@@ -126,16 +129,17 @@ public class BDTestOptionsTests
         options.StepHooks.Add(new Hook("failing", calls, failAfter: true));
         options.StepHooks.Add(new Hook("last", calls));
         using var run = BDTestRun.Start(options);
-        await Assert.ThrowsAsync<RegisteredException>(async () => await new Capture(run)
-            .When(() => Fail()).Then(() => Complete()).BDTestAsync());
-        Assert.That(calls, Does.Contain("last after Failed"));
-        Assert.That(Required(Required(run.Scenarios.Single().Steps)[0].Exception).TypeName, Does.Contain(nameof(RegisteredException)));
+        await Assert.That(async () => await new Capture(run)
+            .When(() => Fail()).Then(() => Complete()).BDTestAsync()).ThrowsExactly<RegisteredException>();
+        await Assert.That(calls).Contains("last after Failed");
+        await Assert.That(Required(Required(run.Scenarios.Single().Steps)[0].Exception).TypeName).Contains(nameof(RegisteredException));
     }
 
-    [Test, Combinatorial]
+    [Test]
+    [MatrixDataSource]
     public async Task Run_converters_apply_to_each_delegate_argument_source(
-        [Values("generated", "explicit", "fallback")] string argumentSource,
-        [Values("converted", "null", "throws")] string conversion)
+        [Matrix("generated", "explicit", "fallback")] string argumentSource,
+        [Matrix("converted", "null", "throws")] string conversion)
     {
         var options = new BDTestOptions();
         options.RegisterCustomStringConverter(new Converter(conversion == "null" ? null : conversion,
@@ -143,13 +147,13 @@ public class BDTestOptionsTests
         using var run = BDTestRun.Start(options);
         var fixture = new Capture(run);
         var builder = fixture.BuildWithArgument(argumentSource);
-        Assert.That(fixture.ArgumentReads, Is.Zero);
+        await Assert.That(fixture.ArgumentReads).IsZero();
 
         var scenario = await builder.BDTestAsync();
         var expected = conversion == "throws" ? "<error: InvalidOperationException>" : conversion;
-        Assert.That(scenario.Status, Is.EqualTo(Status.Passed));
-        Assert.That(Required(scenario.Steps)[0].StepText, Does.EndWith(" " + expected));
-        Assert.That(Required(scenario.Steps[0].Diagnostics).Count, Is.EqualTo(conversion == "throws" ? 1 : 0));
+        await Assert.That(scenario.Status).IsEqualTo(Status.Passed);
+        await Assert.That(Required(scenario.Steps)[0].StepText).EndsWith(" " + expected);
+        await Assert.That(Required(scenario.Steps[0].Diagnostics).Count).IsEqualTo(conversion == "throws" ? 1 : 0);
     }
 
     [Test]
@@ -165,19 +169,19 @@ public class BDTestOptionsTests
         async Task Execute(BDTestRun run)
         {
             var fixture = new Capture(run);
-            await Assert.ThrowsAsync<RegisteredException>(async () => await fixture.When(() => Fail())
-                .Then(() => Complete()).BDTestAsync());
+            await Assert.That(async () => await fixture.When(() => Fail())
+                .Then(() => Complete()).BDTestAsync()).ThrowsExactly<RegisteredException>();
             await fixture.When(() => Keep(new Value())).WithArgs(() => new Value()).Then(() => Skipped()).BDTestAsync();
         }
         await Task.WhenAll(Task.Run(() => Execute(frozen)), Task.Run(() => Execute(later)));
-        Assert.That(frozen.Scenarios.Single(scenario => scenario.Status == Status.Failed).RetryCount, Is.EqualTo(1));
-        Assert.That(later.Scenarios.Single(scenario => scenario.Status == Status.Failed).RetryCount, Is.EqualTo(3));
+        await Assert.That(frozen.Scenarios.Single(scenario => scenario.Status == Status.Failed).RetryCount).IsEqualTo(1);
+        await Assert.That(later.Scenarios.Single(scenario => scenario.Status == Status.Failed).RetryCount).IsEqualTo(3);
         var frozenPassed = frozen.Scenarios.Single(scenario => scenario.Status == Status.Passed);
         var laterPassed = later.Scenarios.Single(scenario => scenario.Status == Status.Passed);
-        Assert.That(Required(frozenPassed.Steps)[0].StepText, Does.Not.Contain("late converter"));
-        Assert.That(Required(laterPassed.Steps)[0].StepText, Does.Contain("late converter"));
-        Assert.That(frozenPassed.Steps[1].Status, Is.EqualTo(Status.Passed));
-        Assert.That(laterPassed.Steps[1].Status, Is.EqualTo(Status.Skipped));
+        await Assert.That(Required(frozenPassed.Steps)[0].StepText).DoesNotContain("late converter");
+        await Assert.That(Required(laterPassed.Steps)[0].StepText).Contains("late converter");
+        await Assert.That(frozenPassed.Steps[1].Status).IsEqualTo(Status.Passed);
+        await Assert.That(laterPassed.Steps[1].Status).IsEqualTo(Status.Skipped);
     }
 
     [Test]
@@ -201,8 +205,8 @@ public class BDTestOptionsTests
         await Task.WhenAll(
             Task.Run(() => new Capture(first).When(() => wait()).Then(() => Complete()).BDTestAsync()),
             Task.Run(() => new Capture(second).When(() => wait()).Then(() => Complete()).BDTestAsync()));
-        Assert.That(firstCalls, Is.EqualTo(new[] { "first before", "first after Passed", "first before", "first after Passed" }));
-        Assert.That(secondCalls, Is.EqualTo(new[] { "second before", "second after Passed", "second before", "second after Passed" }));
+        await Assert.That(firstCalls).IsEquivalentTo(new[] { "first before", "first after Passed", "first before", "first after Passed" }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(secondCalls).IsEquivalentTo(new[] { "second before", "second after Passed", "second before", "second after Passed" }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 
     private static void Complete() { }

@@ -12,11 +12,11 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
-using NUnit.Framework;
+using System.Threading.Tasks;
 
 namespace BDTest.Tests.Fixtures;
 
-[NonParallelizable]
+[NotInParallel]
 public class ReportSidebarTests
 {
     // Initialized by the asynchronous setup hook before each test.
@@ -25,7 +25,7 @@ public class ReportSidebarTests
     private readonly RecordingRepository _repository = new();
     private readonly RecordingLinksProvider _links = new();
 
-    [OneTimeSetUp]
+    [Before(HookType.Test)]
     public async Task StartServer()
     {
         var builder = WebApplication.CreateBuilder();
@@ -39,7 +39,7 @@ public class ReportSidebarTests
         _client = new HttpClient { BaseAddress = new Uri(_application.Urls.Single()) };
     }
 
-    [SetUp]
+    [Before(HookType.Test)]
     public void Reset()
     {
         _repository.ReadTokens.Clear();
@@ -56,15 +56,16 @@ public class ReportSidebarTests
         _links.Reports.Clear();
     }
 
-    [OneTimeTearDown]
+    [After(HookType.Test)]
     public async Task StopServer()
     {
         _client.Dispose();
         await _application.DisposeAsync();
     }
 
-    [TestCase(false)]
-    [TestCase(true)]
+    [Test]
+    [Arguments(false)]
+    [Arguments(true)]
     public async Task Retry_history_renders_attempt_status_duration_and_encoded_exceptions(bool retryHookFailed)
     {
         Required(_repository.Report).Scenarios = [ReportJson.DeserializeObject<Scenario>("""
@@ -85,21 +86,21 @@ public class ReportSidebarTests
 
         var html = await _client.GetStringAsync("/bdtest/report/run-632/scenario/scenario-632");
 
-        Assert.That(html, Does.Contain("Retry history"));
-        Assert.That(html, Does.Contain("Retries: 1"));
-        Assert.That(html, Does.Contain("Failed</span>"));
-        Assert.That(html, Does.Contain("title=\"00:00:00.1250000\""));
+        await Assert.That(html).Contains("Retry history");
+        await Assert.That(html).Contains("Retries: 1");
+        await Assert.That(html).Contains("Failed</span>");
+        await Assert.That(html).Contains("title=\"00:00:00.1250000\"");
         if (!retryHookFailed)
         {
-            Assert.That(html, Does.Contain("Passed</span>"));
-            Assert.That(html, Does.Contain("title=\"00:00:00.2500000\""));
+            await Assert.That(html).Contains("Passed</span>");
+            await Assert.That(html).Contains("title=\"00:00:00.2500000\"");
         }
-        Assert.That(html, Does.Contain("&lt;retry failure&gt;"));
-        Assert.That(html, Does.Contain("at FailingStep()"));
-        Assert.That(html, Does.Not.Contain("<retry failure>"));
+        await Assert.That(html).Contains("&lt;retry failure&gt;");
+        await Assert.That(html).Contains("at FailingStep()");
+        await Assert.That(html).DoesNotContain("<retry failure>");
 
         var list = await _client.GetStringAsync("/bdtest/report/run-632/all-scenarios");
-        Assert.That(list, Does.Contain("<span class=\"tag\">retries 1</span>"));
+        await Assert.That(list).Contains("<span class=\"tag\">retries 1</span>");
     }
 
     [Test]
@@ -116,28 +117,29 @@ public class ReportSidebarTests
 
         var detail = await _client.GetStringAsync("/bdtest/report/run-632/scenario/s0");
         var link = Regex.Match(detail, "href=\"([^\"]+)\">2 scenarios in this story</a>");
-        Assert.That(link.Success, Is.True);
+        await Assert.That(link.Success).IsTrue();
         var url = System.Net.WebUtility.HtmlDecode(link.Groups[1].Value);
         var list = await _client.GetStringAsync(url);
-        Assert.That(list, Does.Contain("scenario-id=\"s0\"").And.Contain("scenario-id=\"s1\"")
-            .And.Not.Contain("scenario-id=\"s2\""));
-        Assert.That(System.Net.WebUtility.HtmlDecode(list),
-            Does.Contain("name=\"story\" value=\"" + story + "\""));
+
+        await Assert.That(list).Contains("scenario-id=\"s0\"").And.Contains("scenario-id=\"s1\"").And.DoesNotContain("scenario-id=\"s2\"");
+        await Assert.That(System.Net.WebUtility.HtmlDecode(list)).Contains("name=\"story\" value=\"" + story + "\"");
 
         var searched = await _client.GetStringAsync(url + "&q=Scenario%201");
-        Assert.That(searched, Does.Contain("scenario-id=\"s1\"").And.Not.Contain("scenario-id=\"s0\""));
+
+        await Assert.That(searched).Contains("scenario-id=\"s1\"").And.DoesNotContain("scenario-id=\"s0\"");
         var clear = Regex.Match(list, "href=\"([^\"]+)\">Clear filters</a>");
-        Assert.That(clear.Success, Is.True);
+        await Assert.That(clear.Success).IsTrue();
         var unfiltered = await _client.GetStringAsync(System.Net.WebUtility.HtmlDecode(clear.Groups[1].Value));
-        Assert.That(unfiltered, Does.Contain("scenario-id=\"s2\""));
+        await Assert.That(unfiltered).Contains("scenario-id=\"s2\"");
     }
 
-    [TestCase("status", new[] { "b", "a", "c" })]
-    [TestCase("name", new[] { "a", "b", "c" })]
-    [TestCase("durationDescending", new[] { "c", "b", "a" })]
-    [TestCase("durationAscending", new[] { "a", "b", "c" })]
-    [TestCase("dateAscending", new[] { "a", "b", "c" })]
-    [TestCase("dateDescending", new[] { "c", "b", "a" })]
+    [Test]
+    [Arguments("status", new[] { "b", "a", "c" })]
+    [Arguments("name", new[] { "a", "b", "c" })]
+    [Arguments("durationDescending", new[] { "c", "b", "a" })]
+    [Arguments("durationAscending", new[] { "a", "b", "c" })]
+    [Arguments("dateAscending", new[] { "a", "b", "c" })]
+    [Arguments("dateDescending", new[] { "c", "b", "a" })]
     public async Task Stories_sort_scenarios_within_each_story(string order, string[] expected)
     {
         Required(_repository.Report).Scenarios = new[] { 2, 0, 1 }.Select(index =>
@@ -154,7 +156,7 @@ public class ReportSidebarTests
         var html = await _client.GetStringAsync("/bdtest/report/run-632/stories?order=" + order);
         var ids = Regex.Matches(html, "scenario-id=\"([^\"]+)\"")
             .Select(match => match.Groups[1].Value);
-        Assert.That(ids, Is.EqualTo(expected));
+        await Assert.That(ids).IsEquivalentTo(expected, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 
     [Test]
@@ -168,12 +170,14 @@ public class ReportSidebarTests
             }))).ToList();
 
         var first = await _client.GetStringAsync("/bdtest/report/run-632/all-scenarios?group=none&order=name");
-        Assert.That(Regex.Matches(first, "scenario-id=\"s\\d{3}\""), Has.Count.EqualTo(100));
-        Assert.That(first, Does.Contain("scenario-id=\"s099\"").And.Not.Contain("scenario-id=\"s100\""));
-        Assert.That(System.Net.WebUtility.HtmlDecode(first), Does.Contain("1–100 of 150 scenarios"));
+        await Assert.That(Regex.Matches(first, "scenario-id=\"s\\d{3}\"")).Count().IsEqualTo(100);
+
+        await Assert.That(first).Contains("scenario-id=\"s099\"").And.DoesNotContain("scenario-id=\"s100\"");
+        await Assert.That(System.Net.WebUtility.HtmlDecode(first)).Contains("1–100 of 150 scenarios");
 
         var selected = await _client.GetStringAsync("/bdtest/report/run-632/all-scenarios?group=none&order=name&scenarioId=s130");
-        Assert.That(selected, Does.Contain("scenario-id=\"s130\"").And.Not.Contain("scenario-id=\"s099\""));
+
+        await Assert.That(selected).Contains("scenario-id=\"s130\"").And.DoesNotContain("scenario-id=\"s099\"");
     }
 
     [Test]
@@ -195,12 +199,16 @@ public class ReportSidebarTests
 
         var html = await _client.GetStringAsync("/bdtest/report/run-632/scenario/scenario-632");
 
-        Assert.That(html, Does.Contain("System.InvalidOperationException").And.Contain("System.ArgumentException"));
-        Assert.That(html, Does.Contain("&lt;first cause&gt;").And.Contain("&lt;second cause&gt;"));
-        Assert.That(html, Does.Contain("&lt;key&gt;").And.Contain("&lt;value&gt;"));
-        Assert.That(html, Does.Not.Contain("<first cause>").And.Not.Contain("<key>"));
-        Assert.That(html, Does.Contain("exception-wrapper"));
-        Assert.That(html.Split("<details class=\"exception-tree\" open>").Length - 1, Is.EqualTo(3));
+
+        await Assert.That(html).Contains("System.InvalidOperationException").And.Contains("System.ArgumentException");
+
+        await Assert.That(html).Contains("&lt;first cause&gt;").And.Contains("&lt;second cause&gt;");
+
+        await Assert.That(html).Contains("&lt;key&gt;").And.Contains("&lt;value&gt;");
+
+        await Assert.That(html).DoesNotContain("<first cause>").And.DoesNotContain("<key>");
+        await Assert.That(html).Contains("exception-wrapper");
+        await Assert.That(html.Split("<details class=\"exception-tree\" open>").Length - 1).IsEqualTo(3);
     }
 
     [Test]
@@ -221,9 +229,12 @@ public class ReportSidebarTests
 
         foreach (var html in new[] { defects, flakiness })
         {
-            Assert.That(html, Does.Contain("System.InvalidOperationException").And.Contain("System.ArgumentException"));
-            Assert.That(html, Does.Not.Contain("System.Reflection.TargetInvocationException").And.Not.Contain("System.AggregateException"));
-            Assert.That(html, Does.Contain("&lt;first cause&gt;").And.Contain("&lt;second cause&gt;"));
+
+            await Assert.That(html).Contains("System.InvalidOperationException").And.Contains("System.ArgumentException");
+
+            await Assert.That(html).DoesNotContain("System.Reflection.TargetInvocationException").And.DoesNotContain("System.AggregateException");
+
+            await Assert.That(html).Contains("&lt;first cause&gt;").And.Contains("&lt;second cause&gt;");
         }
     }
 
@@ -243,18 +254,19 @@ public class ReportSidebarTests
         response.EnsureSuccessStatusCode();
         var html = await response.Content.ReadAsStringAsync();
 
-        Assert.That(html, Does.Contain("InvalidOperationException <span class=\"muted\">×2</span>"));
+        await Assert.That(html).Contains("InvalidOperationException <span class=\"muted\">×2</span>");
         var rows = Regex.Matches(html, @"<tr>\s*<td[^>]*>InvalidOperationException</td>\s*<td[^>]*>(.*?)</td>\s*<td class=""num"">(\d+)</td>\s*</tr>");
-        Assert.That(rows.Select(row => row.Groups[1].Value),
-            Is.EquivalentTo(new[] { "&lt;first cause&gt;", "&lt;second cause&gt;" }));
-        Assert.That(rows.Select(row => row.Groups[2].Value), Is.All.EqualTo("2"));
+
+        await Assert.That(rows.Select(row => row.Groups[1].Value)).IsEquivalentTo(new[] { "&lt;first cause&gt;", "&lt;second cause&gt;" }, global::TUnit.Assertions.Enums.CollectionOrdering.Any);
+
+        await Assert.That((rows.Select(row => row.Groups[2].Value)).All(item => Equals(item, "2"))).IsTrue();
     }
 
     [Test]
     public async Task Old_reports_do_not_render_retry_history()
     {
         var html = await _client.GetStringAsync("/bdtest/report/run-632/scenario/scenario-632");
-        Assert.That(html, Does.Not.Contain("Retry history"));
+        await Assert.That(html).DoesNotContain("Retry history");
     }
 
     [Test]
@@ -266,13 +278,14 @@ public class ReportSidebarTests
 
         var html = await _client.GetStringAsync("/bdtest/report/run-632/scenario/scenario-632");
 
-        Assert.That(_repository.ReadTokens, Has.Count.EqualTo(1));
-        Assert.That(html, Does.Contain("href=\"/bdtest/report/run-632/scenario/next-scenario\" rel=\"next\""));
-        Assert.That(html, Does.Not.Contain("rel=\"prev\""));
+        await Assert.That(_repository.ReadTokens).Count().IsEqualTo(1);
+        await Assert.That(html).Contains("href=\"/bdtest/report/run-632/scenario/next-scenario\" rel=\"next\"");
+        await Assert.That(html).DoesNotContain("rel=\"prev\"");
     }
 
-    [TestCase("stories")]
-    [TestCase("all-scenarios")]
+    [Test]
+    [Arguments("stories")]
+    [Arguments("all-scenarios")]
     public async Task Tag_filter_renders_only_matching_rows_and_keeps_all_tag_options(string page)
     {
         Required(_repository.Report).Scenarios = ReportJson.DeserializeObject<List<Scenario>>("""
@@ -285,62 +298,66 @@ public class ReportSidebarTests
 
         var html = await _client.GetStringAsync($"/bdtest/report/run-632/{page}?filterByTag=SMOKE");
 
-        Assert.That(html, Does.Contain("scenario-id=\"tagged\""));
-        Assert.That(html, Does.Not.Contain("scenario-id=\"other\"").And.Not.Contain("scenario-id=\"legacy\""));
-        Assert.That(html, Does.Contain("value=\"regression\""));
-        Assert.That(html, Does.Contain("<span class=\"tag hide-phone\">smoke</span>"));
-        Assert.That(_repository.ReadTokens, Has.Count.EqualTo(1));
+        await Assert.That(html).Contains("scenario-id=\"tagged\"");
+
+        await Assert.That(html).DoesNotContain("scenario-id=\"other\"").And.DoesNotContain("scenario-id=\"legacy\"");
+        await Assert.That(html).Contains("value=\"regression\"");
+        await Assert.That(html).Contains("<span class=\"tag hide-phone\">smoke</span>");
+        await Assert.That(_repository.ReadTokens).Count().IsEqualTo(1);
     }
 
-    [TestCase("summary")]
-    [TestCase("stories")]
-    [TestCase("all-scenarios")]
-    [TestCase("scenario/scenario-632")]
-    [TestCase("scenario/missing")]
-    [TestCase("timings")]
-    [TestCase("top-defects")]
-    [TestCase("warnings")]
+    [Test]
+    [Arguments("summary")]
+    [Arguments("stories")]
+    [Arguments("all-scenarios")]
+    [Arguments("scenario/scenario-632")]
+    [Arguments("scenario/missing")]
+    [Arguments("timings")]
+    [Arguments("top-defects")]
+    [Arguments("warnings")]
     public async Task Report_pages_render_sidebar_from_the_single_loaded_report(string page)
     {
         var html = await _client.GetStringAsync("/bdtest/report/run-632/" + page);
 
         var compactPage = page is "summary" or "timings" or "top-defects" or "warnings";
-        Assert.That(_repository.ReadTokens, Has.Count.EqualTo(compactPage ? 2 : 1));
-        Assert.That(_repository.ReadTokens.All(token => token.CanBeCanceled), Is.True);
-        Assert.That(_links.Reports, Has.Count.EqualTo(1));
-        Assert.That(_links.Reports.Single(), Is.SameAs(_repository.Report));
-        Assert.That(html, Does.Contain("/bdtest/report/run-632/summary"));
-        Assert.That(html, Does.Contain("/bdtest/report/run-632/raw-json-data"));
-        Assert.That(html, Does.Contain("sidebar-environment"));
-        Assert.That(html, Does.Contain("sidebar-tag"));
-        Assert.That(html, Does.Contain("sidebar-branch"));
-        Assert.That(html, Does.Contain("Custom sidebar link"));
+        await Assert.That(_repository.ReadTokens).Count().IsEqualTo(compactPage ? 2 : 1);
+        await Assert.That(_repository.ReadTokens.All(token => token.CanBeCanceled)).IsTrue();
+        await Assert.That(_links.Reports).Count().IsEqualTo(1);
+        await Assert.That(_links.Reports.Single()).IsSameReferenceAs(_repository.Report);
+        await Assert.That(html).Contains("/bdtest/report/run-632/summary");
+        await Assert.That(html).Contains("/bdtest/report/run-632/raw-json-data");
+        await Assert.That(html).Contains("sidebar-environment");
+        await Assert.That(html).Contains("sidebar-tag");
+        await Assert.That(html).Contains("sidebar-branch");
+        await Assert.That(html).Contains("Custom sidebar link");
     }
 
-    [TestCase("summary")]
-    [TestCase("stories")]
-    [TestCase("all-scenarios")]
-    [TestCase("scenario/missing")]
+    [Test]
+    [Arguments("summary")]
+    [Arguments("stories")]
+    [Arguments("all-scenarios")]
+    [Arguments("scenario/missing")]
     public async Task Missing_reports_are_not_fetched_again_by_the_sidebar(string page)
     {
         _repository.Report = null;
         var html = await _client.GetStringAsync("/bdtest/report/missing/" + page);
 
-        Assert.That(_repository.ReadTokens, Has.Count.EqualTo(1));
-        Assert.That(html, Does.Not.Contain("/bdtest/report/missing/raw-json-data"));
-        Assert.That(_links.Reports, Is.EqualTo(new BDTestOutputModel?[] { null }));
+        await Assert.That(_repository.ReadTokens).Count().IsEqualTo(1);
+        await Assert.That(html).DoesNotContain("/bdtest/report/missing/raw-json-data");
+        await Assert.That(_links.Reports).IsEquivalentTo(new BDTestOutputModel?[] { null }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 
-    [TestCase("test-runs")]
-    [TestCase("trends")]
-    [TestCase("test-run-flakiness")]
+    [Test]
+    [Arguments("test-runs")]
+    [Arguments("trends")]
+    [Arguments("test-run-flakiness")]
     public async Task Global_pages_render_without_loading_a_report(string page)
     {
         var html = await _client.GetStringAsync("/bdtest/report/" + page);
 
-        Assert.That(_repository.ReadTokens, Is.Empty);
-        Assert.That(html, Does.Not.Contain("raw-json-data"));
-        Assert.That(_links.Reports, Is.EqualTo(new BDTestOutputModel?[] { null }));
+        await Assert.That(_repository.ReadTokens).IsEmpty();
+        await Assert.That(html).DoesNotContain("raw-json-data");
+        await Assert.That(_links.Reports).IsEquivalentTo(new BDTestOutputModel?[] { null }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 
     [Test]
@@ -354,9 +371,9 @@ public class ReportSidebarTests
         };
         cancellation.Cancel();
 
-        await Assert.ThrowsAsync<OperationCanceledException>(async () =>
-            await controller.Summary("run-632", controller.HttpContext.RequestAborted));
-        Assert.That(_repository.ReadTokens, Is.EqualTo(new[] { cancellation.Token }));
+        await Assert.That(async () =>
+            await controller.Summary("run-632", controller.HttpContext.RequestAborted)).ThrowsExactly<OperationCanceledException>();
+        await Assert.That(_repository.ReadTokens).IsEquivalentTo(new[] { cancellation.Token }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 
     private sealed class RecordingLinksProvider : IBDTestCustomSidebarLinksProvider

@@ -4,18 +4,16 @@ using BDTest.Test.Steps;
 using BDTest.Test.Steps.Given;
 using BDTest.Test.Steps.When;
 using BDTest.Test.Steps.Then;
-using NUnit.Framework;
+using System.Threading.Tasks;
 
 namespace BDTest.Tests.Fixtures;
-
-[FixtureLifeCycle(LifeCycle.InstancePerTestCase)]
 public class FluentBuilderTests : RunTestBase
 {
-    [SetUp]
-    public void BindMetadata() => BeginTest(TestContext.CurrentContext.Test.ID,
-        Required(global::NUnit.Framework.Internal.TestExecutionContext.CurrentContext.CurrentTest.Method).MethodInfo);
+    [Before(HookType.Test)]
+    public void BindMetadata() => BeginTest(Required(TestContext.Current).Id,
+        Required(TestContext.Current).Metadata.TestDetails.MethodMetadata.GetReflectionInfo());
 
-    [TearDown]
+    [After(HookType.Test)]
     public void FinishExecution() => EndTest();
 
     [Test]
@@ -32,20 +30,20 @@ public class FluentBuilderTests : RunTestBase
         ButThen butThen = andThen.But(() => NoOp()).WithStepText(() => "but then").WithArgs().WithScenarioText("final");
         var scenario = await butThen.And(() => NoOp()).WithScenarioText("continued");
 
-        Assert.That(then.GetScenarioText(), Is.EqualTo("first"));
-        Assert.That(andThen.GetScenarioText(), Is.EqualTo("second"));
-        Assert.That(butThen.GetScenarioText(), Is.EqualTo("final"));
-        Assert.That(scenario.GetScenarioText(), Is.EqualTo("continued"));
-        Assert.That(Required(scenario.Steps).Select(step => step.StepType), Is.EqualTo(new[]
+        await Assert.That(then.GetScenarioText()).IsEqualTo("first");
+        await Assert.That(andThen.GetScenarioText()).IsEqualTo("second");
+        await Assert.That(butThen.GetScenarioText()).IsEqualTo("final");
+        await Assert.That(scenario.GetScenarioText()).IsEqualTo("continued");
+        await Assert.That(Required(scenario.Steps).Select(step => step.StepType)).IsEquivalentTo(new[]
         {
             StepType.Given, StepType.AndGiven, StepType.ButGiven, StepType.When,
             StepType.AndWhen, StepType.ButWhen, StepType.Then, StepType.AndThen, StepType.ButThen, StepType.AndThen
-        }));
-        Assert.That(scenario.Steps.Take(9).Select(step => step.StepText), Is.EqualTo(new[]
+        }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(scenario.Steps.Take(9).Select(step => step.StepText)).IsEquivalentTo((new[]
         {
             "Given given", "And and given", "But but given", "When when", "And and when", "But but when",
             "Then then", "And and then", "But but then"
-        }));
+        }).Cast<string?>(), global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 
     [Test]
@@ -53,7 +51,7 @@ public class FluentBuilderTests : RunTestBase
     {
         var scenario = await When(() => NoOp()).Then(() => NoOp()).WithScenarioText("named")
             .And(() => NoOp()).But(() => NoOp());
-        Assert.That(scenario.GetScenarioText(), Is.EqualTo("named"));
+        await Assert.That(scenario.GetScenarioText()).IsEqualTo("named");
     }
 
     [Test]
@@ -69,48 +67,50 @@ public class FluentBuilderTests : RunTestBase
             .Then(() => Value(0)).WithArgs(() => ++reads)
             .And(() => Value(0)).WithArgs(() => ++reads)
             .But(() => Value(0)).WithArgs(() => ++reads);
-        Assert.That(reads, Is.Zero);
+        await Assert.That(reads).IsZero();
         var scenario = await builder;
-        Assert.That(reads, Is.EqualTo(9));
-        Assert.That(Required(scenario.Steps).Select(step => step.StepText), Is.EqualTo(new[]
+        await Assert.That(reads).IsEqualTo(9);
+        await Assert.That(Required(scenario.Steps).Select(step => step.StepText)).IsEquivalentTo((new[]
         {
             "Given value 1", "And value 2", "But value 3", "When value 4", "And value 5", "But value 6",
             "Then value 7", "And value 8", "But value 9"
-        }));
+        }).Cast<string?>(), global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 
     [Test]
-    public void Step_kinds_are_sealed_and_customizers_have_no_hidden_or_generic_variants()
+    public async Task Step_kinds_are_sealed_and_customizers_have_no_hidden_or_generic_variants()
     {
         Type[] kinds = [typeof(Given), typeof(AndGiven), typeof(ButGiven), typeof(When), typeof(AndWhen),
             typeof(ButWhen), typeof(Then), typeof(AndThen), typeof(ButThen)];
         foreach (var kind in kinds)
         {
-            Assert.That(kind.IsSealed, Is.True, kind.Name);
-            Assert.That(kinds.Where(other => other != kind).Any(other => other.IsAssignableFrom(kind)), Is.False, kind.Name);
+            await Assert.That(kind.IsSealed).IsTrue().Because(kind.Name);
+            await Assert.That(kinds.Where(other => other != kind).Any(other => other.IsAssignableFrom(kind))).IsFalse().Because(kind.Name);
             foreach (var name in new[] { "WithArgs", "WithStepText", "WithScenarioText" })
             {
                 if (name == "WithScenarioText" && !typeof(RunnableStepBuilder).IsAssignableFrom(kind)) continue;
                 var methods = kind.GetMethods().Where(method => method.Name == name).ToArray();
-                Assert.That(methods, Has.Length.EqualTo(1), kind.Name + "." + name);
-                Assert.That(methods[0].ReturnType, Is.EqualTo(kind));
-                Assert.That(methods[0].IsGenericMethod, Is.False);
+
+                await Assert.That((methods).Length).IsEqualTo(1).Because(kind.Name + "." + name);
+                await Assert.That(methods[0].ReturnType).IsEqualTo(kind);
+                await Assert.That(methods[0].IsGenericMethod).IsFalse();
             }
         }
     }
 
-    [TestCase(42)]
+    [Test]
+    [Arguments(42)]
     public async Task Public_names_describe_report_identity_and_parameter_names(int value)
     {
         var builder = When(() => Value(value)).Then(() => NoOp());
-        Assert.That(builder.ParameterNames, Is.EqualTo(new[] { "value" }));
+        await Assert.That(builder.ParameterNames).IsEquivalentTo((new[] { "value" }).Cast<string?>(), global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
         var pending = BDTestUtil.GetNotRunScenarios(TestRun).Single(definition => definition.ScenarioId == builder.ScenarioId);
-        Assert.That(pending.ParameterNames, Is.EqualTo(new[] { "value" }));
-        Assert.That(builder.ReportId, Is.EqualTo(TestRun.ReportId));
-        Assert.That(typeof(BDTestUtil).GetProperty("GetCurrentReportId"), Is.Null);
-        Assert.That(typeof(BDTestContext).GetProperty("CurrentTestRunnerId"), Is.Null);
-        Assert.That(typeof(BuildableTest).GetProperty("Parameters"), Is.Null);
-        Assert.That(typeof(BDTestBase).GetMethods().Any(method => method.Name == "WithContext"), Is.False);
+        await Assert.That(pending.ParameterNames).IsEquivalentTo((new[] { "value" }).Cast<string?>(), global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(builder.ReportId).IsEqualTo(TestRun.ReportId);
+        await Assert.That(typeof(BDTestUtil).GetProperty("GetCurrentReportId")).IsNull();
+        await Assert.That(typeof(BDTestContext).GetProperty("CurrentTestRunnerId")).IsNull();
+        await Assert.That(typeof(BuildableTest).GetProperty("Parameters")).IsNull();
+        await Assert.That(typeof(BDTestBase).GetMethods().Any(method => method.Name == "WithContext")).IsFalse();
         await builder;
     }
 

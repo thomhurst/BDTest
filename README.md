@@ -56,6 +56,19 @@ The [first-test walkthrough](https://thomhurst.github.io/BDTest/docs/getting-sta
 adds reusable steps, readable step text and an HTML report. CI compiles this exact
 README example against the current source APIs.
 
+## Developing BDTest
+
+Run the core behavior and reporting suite with TUnit:
+
+```bash
+dotnet run --project BDTest.Tests
+dotnet run --project BDTest.Tests -- --treenode-filter "/*/*/RetryTests/*"
+```
+
+NUnit adapter and sample integration coverage stays in `BDTest.NUnit.Tests` and
+runs with `dotnet test BDTest.NUnit.Tests/BDTest.NUnit.Tests.csproj`. See
+[build details](BUILDING.md) for all suites and validation commands.
+
 ## Documentation
 
 - [Writing scenarios](https://thomhurst.github.io/BDTest/docs/writing-tests/scenarios) and [framework adapters](https://thomhurst.github.io/BDTest/docs/frameworks/overview)

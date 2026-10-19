@@ -1,15 +1,15 @@
 using BDTest.Attributes;
 using BDTest.Settings;
 using BDTest.Test;
-using NUnit.Framework;
+using System.Threading.Tasks;
 
 namespace BDTest.Tests.Fixtures;
 
-[NonParallelizable]
+[NotInParallel]
 [BDTestRetry(2)]
 public class SkippedScenarioTests : RunTestBase
 {
-    [SetUp]
+    [Before(HookType.Test)]
     public void RegisterStepRule() => Options.SkipStepRules.Add<SkippedProbeAttribute>(_ => true);
 
     [Test]
@@ -18,10 +18,11 @@ public class SkippedScenarioTests : RunTestBase
         var scenario = await Given(() => SkippedStep()).When(() => SkippedStep())
             .Then(() => SkippedStep()).BDTestAsync();
 
-        Assert.That(scenario.Status, Is.EqualTo(Status.Skipped));
-        Assert.That(Required(scenario.Steps).Select(s => s.Status), Is.All.EqualTo(Status.Skipped));
-        Assert.That(scenario.RetryCount, Is.Zero);
-        Assert.That(scenario.EndTime, Is.GreaterThanOrEqualTo(scenario.StartTime));
+        await Assert.That(scenario.Status).IsEqualTo(Status.Skipped);
+
+        await Assert.That((Required(scenario.Steps).Select(s => s.Status)).All(item => Equals(item, Status.Skipped))).IsTrue();
+        await Assert.That(scenario.RetryCount).IsZero();
+        await Assert.That(scenario.EndTime).IsGreaterThanOrEqualTo(scenario.StartTime);
     }
 
     [Test]
@@ -30,9 +31,8 @@ public class SkippedScenarioTests : RunTestBase
         var scenario = await Given(() => SkippedStep()).When(() => ExecutedStep())
             .Then(() => SkippedStep()).BDTestAsync();
 
-        Assert.That(scenario.Status, Is.EqualTo(Status.Passed));
-        Assert.That(Required(scenario.Steps).Select(s => s.Status),
-            Is.EqualTo(new[] { Status.Skipped, Status.Passed, Status.Skipped }));
+        await Assert.That(scenario.Status).IsEqualTo(Status.Passed);
+        await Assert.That(Required(scenario.Steps).Select(s => s.Status)).IsEquivalentTo(new[] { Status.Skipped, Status.Passed, Status.Skipped }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 
     [Test]
@@ -41,31 +41,29 @@ public class SkippedScenarioTests : RunTestBase
         Options.Debug.ShouldSkipWhenStep = true;
         var scenario = await Given(() => ExecutedStep()).When(() => MustNotRun())
             .Then(() => ExecutedStep()).BDTestAsync();
-        Assert.That(scenario.Status, Is.EqualTo(Status.Passed));
-        Assert.That(Required(scenario.Steps).Select(s => s.Status),
-            Is.EqualTo(new[] { Status.Passed, Status.Skipped, Status.Passed }));
+        await Assert.That(scenario.Status).IsEqualTo(Status.Passed);
+        await Assert.That(Required(scenario.Steps).Select(s => s.Status)).IsEquivalentTo(new[] { Status.Passed, Status.Skipped, Status.Passed }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
 
     }
 
     [Test]
-    public void CustomSkipBypassesRetryRulesAndPreservesExecutedSteps()
+    public async Task CustomSkipBypassesRetryRulesAndPreservesExecutedSteps()
     {
         Options.SkipExceptionTypes.Add(typeof(ProbeSkipException));
         Options.RetryTestRules.Add(e => e is ProbeSkipException, 3);
         var builder = Given(() => ExecutedStep()).When(() => ThrowSkip()).Then(() => MustNotRun());
 
-        Assert.ThrowsAsync<ProbeSkipException>(async () => await builder.BDTestAsync());
+        await Assert.That(async () => await builder.BDTestAsync()).ThrowsExactly<ProbeSkipException>();
         var scenario = BDTestUtil.GetScenarios(TestRun).Single(s => s.Guid == builder.Guid);
-        Assert.That(scenario.Status, Is.EqualTo(Status.Skipped));
-        Assert.That(Required(scenario.Steps).Select(s => s.Status),
-            Is.EqualTo(new[] { Status.Passed, Status.Skipped, Status.Skipped }));
-        Assert.That(scenario.RetryCount, Is.Zero);
-        Assert.That(scenario.Exception, Is.Null);
-        Assert.That(Required(scenario.Steps).All(s => s.Runnable == null), Is.True);
+        await Assert.That(scenario.Status).IsEqualTo(Status.Skipped);
+        await Assert.That(Required(scenario.Steps).Select(s => s.Status)).IsEquivalentTo(new[] { Status.Passed, Status.Skipped, Status.Skipped }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(scenario.RetryCount).IsZero();
+        await Assert.That(scenario.Exception).IsNull();
+        await Assert.That(Required(scenario.Steps).All(s => s.Runnable == null)).IsTrue();
     }
 
     [Test]
-    public void CustomSkipFormatsRemainingStepTextBeforeReleasingReferences()
+    public async Task CustomSkipFormatsRemainingStepTextBeforeReleasingReferences()
     {
         Options.SkipExceptionTypes.Add(typeof(ProbeSkipException));
         var formatted = 0;
@@ -73,14 +71,14 @@ public class SkippedScenarioTests : RunTestBase
             .Then(() => MustNotRun()).WithStepText(() => $"custom skipped step {++formatted}")
             .And(() => MustNotRun()).WithStepText(() => $"another skipped step {++formatted}");
 
-        Assert.ThrowsAsync<ProbeSkipException>(async () => await builder.BDTestAsync());
+        await Assert.That(async () => await builder.BDTestAsync()).ThrowsExactly<ProbeSkipException>();
         var scenario = BDTestUtil.GetScenarios(TestRun).Single(s => s.Guid == builder.Guid);
-        Assert.That(scenario.Status, Is.EqualTo(Status.Skipped));
-        Assert.That(Required(scenario.Steps).Skip(2).Select(s => s.StepText),
-            Is.EqualTo(new[] { "Then custom skipped step 1", "And another skipped step 2" }));
-        Assert.That(Required(scenario.Steps).Skip(2).Select(s => s.Status), Is.All.EqualTo(Status.Skipped));
-        Assert.That(formatted, Is.EqualTo(2));
-        Assert.That(Required(scenario.Steps).All(s => s.Runnable == null && s.OverriddenStepText == null), Is.True);
+        await Assert.That(scenario.Status).IsEqualTo(Status.Skipped);
+        await Assert.That(Required(scenario.Steps).Skip(2).Select(s => s.StepText)).IsEquivalentTo((new[] { "Then custom skipped step 1", "And another skipped step 2" }).Cast<string?>(), global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
+
+        await Assert.That((Required(scenario.Steps).Skip(2).Select(s => s.Status)).All(item => Equals(item, Status.Skipped))).IsTrue();
+        await Assert.That(formatted).IsEqualTo(2);
+        await Assert.That(Required(scenario.Steps).All(s => s.Runnable == null && s.OverriddenStepText == null)).IsTrue();
     }
 
     private static void ThrowSkip() => throw new ProbeSkipException();

@@ -1,17 +1,14 @@
 using BDTest.Attributes;
-using BDTest.NUnit;
+using BDTest.TUnit;
 using BDTest.Test;
-using NUnit.Framework;
+using System.Threading.Tasks;
 
 namespace BDTest.Tests.Fixtures;
-
-[Parallelizable(ParallelScope.All)]
 [BDTestRetry(3)]
-[FixtureLifeCycle(LifeCycle.InstancePerTestCase)]
 [Story(AsA = "BDTest developer",
     IWant = "to make sure that tests can be retried",
     SoThat = "developers can mitigate against flakey tests")]
-public class RetryTests : NUnitBDTestBase<RetryContext>
+public class RetryTests : TUnitBDTestBase<RetryContext>
 {
     private int _retryMethodCallCount;
         
@@ -25,14 +22,14 @@ public class RetryTests : NUnitBDTestBase<RetryContext>
     }
         
     [BDTestRetrySetUp]
-    public async Task BDTestRetrySetup()
+    private async Task BDTestRetrySetup()
     {
         await Task.Yield();
         _setUpCounter++;
     }
         
     [BDTestRetryTearDown]
-    public async Task BDTestRetryTearDown()
+    private async Task BDTestRetryTearDown()
     {
         await Task.Yield();
         _tearDownCounter++;
@@ -40,9 +37,10 @@ public class RetryTests : NUnitBDTestBase<RetryContext>
 
     private int _retryCount;
 
-    [TestCase(1)]
-    [TestCase(2)]
-    [TestCase(3)]
+    [Test]
+    [Arguments(1)]
+    [Arguments(2)]
+    [Arguments(3)]
     public async Task RetrySuccessfully(int throwIfRetryLessThan)
     {
         var scenario = await Given(() => ThrowException(throwIfRetryLessThan))
@@ -50,20 +48,21 @@ public class RetryTests : NUnitBDTestBase<RetryContext>
             .Then(() => Console.WriteLine("the test should retry"))
             .BDTestAsync();
             
-        Assert.That(scenario.RetryCount, Is.EqualTo(throwIfRetryLessThan));
-        Assert.That(scenario.Attempts, Has.Count.EqualTo(throwIfRetryLessThan + 1));
-        Assert.That(Required(scenario.Attempts).Take(throwIfRetryLessThan).Select(attempt => attempt.Status),
-            Is.All.EqualTo(Status.Failed));
-        Assert.That(scenario.Attempts.Last().Status, Is.EqualTo(Status.Passed));
-        Assert.That(_retryMethodCallCount, Is.EqualTo(throwIfRetryLessThan));
-            
-        Assert.That(_setUpCounter, Is.Positive);
-        Assert.That(_tearDownCounter, Is.Positive);
+        await Assert.That(scenario.RetryCount).IsEqualTo(throwIfRetryLessThan);
+        await Assert.That(scenario.Attempts).Count().IsEqualTo(throwIfRetryLessThan + 1);
+
+        await Assert.That((Required(scenario.Attempts).Take(throwIfRetryLessThan).Select(attempt => attempt.Status)).All(item => Equals(item, Status.Failed))).IsTrue();
+        await Assert.That(scenario.Attempts.Last().Status).IsEqualTo(Status.Passed);
+        await Assert.That(_retryMethodCallCount).IsEqualTo(throwIfRetryLessThan);
+
+        await Assert.That(_setUpCounter).IsPositive();
+        await Assert.That(_tearDownCounter).IsPositive();
     }
 
-    [TestCase(4)]
-    [TestCase(5)]
-    [TestCase(6)]
+    [Test]
+    [Arguments(4)]
+    [Arguments(5)]
+    [Arguments(6)]
     public async Task RetryPastLimit(int throwIfRetryLessThan)
     {
         try
@@ -73,19 +72,19 @@ public class RetryTests : NUnitBDTestBase<RetryContext>
                 .Then(() => Console.WriteLine("the test should retry"))
                 .BDTestAsync();
 
-            Assert.Fail();
+            Fail.Test("");
         }
         catch (MyCustomRetryException)
         {
-            Assert.That(_retryMethodCallCount, Is.EqualTo(3));
-            Assert.Pass();
+            await Assert.That(_retryMethodCallCount).IsEqualTo(3);
+
         }
     }
 
-    private void CheckContextCounter()
+    private async Task CheckContextCounter()
     {
-        Assert.That(Context.ContextCounter, Is.Zero);
-            
+        await Assert.That(Context.ContextCounter).IsZero();
+
         Context.ContextCounter++;
     }
 

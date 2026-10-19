@@ -1,7 +1,8 @@
+using System.IO;
 using System.Text;
 using BDTest.Helpers;
 using BDTest.Test;
-using NUnit.Framework;
+using System.Threading.Tasks;
 
 namespace BDTest.Tests.Fixtures;
 
@@ -16,17 +17,16 @@ public class AttachmentTests
         var scenario = await fixture.When(() => fixture.Attach("step.txt")).Then(() => Done()).BDTestAsync();
         fixture.BDTestContext.Attachments.Attach("teardown.txt", new byte[] { 2 }, "text/plain");
 
-        Assert.That(Required(scenario.Attachments).Select(file => file.Name), Is.EqualTo(new[] { "setup.txt", "teardown.txt" }));
-        Assert.That(Required(Required(scenario.Steps)[0].Attachments).Select(file => file.Name),
-            Is.EqualTo(new[] { "before.txt", "step.txt", "after.txt" }));
-        Assert.That(Required(scenario.Steps[1].Attachments).Select(file => file.Name), Is.EqualTo(new[] { "before.txt", "after.txt" }));
+        await Assert.That(Required(scenario.Attachments).Select(file => file.Name)).IsEquivalentTo((new[] { "setup.txt", "teardown.txt" }).Cast<string?>(), global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(Required(Required(scenario.Steps)[0].Attachments).Select(file => file.Name)).IsEquivalentTo((new[] { "before.txt", "step.txt", "after.txt" }).Cast<string?>(), global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(Required(scenario.Steps[1].Attachments).Select(file => file.Name)).IsEquivalentTo((new[] { "before.txt", "after.txt" }).Cast<string?>(), global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
         var attachment = Required(scenario.Steps[0].Attachments)[1];
         using var content = run.OpenAttachment(Required(attachment.Id));
-        Assert.That(new StreamReader(content).ReadToEnd(), Is.EqualTo("step.txt"));
-        Assert.That(attachment.Length, Is.EqualTo(8));
-        Assert.That(attachment.AttemptNumber, Is.EqualTo(1));
+        await Assert.That(new StreamReader(content).ReadToEnd()).IsEqualTo("step.txt");
+        await Assert.That(attachment.Length).IsEqualTo(8);
+        await Assert.That(attachment.AttemptNumber).IsEqualTo(1);
         var restoredScenario = Required(Required(BDTestJsonHelper.Deserialize(BDTestJsonHelper.GetTestJsonData(null, run))).Scenarios).Single();
-        Assert.That(Required(restoredScenario.Attachments).Select(file => file.Name), Is.EqualTo(new[] { "setup.txt", "teardown.txt" }));
+        await Assert.That(Required(restoredScenario.Attachments).Select(file => file.Name)).IsEquivalentTo((new[] { "setup.txt", "teardown.txt" }).Cast<string?>(), global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 
     [Test]
@@ -43,12 +43,12 @@ public class AttachmentTests
             if (attempts == 1) throw new InvalidOperationException("retry");
         }).Then(() => Done()).BDTestAsync();
 
-        Assert.That(Required(Required(scenario.Steps)[0].Attachments).Select(file => file.AttemptNumber), Is.EqualTo(new[] { 1, 2 }));
-        Assert.That(Required(scenario.Steps[0].Attachments).Select(file => file.Id).Distinct().Count(), Is.EqualTo(2));
+        await Assert.That(Required(Required(scenario.Steps)[0].Attachments).Select(file => file.AttemptNumber)).IsEquivalentTo(new[] { 1, 2 }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(Required(scenario.Steps[0].Attachments).Select(file => file.Id).Distinct().Count()).IsEqualTo(2);
         foreach (var file in Required(scenario.Steps[0].Attachments))
         {
             using var reader = new StreamReader(run.OpenAttachment(Required(file.Id)));
-            Assert.That(reader.ReadToEnd(), Is.EqualTo("attempt-" + file.AttemptNumber));
+            await Assert.That(reader.ReadToEnd()).IsEqualTo("attempt-" + file.AttemptNumber);
         }
     }
 
@@ -60,15 +60,15 @@ public class AttachmentTests
         await fixture.When(() => fixture.Attach("private-file-content")).Then(() => Done()).BDTestAsync();
         var json = BDTestJsonHelper.GetTestJsonData(null, run);
         var restored = Required(Required(Required(Required(BDTestJsonHelper.Deserialize(json)).Scenarios).Single().Steps)[0].Attachments).Single();
-        Assert.That(restored.Name, Is.EqualTo("private-file-content"));
-        Assert.That(restored.MimeType, Is.EqualTo("text/plain"));
-        Assert.That(restored.AttemptNumber, Is.EqualTo(1));
-        Assert.That(restored.Uri, Is.Null);
-        Assert.That(json, Does.Not.Contain(run.AttachmentFiles.DirectoryPath));
-        Assert.That(json, Does.Not.Contain(Convert.ToBase64String(Encoding.UTF8.GetBytes("private-file-content"))));
+        await Assert.That(restored.Name).IsEqualTo("private-file-content");
+        await Assert.That(restored.MimeType).IsEqualTo("text/plain");
+        await Assert.That(restored.AttemptNumber).IsEqualTo(1);
+        await Assert.That(restored.Uri).IsNull();
+        await Assert.That(json).DoesNotContain(run.AttachmentFiles.DirectoryPath);
+        await Assert.That(json).DoesNotContain(Convert.ToBase64String(Encoding.UTF8.GetBytes("private-file-content")));
         var historical = Required(BDTestJsonHelper.Deserialize("{\"Scenarios\":[{\"Steps\":[{}]}]}"));
-        Assert.That(Required(historical.Scenarios)[0].Attachments, Is.Empty);
-        Assert.That(Required(historical.Scenarios[0].Steps)[0].Attachments, Is.Empty);
+        await Assert.That(Required(historical.Scenarios)[0].Attachments).IsEmpty();
+        await Assert.That(Required(historical.Scenarios[0].Steps)[0].Attachments).IsEmpty();
     }
 
     [Test]
@@ -91,14 +91,15 @@ public class AttachmentTests
         var results = await Task.WhenAll(Task.Run(() => Execute(first, "first")), Task.Run(() => Execute(second, "second")));
         var firstFile = Required(Required(results[0].Steps)[0].Attachments).Single();
         var secondFile = Required(Required(results[1].Steps)[0].Attachments).Single();
-        Assert.Throws<KeyNotFoundException>(() => first.OpenAttachment(Required(secondFile.Id)));
-        Assert.Throws<KeyNotFoundException>(() => second.OpenAttachment(Required(firstFile.Id)));
+        await Assert.That(() => first.OpenAttachment(Required(secondFile.Id))).ThrowsExactly<KeyNotFoundException>();
+        await Assert.That(() => second.OpenAttachment(Required(firstFile.Id))).ThrowsExactly<KeyNotFoundException>();
         first.Dispose();
-        Assert.That(Directory.Exists(first.AttachmentFiles.DirectoryPath), Is.False);
+        await Assert.That(Directory.Exists(first.AttachmentFiles.DirectoryPath)).IsFalse();
         using var reader = new StreamReader(second.OpenAttachment(Required(secondFile.Id)));
-        Assert.That(reader.ReadToEnd(), Is.EqualTo("second"));
+        await Assert.That(reader.ReadToEnd()).IsEqualTo("second");
         var json = BDTestJsonHelper.GetTestJsonData(null, second);
-        Assert.That(json, Does.Contain(secondFile.Id).And.Not.Contain(firstFile.Id));
+
+        await Assert.That(json).Contains(secondFile.Id).And.DoesNotContain(Required(firstFile.Id));
     }
 
     [Test]
@@ -115,7 +116,7 @@ public class AttachmentTests
             }).Then(() => Done()).BDTestAsync();
         })));
         foreach (var scenario in results)
-            Assert.That(Required(Required(scenario.Steps)[0].Attachments).Single().Name, Is.EqualTo(scenario.FrameworkTestId));
+            await Assert.That(Required(Required(scenario.Steps)[0].Attachments).Single().Name).IsEqualTo(scenario.FrameworkTestId);
     }
 
     [Test]
@@ -129,11 +130,11 @@ public class AttachmentTests
             if (row.Value == 1) throw new InvalidOperationException("factory failure");
             return fixture.When(() => fixture.Attach("step-" + row.Value)).Then(() => Done());
         });
-        await Assert.ThrowsAsync<InvalidOperationException>(async () => await builder.BDTestAsync());
+        await Assert.That(async () => await builder.BDTestAsync()).ThrowsExactly<InvalidOperationException>();
         var outline = run.Scenarios.Single();
-        Assert.That(outline.Attachments, Is.Empty);
-        Assert.That(Required(outline.Examples).Select(row => Required(row.Attachments).Single().Name), Is.EqualTo(new[] { "factory-1", "factory-2" }));
-        Assert.That(Required(Required(outline.Examples[1].Steps)[0].Attachments).Single().Name, Is.EqualTo("step-2"));
+        await Assert.That(outline.Attachments).IsEmpty();
+        await Assert.That(Required(outline.Examples).Select(row => Required(row.Attachments).Single().Name)).IsEquivalentTo((new[] { "factory-1", "factory-2" }).Cast<string?>(), global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(Required(Required(outline.Examples[1].Steps)[0].Attachments).Single().Name).IsEqualTo("step-2");
     }
 
     [Test]
@@ -146,17 +147,18 @@ public class AttachmentTests
         options.Attachments.MaximumAttachmentBytes = 100;
         options.Attachments.MaximumRunBytes = 100;
         var fixture = new Capture(run, "test");
-        Assert.Throws<IOException>(() => fixture.Attach("four"));
+        await Assert.That(() => fixture.Attach("four")).ThrowsExactly<IOException>();
         using var broken = new BrokenStream();
-        Assert.Throws<IOException>(() => fixture.Attachments.Attach("broken", broken, "text/plain"));
-        Assert.That(broken.CanRead, Is.True, "The caller owns the source stream.");
-        Assert.That(Directory.GetFiles(run.AttachmentFiles.DirectoryPath), Is.Empty);
+        await Assert.That(() => fixture.Attachments.Attach("broken", broken, "text/plain")).ThrowsExactly<IOException>();
+        await Assert.That(broken.CanRead).IsTrue().Because("The caller owns the source stream.");
+        await Assert.That(Directory.GetFiles(run.AttachmentFiles.DirectoryPath)).IsEmpty();
         fixture.Attach("one");
-        Assert.Throws<IOException>(() => fixture.Attach("two"));
+        await Assert.That(() => fixture.Attach("two")).ThrowsExactly<IOException>();
         fixture.Attach("ok");
         var scenario = await fixture.When(() => Done()).Then(() => Done()).BDTestAsync();
-        Assert.That(Required(scenario.Attachments).Select(file => file.Length), Is.EqualTo(new long[] { 3, 2 }));
-        Assert.That(Directory.GetFiles(run.AttachmentFiles.DirectoryPath), Has.Length.EqualTo(2));
+        await Assert.That(Required(scenario.Attachments).Select(file => file.Length)).IsEquivalentTo(new long[] { 3, 2 }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
+
+        await Assert.That((Directory.GetFiles(run.AttachmentFiles.DirectoryPath)).Length).IsEqualTo(2);
     }
 
     [Test]
@@ -171,10 +173,11 @@ public class AttachmentTests
             try { fixture.Attach("abc"); return 1; }
             catch (IOException) { return 0; }
         })));
-        Assert.That(successes.Sum(), Is.EqualTo(1));
+        await Assert.That(successes.Sum()).IsEqualTo(1);
         var scenario = await fixture.When(() => Done()).Then(() => Done()).BDTestAsync();
-        Assert.That(scenario.Attachments, Has.Count.EqualTo(1));
-        Assert.That(Directory.GetFiles(run.AttachmentFiles.DirectoryPath), Has.Length.EqualTo(1));
+        await Assert.That(scenario.Attachments).Count().IsEqualTo(1);
+
+        await Assert.That((Directory.GetFiles(run.AttachmentFiles.DirectoryPath)).Length).IsEqualTo(1);
     }
 
     [Test]
@@ -185,7 +188,7 @@ public class AttachmentTests
         using var source = new MemoryStream(new byte[] { 1, 2, 3 });
         source.Position = 1;
         fixture.Attachments.Attach("stream", source, "application/octet-stream");
-        Assert.That(source.CanRead, Is.True);
+        await Assert.That(source.CanRead).IsTrue();
         var path = Path.GetTempFileName();
         try
         {
@@ -193,43 +196,44 @@ public class AttachmentTests
             fixture.Attachments.AttachFile(path);
             var scenario = await fixture.When(() => Done()).Then(() => Done()).BDTestAsync();
             var files = Required(scenario.Attachments);
-            Assert.That(files[0].Length, Is.EqualTo(2));
+            await Assert.That(files[0].Length).IsEqualTo(2);
             using var captured = run.OpenAttachment(Required(files[0].Id));
-            Assert.That(captured.ReadByte(), Is.EqualTo(2));
-            Assert.That(files[1].Name, Is.EqualTo(Path.GetFileName(path)));
-            Assert.That(files[1].MimeType, Is.EqualTo("application/octet-stream"));
+            await Assert.That(captured.ReadByte()).IsEqualTo(2);
+            await Assert.That(files[1].Name).IsEqualTo(Path.GetFileName(path));
+            await Assert.That(files[1].MimeType).IsEqualTo("application/octet-stream");
         }
         finally { File.Delete(path); }
     }
 
-    [TestCase(false)]
-    [TestCase(true)]
+    [Test]
+    [Arguments(false)]
+    [Arguments(true)]
     public async Task Clear_and_dispose_delete_files_after_failed_execution(bool dispose)
     {
         using var run = BDTestRun.Start();
         var fixture = new Capture(run, "test");
         var savedWriter = fixture.Attachments;
-        await Assert.ThrowsAsync<InvalidOperationException>(async () => await fixture.When(() =>
+        await Assert.That(async () => await fixture.When(() =>
         {
             fixture.Attach("before-failure");
             throw new InvalidOperationException("failed");
-        }).Then(() => Done()).BDTestAsync());
+        }).Then(() => Done()).BDTestAsync()).ThrowsExactly<InvalidOperationException>();
         var file = Required(Required(run.Scenarios.Single().Steps)[0].Attachments).Single();
-        Assert.That(Directory.Exists(run.AttachmentFiles.DirectoryPath), Is.True);
+        await Assert.That(Directory.Exists(run.AttachmentFiles.DirectoryPath)).IsTrue();
         if (dispose) run.Dispose();
         else BDTestUtil.ClearScenarios(run);
-        Assert.That(Directory.Exists(run.AttachmentFiles.DirectoryPath), Is.False);
+        await Assert.That(Directory.Exists(run.AttachmentFiles.DirectoryPath)).IsFalse();
         if (dispose)
         {
-            Assert.Throws<ObjectDisposedException>(() => run.OpenAttachment(Required(file.Id)));
-            Assert.Throws<ObjectDisposedException>(() => savedWriter.Attach("late", new byte[] { 1 }, "text/plain"));
+            await Assert.That(() => run.OpenAttachment(Required(file.Id))).ThrowsExactly<ObjectDisposedException>();
+            await Assert.That(() => savedWriter.Attach("late", new byte[] { 1 }, "text/plain")).ThrowsExactly<ObjectDisposedException>();
         }
         else
         {
-            Assert.Throws<KeyNotFoundException>(() => run.OpenAttachment(Required(file.Id)));
+            await Assert.That(() => run.OpenAttachment(Required(file.Id))).ThrowsExactly<KeyNotFoundException>();
             fixture.Attach("fresh");
             var next = await fixture.When(() => Done()).Then(() => Done()).BDTestAsync();
-            Assert.That(Required(next.Attachments).Single().Name, Is.EqualTo("fresh"));
+            await Assert.That(Required(next.Attachments).Single().Name).IsEqualTo("fresh");
         }
     }
 
@@ -248,39 +252,41 @@ public class AttachmentTests
         }
         try
         {
-            await Assert.ThrowsAsync<TimeoutException>(async () => await fixture.When(() => LateStep())
-                .WithStepTimeout(TimeSpan.FromMilliseconds(100)).Then(() => Done()).BDTestAsync().WaitAsync(TimeSpan.FromSeconds(10)));
+            await Assert.That(async () => await fixture.When(() => LateStep())
+                .WithStepTimeout(TimeSpan.FromMilliseconds(100)).Then(() => Done()).BDTestAsync().WaitAsync(TimeSpan.FromSeconds(10))).ThrowsExactly<TimeoutException>();
         }
         finally { finish.TrySetResult(); }
-        Assert.That(await result.Task.WaitAsync(TimeSpan.FromSeconds(10)), Is.TypeOf<InvalidOperationException>());
-        Assert.That(Required(run.Scenarios.Single().Steps)[0].Attachments, Is.Empty);
-        Assert.That(Directory.Exists(run.AttachmentFiles.DirectoryPath), Is.False);
+        await Assert.That(await result.Task.WaitAsync(TimeSpan.FromSeconds(10))).IsTypeOf<InvalidOperationException>();
+        await Assert.That(Required(run.Scenarios.Single().Steps)[0].Attachments).IsEmpty();
+        await Assert.That(Directory.Exists(run.AttachmentFiles.DirectoryPath)).IsFalse();
     }
 
-    [TestCase("")]
-    [TestCase("not a mime type")]
-    [TestCase("text/*")]
-    [TestCase("text/plain\r\nx-header: value")]
-    public void Invalid_metadata_is_rejected_before_creating_files(string mimeType)
+    [Test]
+    [Arguments("")]
+    [Arguments("not a mime type")]
+    [Arguments("text/*")]
+    [Arguments("text/plain\r\nx-header: value")]
+    public async Task Invalid_metadata_is_rejected_before_creating_files(string mimeType)
     {
         using var run = BDTestRun.Start();
         var writer = new Capture(run, "test").Attachments;
-        Assert.Throws<ArgumentException>(() => writer.Attach("name", Array.Empty<byte>(), mimeType));
-        Assert.Throws<ArgumentException>(() => writer.Attach(" ", Array.Empty<byte>(), "text/plain"));
-        Assert.Throws<ArgumentNullException>(() => writer.Attach("name", (byte[])null!, "text/plain"));
-        Assert.That(Directory.Exists(run.AttachmentFiles.DirectoryPath), Is.False);
+        await Assert.That(() => writer.Attach("name", Array.Empty<byte>(), mimeType)).ThrowsExactly<ArgumentException>();
+        await Assert.That(() => writer.Attach(" ", Array.Empty<byte>(), "text/plain")).ThrowsExactly<ArgumentException>();
+        await Assert.That(() => writer.Attach("name", (byte[])null!, "text/plain")).ThrowsExactly<ArgumentNullException>();
+        await Assert.That(Directory.Exists(run.AttachmentFiles.DirectoryPath)).IsFalse();
     }
 
-    [TestCase("screenshots/login.png")]
-    [TestCase("screenshots\\login.png")]
-    [TestCase("line\nfeed")]
-    [TestCase("control\u0001")]
-    public void Invalid_names_fail_at_capture_before_creating_files(string name)
+    [Test]
+    [Arguments("screenshots/login.png")]
+    [Arguments("screenshots\\login.png")]
+    [Arguments("line\nfeed")]
+    [Arguments("control\u0001")]
+    public async Task Invalid_names_fail_at_capture_before_creating_files(string name)
     {
         using var run = BDTestRun.Start();
         var writer = new Capture(run, "test").Attachments;
-        Assert.Throws<ArgumentException>(() => writer.Attach(name, Array.Empty<byte>(), "text/plain"));
-        Assert.That(Directory.Exists(run.AttachmentFiles.DirectoryPath), Is.False);
+        await Assert.That(() => writer.Attach(name, Array.Empty<byte>(), "text/plain")).ThrowsExactly<ArgumentException>();
+        await Assert.That(Directory.Exists(run.AttachmentFiles.DirectoryPath)).IsFalse();
     }
 
     [Test]
@@ -289,25 +295,27 @@ public class AttachmentTests
         using var run = BDTestRun.Start();
         var fixture = new Capture(run, "test");
         var mime = "application/" + new string('a', 244);
-        Assert.Throws<ArgumentException>(() => fixture.Attachments.Attach(new string('a', 256), Array.Empty<byte>(), "text/plain"));
-        Assert.Throws<ArgumentException>(() => fixture.Attachments.Attach("name", Array.Empty<byte>(), mime + "a"));
-        Assert.Throws<ArgumentException>(() => fixture.Attachments.Attach("name", Array.Empty<byte>(), "text/plain;p=" + new string('a', 243)));
-        Assert.That(Directory.Exists(run.AttachmentFiles.DirectoryPath), Is.False);
+        await Assert.That(() => fixture.Attachments.Attach(new string('a', 256), Array.Empty<byte>(), "text/plain")).ThrowsExactly<ArgumentException>();
+        await Assert.That(() => fixture.Attachments.Attach("name", Array.Empty<byte>(), mime + "a")).ThrowsExactly<ArgumentException>();
+        await Assert.That(() => fixture.Attachments.Attach("name", Array.Empty<byte>(), "text/plain;p=" + new string('a', 243))).ThrowsExactly<ArgumentException>();
+        await Assert.That(Directory.Exists(run.AttachmentFiles.DirectoryPath)).IsFalse();
         fixture.Attachments.Attach(new string('a', 255), Array.Empty<byte>(), mime);
         var scenario = await fixture.When(() => Done()).Then(() => Done()).BDTestAsync();
-        Assert.That(Required(scenario.Attachments).Single().Name, Has.Length.EqualTo(255));
-        Assert.That(scenario.Attachments.Single().MimeType, Has.Length.EqualTo(256));
+
+        await Assert.That(Required(Required(scenario.Attachments).Single().Name).Length).IsEqualTo(255);
+
+        await Assert.That(Required(Required(scenario.Attachments).Single().MimeType).Length).IsEqualTo(256);
     }
 
     [Test]
-    public void Negative_limits_are_rejected_at_start()
+    public async Task Negative_limits_are_rejected_at_start()
     {
         var options = new BDTestOptions();
         options.Attachments.MaximumAttachmentBytes = -1;
-        Assert.Throws<ArgumentOutOfRangeException>(() => BDTestRun.Start(options));
+        await Assert.That(() => BDTestRun.Start(options)).ThrowsExactly<ArgumentOutOfRangeException>();
         options.Attachments.MaximumAttachmentBytes = 1;
         options.Attachments.MaximumRunBytes = -1;
-        Assert.Throws<ArgumentOutOfRangeException>(() => BDTestRun.Start(options));
+        await Assert.That(() => BDTestRun.Start(options)).ThrowsExactly<ArgumentOutOfRangeException>();
     }
 
     [Test]
@@ -315,15 +323,14 @@ public class AttachmentTests
     {
         using var run = BDTestRun.Start();
         var fixture = new Capture(run, "test") { CaptureHooks = true };
-        await Assert.ThrowsAsync<InvalidOperationException>(async () => await fixture.When(() =>
+        await Assert.That(async () => await fixture.When(() =>
         {
             fixture.Attach("failure");
             throw new InvalidOperationException("step failed");
-        }).Then(() => Done()).BDTestAsync());
+        }).Then(() => Done()).BDTestAsync()).ThrowsExactly<InvalidOperationException>();
         var scenario = run.Scenarios.Single();
-        Assert.That(Required(Required(scenario.Steps)[0].Attachments).Select(file => file.Name),
-            Is.EqualTo(new[] { "before.txt", "failure", "after.txt" }));
-        Assert.That(scenario.Steps[1].Attachments, Is.Empty);
+        await Assert.That(Required(Required(scenario.Steps)[0].Attachments).Select(file => file.Name)).IsEquivalentTo((new[] { "before.txt", "failure", "after.txt" }).Cast<string?>(), global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(scenario.Steps[1].Attachments).IsEmpty();
     }
 
     [Test]
@@ -337,9 +344,9 @@ public class AttachmentTests
         var secondFixture = new Capture(second, "same-id");
         var secondScenario = await secondFixture.When(() => saved.Attach("saved", new byte[] { 1 }, "text/plain"))
             .Then(() => Done()).BDTestAsync();
-        Assert.That(Required(firstScenario.Attachments).Single().Name, Is.EqualTo("saved"));
-        Assert.That(secondScenario.Attachments, Is.Empty);
-        Assert.That(Required(secondScenario.Steps).SelectMany(step => Required(step.Attachments)), Is.Empty);
+        await Assert.That(Required(firstScenario.Attachments).Single().Name).IsEqualTo("saved");
+        await Assert.That(secondScenario.Attachments).IsEmpty();
+        await Assert.That(Required(secondScenario.Steps).SelectMany(step => Required(step.Attachments))).IsEmpty();
     }
 
     [Test]
@@ -354,8 +361,8 @@ public class AttachmentTests
         {
             if (++attempts == 1) throw new InvalidOperationException("retry");
         }).Then(() => Done()).BDTestAsync();
-        Assert.That(Required(scenario.Attachments).Single().Name, Is.EqualTo("retry-hook"));
-        Assert.That(scenario.Attachments.Single().AttemptNumber, Is.EqualTo(2));
+        await Assert.That(Required(scenario.Attachments).Single().Name).IsEqualTo("retry-hook");
+        await Assert.That(scenario.Attachments.Single().AttemptNumber).IsEqualTo(2);
     }
 
     [Test]
@@ -376,9 +383,9 @@ public class AttachmentTests
             return fixture.When(() => Done()).Then(() => Done());
         }).BDTestAsync();
         finish.SetResult();
-        Assert.That(await Required(late).WaitAsync(TimeSpan.FromSeconds(10)), Is.TypeOf<InvalidOperationException>());
-        Assert.That(Required(outline.Examples).Single().Attachments, Is.Empty);
-        Assert.That(Directory.Exists(run.AttachmentFiles.DirectoryPath), Is.False);
+        await Assert.That(await Required(late).WaitAsync(TimeSpan.FromSeconds(10))).IsTypeOf<InvalidOperationException>();
+        await Assert.That(Required(outline.Examples).Single().Attachments).IsEmpty();
+        await Assert.That(Directory.Exists(run.AttachmentFiles.DirectoryPath)).IsFalse();
     }
 
     [Test]
@@ -390,15 +397,16 @@ public class AttachmentTests
         using var run = BDTestRun.Start(options);
         var fixture = new Capture(run, "test");
         fixture.Attachments.Attach("empty", Array.Empty<byte>(), "text/plain");
-        Assert.Throws<IOException>(() => fixture.Attach("nonempty"));
+        await Assert.That(() => fixture.Attach("nonempty")).ThrowsExactly<IOException>();
         var scenario = await fixture.When(() => Done()).Then(() => Done()).BDTestAsync();
-        Assert.That(Required(scenario.Attachments).Single().Length, Is.Zero);
+        await Assert.That(Required(scenario.Attachments).Single().Length).IsZero();
         using var stream = run.OpenAttachment(Required(scenario.Attachments.Single().Id));
-        Assert.That(stream.ReadByte(), Is.EqualTo(-1));
+        await Assert.That(stream.ReadByte()).IsEqualTo(-1);
     }
 
-    [TestCase(false)]
-    [TestCase(true)]
+    [Test]
+    [Arguments(false)]
+    [Arguments(true)]
     public async Task Completing_setup_releases_only_attachments_without_a_scenario(bool createScenario)
     {
         var options = new BDTestOptions();
@@ -414,24 +422,26 @@ public class AttachmentTests
         fixture.Finish();
         fixture.Finish();
 
-        Assert.That(File.Exists(path), Is.EqualTo(createScenario));
+        await Assert.That(File.Exists(path)).IsEqualTo(createScenario);
         if (createScenario)
         {
             using var content = run.OpenAttachment(attachmentId);
-            Assert.That(new StreamReader(content).ReadToEnd(), Is.EqualTo("abc"));
-            Assert.Throws<IOException>(() => new Capture(run, "next").Attach("abc"));
+            await Assert.That(new StreamReader(content).ReadToEnd()).IsEqualTo("abc");
+            await Assert.That(() => new Capture(run, "next").Attach("abc")).ThrowsExactly<IOException>();
         }
         else
         {
-            Assert.Throws<KeyNotFoundException>(() => run.OpenAttachment(attachmentId));
+            await Assert.That(() => run.OpenAttachment(attachmentId)).ThrowsExactly<KeyNotFoundException>();
             var next = new Capture(run, "next");
             next.Attach("abc");
             var scenario = await next.When(() => Done()).Then(() => Done()).BDTestAsync();
-            Assert.That(Required(scenario.Attachments).Single().Name, Is.EqualTo("abc"));
+            await Assert.That(Required(scenario.Attachments).Single().Name).IsEqualTo("abc");
         }
     }
 
     [Test]
+    // Keep the bounded disk-write probe independent of other file-store fixtures.
+    [NotInParallel]
     public async Task Background_setup_and_outline_factory_captures_keep_every_attachment()
     {
         using var run = BDTestRun.Start();
@@ -453,19 +463,21 @@ public class AttachmentTests
         }).BDTestAsync();
         await background.WaitAsync(TimeSpan.FromSeconds(10));
 
-        Assert.That(outline.Attachments, Has.Count.EqualTo(1000));
-        Assert.That(Required(outline.Examples).All(row => Required(row.Attachments).Count == 1), Is.True);
+        await Assert.That(outline.Attachments).Count().IsEqualTo(1000);
+        await Assert.That(Required(outline.Examples).All(row => Required(row.Attachments).Count == 1)).IsTrue();
         var files = Required(outline.Attachments).Concat(outline.Examples.SelectMany(row => Required(row.Attachments))).ToArray();
-        Assert.That(files, Has.Length.EqualTo(1100));
-        Assert.That(files.Select(file => file.Name).Distinct().Count(), Is.EqualTo(1100));
+
+        await Assert.That((files).Length).IsEqualTo(1100);
+        await Assert.That(files.Select(file => file.Name).Distinct().Count()).IsEqualTo(1100);
         foreach (var row in outline.Examples)
-            Assert.That(Required(row.Attachments).Any(file => file.Name == "factory-" + Required(row.ExampleValues)["Value"]), Is.True);
+            await Assert.That(Required(row.Attachments).Any(file => file.Name == "factory-" + Required(row.ExampleValues)["Value"])).IsTrue();
     }
 
-    [TestCase(false, false)]
-    [TestCase(false, true)]
-    [TestCase(true, false)]
-    [TestCase(true, true)]
+    [Test]
+    [Arguments(false, false)]
+    [Arguments(false, true)]
+    [Arguments(true, false)]
+    [Arguments(true, true)]
     public async Task Setup_capture_finishing_after_teardown_releases_files_and_quota(bool useContext, bool createScenario)
     {
         var options = new BDTestOptions();
@@ -489,17 +501,18 @@ public class AttachmentTests
         }
         finally { source.Resume.Set(); }
 
-        Assert.That(await capture.WaitAsync(TimeSpan.FromSeconds(10)), Is.TypeOf<InvalidOperationException>());
-        Assert.That(Directory.GetFiles(run.AttachmentFiles.DirectoryPath), Is.Empty);
-        Assert.That(run.Scenarios.SelectMany(scenario => Required(scenario.Attachments)), Is.Empty);
+        await Assert.That(await capture.WaitAsync(TimeSpan.FromSeconds(10))).IsTypeOf<InvalidOperationException>();
+        await Assert.That(Directory.GetFiles(run.AttachmentFiles.DirectoryPath)).IsEmpty();
+        await Assert.That(run.Scenarios.SelectMany(scenario => Required(scenario.Attachments))).IsEmpty();
         var next = new Capture(run, "next");
         next.Attach("abc");
         var nextScenario = await next.When(() => Done()).Then(() => Done()).BDTestAsync();
-        Assert.That(Required(nextScenario.Attachments).Single().Length, Is.EqualTo(3));
+        await Assert.That(Required(nextScenario.Attachments).Single().Length).IsEqualTo(3);
     }
 
-    [TestCase(false)]
-    [TestCase(true)]
+    [Test]
+    [Arguments(false)]
+    [Arguments(true)]
     public async Task Background_setup_cannot_start_capture_after_teardown(bool useContext)
     {
         using var run = BDTestRun.Start();
@@ -516,8 +529,8 @@ public class AttachmentTests
         });
         fixture.Finish();
         finish.SetResult();
-        Assert.That(await capture.WaitAsync(TimeSpan.FromSeconds(10)), Is.TypeOf<InvalidOperationException>());
-        Assert.That(Directory.Exists(run.AttachmentFiles.DirectoryPath), Is.False);
+        await Assert.That(await capture.WaitAsync(TimeSpan.FromSeconds(10))).IsTypeOf<InvalidOperationException>();
+        await Assert.That(Directory.Exists(run.AttachmentFiles.DirectoryPath)).IsFalse();
     }
 
     [Test]
@@ -542,15 +555,15 @@ public class AttachmentTests
         }
         finally { source.Resume.Set(); }
 
-        Assert.That(Required(outline.Attachments).Single().Name, Is.EqualTo("setup"));
-        Assert.That(outline.Attachments.Single().AttemptNumber, Is.EqualTo(1));
-        Assert.That(Required(outline.Examples).SelectMany(row => Required(row.Attachments)), Is.Empty);
-        Assert.That(outline.Examples.Select(row => Required(Required(row.Steps)[0].Attachments).Single().Name),
-            Is.EqualTo(new[] { "step-1", "step-2" }));
+        await Assert.That(Required(outline.Attachments).Single().Name).IsEqualTo("setup");
+        await Assert.That(outline.Attachments.Single().AttemptNumber).IsEqualTo(1);
+        await Assert.That(Required(outline.Examples).SelectMany(row => Required(row.Attachments))).IsEmpty();
+        await Assert.That(outline.Examples.Select(row => Required(Required(row.Steps)[0].Attachments).Single().Name)).IsEquivalentTo((new[] { "step-1", "step-2" }).Cast<string?>(), global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 
-    [TestCase(false)]
-    [TestCase(true)]
+    [Test]
+    [Arguments(false)]
+    [Arguments(true)]
     public async Task Writer_created_before_begin_rejects_copy_finishing_after_teardown(bool useContext)
     {
         using var run = BDTestRun.Start();
@@ -570,13 +583,13 @@ public class AttachmentTests
         }
         finally { source.Resume.Set(); }
 
-        Assert.That(await capture.WaitAsync(TimeSpan.FromSeconds(10)), Is.TypeOf<InvalidOperationException>());
-        Assert.That(Directory.GetFiles(run.AttachmentFiles.DirectoryPath), Is.Empty);
+        await Assert.That(await capture.WaitAsync(TimeSpan.FromSeconds(10))).IsTypeOf<InvalidOperationException>();
+        await Assert.That(Directory.GetFiles(run.AttachmentFiles.DirectoryPath)).IsEmpty();
         fixture.Start();
-        Assert.Throws<InvalidOperationException>(() => writer.Attach("old", new byte[] { 1 }, "text/plain"));
+        await Assert.That(() => writer.Attach("old", new byte[] { 1 }, "text/plain")).ThrowsExactly<InvalidOperationException>();
         fixture.Attach("new");
         var scenario = await fixture.When(() => Done()).Then(() => Done()).BDTestAsync();
-        Assert.That(Required(scenario.Attachments).Single().Name, Is.EqualTo("new"));
+        await Assert.That(Required(scenario.Attachments).Single().Name).IsEqualTo("new");
         fixture.Finish();
     }
     [Test]
@@ -594,8 +607,8 @@ public class AttachmentTests
         fixture.Start();
         fixture.Finish();
         finish.SetResult();
-        Assert.That(await capture.WaitAsync(TimeSpan.FromSeconds(10)), Is.TypeOf<InvalidOperationException>());
-        Assert.That(Directory.Exists(run.AttachmentFiles.DirectoryPath), Is.False);
+        await Assert.That(await capture.WaitAsync(TimeSpan.FromSeconds(10))).IsTypeOf<InvalidOperationException>();
+        await Assert.That(Directory.Exists(run.AttachmentFiles.DirectoryPath)).IsFalse();
     }
 
     private sealed class PausedStream : MemoryStream

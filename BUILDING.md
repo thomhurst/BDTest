@@ -31,12 +31,11 @@ metadata or processes are missing. Source-generator tests retain nullable argume
 values; their dynamically compiled input strings keep independent compilation
 settings so existing consumer compatibility tests remain unchanged.
 
-The core suite (currently NUnit pending #950) models optional callback state and missing repository records
+The TUnit core suite models optional callback state and missing repository records
 as nullable. Required reflection metadata, JSON properties, HTTP content, and
 exception assertion results fail explicitly when absent. Intentional null inputs
-still exercise runtime guards. Context capture tests verify uniqueness in fixture
-teardown instead of using obsolete NUnit ordering attributes, preserving parallel
-fixture execution. Standalone/core tests own configured runs instead of saving and restoring global
+still exercise runtime guards. Context capture tests verify uniqueness within each case using independent execution
+flows, so per-test fixture instances and filtered runs preserve the same checks. Standalone/core tests own configured runs instead of saving and restoring global
 settings. Compatibility tests access obsolete lifecycle bridges through reflection,
 preserving their behavior without disabling obsolete diagnostics.
 
@@ -54,9 +53,9 @@ dotnet build BDTest.sln -c Release
 ```
 
 Run every `*Tests.csproj` with `dotnet test <project> -c Release`, except
-`BDTest.TUnit.Tests`, `BDTest.Pipeline.Tests` and `BDTest.ReportGenerator.Tests`, which use
-`dotnet run --project <project> -c Release`. The core suite still uses NUnit pending #950; NUnit adapter and sample coverage now lives in
-`BDTest.NUnit.Tests`, also run with `dotnet test`. Runner selection evaluates Release `PackageReference`
+`BDTest.Tests`, `BDTest.TUnit.Tests`, `BDTest.Pipeline.Tests` and `BDTest.ReportGenerator.Tests`, which use
+`dotnet run --project <project> -c Release`. NUnit adapter and sample coverage lives in
+`BDTest.NUnit.Tests`, run with `dotnet test`. Runner selection evaluates Release `PackageReference`
 items, so imported or conditional TUnit references work and xUnit v3 executables
 keep using VSTest. Both runner paths publish TRX under
 `artifacts/test-results/<project>`.
@@ -68,7 +67,7 @@ storage initialization 2 and personalization 5. None were removed or merged.
 TUnit creates a separate fixture per case; authentication hosts and stores are
 created and disposed by per-test hooks, and other tests own their local resources.
 No suite-wide serialization is needed. The shared historical-report validator
-uses framework-independent comparisons so both the core NUnit and host TUnit
+uses framework-independent comparisons so both the core and host TUnit
 suites check the same snapshot, including ordered collections and missing values.
 
 Run the host suite with CI-compatible TRX output:
@@ -112,10 +111,11 @@ core fixture, preserving its full test name and three repetitions.
 
 `BDTest.NUnit.Tests` is unsigned, references the NUnit sample and adapter, and
 runs their shared contracts with the source generator and analyzers enabled.
-Core drops its sample reference and NUnit conformance sources, but keeps its
-NUnit adapter dependency until #950 converts its remaining behavior tests.
-Both suites link the same small NUnit assertion, output-directory and context
-helpers from `TestUtilities`; they do not reference each other's assemblies.
+The core suite now references `BDTest.TUnit` and has no NUnit, NUnit3TestAdapter,
+Microsoft.NET.Test.Sdk or sample dependency. Its local TUnit assertion and
+output-directory helpers preserve the same behavior as the NUnit helpers linked
+by the dedicated adapter suite. Both suites still share the framework-independent
+context fixture and do not reference each other's assemblies.
 `OutputCaptureInspection` preserves internal capture/buffer cleanup checks via
 reflection and fails explicitly if those members disappear. It adds no friend
 grant or shipped API. Core and Razor reports still grant friend access only to
@@ -132,6 +132,69 @@ pwsh scripts/Test-AdapterConformance.ps1
 The solution includes the new project. The pipeline discovers it by its existing
 Tests-project rule and selects VSTest from its evaluated package references;
 TRX results go to `artifacts/test-results/BDTest.NUnit.Tests`.
+
+## Completed core TUnit migration (#950)
+
+Immediately before conversion, at `cf906e3`, core discovery and the baseline TRX
+contained **1,905 cases**: the retained 1,896 plus nine `CompactReportPageTests`
+added after extraction. That baseline passed 1,903 cases and skipped two Windows
+symbolic-link privilege probes.
+
+Five additional NUnit-specific cases belong in `BDTest.NUnit.Tests`: the native
+success exception and four scenario-hook assertion-scope cases. Their NUnit
+names, inputs and assertions are preserved, bringing that suite to **145 discovered
+definitions**, including explicit runner probes. Core retains **1,900 logical
+cases**; none were removed. TUnit exposes repetitions as separate definitions:
+eight output-capture cases run ten times (`Repeat(9)`), and two isolation cases
+run three times (`Repeat(2)`). Thus core discovers **1,976 executable cases**
+(1,900 + 72 + 4), preserving the number of executions. NUnit class arguments
+become TUnit class arguments; matrix values and typed data sources preserve every
+row. The two parameterized report fixtures now share a class identity across
+argument sets in TRX, while their case counts remain 54 and 44.
+The eight standalone parallel `Test1`–`Test8` captures become eight argument rows
+of `ContextIsIndependentOfOtherFlows`; `ZZZ_EnsureContextsAreUnique` becomes
+`EnsureContextsAreUnique`, without cross-case ordering or completion dependencies.
+`NUNitIgnoreException` becomes `TUnitSkipException`; native NUnit skip coverage
+continues in the dedicated adapter suite.
+
+Run core tests and focused fixtures with:
+
+```powershell
+dotnet run --project BDTest.Tests -c Release -- --report-trx --results-directory "$PWD/artifacts/test-results/BDTest.Tests"
+dotnet run --project BDTest.Tests -c Release -- --treenode-filter "/*/*/ScenarioOutlineTests/*"
+```
+
+The TUnit `TUNU0001` migration fixer was applied and then reviewed manually.
+Unsupported assertion chains, exact/dynamic exception checks, collection ordering
+and item identity, matrix data, fixture arguments, cultures, hooks and helper
+awaits were corrected. In particular, the fixer discarded fluent retry chains;
+those scenarios were restored. Synchronous context callbacks and allocation/GC
+probes stay synchronous, with explicit invariant checks where awaiting would
+change the behavior under test.
+
+Every test gets a fresh fixture. Report hosts use per-test setup/disposal and
+run owners isolate framework registrations and stores. Context isolation tests
+create their own sequential/concurrent callers instead of waiting for other test
+cases. Targeted `NotInParallel` constraints protect shared counters and real-time
+expiry assertions; other cases retain parallel execution. Narrow, documented
+TUnit analyzer suppressions cover intentional per-case state, public BDTest
+retry hooks, and the custom worker entry point; nullable analysis, warnings-as-errors,
+source generators and BDTest analyzers remain enabled.
+
+The executable dispatches `file-store-worker` arguments to the existing isolated
+process protocol and all normal runner arguments to the generated Microsoft
+Testing Platform application, retaining extension registration and TRX output.
+Signing and friend grants are unchanged: only signed `BDTest.Tests` has access
+to core and Razor internals. Pipeline runner selection still uses evaluated
+package references, including VSTest for xUnit executable projects.
+
+Validation on Windows with SDK 10.0.402: Release solution build completed with
+zero warnings/errors. Two full core runs with default parallel execution each
+reported 1,974 passed and the same two symbolic-link privilege skips as the
+baseline (1,976 total). All eleven other test projects were exercised; the
+pipeline's changed runner-selection expectation passed a focused rerun.
+Signing verification, native skip outcomes (21), adapter conformance (155),
+additional native lifecycle outcomes (46), and the documentation build passed.
 
 ## Completed nullable rollout
 

@@ -3,16 +3,17 @@ using BDTest.Helpers;
 using BDTest.Settings;
 using BDTest.Tests.Helpers;
 using Newtonsoft.Json.Linq;
-using NUnit.Framework;
+using System.Threading.Tasks;
 
 namespace BDTest.Tests.Fixtures;
 
-[NonParallelizable]
+[NotInParallel]
 public class ReportMetadataTests
 {
     [Test]
+    [MatrixDataSource]
     public async Task DescriptorValuesAreExported(
-        [Values("upload", "json", "html")] string path, [Values(false, true)] bool emptyValues)
+        [Matrix("upload", "json", "html")] string path, [Matrix(false, true)] bool emptyValues)
     {
         var environment = emptyValues ? "" : "Descriptor environment";
         var tag = emptyValues ? "" : "Descriptor tag";
@@ -23,9 +24,10 @@ public class ReportMetadataTests
     }
 
     [Test]
+    [MatrixDataSource]
     public async Task NullDescriptorPropertyRemainsNullIndependently(
-        [Values("upload", "json", "html")] string path,
-        [Values("Environment", "Tag", "BranchName")] string missingProperty)
+        [Matrix("upload", "json", "html")] string path,
+        [Matrix("Environment", "Tag", "BranchName")] string missingProperty)
     {
         var descriptor = new BDTestRunDescriptor
         {
@@ -44,16 +46,17 @@ public class ReportMetadataTests
             missingProperty == "BranchName" ? null : "Descriptor branch");
     }
 
-    public static IEnumerable<TestCaseData> MissingDescriptorCases()
+    public static IEnumerable<(string path, string mode)> MissingDescriptorCases()
     {
         foreach (var path in new[] { "upload", "json", "html" })
         foreach (var mode in new[] { "null", "empty" })
         {
-            yield return new TestCaseData(path, mode);
+            yield return (path, mode);
         }
     }
 
-    [TestCaseSource(nameof(MissingDescriptorCases))]
+    [Test]
+    [MethodDataSource(nameof(MissingDescriptorCases))]
     public async Task MissingMetadataIsNullInJsonAndShownAsNotSpecifiedInHtml(
         string path, string descriptorMode)
     {
@@ -63,19 +66,17 @@ public class ReportMetadataTests
     }
 
     [Test]
-    public void Missing_metadata_stays_null_in_the_shared_model()
+    public async Task Missing_metadata_stays_null_in_the_shared_model()
     {
         using var run = BDTestRun.Start();
 
         var report = BDTestOutputModelBuilder.Build(run, new BDTestRunDescriptor());
 
-        Assert.That(report.Environment, Is.Null);
-        Assert.That(report.Tag, Is.Null);
-        Assert.That(report.BranchName, Is.Null);
-        Assert.That(BDTestHtmlHelper.GetTestHtmlReport(null, run),
-            Does.Contain("<dt>Environment</dt><dd class=\"unset\">Not Specified</dd>")
-                .And.Contain("<dt>Tag</dt><dd class=\"unset\">Not Specified</dd>")
-                .And.Contain("<dt>Branch</dt><dd class=\"unset\">Not Specified</dd>"));
+        await Assert.That(report.Environment).IsNull();
+        await Assert.That(report.Tag).IsNull();
+        await Assert.That(report.BranchName).IsNull();
+
+        await Assert.That(BDTestHtmlHelper.GetTestHtmlReport(null, run)).Contains("<dt>Environment</dt><dd class=\"unset\">Not Specified</dd>").And.Contains("<dt>Tag</dt><dd class=\"unset\">Not Specified</dd>").And.Contains("<dt>Branch</dt><dd class=\"unset\">Not Specified</dd>");
     }
 
     private static async Task AssertMetadataAsync(string path, BDTestRunDescriptor? descriptor,
@@ -85,9 +86,9 @@ public class ReportMetadataTests
         if (path == "html")
         {
             var html = BDTestHtmlHelper.GetTestHtmlReport(descriptor, run);
-            Assert.That(html, Does.Match($"<dt>Environment</dt><dd[^>]*>{System.Text.RegularExpressions.Regex.Escape(environment ?? "Not Specified")}</dd>"));
-            Assert.That(html, Does.Match($"<dt>Tag</dt><dd[^>]*>{System.Text.RegularExpressions.Regex.Escape(tag ?? "Not Specified")}</dd>"));
-            Assert.That(html, Does.Match($"<dt>Branch</dt><dd[^>]*>{System.Text.RegularExpressions.Regex.Escape(branchName ?? "Not Specified")}</dd>"));
+            await Assert.That(html).Matches($"<dt>Environment</dt><dd[^>]*>{System.Text.RegularExpressions.Regex.Escape(environment ?? "Not Specified")}</dd>");
+            await Assert.That(html).Matches($"<dt>Tag</dt><dd[^>]*>{System.Text.RegularExpressions.Regex.Escape(tag ?? "Not Specified")}</dd>");
+            await Assert.That(html).Matches($"<dt>Branch</dt><dd[^>]*>{System.Text.RegularExpressions.Regex.Escape(branchName ?? "Not Specified")}</dd>");
             return;
         }
 
@@ -106,9 +107,9 @@ public class ReportMetadataTests
         }
 
         var metadata = JObject.Parse(json);
-        Assert.That(metadata.Value<string>("Environment"), Is.EqualTo(environment));
-        Assert.That(metadata.Value<string>("Tag"), Is.EqualTo(tag));
-        Assert.That(metadata.Value<string>("BranchName"), Is.EqualTo(branchName));
+        await Assert.That(metadata.Value<string>("Environment")).IsEqualTo(environment);
+        await Assert.That(metadata.Value<string>("Tag")).IsEqualTo(tag);
+        await Assert.That(metadata.Value<string>("BranchName")).IsEqualTo(branchName);
     }
 
     private sealed class MetadataUploadHandler : HttpMessageHandler

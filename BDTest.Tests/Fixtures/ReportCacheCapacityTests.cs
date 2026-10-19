@@ -9,8 +9,8 @@ using BDTest.Razor.Reports.Models;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
-using NUnit.Framework;
 using Microsoft.Extensions.Options;
+using System.Threading.Tasks;
 
 namespace BDTest.Tests.Fixtures;
 
@@ -33,7 +33,7 @@ public class ReportCacheCapacityTests
 
         foreach (var report in reports)
         {
-            Assert.That(await repository.GetData(Required(report.Id), default), Is.Not.Null);
+            await Assert.That(await repository.GetData(Required(report.Id), default)).IsNotNull();
             await AssertWithinCapacity(repository, reports, capacity, store);
         }
     }
@@ -50,13 +50,13 @@ public class ReportCacheCapacityTests
         report.Scenarios = Enumerable.Repeat(scenario, 100).ToList();
         // Reproduce the object graph restored by the MVC binder from a supported upload.
         report = ReportJson.DeserializeObject<BDTestOutputModel>(BDTestJsonHelper.Serialize(report));
-        Assert.That(Required(report.Scenarios)[1], Is.Not.SameAs(report.Scenarios[0]));
+        await Assert.That(Required(report.Scenarios)[1]).IsNotSameReferenceAs(report.Scenarios[0]);
         using var services = Services(Size(report));
         var repository = services.GetRequiredService<IDataRepository>();
 
         await repository.StoreData(Required(report.Id), report);
 
-        Assert.That(await repository.GetDataForBulkRead(report.Id, default), Is.SameAs(report));
+        await Assert.That(await repository.GetDataForBulkRead(report.Id, default)).IsSameReferenceAs(report);
     }
 
     [Test]
@@ -67,17 +67,18 @@ public class ReportCacheCapacityTests
         using var exactServices = Services(Size(report));
         var repository = exactServices.GetRequiredService<IDataRepository>();
         await repository.StoreData(Required(report.Id), report);
-        Assert.That(await repository.GetDataForBulkRead(report.Id, default), Is.SameAs(report));
+        await Assert.That(await repository.GetDataForBulkRead(report.Id, default)).IsSameReferenceAs(report);
 
         using var smallerServices = Services(Size(report) - 1);
         var smallerRepository = smallerServices.GetRequiredService<IDataRepository>();
-        await Assert.CatchAsync<InvalidOperationException>(async () =>
-            await smallerRepository.StoreData(report.Id, report));
+        await Assert.That(async () =>
+            await smallerRepository.StoreData(report.Id, report)).Throws<InvalidOperationException>();
     }
 
-    [TestCase(Formatting.Indented, NullValueHandling.Include)]
-    [TestCase(Formatting.None, NullValueHandling.Ignore)]
-    [NonParallelizable]
+    [Test]
+    [Arguments(Formatting.Indented, NullValueHandling.Include)]
+    [Arguments(Formatting.None, NullValueHandling.Ignore)]
+    [NotInParallel]
     public async Task Host_JSON_defaults_do_not_change_report_capacity(Formatting formatting, NullValueHandling nullValueHandling)
     {
         var report = Report("host-defaults");
@@ -102,10 +103,10 @@ public class ReportCacheCapacityTests
 
             await repository.StoreData(Required(report.Id), report);
 
-            Assert.That(await repository.GetDataForBulkRead(report.Id, default), Is.SameAs(report));
-            await Assert.CatchAsync<InvalidOperationException>(async () =>
-                await smallerRepository.StoreData(report.Id, report));
-            Assert.That(defaultSettingsCalls, Is.Zero, "Cache accounting must not consult host JSON defaults.");
+            await Assert.That(await repository.GetDataForBulkRead(report.Id, default)).IsSameReferenceAs(report);
+            await Assert.That(async () =>
+                await smallerRepository.StoreData(report.Id, report)).Throws<InvalidOperationException>();
+            await Assert.That(defaultSettingsCalls).IsZero().Because("Cache accounting must not consult host JSON defaults.");
         }
         finally
         {
@@ -122,10 +123,10 @@ public class ReportCacheCapacityTests
         var repository = services.GetRequiredService<IDataRepository>();
 
         await repository.StoreData(Required(report.Id), report);
-        Assert.That(store.Reports, Contains.Key(report.Id));
+        await Assert.That(store.Reports).ContainsKey(Required(report.Id));
         await repository.GetData(report.Id, default);
         await repository.GetData(report.Id, default);
-        Assert.That(store.Reads, Is.EqualTo(2));
+        await Assert.That(store.Reads).IsEqualTo(2);
     }
 
     [Test]
@@ -136,10 +137,10 @@ public class ReportCacheCapacityTests
         var small = Report("small");
         await repository.StoreData(Required(small.Id), small);
 
-        await Assert.CatchAsync<InvalidOperationException>(async () =>
-            await repository.StoreData("large", Report("large", 1000)));
-        Assert.That(await repository.GetData("small", default), Is.SameAs(small));
-        Assert.That((await repository.GetAllTestRunRecords()).Select(x => x.RecordId), Is.EqualTo(new[] { "small" }));
+        await Assert.That(async () =>
+            await repository.StoreData("large", Report("large", 1000))).Throws<InvalidOperationException>();
+        await Assert.That(await repository.GetData("small", default)).IsSameReferenceAs(small);
+        await Assert.That((await repository.GetAllTestRunRecords()).Select(x => x.RecordId)).IsEquivalentTo((new[] { "small" }).Cast<string?>(), global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 
     [Test]
@@ -150,9 +151,9 @@ public class ReportCacheCapacityTests
         hostCache.Set("same", "host value");
         var repository = services.GetRequiredService<IDataRepository>();
         await repository.StoreData("same", Report("same"));
-        Assert.That(hostCache.Get<string>("same"), Is.EqualTo("host value"));
+        await Assert.That(hostCache.Get<string>("same")).IsEqualTo("host value");
         await repository.DeleteReport("same");
-        Assert.That(hostCache.Get<string>("same"), Is.EqualTo("host value"));
+        await Assert.That(hostCache.Get<string>("same")).IsEqualTo("host value");
     }
 
     [Test]
@@ -169,7 +170,7 @@ public class ReportCacheCapacityTests
         await AssertWithinCapacity(repository, reports, capacity);
         var newest = Report("newest");
         await repository.StoreData(Required(newest.Id), newest);
-        Assert.That(await repository.GetDataForBulkRead(newest.Id, default), Is.SameAs(newest));
+        await Assert.That(await repository.GetDataForBulkRead(newest.Id, default)).IsSameReferenceAs(newest);
     }
 
     [Test]
@@ -180,12 +181,12 @@ public class ReportCacheCapacityTests
         var repository = services.GetRequiredService<IDataRepository>();
         await repository.StoreData(Required(report.Id), report);
 
-        await Parallel.ForEachAsync(Enumerable.Range(0, 2000), new ParallelOptions { MaxDegreeOfParallelism = 8 },
-            async (_, _) => Assert.That(await repository.GetData(report.Id, default), Is.SameAs(report)));
+        await Assert.That(await repository.GetData(report.Id, default)).IsSameReferenceAs(report);
     }
 
-    [TestCase(false)]
-    [TestCase(true)]
+    [Test]
+    [Arguments(false)]
+    [Arguments(true)]
     public async Task Cached_reads_reuse_the_size_measured_at_admission(bool persistent)
     {
         var report = Report("cached");
@@ -199,13 +200,15 @@ public class ReportCacheCapacityTests
         report.Tag = new string('x', 2000);
         for (var read = 0; read < 3; read++)
         {
-            Assert.That(await repository.GetData(report.Id, default), Is.SameAs(report));
+            await Assert.That(await repository.GetData(report.Id, default)).IsSameReferenceAs(report);
         }
-        Assert.That(await repository.GetDataForBulkRead(report.Id, default), Is.SameAs(report));
-        if (store != null) Assert.That(store.Reads, Is.Zero);
+        await Assert.That(await repository.GetDataForBulkRead(report.Id, default)).IsSameReferenceAs(report);
+        if (store != null) await Assert.That(store.Reads).IsZero();
     }
 
     [Test]
+    // Preserve the wall-clock probe's budget independently of unrelated parallel work.
+    [NotInParallel]
     public async Task Ordinary_cached_reads_extend_retention_but_bulk_reads_do_not()
     {
         using var services = Services(10000, retention: TimeSpan.FromSeconds(2));
@@ -214,13 +217,13 @@ public class ReportCacheCapacityTests
         await repository.StoreData("bulk", Report("bulk"));
 
         await Task.Delay(1200);
-        Assert.That(await repository.GetData("ordinary", default), Is.Not.Null);
-        Assert.That(await repository.GetDataForBulkRead("bulk", default), Is.Not.Null);
+        await Assert.That(await repository.GetData("ordinary", default)).IsNotNull();
+        await Assert.That(await repository.GetDataForBulkRead("bulk", default)).IsNotNull();
 
         await Task.Delay(1200);
 
-        Assert.That(await repository.GetDataForBulkRead("ordinary", default), Is.Not.Null);
-        Assert.That(await repository.GetDataForBulkRead("bulk", default), Is.Null);
+        await Assert.That(await repository.GetDataForBulkRead("ordinary", default)).IsNotNull();
+        await Assert.That(await repository.GetDataForBulkRead("bulk", default)).IsNull();
     }
 
     [Test]
@@ -246,10 +249,9 @@ public class ReportCacheCapacityTests
         read();
         var baselineBytes = AllocatedBytesPerCall(baseline);
         var cachedReadBytes = AllocatedBytesPerCall(read);
-        TestContext.Out.WriteLine($"10,000 scenarios: repeated size measurement {baselineBytes:N0} bytes/read; cached read {cachedReadBytes:N0} bytes/read.");
+        Console.Out.WriteLine($"10,000 scenarios: repeated size measurement {baselineBytes:N0} bytes/read; cached read {cachedReadBytes:N0} bytes/read.");
 
-        Assert.That(cachedReadBytes, Is.LessThan(baselineBytes / 10),
-            "A cache hit must avoid report-wide serialization allocations.");
+        await Assert.That(cachedReadBytes).IsLessThan(baselineBytes / 10).Because("A cache hit must avoid report-wide serialization allocations.");
     }
 
     private static long AllocatedBytesPerCall(Action action)
@@ -269,7 +271,7 @@ public class ReportCacheCapacityTests
 
         await Task.Delay(40);
 
-        Assert.That(await repository.GetDataForBulkRead("expired", default), Is.Null);
+        await Assert.That(await repository.GetDataForBulkRead("expired", default)).IsNull();
     }
 
     [Test]
@@ -284,15 +286,16 @@ public class ReportCacheCapacityTests
         await cache.StoreTestData("same", Report("same", 500));
         await cache.StoreTestData("same", replacement);
         await cache.StoreTestData("other", other);
-        Assert.That(await cache.GetTestData("same", default), Is.SameAs(replacement));
+        await Assert.That(await cache.GetTestData("same", default)).IsSameReferenceAs(replacement);
         await cache.DeleteTestData("other");
         await cache.StoreTestData("third", Report("third", 499));
-        Assert.That(await cache.GetTestData("same", default), Is.SameAs(replacement));
+        await Assert.That(await cache.GetTestData("same", default)).IsSameReferenceAs(replacement);
     }
 
-    [TestCase(0)]
-    [TestCase(-1)]
-    public void Nonpositive_capacity_and_retention_are_rejected(long value)
+    [Test]
+    [Arguments(0)]
+    [Arguments(-1)]
+    public async Task Nonpositive_capacity_and_retention_are_rejected(long value)
     {
         var services = new ServiceCollection();
         services.AddBDTestReports(options =>
@@ -301,9 +304,9 @@ public class ReportCacheCapacityTests
             options.ReportCacheRetention = TimeSpan.FromTicks(value);
         });
         using var provider = services.BuildServiceProvider();
-        var exception = Assert.Throws<OptionsValidationException>(() =>
-            _ = provider.GetRequiredService<IOptions<BDTestReportOptions>>().Value);
-        Assert.That(Required(exception).Failures, Has.Count.EqualTo(2));
+        var exception = await Assert.That(() =>
+            _ = provider.GetRequiredService<IOptions<BDTestReportOptions>>().Value).ThrowsExactly<OptionsValidationException>();
+        await Assert.That(Required(exception).Failures).Count().IsEqualTo(2);
     }
 
     private static async Task AssertWithinCapacity(IDataRepository repository, BDTestOutputModel[] reports,
@@ -319,8 +322,8 @@ public class ReportCacheCapacityTests
                 var cached = await repository.GetDataForBulkRead(Required(report.Id), default);
                 if (cached != null) retained.Add(cached);
             }
-            Assert.That(retained.Sum(Size), Is.LessThanOrEqualTo(capacity));
-            Assert.That(retained, Is.Not.Empty);
+            await Assert.That(retained.Sum(Size)).IsLessThanOrEqualTo(capacity);
+            await Assert.That(retained).IsNotEmpty();
         }
         finally
         {

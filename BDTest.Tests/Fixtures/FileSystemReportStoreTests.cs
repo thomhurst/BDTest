@@ -1,3 +1,4 @@
+using System.IO;
 using System.Text;
 using System.Diagnostics;
 using BDTest.Razor.Reports.Storage;
@@ -5,7 +6,7 @@ using BDTest.Reports.Storage.FileSystem;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
-using NUnit.Framework;
+using System.Threading.Tasks;
 
 namespace BDTest.Tests.Fixtures;
 
@@ -13,7 +14,7 @@ public class FileSystemReportStoreTests
 {
     private string _directory = null!; // Set before each test.
 
-    [SetUp]
+    [Before(HookType.Test)]
     public void SetUp() => _directory = Path.Combine(
         ResolvePhysicalDirectory(new DirectoryInfo(Path.GetTempPath())), "BDTest-file-store", Guid.NewGuid().ToString("N"));
 
@@ -26,7 +27,7 @@ public class FileSystemReportStoreTests
         return physical.ResolveLinkTarget(returnFinalTarget: true)?.FullName ?? physical.FullName;
     }
 
-    [TearDown]
+    [After(HookType.Test)]
     public void TearDown()
     {
         if (Directory.Exists(_directory)) Directory.Delete(_directory, recursive: true);
@@ -54,16 +55,16 @@ public class FileSystemReportStoreTests
         using var input = Bytes("prefix  { \"unknown\": true } \n");
         input.Position = 6;
         await store.WriteAsync("CON", input, default);
-        Assert.That(input.CanRead, Is.True);
-        Assert.That(await Read(Store(), "CON"), Is.EqualTo("  { \"unknown\": true } \n"));
+        await Assert.That(input.CanRead).IsTrue();
+        await Assert.That(await Read(Store(), "CON")).IsEqualTo("  { \"unknown\": true } \n");
         using var lower = Bytes("lower");
         await store.WriteAsync("con", lower, default);
-        Assert.That(await Read(store, "con"), Is.EqualTo("lower"));
-        Assert.That(await Read(store, "CON"), Does.Contain("unknown"));
-        Assert.That(await Read(store, "missing"), Is.Null);
-        Assert.That(await store.DeleteAsync("CON", default), Is.True);
-        Assert.That(await store.DeleteAsync("CON", default), Is.False);
-        Assert.That(await Read(store, "con"), Is.EqualTo("lower"));
+        await Assert.That(await Read(store, "con")).IsEqualTo("lower");
+        await Assert.That(await Read(store, "CON")).Contains("unknown");
+        await Assert.That(await Read(store, "missing")).IsNull();
+        await Assert.That(await store.DeleteAsync("CON", default)).IsTrue();
+        await Assert.That(await store.DeleteAsync("CON", default)).IsFalse();
+        await Assert.That(await Read(store, "con")).IsEqualTo("lower");
     }
 
     [Test]
@@ -85,52 +86,52 @@ public class FileSystemReportStoreTests
             PageSize = 2, BranchName = "main", Environment = "ci", Tag = "smoke", ContinuationToken = token
         };
         var first = await Store().ListAsync(Query(), default);
-        Assert.That(first.Entries.Select(entry => entry.RecordId), Is.EqualTo(new[] { "a", "b" }));
-        Assert.That(first.Entries.All(entry => entry.Counts?.Passed == 3), Is.True);
+        await Assert.That(first.Entries.Select(entry => entry.RecordId)).IsEquivalentTo((new[] { "a", "b" }).Cast<string?>(), global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(first.Entries.All(entry => entry.Counts?.Passed == 3)).IsTrue();
         IRunIndexStore index = store;
-        Assert.That(await index.DeleteAsync("b", default), Is.True);
+        await Assert.That(await index.DeleteAsync("b", default)).IsTrue();
         var second = await index.ListAsync(Query(first.ContinuationToken), default);
-        Assert.That(second.Entries.Select(entry => entry.RecordId), Is.EqualTo(new[] { "c", "d" }));
-        Assert.That(second.ContinuationToken, Is.Null);
+        await Assert.That(second.Entries.Select(entry => entry.RecordId)).IsEquivalentTo((new[] { "c", "d" }).Cast<string?>(), global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(second.ContinuationToken).IsNull();
         await index.UpsertAsync(new RunIndexEntry { RecordId = "a", BranchName = "other" }, default);
-        Assert.That((await index.ListAsync(Query(), default)).Entries.Select(entry => entry.RecordId),
-            Is.EqualTo(new[] { "c", "d" }));
-        Assert.That(await index.DeleteAsync("b", default), Is.False);
-        Assert.That(await Read(store, "b"), Is.EqualTo("not JSON"));
-        await Assert.ThrowsAsync<ArgumentException>(async () =>
-            await index.ListAsync(new RunIndexQuery { ContinuationToken = "invalid" }, default));
-        await Assert.ThrowsAsync<ArgumentOutOfRangeException>(async () =>
-            await index.ListAsync(new RunIndexQuery { PageSize = 0 }, default));
+        await Assert.That((await index.ListAsync(Query(), default)).Entries.Select(entry => entry.RecordId)).IsEquivalentTo((new[] { "c", "d" }).Cast<string?>(), global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(await index.DeleteAsync("b", default)).IsFalse();
+        await Assert.That(await Read(store, "b")).IsEqualTo("not JSON");
+        await Assert.That(async () =>
+            await index.ListAsync(new RunIndexQuery { ContinuationToken = "invalid" }, default)).ThrowsExactly<ArgumentException>();
+        await Assert.That(async () =>
+            await index.ListAsync(new RunIndexQuery { PageSize = 0 }, default)).ThrowsExactly<ArgumentOutOfRangeException>();
     }
 
-    [TestCase(null)]
-    [TestCase("")]
-    [TestCase("../outside")]
-    [TestCase("..\\outside")]
-    [TestCase("/absolute")]
-    [TestCase("C:\\absolute")]
-    [TestCase("run:stream")]
-    [TestCase("%2e%2e%2foutside")]
-    [TestCase("run.")]
-    [TestCase("run ")]
-    [TestCase("é")]
+    [Test]
+    [Arguments(null)]
+    [Arguments("")]
+    [Arguments("../outside")]
+    [Arguments("..\\outside")]
+    [Arguments("/absolute")]
+    [Arguments("C:\\absolute")]
+    [Arguments("run:stream")]
+    [Arguments("%2e%2e%2foutside")]
+    [Arguments("run.")]
+    [Arguments("run ")]
+    [Arguments("é")]
     public async Task Every_ID_operation_rejects_unsafe_IDs_without_creating_storage(string? id)
     {
         var store = Store();
         using var input = Bytes("{}");
-        await Assert.ThrowsAsync<ArgumentException>(async () => await store.WriteAsync(id!, input, default));
-        await Assert.ThrowsAsync<ArgumentException>(async () => await store.OpenReadAsync(id!, default));
-        await Assert.ThrowsAsync<ArgumentException>(async () => await ((IReportStore)store).DeleteAsync(id!, default));
-        await Assert.ThrowsAsync<ArgumentException>(async () => await store.UpsertAsync(new() { RecordId = id }, default));
-        await Assert.ThrowsAsync<ArgumentException>(async () => await ((IRunIndexStore)store).DeleteAsync(id!, default));
-        Assert.That(Directory.Exists(_directory), Is.False);
+        await Assert.That(async () => await store.WriteAsync(id!, input, default)).ThrowsExactly<ArgumentException>();
+        await Assert.That(async () => await store.OpenReadAsync(id!, default)).ThrowsExactly<ArgumentException>();
+        await Assert.That(async () => await ((IReportStore)store).DeleteAsync(id!, default)).ThrowsExactly<ArgumentException>();
+        await Assert.That(async () => await store.UpsertAsync(new() { RecordId = id }, default)).ThrowsExactly<ArgumentException>();
+        await Assert.That(async () => await ((IRunIndexStore)store).DeleteAsync(id!, default)).ThrowsExactly<ArgumentException>();
+        await Assert.That(Directory.Exists(_directory)).IsFalse();
     }
 
     [Test]
     public async Task IDs_have_a_bounded_length()
     {
         using var input = Bytes("{}");
-        await Assert.ThrowsAsync<ArgumentException>(async () => await Store().WriteAsync(new string('a', 129), input, default));
+        await Assert.That(async () => await Store().WriteAsync(new string('a', 129), input, default)).ThrowsExactly<ArgumentException>();
         await Store().WriteAsync(new string('a', 128), input, default);
     }
 
@@ -140,17 +141,18 @@ public class FileSystemReportStoreTests
         var store = Store();
         var token = new CancellationToken(true);
         using var input = Bytes("{}");
-        await Assert.CatchAsync<OperationCanceledException>(async () => await store.WriteAsync("run", input, token));
-        await Assert.CatchAsync<OperationCanceledException>(async () => await store.OpenReadAsync("run", token));
-        await Assert.CatchAsync<OperationCanceledException>(async () => await ((IReportStore)store).DeleteAsync("run", token));
-        await Assert.CatchAsync<OperationCanceledException>(async () => await store.UpsertAsync(new() { RecordId = "run" }, token));
-        await Assert.CatchAsync<OperationCanceledException>(async () => await store.ListAsync(new(), token));
-        await Assert.CatchAsync<OperationCanceledException>(async () => await ((IRunIndexStore)store).DeleteAsync("run", token));
-        Assert.That(Directory.Exists(_directory), Is.False);
+        await Assert.That(async () => await store.WriteAsync("run", input, token)).Throws<OperationCanceledException>();
+        await Assert.That(async () => await store.OpenReadAsync("run", token)).Throws<OperationCanceledException>();
+        await Assert.That(async () => await ((IReportStore)store).DeleteAsync("run", token)).Throws<OperationCanceledException>();
+        await Assert.That(async () => await store.UpsertAsync(new() { RecordId = "run" }, token)).Throws<OperationCanceledException>();
+        await Assert.That(async () => await store.ListAsync(new(), token)).Throws<OperationCanceledException>();
+        await Assert.That(async () => await ((IRunIndexStore)store).DeleteAsync("run", token)).Throws<OperationCanceledException>();
+        await Assert.That(Directory.Exists(_directory)).IsFalse();
     }
 
-    [TestCase(false)]
-    [TestCase(true)]
+    [Test]
+    [Arguments(false)]
+    [Arguments(true)]
     public async Task Interrupted_write_preserves_old_report_and_removes_temporary_files(bool cancel)
     {
         var store = Store();
@@ -159,12 +161,12 @@ public class FileSystemReportStoreTests
         using var cancellation = new CancellationTokenSource();
         using var broken = new InterruptedStream(cancel ? cancellation : null);
         if (cancel)
-            await Assert.CatchAsync<OperationCanceledException>(async () => await store.WriteAsync("run", broken, cancellation.Token));
+            await Assert.That(async () => await store.WriteAsync("run", broken, cancellation.Token)).Throws<OperationCanceledException>();
         else
-            await Assert.ThrowsAsync<IOException>(async () => await store.WriteAsync("run", broken, default));
-        Assert.That(await Read(store, "run"), Is.EqualTo("original"));
-        Assert.That(Directory.GetFiles(_directory, "*.tmp"), Is.Empty);
-        Assert.That(broken.CanRead, Is.True);
+            await Assert.That(async () => await store.WriteAsync("run", broken, default)).ThrowsExactly<IOException>();
+        await Assert.That(await Read(store, "run")).IsEqualTo("original");
+        await Assert.That(Directory.GetFiles(_directory, "*.tmp")).IsEmpty();
+        await Assert.That(broken.CanRead).IsTrue();
     }
 
     [Test]
@@ -181,13 +183,13 @@ public class FileSystemReportStoreTests
             using var input = Bytes(value);
             await other.WriteAsync("run", input, default);
             await other.UpsertAsync(new() { RecordId = "run", Tag = value[..1] }, default);
-            Assert.That(values, Does.Contain(await Read(other, "run")));
+            await Assert.That(values).Contains(Required(await Read(other, "run")));
         }));
-        Assert.That(values, Does.Contain(await Read(store, "run")));
-        Assert.That((await store.ListAsync(new(), default)).Entries.Count, Is.EqualTo(1));
+        await Assert.That(values).Contains(Required(await Read(store, "run")));
+        await Assert.That((await store.ListAsync(new(), default)).Entries.Count).IsEqualTo(1);
         using var oldReader = new StreamReader(Required(reader));
-        Assert.That(await oldReader.ReadToEndAsync(), Is.EqualTo("original"));
-        Assert.That(Directory.GetFiles(_directory, "*.tmp"), Is.Empty);
+        await Assert.That(await oldReader.ReadToEndAsync()).IsEqualTo("original");
+        await Assert.That(Directory.GetFiles(_directory, "*.tmp")).IsEmpty();
     }
 
     [Test]
@@ -201,19 +203,19 @@ public class FileSystemReportStoreTests
             var temporary = Directory.GetFiles(_directory, "*.tmp").Single();
             contender = StartWorker("contender");
             await Expect(contender, "waiting-to-cancel");
-            Assert.That(File.Exists(temporary), Is.True);
+            await Assert.That(File.Exists(temporary)).IsTrue();
             await contender.StandardInput.WriteLineAsync("cancel");
             await Expect(contender, "cancelled");
-            Assert.That(File.Exists(temporary), Is.True);
+            await Assert.That(File.Exists(temporary)).IsTrue();
             await Expect(contender, "waiting-to-read");
             await writer.StandardInput.WriteLineAsync("release");
             await Expect(writer, "written");
             await Expect(contender, "complete:partial-complete");
             await writer.WaitForExitAsync().WaitAsync(TimeSpan.FromSeconds(30));
             await contender.WaitForExitAsync().WaitAsync(TimeSpan.FromSeconds(30));
-            Assert.That(writer.ExitCode, Is.Zero, await writer.StandardError.ReadToEndAsync());
-            Assert.That(contender.ExitCode, Is.Zero, await contender.StandardError.ReadToEndAsync());
-            Assert.That(Directory.GetFiles(_directory, "*.tmp"), Is.Empty);
+            await Assert.That(writer.ExitCode).IsZero().Because(await writer.StandardError.ReadToEndAsync());
+            await Assert.That(contender.ExitCode).IsZero().Because(await contender.StandardError.ReadToEndAsync());
+            await Assert.That(Directory.GetFiles(_directory, "*.tmp")).IsEmpty();
         }
         finally
         {
@@ -244,7 +246,7 @@ public class FileSystemReportStoreTests
     private static async Task Expect(Process process, string expected)
     {
         var actual = await process.StandardOutput.ReadLineAsync().WaitAsync(TimeSpan.FromSeconds(30));
-        Assert.That(actual, Is.EqualTo(expected), actual == null ? await process.StandardError.ReadToEndAsync() : null);
+        await Assert.That(actual).IsEqualTo(expected).Because(actual == null ? await process.StandardError.ReadToEndAsync() : "The worker must emit the expected protocol line");
     }
 
     private static async Task StopWorker(Process process)
@@ -261,9 +263,9 @@ public class FileSystemReportStoreTests
         using var lease = new FileStream(Path.Combine(_directory, "store.lock"), FileMode.Open, FileAccess.ReadWrite, FileShare.None);
         using var cancellation = new CancellationTokenSource();
         var pending = store.ListAsync(new(), cancellation.Token);
-        Assert.That(pending.IsCompleted, Is.False);
+        await Assert.That(pending.IsCompleted).IsFalse();
         cancellation.Cancel();
-        await Assert.CatchAsync<OperationCanceledException>(async () => await pending);
+        await Assert.That(async () => await pending).Throws<OperationCanceledException>();
     }
 
     [Test]
@@ -279,15 +281,15 @@ public class FileSystemReportStoreTests
         using var current = Bytes("current");
         await store.WriteAsync("current", current, default);
         await store.UpsertAsync(new() { RecordId = "current" }, default);
-        Assert.That(await Read(store, "old"), Is.Null);
-        Assert.That(await Read(store, "current"), Is.EqualTo("current"));
-        Assert.That((await store.ListAsync(new(), default)).Entries.Select(entry => entry.RecordId), Is.EqualTo(new[] { "current" }));
-        Assert.That(Directory.GetFiles(_directory, "*.tmp"), Is.Empty);
+        await Assert.That(await Read(store, "old")).IsNull();
+        await Assert.That(await Read(store, "current")).IsEqualTo("current");
+        await Assert.That((await store.ListAsync(new(), default)).Entries.Select(entry => entry.RecordId)).IsEquivalentTo((new[] { "current" }).Cast<string?>(), global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(Directory.GetFiles(_directory, "*.tmp")).IsEmpty();
         // Read/list operations also enforce retention when no new reports arrive.
         foreach (var path in Directory.GetFiles(_directory, "*.json"))
             File.SetLastWriteTimeUtc(path, DateTime.UtcNow.AddDays(-2));
-        Assert.That((await store.ListAsync(new(), default)).Entries, Is.Empty);
-        Assert.That(await Read(store, "current"), Is.Null);
+        await Assert.That((await store.ListAsync(new(), default)).Entries).IsEmpty();
+        await Assert.That(await Read(store, "current")).IsNull();
     }
 
     [Test]
@@ -301,13 +303,13 @@ public class FileSystemReportStoreTests
         using var replacement = Bytes("replacement");
         await store.WriteAsync("run", replacement, default);
         await using var stream = await store.OpenReadAsync("run", default);
-        Assert.That(stream, Is.Not.Null);
-        Assert.That(await store.DeleteAsync("run", default), Is.True);
+        await Assert.That(stream).IsNotNull();
+        await Assert.That(await store.DeleteAsync("run", default)).IsTrue();
         using var recreated = Bytes("recreated");
         await store.WriteAsync("run", recreated, default);
         using var reader = new StreamReader(Required(stream));
-        Assert.That(await reader.ReadToEndAsync(), Is.EqualTo("replacement"));
-        Assert.That(await Read(store, "run"), Is.EqualTo("recreated"));
+        await Assert.That(await reader.ReadToEndAsync()).IsEqualTo("replacement");
+        await Assert.That(await Read(store, "run")).IsEqualTo("recreated");
     }
 
     [Test]
@@ -321,13 +323,13 @@ public class FileSystemReportStoreTests
         await File.WriteAllTextAsync(outside, "untouched");
         File.Delete(path);
         try { File.CreateSymbolicLink(path, outside); }
-        catch (UnauthorizedAccessException) { Assert.Ignore("Creating symbolic links requires privileges on this host."); }
+        catch (UnauthorizedAccessException) { Skip.Test("Creating symbolic links requires privileges on this host."); }
         catch (IOException exception) when ((exception.HResult & 0xffff) == 1314)
-        { Assert.Ignore("Creating symbolic links requires privileges on this host."); }
-        await Assert.ThrowsAsync<IOException>(async () => await store.OpenReadAsync("run", default));
-        await Assert.ThrowsAsync<IOException>(async () => await store.WriteAsync("run", input, default));
-        await Assert.ThrowsAsync<IOException>(async () => await ((IReportStore)store).DeleteAsync("run", default));
-        Assert.That(await File.ReadAllTextAsync(outside), Is.EqualTo("untouched"));
+        { Skip.Test("Creating symbolic links requires privileges on this host."); }
+        await Assert.That(async () => await store.OpenReadAsync("run", default)).ThrowsExactly<IOException>();
+        await Assert.That(async () => await store.WriteAsync("run", input, default)).ThrowsExactly<IOException>();
+        await Assert.That(async () => await ((IReportStore)store).DeleteAsync("run", default)).ThrowsExactly<IOException>();
+        await Assert.That(await File.ReadAllTextAsync(outside)).IsEqualTo("untouched");
     }
 
     [Test]
@@ -338,16 +340,16 @@ public class FileSystemReportStoreTests
         Directory.CreateDirectory(target);
         var link = Path.Combine(_directory, "link");
         try { Directory.CreateSymbolicLink(link, target); }
-        catch (UnauthorizedAccessException) { Assert.Ignore("Creating symbolic links requires privileges on this host."); }
+        catch (UnauthorizedAccessException) { Skip.Test("Creating symbolic links requires privileges on this host."); }
         catch (IOException exception) when ((exception.HResult & 0xffff) == 1314)
-        { Assert.Ignore("Creating symbolic links requires privileges on this host."); }
+        { Skip.Test("Creating symbolic links requires privileges on this host."); }
         var store = new FileSystemReportStore(Options.Create(new FileSystemReportStoreOptions
         {
             DirectoryPath = Path.Combine(link, "reports")
         }));
         using var input = Bytes("data");
-        await Assert.ThrowsAsync<IOException>(async () => await store.WriteAsync("run", input, default));
-        Assert.That(Directory.GetFileSystemEntries(target), Is.Empty);
+        await Assert.That(async () => await store.WriteAsync("run", input, default)).ThrowsExactly<IOException>();
+        await Assert.That(Directory.GetFileSystemEntries(target)).IsEmpty();
     }
 
     [Test]
@@ -357,7 +359,7 @@ public class FileSystemReportStoreTests
         builder.Services.AddBDTestFileSystemStorage(options => options.DirectoryPath = _directory);
         using var host = builder.Build();
         await host.StartAsync();
-        Assert.That(host.Services.GetRequiredService<IReportStore>(), Is.SameAs(host.Services.GetRequiredService<IRunIndexStore>()));
+        await Assert.That(host.Services.GetRequiredService<IReportStore>()).IsSameReferenceAs(host.Services.GetRequiredService<IRunIndexStore>());
         await host.StopAsync();
         foreach (var options in new[]
         {
@@ -374,8 +376,8 @@ public class FileSystemReportStoreTests
                 value.Retention = options.Retention;
             });
             using var invalidHost = invalid.Build();
-            await Assert.ThrowsAsync<OptionsValidationException>(async () => await invalidHost.StartAsync());
-            Assert.Throws<OptionsValidationException>(() => new FileSystemReportStore(Options.Create(options)));
+            await Assert.That(async () => await invalidHost.StartAsync()).ThrowsExactly<OptionsValidationException>();
+            await Assert.That(() => new FileSystemReportStore(Options.Create(options))).ThrowsExactly<OptionsValidationException>();
         }
     }
 
