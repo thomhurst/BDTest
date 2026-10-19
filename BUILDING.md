@@ -144,10 +144,12 @@ Five additional NUnit-specific cases belong in `BDTest.NUnit.Tests`: the native
 success exception and four scenario-hook assertion-scope cases. Their NUnit
 names, inputs and assertions are preserved, bringing that suite to **145 discovered
 definitions**, including explicit runner probes. Core retains **1,900 logical
-cases**; none were removed. TUnit exposes repetitions as separate definitions:
+cases** from that baseline; none were removed. Integrating #967 adds 27 attachment
+rendering cases (26 view cases and one upload integration case), all converted
+to TUnit, for **1,927 logical cases**. TUnit exposes repetitions as separate definitions:
 eight output-capture cases run ten times (`Repeat(9)`), and two isolation cases
-run three times (`Repeat(2)`). Thus core discovers **1,976 executable cases**
-(1,900 + 72 + 4), preserving the number of executions. NUnit class arguments
+run three times (`Repeat(2)`). Thus core discovers **2,003 executable cases**
+(1,927 + 72 + 4), preserving the number of executions. NUnit class arguments
 become TUnit class arguments; matrix values and typed data sources preserve every
 row. The two parameterized report fixtures now share a class identity across
 argument sets in TRX, while their case counts remain 54 and 44.
@@ -181,6 +183,9 @@ TUnit analyzer suppressions cover intentional per-case state, public BDTest
 retry hooks, and the custom worker entry point; nullable analysis, warnings-as-errors,
 source generators and BDTest analyzers remain enabled.
 
+The macOS file-store CI job uses `dotnet run` with the TUnit tree-node filter
+`/*/*/FileSystemReportStoreTests/*`.
+
 The executable dispatches `file-store-worker` arguments to the existing isolated
 process protocol and all normal runner arguments to the generated Microsoft
 Testing Platform application, retaining extension registration and TRX output.
@@ -188,13 +193,22 @@ Signing and friend grants are unchanged: only signed `BDTest.Tests` has access
 to core and Razor internals. Pipeline runner selection still uses evaluated
 package references, including VSTest for xUnit executable projects.
 
-Validation on Windows with SDK 10.0.402: Release solution build completed with
+Initial validation on Windows with SDK 10.0.402: Release solution build completed with
 zero warnings/errors. Two full core runs with default parallel execution each
 reported 1,974 passed and the same two symbolic-link privilege skips as the
 baseline (1,976 total). All eleven other test projects were exercised; the
 pipeline's changed runner-selection expectation passed a focused rerun.
 Signing verification, native skip outcomes (21), adapter conformance (155),
 additional native lifecycle outcomes (46), and the documentation build passed.
+
+After integrating #967, the Release build and all eleven other test projects
+passed. The full core run passed 2,001 cases with two expected symbolic-link
+skips (2,003 total). The first run overlapped other suites and npm installation
+and hit the unchanged 10-second attachment disk-write guard; the full rerun with
+no competing validation passed. Run the suites sequentially when validating
+these bounded disk/timing probes. The file-store CI command selected all 25
+cases (23 passed and two Windows skips); native Darwin locking remains covered
+by macOS CI. Signing, report controls and the documentation build also passed.
 
 ## Completed nullable rollout
 

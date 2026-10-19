@@ -181,7 +181,8 @@ public class ReportCacheCapacityTests
         var repository = services.GetRequiredService<IDataRepository>();
         await repository.StoreData(Required(report.Id), report);
 
-        await Assert.That(await repository.GetData(report.Id, default)).IsSameReferenceAs(report);
+        await Parallel.ForEachAsync(Enumerable.Range(0, 2000), new ParallelOptions { MaxDegreeOfParallelism = 8 },
+            async (_, _) => await Assert.That(await repository.GetData(report.Id, default)).IsSameReferenceAs(report));
     }
 
     [Test]

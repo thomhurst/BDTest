@@ -5,7 +5,6 @@ using BDTest.Helpers;
 using BDTest.Razor.Reports.Interfaces;
 using BDTest.Test;
 using Microsoft.Extensions.DependencyInjection;
-using NUnit.Framework;
 
 namespace BDTest.Tests.Fixtures;
 
@@ -33,30 +32,36 @@ public partial class ReportUploadTests
         var report = server.Store.Received.Single();
         var html = await server.Client.GetStringAsync($"bdtest/report/{report.Id}/scenario/{scenario.Guid}");
         var steps = Regex.Matches(html, "<details class=\"expander step-item\".*?</details>", RegexOptions.Singleline);
-        Assert.That(steps, Has.Count.EqualTo(2));
+        await Assert.That(steps.Count).IsEqualTo(2);
         var firstStep = steps[0].Value;
-        Assert.That(firstStep, Does.Contain("body-1").And.Contain("body-2").And.Contain("before.txt").And.Contain("after.txt"));
-        Assert.That(firstStep, Does.Not.Contain("setup.txt").And.Not.Contain("teardown.txt"));
+        await Assert.That(firstStep).Contains("body-1");
+        await Assert.That(firstStep).Contains("body-2");
+        await Assert.That(firstStep).Contains("before.txt");
+        await Assert.That(firstStep).Contains("after.txt");
+        await Assert.That(firstStep).DoesNotContain("setup.txt");
+        await Assert.That(firstStep).DoesNotContain("teardown.txt");
         foreach (var file in Required(Required(scenario.Steps)[0].Attachments))
         {
             var group = Regex.Match(firstStep, $"<section class=\"attachment-list\"[^>]*data-attempt=\"{file.AttemptNumber}\".*?</section>", RegexOptions.Singleline).Value;
-            Assert.That(group, Does.Contain($"data-attachment-id=\"{file.Id}\""));
+            await Assert.That(group).Contains($"data-attachment-id=\"{file.Id}\"");
             using var download = await server.Client.GetAsync($"bdtest/report/{report.Id}/attachments/{file.Id}");
-            Assert.That(download.StatusCode, Is.EqualTo(HttpStatusCode.OK));
-            Assert.That(await download.Content.ReadAsStringAsync(), Is.EqualTo(file.Name));
+            await Assert.That(download.StatusCode).IsEqualTo(HttpStatusCode.OK);
+            await Assert.That(await download.Content.ReadAsStringAsync()).IsEqualTo(file.Name);
         }
-        Assert.That(html, Does.Contain("setup.txt").And.Contain("teardown.txt"));
-        Assert.That(steps[1].Value, Does.Not.Contain("body-1").And.Not.Contain("body-2"));
+        await Assert.That(html).Contains("setup.txt");
+        await Assert.That(html).Contains("teardown.txt");
+        await Assert.That(steps[1].Value).DoesNotContain("body-1");
+        await Assert.That(steps[1].Value).DoesNotContain("body-2");
 
         // Rendering uses metadata, so retention or an interrupted upload cannot break the page.
         await files.Store.DeleteReportAsync(Required(report.Id));
         var attachment = BDTestAttachmentHelper.GetAttachments(report).First();
         using var missing = await server.Client.GetAsync($"bdtest/report/{report.Id}/attachments/{attachment.Id}");
-        Assert.That(missing.StatusCode, Is.EqualTo(HttpStatusCode.NotFound));
+        await Assert.That(missing.StatusCode).IsEqualTo(HttpStatusCode.NotFound);
         var afterDeletion = await server.Client.GetStringAsync($"bdtest/report/{report.Id}/scenario/{scenario.Guid}");
-        Assert.That(afterDeletion, Does.Contain($"data-attachment-id=\"{attachment.Id}\""));
+        await Assert.That(afterDeletion).Contains($"data-attachment-id=\"{attachment.Id}\"");
         using var retained = run.OpenAttachment(Required(attachment.Id));
-        Assert.That(retained.CanRead, Is.True, "Uploading or deleting server content must not dispose run-owned files.");
+        await Assert.That(retained.CanRead).IsTrue().Because("Uploading or deleting server content must not dispose run-owned files.");
     }
 
     private sealed class RenderingCapture(BDTestRun run) : AbstractContextBDTestBase<object>

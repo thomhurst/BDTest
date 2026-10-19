@@ -33,7 +33,17 @@ public class BDTestRunTests
 
         var firstScenario = await execute();
         var secondScenario = await new Capture(second, "same-id").Build().BDTestAsync();
-        await Assert.That(async () => { await execute(); }).ThrowsExactly<AlreadyExecutedException>();
+        // Invoke in this flow: an async assertion delegate would restore AsyncLocal output targets.
+        Exception? rejected = null;
+        try
+        {
+            _ = execute();
+        }
+        catch (Exception exception)
+        {
+            rejected = exception;
+        }
+        await Assert.That(rejected?.GetType()).IsEqualTo(typeof(AlreadyExecutedException));
         await Assert.That(TestOutputData.Run).IsSameReferenceAs(second);
         await Assert.That(TestOutputData.TestId).IsEqualTo(secondScenario.Guid);
         await Assert.That(TestOutputData.FrameworkExecutionId).IsEqualTo("same-id");

@@ -2,7 +2,6 @@ using System.Text.Encodings.Web;
 using System.Text.RegularExpressions;
 using BDTest.Razor.Reports.Models.ViewModels;
 using BDTest.Test;
-using NUnit.Framework;
 
 namespace BDTest.Tests.Fixtures;
 
@@ -11,35 +10,38 @@ public class ReportAttachmentRenderingTests
     private const string ReportId = "00112233445566778899aabbccddeeff";
     private const string AttachmentId = "112233445566778899aabbccddeeff00";
 
-    [TestCase("image/png", true)]
-    [TestCase("IMAGE/JPEG", true)]
-    [TestCase("image/png; version=1", true)]
-    [TestCase("IMAGE/JPEG; charset=binary", true)]
-    [TestCase("image/png; profile=\"example\"", true)]
-    [TestCase("image/svg+xml; charset=utf-8", false)]
-    [TestCase("text/html; charset=utf-8", false)]
-    [TestCase("image/png; profile=\"unterminated", false)]
-    [TestCase("image/png, text/html", false)]
-    [TestCase("", false)]
-    [TestCase("image/gif", true)]
-    [TestCase("image/webp", true)]
-    [TestCase("image/bmp", true)]
-    [TestCase("image/avif", true)]
-    [TestCase("image/svg+xml", false)]
-    [TestCase("text/html", false)]
-    [TestCase("application/xhtml+xml", false)]
-    [TestCase("application/pdf", false)]
-    [TestCase("image/unknown", false)]
-    [TestCase("text/plain", false)]
-    [TestCase(null, false)]
+    [Test]
+    [Arguments("image/png", true)]
+    [Arguments("IMAGE/JPEG", true)]
+    [Arguments("image/png; version=1", true)]
+    [Arguments("IMAGE/JPEG; charset=binary", true)]
+    [Arguments("image/png; profile=\"example\"", true)]
+    [Arguments("image/svg+xml; charset=utf-8", false)]
+    [Arguments("text/html; charset=utf-8", false)]
+    [Arguments("image/png; profile=\"unterminated", false)]
+    [Arguments("image/png, text/html", false)]
+    [Arguments("", false)]
+    [Arguments("image/gif", true)]
+    [Arguments("image/webp", true)]
+    [Arguments("image/bmp", true)]
+    [Arguments("image/avif", true)]
+    [Arguments("image/svg+xml", false)]
+    [Arguments("text/html", false)]
+    [Arguments("application/xhtml+xml", false)]
+    [Arguments("application/pdf", false)]
+    [Arguments("image/unknown", false)]
+    [Arguments("text/plain", false)]
+    [Arguments(null, false)]
     public async Task Only_known_raster_types_have_previews(string? mime, bool preview)
     {
         var html = await RenderAttachments(new Attachment { Id = AttachmentId, Name = "capture", MimeType = mime, AttemptNumber = 1 });
-        Assert.That(html.Contains("<img "), Is.EqualTo(preview));
-        Assert.That(html.Contains("data-bdtest-action=\"preview-attachment\""), Is.EqualTo(preview));
-        Assert.That(html, Does.Contain($"href=\"/host/bdtest/report/{ReportId}/attachments/{AttachmentId}\""));
-        Assert.That(html, Does.Contain("download"));
-        Assert.That(html, Does.Not.Contain("<iframe").And.Not.Contain("<object").And.Not.Contain("<embed"));
+        await Assert.That(html.Contains("<img ")).IsEqualTo(preview);
+        await Assert.That(html.Contains("data-bdtest-action=\"preview-attachment\"")).IsEqualTo(preview);
+        await Assert.That(html).Contains($"href=\"/host/bdtest/report/{ReportId}/attachments/{AttachmentId}\"");
+        await Assert.That(html).Contains("download");
+        await Assert.That(html).DoesNotContain("<iframe");
+        await Assert.That(html).DoesNotContain("<object");
+        await Assert.That(html).DoesNotContain("<embed");
     }
 
     [Test]
@@ -52,18 +54,23 @@ public class ReportAttachmentRenderingTests
             Id = AttachmentId, Name = name, MimeType = mime, Length = 42, AttemptNumber = 2,
             Uri = "javascript:alert(3)"
         });
-        Assert.That(html, Does.Contain(HtmlEncoder.Default.Encode(name)));
-        Assert.That(html, Does.Contain(HtmlEncoder.Default.Encode(mime)));
-        Assert.That(html, Does.Not.Contain("<img").And.Not.Contain("<script").And.Not.Contain("javascript:"));
-        Assert.That(html, Does.Contain("42 bytes").And.Contain("Attempt 2"));
+        await Assert.That(html).Contains(HtmlEncoder.Default.Encode(name));
+        await Assert.That(html).Contains(HtmlEncoder.Default.Encode(mime));
+        await Assert.That(html).DoesNotContain("<img");
+        await Assert.That(html).DoesNotContain("<script");
+        await Assert.That(html).DoesNotContain("javascript:");
+        await Assert.That(html).Contains("42 bytes");
+        await Assert.That(html).Contains("Attempt 2");
     }
 
     [Test]
     public async Task Unknown_identifiers_show_metadata_without_an_unsafe_link()
     {
         var html = await RenderAttachments(new Attachment { Id = "../bad", Name = "old capture", MimeType = "image/png", AttemptNumber = 1 });
-        Assert.That(html, Does.Contain("old capture").And.Contain("Content unavailable"));
-        Assert.That(html, Does.Not.Contain("href=").And.Not.Contain("<img"));
+        await Assert.That(html).Contains("old capture");
+        await Assert.That(html).Contains("Content unavailable");
+        await Assert.That(html).DoesNotContain("href=");
+        await Assert.That(html).DoesNotContain("<img");
     }
 
     [Test]
@@ -84,20 +91,26 @@ public class ReportAttachmentRenderingTests
         })
         {
             var html = await Render(path, model);
-            Assert.That(html, Does.Contain("outline setup").And.Contain("row setup").And.Contain("row step"));
+            await Assert.That(html).Contains("outline setup");
+            await Assert.That(html).Contains("row setup");
+            await Assert.That(html).Contains("row step");
             var row = Regex.Match(html, "<details class=\"example-row\".*?</details>", RegexOptions.Singleline).Value;
-            Assert.That(row, Does.Contain("row setup").And.Contain("row step").And.Not.Contain("outline setup"));
-            Assert.That(row.IndexOf("When", StringComparison.Ordinal), Is.LessThan(row.IndexOf("row step", StringComparison.Ordinal)));
-            Assert.That(row, Does.Contain("Attempt 2"));
+            await Assert.That(row).Contains("row setup");
+            await Assert.That(row).Contains("row step");
+            await Assert.That(row).DoesNotContain("outline setup");
+            await Assert.That(row.IndexOf("When", StringComparison.Ordinal)).IsLessThan(row.IndexOf("row step", StringComparison.Ordinal));
+            await Assert.That(row).Contains("Attempt 2");
         }
     }
 
-    [TestCase("{}")]
-    [TestCase("{\"Attachments\":null,\"Steps\":[{\"Attachments\":null}]}")]
+    [Test]
+    [Arguments("{}")]
+    [Arguments("{\"Attachments\":null,\"Steps\":[{\"Attachments\":null}]}")]
     public async Task Historical_reports_without_attachments_still_render(string json)
     {
         var html = await Render("/Views/BDTest/Scenario.cshtml", ReportJson.DeserializeObject<Scenario>(json));
-        Assert.That(html, Does.Contain("Steps").And.Not.Contain("class=\"attachment-list\""));
+        await Assert.That(html).Contains("Steps");
+        await Assert.That(html).DoesNotContain("class=\"attachment-list\"");
     }
 
     private static Task<string> RenderAttachments(params Attachment[] attachments) => Render("/Views/Shared/_Attachments.cshtml", attachments);
