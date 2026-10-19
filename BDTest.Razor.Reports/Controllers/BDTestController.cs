@@ -87,7 +87,22 @@ public class BDTestController : Controller
         Response.Headers["X-BDTest-Report-Id"] = id;
         if (attachmentToken != null)
             Response.Headers["X-BDTest-Attachment-Token"] = attachmentToken;
-        return Ok(Url.ActionLink("Summary", "BDTest", new { id }));
+        var reportUrl = Url.ActionLink("Summary", "BDTest", new { id })
+            ?? throw new InvalidOperationException("Could not generate the report URL.");
+        if (Request.Headers["X-BDTest-Upload-Protocol"].ToString() == "1")
+        {
+            Response.Headers.Location = reportUrl;
+            // Fix the wire format independently of host JSON settings and Accept negotiation.
+            return new ContentResult
+            {
+                StatusCode = 201,
+                ContentType = "application/json; charset=utf-8",
+                Content = System.Text.Json.JsonSerializer.Serialize(
+                    new BDTestReportUploadResult(new Uri(reportUrl), id),
+                    BDTestReportJsonContext.Default.BDTestReportUploadResult)
+            };
+        }
+        return Content(reportUrl, "text/plain; charset=utf-8");
     }
 
     [HttpGet]

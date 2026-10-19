@@ -33,7 +33,7 @@ public class ReportModelTests
         var json = BDTestJsonHelper.GetTestJsonData(descriptor, run);
         using var handler = new ReportHandler();
         using var client = new HttpClient(handler);
-        await BDTestReportServer.SendDataAndGetReportUriAsync(new Uri("https://reports.example"), descriptor, client, run);
+        await BDTest.Tests.Helpers.CompatibilityReportUpload.SendDataAndGetReportUriAsync(new Uri("https://reports.example"), descriptor, client, run);
 
         await Assert.That(JToken.DeepEquals(JToken.Parse(json), JToken.Parse(Required(handler.Payload)))).IsTrue().Because("Formatting may differ, but JSON export and upload must have the same report values.");
         var report = Required(BDTestJsonHelper.DeserializeReport(json));
@@ -67,7 +67,7 @@ public class ReportModelTests
         var json = BDTestJsonHelper.GetTestJsonData(Descriptor(), run);
         using var handler = new ReportHandler();
         using var client = new HttpClient(handler);
-        await BDTestReportServer.SendDataAndGetReportUriAsync(new Uri("https://reports.example"), Descriptor(), client, run);
+        await BDTest.Tests.Helpers.CompatibilityReportUpload.SendDataAndGetReportUriAsync(new Uri("https://reports.example"), Descriptor(), client, run);
 
         foreach (var payload in new[] { json, Required(handler.Payload) })
         {
@@ -106,7 +106,7 @@ public class ReportModelTests
 
         await Assert.That(Required(await Assert.That(() => BDTestJsonHelper.GetTestJsonData(null, null!)).ThrowsExactly<ArgumentNullException>()).ParamName).IsEqualTo("run");
         await Assert.That(Required(await Assert.That(() => BDTestHtmlHelper.GetTestHtmlReport(null, null!)).ThrowsExactly<ArgumentNullException>()).ParamName).IsEqualTo("run");
-        var exception = await Assert.That(async () => { await BDTestReportServer.SendDataAndGetReportUriAsync(
+        var exception = await Assert.That(async () => { await BDTest.Tests.Helpers.CompatibilityReportUpload.SendDataAndGetReportUriAsync(
             new Uri("https://reports.example"), null, client, null!); }).ThrowsExactly<ArgumentNullException>();
         await Assert.That(Required(exception).ParamName).IsEqualTo("run");
         await Assert.That(handler.RequestCount).IsZero();
@@ -122,7 +122,7 @@ public class ReportModelTests
 
         await Assert.That(() => BDTestJsonHelper.GetTestJsonData(Descriptor(), run)).ThrowsExactly<ObjectDisposedException>();
         await Assert.That(() => BDTestHtmlHelper.GetTestHtmlReport(Descriptor(), run)).ThrowsExactly<ObjectDisposedException>();
-        await Assert.That(async () => { await BDTestReportServer.SendDataAndGetReportUriAsync(
+        await Assert.That(async () => { await BDTest.Tests.Helpers.CompatibilityReportUpload.SendDataAndGetReportUriAsync(
             new Uri("https://reports.example"), Descriptor(), client, run); }).ThrowsExactly<ObjectDisposedException>();
         await Assert.That(handler.RequestCount).IsZero();
     }
@@ -144,7 +144,7 @@ public class ReportModelTests
         {
             RequestCount++;
             if (request.Method == HttpMethod.Post)
-                Payload = await Required(request.Content).ReadAsStringAsync(cancellationToken);
+                Payload = await BDTest.Tests.Helpers.CompatibilityReportUpload.ReadReportAsync(Required(request.Content), cancellationToken);
             return new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent("https://reports.example/report") };
         }
     }

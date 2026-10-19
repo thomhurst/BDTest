@@ -64,7 +64,7 @@ Keep the run alive until tests, writers and exporters finish. Use `using` or `tr
 
 ## Uploading
 
-`BDTestReportServer.SendDataAndGetReportUriAsync` uploads report JSON first, then streams each referenced attachment from that run's temporary files. Explicit-run overloads never read another run's files. Captures from retry attempts and outline examples are included. Pending files without a scenario are not uploaded. Keep the run alive until the whole upload completes; neither success nor failure clears its files automatically.
+`BDTestReportUploader.UploadReportAsync` uploads report JSON first, then streams each referenced attachment from that run's temporary files. Explicit-run overloads never read another run's files. Captures from retry attempts and outline examples are included. Pending files without a scenario are not uploaded. Keep the run alive until the whole upload completes; neither success nor failure clears its files automatically.
 
 Configure an [attachment store](../report-server/persistence.md#attachments) on the server and pass a caller-owned `HttpClient` carrying `X-BDTest-Upload-Key`. An older server that does not issue an attachment receipt causes the upload method to throw when the run has attachments. The contracts-based host supports schema-version-1 uploads, including attachment metadata retained across retries, and reads historical reports. Upgrade older hosts before using the current exporter; see [server compatibility](../migration/immutable-results.md).
 

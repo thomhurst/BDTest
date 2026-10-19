@@ -19,7 +19,7 @@ public class ReportServerRetryTests : TestRunOwner
         var requests = new List<string>();
         using var handler = new UploadHandler(async (request, attempt) =>
         {
-            requests.Add(await Required(request.Content).ReadAsStringAsync());
+            requests.Add(await BDTest.Tests.Helpers.CompatibilityReportUpload.ReadReportAsync(Required(request.Content)));
             await Assert.That(request.Headers.GetValues("X-BDTest-Upload-Key")).IsEquivalentTo(new[] { "secret" }, global::TUnit.Assertions.Enums.CollectionOrdering.Matching);
             if (attempt == 1)
             {
@@ -48,7 +48,7 @@ public class ReportServerRetryTests : TestRunOwner
         using var client = new HttpClient(handler);
         client.DefaultRequestHeaders.Add("X-BDTest-Upload-Key", "secret");
 
-        var result = await BDTestReportServer.SendDataAndGetReportUriAsync(new Uri("https://reports.example"), new BDTestRunDescriptor(), client, TestRun);
+        var result = await BDTest.Tests.Helpers.CompatibilityReportUpload.SendDataAndGetReportUriAsync(new Uri("https://reports.example"), new BDTestRunDescriptor(), client, TestRun);
 
         await Assert.That(result).IsEqualTo(new Uri("https://reports.example/bdtest/report/server-id"));
         await Assert.That(handler.UploadAttempts).IsEqualTo(2);
@@ -77,7 +77,7 @@ public class ReportServerRetryTests : TestRunOwner
         });
         using var client = new HttpClient(handler);
 
-        await BDTestReportServer.SendDataAndGetReportUriAsync(new Uri("https://reports.example"), new BDTestRunDescriptor(), client, TestRun);
+        await BDTest.Tests.Helpers.CompatibilityReportUpload.SendDataAndGetReportUriAsync(new Uri("https://reports.example"), new BDTestRunDescriptor(), client, TestRun);
 
         await Assert.That(handler.UploadAttempts).IsEqualTo(2);
     }
@@ -94,7 +94,7 @@ public class ReportServerRetryTests : TestRunOwner
         using var client = new HttpClient(handler);
 
         await Assert.That(async () =>
-            await BDTestReportServer.SendDataAndGetReportUriAsync(new Uri("https://reports.example"), new BDTestRunDescriptor(), client, TestRun).WaitAsync(TimeSpan.FromSeconds(5))).ThrowsExactly<HttpRequestException>();
+            await BDTest.Tests.Helpers.CompatibilityReportUpload.SendDataAndGetReportUriAsync(new Uri("https://reports.example"), new BDTestRunDescriptor(), client, TestRun).WaitAsync(TimeSpan.FromSeconds(5))).ThrowsExactly<HttpRequestException>();
         await Assert.That(handler.UploadAttempts).IsEqualTo(3);
     }
 
@@ -118,7 +118,7 @@ public class ReportServerRetryTests : TestRunOwner
         using var client = new HttpClient(handler);
 
         await Assert.That(async () =>
-            await BDTestReportServer.SendDataAndGetReportUriAsync(new Uri("https://reports.example"), new BDTestRunDescriptor(), client, TestRun)).ThrowsExactly<HttpRequestException>();
+            await BDTest.Tests.Helpers.CompatibilityReportUpload.SendDataAndGetReportUriAsync(new Uri("https://reports.example"), new BDTestRunDescriptor(), client, TestRun)).ThrowsExactly<HttpRequestException>();
 
         await Assert.That(handler.UploadAttempts).IsEqualTo(1);
     }
@@ -144,7 +144,7 @@ public class ReportServerRetryTests : TestRunOwner
         });
         using var client = new HttpClient(handler);
 
-        await BDTestReportServer.SendDataAndGetReportUriAsync(new Uri("https://reports.example"), new BDTestRunDescriptor(), client, TestRun);
+        await BDTest.Tests.Helpers.CompatibilityReportUpload.SendDataAndGetReportUriAsync(new Uri("https://reports.example"), new BDTestRunDescriptor(), client, TestRun);
 
         await Assert.That(handler.UploadAttempts).IsEqualTo(3);
     }
@@ -167,7 +167,7 @@ public class ReportServerRetryTests : TestRunOwner
         });
         using var client = new HttpClient(handler);
 
-        await BDTestReportServer.SendDataAndGetReportUriAsync(new Uri("https://reports.example"), new BDTestRunDescriptor(), client, TestRun);
+        await BDTest.Tests.Helpers.CompatibilityReportUpload.SendDataAndGetReportUriAsync(new Uri("https://reports.example"), new BDTestRunDescriptor(), client, TestRun);
 
         await Assert.That(handler.UploadAttempts).IsEqualTo(2);
     }
@@ -179,7 +179,7 @@ public class ReportServerRetryTests : TestRunOwner
         using var client = new HttpClient(handler);
 
         await Assert.That(async () =>
-            await BDTestReportServer.SendDataAndGetReportUriAsync(new Uri("https://reports.example"), new BDTestRunDescriptor(), client, TestRun)).ThrowsExactly<InvalidOperationException>();
+            await BDTest.Tests.Helpers.CompatibilityReportUpload.SendDataAndGetReportUriAsync(new Uri("https://reports.example"), new BDTestRunDescriptor(), client, TestRun)).ThrowsExactly<InvalidOperationException>();
 
         await Assert.That(handler.UploadAttempts).IsEqualTo(1);
     }
@@ -192,15 +192,15 @@ public class ReportServerRetryTests : TestRunOwner
     {
         using var handler = new TrackingHandler(status);
         using var client = new HttpClient(handler);
-        var upload = BDTestReportServer.SendDataAndGetReportUriAsync(new Uri("https://reports.example"), new BDTestRunDescriptor(), client, TestRun);
+        var upload = BDTest.Tests.Helpers.CompatibilityReportUpload.SendDataAndGetReportUriAsync(new Uri("https://reports.example"), new BDTestRunDescriptor(), client, TestRun);
         if (status == HttpStatusCode.OK) await upload;
         else await Assert.That(async () => await upload).ThrowsExactly<HttpRequestException>();
 
-        await Assert.That(handler.Contents).Count().IsEqualTo(attempts + 1);
+        await Assert.That(handler.Contents).Count().IsEqualTo(attempts);
         await Assert.That(handler.Contents.All(content => content.Disposed)).IsTrue();
         foreach (var request in handler.UploadRequests)
         {
-            await Assert.That(async () => await Required(request.Content).ReadAsStringAsync()).ThrowsExactly<ObjectDisposedException>();
+            await Assert.That(async () => await BDTest.Tests.Helpers.CompatibilityReportUpload.ReadReportAsync(Required(request.Content))).ThrowsExactly<ObjectDisposedException>();
             await Assert.That(() => request.Method = HttpMethod.Post).ThrowsExactly<ObjectDisposedException>();
         }
         using var ping = await client.GetAsync("https://reports.example/bdtest/ping");
@@ -214,7 +214,7 @@ public class ReportServerRetryTests : TestRunOwner
 
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
-            // Earlier responses, including the warm-up, must be released before another request.
+            // Earlier responses must be released before another request.
             await Assert.That(Contents.All(content => content.Disposed)).IsTrue();
             if (request.Method == HttpMethod.Post) UploadRequests.Add(request);
             var content = new TrackingContent();

@@ -198,7 +198,7 @@ public class BDTestRunTests
         var html = BDTestHtmlHelper.GetTestHtmlReport(descriptor, first);
         using var handler = new ReportHandler();
         using var client = new HttpClient(handler);
-        await BDTestReportServer.SendDataAndGetReportUriAsync(new Uri("https://reports.example"), descriptor, client, first);
+        await BDTest.Tests.Helpers.CompatibilityReportUpload.SendDataAndGetReportUriAsync(new Uri("https://reports.example"), descriptor, client, first);
 
         foreach (var payload in new[] { json, handler.Payload })
         {
@@ -288,7 +288,7 @@ public class BDTestRunTests
 
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
-            if (request.Method == HttpMethod.Post) Payload = await Required(request.Content).ReadAsStringAsync(cancellationToken);
+            if (request.Method == HttpMethod.Post) Payload = await BDTest.Tests.Helpers.CompatibilityReportUpload.ReadReportAsync(Required(request.Content), cancellationToken);
             return new HttpResponseMessage(HttpStatusCode.OK)
             {
                 Content = new StringContent("https://reports.example/report")

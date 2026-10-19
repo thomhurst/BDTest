@@ -365,7 +365,7 @@ public partial class ReportUploadTests
         await using var server = await UploadServer.Start();
         server.Client.DefaultRequestHeaders.Add("X-BDTest-Upload-Key", Key);
         await new VersionedFixture(run).When(() => { }).Then(() => { }).BDTestAsync();
-        var uri = await BDTestReportServer.SendDataAndGetReportUriAsync(server.Client.BaseAddress!, null, server.Client, run);
+        var uri = await BDTest.Tests.Helpers.CompatibilityReportUpload.SendDataAndGetReportUriAsync(server.Client.BaseAddress!, null, server.Client, run);
         var report = server.Store.Received.Single();
         await Assert.That(report.SchemaVersion).IsEqualTo(1);
         await Assert.That(report.Scenarios).Count().IsEqualTo(1);
@@ -474,7 +474,7 @@ public partial class ReportUploadTests
 
         // The convenience overload has no upload key, so the server rejects its request.
         await Assert.That(async () =>
-            await BDTestReportServer.SendDataAndGetReportUriAsync(run, Required(server.Client.BaseAddress), new BDTestRunDescriptor())).ThrowsExactly<HttpRequestException>();
+            await BDTest.Tests.Helpers.CompatibilityReportUpload.SendDataAndGetReportUriAsync(run, Required(server.Client.BaseAddress), new BDTestRunDescriptor())).ThrowsExactly<HttpRequestException>();
 
         await connectionClosed.Task.WaitAsync(TimeSpan.FromSeconds(10));
     }

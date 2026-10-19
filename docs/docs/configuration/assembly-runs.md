@@ -55,7 +55,7 @@ var descriptor = new BDTestRunDescriptor { Environment = "CI", Tag = "Acceptance
 var scenarios = BDTestUtil.GetScenarios(run);
 var json = BDTestJsonHelper.GetTestJsonData(descriptor, run);
 var html = BDTestHtmlHelper.GetTestHtmlReport(descriptor, run);
-// await BDTestReportServer.SendDataAndGetReportUriAsync(run, serverUri, descriptor);
+// await uploader.UploadReportAsync(run, descriptor);
 ```
 
 ## Cleanup and reused hosts

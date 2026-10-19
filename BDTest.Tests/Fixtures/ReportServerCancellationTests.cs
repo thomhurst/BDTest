@@ -39,11 +39,10 @@ public class ReportServerCancellationTests
         using var cancellation = new CancellationTokenSource();
         cancellation.Cancel();
 
-        await Assert.That(async () => { await BDTestReportServer.SendDataAndGetReportUriAsync(run, Server, null, cancellation.Token); }).Throws<OperationCanceledException>();
+        await Assert.That(async () => { await BDTest.Tests.Helpers.CompatibilityReportUpload.SendDataAndGetReportUriAsync(run, Server, null, cancellation.Token); }).Throws<OperationCanceledException>();
     }
 
     [Test]
-    [Arguments("ping")]
     [Arguments("data")]
     [Arguments("attachment")]
     public async Task Cancellation_interrupts_request_without_starting_later_requests(string phase)
@@ -79,7 +78,7 @@ public class ReportServerCancellationTests
             await started.Task.WaitAsync(TimeSpan.FromSeconds(5));
             cancellation.Cancel();
             await Assert.That(async () => await upload.WaitAsync(TimeSpan.FromSeconds(5))).Throws<OperationCanceledException>();
-            await Assert.That(requests).Count().IsEqualTo(phase == "ping" ? 1 : phase == "data" ? 2 : 3);
+            await Assert.That(requests).Count().IsEqualTo(phase == "data" ? 1 : 2);
             foreach (var request in requests.Where(request => request.Method == HttpMethod.Post))
             {
                 await Assert.That(() => request.Method = HttpMethod.Post).ThrowsExactly<ObjectDisposedException>();
@@ -99,7 +98,6 @@ public class ReportServerCancellationTests
     }
 
     [Test]
-    [Arguments("ping")]
     [Arguments("data")]
     [Arguments("attachment")]
     public async Task Cancellation_interrupts_response_body_buffering(string phase)
@@ -127,7 +125,7 @@ public class ReportServerCancellationTests
             await content.Started.Task.WaitAsync(TimeSpan.FromSeconds(5));
             cancellation.Cancel();
             await Assert.That(async () => await upload.WaitAsync(TimeSpan.FromSeconds(5))).Throws<OperationCanceledException>();
-            await Assert.That(requests).IsEqualTo(phase == "ping" ? 1 : phase == "data" ? 2 : 3);
+            await Assert.That(requests).IsEqualTo(phase == "data" ? 1 : 2);
             await Assert.That(content.Disposed).IsTrue();
         }
         finally
@@ -175,10 +173,10 @@ public class ReportServerCancellationTests
         });
         using var client = new HttpClient(handler);
         var upload = Upload(run, client, cancellation.Token);
-        await Assert.That(requests).Count().IsEqualTo(3);
+        await Assert.That(requests).Count().IsEqualTo(2);
         cancellation.Cancel();
         await Assert.That(async () => await upload.WaitAsync(TimeSpan.FromSeconds(5))).Throws<OperationCanceledException>();
-        await Assert.That(requests).Count().IsEqualTo(3);
+        await Assert.That(requests).Count().IsEqualTo(2);
         await Assert.That(async () => await Required(requests.Last().Content).ReadAsByteArrayAsync()).ThrowsExactly<ObjectDisposedException>();
     }
 
@@ -217,14 +215,15 @@ public class ReportServerCancellationTests
     }
 
     [Test]
-    public async Task Noncancellation_warmup_failure_remains_best_effort()
+    public async Task Static_forwarder_sends_no_warmup()
     {
         using var run = BDTestRun.Start();
         using var cancellation = new CancellationTokenSource();
         var attempts = 0;
+        var warmups = 0;
         using var handler = new Handler((request, _) =>
         {
-            if (request.Method == HttpMethod.Get) throw new HttpRequestException("Warm-up failed");
+            if (request.Method == HttpMethod.Get) warmups++;
             attempts++;
             return Task.FromResult(Success());
         });
@@ -234,10 +233,61 @@ public class ReportServerCancellationTests
 
         await Assert.That(result.AbsoluteUri).IsEqualTo("https://reports.example/report/server-id");
         await Assert.That(attempts).IsEqualTo(1);
+        await Assert.That(warmups).IsZero();
+    }
+
+    [Test]
+    public async Task Static_forwarder_rejects_a_null_client()
+    {
+        using var run = BDTestRun.Start();
+        await Assert.That(async () => { await Upload(run, null!, CancellationToken.None); }).ThrowsExactly<ArgumentNullException>();
+    }
+
+    [Test]
+    public async Task Static_forwarder_preserves_long_and_infinite_client_timeouts()
+    {
+        // Exercise the former two-minute cap with real requests. Run all combinations
+        // together so report/attachment and finite/infinite coverage cost one wait.
+        using var guard = new CancellationTokenSource(TimeSpan.FromMinutes(5));
+        await Task.WhenAll(
+            CheckTimeout(TimeSpan.FromMinutes(4), "data"),
+            CheckTimeout(TimeSpan.FromMinutes(4), "attachment"),
+            CheckTimeout(Timeout.InfiniteTimeSpan, "data"),
+            CheckTimeout(Timeout.InfiniteTimeSpan, "attachment"));
+
+        async Task CheckTimeout(TimeSpan timeout, string phase)
+        {
+            using var run = BDTestRun.Start();
+            var fixture = new AttachmentFixture(run);
+            await fixture.When(() => fixture.Attachments.Attach("timeout.txt", new byte[] { 1 }, "text/plain"))
+                .Then(() => { }).BDTestAsync();
+            var requests = 0;
+            using var handler = new Handler(async (request, token) =>
+            {
+                requests++;
+                var isAttachment = Required(request.RequestUri).AbsolutePath.Contains("/attachments/");
+                if (isAttachment == (phase == "attachment"))
+                {
+                    try { await Task.Delay(TimeSpan.FromSeconds(125), token); }
+                    catch (OperationCanceledException) when (!guard.IsCancellationRequested)
+                    {
+                        throw new InvalidOperationException($"The {phase} request was cancelled before the caller's {timeout} timeout.");
+                    }
+                }
+                return Success();
+            });
+            using var client = new HttpClient(handler) { Timeout = timeout };
+
+            var result = await Upload(run, client, guard.Token);
+
+            await Assert.That(result.AbsoluteUri).IsEqualTo("https://reports.example/report/server-id");
+            await Assert.That(requests).IsEqualTo(2);
+            await Assert.That(client.Timeout).IsEqualTo(timeout);
+        }
     }
 
     private static Task<Uri> Upload(BDTestRun run, HttpClient client, CancellationToken token) =>
-        BDTestReportServer.SendDataAndGetReportUriAsync(Server, null, client, run, token);
+        BDTest.Tests.Helpers.CompatibilityReportUpload.SendDataAndGetReportUriAsync(Server, null, client, run, token);
 
     private static HttpResponseMessage Success()
     {

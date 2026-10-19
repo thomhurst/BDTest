@@ -9,6 +9,10 @@ using BDTest.Test;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Internal;
+using Microsoft.Extensions.Options;
+using BDTest.Razor.Reports.Models;
 using System.Threading.Tasks;
 
 namespace BDTest.Tests.Fixtures;
@@ -256,7 +260,7 @@ public partial class ReportUploadTests
                 : attempts == 1 ? HttpStatusCode.ServiceUnavailable : HttpStatusCode.NoContent);
         });
         using var client = new HttpClient(handler);
-        var upload = BDTestReportServer.SendDataAndGetReportUriAsync(new Uri("https://reports.test" + prefix), null, client, run);
+        var upload = BDTest.Tests.Helpers.CompatibilityReportUpload.SendDataAndGetReportUriAsync(new Uri("https://reports.test" + prefix), null, client, run);
         if (permanentFailure) await Assert.That(async () => await upload).ThrowsExactly<HttpRequestException>();
         else await upload;
         await Assert.That(attempts).IsEqualTo(permanentFailure ? 1 : 2);
@@ -282,7 +286,7 @@ public partial class ReportUploadTests
         });
         using var client = new HttpClient(handler);
         await Assert.That(async () =>
-            await BDTestReportServer.SendDataAndGetReportUriAsync(new Uri("https://reports.test"), null, client, run)).ThrowsExactly<KeyNotFoundException>();
+            await BDTest.Tests.Helpers.CompatibilityReportUpload.SendDataAndGetReportUriAsync(new Uri("https://reports.test"), null, client, run)).ThrowsExactly<KeyNotFoundException>();
     }
 
     [Test]
@@ -341,10 +345,9 @@ public partial class ReportUploadTests
     }
 
     [Test]
-    // Preserve the wall-clock probe's budget independently of unrelated parallel work.
-    [NotInParallel]
     public async Task Cache_only_expiry_removes_owned_files()
     {
+        var clock = new AttachmentCacheClock();
         using var files = new AttachmentDirectory();
         var observing = new ObservingAttachmentStore(files.Store);
         await using var server = await UploadServer.Start(options =>
@@ -354,6 +357,9 @@ public partial class ReportUploadTests
         {
             services.RemoveAll<IBDTestDataStore>();
             services.AddSingleton<IBDTestAttachmentStore>(observing);
+            services.AddSingleton<IMemoryCacheBdTestDataStore>(provider => new MemoryCacheBdTestDataStore(
+                provider.GetRequiredService<IMemoryCache>(), provider.GetRequiredService<IOptions<BDTestReportOptions>>(),
+                provider.GetRequiredService<ReportAttachmentGate>(), observing, null, false, clock, clock));
         });
         var attachmentId = Guid.NewGuid().ToString("N");
         using var receipt = await server.Post(AttachmentReport(attachmentId));
@@ -361,10 +367,16 @@ public partial class ReportUploadTests
         using var upload = await PostAttachment(server, reportId, attachmentId,
             receipt.Headers.GetValues("X-BDTest-Attachment-Token").Single(), new byte[] { 1, 2 });
         await Assert.That(upload.StatusCode).IsEqualTo(HttpStatusCode.NoContent);
-        await Task.Delay(700);
+        // Expire only after the upload succeeds, independently of host scheduling.
+        clock.UtcNow += TimeSpan.FromMilliseconds(700);
         await Assert.That(await server.Repository.GetDataForBulkRead(reportId, default)).IsNull();
         await Assert.That(await observing.Deleted.Task.WaitAsync(TimeSpan.FromSeconds(10))).IsEqualTo(reportId);
         await Assert.That(Directory.GetFiles(files.Path, "*", SearchOption.AllDirectories)).IsEmpty();
+    }
+
+    private sealed class AttachmentCacheClock : ISystemClock
+    {
+        public DateTimeOffset UtcNow { get; set; } = new(2026, 1, 1, 0, 0, 0, TimeSpan.Zero);
     }
 
     [Test]

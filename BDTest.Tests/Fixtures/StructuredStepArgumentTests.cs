@@ -153,7 +153,7 @@ public class StructuredStepArgumentTests : BDTestBase
         await Given(NoOp).WithTable(table).WithDocString(doc).When(NoOp).Then(NoOp);
         using var handler = new UploadHandler();
         using var client = new HttpClient(handler);
-        await BDTestReportServer.SendDataAndGetReportUriAsync(new Uri("https://reports.example"), new BDTestRunDescriptor(), client, TestRun);
+        await BDTest.Tests.Helpers.CompatibilityReportUpload.SendDataAndGetReportUriAsync(new Uri("https://reports.example"), new BDTestRunDescriptor(), client, TestRun);
         var restored = Required(BDTestJsonHelper.DeserializeReport(Required(handler.Json)));
         var step = Required(Required(restored.Scenarios).Single().Steps)[0];
         await Assert.That(((BDTest.Contracts.StepTable)step.Arguments[0]).Rows).Count().IsEqualTo(1000);
@@ -194,7 +194,7 @@ public class StructuredStepArgumentTests : BDTestBase
         public string? Json { get; private set; }
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
-            if (request.Method == HttpMethod.Post) Json = await Required(request.Content).ReadAsStringAsync(cancellationToken);
+            if (request.Method == HttpMethod.Post) Json = await BDTest.Tests.Helpers.CompatibilityReportUpload.ReadReportAsync(Required(request.Content), cancellationToken);
             return new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent("https://reports.example/report") };
         }
     }
