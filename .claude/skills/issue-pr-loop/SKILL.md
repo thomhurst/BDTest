@@ -125,6 +125,13 @@ $worktreeRoot = Join-Path (Split-Path $repo -Parent) ($repoName + '-worktrees')
 
 Verify the repository and intended base; examples use `origin/main`. Use a writable temporary `<repoName>-worktrees` root if needed. Choose a unique worktree path when one already exists.
 
+Write nothing loose beside the repository. Every file an agent produces outside a worktree has one home, so cleanup can find it:
+
+- Evidence (build and test logs, reports, PR and comment body drafts, diffs, validation projects) goes in `<repo-parent>/BDTest-evidence/<lock-name>/`, for example `C:/git/BDTest-evidence/issue-123/build.log`. `Remove-MergedWorktrees.ps1` deletes an entry once its newest file is older than 7 days (`-EvidenceRetentionDays`).
+- Throwaway checkouts and baselines are worktrees under `BDTest-worktrees/`, never plain copies.
+- Downloaded SDKs and CLI tools go in `C:/git/toolchains/<name>-<version>/`, shared by every repository.
+- Never write to `C:/git` itself or to the main checkout.
+
 Acquire the Redis lock before acting on an item: `pr-<N>` for PR work or recovery, `issue-<N>` for new implementation. Always invoke the absolute shared-checkout `$agentLocks` path for every verb; older branch copies can have incompatible token caches.
 
 | Command | Result |
@@ -144,7 +151,7 @@ Use repository scripts for merged-worktree cleanup; `[gone]` or ancestry alone i
 
 Stop only services/processes/containers started for this worktree. Never blanket-delete containers/volumes or stop shared lock Redis. Follow local lifecycle guidance; use Aspire only where an AppHost exists.
 
-Immediately after checkout, run `pwsh $agentLocks renew -LockName $lockName -Worktree $worktree` once to register its path. Stop owned processes, archive needed evidence outside the worktree, then release in `finally` from a command whose `workdir` is the shared checkout, never the worktree: on Windows a shell whose current directory is inside the worktree blocks its deletion. Run `Merge-Pr.ps1` the same way. Release removes clean checkouts even for open PRs; branches and detached commits remain available for re-checkout. Never `git worktree lock` a checkout to keep it, except for the temporary setup lock; commit and push work you need. See [local worktree lifecycle](../../../scripts/WorktreeLifecycle.md) for preservation rules and crash behavior.
+Immediately after checkout, run `pwsh $agentLocks renew -LockName $lockName -Worktree $worktree` once to register its path. Stop owned processes, save needed evidence under the evidence root (§ Isolation and ownership), then release in `finally` from a command whose `workdir` is the shared checkout, never the worktree: on Windows a shell whose current directory is inside the worktree blocks its deletion. Run `Merge-Pr.ps1` the same way. Release removes clean checkouts even for open PRs; branches and detached commits remain available for re-checkout. Never `git worktree lock` a checkout to keep it, except for the temporary setup lock; commit and push work you need. See [local worktree lifecycle](../../../scripts/WorktreeLifecycle.md) for preservation rules and crash behavior.
 
 ## Maintain PRs
 
