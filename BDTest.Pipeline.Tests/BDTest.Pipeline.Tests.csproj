@@ -5,7 +5,7 @@
     <OutputType>Exe</OutputType>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="TUnit" Version="1.75.0" />
+    <PackageReference Include="TUnit" Version="1.76.0" />
     <ProjectReference Include="..\BDTest.Pipeline\BDTest.Pipeline.csproj" />
   </ItemGroup>
   <ItemGroup>
