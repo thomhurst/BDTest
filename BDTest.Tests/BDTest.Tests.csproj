@@ -12,7 +12,7 @@
 
     <ItemGroup>
         <PackageReference Include="CompareNETObjects" Version="4.84.0" />
-        <PackageReference Include="TUnit" Version="1.75.0" />
+        <PackageReference Include="TUnit" Version="1.76.0" />
         <PackageReference Include="Microsoft.Extensions.TimeProvider.Testing" Version="10.11.0" />
         <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
         <!-- The Identity token cache's Xml dependency is not pruned in test projects. -->

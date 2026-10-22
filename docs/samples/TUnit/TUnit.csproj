@@ -9,7 +9,7 @@
     <ProjectReference Include="../../../BDTest.Reporting/BDTest.Reporting.csproj" />
     <ProjectReference Include="../../../BDTest.TUnit/BDTest.TUnit.csproj" />
     <ProjectReference Include="../../../BDTest.SourceGenerator/BDTest.SourceGenerator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
-    <PackageReference Include="TUnit" Version="1.75.0" />
+    <PackageReference Include="TUnit" Version="1.76.0" />
     <Compile Include="obj/Examples/*.cs" />
   </ItemGroup>
 </Project>
