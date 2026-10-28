@@ -6,12 +6,21 @@ on:
   pull_request:
     # The branches below must be a subset of the branches above
     branches: [ main ]
+    # Drafts skip every job; marking ready starts CI and converting back cancels it.
+    types: [opened, synchronize, reopened, ready_for_review, converted_to_draft]
   schedule:
     - cron: '31 18 * * 4'
+
+concurrency:
+  # Pull requests cancel their own superseded analyses; push and scheduled runs keep a unique group.
+  group: ${{ github.event_name == 'pull_request' && format('codeql-pr-{0}', github.event.pull_request.number) || format('codeql-{0}', github.run_id) }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   analyze:
     name: Analyze
+    # Skip draft PRs before allocating a runner.
+    if: github.event_name != 'pull_request' || !github.event.pull_request.draft
     runs-on: ubuntu-latest
     permissions:
       actions: read

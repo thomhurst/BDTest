@@ -8,6 +8,8 @@ on:
     branches: ["main"]
   pull_request:
     branches: ["main"]
+    # Drafts skip every job; marking ready starts CI and converting back cancels it.
+    types: [opened, synchronize, reopened, ready_for_review, converted_to_draft]
   workflow_dispatch:
     inputs:
       publish-packages:
@@ -22,6 +24,8 @@ concurrency:
 
 jobs:
   filesystem-storage-macos:
+    # Skip draft PRs before allocating a runner.
+    if: github.event_name != 'pull_request' || !github.event.pull_request.draft
     runs-on: macos-latest
     timeout-minutes: 15
     steps:
@@ -36,6 +40,7 @@ jobs:
         run: dotnet run --project BDTest.Tests/BDTest.Tests.csproj -c Release -- --treenode-filter "/*/*/FileSystemReportStoreTests/*"
 
   modularpipeline:
+    if: github.event_name != 'pull_request' || !github.event.pull_request.draft
     environment: ${{ github.ref == 'refs/heads/main' && 'Production' || 'Pull Requests' }}
     runs-on: ubuntu-latest
     permissions:
