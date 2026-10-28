@@ -1,8 +1,8 @@
 # Assert-PrGreen.ps1
 # Fail-closed merge gate for the issue-pr-loop skill.
 #
-# Exits 0 ONLY when PR #<N> is provably safe to merge:
-#   - state OPEN
+# Default mode exits 0 ONLY when PR #<N> is provably safe to merge now:
+#   - state OPEN, not a draft
 #   - mergeable == MERGEABLE
 #   - mergeStateStatus == CLEAN
 #   - every status check is terminal AND passing (CheckRun: status=COMPLETED and
@@ -15,23 +15,42 @@
 # check, an unresolved thread, or an API hiccup — exits 1 so the caller MUST NOT
 # merge. The default on uncertainty is DENY.
 #
-# Why this exists: the repo is on a tier WITHOUT branch protection, so GitHub
-# cannot enforce "green before merge" itself. This script is the deterministic
-# gate the prose rules alone cannot guarantee — the skill calls it immediately
-# before `gh pr merge`, and only merges if it exits 0.
+# -ForAutoMerge mode is the gate for arming native auto-merge (Enable-AutoMerge.ps1).
+# CI may still be running, because GitHub waits for required checks itself, but:
+#   - state OPEN, not a draft, mergeable == MERGEABLE
+#   - the base branch's active rules require the `CI Passed` check; without that rule
+#     auto-merge would merge immediately
+#   - no current check has failed (the newest execution of each check counts)
+#   - Codex and Greptile have each reviewed the current head commit
+#   - the review-body and unresolved-thread checks below pass
 #
-# Usage: pwsh scripts/Assert-PrGreen.ps1 -Pr 1234 [-Repo owner/name]
-# Exit:  0 = safe to merge; 1 = DO NOT MERGE (reason printed to stderr).
+# Why this exists: the `main` ruleset enforces `CI Passed` and resolved conversations,
+# but it cannot read review bodies or tell whether the reviewers saw this head. This
+# script is the deterministic gate the prose rules alone cannot guarantee. The caller
+# still reads every review body and comment itself; the script is necessary but not
+# sufficient.
+#
+# Usage: pwsh scripts/Assert-PrGreen.ps1 -Pr 1234 [-Repo owner/name] [-ForAutoMerge] [-Json]
+# Exit:  0 = safe to merge (or arm); 1 = DO NOT MERGE (reason printed to stderr).
 
 [CmdletBinding()]
 param(
     [Parameter(Mandatory)][int]$Pr,
     [string]$Repo,
-    [switch]$Json
+    [switch]$Json,
+    [switch]$ForAutoMerge
 )
 
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'AssertPrGreenReviewHeuristics.ps1')
+. (Join-Path $PSScriptRoot 'MergeGateChecks.ps1')
+
+function Get-GitHubPages([string]$Endpoint, [string]$What) {
+    $raw = gh api $Endpoint --paginate --slurp 2>$null
+    if ($LASTEXITCODE -ne 0) { Deny "could not fetch $What (exit $LASTEXITCODE)" }
+    try { return @(($raw | ConvertFrom-Json) | ForEach-Object { $_ }) }
+    catch { Deny "could not parse ${What}: $($_.Exception.Message)" }
+}
 
 function Deny([string]$reason) {
     [Console]::Error.WriteLine("DO NOT MERGE #${Pr} -- $reason")
@@ -42,7 +61,7 @@ $repoArgs = @()
 if ($Repo) { $repoArgs = @('--repo', $Repo) }
 
 # Re-fetch fresh — survey output goes stale within seconds.
-$raw = gh pr view $Pr @repoArgs --json number,state,mergeable,mergeStateStatus,statusCheckRollup,commits,headRefOid,headRefName 2>$null
+$raw = gh pr view $Pr @repoArgs --json number,state,isDraft,mergeable,mergeStateStatus,statusCheckRollup,commits,headRefOid,headRefName,baseRefName 2>$null
 if ($LASTEXITCODE -ne 0) { Deny "gh pr view failed (exit $LASTEXITCODE)" }
 try {
     $view = $raw | ConvertFrom-Json
@@ -52,43 +71,10 @@ catch {
 }
 
 if ($view.state -ne 'OPEN') { Deny "state=$($view.state) (need OPEN)" }
+if ($view.isDraft) { Deny 'PR is a draft; mark it ready only after its reviews approve the current head' }
 if ($view.mergeable -ne 'MERGEABLE') { Deny "mergeable=$($view.mergeable) (need MERGEABLE)" }
-if ($view.mergeStateStatus -ne 'CLEAN') { Deny "mergeStateStatus=$($view.mergeStateStatus) (need CLEAN)" }
-
-$checks = @($view.statusCheckRollup | Where-Object { $null -ne $_ })
-if ($checks.Count -eq 0) {
-    Deny "statusCheckRollup is empty -- no checks registered yet; refusing to merge blind"
-}
-
-$allowedConclusions = @('SUCCESS', 'SKIPPED', 'NEUTRAL')
-$bad = @()
-foreach ($c in $checks) {
-    if ($null -ne $c.status) {
-        # CheckRun: must be terminal AND passing.
-        if ($c.status -ne 'COMPLETED') {
-            $bad += "$($c.name): status=$($c.status)"
-            continue
-        }
-        if ($allowedConclusions -notcontains $c.conclusion) {
-            $bad += "$($c.name): conclusion=$($c.conclusion)"
-        }
-    }
-    elseif ($null -ne $c.state) {
-        # StatusContext: state must be SUCCESS.
-        if ($c.state -ne 'SUCCESS') {
-            $bad += "$($c.context): state=$($c.state)"
-        }
-    }
-    else {
-        $bad += "unrecognized check entry: $($c | ConvertTo-Json -Compress)"
-    }
-}
-if ($bad.Count -gt 0) {
-    Deny ("checks not green: " + ($bad -join '; '))
-}
-
-$headCommit = @($view.commits | Where-Object { $null -ne $_ }) | Select-Object -Last 1
-$headCommittedAt = if ($headCommit) { ConvertTo-UtcDateTimeOffset $headCommit.committedDate } else { $null }
+$headSha = [string]$view.headRefOid
+if ($headSha -notmatch '^[0-9a-f]{40}$') { Deny 'PR state omitted a valid headRefOid' }
 
 if ($Repo) {
     $owner, $name = $Repo -split '/', 2
@@ -98,6 +84,42 @@ else {
     if ($LASTEXITCODE -ne 0 -or -not $nwo) { Deny "could not resolve repo for review checks" }
     $owner, $name = $nwo.Trim() -split '/', 2
 }
+
+$checks = @($view.statusCheckRollup | Where-Object { $null -ne $_ })
+if ($ForAutoMerge) {
+    $rules = Get-GitHubPages "repos/$owner/$name/rules/branches/$([uri]::EscapeDataString([string]$view.baseRefName))" 'base branch rules'
+    if (-not (Test-RulesRequireCheck -Rules $rules -Context $AutoMergeRequiredCheck)) {
+        Deny "base branch '$($view.baseRefName)' does not require the '$AutoMergeRequiredCheck' check, so auto-merge would merge without CI"
+    }
+    $problems = @(Get-AutoMergeCheckProblems $checks)
+    if ($problems.Count -gt 0) { Deny ("checks failed: " + ($problems -join '; ')) }
+
+    $comments = Get-GitHubPages "repos/$owner/$name/issues/$Pr/comments?per_page=100" 'issue comments'
+    $prReviews = Get-GitHubPages "repos/$owner/$name/pulls/$Pr/reviews?per_page=100" 'reviews'
+    $approvedRequests = @(foreach ($id in Get-CodexRequestIds -Comments $comments -HeadSha $headSha) {
+            $reactions = Get-GitHubPages "repos/$owner/$name/issues/comments/$id/reactions?per_page=100" 'review request reactions'
+            if (@($reactions | Where-Object { $_.content -eq '+1' -and $_.user.login -eq $CodexReviewer }).Count -gt 0) { $id }
+        })
+    if (-not (Test-CodexReviewedHead -Comments $comments -Reviews $prReviews -HeadSha $headSha -ApprovedRequestIds $approvedRequests)) {
+        Deny "no Codex review of head $headSha; request one while the PR is a draft"
+    }
+    if (-not (Test-GreptileReviewedHead -Comments $comments -Reviews $prReviews -HeadSha $headSha)) {
+        Deny "no Greptile review of head $headSha; request one while the PR is a draft"
+    }
+}
+else {
+    if ($view.mergeStateStatus -ne 'CLEAN') { Deny "mergeStateStatus=$($view.mergeStateStatus) (need CLEAN)" }
+    if ($checks.Count -eq 0) {
+        Deny "statusCheckRollup is empty -- no checks registered yet; refusing to merge blind"
+    }
+    $bad = @(Get-MergeCheckProblems $checks)
+    if ($bad.Count -gt 0) {
+        Deny ("checks not green: " + ($bad -join '; '))
+    }
+}
+
+$headCommit = @($view.commits | Where-Object { $null -ne $_ }) | Select-Object -Last 1
+$headCommittedAt = if ($headCommit) { ConvertTo-UtcDateTimeOffset $headCommit.committedDate } else { $null }
 
 # gh pr view's latestReviews selection leaves commit.oid empty. Request it
 # explicitly and paginate the connection before authenticating workflow verdicts.
@@ -229,6 +251,11 @@ if ($Json) {
     [pscustomobject]@{ headRefOid = $view.headRefOid; headRefName = $view.headRefName } | ConvertTo-Json -Compress
 }
 else {
-    Write-Host "OK #${Pr} -- MERGEABLE, CLEAN, $($checks.Count) check(s) green, no unresolved threads. Safe to merge."
+    if ($ForAutoMerge) {
+        Write-Host "OK #${Pr} -- MERGEABLE, no failed checks, Codex and Greptile reviewed $headSha, no unresolved threads. Safe to arm auto-merge."
+    }
+    else {
+        Write-Host "OK #${Pr} -- MERGEABLE, CLEAN, $($checks.Count) check(s) green, no unresolved threads. Safe to merge."
+    }
 }
 exit 0

@@ -181,7 +181,7 @@ Open every PR as a draft (`gh pr create --draft`), including recovery and split 
 2. Read every review surface. A successful check, a request, an eyes reaction, silence, or a verdict for an older head is not approval. Require a completed, positive verdict from every required reviewer for the current head, in a form the repository guidance accepts. Honor any formal approval required by repository rules; do not approve your own PR or manufacture reviewer approval.
 3. Dispose of findings under [Maintain PRs](#maintain-prs), leaving no blocking or undecided findings and no unresolved threads. After a fix changes the head, keep the draft and request each reviewer once for the new head, re-requesting only after the timeout in step 1. Do not reuse the earlier head's approval. Pending review is a wait, not a reason to park or abandon the PR.
 4. Under the PR lock, re-fetch the head, draft state, verdicts, threads, and checks. Skipped or absent draft CI is expected, not a blocker to promotion. When every required reviewer approves the same current head and findings are dispositioned, run `gh pr ready <N>` and verify that `isDraft` is false and the head is unchanged. Do not mark ready while conflicts or known CI failures remain. When the head changed during promotion, restore the draft with `gh pr ready <N> --undo` and review the new head.
-5. Marking ready starts CI and can trigger automatic reviews of the same head. Take another item while CI runs, then continue through [Merge gate](#merge-gate): read any new reviews and fix CI failures as usual. A fix push after readiness returns the PR to draft (`gh pr ready <N> --undo`) for this lifecycle. Never merge or enable auto-merge while draft.
+5. Arm auto-merge as soon as the PR is ready and its head is verified: run `pwsh scripts/Enable-AutoMerge.ps1 -Pr <N>` without waiting for CI, then take another item. CI proves the build, and GitHub merges once the required checks pass. Never arm auto-merge while draft. Readiness can trigger automatic reviews of the same head; read them on the next visit, and when one raises a blocking finding, return the PR to draft (`gh pr ready <N> --undo`, which disarms auto-merge) and fix it through this lifecycle. A push disarms auto-merge, so a CI fix also goes back through draft review and is re-armed only after the new head's approvals.
 
 ### Rework budget
 
@@ -212,11 +212,13 @@ Merge requires an open, ready-for-review PR; `MERGEABLE` and `CLEAN`; every appl
 
 Use current repository rules/instructions for approval requirements. Historical merges without approval do not prove approval is optional; inaccessible protection APIs do not prove no protection exists.
 
+The normal path is native auto-merge, armed by [Draft review lifecycle](#draft-review-lifecycle) step 5 with `scripts/Enable-AutoMerge.ps1`, which runs `Assert-PrGreen.ps1 -ForAutoMerge` (pending CI allowed; failures, a missing current-head review, unresolved threads, or a base branch without the required check deny) and arms a squash merge pinned to the gated head. Re-arm a ready, approved PR whose auto-merge was disarmed the same way. To merge a ready PR whose checks already passed without waiting, use the immediate wrapper:
+
 ```powershell
 pwsh scripts/Merge-Pr.ps1 -Pr <N> -Worktree $worktree
 ```
 
-Omit `-Worktree` only when none exists. The wrapper calls `Assert-PrGreen.ps1`, merges on a passing mechanical gate, and cleans up. Judge review dispositions and approval yourself; the script is necessary but insufficient.
+Omit `-Worktree` only when none exists. The wrapper calls `Assert-PrGreen.ps1`, merges on a passing mechanical gate, and cleans up. Both scripts are necessary but insufficient: judge review dispositions and approval yourself before running either.
 
 Never bypass with direct `gh pr merge` or `--auto`. Nonzero exit means inspect/defer, not retry blindly. Cleanup warnings after a successful merge do not justify retrying; reconcile ambiguous results with GitHub state. Never delete fork branches through the base repository's `origin`.
 

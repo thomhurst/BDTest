@@ -64,6 +64,9 @@ jobs:
       - name: Verify dependency merge safeguards
         shell: pwsh
         run: ./scripts/Test-DependencyAutomerge.ps1
+      - name: Verify auto-merge gate
+        shell: pwsh
+        run: ./scripts/Test-AssertPrGreenAutoMerge.ps1
       - name: Verify public API baseline enforcement
         shell: pwsh
         run: ./scripts/Test-PublicApiBaselines.ps1
@@ -110,3 +113,23 @@ jobs:
             artifacts/packages/*.nupkg
             artifacts/packages/*.snupkg
           if-no-files-found: warn
+
+  ci-passed:
+    # The `main` ruleset's only required status check. List every other job in `needs`.
+    # The name is an expression on purpose: GitHub evaluates a job name only when the job
+    # runs, so a skipped run (a draft PR, or a run cancelled by a newer one) reports this
+    # check under the raw expression text and can never satisfy the required `CI Passed`.
+    # !cancelled() still runs it after a failed job, so failures report under the name.
+    name: ${{ needs.modularpipeline.result != 'skipped' && 'CI Passed' || 'CI Passed (skipped)' }}
+    needs: [filesystem-storage-macos, modularpipeline]
+    if: ${{ !cancelled() && (github.event_name != 'pull_request' || !github.event.pull_request.draft) }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    permissions: {}
+    steps:
+      - name: Require every CI job to succeed
+        env:
+          NEEDS: ${{ toJSON(needs) }}
+        run: |
+          echo "$NEEDS" | jq -r 'to_entries[] | "\(.key): \(.value.result)"'
+          echo "$NEEDS" | jq -e 'to_entries | all(.value.result == "success")' > /dev/null

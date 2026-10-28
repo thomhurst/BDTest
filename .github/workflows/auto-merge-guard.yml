@@ -1,0 +1,29 @@
+name: Auto-merge guard
+
+# A push to a PR disarms native auto-merge, so every new head needs its own review cycle
+# and a new scripts/Enable-AutoMerge.ps1 call before it can merge.
+# pull_request_target supplies a write token for fork PRs too. Never check out or run PR code here.
+on:
+  pull_request_target:
+    branches: [main]
+    types: [synchronize]
+
+permissions: {}
+
+jobs:
+  disarm-auto-merge:
+    if: github.event.pull_request.auto_merge != null
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Disarm auto-merge
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+        run: |
+          gh pr merge "$PR" --repo "$REPO" --disable-auto
+          echo "::notice::Auto-merge disarmed by a push; re-arm with scripts/Enable-AutoMerge.ps1 after this head's review."
