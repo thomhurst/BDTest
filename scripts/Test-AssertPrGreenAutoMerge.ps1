@@ -181,3 +181,5 @@ Test-Arm 'Does not arm when the gate denies' { $fx.gateExit = 1 } $false
 Test-Arm 'Does not arm when the head moved during the gate' { $fx.gateHead = $oldHead } $false
 
 Write-Output 'Assert-PrGreen auto-merge gate and Enable-AutoMerge tests passed.'
+# The denial cases leave LASTEXITCODE at 1, and the Actions pwsh shell exits with it.
+exit 0
