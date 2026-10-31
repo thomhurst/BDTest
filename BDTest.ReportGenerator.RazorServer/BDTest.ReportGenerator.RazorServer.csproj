@@ -10,7 +10,7 @@
       <PackageReference Include="Microsoft.Identity.Web" Version="4.16.1" />
       <PackageReference Include="Microsoft.Identity.Web.UI" Version="4.16.1" />
       <!-- Keep the Identity token cache's transitive Pkcs dependency patched. -->
-      <PackageReference Include="System.Security.Cryptography.Pkcs" Version="10.0.13" />
+      <PackageReference Include="System.Security.Cryptography.Pkcs" Version="10.0.14" />
     </ItemGroup>
 
     <ItemGroup>
