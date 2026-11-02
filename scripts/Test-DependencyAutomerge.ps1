@@ -1,3 +1,4 @@
+#!/usr/bin/env pwsh
 $ErrorActionPreference = 'Stop'
 $scriptPath = Join-Path $PSScriptRoot 'Merge-DependencyPr.ps1'
 $repo = 'test/repo'

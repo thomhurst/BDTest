@@ -1,3 +1,4 @@
+#!/usr/bin/env pwsh
 # Merge dependency PRs only after their current head passes the .NET workflow and
 # the same fail-closed checks/review gate used by the issue-pr-loop.
 [CmdletBinding()]

@@ -1,3 +1,4 @@
+#!/usr/bin/env pwsh
 # Exercise Assert-PrGreen.ps1 (both modes) and Enable-AutoMerge.ps1 against mocked GitHub
 # responses. A test must never contact GitHub or arm a real PR.
 $ErrorActionPreference = 'Stop'

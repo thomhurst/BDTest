@@ -1,3 +1,4 @@
+#!/usr/bin/env pwsh
 # Exercise the loop survey and deferral fingerprints for draft PRs without GitHub, Redis, or an agent process.
 $ErrorActionPreference = 'Stop'
 

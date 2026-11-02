@@ -1,3 +1,4 @@
+#!/usr/bin/env pwsh
 # Pure check and verdict helpers for Assert-PrGreen.ps1. They make no GitHub calls, so
 # Test-AssertPrGreenAutoMerge.ps1 can drive them with fixtures.
 
