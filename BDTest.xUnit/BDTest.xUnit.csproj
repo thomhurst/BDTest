@@ -18,8 +18,8 @@
 
     <ItemGroup>
       <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Condition="'$(TargetFramework)' == 'netstandard2.0'" Version="10.0.13" />
-      <PackageReference Include="xunit.v3.extensibility.core" Version="4.0.2" />
-      <PackageReference Include="xunit.v3.assert" Version="4.0.2" />
+      <PackageReference Include="xunit.v3.extensibility.core" Version="4.0.3" />
+      <PackageReference Include="xunit.v3.assert" Version="4.0.3" />
     </ItemGroup>
 
 </Project>
