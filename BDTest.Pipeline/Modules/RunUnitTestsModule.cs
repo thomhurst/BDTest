@@ -1,45 +1,42 @@
 using System.Text.Json;
+using ModularPipelines;
 using ModularPipelines.Context;
-using ModularPipelines.DotNet.Extensions;
 using ModularPipelines.DotNet.Options;
-using ModularPipelines.Git.Extensions;
-using ModularPipelines.Models;
-using ModularPipelines.Modules;
 using ModularPipelines.Options;
 
 namespace BDTest.Pipeline.Modules;
 
 public class RunUnitTestsModule : Module<List<CommandResult>>
 {
-    protected override async Task<List<CommandResult>?> ExecuteAsync(IModuleContext context, CancellationToken cancellationToken)
+    protected override async Task<List<CommandResult>> ExecuteAsync(IModuleContext context, CancellationToken cancellationToken)
     {
         var results = new List<CommandResult>();
+        var root = (await context.Tools.Git.Information.GetRequiredInfoAsync(cancellationToken)).Root;
 
-        foreach (var unitTestProjectFile in context
-                     .Git().RootDirectory!
+        foreach (var unitTestProjectFile in root
                      .GetFiles(file => file.Path.EndsWith(".csproj", StringComparison.OrdinalIgnoreCase)
                                        && file.Path.Contains("Tests", StringComparison.OrdinalIgnoreCase)))
         {
-            var resultsDirectory = Path.Combine(context.Git().RootDirectory!.Path, "artifacts", "test-results",
+            var resultsDirectory = Path.Combine(root.Path, "artifacts", "test-results",
                 Path.GetFileNameWithoutExtension(unitTestProjectFile.Path));
 
             // Evaluate imports and Release conditions just as the test invocation does.
-            var evaluation = await context.Shell.Command.ExecuteCommandLineTool(
+            var evaluation = await context.Shell.RunAsync(
                 CreateRunnerQuery(unitTestProjectFile.Path), new CommandExecutionOptions
                 {
-                    WorkingDirectory = context.Git().RootDirectory!.Path,
+                    WorkingDirectory = root.Path,
                     ThrowOnNonZeroExitCode = true
                 }, cancellationToken);
             if (UsesMicrosoftTestingPlatform(evaluation.StandardOutput))
             {
-                results.Add(await context.DotNet().Run(new DotNetRunOptions
+                results.Add(await context.Tools.DotNet.RunAsync(new DotNetRunOptions
                 {
                     Project = unitTestProjectFile.Path,
                     RunSettings = ["--report-trx", "--results-directory", resultsDirectory],
                     Configuration = "Release",
                 }, new CommandExecutionOptions
                 {
-                    LogSettings = new CommandLoggingOptions
+                    Logging = new CommandLoggingOptions
                     {
                         ShowCommandArguments = true,
                         ShowStandardOutput = false,
@@ -49,14 +46,15 @@ public class RunUnitTestsModule : Module<List<CommandResult>>
                 continue;
             }
 
-            results.Add(await context.DotNet().Test(new DotNetTestOptions
+            results.Add(await context.Tools.DotNet.TestVstestAsync(new DotNetTestVstestOptions
             {
-                Arguments = [unitTestProjectFile.Path, "--logger", "trx"],
+                ProjectSolution = unitTestProjectFile.Path,
+                Logger = ["trx"],
                 ResultsDirectory = resultsDirectory,
                 Configuration = "Release",
             }, new CommandExecutionOptions
             {
-                LogSettings = new CommandLoggingOptions
+                Logging = new CommandLoggingOptions
                 {
                     ShowCommandArguments = true,
                     ShowStandardOutput = false,
@@ -68,7 +66,7 @@ public class RunUnitTestsModule : Module<List<CommandResult>>
         return results;
     }
 
-    public static GenericCommandLineToolOptions CreateRunnerQuery(string projectPath) => new("dotnet")
+    public static CommandLineToolOptions CreateRunnerQuery(string projectPath) => new("dotnet")
     {
         Arguments = ["msbuild", projectPath, "-nologo", "-property:Configuration=Release", "-getItem:PackageReference", "-getProperty:UseMicrosoftTestingPlatformRunner"]
     };

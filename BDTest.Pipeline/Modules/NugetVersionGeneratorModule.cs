@@ -1,8 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
+using ModularPipelines;
 using ModularPipelines.Context;
-using ModularPipelines.Git.Extensions;
-using ModularPipelines.Models;
-using ModularPipelines.Modules;
 
 // ReSharper disable HeuristicUnreachableCode
 #pragma warning disable CS0162
@@ -11,9 +9,9 @@ namespace BDTest.Pipeline.Modules;
 
 public class NugetVersionGeneratorModule : Module<string>
 {
-    protected override async Task<string?> ExecuteAsync(IModuleContext context, CancellationToken cancellationToken)
+    protected override async Task<string> ExecuteAsync(IModuleContext context, CancellationToken cancellationToken)
     {
-        var gitVersionInformation = await context.Git().Versioning.GetGitVersioningInformation();
+        var gitVersionInformation = await context.Tools.Git.Versioning.GetVersioningInformationAsync(cancellationToken);
 
         if (gitVersionInformation.BranchName == "main")
         {

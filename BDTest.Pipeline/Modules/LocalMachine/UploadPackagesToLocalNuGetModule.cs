@@ -1,11 +1,8 @@
 using EnumerableAsyncProcessor.Extensions;
 using Microsoft.Extensions.Logging;
-using ModularPipelines.Attributes;
+using ModularPipelines;
 using ModularPipelines.Context;
-using ModularPipelines.DotNet.Extensions;
 using ModularPipelines.DotNet.Options;
-using ModularPipelines.Models;
-using ModularPipelines.Modules;
 
 namespace BDTest.Pipeline.Modules.LocalMachine;
 
@@ -26,18 +23,17 @@ public class UploadPackagesToLocalNuGetModule : Module<CommandResult[]>
         await base.OnBeforeExecuteAsync(context, cancellationToken);
     }
 
-    protected override async Task<CommandResult[]?> ExecuteAsync(IModuleContext context, CancellationToken cancellationToken)
+    protected override async Task<CommandResult[]> ExecuteAsync(IModuleContext context, CancellationToken cancellationToken)
     {
         var localRepoLocation = await context.GetModule<CreateLocalNugetFolderModule>();
         var packagePaths = await context.GetModule<PackagePathsParserModule>();
-        return await packagePaths.ValueOrDefault!.SelectAsync(async file => await context.DotNet()
-            .Nuget
-            .Push(new DotNetNugetPushOptions
+        return await packagePaths.ValueOrDefault!.SelectAsync(async file => await context.Tools.DotNet
+            .NuGet
+            .PushAsync(new DotNetNuGetPushOptions([file.Path])
             {
-                Path = file,
                 // Folder feeds do not provide a symbol server. Keep symbols in the build output.
                 NoSymbols = true,
-                Source = localRepoLocation.ValueOrDefault!
+                Source = localRepoLocation.ValueOrDefault!.Path
             }, cancellationToken: cancellationToken), cancellationToken: cancellationToken).ProcessOneAtATime();
     }
 }

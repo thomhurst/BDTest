@@ -1,11 +1,7 @@
 using Microsoft.Extensions.Logging;
-using ModularPipelines.Attributes;
+using ModularPipelines;
 using ModularPipelines.Context;
-using ModularPipelines.DotNet.Extensions;
 using ModularPipelines.DotNet.Options;
-using ModularPipelines.Git.Extensions;
-using ModularPipelines.Models;
-using ModularPipelines.Modules;
 using ModularPipelines.Options;
 
 namespace BDTest.Pipeline.Modules;
@@ -16,21 +12,22 @@ namespace BDTest.Pipeline.Modules;
 [DependsOn<NugetVersionGeneratorModule>]
 public class PackProjectsModule : Module<List<CommandResult>>
 {
-    protected override async Task<List<CommandResult>?> ExecuteAsync(IModuleContext context, CancellationToken cancellationToken)
+    protected override async Task<List<CommandResult>> ExecuteAsync(IModuleContext context, CancellationToken cancellationToken)
     {
         var results = new List<CommandResult>();
-        var artifacts = new PackageArtifacts(context.Git().RootDirectory!.Path);
+        var root = (await context.Tools.Git.Information.GetRequiredInfoAsync(cancellationToken)).Root;
+        var artifacts = new PackageArtifacts(root.Path);
         var packageVersion = await context.GetModule<NugetVersionGeneratorModule>();
         var version = packageVersion.ValueOrDefault
             ?? throw new InvalidOperationException("The package version was not generated.");
-        var projectFiles = context.Git().RootDirectory!.GetFiles(
+        var projectFiles = root.GetFiles(
             file => file.Path.EndsWith(".csproj", StringComparison.OrdinalIgnoreCase));
         foreach (var projectFile in projectFiles)
         {
-            var evaluation = await context.Shell.Command.ExecuteCommandLineTool(
+            var evaluation = await context.Shell.RunAsync(
                 CreatePackabilityQuery(projectFile.Path), new CommandExecutionOptions
                 {
-                    WorkingDirectory = context.Git().RootDirectory!.Path,
+                    WorkingDirectory = root.Path,
                     ThrowOnNonZeroExitCode = true
                 }, cancellationToken);
             if (!bool.Parse(evaluation.StandardOutput.Trim()))
@@ -39,7 +36,7 @@ public class PackProjectsModule : Module<List<CommandResult>>
             }
 
             context.Logger.LogInformation("Packing project: {Project}", projectFile.Path);
-            results.Add(await context.DotNet().Pack(CreatePackOptions(
+            results.Add(await context.Tools.DotNet.PackAsync(CreatePackOptions(
                 projectFile.Path, artifacts.OutputDirectory, version),
                 cancellationToken: cancellationToken));
         }
@@ -71,7 +68,7 @@ public class PackProjectsModule : Module<List<CommandResult>>
         };
     }
 
-    public static GenericCommandLineToolOptions CreatePackabilityQuery(string projectPath) => new("dotnet")
+    public static CommandLineToolOptions CreatePackabilityQuery(string projectPath) => new("dotnet")
     {
         Arguments = ["msbuild", projectPath, "-nologo", "-property:Configuration=Release", "-getProperty:IsPackable"]
     };

@@ -8,7 +8,7 @@ BDTest is a code-only BDD testing and reporting framework for .NET (an alternati
 
 ## Commands
 
-SDK: .NET 10 (CI uses `10.0.402`). Solution: `BDTest.sln`.
+SDK: .NET 10 (CI uses `10.0.402`), plus .NET 11 (`11.0.100`) for `BDTest.Pipeline` and `BDTest.Pipeline.Tests`. Solution: `BDTest.sln`.
 
 ```bash
 dotnet build BDTest.sln

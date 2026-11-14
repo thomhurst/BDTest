@@ -2,21 +2,16 @@ using BDTest.Pipeline.Settings;
 using EnumerableAsyncProcessor.Extensions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using ModularPipelines.Attributes;
-using ModularPipelines.Configuration;
+using ModularPipelines;
 using ModularPipelines.Context;
-using ModularPipelines.DotNet.Extensions;
 using ModularPipelines.DotNet.Options;
-using ModularPipelines.Git.Extensions;
-using ModularPipelines.Models;
-using ModularPipelines.Modules;
 
 namespace BDTest.Pipeline.Modules;
 
 [DependsOn<RunUnitTestsModule>]
 [DependsOn<PackagePathsParserModule>]
 [DependsOn<VerifyPackageArtifactsModule>]
-public class UploadPackagesToNugetModule : Module<CommandResult[]>
+public class UploadPackagesToNugetModule : Module<CommandResult[]?>
 {
     private readonly IOptions<NuGetSettings> _options;
 
@@ -25,9 +20,8 @@ public class UploadPackagesToNugetModule : Module<CommandResult[]>
         _options = options;
     }
 
-    protected override ModuleConfiguration Configure() => ModuleConfiguration.Create()
-        .WithSkipWhen(async context => await ShouldSkip(context))
-        .Build();
+    protected override void Configure(ModuleConfigurationBuilder module) => module
+        .WithSkipWhen(async (context, cancellationToken) => await ShouldSkip(context, cancellationToken));
 
     protected override async Task OnBeforeExecuteAsync(IModuleContext context, CancellationToken cancellationToken)
     {
@@ -41,9 +35,9 @@ public class UploadPackagesToNugetModule : Module<CommandResult[]>
         await base.OnBeforeExecuteAsync(context, cancellationToken);
     }
 
-    private static async Task<SkipDecision> ShouldSkip(IPipelineContext context)
+    private static async Task<bool> ShouldSkip(IModuleContext context, CancellationToken cancellationToken)
     {
-        var gitVersionInfo = await context.Git().Versioning.GetGitVersioningInformation();
+        var gitVersionInfo = await context.Tools.Git.Versioning.GetVersioningInformationAsync(cancellationToken);
 
         if (gitVersionInfo.BranchName != "main")
         {
@@ -51,7 +45,7 @@ public class UploadPackagesToNugetModule : Module<CommandResult[]>
         }
 
         var publishPackages =
-            context.Environment.Variables.GetEnvironmentVariable("PUBLISH_PACKAGES")!;
+            context.Environment.Variables.Get("PUBLISH_PACKAGES")!;
 
         if (!bool.TryParse(publishPackages, out var shouldPublishPackages) || !shouldPublishPackages)
         {
@@ -65,7 +59,7 @@ public class UploadPackagesToNugetModule : Module<CommandResult[]>
     {
         ArgumentNullException.ThrowIfNull(_options.Value.ApiKey);
 
-        var gitVersionInformation = await context.Git().Versioning.GetGitVersioningInformation();
+        var gitVersionInformation = await context.Tools.Git.Versioning.GetVersioningInformationAsync(cancellationToken);
 
         if (gitVersionInformation.BranchName != "main")
         {
@@ -77,11 +71,10 @@ public class UploadPackagesToNugetModule : Module<CommandResult[]>
         // Explicit symbol pushes still run when NuGet skips an already published primary package.
         var uploadPaths = PackageArtifacts.GetUploadPaths(packagePaths.ValueOrDefault!.Select(file => file.Path));
 
-        return await uploadPaths.SelectAsync(async file => await context.DotNet()
-            .Nuget
-            .Push(new DotNetNugetPushOptions
+        return await uploadPaths.SelectAsync(async file => await context.Tools.DotNet
+            .NuGet
+            .PushAsync(new DotNetNuGetPushOptions([file])
             {
-                Path = file,
                 Source = "https://api.nuget.org/v3/index.json",
                 NoSymbols = file.EndsWith(".nupkg", StringComparison.OrdinalIgnoreCase),
                 SkipDuplicate = true,
