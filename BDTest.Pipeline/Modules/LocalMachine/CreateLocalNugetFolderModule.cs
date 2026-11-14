@@ -1,16 +1,14 @@
 ﻿using Microsoft.Extensions.Logging;
-using ModularPipelines.Attributes;
-using ModularPipelines.Context;
+using ModularPipelines;
 using ModularPipelines.FileSystem;
-using ModularPipelines.Modules;
 
 namespace BDTest.Pipeline.Modules.LocalMachine;
 
 [DependsOn<RunUnitTestsModule>]
 [DependsOn<PackagePathsParserModule>]
-public class CreateLocalNugetFolderModule : Module<Folder>
+public class CreateLocalNugetFolderModule : Module<FolderPath>
 {
-    protected override async Task<Folder?> ExecuteAsync(IModuleContext context, CancellationToken cancellationToken)
+    protected override async Task<FolderPath> ExecuteAsync(IModuleContext context, CancellationToken cancellationToken)
     {
         var localNugetRepositoryFolder = context.Files.GetFolder(Environment.SpecialFolder.ApplicationData)
             .GetFolder("ModularPipelines")

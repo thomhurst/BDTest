@@ -2,7 +2,6 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using ModularPipelines;
-using ModularPipelines.Extensions;
 using BDTest.Pipeline.Modules;
 using BDTest.Pipeline.Modules.LocalMachine;
 using BDTest.Pipeline.Settings;
@@ -18,17 +17,17 @@ builder.Services.Configure<NuGetSettings>(builder.Configuration.GetSection("NuGe
 
 if (builder.Environment.IsDevelopment())
 {
-    builder.Services
+    builder
         .AddModule<CreateLocalNugetFolderModule>()
         .AddModule<AddLocalNugetSourceModule>()
         .AddModule<UploadPackagesToLocalNuGetModule>();
 }
 else
 {
-    builder.Services.AddModule<UploadPackagesToNugetModule>();
+    builder.AddModule<UploadPackagesToNugetModule>();
 }
 
-builder.Services
+builder
     .AddModule<RunUnitTestsModule>()
     .AddModule<NugetVersionGeneratorModule>()
     .AddModule<PackProjectsModule>()
@@ -36,4 +35,4 @@ builder.Services
     .AddModule<PackagePathsParserModule>()
     .AddModule<VerifyPackageArtifactsModule>();
 
-await builder.Build().RunAsync();
+await builder.RunAsync();

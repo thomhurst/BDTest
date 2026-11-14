@@ -9,7 +9,7 @@ BDTest is developed on [GitHub](https://github.com/thomhurst/BDTest). Issues and
 
 ## Building
 
-Use the .NET 10 SDK (CI uses `10.0.402`).
+Use the .NET 10 SDK (CI uses `10.0.402`). The build pipeline projects also need the .NET 11 SDK (`11.0.100`).
 
 ```bash
 dotnet build BDTest.sln

@@ -1,4 +1,4 @@
-using File = ModularPipelines.FileSystem.File;
+using File = ModularPipelines.FileSystem.FilePath;
 
 namespace BDTest.Pipeline;
 

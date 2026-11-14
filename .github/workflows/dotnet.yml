@@ -59,6 +59,7 @@ jobs:
         uses: actions/setup-dotnet@v6.0.0
         with:
           dotnet-version: |
+            11.0.100
             10.0.402
             8.0.x
       - name: Verify dependency merge safeguards

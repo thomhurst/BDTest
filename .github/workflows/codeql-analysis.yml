@@ -44,7 +44,9 @@ jobs:
       if: matrix.language == 'csharp'
       uses: actions/setup-dotnet@v6.0.0
       with:
-        dotnet-version: 10.0.402
+        dotnet-version: |
+          11.0.100
+          10.0.402
 
     - name: Initialize CodeQL
       uses: github/codeql-action/init@v4

@@ -1,15 +1,12 @@
+using ModularPipelines;
 using ModularPipelines.Context;
-using ModularPipelines.Git.Extensions;
-using ModularPipelines.Modules;
 
 namespace BDTest.Pipeline.Modules;
 
 public class PackageFilesRemovalModule : Module
 {
-    protected override async Task ExecuteModuleAsync(IModuleContext context, CancellationToken cancellationToken)
+    protected override async Task ExecuteAsync(IModuleContext context, CancellationToken cancellationToken)
     {
-        new PackageArtifacts(context.Git().RootDirectory!.Path).PrepareDirectory();
-
-        await Task.CompletedTask;
+        new PackageArtifacts((await context.Tools.Git.Information.GetRequiredInfoAsync(cancellationToken)).Root.Path).PrepareDirectory();
     }
 }

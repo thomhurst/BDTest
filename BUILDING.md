@@ -46,7 +46,8 @@ JSON-null summaries are filtered out. No nullable diagnostic categories are disa
 
 ## Validation
 
-Use .NET SDK 10.0.402, matching CI:
+Use .NET SDK 10.0.402, matching CI. `BDTest.Pipeline` and `BDTest.Pipeline.Tests` target
+`net11.0`, so the solution build also needs .NET SDK 11.0.100:
 
 ```powershell
 dotnet build BDTest.sln -c Release
