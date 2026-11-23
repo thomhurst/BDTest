@@ -134,9 +134,20 @@ jobs:
             exit 1
           fi
 
-          draft_ids=$(gh api --paginate "$repo/releases?per_page=100" \
-            --jq '.[] | select(.draft and ((.body // "") | contains(env.DRAFT_MARKER))) | .id')
-          draft_id=${draft_ids%%$'\n'*}
+          # The newest marked draft is the one to update. More than one should not happen; name them
+          # so the owner can delete the extras.
+          drafts=$(gh api --paginate "$repo/releases?per_page=100" \
+            --jq '.[] | select(.draft and ((.body // "") | contains(env.DRAFT_MARKER))) | "\(.created_at) \(.id)"')
+          draft_id=""
+          if [ -n "$drafts" ]; then
+            drafts=$(sort -r <<< "$drafts")
+            draft_id=$(head -n 1 <<< "$drafts" | cut -d ' ' -f 2)
+            count=$(wc -l <<< "$drafts" | tr -d ' ')
+            if [ "$count" -gt 1 ]; then
+              ids=$(cut -d ' ' -f 2 <<< "$drafts" | paste -s -d ' ' -)
+              echo "::warning::$count drafts carry the release-draft marker (ids, newest first: $ids). Updating the newest, $draft_id; delete the others."
+            fi
+          fi
 
           # Keep a version the owner set on the draft when it is a valid release version above the
           # suggestion that has no tag or release yet. Anything else gets the suggestion.
