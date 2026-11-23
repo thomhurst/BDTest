@@ -286,6 +286,49 @@ interchangeable or guarantee compatibility across major releases.
 `BDTest.Pipeline.Tests/PackageVersionTests.cs` checks the properties passed to
 packing for stable, prerelease, metadata, minor, patch and major versions.
 
+## Releasing
+
+`.github/workflows/release-draft.yml` keeps one draft GitHub release for `main`,
+updated on every push. By default its tag is the version GitVersion computes
+for the newest commit: the next patch after the latest version tag
+(`GitVersion.yml`), however many commits follow it. Commit messages no longer
+choose the version, so `+semver:` has no effect.
+
+To release, edit the draft on GitHub, adjust the notes, and publish it. Change
+the draft's tag to override the version (for example `3.1.0` or `4.0.0`; a `v`
+prefix and a prerelease such as `4.0.0-beta.1` also work); later pushes keep a
+higher version you set. Set it back to the suggestion (or lower) to return to
+the default. A tag that is not a valid version, or whose version already has a
+tag or release, is replaced by the suggestion.
+
+Publishing creates the tag on the draft's commit and runs
+`.github/workflows/dotnet.yml` on it in the `Production` environment. That run
+fails unless the tag is a version and its commit is on `main`. It tests, packs
+and verifies the commit with the tag's version, then pushes the packages to
+NuGet. To retry a failed publish, re-run that workflow run: packages already on
+NuGet are skipped.
+
+Every push to `main` regenerates the draft's notes, so edits to them are lost if
+`main` moves before the draft is published. Keep the hidden
+`<!-- bdtest-release-draft -->` comment at the end of the notes: it marks the
+draft the workflow owns, and without it the next push creates a second draft.
+No draft is made for a version that already has a tag or a published release.
+
+The notes list the merged PRs since the latest published release (or, before
+the first one, the newest version tag), grouped by `.github/release.yml`:
+Breaking Changes, New Features, Bug Fixes, Performance, Documentation, Other
+Changes, then Dependencies. Label a PR `breaking` (or `breaking-change`) to list
+it under Breaking Changes, and `ignore-for-release` to leave it out. Dependency
+PRs carry `dependencies` (from `renovate.json`, and Dependabot's default) and are
+grouped automatically, unless they are also breaking.
+
+`scripts/ReleaseVersion.psm1` holds the one release-version grammar and its
+SemVer 2.0 precedence: an optional `v`, then a version without build metadata or
+leading zeros, each of major, minor and patch at most 65534 (they become
+`AssemblyVersion` and `FileVersion`). `Get-ReleaseVersion.ps1` and
+`Compare-ReleaseVersion.ps1` wrap it for the workflows, and
+`scripts/Test-ReleaseVersion.ps1` checks both in CI.
+
 ## Strong-name signing and adapter boundaries (#857)
 
 `Directory.Build.props` defines `BDTestPublicKey` once and resolves

@@ -1,0 +1,227 @@
+name: Release Draft
+
+# Keeps one draft release up to date with main: its tag is the version GitVersion computes for the
+# newest commit (the next patch after the latest version tag, see GitVersion.yml), its target is
+# that commit, and its notes list the changes since the latest release, categorised by
+# .github/release.yml.
+#
+# To release, edit the draft on GitHub, adjust the notes, and publish it. Change the draft's tag to
+# override the version (for example 3.1.0 for a minor or 4.0.0 for a major release; 4.0.0-beta.1
+# for a prerelease); later pushes keep a higher version you set. Set it back to the suggestion (or
+# lower) to return to the default. Publishing creates the tag on the draft's commit and runs
+# dotnet.yml, which tests and packs that commit with the tag's version and pushes the packages to
+# NuGet.
+#
+# Every push to main regenerates the draft's notes and retargets it, so edits to the notes are
+# lost if main moves before it is published. The draft this workflow owns carries DRAFT_MARKER, a
+# hidden comment at the end of its notes: keep it when editing the notes, or the next push creates
+# a second draft. Other drafts are left alone.
+
+on:
+  push:
+    branches: ["main"]
+  workflow_dispatch:
+
+permissions: {}
+
+# Only the newest commit's draft matters.
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: true
+
+jobs:
+  draft:
+    # A manual run on another branch must not point main's draft at an unmerged commit.
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    env:
+      DRAFT_MARKER: '<!-- bdtest-release-draft -->'
+
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v6.0.0
+        with:
+          dotnet-version: 10.0.402
+
+      # The same GitVersion.Tool version and repository GitVersion.yml the pipeline's
+      # NugetVersionGeneratorModule uses (ModularPipelines' GitVersioningOptions.ToolVersion), and
+      # the release-version grammar dotnet.yml applies to a published tag.
+      - name: Determine version
+        id: version
+        shell: bash
+        run: |
+          set -euo pipefail
+          shopt -s inherit_errexit
+          tools="$RUNNER_TEMP/gitversion"
+          dotnet tool install --tool-path "$tools" GitVersion.Tool --version 6.8.2 > /dev/null
+          suggested=$("$tools/dotnet-gitversion" /output json /nocache | jq -r .SemVer)
+          if ! version=$(pwsh -NoProfile -File scripts/Get-ReleaseVersion.ps1 -Tag "$suggested" -Stable); then
+            echo "::error::GitVersion suggested '$suggested' for main; expected a stable release version."
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Update draft release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          # Command substitutions inherit errexit, and every function checks its own failures
+          # (errexit is ignored inside a function called from a condition or `||`).
+          shopt -s inherit_errexit
+          repo="repos/$GITHUB_REPOSITORY"
+          # Existing tags have no v prefix; a published tag may carry one.
+          tag="$VERSION"
+
+          # A re-run of an older main run keeps its original commit; it must not move the draft back.
+          tip=$(git ls-remote --exit-code origin refs/heads/main | cut -f1)
+          if [ "$tip" != "$GITHUB_SHA" ]; then
+            echo "Run commit $GITHUB_SHA is not the tip of main ($tip); leaving the draft alone." | tee -a "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          # GET an API path. Prints the body and returns 0, returns 1 for 404 Not Found, and returns 2
+          # for any other error (gh prints a 404's body on stdout, so check its status, not output).
+          # Callers fail the step on 2.
+          api_get() {
+            local out err
+            err=$(mktemp) || return 2
+            if out=$(gh api "$@" 2> "$err"); then
+              rm -f "$err"
+              printf '%s' "$out"
+              return 0
+            fi
+            if grep -q 'HTTP 404' "$err"; then
+              rm -f "$err"
+              return 1
+            fi
+            echo "::error::gh api $* failed: $(cat "$err")" >&2
+            rm -f "$err"
+            return 2
+          }
+
+          # Returns 0 when a tag or published release exists for the version in either tag form,
+          # 1 when none does, and 2 when a lookup fails.
+          version_taken() {
+            local path rc
+            for path in "git/ref/tags/$1" "git/ref/tags/v$1" "releases/tags/$1" "releases/tags/v$1"; do
+              rc=0
+              api_get "$repo/$path" > /dev/null || rc=$?
+              if [ "$rc" -ne 1 ]; then
+                return $(( rc == 0 ? 0 : 2 ))
+              fi
+            done
+            return 1
+          }
+
+          # A version that already has a tag or a published release is not suggested again.
+          rc=0
+          version_taken "$VERSION" || rc=$?
+          if [ "$rc" -eq 0 ]; then
+            echo "Version $VERSION already has a tag or release; leaving the draft alone." | tee -a "$GITHUB_STEP_SUMMARY"
+            exit 0
+          elif [ "$rc" -ne 1 ]; then
+            exit 1
+          fi
+
+          # The newest marked draft is the one to update. More than one should not happen; name them
+          # so the owner can delete the extras.
+          drafts=$(gh api --paginate "$repo/releases?per_page=100" \
+            --jq '.[] | select(.draft and ((.body // "") | contains(env.DRAFT_MARKER))) | "\(.created_at) \(.id)"')
+          draft_id=""
+          if [ -n "$drafts" ]; then
+            drafts=$(sort -r <<< "$drafts")
+            draft_id=$(head -n 1 <<< "$drafts" | cut -d ' ' -f 2)
+            count=$(wc -l <<< "$drafts" | tr -d ' ')
+            if [ "$count" -gt 1 ]; then
+              ids=$(cut -d ' ' -f 2 <<< "$drafts" | paste -s -d ' ' -)
+              echo "::warning::$count drafts carry the release-draft marker (ids, newest first: $ids). Updating the newest, $draft_id; delete the others."
+            fi
+          fi
+
+          # Keep a version the owner set on the draft when it is a valid release version above the
+          # suggestion that has no tag or release yet. Anything else gets the suggestion.
+          tag="$VERSION"
+          kept=""
+          if [ -n "$draft_id" ]; then
+            draft=$(gh api "$repo/releases/$draft_id")
+            is_draft=$(jq -r .draft <<< "$draft")
+            if [ "$is_draft" != "true" ]; then
+              echo "Release $draft_id was published meanwhile; leaving it alone." | tee -a "$GITHUB_STEP_SUMMARY"
+              exit 0
+            fi
+            current=$(jq -r .tag_name <<< "$draft")
+            order=""
+            if current_version=$(pwsh -NoProfile -File scripts/Get-ReleaseVersion.ps1 -Tag "$current" 2> /dev/null); then
+              order=$(pwsh -NoProfile -File scripts/Compare-ReleaseVersion.ps1 -Left "$current" -Right "$VERSION")
+            fi
+            if [ "$order" = "1" ]; then
+              rc=0
+              version_taken "$current_version" || rc=$?
+              if [ "$rc" -eq 1 ]; then
+                tag="$current"
+                kept="kept the draft's tag $current over the suggested $VERSION"
+              elif [ "$rc" -eq 0 ]; then
+                kept="replaced the draft's tag $current, which already has a tag or release, with $VERSION"
+              else
+                exit 1
+              fi
+            elif [ "$current" != "$VERSION" ]; then
+              kept="replaced the draft's tag $current, not a release version above $VERSION, with $VERSION"
+            fi
+          fi
+
+          # Notes start at the latest published release. Before the first one, they start at the
+          # newest stable version tag on main, which is the version last pushed to NuGet.
+          rc=0
+          previous=$(api_get "$repo/releases/latest" --jq .tag_name) || rc=$?
+          if [ "$rc" -eq 1 ]; then
+            previous=""
+          elif [ "$rc" -ne 0 ]; then
+            exit 1
+          fi
+          if [ -z "$previous" ]; then
+            tags=$(git tag --merged HEAD --sort=-version:refname)
+            previous=$(printf '%s\n' "$tags" | grep -E '^v?[0-9]+\.[0-9]+\.[0-9]+$' | head -n 1 || true)
+          fi
+
+          # GitHub categorises the notes with .github/release.yml from the default branch.
+          notes_args=(-f tag_name="$tag" -f target_commitish="$GITHUB_SHA")
+          if [ -n "$previous" ]; then
+            notes_args+=(-f previous_tag_name="$previous")
+          fi
+          notes=$(gh api -X POST "$repo/releases/generate-notes" "${notes_args[@]}" --jq .body)
+          body="$notes"$'\n\n'"$DRAFT_MARKER"
+
+          if [ -n "$draft_id" ]; then
+            # Re-read right before updating. Publishing the draft between this check and the PATCH
+            # (a sub-second window) can still let the PATCH rewrite the published release's tag,
+            # name and notes; the PATCH never sends draft, so it cannot turn a published release
+            # back into a draft. A kept tag keeps its name: only the target and notes change.
+            is_draft=$(gh api "$repo/releases/$draft_id" --jq .draft)
+            if [ "$is_draft" != "true" ]; then
+              echo "Release $draft_id was published meanwhile; leaving it alone." | tee -a "$GITHUB_STEP_SUMMARY"
+              exit 0
+            fi
+            patch_args=(-f target_commitish="$GITHUB_SHA" -f body="$body")
+            if [ "$tag" = "$VERSION" ]; then
+              patch_args+=(-f tag_name="$tag" -f name="$VERSION")
+            fi
+            url=$(gh api -X PATCH "$repo/releases/$draft_id" "${patch_args[@]}" --jq .html_url)
+          else
+            url=$(gh api -X POST "$repo/releases" \
+              -f tag_name="$tag" -f target_commitish="$GITHUB_SHA" -f name="$VERSION" \
+              -F draft=true -f body="$body" --jq .html_url)
+          fi
+
+          echo "Draft release $tag for $GITHUB_SHA (suggested $VERSION${kept:+; $kept}; previous release ${previous:-none}): $url" | tee -a "$GITHUB_STEP_SUMMARY"

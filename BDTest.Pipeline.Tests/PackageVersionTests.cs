@@ -44,4 +44,35 @@ public class PackageVersionTests
 
         await Assert.That(secondVersion).IsEqualTo(firstVersion);
     }
+
+    [Test]
+    [Arguments("3.0.1")]
+    [Arguments("4.0.0-beta.1")]
+    public async Task Release_runs_ship_the_release_tag_version(string releaseVersion)
+    {
+        await Assert.That(NugetVersionGeneratorModule.GetReleaseVersion("release", releaseVersion))
+            .IsEqualTo(releaseVersion);
+    }
+
+    [Test]
+    [Arguments("push", "3.0.1")]
+    [Arguments("pull_request", null)]
+    [Arguments(null, null)]
+    public async Task Other_runs_leave_the_version_to_GitVersion(string? eventName, string? releaseVersion)
+    {
+        await Assert.That(NugetVersionGeneratorModule.GetReleaseVersion(eventName, releaseVersion)).IsNull();
+    }
+
+    [Test]
+    [Arguments(null)]
+    [Arguments("")]
+    [Arguments(" ")]
+    public async Task Release_runs_without_a_release_version_fail(string? releaseVersion)
+    {
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+        {
+            NugetVersionGeneratorModule.GetReleaseVersion("release", releaseVersion);
+            return Task.CompletedTask;
+        });
+    }
 }
