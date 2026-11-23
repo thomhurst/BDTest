@@ -10,17 +10,16 @@ on:
     branches: ["main"]
     # Drafts skip every job; marking ready starts CI and converting back cancels it.
     types: [opened, synchronize, reopened, ready_for_review, converted_to_draft]
+  # Publishing the draft release that release-draft.yml keeps for main runs the full pipeline on
+  # the release's tag and pushes the packages to NuGet, stamped with the tag's version.
+  release:
+    types: [published]
   workflow_dispatch:
-    inputs:
-      publish-packages:
-        description: Publish packages?    
-        type: boolean
-        required: true
 
 concurrency:
   # Keep package publication separate and uninterrupted; ordinary builds still supersede each other.
-  group: ${{ github.workflow }}-${{ inputs.publish-packages && 'publish' || 'build' }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: ${{ !inputs.publish-packages }}
+  group: ${{ github.workflow }}-${{ github.event_name == 'release' && 'publish' || 'build' }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name != 'release' }}
 
 jobs:
   filesystem-storage-macos:
@@ -41,7 +40,7 @@ jobs:
 
   modularpipeline:
     if: github.event_name != 'pull_request' || !github.event.pull_request.draft
-    environment: ${{ github.ref == 'refs/heads/main' && 'Production' || 'Pull Requests' }}
+    environment: ${{ (github.ref == 'refs/heads/main' || github.event_name == 'release') && 'Production' || 'Pull Requests' }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -53,7 +52,8 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
-          # GitVersion's Mainline strategy fails on the synthetic PR merge commit, so build the PR branch itself
+          # Build the PR branch itself, not the synthetic merge commit, so GitVersion names the branch.
+          # Empty outside pull requests: a release checks out its tag.
           ref: ${{ github.head_ref }}
       - name: Setup .NET
         uses: actions/setup-dotnet@v6.0.0
@@ -85,8 +85,27 @@ jobs:
       - name: Verify framework cancellation from test runners
         shell: pwsh
         run: ./scripts/Test-AdapterCancellation.ps1 -ResultsDirectory artifacts/test-results/adapter-cancellation
+      # A release ships the version in its tag (v prefix optional, prerelease suffix allowed), and
+      # only what main has: the tag must point at a commit on main.
+      - name: Verify release
+        if: github.event_name == 'release'
+        shell: bash
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: |
+          set -euo pipefail
+          if [[ ! "$RELEASE_TAG" =~ ^v?[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
+            echo "::error::Release tag '$RELEASE_TAG' is not a version. Use a tag such as 3.0.1, v3.1.0 or 4.0.0-beta.1."
+            exit 1
+          fi
+          if ! git merge-base --is-ancestor "$GITHUB_SHA" origin/main; then
+            echo "::error::Release $RELEASE_TAG points at $GITHUB_SHA, which is not on main."
+            exit 1
+          fi
+          echo "RELEASE_VERSION=${RELEASE_TAG#v}" >> "$GITHUB_ENV"
+          echo "Release version: ${RELEASE_TAG#v}"
       - name: NuGet login
-        if: ${{ github.ref == 'refs/heads/main' && github.event.inputs.publish-packages == 'true' }}
+        if: github.event_name == 'release'
         uses: NuGet/login@v1
         id: login
         with:
@@ -95,9 +114,9 @@ jobs:
         run: dotnet run -c Release
         working-directory: "BDTest.Pipeline"
         env:
-          DOTNET_ENVIRONMENT: ${{ github.ref == 'refs/heads/main' && 'Production' || 'Development' }}
+          DOTNET_ENVIRONMENT: ${{ (github.ref == 'refs/heads/main' || github.event_name == 'release') && 'Production' || 'Development' }}
           NuGet__ApiKey: ${{ steps.login.outputs.NUGET_API_KEY }}
-          PUBLISH_PACKAGES: ${{ github.event.inputs.publish-packages }}
+          PUBLISH_PACKAGES: ${{ github.event_name == 'release' }}
       - name: Upload test results
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v7.0.2
@@ -115,8 +134,34 @@ jobs:
             artifacts/packages/*.snupkg
           if-no-files-found: warn
 
+  # The draft was named, and its compare link written, for the version GitVersion suggested.
+  # Follow the tag if it was edited before publishing. Cosmetic, so it never blocks a release.
+  # A separate job keeps write access out of the build job. It is not in ci-passed's `needs`: it
+  # runs only for releases, and a skipped need would fail that check on every pull request.
+  name-release:
+    if: github.event_name == 'release'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    steps:
+      - name: Name release after its tag
+        continue-on-error: true
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_ID: ${{ github.event.release.id }}
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: |
+          set -euo pipefail
+          version="${RELEASE_TAG#v}"
+          body=$(gh api "repos/$GITHUB_REPOSITORY/releases/$RELEASE_ID" --jq '.body // ""')
+          body=$(printf '%s' "$body" | sed -E "s#(/compare/[^ )]+)\.\.\.[^ )]+#\1...$RELEASE_TAG#")
+          gh api -X PATCH "repos/$GITHUB_REPOSITORY/releases/$RELEASE_ID" -f name="$version" -f body="$body" > /dev/null
+
   ci-passed:
-    # The `main` ruleset's only required status check. List every other job in `needs`.
+    # The `main` ruleset's only required status check. List every other job in `needs`, except
+    # the release-only name-release job (see above).
     # The name is an expression on purpose: GitHub evaluates a job name only when the job
     # runs, so a skipped run (a draft PR, or a run cancelled by a newer one) reports this
     # check under the raw expression text and can never satisfy the required `CI Passed`.

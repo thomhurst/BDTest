@@ -51,7 +51,7 @@ cd BDTest.Pipeline
 DOTNET_ENVIRONMENT=Development dotnet run -c Release
 ```
 
-Use `Development` locally. `Production` can publish packages to NuGet.
+Use `Development` locally. `Production` publishes packages to NuGet only when a GitHub release is published.
 
 ## Repository layout
 

@@ -286,6 +286,27 @@ interchangeable or guarantee compatibility across major releases.
 `BDTest.Pipeline.Tests/PackageVersionTests.cs` checks the properties passed to
 packing for stable, prerelease, metadata, minor, patch and major versions.
 
+## Releasing
+
+`.github/workflows/release-draft.yml` keeps one draft GitHub release for `main`,
+rewritten on every push. Its tag is the version GitVersion computes for the
+newest commit: the next patch after the latest version tag (`GitVersion.yml`),
+however many commits follow it. Its notes are generated from the merged PRs
+since the latest published release, or since the newest version tag before the
+first one. Commit messages no longer choose the version, so `+semver:` has no
+effect.
+
+To release, edit the draft on GitHub, change its tag to the version you want
+(for example `3.1.0` or `4.0.0`; a `v` prefix and a prerelease such as
+`4.0.0-beta.1` also work), adjust the notes, and publish it. Publishing creates
+the tag on the draft's commit and runs `.github/workflows/dotnet.yml` on it in
+the `Production` environment. That run fails unless the tag is a version and
+its commit is on `main`. It tests, packs and verifies the commit with the tag's
+version, then pushes the packages to NuGet. To retry a failed publish, re-run
+that workflow run: packages already on NuGet are skipped. Every push to `main`
+rewrites the draft, so edits to it are lost if `main` moves before it is
+published.
+
 ## Strong-name signing and adapter boundaries (#857)
 
 `Directory.Build.props` defines `BDTestPublicKey` once and resolves
