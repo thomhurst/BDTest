@@ -305,7 +305,16 @@ its commit is on `main`. It tests, packs and verifies the commit with the tag's
 version, then pushes the packages to NuGet. To retry a failed publish, re-run
 that workflow run: packages already on NuGet are skipped. Every push to `main`
 rewrites the draft, so edits to it are lost if `main` moves before it is
-published.
+published. Keep the hidden `<!-- bdtest-release-draft -->` comment at the end of
+the draft's notes: it marks the draft the workflow owns, and without it the next
+push creates a second draft. No draft is made for a version that already has a
+tag or a published release.
+
+`scripts/Get-ReleaseVersion.ps1` holds the one release-version grammar: an
+optional `v`, then a SemVer 2.0 version without build metadata or leading
+zeros, each of major, minor and patch at most 65534 (they become
+`AssemblyVersion` and `FileVersion`). `scripts/Test-ReleaseVersion.ps1` checks
+it in CI.
 
 ## Strong-name signing and adapter boundaries (#857)
 

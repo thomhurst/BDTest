@@ -16,6 +16,10 @@ on:
     types: [published]
   workflow_dispatch:
 
+# Jobs that need more declare it themselves.
+permissions:
+  contents: read
+
 concurrency:
   # Keep package publication separate and uninterrupted; ordinary builds still supersede each other.
   group: ${{ github.workflow }}-${{ github.event_name == 'release' && 'publish' || 'build' }}-${{ github.event.pull_request.number || github.ref }}
@@ -85,7 +89,10 @@ jobs:
       - name: Verify framework cancellation from test runners
         shell: pwsh
         run: ./scripts/Test-AdapterCancellation.ps1 -ResultsDirectory artifacts/test-results/adapter-cancellation
-      # A release ships the version in its tag (v prefix optional, prerelease suffix allowed), and
+      - name: Verify release version grammar
+        shell: pwsh
+        run: ./scripts/Test-ReleaseVersion.ps1
+      # A release ships the version in its tag (see Get-ReleaseVersion.ps1 for the grammar), and
       # only what main has: the tag must point at a commit on main.
       - name: Verify release
         if: github.event_name == 'release'
@@ -94,7 +101,7 @@ jobs:
           RELEASE_TAG: ${{ github.event.release.tag_name }}
         run: |
           set -euo pipefail
-          if [[ ! "$RELEASE_TAG" =~ ^v?[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
+          if ! version=$(pwsh -NoProfile -File scripts/Get-ReleaseVersion.ps1 -Tag "$RELEASE_TAG"); then
             echo "::error::Release tag '$RELEASE_TAG' is not a version. Use a tag such as 3.0.1, v3.1.0 or 4.0.0-beta.1."
             exit 1
           fi
@@ -102,8 +109,8 @@ jobs:
             echo "::error::Release $RELEASE_TAG points at $GITHUB_SHA, which is not on main."
             exit 1
           fi
-          echo "RELEASE_VERSION=${RELEASE_TAG#v}" >> "$GITHUB_ENV"
-          echo "Release version: ${RELEASE_TAG#v}"
+          echo "RELEASE_VERSION=$version" >> "$GITHUB_ENV"
+          echo "Release version: $version"
       - name: NuGet login
         if: github.event_name == 'release'
         uses: NuGet/login@v1
@@ -134,8 +141,10 @@ jobs:
             artifacts/packages/*.snupkg
           if-no-files-found: warn
 
-  # The draft was named, and its compare link written, for the version GitVersion suggested.
-  # Follow the tag if it was edited before publishing. Cosmetic, so it never blocks a release.
+  # The draft was named, and its Full Changelog link written, for the version GitVersion suggested.
+  # Follow the tag if it was edited before publishing. Only the generated Full Changelog line is
+  # rewritten; other compare links in the notes are left as written. Cosmetic, so it never blocks
+  # a release, and independent of the build job, so it runs whatever happens after publishing.
   # A separate job keeps write access out of the build job. It is not in ci-passed's `needs`: it
   # runs only for releases, and a skipped need would fail that check on every pull request.
   name-release:
@@ -156,7 +165,8 @@ jobs:
           set -euo pipefail
           version="${RELEASE_TAG#v}"
           body=$(gh api "repos/$GITHUB_REPOSITORY/releases/$RELEASE_ID" --jq '.body // ""')
-          body=$(printf '%s' "$body" | sed -E "s#(/compare/[^ )]+)\.\.\.[^ )]+#\1...$RELEASE_TAG#")
+          body=$(printf '%s' "$body" \
+            | sed -E "s#^(\*\*Full Changelog\*\*: https://github\.com/$GITHUB_REPOSITORY/compare/[^ ]+)\.\.\.[^ ]+\$#\1...$RELEASE_TAG#")
           gh api -X PATCH "repos/$GITHUB_REPOSITORY/releases/$RELEASE_ID" -f name="$version" -f body="$body" > /dev/null
 
   ci-passed:

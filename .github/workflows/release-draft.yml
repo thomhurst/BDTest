@@ -10,8 +10,9 @@ name: Release Draft
 # packs that commit with the tag's version and pushes the packages to NuGet.
 #
 # Every push to main rewrites the draft, so edits to it are lost if main moves before it is
-# published. The draft this workflow owns carries DRAFT_MARKER in its notes; other drafts are left
-# alone.
+# published. The draft this workflow owns carries DRAFT_MARKER, a hidden comment at the end of its
+# notes: keep it when editing the notes, or the next push creates a second draft. Other drafts are
+# left alone.
 
 on:
   push:
@@ -27,6 +28,8 @@ concurrency:
 
 jobs:
   draft:
+    # A manual run on another branch must not point main's draft at an unmerged commit.
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
@@ -46,7 +49,8 @@ jobs:
           dotnet-version: 10.0.402
 
       # The same GitVersion.Tool version and repository GitVersion.yml the pipeline's
-      # NugetVersionGeneratorModule uses (ModularPipelines' GitVersioningOptions.ToolVersion).
+      # NugetVersionGeneratorModule uses (ModularPipelines' GitVersioningOptions.ToolVersion), and
+      # the release-version grammar dotnet.yml applies to a published tag.
       - name: Determine version
         id: version
         shell: bash
@@ -54,9 +58,9 @@ jobs:
           set -euo pipefail
           tools="$RUNNER_TEMP/gitversion"
           dotnet tool install --tool-path "$tools" GitVersion.Tool --version 6.8.2 > /dev/null
-          version=$("$tools/dotnet-gitversion" /output json /nocache | jq -r .SemVer)
-          if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-            echo "::error::GitVersion suggested '$version' for main; expected a release version."
+          suggested=$("$tools/dotnet-gitversion" /output json /nocache | jq -r .SemVer)
+          if ! version=$(pwsh -NoProfile -File scripts/Get-ReleaseVersion.ps1 -Tag "$suggested" -Stable); then
+            echo "::error::GitVersion suggested '$suggested' for main; expected a stable release version."
             exit 1
           fi
           echo "version=$version" >> "$GITHUB_OUTPUT"
@@ -72,15 +76,51 @@ jobs:
           # Existing tags have no v prefix; a published tag may carry one.
           tag="$VERSION"
 
+          # GET an API path. Prints the body and returns 0, returns 1 for 404 Not Found, and returns 2
+          # for any other error (gh prints a 404's body on stdout, so check its status, not output).
+          # Callers fail the step on 2.
+          api_get() {
+            local out err
+            err=$(mktemp)
+            if out=$(gh api "$@" 2> "$err"); then
+              rm -f "$err"
+              printf '%s' "$out"
+              return 0
+            fi
+            if grep -q 'HTTP 404' "$err"; then
+              rm -f "$err"
+              return 1
+            fi
+            echo "::error::gh api $* failed: $(cat "$err")" >&2
+            rm -f "$err"
+            return 2
+          }
+
+          # A version that already has a tag or a published release is not suggested again.
+          for path in "git/ref/tags/$VERSION" "git/ref/tags/v$VERSION" \
+            "releases/tags/$VERSION" "releases/tags/v$VERSION"; do
+            rc=0
+            api_get "$repo/$path" > /dev/null || rc=$?
+            if [ "$rc" -eq 0 ]; then
+              echo "Version $VERSION already has $path; leaving the draft alone." | tee -a "$GITHUB_STEP_SUMMARY"
+              exit 0
+            elif [ "$rc" -ne 1 ]; then
+              exit 1
+            fi
+          done
+
           # Notes start at the latest published release. Before the first one, they start at the
           # newest stable version tag on main, which is the version last pushed to NuGet.
-          # gh prints the 404 body on stdout when there is no release yet, so discard it on failure.
-          if ! previous=$(gh api "$repo/releases/latest" --jq .tag_name 2> /dev/null); then
+          rc=0
+          previous=$(api_get "$repo/releases/latest" --jq .tag_name) || rc=$?
+          if [ "$rc" -eq 1 ]; then
             previous=""
+          elif [ "$rc" -ne 0 ]; then
+            exit 1
           fi
           if [ -z "$previous" ]; then
-            previous=$(git tag --merged HEAD --sort=-version:refname \
-              | grep -E '^v?[0-9]+\.[0-9]+\.[0-9]+$' | head -n 1 || true)
+            tags=$(git tag --merged HEAD --sort=-version:refname)
+            previous=$(printf '%s\n' "$tags" | grep -E '^v?[0-9]+\.[0-9]+\.[0-9]+$' | head -n 1 || true)
           fi
 
           notes_args=(-f tag_name="$tag" -f target_commitish="$GITHUB_SHA")
@@ -95,15 +135,21 @@ jobs:
           draft_id=${draft_ids%%$'\n'*}
 
           if [ -n "$draft_id" ]; then
-            method=PATCH
-            endpoint="$repo/releases/$draft_id"
+            # Publishing the draft between this check and the PATCH below (a sub-second window) can
+            # still let this PATCH rewrite the published release's tag, name and notes. The PATCH
+            # never sends draft, so it cannot turn a published release back into a draft.
+            is_draft=$(gh api "$repo/releases/$draft_id" --jq .draft)
+            if [ "$is_draft" != "true" ]; then
+              echo "Release $draft_id was published meanwhile; leaving it alone." | tee -a "$GITHUB_STEP_SUMMARY"
+              exit 0
+            fi
+            url=$(gh api -X PATCH "$repo/releases/$draft_id" \
+              -f tag_name="$tag" -f target_commitish="$GITHUB_SHA" -f name="$VERSION" \
+              -f body="$body" --jq .html_url)
           else
-            method=POST
-            endpoint="$repo/releases"
+            url=$(gh api -X POST "$repo/releases" \
+              -f tag_name="$tag" -f target_commitish="$GITHUB_SHA" -f name="$VERSION" \
+              -F draft=true -f body="$body" --jq .html_url)
           fi
-
-          url=$(gh api -X "$method" "$endpoint" \
-            -f tag_name="$tag" -f target_commitish="$GITHUB_SHA" -f name="$VERSION" \
-            -F draft=true -f body="$body" --jq .html_url)
 
           echo "Draft release $tag for $GITHUB_SHA (previous release ${previous:-none}): $url" | tee -a "$GITHUB_STEP_SUMMARY"
