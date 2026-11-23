@@ -31,8 +31,8 @@ public class NugetVersionGeneratorModule : Module<string>
 
     /// <summary>
     /// Returns the version a published release ships, or <see langword="null"/> for any other run.
-    /// The workflow validates the release tag with <c>scripts/Get-ReleaseVersion.ps1</c>, the
-    /// repository's one release-version grammar, and exports it without a <c>v</c> prefix as
+    /// The workflow validates the release tag with <c>scripts/Get-ReleaseVersion.ps1</c>, which
+    /// applies the repository's one release-version grammar, and exports it without a <c>v</c> prefix as
     /// <c>RELEASE_VERSION</c>.
     /// </summary>
     public static string? GetReleaseVersion(string? eventName, string? releaseVersion)

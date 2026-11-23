@@ -1,0 +1,60 @@
+# Categories for the release notes GitHub generates for the draft release (release-draft.yml).
+# GitHub puts each PR in the first category it matches, in file order. Label a PR `breaking` (or
+# `breaking-change`) for Breaking Changes, and `ignore-for-release` to leave it out. Dependency PRs
+# carry `dependencies` (renovate.json, and Dependabot's default) and are grouped under
+# Dependencies, last: the categories before it exclude that label, so a dependency PR is never
+# split out of the group unless it is breaking.
+changelog:
+  exclude:
+    labels:
+      - ignore-for-release
+  categories:
+    - title: Breaking Changes
+      labels:
+        - breaking
+        - breaking-change
+    - title: New Features
+      labels:
+        - enhancement
+        - feature
+      exclude:
+        labels:
+          - dependencies
+    - title: Bug Fixes
+      labels:
+        - bug
+        - fix
+      exclude:
+        labels:
+          - dependencies
+    - title: Performance
+      labels:
+        - performance
+      exclude:
+        labels:
+          - dependencies
+    - title: Documentation
+      labels:
+        - documentation
+        - docs
+      exclude:
+        labels:
+          - dependencies
+    - title: Other Changes
+      labels:
+        - '*'
+      exclude:
+        labels:
+          - dependencies
+          - breaking
+          - breaking-change
+          - enhancement
+          - feature
+          - bug
+          - fix
+          - performance
+          - documentation
+          - docs
+    - title: Dependencies
+      labels:
+        - dependencies
