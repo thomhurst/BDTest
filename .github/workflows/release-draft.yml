@@ -59,6 +59,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          shopt -s inherit_errexit
           tools="$RUNNER_TEMP/gitversion"
           dotnet tool install --tool-path "$tools" GitVersion.Tool --version 6.8.2 > /dev/null
           suggested=$("$tools/dotnet-gitversion" /output json /nocache | jq -r .SemVer)
@@ -75,16 +76,26 @@ jobs:
           VERSION: ${{ steps.version.outputs.version }}
         run: |
           set -euo pipefail
+          # Command substitutions inherit errexit, and every function checks its own failures
+          # (errexit is ignored inside a function called from a condition or `||`).
+          shopt -s inherit_errexit
           repo="repos/$GITHUB_REPOSITORY"
           # Existing tags have no v prefix; a published tag may carry one.
           tag="$VERSION"
+
+          # A re-run of an older main run keeps its original commit; it must not move the draft back.
+          tip=$(git ls-remote --exit-code origin refs/heads/main | cut -f1)
+          if [ "$tip" != "$GITHUB_SHA" ]; then
+            echo "Run commit $GITHUB_SHA is not the tip of main ($tip); leaving the draft alone." | tee -a "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
 
           # GET an API path. Prints the body and returns 0, returns 1 for 404 Not Found, and returns 2
           # for any other error (gh prints a 404's body on stdout, so check its status, not output).
           # Callers fail the step on 2.
           api_get() {
             local out err
-            err=$(mktemp)
+            err=$(mktemp) || return 2
             if out=$(gh api "$@" 2> "$err"); then
               rm -f "$err"
               printf '%s' "$out"
@@ -133,13 +144,17 @@ jobs:
           kept=""
           if [ -n "$draft_id" ]; then
             draft=$(gh api "$repo/releases/$draft_id")
-            if [ "$(jq -r .draft <<< "$draft")" != "true" ]; then
+            is_draft=$(jq -r .draft <<< "$draft")
+            if [ "$is_draft" != "true" ]; then
               echo "Release $draft_id was published meanwhile; leaving it alone." | tee -a "$GITHUB_STEP_SUMMARY"
               exit 0
             fi
             current=$(jq -r .tag_name <<< "$draft")
-            if current_version=$(pwsh -NoProfile -File scripts/Get-ReleaseVersion.ps1 -Tag "$current" 2> /dev/null) \
-              && [ "$(pwsh -NoProfile -File scripts/Compare-ReleaseVersion.ps1 -Left "$current" -Right "$VERSION")" = "1" ]; then
+            order=""
+            if current_version=$(pwsh -NoProfile -File scripts/Get-ReleaseVersion.ps1 -Tag "$current" 2> /dev/null); then
+              order=$(pwsh -NoProfile -File scripts/Compare-ReleaseVersion.ps1 -Left "$current" -Right "$VERSION")
+            fi
+            if [ "$order" = "1" ]; then
               rc=0
               version_taken "$current_version" || rc=$?
               if [ "$rc" -eq 1 ]; then
@@ -182,7 +197,8 @@ jobs:
             # (a sub-second window) can still let the PATCH rewrite the published release's tag,
             # name and notes; the PATCH never sends draft, so it cannot turn a published release
             # back into a draft. A kept tag keeps its name: only the target and notes change.
-            if [ "$(gh api "$repo/releases/$draft_id" --jq .draft)" != "true" ]; then
+            is_draft=$(gh api "$repo/releases/$draft_id" --jq .draft)
+            if [ "$is_draft" != "true" ]; then
               echo "Release $draft_id was published meanwhile; leaving it alone." | tee -a "$GITHUB_STEP_SUMMARY"
               exit 0
             fi

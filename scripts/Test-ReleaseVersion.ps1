@@ -101,3 +101,5 @@ if ($failures.Count -gt 0) {
 }
 
 Write-Host "Release version grammar: $($accepted.Count) accepted, $($rejected.Count) rejected, -Stable checked; $comparisons precedence comparisons."
+# The last native call above may have exited non-zero on purpose; report the result explicitly.
+exit 0

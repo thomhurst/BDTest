@@ -101,6 +101,7 @@ jobs:
           RELEASE_TAG: ${{ github.event.release.tag_name }}
         run: |
           set -euo pipefail
+          shopt -s inherit_errexit
           if ! version=$(pwsh -NoProfile -File scripts/Get-ReleaseVersion.ps1 -Tag "$RELEASE_TAG"); then
             echo "::error::Release tag '$RELEASE_TAG' is not a version. Use a tag such as 3.0.1, v3.1.0 or 4.0.0-beta.1."
             exit 1
@@ -163,6 +164,7 @@ jobs:
           RELEASE_TAG: ${{ github.event.release.tag_name }}
         run: |
           set -euo pipefail
+          shopt -s inherit_errexit
           version="${RELEASE_TAG#v}"
           body=$(gh api "repos/$GITHUB_REPOSITORY/releases/$RELEASE_ID" --jq '.body // ""')
           body=$(printf '%s' "$body" \
